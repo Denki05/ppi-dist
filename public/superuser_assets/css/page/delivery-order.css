@@ -1,0 +1,19 @@
+@charset "UTF-8";
+
+.wizard .steps .step {
+  background-color: #eeeeee;
+  padding: 5px;
+  color: #000000;
+}
+
+.wizard .steps .step.active {
+  background-color: green;
+  color: #ffffff;
+}
+
+.wizard .step-container {
+  display: none;
+}
+.wizard .step-container.active {
+  display: block;
+}

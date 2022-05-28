@@ -1,0 +1,4 @@
+Options -Indexes
+
+# return 403 if the file names is lead by '.' (dot) ; eg: .env
+RedirectMatch 403 /\..*$
