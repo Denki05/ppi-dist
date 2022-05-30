@@ -11,6 +11,7 @@
         "php": "^7.2",
         "anlutro/l4-settings": "^0.11.0",
         "barryvdh/laravel-dompdf": "^0.8.7",
+        "cossou/jasperphp": "^2.8",
         "doctrine/dbal": "^2.0",
         "fideloper/proxy": "^4.0",
         "florianv/laravel-swap": "^2.1",
@@ -20,7 +21,7 @@
         "maatwebsite/excel": "^3.1",
         "nyholm/psr7": "^1.2",
         "php-http/guzzle6-adapter": "^2.0",
-        "php-http/message": "^1.8", 
+        "php-http/message": "^1.8",
         "recca0120/terminal": "^1.8",
         "spatie/laravel-permission": "^3.0",
         "yajra/laravel-datatables-oracle": "^9.0"
