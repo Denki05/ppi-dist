@@ -10,8 +10,8 @@
     "require": {
         "php": "^7.2",
         "anlutro/l4-settings": "^0.11.0",
-        "barryvdh/laravel-dompdf": "^0.8.7",
         "cossou/jasperphp": "^2.8",
+        "barryvdh/laravel-dompdf": "^0.8.7",
         "doctrine/dbal": "^2.0",
         "fideloper/proxy": "^4.0",
         "florianv/laravel-swap": "^2.1",

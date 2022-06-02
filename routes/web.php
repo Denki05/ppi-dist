@@ -18,3 +18,6 @@ Route::group(['as' => 'utility.'], function () {
         return 'Token valid.';
     })->name('token');
 });
+
+Route::get('/', 'GenerateReportPdfController@index');
+Route::get('/process', 'GenerateReportPdfController@process');
