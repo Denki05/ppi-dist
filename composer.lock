@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "77ab8e09a51039a5e110c47968cc3e4f",
+    "content-hash": "e60ee4b55358658980ea5eb19e344457",
     "packages": [
         {
             "name": "anlutro/l4-settings",
@@ -201,51 +201,6 @@
                 }
             ],
             "time": "2022-02-21T13:15:14+00:00"
-        },
-        {
-            "name": "cossou/jasperphp",
-            "version": "2.8.0",
-            "source": {
-                "type": "git",
-                "url": "https://github.com/cossou/JasperPHP.git",
-                "reference": "d24bc69aaaf55beb2a76a0db2a572e81f6baee09"
-            },
-            "dist": {
-                "type": "zip",
-                "url": "https://api.github.com/repos/cossou/JasperPHP/zipball/d24bc69aaaf55beb2a76a0db2a572e81f6baee09",
-                "reference": "d24bc69aaaf55beb2a76a0db2a572e81f6baee09",
-                "shasum": ""
-            },
-            "type": "library",
-            "autoload": {
-                "psr-0": {
-                    "JasperPHP": "src/"
-                }
-            },
-            "notification-url": "https://packagist.org/downloads/",
-            "license": [
-                "MIT"
-            ],
-            "authors": [
-                {
-                    "name": "Hélder Duarte",
-                    "email": "cossou@gmail.com"
-                }
-            ],
-            "description": "Create Reports in PHP with JasperReports",
-            "homepage": "https://github.com/cossou/JasperPHP",
-            "keywords": [
-                "jasper",
-                "jasperreports",
-                "java",
-                "pdf",
-                "reports"
-            ],
-            "support": {
-                "issues": "https://github.com/cossou/JasperPHP/issues",
-                "source": "https://github.com/cossou/JasperPHP/tree/master"
-            },
-            "time": "2018-11-16T11:45:31+00:00"
         },
         {
             "name": "dnoegel/php-xdg-base-dir",
@@ -1302,6 +1257,58 @@
                 "source": "https://github.com/florianv/swap/tree/4.3.0"
             },
             "time": "2020-12-28T10:14:12+00:00"
+        },
+        {
+            "name": "geekcom/phpjasper",
+            "version": "3.3.1",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/PHPJasper/phpjasper.git",
+                "reference": "df25051c1c50410d89d51fa84b8b6457b3c1e851"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/PHPJasper/phpjasper/zipball/df25051c1c50410d89d51fa84b8b6457b3c1e851",
+                "reference": "df25051c1c50410d89d51fa84b8b6457b3c1e851",
+                "shasum": ""
+            },
+            "require": {
+                "php": "^7.2"
+            },
+            "require-dev": {
+                "php-coveralls/php-coveralls": "^2.2",
+                "phpstan/phpstan": "^0.12.5",
+                "phpunit/phpunit": "^8.4",
+                "squizlabs/php_codesniffer": "*"
+            },
+            "type": "library",
+            "autoload": {
+                "psr-4": {
+                    "PHPJasper\\": "src/"
+                }
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "MIT"
+            ],
+            "authors": [
+                {
+                    "name": "Daniel Rodrigues Lima",
+                    "email": "geekcom@php.net",
+                    "role": "lead"
+                }
+            ],
+            "description": "A PHP report generator",
+            "keywords": [
+                "pdf",
+                "php-reports",
+                "reports"
+            ],
+            "support": {
+                "issues": "https://github.com/PHPJasper/phpjasper/issues",
+                "source": "https://github.com/PHPJasper/phpjasper/tree/3.3.1"
+            },
+            "time": "2020-03-18T14:10:39+00:00"
         },
         {
             "name": "guzzlehttp/guzzle",

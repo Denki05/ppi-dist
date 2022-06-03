@@ -73,6 +73,7 @@ Route::group([
         Route::post('/ajax_customer_other_address_detail', 'PackingOrderController@ajax_customer_other_address_detail')->name('ajax_customer_other_address_detail');
 
         Route::get('/{id}/print_proforma', 'PackingOrderController@print_proforma')->name('print_proforma');
+        // Route::get('print_test', 'PackingOrderController@print_test')->name('print_test');
     });
 
     Route::group(['as' => 'delivery_order.', 'prefix' => '/delivery_order'], function () {

@@ -111,6 +111,7 @@
                       @if($row->invoicing != null)
                       <a href="{{route('superuser.finance.invoicing.print_proforma',$row->invoicing->id)}}" class="btn btn-info btn-sm btn-flat mx-1" data-id="{{$row->invoicing->id}}" target="_blank"><i class="fa fa-print"></i> Print Proforma</a>
                       <a href="{{route('superuser.finance.invoicing.print',$row->invoicing->id)}}" class="btn btn-primary btn-sm btn-flat mx-1" data-id="{{$row->invoicing->id}}" target="_blank"><i class="fa fa-print"></i> Print Invoice</a>
+                      <a href="{{route('superuser.penjualan.packing_order.print_test')}}" class="btn btn-info btn-sm btn-flat mx-1" target="_blank"><i class="fa fa-print"></i> Print Test</a>
                       @endif
                     </div>
                     @else
@@ -118,6 +119,7 @@
                       @if($row->invoicing != null)
                       <a href="{{route('superuser.finance.invoicing.print_proforma',$row->invoicing->id)}}" class="btn btn-info btn-sm btn-flat mx-1" data-id="{{$row->invoicing->id}}" target="_blank"><i class="fa fa-print"></i> Print Proforma</a>
                       <a href="{{route('superuser.finance.invoicing.print',$row->invoicing->id)}}" class="btn btn-primary btn-sm btn-flat mx-1" data-id="{{$row->invoicing->id}}" target="_blank"><i class="fa fa-print"></i> Print Invoice</a>
+                      <a href="{{route('superuser.penjualan.packing_order.print_test')}}" class="btn btn-info btn-sm btn-flat mx-1" target="_blank"><i class="fa fa-print"></i> Print Test</a>
                       @endif
                     </div>
                     @endif

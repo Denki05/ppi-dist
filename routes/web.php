@@ -19,5 +19,6 @@ Route::group(['as' => 'utility.'], function () {
     })->name('token');
 });
 
-Route::get('/', 'GenerateReportPdfController@index');
-Route::get('/process', 'GenerateReportPdfController@process');
+
+Route::get('compailePdf', 'JasperReportPdfController@compailePdf')->name('compailePdf');
+Route::get('getReportPdf', 'JasperReportPdfController@getReportPdf')->name('getReportPdf');

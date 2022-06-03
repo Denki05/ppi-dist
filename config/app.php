@@ -170,7 +170,6 @@ return [
         Swap\Laravel\SwapServiceProvider::class,
         Yajra\DataTables\DataTablesServiceProvider::class,
         Barryvdh\DomPDF\ServiceProvider::class,
-        JasperPHP\JasperPHPServiceProvider::class,
         
         /*
          * Application Service Providers...

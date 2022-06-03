@@ -10,11 +10,11 @@
     "require": {
         "php": "^7.2",
         "anlutro/l4-settings": "^0.11.0",
-        "cossou/jasperphp": "^2.8",
         "barryvdh/laravel-dompdf": "^0.8.7",
         "doctrine/dbal": "^2.0",
         "fideloper/proxy": "^4.0",
         "florianv/laravel-swap": "^2.1",
+        "geekcom/phpjasper": "^3.3",
         "laravel/framework": "^6.0",
         "laravel/telescope": "^2.1",
         "laravel/tinker": "^1.0",
