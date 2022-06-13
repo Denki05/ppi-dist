@@ -13,6 +13,7 @@ use App\Entities\Master\SubBrandReference;
 use App\Entities\Master\Unit;
 use App\Entities\Master\Vendor;
 use App\Entities\Master\Warehouse;
+use App\Entities\Master\Store;
 use App\Entities\Penjualan\SalesOrder;
 use App\Entities\Penjualan\PackingOrder;
 use App\Entities\Penjualan\DeliveryOrderMutation;
@@ -34,6 +35,11 @@ class CodeRepo
     public static function generateBranchOffice()
     {
         return self::generate('B', BranchOffice::class);
+    }
+
+    public static function generateStores()
+    {
+        return self::generate('STR', Store::class);
     }
 
     public static function generateBrandReference()

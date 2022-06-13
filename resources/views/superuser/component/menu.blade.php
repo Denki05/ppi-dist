@@ -65,6 +65,11 @@
         </a>
       </li>
       <li>
+        <a href="{{ route('superuser.master.store.index') }}" class="{{ is_active_route('superuser.master.store.index') }}">
+          Store
+        </a>
+      </li>
+      <li>
         <a href="{{ route('superuser.master.brand_reference.index') }}" class="{{ is_active_route('superuser.master.brand_reference.index') }}">
           Brand Reference
         </a>

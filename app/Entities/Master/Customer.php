@@ -68,4 +68,8 @@ class Customer extends Model
     public function do(){
         return $this->hasMany('App\Entities\Penjualan\PackingOrder','customer_id');
     }
+
+    public function store(){
+        return $this->hasMany('App\Entities\Master\Store', 'customer_id');
+    }
 }
