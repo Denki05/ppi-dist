@@ -20,7 +20,6 @@ use App\Entities\Master\Ekspedisi;
 use Auth;
 use DB;
 use PDF;
-use PHPJasper\PHPJasper;
 
 class PackingOrderController extends Controller
 {
@@ -1095,43 +1094,6 @@ class PackingOrderController extends Controller
         $pdf = PDF::loadview($this->view."print_proforma",$data)->setPaper('a4','potrait');
         return $pdf->stream($result->code ?? '');
     }
-
-    // public function print_test()
-    // {
-    //     if(Auth::user()->is_superuser == 0){
-    //         if(empty($this->access) || empty($this->access->user) || $this->access->can_print == 0){
-    //             return redirect()->route('superuser.index')->with('error','Anda tidak punya akses untuk membuka menu terkait');
-    //         }
-    //     }
-
-    //     $input = public_path().'/report/pack.jasper';
-    //     $output = public_path().'/report/output';
-    //     $jdbc_dir = __DIR__ . '/vendor/geekcom/phpjasper/bin/jaspertarter/jdbc';
-    //     $ext = [
-    //         'format' => ['pdf'],
-    //         'params' => [],
-    //         'db_connection' => [
-    //             'driver' => 'mysql',
-    //             'host' => '127.0.0.1',
-    //             'port' => '3306',
-    //             'database' => 'ppi-dist',
-    //             'username' => 'root',
-    //             'password' => '',
-    //             'jdbc_driver' => 'com.mysql.jdbc.Driver',
-    //             'jdbc_url' => 'jdbc:mysql://localhost/ppi-dist',
-    //             'jdbc_dir' => $jdbc_dir
-    //         ]
-    //     ];
-
-    //     $jasper = new PHPJasper;
-
-    //     $process = $jasper->process(
-    //         $input,
-    //         $output,
-    //         $ext
-    //     )->execute();
-    // }
-
     private function reset_cost_if_change_idr_rate($do_id,$idr_rate){
         $do = PackingOrder::where('id',$do_id)->first();
         $result = PackingOrderDetail::where('do_id',$do_id)->first();

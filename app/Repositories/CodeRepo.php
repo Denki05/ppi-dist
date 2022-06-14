@@ -37,11 +37,6 @@ class CodeRepo
         return self::generate('B', BranchOffice::class);
     }
 
-    public static function generateStores()
-    {
-        return self::generate('STR', Store::class);
-    }
-
     public static function generateBrandReference()
     {
         return self::generate('BR', BrandReference::class);
@@ -56,6 +51,11 @@ class CodeRepo
     {
         return self::generate('C', Customer::class);
     }
+
+    // public static function generateStore()
+    // {
+    //     return self::generate('STR', Store::class);
+    // }
 
     public static function generateCustomerCategory()
     {

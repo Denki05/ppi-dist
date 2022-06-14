@@ -33,7 +33,6 @@
           <th class="text-center">Created at</th>
           <th class="text-center">Code</th>
           <th class="text-center">Store Name</th>
-          <th class="text-center">Status</th>
           <th class="text-center">Action</th>
         </tr>
       </thead>
@@ -47,6 +46,11 @@
 
 @section('modal')
 
+{{-- @include('superuser.component.modal-manage', [
+  'import_template_url' => route('superuser.master.branch_office.import_template'),
+  'import_url' => route('superuser.master.branch_office.import'),
+  'export_url' => route('superuser.master.branch_office.export')
+]) --}}
 
 @endsection
 
@@ -75,7 +79,6 @@ $(document).ready(function() {
       },
       {data: 'code'},
       {data: 'name'},
-      {data: 'status'},
       {data: 'action', orderable: false, searcable: false}
     ],
     order: [

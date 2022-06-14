@@ -64,6 +64,7 @@ class CustomerController extends Controller
 
         $data['customer_categories'] = MasterRepo::customer_categories();
         $data['customer_types'] = MasterRepo::customer_types();
+        $data['stores'] = MasterRepo::store();
 
         return view('superuser.master.customer.create', $data);
     }
@@ -121,6 +122,7 @@ class CustomerController extends Controller
 
                 $customer->category_id = $request->category;
                 // $customer->type_id = $request->type;
+                $customer->store_id = $request->store;
 
                 $customer->email = $request->email;
                 $customer->phone = $request->phone;
@@ -206,6 +208,7 @@ class CustomerController extends Controller
         $data['customer'] = Customer::findOrFail($id);
         $data['customer_categories'] = MasterRepo::customer_categories();
         $data['customer_types'] = MasterRepo::customer_types();
+        $data['stores'] = MasterRepo::store();
 
         return view('superuser.master.customer.edit', $data);
     }
@@ -267,6 +270,7 @@ class CustomerController extends Controller
 
                 $customer->category_id = $request->category;
                 // $customer->type_id = $request->type;
+                $customer->store_id = $request->store;
 
                 $customer->email = $request->email;
                 $customer->phone = $request->phone;

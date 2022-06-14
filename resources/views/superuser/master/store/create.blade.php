@@ -13,27 +13,16 @@
   </div>
   <div class="block-content">
     <form class="ajax" data-action="{{ route('superuser.master.store.store') }}" data-type="POST" enctype="multipart/form-data">
-      {{--<div class="form-group row">
+      <div class="form-group row">
         <label class="col-md-3 col-form-label text-right" for="code">Code <span class="text-danger">*</span></label>
         <div class="col-md-7">
-          <input type="text" class="form-control" id="code" name="code" onkeyup="nospaces(this)" value="">
+          <input type="text" class="form-control" id="code" name="code" onkeyup="nospaces(this)" value="{{ App\Repositories\StoreRepo::generateCode() }}" readonly>
         </div>
-      </div>--}}
+      </div>
       <div class="form-group row">
         <label class="col-md-3 col-form-label text-right" for="name">Store Name <span class="text-danger">*</span></label>
         <div class="col-md-7">
           <input type="text" class="form-control" id="name" name="name">
-        </div>
-      </div>
-      <div class="form-group row">
-        <label class="col-md-3 col-form-label text-right" for="customer">Customer <span class="text-danger">*</span></label>
-        <div class="col-md-7">
-          <select class="js-select2 form-control" id="c" name="customer" data-placeholder="Select Customer">
-            <option></option>
-            @foreach($customers as $customer)
-            <option value="{{ $customer->id }}">{{ $customer->name }}</option>
-            @endforeach
-          </select>
         </div>
       </div>
       <div class="form-group row pt-30">

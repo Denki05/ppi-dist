@@ -11,7 +11,7 @@ class Customer extends Model
     
     protected $appends = ['img_store', 'img_ktp'];
     protected $fillable = [
-        'category_id', /* 'type_id', */ 'code', 'name',
+        'store_id', 'category_id', /* 'type_id', */ 'code', 'name',
         'email', 'phone', 'npwp', 'address',
         'owner_name', 'plafon_piutang', 'gps_latitude', 'gps_longitude',
         'provinsi', 'kota', 'kecamatan', 'kelurahan',
@@ -29,6 +29,11 @@ class Customer extends Model
     public function category()
     {
         return $this->BelongsTo('App\Entities\Master\CustomerCategory');
+    }
+
+    public function store()
+    {
+        return $this->BelongsTo('App\Entities\Master\Store');
     }
 
     public function types()
@@ -67,9 +72,5 @@ class Customer extends Model
 
     public function do(){
         return $this->hasMany('App\Entities\Penjualan\PackingOrder','customer_id');
-    }
-
-    public function store(){
-        return $this->hasMany('App\Entities\Master\Store', 'customer_id');
     }
 }

@@ -14,27 +14,16 @@
   <div class="block-content">
     <form class="ajax" data-action="{{ route('superuser.master.store.update', $store) }}" data-type="POST" enctype="multipart/form-data">
       <input type="hidden" name="_method" value="PUT">
-      {{--<div class="form-group row">
+      <div class="form-group row">
         <label class="col-md-3 col-form-label text-right" for="code">Code <span class="text-danger">*</span></label>
         <div class="col-md-7">
-          <input type="text" class="form-control" id="code" name="code" onkeyup="nospaces(this)" value="{{ $store->code }}">
+          <input type="text" class="form-control" id="code" name="code" onkeyup="nospaces(this)" value="{{ $store->code }}" readonly>
         </div>
-      </div>--}}
+      </div>
       <div class="form-group row">
         <label class="col-md-3 col-form-label text-right" for="name">Store Name <span class="text-danger">*</span></label>
         <div class="col-md-7">
           <input type="text" class="form-control" id="name" name="name" value="{{ $store->name }}">
-        </div>
-      </div>
-      <div class="form-group row">
-        <label class="col-md-3 col-form-label text-right" for="customer">Customer <span class="text-danger">*</span></label>
-        <div class="col-md-7">
-          <select class="js-select2 form-control" id="customer" name="customer" data-placeholder="Select Customer">
-            <option></option>
-            @foreach($customers as $customer)
-            <option value="{{ $customer->id }}" {{ ($customer->id == $customer->customer_id) ? 'selected' : '' }}>{{ $customer->name }}</option>
-            @endforeach
-          </select>
         </div>
       </div>
       <div class="form-group row pt-30">

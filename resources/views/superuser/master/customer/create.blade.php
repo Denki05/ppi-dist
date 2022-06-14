@@ -36,6 +36,17 @@
         </div>
       </div>
       <div class="form-group row">
+        <label class="col-md-3 col-form-label text-right" for="store">Store <span class="text-danger">*</span></label>
+        <div class="col-md-7">
+          <select class="js-select2 form-control" id="store" name="store" data-placeholder="Select Store">
+            <option></option>
+            @foreach($stores as $store)
+            <option value="{{ $store->id }}">{{ $store->name }}</option>
+            @endforeach
+          </select>
+        </div>
+      </div>
+      <div class="form-group row">
         <label class="col-md-3 col-form-label text-right" for="type">Type <span class="text-danger">*</span></label>
         <div class="col-md-7">
           <select class="js-select2 form-control" id="type" name="type[]" data-placeholder="Select Type" multiple>

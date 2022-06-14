@@ -18,7 +18,3 @@ Route::group(['as' => 'utility.'], function () {
         return 'Token valid.';
     })->name('token');
 });
-
-
-Route::get('compailePdf', 'JasperReportPdfController@compailePdf')->name('compailePdf');
-Route::get('getReportPdf', 'JasperReportPdfController@getReportPdf')->name('getReportPdf');

@@ -14,7 +14,7 @@ class StoreTable extends Table
      */
     private function query()
     {
-        $model = Store::select('id', 'code', 'name', 'status', 'created_at');
+        $model = Store::select('id', 'code', 'name', 'created_at');
 
         return $model;
     }
@@ -27,13 +27,13 @@ class StoreTable extends Table
         $table = Table::of($this->query());
         $table->addIndexColumn();
 
-        $table->setRowClass(function (Store $model) {
-            return $model->status == $model::STATUS['DELETED'] ? 'table-danger' : '';
-        });
-
-        $table->editColumn('status', function (Store $model) {
-            return $model->status();
-        });
+        // $table->setRowClass(function (BranchOffice $model) {
+        //     return $model->status == $model::STATUS['DELETED'] ? 'table-danger' : '';
+        // });
+        
+        // $table->editColumn('status', function (BranchOffice $model) {
+        //     return $model->status();
+        // });
 
         $table->editColumn('created_at', function (Store $model) {
             return [
@@ -47,15 +47,15 @@ class StoreTable extends Table
             $edit = route('superuser.master.store.edit', $model);
             $destroy = route('superuser.master.store.destroy', $model);
 
-            if ($model->status == $model::STATUS['DELETED']) {
-                return "
-                    <a href=\"{$view}\">
-                        <button type=\"button\" class=\"btn btn-sm btn-circle btn-alt-secondary\" title=\"View\">
-                            <i class=\"fa fa-eye\"></i>
-                        </button>
-                    </a>
-                ";
-            }
+            // if ($model->status == $model::STATUS['DELETED']) {
+            //     return "
+            //         <a href=\"{$view}\">
+            //             <button type=\"button\" class=\"btn btn-sm btn-circle btn-alt-secondary\" title=\"View\">
+            //                 <i class=\"fa fa-eye\"></i>
+            //             </button>
+            //         </a>
+            //     ";
+            // }
             
             return "
                 <a href=\"{$view}\">
@@ -75,7 +75,7 @@ class StoreTable extends Table
                 </a>
             ";
         });
-        
+
         return $table->make(true);
     }
 }
