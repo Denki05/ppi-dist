@@ -11,8 +11,4 @@ class Store extends Model
 
     protected $fillable = ['name', 'code'];
     protected $table = 'master_stores';
-
-    public function customer(){
-        return $this->hasMany('App\Entities\Master\Customer','store_id');
-    }
 }

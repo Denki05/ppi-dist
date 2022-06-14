@@ -31,10 +31,6 @@ class Customer extends Model
         return $this->BelongsTo('App\Entities\Master\CustomerCategory');
     }
 
-    public function store()
-    {
-        return $this->BelongsTo('App\Entities\Master\Store');
-    }
 
     public function types()
     {
