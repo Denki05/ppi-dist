@@ -34,16 +34,6 @@
       </div>
     </div>
     <div class="row">
-      <label class="col-md-3 col-form-label text-right">Store</label>
-      <div class="col-md-7">
-        <div class="form-control-plaintext">
-          <a href="{{ route('superuser.master.store.show', $customer->store->id) }}">
-            {{ $customer->store->name }}
-          </a>
-        </div>
-      </div>
-    </div>
-    <div class="row">
       <label class="col-md-3 col-form-label text-right">Type</label>
       <div class="col-md-7">
         <div class="form-control-plaintext">

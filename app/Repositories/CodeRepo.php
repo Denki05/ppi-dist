@@ -13,7 +13,6 @@ use App\Entities\Master\SubBrandReference;
 use App\Entities\Master\Unit;
 use App\Entities\Master\Vendor;
 use App\Entities\Master\Warehouse;
-use App\Entities\Master\Store;
 use App\Entities\Penjualan\SalesOrder;
 use App\Entities\Penjualan\PackingOrder;
 use App\Entities\Penjualan\DeliveryOrderMutation;
@@ -51,11 +50,6 @@ class CodeRepo
     {
         return self::generate('C', Customer::class);
     }
-
-    // public static function generateStore()
-    // {
-    //     return self::generate('STR', Store::class);
-    // }
 
     public static function generateCustomerCategory()
     {

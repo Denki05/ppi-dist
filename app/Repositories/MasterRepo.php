@@ -8,7 +8,6 @@ use App\Entities\Master\Contact;
 use App\Entities\Master\Customer;
 use App\Entities\Master\CustomerCategory;
 use App\Entities\Master\CustomerType;
-use App\Entities\Master\Store;
 use App\Entities\Master\Product;
 use App\Entities\Master\ProductCategory;
 use App\Entities\Master\ProductType;
@@ -88,10 +87,5 @@ class MasterRepo
     public static function questions()
     {   
         return Question::orderBy('name')->get();
-    }
-
-    public static function store()
-    {
-        return Store::orderBy('name')->get();
     }
 }
