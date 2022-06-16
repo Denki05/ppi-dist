@@ -23,8 +23,8 @@ class CustomerOtherAddress extends Model
         'ACTIVE' => 1
     ];
     
-    public function customer()
+    public function member()
     {
-        return $this->BelongsTo('App\Entities\Master\Customer');
+        return $this->hasMany('App\Entities\Master\Customer');
     }
 }

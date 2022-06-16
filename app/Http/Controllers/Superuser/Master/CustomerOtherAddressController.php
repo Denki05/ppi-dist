@@ -13,7 +13,7 @@ use Auth;
 class CustomerOtherAddressController extends Controller
 {
     public function __construct(){
-        $this->route = "superuser.master.customer_other_address";
+        $this->route = "superuser.master.store";
         $this->user_menu = new UserMenu;
         $this->access = null;
         $this->middleware(function ($request, $next) {
@@ -37,18 +37,19 @@ class CustomerOtherAddressController extends Controller
             }
         }
 
-        $data['customer'] = Customer::findOrFail($id);
+        // $data['customer'] = Customer::findOrFail($id);
 
-        return view('superuser.master.customer_other_address.create', $data);
+        return view('superuser.master.store.create');
     }
 
-    public function store(Request $request, $id)
+    public function store(Request $request)
     {
         if ($request->ajax()) {
             $validator = Validator::make($request->all(), [
-                'label' => 'required|string',
+                'name' => 'required|string',
                 'contact_person' => 'nullable|string',
                 'phone' => 'nullable|string',
+                'npwp' => 'nullable|string',
                 'address' => 'required|string',
                 'gps_latitude' => 'nullable|string',
                 'gps_longitude' => 'nullable|string',
@@ -83,11 +84,10 @@ class CustomerOtherAddressController extends Controller
 
                 $other_address = new CustomerOtherAddress;
 
-                $other_address->customer_id = $customer->id;
-
-                $other_address->label = $request->label;
+                $other_address->name = $request->name;
                 $other_address->contact_person = $request->contact_person;
                 $other_address->phone = $request->phone;
+                $other_address->npwp = $request->npwp;
                 $other_address->address = $request->address;
 
                 $other_address->gps_latitude = $request->gps_latitude;
@@ -113,7 +113,7 @@ class CustomerOtherAddressController extends Controller
                         'content' => 'Success',
                     ];
 
-                    $response['redirect_to'] = route('superuser.master.customer.show', $id);
+                    $response['redirect_to'] = route('superuser.master.store.index');
 
                     return $this->response(200, $response);
                 }
@@ -121,7 +121,7 @@ class CustomerOtherAddressController extends Controller
         }
     }
 
-    public function edit($id, $address_id)
+    public function edit($address_id)
     {
         // Access
         if(Auth::user()->is_superuser == 0){
@@ -130,19 +130,19 @@ class CustomerOtherAddressController extends Controller
             }
         }
 
-        $data['customer'] = Customer::findOrFail($id);
         $data['other_address'] = CustomerOtherAddress::findOrFail($address_id);
 
-        return view('superuser.master.customer_other_address.edit', $data);
+        return view('superuser.master.store.edit', $data);
     }
     
     public function update(Request $request, $id, $address_id)
     {
         if ($request->ajax()) {
             $validator = Validator::make($request->all(), [
-                'label' => 'required|string',
+                'name' => 'required|string',
                 'contact_person' => 'nullable|string',
                 'phone' => 'nullable|string',
+                'npwp' => 'nullable|string',
                 'address' => 'required|string',
                 'gps_latitude' => 'nullable|string',
                 'gps_longitude' => 'nullable|string',
@@ -169,16 +169,16 @@ class CustomerOtherAddressController extends Controller
             }
 
             if ($validator->passes()) {
-                $customer = Customer::find($id);
                 $other_address = CustomerOtherAddress::find($address_id);
 
-                if ($customer == null OR $other_address == null) {
+                if ($other_address == null) {
                     abort(404);
                 }
 
-                $other_address->label = $request->label;
+                $other_address->name = $request->name;
                 $other_address->contact_person = $request->contact_person;
                 $other_address->phone = $request->phone;
+                $other_address->npwp = $request->npwp;
                 $other_address->address = $request->address;
 
                 $other_address->gps_latitude = $request->gps_latitude;
@@ -202,7 +202,7 @@ class CustomerOtherAddressController extends Controller
                         'content' => 'Success',
                     ];
 
-                    $response['redirect_to'] = route('superuser.master.customer.show', $id);
+                    $response['redirect_to'] = route('superuser.master.store.show');
 
                     return $this->response(200, $response);
                 }
@@ -210,7 +210,7 @@ class CustomerOtherAddressController extends Controller
         }
     }
 
-    public function destroy(Request $request, $id, $address_id)
+    public function destroy(Request $request, $address_id)
     {
         // Access
         if(Auth::user()->is_superuser == 0){
@@ -219,10 +219,9 @@ class CustomerOtherAddressController extends Controller
             }
         }
         if ($request->ajax()) {
-            $customer = Customer::find($id);
             $other_address = CustomerOtherAddress::find($address_id);
 
-            if ($customer === null OR $other_address === null) {
+            if ($other_address === null) {
                 abort(404);
             }
 

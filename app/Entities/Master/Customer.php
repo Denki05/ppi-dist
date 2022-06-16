@@ -37,9 +37,9 @@ class Customer extends Model
         return $this->belongsToMany('App\Entities\Master\CustomerType', 'master_customer_type_pivot', 'customer_id', 'type_id')->withPivot('id');
     }
 
-    public function other_addresses()
+    public function store()
     {
-        return $this->hasMany('App\Entities\Master\CustomerOtherAddress');
+        return $this->BelongsTo('App\Entities\Master\CustomerOtherAddress');
     }
 
     public function contacts()
