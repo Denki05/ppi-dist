@@ -79,9 +79,9 @@ class CustomerController extends Controller
                 'type.*' => 'required|integer',
                 'email' => 'nullable|email',
                 'phone' => 'nullable|string',
+                'ktp' => 'nullable|string',
                 'npwp' => 'nullable|string',
                 'address' => 'required|string',
-                'owner_name' => 'nullable|string',
                 'website' => 'nullable|string',
                 'plafon_piutang' => 'nullable|numeric',
                 'gps_latitude' => 'nullable|string',
@@ -97,6 +97,7 @@ class CustomerController extends Controller
                 'zipcode' => 'nullable|string',
                 'image_store' => 'nullable|image|mimes:jpeg,png,jpg|max:2048',
                 'image_ktp' => 'nullable|image|mimes:jpeg,png,jpg|max:2048',
+                'image_npwp' => 'nullable|image|mimes:jpeg,png,jpg|max:2048',
                 'notification_email' => 'nullable'
             ]);
 
@@ -124,10 +125,11 @@ class CustomerController extends Controller
 
                 $customer->email = $request->email;
                 $customer->phone = $request->phone;
+                $customer->ktp = $request->ktp;
                 $customer->npwp = $request->npwp;
                 $customer->address = $request->address;
 
-                $customer->owner_name = $request->owner_name;
+                
                 $customer->website = $request->website;
                 $customer->plafon_piutang = ($request->plafon_piutang) ? $request->plafon_piutang : 0;
 
@@ -151,6 +153,10 @@ class CustomerController extends Controller
 
                 if (!empty($request->file('image_ktp'))) {
                     $customer->image_ktp = UploadMedia::image($request->file('image_ktp'), Customer::$directory_image);
+                }
+
+                if (!empty($request->file('image_npwp'))) {
+                    $customer->image_npwp = UploadMedia::image($request->file('image_npwp'), Customer::$directory_image);
                 }
 
                 $customer->notification_email = ($request->notification_email) ? true : false;
@@ -227,9 +233,9 @@ class CustomerController extends Controller
                 'type.*' => 'required|integer',
                 'email' => 'nullable|email',
                 'phone' => 'nullable|string',
+                'ktp' => 'nullable|string',
                 'npwp' => 'nullable|string',
                 'address' => 'required|string',
-                'owner_name' => 'nullable|string',
                 'website' => 'nullable|string',
                 'plafon_piutang' => 'nullable|numeric',
                 'gps_latitude' => 'nullable|string',
@@ -245,6 +251,7 @@ class CustomerController extends Controller
                 'zipcode' => 'nullable|string',
                 'image_store' => 'nullable|image|mimes:jpeg,png,jpg|max:2048',
                 'image_ktp' => 'nullable|image|mimes:jpeg,png,jpg|max:2048',
+                'image_npwp' => 'nullable|image|mimes:jpeg,png,jpg|max:2048',
                 'notification_email' => 'nullable'
             ]);
 
@@ -270,10 +277,11 @@ class CustomerController extends Controller
 
                 $customer->email = $request->email;
                 $customer->phone = $request->phone;
+                $customer->ktp = $request->ktp;
                 $customer->npwp = $request->npwp;
                 $customer->address = $request->address;
 
-                $customer->owner_name = $request->owner_name;
+               
                 $customer->website = $request->website;
                 $customer->plafon_piutang = ($request->plafon_piutang) ? $request->plafon_piutang : 0;
 
@@ -305,6 +313,14 @@ class CustomerController extends Controller
                     }
 
                     $customer->image_ktp = UploadMedia::image($request->file('image_ktp'), Customer::$directory_image);
+                }
+
+                if (!empty($request->file('image_npwp'))) {
+                    if (is_file_exists(Customer::$directory_image.$customer->image_npwp)) {
+                        remove_file(Customer::$directory_image.$customer->image_npwp);
+                    }
+
+                    $customer->image_npwp = UploadMedia::image($request->file('image_npwp'), Customer::$directory_image);
                 }
 
                 $customer->notification_email = ($request->notification_email) ? true : false;
