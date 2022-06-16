@@ -64,6 +64,7 @@ class CustomerController extends Controller
 
         $data['customer_categories'] = MasterRepo::customer_categories();
         $data['customer_types'] = MasterRepo::customer_types();
+        $data['stores'] = MasterRepo::store();
 
         return view('superuser.master.customer.create', $data);
     }
@@ -75,6 +76,7 @@ class CustomerController extends Controller
                 // 'code' => 'required|string|unique:master_customers,code',
                 'name' => 'required|string',
                 'category' => 'required|integer',
+                'store' => 'required|integer',
                 'type' => 'required|array',
                 'type.*' => 'required|integer',
                 'email' => 'nullable|email',
@@ -121,6 +123,7 @@ class CustomerController extends Controller
                 $customer->name = $request->name;
 
                 $customer->category_id = $request->category;
+                $customer->store_id = $request->store;
                 // $customer->type_id = $request->type;
 
                 $customer->email = $request->email;
@@ -212,6 +215,7 @@ class CustomerController extends Controller
         $data['customer'] = Customer::findOrFail($id);
         $data['customer_categories'] = MasterRepo::customer_categories();
         $data['customer_types'] = MasterRepo::customer_types();
+        $data['stores'] = MasterRepo::store();
 
         return view('superuser.master.customer.edit', $data);
     }
@@ -229,6 +233,7 @@ class CustomerController extends Controller
                 // 'code' => 'required|string|unique:master_customers,code,' . $customer->id,
                 'name' => 'required|string',
                 'category' => 'required|integer',
+                'store' => 'required|integer',
                 'type' => 'required|array',
                 'type.*' => 'required|integer',
                 'email' => 'nullable|email',
@@ -273,6 +278,7 @@ class CustomerController extends Controller
                 $customer->name = $request->name;
 
                 $customer->category_id = $request->category;
+                $customer->store_id = $request->store;
                 // $customer->type_id = $request->type;
 
                 $customer->email = $request->email;
