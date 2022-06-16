@@ -167,4 +167,11 @@ Route::group([
         Route::get('/export', 'EkspedisiController@export')->name('export');
     });
     Route::resource('ekspedisi', 'EkspedisiController');
+
+    Route::group(['as' => 'store.', 'prefix' => '/store'], function () {
+        // Route::get('/import_template', 'CustomerOtherAddressController@import_template')->name('import_template');
+        // Route::post('/import', 'CustomerOtherAddressController@import')->name('import');
+        // Route::get('/export', 'CustomerOtherAddressController@export')->name('export');
+    });
+    Route::resource('store', 'CustomerOtherAddressController');
 });

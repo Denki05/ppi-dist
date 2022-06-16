@@ -22,20 +22,18 @@
       <button type="button" class="btn btn-outline-primary min-width-125">Create</button>
     </a>
 
-    {{-- <button type="button" class="btn btn-outline-info ml-10" data-toggle="modal" data-target="#modal-manage">Manage</button> --}}
+    {{--<button type="button" class="btn btn-outline-info ml-10" data-toggle="modal" data-target="#modal-manage">Manage</button>--}}
   </div>
   <hr class="my-20">
   <div class="block-content block-content-full">
     <table id="datatable" class="table table-striped table-vcenter table-responsive">
       <thead>
         <tr>
-          <th class="text-center">#</th>
-          <th class="text-center">Created at</th>
-          <th class="text-center">Code</th>
-          <th class="text-center">Store Name</th>
-          <th class="text-center">Phone</th>
-          <th class="text-center">Address</th>
-          <th class="text-center">Action</th>
+          <th>#</th>
+          <th>Created at</th>
+          <th>Name</th>
+          <th>Status</th>
+          <th>Action</th>
         </tr>
       </thead>
     </table>
@@ -48,11 +46,11 @@
 
 @section('modal')
 
-{{-- @include('superuser.component.modal-manage', [
-  'import_template_url' => route('superuser.master.branch_office.import_template'),
-  'import_url' => route('superuser.master.branch_office.import'),
-  'export_url' => route('superuser.master.branch_office.export')
-]) --}}
+{{--@include('superuser.component.modal-manage', [
+  'import_template_url' => route('superuser.master.customer.import_template'),
+  'import_url' => route('superuser.master.customer.import'),
+  'export_url' => route('superuser.master.customer.export')
+])--}}
 
 @endsection
 
@@ -79,10 +77,8 @@ $(document).ready(function() {
           sort: 'timestamp'
         }
       },
-      {data: 'code'},
       {data: 'name'},
-      {data: 'phone'},
-      {data: 'address'},
+      {data: 'status'},
       {data: 'action', orderable: false, searcable: false}
     ],
     order: [

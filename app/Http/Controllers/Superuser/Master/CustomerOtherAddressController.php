@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Superuser\Master;
 
+use App\DataTables\Master\CustomerOtherAddressTable;
 use App\Entities\Master\Customer;
 use App\Entities\Master\CustomerOtherAddress;
 use App\Http\Controllers\Controller;
@@ -28,7 +29,24 @@ class CustomerOtherAddressController extends Controller
             return $next($request);
         });
     }
-    public function create($id)
+
+    public function json(Request $request, CustomerOtherAddressTable $datatable)
+    {
+        return $datatable->build();
+    }
+
+    public function index()
+    {
+        // Access
+        if(Auth::user()->is_superuser == 0){
+            if(empty($this->access)){
+                return redirect()->route('superuser.index')->with('error','Anda tidak punya akses untuk membuka menu terkait');
+            }
+        }
+        return view('superuser.master.store.index');
+    }
+
+    public function create()
     {
         // Access
         if(Auth::user()->is_superuser == 0){
@@ -36,8 +54,6 @@ class CustomerOtherAddressController extends Controller
                 return redirect()->route('superuser.index')->with('error','Anda tidak punya akses untuk membuka menu terkait');
             }
         }
-
-        // $data['customer'] = Customer::findOrFail($id);
 
         return view('superuser.master.store.create');
     }
@@ -76,11 +92,6 @@ class CustomerOtherAddressController extends Controller
             }
 
             if ($validator->passes()) {
-                $customer = Customer::find($id);
-
-                if ($customer == null) {
-                    abort(404);
-                }
 
                 $other_address = new CustomerOtherAddress;
 
@@ -113,6 +124,8 @@ class CustomerOtherAddressController extends Controller
                         'content' => 'Success',
                     ];
 
+                    // dd($other_address->save());
+
                     $response['redirect_to'] = route('superuser.master.store.index');
 
                     return $this->response(200, $response);
@@ -121,7 +134,20 @@ class CustomerOtherAddressController extends Controller
         }
     }
 
-    public function edit($address_id)
+    public function show($id)
+    {
+        // Access
+        if(Auth::user()->is_superuser == 0){
+            if(empty($this->access) || empty($this->access->user) || $this->access->can_read == 0){
+                return redirect()->route('superuser.index')->with('error','Anda tidak punya akses untuk membuka menu terkait');
+            }
+        }
+        $data['other_address'] = CustomerOtherAddress::findOrFail($id);
+
+        return view('superuser.master.store.show', $data);
+    }
+
+    public function edit($id)
     {
         // Access
         if(Auth::user()->is_superuser == 0){
@@ -130,12 +156,12 @@ class CustomerOtherAddressController extends Controller
             }
         }
 
-        $data['other_address'] = CustomerOtherAddress::findOrFail($address_id);
+        $data['other_address'] = CustomerOtherAddress::findOrFail($id);
 
         return view('superuser.master.store.edit', $data);
     }
     
-    public function update(Request $request, $id, $address_id)
+    public function update(Request $request, $id)
     {
         if ($request->ajax()) {
             $validator = Validator::make($request->all(), [
@@ -169,7 +195,7 @@ class CustomerOtherAddressController extends Controller
             }
 
             if ($validator->passes()) {
-                $other_address = CustomerOtherAddress::find($address_id);
+                $other_address = CustomerOtherAddress::find($id);
 
                 if ($other_address == null) {
                     abort(404);
@@ -202,7 +228,7 @@ class CustomerOtherAddressController extends Controller
                         'content' => 'Success',
                     ];
 
-                    $response['redirect_to'] = route('superuser.master.store.show');
+                    $response['redirect_to'] = route('superuser.master.store.index');
 
                     return $this->response(200, $response);
                 }
@@ -210,7 +236,7 @@ class CustomerOtherAddressController extends Controller
         }
     }
 
-    public function destroy(Request $request, $address_id)
+    public function destroy(Request $request, $id)
     {
         // Access
         if(Auth::user()->is_superuser == 0){
@@ -219,7 +245,7 @@ class CustomerOtherAddressController extends Controller
             }
         }
         if ($request->ajax()) {
-            $other_address = CustomerOtherAddress::find($address_id);
+            $other_address = CustomerOtherAddress::find($id);
 
             if ($other_address === null) {
                 abort(404);
