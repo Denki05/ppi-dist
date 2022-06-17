@@ -47,9 +47,9 @@
           
           @if($result->so_for == 1)
           <div class="form-group row">
-            <label class="col-md-2 col-form-label text-right">Customer</label>
+            <label class="col-md-2 col-form-label text-right">Member</label>
             <div class="col-md-8">
-              <input type="text" class="form-control" value="{{$result->customer->name ?? ''}}" readonly>
+              <input type="text" class="form-control" value="{{$result->customer->name ?? ''}} / {{$result->customer->store->name ?? ''}}" readonly>
             </div>
           </div>
           @else

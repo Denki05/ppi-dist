@@ -18,6 +18,16 @@
       </div>
     </div>
     <div class="row">
+      <label class="col-md-3 col-form-label text-right">Member</label>
+      <div class="col-md-7">
+        <div class="form-control-plaintext">
+          <a href="{{ route('superuser.master.customer.show', $contact->member->id) }}">
+            {{ $contact->member->name }}
+          </a>
+        </div>
+      </div>
+    </div>
+    <div class="row">
       <label class="col-md-3 col-form-label text-right">Phone</label>
       <div class="col-md-7">
         <div class="form-control-plaintext">{{ $contact->phone }}</div>

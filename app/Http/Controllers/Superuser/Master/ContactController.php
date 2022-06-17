@@ -9,6 +9,7 @@ use App\Exports\Master\ContactImportTemplate;
 use App\Http\Controllers\Controller;
 use App\Imports\Master\ContactImport;
 use App\Entities\Setting\UserMenu;
+use App\Repositories\MasterRepo;
 use DB;
 use Excel;
 use Illuminate\Http\Request;
@@ -58,7 +59,9 @@ class ContactController extends Controller
             }
         }
 
-        return view('superuser.master.contact.create');
+        $data['contacts'] = MasterRepo::member();
+
+        return view('superuser.master.contact.create', $data);
     }
 
     public function store(Request $request)
@@ -66,6 +69,7 @@ class ContactController extends Controller
         if ($request->ajax()) {
             $validator = Validator::make($request->all(), [
                 'name' => 'required|string',
+                'member' => 'required|string',
                 'phone' => 'required|string',
                 'email' => 'nullable|email',
                 'position' => 'nullable',
@@ -92,6 +96,7 @@ class ContactController extends Controller
                 $contact = new Contact();
 
                 $contact->name = $request->name;
+                $contact->customer_id = $request->member;
                 $contact->phone = $request->phone;
                 $contact->email = $request->email;
                 $contact->position = $request->position;
@@ -157,6 +162,7 @@ class ContactController extends Controller
 
             $validator = Validator::make($request->all(), [
                 'name' => 'required|string',
+                'member' => 'required|string',
                 'phone' => 'required|string',
                 'email' => 'nullable|email',
                 'position' => 'nullable',
@@ -181,6 +187,7 @@ class ContactController extends Controller
                 DB::beginTransaction();
 
                 $contact->name = $request->name;
+                $contact->customer_id = $request->member;
                 $contact->phone = $request->phone;
                 $contact->email = $request->email;
                 $contact->position = $request->position;

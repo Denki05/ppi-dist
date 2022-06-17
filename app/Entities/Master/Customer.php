@@ -42,11 +42,6 @@ class Customer extends Model
         return $this->BelongsTo('App\Entities\Master\CustomerOtherAddress');
     }
 
-    public function contacts()
-    {
-        return $this->belongsToMany('App\Entities\Master\Contact', 'master_customer_contacts', 'customer_id', 'contact_id')->withPivot('id');
-    }
-
     public function getImgStoreAttribute()
     {
         if (!$this->image_store OR !file_exists(Self::$directory_image.$this->image_store)) {
@@ -77,4 +72,8 @@ class Customer extends Model
     public function do(){
         return $this->hasMany('App\Entities\Penjualan\PackingOrder','customer_id');
     }
+
+    function contact(){
+		return $this->hasMany('App\Entities\Master\Contact','customer_id');
+	}
 }

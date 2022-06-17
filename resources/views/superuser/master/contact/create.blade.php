@@ -20,6 +20,17 @@
         </div>
       </div>
       <div class="form-group row">
+        <label class="col-md-3 col-form-label text-right" for="member">Member <span class="text-danger">*</span></label>
+        <div class="col-md-7">
+          <select class="js-select2 form-control" id="member" name="member" data-placeholder="Select Member">
+            <option></option>
+            @foreach($contacts as $contact)
+            <option value="{{ $contact->id }}">{{ $contact->name }}</option>
+            @endforeach
+          </select>
+        </div>
+      </div>
+      <div class="form-group row">
         <label class="col-md-3 col-form-label text-right" for="phone">Phone <span class="text-danger">*</span></label>
         <div class="col-md-7">
           <input type="text" class="form-control" id="phone" name="phone">
@@ -81,12 +92,15 @@
 @endsection
 
 @include('superuser.asset.plugin.flatpickr')
+@include('superuser.asset.plugin.select2')
 
 @push('scripts')
 <script src="{{ asset('utility/superuser/js/form.js') }}"></script>
 <script type="text/javascript">
   $(document).ready(function() {
     Codebase.helpers('flatpickr')
+
+  $('.js-select2').select2()
   })
 </script>
 @endpush

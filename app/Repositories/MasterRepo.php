@@ -94,4 +94,9 @@ class MasterRepo
     {
         return CustomerOtherAddress::where('status', CustomerOtherAddress::STATUS['ACTIVE'])->orderBy('name')->get();
     }
+
+    public static function member()
+    {
+        return Customer::where('status', Customer::STATUS['ACTIVE'])->orderBy('name')->get();
+    }
 }
