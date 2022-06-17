@@ -42,12 +42,6 @@
       </div>
     </div>
     <div class="row">
-      <label class="col-md-3 col-form-label text-right">Address</label>
-      <div class="col-md-7">
-        <div class="form-control-plaintext">{{ $other_address->address }}</div>
-      </div>
-    </div>
-    <div class="row">
       <label class="col-md-3 col-form-label text-right">GPS Coordinate</label>
       <div class="col-md-3">
         <div class="form-control-plaintext">Latitude: {{ $other_address->gps_latitude }}</div>
@@ -86,6 +80,14 @@
         <div class="form-control-plaintext">{{ $other_address->zipcode }}</div>
       </div>
     </div>
+    <div class="row">
+      <label class="col-md-3 col-form-label text-right">NPWP</label>
+      <div class="col-md-7">
+        <a href="{{ $other_address->img_npwp }}" class="img-link img-link-zoom-in img-thumb img-lightbox">
+          <img src="{{ $other_address->img_npwp }}" class="img-fluid img-show-small">
+        </a>
+      </div>
+    </div>
     <div class="row pt-30 mb-15">
       <div class="col-md-6">
         <a href="javascript:history.back()">
@@ -101,12 +103,21 @@
 
 @include('superuser.asset.plugin.swal2')
 @include('superuser.asset.plugin.datatables')
+@include('superuser.asset.plugin.magnific-popup')
+
 
 @push('scripts')
 <script src="{{ asset('utility/superuser/js/form.js') }}"></script>
 <script type="text/javascript">
   $(document).ready(function() {
     $('#datatable').DataTable()
+
+    $('a.img-lightbox').magnificPopup({
+      type: 'image',
+      closeOnContentClick: true,
+    });
+
+    Codebase.helpers('table-tools')
   })
 </script>
 @endpush

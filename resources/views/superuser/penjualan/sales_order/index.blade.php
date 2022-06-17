@@ -69,7 +69,7 @@
                 @endif
 
                 @if($step == 1 || $step == 2)
-                <th>Customer</th>
+                <th>Member / Store</th>
                 @elseif($step == 9)
                 <th>Warehouse</th>
                 @endif
@@ -100,7 +100,8 @@
 
                   <td>
                     @if($row->so_for == 1)
-                      {{$row->customer->name ?? ''}}
+                      {{$row->customer->name ?? ''}} / <br>
+                      <b>{{$row->customer->store->name}}</b>
                     @elseif($row->so_for == 2)
                       {{$row->customer_gudang->name ?? ''}}
                     @endif

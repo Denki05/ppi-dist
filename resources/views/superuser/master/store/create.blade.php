@@ -94,6 +94,12 @@
           <input type="text" class="form-control" id="zipcode" name="zipcode">
         </div>
       </div>
+      <div class="form-group row">
+        <label class="col-md-3 col-form-label text-right">Image NPWP</label>
+        <div class="col-md-7">
+          <input type="file" id="image_npwp" name="image_npwp" data-max-file-size="2000" accept="image/png, image/jpeg">
+        </div>
+      </div>
       <div class="form-group row pt-30">
         <div class="col-md-6">
           <a href="javascript:history.back()">
@@ -114,6 +120,7 @@
 <div id="alert-block"></div>
 @endsection
 
+@include('superuser.asset.plugin.fileinput')
 @include('superuser.asset.plugin.select2')
 @include('superuser.asset.plugin.select2-chain-indonesian-teritory')
 
@@ -121,6 +128,21 @@
 <script src="{{ asset('utility/superuser/js/form.js') }}"></script>
 <script>
   $(document).ready(function () {
+
+    $('#image_npwp').fileinput({
+      theme: 'explorer-fa',
+      browseOnZoneClick: true,
+      showCancel: false,
+      showClose: false,
+      showUpload: false,
+      browseLabel: '',
+      removeLabel: '',
+      fileActionSettings: {
+        showDrag: false,
+        showRemove: false
+      },
+    });
+
     $('.js-select2').select2()
   })
 </script>

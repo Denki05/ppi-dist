@@ -10,6 +10,7 @@ use Illuminate\Http\Request;
 use App\Entities\Setting\UserMenu;
 use Validator;
 use Auth;
+use App\Helper\UploadMedia;
 
 class CustomerOtherAddressController extends Controller
 {
@@ -78,6 +79,7 @@ class CustomerOtherAddressController extends Controller
                 'text_kecamatan' => 'nullable|required_with:kecamatan|string',
                 'text_kelurahan' => 'nullable|required_with:kelurahan|string',
                 'zipcode' => 'nullable|string',
+                'image_npwp' => 'nullable|image|mimes:jpeg,png,jpg|max:2048'
             ]);
 
             if ($validator->fails()) {
@@ -114,6 +116,10 @@ class CustomerOtherAddressController extends Controller
                 $other_address->text_kelurahan = $request->text_kelurahan;
 
                 $other_address->zipcode = $request->zipcode;
+
+                if (!empty($request->file('image_npwp'))) {
+                    $other_address->image_npwp = UploadMedia::image($request->file('image_npwp'), CustomerOtherAddress::$directory_image);
+                }
 
                 $other_address->status = CustomerOtherAddress::STATUS['ACTIVE'];
                 
@@ -181,6 +187,7 @@ class CustomerOtherAddressController extends Controller
                 'text_kecamatan' => 'nullable|required_with:kecamatan|string',
                 'text_kelurahan' => 'nullable|required_with:kelurahan|string',
                 'zipcode' => 'nullable|string',
+                'image_npwp' => 'nullable|image|mimes:jpeg,png,jpg|max:2048'
             ]);
 
             if ($validator->fails()) {
@@ -220,6 +227,14 @@ class CustomerOtherAddressController extends Controller
                 $other_address->text_kelurahan = $request->text_kelurahan;
 
                 $other_address->zipcode = $request->zipcode;
+
+                if (!empty($request->file('image_npwp'))) {
+                    if (is_file_exists(CustomerOtherAddress::$directory_image.$other_address->image_npwp)) {
+                        remove_file(CustomerOtherAddress::$directory_image.$other_address->image_npwp);
+                    }
+
+                    $other_address->image_npwp = UploadMedia::image($request->file('image_npwp'), CustomerOtherAddress::$directory_image);
+                }
 
                 if ($other_address->save()) {
                     $response['notification'] = [
