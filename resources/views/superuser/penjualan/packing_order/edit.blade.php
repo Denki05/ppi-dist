@@ -53,7 +53,7 @@
                     </div>
                   </div>
                   <div class="form-group row">
-                    <label class="col-md-2 col-form-label text-right">Customer</label>
+                    <label class="col-md-2 col-form-label text-right">Member</label>
                     <div class="col-md-8">
                       <select class="form-control js-select2" name="customer_id" disabled>
                         <option value="">==Select customer==</option>
@@ -360,7 +360,7 @@
 
     $('.js-select2').select2();
 
-    customer_other_address('{{$result->customer_id}}','{{$result->customer_other_address_id}}');
+    customer_other_address('{{$result->id}}','{{$result->customer_other_address_id}}');
    
     $(document).on('change','.count',function(){
         total();
@@ -477,12 +477,12 @@
     })
   })
 
-  function customer_other_address(customer_id,selected=0){
+  function customer_other_address(id,selected=0){
     ajaxcsrfscript();
     $.ajax({
       url : '{{route('superuser.penjualan.packing_order.ajax_customer_other_address')}}',
       method : "POST",
-      data : {customer_id:customer_id},
+      data : {id:id},
       dataType : "JSON",
       success : function(resp){
         if(resp.IsError == true){

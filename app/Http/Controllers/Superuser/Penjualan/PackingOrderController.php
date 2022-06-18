@@ -253,6 +253,8 @@ class PackingOrderController extends Controller
                 
             }catch(\Throwable $e){
                 DB::rollback();
+
+                // dd($e);
                 $data_json["IsError"] = TRUE;
                 $data_json["Message"] = $e->getMessage();
                 goto ResultData;
@@ -496,6 +498,8 @@ class PackingOrderController extends Controller
               
             }catch(\Throwable $e){
                 DB::rollback();
+
+                // dd($e);
                 $data_json["IsError"] = TRUE;
                 $data_json["Message"] = $e->getMessage();
                 goto ResultData;
@@ -1020,12 +1024,13 @@ class PackingOrderController extends Controller
         ResultData:
         return response()->json($data_json,200);
     }
+
     public function ajax_customer_other_address(Request $request){
         $data_json = [];
         $post = $request->all();
         if($request->method() == "POST"){
             try{
-                $get = CustomerOtherAddress::where('customer_id',$post["customer_id"])
+                $get = CustomerOtherAddress::where('id',$post["id"])
                                             ->get();
 
                 $data_json["IsError"] = FALSE;
@@ -1046,6 +1051,7 @@ class PackingOrderController extends Controller
         ResultData:
         return response()->json($data_json,200);
     }
+    
     public function ajax_customer_other_address_detail(Request $request){
         $data_json = [];
         $post = $request->all();
@@ -1072,6 +1078,7 @@ class PackingOrderController extends Controller
         ResultData:
         return response()->json($data_json,200);
     }
+    
     public function print_proforma($id){
         // Access
         if(Auth::user()->is_superuser == 0){

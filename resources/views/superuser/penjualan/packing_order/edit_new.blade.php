@@ -64,7 +64,7 @@
           </div>
 
           <div class="form-group row">
-            <label class="col-6 col-md-3 col-form-label font-weight-bold">Customer</label>
+            <label class="col-6 col-md-3 col-form-label font-weight-bold">Member</label>
             <div class="col-6 col-md-9 col-form-label">
               {{$result->customer->name}}
             </div>
@@ -513,12 +513,12 @@
     })
   })
 
-  function customer_other_address(customer_id,selected=0){
+  function customer_other_address(id,selected=0){
     ajaxcsrfscript();
     $.ajax({
       url : '{{route('superuser.penjualan.packing_order.ajax_customer_other_address')}}',
       method : "POST",
-      data : {customer_id:customer_id},
+      data : {id:id},
       dataType : "JSON",
       success : function(resp){
         if(resp.IsError == true){
