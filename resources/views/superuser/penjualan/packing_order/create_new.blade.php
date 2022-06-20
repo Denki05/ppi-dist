@@ -226,17 +226,6 @@
         customer_address(val);
       }else{
         $('textarea[name="address"]').val("");
-        // $('.select-other-address').html('<option value="">==Select customer other address==</option>');
-        // $('textarea[name="delivery_address"]').val("");
-      }
-    })
-
-    $(document).on('change','.select-other-address',function(){
-      let val = $(this).val();
-      if(val != ""){
-        customer_other_detail(val);
-      }else{
-        $('textarea[name="delivery_address"]').val("");
       }
     })
 
@@ -253,7 +242,6 @@
           }
           else{
             $('textarea[name="address"]').val(resp.Data.address);
-            customer_other_address(id);
           }
         },
         error : function(){
@@ -261,6 +249,16 @@
         },
       })
     }
+
+    $(document).on('change','.select-other-address',function(){
+      let val = $(this).val();
+      if(val != ""){
+        customer_other_detail(val);
+      }else{
+        $('textarea[name="delivery_address"]').val("");
+      }
+    })
+
     function customer_other_address(id){
       ajaxcsrfscript();
       $.ajax({
@@ -285,6 +283,7 @@
         },
       })
     }
+
     function customer_other_detail(id){
       ajaxcsrfscript();
       $.ajax({
