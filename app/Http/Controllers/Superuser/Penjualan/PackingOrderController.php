@@ -142,10 +142,12 @@ class PackingOrderController extends Controller
         $warehouse = Warehouse::all();
         $customer = Customer::all();
         $ekspedisi = Ekspedisi::all();
+        $store = CustomerOtherAddress::all();
         $data = [
             'warehouse' => $warehouse,
             'customer' => $customer,
-            'ekspedisi' => $ekspedisi
+            'ekspedisi' => $ekspedisi,
+            'store' => $store
         ];
         return view($this->view."create",$data);
     }
@@ -161,10 +163,12 @@ class PackingOrderController extends Controller
         $warehouse = Warehouse::all();
         $customer = Customer::all();
         $ekspedisi = Ekspedisi::all();
+        $store = CustomerOtherAddress::all();
         $data = [
             'warehouse' => $warehouse,
             'customer' => $customer,
-            'ekspedisi' => $ekspedisi
+            'ekspedisi' => $ekspedisi,
+            'store' => $store
         ];
         return view($this->view."create_new",$data);
     }
@@ -206,6 +210,8 @@ class PackingOrderController extends Controller
         $data_json = [];
         $post = $request->all();
         if($request->method() == "POST"){
+            dd($request);
+
             DB::beginTransaction();
             try{
                 if(empty($post["warehouse_id"])){
@@ -252,9 +258,8 @@ class PackingOrderController extends Controller
                 goto ResultData;
                 
             }catch(\Throwable $e){
-                DB::rollback();
-
                 // dd($e);
+                DB::rollback();
                 $data_json["IsError"] = TRUE;
                 $data_json["Message"] = $e->getMessage();
                 goto ResultData;
@@ -423,13 +428,15 @@ class PackingOrderController extends Controller
         $warehouse = Warehouse::all();
         $customer = Customer::all();
         $ekspedisi = Ekspedisi::all();
+        $store = CustomerOtherAddress::all();
         $data = [
             'warehouse' => $warehouse,
             'customer' => $customer,
             'ekspedisi' => $ekspedisi,
+            'store' => $store,
             'result' => $result
         ];
-        return view($this->view."edit_new",$data);
+        return view($this->view."edit",$data);
     }
 
     public function detail($id)
@@ -1078,6 +1085,32 @@ class PackingOrderController extends Controller
         ResultData:
         return response()->json($data_json,200);
     }
+
+    // public function ajax_warehouse_detail(Request $request){
+    //     $data_json = [];
+    //     $post = $request->all();
+    //     if($request->method() == "POST"){
+    //         try{
+    //             $result = Warehouse::where('id',$post["id"])->first();
+
+    //             $data_json["IsError"] = FALSE;
+    //             $data_json["Data"] = $result;
+    //             goto ResultData;
+
+    //         }catch(\Throwable $e){
+    //             $data_json["IsError"] = TRUE;
+    //             $data_json["Message"] = $e->getMessage();
+    //             goto ResultData;
+    //         }
+    //     }
+    //     else{
+    //         $data_json["IsError"] = TRUE;
+    //         $data_json["Message"] = "Invalid Method";
+    //         goto ResultData;
+    //     }
+    //     ResultData:
+    //     return response()->json($data_json,200);
+    // }
     
     public function print_proforma($id){
         // Access

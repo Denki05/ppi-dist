@@ -17,7 +17,7 @@
     </button>
 </div>
 @endif
-<!--
+
 <div class="block">
   <div class="block-content block-content-full">
       <div class="row">
@@ -27,7 +27,7 @@
       </div>
   </div>
 </div>
--->
+
 <div class="block">
   <hr class="my-20">
   <div class="block-content block-content-full">

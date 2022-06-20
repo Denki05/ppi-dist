@@ -74,6 +74,9 @@
                     <div class="col-md-8">
                       <select class="form-control js-select2 select-other-address" name="customer_other_address_id">
                         <option value="">==Select customer other address==</option>
+                        @foreach($store as $index => $row)
+                          <option value="{{$row->id}}">{{$row->name}}</option>
+                        @endforeach
                       </select>
                     </div>
                   </div>
@@ -506,6 +509,7 @@
       },
     })
   }
+
   function customer_other_detail(id,selected=0){
     ajaxcsrfscript();
     $.ajax({
