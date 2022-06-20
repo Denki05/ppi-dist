@@ -174,7 +174,7 @@
   </div>
 </div>
 
-<div class="row">
+<!-- <div class="row">
   <div class="col-md-6">
     <div class="block">
       <div class="block-header block-header-default">
@@ -324,7 +324,7 @@
       </div>
     </div>
   </div>
-</div>
+</div> -->
 
 @endsection
 
@@ -335,17 +335,6 @@
 @push('scripts')
 <script type="text/javascript">
   $(document).ready(function() {
-    $('#datatable-other_address').DataTable({
-      columnDefs: [
-        { orderable: false, targets: [2, 3] }
-      ]
-    })
-
-    $('#datatable-contact').DataTable({
-      columnDefs: [
-        { orderable: false, targets: [3] }
-      ]
-    })
 
     $('a.img-lightbox').magnificPopup({
       type: 'image',

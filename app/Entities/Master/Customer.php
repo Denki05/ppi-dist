@@ -13,12 +13,12 @@ class Customer extends Model
     protected $fillable = [
         'category_id', /* 'type_id', */ 'code', 'name',
         'email', 'phone', 'npwp', 'address',
-        'owner_name', 'plafon_piutang', 'gps_latitude', 'gps_longitude',
+        'plafon_piutang', 'gps_latitude', 'gps_longitude',
         'provinsi', 'kota', 'kecamatan', 'kelurahan',
         'text_provinsi', 'text_kota', 'text_kecamatan', 'text_kelurahan',
         'zipcode', 'image_store', 'image_ktp', 'notification_email', 'status'
     ];
-    protected $table = 'master_customers';
+    protected $table = 'master_members';
     public static $directory_image = 'superuser_assets/media/master/customer/';
 
     const STATUS = [

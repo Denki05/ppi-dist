@@ -3,9 +3,9 @@
 @section('content')
 <nav class="breadcrumb bg-white push">
   <span class="breadcrumb-item">Master</span>
-  <a class="breadcrumb-item" href="{{ route('superuser.master.customer.index') }}">Customer</a>
-  <a class="breadcrumb-item" href="{{ route('superuser.master.customer.show', $customer->id) }}">{{ $customer->id }}</a>
-  <span class="breadcrumb-item">Other Address</span>
+  <a class="breadcrumb-item" href="{{ route('superuser.master.customer_other_address.index') }}">Store</a>
+  
+  <span class="breadcrumb-item">Store</span>
   <span class="breadcrumb-item active">Edit</span>
 </nav>
 <div class="block">
@@ -13,12 +13,12 @@
     <h3 class="block-title">Edit Other Address</h3>
   </div>
   <div class="block-content">
-    <form class="ajax" data-action="{{ route('superuser.master.customer.other_address.update', [$customer->id, $other_address->id]) }}" data-type="POST" enctype="multipart/form-data">
+    <form class="ajax" data-action="{{ route('superuser.master.customer.other_address.update') }}" data-type="POST" enctype="multipart/form-data">
       <input type="hidden" name="_method" value="PUT">
       <div class="form-group row">
-        <label class="col-md-3 col-form-label text-right" for="label">Label <span class="text-danger">*</span></label>
+        <label class="col-md-3 col-form-label text-right" for="name">Name <span class="text-danger">*</span></label>
         <div class="col-md-7">
-          <input type="text" class="form-control" id="label" name="label" value="{{ $other_address->label }}">
+          <input type="text" class="form-control" id="name" name="name" value="{{ $store->name }}">
         </div>
       </div>
       <div class="form-group row">

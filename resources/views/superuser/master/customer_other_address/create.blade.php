@@ -3,9 +3,7 @@
 @section('content')
 <nav class="breadcrumb bg-white push">
   <span class="breadcrumb-item">Master</span>
-  <a class="breadcrumb-item" href="{{ route('superuser.master.customer.index') }}">Customer</a>
-  <a class="breadcrumb-item" href="{{ route('superuser.master.customer.show', $customer->id) }}">{{ $customer->id }}</a>
-  <span class="breadcrumb-item">Other Address</span>
+  <a class="breadcrumb-item" href="{{ route('superuser.master.customer_other_address.index') }}">Store</a>
   <span class="breadcrumb-item active">Create</span>
 </nav>
 <div class="block">
@@ -13,17 +11,29 @@
     <h3 class="block-title">Create Other Address</h3>
   </div>
   <div class="block-content">
-    <form class="ajax" data-action="{{ route('superuser.master.customer.other_address.store', $customer->id) }}" data-type="POST" enctype="multipart/form-data">
+    <form class="ajax" data-action="{{ route('superuser.master.customer_other_address.store') }}" data-type="POST" enctype="multipart/form-data">
       <div class="form-group row">
-        <label class="col-md-3 col-form-label text-right" for="label">Label <span class="text-danger">*</span></label>
+        <label class="col-md-3 col-form-label text-right" for="name">Name <span class="text-danger">*</span></label>
         <div class="col-md-7">
-          <input type="text" class="form-control" id="label" name="label">
+          <input type="text" class="form-control" id="name" name="name">
         </div>
       </div>
       <div class="form-group row">
+        <label class="col-md-3 col-form-label text-right" for="code">Code <span class="text-danger">*</span></label>
+        <div class="col-md-7">
+          <input type="text" class="form-control" id="code" name="code" onkeyup="nospaces(this)" value="{{ App\Repositories\CodeRepo::generateStore() }}" readonly>
+        </div>
+      </div>
+      <!-- <div class="form-group row">
         <label class="col-md-3 col-form-label text-right" for="contact_person">Contact Person</label>
         <div class="col-md-7">
           <input type="text" class="form-control" id="contact_person" name="contact_person">
+        </div>
+      </div> -->
+      <div class="form-group row">
+        <label class="col-md-3 col-form-label text-right" for="npwp">NPWP</label>
+        <div class="col-md-7">
+          <input type="text" class="form-control" id="npwp" name="npwp">
         </div>
       </div>
       <div class="form-group row">
@@ -92,7 +102,7 @@
       </div>
       <div class="form-group row pt-30">
         <div class="col-md-6">
-          <a href="{{ route('superuser.master.customer.show', $customer->id) }}">
+          <a href="javascript:history.back()">
             <button type="button" class="btn bg-gd-cherry border-0 text-white">
               <i class="fa fa-arrow-left mr-10"></i> Back
             </button>
