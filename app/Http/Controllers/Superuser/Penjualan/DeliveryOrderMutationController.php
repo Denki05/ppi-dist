@@ -44,6 +44,8 @@ class DeliveryOrderMutationController extends Controller
     }
     public function index(Request $request)
     {
+        return view("superuser.coming-soon");
+        
         // Access
         if(Auth::user()->is_superuser == 0){
             if(empty($this->access)){

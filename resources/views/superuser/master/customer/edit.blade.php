@@ -3,13 +3,13 @@
 @section('content')
 <nav class="breadcrumb bg-white push">
   <span class="breadcrumb-item">Master</span>
-  <a class="breadcrumb-item" href="{{ route('superuser.master.customer.index') }}">Member</a>
+  <a class="breadcrumb-item" href="{{ route('superuser.master.customer.index') }}">Customer</a>
   <a class="breadcrumb-item" href="{{ route('superuser.master.customer.show', $customer->id) }}">{{ $customer->id }}</a>
   <span class="breadcrumb-item active">Edit</span>
 </nav>
 <div class="block">
   <div class="block-header block-header-default">
-    <h3 class="block-title">Edit Member</h3>
+    <h3 class="block-title">Edit Customer</h3>
   </div>
   <div class="block-content">
     <form class="ajax" data-action="{{ route('superuser.master.customer.update', $customer) }}" data-type="POST" enctype="multipart/form-data">
@@ -33,17 +33,6 @@
             <option></option>
             @foreach($customer_categories as $category)
             <option value="{{ $category->id }}" {{ ($category->id == $customer->category_id) ? 'selected' : '' }}>{{ $category->name }}</option>
-            @endforeach
-          </select>
-        </div>
-      </div>
-      <div class="form-group row">
-        <label class="col-md-3 col-form-label text-right" for="store">Store <span class="text-danger">*</span></label>
-        <div class="col-md-7">
-          <select class="js-select2 form-control" id="store" name="store" data-placeholder="Select Store">
-            <option></option>
-            @foreach($stores as $store)
-            <option value="{{ $store->id }}" {{ ($store->id == $customer->store_id) ? 'selected' : '' }}>{{ $store->name }}</option>
             @endforeach
           </select>
         </div>
@@ -78,12 +67,6 @@
         </div>
       </div>
       <div class="form-group row">
-        <label class="col-md-3 col-form-label text-right" for="ktp">KTP</label>
-        <div class="col-md-7">
-          <input type="text" class="form-control" id="ktp" name="ktp" value="{{ $customer->ktp }}">
-        </div>
-      </div>
-      <div class="form-group row">
         <label class="col-md-3 col-form-label text-right" for="npwp">NPWP</label>
         <div class="col-md-7">
           <input type="text" class="form-control" id="npwp" name="npwp" value="{{ $customer->npwp }}">
@@ -93,6 +76,12 @@
         <label class="col-md-3 col-form-label text-right" for="address">Address <span class="text-danger">*</span></label>
         <div class="col-md-7">
           <textarea class="form-control" id="address" name="address">{{ $customer->address }}</textarea>
+        </div>
+      </div>
+      <div class="form-group row">
+        <label class="col-md-3 col-form-label text-right" for="owner_name">Owner Name</label>
+        <div class="col-md-7">
+          <input type="text" class="form-control" id="owner_name" name="owner_name" value="{{ $customer->owner_name }}">
         </div>
       </div>
       <div class="form-group row">
@@ -171,12 +160,6 @@
           <input type="file" id="image_ktp" name="image_ktp" data-max-file-size="2000" accept="image/png, image/jpeg" data-src="{{ $customer->img_ktp }}">
         </div>
       </div>
-      <div class="form-group row">
-        <label class="col-md-3 col-form-label text-right">NPWP</label>
-        <div class="col-md-7">
-          <input type="file" id="image_npwp" name="image_npwp" data-max-file-size="2000" accept="image/png, image/jpeg" data-src="{{ $customer->img_ktp }}">
-        </div>
-      </div>
       <div class="form-group row pt-30">
         <div class="col-md-6">
           <a href="{{ route('superuser.master.customer.show', $customer->id) }}">
@@ -243,27 +226,6 @@
       initialPreviewConfig: [
       {
           caption: '{{ $customer->image_ktp }}'
-      }
-    ]
-    });
-
-    $('#image_npwp').fileinput({
-      theme: 'explorer-fa',
-      browseOnZoneClick: true,
-      showCancel: false,
-      showClose: false,
-      showUpload: false,
-      browseLabel: '',
-      removeLabel: '',
-      initialPreview: $('#image_npwp').data('src'),
-      initialPreviewAsData: true,
-      fileActionSettings: {
-        showDrag: false,
-        showRemove: false
-      },
-      initialPreviewConfig: [
-      {
-          caption: '{{ $customer->image_npwp }}'
       }
     ]
     });

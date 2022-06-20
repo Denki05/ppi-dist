@@ -80,7 +80,7 @@
           </div>
         </div>
         <div class="form-group row">
-          <label class="col-md-2 col-form-label text-right">Member<span class="text-danger">*</span></label>
+          <label class="col-md-2 col-form-label text-right">Customer<span class="text-danger">*</span></label>
           <div class="col-md-8">
             <select class="form-control js-select2 select-customer" name="customer_id">
               <option value="">==Select customer==</option>
@@ -101,9 +101,6 @@
           <div class="col-md-8">
             <select class="form-control js-select2 select-other-address" name="customer_other_address_id">
               <option value="">==Select customer other address==</option>
-              @foreach($store as $index => $row)
-                <option value="{{$row->id}}">{{$row->name}}</option>
-              @endforeach
             </select>
           </div>
         </div>
@@ -226,9 +223,18 @@
         customer_address(val);
       }else{
         $('textarea[name="address"]').val("");
+        $('.select-other-address').html('<option value="">==Select customer other address==</option>');
+        $('textarea[name="delivery_address"]').val("");
       }
     })
-
+    $(document).on('change','.select-other-address',function(){
+      let val = $(this).val();
+      if(val != ""){
+        customer_other_detail(val);
+      }else{
+        $('textarea[name="delivery_address"]').val("");
+      }
+    })
     function customer_address(id){
       ajaxcsrfscript();
       $.ajax({
@@ -242,6 +248,7 @@
           }
           else{
             $('textarea[name="address"]').val(resp.Data.address);
+            customer_other_address(id);
           }
         },
         error : function(){
@@ -249,22 +256,12 @@
         },
       })
     }
-
-    $(document).on('change','.select-other-address',function(){
-      let val = $(this).val();
-      if(val != ""){
-        customer_other_detail(val);
-      }else{
-        $('textarea[name="delivery_address"]').val("");
-      }
-    })
-
-    function customer_other_address(id){
+    function customer_other_address(customer_id){
       ajaxcsrfscript();
       $.ajax({
         url : '{{route('superuser.penjualan.packing_order.ajax_customer_other_address')}}',
         method : "POST",
-        data : {id:id},
+        data : {customer_id:customer_id},
         dataType : "JSON",
         success : function(resp){
           if(resp.IsError == true){
@@ -283,7 +280,6 @@
         },
       })
     }
-
     function customer_other_detail(id){
       ajaxcsrfscript();
       $.ajax({

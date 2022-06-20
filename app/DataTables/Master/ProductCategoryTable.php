@@ -14,7 +14,8 @@ class ProductCategoryTable extends Table
      */
     private function query()
     {
-        $model = ProductCategory::select('id', 'code', 'name', 'status', 'created_at');
+        $model = ProductCategory::select('id', 'code', 'name', 'status', 'created_at')
+							->where('status', 1);
         
         return $model;
     }

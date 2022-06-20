@@ -3,60 +3,55 @@
 @section('content')
 <nav class="breadcrumb bg-white push">
   <span class="breadcrumb-item">Master</span>
-  <a class="breadcrumb-item" href="{{ route('superuser.master.store.index') }}">Store</a>
-  <span class="breadcrumb-item active">Edit</span>
+  <a class="breadcrumb-item" href="{{ route('superuser.master.customer.index') }}">Customer</a>
+  <a class="breadcrumb-item" href="{{ route('superuser.master.customer.show', $customer->id) }}">{{ $customer->id }}</a>
+  <span class="breadcrumb-item">Other Address</span>
+  <span class="breadcrumb-item active">Create</span>
 </nav>
 <div class="block">
   <div class="block-header block-header-default">
-    <h3 class="block-title">Edit Other Address</h3>
+    <h3 class="block-title">Create Other Address</h3>
   </div>
   <div class="block-content">
-    <form class="ajax" data-action="{{ route('superuser.master.store.update', $other_address) }}" data-type="POST" enctype="multipart/form-data">
-      <input type="hidden" name="_method" value="PUT">
+    <form class="ajax" data-action="{{ route('superuser.master.customer.other_address.store', $customer->id) }}" data-type="POST" enctype="multipart/form-data">
       <div class="form-group row">
-        <label class="col-md-3 col-form-label text-right" for="name">Name <span class="text-danger">*</span></label>
+        <label class="col-md-3 col-form-label text-right" for="label">Label <span class="text-danger">*</span></label>
         <div class="col-md-7">
-          <input type="text" class="form-control" id="name" name="name" value="{{ $other_address->name }}">
+          <input type="text" class="form-control" id="label" name="label">
         </div>
       </div>
       <div class="form-group row">
         <label class="col-md-3 col-form-label text-right" for="contact_person">Contact Person</label>
         <div class="col-md-7">
-          <input type="text" class="form-control" id="contact_person" name="contact_person" value="{{ $other_address->contact_person }}">
+          <input type="text" class="form-control" id="contact_person" name="contact_person">
         </div>
       </div>
       <div class="form-group row">
         <label class="col-md-3 col-form-label text-right" for="phone">Phone</label>
         <div class="col-md-7">
-          <input type="text" class="form-control" id="phone" name="phone" value="{{ $other_address->phone }}">
-        </div>
-      </div>
-      <div class="form-group row">
-        <label class="col-md-3 col-form-label text-right" for="npwp">NPWP</label>
-        <div class="col-md-7">
-          <input type="text" class="form-control" id="npwp" name="npwp" value="{{ $other_address->npwp }}">
+          <input type="text" class="form-control" id="phone" name="phone">
         </div>
       </div>
       <div class="form-group row">
         <label class="col-md-3 col-form-label text-right" for="address">Address <span class="text-danger">*</span></label>
         <div class="col-md-7">
-          <textarea class="form-control" id="address" name="address">{{ $other_address->address }}</textarea>
+          <textarea class="form-control" id="address" name="address"></textarea>
         </div>
       </div>
       <div class="form-group row">
         <label class="col-md-3 col-form-label text-right">GPS Coordinate</label>
         <div class="col-md-3">
-          <input type="text" class="form-control" id="gps_latitude" name="gps_latitude" placeholder="Latitude" value="{{ $other_address->gps_latitude }}">
+          <input type="text" class="form-control" id="gps_latitude" name="gps_latitude" placeholder="Latitude">
         </div>
         <div class="col-md-1"></div>
         <div class="col-md-3">
-          <input type="text" class="form-control" id="gps_longitude" name="gps_longitude" placeholder="Longitude" value="{{ $other_address->gps_longitude }}">
+          <input type="text" class="form-control" id="gps_longitude" name="gps_longitude" placeholder="Longitude">
         </div>
       </div>
       <div class="form-group row">
         <label class="col-md-3 col-form-label text-right">Provinsi</label>
         <div class="col-md-7">
-          <select class="js-select2 form-control" id="provinsi" name="provinsi" data-placeholder="Select Provinsi" data-value="{{ $other_address->provinsi }}">
+          <select class="js-select2 form-control" id="provinsi" name="provinsi" data-placeholder="Select Provinsi">
             <option></option>
           </select>
           <input type="hidden" name="text_provinsi">
@@ -65,7 +60,7 @@
       <div class="form-group row">
         <label class="col-md-3 col-form-label text-right">Kota</label>
         <div class="col-md-7">
-          <select class="js-select2 form-control" id="kota" name="kota" data-placeholder="Select Kota" data-value="{{ $other_address->kota }}">
+          <select class="js-select2 form-control" id="kota" name="kota" data-placeholder="Select Kota">
             <option></option>
           </select>
           <input type="hidden" name="text_kota">
@@ -74,7 +69,7 @@
       <div class="form-group row">
         <label class="col-md-3 col-form-label text-right">Kecamatan</label>
         <div class="col-md-7">
-          <select class="js-select2 form-control" id="kecamatan" name="kecamatan" data-placeholder="Select Kecamatan" data-value="{{ $other_address->kecamatan }}">
+          <select class="js-select2 form-control" id="kecamatan" name="kecamatan" data-placeholder="Select Kecamatan">
             <option></option>
           </select>
           <input type="hidden" name="text_kecamatan">
@@ -83,7 +78,7 @@
       <div class="form-group row">
         <label class="col-md-3 col-form-label text-right">Kelurahan</label>
         <div class="col-md-7">
-          <select class="js-select2 form-control" id="kelurahan" name="kelurahan" data-placeholder="Select Kelurahan" data-value="{{ $other_address->kelurahan }}">
+          <select class="js-select2 form-control" id="kelurahan" name="kelurahan" data-placeholder="Select Kelurahan">
             <option></option>
           </select>
           <input type="hidden" name="text_kelurahan">
@@ -92,18 +87,12 @@
       <div class="form-group row">
         <label class="col-md-3 col-form-label text-right" for="zipcode">Zipcode</label>
         <div class="col-md-7">
-          <input type="text" class="form-control" id="zipcode" name="zipcode" value="{{ $other_address->zipcode }}">
-        </div>
-      </div>
-      <div class="form-group row">
-        <label class="col-md-3 col-form-label text-right">Image NPWP</label>
-        <div class="col-md-7">
-          <input type="file" id="image_npwp" name="image_npwp" data-max-file-size="2000" accept="image/png, image/jpeg" data-src="{{ $other_address->img_ktp }}">
+          <input type="text" class="form-control" id="zipcode" name="zipcode">
         </div>
       </div>
       <div class="form-group row pt-30">
         <div class="col-md-6">
-        <a href="javascript:history.back()">
+          <a href="{{ route('superuser.master.customer.show', $customer->id) }}">
             <button type="button" class="btn bg-gd-cherry border-0 text-white">
               <i class="fa fa-arrow-left mr-10"></i> Back
             </button>
@@ -121,7 +110,6 @@
 <div id="alert-block"></div>
 @endsection
 
-@include('superuser.asset.plugin.fileinput')
 @include('superuser.asset.plugin.select2')
 @include('superuser.asset.plugin.select2-chain-indonesian-teritory')
 
@@ -129,27 +117,6 @@
 <script src="{{ asset('utility/superuser/js/form.js') }}"></script>
 <script>
   $(document).ready(function () {
-
-    $('#image_npwp').fileinput({
-      theme: 'explorer-fa',
-      browseOnZoneClick: true,
-      showCancel: false,
-      showClose: false,
-      showUpload: false,
-      browseLabel: '',
-      removeLabel: '',
-      initialPreview: $('#image_npwp').data('src'),
-      initialPreviewAsData: true,
-      fileActionSettings: {
-        showDrag: false,
-        showRemove: false
-      },
-      initialPreviewConfig: [
-      {
-          caption: '{{ $other_address->image_npwp }}'
-      }
-    ]
-    });
     $('.js-select2').select2()
   })
 </script>

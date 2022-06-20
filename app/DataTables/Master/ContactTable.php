@@ -14,7 +14,7 @@ class ContactTable extends Table
      */
     private function query()
     {
-        $model = Contact::select('id', 'name', 'customer_id', 'phone', 'email', 'position', 'dob', 'npwp', 'ktp', 'address', 'status', 'created_at');
+        $model = Contact::select('id', 'name', 'phone', 'email', 'position', 'dob', 'npwp', 'ktp', 'address', 'status', 'created_at');
 
         return $model;
     }
@@ -33,10 +33,6 @@ class ContactTable extends Table
         
         $table->editColumn('status', function (Contact $model) {
             return $model->status();
-        });
-
-        $table->editColumn('customer_id', function (Contact $model) {
-            return $model->member->name;
         });
 
         $table->editColumn('created_at', function (Contact $model) {

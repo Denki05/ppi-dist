@@ -83,6 +83,10 @@ Route::group([
         Route::get('/import_template', 'CustomerController@import_template')->name('import_template');
         Route::post('/import', 'CustomerController@import')->name('import');
         Route::get('/export', 'CustomerController@export')->name('export');
+		Route::post('/getkabupaten', 'CustomerController@getkabupaten')->name('getkabupaten');
+        Route::post('/getkecamatan', 'CustomerController@getkecamatan')->name('getkecamatan');
+        Route::post('/getkelurahan', 'CustomerController@getkelurahan')->name('getkelurahan');
+        Route::post('/getzipcode', 'CustomerController@getzipcode')->name('getzipcode');
 
         Route::group(['as' => 'other_address.'], function() {
             Route::get('/{id}/other_address/create', 'CustomerOtherAddressController@create')->name('create');
@@ -167,11 +171,4 @@ Route::group([
         Route::get('/export', 'EkspedisiController@export')->name('export');
     });
     Route::resource('ekspedisi', 'EkspedisiController');
-
-    Route::group(['as' => 'store.', 'prefix' => '/store'], function () {
-        // Route::get('/import_template', 'CustomerOtherAddressController@import_template')->name('import_template');
-        // Route::post('/import', 'CustomerOtherAddressController@import')->name('import');
-        // Route::get('/export', 'CustomerOtherAddressController@export')->name('export');
-    });
-    Route::resource('store', 'CustomerOtherAddressController');
 });

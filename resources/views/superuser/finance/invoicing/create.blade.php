@@ -461,6 +461,7 @@
     $('input[name="purchase_total_idr"]').val(formatRupiah(sub_purchase_total));
     $('input[name="grand_total_idr"]').val(formatRupiah(grand_total_idr));
   }
+  
   /* Fungsi formatRupiah */
   function formatRupiah(angka, prefix){
     angka = angka.toString();

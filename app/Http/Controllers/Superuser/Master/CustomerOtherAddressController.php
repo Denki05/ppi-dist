@@ -2,7 +2,6 @@
 
 namespace App\Http\Controllers\Superuser\Master;
 
-use App\DataTables\Master\CustomerOtherAddressTable;
 use App\Entities\Master\Customer;
 use App\Entities\Master\CustomerOtherAddress;
 use App\Http\Controllers\Controller;
@@ -10,12 +9,11 @@ use Illuminate\Http\Request;
 use App\Entities\Setting\UserMenu;
 use Validator;
 use Auth;
-use App\Helper\UploadMedia;
 
 class CustomerOtherAddressController extends Controller
 {
     public function __construct(){
-        $this->route = "superuser.master.store";
+        $this->route = "superuser.master.customer_other_address";
         $this->user_menu = new UserMenu;
         $this->access = null;
         $this->middleware(function ($request, $next) {
@@ -30,24 +28,7 @@ class CustomerOtherAddressController extends Controller
             return $next($request);
         });
     }
-
-    public function json(Request $request, CustomerOtherAddressTable $datatable)
-    {
-        return $datatable->build();
-    }
-
-    public function index()
-    {
-        // Access
-        if(Auth::user()->is_superuser == 0){
-            if(empty($this->access)){
-                return redirect()->route('superuser.index')->with('error','Anda tidak punya akses untuk membuka menu terkait');
-            }
-        }
-        return view('superuser.master.store.index');
-    }
-
-    public function create()
+    public function create($id)
     {
         // Access
         if(Auth::user()->is_superuser == 0){
@@ -56,17 +37,18 @@ class CustomerOtherAddressController extends Controller
             }
         }
 
-        return view('superuser.master.store.create');
+        $data['customer'] = Customer::findOrFail($id);
+
+        return view('superuser.master.customer_other_address.create', $data);
     }
 
-    public function store(Request $request)
+    public function store(Request $request, $id)
     {
         if ($request->ajax()) {
             $validator = Validator::make($request->all(), [
-                'name' => 'required|string',
+                'label' => 'required|string',
                 'contact_person' => 'nullable|string',
                 'phone' => 'nullable|string',
-                'npwp' => 'nullable|string',
                 'address' => 'required|string',
                 'gps_latitude' => 'nullable|string',
                 'gps_longitude' => 'nullable|string',
@@ -79,7 +61,6 @@ class CustomerOtherAddressController extends Controller
                 'text_kecamatan' => 'nullable|required_with:kecamatan|string',
                 'text_kelurahan' => 'nullable|required_with:kelurahan|string',
                 'zipcode' => 'nullable|string',
-                'image_npwp' => 'nullable|image|mimes:jpeg,png,jpg|max:2048'
             ]);
 
             if ($validator->fails()) {
@@ -94,13 +75,19 @@ class CustomerOtherAddressController extends Controller
             }
 
             if ($validator->passes()) {
+                $customer = Customer::find($id);
+
+                if ($customer == null) {
+                    abort(404);
+                }
 
                 $other_address = new CustomerOtherAddress;
 
-                $other_address->name = $request->name;
+                $other_address->customer_id = $customer->id;
+
+                $other_address->label = $request->label;
                 $other_address->contact_person = $request->contact_person;
                 $other_address->phone = $request->phone;
-                $other_address->npwp = $request->npwp;
                 $other_address->address = $request->address;
 
                 $other_address->gps_latitude = $request->gps_latitude;
@@ -116,10 +103,6 @@ class CustomerOtherAddressController extends Controller
                 $other_address->text_kelurahan = $request->text_kelurahan;
 
                 $other_address->zipcode = $request->zipcode;
-
-                if (!empty($request->file('image_npwp'))) {
-                    $other_address->image_npwp = UploadMedia::image($request->file('image_npwp'), CustomerOtherAddress::$directory_image);
-                }
 
                 $other_address->status = CustomerOtherAddress::STATUS['ACTIVE'];
                 
@@ -130,9 +113,7 @@ class CustomerOtherAddressController extends Controller
                         'content' => 'Success',
                     ];
 
-                    // dd($other_address->save());
-
-                    $response['redirect_to'] = route('superuser.master.store.index');
+                    $response['redirect_to'] = route('superuser.master.customer.show', $id);
 
                     return $this->response(200, $response);
                 }
@@ -140,20 +121,7 @@ class CustomerOtherAddressController extends Controller
         }
     }
 
-    public function show($id)
-    {
-        // Access
-        if(Auth::user()->is_superuser == 0){
-            if(empty($this->access) || empty($this->access->user) || $this->access->can_read == 0){
-                return redirect()->route('superuser.index')->with('error','Anda tidak punya akses untuk membuka menu terkait');
-            }
-        }
-        $data['other_address'] = CustomerOtherAddress::findOrFail($id);
-
-        return view('superuser.master.store.show', $data);
-    }
-
-    public function edit($id)
+    public function edit($id, $address_id)
     {
         // Access
         if(Auth::user()->is_superuser == 0){
@@ -162,19 +130,19 @@ class CustomerOtherAddressController extends Controller
             }
         }
 
-        $data['other_address'] = CustomerOtherAddress::findOrFail($id);
+        $data['customer'] = Customer::findOrFail($id);
+        $data['other_address'] = CustomerOtherAddress::findOrFail($address_id);
 
-        return view('superuser.master.store.edit', $data);
+        return view('superuser.master.customer_other_address.edit', $data);
     }
     
-    public function update(Request $request, $id)
+    public function update(Request $request, $id, $address_id)
     {
         if ($request->ajax()) {
             $validator = Validator::make($request->all(), [
-                'name' => 'required|string',
+                'label' => 'required|string',
                 'contact_person' => 'nullable|string',
                 'phone' => 'nullable|string',
-                'npwp' => 'nullable|string',
                 'address' => 'required|string',
                 'gps_latitude' => 'nullable|string',
                 'gps_longitude' => 'nullable|string',
@@ -187,7 +155,6 @@ class CustomerOtherAddressController extends Controller
                 'text_kecamatan' => 'nullable|required_with:kecamatan|string',
                 'text_kelurahan' => 'nullable|required_with:kelurahan|string',
                 'zipcode' => 'nullable|string',
-                'image_npwp' => 'nullable|image|mimes:jpeg,png,jpg|max:2048'
             ]);
 
             if ($validator->fails()) {
@@ -202,16 +169,16 @@ class CustomerOtherAddressController extends Controller
             }
 
             if ($validator->passes()) {
-                $other_address = CustomerOtherAddress::find($id);
+                $customer = Customer::find($id);
+                $other_address = CustomerOtherAddress::find($address_id);
 
-                if ($other_address == null) {
+                if ($customer == null OR $other_address == null) {
                     abort(404);
                 }
 
-                $other_address->name = $request->name;
+                $other_address->label = $request->label;
                 $other_address->contact_person = $request->contact_person;
                 $other_address->phone = $request->phone;
-                $other_address->npwp = $request->npwp;
                 $other_address->address = $request->address;
 
                 $other_address->gps_latitude = $request->gps_latitude;
@@ -228,14 +195,6 @@ class CustomerOtherAddressController extends Controller
 
                 $other_address->zipcode = $request->zipcode;
 
-                if (!empty($request->file('image_npwp'))) {
-                    if (is_file_exists(CustomerOtherAddress::$directory_image.$other_address->image_npwp)) {
-                        remove_file(CustomerOtherAddress::$directory_image.$other_address->image_npwp);
-                    }
-
-                    $other_address->image_npwp = UploadMedia::image($request->file('image_npwp'), CustomerOtherAddress::$directory_image);
-                }
-
                 if ($other_address->save()) {
                     $response['notification'] = [
                         'alert' => 'notify',
@@ -243,7 +202,7 @@ class CustomerOtherAddressController extends Controller
                         'content' => 'Success',
                     ];
 
-                    $response['redirect_to'] = route('superuser.master.store.index');
+                    $response['redirect_to'] = route('superuser.master.customer.show', $id);
 
                     return $this->response(200, $response);
                 }
@@ -251,7 +210,7 @@ class CustomerOtherAddressController extends Controller
         }
     }
 
-    public function destroy(Request $request, $id)
+    public function destroy(Request $request, $id, $address_id)
     {
         // Access
         if(Auth::user()->is_superuser == 0){
@@ -260,9 +219,10 @@ class CustomerOtherAddressController extends Controller
             }
         }
         if ($request->ajax()) {
-            $other_address = CustomerOtherAddress::find($id);
+            $customer = Customer::find($id);
+            $other_address = CustomerOtherAddress::find($address_id);
 
-            if ($other_address === null) {
+            if ($customer === null OR $other_address === null) {
                 abort(404);
             }
 

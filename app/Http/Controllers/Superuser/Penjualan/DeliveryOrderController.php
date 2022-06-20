@@ -238,7 +238,7 @@ class DeliveryOrderController extends Controller
             abort(404);
         }
         if($result->status <= 3){
-            return redirect()->back()->with('error','Tidak bisa print delivery order.Status delivery order belum memenuhi syarat');
+            return redirect()->back()->with('error','Tidak bisa print delivery order. Status delivery order belum memenuhi syarat');
         }
         $data = [
             'result' => $result,
@@ -249,7 +249,10 @@ class DeliveryOrderController extends Controller
             'created_by' => Auth::id()
         ]);
         
-        $pdf = PDF::loadview($this->view."print_new",$data)->setPaper('a5','landscape');
+        $width = 21;
+        $height = 14.8;
+        $customPaper = array(0,0,($width/2.54*72),($height/2.54*72));
+        $pdf = PDF::loadview($this->view."print_new",$data)->setPaper($customPaper,'portait');
         if(!empty($result->do_code)){
             return $pdf->stream($result->do_code ?? '');    
         }

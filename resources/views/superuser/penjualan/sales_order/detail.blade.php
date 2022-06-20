@@ -47,9 +47,9 @@
           
           @if($result->so_for == 1)
           <div class="form-group row">
-            <label class="col-md-2 col-form-label text-right">Member</label>
+            <label class="col-md-2 col-form-label text-right">Customer</label>
             <div class="col-md-8">
-              <input type="text" class="form-control" value="{{$result->customer->name ?? ''}} / {{$result->customer->store->name ?? ''}}" readonly>
+              <input type="text" class="form-control" value="{{$result->customer->name ?? ''}}" readonly>
             </div>
           </div>
           @else
@@ -80,6 +80,12 @@
             <label class="col-md-2 col-form-label text-right">Ekspedisi</label>
             <div class="col-md-8">
               <input type="text" class="form-control" value="{{$result->ekspedisi->name ?? ''}}" readonly>
+            </div>
+          </div>
+          <div class="form-group row">
+            <label class="col-md-2 col-form-label text-right">Note</label>
+            <div class="col-md-8">
+              <textarea class="form-control" readonly rows="3">{{$result->note}}</textarea>
             </div>
           </div>
         </div>

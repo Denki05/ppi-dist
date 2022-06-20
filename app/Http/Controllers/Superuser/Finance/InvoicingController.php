@@ -482,13 +482,10 @@ class InvoicingController extends Controller
         $data = [
             'result' => $result,
             'company' => $company,
-            'watermark' => isset($paid) && $paid == true ? 'Paid' : 'Unpaid'
+            'watermark' => $result->do->type_transaction === 1 ? 'Paid' : 'Unpaid'
         ];
-        if ($type == null || $type == 1) {
-            $pdf = PDF::loadview($this->view."print_new",$data)->setPaper('a5','landscape');
-        } else if ($type == 2) {
-            $pdf = PDF::loadview($this->view."print_new",$data)->setPaper('a4','portait');
-        }
+        
+        $pdf = PDF::loadview($this->view."print_new",$data)->setPaper('a4','portait');
         return $pdf->stream($result->code ?? '');
     }
 
@@ -520,7 +517,7 @@ class InvoicingController extends Controller
             'company' => $company
         ];
 
-        $pdf = PDF::loadview($this->view."print_proforma_new",$data)->setPaper('a5','landscape');
+        $pdf = PDF::loadview($this->view."print_proforma_new",$data)->setPaper('a4','portait');
         return $pdf->stream($result->do->do_code ?? '');
     }
     private function reset_cost_if_change_idr_rate($do_id,$idr_rate){

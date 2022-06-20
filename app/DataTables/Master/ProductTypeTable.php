@@ -14,8 +14,8 @@ class ProductTypeTable extends Table
      */
     private function query()
     {
-        $model = ProductType::select('id', 'code', 'name', 'status', 'created_at');
-        
+        $model = ProductType::select('id', 'code', 'name', 'status', 'created_at')
+						->where('status', 1);
         return $model;
     }
 

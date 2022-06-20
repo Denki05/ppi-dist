@@ -15,6 +15,7 @@ class PackingOrder extends Model
         'do_code',
     	'warehouse_id',
     	'customer_id',
+    	'customer_other_address_id',
         'ekspedisi_id',
     	'idr_rate',
     	'status',
@@ -63,9 +64,12 @@ class PackingOrder extends Model
     public function customer(){
     	return $this->BelongsTo('App\Entities\Master\Customer','customer_id','id');
     }
-    // public function customer_other_address(){
-    //     return $this->BelongsTo('App\Entities\Master\CustomerOtherAddress','customer_other_address_id','id');
-    // }
+    public function so(){
+    	return $this->BelongsTo('App\Entities\Penjualan\SalesOrder','so_id','id');
+    }
+    public function customer_other_address(){
+        return $this->BelongsTo('App\Entities\Master\CustomerOtherAddress','customer_other_address_id','id');
+    }
     public function warehouse(){
     	return $this->BelongsTo('App\Entities\Master\Warehouse','warehouse_id','id');
     }

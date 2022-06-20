@@ -18,11 +18,4 @@ Route::group([
         Route::post('/check_product_warehouse', 'StockAdjustmentController@check_product_warehouse')->name('check_product_warehouse');
         Route::post('/store', 'StockAdjustmentController@store')->name('store');
     });
-
-    Route::group(['as' => 'stock_sales_order.', 'prefix' => '/stock_sales_order'], function () {
-        Route::get('/import_template', 'StockSalesOrderController@import_template')->name('import_template');
-        Route::post('/import', 'StockSalesOrderController@import')->name('import');
-        Route::get('/export', 'StockSalesOrderController@export')->name('export');
-    });
-    Route::resource('stock_sales_order', 'StockSalesOrderController');
 });

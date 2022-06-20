@@ -161,6 +161,7 @@ class SalesOrderController extends Controller
     
     public function index_mutasi(Request $request)
     {
+        return view("superuser.coming-soon");
         return $this->index($request, 9);
     }
 
@@ -244,6 +245,16 @@ class SalesOrderController extends Controller
                 $data_json["Message"] = "Sales wajib dipilih";
                 goto ResultData;
             }
+            if(empty($post["sales_id"])){
+                $data_json["IsError"] = TRUE;
+                $data_json["Message"] = "Sales wajib dipilih";
+                goto ResultData;
+            }
+            if(empty($post["customer_id"])){
+                $data_json["IsError"] = TRUE;
+                $data_json["Message"] = "Customer wajib dipilih";
+                goto ResultData;
+            }
             $customer = [];
             $gudang = [];
             if(!empty($post["customer_id"])){
@@ -268,6 +279,8 @@ class SalesOrderController extends Controller
                     $insert->destination_warehouse_id = $gudang["id"] ?? null;
                 }
                 $insert->so_for = trim(htmlentities($customer["so_for"]));
+                $insert->type_transaction = trim(htmlentities($post["type_transaction"]));
+                $insert->note = trim(htmlentities($post["note"]));
                 $insert->created_by = Auth::id();
                 $insert->status = $post["ajukankelanjutan"] == 1 ? 2 : 1;
                 $insert->save();
@@ -526,6 +539,7 @@ class SalesOrderController extends Controller
                     $sales_order->sales_senior_id = trim(htmlentities($post["sales_senior_id"]));
                     $sales_order->sales_id = trim(htmlentities($post["sales_id"]));
                     $sales_order->customer_id = $customer["id"] ?? null;
+                    $sales_order->note = trim(htmlentities($post["note"]));
                     $sales_order->updated_by = Auth::id();
                     $sales_order->status = $step;
                 } else if ($step == 2) {
@@ -833,11 +847,6 @@ class SalesOrderController extends Controller
                 $data_json["Message"] = "IDR rate wajib dipilih";
                 goto ResultData;
             }
-            if(empty($post["type_transaction"])){
-                $data_json["IsError"] = TRUE;
-                $data_json["Message"] = "Type transaction wajib dipilih";
-                goto ResultData;
-            }
             if(count($post["repeater"]) == 0){
                 $data_json["IsError"] = TRUE;
                 $data_json["Message"] = "Not item sales order are ready";
@@ -849,9 +858,6 @@ class SalesOrderController extends Controller
                 $company = Company::first();
 
                 $sales_order->origin_warehouse_id = trim(htmlentities($post["origin_warehouse_id"]));
-                $sales_order->type_transaction = trim(htmlentities($post["type_transaction"]));
-                $expedisi_id = trim(htmlentities($post["ekspedisi_id"])) == '' ? null : trim(htmlentities($post["ekspedisi_id"]));
-                $sales_order->ekspedisi_id = $expedisi_id;
                 $sales_order->status = 4;
                 $sales_order->updated_by = Auth::id();
                 $sales_order->save();
@@ -861,121 +867,121 @@ class SalesOrderController extends Controller
                                             ->join('master_products', 'master_products.id', '=', 'penjualan_so_item.product_id')
                                             ->groupBy('master_products.category_id')->get();
                 
-                // $jumlahitem = 0;
-                // foreach($categories as $category) {
-                //     $packing_order = new PackingOrder;
-                //     $packing_order->code = CodeRepo::generatePO();
-                //     $packing_order->customer_id  = $sales_order->customer_id;
-                //     $packing_order->warehouse_id = $sales_order->origin_warehouse_id;
-                //     $packing_order->type_transaction  = $sales_order->type_transaction;
-                //     $packing_order->idr_rate = trim(htmlentities($post["idr_rate"]));
-                //     $packing_order->note = $company->note;
-                //     $packing_order->status = 1;
-                //     $packing_order->created_by = Auth::id();
-                //     $packing_order->ekspedisi_id  = $sales_order->ekspedisi_id;
-                //     $packing_order->save();
+                $jumlahitem = 0;
+                foreach($categories as $category) {
+                    $packing_order = new PackingOrder;
+                    $packing_order->code = CodeRepo::generatePO();
+                    $packing_order->so_id  = $sales_order->id;
+                    $packing_order->customer_id  = $sales_order->customer_id;
+                    $packing_order->warehouse_id = $sales_order->origin_warehouse_id;
+                    $packing_order->type_transaction  = $sales_order->type_transaction;
+                    $packing_order->idr_rate = trim(htmlentities($post["idr_rate"]));
+                    $packing_order->note = $company->note;
+                    $packing_order->status = 1;
+                    $packing_order->created_by = Auth::id();
+                    $packing_order->save();
 
-                //     $packing_order_detail = new PackingOrderDetail;
-                //     $packing_order_detail->do_id = $packing_order->id;
-                //     $packing_order_detail->created_by = Auth::id();
-                //     $packing_order_detail->save();
+                    $packing_order_detail = new PackingOrderDetail;
+                    $packing_order_detail->do_id = $packing_order->id;
+                    $packing_order_detail->created_by = Auth::id();
+                    $packing_order_detail->save();
                     
-                //     $data = [];
-                //     foreach ($post["repeater"] as $key => $value) {
-                //         if (empty($value["so_qty"]) || (!empty($value["so_qty"]) && $value["so_qty"] <= 0)) {
-                //             continue;
-                //         }
+                    $data = [];
+                    foreach ($post["repeater"] as $key => $value) {
+                        if (empty($value["so_qty"]) || (!empty($value["so_qty"]) && $value["so_qty"] <= 0)) {
+                            continue;
+                        }
 
-                //         $result = SalesOrderItem::where('id',$value["so_item_id"])->first();
-                //         if ($result->product->category->id !== $category->category_id) {
-                //             continue;
-                //         }
+                        $result = SalesOrderItem::where('id',$value["so_item_id"])->first();
+                        if ($result->product->category->id !== $category->category_id) {
+                            continue;
+                        }
 
-                //         $jumlahitem = $jumlahitem + 1;
+                        $jumlahitem = $jumlahitem + 1;
 
-                //         $so_item_id = $value["so_item_id"];
-                //         $price = $value["price"];
-                //         $so_qty = $value["so_qty"];
-                //         $do_qty = $value["do_qty"];
-                //         $rej_qty = $so_qty - $do_qty;
-                //         $usd_disc = 0;
-                //         $percent_disc = 0;
-                //         $total_discount = 0;
+                        $so_item_id = $value["so_item_id"];
+                        $price = $value["price"];
+                        $so_qty = $value["so_qty"];
+                        $do_qty = $value["do_qty"];
+                        $rej_qty = $so_qty - $do_qty;
+                        $usd_disc = 0;
+                        $percent_disc = 0;
+                        $total_discount = 0;
                     
-                //         if(empty($value["so_item_id"])){
-                //             $data_json["IsError"] = TRUE;
-                //             $data_json["Message"] = "SO Item ID tidak boleh kosong";
-                //             goto ResultData;
-                //         }
-                //         if(empty($value["product_id"])){
-                //             $data_json["IsError"] = TRUE;
-                //             $data_json["Message"] = "Product ID tidak boleh kosong";
-                //             goto ResultData;
-                //         }
+                        if(empty($value["so_item_id"])){
+                            $data_json["IsError"] = TRUE;
+                            $data_json["Message"] = "SO Item ID tidak boleh kosong";
+                            goto ResultData;
+                        }
+                        if(empty($value["product_id"])){
+                            $data_json["IsError"] = TRUE;
+                            $data_json["Message"] = "Product ID tidak boleh kosong";
+                            goto ResultData;
+                        }
 
-                //         if(empty($value["price"])){
-                //             $data_json["IsError"] = TRUE;
-                //             $data_json["Message"] = "Harga produk tidak boleh 0";
-                //             goto ResultData;
-                //         }
+                        if(empty($value["price"])){
+                            $data_json["IsError"] = TRUE;
+                            $data_json["Message"] = "Harga produk tidak boleh 0";
+                            goto ResultData;
+                        }
 
-                //         $qty_total = $do_qty + $rej_qty;
-                //         $sisa = $so_qty - $do_qty;
+                        $qty_total = $do_qty + $rej_qty;
+                        $sisa = $so_qty - $do_qty;
 
-                //         if($so_qty < $qty_total){
-                //             $data_json["IsError"] = TRUE;
-                //             $data_json["Message"] = "Jumlah DO,REJ melebihi SO Qty";
-                //             goto ResultData;
-                //         }
+                        if($so_qty < $qty_total){
+                            $data_json["IsError"] = TRUE;
+                            $data_json["Message"] = "Jumlah DO,REJ melebihi SO Qty";
+                            goto ResultData;
+                        }
 
-                //         if($do_qty == 0 && $rej_qty == 0){
-                //             $updateSO = SalesOrderItem::where('id',$value["so_item_id"])->update([
-                //                 'qty' => 0
-                //             ]);
-                //         }
+                        if($do_qty == 0 && $rej_qty == 0){
+                            $updateSO = SalesOrderItem::where('id',$value["so_item_id"])->update([
+                                'qty' => 0
+                            ]);
+                        }
                         
-                //         if($do_qty > 0){
-                //             $total_disc = floatval(($usd_disc + (($price - $usd_disc) * ($percent_disc/100))) * $do_qty);
-                //             $data[] = [
-                //                 'do_id' => $packing_order->id,
-                //                 'product_id' => $value["product_id"],
-                //                 'so_item_id' => $value["so_item_id"],
-                //                 'packaging' => $result->packaging,
-                //                 'qty' => $do_qty,
-                //                 'price' => $price,
-                //                 'usd_disc' => $usd_disc,
-                //                 'percent_disc' => $percent_disc,
-                //                 'usd_disc' => $usd_disc,
-                //                 'total_disc' => $total_disc,
-                //                 'total' => floatval($do_qty * $price) - $total_disc ,
-                //                 'note' => trim(htmlentities($value["note"])),
-                //                 'created_by' => Auth::id(),
-                //             ];
+                        if($do_qty > 0){
+                            $total_disc = floatval(($usd_disc + (($price - $usd_disc) * ($percent_disc/100))) * $do_qty);
+                            $data[] = [
+                                'do_id' => $packing_order->id,
+                                'product_id' => $value["product_id"],
+                                'so_item_id' => $value["so_item_id"],
+                                'packaging' => $result->packaging,
+                                'qty' => $do_qty,
+                                'price' => $price,
+                                'usd_disc' => $usd_disc,
+                                'percent_disc' => $percent_disc,
+                                'usd_disc' => $usd_disc,
+                                'total_disc' => $total_disc,
+                                'total' => floatval($do_qty * $price) - $total_disc ,
+                                'note' => trim(htmlentities($value["note"])),
+                                'created_by' => Auth::id(),
+                            ];
 
-                //             $updateSO = SalesOrderItem::where('id',$value["so_item_id"])->update([
-                //                 'qty_worked' => $do_qty
-                //             ]);
-                //         }
+                            $updateSO = SalesOrderItem::where('id',$value["so_item_id"])->update([
+                                'qty_worked' => $do_qty
+                            ]);
+                        }
 
-                //         if(empty($do_qty) && $rej_qty > 0){
-                //             $updateSO = SalesOrderItem::where('id',$value["so_item_id"])->update([
-                //                 'qty_worked' => $do_qty
-                //             ]);
-                //         }
-                //     }
+                        if(empty($do_qty) && $rej_qty > 0){
+                            $updateSO = SalesOrderItem::where('id',$value["so_item_id"])->update([
+                                'qty_worked' => $do_qty
+                            ]);
+                        }
+                    }
 
-                //     if (count($data) == 0) {
-                //         DB::rollback();
-                //         $data_json["IsError"] = TRUE;
-                //         $data_json["Message"] = "Not item sales order are ready";
-                //         goto ResultData;
-                //     }
-                //     foreach ($data as $key => $value) {
-                //         $insert = PackingOrderItem::create($data[$key]);
-                //     }
-                //     app('App\Http\Controllers\Superuser\Penjualan\PackingOrderController')->reset_cost($packing_order->id);
+                    if (count($data) == 0) {
+                        DB::rollback();
+                        $data_json["IsError"] = TRUE;
+                        $data_json["Message"] = "Not item sales order are ready";
+                        goto ResultData;
+                    }
+                    foreach ($data as $key => $value) {
+                        $insert = PackingOrderItem::create($data[$key]);
+                    }
+                    app('App\Http\Controllers\Superuser\Penjualan\PackingOrderController')->reset_cost($packing_order->id);
 
-                // }
+                }
                     
                 DB::commit();
 

@@ -45,34 +45,37 @@
         <div class="col-12">
 
           <div class="form-group row">
-            <label class="col-6 col-md-3 col-form-label font-weight-bold">SO Referensi</label>
-            <div class="col-6 col-md-3 col-form-label">
+            <label class="col-6 col-md-2 col-form-label font-weight-bold">SO Referensi</label>
+            <div class="col-6 col-md-4 col-form-label">
               {{$result->do_detail[0]->so_item->so->code}}
             </div>
             
-            <label class="col-6 col-md-3 col-form-label font-weight-bold">Packing Order</label>
-            <div class="col-6 col-md-3 col-form-label">
+            <label class="col-6 col-md-2 col-form-label font-weight-bold">Packing Order</label>
+            <div class="col-6 col-md-4 col-form-label">
               {{$result->code}}
             </div>
           </div>
 
           <div class="form-group row">
-            <label class="col-6 col-md-3 col-form-label font-weight-bold">Gudang Asal</label>
-            <div class="col-6 col-md-9 col-form-label">
+            <label class="col-6 col-md-2 col-form-label font-weight-bold">Gudang Asal</label>
+            <div class="col-6 col-md-4 col-form-label">
               {{$result->warehouse->name}}
             </div>
-          </div>
 
-          <div class="form-group row">
-            <label class="col-6 col-md-3 col-form-label font-weight-bold">Member</label>
-            <div class="col-6 col-md-9 col-form-label">
+            <label class="col-6 col-md-2 col-form-label font-weight-bold">Customer</label>
+            <div class="col-6 col-md-4 col-form-label">
               {{$result->customer->name}}
             </div>
           </div>
 
           <div class="form-group row">
-            <label class="col-6 col-md-3 col-form-label font-weight-bold">Kategori Barang</label>
-            <div class="col-6 col-md-9 col-form-label">
+            <label class="col-6 col-md-2 col-form-label font-weight-bold">Note</label>
+            <div class="col-6 col-md-4 col-form-label">
+              {{$result->so ? $result->so->note : '-'}}
+            </div>
+
+            <label class="col-6 col-md-2 col-form-label font-weight-bold">Kategori Barang</label>
+            <div class="col-6 col-md-4 col-form-label">
               <strong>{{$result->do_detail[0]->so_item->product->category->name}}</strong>
             </div>
           </div>
@@ -90,7 +93,7 @@
                   <th>Jumlah Permintaan</th>
                   <th>Packaging</th>
                   <th>Harga Acuan</th>
-                  <th>Diskon USD</th>
+                  <th>Diskon USD <input type="text" class="base_disc form-control formatRupiah" {{ $result->status == 1 ? '' : 'readonly' }} onkeyup="discountOnChange()" /></th>
                   <th>Total</th>
                 </tr>
               </thead>
@@ -111,7 +114,7 @@
                     <td>$<span class="do-detail-price" data-id="{{$row->id}}">{{$row->price}}</span></td>
                     <td>
                       <input type="hidden" name="do_details[{{$index}}][id]" value="{{$row->id}}" />
-                      <input type="text" name="do_details[{{$index}}][usd_disc]" value="{{$row->usd_disc}}" class="form-control formatRupiah do-detail-disc-usd" data-id="{{$row->id}}" onchange="setDoDetailTotal({{$row->id}});updateIdrSubTotal()" />
+                      <input type="text" name="do_details[{{$index}}][usd_disc]" value="{{$row->usd_disc}}" {{ $result->status == 1 ? '' : 'readonly' }} class="form-control formatRupiah do-detail-disc-usd" data-id="{{$row->id}}" onchange="discountOnChange({{$row->id}})" />
                     </td>
                     <td>$<span class="do-detail-total" data-id="{{$row->id}}">{{$row->total}}</span></td>
                   </tr>
@@ -121,7 +124,9 @@
           </div>
 
           <div class="form-group row">
-            <div class="col-6"></div>
+            <div class="col-6">
+              <a href="{{route('superuser.penjualan.packing_order.index')}}" class="btn btn-warning btn-md text-white"><i class="fa fa-arrow-left"></i> Exit</a>
+            </div>
             <div class="col-12 text-right">
               <button type="button" class="btn btn-primary" onclick="changeStep(2)">Next</button>
             </div>
@@ -143,7 +148,12 @@
           <div class="form-group row">
             <label class="col-6 col-md-3 col-form-label font-weight-bold">Alamat Kirim</label>
             <div class="col-6 col-md-6 col-form-label">
-              {{$result->customer->address}}
+              <select class="form-control js-select2 select-other-address" {{ $result->status == 1 ? '' : 'disabled' }} name="customer_other_address_id">
+                <option value="">{{$result->customer->name}}</option>
+                @foreach($ekspedisi as $index => $row)
+                <option value="{{$row->id}}" @if($result->customer_other_address_id == $row->id) selected @endif>{{$row->name}}</option>
+                @endforeach
+              </select>
             </div>
           </div>
 
@@ -157,14 +167,14 @@
           <div class="form-group row">
             <label class="col-6 col-md-3 col-form-label font-weight-bold">Nilai Kurs</label>
             <div class="col-6 col-md-6 col-form-label">
-              <input type="text" name="idr_rate" class="form-control formatRupiah" value="{{number_format($result->idr_rate,0,',','.')}}" onchange="updateIdrSubTotal()">
+              <input type="text" name="idr_rate" {{ $result->status == 1 ? '' : 'readonly' }} class="form-control formatRupiah" value="{{number_format($result->idr_rate,0,',','.')}}" onchange="updateIdrSubTotal()">
             </div>
           </div>
 
           <div class="form-group row">
             <label class="col-6 col-md-3 col-form-label font-weight-bold">Kurir</label>
             <div class="col-6 col-md-6 col-form-label">
-              <select class="form-control js-select2" name="ekspedisi_id">
+              <select class="form-control js-select2" {{ $result->status == 1 ? '' : 'disabled' }} name="ekspedisi_id">
                 <option value="">==Select ekspedisi==</option>
                 @foreach($ekspedisi as $index => $row)
                 <option value="{{$row->id}}" @if($result->ekspedisi_id == $row->id) selected @endif>{{$row->name}}</option>
@@ -177,7 +187,7 @@
             <label class="col-6 col-md-3 col-form-label font-weight-bold">Perkiraan Ongkir</label>
             <div class="col-6 col-md-6 col-form-label">
               <input type="hidden" name="delivery_cost_note" class="form-control" value="{{$result->do_cost->delivery_cost_note}}">
-              <input type="text" name="delivery_cost_idr" class="form-control count formatRupiah" value="{{number_format($result->do_cost->delivery_cost_idr ?? 0,0,',','.')}}">
+              <input type="text" name="delivery_cost_idr" class="form-control count formatRupiah" {{ $result->status == 1 ? '' : 'readonly' }} value="{{number_format($result->do_cost->delivery_cost_idr ?? 0,0,',','.')}}">
             </div>
           </div>
 
@@ -219,14 +229,14 @@
           <div class="form-group row">
             <label class="col-6 col-md-3 col-form-label font-weight-bold">Diskon %</label>
             <div class="col-6 col-md-6 col-form-label">
-            <input type="text" name="discount_1" class="form-control count" value="{{$result->do_cost->discount_1 ?? 0}}">
+            <input type="text" name="discount_1" class="form-control count" {{ $result->status == 1 ? '' : 'readonly' }} value="{{$result->do_cost->discount_1 ?? 0}}">
             </div>
           </div>
 
           <div class="form-group row">
             <label class="col-6 col-md-3 col-form-label font-weight-bold">Diskon Kemasan %</label>
             <div class="col-6 col-md-6 col-form-label">
-              <input type="text" name="discount_2" class="form-control count" value="{{$result->do_cost->discount_2 ?? 0}}">
+              <input type="text" name="discount_2" class="form-control count" {{ $result->status == 1 ? '' : 'readonly' }} value="{{$result->do_cost->discount_2 ?? 0}}">
             </div>
           </div>
 
@@ -245,7 +255,7 @@
           </div>
 
           <div class="form-group row">
-            <label class="col-6 col-md-3 col-form-label"><input type="checkbox" name="checkbox_ppn" class="checkbox_ppn count" @if($result->do_cost->ppn ?? 0 > 0) checked @endif> PPN 10%</label>
+            <label class="col-6 col-md-3 col-form-label"><input type="checkbox" name="checkbox_ppn" {{ $result->status == 1 ? '' : 'disabled' }} class="checkbox_ppn count" @if($result->do_cost->ppn ?? 0 > 0) checked @endif> PPN 10%</label>
             <div class="col-6 col-md-6 col-form-label">
               <input type="text" name="ppn" class="form-control" readonly value="{{number_format($result->do_cost->ppn ?? 0,0,',','.')}}">
             </div>
@@ -254,14 +264,14 @@
           <div class="form-group row">
             <label class="col-6 col-md-3 col-form-label font-weight-bold">Voucher</label>
             <div class="col-6 col-md-6 col-form-label">
-              <input type="text" name="voucher_idr" class="form-control count formatRupiah" value="{{number_format($result->do_cost->voucher_idr ?? 0,0,',','.')}}">
+              <input type="text" name="voucher_idr" class="form-control count formatRupiah" {{ $result->status == 1 ? '' : 'readonly' }} value="{{number_format($result->do_cost->voucher_idr ?? 0,0,',','.')}}">
             </div>
           </div>
 
           <div class="form-group row">
             <label class="col-6 col-md-3 col-form-label font-weight-bold">Cashback</label>
             <div class="col-6 col-md-6 col-form-label">
-              <input type="text" name="cashback_idr" class="form-control count formatRupiah" value="{{number_format($result->do_cost->cashback_idr ?? 0,0,',','.')}}">
+              <input type="text" name="cashback_idr" class="form-control count formatRupiah" {{ $result->status == 1 ? '' : 'readonly' }} value="{{number_format($result->do_cost->cashback_idr ?? 0,0,',','.')}}">
             </div>
           </div>
 
@@ -513,19 +523,19 @@
     })
   })
 
-  function customer_other_address(id,selected=0){
+  function customer_other_address(customer_id,selected=0){
     ajaxcsrfscript();
     $.ajax({
       url : '{{route('superuser.penjualan.packing_order.ajax_customer_other_address')}}',
       method : "POST",
-      data : {id:id},
+      data : {customer_id:customer_id},
       dataType : "JSON",
       success : function(resp){
         if(resp.IsError == true){
           showToast('danger',resp.Message);
         }
         else{
-          let option = '<option value="">==Select customer other address==</option>';
+          let option = '<option value="">{{$result->customer->name}}</option>';
           $.each(resp.Data,function(i,e){
             if(selected != 0){
               option += '<option value="'+e.id+'" selected>'+e.label+'</option>';
@@ -655,6 +665,17 @@
     
     $('.js-select2').select2();
     total();
+  }
+
+  function discountOnChange() {
+    const discUsd = $("input.base_disc").val();
+    const allDisc = $("input.do-detail-disc-usd");
+    let totalDisc = 0;
+    for(let i = 0; i < allDisc.length; i++) {
+      $(allDisc[i]).val(discUsd);
+      setDoDetailTotal($(allDisc[i]).data('id'));
+    }
+    updateIdrSubTotal();
   }
 
   function setDoDetailTotal(id) {

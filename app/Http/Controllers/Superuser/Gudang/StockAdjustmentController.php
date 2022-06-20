@@ -5,9 +5,8 @@ namespace App\Http\Controllers\Superuser\Gudang;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use App\Entities\Master\Warehouse;
-use App\Entities\Master\Product;
+use App\Entities\Master\ProductMinStock;
 use App\Entities\Gudang\StockAdjustment;
-use App\Entities\Gudang\StockSalesOrder;
 use App\Entities\Setting\UserMenu;
 use App\Repositories\CodeRepo;
 use Auth;
@@ -99,13 +98,11 @@ class StockAdjustmentController extends Controller
         if(empty($warehouse)){
             return redirect()->route('superuser.gudang.stock_adjustment.index')->with('error','Gudang tidak ditemukan');
         }
-        $product = Product::where('default_warehouse_id',$warehouse->id)->get();
+        $product = ProductMinStock::where('warehouse_id',$warehouse->id)->get();
         $data = [
             'warehouse' => $warehouse,
             'product' => $product
         ];
-
-        // DD($data);
 
         return view($this->view."create",$data);
     }
@@ -133,13 +130,13 @@ class StockAdjustmentController extends Controller
                     $data_json["Message"] = "Product wajib dipilih";
                     goto ResultData;
                 }
-                $product_warehouse = StockSalesOrder::where('warehouse_id',$post["warehouse_id"])
+                $product_warehouse = ProductMinStock::where('warehouse_id',$post["warehouse_id"])
                                                     ->where('product_id',$post["product_id"])
                                                     ->first();
 
                 $plus_stock = (empty($post["plus"])) ? 0 : $post["plus"];
                 $min_stock = (empty($post["min"])) ? 0 : $post["min"];
-                $prev_stock = $product_warehouse->quantity ?? 0;
+                $prev_stock = $product_warehouse->quantity;
                 $update_stock = (int)$prev_stock + $plus_stock - $min_stock;
 
                 $data = [
@@ -154,12 +151,11 @@ class StockAdjustmentController extends Controller
                     'created_by' => Auth::id()
                 ];
 
-                $update_stock = StockSalesOrder::where('warehouse_id',$post["warehouse_id"])
+                $update_stock = ProductMinStock::where('warehouse_id',$post["warehouse_id"])
                                                 ->where('product_id',$post["product_id"])
                                                 ->update([
                                                     'quantity' => $update_stock
                                                 ]);
-
                 $insert = StockAdjustment::create($data);
                 DB::commit();
 
@@ -243,7 +239,7 @@ class StockAdjustmentController extends Controller
                     goto ResultData;
                 }
 
-                $get = StockSalesOrder::where('warehouse_id',$post["warehouse_id"])
+                $get = ProductMinStock::where('warehouse_id',$post["warehouse_id"])
                                         ->where('product_id',$post["product_id"])
                                         ->first();
 

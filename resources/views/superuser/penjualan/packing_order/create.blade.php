@@ -180,7 +180,6 @@
         $('textarea[name="delivery_address"]').val("");
       }
     })
-    
     function customer_address(id){
       ajaxcsrfscript();
       $.ajax({
@@ -202,13 +201,12 @@
         },
       })
     }
-
-    function customer_other_address(id){
+    function customer_other_address(customer_id){
       ajaxcsrfscript();
       $.ajax({
         url : '{{route('superuser.penjualan.packing_order.ajax_customer_other_address')}}',
         method : "POST",
-        data : {id:id},
+        data : {customer_id:customer_id},
         dataType : "JSON",
         success : function(resp){
           if(resp.IsError == true){
@@ -227,7 +225,6 @@
         },
       })
     }
-    
     function customer_other_detail(id){
       ajaxcsrfscript();
       $.ajax({

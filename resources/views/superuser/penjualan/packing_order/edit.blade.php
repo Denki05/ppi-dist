@@ -53,7 +53,7 @@
                     </div>
                   </div>
                   <div class="form-group row">
-                    <label class="col-md-2 col-form-label text-right">Member</label>
+                    <label class="col-md-2 col-form-label text-right">Customer</label>
                     <div class="col-md-8">
                       <select class="form-control js-select2" name="customer_id" disabled>
                         <option value="">==Select customer==</option>
@@ -74,9 +74,6 @@
                     <div class="col-md-8">
                       <select class="form-control js-select2 select-other-address" name="customer_other_address_id">
                         <option value="">==Select customer other address==</option>
-                        @foreach($store as $index => $row)
-                          <option value="{{$row->id}}">{{$row->name}}</option>
-                        @endforeach
                       </select>
                     </div>
                   </div>
@@ -363,7 +360,7 @@
 
     $('.js-select2').select2();
 
-    customer_other_address('{{$result->id}}','{{$result->customer_other_address_id}}');
+    customer_other_address('{{$result->customer_id}}','{{$result->customer_other_address_id}}');
    
     $(document).on('change','.count',function(){
         total();
@@ -480,12 +477,12 @@
     })
   })
 
-  function customer_other_address(id,selected=0){
+  function customer_other_address(customer_id,selected=0){
     ajaxcsrfscript();
     $.ajax({
       url : '{{route('superuser.penjualan.packing_order.ajax_customer_other_address')}}',
       method : "POST",
-      data : {id:id},
+      data : {customer_id:customer_id},
       dataType : "JSON",
       success : function(resp){
         if(resp.IsError == true){
@@ -509,7 +506,6 @@
       },
     })
   }
-
   function customer_other_detail(id,selected=0){
     ajaxcsrfscript();
     $.ajax({

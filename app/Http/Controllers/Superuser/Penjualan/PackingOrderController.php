@@ -142,12 +142,10 @@ class PackingOrderController extends Controller
         $warehouse = Warehouse::all();
         $customer = Customer::all();
         $ekspedisi = Ekspedisi::all();
-        $store = CustomerOtherAddress::all();
         $data = [
             'warehouse' => $warehouse,
             'customer' => $customer,
-            'ekspedisi' => $ekspedisi,
-            'store' => $store
+            'ekspedisi' => $ekspedisi
         ];
         return view($this->view."create",$data);
     }
@@ -163,12 +161,10 @@ class PackingOrderController extends Controller
         $warehouse = Warehouse::all();
         $customer = Customer::all();
         $ekspedisi = Ekspedisi::all();
-        $store = CustomerOtherAddress::all();
         $data = [
             'warehouse' => $warehouse,
             'customer' => $customer,
-            'ekspedisi' => $ekspedisi,
-            'store' => $store
+            'ekspedisi' => $ekspedisi
         ];
         return view($this->view."create_new",$data);
     }
@@ -210,8 +206,6 @@ class PackingOrderController extends Controller
         $data_json = [];
         $post = $request->all();
         if($request->method() == "POST"){
-            dd($request);
-
             DB::beginTransaction();
             try{
                 if(empty($post["warehouse_id"])){
@@ -258,7 +252,6 @@ class PackingOrderController extends Controller
                 goto ResultData;
                 
             }catch(\Throwable $e){
-                // dd($e);
                 DB::rollback();
                 $data_json["IsError"] = TRUE;
                 $data_json["Message"] = $e->getMessage();
@@ -422,21 +415,16 @@ class PackingOrderController extends Controller
         if(empty($result)){
             abort(404);
         }
-        if($result->status != 1 && $result->status != 2){
-            return redirect()->route('superuser.penjualan.packing_order.index')->with('error','Hanya packing order yang berstatus draft yang bisa di edit');
-        }
         $warehouse = Warehouse::all();
         $customer = Customer::all();
         $ekspedisi = Ekspedisi::all();
-        $store = CustomerOtherAddress::all();
         $data = [
             'warehouse' => $warehouse,
             'customer' => $customer,
             'ekspedisi' => $ekspedisi,
-            'store' => $store,
             'result' => $result
         ];
-        return view($this->view."edit",$data);
+        return view($this->view."edit_new",$data);
     }
 
     public function detail($id)
@@ -505,8 +493,6 @@ class PackingOrderController extends Controller
               
             }catch(\Throwable $e){
                 DB::rollback();
-
-                // dd($e);
                 $data_json["IsError"] = TRUE;
                 $data_json["Message"] = $e->getMessage();
                 goto ResultData;
@@ -1031,13 +1017,12 @@ class PackingOrderController extends Controller
         ResultData:
         return response()->json($data_json,200);
     }
-
     public function ajax_customer_other_address(Request $request){
         $data_json = [];
         $post = $request->all();
         if($request->method() == "POST"){
             try{
-                $get = CustomerOtherAddress::where('id',$post["id"])
+                $get = CustomerOtherAddress::where('customer_id',$post["customer_id"])
                                             ->get();
 
                 $data_json["IsError"] = FALSE;
@@ -1058,7 +1043,6 @@ class PackingOrderController extends Controller
         ResultData:
         return response()->json($data_json,200);
     }
-    
     public function ajax_customer_other_address_detail(Request $request){
         $data_json = [];
         $post = $request->all();
@@ -1085,33 +1069,6 @@ class PackingOrderController extends Controller
         ResultData:
         return response()->json($data_json,200);
     }
-
-    // public function ajax_warehouse_detail(Request $request){
-    //     $data_json = [];
-    //     $post = $request->all();
-    //     if($request->method() == "POST"){
-    //         try{
-    //             $result = Warehouse::where('id',$post["id"])->first();
-
-    //             $data_json["IsError"] = FALSE;
-    //             $data_json["Data"] = $result;
-    //             goto ResultData;
-
-    //         }catch(\Throwable $e){
-    //             $data_json["IsError"] = TRUE;
-    //             $data_json["Message"] = $e->getMessage();
-    //             goto ResultData;
-    //         }
-    //     }
-    //     else{
-    //         $data_json["IsError"] = TRUE;
-    //         $data_json["Message"] = "Invalid Method";
-    //         goto ResultData;
-    //     }
-    //     ResultData:
-    //     return response()->json($data_json,200);
-    // }
-    
     public function print_proforma($id){
         // Access
         if(Auth::user()->is_superuser == 0){

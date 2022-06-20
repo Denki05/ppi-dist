@@ -2,8 +2,8 @@
 
 @section('content')
 <nav class="breadcrumb bg-white push">
-  <span class="breadcrumb-item">Gudang</span>
-  <span class="breadcrumb-item active">Stock Sales(Awal)</span>
+  <span class="breadcrumb-item">Master</span>
+  <span class="breadcrumb-item active">Warehouse</span>
 </nav>
 @if($errors->any())
 <div class="alert alert-danger alert-dismissable" role="alert">
@@ -18,7 +18,7 @@
 @endif
 <div class="block">
   <div class="block-content">
-    <a href="{{ route('superuser.gudang.stock_sales_order.create') }}">
+    <a href="{{ route('superuser.master.warehouse.create') }}">
       <button type="button" class="btn btn-outline-primary min-width-125">Create</button>
     </a>
 
@@ -29,10 +29,13 @@
     <table id="datatable" class="table table-striped table-vcenter table-responsive">
       <thead>
         <tr>
-          <th>Warehouse</th>
-          <th>Product</th>
-          <th>Quantity</th>
+          <th>#</th>
           <th>Created at</th>
+          {{-- <th>Type</th> --}}
+          <th>Code</th>
+          <th>Name</th>
+          <th>Status</th>
+          <th>Action</th>
         </tr>
       </thead>
     </table>
@@ -56,7 +59,7 @@
 @push('scripts')
 <script type="text/javascript">
 $(document).ready(function() {
-  let datatableUrl = '{{ route('superuser.gudang.stock_sales_order.json') }}';
+  let datatableUrl = '{{ route('superuser.master.warehouse.json') }}';
 
   $('#datatable').DataTable({
     processing: true,
@@ -68,10 +71,19 @@ $(document).ready(function() {
       "data":{ _token: "{{csrf_token()}}"}
     },
     columns: [
-      {data: 'warehouse', name: 'master_warehouses.name'},
-      {data: 'productName', name: 'master_products.name'},
-      {data: 'qty', name: 'stock_sales_order.quantity'},
-      {data: 'date', name: 'stock_sales_order.created_at'},
+      {data: 'DT_RowIndex', name: 'id'},
+      {
+        data: 'created_at',
+        render: {
+          _: 'display',
+          sort: 'timestamp'
+        }
+      },
+      // {data: 'type'},
+      {data: 'code'},
+      {data: 'name'},
+      {data: 'status'},
+      {data: 'action', orderable: false, searcable: false}
     ],
     order: [
       [1, 'desc']

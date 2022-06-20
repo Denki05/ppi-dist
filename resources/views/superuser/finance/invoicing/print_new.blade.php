@@ -78,7 +78,7 @@
       box-sizing: border-box;
       text-align: justify;
       border:1px solid grey;
-      font-size: 90%;
+      font-size: 70%;
     }
     .p-note p {
       line-height: 1;
@@ -118,13 +118,17 @@
     .page-number:before {
       content: '<?= $code." | ".$result->do->customer->name ?? null; ?>' " | Page " counter(page);
     }
+
+    .page-break {
+      page-break-inside:avoid; page-break-after:always;
+    }
   </style>
 </head>
 <body>
     <div class="header {{ $watermark == 'Paid' ? 'paid' : '' }}">
       {{$watermark}}
     </div>
-
+    
     <div class="row-float" style="margin-bottom: 20px !important;">
       <div class="column-float note" style="width: 45%;">
           <div style="height: 100px;">
@@ -183,6 +187,11 @@
                 <td style="width: 2% !important;">:</td>
                 <td style="width: 63% !important;">{{$result->do->customer->phone ?? ''}}</td>
               </tr>
+              <tr>
+                <td style="width: 35% !important;">Jenis</td>
+                <td style="width: 2% !important;">:</td>
+                <td style="width: 63% !important;">{{$result->do->do_type_transaction()->scalar ?? ''}}</td>
+              </tr>
             </tbody>
           </table>
         </div>
@@ -212,6 +221,20 @@
                 <td style="width: 35% !important;">Alamat Kirim</td>
                 <td style="width: 2% !important;">:</td>
                 <td style="width: 63% !important;">{{$result->do->customer_other_address->address ?? ''}}</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="row-float">
+        <div class="column-float" style="width: 100%;">
+          <table class="table borderless info" style="width: 100%;">
+            <tbody>
+              <tr>
+                <td style="width: 17.5% !important;">Note</td>
+                <td style="width: 1% !important;">:</td>
+                <td style="width: 81.5% !important;">{{$result->do->so->note ?? ''}}</td>
               </tr>
             </tbody>
           </table>
@@ -321,9 +344,9 @@
                 <td style="width: 60%;text-align: right;">Discount (IDR)</td>
                 <td style="width: 40%;text-align: left;">: {{number_format($result->do->do_cost->discount_idr ?? 0,0,',','.')}}</td>
               </tr>
-              <tr>
               @endif
               @if($result->do->do_cost->total_discount_idr != null && $result->do->do_cost->total_discount_idr > 0)
+              <tr>
                 <td style="width: 60%;text-align: right;">Total Discount (IDR)</td>
                 <td style="width: 40%;text-align: left;">: {{number_format($result->do->do_cost->total_discount_idr ?? 0,0,',','.')}}</td>
               </tr>

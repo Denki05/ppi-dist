@@ -9,16 +9,16 @@ class Customer extends Model
 {
     use SoftDeletes;
     
-    protected $appends = ['img_store', 'img_ktp', 'img_npwp'];
+    protected $appends = ['img_store', 'img_ktp'];
     protected $fillable = [
-        'category_id', /* 'type_id', */ 'store_id', 'code', 'name',
-        'email', 'phone', 'ktp', 'npwp', 'address',
+        'category_id', /* 'type_id', */ 'code', 'name',
+        'email', 'phone', 'npwp', 'address',
         'owner_name', 'plafon_piutang', 'gps_latitude', 'gps_longitude',
         'provinsi', 'kota', 'kecamatan', 'kelurahan',
         'text_provinsi', 'text_kota', 'text_kecamatan', 'text_kelurahan',
-        'zipcode', 'image_store', 'image_ktp', 'image_npwp', 'notification_email', 'status'
+        'zipcode', 'image_store', 'image_ktp', 'notification_email', 'status'
     ];
-    protected $table = 'master_members';
+    protected $table = 'master_customers';
     public static $directory_image = 'superuser_assets/media/master/customer/';
 
     const STATUS = [
@@ -37,9 +37,14 @@ class Customer extends Model
         return $this->belongsToMany('App\Entities\Master\CustomerType', 'master_customer_type_pivot', 'customer_id', 'type_id')->withPivot('id');
     }
 
-    public function store()
+    public function other_addresses()
     {
-        return $this->BelongsTo('App\Entities\Master\CustomerOtherAddress');
+        return $this->hasMany('App\Entities\Master\CustomerOtherAddress');
+    }
+
+    public function contacts()
+    {
+        return $this->belongsToMany('App\Entities\Master\Contact', 'master_customer_contacts', 'customer_id', 'contact_id')->withPivot('id');
     }
 
     public function getImgStoreAttribute()
@@ -60,20 +65,7 @@ class Customer extends Model
         return asset(Self::$directory_image.$this->image_ktp);
     }
 
-    public function getImgNpwpAttribute()
-    {
-        if (!$this->image_npwp OR !file_exists(Self::$directory_image.$this->image_npwp)) {
-          return img_holder();
-        }
-
-        return asset(Self::$directory_image.$this->image_npwp);
-    }
-
     public function do(){
         return $this->hasMany('App\Entities\Penjualan\PackingOrder','customer_id');
     }
-
-    function contact(){
-		return $this->hasMany('App\Entities\Master\Contact','customer_id');
-	}
 }

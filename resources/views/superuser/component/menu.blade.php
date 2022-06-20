@@ -51,12 +51,7 @@
       </li>
       <li>
         <a href="{{ route('superuser.master.customer.index') }}" class="{{ is_active_route('superuser.master.customer.index') }}">
-          Member
-        </a>
-      </li>
-      <li>
-        <a href="{{ route('superuser.master.store.index') }}" class="{{ is_active_route('superuser.master.store.index') }}">
-          Store
+          Customer
         </a>
       </li>
       <li>
@@ -186,11 +181,6 @@
       <li>
         <a href="{{ route('superuser.gudang.stock_adjustment.index') }}" class="{{ is_active_route('superuser.gudang.stock_adjustment.index') }}">
           Stock Adjustment
-        </a>
-      </li>
-      <li>
-        <a href="{{ route('superuser.gudang.stock_sales_order.index') }}" class="{{ is_active_route('superuser.gudang.stock_sales_order.index') }}">
-          Stock Awal
         </a>
       </li>
     </ul>

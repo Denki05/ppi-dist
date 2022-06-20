@@ -71,12 +71,12 @@
           @endif
           @if($step == 1 || $step == 2)
           <div class="form-group row">
-            <label class="col-md-2 col-form-label text-right">Member</label>
+            <label class="col-md-2 col-form-label text-right">Customer <span class="text-danger">*</span></label>
             <div class="col-md-8">
               <select class="form-control js-select2 select-customer" name="customer_id" <?php echo $step == 2 ? 'disabled' : '' ?>>
                 <option value="">==Select customer==</option>
                 @foreach($customer as $index => $row)
-                  <option value="{{$row->id}}">{{$row->name}} - {{$row->store->name}}</option>
+                  <option value="{{$row->id}}">{{$row->name}}</option>
                 @endforeach
               </select>
             </div>
@@ -90,7 +90,7 @@
             </div>
           </div>
           @endif
-          @if($step == 2)
+          @if($step == 1)
           <div class="form-group row">
             <label class="col-md-2 col-form-label text-right">Transaction<span class="text-danger">*</span></label>
             <div class="col-md-8">
@@ -113,6 +113,14 @@
                 <option value="{{$row->id}}">{{$row->name}}</option>
                 @endforeach
               </select>
+            </div>
+          </div>
+          @endif
+          @if($step == 1 || $step == 2)
+          <div class="form-group row">
+            <label class="col-md-2 col-form-label text-right">Note</label>
+            <div class="col-md-8">
+              <textarea class="form-control" name="note" rows="3"></textarea>
             </div>
           </div>
           @endif

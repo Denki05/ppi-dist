@@ -32,7 +32,6 @@
           <th>#</th>
           <th>Created at</th>
           <th>Name</th>
-          <th>Member</th>
           <th>Phone</th>
           <th>Position</th>
           <th>Status</th>
@@ -95,7 +94,6 @@ $(document).ready(function() {
         }
       },
       {data: 'name'},
-      {data: 'customer_id'},
       {data: 'phone'},
       {data: 'position'},
       {data: 'status'},

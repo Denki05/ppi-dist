@@ -3,7 +3,7 @@
 @section('content')
 <nav class="breadcrumb bg-white push">
   <span class="breadcrumb-item">Master</span>
-  <span class="breadcrumb-item active">Member</span>
+  <span class="breadcrumb-item active">Customer</span>
 </nav>
 @if($errors->any())
 <div class="alert alert-danger alert-dismissable" role="alert">

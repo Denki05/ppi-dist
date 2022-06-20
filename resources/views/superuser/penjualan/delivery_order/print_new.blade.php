@@ -41,7 +41,10 @@
     }
 
     /*Table*/
-    table.table-data, .table-data td, .table-data th {
+    table.table-data {
+      border-bottom: 1px solid #333;
+    }
+    .table-data th {
       border: 1px solid #333;
     }
     table.table-data th{

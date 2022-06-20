@@ -79,12 +79,12 @@
                   @endif
                   @if($step == 1 || $step == 2)
                   <div class="form-group row">
-                    <label class="col-md-2 col-form-label text-right">Member / Store</label>
+                    <label class="col-md-2 col-form-label text-right">Customer</label>
                     <div class="col-md-8">
                       <select class="form-control js-select2 select-customer" name="customer_id" @if($step == 2) disabled @endif>
                         <option value="">==Select customer==</option>
                         @foreach($customer as $index => $row)
-                          <option value="{{$row->id}}" @if($result->customer_id == $row->id && $result->so_for == 1) selected @endif>{{$row->name}} / {{$row->store->name}}</option>
+                          <option value="{{$row->id}}" @if($result->customer_id == $row->id && $result->so_for == 1) selected @endif>{{$row->name}}</option>
                         @endforeach
                       </select>
                     </div>
@@ -214,6 +214,14 @@
                     <h5>#Data Pesanan</h5>
                     @if($step == 2)
                     <div class="form-group row">
+                      <label class="col-md-2 col-form-label text-right">Note</label>
+                      <div class="col-md-8">
+                        <textarea class="form-control" readonly name="note" rows="3">{{$result->note}}</textarea>
+                      </div>
+                    </div>
+                    @endif
+                    @if($step == 2)
+                    <div class="form-group row">
                       <label class="col-md-2 col-form-label text-right">Gudang Asal<span class="text-danger">*</span></label>
                       <div class="col-md-8">
                         <select class="form-control js-select2" name="origin_warehouse_id">
@@ -230,47 +238,6 @@
                       <label class="col-md-2 col-form-label text-right">IDR Rate<span class="text-danger">*</span></label>
                       <div class="col-md-8">
                         <input type="text" name="idr_rate" class="form-control" step="any">
-                      </div>
-                    </div>
-                    @endif
-                    @if($step == 2)
-                    <div class="form-group row">
-                      <label class="col-md-2 col-form-label text-right">Transaction<span class="text-danger">*</span></label>
-                      <div class="col-md-8">
-                        <select class="form-control js-select2" name="type_transaction" >
-                          <?php
-                            $selected1 = "";
-                            $selected2 = "";
-                            $selected3 = "";
-
-                            if($result->type_transaction == 1){
-                              $selected1 = "selected";
-                            }
-                            else if($result->type_transaction == 2){
-                              $selected2 = "selected";
-                            }
-                            else{
-                              $selected3 = "selected";
-                            }
-                          ?>
-                          <option value="">==Select type transaction==</option>
-                          <option value="1" <?= $selected1 ?>>Cash</option>
-                          <option value="2" <?= $selected2 ?>>Tempo</option>
-                          <option value="3" <?= $selected3 ?>>Marketplace</option>
-                        </select>
-                      </div>
-                    </div>
-                    @endif
-                    @if($step == 2)
-                    <div class="form-group row">
-                      <label class="col-md-2 col-form-label text-right">Ekspedisi</label>
-                      <div class="col-md-8">
-                        <select class="form-control js-select2" name="ekspedisi_id">
-                          <option value="">==Select ekspedisi==</option>
-                          @foreach($ekspedisi as $index => $row)
-                          <option value="{{$row->id}}" @if($result->ekspedisi_id == $row->id) selected @endif>{{$row->name}}</option>
-                          @endforeach
-                        </select>
                       </div>
                     </div>
                     @endif

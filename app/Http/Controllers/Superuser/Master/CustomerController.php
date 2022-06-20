@@ -18,6 +18,11 @@ use Illuminate\Http\Request;
 use App\Entities\Setting\UserMenu;
 use Validator;
 use Auth;
+Use App\Models\Province;
+use App\Models\Regency;
+use App\Models\District;
+use App\Models\Village;
+use App\Models\Zipcode;
 
 class CustomerController extends Controller
 {
@@ -64,9 +69,53 @@ class CustomerController extends Controller
 
         $data['customer_categories'] = MasterRepo::customer_categories();
         $data['customer_types'] = MasterRepo::customer_types();
-        $data['stores'] = MasterRepo::store();
+		$data['provinces'] = Province::all();
 
         return view('superuser.master.customer.create', $data);
+    }
+	
+	public function getkabupaten(request $request)
+    {
+        $prov_id = $request->prov_id;
+
+        $kabupatens = Regency::where('prov_id', $prov_id)->get();
+
+        foreach ($kabupatens as $kabupaten){
+            echo "<option value='$kabupaten->city_id'>$kabupaten->city_name</option>";
+        }
+    }
+
+    public function getkecamatan(request $request)
+    {
+        $city_id = $request->city_id;
+
+        $kecamatans = District::where('city_id', $city_id)->get();
+
+        foreach ($kecamatans as $kecamatan){
+            echo "<option value='$kecamatan->dis_id'>$kecamatan->dis_name</option>";
+        }
+    }
+
+    public function getkelurahan(request $request)
+    {
+        $dis_id = $request->dis_id;
+
+        $kelurahans = Village::where('dis_id', $dis_id)->get();
+
+        foreach ($kelurahans as $kelurahan){
+            echo "<option value='$kelurahan->subdis_id'>$kelurahan->subdis_name</option>";
+        }
+    }
+
+    public function getzipcode(request $request)
+    {
+        $subdis_id = $request->subdis_id;
+
+        $zipcodes = Zipcode::where('subdis_id', $subdis_id)->get();
+
+        foreach ($zipcodes as $zipcode){
+            echo "<option value='$zipcode->postal_code'>$zipcode->postal_code</option>";
+        }
     }
 
     public function store(Request $request)
@@ -76,14 +125,13 @@ class CustomerController extends Controller
                 // 'code' => 'required|string|unique:master_customers,code',
                 'name' => 'required|string',
                 'category' => 'required|integer',
-                'store' => 'required|integer',
                 'type' => 'required|array',
                 'type.*' => 'required|integer',
                 'email' => 'nullable|email',
                 'phone' => 'nullable|string',
-                'ktp' => 'nullable|string',
                 'npwp' => 'nullable|string',
                 'address' => 'required|string',
+                'owner_name' => 'nullable|string',
                 'website' => 'nullable|string',
                 'plafon_piutang' => 'nullable|numeric',
                 'gps_latitude' => 'nullable|string',
@@ -92,14 +140,13 @@ class CustomerController extends Controller
                 'kota' => 'nullable|string',
                 'kecamatan' => 'nullable|string',
                 'kelurahan' => 'nullable|string',
-                'text_provinsi' => 'nullable|required_with:provinsi|string',
-                'text_kota' => 'nullable|required_with:kota|string',
-                'text_kecamatan' => 'nullable|required_with:kecamatan|string',
-                'text_kelurahan' => 'nullable|required_with:kelurahan|string',
+                //'text_provinsi' => 'nullable|required_with:provinsi|string',
+                //'text_kota' => 'nullable|required_with:kota|string',
+                //'text_kecamatan' => 'nullable|required_with:kecamatan|string',
+                //'text_kelurahan' => 'nullable|required_with:kelurahan|string',
                 'zipcode' => 'nullable|string',
                 'image_store' => 'nullable|image|mimes:jpeg,png,jpg|max:2048',
                 'image_ktp' => 'nullable|image|mimes:jpeg,png,jpg|max:2048',
-                'image_npwp' => 'nullable|image|mimes:jpeg,png,jpg|max:2048',
                 'notification_email' => 'nullable'
             ]);
 
@@ -123,16 +170,14 @@ class CustomerController extends Controller
                 $customer->name = $request->name;
 
                 $customer->category_id = $request->category;
-                $customer->store_id = $request->store;
                 // $customer->type_id = $request->type;
 
                 $customer->email = $request->email;
                 $customer->phone = $request->phone;
-                $customer->ktp = $request->ktp;
                 $customer->npwp = $request->npwp;
                 $customer->address = $request->address;
 
-                
+                $customer->owner_name = $request->owner_name;
                 $customer->website = $request->website;
                 $customer->plafon_piutang = ($request->plafon_piutang) ? $request->plafon_piutang : 0;
 
@@ -156,10 +201,6 @@ class CustomerController extends Controller
 
                 if (!empty($request->file('image_ktp'))) {
                     $customer->image_ktp = UploadMedia::image($request->file('image_ktp'), Customer::$directory_image);
-                }
-
-                if (!empty($request->file('image_npwp'))) {
-                    $customer->image_npwp = UploadMedia::image($request->file('image_npwp'), Customer::$directory_image);
                 }
 
                 $customer->notification_email = ($request->notification_email) ? true : false;
@@ -215,7 +256,6 @@ class CustomerController extends Controller
         $data['customer'] = Customer::findOrFail($id);
         $data['customer_categories'] = MasterRepo::customer_categories();
         $data['customer_types'] = MasterRepo::customer_types();
-        $data['stores'] = MasterRepo::store();
 
         return view('superuser.master.customer.edit', $data);
     }
@@ -233,14 +273,13 @@ class CustomerController extends Controller
                 // 'code' => 'required|string|unique:master_customers,code,' . $customer->id,
                 'name' => 'required|string',
                 'category' => 'required|integer',
-                'store' => 'required|integer',
                 'type' => 'required|array',
                 'type.*' => 'required|integer',
                 'email' => 'nullable|email',
                 'phone' => 'nullable|string',
-                'ktp' => 'nullable|string',
                 'npwp' => 'nullable|string',
                 'address' => 'required|string',
+                'owner_name' => 'nullable|string',
                 'website' => 'nullable|string',
                 'plafon_piutang' => 'nullable|numeric',
                 'gps_latitude' => 'nullable|string',
@@ -256,7 +295,6 @@ class CustomerController extends Controller
                 'zipcode' => 'nullable|string',
                 'image_store' => 'nullable|image|mimes:jpeg,png,jpg|max:2048',
                 'image_ktp' => 'nullable|image|mimes:jpeg,png,jpg|max:2048',
-                'image_npwp' => 'nullable|image|mimes:jpeg,png,jpg|max:2048',
                 'notification_email' => 'nullable'
             ]);
 
@@ -278,16 +316,14 @@ class CustomerController extends Controller
                 $customer->name = $request->name;
 
                 $customer->category_id = $request->category;
-                $customer->store_id = $request->store;
                 // $customer->type_id = $request->type;
 
                 $customer->email = $request->email;
                 $customer->phone = $request->phone;
-                $customer->ktp = $request->ktp;
                 $customer->npwp = $request->npwp;
                 $customer->address = $request->address;
 
-               
+                $customer->owner_name = $request->owner_name;
                 $customer->website = $request->website;
                 $customer->plafon_piutang = ($request->plafon_piutang) ? $request->plafon_piutang : 0;
 
@@ -319,14 +355,6 @@ class CustomerController extends Controller
                     }
 
                     $customer->image_ktp = UploadMedia::image($request->file('image_ktp'), Customer::$directory_image);
-                }
-
-                if (!empty($request->file('image_npwp'))) {
-                    if (is_file_exists(Customer::$directory_image.$customer->image_npwp)) {
-                        remove_file(Customer::$directory_image.$customer->image_npwp);
-                    }
-
-                    $customer->image_npwp = UploadMedia::image($request->file('image_npwp'), Customer::$directory_image);
                 }
 
                 $customer->notification_email = ($request->notification_email) ? true : false;

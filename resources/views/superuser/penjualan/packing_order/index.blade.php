@@ -17,7 +17,7 @@
     </button>
 </div>
 @endif
-
+<!--
 <div class="block">
   <div class="block-content block-content-full">
       <div class="row">
@@ -27,7 +27,7 @@
       </div>
   </div>
 </div>
-
+-->
 <div class="block">
   <hr class="my-20">
   <div class="block-content block-content-full">
@@ -74,7 +74,11 @@
                 <tr>
                   <td>{{$index+1}}</td>
                   <td>
-                    {{$row->code}}
+                    @if($row->status != 1)
+                      <a href="{{route('superuser.penjualan.packing_order.edit',$row->id)}}">{{$row->code}}</a>
+                    @else
+                      {{$row->code}}
+                    @endif
                   </td>
                   <td>
                     {{$row->customer->name ?? ''}}
@@ -100,7 +104,7 @@
                     </div>
                     @elseif($row->status == 2)
                     <div class="d-flex mb-2">
-                      <a href="#" class="btn btn-success btn-sm btn-flat btn-ready" data-id="{{$row->id}}"><i class="fa fa-send"></i> Selesai Ditagih</a>
+                      <a href="#" class="btn btn-success btn-sm btn-flat btn-ready" data-id="{{$row->id}}"><i class="fa fa-send"></i> Naik Ke DO</a>
                       @if($row->invoicing != null)
                       <a href="{{route('superuser.finance.invoicing.print_proforma',$row->invoicing->id)}}" class="btn btn-info btn-sm btn-flat mx-1" data-id="{{$row->invoicing->id}}" target="_blank"><i class="fa fa-print"></i> Print Proforma</a>
                       <a href="{{route('superuser.finance.invoicing.print',$row->invoicing->id)}}" class="btn btn-primary btn-sm btn-flat mx-1" data-id="{{$row->invoicing->id}}" target="_blank"><i class="fa fa-print"></i> Print Invoice</a>

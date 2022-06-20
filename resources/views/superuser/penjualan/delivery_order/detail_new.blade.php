@@ -65,7 +65,7 @@
                   <th>Nama Barang</th>
                   <th>Jumlah Permintaan</th>
                   <th>Packaging</th>
-                  <th>Status Barang</th>
+                  <th>Status Barang <input type="checkbox" class="check-all-confirm-item" onclick="$('.confirm-item').prop('checked', $(this).prop('checked'))" /></th>
                 </tr>
               </thead>
               <tbody>
