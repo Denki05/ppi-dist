@@ -62,7 +62,7 @@
               {{$result->warehouse->name}}
             </div>
 
-            <label class="col-6 col-md-2 col-form-label font-weight-bold">Customer</label>
+            <label class="col-6 col-md-2 col-form-label font-weight-bold">Member</label>
             <div class="col-6 col-md-4 col-form-label">
               {{$result->customer->name}}
             </div>
@@ -538,10 +538,10 @@
           let option = '<option value="">{{$result->customer->name}}</option>';
           $.each(resp.Data,function(i,e){
             if(selected != 0){
-              option += '<option value="'+e.id+'" selected>'+e.label+'</option>';
+              option += '<option value="'+e.id+'" selected>'+e.name+'</option>';
             }
             else{
-              option += '<option value="'+e.id+'">'+e.label+'</option>';
+              option += '<option value="'+e.id+'">'+e.name+'</option>';
             }
           })
           $('.select-other-address').html(option);
