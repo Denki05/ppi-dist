@@ -11,14 +11,14 @@ class Customer extends Model
     
     protected $appends = ['img_store', 'img_ktp'];
     protected $fillable = [
-        'category_id', 'store_id', /* 'type_id', */ 'code', 'name',
+        'category_id', /* 'type_id', */ 'code', 'name',
         'email', 'phone', 'npwp', 'address',
-        'plafon_piutang', 'gps_latitude', 'gps_longitude',
+        'owner_name', 'plafon_piutang', 'gps_latitude', 'gps_longitude',
         'provinsi', 'kota', 'kecamatan', 'kelurahan',
         'text_provinsi', 'text_kota', 'text_kecamatan', 'text_kelurahan',
         'zipcode', 'image_store', 'image_ktp', 'notification_email', 'status'
     ];
-    protected $table = 'master_members';
+    protected $table = 'master_customers';
     public static $directory_image = 'superuser_assets/media/master/customer/';
 
     const STATUS = [
@@ -37,9 +37,9 @@ class Customer extends Model
         return $this->belongsToMany('App\Entities\Master\CustomerType', 'master_customer_type_pivot', 'customer_id', 'type_id')->withPivot('id');
     }
 
-    public function store()
+    public function other_addresses()
     {
-        return $this->BelongsTo('App\Entities\Master\CustomerOtherAddress');
+        return $this->hasMany('App\Entities\Master\CustomerOtherAddress');
     }
 
     public function contacts()

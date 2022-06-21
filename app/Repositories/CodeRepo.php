@@ -20,7 +20,6 @@ use App\Entities\Penjualan\Canvasing;
 use App\Entities\Finance\Invoicing;
 use App\Entities\Finance\Payable;
 use App\Entities\Gudang\StockAdjustment;
-use App\Entities\Master\CustomerOtherAddress;
 
 class CodeRepo
 {
@@ -130,10 +129,5 @@ class CodeRepo
     }
     public static function generatePayable(){
         return self::generate('PY', Payable::class);   
-    }
-
-    public static function generateStore()
-    {
-        return self::generate('STR', CustomerOtherAddress::class);
     }
 }

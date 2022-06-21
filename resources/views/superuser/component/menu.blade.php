@@ -30,11 +30,6 @@
         </a>
       </li>
       <li>
-        <a href="{{ route('superuser.master.customer_other_address.index') }}" class="{{ is_active_route('superuser.master.customer_other_address.index') }}">
-          Store
-        </a>
-      </li>
-      <li>
         <a href="{{ route('superuser.master.product.index') }}" class="{{ is_active_route('superuser.master.product.index') }}">
           Product
         </a>
@@ -56,7 +51,7 @@
       </li>
       <li>
         <a href="{{ route('superuser.master.customer.index') }}" class="{{ is_active_route('superuser.master.customer.index') }}">
-          Member
+          Customer
         </a>
       </li>
       <li>

@@ -3,13 +3,13 @@
 @section('content')
 <nav class="breadcrumb bg-white push">
   <span class="breadcrumb-item">Master</span>
-  <a class="breadcrumb-item" href="{{ route('superuser.master.customer.index') }}">Member</a>
+  <a class="breadcrumb-item" href="{{ route('superuser.master.customer.index') }}">Customer</a>
   <a class="breadcrumb-item" href="{{ route('superuser.master.customer.show', $customer->id) }}">{{ $customer->id }}</a>
   <span class="breadcrumb-item active">Edit</span>
 </nav>
 <div class="block">
   <div class="block-header block-header-default">
-    <h3 class="block-title">Edit Member</h3>
+    <h3 class="block-title">Edit Customer</h3>
   </div>
   <div class="block-content">
     <form class="ajax" data-action="{{ route('superuser.master.customer.update', $customer) }}" data-type="POST" enctype="multipart/form-data">
@@ -33,17 +33,6 @@
             <option></option>
             @foreach($customer_categories as $category)
             <option value="{{ $category->id }}" {{ ($category->id == $customer->category_id) ? 'selected' : '' }}>{{ $category->name }}</option>
-            @endforeach
-          </select>
-        </div>
-      </div>
-      <div class="form-group row">
-        <label class="col-md-3 col-form-label text-right" for="store">Store <span class="text-danger">*</span></label>
-        <div class="col-md-7">
-          <select class="js-select2 form-control" id="store" name="store" data-placeholder="Select Store">
-            <option></option>
-            @foreach($store as $store)
-            <option value="{{ $store->id }}" {{ ($store->id == $customer->store_id) ? 'selected' : '' }}>{{ $store->name }}</option>
             @endforeach
           </select>
         </div>
@@ -89,12 +78,12 @@
           <textarea class="form-control" id="address" name="address">{{ $customer->address }}</textarea>
         </div>
       </div>
-      <!-- <div class="form-group row">
+      <div class="form-group row">
         <label class="col-md-3 col-form-label text-right" for="owner_name">Owner Name</label>
         <div class="col-md-7">
           <input type="text" class="form-control" id="owner_name" name="owner_name" value="{{ $customer->owner_name }}">
         </div>
-      </div> -->
+      </div>
       <div class="form-group row">
         <label class="col-md-3 col-form-label text-right" for="website">Website</label>
         <div class="col-md-7">
@@ -120,11 +109,8 @@
       <div class="form-group row">
         <label class="col-md-3 col-form-label text-right">Provinsi</label>
         <div class="col-md-7">
-          <select class="js-select2 form-control" id="provinsi" name="provinsi" data-placeholder="Select Provinsi">
+          <select class="js-select2 form-control" id="provinsi" name="provinsi" data-placeholder="Select Provinsi" data-value="{{ $customer->provinsi }}">
             <option></option>
-            @foreach ($provinces as $provinsi)
-            <option value="{{ $provinsi->prov_id }}" {{ ($provinsi->prov_id == $customer->provinsi) ? 'selected' : '' }}>{{ $provinsi->prov_name }}</option>
-            @endforeach
           </select>
           <input type="hidden" name="text_provinsi">
         </div>
@@ -196,6 +182,7 @@
 
 @include('superuser.asset.plugin.fileinput')
 @include('superuser.asset.plugin.select2')
+@include('superuser.asset.plugin.select2-chain-indonesian-teritory')
 
 @push('scripts')
 <script src="{{ asset('utility/superuser/js/form.js') }}"></script>
@@ -244,108 +231,6 @@
     });
 
     $('.js-select2').select2()
-
-    $(function () {
-    $.ajaxSetup({
-      headers: { 'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')}
-    });
-
-    $(function(){
-
-        $('#provinsi').on('change', function(){
-          let prov_id = $('#provinsi').val();
-
-          let text_provinsi = (objHasProp($('#provinsi').select2('data')[0], 'text')) ? $('#provinsi').select2('data')[0].text : '';
-          $('input[name=text_provinsi]').val(text_provinsi);
-          $('input[name=text_kota]').val('');
-          $('input[name=text_kecamatan]').val('');
-          $('input[name=text_kelurahan]').val('');
-          
-
-          $.ajax({
-            type : 'POST',
-            url : '{{route('superuser.master.customer.getkabupaten')}}',
-            data : {prov_id:prov_id},
-            cache : false,
-
-            success: function(msg){
-              $('#kota').html(msg);
-            },
-            error : function(data){
-              console.log('error:',data)
-            },
-          })
-        })
-
-        $('#kota').on('change', function(){
-          let city_id = $('#kota').val();
-
-          let text_kota = (objHasProp($('#kota').select2('data')[0], 'text')) ? $('#kota').select2('data')[0].text : '';
-          $('input[name=text_kota]').val(text_kota);
-          $('input[name=text_kecamatan]').val('');
-          $('input[name=text_kelurahan]').val('');
-          
-
-          $.ajax({
-            type : 'POST',
-            url : '{{route('superuser.master.customer.getkecamatan')}}',
-            data : {city_id:city_id},
-            cache : false,
-
-            success: function(msg){
-              $('#kecamatan').html(msg);
-            },
-            error : function(data){
-              console.log('error:',data)
-            },
-          })
-        })
-
-        $('#kecamatan').on('change', function(){
-          let dis_id = $('#kecamatan').val();
-
-          let text_kecamatan = (objHasProp($('#kecamatan').select2('data')[0], 'text')) ? $('#kecamatan').select2('data')[0].text : '';
-          $('input[name=text_kecamatan]').val(text_kecamatan);
-          $('input[name=text_kelurahan]').val('');
-          
-
-          $.ajax({
-            type : 'POST',
-            url : '{{route('superuser.master.customer.getkelurahan')}}',
-            data : {dis_id:dis_id},
-            cache : false,
-
-            success: function(msg){
-              $('#kelurahan').html(msg);
-            },
-            error : function(data){
-              console.log('error:',data)
-            },
-          })
-        })
-
-        $('#kelurahan').on('change', function(){
-          let subdis_id = $('#kelurahan').val();
-
-          let text_kelurahan = (objHasProp($('#kelurahan').select2('data')[0], 'text')) ? $('#kelurahan').select2('data')[0].text : '';
-          $('input[name=text_kelurahan]').val(text_kelurahan);
-
-          $.ajax({
-            type : 'POST',
-            url : '{{route('superuser.master.customer.getzipcode')}}',
-            data : {subdis_id:subdis_id},
-            cache : false,
-
-            success: function(msg){
-              $('#zipcode').html(msg);
-            },
-            error : function(data){
-              console.log('error:',data)
-            },
-          })
-        })
-      })
-    })
 
     $('.js-select2#type').val({{ json_encode($customer->types->pluck('id')->toArray()) }}).change()
   })

@@ -57,10 +57,10 @@
               </div>
               <div class="col-lg-3">
                 <div class="form-group row">
-                  <label class="col-md-3 col-form-label text-right">Member</label>
+                  <label class="col-md-3 col-form-label text-right">Customer</label>
                   <div class="col-md-9">
                     <select class="form-control js-select2" name="customer_id">
-                      <option value="">==All Member==</option>
+                      <option value="">==All Customer==</option>
                       @foreach($customer as $index => $row)
                       <option value="{{$row->id}}">{{$row->name}}</option>
                       @endforeach
@@ -72,12 +72,10 @@
                 <div class="form-group row">
                   <label class="col-md-3 col-form-label text-right">Area</label>
                   <div class="col-md-9">
-                    <select class="form-control js-select2" name="customer_id">
-                      <option value="">==All Customer==</option>
-                      @foreach($provinsi as $index => $row)
-                      <option value="{{$row->id}}">{{$row->prov_name}}</option>
-                      @endforeach
+                    <select class="js-select2 form-control" id="provinsi" name="provinsi" data-placeholder="Select Provinsi">
+                      <option></option>
                     </select>
+                    <input type="hidden" name="text_provinsi">
                   </div>
                 </div>
               </div>
@@ -178,6 +176,7 @@
 
 @include('superuser.asset.plugin.select2')
 @include('superuser.asset.plugin.swal2')
+@include('superuser.asset.plugin.select2-chain-indonesian-teritory')
 
 @push('scripts')
 <script type="text/javascript">

@@ -2,20 +2,13 @@
 
 namespace App\Http\Controllers\Superuser\Master;
 
-use App\DataTables\Master\CustomerOtherAddressTable;
+use App\Entities\Master\Customer;
 use App\Entities\Master\CustomerOtherAddress;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use App\Entities\Setting\UserMenu;
-use App\Repositories\CodeRepo;
-use App\Repositories\MasterRepo;
 use Validator;
 use Auth;
-use App\Models\Province;
-use App\Models\Regency;
-use App\Models\District;
-use App\Models\Village;
-use App\Models\Zipcode;
 
 class CustomerOtherAddressController extends Controller
 {
@@ -35,24 +28,7 @@ class CustomerOtherAddressController extends Controller
             return $next($request);
         });
     }
-
-    public function json(Request $request, CustomerOtherAddressTable $datatable)
-    {
-        return $datatable->build();
-    }
-
-    public function index()
-    {
-        // Access
-        if(Auth::user()->is_superuser == 0){
-            if(empty($this->access)){
-                return redirect()->route('superuser.index')->with('error','Anda tidak punya akses untuk membuka menu terkait');
-            }
-        }
-        return view('superuser.master.customer_other_address.index');
-    }
-
-    public function create()
+    public function create($id)
     {
         // Access
         if(Auth::user()->is_superuser == 0){
@@ -61,62 +37,17 @@ class CustomerOtherAddressController extends Controller
             }
         }
 
-        $data['provinces'] = Province::all();
+        $data['customer'] = Customer::findOrFail($id);
 
         return view('superuser.master.customer_other_address.create', $data);
     }
 
-    public function getkabupaten(request $request)
-    {
-        $prov_id = $request->prov_id;
-
-        $kabupatens = Regency::where('prov_id', $prov_id)->get();
-
-        foreach ($kabupatens as $kabupaten){
-            echo "<option value='$kabupaten->city_id'>$kabupaten->city_name</option>";
-        }
-    }
-
-    public function getkecamatan(request $request)
-    {
-        $city_id = $request->city_id;
-
-        $kecamatans = District::where('city_id', $city_id)->get();
-
-        foreach ($kecamatans as $kecamatan){
-            echo "<option value='$kecamatan->dis_id'>$kecamatan->dis_name</option>";
-        }
-    }
-
-    public function getkelurahan(request $request)
-    {
-        $dis_id = $request->dis_id;
-
-        $kelurahans = Village::where('dis_id', $dis_id)->get();
-
-        foreach ($kelurahans as $kelurahan){
-            echo "<option value='$kelurahan->subdis_id'>$kelurahan->subdis_name</option>";
-        }
-    }
-
-    public function getzipcode(request $request)
-    {
-        $subdis_id = $request->subdis_id;
-
-        $zipcodes = Zipcode::where('subdis_id', $subdis_id)->get();
-
-        foreach ($zipcodes as $zipcode){
-            echo "<option value='$zipcode->postal_code'>$zipcode->postal_code</option>";
-        }
-    }
-
-    public function store(Request $request)
+    public function store(Request $request, $id)
     {
         if ($request->ajax()) {
             $validator = Validator::make($request->all(), [
-                'name' => 'required|string',
-                'code' => 'required|string',
-                'npwp' => 'nullable|string',
+                'label' => 'required|string',
+                'contact_person' => 'nullable|string',
                 'phone' => 'nullable|string',
                 'address' => 'required|string',
                 'gps_latitude' => 'nullable|string',
@@ -144,11 +75,18 @@ class CustomerOtherAddressController extends Controller
             }
 
             if ($validator->passes()) {
+                $customer = Customer::find($id);
+
+                if ($customer == null) {
+                    abort(404);
+                }
+
                 $other_address = new CustomerOtherAddress;
 
-                $other_address->name = $request->name;
-                $other_address->code = CodeRepo::generateStore();
-                $other_address->npwp = $request->npwp;
+                $other_address->customer_id = $customer->id;
+
+                $other_address->label = $request->label;
+                $other_address->contact_person = $request->contact_person;
                 $other_address->phone = $request->phone;
                 $other_address->address = $request->address;
 
@@ -175,7 +113,7 @@ class CustomerOtherAddressController extends Controller
                         'content' => 'Success',
                     ];
 
-                    $response['redirect_to'] = route('superuser.master.customer_other_address.index');
+                    $response['redirect_to'] = route('superuser.master.customer.show', $id);
 
                     return $this->response(200, $response);
                 }
@@ -183,20 +121,7 @@ class CustomerOtherAddressController extends Controller
         }
     }
 
-    public function show($id)
-    {
-        // Access
-        if(Auth::user()->is_superuser == 0){
-            if(empty($this->access) || empty($this->access->user) || $this->access->can_read == 0){
-                return redirect()->route('superuser.index')->with('error','Anda tidak punya akses untuk membuka menu terkait');
-            }
-        }
-        $data['store'] = CustomerOtherAddress::findOrFail($id);
-
-        return view('superuser.master.customer_other_address.show', $data);
-    }
-
-    public function edit($id)
+    public function edit($id, $address_id)
     {
         // Access
         if(Auth::user()->is_superuser == 0){
@@ -205,20 +130,18 @@ class CustomerOtherAddressController extends Controller
             }
         }
 
-        $data['store'] = CustomerOtherAddress::findOrFail($id);
-        $data['provinces'] = Province::all();
+        $data['customer'] = Customer::findOrFail($id);
+        $data['other_address'] = CustomerOtherAddress::findOrFail($address_id);
 
         return view('superuser.master.customer_other_address.edit', $data);
     }
     
-    public function update(Request $request, $id)
+    public function update(Request $request, $id, $address_id)
     {
         if ($request->ajax()) {
             $validator = Validator::make($request->all(), [
-                'name' => 'required|string',
-                'code' => 'required|string',
+                'label' => 'required|string',
                 'contact_person' => 'nullable|string',
-                'npwp' => 'nullable|string',
                 'phone' => 'nullable|string',
                 'address' => 'required|string',
                 'gps_latitude' => 'nullable|string',
@@ -246,16 +169,15 @@ class CustomerOtherAddressController extends Controller
             }
 
             if ($validator->passes()) {
-                $other_address = CustomerOtherAddress::find($id);
+                $customer = Customer::find($id);
+                $other_address = CustomerOtherAddress::find($address_id);
 
-                if ($other_address == null) {
+                if ($customer == null OR $other_address == null) {
                     abort(404);
                 }
 
-                $other_address->name = $request->name;
-                $other_address->code = $request->code;
+                $other_address->label = $request->label;
                 $other_address->contact_person = $request->contact_person;
-                $other_address->npwp = $request->npwp;
                 $other_address->phone = $request->phone;
                 $other_address->address = $request->address;
 
@@ -280,7 +202,7 @@ class CustomerOtherAddressController extends Controller
                         'content' => 'Success',
                     ];
 
-                    $response['redirect_to'] = route('superuser.master.customer_other_address.show', $id);
+                    $response['redirect_to'] = route('superuser.master.customer.show', $id);
 
                     return $this->response(200, $response);
                 }
@@ -288,7 +210,7 @@ class CustomerOtherAddressController extends Controller
         }
     }
 
-    public function destroy(Request $request, $id)
+    public function destroy(Request $request, $id, $address_id)
     {
         // Access
         if(Auth::user()->is_superuser == 0){
@@ -297,9 +219,10 @@ class CustomerOtherAddressController extends Controller
             }
         }
         if ($request->ajax()) {
-            $other_address = CustomerOtherAddress::find($id);
+            $customer = Customer::find($id);
+            $other_address = CustomerOtherAddress::find($address_id);
 
-            if ($other_address === null) {
+            if ($customer === null OR $other_address === null) {
                 abort(404);
             }
 

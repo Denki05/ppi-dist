@@ -18,7 +18,7 @@ use Illuminate\Http\Request;
 use App\Entities\Setting\UserMenu;
 use Validator;
 use Auth;
-use App\Models\Province;
+Use App\Models\Province;
 use App\Models\Regency;
 use App\Models\District;
 use App\Models\Village;
@@ -69,7 +69,6 @@ class CustomerController extends Controller
 
         $data['customer_categories'] = MasterRepo::customer_categories();
         $data['customer_types'] = MasterRepo::customer_types();
-        $data['store'] = MasterRepo::store();
 		$data['provinces'] = Province::all();
 
         return view('superuser.master.customer.create', $data);
@@ -132,7 +131,7 @@ class CustomerController extends Controller
                 'phone' => 'nullable|string',
                 'npwp' => 'nullable|string',
                 'address' => 'required|string',
-                // 'owner_name' => 'nullable|string',
+                'owner_name' => 'nullable|string',
                 'website' => 'nullable|string',
                 'plafon_piutang' => 'nullable|numeric',
                 'gps_latitude' => 'nullable|string',
@@ -141,10 +140,10 @@ class CustomerController extends Controller
                 'kota' => 'nullable|string',
                 'kecamatan' => 'nullable|string',
                 'kelurahan' => 'nullable|string',
-                'text_provinsi' => 'nullable|required_with:provinsi|string',
-                'text_kota' => 'nullable|required_with:kota|string',
-                'text_kecamatan' => 'nullable|required_with:kecamatan|string',
-                'text_kelurahan' => 'nullable|required_with:kelurahan|string',
+                //'text_provinsi' => 'nullable|required_with:provinsi|string',
+                //'text_kota' => 'nullable|required_with:kota|string',
+                //'text_kecamatan' => 'nullable|required_with:kecamatan|string',
+                //'text_kelurahan' => 'nullable|required_with:kelurahan|string',
                 'zipcode' => 'nullable|string',
                 'image_store' => 'nullable|image|mimes:jpeg,png,jpg|max:2048',
                 'image_ktp' => 'nullable|image|mimes:jpeg,png,jpg|max:2048',
@@ -171,7 +170,6 @@ class CustomerController extends Controller
                 $customer->name = $request->name;
 
                 $customer->category_id = $request->category;
-                $customer->store_id = $request->store;
                 // $customer->type_id = $request->type;
 
                 $customer->email = $request->email;
@@ -179,7 +177,7 @@ class CustomerController extends Controller
                 $customer->npwp = $request->npwp;
                 $customer->address = $request->address;
 
-                // $customer->owner_name = $request->owner_name;
+                $customer->owner_name = $request->owner_name;
                 $customer->website = $request->website;
                 $customer->plafon_piutang = ($request->plafon_piutang) ? $request->plafon_piutang : 0;
 
@@ -258,8 +256,6 @@ class CustomerController extends Controller
         $data['customer'] = Customer::findOrFail($id);
         $data['customer_categories'] = MasterRepo::customer_categories();
         $data['customer_types'] = MasterRepo::customer_types();
-        $data['store'] = MasterRepo::store();
-        $data['provinces'] = Province::all();
 
         return view('superuser.master.customer.edit', $data);
     }
@@ -277,7 +273,6 @@ class CustomerController extends Controller
                 // 'code' => 'required|string|unique:master_customers,code,' . $customer->id,
                 'name' => 'required|string',
                 'category' => 'required|integer',
-                'store' => 'required|integer',
                 'type' => 'required|array',
                 'type.*' => 'required|integer',
                 'email' => 'nullable|email',
@@ -321,7 +316,6 @@ class CustomerController extends Controller
                 $customer->name = $request->name;
 
                 $customer->category_id = $request->category;
-                $customer->store_id = $request->store;
                 // $customer->type_id = $request->type;
 
                 $customer->email = $request->email;
@@ -329,7 +323,7 @@ class CustomerController extends Controller
                 $customer->npwp = $request->npwp;
                 $customer->address = $request->address;
 
-                // $customer->owner_name = $request->owner_name;
+                $customer->owner_name = $request->owner_name;
                 $customer->website = $request->website;
                 $customer->plafon_piutang = ($request->plafon_piutang) ? $request->plafon_piutang : 0;
 

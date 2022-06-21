@@ -10,13 +10,13 @@ class CustomerOtherAddress extends Model
     use SoftDeletes;
 
     protected $fillable = [
-        'name', 'code', 'contact_person', 'npwp', 'phone', 'address',
+        'customer_id', 'contact_person', 'phone', 'address',
         'gps_latitude', 'gps_longitude',
         'provinsi', 'kota', 'kecamatan', 'kelurahan',
         'text_provinsi', 'text_kota', 'text_kecamatan', 'text_kelurahan',
         'zipcode', 'status'
     ];
-    protected $table = 'master_stores';
+    protected $table = 'master_customer_other_addresses';
 
     const STATUS = [
         'DELETED' => 0,
@@ -25,6 +25,6 @@ class CustomerOtherAddress extends Model
     
     public function customer()
     {
-        return $this->belongsToMany('App\Entities\Master\Customer', 'store_id');
+        return $this->BelongsTo('App\Entities\Master\Customer');
     }
 }

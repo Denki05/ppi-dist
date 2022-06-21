@@ -8,11 +8,6 @@ use App\Entities\Finance\Invoicing;
 use App\Entities\Master\Customer;
 use App\Entities\Setting\UserMenu;
 use Auth;
-use App\Models\Province;
-use App\Models\Regency;
-use App\Models\District;
-use App\Models\Village;
-use App\Models\Zipcode;
 
 
 class DashboardController extends Controller
@@ -76,13 +71,11 @@ class DashboardController extends Controller
     						->orderBy('id','DESC')
     						->get();
     	$customer = Customer::get();
-		$provinsi = Province::get();
 
     	$data =[
             'invoice' => $invoice,
             'customer' => $customer,
-            'is_see' => $is_see,
-			'provinsi' => $provinsi
+            'is_see' => $is_see
         ];
         return view($this->view,$data);
     }
