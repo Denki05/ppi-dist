@@ -176,7 +176,6 @@
 
 @include('superuser.asset.plugin.select2')
 @include('superuser.asset.plugin.swal2')
-@include('superuser.asset.plugin.select2-chain-indonesian-teritory')
 
 @push('scripts')
 <script type="text/javascript">

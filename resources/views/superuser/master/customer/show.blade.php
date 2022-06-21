@@ -126,16 +126,16 @@
         <div class="form-control-plaintext">{{ $customer->zipcode }}</div>
       </div>
     </div>
-    <div class="row">
+    <!-- <div class="row">
       <label class="col-md-3 col-form-label text-right">Store</label>
       <div class="col-md-7">
         <a href="{{ $customer->img_store }}" class="img-link img-link-zoom-in img-thumb img-lightbox">
           <img src="{{ $customer->img_store }}" class="img-fluid img-show-small">
         </a>
       </div>
-    </div>
+    </div> -->
     <div class="row">
-      <label class="col-md-3 col-form-label text-right">KTP</label>
+      <label class="col-md-3 col-form-label text-right">NPWP</label>
       <div class="col-md-7">
         <a href="{{ $customer->img_ktp }}" class="img-link img-link-zoom-in img-thumb img-lightbox">
           <img src="{{ $customer->img_ktp }}" class="img-fluid img-show-small">
@@ -174,7 +174,7 @@
   </div>
 </div>
 
-<div class="row">
+<!-- <div class="row">
   <div class="col-md-6">
     <div class="block">
       <div class="block-header block-header-default">
@@ -324,7 +324,7 @@
       </div>
     </div>
   </div>
-</div>
+</div> -->
 
 @endsection
 

@@ -576,6 +576,8 @@ class SalesOrderController extends Controller
                 $data_json["Message"] = "Sales Order Berhasil Diubah";
                 goto ResultData;
             } catch (\Exception $e) {
+
+                dd($e);
                 DB::rollback();
 
                 $data_json["IsError"] = TRUE;

@@ -10,7 +10,7 @@ class CustomerOtherAddress extends Model
     use SoftDeletes;
 
     protected $fillable = [
-        'customer_id', 'contact_person', 'phone', 'address',
+        'customer_id', 'name', 'contact_person', 'phone', 'address',
         'gps_latitude', 'gps_longitude',
         'provinsi', 'kota', 'kecamatan', 'kelurahan',
         'text_provinsi', 'text_kota', 'text_kecamatan', 'text_kelurahan',

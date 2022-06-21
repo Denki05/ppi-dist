@@ -3,12 +3,12 @@
 @section('content')
 <nav class="breadcrumb bg-white push">
   <span class="breadcrumb-item">Master</span>
-  <a class="breadcrumb-item" href="{{ route('superuser.master.customer.index') }}">Customer</a>
+  <a class="breadcrumb-item" href="{{ route('superuser.master.customer.index') }}">Store</a>
   <span class="breadcrumb-item active">Create</span>
 </nav>
 <div class="block">
   <div class="block-header block-header-default">
-    <h3 class="block-title">Create Customer</h3>
+    <h3 class="block-title">Create Store</h3>
   </div>
   <div class="block-content">
     <form class="ajax" data-action="{{ route('superuser.master.customer.store') }}" data-type="POST" enctype="multipart/form-data">
@@ -152,14 +152,14 @@
           <input type="hidden" name="text_zipcode">
         </div>
       </div>
-      <div class="form-group row">
+      <!-- <div class="form-group row">
         <label class="col-md-3 col-form-label text-right">Store</label>
         <div class="col-md-7">
           <input type="file" id="image_store" name="image_store" data-max-file-size="2000" accept="image/png, image/jpeg">
         </div>
-      </div>
+      </div> -->
       <div class="form-group row">
-        <label class="col-md-3 col-form-label text-right">KTP</label>
+        <label class="col-md-3 col-form-label text-right">NPWP</label>
         <div class="col-md-7">
           <input type="file" id="image_ktp" name="image_ktp" data-max-file-size="2000" accept="image/png, image/jpeg">
         </div>

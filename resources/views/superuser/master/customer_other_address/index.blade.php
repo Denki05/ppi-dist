@@ -3,7 +3,7 @@
 @section('content')
 <nav class="breadcrumb bg-white push">
   <span class="breadcrumb-item">Master</span>
-  <span class="breadcrumb-item active">Store</span>
+  <span class="breadcrumb-item active">Member</span>
 </nav>
 @if($errors->any())
 <div class="alert alert-danger alert-dismissable" role="alert">
@@ -18,7 +18,7 @@
 @endif
 <div class="block">
   <div class="block-content">
-    <a href="{{ route('superuser.master.customer.create') }}">
+    <a href="{{ route('superuser.master.customer_other_address.create') }}">
       <button type="button" class="btn btn-outline-primary min-width-125">Create</button>
     </a>
 
@@ -31,7 +31,6 @@
         <tr>
           <th>#</th>
           <th>Created at</th>
-          <th>Code</th>
           <th>Name</th>
           <th>Status</th>
           <th>Action</th>
@@ -58,7 +57,7 @@
 @push('scripts')
 <script type="text/javascript">
 $(document).ready(function() {
-  let datatableUrl = '{{ route('superuser.master.customer.json') }}';
+  let datatableUrl = '{{ route('superuser.master.customer_other_address.json') }}';
 
   $('#datatable').DataTable({
     processing: true,
@@ -78,7 +77,6 @@ $(document).ready(function() {
           sort: 'timestamp'
         }
       },
-      {data: 'code'},
       {data: 'name'},
       {data: 'status'},
       {data: 'action', orderable: false, searcable: false}
