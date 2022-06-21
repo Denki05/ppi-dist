@@ -11,7 +11,7 @@ class Customer extends Model
     
     protected $appends = ['img_store', 'img_ktp'];
     protected $fillable = [
-        'category_id', /* 'type_id', */ 'code', 'name',
+        'category_id', 'store_id', /* 'type_id', */ 'code', 'name',
         'email', 'phone', 'npwp', 'address',
         'plafon_piutang', 'gps_latitude', 'gps_longitude',
         'provinsi', 'kota', 'kecamatan', 'kelurahan',
@@ -37,9 +37,9 @@ class Customer extends Model
         return $this->belongsToMany('App\Entities\Master\CustomerType', 'master_customer_type_pivot', 'customer_id', 'type_id')->withPivot('id');
     }
 
-    public function other_addresses()
+    public function store()
     {
-        return $this->hasMany('App\Entities\Master\CustomerOtherAddress');
+        return $this->BelongsTo('App\Entities\Master\CustomerOtherAddress');
     }
 
     public function contacts()

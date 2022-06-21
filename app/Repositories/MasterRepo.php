@@ -16,6 +16,7 @@ use App\Entities\Master\SubBrandReference;
 use App\Entities\Master\Unit;
 use App\Entities\Master\Vendor;
 use App\Entities\Master\Warehouse;
+use App\Entities\Master\CustomerOtherAddress;
 
 class MasterRepo
 {
@@ -87,5 +88,10 @@ class MasterRepo
     public static function questions()
     {   
         return Question::orderBy('name')->get();
+    }
+
+    public static function store()
+    {
+        return CustomerOtherAddress::where('status', CustomerOtherAddress::STATUS['ACTIVE'])->orderBy('name')->get();
     }
 }

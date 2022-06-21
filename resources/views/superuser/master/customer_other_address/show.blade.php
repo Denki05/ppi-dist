@@ -12,15 +12,27 @@
   </div>
   <div class="block-content">
     <div class="row">
+      <label class="col-md-3 col-form-label text-right">Name</label>
+      <div class="col-md-7">
+        <div class="form-control-plaintext">{{ $store->name }}</div>
+      </div>
+    </div>
+    <div class="row">
       <label class="col-md-3 col-form-label text-right">Code</label>
       <div class="col-md-7">
         <div class="form-control-plaintext">{{ $store->code }}</div>
       </div>
     </div>
     <div class="row">
-      <label class="col-md-3 col-form-label text-right">Store Name</label>
+      <label class="col-md-3 col-form-label text-right">NPWP</label>
       <div class="col-md-7">
-        <div class="form-control-plaintext">{{ $store->name }}</div>
+        <div class="form-control-plaintext">{{ $store->npwp }}</div>
+      </div>
+    </div>
+    <div class="row">
+      <label class="col-md-3 col-form-label text-right">Phone</label>
+      <div class="col-md-7">
+        <div class="form-control-plaintext">{{ $store->phone }}</div>
       </div>
     </div>
     <div class="row">
@@ -30,9 +42,42 @@
       </div>
     </div>
     <div class="row">
-      <label class="col-md-3 col-form-label text-right">Phone</label>
+      <label class="col-md-3 col-form-label text-right">GPS Coordinate</label>
+      <div class="col-md-3">
+        <div class="form-control-plaintext">Latitude: {{ $store->gps_latitude ?? '-' }}</div>
+      </div>
+      <div class="col-md-3">
+        <div class="form-control-plaintext">Longitude:  {{ $store->gps_longitude ?? '-' }}</div>
+      </div>
+    </div>
+    <div class="row">
+      <label class="col-md-3 col-form-label text-right">Provinsi</label>
       <div class="col-md-7">
-        <div class="form-control-plaintext">{{ $store->phone }}</div>
+        <div class="form-control-plaintext">{{ $store->text_provinsi ?? '-' }}</div>
+      </div>
+    </div>
+    <div class="row">
+      <label class="col-md-3 col-form-label text-right">Kota</label>
+      <div class="col-md-7">
+        <div class="form-control-plaintext">{{ $store->text_kota ?? '-' }}</div>
+      </div>
+    </div>
+    <div class="row">
+      <label class="col-md-3 col-form-label text-right">Kecamatan</label>
+      <div class="col-md-7">
+        <div class="form-control-plaintext">{{ $store->text_kecamatan ?? '-' }}</div>
+      </div>
+    </div>
+    <div class="row">
+      <label class="col-md-3 col-form-label text-right">Kelurahan</label>
+      <div class="col-md-7">
+        <div class="form-control-plaintext">{{ $store->text_kelurahan ?? '-' }}</div>
+      </div>
+    </div>
+    <div class="row">
+      <label class="col-md-3 col-form-label text-right">Zipcode</label>
+      <div class="col-md-7">
+        <div class="form-control-plaintext">{{ $store->zipcode ?? '-' }}</div>
       </div>
     </div>
     <div class="row pt-30 mb-15">

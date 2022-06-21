@@ -56,7 +56,7 @@
       </li>
       <li>
         <a href="{{ route('superuser.master.customer.index') }}" class="{{ is_active_route('superuser.master.customer.index') }}">
-          Customer
+          Member
         </a>
       </li>
       <li>

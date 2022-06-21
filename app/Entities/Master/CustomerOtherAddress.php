@@ -25,6 +25,6 @@ class CustomerOtherAddress extends Model
     
     public function customer()
     {
-        return $this->BelongsTo('App\Entities\Master\Customer');
+        return $this->belongsToMany('App\Entities\Master\Customer', 'store_id');
     }
 }
