@@ -23,7 +23,7 @@
   <div class="block-content block-content-full">
     <div class="row">
       <div class="col-lg-2">
-        Customer Code
+        Store Code
       </div>
       <div class="col-lg-10">
         : {{$customer->code}}
@@ -31,7 +31,7 @@
     </div>
     <div class="row">
       <div class="col-lg-2">
-        Customer Name
+        Store Name
       </div>
       <div class="col-lg-10">
         : {{$customer->name}}

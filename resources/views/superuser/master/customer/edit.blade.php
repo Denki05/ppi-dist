@@ -109,8 +109,11 @@
       <div class="form-group row">
         <label class="col-md-3 col-form-label text-right">Provinsi</label>
         <div class="col-md-7">
-          <select class="js-select2 form-control" id="provinsi" name="provinsi" data-placeholder="Select Provinsi" data-value="{{ $customer->provinsi }}">
+          <select class="js-select2 form-control" id="provinsi" name="provinsi" data-placeholder="Select Provinsi">
             <option></option>
+            @foreach ($provinces as $provinsi)
+              <option value="{{ $provinsi->prov_id }}">{{ $provinsi->prov_name }}</option>
+            @endforeach
           </select>
           <input type="hidden" name="text_provinsi">
         </div>
@@ -230,6 +233,108 @@
     });
 
     $('.js-select2').select2()
+
+    $(function () {
+    $.ajaxSetup({
+      headers: { 'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')}
+    });
+
+    $(function(){
+
+        $('#provinsi').on('change', function(){
+          let prov_id = $('#provinsi').val();
+
+          let text_provinsi = (objHasProp($('#provinsi').select2('data')[0], 'text')) ? $('#provinsi').select2('data')[0].text : '';
+          $('input[name=text_provinsi]').val(text_provinsi);
+          $('input[name=text_kota]').val('');
+          $('input[name=text_kecamatan]').val('');
+          $('input[name=text_kelurahan]').val('');
+          
+
+          $.ajax({
+            type : 'POST',
+            url : '{{route('superuser.master.customer.getkabupaten')}}',
+            data : {prov_id:prov_id},
+            cache : false,
+
+            success: function(msg){
+              $('#kota').html(msg);
+            },
+            error : function(data){
+              console.log('error:',data)
+            },
+          })
+        })
+
+        $('#kota').on('change', function(){
+          let city_id = $('#kota').val();
+
+          let text_kota = (objHasProp($('#kota').select2('data')[0], 'text')) ? $('#kota').select2('data')[0].text : '';
+          $('input[name=text_kota]').val(text_kota);
+          $('input[name=text_kecamatan]').val('');
+          $('input[name=text_kelurahan]').val('');
+          
+
+          $.ajax({
+            type : 'POST',
+            url : '{{route('superuser.master.customer.getkecamatan')}}',
+            data : {city_id:city_id},
+            cache : false,
+
+            success: function(msg){
+              $('#kecamatan').html(msg);
+            },
+            error : function(data){
+              console.log('error:',data)
+            },
+          })
+        })
+
+        $('#kecamatan').on('change', function(){
+          let dis_id = $('#kecamatan').val();
+
+          let text_kecamatan = (objHasProp($('#kecamatan').select2('data')[0], 'text')) ? $('#kecamatan').select2('data')[0].text : '';
+          $('input[name=text_kecamatan]').val(text_kecamatan);
+          $('input[name=text_kelurahan]').val('');
+          
+
+          $.ajax({
+            type : 'POST',
+            url : '{{route('superuser.master.customer.getkelurahan')}}',
+            data : {dis_id:dis_id},
+            cache : false,
+
+            success: function(msg){
+              $('#kelurahan').html(msg);
+            },
+            error : function(data){
+              console.log('error:',data)
+            },
+          })
+        })
+
+        $('#kelurahan').on('change', function(){
+          let subdis_id = $('#kelurahan').val();
+
+          let text_kelurahan = (objHasProp($('#kelurahan').select2('data')[0], 'text')) ? $('#kelurahan').select2('data')[0].text : '';
+          $('input[name=text_kelurahan]').val(text_kelurahan);
+
+          $.ajax({
+            type : 'POST',
+            url : '{{route('superuser.master.customer.getzipcode')}}',
+            data : {subdis_id:subdis_id},
+            cache : false,
+
+            success: function(msg){
+              $('#zipcode').html(msg);
+            },
+            error : function(data){
+              console.log('error:',data)
+            },
+          })
+        })
+      })
+    })  
 
     $('.js-select2#type').val({{ json_encode($customer->types->pluck('id')->toArray()) }}).change()
   })

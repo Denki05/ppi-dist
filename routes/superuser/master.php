@@ -88,14 +88,6 @@ Route::group([
         Route::post('/getkelurahan', 'CustomerController@getkelurahan')->name('getkelurahan');
         Route::post('/getzipcode', 'CustomerController@getzipcode')->name('getzipcode');
 
-        // Route::group(['as' => 'other_address.'], function() {
-        //     Route::get('/{id}/other_address/create', 'CustomerOtherAddressController@create')->name('create');
-        //     Route::post('/{id}/other_address', 'CustomerOtherAddressController@store')->name('store');
-        //     Route::get('/{id}/other_address/{address_id}/edit', 'CustomerOtherAddressController@edit')->name('edit');
-        //     Route::put('/{id}/other_address/{address_id}', 'CustomerOtherAddressController@update')->name('update');
-        //     Route::delete('/{id}/other_address/{address_id}', 'CustomerOtherAddressController@destroy')->name('destroy');
-        // });
-
         Route::group(['as' => 'contact.'], function() {
             Route::get('/{id}/contact', 'CustomerContactController@manage')->name('manage');
             Route::post('/{id}/contact', 'CustomerContactController@add')->name('add');
@@ -173,9 +165,10 @@ Route::group([
     Route::resource('ekspedisi', 'EkspedisiController');
 
     Route::group(['as' => 'customer_other_address.', 'prefix' => '/customer_other_address'], function () {
-        // Route::get('/import_template', 'CustomerOtherAddressContoller@import_template')->name('import_template');
-        // Route::post('/import', 'CustomerOtherAddressContoller@import')->name('import');
-        // Route::get('/export', 'CustomerOtherAddressContoller@export')->name('export');
+        Route::post('/getkabupaten', 'CustomerOtherAddressController@getkabupaten')->name('getkabupaten');
+        Route::post('/getkecamatan', 'CustomerOtherAddressController@getkecamatan')->name('getkecamatan');
+        Route::post('/getkelurahan', 'CustomerOtherAddressController@getkelurahan')->name('getkelurahan');
+        Route::post('/getzipcode', 'CustomerOtherAddressController@getzipcode')->name('getzipcode');
     });
     Route::resource('customer_other_address', 'CustomerOtherAddressController');
 });

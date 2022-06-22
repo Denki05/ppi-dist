@@ -256,6 +256,7 @@ class CustomerController extends Controller
         $data['customer'] = Customer::findOrFail($id);
         $data['customer_categories'] = MasterRepo::customer_categories();
         $data['customer_types'] = MasterRepo::customer_types();
+        $data['provinces'] = Province::all();
 
         return view('superuser.master.customer.edit', $data);
     }

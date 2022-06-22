@@ -3,22 +3,31 @@
 @section('content')
 <nav class="breadcrumb bg-white push">
   <span class="breadcrumb-item">Master</span>
-  <a class="breadcrumb-item" href="{{ route('superuser.master.customer.index') }}">Customer</a>
-  <a class="breadcrumb-item" href="{{ route('superuser.master.customer.show', $customer->id) }}">{{ $customer->id }}</a>
-  <span class="breadcrumb-item">Other Address</span>
+  <a class="breadcrumb-item" href="{{ route('superuser.master.customer_other_address.index') }}">Member</a>
   <span class="breadcrumb-item active">Edit</span>
 </nav>
 <div class="block">
   <div class="block-header block-header-default">
-    <h3 class="block-title">Edit Other Address</h3>
+    <h3 class="block-title">Edit Member</h3>
   </div>
   <div class="block-content">
-    <form class="ajax" data-action="{{ route('superuser.master.customer.other_address.update', [$customer->id, $other_address->id]) }}" data-type="POST" enctype="multipart/form-data">
+    <form class="ajax" data-action="{{ route('superuser.master.customer_other_address.update', [$other_address->id]) }}" data-type="POST" enctype="multipart/form-data">
       <input type="hidden" name="_method" value="PUT">
       <div class="form-group row">
-        <label class="col-md-3 col-form-label text-right" for="label">Label <span class="text-danger">*</span></label>
+        <label class="col-md-3 col-form-label text-right" for="name">Name <span class="text-danger">*</span></label>
         <div class="col-md-7">
-          <input type="text" class="form-control" id="label" name="label" value="{{ $other_address->label }}">
+          <input type="text" class="form-control" id="name" name="name" value="{{ $other_address->name }}">
+        </div>
+      </div>
+      <div class="form-group row">
+        <label class="col-md-3 col-form-label text-right" for="customer">Store <span class="text-danger">*</span></label>
+        <div class="col-md-7">
+          <select class="js-select2 form-control" id="customer" name="customer" data-placeholder="Select Store">
+            <option></option>
+            @foreach($customers as $store)
+            <option value="{{ $store->id }}">{{ $store->name }}</option>
+            @endforeach
+          </select>
         </div>
       </div>
       <div class="form-group row">
@@ -52,8 +61,11 @@
       <div class="form-group row">
         <label class="col-md-3 col-form-label text-right">Provinsi</label>
         <div class="col-md-7">
-          <select class="js-select2 form-control" id="provinsi" name="provinsi" data-placeholder="Select Provinsi" data-value="{{ $other_address->provinsi }}">
+          <select class="js-select2 form-control" id="provinsi" name="provinsi" data-placeholder="Select Provinsi">
             <option></option>
+            @foreach ($provinces as $provinsi)
+              <option value="{{ $provinsi->prov_id }}">{{ $provinsi->prov_name }}</option>
+            @endforeach
           </select>
           <input type="hidden" name="text_provinsi">
         </div>
@@ -93,7 +105,7 @@
       </div>
       <div class="form-group row pt-30">
         <div class="col-md-6">
-          <a href="{{ route('superuser.master.customer.show', $customer->id) }}">
+        <a href="{{ route('superuser.master.customer_other_address.show', $other_address->id) }}">
             <button type="button" class="btn bg-gd-cherry border-0 text-white">
               <i class="fa fa-arrow-left mr-10"></i> Back
             </button>
@@ -113,13 +125,114 @@
 
 @include('superuser.asset.plugin.fileinput')
 @include('superuser.asset.plugin.select2')
-@include('superuser.asset.plugin.select2-chain-indonesian-teritory')
 
 @push('scripts')
 <script src="{{ asset('utility/superuser/js/form.js') }}"></script>
 <script>
   $(document).ready(function () {
     $('.js-select2').select2()
+
+    $(function () {
+    $.ajaxSetup({
+      headers: { 'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')}
+    });
+
+    $(function(){
+
+        $('#provinsi').on('change', function(){
+          let prov_id = $('#provinsi').val();
+
+          let text_provinsi = (objHasProp($('#provinsi').select2('data')[0], 'text')) ? $('#provinsi').select2('data')[0].text : '';
+          $('input[name=text_provinsi]').val(text_provinsi);
+          $('input[name=text_kota]').val('');
+          $('input[name=text_kecamatan]').val('');
+          $('input[name=text_kelurahan]').val('');
+          
+
+          $.ajax({
+            type : 'POST',
+            url : '{{route('superuser.master.customer_other_address.getkabupaten')}}',
+            data : {prov_id:prov_id},
+            cache : false,
+
+            success: function(msg){
+              $('#kota').html(msg);
+            },
+            error : function(data){
+              console.log('error:',data)
+            },
+          })
+        })
+
+        $('#kota').on('change', function(){
+          let city_id = $('#kota').val();
+
+          let text_kota = (objHasProp($('#kota').select2('data')[0], 'text')) ? $('#kota').select2('data')[0].text : '';
+          $('input[name=text_kota]').val(text_kota);
+          $('input[name=text_kecamatan]').val('');
+          $('input[name=text_kelurahan]').val('');
+          
+
+          $.ajax({
+            type : 'POST',
+            url : '{{route('superuser.master.customer_other_address.getkecamatan')}}',
+            data : {city_id:city_id},
+            cache : false,
+
+            success: function(msg){
+              $('#kecamatan').html(msg);
+            },
+            error : function(data){
+              console.log('error:',data)
+            },
+          })
+        })
+
+        $('#kecamatan').on('change', function(){
+          let dis_id = $('#kecamatan').val();
+
+          let text_kecamatan = (objHasProp($('#kecamatan').select2('data')[0], 'text')) ? $('#kecamatan').select2('data')[0].text : '';
+          $('input[name=text_kecamatan]').val(text_kecamatan);
+          $('input[name=text_kelurahan]').val('');
+          
+
+          $.ajax({
+            type : 'POST',
+            url : '{{route('superuser.master.customer_other_address.getkelurahan')}}',
+            data : {dis_id:dis_id},
+            cache : false,
+
+            success: function(msg){
+              $('#kelurahan').html(msg);
+            },
+            error : function(data){
+              console.log('error:',data)
+            },
+          })
+        })
+
+        $('#kelurahan').on('change', function(){
+          let subdis_id = $('#kelurahan').val();
+
+          let text_kelurahan = (objHasProp($('#kelurahan').select2('data')[0], 'text')) ? $('#kelurahan').select2('data')[0].text : '';
+          $('input[name=text_kelurahan]').val(text_kelurahan);
+
+          $.ajax({
+            type : 'POST',
+            url : '{{route('superuser.master.customer_other_address.getzipcode')}}',
+            data : {subdis_id:subdis_id},
+            cache : false,
+
+            success: function(msg){
+              $('#zipcode').html(msg);
+            },
+            error : function(data){
+              console.log('error:',data)
+            },
+          })
+        })
+      })
+    })
   })
 </script>
 @endpush

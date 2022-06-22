@@ -11,6 +11,11 @@ use App\Entities\Setting\UserMenu;
 use App\Repositories\MasterRepo;
 use Validator;
 use Auth;
+use App\Models\Province;
+use App\Models\Regency;
+use App\Models\District;
+use App\Models\Village;
+use App\Models\Zipcode;
 
 class CustomerOtherAddressController extends Controller
 {
@@ -58,8 +63,53 @@ class CustomerOtherAddressController extends Controller
 
         // $data['customer'] = Customer::findOrFail($id);
         $data['customers'] = MasterRepo::customers();
+        $data['provinces'] = Province::all();
 
         return view('superuser.master.customer_other_address.create', $data);
+    }
+
+    public function getkabupaten(request $request)
+    {
+        $prov_id = $request->prov_id;
+
+        $kabupatens = Regency::where('prov_id', $prov_id)->get();
+
+        foreach ($kabupatens as $kabupaten){
+            echo "<option value='$kabupaten->city_id'>$kabupaten->city_name</option>";
+        }
+    }
+
+    public function getkecamatan(request $request)
+    {
+        $city_id = $request->city_id;
+
+        $kecamatans = District::where('city_id', $city_id)->get();
+
+        foreach ($kecamatans as $kecamatan){
+            echo "<option value='$kecamatan->dis_id'>$kecamatan->dis_name</option>";
+        }
+    }
+
+    public function getkelurahan(request $request)
+    {
+        $dis_id = $request->dis_id;
+
+        $kelurahans = Village::where('dis_id', $dis_id)->get();
+
+        foreach ($kelurahans as $kelurahan){
+            echo "<option value='$kelurahan->subdis_id'>$kelurahan->subdis_name</option>";
+        }
+    }
+
+    public function getzipcode(request $request)
+    {
+        $subdis_id = $request->subdis_id;
+
+        $zipcodes = Zipcode::where('subdis_id', $subdis_id)->get();
+
+        foreach ($zipcodes as $zipcode){
+            echo "<option value='$zipcode->postal_code'>$zipcode->postal_code</option>";
+        }
     }
 
     public function store(Request $request)
@@ -142,6 +192,21 @@ class CustomerOtherAddressController extends Controller
         }
     }
 
+    public function show($id)
+    {
+        // Access
+        if(Auth::user()->is_superuser == 0){
+            if(empty($this->access) || empty($this->access->user) || $this->access->can_read == 0){
+                return redirect()->route('superuser.index')->with('error','Anda tidak punya akses untuk membuka menu terkait');
+            }
+        }
+
+        $data['other_address'] = CustomerOtherAddress::findOrFail($id);
+        $data['customers'] = MasterRepo::customers();
+
+        return view('superuser.master.customer_other_address.show', $data);
+    }
+
     public function edit($id)
     {
         // Access
@@ -151,9 +216,11 @@ class CustomerOtherAddressController extends Controller
             }
         }
 
-        // $data['customer'] = Customer::findOrFail($id);
+        $data['customers'] = MasterRepo::customers();
         $data['other_address'] = CustomerOtherAddress::findOrFail($id);
+        $data['provinces'] = Province::all();
 
+        // dd($data);
         return view('superuser.master.customer_other_address.edit', $data);
     }
     
@@ -225,7 +292,7 @@ class CustomerOtherAddressController extends Controller
                         'content' => 'Success',
                     ];
 
-                    $response['redirect_to'] = route('superuser.master.customer_other_address.show');
+                    $response['redirect_to'] = route('superuser.master.customer_other_address.show', $other_address->id);
 
                     return $this->response(200, $response);
                 }

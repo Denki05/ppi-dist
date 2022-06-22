@@ -54,7 +54,7 @@
               <tr>
                 <th>#</th>
                 <th>Payable Code</th>
-                <th>Customer</th>
+                <th>Store</th>
                 <th>Total</th>
                 <th>Created At</th>
                 <th>Action</th>

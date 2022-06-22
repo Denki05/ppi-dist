@@ -6,7 +6,7 @@
 </nav>
 
 <div class="row gutters-tiny">
-  {{-- <div class="col-4">
+  <div class="col-4">
     <a class="block" href="javascript:void(0)">
       <div class="block-content block-content-full">
         <div class="row">
@@ -29,7 +29,7 @@
         </div>
       </div>
     </a>
-  </div> --}}
+  </div>
 </div>
 
 @if(session('error') || session('success'))
@@ -69,13 +69,15 @@
                 </div>   
               </div>
               <div class="col-lg-3">
-                <div class="form-group row">
+              <div class="form-group row">
                   <label class="col-md-3 col-form-label text-right">Area</label>
                   <div class="col-md-9">
-                    <select class="js-select2 form-control" id="provinsi" name="provinsi" data-placeholder="Select Provinsi">
-                      <option></option>
+                    <select class="form-control js-select2" name="province">
+                      <option value="">==All Customer==</option>
+                      @foreach($customer as $index => $row)
+                      <option value="{{$row->id}}">{{$row->text_provinsi}}</option>
+                      @endforeach
                     </select>
-                    <input type="hidden" name="text_provinsi">
                   </div>
                 </div>
               </div>
@@ -126,7 +128,7 @@
                         <?= date('d-m-Y',strtotime($row->created_at)); ?>
                       </td>
                       <td>{{$row->code}}</td>
-                      <td>{{$row->do->customer->name ?? ''}} / {{$row->do->customer_other_address->name}}</td>
+                      <td>{{$row->do->customer->name ?? ''}} / {{$row->do->customer_other_address->name ?? ''}}</td>
                       <td>{{$row->do->customer->text_provinsi ?? ''}}</td>
                       <td>{{number_format($row->grand_total_idr,0,',','.')}}</td>
                       <td>{{number_format($row->payable_detail->sum('total'),0,',','.')}}</td>
