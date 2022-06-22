@@ -79,7 +79,7 @@
                   @endif
                   @if($step == 1 || $step == 2)
                   <div class="form-group row">
-                    <label class="col-md-2 col-form-label text-right">Member</label>
+                    <label class="col-md-2 col-form-label text-right">Store / Member</label>
                     <div class="col-md-8">
                       <select class="form-control js-select2 select-customer" name="customer_id" @if($step == 2) disabled @endif>
                         <option value="">==Select customer==</option>

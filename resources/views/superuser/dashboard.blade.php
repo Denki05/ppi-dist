@@ -103,7 +103,7 @@
                   <thead>
                     <th>Invoice Date</th>
                     <th>Invoice Number</th>
-                    <th>Customer</th>
+                    <th>Store / Member</th>
                     <th>Area</th>
                     <th>Revenue</th>
                     <th>Paid</th>
@@ -126,7 +126,7 @@
                         <?= date('d-m-Y',strtotime($row->created_at)); ?>
                       </td>
                       <td>{{$row->code}}</td>
-                      <td>{{$row->do->customer->name ?? ''}}</td>
+                      <td>{{$row->do->customer->name ?? ''}} / {{$row->do->customer_other_address->name}}</td>
                       <td>{{$row->do->customer->text_provinsi ?? ''}}</td>
                       <td>{{number_format($row->grand_total_idr,0,',','.')}}</td>
                       <td>{{number_format($row->payable_detail->sum('total'),0,',','.')}}</td>

@@ -69,7 +69,7 @@
                 @endif
 
                 @if($step == 1 || $step == 2)
-                <th>Customer</th>
+                <th>Store / Member</th>
                 @elseif($step == 9)
                 <th>Warehouse</th>
                 @endif

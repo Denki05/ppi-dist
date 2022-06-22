@@ -50,7 +50,7 @@
                 <th>#</th>
                 <th>DO Code</th>
                 <th>Referensi SO</th>
-                <th>Nama Customer</th>
+                <th>Store / Member</th>
                 <th>Status</th>
                 <th>Action</th>
               </tr>
@@ -64,7 +64,7 @@
                   </td>
                   <td>{{$row->do_detail[0]->so_item->so->code ?? ''}}</td>
                   <td>
-                    {{$row->customer->name ?? ''}}
+                    {{$row->customer->name ?? ''}} / {{$row->customer_other_address->name}}
                   </td>
                   <td>
                     <span

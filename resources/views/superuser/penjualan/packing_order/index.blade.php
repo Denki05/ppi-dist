@@ -62,7 +62,7 @@
               <tr>
                 <th>#</th>
                 <th>Code</th>
-                <th>Customer</th>
+                <th>Store / Member</th>
                 <th>Kategori / Tanggal</th>
                 <th>Referensi SO</th>
                 <th>Status</th>

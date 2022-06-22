@@ -62,7 +62,7 @@
               {{$result->warehouse->name}}
             </div>
 
-            <label class="col-6 col-md-2 col-form-label font-weight-bold">Member</label>
+            <label class="col-6 col-md-2 col-form-label font-weight-bold">Store / Member</label>
             <div class="col-6 col-md-4 col-form-label">
               {{$result->customer->name}}
             </div>
@@ -146,7 +146,7 @@
           </div>
 
           <div class="form-group row">
-            <label class="col-6 col-md-3 col-form-label font-weight-bold">Alamat Kirim</label>
+            <label class="col-6 col-md-3 col-form-label font-weight-bold">Delivery</label>
             <div class="col-6 col-md-6 col-form-label">
               <select class="form-control js-select2 select-other-address" {{ $result->status == 1 ? '' : 'disabled' }} name="customer_other_address_id">
                 <option value="">{{$result->customer->name}}</option>
@@ -154,6 +154,13 @@
                 <option value="{{$row->id}}" @if($result->customer_other_address_id == $row->id) selected @endif>{{$row->name}}</option>
                 @endforeach
               </select>
+            </div>
+          </div>
+
+          <div class="form-group row">
+            <label class="col-6 col-md-3 col-form-label font-weight-bold">Delivery Address</label>
+            <div class="col-md-8">
+              <textarea class="form-control" readonly name="delivery_address" rows="1">{{$result->customer_other_address->address ?? ''}}</textarea>
             </div>
           </div>
 

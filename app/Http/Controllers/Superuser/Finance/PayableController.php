@@ -11,6 +11,7 @@ use App\Entities\Finance\Payable;
 use App\Entities\Finance\PayableDetail;
 use App\Entities\Setting\UserMenu;
 use App\Repositories\CodeRepo;
+use App\Entities\Penjualan\PackingOrder;
 use DB;
 use Auth;
 use PDF;
