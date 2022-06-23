@@ -66,13 +66,13 @@
                         </div>
                       </div>
                     </div>
-                    {{-- <div class="block-content bg-body-light">
+                     <div class="block-content bg-body-light">
                       <div class="form-group text-center">
                         <a class="link-effect text-muted mr-10 mb-5 d-inline-block" href="op_auth_reminder3.html">
                           <i class="fa fa-warning mr-5"></i> Forgot Password
                         </a>
                       </div>
-                    </div> --}}
+                    </div> 
                   </div>
                 </form>
                 <div id="alert-block"></div>
