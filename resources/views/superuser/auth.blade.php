@@ -10,7 +10,7 @@
     @stack('plugin-styles')
   </head>
   <body>
-                <form class="ajax js-validation-signin" data-action="{{ route('auth.superuser.login') }}" data-type="POST">
+                <form class="ajax js-validation-signin" data-action="{{ route('auth.superuser.login') }}" data-type="POST" style="padding-top: 130px;">
                   <div class="wrapper">
                       <div class="logo">
                           <img src="https://www.premiumparfum.com/images/logo%20ppi%202016%20-%20variant-02-u26873_2x.png" alt="">
