@@ -81,7 +81,7 @@
                     @endif
                   </td>
                   <td>
-                    {{$row->customer->name ?? ''}}
+                    {{$row->customer->name ?? ''}} / {{$row->customer_other_address->name ?? ''}}
                   </td>
                   <td>
                     {{$row->do_detail[0]->so_item->product->category->name ?? ''}} / <?= date('d-m-Y h:i:s',strtotime($row->created_at)); ?>

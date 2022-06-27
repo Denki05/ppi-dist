@@ -1040,12 +1040,13 @@ class SalesOrderController extends Controller
         if($request->method() == "POST"){
             try{
                 $result = Customer::where('id',$post["id"])->first();
-
                 $data_json["IsError"] = FALSE;
                 $data_json["Data"] = $result;
                 goto ResultData;
 
             }catch(\Throwable $e){
+
+                // dd($e);
                 $data_json["IsError"] = TRUE;
                 $data_json["Message"] = $e->getMessage();
                 goto ResultData;

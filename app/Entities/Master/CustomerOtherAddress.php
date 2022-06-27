@@ -25,6 +25,10 @@ class CustomerOtherAddress extends Model
     
     public function customer()
     {
-        return $this->BelongsTo('App\Entities\Master\Customer');
+        return $this->belongsTo('App\Entities\Master\Customer');
+    }
+
+    public function po(){
+        return $this->hasMany('App\Entities\Penjualan\PackingOrder','customer_other_address_id');
     }
 }
