@@ -29,11 +29,10 @@
     <table id="datatable" class="table table-striped table-vcenter table-responsive">
       <thead>
         <tr>
-          <th></th>
           <th>#</th>
-          <th>Created at</th>
           <th>Code</th>
           <th>Name</th>
+          <th>Address</th>
           <th>Status</th>
           <th>Action</th>
         </tr>
@@ -58,23 +57,10 @@
 
 @push('scripts')
 <script type="text/javascript">
-  function format(d) {
-    return (
-        'Full name: ' +
-        d.first_name +
-        ' ' +
-        d.last_name +
-        '<br>' +
-        'Salary: ' +
-        d.salary +
-        '<br>' +
-        'The child row can contain any data you wish, including links, images, inner tables etc.'
-    );
-}
 $(document).ready(function() {
   let datatableUrl = '{{ route('superuser.master.customer.json') }}';
 
-  var dt = $('#datatable').DataTable({
+  $('#datatable').DataTable({
     processing: true,
     serverSide: true,
     ajax: {
@@ -84,22 +70,10 @@ $(document).ready(function() {
       "data":{ _token: "{{csrf_token()}}"}
     },
     columns: [
-      {
-                class: 'details-control',
-                orderable: false,
-                data: null,
-                defaultContent: '<i class="fas fa-plus"></i>',
-      },
       {data: 'DT_RowIndex', name: 'id'},
-      {
-        data: 'created_at',
-        render: {
-          _: 'display',
-          sort: 'timestamp'
-        }
-      },
       {data: 'code'},
       {data: 'name'},
+      {data: 'address'},
       {data: 'status'},
       {data: 'action', orderable: false, searcable: false}
     ],
@@ -112,36 +86,6 @@ $(document).ready(function() {
       [5, 15, 20]
     ],
   });
-
-  var detailRows = [];
-
-  $('#datatable tbody').on('click', 'tr td.details-control', function () {
-        var tr = $(this).closest('tr');
-        var row = dt.row(tr);
-        var idx = detailRows.indexOf(tr.attr('id'));
- 
-        if (row.child.isShown()) {
-            tr.removeClass('details');
-            row.child.hide();
- 
-            // Remove from the 'open' array
-            detailRows.splice(idx, 1);
-        } else {
-            tr.addClass('details');
-            row.child(format(row.data())).show();
- 
-            // Add to the 'open' array
-            if (idx === -1) {
-                detailRows.push(tr.attr('id'));
-            }
-        }
-    });
-
-    dt.on('draw', function () {
-        detailRows.forEach(function(id, i) {
-            $('#' + id + ' td.details-control').trigger('click');
-        });
-    });
 });
 </script>
 @endpush
