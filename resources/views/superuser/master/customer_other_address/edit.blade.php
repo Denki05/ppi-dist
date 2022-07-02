@@ -37,6 +37,18 @@
         </div>
       </div>
       <div class="form-group row">
+        <label class="col-md-3 col-form-label text-right" for="npwp">NPWP</label>
+        <div class="col-md-7">
+          <input type="text" class="form-control" id="npwp" name="npwp" value="{{ $other_address->npwp ?? '-' }}">
+        </div>
+      </div>
+      <div class="form-group row">
+        <label class="col-md-3 col-form-label text-right" for="ktp">KTP</label>
+        <div class="col-md-7">
+          <input type="text" class="form-control" id="ktp" name="ktp" value="{{ $other_address->ktp ?? '-' }}">
+        </div>
+      </div>
+      <div class="form-group row">
         <label class="col-md-3 col-form-label text-right" for="phone">Phone</label>
         <div class="col-md-7">
           <input type="text" class="form-control" id="phone" name="phone" value="{{ $other_address->phone }}">
@@ -103,6 +115,18 @@
           <input type="text" class="form-control" id="zipcode" name="zipcode" value="{{ $other_address->zipcode }}">
         </div>
       </div>
+      <div class="form-group row">
+        <label class="col-md-3 col-form-label text-right">Image NPWP</label>
+        <div class="col-md-7">
+          <input type="file" id="image_npwp" name="image_npwp" data-max-file-size="2000" accept="image/png, image/jpeg" data-src="{{ $other_address->img_npwp }}">
+        </div>
+      </div>
+      <div class="form-group row">
+        <label class="col-md-3 col-form-label text-right">Image KTP</label>
+        <div class="col-md-7">
+          <input type="file" id="image_ktp" name="image_ktp" data-max-file-size="2000" accept="image/png, image/jpeg" data-src="{{ $other_address->img_ktp }}">
+        </div>
+      </div>
       <div class="form-group row pt-30">
         <div class="col-md-6">
         <a href="{{ route('superuser.master.customer_other_address.show', $other_address->id) }}">
@@ -130,6 +154,48 @@
 <script src="{{ asset('utility/superuser/js/form.js') }}"></script>
 <script>
   $(document).ready(function () {
+    $('#image_npwp').fileinput({
+      theme: 'explorer-fa',
+      browseOnZoneClick: true,
+      showCancel: false,
+      showClose: false,
+      showUpload: false,
+      browseLabel: '',
+      removeLabel: '',
+      initialPreview: $('#image_npwp').data('src'),
+      initialPreviewAsData: true,
+      fileActionSettings: {
+        showDrag: false,
+        showRemove: false
+      },
+      initialPreviewConfig: [
+      {
+          caption: '{{ $other_address->image_npwp }}'
+      }
+    ]
+    });
+
+    $('#image_ktp').fileinput({
+      theme: 'explorer-fa',
+      browseOnZoneClick: true,
+      showCancel: false,
+      showClose: false,
+      showUpload: false,
+      browseLabel: '',
+      removeLabel: '',
+      initialPreview: $('#image_ktp').data('src'),
+      initialPreviewAsData: true,
+      fileActionSettings: {
+        showDrag: false,
+        showRemove: false
+      },
+      initialPreviewConfig: [
+      {
+          caption: '{{ $other_address->image_ktp }}'
+      }
+    ]
+    });
+
     $('.js-select2').select2()
 
     $(function () {

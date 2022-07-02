@@ -32,6 +32,18 @@
       </div>
     </div>
     <div class="row">
+      <label class="col-md-3 col-form-label text-right">NPWP</label>
+      <div class="col-md-7">
+        <div class="form-control-plaintext">{{ $other_address->npwp }}</div>
+      </div>
+    </div>
+    <div class="row">
+      <label class="col-md-3 col-form-label text-right">KTP</label>
+      <div class="col-md-7">
+        <div class="form-control-plaintext">{{ $other_address->ktp }}</div>
+      </div>
+    </div>
+    <div class="row">
       <label class="col-md-3 col-form-label text-right">Phone</label>
       <div class="col-md-7">
         <div class="form-control-plaintext">{{ $other_address->phone }}</div>
@@ -81,6 +93,22 @@
       <label class="col-md-3 col-form-label text-right">Zipcode</label>
       <div class="col-md-7">
         <div class="form-control-plaintext">{{ $other_address->zipcode }}</div>
+      </div>
+    </div>
+    <div class="row">
+      <label class="col-md-3 col-form-label text-right">Image NPWP</label>
+      <div class="col-md-7">
+        <a href="{{ $other_address->img_npwp }}" class="img-link img-link-zoom-in img-thumb img-lightbox">
+          <img src="{{ $other_address->img_npwp }}" class="img-fluid img-show-small">
+        </a>
+      </div>
+    </div>
+    <div class="row">
+      <label class="col-md-3 col-form-label text-right">Image KTP</label>
+      <div class="col-md-7">
+        <a href="{{ $other_address->img_ktp }}" class="img-link img-link-zoom-in img-thumb img-lightbox">
+          <img src="{{ $other_address->img_ktp }}" class="img-fluid img-show-small">
+        </a>
       </div>
     </div>
     <div class="row">

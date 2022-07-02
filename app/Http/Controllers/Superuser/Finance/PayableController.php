@@ -170,7 +170,6 @@ class PayableController extends Controller
                 $update = Payable::where('id',$insert->id)->update([
                     'total' => $total_payable
                 ]);
-
                 DB::commit();
 
                 $data_json["IsError"] = FALSE;

@@ -71,6 +71,12 @@
         </div>
       </div>
       <div class="form-group row">
+        <label class="col-md-3 col-form-label text-right" for="ktp">KTP</label>
+        <div class="col-md-7">
+          <input type="text" class="form-control" id="ktp" name="ktp">
+        </div>
+      </div>
+      <div class="form-group row">
         <label class="col-md-3 col-form-label text-right" for="address">Address <span class="text-danger">*</span></label>
         <div class="col-md-7">
           <textarea class="form-control" id="address" name="address"></textarea>
@@ -152,14 +158,14 @@
           <input type="hidden" name="text_zipcode">
         </div>
       </div>
-      <!-- <div class="form-group row">
-        <label class="col-md-3 col-form-label text-right">Store</label>
-        <div class="col-md-7">
-          <input type="file" id="image_store" name="image_store" data-max-file-size="2000" accept="image/png, image/jpeg">
-        </div>
-      </div> -->
       <div class="form-group row">
-        <label class="col-md-3 col-form-label text-right">NPWP</label>
+        <label class="col-md-3 col-form-label text-right">Image NPWP</label>
+        <div class="col-md-7">
+          <input type="file" id="image_ktp" name="image_ktp" data-max-file-size="2000" accept="image/png, image/jpeg">
+        </div>
+      </div>
+      <div class="form-group row">
+        <label class="col-md-3 col-form-label text-right">Image KTP</label>
         <div class="col-md-7">
           <input type="file" id="image_ktp" name="image_ktp" data-max-file-size="2000" accept="image/png, image/jpeg">
         </div>
@@ -192,7 +198,7 @@
 <script src="{{ asset('utility/superuser/js/form.js') }}"></script>
 <script>
   $(document).ready(function () {
-    $('#image_store').fileinput({
+    $('#image_npwp').fileinput({
       theme: 'explorer-fa',
       browseOnZoneClick: true,
       showCancel: false,

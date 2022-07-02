@@ -164,6 +164,13 @@
             </div>
           </div>
 
+          <!-- <div class="form-group row">
+            <label class="col-6 col-md-3 col-form-label font-weight-bold">Detail NPWP</label>
+            <div class="col-6 col-md-6 col-form-label">
+            <textarea class="form-control" readonly rows="1">{{$result->customer->npwp ?? ''}}</textarea>
+            </div>
+          </div> -->
+
           <div class="form-group row">
             <label class="col-6 col-md-3 col-form-label font-weight-bold">Cara Bayar</label>
             <div class="col-6 col-md-6 col-form-label">
@@ -197,6 +204,15 @@
               <input type="text" name="delivery_cost_idr" class="form-control count formatRupiah" {{ $result->status == 1 ? '' : 'readonly' }} value="{{number_format($result->do_cost->delivery_cost_idr ?? 0,0,',','.')}}">
             </div>
           </div>
+
+          <!-- <div class="form-group row">
+            <label class="col-6 col-md-3 col-form-label font-weight-bold">Validasi KTP</label>
+            <div class="col-6 col-md-6 col-form-label">
+              <input type="hidden" name="delivery_cost_note" class="form-control" value="{{$result->do_cost->delivery_cost_note}}">
+              <input type="text" name="delivery_cost_idr" class="form-control count formatRupiah" {{ $result->status == 1 ? '' : 'readonly' }} value="{{number_format($result->do_cost->delivery_cost_idr ?? 0,0,',','.')}}">
+              <button type="button" class="btn btn-outline-info ml-10" data-toggle="modal" data-target="#modal-manage">Manage</button>
+            </div>
+          </div> -->
 
           <div class="form-group row">
             <div class="col-6">
@@ -325,6 +341,8 @@
 
 @include('superuser.asset.plugin.swal2')
 @include('superuser.asset.plugin.select2')
+
+@include('superuser.component.modal-manage-validasi')
 
 @push('scripts')
 <script>

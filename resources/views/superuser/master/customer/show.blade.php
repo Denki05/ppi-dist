@@ -64,6 +64,12 @@
       </div>
     </div>
     <div class="row">
+      <label class="col-md-3 col-form-label text-right">KTP</label>
+      <div class="col-md-7">
+        <div class="form-control-plaintext">{{ $customer->ktp }}</div>
+      </div>
+    </div>
+    <div class="row">
       <label class="col-md-3 col-form-label text-right">Address</label>
       <div class="col-md-7">
         <div class="form-control-plaintext">{{ $customer->address }}</div>
@@ -78,7 +84,7 @@
     <div class="row">
       <label class="col-md-3 col-form-label text-right">Website</label>
       <div class="col-md-7">
-        <div class="form-control-plaintext">{{ $customer->website }}</div>
+        <div class="form-control-plaintext">{{ $customer->website ?? '-' }}</div>
       </div>
     </div>
     <div class="row">
@@ -126,16 +132,16 @@
         <div class="form-control-plaintext">{{ $customer->zipcode }}</div>
       </div>
     </div>
-    <!-- <div class="row">
-      <label class="col-md-3 col-form-label text-right">Store</label>
+    <div class="row">
+      <label class="col-md-3 col-form-label text-right">Image NPWP</label>
       <div class="col-md-7">
-        <a href="{{ $customer->img_store }}" class="img-link img-link-zoom-in img-thumb img-lightbox">
-          <img src="{{ $customer->img_store }}" class="img-fluid img-show-small">
+        <a href="{{ $customer->img_npwp }}" class="img-link img-link-zoom-in img-thumb img-lightbox">
+          <img src="{{ $customer->img_npwp }}" class="img-fluid img-show-small">
         </a>
       </div>
-    </div> -->
+    </div>
     <div class="row">
-      <label class="col-md-3 col-form-label text-right">NPWP</label>
+      <label class="col-md-3 col-form-label text-right">Image KTP</label>
       <div class="col-md-7">
         <a href="{{ $customer->img_ktp }}" class="img-link img-link-zoom-in img-thumb img-lightbox">
           <img src="{{ $customer->img_ktp }}" class="img-fluid img-show-small">

@@ -16,6 +16,7 @@ use App\Models\Regency;
 use App\Models\District;
 use App\Models\Village;
 use App\Models\Zipcode;
+use App\Helper\UploadMedia;
 
 class CustomerOtherAddressController extends Controller
 {
@@ -119,6 +120,8 @@ class CustomerOtherAddressController extends Controller
                 'name' => 'required|string',
                 'customer' => 'required|string',
                 'contact_person' => 'nullable|string',
+                'npwp' => 'nullable|string',
+                'ktp' => 'nullable|string',
                 'phone' => 'nullable|string',
                 'address' => 'required|string',
                 'gps_latitude' => 'nullable|string',
@@ -158,6 +161,8 @@ class CustomerOtherAddressController extends Controller
 
                 $other_address->name = $request->name;
                 $other_address->contact_person = $request->contact_person;
+                $other_address->npwp = $request->npwp;
+                $other_address->ktp = $request->ktp;
                 $other_address->phone = $request->phone;
                 $other_address->address = $request->address;
 
@@ -174,6 +179,14 @@ class CustomerOtherAddressController extends Controller
                 $other_address->text_kelurahan = $request->text_kelurahan;
 
                 $other_address->zipcode = $request->zipcode;
+
+                if (!empty($request->file('image_ktp'))) {
+                    $customer->image_ktp = UploadMedia::image($request->file('image_ktp'), Customer::$directory_image);
+                }
+
+                if (!empty($request->file('image_npwp'))) {
+                    $customer->image_npwp = UploadMedia::image($request->file('image_npwp'), Customer::$directory_image);
+                }
 
                 $other_address->status = CustomerOtherAddress::STATUS['ACTIVE'];
                 
@@ -231,6 +244,8 @@ class CustomerOtherAddressController extends Controller
                 'name' => 'required|string',
                 'customer' => 'required|string',
                 'contact_person' => 'nullable|string',
+                'npwp' => 'nullable|string',
+                'ktp' => 'nullable|string',
                 'phone' => 'nullable|string',
                 'address' => 'required|string',
                 'gps_latitude' => 'nullable|string',
@@ -268,6 +283,8 @@ class CustomerOtherAddressController extends Controller
                 $other_address->name = $request->name;
                 $other_address->customer_id = $request->customer;
                 $other_address->contact_person = $request->contact_person;
+                $other_address->npwp = $request->npwp;
+                $other_address->ktp = $request->ktp;
                 $other_address->phone = $request->phone;
                 $other_address->address = $request->address;
 
@@ -285,7 +302,26 @@ class CustomerOtherAddressController extends Controller
 
                 $other_address->zipcode = $request->zipcode;
 
+                if (!empty($request->file('image_npwp'))) {
+                    if (is_file_exists(CustomerOtherAddress::$directory_image.$other_address->image_npwp)) {
+                        remove_file(CustomerOtherAddress::$directory_image.$other_address->image_npwp);
+                    }
+
+                    $other_address->image_npwp = UploadMedia::image($request->file('image_npwp'), CustomerOtherAddress::$directory_image);
+                }
+
+                if (!empty($request->file('image_ktp'))) {
+                    if (is_file_exists(CustomerOtherAddress::$directory_image.$other_address->image_ktp)) {
+                        remove_file(CustomerOtherAddress::$directory_image.$other_address->image_ktp);
+                    }
+
+                    $other_address->image_ktp = UploadMedia::image($request->file('image_ktp'), CustomerOtherAddress::$directory_image);
+                }
+
+
                 if ($other_address->save()) {
+
+                    // dd($other_address);
                     $response['notification'] = [
                         'alert' => 'notify',
                         'type' => 'success',

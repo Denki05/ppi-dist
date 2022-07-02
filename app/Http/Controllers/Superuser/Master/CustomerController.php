@@ -175,6 +175,7 @@ class CustomerController extends Controller
                 $customer->email = $request->email;
                 $customer->phone = $request->phone;
                 $customer->npwp = $request->npwp;
+                $customer->ktp = $request->ktp;
                 $customer->address = $request->address;
 
                 $customer->owner_name = $request->owner_name;
@@ -195,12 +196,12 @@ class CustomerController extends Controller
 
                 $customer->zipcode = $request->zipcode;
 
-                // if (!empty($request->file('image_store'))) {
-                //     $customer->image_store = UploadMedia::image($request->file('image_store'), Customer::$directory_image);
-                // }
-
                 if (!empty($request->file('image_ktp'))) {
                     $customer->image_ktp = UploadMedia::image($request->file('image_ktp'), Customer::$directory_image);
+                }
+
+                if (!empty($request->file('image_npwp'))) {
+                    $customer->image_npwp = UploadMedia::image($request->file('image_npwp'), Customer::$directory_image);
                 }
 
                 $customer->notification_email = ($request->notification_email) ? true : false;
@@ -279,6 +280,7 @@ class CustomerController extends Controller
                 'email' => 'nullable|email',
                 'phone' => 'nullable|string',
                 'npwp' => 'nullable|string',
+                'ktp' => 'nullable|string',
                 'address' => 'required|string',
                 'owner_name' => 'nullable|string',
                 'website' => 'nullable|string',
@@ -294,7 +296,7 @@ class CustomerController extends Controller
                 'text_kecamatan' => 'nullable|required_with:kecamatan|string',
                 'text_kelurahan' => 'nullable|required_with:kelurahan|string',
                 'zipcode' => 'nullable|string',
-                // 'image_store' => 'nullable|image|mimes:jpeg,png,jpg|max:2048',
+                'image_npwp' => 'nullable|image|mimes:jpeg,png,jpg|max:2048',
                 'image_ktp' => 'nullable|image|mimes:jpeg,png,jpg|max:2048',
                 'notification_email' => 'nullable'
             ]);
@@ -322,6 +324,7 @@ class CustomerController extends Controller
                 $customer->email = $request->email;
                 $customer->phone = $request->phone;
                 $customer->npwp = $request->npwp;
+                $customer->ktp = $request->ktp;
                 $customer->address = $request->address;
 
                 $customer->owner_name = $request->owner_name;
@@ -342,13 +345,13 @@ class CustomerController extends Controller
 
                 $customer->zipcode = $request->zipcode;
 
-                // if (!empty($request->file('image_store'))) {
-                //     if (is_file_exists(Customer::$directory_image.$customer->image_store)) {
-                //         remove_file(Customer::$directory_image.$customer->image_store);
-                //     }
+                if (!empty($request->file('image_npwp'))) {
+                    if (is_file_exists(Customer::$directory_image.$customer->image_npwp)) {
+                        remove_file(Customer::$directory_image.$customer->image_npwp);
+                    }
 
-                //     $customer->image_store = UploadMedia::image($request->file('image_store'), Customer::$directory_image);
-                // }
+                    $customer->image_npwp = UploadMedia::image($request->file('image_npwp'), Customer::$directory_image);
+                }
 
                 if (!empty($request->file('image_ktp'))) {
                     if (is_file_exists(Customer::$directory_image.$customer->image_ktp)) {
