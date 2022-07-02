@@ -3,12 +3,12 @@
 @section('content')
 <nav class="breadcrumb bg-white push">
   <span class="breadcrumb-item">Master</span>
-  <a class="breadcrumb-item" href="{{ route('superuser.master.customer.index') }}">Customer</a>
+  <a class="breadcrumb-item" href="{{ route('superuser.master.customer.index') }}">Store</a>
   <span class="breadcrumb-item active">{{ $customer->id }}</span>
 </nav>
 <div class="block">
   <div class="block-header block-header-default">
-    <h3 class="block-title">Show Customer</h3>
+    <h3 class="block-title">Show Store</h3>
   </div>
   <div class="block-content">
     <div class="row">

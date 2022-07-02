@@ -10,11 +10,11 @@
 }
 
 body {
-    background-image: url("../media/background_auth.jpg");
+    /* background-image: url("../media/background_auth.jpg");
     background-position: center;
     background-repeat: no-repeat;
     background-attachment: fixed;
-    background-size: cover;
+    background-size: cover; */
     /* overflow: hidden; */
 }
 

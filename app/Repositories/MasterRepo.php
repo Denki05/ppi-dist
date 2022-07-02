@@ -6,6 +6,7 @@ use App\Entities\Master\BranchOffice;
 use App\Entities\Master\BrandReference;
 use App\Entities\Master\Contact;
 use App\Entities\Master\Customer;
+use App\Entities\Master\CustomerOtherAddress;
 use App\Entities\Master\CustomerCategory;
 use App\Entities\Master\CustomerType;
 use App\Entities\Master\Product;
@@ -47,6 +48,11 @@ class MasterRepo
     public static function customers()
     {
         return Customer::where('status', Customer::STATUS['ACTIVE'])->orderBy('name')->get();
+    }
+
+    public static function other_address()
+    {
+        return CustomerOtherAddress::where('status', CustomerOtherAddress::STATUS['ACTIVE'])->orderBy('name')->get();
     }
 
     public static function customer_categories()

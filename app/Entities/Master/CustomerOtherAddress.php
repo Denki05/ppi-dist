@@ -30,8 +30,8 @@ class CustomerOtherAddress extends Model
         return $this->belongsTo('App\Entities\Master\Customer');
     }
 
-    public function po(){
-        return $this->hasMany('App\Entities\Penjualan\PackingOrder','customer_other_address_id');
+    public function dokumen(){
+        return $this->hasMany('App\Entities\Master\Dokumen','customer_other_address_id');
     }
 
     public function getImgKtpAttribute()
