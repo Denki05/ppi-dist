@@ -27,7 +27,7 @@ class CustomerOtherAddress extends Model
     
     public function customer()
     {
-        return $this->belongsTo('App\Entities\Master\Customer');
+        return $this->hasMany('App\Entities\Master\Customer', 'customer_id');
     }
 
     public function dokumen(){

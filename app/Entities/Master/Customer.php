@@ -39,7 +39,7 @@ class Customer extends Model
 
     public function other_address()
     {
-        return $this->hasMany('App\Entities\Master\CustomerOtherAddress');
+        return $this->belongsTo('App\Entities\Master\CustomerOtherAddress', 'customer_id');
     }
 
     public function contacts()
