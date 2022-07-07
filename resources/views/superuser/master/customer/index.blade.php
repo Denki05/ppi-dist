@@ -27,16 +27,97 @@
   <hr class="my-20">
   <div class="block-content block-content-full">
     <table id="datatable" class="table table-striped table-vcenter table-responsive">
-      <thead>
+      <thead class="thead-dark">
         <tr>
-          <th>#</th>
-          <th>Code</th>
-          <th>Name</th>
+          <th></th>
+          <th>Store</th>
           <th>Address</th>
-          <th>Status</th>
-          <th>Action</th>
+          <th scope="col">Action</th>
+          <th></th>
         </tr>
       </thead>
+      <tbody>
+        @foreach ($customers as $row)
+          <tr class="clickable js-tabularinfo-toggle" data-toggle="collapse" id="row2"
+                    data-target=".a{{ $row->id }}">
+              <td>
+                <div class="col-sm-6">
+                  <div class="row mb-2">
+                    <a href="#" class="link">
+                      <button type="button" name='edit' id='{{ $row->id }}'
+                      class="edit btn btn-xs btn-outline-secondary btn-sm my-0">
+                        <i class="fa fa-plus"></i></button>
+                    </a>
+                  </div>
+                </div>
+              </td>
+              <td>{{ $row->name }}</td>
+              <td>{{ $row->address }} - <br><b>{{ $row->text_city }}</b></br></td>
+              <td>
+                <a href="{{ route('superuser.master.customer.edit', $row->id) }}">
+                    <button type="button" class="btn btn-sm btn-circle btn-alt-warning" title="Edit">
+                        <i class="fa fa-pencil"></i>
+                    </button>
+                </a>
+                <a href="{{ route('superuser.master.customer.show', $row->id) }}">
+                    <button type="button" class="btn btn-sm btn-circle btn-alt-secondary" title="View">
+                        <i class="fa fa-eye"></i>
+                    </button>
+                </a>
+                <a href="{{ route('superuser.master.customer.destroy', $row->id) }}">
+                    <button type="button" class="btn btn-sm btn-circle btn-alt-danger" title="Delete">
+                        <i class="fa fa-times"></i>
+                    </button>
+                </a>
+              </td>
+              <td>
+                <a class="btn btn-primary" href="{{ route('superuser.master.customer_other_address.create') }}" role="button" title="Add Member"><i class="fa fa-file"></i></a>
+              </td>
+          </tr>
+
+          <tr class="tabularinfo__subblock collapse a{{ $row->id }}">
+                    <td colspan="8">
+                        <table class="table-active table table-bordered">
+                            <tr>
+                                <th width="10%">Member</th>
+                                <th width="5%">Action</th>
+                                <th width="2%"></th>
+                            </tr>
+
+                            <tbody>
+                                @foreach ($other_address as $index)
+                                    @if ($row->id == $index->customer_id)
+                                        <tr>
+                                            <td width="20%"><b>{{ $index->name }}</b> - <br><i>{{ $index->address }}</i></br></td>
+                                            <td>
+                                              <a href="{{ route('superuser.master.customer_other_address.edit', $index->id) }}">
+                                                  <button type="button" class="btn btn-sm btn-circle btn-alt-warning" title="Edit">
+                                                      <i class="fa fa-pencil"></i>
+                                                  </button>
+                                              </a>
+                                              <a href="{{ route('superuser.master.customer_other_address.show', $index->id) }}">
+                                                  <button type="button" class="btn btn-sm btn-circle btn-alt-secondary" title="View">
+                                                      <i class="fa fa-eye"></i>
+                                                  </button>
+                                              </a>
+                                              <a href="{{ route('superuser.master.customer_other_address.destroy', $index->id) }}">
+                                                  <button type="button" class="btn btn-sm btn-circle btn-alt-danger" title="Delete">
+                                                      <i class="fa fa-times"></i>
+                                                  </button>
+                                              </a>
+                                            </td>
+                                            <td>
+                                              <a class="btn btn-primary" href="#" role="button" title="Add Dokumen"><i class="fa fa-file"></i></a>
+                                            </td>
+                                        </tr>
+                                    @endif
+                                @endforeach
+                            </tbody>
+                        </table>
+                  </td>
+            </tr>
+        @endforeach
+      </tbody>
     </table>
   </div>
 </div>
@@ -58,25 +139,8 @@
 @push('scripts')
 <script type="text/javascript">
 $(document).ready(function() {
-  let datatableUrl = '{{ route('superuser.master.customer.json') }}';
 
   $('#datatable').DataTable({
-    processing: true,
-    serverSide: true,
-    ajax: {
-      "url": datatableUrl,
-      "dataType": "json",
-      "type": "GET",
-      "data":{ _token: "{{csrf_token()}}"}
-    },
-    columns: [
-      {data: 'DT_RowIndex', name: 'id'},
-      {data: 'code'},
-      {data: 'name'},
-      {data: 'address'},
-      {data: 'status'},
-      {data: 'action', orderable: false, searcable: false}
-    ],
     order: [
       [1, 'desc']
     ],
@@ -87,5 +151,7 @@ $(document).ready(function() {
     ],
   });
 });
+
+
 </script>
 @endpush

@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Superuser\Master;
 
 use App\DataTables\Master\CustomerTable;
 use App\Entities\Master\Customer;
+use App\Entities\Master\CustomerOtherAddress;
 use App\Entities\Master\CustomerTypePivot;
 use App\Exports\Master\CustomerExport;
 use App\Exports\Master\CustomerImportTemplate;
@@ -42,10 +43,10 @@ class CustomerController extends Controller
             return $next($request);
         });
     }
-    public function json(Request $request, CustomerTable $datatable)
-    {
-        return $datatable->build();
-    }
+    // public function json(Request $request, CustomerTable $datatable)
+    // {
+    //     return $datatable->build();
+    // }
 
     public function index()
     {
@@ -55,7 +56,24 @@ class CustomerController extends Controller
                 return redirect()->route('superuser.index')->with('error','Anda tidak punya akses untuk membuka menu terkait');
             }
         }
-        return view('superuser.master.customer.index');
+
+        $data['customers'] = Customer::all();
+        $data['other_address'] = CustomerOtherAddress::all();
+
+        // $data['datas'] = Customer::leftJoin('master_customer_other_addresses', function ($join){
+        //     $join->on('master_customers.id', '=', 'master_customer_other_addresses.customer_id');
+        // })
+        // ->selectRaw('master_customers.id as sID, 
+        //             master_customers.name as sName, 
+        //             master_customers.address as sAdddress,
+        //             master_customers.text_kota as sCity, 
+        //             master_customer_other_addresses.customer_id as mCustomerID, 
+        //             master_customer_other_addresses.name as mName, 
+        //             master_customer_other_addresses.address as mAddress
+        //             ')
+        // ->get();
+
+        return view('superuser.master.customer.index', $data);
     }
 
     public function create()
