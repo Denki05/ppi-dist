@@ -60,19 +60,10 @@ class CustomerController extends Controller
         $data['customers'] = Customer::all();
         $data['other_address'] = CustomerOtherAddress::all();
 
-        // $data['datas'] = Customer::leftJoin('master_customer_other_addresses', function ($join){
-        //     $join->on('master_customers.id', '=', 'master_customer_other_addresses.customer_id');
-        // })
-        // ->selectRaw('master_customers.id as sID, 
-        //             master_customers.name as sName, 
-        //             master_customers.address as sAdddress,
-        //             master_customers.text_kota as sCity, 
-        //             master_customer_other_addresses.customer_id as mCustomerID, 
-        //             master_customer_other_addresses.name as mName, 
-        //             master_customer_other_addresses.address as mAddress
-        //             ')
-        // ->get();
-
+        // $data = new Customer();
+        // $parent = $data->get('SELECT * FROM master_customers');
+        // $child = $data->get('SELECT * FROM master_customer_other_addresses');
+        
         return view('superuser.master.customer.index', $data);
     }
 

@@ -22,10 +22,69 @@
       <button type="button" class="btn btn-outline-primary min-width-125">Create</button>
     </a>
 
-    <button type="button" class="btn btn-outline-info ml-10" data-toggle="modal" data-target="#modal-manage">Manage</button>
+    <!-- <button type="button" class="btn btn-outline-info ml-10" data-toggle="modal" data-target="#modal-manage">Manage</button>
+
+    <button type="button" class="btn btn-outline-danger ml-10" onclick="deleteMultiple()">Delete Checked</button>
+
+    <a class="ml-10" href="{{ route('superuser.master.product.cetak') }}">
+      <button type="button" class="btn btn-outline-warning min-width-125">Print</button>
+    </a> -->
   </div>
-  <hr class="my-20">
   <div class="block-content block-content-full">
+    <!-- <form id="form" target="_blank" action="#"
+      enctype="multipart/form-data" method="POST">
+      @csrf
+      <input type="hidden" name="download_type" id="download_type" value="">
+      <div class="form-group row">
+        <div class="col-md-9">
+          <div class="block">
+            <div class="block-content">
+              <div class="form-group row">
+                <label class="col-md-2 col-form-label text-left" for="period">Period :</label>
+                <div class="col-md-4">
+                  <div class="input-group">
+                    <div class="input-group-prepend"><span class="input-group-text"><i class="fa fa-calendar"
+                          aria-hidden="true"></i></span></div><input type="text" class="form-control pull-right"
+                      id="datesearch" name="datesearch" placeholder="Select period"
+                      value="">
+                  </div>
+                </div>
+                <label class="col-md-2 col-form-label text-left" for="marketplace">Marketplace :</label>
+                <div class="col-md-4">
+                  <select class="js-select2 form-control" id="marketplace" name="marketplace" data-placeholder="Select Marketplace">
+                    <option value="all">All</option>
+                  
+                  </select>
+                </div>
+              </div>
+              <div class="form-group row">
+                <label class="col-md-2 col-form-label text-left" for="status">Status :</label>
+                <div class="col-md-4">
+                  <select class="js-select2 form-control" id="status" name="status" data-placeholder="Select Status">
+                    <option value="all">All</option>
+                    <option value="paid">Paid</option>
+                    <option value="debt">Unpaid</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="col-md-3">
+          <div class="block">
+            <div class="block-content">
+              <div class="form-group row">
+                <div class="col-md-12 text-center">
+                  <a href="#" id="btn-filter" class="btn bg-gd-corporate border-0 text-white pl-50 pr-50">
+                    Filter <i class="fa fa-search ml-10"></i>
+                  </a>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </form> -->
     <table id="datatable" class="table table-striped table-vcenter table-responsive">
       <thead class="thead-dark">
         <tr>
@@ -52,7 +111,7 @@
                 </div>
               </td>
               <td>{{ $row->name }}</td>
-              <td>{{ $row->address }} - <br><b>{{ $row->text_city }}</b></br></td>
+              <td>{{ $row->address }} - <br><b>{{ $row->text_kota }}</b></br></td>
               <td>
                 <a href="{{ route('superuser.master.customer.edit', $row->id) }}">
                     <button type="button" class="btn btn-sm btn-circle btn-alt-warning" title="Edit">
@@ -80,6 +139,7 @@
                         <table class="table-active table table-bordered">
                             <tr>
                                 <th width="10%">Member</th>
+                                <th width="10%">Location</th>
                                 <th width="5%">Action</th>
                                 <th width="2%"></th>
                             </tr>
@@ -89,6 +149,9 @@
                                     @if ($row->id == $index->customer_id)
                                         <tr>
                                             <td width="20%"><b>{{ $index->name }}</b> - <br><i>{{ $index->address }}</i></br></td>
+                                            <td width="5%">
+                                              <iframe  style="height:100px; width: 200px;" src="https://maps.google.com/maps?q={{ $index->gps_latitude }},{{ $index->gps_longitude }}&hl=es;z=14&amp;output=embed" ?? ></iframe>
+                                            </td>
                                             <td>
                                               <a href="{{ route('superuser.master.customer_other_address.edit', $index->id) }}">
                                                   <button type="button" class="btn btn-sm btn-circle btn-alt-warning" title="Edit">
@@ -138,20 +201,14 @@
 
 @push('scripts')
 <script type="text/javascript">
-$(document).ready(function() {
-
-  $('#datatable').DataTable({
-    order: [
-      [1, 'desc']
-    ],
-    pageLength: 5,
-    lengthMenu: [
-      [5, 15, 20],
-      [5, 15, 20]
-    ],
-  });
-});
-
-
+  $(document).ready(function() {
+        $('.link').click(function() {
+            event.preventDefault();
+        });
+        $('.js-tabularinfo').bootstrapTable({
+            escape: false,
+            showHeader: false
+        });
+    });
 </script>
 @endpush

@@ -53,10 +53,18 @@
           <input type="text" class="form-control" id="phone" name="phone">
         </div>
       </div>
+      <!-- <div style="width: 100%" class="form-group row">
+        <iframe width="100%" height="600" frameborder="0" scrolling="no" marginheight="0" marginwidth="0" src="https://maps.google.com/maps?width=100%25&amp;height=600&amp;hl=en&amp;q=1%20Grafton%20Street,%20Dublin,%20Ireland+(My%20Business%20Name)&amp;t=&amp;z=14&amp;ie=UTF8&amp;iwloc=B&amp;output=embed"><a href="https://www.gps.ie/farm-gps/">gps for tractors</a></iframe>
+      </div> -->
       <div class="form-group row">
         <label class="col-md-3 col-form-label text-right" for="address">Address <span class="text-danger">*</span></label>
         <div class="col-md-7">
           <textarea class="form-control" id="address" name="address"></textarea>
+        </div>
+      </div>
+      <div class="form-group row">
+        <label class="col-md-3 col-form-label text-right">Map <span class="text-danger">*</span></label>
+        <div class="col-md-3" id="map" style="height:200px; width: 400px;"  >
         </div>
       </div>
       <div class="form-group row">
@@ -286,4 +294,34 @@
     })
   })
 </script>
+<script>
+                    let map;
+                    function initMap() {
+                        map = new google.maps.Map(document.getElementById("map"), {
+                            center: { lat: -7.3020583, lng: 112.7851902 },
+                            zoom: 8,
+                            scrollwheel: true,
+                        });
+                        const uluru = { lat: -7.3020583, lng: 112.7851902 };
+                        let marker = new google.maps.Marker({
+                            position: uluru,
+                            map: map,
+                            draggable: true
+                        });
+                        google.maps.event.addListener(marker,'position_changed',
+                            function (){
+                                let lat = marker.position.lat()
+                                let lng = marker.position.lng()
+                                $('#gps_latitude').val(lat)
+                                $('#gps_longitude').val(lng)
+                            })
+                        google.maps.event.addListener(map,'click',
+                        function (event){
+                            pos = event.latLng
+                            marker.setPosition(pos)
+                        })
+                        
+                    }
+                </script>
+                <script async defer src="https://maps.googleapis.com/maps/api/js?key=&callback=initMap" type="text/javascript"></script>
 @endpush

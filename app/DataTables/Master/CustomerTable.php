@@ -12,7 +12,7 @@ class CustomerTable extends Table
      * Get query source of dataTable.
      *
      */
-    private function query()
+    private function query(Request $request)
     {
         $model = Customer::select('id', 'code', 'name', 'status', 'address');
 
@@ -22,7 +22,7 @@ class CustomerTable extends Table
     /**
      * Build DataTable class.
      */
-    public function build()
+    public function build(Request $request)
     {
         $table = Table::of($this->query());
         $table->addIndexColumn();

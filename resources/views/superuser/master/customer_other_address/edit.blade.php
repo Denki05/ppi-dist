@@ -61,6 +61,10 @@
         </div>
       </div>
       <div class="form-group row">
+        <label class="col-md-3 col-form-label text-right" for="address">Map <span class="text-danger">*</span></label>
+        <div class="col-md-3" id="map" style="height:200px; width: 400px;"  ></div>
+      </div>
+      <div class="form-group row">
         <label class="col-md-3 col-form-label text-right">GPS Coordinate</label>
         <div class="col-md-3">
           <input type="text" class="form-control" id="gps_latitude" name="gps_latitude" placeholder="Latitude" value="{{ $other_address->gps_latitude }}">
@@ -301,4 +305,33 @@
     })
   })
 </script>
+<script>
+                    let map;
+                    function initMap() {
+                        map = new google.maps.Map(document.getElementById("map"), {
+                            center: { lat: -7.3020583, lng: 112.7851902 },
+                            zoom: 8,
+                            scrollwheel: true,
+                        });
+                        const uluru = { lat: -7.3020583, lng: 112.7851902 };
+                        let marker = new google.maps.Marker({
+                            position: uluru,
+                            map: map,
+                            draggable: true
+                        });
+                        google.maps.event.addListener(marker,'position_changed',
+                            function (){
+                                let lat = marker.position.lat()
+                                let lng = marker.position.lng()
+                                $('#gps_latitude').val(lat)
+                                $('#gps_longitude').val(lng)
+                            })
+                        google.maps.event.addListener(map,'click',
+                        function (event){
+                            pos = event.latLng
+                            marker.setPosition(pos)
+                        })
+                    }
+                </script>
+                <script async defer src="https://maps.googleapis.com/maps/api/js?key=&callback=initMap" type="text/javascript"></script>
 @endpush
