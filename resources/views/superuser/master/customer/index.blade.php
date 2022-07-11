@@ -113,16 +113,9 @@
               <td>{{ $row->name }}</td>
               <td>{{ $row->address }} - <br><b>{{ $row->text_kota }}</b></br></td>
               <td>
-                <a href="{{ route('superuser.master.customer.edit', $row->id) }}">
-                    <button type="button" class="btn btn-sm btn-circle btn-alt-warning" title="Edit">
-                        <i class="fa fa-pencil"></i>
-                    </button>
-                </a>
-                <a href="{{ route('superuser.master.customer.show', $row->id) }}">
-                    <button type="button" class="btn btn-sm btn-circle btn-alt-secondary" title="View">
-                        <i class="fa fa-eye"></i>
-                    </button>
-                </a>
+                <button type="button" class="btn btn-sm btn-circle btn-alt-secondary" title="View" onclick="showStore()">
+                  <i class="fa fa-eye"></i>
+                </button>
                 <a href="{{ route('superuser.master.customer.destroy', $row->id) }}">
                     <button type="button" class="btn btn-sm btn-circle btn-alt-danger" title="Delete">
                         <i class="fa fa-times"></i>
@@ -153,16 +146,11 @@
                                               <iframe  style="height:100px; width: 200px;" src="https://maps.google.com/maps?q={{ $index->gps_latitude }},{{ $index->gps_longitude }}&hl=es;z=14&amp;output=embed" ?? ></iframe>
                                             </td>
                                             <td>
-                                              <a href="{{ route('superuser.master.customer_other_address.edit', $index->id) }}">
-                                                  <button type="button" class="btn btn-sm btn-circle btn-alt-warning" title="Edit">
-                                                      <i class="fa fa-pencil"></i>
-                                                  </button>
-                                              </a>
-                                              <a href="{{ route('superuser.master.customer_other_address.show', $index->id) }}">
-                                                  <button type="button" class="btn btn-sm btn-circle btn-alt-secondary" title="View">
-                                                      <i class="fa fa-eye"></i>
-                                                  </button>
-                                              </a>
+                                              <!-- <a href="{{ route('superuser.master.customer_other_address.show', $index->id) }}"> -->
+                                              <button type="button" class="btn btn-sm btn-circle btn-alt-secondary" title="View" onclick="showMember()">
+                                                <i class="fa fa-eye"></i>
+                                              </button>
+                                              <!-- </a> -->
                                               <a href="{{ route('superuser.master.customer_other_address.destroy', $index->id) }}">
                                                   <button type="button" class="btn btn-sm btn-circle btn-alt-danger" title="Delete">
                                                       <i class="fa fa-times"></i>
@@ -210,5 +198,13 @@
             showHeader: false
         });
     });
+
+    function showMember() {
+      window.open("{{ route('superuser.master.customer_other_address.show', $index->id) }}");
+    }
+
+    function showStore() {
+      window.open("{{ route('superuser.master.customer.show', $row->id) }}");
+    }
 </script>
 @endpush

@@ -10,7 +10,12 @@
   <div class="block-header block-header-default">
     <h3 class="block-title">Show Member</h3>
   </div>
-  <div class="block-content">
+  
+
+
+
+
+  <!-- <div class="block-content">
     <div class="row">
       <label class="col-md-3 col-form-label text-right">Name</label>
       <div class="col-md-7">
@@ -125,22 +130,8 @@
           </button>
         </a>
       </div>
-      @if($other_address->status != $other_address::STATUS['DELETED'])
-      <div class="col-md-6 text-right">
-        <a href="javascript:deleteConfirmation('{{ route('superuser.master.customer_other_address.destroy', $other_address->id) }}', true)">
-          <button type="button" class="btn bg-gd-pulse border-0 text-white">
-            Delete <i class="fa fa-trash ml-10"></i>
-          </button>
-        </a>
-        <a href="{{ route('superuser.master.customer_other_address.edit', $other_address->id) }}">
-          <button type="button" class="btn bg-gd-leaf border-0 text-white">
-            Edit <i class="fa fa-pencil ml-10"></i>
-          </button>
-        </a>
-      </div>
-      @endif
     </div>
-  </div>
+  </div> -->
 </div>
 
 
@@ -161,5 +152,7 @@
 
     Codebase.helpers('table-tools')
   })
+
+ 
 </script>
 @endpush
