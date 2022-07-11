@@ -171,4 +171,11 @@ Route::group([
         Route::post('/getzipcode', 'CustomerOtherAddressController@getzipcode')->name('getzipcode');
     });
     Route::resource('customer_other_address', 'CustomerOtherAddressController');
+
+    Route::group(['as' => 'dokumen.', 'prefix' => '/dokumen'], function () {
+        // Route::get('/import_template', 'EkspedisiController@import_template')->name('import_template');
+        // Route::post('/import', 'EkspedisiController@import')->name('import');
+        // Route::get('/export', 'EkspedisiController@export')->name('export');
+    });
+    Route::resource('dokumen', 'DokumenController');
 });

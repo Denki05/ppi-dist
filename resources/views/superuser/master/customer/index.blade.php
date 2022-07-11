@@ -92,7 +92,7 @@
           <th>Store</th>
           <th>Address</th>
           <th scope="col">Action</th>
-          <th></th>
+          <th>Add Member</th>
         </tr>
       </thead>
       <tbody>
@@ -141,7 +141,7 @@
                                 <th width="10%">Member</th>
                                 <th width="10%">Location</th>
                                 <th width="5%">Action</th>
-                                <th width="2%"></th>
+                                <th width="2%">Add Dokumen</th>
                             </tr>
 
                             <tbody>
@@ -170,7 +170,7 @@
                                               </a>
                                             </td>
                                             <td>
-                                              <a class="btn btn-primary" href="#" role="button" title="Add Dokumen"><i class="fa fa-file"></i></a>
+                                              <a class="btn btn-primary" href="{{ route('superuser.master.dokumen.create') }}" role="button" title="Add Dokumen"><i class="fa fa-file"></i></a>
                                             </td>
                                         </tr>
                                     @endif

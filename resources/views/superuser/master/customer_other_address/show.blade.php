@@ -68,31 +68,31 @@
     <div class="row">
       <label class="col-md-3 col-form-label text-right">Provinsi</label>
       <div class="col-md-7">
-        <div class="form-control-plaintext">{{ $other_address->text_provinsi }}</div>
+        <div class="form-control-plaintext">{{ $other_address->text_provinsi ?? '-' }}</div>
       </div>
     </div>
     <div class="row">
       <label class="col-md-3 col-form-label text-right">Kota</label>
       <div class="col-md-7">
-        <div class="form-control-plaintext">{{ $other_address->text_kota }}</div>
+        <div class="form-control-plaintext">{{ $other_address->text_kota ?? '-' }}</div>
       </div>
     </div>
     <div class="row">
       <label class="col-md-3 col-form-label text-right">Kecamatan</label>
       <div class="col-md-7">
-        <div class="form-control-plaintext">{{ $other_address->text_kecamatan }}</div>
+        <div class="form-control-plaintext">{{ $other_address->text_kecamatan ?? '-' }}</div>
       </div>
     </div>
     <div class="row">
       <label class="col-md-3 col-form-label text-right">Kelurahan</label>
       <div class="col-md-7">
-        <div class="form-control-plaintext">{{ $other_address->text_kelurahan }}</div>
+        <div class="form-control-plaintext">{{ $other_address->text_kelurahan ?? '-' }}</div>
       </div>
     </div>
     <div class="row">
       <label class="col-md-3 col-form-label text-right">Zipcode</label>
       <div class="col-md-7">
-        <div class="form-control-plaintext">{{ $other_address->zipcode }}</div>
+        <div class="form-control-plaintext">{{ $other_address->zipcode ?? '-' }}</div>
       </div>
     </div>
     <div class="row">
@@ -119,7 +119,7 @@
     </div>
     <div class="row pt-30 mb-15">
       <div class="col-md-6">
-        <a href="{{ route('superuser.master.customer_other_address.index') }}">
+        <a href="{{ route('superuser.master.customer.index') }}">
           <button type="button" class="btn bg-gd-cherry border-0 text-white">
             <i class="fa fa-arrow-left mr-10"></i> Back
           </button>
@@ -154,18 +154,6 @@
 @push('scripts')
 <script type="text/javascript">
   $(document).ready(function() {
-    $('#datatable-other_address').DataTable({
-      columnDefs: [
-        { orderable: false, targets: [2, 3] }
-      ]
-    })
-
-    $('#datatable-contact').DataTable({
-      columnDefs: [
-        { orderable: false, targets: [3] }
-      ]
-    })
-
     $('a.img-lightbox').magnificPopup({
       type: 'image',
       closeOnContentClick: true,

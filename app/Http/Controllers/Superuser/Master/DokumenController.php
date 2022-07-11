@@ -33,22 +33,6 @@ class DokumenController extends Controller
         });
     }
 
-    // public function json(Request $request, CustomerOtherAddressTable $datatable)
-    // {
-    //     return $datatable->build();
-    // }
-
-    // public function index()
-    // {
-    //     // Access
-    //     if(Auth::user()->is_superuser == 0){
-    //         if(empty($this->access)){
-    //             return redirect()->route('superuser.index')->with('error','Anda tidak punya akses untuk membuka menu terkait');
-    //         }
-    //     }
-    //     return view('superuser.master.customer_other_address.index');
-    // }
-
     public function create()
     {
         // Access
@@ -59,77 +43,67 @@ class DokumenController extends Controller
         }
 
         // $data['customer'] = Customer::findOrFail($id);
-        $data['customers'] = MasterRepo::CustomerOtherAddress();
+        $data['other_address'] = MasterRepo::other_address();
         
-        return view('superuser.master.customer_other_address.create', $data);
+        // dd($data);
+        return view('superuser.master.dokumen.create', $data);
     }
 
-    public function getkabupaten(request $request)
-    {
-        $prov_id = $request->prov_id;
+    // public function getkabupaten(request $request)
+    // {
+    //     $prov_id = $request->prov_id;
 
-        $kabupatens = Regency::where('prov_id', $prov_id)->get();
+    //     $kabupatens = Regency::where('prov_id', $prov_id)->get();
 
-        foreach ($kabupatens as $kabupaten){
-            echo "<option value='$kabupaten->city_id'>$kabupaten->city_name</option>";
-        }
-    }
+    //     foreach ($kabupatens as $kabupaten){
+    //         echo "<option value='$kabupaten->city_id'>$kabupaten->city_name</option>";
+    //     }
+    // }
 
-    public function getkecamatan(request $request)
-    {
-        $city_id = $request->city_id;
+    // public function getkecamatan(request $request)
+    // {
+    //     $city_id = $request->city_id;
 
-        $kecamatans = District::where('city_id', $city_id)->get();
+    //     $kecamatans = District::where('city_id', $city_id)->get();
 
-        foreach ($kecamatans as $kecamatan){
-            echo "<option value='$kecamatan->dis_id'>$kecamatan->dis_name</option>";
-        }
-    }
+    //     foreach ($kecamatans as $kecamatan){
+    //         echo "<option value='$kecamatan->dis_id'>$kecamatan->dis_name</option>";
+    //     }
+    // }
 
-    public function getkelurahan(request $request)
-    {
-        $dis_id = $request->dis_id;
+    // public function getkelurahan(request $request)
+    // {
+    //     $dis_id = $request->dis_id;
 
-        $kelurahans = Village::where('dis_id', $dis_id)->get();
+    //     $kelurahans = Village::where('dis_id', $dis_id)->get();
 
-        foreach ($kelurahans as $kelurahan){
-            echo "<option value='$kelurahan->subdis_id'>$kelurahan->subdis_name</option>";
-        }
-    }
+    //     foreach ($kelurahans as $kelurahan){
+    //         echo "<option value='$kelurahan->subdis_id'>$kelurahan->subdis_name</option>";
+    //     }
+    // }
 
-    public function getzipcode(request $request)
-    {
-        $subdis_id = $request->subdis_id;
+    // public function getzipcode(request $request)
+    // {
+    //     $subdis_id = $request->subdis_id;
 
-        $zipcodes = Zipcode::where('subdis_id', $subdis_id)->get();
+    //     $zipcodes = Zipcode::where('subdis_id', $subdis_id)->get();
 
-        foreach ($zipcodes as $zipcode){
-            echo "<option value='$zipcode->postal_code'>$zipcode->postal_code</option>";
-        }
-    }
+    //     foreach ($zipcodes as $zipcode){
+    //         echo "<option value='$zipcode->postal_code'>$zipcode->postal_code</option>";
+    //     }
+    // }
 
     public function store(Request $request)
     {
         if ($request->ajax()) {
             $validator = Validator::make($request->all(), [
                 'name' => 'required|string',
-                'customer' => 'required|string',
-                'contact_person' => 'nullable|string',
-                'npwp' => 'nullable|string',
-                'ktp' => 'nullable|string',
-                'phone' => 'nullable|string',
-                'address' => 'required|string',
-                'gps_latitude' => 'nullable|string',
-                'gps_longitude' => 'nullable|string',
-                'provinsi' => 'nullable|string',
-                'kota' => 'nullable|string',
-                'kecamatan' => 'nullable|string',
-                'kelurahan' => 'nullable|string',
-                'text_provinsi' => 'nullable|required_with:provinsi|string',
-                'text_kota' => 'nullable|required_with:kota|string',
-                'text_kecamatan' => 'nullable|required_with:kecamatan|string',
-                'text_kelurahan' => 'nullable|required_with:kelurahan|string',
-                'zipcode' => 'nullable|string',
+                'other_address' => 'required|string',
+                'contact' => 'required|string',
+                'npwp' => 'required|string',
+                'ktp' => 'required|string',
+                'image_npwp' => 'nullable|image|mimes:jpeg,png,jpg|max:2048',
+                'image_ktp' => 'nullable|image|mimes:jpeg,png,jpg|max:2048'
             ]);
 
             if ($validator->fails()) {
@@ -150,49 +124,33 @@ class DokumenController extends Controller
                 //     abort(404);
                 // }
 
-                $other_address = new CustomerOtherAddress;
+                $dokumen = new Dokumen;
 
-                $other_address->customer_id = $request->customer;
-
-                $other_address->name = $request->name;
-                $other_address->contact_person = $request->contact_person;
-                $other_address->npwp = $request->npwp;
-                $other_address->ktp = $request->ktp;
-                $other_address->phone = $request->phone;
-                $other_address->address = $request->address;
-
-                $other_address->gps_latitude = $request->gps_latitude;
-                $other_address->gps_longitude = $request->gps_longitude;
-
-                $other_address->provinsi = $request->provinsi;
-                $other_address->kota = $request->kota;
-                $other_address->kecamatan = $request->kecamatan;
-                $other_address->kelurahan = $request->kelurahan;
-                $other_address->text_provinsi = $request->text_provinsi;
-                $other_address->text_kota = $request->text_kota;
-                $other_address->text_kecamatan = $request->text_kecamatan;
-                $other_address->text_kelurahan = $request->text_kelurahan;
-
-                $other_address->zipcode = $request->zipcode;
+                $dokumen->customer_other_address_id = $request->other_address;
+                
+                $dokumen->name = $request->name;
+                $dokumen->contact = $request->contact;
+                $dokumen->npwp = $request->npwp;
+                $dokumen->ktp = $request->ktp;
 
                 if (!empty($request->file('image_ktp'))) {
-                    $customer->image_ktp = UploadMedia::image($request->file('image_ktp'), Customer::$directory_image);
+                    $dokumen->image_ktp = UploadMedia::image($request->file('image_ktp'), Dokumen::$directory_image);
                 }
 
                 if (!empty($request->file('image_npwp'))) {
-                    $customer->image_npwp = UploadMedia::image($request->file('image_npwp'), Customer::$directory_image);
+                    $dokumen->image_npwp = UploadMedia::image($request->file('image_npwp'), Dokumen::$directory_image);
                 }
 
-                $other_address->status = CustomerOtherAddress::STATUS['ACTIVE'];
+                // $other_address->status = CustomerOtherAddress::STATUS['ACTIVE'];
                 
-                if ($other_address->save()) {
+                if ($dokumen->save()) {
                     $response['notification'] = [
                         'alert' => 'notify',
                         'type' => 'success',
                         'content' => 'Success',
                     ];
 
-                    $response['redirect_to'] = route('superuser.master.customer_other_address.index');
+                    $response['redirect_to'] = route('superuser.master.customer.index');
 
                     return $this->response(200, $response);
                 }
@@ -209,10 +167,9 @@ class DokumenController extends Controller
             }
         }
 
-        $data['other_address'] = CustomerOtherAddress::findOrFail($id);
-        $data['customers'] = MasterRepo::customers();
+        $data['dokumen'] = Dokumen::findOrFail($id);
 
-        return view('superuser.master.customer_other_address.show', $data);
+        return view('superuser.master.dokumen.show', $data);
     }
 
     public function edit($id)
@@ -224,12 +181,13 @@ class DokumenController extends Controller
             }
         }
 
-        $data['customers'] = MasterRepo::customers();
-        $data['other_address'] = CustomerOtherAddress::findOrFail($id);
-        $data['provinces'] = Province::all();
+        // $data['customers'] = MasterRepo::customers();
+        $data['dokumen'] = Dokumen::findOrFail($id);
+        $data['other_address'] = MasterRepo::CustomerOtherAddress();
+        // $data['provinces'] = Province::all();
 
         // dd($data);
-        return view('superuser.master.customer_other_address.edit', $data);
+        return view('superuser.master.dokumen.edit', $data);
     }
     
     public function update(Request $request, $id)
@@ -237,23 +195,12 @@ class DokumenController extends Controller
         if ($request->ajax()) {
             $validator = Validator::make($request->all(), [
                 'name' => 'required|string',
-                'customer' => 'required|string',
-                'contact_person' => 'nullable|string',
-                'npwp' => 'nullable|string',
-                'ktp' => 'nullable|string',
-                'phone' => 'nullable|string',
-                'address' => 'required|string',
-                'gps_latitude' => 'nullable|string',
-                'gps_longitude' => 'nullable|string',
-                'provinsi' => 'nullable|string',
-                'kota' => 'nullable|string',
-                'kecamatan' => 'nullable|string',
-                'kelurahan' => 'nullable|string',
-                'text_provinsi' => 'nullable|required_with:provinsi|string',
-                'text_kota' => 'nullable|required_with:kota|string',
-                'text_kecamatan' => 'nullable|required_with:kecamatan|string',
-                'text_kelurahan' => 'nullable|required_with:kelurahan|string',
-                'zipcode' => 'nullable|string',
+                'other_address' => 'required|string',
+                'contact' => 'required|string',
+                'npwp' => 'required|string',
+                'ktp' => 'required|string',
+                'image_npwp' => 'nullable|image|mimes:jpeg,png,jpg|max:2048',
+                'image_ktp' => 'nullable|image|mimes:jpeg,png,jpg|max:2048'
             ]);
 
             if ($validator->fails()) {
@@ -269,52 +216,37 @@ class DokumenController extends Controller
 
             if ($validator->passes()) {
                 // $customer = Customer::find($id);
-                $other_address = CustomerOtherAddress::find($id);
+                $dokumen = Dokumen::find($id);
 
-                if ($other_address == null) {
+                if ($dokumen == null) {
                     abort(404);
                 }
 
-                $other_address->name = $request->name;
-                $other_address->customer_id = $request->customer;
-                $other_address->contact_person = $request->contact_person;
-                $other_address->npwp = $request->npwp;
-                $other_address->ktp = $request->ktp;
-                $other_address->phone = $request->phone;
-                $other_address->address = $request->address;
-
-                $other_address->gps_latitude = $request->gps_latitude;
-                $other_address->gps_longitude = $request->gps_longitude;
-
-                $other_address->provinsi = $request->provinsi;
-                $other_address->kota = $request->kota;
-                $other_address->kecamatan = $request->kecamatan;
-                $other_address->kelurahan = $request->kelurahan;
-                $other_address->text_provinsi = $request->text_provinsi;
-                $other_address->text_kota = $request->text_kota;
-                $other_address->text_kecamatan = $request->text_kecamatan;
-                $other_address->text_kelurahan = $request->text_kelurahan;
-
-                $other_address->zipcode = $request->zipcode;
+                $dokumen->customer_other_address_id = $request->other_address;
+                
+                $dokumen->name = $request->name;
+                $dokumen->contact = $request->contact;
+                $dokumen->npwp = $request->npwp;
+                $dokumen->ktp = $request->ktp;
 
                 if (!empty($request->file('image_npwp'))) {
-                    if (is_file_exists(CustomerOtherAddress::$directory_image.$other_address->image_npwp)) {
-                        remove_file(CustomerOtherAddress::$directory_image.$other_address->image_npwp);
+                    if (is_file_exists(CustomerOtherAddress::$directory_image.$dokumen->image_npwp)) {
+                        remove_file(CustomerOtherAddress::$directory_image.$dokumen->image_npwp);
                     }
 
-                    $other_address->image_npwp = UploadMedia::image($request->file('image_npwp'), CustomerOtherAddress::$directory_image);
+                    $dokumen->image_npwp = UploadMedia::image($request->file('image_npwp'), Dokumen::$directory_image);
                 }
 
                 if (!empty($request->file('image_ktp'))) {
-                    if (is_file_exists(CustomerOtherAddress::$directory_image.$other_address->image_ktp)) {
-                        remove_file(CustomerOtherAddress::$directory_image.$other_address->image_ktp);
+                    if (is_file_exists(CustomerOtherAddress::$directory_image.$dokumen->image_ktp)) {
+                        remove_file(CustomerOtherAddress::$directory_image.$dokumen->image_ktp);
                     }
 
-                    $other_address->image_ktp = UploadMedia::image($request->file('image_ktp'), CustomerOtherAddress::$directory_image);
+                    $dokumen->image_ktp = UploadMedia::image($request->file('image_ktp'), Dokumen::$directory_image);
                 }
 
 
-                if ($other_address->save()) {
+                if ($dokumen->save()) {
 
                     // dd($other_address);
                     $response['notification'] = [
@@ -323,7 +255,7 @@ class DokumenController extends Controller
                         'content' => 'Success',
                     ];
 
-                    $response['redirect_to'] = route('superuser.master.customer_other_address.show', $other_address->id);
+                    $response['redirect_to'] = route('superuser.master.dokumen.show', $dokumen->id);
 
                     return $this->response(200, $response);
                 }
@@ -341,15 +273,15 @@ class DokumenController extends Controller
         }
         if ($request->ajax()) {
             // $customer = Customer::find($id);
-            $other_address = CustomerOtherAddress::find($id);
+            $dokumen = Dokumen::find($id);
 
-            if ($other_address === null) {
+            if ($dokumen === null) {
                 abort(404);
             }
 
-            $other_address->status = CustomerOtherAddress::STATUS['DELETED'];
+            // $other_address->status = CustomerOtherAddress::STATUS['DELETED'];
 
-            if ($other_address->save()) {
+            if ($dokumen->save()) {
                 $response['redirect_to'] = 'reload()';
                 return $this->response(200, $response);
             }

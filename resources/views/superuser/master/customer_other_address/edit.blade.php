@@ -3,7 +3,7 @@
 @section('content')
 <nav class="breadcrumb bg-white push">
   <span class="breadcrumb-item">Master</span>
-  <a class="breadcrumb-item" href="{{ route('superuser.master.customer_other_address.index') }}">Member</a>
+  <a class="breadcrumb-item" href="{{ route('superuser.master.customer.index') }}">Member</a>
   <span class="breadcrumb-item active">Edit</span>
 </nav>
 <div class="block">
@@ -133,7 +133,7 @@
       </div>
       <div class="form-group row pt-30">
         <div class="col-md-6">
-        <a href="{{ route('superuser.master.customer_other_address.show', $other_address->id) }}">
+        <a href="{{ route('superuser.master.customer.index') }}">
             <button type="button" class="btn bg-gd-cherry border-0 text-white">
               <i class="fa fa-arrow-left mr-10"></i> Back
             </button>

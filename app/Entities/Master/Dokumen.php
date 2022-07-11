@@ -12,7 +12,7 @@ class Dokumen extends Model
     protected $appends = ['img_ktp', 'img_npwp'];
     protected $fillable = [
                             'id',
-                            'customer_other_address',
+                            'customer_other_address_id',
                             'name',
                             'contact',
                             'npwp',
@@ -26,5 +26,23 @@ class Dokumen extends Model
     public function member()
     {
         return $this->belongsTo('App\Entities\Master\CustomerOtherAddress');
+    }
+
+    public function getImgKtpAttribute()
+    {
+        if (!$this->image_ktp OR !file_exists(Self::$directory_image.$this->image_ktp)) {
+          return img_holder();
+        }
+
+        return asset(Self::$directory_image.$this->image_ktp);
+    }
+
+    public function getImgNpwpAttribute()
+    {
+        if (!$this->image_npwp OR !file_exists(Self::$directory_image.$this->image_npwp)) {
+          return img_holder();
+        }
+
+        return asset(Self::$directory_image.$this->image_npwp);
     }
 }
