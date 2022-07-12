@@ -123,7 +123,7 @@
                 </a>
               </td>
               <td>
-                <a class="btn btn-primary" href="{{ route('superuser.master.customer_other_address.create') }}" role="button" title="Add Member"><i class="fa fa-file"></i></a>
+                <a class="btn btn-primary" href="{{ route('superuser.master.customer.other_address.create', [$row->id]) }}" role="button" title="Add Member"><i class="fa fa-file"></i></a>
               </td>
           </tr>
 
@@ -146,12 +146,12 @@
                                               <iframe  style="height:100px; width: 200px;" src="https://maps.google.com/maps?q={{ $index->gps_latitude }},{{ $index->gps_longitude }}&hl=es;z=14&amp;output=embed" ?? ></iframe>
                                             </td>
                                             <td>
-                                              <!-- <a href="{{ route('superuser.master.customer_other_address.show', $index->id) }}"> -->
-                                              <button type="button" class="btn btn-sm btn-circle btn-alt-secondary" title="View" onclick="showMember()">
-                                                <i class="fa fa-eye"></i>
-                                              </button>
-                                              <!-- </a> -->
-                                              <a href="{{ route('superuser.master.customer_other_address.destroy', $index->id) }}">
+                                            <a href="{{ route('superuser.master.customer_other_address.show', $index->id) }}">
+                                                  <button type="button" class="btn btn-sm btn-circle btn-alt-secondary" title="View">
+                                                      <i class="fa fa-eye"></i>
+                                                  </button>
+                                              </a>
+                                              <a href="javascript:deleteConfirmation('{{ route('superuser.master.customer.other_address.destroy', [$row->id, $index->id]) }}')">
                                                   <button type="button" class="btn btn-sm btn-circle btn-alt-danger" title="Delete">
                                                       <i class="fa fa-times"></i>
                                                   </button>
@@ -199,13 +199,5 @@
             showHeader: false
         });
     });
-
-    function showMember() {
-      window.open("{{ route('superuser.master.customer_other_address.show', $index->id) }}");
-    }
-
-    function showStore() {
-      window.open("{{ route('superuser.master.customer.show', $row->id) }}");
-    }
 </script>
 @endpush

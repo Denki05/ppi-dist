@@ -3,7 +3,9 @@
 @section('content')
 <nav class="breadcrumb bg-white push">
   <span class="breadcrumb-item">Master</span>
-  <a class="breadcrumb-item" href="{{ route('superuser.master.customer.index') }}">Member</a>
+  <a class="breadcrumb-item" href="{{ route('superuser.master.customer.index') }}">Store</a>
+  <a class="breadcrumb-item" href="{{ route('superuser.master.customer.show', $customer->id) }}">{{ $customer->name }}</a>
+  <span class="breadcrumb-item">Member</span>
   <span class="breadcrumb-item active">Create</span>
 </nav>
 <div class="block">
@@ -11,24 +13,14 @@
     <h3 class="block-title">Create Member</h3>
   </div>
   <div class="block-content">
-    <form class="ajax" data-action="{{ route('superuser.master.customer_other_address.store') }}" data-type="POST" enctype="multipart/form-data">
-      <div class="form-group row">
+    <form class="ajax" data-action="{{ route('superuser.master.customer.other_address.store', $customer->id) }}" data-type="POST" enctype="multipart/form-data">
+    <div class="form-group row">
         <label class="col-md-3 col-form-label text-right" for="name">Name <span class="text-danger">*</span></label>
         <div class="col-md-7">
           <input type="text" class="form-control" id="name" name="name">
         </div>
       </div>
-      <div class="form-group row">
-        <label class="col-md-3 col-form-label text-right" for="customer">Store <span class="text-danger">*</span></label>
-        <div class="col-md-7">
-          <select class="js-select2 form-control" id="customer" name="customer" data-placeholder="Select Store">
-            <option></option>
-            @foreach($customers as $store)
-            <option value="{{ $store->id }}">{{ $store->name }}</option>
-            @endforeach
-          </select>
-        </div>
-      </div>
+      
       <div class="form-group row">
         <label class="col-md-3 col-form-label text-right" for="contact_person">Contact Person</label>
         <div class="col-md-7">
@@ -125,7 +117,7 @@
       <div class="form-group row">
         <label class="col-md-3 col-form-label text-right">Image NPWP</label>
         <div class="col-md-7">
-          <input type="file" id="image_ktp" name="image_ktp" data-max-file-size="2000" accept="image/png, image/jpeg">
+          <input type="file" id="image_npwp" name="image_ktp" data-max-file-size="2000" accept="image/png, image/jpeg">
         </div>
       </div>
       <div class="form-group row">
@@ -323,5 +315,5 @@
                         
                     }
                 </script>
-                <script async defer src="https://maps.googleapis.com/maps/api/js?key=&callback=initMap" type="text/javascript"></script>
+<script async defer src="https://maps.googleapis.com/maps/api/js?key=&callback=initMap" type="text/javascript"></script>
 @endpush

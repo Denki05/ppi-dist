@@ -43,10 +43,10 @@ class CustomerController extends Controller
             return $next($request);
         });
     }
-    // public function json(Request $request, CustomerTable $datatable)
-    // {
-    //     return $datatable->build();
-    // }
+    public function json(Request $request, CustomerTable $datatable)
+    {
+        return $datatable->build();
+    }
 
     public function index()
     {
@@ -60,10 +60,6 @@ class CustomerController extends Controller
         $data['customers'] = Customer::all();
         $data['other_address'] = CustomerOtherAddress::all();
 
-        // $data = new Customer();
-        // $parent = $data->get('SELECT * FROM master_customers');
-        // $child = $data->get('SELECT * FROM master_customer_other_addresses');
-        
         return view('superuser.master.customer.index', $data);
     }
 
@@ -78,12 +74,12 @@ class CustomerController extends Controller
 
         $data['customer_categories'] = MasterRepo::customer_categories();
         $data['customer_types'] = MasterRepo::customer_types();
-		$data['provinces'] = Province::all();
+        $data['provinces'] = Province::all();
 
         return view('superuser.master.customer.create', $data);
     }
-	
-	public function getkabupaten(request $request)
+
+    public function getkabupaten(request $request)
     {
         $prov_id = $request->prov_id;
 
@@ -156,6 +152,7 @@ class CustomerController extends Controller
                 'zipcode' => 'nullable|string',
                 // 'image_store' => 'nullable|image|mimes:jpeg,png,jpg|max:2048',
                 'image_ktp' => 'nullable|image|mimes:jpeg,png,jpg|max:2048',
+                'image_npwp' => 'nullable|image|mimes:jpeg,png,jpg|max:2048',
                 'notification_email' => 'nullable'
             ]);
 
@@ -184,7 +181,6 @@ class CustomerController extends Controller
                 $customer->email = $request->email;
                 $customer->phone = $request->phone;
                 $customer->npwp = $request->npwp;
-                $customer->ktp = $request->ktp;
                 $customer->address = $request->address;
 
                 $customer->owner_name = $request->owner_name;
@@ -266,7 +262,6 @@ class CustomerController extends Controller
         $data['customer'] = Customer::findOrFail($id);
         $data['customer_categories'] = MasterRepo::customer_categories();
         $data['customer_types'] = MasterRepo::customer_types();
-        $data['provinces'] = Province::all();
 
         return view('superuser.master.customer.edit', $data);
     }
@@ -289,7 +284,6 @@ class CustomerController extends Controller
                 'email' => 'nullable|email',
                 'phone' => 'nullable|string',
                 'npwp' => 'nullable|string',
-                'ktp' => 'nullable|string',
                 'address' => 'required|string',
                 'owner_name' => 'nullable|string',
                 'website' => 'nullable|string',
@@ -333,7 +327,6 @@ class CustomerController extends Controller
                 $customer->email = $request->email;
                 $customer->phone = $request->phone;
                 $customer->npwp = $request->npwp;
-                $customer->ktp = $request->ktp;
                 $customer->address = $request->address;
 
                 $customer->owner_name = $request->owner_name;
@@ -354,12 +347,12 @@ class CustomerController extends Controller
 
                 $customer->zipcode = $request->zipcode;
 
-                if (!empty($request->file('image_npwp'))) {
-                    if (is_file_exists(Customer::$directory_image.$customer->image_npwp)) {
-                        remove_file(Customer::$directory_image.$customer->image_npwp);
+                if (!empty($request->file('image_store'))) {
+                    if (is_file_exists(Customer::$directory_image.$customer->image_store)) {
+                        remove_file(Customer::$directory_image.$customer->image_store);
                     }
 
-                    $customer->image_npwp = UploadMedia::image($request->file('image_npwp'), Customer::$directory_image);
+                    $customer->image_store = UploadMedia::image($request->file('image_store'), Customer::$directory_image);
                 }
 
                 if (!empty($request->file('image_ktp'))) {

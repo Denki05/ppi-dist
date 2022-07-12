@@ -2,13 +2,11 @@
 
 namespace App\Http\Controllers\Superuser\Master;
 
-use App\DataTables\Master\CustomerOtherAddressTable;
-// use App\Entities\Master\Customer;
+use App\Entities\Master\Customer;
 use App\Entities\Master\CustomerOtherAddress;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use App\Entities\Setting\UserMenu;
-use App\Repositories\MasterRepo;
 use Validator;
 use Auth;
 use App\Models\Province;
@@ -36,24 +34,7 @@ class CustomerOtherAddressController extends Controller
             return $next($request);
         });
     }
-
-    public function json(Request $request, CustomerOtherAddressTable $datatable)
-    {
-        return $datatable->build();
-    }
-
-    public function index()
-    {
-        // Access
-        if(Auth::user()->is_superuser == 0){
-            if(empty($this->access)){
-                return redirect()->route('superuser.index')->with('error','Anda tidak punya akses untuk membuka menu terkait');
-            }
-        }
-        return view('superuser.master.customer_other_address.index');
-    }
-
-    public function create()
+    public function create($id)
     {
         // Access
         if(Auth::user()->is_superuser == 0){
@@ -62,8 +43,7 @@ class CustomerOtherAddressController extends Controller
             }
         }
 
-        // $data['customer'] = Customer::findOrFail($id);
-        $data['customers'] = MasterRepo::customers();
+        $data['customer'] = Customer::findOrFail($id);
         $data['provinces'] = Province::all();
 
         return view('superuser.master.customer_other_address.create', $data);
@@ -113,12 +93,11 @@ class CustomerOtherAddressController extends Controller
         }
     }
 
-    public function store(Request $request)
+    public function store(Request $request, $id)
     {
         if ($request->ajax()) {
             $validator = Validator::make($request->all(), [
                 'name' => 'required|string',
-                'customer' => 'required|string',
                 'contact_person' => 'nullable|string',
                 'npwp' => 'nullable|string',
                 'ktp' => 'nullable|string',
@@ -134,7 +113,7 @@ class CustomerOtherAddressController extends Controller
                 'text_kota' => 'nullable|required_with:kota|string',
                 'text_kecamatan' => 'nullable|required_with:kecamatan|string',
                 'text_kelurahan' => 'nullable|required_with:kelurahan|string',
-                'zipcode' => 'nullable|string',
+                'zipcode' => 'nullable|string'
             ]);
 
             if ($validator->fails()) {
@@ -149,15 +128,15 @@ class CustomerOtherAddressController extends Controller
             }
 
             if ($validator->passes()) {
-                // $customer = Customer::find($id);
+                $customer = Customer::find($id);
 
-                // if ($customer == null) {
-                //     abort(404);
-                // }
+                if ($customer == null) {
+                    abort(404);
+                }
 
                 $other_address = new CustomerOtherAddress;
 
-                $other_address->customer_id = $request->customer;
+                $other_address->customer_id = $customer->id;
 
                 $other_address->name = $request->name;
                 $other_address->contact_person = $request->contact_person;
@@ -189,6 +168,7 @@ class CustomerOtherAddressController extends Controller
                 }
 
                 $other_address->status = CustomerOtherAddress::STATUS['ACTIVE'];
+
                 
                 if ($other_address->save()) {
                     $response['notification'] = [
@@ -197,7 +177,7 @@ class CustomerOtherAddressController extends Controller
                         'content' => 'Success',
                     ];
 
-                    $response['redirect_to'] = route('superuser.master.customer_other_address.index');
+                    $response['redirect_to'] = route('superuser.master.customer.index', $id);
 
                     return $this->response(200, $response);
                 }
@@ -213,14 +193,12 @@ class CustomerOtherAddressController extends Controller
                 return redirect()->route('superuser.index')->with('error','Anda tidak punya akses untuk membuka menu terkait');
             }
         }
-
         $data['other_address'] = CustomerOtherAddress::findOrFail($id);
-        $data['customers'] = MasterRepo::customers();
 
         return view('superuser.master.customer_other_address.show', $data);
     }
 
-    public function edit($id)
+    public function edit($id, $address_id)
     {
         // Access
         if(Auth::user()->is_superuser == 0){
@@ -229,20 +207,18 @@ class CustomerOtherAddressController extends Controller
             }
         }
 
-        $data['customers'] = MasterRepo::customers();
-        $data['other_address'] = CustomerOtherAddress::findOrFail($id);
+        $data['customer'] = Customer::findOrFail($id);
+        $data['other_address'] = CustomerOtherAddress::findOrFail($address_id);
         $data['provinces'] = Province::all();
 
-        // dd($data);
         return view('superuser.master.customer_other_address.edit', $data);
     }
     
-    public function update(Request $request, $id)
+    public function update(Request $request, $id, $address_id)
     {
         if ($request->ajax()) {
             $validator = Validator::make($request->all(), [
                 'name' => 'required|string',
-                'customer' => 'required|string',
                 'contact_person' => 'nullable|string',
                 'npwp' => 'nullable|string',
                 'ktp' => 'nullable|string',
@@ -258,7 +234,7 @@ class CustomerOtherAddressController extends Controller
                 'text_kota' => 'nullable|required_with:kota|string',
                 'text_kecamatan' => 'nullable|required_with:kecamatan|string',
                 'text_kelurahan' => 'nullable|required_with:kelurahan|string',
-                'zipcode' => 'nullable|string',
+                'zipcode' => 'nullable|string'
             ]);
 
             if ($validator->fails()) {
@@ -273,10 +249,10 @@ class CustomerOtherAddressController extends Controller
             }
 
             if ($validator->passes()) {
-                // $customer = Customer::find($id);
-                $other_address = CustomerOtherAddress::find($id);
+                $customer = Customer::find($id);
+                $other_address = CustomerOtherAddress::find($address_id);
 
-                if ($other_address == null) {
+                if ($customer == null OR $other_address == null) {
                     abort(404);
                 }
 
@@ -320,15 +296,13 @@ class CustomerOtherAddressController extends Controller
 
 
                 if ($other_address->save()) {
-
-                    // dd($other_address);
                     $response['notification'] = [
                         'alert' => 'notify',
                         'type' => 'success',
                         'content' => 'Success',
                     ];
 
-                    $response['redirect_to'] = route('superuser.master.customer_other_address.show', $other_address->id);
+                    $response['redirect_to'] = route('superuser.master.customer.index', $id);
 
                     return $this->response(200, $response);
                 }
@@ -336,7 +310,7 @@ class CustomerOtherAddressController extends Controller
         }
     }
 
-    public function destroy(Request $request, $id)
+    public function destroy(Request $request, $id, $address_id)
     {
         // Access
         if(Auth::user()->is_superuser == 0){
@@ -345,10 +319,10 @@ class CustomerOtherAddressController extends Controller
             }
         }
         if ($request->ajax()) {
-            // $customer = Customer::find($id);
-            $other_address = CustomerOtherAddress::find($id);
+            $customer = Customer::find($id);
+            $other_address = CustomerOtherAddress::find($address_id);
 
-            if ($other_address === null) {
+            if ($customer === null OR $other_address === null) {
                 abort(404);
             }
 

@@ -4,7 +4,7 @@
 <nav class="breadcrumb bg-white push">
   <span class="breadcrumb-item">Master</span>
   <a class="breadcrumb-item" href="{{ route('superuser.master.customer.index') }}">Member</a>
-  <span class="breadcrumb-item active">{{ $other_address->id }}</span>
+  <span class="breadcrumb-item active">{{ $other_address->name }}</span>
 </nav>
 <div class="block">
   <div class="block-header block-header-default">

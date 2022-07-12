@@ -54,11 +54,6 @@
           Store
         </a>
       </li>
-      <!-- <li>
-        <a href="{{ route('superuser.master.customer_other_address.index') }}" class="{{ is_active_route('superuser.master.customer_other_address.index') }}">
-          Member
-        </a>
-      </li> -->
       <li>
         <a href="{{ route('superuser.master.customer_category.index') }}" class="{{ is_active_route('superuser.master.customer_category.index') }}">
           Customer Category
