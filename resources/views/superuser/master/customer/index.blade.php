@@ -116,7 +116,7 @@
                 <button type="button" class="btn btn-sm btn-circle btn-alt-secondary" title="View" onclick="showStore()">
                   <i class="fa fa-eye"></i>
                 </button>
-                <a href="{{ route('superuser.master.customer.destroy', $row->id) }}">
+                <a href="javascript:deleteConfirmation('{$row->id}')">
                     <button type="button" class="btn btn-sm btn-circle btn-alt-danger" title="Delete">
                         <i class="fa fa-times"></i>
                     </button>
@@ -190,6 +190,7 @@
 @push('scripts')
 <script type="text/javascript">
   $(document).ready(function() {
+
         $('.link').click(function() {
             event.preventDefault();
         });
