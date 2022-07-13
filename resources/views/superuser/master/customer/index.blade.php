@@ -113,9 +113,11 @@
               <td>{{ $row->name }}</td>
               <td>{{ $row->address }} - <br><b>{{ $row->text_kota }}</b></br></td>
               <td>
-                <button type="button" class="btn btn-sm btn-circle btn-alt-secondary" title="View" onclick="showStore()">
-                  <i class="fa fa-eye"></i>
-                </button>
+                <a href="{{ route('superuser.master.customer.show', $row->id) }}">
+                    <button type="button" class="btn btn-sm btn-circle btn-alt-secondary" title="Delete">
+                        <i class="fa fa-eye"></i>
+                    </button>
+                </a>
                 <a href="javascript:deleteConfirmation('{$row->id}')">
                     <button type="button" class="btn btn-sm btn-circle btn-alt-danger" title="Delete">
                         <i class="fa fa-times"></i>

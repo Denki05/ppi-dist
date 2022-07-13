@@ -6,6 +6,7 @@
 <link rel="stylesheet" href="{{ asset(setting('website.color_themes')) }}" id="css-theme" >
 @endif
 <link rel="stylesheet" href="{{ asset('superuser_assets/css/codebase.custom.css') }}">
+<link rel="stylesheet" href="{{ asset('superuser_assets/css/nav.menu.css') }}">
 <link rel="stylesheet" href="{{ asset('superuser_assets/summernote/summernote.css') }}">
 <link rel="stylesheet" href="{{ asset('superuser_assets/css/login.css') }}">
 
