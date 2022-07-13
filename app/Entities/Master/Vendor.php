@@ -11,10 +11,8 @@ class Vendor extends Model
     
     protected $fillable = [
         'code', 'name', 'address',
-        'provinsi', 'kota', 'kecamatan', 'kelurahan',
-        'text_provinsi', 'text_kota', 'text_kecamatan', 'text_kelurahan',
-        'zipcode', 'email', 'phone', 'owner_name', 'website',
-        'description', 'status'
+        'email', 'phone', 'owner_name', 'website',
+        'description', 'status', 'type'
     ];
     
     protected $table = 'master_vendors';
@@ -23,9 +21,18 @@ class Vendor extends Model
         'DELETED' => 0,
         'ACTIVE' => 1
     ];
+    const TYPE = [
+    	'Non Ekspedisi' => 0,
+        'Ekspedisi' => 1
+    ];
 
-    public function contacts()
+    public function type()
     {
-        return $this->belongsToMany('App\Entities\Master\Contact', 'master_vendor_contacts', 'vendor_id', 'contact_id')->withPivot('id');
+        return array_search($this->type, self::TYPE);
+    }
+
+    public function details()
+    {
+        return $this->hasMany('App\Entites\Master\VendorDetail', 'vendor_id');
     }
 }

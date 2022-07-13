@@ -44,21 +44,12 @@ class VendorTable extends Table
 
         $table->addColumn('action', function (Vendor $model) {
             $view = route('superuser.master.vendor.show', $model);
-            $edit = route('superuser.master.vendor.edit', $model);
             $destroy = route('superuser.master.vendor.destroy', $model);
 
             $html_view = "
                 <a href=\"{$view}\">
                     <button type=\"button\" class=\"btn btn-sm btn-circle btn-alt-secondary\" title=\"View\">
                         <i class=\"fa fa-eye\"></i>
-                    </button>
-                </a>
-            ";
-
-            $html_edit = "
-                <a href=\"{$edit}\">
-                    <button type=\"button\" class=\"btn btn-sm btn-circle btn-alt-warning\" title=\"Edit\">
-                        <i class=\"fa fa-pencil\"></i>
                     </button>
                 </a>
             ";
@@ -75,7 +66,7 @@ class VendorTable extends Table
                 return $html_view;
             }
             
-            return $html_view . $html_edit . $html_destroy;
+            return $html_view . $html_destroy;
         });
 
         return $table->make(true);

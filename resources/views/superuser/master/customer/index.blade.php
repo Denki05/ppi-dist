@@ -147,21 +147,23 @@
                                             <td width="5%">
                                               <iframe  style="height:100px; width: 200px;" src="https://maps.google.com/maps?q={{ $index->gps_latitude }},{{ $index->gps_longitude }}&hl=es;z=14&amp;output=embed" ?? ></iframe>
                                             </td>
+                                            @if ($index->status != $index::STATUS['DELETED'] AND $row->status != $row::STATUS['DELETED'])
                                             <td>
-                                            <a href="{{ route('superuser.master.customer_other_address.show', $index->id) }}">
-                                                  <button type="button" class="btn btn-sm btn-circle btn-alt-secondary" title="View">
-                                                      <i class="fa fa-eye"></i>
-                                                  </button>
-                                              </a>
-                                              <a href="javascript:deleteConfirmation('{{ route('superuser.master.customer.other_address.destroy', [$row->id, $index->id]) }}')">
-                                                  <button type="button" class="btn btn-sm btn-circle btn-alt-danger" title="Delete">
-                                                      <i class="fa fa-times"></i>
-                                                  </button>
-                                              </a>
+                                                <a href="{{ route('superuser.master.customer_other_address.show', $index->id) }}">
+                                                    <button type="button" class="btn btn-sm btn-circle btn-alt-secondary" title="View">
+                                                        <i class="fa fa-eye"></i>
+                                                    </button>
+                                                </a>
+                                                <a href="javascript:deleteConfirmation('{{ route('superuser.master.customer.other_address.destroy', [$row->id, $index->id]) }}')">
+                                                    <button type="button" class="btn btn-sm btn-circle btn-alt-danger" title="Delete">
+                                                        <i class="fa fa-times"></i>
+                                                    </button>
+                                                </a>
                                             </td>
                                             <td>
                                               <a class="btn btn-primary" href="{{ route('superuser.master.dokumen.create') }}" role="button" title="Add Dokumen"><i class="fa fa-file"></i></a>
                                             </td>
+                                            @endif
                                         </tr>
                                     @endif
                                 @endforeach

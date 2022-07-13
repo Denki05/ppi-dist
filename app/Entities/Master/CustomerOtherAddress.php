@@ -3,12 +3,10 @@
 namespace App\Entities\Master;
 
 use App\Entities\Model;
-use Illuminate\Database\Eloquent\SoftDeletes;
 
 class CustomerOtherAddress extends Model
 {
-    use SoftDeletes;
-
+   
     protected $appends = ['img_ktp', 'img_npwp'];
     protected $fillable = [
         'customer_id', 'name', 'contact_person', 'npwp', 'ktp', 'phone', 'address',

@@ -32,48 +32,6 @@
         </div>
       </div>
       <div class="form-group row">
-        <label class="col-md-3 col-form-label text-right">Provinsi</label>
-        <div class="col-md-7">
-          <select class="js-select2 form-control" id="provinsi" name="provinsi" data-placeholder="Select Provinsi">
-            <option></option>
-          </select>
-          <input type="hidden" name="text_provinsi">
-        </div>
-      </div>
-      <div class="form-group row">
-        <label class="col-md-3 col-form-label text-right">Kota</label>
-        <div class="col-md-7">
-          <select class="js-select2 form-control" id="kota" name="kota" data-placeholder="Select Kota">
-            <option></option>
-          </select>
-          <input type="hidden" name="text_kota">
-        </div>
-      </div>
-      <div class="form-group row">
-        <label class="col-md-3 col-form-label text-right">Kecamatan</label>
-        <div class="col-md-7">
-          <select class="js-select2 form-control" id="kecamatan" name="kecamatan" data-placeholder="Select Kecamatan">
-            <option></option>
-          </select>
-          <input type="hidden" name="text_kecamatan">
-        </div>
-      </div>
-      <div class="form-group row">
-        <label class="col-md-3 col-form-label text-right">Kelurahan</label>
-        <div class="col-md-7">
-          <select class="js-select2 form-control" id="kelurahan" name="kelurahan" data-placeholder="Select Kelurahan">
-            <option></option>
-          </select>
-          <input type="hidden" name="text_kelurahan">
-        </div>
-      </div>
-      <div class="form-group row">
-        <label class="col-md-3 col-form-label text-right" for="zipcode">Zipcode</label>
-        <div class="col-md-7">
-          <input type="text" class="form-control" id="zipcode" name="zipcode">
-        </div>
-      </div>
-      <div class="form-group row">
         <label class="col-md-3 col-form-label text-right" for="email">Email</label>
         <div class="col-md-7">
           <input type="email" class="form-control" id="email" name="email">
@@ -103,6 +61,19 @@
           <textarea class="form-control" id="description" name="description"></textarea>
         </div>
       </div>
+      <div class="form-group row">
+        <label class="col-md-3 col-form-label text-right" for="type">Type <span class="text-danger">*</span></label>
+        <div class="col-md-7 text-right">
+          <div class="col-md-3 form-check form-check-inline">
+            <input class="form-check-input" type="radio" name="type" id="type" value="1">
+            <label class="form-check-label" for="type">Ekspedisi</label>
+          </div>
+          <div class="form-check form-check-inline">
+            <input class="form-check-input" type="radio" name="type" id="type" value="0">
+            <label class="form-check-label" for="type">Non Ekspedisi</label>
+          </div>
+        </div>
+      </div>
       <div class="form-group row pt-30">
         <div class="col-md-6">
           <a href="{{ route('superuser.master.vendor.index') }}">
@@ -123,7 +94,6 @@
 @endsection
 
 @include('superuser.asset.plugin.select2')
-@include('superuser.asset.plugin.select2-chain-indonesian-teritory')
 
 @push('scripts')
 <script src="{{ asset('utility/superuser/js/form.js') }}"></script>

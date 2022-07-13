@@ -68,23 +68,14 @@ class VendorController extends Controller
                 'name' => 'required|string',
                 'address' => 'nullable|string',
 
-                'provinsi' => 'nullable|string',
-                'kota' => 'nullable|string',
-                'kecamatan' => 'nullable|string',
-                'kelurahan' => 'nullable|string',
-                'text_provinsi' => 'nullable|required_with:provinsi|string',
-                'text_kota' => 'nullable|required_with:kota|string',
-                'text_kecamatan' => 'nullable|required_with:kecamatan|string',
-                'text_kelurahan' => 'nullable|required_with:kelurahan|string',
-                'zipcode' => 'nullable|string',
-
                 'email' => 'nullable|email',
                 'phone' => 'nullable|string',
 
                 'owner_name' => 'nullable|string',
                 'website' => 'nullable|string',
 
-                'description' => 'nullable|string'
+                'description' => 'nullable|string',
+                'type' => 'nullable|string'
             ]);
 
             if ($validator->fails()) {
@@ -107,17 +98,6 @@ class VendorController extends Controller
                 $vendor->name = $request->name;
                 $vendor->address = $request->address;
 
-                $vendor->provinsi = $request->provinsi;
-                $vendor->kota = $request->kota;
-                $vendor->kecamatan = $request->kecamatan;
-                $vendor->kelurahan = $request->kelurahan;
-                $vendor->text_provinsi = $request->text_provinsi;
-                $vendor->text_kota = $request->text_kota;
-                $vendor->text_kecamatan = $request->text_kecamatan;
-                $vendor->text_kelurahan = $request->text_kelurahan;
-
-                $vendor->zipcode = $request->zipcode;
-
                 $vendor->email = $request->email;
                 $vendor->phone = $request->phone;
 
@@ -125,6 +105,8 @@ class VendorController extends Controller
                 $vendor->website = $request->website;
                 
                 $vendor->description = $request->description;
+                
+                $vendor->type = $request->type;
 
                 $vendor->status = Vendor::STATUS['ACTIVE'];
 
@@ -186,16 +168,6 @@ class VendorController extends Controller
                 'name' => 'required|string',
                 'address' => 'nullable|string',
 
-                'provinsi' => 'nullable|string',
-                'kota' => 'nullable|string',
-                'kecamatan' => 'nullable|string',
-                'kelurahan' => 'nullable|string',
-                'text_provinsi' => 'nullable|required_with:provinsi|string',
-                'text_kota' => 'nullable|required_with:kota|string',
-                'text_kecamatan' => 'nullable|required_with:kecamatan|string',
-                'text_kelurahan' => 'nullable|required_with:kelurahan|string',
-                'zipcode' => 'nullable|string',
-
                 'email' => 'nullable|email',
                 'phone' => 'nullable|string',
 
@@ -222,18 +194,7 @@ class VendorController extends Controller
                 // $vendor->code = $request->code;
                 $vendor->name = $request->name;
                 $vendor->address = $request->address;
-
-                $vendor->provinsi = $request->provinsi;
-                $vendor->kota = $request->kota;
-                $vendor->kecamatan = $request->kecamatan;
-                $vendor->kelurahan = $request->kelurahan;
-                $vendor->text_provinsi = $request->text_provinsi;
-                $vendor->text_kota = $request->text_kota;
-                $vendor->text_kecamatan = $request->text_kecamatan;
-                $vendor->text_kelurahan = $request->text_kelurahan;
-
-                $vendor->zipcode = $request->zipcode;
-
+                
                 $vendor->email = $request->email;
                 $vendor->phone = $request->phone;
 

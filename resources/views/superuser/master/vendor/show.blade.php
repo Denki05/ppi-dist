@@ -30,36 +30,6 @@
       </div>
     </div>
     <div class="row">
-      <label class="col-md-3 col-form-label text-right">Provinsi</label>
-      <div class="col-md-7">
-        <div class="form-control-plaintext">{{ $vendor->text_provinsi }}</div>
-      </div>
-    </div>
-    <div class="row">
-      <label class="col-md-3 col-form-label text-right">Kota</label>
-      <div class="col-md-7">
-        <div class="form-control-plaintext">{{ $vendor->text_kota }}</div>
-      </div>
-    </div>
-    <div class="row">
-      <label class="col-md-3 col-form-label text-right">Kecamatan</label>
-      <div class="col-md-7">
-        <div class="form-control-plaintext">{{ $vendor->text_kecamatan }}</div>
-      </div>
-    </div>
-    <div class="row">
-      <label class="col-md-3 col-form-label text-right">Kelurahan</label>
-      <div class="col-md-7">
-        <div class="form-control-plaintext">{{ $vendor->text_kelurahan }}</div>
-      </div>
-    </div>
-    <div class="row">
-      <label class="col-md-3 col-form-label text-right">Zipcode</label>
-      <div class="col-md-7">
-        <div class="form-control-plaintext">{{ $vendor->zipcode }}</div>
-      </div>
-    </div>
-    <div class="row">
       <label class="col-md-3 col-form-label text-right">Email</label>
       <div class="col-md-7">
         <div class="form-control-plaintext">{{ $vendor->email }}</div>
@@ -94,6 +64,11 @@
       <div class="col-md-7">
         <div class="form-control-plaintext">{{ $vendor->status() }}</div>
       </div>
+    </div><div class="row">
+      <label class="col-md-3 col-form-label text-right">Type</label>
+      <div class="col-md-7">
+        <div class="form-control-plaintext">{{ $vendor->type() }}</div>
+      </div>
     </div>
     <div class="row pt-30 mb-15">
       <div class="col-md-6">
@@ -121,63 +96,51 @@
   </div>
 </div>
 
-<div class="row">
-  <div class="col-md-6">
-    <div class="block">
-      <div class="block-header block-header-default">
-        <h3 class="block-title">Contact</h3>
-        
-        @if($vendor->status != $vendor::STATUS['DELETED'])
-        <a href="{{ route('superuser.master.vendor.contact.manage', [$vendor->id]) }}">
-          <button type="button" class="btn btn-outline-warning min-width-125 pull-right">Manage</button>
-        </a>
-        @endif
-      </div>
-      <div class="block-content block-content-full">
-        <table id="datatable-contact" class="table table-striped table-vcenter table-responsive js-table-sections table-hover">
-          <thead>
-            <tr>
-              <th>#</th>
-              <th>Name</th>
-              <th>Phone</th>
-              <th>Action</th>
-            </tr>
-          </thead>
-          <tbody>
-            @foreach($vendor->contacts as $contact)
-            <tr>
-              <td>{{ $loop->iteration }}</td>
-              <td>{{ $contact->name }}</td>
-              <td>{{ $contact->phone }}</td>
-              <td>
-                <a href="{{ route('superuser.master.contact.show', $contact->id) }}" target="_blank">
-                  <button type="button" class="btn btn-sm btn-circle btn-alt-secondary" title="Show Contact">
-                    <i class="fa fa-eye"></i>
-                  </button>
-                </a>
-              </td>
-            </tr>
-            @endforeach
-          </tbody>
-        </table>
-      </div>
-    </div>
+@if($vendor->type == $vendor::TYPE['Non Ekspedisi'])
+<div class="block">
+  <div class="block-header block-header-default">
+    <h3 class="block-title">Transaction History</h3>
+
+    <a href="#">
+      <button type="button" class="btn btn-outline-primary min-width-125 pull-right">Add</button>
+    </a>
+  </div>
+  <div class="block-content">
+    <table id="datatable" class="table table-striped table-vcenter table-responsive">
+      <thead>
+        <tr>
+          <th class="text-center">SKU</th>
+          <th class="text-center">Qty</th>
+          <th class="text-center">Unit Price (RMB)</th>
+          <th class="text-center">Local Freight Cost (RMB)</th>
+          <th class="text-center">Komisi (IDR)</th>
+          <th class="text-center">Total Price (RMB)</th>
+          <th class="text-center">Kurs (RMB)</th>
+          <th class="text-center">Total Price (IDR)</th>
+          <th class="text-center">Unit Price (IDR)</th>
+          <th class="text-center">Action</th>
+        </tr>
+      </thead>
+      <tbody>
+      </tbody>
+      <tfoot>
+      </tfoot>
+    </table>
   </div>
 </div>
+@endif
+
 @endsection
 
 @include('superuser.asset.plugin.datatables')
 @include('superuser.asset.plugin.swal2')
 
 @push('scripts')
+<script src="{{ asset('utility/superuser/js/form.js') }}"></script>
 <script type="text/javascript">
-  $(document).ready(function() {
-    $('#datatable-contact').DataTable({
-      columnDefs: [
-        { orderable: false, targets: [3] }
-      ]
-    })
-  })
+  $(document).ready( function () {
+    $('#datatable').DataTable();
+  });
 </script>
 @endpush
 
