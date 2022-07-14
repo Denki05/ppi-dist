@@ -33,6 +33,6 @@ class Vendor extends Model
 
     public function details()
     {
-        return $this->hasMany('App\Entites\Master\VendorDetail', 'vendor_id');
+        return $this->hasMany('App\Entities\Master\VendorDetail', 'vendor_id');
     }
 }

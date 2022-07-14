@@ -101,7 +101,7 @@
   <div class="block-header block-header-default">
     <h3 class="block-title">Transaction History</h3>
 
-    <a href="#">
+    <a href="{{ route('superuser.master.vendor.detail.create', [$vendor->id]) }}">
       <button type="button" class="btn btn-outline-primary min-width-125 pull-right">Add</button>
     </a>
   </div>
@@ -109,19 +109,23 @@
     <table id="datatable" class="table table-striped table-vcenter table-responsive">
       <thead>
         <tr>
-          <th class="text-center">SKU</th>
+          <th class="text-center">Transaction Date</th>
+          <th class="text-center">Transaction Name</th>
           <th class="text-center">Qty</th>
-          <th class="text-center">Unit Price (RMB)</th>
-          <th class="text-center">Local Freight Cost (RMB)</th>
-          <th class="text-center">Komisi (IDR)</th>
-          <th class="text-center">Total Price (RMB)</th>
-          <th class="text-center">Kurs (RMB)</th>
-          <th class="text-center">Total Price (IDR)</th>
-          <th class="text-center">Unit Price (IDR)</th>
-          <th class="text-center">Action</th>
+          <th class="text-center">Unit</th>
+          <th class="text-center">Grand Total</th>
         </tr>
       </thead>
       <tbody>
+        @foreach($vendor->details as $detail)
+        <tr>
+          <td class="text-center">{{ date('d-m-Y', strtotime($detail->created_at)) }}</td>
+          <td class="text-center">{{ $detail->transaction }}</td>
+          <td class="text-center">{{ $detail->quantity }}</td>
+          <td class="text-center">{{ $detail->satuan() }}</td>
+          <td class="text-center">Rp. {{ number_format($detail->grand_total, 2) }}</td>
+        </tr>
+        @endforeach
       </tbody>
       <tfoot>
       </tfoot>

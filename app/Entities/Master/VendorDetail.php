@@ -20,21 +20,21 @@ class VendorDetail extends Model
         'ACTIVE' => 1
     ];
 
-    const UNIT = [
-        1 => 'Pcs',
-        2 => 'Lembar',
-        3 => 'Lusin',
-        4 => 'Liter',
-        5 => 'Kg'
+    const SATUAN = [
+        'Pcs' => 1,
+        'Lembar' => 2,
+        'Lusin' => 3,
+        'Liter' => 4,
+        'Kg' => 5
     ];
 
-    public function unit()
+    public function satuan()
     {
-        return array_search($this->unit, self::UNIT);
+        return array_search($this->satuan, self::SATUAN);
     }
 
     public function vendor()
     {
-        return $this->belongsTo('App\Entities\Master\Vendor');
+        return $this->belongsTo('App\Entities\Master\Vendor', 'vendor_id');
     }
 }

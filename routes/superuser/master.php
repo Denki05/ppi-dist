@@ -167,6 +167,15 @@ Route::group([
             Route::post('/{id}/contact', 'VendorContactController@add')->name('add');
             Route::get('/{id}/contact/{contact_id}/remove', 'VendorContactController@remove')->name('remove');
         });
+
+        Route::group(['as' => 'detail.'], function () {
+            Route::get('{id}/detail/create', 'VendorDetailController@create')->name('create');
+            Route::post('{id}/detail', 'VendorDetailController@store')->name('store');
+            Route::get('{id}/detail/{detail_id}/edit', 'VendorDetailController@edit')->name('edit');
+            Route::put('{id}/detail/{detail_id}', 'VendorDetailController@update')->name('update');
+            // Route::delete('{id}/detail/{detail_id}', 'VendorDetailController@destroy')->name('destroy');
+            // Route::post('/detail/bulk_delete', 'VendorDetailController@bulk_delete')->name('bulk_delete');
+        });
     });
     Route::resource('vendor', 'VendorController');
 

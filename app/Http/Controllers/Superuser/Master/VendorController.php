@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Superuser\Master;
 
 use App\DataTables\Master\VendorTable;
 use App\Entities\Master\Vendor;
+use App\Entities\Master\VendorDetail;
 use App\Exports\Master\VendorExport;
 use App\Exports\Master\VendorImportTemplate;
 use App\Http\Controllers\Controller;
