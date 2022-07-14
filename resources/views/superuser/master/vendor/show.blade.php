@@ -32,13 +32,13 @@
     <div class="row">
       <label class="col-md-3 col-form-label text-right">Email</label>
       <div class="col-md-7">
-        <div class="form-control-plaintext">{{ $vendor->email }}</div>
+        <div class="form-control-plaintext">{{ $vendor->email ?? '-' }}</div>
       </div>
     </div>
     <div class="row">
       <label class="col-md-3 col-form-label text-right">Phone</label>
       <div class="col-md-7">
-        <div class="form-control-plaintext">{{ $vendor->phone }}</div>
+        <div class="form-control-plaintext">{{ $vendor->phone ?? '-' }}</div>
       </div>
     </div>
     <div class="row">
@@ -50,13 +50,13 @@
     <div class="row">
       <label class="col-md-3 col-form-label text-right">Website</label>
       <div class="col-md-7">
-        <div class="form-control-plaintext">{{ $vendor->website }}</div>
+        <div class="form-control-plaintext">{{ $vendor->website ?? '-' }}</div>
       </div>
     </div>    
     <div class="row">
       <label class="col-md-3 col-form-label text-right">Description</label>
       <div class="col-md-7">
-        <div class="form-control-plaintext">{{ $vendor->description }}</div>
+        <div class="form-control-plaintext">{{ $vendor->description ?? '-' }}</div>
       </div>
     </div>
     <div class="row">
@@ -97,6 +97,7 @@
 </div>
 
 @if($vendor->type == $vendor::TYPE['Non Ekspedisi'])
+
 <div class="block">
   <div class="block-header block-header-default">
     <h3 class="block-title">Transaction History</h3>
@@ -123,11 +124,16 @@
           <td class="text-center">{{ $detail->transaction }}</td>
           <td class="text-center">{{ $detail->quantity }}</td>
           <td class="text-center">{{ $detail->satuan() }}</td>
-          <td class="text-center">Rp. {{ number_format($detail->grand_total, 2) }}</td>
+          <td class="text-center">{{ number_format($detail->grand_total) }}</td>
         </tr>
         @endforeach
       </tbody>
       <tfoot>
+        <tr>
+          <th colspan="3"></th>
+          <th style="text-align:right">Total:</th>
+          <th></th>
+        </tr>
       </tfoot>
     </table>
   </div>
@@ -142,9 +148,43 @@
 @push('scripts')
 <script src="{{ asset('utility/superuser/js/form.js') }}"></script>
 <script type="text/javascript">
-  $(document).ready( function () {
-    $('#datatable').DataTable();
-  });
+  $(document).ready(function () {
+    $('#datatable').DataTable({
+        "paging": false,
+        "searching": false,
+        footerCallback: function (row, data, start, end, display) {
+            var api = this.api();
+ 
+            // Remove the formatting to get integer data for summation
+            var intVal = function (i) {
+                return typeof i === 'string' ? i.replace(/[\$,]/g, '') * 1 : typeof i === 'number' ? i : 0;
+            };
+
+            var numFormat = $.fn.dataTable.render.number( '\,', '.', 2).display;
+ 
+            // Total over all pages
+            total = api
+                .column(4)
+                .data()
+                .reduce(function (a, b) {
+                    return intVal(a) + intVal(b);
+                }, 0);
+ 
+            // Total over this page
+            pageTotal = api
+                .column(4, { page: 'current' })
+                .data()
+                .reduce(function (a, b) {
+                    return intVal(a) + intVal(b);
+                }, 0);
+ 
+            // Update footer
+            $( api.column( 4 ).footer() ).html(
+            numFormat(total)
+          );
+        },
+    });
+});
 </script>
 @endpush
 

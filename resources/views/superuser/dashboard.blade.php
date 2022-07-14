@@ -5,7 +5,7 @@
   <span class="breadcrumb-item active">Dashboard</span>
 </nav>
 
-<div class="row gutters-tiny">
+{{--<div class="row gutters-tiny">
   <div class="col-4">
     <a class="block" href="javascript:void(0)">
       <div class="block-content block-content-full">
@@ -30,7 +30,7 @@
       </div>
     </a>
   </div>
-</div>
+</div>--}}
 
 @if(session('error') || session('success'))
 <div class="alert alert-{{ session('error') ? 'danger' : 'success' }} alert-dismissible fade show" role="alert">

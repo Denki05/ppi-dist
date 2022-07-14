@@ -30,7 +30,7 @@
         <label class="col-md-3 col-form-label text-right">Unit</label>
         <div class="col-md-7">
           <select class="form-control" id="satuan" name="satuan" data-placeholder="Select Unit">
-              <option></option>
+              <option>Select Unit</option>
               <option value="1">Pcs</option>
               <option value="2">Lembar</option>
               <option value="3">Lusin</option>
@@ -42,7 +42,7 @@
       <div class="form-group row">
         <label class="col-md-3 col-form-label text-right" for="grand_total">Grand Total </label>
         <div class="col-md-7">
-          <input type="number" class="form-control" id="grand_total" name="grand_total">
+          <input type="numeric" class="form-control" id="grand_total" name="grand_total" />
         </div>
       </div>
       <div class="form-group row pt-30">
@@ -72,6 +72,29 @@
 <script>
   $(document).ready(function () {
     $('.js-select2').select2()
+
+    // var grand_total = document.getElementById('grand_total');
+    // grand_total.addEventListener('keyup', function(e)
+    // {
+    //   grand_total.value = formatRupiah(this.value);
+    // });
+
+    // function formatRupiah(angka, prefix)
+    // {
+    //     var number_string = angka.replace(/[^,\d]/g, '').toString(),
+    //         split    = number_string.split(','),
+    //         sisa     = split[0].length % 3,
+    //         rupiah     = split[0].substr(0, sisa),
+    //         ribuan     = split[0].substr(sisa).match(/\d{3}/gi);
+            
+    //     if (ribuan) {
+    //         separator = sisa ? '.' : '';
+    //         rupiah += separator + ribuan.join('.');
+    //     }
+        
+    //     rupiah = split[1] != undefined ? rupiah + ',' + split[1] : rupiah;
+    //     return prefix == undefined ? rupiah : (rupiah ? 'Rp. ' + rupiah : '');
+    // }
   })
 </script>
 @endpush
