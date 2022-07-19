@@ -97,7 +97,6 @@
 </div>
 
 @if($vendor->type == $vendor::TYPE['Non Ekspedisi'])
-
 <div class="block">
   <div class="block-header block-header-default">
     <h3 class="block-title">Transaction History</h3>
@@ -144,6 +143,7 @@
 
 @include('superuser.asset.plugin.datatables')
 @include('superuser.asset.plugin.swal2')
+
 
 @push('scripts')
 <script src="{{ asset('utility/superuser/js/form.js') }}"></script>
