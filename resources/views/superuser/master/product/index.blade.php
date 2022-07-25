@@ -29,6 +29,9 @@
     <a class="ml-10" href="{{ route('superuser.master.product.cetak') }}">
       <button type="button" class="btn btn-outline-warning min-width-125">Print</button>
     </a>
+    <a class="ml-10" href="{{ route('superuser.master.product.cetak') }}">
+      <button type="button" class="btn btn-outline-secondary min-width-125">Test Print CR</button>
+    </a>
   </div>
   <hr class="my-20">
   <div class="block-content block-content-full">

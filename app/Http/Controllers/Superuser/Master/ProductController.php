@@ -619,4 +619,9 @@ class ProductController extends Controller
 
         return view('superuser.master.product.cetak.index', $data);
     }
+
+    // public function cetak_cr()
+    // {
+    //     $runtime = new \NetPhp\Core\NetPhpRuntime('COM', 'netutilities.NetPhpRuntime');
+    // }
 }
