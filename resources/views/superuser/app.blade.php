@@ -1,7 +1,7 @@
-<!doctype html>
-<html lang="en" class="no-focus">
+<!DOCTYPE html>
+<html lang="en">
   <head>
-    <meta charset="utf-8">
+  <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, shrink-to-fit=no">
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>{{ setting('website.name') }}</title>
@@ -12,72 +12,17 @@
     @stack('styles')
   </head>
   <body>
-    <div id="page-container" class="sidebar-o sidebar-inverse enable-page-overlay side-scroll page-header-modern main-content-boxed">
-      <nav id="sidebar">
-        <div class="sidebar-content">
-          <div class="content-header content-header-fullrow px-15">
-            <div class="content-header-section text-center align-parent sidebar-mini-hidden">
-              <button type="button" class="btn btn-circle btn-dual-secondary d-lg-none align-v-r" data-toggle="layout" data-action="sidebar_close">
-                <i class="fa fa-times"></i>
-              </button>
-              <div class="content-header-item">
-                <a class="link-effect font-w700" href="{{ route('superuser.index') }}">
-                  <span class="font-size-xl text-dual-primary-dark">{{ setting('website.name') }}</span>
-                </a>
-              </div>
-            </div>
-          </div>
-          <div class="content-side content-side-full content-side-user px-10 align-parent">
-            <div class="sidebar-mini-visible-b align-v animated fadeIn">
-              <img class="img-avatar img-avatar32" src="{{ $superuser->img }}">
-            </div>
-            <div class="sidebar-mini-hidden-b text-center">
-              <a class="img-link" href="{{ route('superuser.profile.index') }}">
-                <img class="img-avatar" src="{{ $superuser->img }}">
-              </a>
-              <ul class="list-inline mt-10">
-                <li class="list-inline-item">
-                  <a class="link-effect text-dual-primary-dark font-size-xs font-w600 text-uppercase" href="{{ route('superuser.profile.index') }}">{{ $superuser->name ?? $superuser->username }}</a>
-                </li>
-                {{-- <li class="list-inline-item">
-                  <a class="link-effect text-dual-primary-dark" href="{{ route('superuser.logout') }}">
-                    <i class="si si-logout"></i>
-                  </a>
-                </li> --}}
-              </ul>
-            </div>
-          </div>
-          <div class="content-side content-side-full">
-            @include('superuser.component.menu')
-          </div>
-        </div>
-      </nav>
-      <header id="page-header">
-        <div class="content-header">
-          <div class="content-header-section">
-            <button type="button" class="btn btn-circle btn-dual-secondary" data-toggle="layout" data-action="sidebar_toggle">
-              <i class="fa fa-navicon"></i>
-            </button>
-          </div>
-          <div class="content-header-section">
-            @include('superuser.component.dropdown-menu')
-            {{-- @include('superuser.component.dropdown-notification') --}}
-          </div>
-        </div>
-        <div id="page-header-loader" class="overlay-header bg-primary">
-          <div class="content-header content-header-fullrow text-center">
-            <div class="content-header-item">
-              <i class="fa fa-sun-o fa-spin text-white"></i>
-            </div>
-          </div>
-        </div>
-      </header>
-      <main id="main-container">
+    <div class="container-scroller">
+      <!-- partial:partials/_horizontal-navbar.html -->
+      <div class="horizontal-menu">
+        @include('superuser.component.menu')
+      </div>
+      <main id="container">
         <div class="content">
           @yield('content')
         </div>
       </main>
-      <footer id="page-footer" class="opacity-0">
+      <!-- <footer id="page-footer" class="footer">
         <div class="content font-size-xs clearfix">
           <div class="float-left">
             <p>This page took {{ round(microtime(true) - LARAVEL_START, 3) }} seconds to render</p>
@@ -86,7 +31,17 @@
             <a class="font-w600" href="https://willek.github.io" target="_blank">Developer</a> &copy; <span class="js-year-copy"></span>
           </div>
         </div>
+      </footer> -->
+      <footer class="footer">
+            <div class="container">
+              <div class="d-sm-flex justify-content-center justify-content-sm-between">
+                <span class="text-muted text-center text-sm-left d-block d-sm-inline-block">Copyright © 2021 <a href="https://www.bootstrapdash.com/" target="_blank">BootstrapDash</a>. All rights reserved.</span>
+                <span class="float-none float-sm-right d-block mt-1 mt-sm-0 text-center">Hand-crafted & made with <i class="mdi mdi-heart text-danger"></i></span>
+              </div>
+            </div>
       </footer>
+      <!-- partial -->
+      <!-- page-body-wrapper ends -->
     </div>
     @yield('modal')
     <script>

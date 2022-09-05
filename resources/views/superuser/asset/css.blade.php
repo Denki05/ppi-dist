@@ -10,3 +10,11 @@
 <link rel="stylesheet" href="{{ asset('superuser_assets/summernote/summernote.css') }}">
 <link rel="stylesheet" href="{{ asset('superuser_assets/css/login.css') }}">
 
+<!-- plus-admin -->
+<link rel="stylesheet" href="{{ asset('superuser_assets/plus-admin/assets/vendors/mdi/css/materialdesignicons.min.css') }}">
+<link rel="stylesheet" href="{{ asset('superuser_assets/plus-admin/assets/vendors/flag-icon-css/css/flag-icon.min.css') }}">
+<link rel="stylesheet" href="{{ asset('superuser_assets/plus-admin/assets/vendors/css/vendor.bundle.base.css') }}">
+<link rel="stylesheet" href="{{ asset('superuser_assets/plus-admin/assets/vendors/jquery-bar-rating/css-stars.css') }}">
+<link rel="stylesheet" href="{{ asset('superuser_assets/plus-admin/assets/vendors/font-awesome/css/font-awesome.min.css') }}">
+<link rel="stylesheet" href="{{ asset('superuser_assets/plus-admin/assets/css/style.css') }}">
+<link rel="stylesheet" href="{{ asset('superuser_assets/plus-admin/assets/images/favicon.png') }}">
