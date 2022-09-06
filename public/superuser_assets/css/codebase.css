@@ -10668,14 +10668,16 @@ a.badge-secondary:focus, a.badge-secondary.focus {
 
 #main-container,
 #page-footer {
-  overflow-x: hidden;
+  overflow-x: auto;
+  overflow-y: auto;
 }
 
 .content {
   margin: 0 auto;
   padding: 12px 12px 1px;
   width: 100%;
-  overflow-x: visible;
+  overflow-x: auto;
+  overflow-y: auto;
 }
 
 .content .pull-t {

@@ -67,22 +67,32 @@ class ProductTable extends Table
             $edit = route('superuser.master.product.edit', $model);
             $destroy = route('superuser.master.product.destroy', $model);
 
-            if ($model->status == $model::STATUS['DELETED']) {
+            if ($model->status == $model::STATUS['ACTIVE']) {
                 return "
                     <a href=\"{$view}\">
                         <button type=\"button\" class=\"btn btn-sm btn-circle btn-alt-secondary\" title=\"View\">
-                            <i class=\"fa fa-eye\"></i>
+                            <i class=\"mdi mdi-eye\"></i>
+                        </button>
+                    </a>
+                    <a href=\"{$edit}\">
+                        <button type=\"button\" class=\"btn btn-sm btn-circle btn-alt-secondary\" title=\"View\">
+                            <i class=\"mdi mdi-lead-pencil\"></i>
+                        </button>
+                    </a>
+                    <a href=\"{$destroy}\">
+                        <button type=\"button\" class=\"btn btn-sm btn-circle btn-alt-secondary\" title=\"View\">
+                            <i class=\"mdi mdi-delete\"></i>
                         </button>
                     </a>
                 ";
             }
 
             return "
-                <a href=\"javascript:deleteConfirmation('{$destroy}')\">
-                    <button type=\"button\" class=\"btn btn-sm btn-circle btn-alt-danger\" title=\"Delete\">
-                        <i class=\"fa fa-times\"></i>
-                    </button>
-                </a>
+                        <a href=\"{$view}\">
+                        <button type=\"button\" class=\"btn btn-sm btn-circle btn-alt-warning\" title=\"View\">
+                            <i class=\"mdi mdi-eye\"></i>
+                        </button>
+                        </a>
             ";
         });
 

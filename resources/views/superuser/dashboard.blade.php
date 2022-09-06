@@ -98,77 +98,74 @@
               </div>
             </div>
           </form>
-          <div class="row">
-            <div class="col-12">
-              <div class="table-responsive">
-                <table class="table table-striped">
-                  <thead>
-                    <th>Invoice Date</th>
-                    <th>Invoice Number</th>
-                    <th>Store / Member</th>
-                    <th>Area</th>
-                    <th>Revenue</th>
-                    <th>Paid</th>
-                    <th>Due Date</th>
-                    <th>Is Due Date</th>
-                  </thead>
-                  <tbody>
-                    <?php 
-                      $total_invoice = 0;
-                      $total_paid = 0;
-                    ?>
-                    @if(count($invoice) == 0)
-                    <tr>
-                      <td colspan="8">Data tidak ditemukan</td>
-                    </tr>
-                    @endif
-                    @foreach($invoice as $index => $row)
-                    <tr>
-                      <td>
-                        <?= date('d-m-Y',strtotime($row->created_at)); ?>
-                      </td>
-                      <td>{{$row->code}}</td>
-                      <td>{{$row->do->customer->name ?? ''}} / {{$row->do->customer_other_address->name ?? ''}}</td>
-                      <td>{{$row->do->customer->text_provinsi ?? ''}}</td>
-                      <td>{{number_format($row->grand_total_idr,0,',','.')}}</td>
-                      <td>{{number_format($row->payable_detail->sum('total'),0,',','.')}}</td>
-                      <td>
-                        <?php
-                          $due_date = date('Y-m-d',strtotime($row->created_at."+ 30 days"));
-                          $due_date_60 = date('Y-m-d',strtotime($row->created_at."+ 60 days"));
-                        ?>
-                        <?= date('d-m-Y',strtotime($due_date)); ?>
-                      </td>
-                      <td>
-                        @if($due_date <= date('Y-m-d') && $row->grand_total_idr > $row->payable_detail->sum('total'))
-                          <span class="badge badge-warning badge-xs">H+30</span>
-                        @elseif($due_date_60 <= date('Y-m-d') && $row->grand_total_idr > $row->payable_detail->sum('total'))
-                          <span class="badge badge-danger badge-xs">H+60</span>
-                        @endif
-                        @if($row->grand_total_idr <= $row->payable_detail->sum('total'))
-                          <span class="badge badge-success badge-xs">Paid Off</span>
-                        @endif
-                      </td>
-                    </tr>
-                    
-                    <?php
-                      $total_invoice += $row->grand_total_idr;
-                      $total_paid += $row->payable_detail->sum('total');
-                    ?>
-                    @endforeach
-                  </tbody>
-                  <tfoot class="text-center">
-                    <tr>
-                      <td colspan="4" class="text-right"><b>Total : </b></td>
-                      <td>{{number_format($total_invoice,0,',','.')}}</td>
-                      <td>{{number_format($total_paid,0,',','.')}}</td>
-                      <td colspan="2"></td>
-                    </tr>
-                  </tfoot>
-                </table>
-              </div>
-            </div>
-          </div>
+          <div class="table-responsive">
+                      <table class="table table-hover" id="datatables">
+                        <thead>
+                          <tr>
+                            <th>Invoice Date</th>
+                            <th>Invoice Number</th>
+                            <th>Store / Member</th>
+                            <th>Area</th>
+                            <th>Revenue</th>
+                            <th>Paid</th>
+                            <th>Due Date</th>
+                            <th>Is Due Date</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                            <?php 
+                              $total_invoice = 0;
+                              $total_paid = 0;
+                            ?>
+                            @if(count($invoice) == 0)
+                            <tr>
+                              <td colspan="8">Data tidak ditemukan</td>
+                            </tr>
+                            @endif
+                            @foreach($invoice as $index => $row)
+                          <tr>
+                            <td>
+                              <?= date('d-m-Y',strtotime($row->created_at)); ?>
+                            </td>
+                            <td>{{$row->code}}</td>
+                            <td>{{$row->do->customer->name ?? ''}} / {{$row->do->customer_other_address->name ?? ''}}</td>
+                            <td>{{$row->do->customer->text_provinsi ?? ''}}</td>
+                            <td>{{number_format($row->grand_total_idr,0,',','.')}}</td>
+                            <td>{{number_format($row->payable_detail->sum('total'),0,',','.')}}</td>
+                            <td>
+                              <?php
+                                $due_date = date('Y-m-d',strtotime($row->created_at."+ 30 days"));
+                                $due_date_60 = date('Y-m-d',strtotime($row->created_at."+ 60 days"));
+                              ?>
+                              <?= date('d-m-Y',strtotime($due_date)); ?>
+                            </td>
+                            <td>
+                              @if($due_date <= date('Y-m-d') && $row->grand_total_idr > $row->payable_detail->sum('total'))
+                                <span class="badge badge-warning">H+30</span>
+                              @elseif($due_date_60 <= date('Y-m-d') && $row->grand_total_idr > $row->payable_detail->sum('total'))
+                                <span class="badge badge-danger">H+60</span>
+                              @endif
+                              @if($row->grand_total_idr <= $row->payable_detail->sum('total'))
+                                <span class="badge badge-success">Paid Off</span>
+                              @endif
+                            </td>
+                          </tr>
+                          <?php
+                            $total_invoice += $row->grand_total_idr;
+                            $total_paid += $row->payable_detail->sum('total');
+                          ?>
+                          @endforeach
+                        </tbody>
+                        <tfoot class="text-center">
+                          <tr>
+                            <td colspan="4" class="text-right"><b>Total : </b></td>
+                            <td>{{number_format($total_invoice,0,',','.')}}</td>
+                            <td>{{number_format($total_paid,0,',','.')}}</td>
+                            <td colspan="2"></td>
+                          </tr>
+                        </tfoot>
+                      </table>
+                    </div>
         @endif
       </div>
     </div>
@@ -178,10 +175,22 @@
 
 @include('superuser.asset.plugin.select2')
 @include('superuser.asset.plugin.swal2')
+@include('superuser.asset.plugin.datatables')
 
 @push('scripts')
 <script type="text/javascript">
   $(function(){
+    $('#datatables').DataTable( {
+        "paging":   true,
+        "ordering": true,
+        "info":     false,
+        "searching" : false,
+        "columnDefs": [{
+          "targets": 0,
+          "orderable": false
+        }]
+      });
+
     $('.js-select2').select2();
   })
 </script>
