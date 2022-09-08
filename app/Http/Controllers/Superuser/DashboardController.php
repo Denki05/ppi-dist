@@ -68,7 +68,7 @@ class DashboardController extends Controller
     								});
     							}
     						})
-    						->orderBy('id','DESC')
+    						->orderBy('id','ASC')
     						->get();
     	$customer = Customer::get();
 

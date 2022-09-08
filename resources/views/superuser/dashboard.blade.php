@@ -1,10 +1,6 @@
 @extends('superuser.app')
 
 @section('content')
-<nav class="breadcrumb bg-white push">
-  <span class="breadcrumb-item active">Dashboard</span>
-</nav>
-
 {{--<div class="row gutters-tiny">
   <div class="col-4">
     <a class="block" href="javascript:void(0)">
