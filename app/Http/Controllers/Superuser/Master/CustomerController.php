@@ -57,11 +57,26 @@ class CustomerController extends Controller
             }
         }
 
-        $data['customers'] = Customer::all();
+        $data['customers'] = Customer::paginate(5);
         $data['other_address'] = CustomerOtherAddress::all();
 
         return view('superuser.master.customer.index', $data);
     }
+
+    // public function cari(Request $request)
+	// {
+	// 	// menangkap data pencarian
+	// 	$cari = $request->cari;
+ 
+    // 		// mengambil data dari table pegawai sesuai pencarian data
+	// 	$data['cari'] = DB::table('tbl_customers')
+	// 	->where('name','like',"%".$cari."%")
+	// 	->paginate();
+ 
+    // 		// mengirim data pegawai ke view index
+    //         return view('superuser.master.customer.index', $data);
+ 
+	// }
 
     public function create()
     {

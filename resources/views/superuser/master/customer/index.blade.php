@@ -85,7 +85,7 @@
         </div>
       </div>
     </form> -->
-    <table id="datatable" class="table table-striped table-vcenter table-responsive">
+    <table id="customer-table" class="table table-striped">
       <thead class="thead-dark">
         <tr>
           <th></th>
@@ -97,15 +97,14 @@
       </thead>
       <tbody>
         @foreach ($customers as $row)
-          <tr class="clickable js-tabularinfo-toggle" data-toggle="collapse" id="row2"
-                    data-target=".a{{ $row->id }}">
+          <tr class="clickable js-tabularinfo-toggle" data-toggle="collapse" id="row2" data-target=".a{{ $row->id }}">
               <td>
                 <div class="col-sm-6">
                   <div class="row mb-2">
                     <a href="#" class="link">
                       <button type="button" name='edit' id='{{ $row->id }}'
                       class="edit btn btn-xs btn-outline-secondary btn-sm my-0">
-                        <i class="fa fa-plus"></i></button>
+                        <i class="mdi mdi-plus-box"></i></button>
                     </a>
                   </div>
                 </div>
@@ -114,24 +113,29 @@
               <td>{{ $row->address }} - <br><b>{{ $row->text_kota }}</b></br></td>
               <td>
                 <a href="{{ route('superuser.master.customer.show', $row->id) }}">
-                    <button type="button" class="btn btn-sm btn-circle btn-alt-secondary" title="Delete">
-                        <i class="fa fa-eye"></i>
+                    <button type="button" class="btn btn-sm btn-circle btn-alt-secondary" title="View">
+                        <i class="mdi mdi-eye"></i>
+                    </button>
+                </a>
+                <a href="{{ route('superuser.master.customer.edit', $row->id) }}">
+                    <button type="button" class="btn btn-sm btn-circle btn-alt-secondary" title="Edit">
+                        <i class="mdi mdi-lead-pencil"></i>
                     </button>
                 </a>
                 <a href="javascript:deleteConfirmation('{$row->id}')">
                     <button type="button" class="btn btn-sm btn-circle btn-alt-danger" title="Delete">
-                        <i class="fa fa-times"></i>
+                        <i class="mdi mdi-delete"></i>
                     </button>
                 </a>
               </td>
               <td>
-                <a class="btn btn-primary" href="{{ route('superuser.master.customer.other_address.create', [$row->id]) }}" role="button" title="Add Member"><i class="fa fa-file"></i></a>
+                <a class="btn" href="{{ route('superuser.master.customer.other_address.create', [$row->id]) }}" target="_blank" role="button" title="Add Member"><i class="mdi mdi-file-multiple"></i></a>
               </td>
           </tr>
 
           <tr class="tabularinfo__subblock collapse a{{ $row->id }}">
-                    <td colspan="8">
-                        <table class="table-active table table-bordered">
+                  <td colspan="8">
+                    <table class="table-active table table-bordered">
                             <tr>
                                 <th width="10%">Member</th>
                                 <th width="10%">Location</th>
@@ -168,12 +172,15 @@
                                     @endif
                                 @endforeach
                             </tbody>
-                        </table>
-                  </td>
+                    </table>
+                </td>
             </tr>
         @endforeach
       </tbody>
     </table>
+  </div>
+  <div class="d-flex justify-content-center">
+    {!! $customers->links() !!}
   </div>
 </div>
 @endsection
@@ -193,15 +200,19 @@
 
 @push('scripts')
 <script type="text/javascript">
-  $(document).ready(function() {
+  $(function () {
+	    $('#customer-table').DataTable({
+		    "searching": true
+      });
 
-        $('.link').click(function() {
-            event.preventDefault();
-        });
-        $('.js-tabularinfo').bootstrapTable({
-            escape: false,
-            showHeader: false
-        });
-    });
+      $('.link').click(function() {
+        event.preventDefault();
+      });
+      
+      $('.js-tabularinfo').bootstrapTable({
+        escape: false,
+        showHeader: false
+      });
+});
 </script>
 @endpush

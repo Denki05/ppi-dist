@@ -14,7 +14,16 @@ class CustomerTable extends Table
      */
     private function query(Request $request)
     {
-        $model = Customer::select('id', 'code', 'name', 'status', 'address');
+        $model = Customer::select(
+                            'master_customers.name', 
+                            'master_customers.address', 
+                            'master_customers.kota', 
+                            'master_customer_other_addresses.name', 
+                            'master_customer_other_addresses.address', 
+                            'master_customer_other_addresses.gps_latitude', 
+                            'master_customer_other_addresses.gps_longitude'
+                            )
+                    ->join('master_customer_other_addresses', 'master_customer_other_addresses.customer_id', '=', 'master_customers.id');
 
         return $model;
     }
