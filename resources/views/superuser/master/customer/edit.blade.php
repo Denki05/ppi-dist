@@ -169,6 +169,12 @@
           <input type="file" id="image_ktp" name="image_ktp" data-max-file-size="2000" accept="image/png, image/jpeg" data-src="{{ $customer->img_ktp }}">
         </div>
       </div>
+      <div class="form-group row">
+        <label class="col-md-3 col-form-label text-right">Image Store</label>
+        <div class="col-md-7">
+          <input type="file" id="image_store" name="image_store" data-max-file-size="2000" accept="image/png, image/jpeg" data-src="{{ $customer->img_store }}">
+        </div>
+      </div>
       <div class="form-group row pt-30">
         <div class="col-md-6">
           <a href="{{ route('superuser.master.customer.show', $customer->id) }}">
@@ -234,6 +240,27 @@
       initialPreviewConfig: [
       {
           caption: '{{ $customer->image_ktp }}'
+      }
+    ]
+    });
+
+    $('#image_store').fileinput({
+      theme: 'explorer-fa',
+      browseOnZoneClick: true,
+      showCancel: false,
+      showClose: false,
+      showUpload: false,
+      browseLabel: '',
+      removeLabel: '',
+      initialPreview: $('#image_store').data('src'),
+      initialPreviewAsData: true,
+      fileActionSettings: {
+        showDrag: false,
+        showRemove: false
+      },
+      initialPreviewConfig: [
+      {
+          caption: '{{ $customer->image_store }}'
       }
     ]
     });

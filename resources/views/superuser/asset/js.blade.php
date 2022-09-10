@@ -17,6 +17,12 @@
 <script src="{{ asset('superuser_assets/plus-admin/assets/js/dashboard.js') }}"></script>
 <script src="{{ asset('utility/system.js') }}"></script>
 <script src="{{ asset('superuser_assets/summernote/summernote.js') }}"></script>
+
+<!-- Multi Tab -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css"></script>
+
+
 <script type="text/javascript">
 
 	let csrfname = "_token";

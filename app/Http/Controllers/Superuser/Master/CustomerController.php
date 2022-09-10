@@ -166,7 +166,7 @@ class CustomerController extends Controller
                 'text_kecamatan' => 'nullable|required_with:kecamatan|string',
                 'text_kelurahan' => 'nullable|required_with:kelurahan|string',
                 'zipcode' => 'nullable|string',
-                // 'image_store' => 'nullable|image|mimes:jpeg,png,jpg|max:2048',
+                'image_store' => 'nullable|image|mimes:jpeg,png,jpg|max:2048',
                 'image_ktp' => 'nullable|image|mimes:jpeg,png,jpg|max:2048',
                 'image_npwp' => 'nullable|image|mimes:jpeg,png,jpg|max:2048',
                 'notification_email' => 'nullable'
@@ -224,6 +224,10 @@ class CustomerController extends Controller
 
                 if (!empty($request->file('image_npwp'))) {
                     $customer->image_npwp = UploadMedia::image($request->file('image_npwp'), Customer::$directory_image);
+                }
+
+                if (!empty($request->file('image_store'))) {
+                    $customer->image_store = UploadMedia::image($request->file('image_store'), Customer::$directory_image);
                 }
 
                 $customer->notification_email = ($request->notification_email) ? true : false;
@@ -320,6 +324,7 @@ class CustomerController extends Controller
                 'zipcode' => 'nullable|string',
                 'image_npwp' => 'nullable|image|mimes:jpeg,png,jpg|max:2048',
                 'image_ktp' => 'nullable|image|mimes:jpeg,png,jpg|max:2048',
+                'image_store' => 'nullable|image|mimes:jpeg,png,jpg|max:2048',
                 'notification_email' => 'nullable'
             ]);
 
@@ -381,6 +386,14 @@ class CustomerController extends Controller
                     }
 
                     $customer->image_ktp = UploadMedia::image($request->file('image_ktp'), Customer::$directory_image);
+                }
+                
+                if (!empty($request->file('image_store'))) {
+                    if (is_file_exists(Customer::$directory_image.$customer->image_store)) {
+                        remove_file(Customer::$directory_image.$customer->image_store);
+                    }
+
+                    $customer->image_store = UploadMedia::image($request->file('image_store'), Customer::$directory_image);
                 }
 
                 $customer->notification_email = ($request->notification_email) ? true : false;

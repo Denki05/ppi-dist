@@ -1,13 +1,9 @@
 @extends('superuser.app')
 
 @section('content')
-<nav class="breadcrumb bg-white push">
-  <span class="breadcrumb-item">Master</span>
-  <a class="breadcrumb-item" href="{{ route('superuser.master.customer.index') }}">Store</a>
-  <span class="breadcrumb-item active">{{ $customer->name }}</span>
-</nav>
+
 <div class="block">
-  <div class="block-header block-header-default">
+  {{--<div class="block-header block-header-default">
     <h3 class="block-title">Show Store</h3>
     <div class="col-md-6 text-right">
         <a href="javascript:deleteConfirmation('{{ route('superuser.master.customer.destroy', $customer->id) }}', true)">
@@ -21,354 +17,179 @@
           </button>
         </a>
     </div>
-  </div>
+  </div>--}}
+  <div class="container py-5">
+  <div class="p-5 bg-white rounded shadow mb-5">
+    <!-- Rounded tabs -->
+    <ul id="myTab" role="tablist" class="nav nav-tabs nav-pills flex-column flex-sm-row text-center bg-light border-0 rounded-nav">
+      <li class="nav-item flex-sm-fill">
+        <a id="profile-tab" data-toggle="tab" href="#profile" role="tab" aria-controls="profile" aria-selected="true" class="nav-link border-0 text-uppercase font-weight-bold active">Profile</a>
+      </li>
+      <li class="nav-item flex-sm-fill">
+        <a id="address-tab" data-toggle="tab" href="#address" role="tab" aria-controls="address" aria-selected="false" class="nav-link border-0 text-uppercase font-weight-bold">Address</a>
+      </li>
+      <li class="nav-item flex-sm-fill">
+        <a id="document-tab" data-toggle="tab" href="#document" role="tab" aria-controls="document" aria-selected="false" class="nav-link border-0 text-uppercase font-weight-bold">Document</a>
+      </li>
+    </ul>
+    <div id="myTabContent" class="tab-content">
+      <div id="profile" role="tabpanel" aria-labelledby="profile-tab" class="tab-pane fade px-4 py-5 show active">
+        <div class="media align-items-center py-3 mb-3">
+          <img src="{{ $customer->img_store }}" alt="" class="d-block ui-w-100 rounded-circle">
+          <div class="media-body ml-4">
+            <h5 class="font-weight-bold mb-0">{{ $customer->name }} <span class="text-muted font-weight-normal">@ {{ $customer->code }}</span></h4>
+            <div class="text-muted mb-2">ID: {{ $customer->id }}</div>
+              <a href="{{ route('superuser.master.customer.edit', $customer->id) }}" class="btn btn-primary btn-sm" target="_blank">Edit</a>&nbsp;
+              <a href="javascript:deleteConfirmation('{{ route('superuser.master.customer.destroy', $customer->id) }}', true)" class="btn btn-danger btn-sm">Delete</a>&nbsp;
+          </div>
+        </div>
 
-  <div class="container">
-              <div class="row">
-                <div class="col-xs-12 ">
-                  <nav>
-                    <div class="nav nav-tabs nav-fill" id="nav-tab" role="tablist">
-                      <a class="nav-item nav-link active" id="nav-home-tab" data-toggle="tab" href="#nav-home" role="tab" aria-controls="nav-home" aria-selected="true">Profile</a>
-                      <a class="nav-item nav-link" id="nav-profile-tab" data-toggle="tab" href="#nav-profile" role="tab" aria-controls="nav-profile" aria-selected="false">Address</a>
-                      <a class="nav-item nav-link" id="nav-contact-tab" data-toggle="tab" href="#nav-contact" role="tab" aria-controls="nav-contact" aria-selected="false">Data</a>
-                      <a class="nav-item nav-link" id="nav-about-tab" data-toggle="tab" href="#nav-about" role="tab" aria-controls="nav-about" aria-selected="false">Document</a>
-                    </div>
-                  </nav>
-                  <div class="tab-content py-3 px-3 px-sm-0" id="nav-tabContent">
-                    <div class="tab-pane fade show active" id="nav-home" role="tabpanel" aria-labelledby="nav-home-tab">
-                        <div class="row">
-                          <label class="col-md-3 col-form-label text-right">Code</label>
-                          <div class="col-md-7">
-                            <div class="form-control-plaintext">{{ $customer->code }}</div>
-                          </div>
-                        </div>
-                        <div class="row">
-                          <label class="col-md-3 col-form-label text-right">Name</label>
-                          <div class="col-md-7">
-                            <div class="form-control-plaintext">{{ $customer->name }}</div>
-                          </div>
-                        </div>
-                        <div class="row">
-                          <label class="col-md-3 col-form-label text-right">Plafon Piutang</label>
-                          <div class="col-md-7">
-                            <div class="form-control-plaintext">{{ rupiah($customer->plafon_piutang) }}</div>
-                          </div>
-                        </div>
-                        <div class="row">
-                          <label class="col-md-3 col-form-label text-right">Saldo</label>
-                          <div class="col-md-7">
-                            <div class="form-control-plaintext">@mod</div>
-                          </div>
-                        </div>
-                    </div>
-                    <div class="tab-pane fade" id="nav-profile" role="tabpanel" aria-labelledby="nav-profile-tab">
-                        <div class="row">
-                          <label class="col-md-3 col-form-label text-right">Address</label>
-                          <div class="col-md-7">
-                            <div class="form-control-plaintext">{{ $customer->address }}</div>
-                          </div>
-                        </div>
-                        <div class="row">
-                          <label class="col-md-3 col-form-label text-right">Phone</label>
-                          <div class="col-md-7">
-                            <div class="form-control-plaintext">{{ $customer->phone }}</div>
-                          </div>
-                        </div>
-                        <div class="row">
-                          <label class="col-md-3 col-form-label text-right">Email</label>
-                          <div class="col-md-7">
-                            <div class="form-control-plaintext">{{ $customer->email }}</div>
-                          </div>
-                        </div>
-                        <div class="row">
-                          <label class="col-md-3 col-form-label text-right">Provinsi</label>
-                          <div class="col-md-7">
-                            <div class="form-control-plaintext">{{ $customer->text_provinsi }}</div>
-                          </div>
-                        </div>
-                        <div class="row">
-                          <label class="col-md-3 col-form-label text-right">Kota</label>
-                          <div class="col-md-7">
-                            <div class="form-control-plaintext">{{ $customer->text_kota }}</div>
-                          </div>
-                        </div>
-                        <div class="row">
-                          <label class="col-md-3 col-form-label text-right">Kecamatan</label>
-                          <div class="col-md-7">
-                            <div class="form-control-plaintext">{{ $customer->text_kecamatan }}</div>
-                          </div>
-                        </div>
-                        <div class="row">
-                          <label class="col-md-3 col-form-label text-right">Kelurahan</label>
-                          <div class="col-md-7">
-                            <div class="form-control-plaintext">{{ $customer->text_kelurahan }}</div>
-                          </div>
-                        </div>
-                        <div class="row">
-                          <label class="col-md-3 col-form-label text-right">Zipcode</label>
-                          <div class="col-md-7">
-                            <div class="form-control-plaintext">{{ $customer->zipcode }}</div>
-                          </div>
-                        </div>
-                        <div class="row">
-                          <label class="col-md-3 col-form-label text-right">GPS Coordinate</label>
-                          <div class="col-md-3">
-                            <div class="form-control-plaintext">Latitude: {{ $customer->gps_latitude ?? '-' }}</div>
-                          </div>
-                          <div class="col-md-3">
-                            <div class="form-control-plaintext">Longitude:  {{ $customer->gps_longitude ?? '-' }}</div>
-                          </div>
-                        </div>
-                    </div>
-                    <div class="tab-pane fade" id="nav-contact" role="tabpanel" aria-labelledby="nav-contact-tab">
-                      <div class="row">
-                        <label class="col-md-3 col-form-label text-right">Category</label>
-                        <div class="col-md-7">
-                          <div class="form-control-plaintext">
-                            <a href="{{ route('superuser.master.customer_category.show', $customer->category->id) }}">
-                              {{ $customer->category->name }}
-                            </a>
-                          </div>
-                        </div>
-                      </div>
-                      <div class="row">
-                        <label class="col-md-3 col-form-label text-right">Type</label>
-                        <div class="col-md-7">
-                          <div class="form-control-plaintext">
-                            @foreach($customer->types as $type)
-                            <a href="{{ route('superuser.master.customer_type.show', $type->id) }}" class="badge badge-info">
-                              {{ $type->name }}
-                            </a>
-                            @endforeach
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                    <div class="tab-pane fade" id="nav-about" role="tabpanel" aria-labelledby="nav-about-tab">
-                      <div class="row">
-                        <label class="col-md-3 col-form-label text-right">NPWP</label>
-                        <div class="col-md-7">
-                          <div class="form-control-plaintext">{{ $customer->npwp ?? '-' }}</div>
-                        </div>
-                      </div>
-                      <div class="row">
-                        <label class="col-md-3 col-form-label text-right">KTP</label>
-                        <div class="col-md-7">
-                          <div class="form-control-plaintext">{{ $customer->ktp ?? '-' }}</div>
-                        </div>
-                      </div>
-                      <div class="row">
-                        <label class="col-md-3 col-form-label text-right">Image NPWP</label>
-                        <div class="col-md-7">
-                          <a href="{{ $customer->img_npwp }}" class="img-link img-link-zoom-in img-thumb img-lightbox">
-                            <img src="{{ $customer->img_npwp }}" class="img-fluid img-show-small">
-                          </a>
-                        </div>
-                      </div>
-                      <div class="row">
-                        <label class="col-md-3 col-form-label text-right">Image KTP</label>
-                        <div class="col-md-7">
-                          <a href="{{ $customer->img_ktp }}" class="img-link img-link-zoom-in img-thumb img-lightbox">
-                            <img src="{{ $customer->img_ktp }}" class="img-fluid img-show-small">
-                          </a>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                
-                </div>
-              </div>
+        <div class="card mb-4">
+          <div class="card-body">
+            <table class="table user-view-table m-0" id="profile_table">
+              <tbody>
+                <tr>
+                  <td>NPWP</td>
+                  <td>{{ \Carbon\Carbon::parse($customer->created_at)->format('d-m-Y')}}</td>
+                </tr>
+                <tr>
+                  <td>Plafon Piutang</td>
+                  <td>{{ rupiah($customer->plafon_piutang) }}</td>
+                </tr>
+                <tr>
+                  <td>Saldo</td>
+                  <td>@mod</td>
+                </tr>
+                <tr>
+                  <td>Category Store</td>
+                  <td>
+                    <a href="{{ route('superuser.master.customer_category.show', $customer->category->id) }}" target="_blank" class="badge badge-info">
+                      {{ $customer->category->name }}
+                    </a>
+                  </td>
+                </tr>
+                <tr>
+                  <td>Type Store</td>
+                  <td>
+                      @foreach($customer->types as $type)
+                      <a href="{{ route('superuser.master.customer_type.show', $type->id) }}" target="_blank" class="badge badge-info">
+                        {{ $type->name }}
+                      </a>
+                      @endforeach
+                  </td>
+                </tr>
+                <tr>
+                  <td>Status</td>
+                  <td><span class="badge badge-outline-success">{{ $customer->status() }} </span></td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
         </div>
       </div>
-</div>
-  <!-- <div class="block-content">
-    <div class="row">
-      <label class="col-md-3 col-form-label text-right">Code</label>
-      <div class="col-md-7">
-        <div class="form-control-plaintext">{{ $customer->code }}</div>
-      </div>
-    </div>
-    <div class="row">
-      <label class="col-md-3 col-form-label text-right">Name</label>
-      <div class="col-md-7">
-        <div class="form-control-plaintext">{{ $customer->name }}</div>
-      </div>
-    </div>
-    <div class="row">
-      <label class="col-md-3 col-form-label text-right">Category</label>
-      <div class="col-md-7">
-        <div class="form-control-plaintext">
-          <a href="{{ route('superuser.master.customer_category.show', $customer->category->id) }}">
-            {{ $customer->category->name }}
-          </a>
+
+      <div id="address" role="tabpanel" aria-labelledby="address-tab" class="tab-pane fade px-4 py-5">
+        <div class="card mb-4">
+          <div class="card-body">
+            <table class="table user-view-table m-0" id="address_table">
+              <tbody>
+                <tr>
+                  <td>Address</td>
+                  <td>{{ $customer->address }}</td>
+                </tr>
+                <tr>
+                  <td>Phone</td>
+                  <td>{{ $customer->phone }}</td>
+                </tr>
+                <tr>
+                  <td>Email</td>
+                  <td>{{ $customer->email }}</td>
+                </tr>
+                <tr>
+                  <td>Area</td>
+                  <td>{{ $customer->text_provinsi }} - {{ $customer->text_kota }} - {{ $customer->text_kecamatan }} - {{ $customer->text_kelurahan }} - {{ $customer->zipcode }} </td>
+                </tr>
+                <tr>
+                  <td>Location Maps</td>
+                  <td>
+                    <iframe src="https://maps.google.com/maps?q={{ $customer->gps_latitude }},{{ $customer->gps_longitude }}&hl=es;z=14&amp;output=embed" ?? ></iframe>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
         </div>
       </div>
-    </div>
-    <div class="row">
-      <label class="col-md-3 col-form-label text-right">Type</label>
-      <div class="col-md-7">
-        <div class="form-control-plaintext">
-          @foreach($customer->types as $type)
-          <a href="{{ route('superuser.master.customer_type.show', $type->id) }}" class="badge badge-info">
-            {{ $type->name }}
-          </a>
-          @endforeach
+
+      <div id="document" role="tabpanel" aria-labelledby="document-tab" class="tab-pane fade px-4 py-5">
+        <div class="card mb-4">
+          <div class="card-body">
+            <table class="table user-view-table m-0" id="document_table">
+              <tbody>
+              <tr>
+                  <td>NPWP</td>
+                  <td>{{ $customer->npwp ?? '-' }}</td>
+                </tr>
+                <tr>
+                  <td>KTP</td>
+                  <td>{{ $customer->ktp ?? '-' }}</td>
+                </tr>
+                <tr>
+                  <td>Saldo</td>
+                  <td>@mod</td>
+                </tr>
+                <tr>
+                  <td>Image NPWP</td>
+                  <td>
+                    <a href="{{ $customer->img_npwp }}" class="img-link img-link-zoom-in img-thumb img-lightbox">
+                      <img src="{{ $customer->img_npwp }}" class="img-fluid img-show-small">
+                    </a>
+                  </td>
+                </tr>
+                <tr>
+                  <td>Image KTP</td>
+                  <td>
+                    <a href="{{ $customer->img_ktp }}" class="img-link img-link-zoom-in img-thumb img-lightbox">
+                      <img src="{{ $customer->img_ktp }}" class="img-fluid img-show-small">
+                    </a>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
         </div>
       </div>
+
     </div>
-    <div class="row">
-      <label class="col-md-3 col-form-label text-right">Email</label>
-      <div class="col-md-7">
-        <div class="form-control-plaintext">{{ $customer->email }}</div>
-      </div>
+    <!-- End rounded tabs -->
     </div>
-    <div class="row">
-      <label class="col-md-3 col-form-label text-right">Phone</label>
-      <div class="col-md-7">
-        <div class="form-control-plaintext">{{ $customer->phone }}</div>
-      </div>
-    </div>
-    <div class="row">
-      <label class="col-md-3 col-form-label text-right">NPWP</label>
-      <div class="col-md-7">
-        <div class="form-control-plaintext">{{ $customer->npwp }}</div>
-      </div>
-    </div>
-    <div class="row">
-      <label class="col-md-3 col-form-label text-right">KTP</label>
-      <div class="col-md-7">
-        <div class="form-control-plaintext">{{ $customer->ktp }}</div>
-      </div>
-    </div>
-    <div class="row">
-      <label class="col-md-3 col-form-label text-right">Address</label>
-      <div class="col-md-7">
-        <div class="form-control-plaintext">{{ $customer->address }}</div>
-      </div>
-    </div>
-    <div class="row">
-      <label class="col-md-3 col-form-label text-right">Owner Name</label>
-      <div class="col-md-7">
-        <div class="form-control-plaintext">{{ $customer->owner_name }}</div>
-      </div>
-    </div>
-    <div class="row">
-      <label class="col-md-3 col-form-label text-right">Website</label>
-      <div class="col-md-7">
-        <div class="form-control-plaintext">{{ $customer->website ?? '-' }}</div>
-      </div>
-    </div>
-    <div class="row">
-      <label class="col-md-3 col-form-label text-right">Plafon Piutang</label>
-      <div class="col-md-7">
-        <div class="form-control-plaintext">{{ rupiah($customer->plafon_piutang) }}</div>
-      </div>
-    </div>
-    <div class="row">
-      <label class="col-md-3 col-form-label text-right">GPS Coordinate</label>
-      <div class="col-md-3">
-        <div class="form-control-plaintext">Latitude: {{ $customer->gps_latitude }}</div>
-      </div>
-      <div class="col-md-3">
-        <div class="form-control-plaintext">Longitude:  {{ $customer->gps_longitude }}</div>
-      </div>
-    </div>
-    <div class="row">
-      <label class="col-md-3 col-form-label text-right">Provinsi</label>
-      <div class="col-md-7">
-        <div class="form-control-plaintext">{{ $customer->text_provinsi }}</div>
-      </div>
-    </div>
-    <div class="row">
-      <label class="col-md-3 col-form-label text-right">Kota</label>
-      <div class="col-md-7">
-        <div class="form-control-plaintext">{{ $customer->text_kota }}</div>
-      </div>
-    </div>
-    <div class="row">
-      <label class="col-md-3 col-form-label text-right">Kecamatan</label>
-      <div class="col-md-7">
-        <div class="form-control-plaintext">{{ $customer->text_kecamatan }}</div>
-      </div>
-    </div>
-    <div class="row">
-      <label class="col-md-3 col-form-label text-right">Kelurahan</label>
-      <div class="col-md-7">
-        <div class="form-control-plaintext">{{ $customer->text_kelurahan }}</div>
-      </div>
-    </div>
-    <div class="row">
-      <label class="col-md-3 col-form-label text-right">Zipcode</label>
-      <div class="col-md-7">
-        <div class="form-control-plaintext">{{ $customer->zipcode }}</div>
-      </div>
-    </div>
-    <div class="row">
-      <label class="col-md-3 col-form-label text-right">Image NPWP</label>
-      <div class="col-md-7">
-        <a href="{{ $customer->img_npwp }}" class="img-link img-link-zoom-in img-thumb img-lightbox">
-          <img src="{{ $customer->img_npwp }}" class="img-fluid img-show-small">
-        </a>
-      </div>
-    </div>
-    <div class="row">
-      <label class="col-md-3 col-form-label text-right">Image KTP</label>
-      <div class="col-md-7">
-        <a href="{{ $customer->img_ktp }}" class="img-link img-link-zoom-in img-thumb img-lightbox">
-          <img src="{{ $customer->img_ktp }}" class="img-fluid img-show-small">
-        </a>
-      </div>
-    </div>
-    <div class="row">
-      <label class="col-md-3 col-form-label text-right">Status</label>
-      <div class="col-md-7">
-        <div class="form-control-plaintext">{{ $customer->status() }}</div>
-      </div>
-    </div>
-    <div class="row pt-30 mb-15">
-      <div class="col-md-6">
-        <a href="{{ route('superuser.master.customer.index') }}">
-          <button type="button" class="btn bg-gd-cherry border-0 text-white">
-            <i class="fa fa-arrow-left mr-10"></i> Back
-          </button>
-        </a>
-      </div>
-      @if($customer->status != $customer::STATUS['DELETED'])
-      <div class="col-md-6 text-right">
-        <a href="javascript:deleteConfirmation('{{ route('superuser.master.customer.destroy', $customer->id) }}', true)">
-          <button type="button" class="btn bg-gd-pulse border-0 text-white">
-            Delete <i class="fa fa-trash ml-10"></i>
-          </button>
-        </a>
-        <a href="{{ route('superuser.master.customer.edit', $customer->id) }}">
-          <button type="button" class="btn bg-gd-leaf border-0 text-white">
-            Edit <i class="fa fa-pencil ml-10"></i>
-          </button>
-        </a>
-      </div>
-      @endif
-    </div>
-  </div> -->
+  </div>
+  </div>
 </div>
 
 
 
 @endsection
 
-@include('superuser.asset.plugin.datatables')
 @include('superuser.asset.plugin.magnific-popup')
 @include('superuser.asset.plugin.swal2')
 
 @push('scripts')
 <script type="text/javascript">
   $(document).ready(function() {
-    $('#datatable-other_address').DataTable({
+    $('#profile_table').DataTable({
       columnDefs: [
         { orderable: false, targets: [2, 3] }
       ]
     })
 
-    $('#datatable-contact').DataTable({
+    $('#address_table').DataTable({
+      columnDefs: [
+        { orderable: false, targets: [3] }
+      ]
+    })
+
+    $('#document_table').DataTable({
       columnDefs: [
         { orderable: false, targets: [3] }
       ]

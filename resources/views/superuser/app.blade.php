@@ -22,24 +22,24 @@
           @yield('content')
         </div>
       </main>
-      <!-- <footer id="page-footer" class="footer">
+      <footer id="page-footer" class="footer">
         <div class="content font-size-xs clearfix">
           <div class="float-left">
             <p>This page took {{ round(microtime(true) - LARAVEL_START, 3) }} seconds to render</p>
           </div>
           <div class="float-right">
-            <a class="font-w600" href="https://willek.github.io" target="_blank">Developer</a> &copy; <span class="js-year-copy"></span>
+            <a class="font-w600" href="https://willek.github.io" target="_blank">Copyright &copy; 2022 <b>Premium Parfume Indonesia</b>. All rights reserved.</span>
           </div>
         </div>
-      </footer> -->
-      <footer class="footer">
+      </footer>
+      <!-- <footer class="footer">
             <div class="container">
               <div class="d-sm-flex justify-content-center justify-content-sm-between">
                 <span class="text-muted text-center text-sm-left d-block d-sm-inline-block">Copyright &copy; 2022 <b>Premium Parfume Indonesia</b>. All rights reserved.</span>
                 <span class="float-none float-sm-right d-block mt-1 mt-sm-0 text-center">This template is made with <i class="mdi mdi-heart text-danger"></i>Developer</span>
               </div>
             </div>
-      </footer>
+      </footer> -->
       <!-- partial -->
       <!-- page-body-wrapper ends -->
     </div>

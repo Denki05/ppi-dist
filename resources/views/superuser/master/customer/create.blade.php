@@ -170,6 +170,12 @@
           <input type="file" id="image_ktp" name="image_ktp" data-max-file-size="2000" accept="image/png, image/jpeg">
         </div>
       </div>
+      <div class="form-group row">
+        <label class="col-md-3 col-form-label text-right">Image Store</label>
+        <div class="col-md-7">
+          <input type="file" id="image_store" name="image_store" data-max-file-size="2000" accept="image/png, image/jpeg">
+        </div>
+      </div>
       <div class="form-group row pt-30">
         <div class="col-md-6">
           <a href="{{ route('superuser.master.customer.index') }}">

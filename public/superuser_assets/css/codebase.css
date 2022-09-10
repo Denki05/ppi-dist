@@ -39,7 +39,7 @@ body {
 hr {
   box-sizing: content-box;
   height: 0;
-  overflow: visible;
+  overflow: hidden;
 }
 
 h1, h2, h3, h4, h5, h6 {
@@ -157,7 +157,7 @@ samp {
 pre {
   margin-top: 0;
   margin-bottom: 1rem;
-  overflow: auto;
+  overflow: hidden;
 }
 
 figure {
@@ -1770,7 +1770,7 @@ pre code {
   .table-responsive-sm {
     display: block;
     width: 100%;
-    overflow-x: auto;
+    overflow-x: visible;
     -webkit-overflow-scrolling: touch;
   }
   .table-responsive-sm > .table-bordered {
@@ -10668,16 +10668,16 @@ a.badge-secondary:focus, a.badge-secondary.focus {
 
 #main-container,
 #page-footer {
-  overflow-x: auto;
-  overflow-y: auto;
+  overflow-x: visible;
+  overflow-y: visible;
 }
 
 .content {
   margin: 0 auto;
   padding: 12px 12px 1px;
   width: 100%;
-  overflow-x: auto;
-  overflow-y: auto;
+  overflow-x: visible;
+  overflow-y: visible;
 }
 
 .content .pull-t {

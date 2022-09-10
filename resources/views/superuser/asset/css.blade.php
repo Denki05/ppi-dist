@@ -18,3 +18,10 @@
 <link rel="stylesheet" href="{{ asset('superuser_assets/plus-admin/assets/vendors/font-awesome/css/font-awesome.min.css') }}">
 <link rel="stylesheet" href="{{ asset('superuser_assets/plus-admin/assets/css/style.css') }}">
 <link rel="stylesheet" href="{{ asset('superuser_assets/plus-admin/assets/images/favicon.png') }}">
+
+<!-- Multi Tab -->
+<link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css">
+<link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.bundle.min.js">
+
+<!-- Form View -->
+<link rel="stylesheet" href="{{ asset('superuser_assets/css/form.view.css') }}">

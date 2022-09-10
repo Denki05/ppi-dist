@@ -9,14 +9,14 @@ class Customer extends Model
 {
     use SoftDeletes;
     
-    protected $appends = ['img_ktp', 'img_npwp'];
+    protected $appends = ['img_ktp', 'img_npwp', 'img_store'];
     protected $fillable = [
         'category_id', /* 'type_id', */ 'code', 'name',
         'email', 'phone', 'npwp', 'ktp', 'address',
         'owner_name', 'plafon_piutang', 'gps_latitude', 'gps_longitude',
         'provinsi', 'kota', 'kecamatan', 'kelurahan',
         'text_provinsi', 'text_kota', 'text_kecamatan', 'text_kelurahan',
-        'zipcode', 'image_npwp', 'image_ktp', 'notification_email', 'status'
+        'zipcode', 'image_npwp', 'image_ktp', 'image_store', 'notification_email', 'status'
     ];
     protected $table = 'master_customers';
     public static $directory_image = 'superuser_assets/media/master/customer/';
@@ -72,6 +72,15 @@ class Customer extends Model
         }
 
         return asset(Self::$directory_image.$this->image_npwp);
+    }
+
+    public function getImgStoreAttribute()
+    {
+        if (!$this->image_store OR !file_exists(Self::$directory_image.$this->image_store)) {
+          return img_holder();
+        }
+
+        return asset(Self::$directory_image.$this->image_store);
     }
 
     public function do(){
