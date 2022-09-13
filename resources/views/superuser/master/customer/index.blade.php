@@ -22,11 +22,11 @@
       <button type="button" class="btn btn-outline-primary min-width-125">Create</button>
     </a>
 
-    <!-- <button type="button" class="btn btn-outline-info ml-10" data-toggle="modal" data-target="#modal-manage">Manage</button>
+    <button type="button" class="btn btn-outline-info ml-10" data-toggle="modal" data-target="#modal-manage">Manage</button>
 
-    <button type="button" class="btn btn-outline-danger ml-10" onclick="deleteMultiple()">Delete Checked</button>
+    <!-- <button type="button" class="btn btn-outline-danger ml-10" onclick="deleteMultiple()">Delete Checked</button> -->
 
-    <a class="ml-10" href="{{ route('superuser.master.product.cetak') }}">
+    <!-- <a class="ml-10" href="{{ route('superuser.master.product.cetak') }}">
       <button type="button" class="btn btn-outline-warning min-width-125">Print</button>
     </a> -->
   </div>
@@ -125,6 +125,11 @@
                 <a href="javascript:deleteConfirmation('{$row->id}')">
                     <button type="button" class="btn btn-sm btn-circle btn-alt-danger" title="Delete">
                         <i class="mdi mdi-delete"></i>
+                    </button>
+                </a>
+                <a href="{{ route('superuser.master.customer.export_customer') }}">
+                    <button type="button" class="btn btn-sm btn-circle btn-alt-secondary" title="Export">
+                        <i class="mdi mdi-file-pdf"></i>
                     </button>
                 </a>
               </td>

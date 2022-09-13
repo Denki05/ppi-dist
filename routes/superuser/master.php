@@ -83,6 +83,7 @@ Route::group([
         Route::get('/import_template', 'CustomerController@import_template')->name('import_template');
         Route::post('/import', 'CustomerController@import')->name('import');
         Route::get('/export', 'CustomerController@export')->name('export');
+        Route::get('/export_customer', 'CustomerController@export_customer')->name('export_customer');
 		Route::post('/getkabupaten', 'CustomerController@getkabupaten')->name('getkabupaten');
         Route::post('/getkecamatan', 'CustomerController@getkecamatan')->name('getkecamatan');
         Route::post('/getkelurahan', 'CustomerController@getkelurahan')->name('getkelurahan');

@@ -49,7 +49,7 @@
             <table class="table user-view-table m-0" id="profile_table">
               <tbody>
                 <tr>
-                  <td>NPWP</td>
+                  <td>Register</td>
                   <td>{{ \Carbon\Carbon::parse($customer->created_at)->format('d-m-Y')}}</td>
                 </tr>
                 <tr>
@@ -107,7 +107,7 @@
                 </tr>
                 <tr>
                   <td>Area</td>
-                  <td>{{ $customer->text_provinsi }} - {{ $customer->text_kota }} - {{ $customer->text_kecamatan }} - {{ $customer->text_kelurahan }} - {{ $customer->zipcode }} </td>
+                  <td>{{ $customer->text_provinsi }} </td>
                 </tr>
                 <tr>
                   <td>Location Maps</td>
@@ -135,11 +135,8 @@
                   <td>{{ $customer->ktp ?? '-' }}</td>
                 </tr>
                 <tr>
-                  <td>Saldo</td>
-                  <td>@mod</td>
-                </tr>
-                <tr>
                   <td>Image NPWP</td>
+                  <td>:</td>
                   <td>
                     <a href="{{ $customer->img_npwp }}" class="img-link img-link-zoom-in img-thumb img-lightbox">
                       <img src="{{ $customer->img_npwp }}" class="img-fluid img-show-small">
@@ -147,7 +144,7 @@
                   </td>
                 </tr>
                 <tr>
-                  <td>Image KTP</td>
+                  <td>Image KTP :</td>
                   <td>
                     <a href="{{ $customer->img_ktp }}" class="img-link img-link-zoom-in img-thumb img-lightbox">
                       <img src="{{ $customer->img_ktp }}" class="img-fluid img-show-small">

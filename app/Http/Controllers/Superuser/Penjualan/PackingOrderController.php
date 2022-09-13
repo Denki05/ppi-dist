@@ -1091,6 +1091,7 @@ class PackingOrderController extends Controller
         $pdf = PDF::loadview($this->view."print_proforma",$data)->setPaper('a4','potrait');
         return $pdf->stream($result->code ?? '');
     }
+    
     private function reset_cost_if_change_idr_rate($do_id,$idr_rate){
         $do = PackingOrder::where('id',$do_id)->first();
         $result = PackingOrderDetail::where('do_id',$do_id)->first();

@@ -24,6 +24,8 @@ use App\Models\Regency;
 use App\Models\District;
 use App\Models\Village;
 use App\Models\Zipcode;
+use PDF;
+use COM;
 
 class CustomerController extends Controller
 {
@@ -481,5 +483,75 @@ class CustomerController extends Controller
     {
         $filename = 'master-customer-' . date('d-m-Y_H-i-s') . '.xlsx';
         return Excel::download(new CustomerExport, $filename);
+    }
+
+    public function export_customer(Request  $id){
+        // Access
+        if(Auth::user()->is_superuser == 0){
+            if(empty($this->access) || empty($this->access->user) || $this->access->can_delete == 0){
+                abort(405);
+            }
+        }
+            $customer = Customer::find($id);
+    
+            if ($customer === null) {
+                abort(404);
+            }
+
+            //- Variables - for your RPT and PDF
+            // echo "Export rpt Crystal Report ON pdf";
+            $my_report = "C:\\xampp\\htdocs\\ppi-dist\\public\\cr\\customer_detail2.rpt"; 
+            $my_pdf = "C:\\xampp\\htdocs\\ppi-dist\\public\\cr\\export\\customer_detail2.pdf";
+    
+            //- Variables - Server Information 
+            $my_server = "SERVER_PPI_DIST"; 
+            $my_user = "ppi_report"; 
+            $my_password = "Denki@05121996"; 
+            $my_database = "ppi-dist";
+            $COM_Object = "CrystalDesignRunTime.Application";
+    
+            $crapp= New COM($COM_Object) or die("Unable to Create Object");
+            $creport = $crapp->OpenReport($my_report, 1);
+    
+            //- Set database logon info - must have 
+            $creport->Database->Tables(1)->SetLogOnInfo($my_server, $my_database, $my_user, $my_password);
+    
+            //------ Put the values that you want -------- 
+            // $creport->RecordSelectionFormula="{idCust.storeID}='$customer'";
+    
+            //- field prompt or else report will hang - to get through 
+            $creport->EnableParameterPrompting = 0;
+            
+            //------ DiscardSavedData make a Refresh in your data -------
+            $creport->DiscardSavedData;
+            $creport->ReadRecords();
+    
+            //------ Pass formula fields --------
+            $creport->ParameterFields(1)->SetCurrentValue(275); // <-- param 1
+    
+            //export to PDF process
+            $creport->ExportOptions->DiskFileName=$my_pdf; //export to pdf
+            $creport->ExportOptions->PDFExportAllPages=true;
+            $creport->ExportOptions->DestinationType=1; // export to file
+            $creport->ExportOptions->FormatType=31; // PDF type
+            $creport->Export(false);
+    
+            //------ Release the variables ------
+            $creport = null;
+            $crapp = null;
+            $ObjectFactory = null;
+    
+            //------ Embed the report in the webpage ------
+            // print "<embed src=\"C:\\xampp\\htdocs\\ppi-manage\\report\\export\\product_list.pdf\" width=\"100%\" height=\"100%\">"
+    
+    
+            $file = "C:\\xampp\\htdocs\\ppi-dist\\public\\cr\\export\\customer_detail2.pdf"; 
+    
+            header("Content-Description: File Transfer"); 
+            header("Content-Type: application/octet-stream"); 
+            header("Content-Disposition: attachment; filename=\"". basename($file) ."\""); 
+    
+            readfile ($file);
+            exit();
     }
 }
