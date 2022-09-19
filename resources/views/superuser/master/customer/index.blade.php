@@ -91,6 +91,7 @@
           <th></th>
           <th>Store</th>
           <th>Address</th>
+          <th>Status</th>
           <th scope="col">Action</th>
           <th>Add Member</th>
         </tr>
@@ -112,6 +113,14 @@
               <td>{{ $row->name }}</td>
               <td>{{ $row->address }} - <br><b>{{ $row->text_kota }}</b></br></td>
               <td>
+                @if($row->status == $row::STATUS['ACTIVE'])
+                  <span class="badge badge-success">ACTIVE</span>
+                @elseif($row->status == $row::STATUS['DELETED'])
+                  <span class="badge badge-danger">IN ACTIVE</span>
+                @endif
+              </td>
+              <td>
+              @if($row->status == $row::STATUS['ACTIVE'])
                 <a href="{{ route('superuser.master.customer.show', $row->id) }}">
                     <button type="button" class="btn btn-sm btn-circle btn-alt-secondary" title="View">
                         <i class="mdi mdi-eye"></i>
@@ -132,9 +141,19 @@
                         <i class="mdi mdi-file-pdf"></i>
                     </button>
                 </a>
+              @elseif($row->status == $row::STATUS['DELETED'])
+                <a href="{{ route('superuser.master.customer.show', $row->id) }}">
+                      <button type="button" class="btn btn-sm btn-circle btn-alt-secondary" title="View">
+                          <i class="mdi mdi-eye"></i>
+                      </button>
+                </a>
+              @endif
               </td>
               <td>
+              @if($row->status == $row::STATUS['ACTIVE'])
                 <a class="btn" href="{{ route('superuser.master.customer.other_address.create', [$row->id]) }}" target="_blank" role="button" title="Add Member"><i class="mdi mdi-file-multiple"></i></a>
+              @elseif($row->status == $row::STATUS['DELETED'])
+              @endif
               </td>
           </tr>
 

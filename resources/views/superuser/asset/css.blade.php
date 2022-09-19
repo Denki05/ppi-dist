@@ -21,7 +21,11 @@
 
 <!-- Multi Tab -->
 <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css">
-<link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.bundle.min.js">
 
 <!-- Form View -->
 <link rel="stylesheet" href="{{ asset('superuser_assets/css/form.view.css') }}">
+
+<!-- Multi form -->
+<link rel="stylesheet" href="{{ asset('superuser_assets/css/multi.tab.css') }}">
+<!-- <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.4.1/css/bootstrap.min.css"> -->
+<link rel="stylesheet" href="https://pro.fontawesome.com/releases/v5.10.0/css/all.css">

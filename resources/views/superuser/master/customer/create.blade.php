@@ -7,198 +7,169 @@
   <span class="breadcrumb-item active">Create</span>
 </nav>
 <div class="block">
-  <div class="block-header block-header-default">
-    <h3 class="block-title">Create Store</h3>
-  </div>
-  <div class="block-content">
-    <form class="ajax" data-action="{{ route('superuser.master.customer.store') }}" data-type="POST" enctype="multipart/form-data">
-      {{-- <div class="form-group row">
-        <label class="col-md-3 col-form-label text-right" for="code">Code <span class="text-danger">*</span></label>
-        <div class="col-md-7">
-          <input type="text" class="form-control" id="code" name="code" onkeyup="nospaces(this)">
+            <div class="block-conten" align="center">
+                <div class="col-md-10 col-md-offset-1">
+                	<form data-action="{{ route('superuser.master.customer.store') }}" data-type="POST" enctype="multipart/form-data" class="f1 ajax">
+                		<div class="f1-steps">
+                			<div class="f1-progress">
+                			    <div class="f1-progress-line" data-now-value="25" data-number-of-steps="4" style="width: 25%;"></div>
+                			</div>
+                            <div class="f1-step active">
+                                <div class="f1-step-icon"><i class="mdi mdi-account"></i></div>
+                                <p>Profile</p>
+                            </div>
+                			<div class="f1-step">
+                				<div class="f1-step-icon"><i class="mdi mdi-home-map-marker"></i></div>
+                				<p>Address</p>
+                			</div>
+                			<div class="f1-step">
+                				<div class="f1-step-icon"><i class="mdi mdi-file-account"></i></div>
+                				<p>Data</p>
+                			</div>
+                      <div class="f1-step">
+                				<div class="f1-step-icon"><i class="mdi mdi-file-document-box"></i></div>
+                				<p>Document</p>
+                			</div>
+                		</div>
+                		<!-- step 1 -->
+                		<fieldset>
+                		    <h4>Profile Store</h4>
+                			<div class="form-group">
+                			    <label for="name">Name<span class="text-danger">*</span></label>
+                                <input type="text" id="name" name="name" placeholder="Name Store" class="form-control">
+                            </div>
+                            <div class="form-group">
+                			    <label for="email">Email</label>
+                                <input type="text" id="email" name="email" placeholder="Email" class="form-control">
+                            </div>
+                            <div class="form-group">
+                			    <label for="phone">Phone</label>
+                                <input type="number" id="phone" name="phone" placeholder="Phone" class="form-control">
+                            </div>
+                            <div class="form-group">
+                			    <label for="owner_name">Owner Name</label>
+                                <input type="text" id="owner_name" name="owner_name" placeholder="Owner Store" class="form-control">
+                            </div>
+                            <div class="form-group">
+                			    <label for="website">Wesite</label>
+                                <input type="text" id="website" name="website" placeholder="Website Store" class="form-control">
+                            </div>
+                            <div class="form-group">
+                                <label>Image Store</label>
+                                <input type="file" id="image_store" name="image_store" data-max-file-size="2000" accept="image/png, image/jpeg">
+                            </div>
+                            <div class="f1-buttons">
+                                <button type="button" class="btn btn-primary btn-next">Next <i class="fa fa-arrow-right"></i></button>
+                            </div>
+                        </fieldset>
+                        <!-- step 2 -->
+                        <fieldset>
+                            <h4>Address Store</h4>
+                            <div class="form-group">
+                                <label for="address">Address<span class="text-danger">*</span></label>
+                                <input type="text" name="address" id="address" placeholder="Store Address" class="form-control">
+                            </div>
+                            <div class="form-group">
+                                <label for="gps_latitude">GPS Latitude</label>
+                                <input type="text" name="gps_latitude" id="gps_latitude" placeholder="Latitude" class="form-control">
+                            </div>
+                            <div class="form-group">
+                                <label for="gps_longitude">GPS Logitude</label>
+                                <input type="text" name="gps_longitude" id="gps_longitude" placeholder="Longitude" class="form-control">
+                            </div>
+                            <div class="form-group">
+                                <label>Area Detail</label>
+                                <select class="js-select2 form-control" id="provinsi" name="provinsi">
+                                    <option>Select Provinsi</option>
+                                    @foreach ($provinces as $provinsi)
+                                    <option value="{{ $provinsi->prov_id }}">{{ $provinsi->prov_name }}</option>
+                                    @endforeach
+                                </select>
+                                <input type="hidden" name="text_provinsi">
+                                <select class="js-select2 form-control" id="kota" name="kota">
+                                    <option>Select Kota</option>
+                                </select>
+                                <input type="hidden" name="text_kota">
+                                <select class="js-select2 form-control" id="kecamatan" name="kecamatan">
+                                    <option>Select Kecamatan</option>
+                                </select>
+                                <input type="hidden" name="text_kecamatan">
+                                <select class="js-select2 form-control" id="kelurahan" name="kelurahan">
+                                    <option>Select Kelurahan</option>
+                                </select>
+                                <input type="hidden" name="text_kelurahan">
+                                <select class="js-select2 form-control" id="zipcode" name="zipcode">
+                                    <option>Select Zipcode</option>
+                                </select>
+                                <input type="hidden" name="text_zipcode">
+                            </div>
+                            <div class="f1-buttons">
+                                <button type="button" class="btn btn-warning btn-previous"><i class="fa fa-arrow-left"></i> Previous</button>
+                                <button type="button" class="btn btn-primary btn-next">Next <i class="fa fa-arrow-right"></i></button>
+                            </div>
+                        </fieldset>
+                        <!-- step 3 -->
+                        <fieldset>
+                            <h4>Data Details</h4>
+                            <div class="form-group">
+                                <label>Category</label>
+                                <select class="js-select2 form-control" id="category" name="category" placeholder="Select Category">
+                                    <option></option>
+                                    @foreach($customer_categories as $category)
+                                    <option value="{{ $category->id }}">{{ $category->name }}</option>
+                                    @endforeach
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label>Type</label>
+                                <select class="js-select2 form-control" id="type" name="type[]" placeholder="Select Type" multiple>
+                                    <option></option>
+                                    @foreach($customer_types as $type)
+                                    <option value="{{ $type->id }}">{{ $type->name }}</option>
+                                    @endforeach
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label>Plafon Piutang</label>
+                                <input type="number" class="form-control" id="plafon_piutang" name="plafon_piutang" min="0" value="0" step="0.0001">
+                            </div>
+                            <div class="f1-buttons">
+                                <button type="button" class="btn btn-warning btn-previous"><i class="fa fa-arrow-left"></i> Previous</button>
+                                <button type="button" class="btn btn-primary btn-next">Next <i class="fa fa-arrow-right"></i></button>
+                            </div>
+                        </fieldset>
+                        <!-- step 4 -->
+                        <fieldset>
+                            <h4>Document Detail</h4>
+                            <div class="form-group">
+                                <label>NPWP</label>
+                                <input type="number" class="form-control" id="npwp" name="npwp">
+                            </div>
+                            <div class="form-group">
+                                <label>KTP</label>
+                                <input type="number" class="form-control" id="ktp" name="ktp">
+                            </div>
+                            <div class="form-group">
+                                <label>Image NPWP</label>
+                                <input type="file" id="image_npwp" name="image_npwp" data-max-file-size="2000" accept="image/png, image/jpeg">
+                            </div>
+                            <div class="form-group">
+                                <label>Image KTP</label>
+                                <input type="file" id="image_ktp" name="image_ktp" data-max-file-size="2000" accept="image/png, image/jpeg">
+                            </div>
+                            <div class="f1-buttons">
+                                <button type="button" class="btn btn-warning btn-previous"><i class="fa fa-arrow-left"></i> Previous</button>
+                                <button type="submit" class="btn btn-primary btn-submit"><i class="fa fa-save"></i> Submit</button>
+                            </div>
+                        </fieldset>
+                	</form>
+                </div>
+            </div>
         </div>
-      </div> --}}
-      <div class="form-group row">
-        <label class="col-md-3 col-form-label text-right" for="name">Name <span class="text-danger">*</span></label>
-        <div class="col-md-7">
-          <input type="text" class="form-control" id="name" name="name">
-        </div>
-      </div>
-      <div class="form-group row">
-        <label class="col-md-3 col-form-label text-right" for="category">Category <span class="text-danger">*</span></label>
-        <div class="col-md-7">
-          <select class="js-select2 form-control" id="category" name="category" data-placeholder="Select Category">
-            <option></option>
-            @foreach($customer_categories as $category)
-            <option value="{{ $category->id }}">{{ $category->name }}</option>
-            @endforeach
-          </select>
-        </div>
-      </div>
-      <div class="form-group row">
-        <label class="col-md-3 col-form-label text-right" for="type">Type <span class="text-danger">*</span></label>
-        <div class="col-md-7">
-          <select class="js-select2 form-control" id="type" name="type[]" data-placeholder="Select Type" multiple>
-            <option></option>
-            @foreach($customer_types as $type)
-            <option value="{{ $type->id }}">{{ $type->name }}</option>
-            @endforeach
-          </select>
-        </div>
-      </div>
-      <div class="form-group row">
-        <label class="col-md-3 col-form-label text-right" for="email">Email</label>
-        <div class="col-md-6">
-          <input type="email" class="form-control" id="email" name="email">
-        </div>
-        <div class="col-md-1 text-center">
-          <label class="css-control css-control-primary css-checkbox">
-            <input type="checkbox" class="css-control-input" name="notification_email">
-            <span class="css-control-indicator"></span>
-          </label>
-        </div>
-      </div>
-      <div class="form-group row">
-        <label class="col-md-3 col-form-label text-right" for="phone">Phone</label>
-        <div class="col-md-7">
-          <input type="text" class="form-control" id="phone" name="phone">
-        </div>
-      </div>
-      <div class="form-group row">
-        <label class="col-md-3 col-form-label text-right" for="npwp">NPWP</label>
-        <div class="col-md-7">
-          <input type="text" class="form-control" id="npwp" name="npwp">
-        </div>
-      </div>
-      <div class="form-group row">
-        <label class="col-md-3 col-form-label text-right" for="ktp">KTP</label>
-        <div class="col-md-7">
-          <input type="text" class="form-control" id="ktp" name="ktp">
-        </div>
-      </div>
-      <div class="form-group row">
-        <label class="col-md-3 col-form-label text-right" for="address">Address <span class="text-danger">*</span></label>
-        <div class="col-md-7">
-          <textarea class="form-control" id="address" name="address"></textarea>
-        </div>
-      </div>
-      <div class="form-group row">
-        <label class="col-md-3 col-form-label text-right" for="owner_name">Owner Name</label>
-        <div class="col-md-7">
-          <input type="text" class="form-control" id="owner_name" name="owner_name">
-        </div>
-      </div>
-      <div class="form-group row">
-        <label class="col-md-3 col-form-label text-right" for="website">Website</label>
-        <div class="col-md-7">
-          <input type="text" class="form-control" id="website" name="website">
-        </div>
-      </div>
-      <div class="form-group row">
-        <label class="col-md-3 col-form-label text-right" for="plafon_piutang">Plafon Piutang <span class="text-danger">*</span></label>
-        <div class="col-md-7">
-          <input type="number" class="form-control" id="plafon_piutang" name="plafon_piutang" min="0" value="0" step="0.0001">
-        </div>
-      </div>
-      <div class="form-group row">
-        <label class="col-md-3 col-form-label text-right">GPS Coordinate</label>
-        <div class="col-md-3">
-          <input type="text" class="form-control" id="gps_latitude" name="gps_latitude" placeholder="Latitude">
-        </div>
-        <div class="col-md-1"></div>
-        <div class="col-md-3">
-          <input type="text" class="form-control" id="gps_longitude" name="gps_longitude" placeholder="Longitude">
-        </div>
-      </div>
-      <div class="form-group row">
-        <label class="col-md-3 col-form-label text-right">Provinsi</label>
-        <div class="col-md-7">
-          <select class="js-select2 form-control" id="provinsi" name="provinsi" data-placeholder="Select Provinsi">
-            <option></option>
-            @foreach ($provinces as $provinsi)
-              <option value="{{ $provinsi->prov_id }}">{{ $provinsi->prov_name }}</option>
-            @endforeach
-          </select>
-          <input type="hidden" name="text_provinsi">
-        </div>
-      </div>
-      <div class="form-group row">
-        <label class="col-md-3 col-form-label text-right">Kota</label>
-        <div class="col-md-7">
-          <select class="js-select2 form-control" id="kota" name="kota" data-placeholder="Select Kota">
-            <option></option>
-          </select>
-          <input type="hidden" name="text_kota">
-        </div>
-      </div>
-      <div class="form-group row">
-        <label class="col-md-3 col-form-label text-right">Kecamatan</label>
-        <div class="col-md-7">
-          <select class="js-select2 form-control" id="kecamatan" name="kecamatan" data-placeholder="Select Kecamatan">
-            <option></option>
-          </select>
-          <input type="hidden" name="text_kecamatan">
-        </div>
-      </div>
-      <div class="form-group row">
-        <label class="col-md-3 col-form-label text-right">Kelurahan</label>
-        <div class="col-md-7">
-          <select class="js-select2 form-control" id="kelurahan" name="kelurahan" data-placeholder="Select Kelurahan">
-            <option></option>
-          </select>
-          <input type="hidden" name="text_kelurahan">
-        </div>
-      </div>
-      <div class="form-group row">
-        <label class="col-md-3 col-form-label text-right">Zipcode</label>
-        <div class="col-md-7">
-          <select class="js-select2 form-control" id="zipcode" name="zipcode" data-placeholder="Select Zipcode">
-            <option></option>
-          </select>
-          <input type="hidden" name="text_zipcode">
-        </div>
-      </div>
-      <div class="form-group row">
-        <label class="col-md-3 col-form-label text-right">Image NPWP</label>
-        <div class="col-md-7">
-          <input type="file" id="image_ktp" name="image_ktp" data-max-file-size="2000" accept="image/png, image/jpeg">
-        </div>
-      </div>
-      <div class="form-group row">
-        <label class="col-md-3 col-form-label text-right">Image KTP</label>
-        <div class="col-md-7">
-          <input type="file" id="image_ktp" name="image_ktp" data-max-file-size="2000" accept="image/png, image/jpeg">
-        </div>
-      </div>
-      <div class="form-group row">
-        <label class="col-md-3 col-form-label text-right">Image Store</label>
-        <div class="col-md-7">
-          <input type="file" id="image_store" name="image_store" data-max-file-size="2000" accept="image/png, image/jpeg">
-        </div>
-      </div>
-      <div class="form-group row pt-30">
-        <div class="col-md-6">
-          <a href="{{ route('superuser.master.customer.index') }}">
-            <button type="button" class="btn bg-gd-cherry border-0 text-white">
-              <i class="fa fa-arrow-left mr-10"></i> Back
-            </button>
-          </a>
-        </div>
-        <div class="col-md-6 text-right">
-          <button type="submit" class="btn bg-gd-corporate border-0 text-white">
-            Submit <i class="fa fa-arrow-right ml-10"></i>
-          </button>
-        </div>
-      </div>
-    </form>
-  </div>
-</div>
-<div id="alert-block"></div>
 @endsection
 
 @include('superuser.asset.plugin.fileinput')
 @include('superuser.asset.plugin.select2')
-
 
 @push('scripts')
 <script src="{{ asset('utility/superuser/js/form.js') }}"></script>
@@ -219,6 +190,20 @@
     });
 
     $('#image_ktp').fileinput({
+      theme: 'explorer-fa',
+      browseOnZoneClick: true,
+      showCancel: false,
+      showClose: false,
+      showUpload: false,
+      browseLabel: '',
+      removeLabel: '',
+      fileActionSettings: {
+        showDrag: false,
+        showRemove: false
+      },
+    });
+
+    $('#image_store').fileinput({
       theme: 'explorer-fa',
       browseOnZoneClick: true,
       showCancel: false,
@@ -338,3 +323,5 @@
   })
 </script>
 @endpush
+
+
