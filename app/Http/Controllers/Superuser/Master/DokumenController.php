@@ -98,7 +98,7 @@ class DokumenController extends Controller
         if ($request->ajax()) {
             $validator = Validator::make($request->all(), [
                 'name' => 'required|string',
-                'other_address' => 'required|string',
+                // 'other_address' => 'required|string',
                 'contact' => 'required|string',
                 'npwp' => 'required|string',
                 'ktp' => 'required|string',

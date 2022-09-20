@@ -99,7 +99,6 @@ Route::group([
             Route::post('/other_address/getkecamatan', 'CustomerOtherAddressController@getkecamatan')->name('getkecamatan');
             Route::post('/other_address/getkelurahan', 'CustomerOtherAddressController@getkelurahan')->name('getkelurahan');
             Route::post('/other_address/getzipcode', 'CustomerOtherAddressController@getzipcode')->name('getzipcode');
-
         });
 
         Route::group(['as' => 'contact.'], function() {

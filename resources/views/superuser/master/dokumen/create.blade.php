@@ -14,7 +14,7 @@
   <div class="block-content">
     <form class="ajax" data-action="{{ route('superuser.master.dokumen.store') }}" data-type="POST" enctype="multipart/form-data">
       <div class="form-group row">
-        <label class="col-md-3 col-form-label text-right" for="name">Name <span class="text-danger">*</span></label>
+        <label class="col-md-3 col-form-label text-right" for="name">Name Card <span class="text-danger">*</span></label>
         <div class="col-md-7">
           <input type="text" class="form-control" id="name" name="name">
         </div>
@@ -51,13 +51,13 @@
       <div class="form-group row">
         <label class="col-md-3 col-form-label text-right">Image NPWP</label>
         <div class="col-md-7">
-          <input type="file" id="image_npwp" name="image_npwp" data-max-file-size="2000" accept="image/png, image/jpeg">
+          <input type="file" id="image_npwp" name="image_npwp" data-max-file-size="4000" accept="image/png, image/jpeg">
         </div>
       </div>
       <div class="form-group row">
         <label class="col-md-3 col-form-label text-right">Image KTP</label>
         <div class="col-md-7">
-          <input type="file" id="image_ktp" name="image_ktp" data-max-file-size="2000" accept="image/png, image/jpeg">
+          <input type="file" id="image_ktp" name="image_ktp" data-max-file-size="4000" accept="image/png, image/jpeg">
         </div>
       </div>
       <div class="form-group row pt-30">
