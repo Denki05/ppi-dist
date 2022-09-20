@@ -189,7 +189,7 @@
                                                 </a>
                                             </td>
                                             <td>
-                                              <a class="btn btn-primary" href="{{ route('superuser.master.dokumen.create') }}" role="button" title="Add Dokumen"><i class="fa fa-file"></i></a>
+                                              <a class="btn" href="{{ route('superuser.master.dokumen.create', [$index->id]) }}" target="_blank" role="button" title="Add Dokumen"><i class="mdi mdi-file-multiple"></i></a>
                                             </td>
                                             @endif
                                         </tr>

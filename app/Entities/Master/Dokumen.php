@@ -23,9 +23,9 @@ class Dokumen extends Model
     protected $table = 'master_dokumen';
     public static $directory_image = 'superuser_assets/media/master/dokumen/';
 
-    public function member()
+    public function other_address()
     {
-        return $this->belongsTo('App\Entities\Master\CustomerOtherAddress');
+        return $this->belongsTo('App\Entities\Master\CustomerOtherAddress', 'customer_other_address_id');
     }
 
     public function getImgKtpAttribute()
