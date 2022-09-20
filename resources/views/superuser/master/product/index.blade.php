@@ -25,10 +25,6 @@
     {{--<button type="button" class="btn btn-outline-info ml-10" data-toggle="modal" data-target="#modal-manage">Manage</button>--}}
 
     {{--<button type="button" class="btn btn-outline-danger ml-10" onclick="deleteMultiple()">Delete Checked</button>--}}
-
-    {{--<a class="ml-10" href="{{ route('superuser.master.product.cetak') }}">
-      <button type="button" class="btn btn-outline-warning min-width-125">Print</button>
-    </a>--}}
     <a class="ml-10" href="{{ route('superuser.master.product.cetak') }}">
       <button type="button" class="btn btn-outline-secondary" title="Print Product"><i class="mdi mdi-printer"></i></button>
     </a>

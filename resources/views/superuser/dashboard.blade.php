@@ -69,7 +69,7 @@
                   <label class="col-md-3 col-form-label text-right">Area</label>
                   <div class="col-md-9">
                     <select class="form-control js-select2" name="province">
-                      <option value="">==All Customer==</option>
+                      <option value="">==All Provinsi==</option>
                       @foreach($customer as $index => $row)
                       <option value="{{$row->id}}">{{$row->text_provinsi}}</option>
                       @endforeach

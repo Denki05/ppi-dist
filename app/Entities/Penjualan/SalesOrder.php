@@ -16,6 +16,7 @@ class SalesOrder extends Model
     	'origin_warehouse_id',
     	'destination_warehouse_id',
     	'customer_id',
+        'customer_other_address_id',
         'ekspedisi_id',
     	'type_transaction',
     	'status',
@@ -39,6 +40,9 @@ class SalesOrder extends Model
     ];
     public function customer(){
     	return $this->BelongsTo('App\Entities\Master\Customer','customer_id','id');
+    }
+    public function member(){
+    	return $this->BelongsTo('App\Entities\Master\CustomerOtherAddress','customer_other_address_id','id');
     }
     public function customer_gudang(){
     	return $this->BelongsTo('App\Entities\Master\Warehouse','destination_warehouse_id','id');

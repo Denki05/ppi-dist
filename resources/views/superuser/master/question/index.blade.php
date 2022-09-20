@@ -26,7 +26,7 @@
   </div>
   <hr class="my-20">
   <div class="block-content block-content-full">
-    <table id="datatable" class="table table-striped table-vcenter table-responsive">
+    <table id="datatable" class="table table-hover">
       <thead>
         <tr>
           <th>#</th>

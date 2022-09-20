@@ -59,7 +59,7 @@
       </form>
       <div class="row mb-30">
         <div class="col-12">
-          <table class="table table-striped table-vcenter table-responsive" id="datatables">
+          <table class="table table-striped" id="datatables">
             <thead>
               <tr>
                 <th>#</th>
@@ -100,7 +100,7 @@
 
                   <td>
                     @if($row->so_for == 1)
-                      {{$row->customer->name ?? ''}}
+                      {{$row->member->name ?? ''}}
                     @elseif($row->so_for == 2)
                       {{$row->customer_gudang->name ?? ''}}
                     @endif

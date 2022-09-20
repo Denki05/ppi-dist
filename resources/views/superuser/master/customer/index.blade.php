@@ -31,60 +31,6 @@
     </a> -->
   </div>
   <div class="block-content block-content-full">
-    <!-- <form id="form" target="_blank" action="#"
-      enctype="multipart/form-data" method="POST">
-      @csrf
-      <input type="hidden" name="download_type" id="download_type" value="">
-      <div class="form-group row">
-        <div class="col-md-9">
-          <div class="block">
-            <div class="block-content">
-              <div class="form-group row">
-                <label class="col-md-2 col-form-label text-left" for="period">Period :</label>
-                <div class="col-md-4">
-                  <div class="input-group">
-                    <div class="input-group-prepend"><span class="input-group-text"><i class="fa fa-calendar"
-                          aria-hidden="true"></i></span></div><input type="text" class="form-control pull-right"
-                      id="datesearch" name="datesearch" placeholder="Select period"
-                      value="">
-                  </div>
-                </div>
-                <label class="col-md-2 col-form-label text-left" for="marketplace">Marketplace :</label>
-                <div class="col-md-4">
-                  <select class="js-select2 form-control" id="marketplace" name="marketplace" data-placeholder="Select Marketplace">
-                    <option value="all">All</option>
-                  
-                  </select>
-                </div>
-              </div>
-              <div class="form-group row">
-                <label class="col-md-2 col-form-label text-left" for="status">Status :</label>
-                <div class="col-md-4">
-                  <select class="js-select2 form-control" id="status" name="status" data-placeholder="Select Status">
-                    <option value="all">All</option>
-                    <option value="paid">Paid</option>
-                    <option value="debt">Unpaid</option>
-                  </select>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-        <div class="col-md-3">
-          <div class="block">
-            <div class="block-content">
-              <div class="form-group row">
-                <div class="col-md-12 text-center">
-                  <a href="#" id="btn-filter" class="btn bg-gd-corporate border-0 text-white pl-50 pr-50">
-                    Filter <i class="fa fa-search ml-10"></i>
-                  </a>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </form> -->
     <table id="customer-table" class="table table-striped">
       <thead class="thead-dark">
         <tr>
