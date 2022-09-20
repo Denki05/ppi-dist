@@ -1,10 +1,10 @@
 @extends('superuser.app')
 
 @section('content')
-<nav class="breadcrumb bg-white push">
+<!-- <nav class="breadcrumb bg-white push">
   <span class="breadcrumb-item">Master</span>
   <span class="breadcrumb-item active">Product</span>
-</nav>
+</nav> -->
 @if($errors->any())
 <div class="alert alert-danger alert-dismissable" role="alert">
   <button type="button" class="close" data-dismiss="alert" aria-label="Close">
@@ -19,23 +19,23 @@
 <div class="block">
   <div class="block-content">
     <a href="{{ route('superuser.master.product.create') }}">
-      <button type="button" class="btn btn-outline-primary min-width-125">Create</button>
+      <button type="button" class="btn btn-outline-primary" title="Create Product"><i class="mdi mdi-file-plus"></i></button>
     </a>
 
-    <button type="button" class="btn btn-outline-info ml-10" data-toggle="modal" data-target="#modal-manage">Manage</button>
+    {{--<button type="button" class="btn btn-outline-info ml-10" data-toggle="modal" data-target="#modal-manage">Manage</button>--}}
 
-    <button type="button" class="btn btn-outline-danger ml-10" onclick="deleteMultiple()">Delete Checked</button>
+    {{--<button type="button" class="btn btn-outline-danger ml-10" onclick="deleteMultiple()">Delete Checked</button>--}}
 
-    <a class="ml-10" href="{{ route('superuser.master.product.cetak') }}">
+    {{--<a class="ml-10" href="{{ route('superuser.master.product.cetak') }}">
       <button type="button" class="btn btn-outline-warning min-width-125">Print</button>
-    </a>
+    </a>--}}
     <a class="ml-10" href="{{ route('superuser.master.product.cetak') }}">
-      <button type="button" class="btn btn-outline-secondary min-width-125">Test Print CR</button>
+      <button type="button" class="btn btn-outline-secondary" title="Print Product"><i class="mdi mdi-printer"></i></button>
     </a>
   </div>
   <hr class="my-20">
   <div class="block-content block-content-full">
-    <table id="datatable" class="table table-striped table-vcenter table-responsive">
+    <table id="datatable" class="table table-hover">
       <thead>
         <tr>
           <th><input type="checkbox" onclick="$('input.check-entity').prop('checked', this.checked);" /></th>
@@ -89,10 +89,10 @@ $(document).ready(function() {
     order: [
       [1, 'desc']
     ],
-    pageLength: 5,
+    pageLength: 10,
     lengthMenu: [
-      [5, 15, 20],
-      [5, 15, 20]
+      [15, 20, 50],
+      [15, 20, 50]
     ],
   });
 });
