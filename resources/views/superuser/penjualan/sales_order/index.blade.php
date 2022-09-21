@@ -117,10 +117,6 @@
                   <td>{{$row->so_type_transaction()->scalar ?? ''}}</td>
                   @endif
 
-                  @if($step == 2)
-                  <td>{{$row->ekspedisi->name ?? null}}</td>
-                  @endif
-
                   @if($step == 1 || $step == 9)
                   <td>
                     <?= date('d-m-Y h:i:s',strtotime($row->created_at)); ?>

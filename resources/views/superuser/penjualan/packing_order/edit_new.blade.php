@@ -64,7 +64,7 @@
 
             <label class="col-6 col-md-2 col-form-label font-weight-bold">Store / Member</label>
             <div class="col-6 col-md-4 col-form-label">
-              {{$result->customer->name}}
+              {{$result->member->name}}
             </div>
           </div>
 
@@ -149,7 +149,7 @@
             <label class="col-6 col-md-3 col-form-label font-weight-bold">Delivery</label>
             <div class="col-6 col-md-6 col-form-label">
               <select class="form-control js-select2 select-other-address" {{ $result->status == 1 ? '' : 'disabled' }} name="customer_other_address_id">
-                <option value="">{{$result->customer->name}}</option>
+                <option value="">{{$result->member->name}}</option>
                 @foreach($ekspedisi as $index => $row)
                 <option value="{{$row->id}}" @if($result->customer_other_address_id == $row->id) selected @endif>{{$row->name}}</option>
                 @endforeach
@@ -160,7 +160,7 @@
           <div class="form-group row">
             <label class="col-6 col-md-3 col-form-label font-weight-bold">Delivery Address</label>
             <div class="col-md-8">
-              <textarea class="form-control" readonly name="delivery_address" rows="1">{{$result->customer_other_address->address ?? ''}}</textarea>
+              <textarea class="form-control" readonly name="delivery_address" rows="1">{{$result->member->address ?? ''}}</textarea>
             </div>
           </div>
 
@@ -560,7 +560,7 @@
           showToast('danger',resp.Message);
         }
         else{
-          let option = '<option value="">{{$result->customer->name}}</option>';
+          let option = '<option value="">{{$result->member->name}}</option>';
           $.each(resp.Data,function(i,e){
             if(selected != 0){
               option += '<option value="'+e.id+'" selected>'+e.name+'</option>';

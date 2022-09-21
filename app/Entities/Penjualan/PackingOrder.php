@@ -67,7 +67,7 @@ class PackingOrder extends Model
     public function so(){
     	return $this->BelongsTo('App\Entities\Penjualan\SalesOrder','so_id','id');
     }
-    public function customer_other_address(){
+    public function member(){
         return $this->BelongsTo('App\Entities\Master\CustomerOtherAddress','customer_other_address_id','id');
     }
     public function warehouse(){

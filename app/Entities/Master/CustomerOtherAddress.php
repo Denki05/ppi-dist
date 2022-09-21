@@ -49,4 +49,8 @@ class CustomerOtherAddress extends Model
 
         return asset(Self::$directory_image.$this->image_npwp);
     }
+
+    public function do(){
+        return $this->hasMany('App\Entities\Penjualan\PackingOrder','customer_other_address_id');
+    }
 }

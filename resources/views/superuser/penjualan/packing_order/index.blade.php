@@ -57,7 +57,7 @@
       </form>
       <div class="row mb-30">
         <div class="col-12">
-          <table class="table table-striped table-vcenter table-responsive" id="datatables">
+          <table class="table table-striped" id="datatables">
             <thead>
               <tr>
                 <th>#</th>
@@ -81,7 +81,7 @@
                     @endif
                   </td>
                   <td>
-                    {{$row->customer->name ?? ''}} / {{$row->customer_other_address->name ?? ''}}
+                    {{$row->member->name ?? ''}}
                   </td>
                   <td>
                     {{$row->do_detail[0]->so_item->product->category->name ?? ''}} / <?= date('d-m-Y h:i:s',strtotime($row->created_at)); ?>

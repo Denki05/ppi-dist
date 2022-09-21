@@ -419,7 +419,7 @@ class SalesOrderController extends Controller
         if(empty($result)){
             abort(404);
         }
-        $customer = Customer::all();
+        $customer = CustomerOtherAddress::all();
         $warehouse = Warehouse::all();
         $sales = Sales::all();
         $product_category = ProductCategory::all();
@@ -439,7 +439,7 @@ class SalesOrderController extends Controller
             'packaging_dictionary' => SalesOrderItem::PACKAGING
         ];
         if ($step == 2) {
-            $doList = $result->customer->do;
+            $doList = $result->member->do;
             $invoiceList = [];
             for ($i = 0; $i < sizeof($doList); $i++) {
                 $do = $doList[$i];
@@ -876,7 +876,7 @@ class SalesOrderController extends Controller
                     $packing_order = new PackingOrder;
                     $packing_order->code = CodeRepo::generatePO();
                     $packing_order->so_id  = $sales_order->id;
-                    $packing_order->customer_id  = $sales_order->customer_id;
+                    $packing_order->customer_other_address_id  = $sales_order->customer_other_address_id;
                     $packing_order->warehouse_id = $sales_order->origin_warehouse_id;
                     $packing_order->type_transaction  = $sales_order->type_transaction;
                     $packing_order->idr_rate = trim(htmlentities($post["idr_rate"]));
@@ -994,7 +994,8 @@ class SalesOrderController extends Controller
                 goto ResultData;
             } catch (\Exception $e) {
                 DB::rollback();
-
+                
+                // dd($e);
                 $data_json["IsError"] = TRUE;
                 $data_json["Message"] = "Sales Order Gagal Diubah, ".$e;
     
