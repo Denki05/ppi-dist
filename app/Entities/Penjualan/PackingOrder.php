@@ -17,6 +17,7 @@ class PackingOrder extends Model
     	'customer_id',
     	'customer_other_address_id',
         'ekspedisi_id',
+        'vendor_id',
     	'idr_rate',
     	'status',
     	'type_transaction',
@@ -97,5 +98,8 @@ class PackingOrder extends Model
     }
     public function ekspedisi(){
         return $this->BelongsTo('App\Entities\Master\Ekspedisi','ekspedisi_id','id');
+    }
+	public function vendor(){
+        return $this->BelongsTo('App\Entities\Master\Vendor','vendor_id','id');
     }
 }

@@ -50,8 +50,12 @@
                             <input type="text" id="material_name" name="material_name" placeholder="Material Name" class="form-control">
                           </div>
                           <div class="form-group">
+                            <label for="alias">Alias</label>
+                            <input type="text" id="alias" name="alias" placeholder="Alias" class="form-control">
+                          </div>
+                          <div class="form-group">
                             <label>Description</label>
-                            <textarea class="form-control" id="description" name="description"></textarea>
+                            <textarea class="form-control" id="description" name="description" placeholder="Description"></textarea>
                           </div>
                           <div class="form-group">
                             <label>Notes</label>
@@ -80,6 +84,10 @@
                             <div class="form-group">
                               <label>Default Quantity <span class="text-danger">*</span></label>
                               <input type="number" class="form-control" id="default_quantity" name="default_quantity" min="0" value="0" step="0.0001">
+                            </div>
+                            <div class="form-group">
+                              <label>Ratio</label>
+                              <input type="number" class="form-control" id="Ratio" name="Ratio" min="0" value="0" step="0.0001">
                             </div>
                             <div class="form-group">
                               <label>Unit <span class="text-danger">*</span></label>

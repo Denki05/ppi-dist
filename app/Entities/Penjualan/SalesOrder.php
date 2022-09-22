@@ -18,6 +18,7 @@ class SalesOrder extends Model
     	'customer_id',
         'customer_other_address_id',
         'ekspedisi_id',
+        'vendor_id',
     	'type_transaction',
     	'status',
         'keterangan_tidak_lanjut',
@@ -58,6 +59,9 @@ class SalesOrder extends Model
     }
     public function ekspedisi(){
         return $this->BelongsTo('App\Entities\Master\Ekspedisi','ekspedisi_id','id');
+    }
+    public function vendor(){
+        return $this->BelongsTo('App\Entities\Master\Vendor','vendor_id','id');
     }
     public function so_detail(){
     	return $this->hasMany('App\Entities\Penjualan\SalesOrderItem','so_id');

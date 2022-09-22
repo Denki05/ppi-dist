@@ -88,6 +88,7 @@ class ProductController extends Controller
                 'name' => 'required|string',
                 'material_code' => 'required|string',
                 'material_name' => 'required|string',
+                'alias' => 'required|string',
                 'buying_price' => 'nullable|numeric|min:0',
                 'selling_price' => 'nullable|numeric|min:0',
                 'description' => 'nullable|string',
@@ -95,6 +96,7 @@ class ProductController extends Controller
 
                 'default_quantity' => 'required|numeric',
                 'default_unit' => 'required|integer',
+                'ratio' => 'required|numeric',
                 'default_warehouse' => 'required|integer',
 
                 'image' => 'nullable|image|mimes:jpeg,png,jpg|max:2048',
@@ -126,6 +128,7 @@ class ProductController extends Controller
                 $product->name = $request->name;
                 $product->material_code = $request->material_code;
                 $product->material_name = $request->material_name;
+                $product->alias = $request->alias;
                 $product->buying_price = $request->buying_price;
                 $product->selling_price = $request->selling_price;
                 $product->description = $request->description;
@@ -133,6 +136,7 @@ class ProductController extends Controller
 
                 $product->default_quantity = $request->default_quantity;
                 $product->default_unit_id = $request->default_unit;
+                $product->ratio = $request->ratio;
                 $product->default_warehouse_id = $request->default_warehouse;
 
                 if (!empty($request->file('image'))) {
@@ -217,6 +221,7 @@ class ProductController extends Controller
                 'name' => 'required|string',
                 'material_code' => 'required|string',
                 'material_name' => 'required|string',
+                'alias' => 'required|string',
                 'buying_price' => 'nullable|numeric|min:0',
                 'selling_price' => 'nullable|numeric|min:0',
                 'description' => 'nullable|string',
@@ -224,6 +229,7 @@ class ProductController extends Controller
 
                 'default_quantity' => 'required|numeric',
                 'default_unit' => 'required|integer',
+                'ratio' => 'required|numeric',
                 'default_warehouse' => 'required|integer',
 
                 'image' => 'nullable|image|mimes:jpeg,png,jpg|max:2048',
@@ -253,12 +259,14 @@ class ProductController extends Controller
                 $product->name = $request->name;
                 $product->material_code = $request->material_code;
                 $product->material_name = $request->material_name;
+                $product->alias = $request->alias;
                 $product->buying_price = $request->buying_price;
                 $product->selling_price = $request->selling_price;
                 $product->description = $request->description;
                 $product->note = $request->note;
 
                 $product->default_quantity = $request->default_quantity;
+                $product->ratio = $request->ratio;
                 $product->default_unit_id = $request->default_unit;
                 $product->default_warehouse_id = $request->default_warehouse;
 

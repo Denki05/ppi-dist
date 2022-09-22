@@ -35,4 +35,11 @@ class Vendor extends Model
     {
         return $this->hasMany('App\Entities\Master\VendorDetail', 'vendor_id');
     }
+
+    public function so(){
+        return $this->hasMany('App\Entities\Penjualan\SalesOrder','vendor_id');
+    }
+    public function do(){
+        return $this->hasMany('App\Entities\Penjualan\PackingOrder','ekspedisi_id');
+    }
 }

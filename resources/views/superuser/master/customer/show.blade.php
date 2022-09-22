@@ -48,20 +48,33 @@
           <div class="card-body">
             <table class="table user-view-table m-0" id="profile_table">
               <tbody>
+                <?php
+                  $total_outstanding = 0;
+                  $total_outstanding_past_due_date = 0;
+                  if(isset($customer_history) && sizeof($customer_history) > 0) {
+                    foreach($customer_history as $index => $row) {
+                      $total_outstanding += $row->grand_total_idr;
+                    }
+                  }
+                ?>
                 <tr>
-                  <td>Register</td>
+                  <td>Registered On</td>
+                  <td><b>:</b></td>
                   <td>{{ \Carbon\Carbon::parse($customer->created_at)->format('d-m-Y')}}</td>
                 </tr>
                 <tr>
                   <td>Plafon Piutang</td>
+                  <td><b>:</b></td>
                   <td>{{ rupiah($customer->plafon_piutang) }}</td>
                 </tr>
                 <tr>
                   <td>Saldo</td>
+                  <td><b>:</b></td>
                   <td>@mod</td>
                 </tr>
                 <tr>
                   <td>Category Store</td>
+                  <td><b>:</b></td>
                   <td>
                     <a href="{{ route('superuser.master.customer_category.show', $customer->category->id) }}" target="_blank" class="badge badge-info">
                       {{ $customer->category->name }}
@@ -70,6 +83,7 @@
                 </tr>
                 <tr>
                   <td>Type Store</td>
+                  <td><b>:</b></td>
                   <td>
                       @foreach($customer->types as $type)
                       <a href="{{ route('superuser.master.customer_type.show', $type->id) }}" target="_blank" class="badge badge-info">
@@ -80,6 +94,7 @@
                 </tr>
                 <tr>
                   <td>Status</td>
+                  <td><b>:</b></td>
                   <td><span class="badge badge-outline-success">{{ $customer->status() }} </span></td>
                 </tr>
               </tbody>
@@ -95,22 +110,27 @@
               <tbody>
                 <tr>
                   <td>Address</td>
+                  <td><b>:</b></td>
                   <td>{{ $customer->address }}</td>
                 </tr>
                 <tr>
                   <td>Phone</td>
+                  <td><b>:</b></td>
                   <td>{{ $customer->phone }}</td>
                 </tr>
                 <tr>
                   <td>Email</td>
+                  <td><b>:</b></td>
                   <td>{{ $customer->email }}</td>
                 </tr>
                 <tr>
                   <td>Area</td>
+                  <td><b>:</b></td>
                   <td>{{ $customer->text_provinsi }} </td>
                 </tr>
                 <tr>
                   <td>Location Maps</td>
+                  <td><b>:</b></td>
                   <td>
                     <iframe src="https://maps.google.com/maps?q={{ $customer->gps_latitude }},{{ $customer->gps_longitude }}&hl=es;z=14&amp;output=embed" ?? ></iframe>
                   </td>
@@ -128,15 +148,17 @@
               <tbody>
               <tr>
                   <td>NPWP</td>
+                  <td><b>:</b></td>
                   <td>{{ $customer->npwp ?? '-' }}</td>
                 </tr>
                 <tr>
                   <td>KTP</td>
+                  <td><b>:</b></td>
                   <td>{{ $customer->ktp ?? '-' }}</td>
                 </tr>
                 <tr>
                   <td>Image NPWP</td>
-                  <td>:</td>
+                  <td><b>:</b></td>
                   <td>
                     <a href="{{ $customer->img_npwp }}" class="img-link img-link-zoom-in img-thumb img-lightbox">
                       <img src="{{ $customer->img_npwp }}" class="img-fluid img-show-small">
@@ -144,7 +166,8 @@
                   </td>
                 </tr>
                 <tr>
-                  <td>Image KTP :</td>
+                  <td>Image KTP</td>
+                  <td><b>:</b></td>
                   <td>
                     <a href="{{ $customer->img_ktp }}" class="img-link img-link-zoom-in img-thumb img-lightbox">
                       <img src="{{ $customer->img_ktp }}" class="img-fluid img-show-small">

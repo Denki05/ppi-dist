@@ -78,11 +78,14 @@
                             <li><a href="{{ route('superuser.master.product.index') }}" target="_blank">Product List</a></li>
                             <li><a href="{{ route('superuser.master.product_category.index') }}" target="_blank">Product Category</a></li>
                             <li><a href="{{ route('superuser.master.product_type.index') }}" target="_blank">Product Type</a></li>
+                            <li><a href="{{ route('superuser.master.brand_reference.index') }}" target="_blank">Brand Reference</a></li>
+                            <li><a href="{{ route('superuser.master.sub_brand_reference.index') }}" target="_blank">Sub Brand Reference</a></li>
+                            <li><a href="{{ route('superuser.master.unit.index') }}" target="_blank">Unit</a></li>
                         </ul>
                     </li>
-                    <li class="nav-item">
+                    {{--<li class="nav-item">
                       <a class="nav-link" href="{{ route('superuser.master.unit.index') }}" target="_blank">Unit</a>
-                    </li>
+                    </li>--}}
                     <li class="dropdown">
                         <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-expanded="false">Store <span class="caret"></span></a>
                         <ul class="dropdown-menu" role="menu">
@@ -91,13 +94,12 @@
                             <li><a href="{{ route('superuser.master.customer_type.index') }}" target="_blank">Store Type</a></li>
                         </ul>
                     </li>
-                    <li class="dropdown">
+                    {{--<li class="dropdown">
                         <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-expanded="false">Brand <span class="caret"></span></a>
                         <ul class="dropdown-menu" role="menu">
-                            <li><a href="{{ route('superuser.master.brand_reference.index') }}" target="_blank">Brand Reference</a></li>
-                            <li><a href="{{ route('superuser.master.sub_brand_reference.index') }}" target="_blank">Sub Brand Reference</a></li>
+                            
                         </ul>
-                    </li>
+                    </li>--}}
                     <li class="nav-item">
                       <a class="nav-link" href="{{ route('superuser.master.question.index') }}" target="_blank">Question</a>
                     </li>
