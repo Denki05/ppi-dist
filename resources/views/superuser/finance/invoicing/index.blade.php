@@ -59,7 +59,7 @@
       </form>
       <div class="row mb-30">
         <div class="col-12">
-          <table class="table table-striped table-vcenter table-responsive" id="datatables">
+          <table class="table table-striped" id="datatables">
             <thead>
               <tr>
                 <th>#</th>
@@ -79,7 +79,7 @@
                     <a href="{{route('superuser.finance.invoicing.history_payable',$row->id)}}">{{$row->code}}</a>
                   </td>
                   <td>{{$row->do->do_code ?? ''}}</td>
-                  <td>{{$row->do->customer->name ?? ''}} / {{$row->do->customer_other_address->name}}</td>
+                  <td>{{$row->do->member->name ?? ''}} / {{$row->do->member->name}}</td>
                   <td>{{number_format($row->grand_total_idr,0,',','.')}}</td>
                   <td>
                     <?= date('d-m-Y h:i:s',strtotime($row->created_at)); ?>

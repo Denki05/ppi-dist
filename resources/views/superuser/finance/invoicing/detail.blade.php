@@ -36,25 +36,25 @@
         <div class="form-group row">
           <label class="col-md-2 col-form-label text-right">Customer</label>
           <div class="col-md-8">
-            <input type="text" class="form-control" value="{{$result->customer->name ?? ''}}" readonly>
+            <input type="text" class="form-control" value="{{$result->member->name ?? ''}}" readonly>
           </div>
         </div>
         <div class="form-group row">
           <label class="col-md-2 col-form-label text-right">Address</label>
           <div class="col-md-8">
-            <textarea class="form-control" readonly name="address" rows="1">{{$result->customer->address ?? ''}}</textarea>
+            <textarea class="form-control" readonly name="address" rows="1">{{$result->member->address ?? ''}}</textarea>
           </div>
         </div>
         <div class="form-group row">
           <label class="col-md-2 col-form-label text-right">Delivery</label>
           <div class="col-md-8">
-            <input type="text" class="form-control" value="{{$result->customer_other_address->label ?? ''}}" readonly>
+            <input type="text" class="form-control" value="{{$result->member->name ?? ''}}" readonly>
           </div>
         </div>
         <div class="form-group row">
           <label class="col-md-2 col-form-label text-right">Delivery Address</label>
           <div class="col-md-8">
-            <textarea class="form-control" readonly name="delivery_address" rows="1">{{$result->customer_other_address->address ?? ''}}</textarea>
+            <textarea class="form-control" readonly name="delivery_address" rows="1">{{$result->member->address ?? ''}}</textarea>
           </div>
         </div>
         <div class="form-group row">

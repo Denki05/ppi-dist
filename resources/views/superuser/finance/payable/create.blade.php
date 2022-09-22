@@ -31,7 +31,7 @@
     </div>
     <div class="row">
       <div class="col-lg-2">
-        Store Name
+        Store/Member
       </div>
       <div class="col-lg-10">
         : {{$customer->name}}

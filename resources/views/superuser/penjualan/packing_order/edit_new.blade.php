@@ -150,8 +150,8 @@
             <div class="col-6 col-md-6 col-form-label">
               <select class="form-control js-select2 select-other-address" {{ $result->status == 1 ? '' : 'disabled' }} name="customer_other_address_id">
                 <option value="">{{$result->member->name}}</option>
-                @foreach($ekspedisi as $index => $row)
-                <option value="{{$row->id}}" @if($result->customer_other_address_id == $row->id) selected @endif>{{$row->name}}</option>
+                @foreach($customer as $index => $row)
+                <option value="{{$row->id}}" @if($result->member->id == $row->id) selected @endif>{{$row->name}}</option>
                 @endforeach
               </select>
             </div>
@@ -379,7 +379,7 @@
 
     $('.js-select2').select2();
 
-    customer_other_address('{{$result->customer_id}}','{{$result->customer_other_address_id}}');
+    customer_other_address('{{$result->customer_other_address_id}}','{{$result->customer_other_address_id}}');
    
     $(document).on('change','.count',function(){
         total();

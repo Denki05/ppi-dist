@@ -22,7 +22,7 @@ $(document).ready(function() {
     // Form
     $('.f1 fieldset:first').fadeIn('slow');
     
-    $('.f1 input[type="text"], .f1 input[type="password"], .f1 textarea').on('focus', function() {
+    $('.f1 input[type="text"], .f1 input[type="number"], .f1 textarea, .f1 select').on('focus', function() {
     	$(this).removeClass('input-error');
     });
     
@@ -35,7 +35,7 @@ $(document).ready(function() {
     	var progress_line = $(this).parents('.f1').find('.f1-progress-line');
     	
     	// validasi form
-    	parent_fieldset.find('input[type="text"], input[type="password"], textarea, select').each(function() {
+    	parent_fieldset.find('input[type="text"],input[type="file"], input[type="number"], textarea, select').each(function() {
     		if( $(this).val() == "" ) {
     			$(this).addClass('input-error');
     			next_step = false;
@@ -80,7 +80,7 @@ $(document).ready(function() {
     // submit (ketika klik tombol submit diakhir wizard)
     $('.f1').on('submit', function(e) {
     	// validasi form
-    	$(this).find('input[type="text"], input[type="password"], textarea').each(function() {
+    	$(this).find('input[type="text"], input[type="number"], textarea, select').each(function() {
     		if( $(this).val() == "" ) {
     			e.preventDefault();
     			$(this).addClass('input-error');

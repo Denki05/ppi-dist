@@ -14,7 +14,7 @@
           <div class="col-12">
             <div class="form-group">
               <label id="select_do">Select Customer<span class="text-danger">*</span></label>
-              <select class="form-control js-select2" name="customer_id" id="select_customer" style="width: 100%;">
+              <select class="form-control js-select2" name="customer_other_address_id" id="select_customer" style="width: 100%;">
                 @foreach($customer as $index => $row)
                   <option value="{{$row->id}}">{{$row->name}}</option>
                 @endforeach
