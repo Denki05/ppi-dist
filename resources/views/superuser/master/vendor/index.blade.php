@@ -61,6 +61,7 @@ $(document).ready(function() {
   let datatableUrl = '{{ route('superuser.master.vendor.json') }}';
 
   $('#datatable').DataTable({
+    
     processing: true,
     serverSide: true,
     ajax: {
@@ -91,6 +92,15 @@ $(document).ready(function() {
       [5, 15, 20],
       [5, 15, 20]
     ],
+    createdRow: function(row, data, index) {
+      if (data.status == 'ACTIVE') {
+        $('td:eq(4)', row).css('color', 'Green');
+        $('td:eq(4)', row).css('font-weight', 'bold');
+      }else if (data.status == 'DELETED') {
+        $('td:eq(4)', row).css('color', 'Red');
+        $('td:eq(4)', row).css('font-weight', 'bold');
+      }
+    },
   });
 });
 </script>
