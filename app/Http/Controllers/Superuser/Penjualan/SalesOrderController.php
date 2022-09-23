@@ -524,8 +524,8 @@ class SalesOrderController extends Controller
 
             $customer = [];
             $gudang = [];
-            if(!empty($post["customer_id"])){
-                $customer["id"] = empty($post["customer_id"]) ? null : $post["customer_id"];
+            if(!empty($post["customer_other_address_id"])){
+                $customer["id"] = empty($post["customer_other_address_id"]) ? null : $post["customer_other_address_id"];
                 $customer["so_for"] = 1;
             }
             else{
@@ -540,7 +540,7 @@ class SalesOrderController extends Controller
                 if ($step == 1) {
                     $sales_order->sales_senior_id = trim(htmlentities($post["sales_senior_id"]));
                     $sales_order->sales_id = trim(htmlentities($post["sales_id"]));
-                    $sales_order->customer_id = $customer["id"] ?? null;
+                    $sales_order->customer_other_address_id = $customer["id"] ?? null;
                     $sales_order->note = trim(htmlentities($post["note"]));
                     $sales_order->updated_by = Auth::id();
                     $sales_order->status = $step;
@@ -579,7 +579,7 @@ class SalesOrderController extends Controller
                 goto ResultData;
             } catch (\Exception $e) {
 
-                dd($e);
+                // dd($e);
                 DB::rollback();
 
                 $data_json["IsError"] = TRUE;

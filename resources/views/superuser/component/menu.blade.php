@@ -113,11 +113,11 @@
                         Vendor
                       </a>
                     </li>
-                    <li class="nav-item">
+                    {{--<li class="nav-item">
                       <a href="{{ route('superuser.master.ekspedisi.index') }}" target="_blank" class="nav-link {{ is_active_route('superuser.master.ekspedisi.index') }}">
                         Ekspedisi
                       </a>
-                    </li>
+                    </li>--}}
                   </ul>
                 </div>
               </li>
