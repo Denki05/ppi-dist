@@ -44,29 +44,36 @@ class VendorTable extends Table
 
         $table->addColumn('action', function (Vendor $model) {
             $view = route('superuser.master.vendor.show', $model);
+            $edit = route('superuser.master.vendor.edit', $model);
             $destroy = route('superuser.master.vendor.destroy', $model);
 
-            $html_view = "
-                <a href=\"{$view}\">
-                    <button type=\"button\" class=\"btn btn-sm btn-circle btn-alt-secondary\" title=\"View\">
-                        <i class=\"fa fa-eye\"></i>
-                    </button>
-                </a>
-            ";
-
-            $html_destroy = "
-                <a href=\"javascript:deleteConfirmation('{$destroy}')\">
-                    <button type=\"button\" class=\"btn btn-sm btn-circle btn-alt-danger\" title=\"Delete\">
-                        <i class=\"fa fa-times\"></i>
-                    </button>
-                </a>
-            ";
-
-            if ($model->status == $model::STATUS['DELETED']) {
-                return $html_view;
+            if ($model->status == $model::STATUS['ACTIVE']) {
+                return "
+                    <a href=\"{$view}\">
+                        <button type=\"button\" class=\"btn btn-sm btn-circle btn-alt-secondary\" title=\"View\">
+                            <i class=\"mdi mdi-eye\"></i>
+                        </button>
+                    </a>
+                    <a href=\"{$edit}\">
+                        <button type=\"button\" class=\"btn btn-sm btn-circle btn-alt-secondary\" title=\"View\">
+                            <i class=\"mdi mdi-lead-pencil\"></i>
+                        </button>
+                    </a>
+                    <a href=\"{$destroy}\">
+                        <button type=\"button\" class=\"btn btn-sm btn-circle btn-alt-secondary\" title=\"View\">
+                            <i class=\"mdi mdi-delete\"></i>
+                        </button>
+                    </a>
+                ";
             }
-            
-            return $html_view . $html_destroy;
+
+            return "
+                        <a href=\"{$view}\">
+                        <button type=\"button\" class=\"btn btn-sm btn-circle btn-alt-warning\" title=\"View\">
+                            <i class=\"mdi mdi-eye\"></i>
+                        </button>
+                        </a>
+            ";
         });
 
         return $table->make(true);
