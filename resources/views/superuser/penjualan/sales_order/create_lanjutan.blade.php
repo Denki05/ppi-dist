@@ -81,10 +81,10 @@
                   <div class="form-group row">
                     <label class="col-md-2 col-form-label text-right">Store / Member</label>
                     <div class="col-md-8">
-                      <select class="form-control js-select2 select-customer" name="customer_other_address_id" @if($step == 2) disabled @endif>
+                      <select class="form-control js-select2 select-customer" name="customer_id" @if($step == 2) disabled @endif>
                         <option value="">==Select customer==</option>
                         @foreach($customer as $index => $row)
-                          <option value="{{$row->id}}" @if($result->customer_other_address_id == $row->id && $result->so_for == 1) selected @endif>{{$row->name}}</option>
+                          <option value="{{$row->id}}" @if($result->customer_id == $row->id && $result->so_for == 1) selected @endif>{{$row->name}}</option>
                         @endforeach
                       </select>
                     </div>
@@ -95,7 +95,7 @@
                     <label class="col-md-2 col-form-label text-right">Address</label>
                     <div class="col-md-8">
                       @if($result->so_for == 1)
-                      <textarea type="text" name="address" class="form-control" readonly>{{$result->member->address ?? ''}}</textarea>
+                      <textarea type="text" name="address" class="form-control" readonly>{{$result->customer->address ?? ''}}</textarea>
                       @else
                       <textarea type="text" name="address" class="form-control" readonly>{{$result->warehouse->address ?? ''}}</textarea>
                       @endif
@@ -145,7 +145,7 @@
               <div class="row mb-3">
                 <div class="col-12">
                   @if(isset($customer_history) && sizeof($customer_history) > 0)
-                  <table id="tableCustomerOutstanding" class="table table-striped">
+                  <table id="tableCustomerOutstanding" class="table table-striped table-vcenter table-responsive dataTable no-footer">
                     <thead>
                       <tr>
                         <th class="text-center">No</th>

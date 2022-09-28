@@ -37,6 +37,7 @@
           <th></th>
           <th>Store</th>
           <th>Address</th>
+          <th>Category</th>
           <th>Status</th>
           <th scope="col">Action</th>
           <th>Add Member</th>
@@ -58,6 +59,7 @@
               </td>
               <td>{{ $row->name }}</td>
               <td>{{ $row->address }} - <br><b>{{ $row->text_kota }}</b></br></td>
+              <td>{{ $row->category->name }}</td>
               <td>
                 @if($row->status == $row::STATUS['ACTIVE'])
                   <span class="badge badge-success">ACTIVE</span>

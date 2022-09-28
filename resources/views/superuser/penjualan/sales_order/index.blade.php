@@ -59,7 +59,7 @@
       </form>
       <div class="row mb-30">
         <div class="col-12">
-          <table class="table table-striped" id="datatables">
+          <table class="table table-striped table-vcenter table-responsive" id="datatables">
             <thead>
               <tr>
                 <th>#</th>
@@ -100,7 +100,7 @@
 
                   <td>
                     @if($row->so_for == 1)
-                      {{$row->member->name ?? ''}}
+                      {{$row->customer->name ?? ''}}
                     @elseif($row->so_for == 2)
                       {{$row->customer_gudang->name ?? ''}}
                     @endif
@@ -115,6 +115,10 @@
 
                   @if($step == 2)
                   <td>{{$row->so_type_transaction()->scalar ?? ''}}</td>
+                  @endif
+
+                  @if($step == 2)
+                  <td>{{$row->ekspedisi->name ?? null}}</td>
                   @endif
 
                   @if($step == 1 || $step == 9)

@@ -16,6 +16,7 @@ class PackingOrder extends Model
     	'warehouse_id',
     	'customer_id',
     	'customer_other_address_id',
+    	'other_address',
         'ekspedisi_id',
         'vendor_id',
     	'idr_rate',

@@ -117,7 +117,7 @@ class PackingOrderController extends Controller
                             ->orderBy('id','DESC')
                             ->paginate(10);
         $table->withPath('packing_order?field='.$field.'&search='.$search);
-        $customer = CustomerOtherAddress::all();
+        $customer = Customer::all();
         $data = [
             'table' => $table,
             'customer' => $customer
@@ -140,7 +140,7 @@ class PackingOrderController extends Controller
         }
 
         $warehouse = Warehouse::all();
-        $customer = CustomerOtherAddress::all();
+        $customer = Customer::all();
         $ekspedisi = Ekspedisi::all();
         $data = [
             'warehouse' => $warehouse,
@@ -159,7 +159,7 @@ class PackingOrderController extends Controller
         }
 
         $warehouse = Warehouse::all();
-        $customer = CustomerOtherAddress::all();
+        $customer = Customer::all();
         $ekspedisi = Ekspedisi::all();
         $data = [
             'warehouse' => $warehouse,
@@ -175,11 +175,11 @@ class PackingOrderController extends Controller
         if(empty($detail_po)){
             abort(404);
         }
-        $customer_id = $detail_po->customer_other_address_id;
+        $customer_id = $detail_po->customer_id;
         $result = SalesOrderItem::whereHas('so',function($query2) use($customer_id,$detail_po){
                                     $query2->where('so_for',1);
-                                    $query2->where('customer_other_address_id','!=',null);
-                                    $query2->where('customer_other_address_id',$customer_id);
+                                    $query2->where('customer_id','!=',null);
+                                    $query2->where('customer_id',$customer_id);
                                     $query2->where('origin_warehouse_id',$detail_po->warehouse_id);
                                     $query2->where('qty','!=',0);
                                     $query2->where('type_transaction',$detail_po->type_transaction);
@@ -213,9 +213,9 @@ class PackingOrderController extends Controller
                     $data_json["Message"] = "Warehouse wajib dipilih";
                     goto ResultData;
                 }
-                if(empty($post["customer_other_address_id"])){
+                if(empty($post["customer_id"])){
                     $data_json["IsError"] = TRUE;
-                    $data_json["Message"] = "Store / Member wajib dipilih";
+                    $data_json["Message"] = "Customer wajib dipilih";
                     goto ResultData;
                 }
                 if(empty($post["idr_rate"])){
@@ -232,9 +232,10 @@ class PackingOrderController extends Controller
                 
                 $data = [
                     'code' => CodeRepo::generatePO(),
-                    'customer_other_address_id' => trim(htmlentities($post["customer_other_address_id"])),
+                    'customer_id' => trim(htmlentities($post["customer_id"])),
                     'warehouse_id' => trim(htmlentities($post["warehouse_id"])),
                     'customer_other_address_id' => (empty($post["customer_other_address_id"])) ? null : $post["customer_other_address_id"],
+                    'other_address' => trim(htmlentities($post["other_address"])),
                     'type_transaction' => trim(htmlentities($post["type_transaction"])),
                     'idr_rate' => trim(htmlentities($post["idr_rate"])),
                     'note' => trim(htmlentities($post["note"])),
@@ -416,7 +417,7 @@ class PackingOrderController extends Controller
             abort(404);
         }
         $warehouse = Warehouse::all();
-        $customer = CustomerOtherAddress::all();
+        $customer = Customer::all();
         $ekspedisi = Ekspedisi::all();
         $data = [
             'warehouse' => $warehouse,
@@ -478,6 +479,7 @@ class PackingOrderController extends Controller
 
                 $data = [
                     'customer_other_address_id' => (empty($post["customer_other_address_id"])) ? null : $post["customer_other_address_id"],
+                    'other_address' => trim(htmlentities($post["other_address"])),
                     'note' => trim(htmlentities($post["note"])),
                     'idr_rate' => $idr_rate,
                     'updated_by' => Auth::id(),
@@ -486,6 +488,7 @@ class PackingOrderController extends Controller
 
                 $update = PackingOrder::where('id',$post["id"])->update($data);
 
+                dd($data);
                 DB::commit();
                 $data_json["IsError"] = FALSE;
                 $data_json["Message"] = "Packing Order Berhasil diubah";
@@ -494,7 +497,7 @@ class PackingOrderController extends Controller
             }catch(\Throwable $e){
                 DB::rollback();
 
-                // dd($e);
+                // dd($data);
                 $data_json["IsError"] = TRUE;
                 $data_json["Message"] = $e->getMessage();
                 goto ResultData;
@@ -1093,7 +1096,6 @@ class PackingOrderController extends Controller
         $pdf = PDF::loadview($this->view."print_proforma",$data)->setPaper('a4','potrait');
         return $pdf->stream($result->code ?? '');
     }
-    
     private function reset_cost_if_change_idr_rate($do_id,$idr_rate){
         $do = PackingOrder::where('id',$do_id)->first();
         $result = PackingOrderDetail::where('do_id',$do_id)->first();

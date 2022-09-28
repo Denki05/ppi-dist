@@ -11,7 +11,6 @@ use App\Entities\Penjualan\PackingOrderItem;
 use App\Entities\Penjualan\PackingOrderDetail;
 use App\Entities\Penjualan\DeliveryOrderMutationItem;
 use App\Entities\Master\Customer;
-use App\Entities\Master\CustomerOtherAddress;
 use App\Entities\Master\Company;
 use App\Entities\Master\Warehouse;
 use App\Entities\Master\ProductCategory;
@@ -206,7 +205,7 @@ class SalesOrderController extends Controller
             }
         }
 
-        $customer = CustomerOtherAddress::all();
+        $customer = Customer::all();
         $warehouse = Warehouse::all();
         $sales = Sales::all();
         $ekspedisi = Ekspedisi::all();
@@ -251,15 +250,15 @@ class SalesOrderController extends Controller
                 $data_json["Message"] = "Sales wajib dipilih";
                 goto ResultData;
             }
-            if(empty($post["customer_other_address_id"])){
+            if(empty($post["customer_id"])){
                 $data_json["IsError"] = TRUE;
                 $data_json["Message"] = "Customer wajib dipilih";
                 goto ResultData;
             }
             $customer = [];
             $gudang = [];
-            if(!empty($post["customer_other_address_id"])){
-                $customer["id"] = empty($post["customer_other_address_id"]) ? null : $post["customer_other_address_id"];
+            if(!empty($post["customer_id"])){
+                $customer["id"] = empty($post["customer_id"]) ? null : $post["customer_id"];
                 $customer["so_for"] = 1;
             }
             else{
@@ -274,7 +273,7 @@ class SalesOrderController extends Controller
                 $insert->sales_senior_id = trim(htmlentities($post["sales_senior_id"]));
                 $insert->sales_id = trim(htmlentities($post["sales_id"]));
                 if ($customer["so_for"] == 1) {
-                    $insert->customer_other_address_id = $customer["id"] ?? null;
+                    $insert->customer_id = $customer["id"] ?? null;
                 } else {
                     $insert->origin_warehouse_id = trim(htmlentities($post["origin_warehouse_id"]));
                     $insert->destination_warehouse_id = $gudang["id"] ?? null;
@@ -419,7 +418,7 @@ class SalesOrderController extends Controller
         if(empty($result)){
             abort(404);
         }
-        $customer = CustomerOtherAddress::all();
+        $customer = Customer::all();
         $warehouse = Warehouse::all();
         $sales = Sales::all();
         $product_category = ProductCategory::all();
@@ -439,7 +438,7 @@ class SalesOrderController extends Controller
             'packaging_dictionary' => SalesOrderItem::PACKAGING
         ];
         if ($step == 2) {
-            $doList = $result->member->do;
+            $doList = $result->customer->do;
             $invoiceList = [];
             for ($i = 0; $i < sizeof($doList); $i++) {
                 $do = $doList[$i];
@@ -524,8 +523,8 @@ class SalesOrderController extends Controller
 
             $customer = [];
             $gudang = [];
-            if(!empty($post["customer_other_address_id"])){
-                $customer["id"] = empty($post["customer_other_address_id"]) ? null : $post["customer_other_address_id"];
+            if(!empty($post["customer_id"])){
+                $customer["id"] = empty($post["customer_id"]) ? null : $post["customer_id"];
                 $customer["so_for"] = 1;
             }
             else{
@@ -540,7 +539,7 @@ class SalesOrderController extends Controller
                 if ($step == 1) {
                     $sales_order->sales_senior_id = trim(htmlentities($post["sales_senior_id"]));
                     $sales_order->sales_id = trim(htmlentities($post["sales_id"]));
-                    $sales_order->customer_other_address_id = $customer["id"] ?? null;
+                    $sales_order->customer_id = $customer["id"] ?? null;
                     $sales_order->note = trim(htmlentities($post["note"]));
                     $sales_order->updated_by = Auth::id();
                     $sales_order->status = $step;
@@ -579,7 +578,7 @@ class SalesOrderController extends Controller
                 goto ResultData;
             } catch (\Exception $e) {
 
-                // dd($e);
+                dd($e);
                 DB::rollback();
 
                 $data_json["IsError"] = TRUE;
@@ -876,10 +875,11 @@ class SalesOrderController extends Controller
                     $packing_order = new PackingOrder;
                     $packing_order->code = CodeRepo::generatePO();
                     $packing_order->so_id  = $sales_order->id;
-                    $packing_order->customer_other_address_id  = $sales_order->customer_other_address_id;
+                    $packing_order->customer_id  = $sales_order->customer_id;
                     $packing_order->warehouse_id = $sales_order->origin_warehouse_id;
                     $packing_order->type_transaction  = $sales_order->type_transaction;
                     $packing_order->idr_rate = trim(htmlentities($post["idr_rate"]));
+                    $packing_order->other_address = 0;
                     $packing_order->note = $company->note;
                     $packing_order->status = 1;
                     $packing_order->created_by = Auth::id();
@@ -994,8 +994,7 @@ class SalesOrderController extends Controller
                 goto ResultData;
             } catch (\Exception $e) {
                 DB::rollback();
-                
-                // dd($e);
+
                 $data_json["IsError"] = TRUE;
                 $data_json["Message"] = "Sales Order Gagal Diubah, ".$e;
     
@@ -1042,7 +1041,7 @@ class SalesOrderController extends Controller
         $post = $request->all();
         if($request->method() == "POST"){
             try{
-                $result = CustomerOtherAddress::where('id',$post["id"])->first();
+                $result = Customer::where('id',$post["id"])->first();
                 $data_json["IsError"] = FALSE;
                 $data_json["Data"] = $result;
                 goto ResultData;

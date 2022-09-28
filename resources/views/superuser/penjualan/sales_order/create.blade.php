@@ -73,7 +73,7 @@
           <div class="form-group row">
             <label class="col-md-2 col-form-label text-right">Member <span class="text-danger">*</span></label>
             <div class="col-md-8">
-              <select class="form-control js-select2 select-customer" name="customer_other_address_id" <?php echo $step == 2 ? 'disabled' : '' ?>>
+              <select class="form-control js-select2 select-customer" name="customer_id" <?php echo $step == 2 ? 'disabled' : '' ?>>
                 <option value="">==Select customer==</option>
                 @foreach($customer as $index => $row)
                   <option value="{{$row->id}}">{{$row->name}}</option>
@@ -206,12 +206,12 @@
       if($(this).is(':checked')){
         $('select[name="destination_warehouse_id"]').attr('disabled',false);
 
-        $('select[name="customer_other_address_id"]').val(null).trigger('change')
-        $('select[name="customer_other_address_id"]').attr('disabled',true);
+        $('select[name="customer_id"]').val(null).trigger('change')
+        $('select[name="customer_id"]').attr('disabled',true);
         $('textarea[name="address"]').val("");
       }
       else{
-       $('select[name="customer_other_address_id"]').attr('disabled',false);
+       $('select[name="customer_id"]').attr('disabled',false);
 
        $('select[name="destination_warehouse_id"]').val(null).trigger('change')
        $('select[name="destination_warehouse_id"]').attr('disabled',true);

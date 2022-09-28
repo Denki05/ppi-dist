@@ -15,12 +15,12 @@
               <tr>
                 <td class="text-left">Nama</td>
                 <td>:</td>
-                <td class="text-left">{{ $result->member->name }}</td>
+                <td class="text-left">{{ $result->customer->name }}</td>
               </tr>
               <tr>
                 <td class="text-left">Alamat</td>
                 <td>:</td>
-                <td class="text-left">{{ $result->member->address }}</td>
+                <td class="text-left">{{ $result->customer->address }}</td>
               </tr>
             </table>
             <table class="customer-outstanding mt-3 mb-3">
