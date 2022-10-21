@@ -488,7 +488,7 @@ class PackingOrderController extends Controller
 
                 $update = PackingOrder::where('id',$post["id"])->update($data);
 
-                dd($data);
+                // dd($data);
                 DB::commit();
                 $data_json["IsError"] = FALSE;
                 $data_json["Message"] = "Packing Order Berhasil diubah";

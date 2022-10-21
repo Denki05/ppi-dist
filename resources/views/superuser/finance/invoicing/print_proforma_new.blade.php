@@ -143,26 +143,27 @@
           <table class="table borderless info" style="width: 100%;">
             <tbody>
               <tr>
-                @if($result->do->customer->other_address = 0)
+                
                 <td style="width: 35% !important;">Pelanggan</td>
                 <td style="width: 2% !important;">:</td>
-                <td style="width: 63% !important;">{{$result->do->customer->name ?? ''}}</td>
-                @elseif($result->do->customer->other_address = 1)
-                <td style="width: 35% !important;">Pelanggan</td>
-                <td style="width: 2% !important;">:</td>
-                <td style="width: 63% !important;">{{$result->do->member->name ?? ''}}</td>
-                @endif
+                <td style="width: 63% !important;">
+                  @if($result->do->other_address === 0)
+                    {{$result->do->customer->name}}
+                  @elseif($result->do->other_address === 1)
+                    {{$result->do->member->name}}
+                  @endif
+                </td>               
               </tr>
               <tr>
-                @if($result->do->customer->other_address = 0)
                 <td style="width: 35% !important;">Up</td>
                 <td style="width: 2% !important;">:</td>
-                <td style="width: 63% !important;">{{$result->do->customer->owner_name ?? ''}}</td>
-                @elseif($result->do->customer->other_address = 1)
-                <td style="width: 35% !important;">Up</td>
-                <td style="width: 2% !important;">:</td>
-                <td style="width: 63% !important;">{{$result->do->member->contact_person ?? ''}}</td>
-                @endif
+                <td style="width: 63% !important;">
+                  @if($result->do->other_address === 0)
+                    {{$result->do->customer->owner_name ?? ''}}
+                  @elseif($result->do->other_address === 1)
+                    {{$result->do->member->contact_person ?? ''}}
+                  @endif
+                </td>
               </tr>
             </tbody>
           </table>
@@ -195,15 +196,15 @@
                 <td style="width: 63% !important;">{{$result->do->customer->npwp ?? ''}}</td>
               </tr>
               <tr>
-                @if($result->do->customer->other_address = 0)
                 <td style="width: 35% !important;">Alamat</td>
                 <td style="width: 2% !important;">:</td>
-                <td style="width: 63% !important;">{{$result->do->customer->address ?? ''}}</td>
-                @elseif($result->do->customer->other_address = 1)
-                <td style="width: 35% !important;">Alamat</td>
-                <td style="width: 2% !important;">:</td>
-                <td style="width: 63% !important;">{{$result->do->member->address ?? ''}}</td>
-                @endif
+                <td style="width: 63% !important;">
+                  @if($result->do->other_address === 0)
+                    {{$result->do->customer->address ?? ''}}
+                  @elseif($result->do->other_address === 1)
+                    {{$result->do->member->address ?? ''}}
+                  @endif
+                </td>
               </tr>
             </tbody>
           </table>

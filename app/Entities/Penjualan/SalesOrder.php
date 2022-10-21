@@ -20,6 +20,7 @@ class SalesOrder extends Model
         'ekspedisi_id',
         'vendor_id',
     	'type_transaction',
+    	'brand_type',
     	'status',
         'keterangan_tidak_lanjut',
     	'so_for',
@@ -31,6 +32,12 @@ class SalesOrder extends Model
     	1 => 'CASH',
     	2 => 'TEMPO',
     	3 => 'MARKETING'
+    ];
+    const BRAND_TYPE = [
+    	1 => 'GCF',
+    	2 => 'Senses',
+    	3 => 'PPI',
+    	4 => 'LONGDA'
     ];
     const STEP = [
     	1 => 'AWAL',
@@ -70,6 +77,14 @@ class SalesOrder extends Model
     {
         if (isset($this->type_transaction)) {
             return (object) self::STATUS[$this->type_transaction];
+        } else {
+            return null;
+        }
+    }
+    public function so_brand_type()
+    {
+        if (isset($this->brand_type)) {
+            return (object) self::BRAND_TYPE[$this->brand_type];
         } else {
             return null;
         }

@@ -59,7 +59,7 @@
       </form>
       <div class="row mb-30">
         <div class="col-12">
-          <table class="table table-striped table-vcenter table-responsive" id="datatables">
+          <table class="table table-hover" id="datatables">
             <thead>
               <tr>
                 <th>#</th>
@@ -72,6 +72,10 @@
                 <th>Store / Member</th>
                 @elseif($step == 9)
                 <th>Warehouse</th>
+                @endif
+
+                @if($step == 1 || $step == 2)
+                <th>Invoice Brand</th>
                 @endif
 
                 @if($step == 1 || $step == 2)
@@ -105,6 +109,12 @@
                       {{$row->customer_gudang->name ?? ''}}
                     @endif
                   </td>
+
+                  @if($step == 1 || $step == 2)
+                  <td>
+                    {{$row->so_brand_type()->scalar ?? ''}}
+                  </td>
+                  @endif
                   
                   @if($step == 1 || $step == 2)
                   <td>

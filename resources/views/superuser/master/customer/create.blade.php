@@ -113,8 +113,9 @@
                             <h4>Data Details</h4>
                             <div class="form-group">
                                 <label>Category</label>
-                                <select class="js-select2 form-control" id="category" name="category" placeholder="Select Category">
-                                    <option></option>
+                                <br>
+                                <select class="js-select2 form-control" id="category" name="category" style="width:100%;" placeholder="Select Category">
+                                    <option>Select Category</option>
                                     @foreach($customer_categories as $category)
                                     <option value="{{ $category->id }}">{{ $category->name }}</option>
                                     @endforeach
@@ -122,7 +123,8 @@
                             </div>
                             <div class="form-group">
                                 <label>Type</label>
-                                <select class="js-select2 form-control" id="type" name="type[]" placeholder="Select Type" multiple>
+                                <br>
+                                <select class="js-select2 form-control" id="type" name="type[]" style="width:100%;" placeholder="Select Type" multiple>
                                     <option></option>
                                     @foreach($customer_types as $type)
                                     <option value="{{ $type->id }}">{{ $type->name }}</option>

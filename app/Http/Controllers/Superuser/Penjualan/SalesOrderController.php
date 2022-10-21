@@ -280,6 +280,7 @@ class SalesOrderController extends Controller
                 }
                 $insert->so_for = trim(htmlentities($customer["so_for"]));
                 $insert->type_transaction = trim(htmlentities($post["type_transaction"]));
+                $insert->brand_type = trim(htmlentities($post["brand_type"]));
                 $insert->note = trim(htmlentities($post["note"]));
                 $insert->created_by = Auth::id();
                 $insert->status = $post["ajukankelanjutan"] == 1 ? 2 : 1;

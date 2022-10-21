@@ -146,9 +146,9 @@
           </div>
 
           <div class="form-group row">
-            <label class="col-6 col-md-3 col-form-label font-weight-bold">Other Address</label>
+            <label class="col-6 col-md-3 col-form-label">Other Address</label>
             <div class="col-6 col-md-6 col-form-label">
-              <input type="checkbox" id="other_address"  name="other_address" value="1">
+              <input type="checkbox" name="other_address" value="1" {{ $result->status == 1 ? '' : 'disabled' }} name="other_address"  />
             </div>
           </div>
           
@@ -406,6 +406,8 @@
         }
 
     })
+
+    
 
     $(document).on('change','select[name="ekspedisi_id"]',function(){
       let ekspedisi_id = $('select[name="ekspedisi_id"]').val();

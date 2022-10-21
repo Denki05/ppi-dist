@@ -124,6 +124,19 @@
             </div>
           </div>
           @endif
+          @if($step == 1 || $step == 2)
+          <div class="form-group row">
+            <label class="col-md-2 col-form-label text-right">Product Category<span class="text-danger">*</span></label>
+            <div class="col-md-8">
+              <select class="form-control js-select2 select-category" name="brand_type" data-index="0">
+                <option value="">==Select product category==</option>
+                @foreach($product_category as $index => $row)
+                  <option value="{{$row->id}}">{{$row->name}}</option>
+                @endforeach
+              </select>
+            </div>
+          </div>
+          @endif
         </div>
       </div>
 
@@ -134,21 +147,21 @@
           <h5>Select Product</h5>
 
           <div class="row">
-            <div class="col-3">Product Category</div>
+            <!-- <div class="col-3">Product Category</div> -->
             <div class="col-3">Product</div>
             <div class="col-1">Qty</div>
             <div class="col-3">Packaging</div>
           </div>
 
           <div class="row mt-10 product-row">
-            <div class="col-3">
+            <!-- <div class="col-3">
               <select class="form-control js-select2 select-category" data-index="0">
                 <option value="">==Select product category==</option>
                 @foreach($product_category as $index => $row)
                   <option value="{{$row->id}}">{{$row->name}}</option>
                 @endforeach
               </select>
-            </div>
+            </div> -->
             <div class="col-3">
               <select class="form-control js-select2 select-product" name="product_id[]" data-index="0">
                 <option value="">==Select product==</option>
@@ -171,8 +184,7 @@
             </div>
             <div class="col-1"><button type="button" id="buttonAddProduct" class="btn btn-primary"><em class="fa fa-plus"></em></button></div>
           </div>
-          <hr />
-
+          <hr />  
         </div>
       </div>
 
