@@ -60,15 +60,14 @@
     </div>
   </div>
 </div>
-
+<hr>
 <div class="row">
-  <div class="col-md-6">
     <div class="block">
       <div class="block-header block-header-default">
         <h3 class="block-title">Customer</h3>
       </div>
       <div class="block-content block-content-full">
-        <table id="datatable" class="table table-striped table-vcenter table-responsive">
+        <table id="datatable" class="table table-hover">
           <thead>
             <tr>
               <th>#</th>
@@ -96,10 +95,6 @@
         </table>
       </div>
     </div>
-  </div>
-  <div class="col-md-6">
-
-  </div>
 </div>
 @endsection
 

@@ -74,7 +74,7 @@
         <h3 class="block-title">Customer</h3>
       </div>
       <div class="block-content block-content-full">
-        <table id="datatable-customer" class="table table-striped table-vcenter table-responsive">
+        <table id="datatable-customer" class="table table-hover">
           <thead>
             <tr>
               <th>#</th>
@@ -115,7 +115,7 @@
         @endif
       </div>
       <div class="block-content block-content-full">
-        <table id="datatable-type" class="table table-striped table-vcenter table-responsive">
+        <table id="datatable-type" class="table table-hover">
           <thead>
             <tr>
               <th>#</th>
