@@ -4,6 +4,8 @@ namespace App\Http\Controllers\Superuser\Master;
 
 use App\DataTables\Master\CustomerTypeTable;
 use App\Entities\Master\CustomerType;
+use App\Entities\Master\CustomerCategory;
+use App\Entities\Master\CustomerCategoryType;
 use App\Exports\Master\CustomerTypeExport;
 use App\Exports\Master\CustomerTypeImportTemplate;
 use App\Http\Controllers\Controller;
@@ -58,7 +60,10 @@ class CustomerTypeController extends Controller
                 return redirect()->route('superuser.index')->with('error','Anda tidak punya akses untuk membuka menu terkait');
             }
         }
-        return view('superuser.master.customer_type.create');
+
+        $data['category'] = CustomerCategory::all();
+
+        return view('superuser.master.customer_type.create', $data);
     }
 
     public function store(Request $request)
@@ -67,6 +72,7 @@ class CustomerTypeController extends Controller
             $validator = Validator::make($request->all(), [
                 // 'code' => 'required|string|unique:master_customer_types,code',
                 'name' => 'required|string',
+                'category' => 'required',
                 'description' => 'nullable|string',
             ]);
 
@@ -92,6 +98,13 @@ class CustomerTypeController extends Controller
                 $customer_type->status = CustomerType::STATUS['ACTIVE'];
 
                 if ($customer_type->save()) {
+                    // foreach ($request->category as $category) {
+                        $customer_category_type = new CustomerCategoryType;
+                        $customer_category_type->category_id = $request->category;
+                        $customer_category_type->type_id = $customer_type->id;
+    
+                        $customer_category_type->save();
+                    // }
                     DB::commit();
 
                     $response['notification'] = [

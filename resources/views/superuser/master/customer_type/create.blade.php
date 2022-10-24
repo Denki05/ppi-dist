@@ -26,6 +26,17 @@
         </div>
       </div>
       <div class="form-group row">
+        <label class="col-md-3 col-form-label text-right" for="name">Category <span class="text-danger">*</span></label>
+        <div class="col-md-7">
+          <select class="form-control" name="category" placeholder="Select Category">
+            <option>Select Category</option>
+            @foreach($category as $index)
+            <option value="{{ $index->id }}">{{ $index->name }}</option>
+            @endforeach
+          </select>
+        </div>
+      </div>
+      <div class="form-group row">
         <label class="col-md-3 col-form-label text-right" for="description">Description</label>
         <div class="col-md-7">
           <textarea class="form-control" id="description" name="description"></textarea>

@@ -109,9 +109,9 @@
         <h3 class="block-title">Type</h3>
 
         @if($customer_category->status != $customer_category::STATUS['DELETED'])
-        <a href="{{ route('superuser.master.customer_category.type.manage', [$customer_category->id]) }}">
+        <!-- <a href="{{ route('superuser.master.customer_category.type.manage', [$customer_category->id]) }}">
           <button type="button" class="btn btn-outline-warning min-width-125 pull-right">Manage</button>
-        </a>
+        </a> -->
         @endif
       </div>
       <div class="block-content block-content-full">

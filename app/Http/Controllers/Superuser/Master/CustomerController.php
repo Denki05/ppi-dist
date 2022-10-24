@@ -4,7 +4,10 @@ namespace App\Http\Controllers\Superuser\Master;
 
 use App\DataTables\Master\CustomerTable;
 use App\Entities\Master\Customer;
+use App\Entities\Master\CustomerType;
 use App\Entities\Master\CustomerOtherAddress;
+use App\Entities\Master\CustomerCategoryType;
+use App\Entities\Master\CustomerCategory;
 use App\Entities\Master\CustomerTypePivot;
 use App\Exports\Master\CustomerExport;
 use App\Exports\Master\CustomerImportTemplate;
@@ -89,9 +92,10 @@ class CustomerController extends Controller
             }
         }
 
-        $data['customer_categories'] = MasterRepo::customer_categories();
+        // $data['customer_categories'] = MasterRepo::customer_categories();
         $data['customer_types'] = MasterRepo::customer_types();
         $data['provinces'] = Province::all();
+        $data['category'] = CustomerCategory::all();
 
         return view('superuser.master.customer.create', $data);
     }
@@ -137,6 +141,25 @@ class CustomerController extends Controller
 
         foreach ($zipcodes as $zipcode){
             echo "<option value='$zipcode->postal_code'>$zipcode->postal_code</option>";
+        }
+    }
+
+    public function getcustomertype(request $request)
+    {
+        $cat_id = $request->category_id;
+
+        $customer_type = CustomerCategoryType::select(
+                                                        'master_customer_types.id AS typeID',
+                                                        'master_customer_types.code AS typeCode', 
+                                                        'master_customer_types.name AS typeName',
+                                                        'master_customer_category_types.type_id', 
+                                                        'master_customer_category_types.category_id',
+                                                    )
+                ->leftJoin('master_customer_types', 'master_customer_types.id', '=', 'master_customer_category_types.type_id')
+                ->where('category_id', $cat_id)
+                ->get();
+        foreach ($customer_type as $row){
+            echo "<option value='$row->type_id'>$row->typeName</option>";
         }
     }
 

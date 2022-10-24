@@ -116,7 +116,7 @@
                                 <br>
                                 <select class="js-select2 form-control" id="category" name="category" style="width:100%;" placeholder="Select Category">
                                     <option>Select Category</option>
-                                    @foreach($customer_categories as $category)
+                                    @foreach($category as $category)
                                     <option value="{{ $category->id }}">{{ $category->name }}</option>
                                     @endforeach
                                 </select>
@@ -125,10 +125,7 @@
                                 <label>Type</label>
                                 <br>
                                 <select class="js-select2 form-control" id="type" name="type[]" style="width:100%;" placeholder="Select Type" multiple>
-                                    <option></option>
-                                    @foreach($customer_types as $type)
-                                    <option value="{{ $type->id }}">{{ $type->name }}</option>
-                                    @endforeach
+                                    <option>Select Type</option>
                                 </select>
                             </div>
                             <div class="form-group">
@@ -322,6 +319,26 @@
         })
       })
     })
+
+    $(function () {
+      $('#category').on('change', function(){
+          let category_id = $('#category').val();
+
+          $.ajax({
+            type : 'POST',
+            url : '{{route('superuser.master.customer.getcustomertype')}}',
+            data : {category_id:category_id},
+            cache : false,
+
+            success: function(msg){
+              $('#type').html(msg);
+            },
+            error : function(data){
+              console.log('error:',data)
+            },
+          })
+        })
+    });
   })
 </script>
 @endpush
