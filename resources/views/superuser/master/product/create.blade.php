@@ -87,7 +87,7 @@
                             </div>
                             <div class="form-group">
                               <label>Ratio</label>
-                              <input type="number" class="form-control" id="Ratio" name="Ratio" min="0" value="0" step="0.0001">
+                              <input type="number" class="form-control" id="ratio" name="ratio" min="0" value="0" step="0.0001">
                             </div>
                             <div class="form-group">
                               <label>Unit <span class="text-danger">*</span></label>

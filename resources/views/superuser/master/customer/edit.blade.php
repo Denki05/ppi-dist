@@ -99,7 +99,7 @@
       <div class="form-group row">
         <label class="col-md-3 col-form-label text-right" for="plafon_piutang">Plafon Piutang <span class="text-danger">*</span></label>
         <div class="col-md-7">
-          <input type="number" class="form-control" id="plafon_piutang" name="plafon_piutang" min="0" value="{{ $customer->plafon_piutang }}" step="0.0001">
+          <input type="number" class="form-control" id="plafon_piutang" name="plafon_piutang" min="0" value="{{ $customer->plafon_piutang  }}" step="0.0001">
         </div>
       </div>
       <div class="form-group row">

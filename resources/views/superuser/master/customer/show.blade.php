@@ -63,14 +63,10 @@
                   <td>{{ \Carbon\Carbon::parse($customer->created_at)->format('d-m-Y')}}</td>
                 </tr>
                 <tr>
-                  <td>Plafon Piutang</td>
+                  <td>Saldo | Plafon Piutang</td>
                   <td><b>:</b></td>
-                  <td>{{ rupiah($customer->plafon_piutang) }}</td>
-                </tr>
-                <tr>
-                  <td>Saldo</td>
-                  <td><b>:</b></td>
-                  <td>@mod</td>
+                  <td>
+                      {{ rupiah($customer->saldo ?? '-') }} |  {{ rupiah($customer->plafon_piutang) }}</td>
                 </tr>
                 <tr>
                   <td>Category Store</td>
@@ -179,7 +175,11 @@
           </div>
         </div>
       </div>
-
+      <div class="row mb-30">
+        <div class="col-12">
+          <a href="{{route('superuser.master.customer.index')}}" class="btn btn-warning  btn-md text-white"><i class="fa fa-arrow-left"></i> Back</a>
+        </div>
+      </div>
     </div>
     <!-- End rounded tabs -->
     </div>

@@ -35,6 +35,7 @@
       <thead class="thead-dark">
         <tr>
           <th></th>
+          <th>Code</th>
           <th>Store</th>
           <th>Address</th>
           <th>Category</th>
@@ -57,6 +58,7 @@
                   </div>
                 </div>
               </td>
+              <td>{{ $row->code }}</td>
               <td>{{ $row->name }}</td>
               <td>{{ $row->address }} - <br><b>{{ $row->text_kota }}</b></br></td>
               <td>{{ $row->category->name }}</td>
@@ -79,16 +81,17 @@
                         <i class="mdi mdi-lead-pencil"></i>
                     </button>
                 </a>
-                <a href="javascript:deleteConfirmation('{$row->id}')">
+                <a href="javascript:deleteConfirmation('{{ route('superuser.master.customer.destroy', $row->id) }}', true)">
                     <button type="button" class="btn btn-sm btn-circle btn-alt-danger" title="Delete">
                         <i class="mdi mdi-delete"></i>
                     </button>
                 </a>
-                <a href="{{ route('superuser.master.customer.export_customer') }}">
+                <a href="{{ route('superuser.master.customer.export_customer', $row->id) }}">
                     <button type="button" class="btn btn-sm btn-circle btn-alt-secondary" title="Export">
                         <i class="mdi mdi-file-pdf"></i>
                     </button>
                 </a>
+                
               @elseif($row->status == $row::STATUS['DELETED'])
                 <a href="{{ route('superuser.master.customer.show', $row->id) }}">
                       <button type="button" class="btn btn-sm btn-circle btn-alt-secondary" title="View">

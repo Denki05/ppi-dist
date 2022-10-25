@@ -89,6 +89,7 @@ Route::group([
         Route::post('/getkelurahan', 'CustomerController@getkelurahan')->name('getkelurahan');
         Route::post('/getzipcode', 'CustomerController@getzipcode')->name('getzipcode');
         Route::post('/getcustomertype', 'CustomerController@getcustomertype')->name('getcustomertype');
+        // Route::get('/{id}/history', 'CustomerController@history')->name('history');
 
         Route::group(['as' => 'other_address.', 'prefix' => '/customer'], function () {
             Route::get('/{id}/other_address/create', 'CustomerOtherAddressController@create')->name('create');

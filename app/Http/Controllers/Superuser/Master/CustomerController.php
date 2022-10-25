@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Superuser\Master;
 
 use App\DataTables\Master\CustomerTable;
 use App\Entities\Master\Customer;
+use App\Entities\Master\CustomerSaldoLog;
 use App\Entities\Master\CustomerType;
 use App\Entities\Master\CustomerOtherAddress;
 use App\Entities\Master\CustomerCategoryType;
@@ -228,6 +229,8 @@ class CustomerController extends Controller
                 $customer->owner_name = $request->owner_name;
                 $customer->website = $request->website;
                 $customer->plafon_piutang = ($request->plafon_piutang) ? $request->plafon_piutang : 0;
+                $customer->saldo = $request->plafon_piutang;
+                $customer->has_ppn = 0;
 
                 $customer->gps_latitude = $request->gps_latitude;
                 $customer->gps_longitude = $request->gps_longitude;
@@ -266,6 +269,13 @@ class CustomerController extends Controller
     
                         $customer_type_pivot->save();
                     }
+
+                        $log_saldo = new CustomerSaldoLog;
+                        $log_saldo->customer_id = $customer->id;
+                        $log_saldo->saldo_log = $request->plafon_piutang;
+                        $log_saldo->note = CustomerSaldoLog::NOTE['SALDO AWAL'];
+                        $log_saldo->save();
+                    
 
                     DB::commit();
 
@@ -382,6 +392,8 @@ class CustomerController extends Controller
                 $customer->owner_name = $request->owner_name;
                 $customer->website = $request->website;
                 $customer->plafon_piutang = ($request->plafon_piutang) ? $request->plafon_piutang : 0;
+                $customer->saldo = $request->plafon_piutang;
+                $customer->has_ppn = 0;
 
                 $customer->gps_latitude = $request->gps_latitude;
                 $customer->gps_longitude = $request->gps_longitude;
@@ -432,6 +444,12 @@ class CustomerController extends Controller
     
                         $customer_type_pivot->save();
                     }
+
+                    $log_saldo = new CustomerSaldoLog;
+                    $log_saldo->customer_id = $customer->id;
+                    $log_saldo->saldo_log = $request->plafon_piutang;
+                    $log_saldo->note = CustomerSaldoLog::NOTE['SALDO UPDATE'];
+                    $log_saldo->save();
 
                     DB::commit();
 

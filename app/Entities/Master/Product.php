@@ -21,7 +21,7 @@ class Product extends Model
     public static $directory_image = 'superuser_assets/media/master/product/';
     
     const NOTE = [
-        'BEST_SELLER',
+        'BEST SELLER',
         'NEW',
         'RECOMMENDATION',
         'REGULER',

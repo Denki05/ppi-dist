@@ -229,7 +229,7 @@ class ProductController extends Controller
 
                 'default_quantity' => 'required|numeric',
                 'default_unit' => 'required|integer',
-                'ratio' => 'required|numeric',
+                'ratio' => 'required|string',
                 'default_warehouse' => 'required|integer',
 
                 'image' => 'nullable|image|mimes:jpeg,png,jpg|max:2048',

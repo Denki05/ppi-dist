@@ -132,6 +132,10 @@
                                 <label>Plafon Piutang</label>
                                 <input type="number" class="form-control" id="plafon_piutang" name="plafon_piutang" min="0" value="0" step="0.0001">
                             </div>
+                            <div class="form-group">
+                                <label for="has_ppn">Customer PPN</label><br>
+                                <input type="checkbox" id="has_ppn" name="has_ppn" value="1">
+                            </div>
                             <div class="f1-buttons">
                                 <button type="button" class="btn btn-warning btn-previous"><i class="fa fa-arrow-left"></i> Previous</button>
                                 <button type="button" class="btn btn-primary btn-next">Next <i class="fa fa-arrow-right"></i></button>

@@ -352,6 +352,8 @@ class PackingOrderController extends Controller
                             $updateSO = SalesOrderItem::where('id',$value["so_item_id"])->update([
                                 'qty' => $sisa
                             ]);
+
+                            
                         }
 
                         if(empty($do_qty) && $rej_qty > 0){

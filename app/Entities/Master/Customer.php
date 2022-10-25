@@ -12,8 +12,8 @@ class Customer extends Model
     protected $appends = ['img_ktp', 'img_npwp', 'img_store'];
     protected $fillable = [
         'category_id', /* 'type_id', */ 'code', 'name',
-        'email', 'phone', 'npwp', 'ktp', 'address',
-        'owner_name', 'plafon_piutang', 'gps_latitude', 'gps_longitude',
+        'email', 'phone', 'npwp', 'ktp', 'has_ppn', 'address',
+        'owner_name', 'plafon_piutang', 'saldo', 'gps_latitude', 'gps_longitude',
         'provinsi', 'kota', 'kecamatan', 'kelurahan',
         'text_provinsi', 'text_kota', 'text_kecamatan', 'text_kelurahan',
         'zipcode', 'image_npwp', 'image_ktp', 'image_store', 'notification_email', 'status'
@@ -86,4 +86,13 @@ class Customer extends Model
     public function do(){
         return $this->hasMany('App\Entities\Penjualan\PackingOrder','customer_id');
     }
+
+    public function customer_saldo(){
+        return $this->hasMany('App\Entities\Master\CustomerSaldoLog','customer_id');
+    }
+
+    // public function getCustomerSaldo()
+    // {
+
+    // }
 }
