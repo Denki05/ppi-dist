@@ -81,7 +81,11 @@
                     @endif
                   </td>
                   <td>
-                    {{$row->member->name ?? ''}}
+                    @if($row->other_address == 0)
+                      {{$row->customer->name ?? '-'}}
+                    @elseif($row->other_address == 1)
+                      {{$row->member->name ?? '-'}}
+                    @endif
                   </td>
                   <td>
                     {{$row->do_detail[0]->so_item->product->category->name ?? ''}} / <?= date('d-m-Y h:i:s',strtotime($row->created_at)); ?>

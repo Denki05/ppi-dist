@@ -11,6 +11,7 @@ use App\Exports\Master\CustomerTypeImportTemplate;
 use App\Http\Controllers\Controller;
 use App\Imports\Master\CustomerTypeImport;
 use App\Repositories\CodeRepo;
+use App\Repositories\MasterRepo;
 use DB;
 use Excel;
 use Illuminate\Http\Request;
@@ -61,7 +62,7 @@ class CustomerTypeController extends Controller
             }
         }
 
-        $data['category'] = CustomerCategory::all();
+        $data['category'] = MasterRepo::customer_categories();
 
         return view('superuser.master.customer_type.create', $data);
     }
@@ -72,7 +73,9 @@ class CustomerTypeController extends Controller
             $validator = Validator::make($request->all(), [
                 // 'code' => 'required|string|unique:master_customer_types,code',
                 'name' => 'required|string',
-                'category' => 'required',
+                // 'category' => 'required',
+                'category' => 'required|array',
+                'category.*' => 'required|integer',
                 'description' => 'nullable|string',
             ]);
 
@@ -98,13 +101,13 @@ class CustomerTypeController extends Controller
                 $customer_type->status = CustomerType::STATUS['ACTIVE'];
 
                 if ($customer_type->save()) {
-                    // foreach ($request->category as $category) {
+                    foreach ($request->category as $category) {
                         $customer_category_type = new CustomerCategoryType;
-                        $customer_category_type->category_id = $request->category;
+                        $customer_category_type->category_id = $category;
                         $customer_category_type->type_id = $customer_type->id;
     
                         $customer_category_type->save();
-                    // }
+                    }
                     DB::commit();
 
                     $response['notification'] = [

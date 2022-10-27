@@ -754,6 +754,15 @@ class PackingOrderController extends Controller
 
                 $update = PackingOrderDetail::where('do_id',$post["id"])->update($data);
 
+                // $update_saldo = DB::select(
+                //                             "SELECT 
+
+                //                             FROM master_customer c
+
+                //                             LEFT JOIN penjualan_so s ON c.id = 
+                //                             "
+                //                         )
+
                 //create invoicing disini
                 if (empty($detail_po->invoicing)) {
                     $data = [

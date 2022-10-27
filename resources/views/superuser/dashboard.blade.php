@@ -124,8 +124,20 @@
                               <?= date('d-m-Y',strtotime($row->created_at)); ?>
                             </td>
                             <td>{{$row->code}}</td>
-                            <td>{{$row->do->member->name ?? ''}}</td>
-                            <td>{{$row->do->member->text_provinsi ?? ''}}</td>
+                            <td>
+                              @if($row->do->other_address == 0)
+                                {{$row->do->customer->name ?? '-'}}
+                              @elseif($row->do->other_address == 1)
+                                {{$row->do->member->name ?? '-'}}
+                              @endif
+                            </td>
+                            <td>
+                              @if($row->do->other_address == 0)
+                                {{$row->do->customer->text_provinsi ?? '-'}}
+                              @elseif($row->do->other_address == 1)
+                                {{$row->do->member->text_provinsi ?? '-'}}
+                              @endif
+                            </td>
                             <td>{{number_format($row->grand_total_idr,0,',','.')}}</td>
                             <td>{{number_format($row->payable_detail->sum('total'),0,',','.')}}</td>
                             <td>

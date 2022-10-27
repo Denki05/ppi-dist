@@ -18,9 +18,9 @@ class CustomerSaldoLog extends Model
         'SALDO PENGURANGAN SO' => 2
     ];
 
-    public function customers()
+    public function customer()
     {
-        return $this->BelongsTo('App\Entities\Master\Customer');
+        return $this->belongsTo('App\Entities\Master\Customer');
     }
 
 }

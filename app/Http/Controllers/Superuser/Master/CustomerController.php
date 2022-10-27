@@ -181,8 +181,8 @@ class CustomerController extends Controller
                 'owner_name' => 'nullable|string',
                 'website' => 'nullable|string',
                 'plafon_piutang' => 'nullable|numeric',
-                'gps_latitude' => 'nullable|string',
-                'gps_longitude' => 'nullable|string',
+                // 'gps_latitude' => 'nullable|string',
+                // 'gps_longitude' => 'nullable|string',
                 'provinsi' => 'nullable|string',
                 'kota' => 'nullable|string',
                 'kecamatan' => 'nullable|string',
@@ -302,6 +302,7 @@ class CustomerController extends Controller
             }
         }
         $data['customer'] = Customer::findOrFail($id);
+        // $data['saldo'] = Customer::find(1)->saldo()->first($id);
 
         return view('superuser.master.customer.show', $data);
     }

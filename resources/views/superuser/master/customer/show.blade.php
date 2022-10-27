@@ -26,10 +26,10 @@
         <a id="profile-tab" data-toggle="tab" href="#profile" role="tab" aria-controls="profile" aria-selected="true" class="nav-link border-0 text-uppercase font-weight-bold active">Profile</a>
       </li>
       <li class="nav-item flex-sm-fill">
-        <a id="address-tab" data-toggle="tab" href="#address" role="tab" aria-controls="address" aria-selected="false" class="nav-link border-0 text-uppercase font-weight-bold">Address</a>
+        <a id="address-tab" data-toggle="tab" href="#address" role="tab" aria-controls="address" aria-selected="false" class="nav-link border-0 text-uppercase font-weight-bold">Geo Tag</a>
       </li>
       <li class="nav-item flex-sm-fill">
-        <a id="document-tab" data-toggle="tab" href="#document" role="tab" aria-controls="document" aria-selected="false" class="nav-link border-0 text-uppercase font-weight-bold">Document</a>
+        <a id="document-tab" data-toggle="tab" href="#document" role="tab" aria-controls="document" aria-selected="false" class="nav-link border-0 text-uppercase font-weight-bold">Finance</a>
       </li>
     </ul>
     <div id="myTabContent" class="tab-content">
@@ -48,50 +48,57 @@
           <div class="card-body">
             <table class="table user-view-table m-0" id="profile_table">
               <tbody>
-                <?php
-                  $total_outstanding = 0;
-                  $total_outstanding_past_due_date = 0;
-                  if(isset($customer_history) && sizeof($customer_history) > 0) {
-                    foreach($customer_history as $index => $row) {
-                      $total_outstanding += $row->grand_total_idr;
-                    }
-                  }
-                ?>
                 <tr>
                   <td>Registered On</td>
                   <td><b>:</b></td>
                   <td>{{ \Carbon\Carbon::parse($customer->created_at)->format('d-m-Y')}}</td>
                 </tr>
                 <tr>
-                  <td>Saldo | Plafon Piutang</td>
+                  <td>Name Store</td>
                   <td><b>:</b></td>
                   <td>
-                      {{ rupiah($customer->saldo ?? '-') }} |  {{ rupiah($customer->plafon_piutang) }}</td>
-                </tr>
-                <tr>
-                  <td>Category Store</td>
-                  <td><b>:</b></td>
-                  <td>
-                    <a href="{{ route('superuser.master.customer_category.show', $customer->category->id) }}" target="_blank" class="badge badge-info">
-                      {{ $customer->category->name }}
-                    </a>
+                     {{$customer->name ?? '-'}}
                   </td>
                 </tr>
                 <tr>
-                  <td>Type Store</td>
+                  <td>E-mail</td>
                   <td><b>:</b></td>
                   <td>
-                      @foreach($customer->types as $type)
-                      <a href="{{ route('superuser.master.customer_type.show', $type->id) }}" target="_blank" class="badge badge-info">
-                        {{ $type->name }}
-                      </a>
-                      @endforeach
+                    {{$customer->email ?? '-'}}
                   </td>
                 </tr>
                 <tr>
-                  <td>Status</td>
+                  <td>Phone</td>
                   <td><b>:</b></td>
-                  <td><span class="badge badge-outline-success">{{ $customer->status() }} </span></td>
+                  <td>
+                      {{$customer->phone ?? '-'}}
+                  </td>
+                </tr>
+                <tr>
+                  <td>Owner</td>
+                  <td><b>:</b></td>
+                  <td>{{$customer->owner_name ?? '-'}}</span></td>
+                </tr>
+                <tr>
+                  <td>Address</td>
+                  <td><b>:</b></td>
+                  <td>{{$customer->address ?? '-'}}</span></td>
+                </tr>
+                <tr>
+                  <td>Location</td>
+                  <td><b>:</b></td>
+                  <td><b>{{$customer->text_provinsi ?? '-'}}</b> | <b>{{$customer->text_kota ?? '-'}}</b> | <b>{{$customer->text_kecamatan ?? '-'}}</b></td>
+                </tr>
+                <tr>
+                  <td>PPN</td>
+                  <td><b>:</b></td>
+                  <td>
+                    @if($customer->has_ppn == 0)
+                      <span class="badge badge-pill badge-success">NO</span>
+                    @elseif($customer->has_ppn ==1)
+                      <span class="badge badge-pill badge-success">YES</span>
+                    @endif
+                  </td>
                 </tr>
               </tbody>
             </table>
@@ -105,27 +112,36 @@
             <table class="table user-view-table m-0" id="address_table">
               <tbody>
                 <tr>
-                  <td>Address</td>
+                  <td>Category</td>
                   <td><b>:</b></td>
-                  <td>{{ $customer->address }}</td>
+                  <td>
+                    <a href="{{ route('superuser.master.customer_category.show', $customer->category->id) }}" target="_blank" class="badge badge-info">
+                      {{ $customer->category->name }}
+                    </a>
+                  </td>
                 </tr>
                 <tr>
-                  <td>Phone</td>
+                  <td>Type</td>
                   <td><b>:</b></td>
-                  <td>{{ $customer->phone }}</td>
+                  <td>
+                      @foreach($customer->types as $type)
+                      <a href="{{ route('superuser.master.customer_type.show', $type->id) }}" target="_blank" class="badge badge-info">
+                        {{ $type->name }}
+                      </a>
+                      @endforeach
+                  </td>
                 </tr>
                 <tr>
-                  <td>Email</td>
+                  <td>Image Store</td>
                   <td><b>:</b></td>
-                  <td>{{ $customer->email }}</td>
+                  <td>
+                      <a href="{{ $customer->img_store }}" class="img-link img-link-zoom-in img-thumb img-lightbox">
+                        <img src="{{ $customer->img_store }}" class="img-fluid img-show-small">
+                      </a>
+                  </td>
                 </tr>
                 <tr>
-                  <td>Area</td>
-                  <td><b>:</b></td>
-                  <td>{{ $customer->text_provinsi }} </td>
-                </tr>
-                <tr>
-                  <td>Location Maps</td>
+                  <td>Maps</td>
                   <td><b>:</b></td>
                   <td>
                     <iframe src="https://maps.google.com/maps?q={{ $customer->gps_latitude }},{{ $customer->gps_longitude }}&hl=es;z=14&amp;output=embed" ?? ></iframe>
@@ -142,7 +158,18 @@
           <div class="card-body">
             <table class="table user-view-table m-0" id="document_table">
               <tbody>
-              <tr>
+                <tr>
+                  <td>Saldo | Plafon Piutang</td>
+                  <td><b>:</b></td>
+                  <td>
+                    @if($customer->saldo == $customer->plafon_piutang)
+                      <h6 style="color:green;">{{"Rp " . number_format($customer->saldo,0,",",".")}}|{{"Rp " . number_format($customer->plafon_piutang,0,",",".")}}</h6>
+                    @elseif($customer->saldo <= $customer->plafon_piutang)
+                      <h6 style="color:red;">{{"Rp " . number_format($customer->saldo,0,",",".")}}|{{"Rp " . number_format($customer->plafon_piutang,0,",",".")}}</h6>
+                    @endif
+                  </td>
+                </tr>
+                <tr>
                   <td>NPWP</td>
                   <td><b>:</b></td>
                   <td>{{ $customer->npwp ?? '-' }}</td>
@@ -165,9 +192,9 @@
                   <td>Image KTP</td>
                   <td><b>:</b></td>
                   <td>
-                    <a href="{{ $customer->img_ktp }}" class="img-link img-link-zoom-in img-thumb img-lightbox">
-                      <img src="{{ $customer->img_ktp }}" class="img-fluid img-show-small">
-                    </a>
+                      <a href="{{ $customer->img_npwp }}" class="img-link img-link-zoom-in img-thumb img-lightbox">
+                        <img src="{{ $customer->img_npwp }}" class="img-fluid img-show-small">
+                      </a>
                   </td>
                 </tr>
               </tbody>

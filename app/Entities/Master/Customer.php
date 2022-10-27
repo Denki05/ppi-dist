@@ -87,12 +87,8 @@ class Customer extends Model
         return $this->hasMany('App\Entities\Penjualan\PackingOrder','customer_id');
     }
 
-    public function customer_saldo(){
-        return $this->hasMany('App\Entities\Master\CustomerSaldoLog','customer_id');
+    public function customer_saldo()
+    {
+        return $this->hasMany('App\Entities\Master\CustomerSaldoLog');
     }
-
-    // public function getCustomerSaldo()
-    // {
-
-    // }
 }

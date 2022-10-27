@@ -146,9 +146,9 @@
           </div>
 
           <div class="form-group row">
-            <label class="col-6 col-md-3 col-form-label">Other Address</label>
+          <label class="col-6 col-md-3 col-form-label font-weight-bold">Other Address</label>
             <div class="col-6 col-md-6 col-form-label">
-              <input type="checkbox" name="other_address" value="1" {{ $result->status == 1 ? '' : 'disabled' }} name="other_address"  />
+              <input type="checkbox" name="other_address" value="1" name="other_address"  />
             </div>
           </div>
           
@@ -168,7 +168,7 @@
           <div class="form-group row">
             <label class="col-6 col-md-3 col-form-label font-weight-bold">Delivery Address</label>
             <div class="col-md-8">
-              <textarea class="form-control" readonly name="delivery_address" rows="1">{{$result->customer_other_address->address ?? ''}}</textarea>
+              <textarea class="form-control" readonly name="delivery_address" rows="1">{{$result->customer->address ?? '$result->other_address->address'}}</textarea>
             </div>
           </div>
 

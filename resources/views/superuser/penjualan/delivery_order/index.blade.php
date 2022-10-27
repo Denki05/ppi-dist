@@ -64,7 +64,7 @@
                   </td>
                   <td>{{$row->do_detail[0]->so_item->so->code ?? ''}}</td>
                   <td>
-                    {{$row->customer->name ?? ''}} / {{$row->member->name}}
+                    {{$row->customer->name ?? ''}} / {{$row->member->name ?? ''}}
                   </td>
                   <td>
                     <span

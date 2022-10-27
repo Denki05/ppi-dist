@@ -220,7 +220,13 @@
               <tr>
                 <td style="width: 35% !important;">Alamat Kirim</td>
                 <td style="width: 2% !important;">:</td>
-                <td style="width: 63% !important;">{{$result->do->customer_other_address->address ?? ''}}</td>
+                <td style="width: 63% !important;">
+                  @if($result->do->other_address == 0)
+                    {{$result->do->customer->address ?? ''}}
+                  @elseif($result->do->other_address == 1)
+                    {{$result->do->member->address ?? ''}}
+                  @endif
+                </td>
               </tr>
             </tbody>
           </table>
