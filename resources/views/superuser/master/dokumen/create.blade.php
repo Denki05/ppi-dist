@@ -62,7 +62,7 @@
         </div>
       </div>
       <div class="form-group row">
-        <label class="col-md-3 col-form-label text-right" for="address">Address </label>
+        <label class="col-md-3 col-form-label text-right" for="address">Address <br><span class="text-danger"><i>*Include Region</i></span></label>
         <div class="col-md-7">
           <input type="text" class="form-control" id="address" name="address">
         </div>
@@ -111,9 +111,9 @@
         var answer = $(this).closest('.cek_list').next('.member');
 
         if(this.checked){
-            answer.show(300);
+            answer.show(0);
         } else {
-            answer.hide(300);
+            answer.hide(0);
         }
     });
 
