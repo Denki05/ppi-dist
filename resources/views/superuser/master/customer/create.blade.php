@@ -101,7 +101,8 @@
                                 <input type="file" id="image_store" name="image_store" data-max-file-size="2000" accept="image/png, image/jpeg">
                             </div>
                             <div class="f1-buttons">
-                                <button type="button" class="btn btn-primary btn-next">Next <i class="fa fa-arrow-right"></i></button>
+                              <a href="{{route('superuser.master.customer.index')}}" class="btn btn-warning  btn-md text-white"><i class="fa fa-arrow-left"></i> Back</a>
+                              <button type="button" class="btn btn-primary btn-next">Next <i class="fa fa-arrow-right"></i></button>
                             </div>
                         </fieldset>
                         <!-- step 2 -->

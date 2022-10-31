@@ -86,10 +86,10 @@ class PayableController extends Controller
             }
         }
 
-        if(empty($request->input('customer_other_address_id'))){
+        if(empty($request->input('customer_id'))){
             return redirect()->route('superuser.finance.payable.index')->with('error','Tidak ada customer yang dipilih');
         }
-        $customer = CustomerOtherAddress::where('id',$request->input('customer_other_address_id'))->first();
+        $customer = Customer::where('id',$request->input('customer_id'))->first();
         if(empty($customer)){
             return redirect()->route('superuser.finance.payable.index')->with('error','Customer tidak ditemukan');
         }
@@ -112,7 +112,7 @@ class PayableController extends Controller
         if($request->method() == "POST"){
             DB::beginTransaction();
             try{
-                if(empty($post["customer_other_address_id"])){
+                if(empty($post["customer_id"])){
                     $data_json["IsError"] = TRUE;
                     $data_json["Message"] = "Customer ID tidak boleh kosong";
                     goto ResultData;
@@ -129,7 +129,7 @@ class PayableController extends Controller
                 }
                 $insert = Payable::create([
                     'code' => CodeRepo::generatePayable(),
-                    'customer_other_address_id' => trim(htmlentities($post["customer_other_address_id"])),
+                    'customer_id' => trim(htmlentities($post["customer_id"])),
                     'created_by' => Auth::id(),
                     'total' => 0
                 ]);

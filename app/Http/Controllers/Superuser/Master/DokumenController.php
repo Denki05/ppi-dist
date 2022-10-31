@@ -3,7 +3,7 @@
 namespace App\Http\Controllers\Superuser\Master;
 
 // use App\DataTables\Master\CustomerOtherAddressTable;
-// use App\Entities\Master\Customer;
+use App\Entities\Master\Customer;
 use App\Entities\Master\CustomerOtherAddress;
 use App\Entities\Master\Dokumen;
 use App\Http\Controllers\Controller;
@@ -42,23 +42,25 @@ class DokumenController extends Controller
             }
         }
 
-        // $data['customer'] = Customer::findOrFail($id);
-        $data['other_address'] = MasterRepo::other_address();
+        $data['customers'] = Customer::get(["id", "name"]);
+        // $data['other_address'] = CustomerOtherAddress::all();
         
         // dd($data);
         return view('superuser.master.dokumen.create', $data);
     }
 
-    // public function getkabupaten(request $request)
-    // {
-    //     $prov_id = $request->prov_id;
+    
 
-    //     $kabupatens = Regency::where('prov_id', $prov_id)->get();
+    public function getstore(request $request)
+    {
+        $customer_id = $request->customer_id;
 
-    //     foreach ($kabupatens as $kabupaten){
-    //         echo "<option value='$kabupaten->city_id'>$kabupaten->city_name</option>";
-    //     }
-    // }
+        $members = CustomerOtherAddress::where('customer_id', $customer_id)->get();
+
+        foreach ($members as $member){
+            echo "<option value='$member->id'>$member->name</option>";
+        }
+    }
 
     // public function getkecamatan(request $request)
     // {
@@ -97,11 +99,11 @@ class DokumenController extends Controller
     {
         if ($request->ajax()) {
             $validator = Validator::make($request->all(), [
-                'name' => 'required|string',
+                'document_type' => 'required|string',
                 // 'other_address' => 'required|string',
-                'contact' => 'required|string',
-                'npwp' => 'required|string',
-                'ktp' => 'required|string',
+                'document_number' => 'required|string',
+                'name_person' => 'required|string',
+                'address' => 'required|string',
                 'image_npwp' => 'nullable|image|mimes:jpeg,png,jpg|max:2048',
                 'image_ktp' => 'nullable|image|mimes:jpeg,png,jpg|max:2048'
             ]);
@@ -126,12 +128,14 @@ class DokumenController extends Controller
 
                 $dokumen = new Dokumen;
 
+                $dokumen->customer_id = $request->customer;
                 $dokumen->customer_other_address_id = $request->other_address;
                 
-                $dokumen->name = $request->name;
-                $dokumen->contact = $request->contact;
-                $dokumen->npwp = $request->npwp;
-                $dokumen->ktp = $request->ktp;
+                $dokumen->document_type = $request->document_type;
+                $dokumen->document_number = $request->document_number;
+                $dokumen->name_person = $request->name_person;
+                $dokumen->address = $request->address;
+                $dokumen->for_member = $request->for_member;
 
                 if (!empty($request->file('image_ktp'))) {
                     $dokumen->image_ktp = UploadMedia::image($request->file('image_ktp'), Dokumen::$directory_image);

@@ -192,6 +192,8 @@ Route::group([
         // Route::get('/import_template', 'EkspedisiController@import_template')->name('import_template');
         // Route::post('/import', 'EkspedisiController@import')->name('import');
         // Route::get('/export', 'EkspedisiController@export')->name('export');
+		Route::post('/getstore', 'DokumenController@getstore')->name('getstore');
+
     });
     Route::resource('dokumen', 'DokumenController');
 

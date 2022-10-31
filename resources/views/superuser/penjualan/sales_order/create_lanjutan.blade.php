@@ -145,7 +145,7 @@
               <div class="row mb-3">
                 <div class="col-12">
                   @if(isset($customer_history) && sizeof($customer_history) > 0)
-                  <table id="tableCustomerOutstanding" class="table table-striped table-vcenter table-responsive dataTable no-footer">
+                  <table id="tableCustomerOutstanding" class="table table-hover">
                     <thead>
                       <tr>
                         <th class="text-center">No</th>

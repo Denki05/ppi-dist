@@ -20,32 +20,51 @@
         </div>
       </div>
       <div class="form-group row">
-        <label class="col-md-3 col-form-label text-right" for="other_address">Member <span class="text-danger">*</span></label>
+        <label class="col-md-3 col-form-label text-right" for="customer">Store <span class="text-danger">*</span></label>
         <div class="col-md-7">
-          <select class="js-select2 form-control" id="other_address" name="other_address" data-placeholder="Select Member">
+          <select class="js-select2 form-control" id="customer" name="customer" data-placeholder="Select Store">
             <option></option>
-            @foreach($other_address as $member)
-            <option value="{{ $member->id }}">{{ $member->name }}</option>
+            @foreach($customers as $customer)
+            <option value="{{ $customer->id }}">{{ $customer->name }}</option>
             @endforeach
           </select>
         </div>
       </div>
-      <div class="form-group row">
-        <label class="col-md-3 col-form-label text-right" for="contact">Phone / Contact</label>
+      <div class="form-group row cek_list">
+        <label class="col-md-3 col-form-label text-right" for="for_member">Data For Members</label>
         <div class="col-md-7">
-          <input type="text" class="form-control" id="contact" name="contact">
+          <input type="checkbox" id="for_member" name="for_member" value="1">
+        </div>
+      </div>
+      <div class="form-group row member" style="display:none;">
+        <label class="col-md-3 col-form-label text-right" for="other_address">Member </label>
+        <div class="col-md-7">
+          <select class="js-select2 form-control" id="other_address" name="other_address" data-placeholder="Select Member">
+          </select>
         </div>
       </div>
       <div class="form-group row">
-        <label class="col-md-3 col-form-label text-right" for="npwp">NPWP</label>
+        <label class="col-md-3 col-form-label text-right" for="document_type">Card Type</label>
         <div class="col-md-7">
-          <input type="text" class="form-control" id="npwp" name="npwp">
+          <input type="text" class="form-control" id="document_type" name="document_type">
         </div>
       </div>
       <div class="form-group row">
-        <label class="col-md-3 col-form-label text-right" for="ktp">KTP</label>
+        <label class="col-md-3 col-form-label text-right" for="document_number">Card Number</label>
         <div class="col-md-7">
-          <input type="text" class="form-control" id="ktp" name="ktp">
+          <input type="number" class="form-control" id="document_number" name="document_number">
+        </div>
+      </div>
+      <div class="form-group row">
+        <label class="col-md-3 col-form-label text-right" for="name_person">Name </label>
+        <div class="col-md-7">
+          <input type="text" class="form-control" id="name_person" name="name_person">
+        </div>
+      </div>
+      <div class="form-group row">
+        <label class="col-md-3 col-form-label text-right" for="address">Address </label>
+        <div class="col-md-7">
+          <input type="text" class="form-control" id="address" name="address">
         </div>
       </div>
       <div class="form-group row">
@@ -86,6 +105,18 @@
 <script src="{{ asset('utility/superuser/js/form.js') }}"></script>
 <script>
   $(document).ready(function () {
+    
+    $(document).on('click', '.cek_list input:checkbox', function() {
+        //Find the next answer element to the question and based on the checked status call either show or hide method
+        var answer = $(this).closest('.cek_list').next('.member');
+
+        if(this.checked){
+            answer.show(300);
+        } else {
+            answer.hide(300);
+        }
+    });
+
     $('.js-select2').select2()
     $('#image_npwp').fileinput({
       theme: 'explorer-fa',
@@ -114,6 +145,32 @@
         showRemove: false
       },
     });
+
+    $(function(){
+
+      $('#customer').on('change', function(){
+        let customer_id = $('#customer').val();
+
+        
+
+        $.ajax({
+          type : 'POST',
+          url : '{{route('superuser.master.dokumen.getstore')}}',
+          data : {customer_id:customer_id},
+          cache : false,
+
+          success: function(msg){
+            $('#other_address').html(msg);
+          },
+          error : function(data){
+            console.log('error:',data)
+          },
+        })
+      })
+      valueChanged();
+    });
+
+
   })
 </script>
 @endpush

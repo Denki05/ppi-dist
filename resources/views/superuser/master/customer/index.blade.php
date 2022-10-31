@@ -38,10 +38,10 @@
           <th>Code</th>
           <th>Store</th>
           <th>Address</th>
+          <th>Region</th>
           <th>Category</th>
           <th>Status</th>
           <th scope="col">Action</th>
-          <th>Add Member</th>
         </tr>
       </thead>
       <tbody>
@@ -61,6 +61,7 @@
               <td>{{ $row->code }}</td>
               <td>{{ $row->name }}</td>
               <td>{{ $row->address }} - <br><b>{{ $row->text_kota }}</b></br></td>
+              <td><b>{{ $row->text_provinsi }}</b></td>
               <td>{{ $row->category->name }}</td>
               <td>
                 @if($row->status == $row::STATUS['ACTIVE'])
@@ -86,11 +87,16 @@
                         <i class="mdi mdi-delete"></i>
                     </button>
                 </a>
-                <a href="{{ route('superuser.master.customer.export_customer', $row->id) }}">
-                    <button type="button" class="btn btn-sm btn-circle btn-alt-secondary" title="Export">
-                        <i class="mdi mdi-file-pdf"></i>
+                <a href="{{ route('superuser.master.customer.other_address.create', [$row->id]) }}">
+                    <button type="button" class="btn btn-sm btn-circle btn-alt-secondary" title="Add Member">
+                        <i class="mdi mdi-file-multiple"></i>
                     </button>
                 </a>
+                <a href="{{ route('superuser.master.dokumen.create', [$row->id]) }}">
+                                                    <button type="button" class="btn btn-sm btn-circle btn-alt-danger" title="Add Document">
+                                                        <i class="mdi mdi-account-card-details"></i>
+                                                    </button>
+                                                </a>
                 
               @elseif($row->status == $row::STATUS['DELETED'])
                 <a href="{{ route('superuser.master.customer.show', $row->id) }}">
@@ -100,12 +106,7 @@
                 </a>
               @endif
               </td>
-              <td>
-              @if($row->status == $row::STATUS['ACTIVE'])
-                <a class="btn" href="{{ route('superuser.master.customer.other_address.create', [$row->id]) }}" target="_blank" role="button" title="Add Member"><i class="mdi mdi-file-multiple"></i></a>
-              @elseif($row->status == $row::STATUS['DELETED'])
-              @endif
-              </td>
+              
           </tr>
 
           <tr class="tabularinfo__subblock collapse a{{ $row->id }}">
@@ -115,7 +116,6 @@
                                 <th width="10%">Member</th>
                                 <th width="10%">Location</th>
                                 <th width="5%">Action</th>
-                                <th width="2%">Add Dokumen</th>
                             </tr>
 
                             <tbody>
@@ -138,9 +138,11 @@
                                                         <i class="fa fa-times"></i>
                                                     </button>
                                                 </a>
-                                            </td>
-                                            <td>
-                                              <a class="btn" href="{{ route('superuser.master.dokumen.create', [$index->id]) }}" target="_blank" role="button" title="Add Dokumen"><i class="mdi mdi-file-multiple"></i></a>
+                                                <a href="{{ route('superuser.master.dokumen.create', [$index->id]) }}">
+                                                    <button type="button" class="btn btn-sm btn-circle btn-alt-danger" title="Add Document">
+                                                        <i class="mdi mdi-account-card-details"></i>
+                                                    </button>
+                                                </a>
                                             </td>
                                             @endif
                                         </tr>

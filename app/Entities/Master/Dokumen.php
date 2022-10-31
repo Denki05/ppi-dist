@@ -12,11 +12,13 @@ class Dokumen extends Model
     protected $appends = ['img_ktp', 'img_npwp'];
     protected $fillable = [
                             'id',
-                            'customer_other_address_id',
-                            'name',
-                            'contact',
-                            'npwp',
-                            'ktp',
+                            'customer_id',
+                            'customer_other_address_id', 
+                            'document_type',
+                            'document_number',
+                            'name_person', 
+                            'address', 
+                            'for_member', 
                             'image_npwp',
                             'image_ktp'
     ];

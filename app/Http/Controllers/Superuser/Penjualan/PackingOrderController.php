@@ -7,6 +7,8 @@ use Illuminate\Http\Request;
 use App\Entities\Finance\Invoicing;
 use App\Entities\Master\Warehouse;
 use App\Entities\Master\Customer;
+use App\Entities\Master\Vendor;
+use App\Entities\Master\CustomerSaldoLog;
 use App\Entities\Master\CustomerOtherAddress;
 use App\Entities\Master\Company;
 use App\Entities\Penjualan\PackingOrder;
@@ -729,6 +731,7 @@ class PackingOrderController extends Controller
                 $purchase_total_idr = ceil($idr_total - $total_discount_idr - $voucher_idr - $cashback_idr + $ppn);
                 $grand_total_idr = ceil($purchase_total_idr + $delivery_cost_idr + $other_cost_idr);
 
+                
                 if($total_discount_idr > $grand_total_idr){
                     $data_json["IsError"] = TRUE;
                     $data_json["Message"] = "Total Discount melebihi IDR total item pembelian";
@@ -754,14 +757,8 @@ class PackingOrderController extends Controller
 
                 $update = PackingOrderDetail::where('do_id',$post["id"])->update($data);
 
-                // $update_saldo = DB::select(
-                //                             "SELECT 
-
-                //                             FROM master_customer c
-
-                //                             LEFT JOIN penjualan_so s ON c.id = 
-                //                             "
-                //                         )
+                //update plafon piutang
+                
 
                 //create invoicing disini
                 if (empty($detail_po->invoicing)) {
@@ -781,6 +778,7 @@ class PackingOrderController extends Controller
                 $data_json["Message"] = "Packing Order Berhasil diubah";
                 goto ResultData;
             } catch(\Throwable $e){
+                dd($e);
                 DB::rollback();
                 $data_json["IsError"] = TRUE;
                 $data_json["Message"] = $e->getMessage();
