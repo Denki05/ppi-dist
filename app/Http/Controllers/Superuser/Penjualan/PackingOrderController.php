@@ -7,7 +7,9 @@ use Illuminate\Http\Request;
 use App\Entities\Finance\Invoicing;
 use App\Entities\Master\Warehouse;
 use App\Entities\Master\Customer;
+use App\Entities\Master\Dokumen;
 use App\Entities\Master\Vendor;
+use App\Repositories\MasterRepo;
 use App\Entities\Master\CustomerSaldoLog;
 use App\Entities\Master\CustomerOtherAddress;
 use App\Entities\Master\Company;
@@ -422,7 +424,8 @@ class PackingOrderController extends Controller
         }
         $warehouse = Warehouse::all();
         $customer = Customer::all();
-        $ekspedisi = Vendor::all();
+        $ekspedisi = MasterRepo::vendors();
+        $dokumen = Dokumen::all();
         $data = [
             'warehouse' => $warehouse,
             'customer' => $customer,

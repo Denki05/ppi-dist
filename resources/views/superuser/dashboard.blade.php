@@ -100,7 +100,7 @@
                           <tr>
                             <th>Invoice Date</th>
                             <th>Invoice Number</th>
-                            <th>Store / Member</th>
+                            <th>Store | Member</th>
                             <th>Area</th>
                             <th>Revenue</th>
                             <th>Paid</th>
@@ -132,11 +132,13 @@
                               @endif
                             </td>
                             <td>
+                              <b>
                               @if($row->do->other_address == 0)
                                 {{$row->do->customer->text_provinsi ?? '-'}}
                               @elseif($row->do->other_address == 1)
                                 {{$row->do->member->text_provinsi ?? '-'}}
                               @endif
+                              </b>
                             </td>
                             <td>{{number_format($row->grand_total_idr,0,',','.')}}</td>
                             <td>{{number_format($row->payable_detail->sum('total'),0,',','.')}}</td>
@@ -176,16 +178,42 @@
                     </div>
         @endif
       </div>
+      
     </div>
   </div>
 </div>
+<div class="row">
+  <div class="col-md-6">
+    <div class="block">
+      <div class="block-header block-header-default">
+        <h4 class="block-title">Statistik Sales Order</h4>
+      </div>
+      <div class="block-content block-content-full">
+      <canvas id="mataChart" class="chartjs" width="undefined" height="undefined"></canvas>
+      </div>
+    </div>
+  </div>
+  <div class="col-md-6">
+    <div class="block">
+      <div class="block-header block-header-default">
+        <h4 class="block-title">Statistik Payable</h4>
+      </div>
+      <div class="block-content block-content-full">
+      <canvas id="mataChart2" class="chartjs" width="undefined" height="undefined"></canvas>
+      </div>
+    </div>
+  </div>
+</div>
+
 @endsection
 
 @include('superuser.asset.plugin.select2')
 @include('superuser.asset.plugin.swal2')
 @include('superuser.asset.plugin.datatables')
+@include('superuser.asset.plugin.chart')
 
 @push('scripts')
+
 <script type="text/javascript">
   $(function(){
     $('#datatables').DataTable( {
@@ -201,5 +229,97 @@
 
     $('.js-select2').select2();
   })
+
+  var ctx = document.getElementById('mataChart').getContext('2d');
+  var myChart = new Chart(ctx, {
+    type: 'bar',
+    data: {
+        labels: <?php echo json_encode($label); ?>,
+        datasets: [{
+            label: 'Statistik Sales Order',
+            data: <?php echo json_encode($jumlah_so); ?>,
+            backgroundColor: [
+                'rgba(255, 99, 132, 0.2)',
+                'rgba(54, 162, 235, 0.2)',
+                'rgba(255, 206, 86, 0.2)',
+                'rgba(75, 192, 192, 0.2)',
+                'rgba(153, 102, 255, 0.2)',
+                'rgba(255, 159, 64, 0.2)'
+            ],
+            borderColor: [
+                'rgba(255, 99, 132, 1)',
+                'rgba(54, 162, 235, 1)',
+                'rgba(255, 206, 86, 1)',
+                'rgba(75, 192, 192, 1)',
+                'rgba(153, 102, 255, 1)',
+                'rgba(255, 159, 64, 1)'
+            ],
+        }, {
+          label: 'Statistik Pay',
+            data: <?php echo json_encode($jumlah_pay); ?>,
+            backgroundColor: [
+                'rgba(255, 99, 132, 0.2)',
+                'rgba(54, 162, 235, 0.2)',
+                'rgba(255, 206, 86, 0.2)',
+                'rgba(75, 192, 192, 0.2)',
+                'rgba(153, 102, 255, 0.2)',
+                'rgba(255, 159, 64, 0.2)'
+            ],
+            borderColor: [
+                'rgba(255, 99, 132, 1)',
+                'rgba(54, 162, 235, 1)',
+                'rgba(255, 206, 86, 1)',
+                'rgba(75, 192, 192, 1)',
+                'rgba(153, 102, 255, 1)',
+                'rgba(255, 159, 64, 1)'
+            ],
+        }
+      ]
+    },
+    options: {
+        scales: {
+            y: {
+                beginAtZero: true
+            }
+        }
+    }
+});
+
+  var ctx = document.getElementById('mataChart2').getContext('2d');
+  var myChart = new Chart(ctx, {
+    type: 'bar',
+    data: {
+        labels: <?php echo json_encode($label); ?>,
+        datasets: [{
+            label: 'Statistik Payable',
+            data: <?php echo json_encode($jumlah_pay); ?>,
+            backgroundColor: [
+                'rgba(255, 99, 132, 0.2)',
+                'rgba(54, 162, 235, 0.2)',
+                'rgba(255, 206, 86, 0.2)',
+                'rgba(75, 192, 192, 0.2)',
+                'rgba(153, 102, 255, 0.2)',
+                'rgba(255, 159, 64, 0.2)'
+            ],
+            borderColor: [
+                'rgba(255, 99, 132, 1)',
+                'rgba(54, 162, 235, 1)',
+                'rgba(255, 206, 86, 1)',
+                'rgba(75, 192, 192, 1)',
+                'rgba(153, 102, 255, 1)',
+                'rgba(255, 159, 64, 1)'
+            ],
+        }]
+    },
+    options: {
+        scales: {
+            y: {
+                beginAtZero: true
+            }
+        }
+    }
+});
 </script>
+
+
 @endpush

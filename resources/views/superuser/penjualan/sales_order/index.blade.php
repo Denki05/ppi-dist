@@ -187,6 +187,8 @@
           </table>
         </div>
       </div>
+
+      {{--<a href="{{ route('superuser.penjualan.sales_order.index_lanjutan') }}" class="btn btn-danger btn-sm btn-flat btn-delete" ><i class="mdi mdi-skip-forward"></i> SO Lanjutan</a>--}}
       
       <div class="row mb-30">
         <div class="col-12">

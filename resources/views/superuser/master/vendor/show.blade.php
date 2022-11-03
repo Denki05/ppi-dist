@@ -106,7 +106,7 @@
     </a>
   </div>
   <div class="block-content">
-    <table id="datatable" class="table table-striped table-vcenter table-responsive">
+    <table id="datatable" class="table table-hover">
       <thead>
         <tr>
           <th class="text-center">Transaction Date</th>

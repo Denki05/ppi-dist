@@ -1,153 +1,155 @@
 @extends('superuser.app')
 
 @section('content')
-<nav class="breadcrumb bg-white push">
+<!-- <nav class="breadcrumb bg-white push">
   <span class="breadcrumb-item">Master</span>
   <a class="breadcrumb-item" href="{{ route('superuser.master.customer.index') }}">Store</a>
-  <a class="breadcrumb-item" href="{{ route('superuser.master.customer.show', $customer->id) }}">{{ $customer->name }}</a>
-  <span class="breadcrumb-item">Member</span>
   <span class="breadcrumb-item active">Create</span>
-</nav>
+</nav> -->
 <div class="block">
-  <div class="block-header block-header-default">
-    <h3 class="block-title">Create Member</h3>
-  </div>
-  <div class="block-content">
-    <form class="ajax" data-action="{{ route('superuser.master.customer.other_address.store', $customer->id) }}" data-type="POST" enctype="multipart/form-data">
-    <div class="form-group row">
-        <label class="col-md-3 col-form-label text-right" for="name">Name <span class="text-danger">*</span></label>
-        <div class="col-md-7">
-          <input type="text" class="form-control" id="name" name="name">
+            <div class="block-conten" align="center">
+                <div class="col-md-10 col-md-offset-1">
+                	<form data-action="{{ route('superuser.master.customer.other_address.store', $customer->id) }}" data-type="POST" enctype="multipart/form-data" class="f1 ajax">
+                		<div class="f1-steps">
+                			<div class="f1-progress">
+                			    <div class="f1-progress-line" data-now-value="25" data-number-of-steps="4" style="width: 25%;"></div>
+                			</div>
+                            <div class="f1-step active">
+                                <div class="f1-step-icon"><i class="mdi mdi-account"></i></div>
+                                <p>Profile</p>
+                            </div>
+                			<div class="f1-step">
+                				<div class="f1-step-icon"><i class="mdi mdi-crosshairs-gps"></i></div>
+                				<p>Geo Tag</p>
+                			</div>
+                			<div class="f1-step">
+                				<div class="f1-step-icon"><i class="mdi mdi-currency-usd"></i></div>
+                				<p>Finance</p>
+                			</div>
+                      <div class="f1-step">
+                				<div class="f1-step-icon"><i class="mdi mdi-file-document-box"></i></div>
+                				<p>Document</p>
+                			</div>
+                		</div>
+                		<!-- step 1 -->
+                		<fieldset>
+                		    <h4>Data Profile</h4>
+                			      <div class="form-group">
+                			          <label for="name">Name<span class="text-danger">*</span></label>
+                                <input type="text" id="name" name="name" placeholder="Name Member" class="form-control">
+                            </div>
+                            <div class="form-group">
+                			          <label for="contact_person">Contact Person</label>
+                                <input type="text" id="contact_person" name="contact_person" placeholder="Contact Person" class="form-control">
+                            </div>
+                            <div class="form-group">
+                			          <label for="phone">Phone</label>
+                                <input type="number" id="phone" name="phone" placeholder="Phone" class="form-control">
+                            </div>
+                            <div class="form-group">
+                                <label for="address">Address<span class="text-danger">*</span></label>
+                                <input type="text" name="address" id="address" placeholder="Member Address" class="form-control">
+                            </div>
+                            <div class="form-group">
+                                <label>Image Store</label>
+                                <input type="file" id="image_store" name="image_store" data-max-file-size="2000" accept="image/png, image/jpeg">
+                            </div>
+                            <div class="f1-buttons">
+                              <a href="{{route('superuser.master.customer.index')}}" class="btn btn-warning  btn-md text-white"><i class="fa fa-arrow-left"></i> Back</a>
+                              <button type="button" class="btn btn-primary btn-next">Next <i class="fa fa-arrow-right"></i></button>
+                            </div>
+                        </fieldset>
+                        <!-- step 2 -->
+                        <fieldset>
+                            <h4>Data Geo Tag</h4><br>
+                            <div class="form-group row">
+                              <label>Area Detail</label>
+                                <select class="js-select2 form-control" id="provinsi" name="provinsi" style="width: 100%;">
+                                    <option>Select Provinsi</option>
+                                    @foreach ($provinces as $provinsi)
+                                    <option value="{{ $provinsi->prov_id }}">{{ $provinsi->prov_name }}</option>
+                                    @endforeach
+                                </select>
+                                <input type="hidden" name="text_provinsi">
+                            </div>
+                            <div class="form-group">
+                                <select class="js-select2 form-control" id="kota" name="kota" style="width: 100%;">
+                                    <option>Select Kota</option>
+                                </select>
+                                <input type="hidden" name="text_kota">
+                            </div>
+                            <div class="form-group">
+                                <select class="js-select2 form-control" id="kecamatan" name="kecamatan" style="width: 100%;">
+                                    <option>Select Kecamatan</option>
+                                </select>
+                                <input type="hidden" name="text_kecamatan">
+                            </div>
+                            <div class="form-group">
+                                <select class="js-select2 form-control" id="kelurahan" name="kelurahan" style="width: 100%;">
+                                    <option>Select Kelurahan</option>
+                                </select>
+                                <input type="hidden" name="text_kelurahan">
+                            </div>
+                            <div class="form-group">
+                                <select class="js-select2 form-control" id="zipcode" name="zipcode" style="width: 100%;">
+                                    <option>Select Zipcode</option>
+                                </select>
+                                <input type="hidden" name="text_zipcode">
+                            </div>
+                            
+                            <div class="form-group">
+                                <label for="gps_latitude">GPS Latitude</label>
+                                <input type="text" name="gps_latitude" id="gps_latitude" placeholder="Latitude" class="form-control">
+                            </div>
+                            <div class="form-group">
+                                <label for="gps_longitude">GPS Logitude</label>
+                                <input type="text" name="gps_longitude" id="gps_longitude" placeholder="Longitude" class="form-control">
+                            </div>
+                            <div class="f1-buttons">
+                                <button type="button" class="btn btn-warning btn-previous"><i class="fa fa-arrow-left"></i> Previous</button>
+                                <button type="button" class="btn btn-primary btn-next">Next <i class="fa fa-arrow-right"></i></button>
+                            </div>
+                        </fieldset>
+                        <!-- step 3 -->
+                        <fieldset>
+                            <h4>Data Finance</h4>
+                            <div class="form-group">
+                                <label>NPWP</label>
+                                <input type="number" class="form-control" id="npwp" name="npwp" min="0" value="0">
+                            </div>
+                            <div class="form-group">
+                                <label>KTP</label>
+                                <input type="number" class="form-control" id="ktp" name="ktp" min="0" value="0">
+                            </div>
+                            <div class="f1-buttons">
+                                <button type="button" class="btn btn-warning btn-previous"><i class="fa fa-arrow-left"></i> Previous</button>
+                                <button type="button" class="btn btn-primary btn-next">Next <i class="fa fa-arrow-right"></i></button>
+                            </div>
+                        </fieldset>
+                        <!-- step 4 -->
+                        <fieldset>
+                            <h4>Data Document</h4>
+                            <div class="form-group">
+                                <label>Image NPWP</label>
+                                <input type="file" id="image_npwp" name="image_npwp" data-max-file-size="2000" accept="image/png, image/jpeg">
+                            </div>
+                            <div class="form-group">
+                                <label>Image KTP</label>
+                                <input type="file" id="image_ktp" name="image_ktp" data-max-file-size="2000" accept="image/png, image/jpeg">
+                            </div>
+                            <div class="f1-buttons">
+                                <button type="button" class="btn btn-warning btn-previous"><i class="fa fa-arrow-left"></i> Previous</button>
+                                <button type="submit" class="btn btn-primary btn-submit"><i class="fa fa-save"></i> Submit</button>
+                            </div>
+                        </fieldset>
+                	</form>
+                </div>
+            </div>
         </div>
-      </div>
-      
-      <div class="form-group row">
-        <label class="col-md-3 col-form-label text-right" for="contact_person">Contact Person</label>
-        <div class="col-md-7">
-          <input type="text" class="form-control" id="contact_person" name="contact_person">
-        </div>
-      </div>
-      <div class="form-group row">
-        <label class="col-md-3 col-form-label text-right" for="npwp">NPWP</label>
-        <div class="col-md-7">
-          <input type="text" class="form-control" id="npwp" name="npwp">
-        </div>
-      </div>
-      <div class="form-group row">
-        <label class="col-md-3 col-form-label text-right" for="ktp">KTP</label>
-        <div class="col-md-7">
-          <input type="text" class="form-control" id="ktp" name="ktp">
-        </div>
-      </div>
-      <div class="form-group row">
-        <label class="col-md-3 col-form-label text-right" for="phone">Phone</label>
-        <div class="col-md-7">
-          <input type="text" class="form-control" id="phone" name="phone">
-        </div>
-      </div>
-      <!-- <div style="width: 100%" class="form-group row">
-        <iframe width="100%" height="600" frameborder="0" scrolling="no" marginheight="0" marginwidth="0" src="https://maps.google.com/maps?width=100%25&amp;height=600&amp;hl=en&amp;q=1%20Grafton%20Street,%20Dublin,%20Ireland+(My%20Business%20Name)&amp;t=&amp;z=14&amp;ie=UTF8&amp;iwloc=B&amp;output=embed"><a href="https://www.gps.ie/farm-gps/">gps for tractors</a></iframe>
-      </div> -->
-      <div class="form-group row">
-        <label class="col-md-3 col-form-label text-right" for="address">Address <span class="text-danger">*</span></label>
-        <div class="col-md-7">
-          <textarea class="form-control" id="address" name="address"></textarea>
-        </div>
-      </div>
-      <div class="form-group row">
-        <label class="col-md-3 col-form-label text-right">Map <span class="text-danger">*</span></label>
-        <div class="col-md-3" id="map" style="height:200px; width: 400px;"  >
-        </div>
-      </div>
-      <div class="form-group row">
-        <label class="col-md-3 col-form-label text-right">GPS Coordinate</label>
-        <div class="col-md-3">
-          <input type="text" class="form-control" id="gps_latitude" name="gps_latitude" placeholder="Latitude">
-        </div>
-        <div class="col-md-1"></div>
-        <div class="col-md-3">
-          <input type="text" class="form-control" id="gps_longitude" name="gps_longitude" placeholder="Longitude">
-        </div>
-      </div>
-      <div class="form-group row">
-        <label class="col-md-3 col-form-label text-right">Provinsi</label>
-        <div class="col-md-7">
-          <select class="js-select2 form-control" id="provinsi" name="provinsi" data-placeholder="Select Provinsi">
-            <option></option>
-            @foreach ($provinces as $provinsi)
-              <option value="{{ $provinsi->prov_id }}">{{ $provinsi->prov_name }}</option>
-            @endforeach
-          </select>
-          <input type="hidden" name="text_provinsi">
-        </div>
-      </div>
-      <div class="form-group row">
-        <label class="col-md-3 col-form-label text-right">Kota</label>
-        <div class="col-md-7">
-          <select class="js-select2 form-control" id="kota" name="kota" data-placeholder="Select Kota">
-            <option></option>
-          </select>
-          <input type="hidden" name="text_kota">
-        </div>
-      </div>
-      <div class="form-group row">
-        <label class="col-md-3 col-form-label text-right">Kecamatan</label>
-        <div class="col-md-7">
-          <select class="js-select2 form-control" id="kecamatan" name="kecamatan" data-placeholder="Select Kecamatan">
-            <option></option>
-          </select>
-          <input type="hidden" name="text_kecamatan">
-        </div>
-      </div>
-      <div class="form-group row">
-        <label class="col-md-3 col-form-label text-right">Kelurahan</label>
-        <div class="col-md-7">
-          <select class="js-select2 form-control" id="kelurahan" name="kelurahan" data-placeholder="Select Kelurahan">
-            <option></option>
-          </select>
-          <input type="hidden" name="text_kelurahan">
-        </div>
-      </div>
-      <div class="form-group row">
-        <label class="col-md-3 col-form-label text-right" for="zipcode">Zipcode</label>
-        <div class="col-md-7">
-          <input type="text" class="form-control" id="zipcode" name="zipcode">
-        </div>
-      </div>
-      <div class="form-group row">
-        <label class="col-md-3 col-form-label text-right">Image NPWP</label>
-        <div class="col-md-7">
-          <input type="file" id="image_npwp" name="image_ktp" data-max-file-size="2000" accept="image/png, image/jpeg">
-        </div>
-      </div>
-      <div class="form-group row">
-        <label class="col-md-3 col-form-label text-right">Image KTP</label>
-        <div class="col-md-7">
-          <input type="file" id="image_ktp" name="image_ktp" data-max-file-size="2000" accept="image/png, image/jpeg">
-        </div>
-      </div>
-      <div class="form-group row pt-30">
-        <div class="col-md-6">
-          <a href="{{ route('superuser.master.customer.index') }}">
-            <button type="button" class="btn bg-gd-cherry border-0 text-white">
-              <i class="fa fa-arrow-left mr-10"></i> Back
-            </button>
-          </a>
-        </div>
-        <div class="col-md-6 text-right">
-          <button type="submit" class="btn bg-gd-corporate border-0 text-white">
-            Submit <i class="fa fa-arrow-right ml-10"></i>
-          </button>
-        </div>
-      </div>
-    </form>
-  </div>
-</div>
-<div id="alert-block"></div>
 @endsection
 
-@include('superuser.asset.plugin.select2')
 @include('superuser.asset.plugin.fileinput')
+@include('superuser.asset.plugin.select2')
 
 @push('scripts')
 <script src="{{ asset('utility/superuser/js/form.js') }}"></script>
@@ -168,6 +170,20 @@
     });
 
     $('#image_ktp').fileinput({
+      theme: 'explorer-fa',
+      browseOnZoneClick: true,
+      showCancel: false,
+      showClose: false,
+      showUpload: false,
+      browseLabel: '',
+      removeLabel: '',
+      fileActionSettings: {
+        showDrag: false,
+        showRemove: false
+      },
+    });
+
+    $('#image_store').fileinput({
       theme: 'explorer-fa',
       browseOnZoneClick: true,
       showCancel: false,
@@ -284,36 +300,28 @@
         })
       })
     })
+
+    $(function () {
+      $('#category').on('change', function(){
+          let category_id = $('#category').val();
+
+          $.ajax({
+            type : 'POST',
+            url : '{{route('superuser.master.customer.getcustomertype')}}',
+            data : {category_id:category_id},
+            cache : false,
+
+            success: function(msg){
+              $('#type').html(msg);
+            },
+            error : function(data){
+              console.log('error:',data)
+            },
+          })
+        })
+    });
   })
 </script>
-<script>
-                    let map;
-                    function initMap() {
-                        map = new google.maps.Map(document.getElementById("map"), {
-                            center: { lat: -7.3020583, lng: 112.7851902 },
-                            zoom: 8,
-                            scrollwheel: true,
-                        });
-                        const uluru = { lat: -7.3020583, lng: 112.7851902 };
-                        let marker = new google.maps.Marker({
-                            position: uluru,
-                            map: map,
-                            draggable: true
-                        });
-                        google.maps.event.addListener(marker,'position_changed',
-                            function (){
-                                let lat = marker.position.lat()
-                                let lng = marker.position.lng()
-                                $('#gps_latitude').val(lat)
-                                $('#gps_longitude').val(lng)
-                            })
-                        google.maps.event.addListener(map,'click',
-                        function (event){
-                            pos = event.latLng
-                            marker.setPosition(pos)
-                        })
-                        
-                    }
-                </script>
-<script async defer src="https://maps.googleapis.com/maps/api/js?key=&callback=initMap" type="text/javascript"></script>
 @endpush
+
+

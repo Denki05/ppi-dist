@@ -23,6 +23,10 @@
     </a>
 
     <button type="button" class="btn btn-outline-info ml-10" data-toggle="modal" data-target="#modal-manage">Manage</button>
+    
+    {{--<a href="{{ route('superuser.master.vendor.create') }}">
+      <button type="button" class="btn btn-outline-primary min-width-125">Add Contact</button>
+    </a>--}}
   </div>
   <hr class="my-20">
   <div class="block-content block-content-full">

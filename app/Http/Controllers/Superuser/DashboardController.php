@@ -8,7 +8,7 @@ use App\Entities\Finance\Invoicing;
 use App\Entities\Master\Customer;
 use App\Entities\Setting\UserMenu;
 use Auth;
-
+use DB;
 
 class DashboardController extends Controller
 {
@@ -37,7 +37,15 @@ class DashboardController extends Controller
             }
         }
 
-    	$search = $request->input('search');
+		$label         = ["Januari","Februari","Maret","April","Mei","Juni","Juli","Agustus","September","Oktober","November","Desember"];
+        for($bulan=1;$bulan < 13;$bulan++){
+			$chartsales     = collect(DB::SELECT("SELECT count(id) AS jumlah from penjualan_so where month(created_at)='$bulan'"))->first();
+			$chartpay     = collect(DB::SELECT("SELECT count(id) AS jumlah from finance_payable where month(created_at)='$bulan'"))->first();
+        $jumlah_so[] = $chartsales->jumlah;
+        $jumlah_pay[] = $chartpay->jumlah;
+        }
+
+		$search = $request->input('search');
     	$customer_id = $request->input('customer_id');
     	$province = $request->input('province');
     	$invoice = Invoicing::where(function($query2) use($search){
@@ -75,7 +83,10 @@ class DashboardController extends Controller
     	$data =[
             'invoice' => $invoice,
             'customer' => $customer,
-            'is_see' => $is_see
+            'is_see' => $is_see,
+			'label' => $label,
+			'jumlah_so' => $jumlah_so,
+			'jumlah_pay' => $jumlah_pay,
         ];
         return view($this->view,$data);
     }

@@ -144,7 +144,7 @@
               <td style="width: 35% !important;"><strong>Alamat Kirim</strong></td>
               <td style="width: 2% !important;">:</td>
               <td style="width: 63% !important;">
-                <div style="word-wrap: break-word;">{{$result->customer_other_address->address ?? ''}}</div>
+                <div style="word-wrap: break-word;">{{$result->member->address ?? ''}}</div>
               </td>
             </tr>
             <tr>

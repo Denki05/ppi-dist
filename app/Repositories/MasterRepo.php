@@ -87,7 +87,7 @@ class MasterRepo
 
     public static function vendors()
     {
-        return Vendor::where('status', Vendor::STATUS['ACTIVE'])->orderBy('name')->get();
+        return Vendor::where('status', Vendor::STATUS['ACTIVE'])->where('type', Vendor::TYPE['Ekspedisi'])->orderBy('name')->get();
     }
 
     public static function questions()

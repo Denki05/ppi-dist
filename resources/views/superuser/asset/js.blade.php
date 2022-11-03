@@ -1,6 +1,7 @@
 <script src="{{ asset('superuser_assets/js/codebase.core.min.js') }}"></script>
 <script src="{{ asset('superuser_assets/js/codebase.app.min.js') }}"></script>
 
+
 <!-- Plus Admin -->
 <script src="{{ asset('superuser_assets/plus-admin/assets/vendors/js/vendor.bundle.base.js') }}"></script>
 <script src="{{ asset('superuser_assets/plus-admin/assets/vendors/chart.js/Chart.min.js') }}"></script>

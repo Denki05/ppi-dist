@@ -172,12 +172,12 @@
             </div>
           </div>
 
-          <!-- <div class="form-group row">
+          <div class="form-group row">
             <label class="col-6 col-md-3 col-form-label font-weight-bold">Detail NPWP</label>
             <div class="col-6 col-md-6 col-form-label">
             <textarea class="form-control" readonly rows="1">{{$result->customer->npwp ?? ''}}</textarea>
             </div>
-          </div> -->
+          </div>
 
           <div class="form-group row">
             <label class="col-6 col-md-3 col-form-label font-weight-bold">Cara Bayar</label>
