@@ -91,4 +91,9 @@ class Customer extends Model
     {
         return $this->hasMany('App\Entities\Master\CustomerSaldoLog');
     }
+
+    public function document()
+    {
+        return $this->hasMany(Dokumen::class);
+    }
 }

@@ -169,12 +169,24 @@
               <tr>
                 <td style="width: 35% !important;">Pelanggan</td>
                 <td style="width: 2% !important;">:</td>
-                <td style="width: 63% !important;">{{$result->do->customer->name ?? ''}}</td>
+                <td style="width: 63% !important;">
+                  @if($result->do->other_address == 0)
+                    {{$result->do->customer->name ?? ''}}
+                  @elseif($result->do->other_address == 1)
+                    {{$result->do->member->name ?? ''}}
+                  @endif
+                </td>
               </tr>
               <tr>
                 <td style="width: 35% !important;">Up</td>
                 <td style="width: 2% !important;">:</td>
-                <td style="width: 63% !important;">{{$result->do->customer->owner_name ?? ''}}</td>
+                <td style="width: 63% !important;">
+                  @if($result->do->other_address == 0)
+                    {{$result->do->customer->owner_name ?? ''}}
+                  @elseif($result->do->other_address == 1)
+                    {{$result->do->member->contact_person ?? ''}}
+                  @endif
+                </td>
               </tr>
             </tbody>
           </table>
@@ -185,7 +197,13 @@
               <tr>
                 <td style="width: 35% !important;">Telepon</td>
                 <td style="width: 2% !important;">:</td>
-                <td style="width: 63% !important;">{{$result->do->customer->phone ?? ''}}</td>
+                <td style="width: 63% !important;">
+                  @if($result->do->other_address == 0)
+                    {{$result->do->customer->phone ?? ''}}
+                  @elseif($result->do->other_address == 1)
+                    {{$result->do->member->phone ?? ''}}
+                  @endif
+                </td>
               </tr>
               <tr>
                 <td style="width: 35% !important;">Jenis</td>

@@ -2,12 +2,19 @@
 
 namespace App\Http\Controllers\Superuser\Master;
 
-use App\Entities\Master\Customer;
+use App\DataTables\Master\ContactTable;
 use App\Entities\Master\CustomerContact;
+use App\Entities\Master\Contact;
+use App\Entities\Master\Customer;
+use App\Entities\Master\CustomerOtherAddress;
+use App\Exports\Master\ContactExport;
+use App\Exports\Master\ContactImportTemplate;
 use App\Http\Controllers\Controller;
-use App\Repositories\MasterRepo;
-use Illuminate\Http\Request;
+use App\Imports\Master\ContactImport;
 use App\Entities\Setting\UserMenu;
+use DB;
+use Excel;
+use Illuminate\Http\Request;
 use Validator;
 use Auth;
 
@@ -29,7 +36,12 @@ class CustomerContactController extends Controller
             return $next($request);
         });
     }
-    public function manage($id)
+    public function json(Request $request, ContactTable $datatable)
+    {
+        return $datatable->build();
+    }
+
+    public function index()
     {
         // Access
         if(Auth::user()->is_superuser == 0){
@@ -37,14 +49,10 @@ class CustomerContactController extends Controller
                 return redirect()->route('superuser.index')->with('error','Anda tidak punya akses untuk membuka menu terkait');
             }
         }
-
-        $data['customer'] = Customer::findOrFail($id);
-        $data['contacts'] = MasterRepo::contacts();
-
-        return view('superuser.master.customer.contact', $data);
+        return view('superuser.master.customer_contact.index');
     }
 
-    public function add(Request $request, $id)
+    public function create()
     {
         // Access
         if(Auth::user()->is_superuser == 0){
@@ -53,49 +61,206 @@ class CustomerContactController extends Controller
             }
         }
 
-        $customer = Customer::findOrFail($id);
+        $data['customers'] = Customer::all();
+        $data['other_address'] = CustomerOtherAddress::all();
+        $data['contacts'] = Contact::all();
+
+        return view('superuser.master.customer_contact.create', $data);
+    }
+
+    public function store(Request $request)
+    {
+        if ($request->ajax()) {
+            $validator = Validator::make($request->all(), [
+                'customer' => 'required|integer',
+                'other_address' => 'required|integer',
+                'contact' => 'required|unique:master_customer_contacts,contact_id',
+            ]);
+
+            if ($validator->fails()) {
+                $response['notification'] = [
+                    'alert' => 'block',
+                    'type' => 'alert-danger',
+                    'header' => 'Error',
+                    'content' => $validator->errors()->all(),
+                ];
+  
+                return $this->response(400, $response);
+            }
+
+            if ($validator->passes()) {
+                DB::beginTransaction();
+
+                $customer_contact = new CustomerContact;
+                
+                $customer_contact->customer_id = $request->customer;
+                $customer_contact->customer_other_address_id = $request->other_address;
+                $customer_contact->contact_id = $request->contact;
+                $customer_contact->status = CustomerContact::STATUS['ACTIVE'];
+
+                if ($customer_contact->save()) {
+                    DB::commit();
+
+                    $response['notification'] = [
+                        'alert' => 'notify',
+                        'type' => 'success',
+                        'content' => 'Success',
+                    ];
+
+                    $response['redirect_to'] = route('superuser.master.customer.index');
+
+                    return $this->response(200, $response);
+                }
+            }
+        }
+    }
+
+    public function show($id)
+    {
+        // Access
+        if(Auth::user()->is_superuser == 0){
+            if(empty($this->access) || empty($this->access->user) || $this->access->can_read == 0){
+                return redirect()->route('superuser.index')->with('error','Anda tidak punya akses untuk membuka menu terkait');
+            }
+        }
+
+        $data['contact'] = Contact::findOrFail($id);
+
+        return view('superuser.master.contact.show', $data);
+    }
+
+    public function edit($id)
+    {
+        // Access
+        if(Auth::user()->is_superuser == 0){
+            if(empty($this->access) || empty($this->access->user) || $this->access->can_update == 0){
+                return redirect()->route('superuser.index')->with('error','Anda tidak punya akses untuk membuka menu terkait');
+            }
+        }
+
+        $data['contact'] = Contact::findOrFail($id);
+
+        return view('superuser.master.contact.edit', $data);
+    }
+
+    public function update(Request $request, $id)
+    {
+        if ($request->ajax()) {
+            $contact = Contact::find($id);
+
+            if ($contact == null) {
+                abort(404);
+            }
+
+            $validator = Validator::make($request->all(), [
+                'name' => 'required|string',
+                'phone' => 'required|string',
+                'email' => 'nullable|email',
+                'position' => 'nullable',
+                'dob' => 'nullable|date|date_format:d-m-Y',
+                'npwp' => 'nullable',
+                'ktp' => 'nullable',
+                'address' => 'nullable'
+            ]);
+
+            if ($validator->fails()) {
+                $response['notification'] = [
+                    'alert' => 'block',
+                    'type' => 'alert-danger',
+                    'header' => 'Error',
+                    'content' => $validator->errors()->all(),
+                ];
+  
+                return $this->response(400, $response);
+            }
+
+            if ($validator->passes()) {
+                DB::beginTransaction();
+
+                $contact->name = $request->name;
+                $contact->phone = $request->phone;
+                $contact->email = $request->email;
+                $contact->position = $request->position;
+                $contact->dob = ($request->dob != null) ? date('Y-m-d', strtotime($request->dob)) : null;
+                $contact->npwp = $request->npwp;
+                $contact->ktp = $request->ktp;
+                $contact->address = $request->address;
+
+                if ($contact->save()) {
+                    DB::commit();
+                    
+                    $response['notification'] = [
+                        'alert' => 'notify',
+                        'type' => 'success',
+                        'content' => 'Success',
+                    ];
+
+                    $response['redirect_to'] = route('superuser.master.contact.index');
+
+                    return $this->response(200, $response);
+                }
+            }
+        }
+    }
+
+    public function destroy(Request $request, $id)
+    {
+        // Access
+        if(Auth::user()->is_superuser == 0){
+            if(empty($this->access) || empty($this->access->user) || $this->access->can_delete == 0){
+                abort(405);
+            }
+        }
+
+        if ($request->ajax()) {
+            $contact = Contact::find($id);
+
+            if ($contact === null) {
+                abort(404);
+            }
+
+            $contact->status = Contact::STATUS['DELETED'];
+
+            if ($contact->save()) {
+                $response['redirect_to'] = '#datatable';
+                return $this->response(200, $response);
+            }
+        }
+    }
+
+    public function import_template()
+    {
+        $filename = 'master-contact-import-template.xlsx';
+        return Excel::download(new ContactImportTemplate, $filename);
+    }
+
+    public function import(Request $request)
+    {
+        // Access
+        if(Auth::user()->is_superuser == 0){
+            if(empty($this->access) || empty($this->access->user) || $this->access->can_create == 0){
+                return redirect()->route('superuser.index')->with('error','Anda tidak punya akses untuk membuka menu terkait');
+            }
+        }
 
         $validator = Validator::make($request->all(), [
-            'contact' => 'required',
+            'import_file' => 'required|file|mimes:xls,xlsx|max:2048',
         ]);
 
         if ($validator->fails()) {
             return redirect()->back()->withErrors($validator->errors()->all());
         }
 
-        $exists = CustomerContact::where([
-            'customer_id' => $customer->id,
-            'contact_id' => $request->contact,
-        ])->first();
+        if ($validator->passes()) {
+            Excel::import(new ContactImport, $request->import_file);
 
-        if ($exists) {
-            return redirect()->back()->withErrors(['Contact already exists']);
+            return redirect()->back();
         }
-
-        $contact = new CustomerContact;
-
-        $contact->customer_id = $customer->id;
-        $contact->contact_id = $request->contact;
-
-        $contact->save();
-        
-        return redirect()->back();
     }
 
-    public function remove($id, $contact_id)
+    public function export()
     {
-        // Access
-        if(Auth::user()->is_superuser == 0){
-            if(empty($this->access) || empty($this->access->user) || $this->access->can_delete == 0){
-                return redirect()->route('superuser.index')->with('error','Anda tidak punya akses untuk membuka menu terkait');
-            }
-        }
-
-        $customer = Customer::findOrFail($id);
-        $contact = CustomerContact::findOrFail($contact_id);
-
-        $contact->delete();
-
-        return redirect()->back();
+        $filename = 'master-contact-' . date('d-m-Y_H-i-s') . '.xlsx';
+        return Excel::download(new ContactExport, $filename);
     }
 }

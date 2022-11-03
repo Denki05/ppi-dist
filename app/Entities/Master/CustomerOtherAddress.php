@@ -53,4 +53,9 @@ class CustomerOtherAddress extends Model
     public function do(){
         return $this->hasMany('App\Entities\Penjualan\PackingOrder','customer_other_address_id');
     }
+    
+    public function customer_contact()
+    {
+        return $this->hasMany('App\Entities\Master\CustomerContact', 'customer_other_address_id');
+    }
 }

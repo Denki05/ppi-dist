@@ -422,7 +422,7 @@ class PackingOrderController extends Controller
         }
         $warehouse = Warehouse::all();
         $customer = Customer::all();
-        $ekspedisi = Ekspedisi::all();
+        $ekspedisi = Vendor::all();
         $data = [
             'warehouse' => $warehouse,
             'customer' => $customer,
@@ -646,6 +646,7 @@ class PackingOrderController extends Controller
                 $data = [
                     'customer_other_address_id' => (empty($post["customer_other_address_id"])) ? null : $post["customer_other_address_id"],
                     //'note' => trim(htmlentities($post["note"])),
+                    'other_address' => trim(htmlentities($post["other_address"])),
                     'idr_rate' => $idr_rate,
                     'status' => 2,
                     'updated_by' => Auth::id(),

@@ -45,6 +45,7 @@
                             <li><a href="{{ route('superuser.master.customer.index') }}" target="_blank">Store List</a></li>
                             <li><a href="{{ route('superuser.master.customer_category.index') }}" target="_blank">Store Category</a></li>
                             <li><a href="{{ route('superuser.master.customer_type.index') }}" target="_blank">Store Type</a></li>
+                            <!-- <li><a href="{{ route('superuser.master.customer_contact.index') }}" target="_blank">Contact</a></li> -->
                         </ul>
                     </li>
                     {{--<li class="dropdown">

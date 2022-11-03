@@ -44,6 +44,7 @@ class DokumenController extends Controller
 
         $data['customers'] = Customer::get(["id", "name"]);
         // $data['other_address'] = CustomerOtherAddress::all();
+        $data['cards'] = Dokumen::CARD;
         
         // dd($data);
         return view('superuser.master.dokumen.create', $data);

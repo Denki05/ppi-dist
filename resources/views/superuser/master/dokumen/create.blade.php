@@ -14,9 +14,9 @@
   <div class="block-content">
     <form class="ajax" data-action="{{ route('superuser.master.dokumen.store') }}" data-type="POST" enctype="multipart/form-data">
       <div class="form-group row">
-        <label class="col-md-3 col-form-label text-right" for="name">Name Card <span class="text-danger">*</span></label>
+        <label class="col-md-3 col-form-label text-right" for="name_person">Name on Card <span class="text-danger">*</span></label>
         <div class="col-md-7">
-          <input type="text" class="form-control" id="name" name="name">
+          <input type="text" class="form-control" id="name_person" name="name_person">
         </div>
       </div>
       <div class="form-group row">
@@ -44,25 +44,24 @@
         </div>
       </div>
       <div class="form-group row">
-        <label class="col-md-3 col-form-label text-right" for="document_type">Card Type</label>
+        <label class="col-md-3 col-form-label text-right" for="customer">Card Type <span class="text-danger">*</span></label>
         <div class="col-md-7">
-          <input type="text" class="form-control" id="document_type" name="document_type">
+          <select class="js-select2 form-control" id="document_type" name="document_type">
+            <option>Select Card Type</option>
+            @foreach($cards as $card)
+            <option value="{{ $card }}">{{ $card }}</option>
+            @endforeach
+          </select>
         </div>
       </div>
       <div class="form-group row">
         <label class="col-md-3 col-form-label text-right" for="document_number">Card Number</label>
         <div class="col-md-7">
-          <input type="number" class="form-control" id="document_number" name="document_number">
+          <input type="text" class="form-control" id="document_number" name="document_number">
         </div>
       </div>
       <div class="form-group row">
-        <label class="col-md-3 col-form-label text-right" for="name_person">Name </label>
-        <div class="col-md-7">
-          <input type="text" class="form-control" id="name_person" name="name_person">
-        </div>
-      </div>
-      <div class="form-group row">
-        <label class="col-md-3 col-form-label text-right" for="address">Address <br><span class="text-danger"><i>*Include Region</i></span></label>
+        <label class="col-md-3 col-form-label text-right" for="address">Address <br><span class="text-danger"><i>*Include Area</i></span></label>
         <div class="col-md-7">
           <input type="text" class="form-control" id="address" name="address">
         </div>

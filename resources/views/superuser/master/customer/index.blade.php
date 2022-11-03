@@ -26,9 +26,9 @@
 
     <!-- <button type="button" class="btn btn-outline-danger ml-10" onclick="deleteMultiple()">Delete Checked</button> -->
 
-    <!-- <a class="ml-10" href="{{ route('superuser.master.product.cetak') }}">
-      <button type="button" class="btn btn-outline-warning min-width-125">Print</button>
-    </a> -->
+    <a class="ml-10" href="{{ route('superuser.master.customer_contact.create') }}">
+      <button type="button" class="btn btn-outline-secondary min-width-125">Add Contact</button>
+    </a>
   </div>
   <div class="block-content block-content-full">
     <table id="customer-table" class="table table-striped">
@@ -89,14 +89,9 @@
                 </a>
                 <a href="{{ route('superuser.master.customer.other_address.create', [$row->id]) }}">
                     <button type="button" class="btn btn-sm btn-circle btn-alt-secondary" title="Add Member">
-                        <i class="mdi mdi-file-multiple"></i>
+                        <i class="mdi mdi-account-multiple-plus"></i>
                     </button>
                 </a>
-                <a href="{{ route('superuser.master.dokumen.create', [$row->id]) }}">
-                                                    <button type="button" class="btn btn-sm btn-circle btn-alt-danger" title="Add Document">
-                                                        <i class="mdi mdi-account-card-details"></i>
-                                                    </button>
-                                                </a>
                 
               @elseif($row->status == $row::STATUS['DELETED'])
                 <a href="{{ route('superuser.master.customer.show', $row->id) }}">
@@ -116,6 +111,7 @@
                                 <th width="10%">Member</th>
                                 <th width="10%">Location</th>
                                 <th width="5%">Action</th>
+                                <th width="5%">Other Action</tg>
                             </tr>
 
                             <tbody>
@@ -133,11 +129,20 @@
                                                         <i class="fa fa-eye"></i>
                                                     </button>
                                                 </a>
+                                                <a href="{{ route('superuser.master.customer_other_address.edit', $index->id) }}">
+                                                    <button type="button" class="btn btn-sm btn-circle btn-alt-secondary" title="Edit">
+                                                        <i class="mdi mdi-lead-pencil"></i>
+                                                    </button>
+                                                </a>
                                                 <a href="javascript:deleteConfirmation('{{ route('superuser.master.customer.other_address.destroy', [$row->id, $index->id]) }}')">
                                                     <button type="button" class="btn btn-sm btn-circle btn-alt-danger" title="Delete">
                                                         <i class="fa fa-times"></i>
                                                     </button>
                                                 </a>
+                                            </td>
+                                            @endif  
+                                            @if ($index->status != $index::STATUS['DELETED'] AND $row->status != $row::STATUS['DELETED'])
+                                            <td>
                                                 <a href="{{ route('superuser.master.dokumen.create', [$index->id]) }}">
                                                     <button type="button" class="btn btn-sm btn-circle btn-alt-danger" title="Add Document">
                                                         <i class="mdi mdi-account-card-details"></i>

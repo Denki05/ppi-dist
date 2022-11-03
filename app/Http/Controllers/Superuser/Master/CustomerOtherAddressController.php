@@ -198,7 +198,7 @@ class CustomerOtherAddressController extends Controller
         return view('superuser.master.customer_other_address.show', $data);
     }
 
-    public function edit($id, $address_id)
+    public function edit($address_id)
     {
         // Access
         if(Auth::user()->is_superuser == 0){
@@ -207,14 +207,14 @@ class CustomerOtherAddressController extends Controller
             }
         }
 
-        $data['customer'] = Customer::findOrFail($id);
+        // $data['customer'] = Customer::findOrFail($id);
         $data['other_address'] = CustomerOtherAddress::findOrFail($address_id);
         $data['provinces'] = Province::all();
 
         return view('superuser.master.customer_other_address.edit', $data);
     }
     
-    public function update(Request $request, $id, $address_id)
+    public function update(Request $request, $address_id)
     {
         if ($request->ajax()) {
             $validator = Validator::make($request->all(), [
@@ -249,15 +249,15 @@ class CustomerOtherAddressController extends Controller
             }
 
             if ($validator->passes()) {
-                $customer = Customer::find($id);
+                // $customer = Customer::find($id);
                 $other_address = CustomerOtherAddress::find($address_id);
 
-                if ($customer == null OR $other_address == null) {
+                if ($other_address == null) {
                     abort(404);
                 }
 
                 $other_address->name = $request->name;
-                $other_address->customer_id = $request->customer;
+                $other_address->customer_id = $other_address->customer_id;
                 $other_address->contact_person = $request->contact_person;
                 $other_address->npwp = $request->npwp;
                 $other_address->ktp = $request->ktp;
@@ -302,7 +302,7 @@ class CustomerOtherAddressController extends Controller
                         'content' => 'Success',
                     ];
 
-                    $response['redirect_to'] = route('superuser.master.customer.index', $id);
+                    $response['redirect_to'] = route('superuser.master.customer.index');
 
                     return $this->response(200, $response);
                 }

@@ -204,4 +204,11 @@ Route::group([
         Route::post('/getzipcode', 'CustomerOtherAddressController@getzipcode')->name('getzipcode');
     });
     Route::resource('customer_other_address', 'CustomerOtherAddressController');
+
+    Route::group(['as' => 'customer_contact.', 'prefix' => '/customer_contact'], function () {
+        Route::get('/import_template', 'CustomerContactController@import_template')->name('import_template');
+        Route::post('/import', 'CustomerContactController@import')->name('import');
+        Route::get('/export', 'CustomerContactController@export')->name('export');
+    });
+    Route::resource('customer_contact', 'CustomerContactController');
 });
