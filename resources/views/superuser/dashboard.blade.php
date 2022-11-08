@@ -193,16 +193,16 @@
       </div>
     </div>
   </div>
-  <div class="col-md-6">
+  {{--<div class="col-md-6">
     <div class="block">
       <div class="block-header block-header-default">
-        <h4 class="block-title">Statistik Payable</h4>
+        <h4 class="block-title">Statistik Brand</h4>
       </div>
       <div class="block-content block-content-full">
       <canvas id="mataChart2" class="chartjs" width="undefined" height="undefined"></canvas>
       </div>
     </div>
-  </div>
+  </div>--}}
 </div>
 
 @endsection
@@ -216,16 +216,8 @@
 
 <script type="text/javascript">
   $(function(){
-    $('#datatables').DataTable( {
-        "paging":   true,
-        "ordering": true,
-        "info":     false,
-        "searching" : false,
-        "columnDefs": [{
-          "targets": 0,
-          "orderable": false
-        }]
-      });
+    $('#datatables').dataTable( {
+    });
 
     $('.js-select2').select2();
   })
@@ -238,25 +230,6 @@
         datasets: [{
             label: 'Statistik Sales Order',
             data: <?php echo json_encode($jumlah_so); ?>,
-            backgroundColor: [
-                'rgba(255, 99, 132, 0.2)',
-                'rgba(54, 162, 235, 0.2)',
-                'rgba(255, 206, 86, 0.2)',
-                'rgba(75, 192, 192, 0.2)',
-                'rgba(153, 102, 255, 0.2)',
-                'rgba(255, 159, 64, 0.2)'
-            ],
-            borderColor: [
-                'rgba(255, 99, 132, 1)',
-                'rgba(54, 162, 235, 1)',
-                'rgba(255, 206, 86, 1)',
-                'rgba(75, 192, 192, 1)',
-                'rgba(153, 102, 255, 1)',
-                'rgba(255, 159, 64, 1)'
-            ],
-        }, {
-          label: 'Statistik Pay',
-            data: <?php echo json_encode($jumlah_pay); ?>,
             backgroundColor: [
                 'rgba(255, 99, 132, 0.2)',
                 'rgba(54, 162, 235, 0.2)',
@@ -287,11 +260,11 @@
 
   var ctx = document.getElementById('mataChart2').getContext('2d');
   var myChart = new Chart(ctx, {
-    type: 'bar',
+    type: 'line',
     data: {
         labels: <?php echo json_encode($label); ?>,
         datasets: [{
-            label: 'Statistik Payable',
+            label: 'Statistik Brand Order',
             data: <?php echo json_encode($jumlah_pay); ?>,
             backgroundColor: [
                 'rgba(255, 99, 132, 0.2)',

@@ -39,8 +39,8 @@ class DashboardController extends Controller
 
 		$label         = ["Januari","Februari","Maret","April","Mei","Juni","Juli","Agustus","September","Oktober","November","Desember"];
         for($bulan=1;$bulan < 13;$bulan++){
-			$chartsales     = collect(DB::SELECT("SELECT count(id) AS jumlah from penjualan_so where month(created_at)='$bulan'"))->first();
-			$chartpay     = collect(DB::SELECT("SELECT count(id) AS jumlah from finance_payable where month(created_at)='$bulan'"))->first();
+			$chartsales     = collect(DB::SELECT("SELECT count(id) AS jumlah from penjualan_so where month(created_at)='$bulan' AND penjualan_so.created_at BETWEEN '2022-01-01' AND '2022-12-31'"))->first();
+			$chartpay     = collect(DB::SELECT("SELECT sum(prev_account_receivable) AS jumlah from finance_payable_detail where month(created_at)='$bulan'"))->first();
         $jumlah_so[] = $chartsales->jumlah;
         $jumlah_pay[] = $chartpay->jumlah;
         }

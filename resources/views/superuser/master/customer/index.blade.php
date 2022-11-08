@@ -92,6 +92,12 @@
                         <i class="mdi mdi-account-multiple-plus"></i>
                     </button>
                 </a>
+
+                <a href="{{ route('superuser.master.dokumen.create') }}">
+                                                    <button type="button" class="btn btn-sm btn-circle btn-alt-danger" title="Add Document">
+                                                        <i class="mdi mdi-account-card-details"></i>
+                                                    </button>
+                                                </a>
                 
               @elseif($row->status == $row::STATUS['DELETED'])
                 <a href="{{ route('superuser.master.customer.show', $row->id) }}">
