@@ -51,7 +51,11 @@
                           </div>
                           <div class="form-group">
                             <label for="alias">Alias</label>
-                            <input type="text" id="alias" name="alias" placeholder="Alias" class="form-control">
+                            <input type="text" id="alias" name="alias" placeholder="Alias Name" class="form-control">
+                          </div>
+                          <div class="form-group">
+                            <label for="alias">Url</label>
+                            <input type="text" id="url" name="url" placeholder="Url Fragrantica" class="form-control">
                           </div>
                           <div class="form-group">
                             <label>Description</label>

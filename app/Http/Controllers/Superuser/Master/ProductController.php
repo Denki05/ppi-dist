@@ -138,6 +138,7 @@ class ProductController extends Controller
                 $product->default_unit_id = $request->default_unit;
                 $product->ratio = $request->ratio;
                 $product->default_warehouse_id = $request->default_warehouse;
+                $product->url = $request->url;
 
                 if (!empty($request->file('image'))) {
                     $product->image = UploadMedia::image($request->file('image'), Product::$directory_image);
@@ -221,7 +222,7 @@ class ProductController extends Controller
                 'name' => 'required|string',
                 'material_code' => 'required|string',
                 'material_name' => 'required|string',
-                'alias' => 'required|string',
+                // 'alias' => 'required|string',
                 'buying_price' => 'nullable|numeric|min:0',
                 'selling_price' => 'nullable|numeric|min:0',
                 'description' => 'nullable|string',
@@ -229,7 +230,7 @@ class ProductController extends Controller
 
                 'default_quantity' => 'required|numeric',
                 'default_unit' => 'required|integer',
-                'ratio' => 'required|string',
+                // 'ratio' => 'required|string',
                 'default_warehouse' => 'required|integer',
 
                 'image' => 'nullable|image|mimes:jpeg,png,jpg|max:2048',
@@ -269,6 +270,7 @@ class ProductController extends Controller
                 $product->ratio = $request->ratio;
                 $product->default_unit_id = $request->default_unit;
                 $product->default_warehouse_id = $request->default_warehouse;
+                $product->url = $request->url;
 
                 if (!empty($request->file('image'))) {
                     if (is_file_exists(Product::$directory_image.$product->image)) {
