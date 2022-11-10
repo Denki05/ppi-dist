@@ -35,7 +35,7 @@
     <div id="myTabContent" class="tab-content">
       <div id="profile" role="tabpanel" aria-labelledby="profile-tab" class="tab-pane fade px-4 py-5 show active">
         <div class="media align-items-center py-3 mb-3">
-          <img src="{{ $customer->img_store }}" alt="" class="d-block ui-w-100 rounded-circle">
+          <img src="{{ $customer->img_store }} ?? " alt="" class="d-block ui-w-100 rounded-circle">
           <div class="media-body ml-4">
             <h5 class="font-weight-bold mb-0">{{ $customer->name }} <span class="text-muted font-weight-normal">@ {{ $customer->code }}</span></h4>
             <div class="text-muted mb-2">ID: {{ $customer->id }}</div>

@@ -79,11 +79,12 @@ class ProductTable extends Table
                             <i class=\"mdi mdi-lead-pencil\"></i>
                         </button>
                     </a>
-                    <a href=\"{$destroy}\">
-                        <button type=\"button\" class=\"btn btn-sm btn-circle btn-alt-secondary\" title=\"Destroy\">
-                            <i class=\"mdi mdi-delete\"></i>
-                        </button>
-                    </a>
+                    
+                    <a href=\"javascript:deleteConfirmation('{$destroy}')\">
+                    <button type=\"button\" class=\"btn btn-sm btn-circle btn-alt-danger\" title=\"Delete\">
+                        <i class=\"mdi mdi-delete\"></i>
+                    </button>
+                </a>
                 ";
             }
 

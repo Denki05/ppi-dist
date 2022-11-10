@@ -163,7 +163,7 @@
                         <fieldset>
                             <h4>Product Image</h4>
                             <div class="form-group">
-                                <label>Image NPWP
+                                <label>Image
                                   <i class="mdi mdi-comment-question-outline" data-toggle="popover" data-placement="left" title="Image" data-content="Standard / small image quality. (For Apps, etc)"></i>
                                 </label>
                                 <input type="file" id="image" name="image" data-max-file-size="2000" accept="image/png, image/jpeg">

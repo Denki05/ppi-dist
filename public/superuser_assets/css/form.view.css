@@ -33,3 +33,23 @@ body{
 .text-xlarge {
     font-size: 170% !important;
 }
+
+.accord-bar {
+    border-bottom-right-radius: .5rem;
+    border-top-right-radius: .2rem .3rem;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.cell {
+    flex: 0 0 auto;
+    min-height: 0;
+    min-width: 0;
+    width: 100%;
+}
+
+.accord-box {
+    margin: auto;
+    max-width: 70%;   
+}
