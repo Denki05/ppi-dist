@@ -146,22 +146,13 @@
         <div class="col-12 product-list">
           <h5>Select Product</h5>
 
-          <div class="row">
-            <!-- <div class="col-3">Product Category</div> -->
+          <div class="row"> 
             <div class="col-3">Product</div>
             <div class="col-1">Qty</div>
             <div class="col-3">Packaging</div>
           </div>
 
           <div class="row mt-10 product-row">
-            <!-- <div class="col-3">
-              <select class="form-control js-select2 select-category" data-index="0">
-                <option value="">==Select product category==</option>
-                @foreach($product_category as $index => $row)
-                  <option value="{{$row->id}}">{{$row->name}}</option>
-                @endforeach
-              </select>
-            </div> -->
             <div class="col-3">
               <select class="form-control js-select2 select-product" name="product_id[]" data-index="0">
                 <option value="">==Select product==</option>
