@@ -1,5 +1,7 @@
 <script src="{{ asset('superuser_assets/js/codebase.core.min.js') }}"></script>
 <script src="{{ asset('superuser_assets/js/codebase.app.min.js') }}"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-slider/11.0.2/bootstrap-slider.min.js" integrity="sha512-f0VlzJbcEB6KiW8ZVtL+5HWPDyW1+nJEjguZ5IVnSQkvZbwBt2RfCBY0CBO1PsMAqxxrG4Di6TfsCPP3ZRwKpA==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+
 
 
 <!-- Plus Admin -->

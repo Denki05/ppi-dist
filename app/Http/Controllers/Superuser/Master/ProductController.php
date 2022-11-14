@@ -7,6 +7,7 @@ use App\Entities\Master\Product;
 use App\Entities\Master\ProductCategory;
 use App\Entities\Master\ProductType;
 use App\Entities\Master\SubBrandReference;
+use App\Entities\Master\Fragrantica;
 use App\Exports\Master\ProductExport;
 use App\Exports\Master\ProductImportTemplate;
 use App\Helper\UploadMedia;
@@ -72,6 +73,7 @@ class ProductController extends Controller
         $data['units'] = MasterRepo::units();
         $data['warehouses'] = MasterRepo::warehouses();
         $data['product_notes'] = Product::NOTE;
+        $data['fragrantica'] = Fragrantica::all();
 
         return view('superuser.master.product.create', $data);
     }
@@ -152,6 +154,16 @@ class ProductController extends Controller
                 $product->status = Product::STATUS['ACTIVE'];
 
                 if ($product->save()) {
+                        $frag = new Fragrantica();
+
+                        $frag->product_id = $product->id;
+                        $frag->brand_reference_id = $product->brand_reference_id;
+
+                        $frag->parfume_scent = $request->parfume_scent;
+                        $frag->scent_range = $request->scent_range;
+
+                        $frag->save();
+
                     DB::commit();
 
                     $response['notification'] = [

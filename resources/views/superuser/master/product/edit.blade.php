@@ -19,16 +19,16 @@
                         <p>Details</p>
                       </div>
                 			<div class="f1-step">
-                				<div class="f1-step-icon"><i class="mdi mdi-file-account"></i></div>
-                				<p>Data</p>
+                				<div class="f1-step-icon"><i class="mdi mdi-home"></i></div>
+                				<p>Warehouse</p>
                 			</div>
                 			<div class="f1-step">
-                				<div class="f1-step-icon"><i class="mdi mdi-shopping"></i></div>
+                				<div class="f1-step-icon"><i class="mdi mdi-source-branch"></i></div>
                 				<p>Brand</p>
                 			</div>
                       <div class="f1-step">
-                				<div class="f1-step-icon"><i class="mdi mdi-image"></i></div>
-                				<p>Document Image</p>
+                				<div class="f1-step-icon"><i class="mdi mdi-note-multiple"></i></div>
+                				<p>Fragrantica</p>
                 			</div>
                 		</div>
                 		<!-- step 1 -->
@@ -55,10 +55,6 @@
                             <input type="text" id="alias" name="alias" placeholder="Alias Name" class="form-control" value="{{ $product->alias }}">
                           </div>
                           <div class="form-group">
-                            <label for="alias">Url</label>
-                            <input type="text" id="url" name="url" placeholder="Url Fragrantica" class="form-control" value="{{ $product->url }}">
-                          </div>
-                          <div class="form-group">
                             <label>Description</label>
                             <textarea class="form-control" id="description" name="description" placeholder="Description" value="{{ $product->description }}"></textarea>
                           </div>
@@ -71,13 +67,25 @@
                               @endforeach
                             </select>
                           </div>
+                          <div class="form-group">
+                                <label>Image Product
+                                  <i class="mdi mdi-comment-question-outline" data-toggle="popover" data-placement="left" title="Image" data-content="Standard / small image quality. (For Apps, etc)"></i>
+                                </label>
+                                <input type="file" id="image" name="image" data-max-file-size="2000" accept="image/png, image/jpeg" data-src="{{ $product->image_url }}">
+                            </div>
+                            <div class="form-group">
+                                <label>Image HD
+                                  <i class="mdi mdi-comment-question-outline" data-toggle="popover" data-placement="left" title="Image HD" data-content="Better image quality. (For Printing, etc)"></i>
+                                </label>
+                                <input type="file" id="image_hd" name="image_hd" data-max-file-size="2000" accept="image/png, image/jpeg" data-src="{{ $product->image_hd_url }}">
+                            </div>
                           <div class="f1-buttons">
                             <button type="button" class="btn btn-primary btn-next">Next <i class="fa fa-arrow-right"></i></button>
                           </div>
                         </fieldset>
                         <!-- step 2 -->
                         <fieldset>
-                            <h4>product Data</h4>
+                            <h4>Warehouse</h4>
                             <div class="form-group">
                               <label for="buying_price">Buying Price</label>
                               <input type="number" class="form-control" id="buying_price" name="buying_price" min="0" value="{{ $product->buying_price }}" step="0.0001">
@@ -162,18 +170,10 @@
                         </fieldset>
                         <!-- step 4 -->
                         <fieldset>
-                            <h4>Product Image</h4>
+                            <h4>Fragrantica Detail</h4>
                             <div class="form-group">
-                                <label>Image NPWP
-                                  <i class="mdi mdi-comment-question-outline" data-toggle="popover" data-placement="left" title="Image" data-content="Standard / small image quality. (For Apps, etc)"></i>
-                                </label>
-                                <input type="file" id="image" name="image" data-max-file-size="2000" accept="image/png, image/jpeg" data-src="{{ $product->image_url }}">
-                            </div>
-                            <div class="form-group">
-                                <label>Image HD
-                                  <i class="mdi mdi-comment-question-outline" data-toggle="popover" data-placement="left" title="Image HD" data-content="Better image quality. (For Printing, etc)"></i>
-                                </label>
-                                <input type="file" id="image_hd" name="image_hd" data-max-file-size="2000" accept="image/png, image/jpeg" data-src="{{ $product->image_hd_url }}">
+                              <label for="alias">Url</label>
+                              <input type="text" id="url" name="url" placeholder="Url Fragrantica" class="form-control" value="{{ $product->url }}">
                             </div>
                             <div class="f1-buttons">
                                 <button type="button" class="btn btn-warning btn-previous"><i class="fa fa-arrow-left"></i> Previous</button>

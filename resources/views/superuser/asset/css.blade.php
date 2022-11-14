@@ -9,6 +9,8 @@
 <link rel="stylesheet" href="{{ asset('superuser_assets/css/nav.menu.css') }}">
 <link rel="stylesheet" href="{{ asset('superuser_assets/summernote/summernote.css') }}">
 <link rel="stylesheet" href="{{ asset('superuser_assets/css/login.css') }}">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-slider/11.0.2/css/bootstrap-slider.min.css" integrity="sha512-3q8fi8M0VS+X/3n64Ndpp6Bit7oXSiyCnzmlx6IDBLGlY5euFySyJ46RUlqIVs0DPCGOypqP8IRk/EyPvU28mQ==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-slider/11.0.2/css/bootstrap-slider.css" integrity="sha512-SZgE3m1he0aEF3tIxxnz/3mXu/u/wlMNxQSnE0Cni9j/O8Gs+TjM9tm1NX34nRQ7GiLwUEzwuE3Wv2FLz2667w==" crossorigin="anonymous" referrerpolicy="no-referrer" />
 
 <!-- plus-admin -->
 <link rel="stylesheet" href="{{ asset('superuser_assets/plus-admin/assets/vendors/mdi/css/materialdesignicons.min.css') }}">

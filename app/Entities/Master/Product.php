@@ -112,4 +112,9 @@ class Product extends Model
     public function so_item(){
         return $this->hasMany('App\Entities\Penjualan\SalesOrderItem','product_id');
     }
+
+    public function fragrantica()
+    {
+        return $this->belongsTo('App\Entities\Master\Fragrantica');
+    }
 }
