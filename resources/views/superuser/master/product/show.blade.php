@@ -26,7 +26,8 @@
         <div class="media align-items-center py-3 mb-3">
           <img src="{{$product->image_url ?? img_holder() }}" class="d-block ui-w-100 rounded-circle" alt=""> 
           <div class="media-body ml-4">
-            <h5 class="font-weight-bold mb-0">{{ $product->name }} <span class="text-muted font-weight-normal">@ {{ $product->code }}</span></h4>
+            <h3 class="font-weight-bold mb-0">Name : {{ $product->name }}</h3>
+            <h5 class="font-weight-bold mb-0"><span class="text-muted font-weight-normal">Code : {{ $product->code }} </span></h5>
             <div class="text-muted mb-2">ID: {{ $product->id }}</div>
             <a href="{{ route('superuser.master.product.edit', $product->id) }}" class="btn btn-primary btn-sm" target="_blank">Edit</a>&nbsp;
               <a href="javascript:deleteConfirmation('{{ route('superuser.master.product.destroy', $product->id) }}', true)" class="btn btn-danger btn-sm">Delete</a>&nbsp;
@@ -49,6 +50,20 @@
                   <td><b>:</b></td>
                   <td>
                       {{$product->material_name ?? '-'}}
+                  </td>
+                </tr>
+                <tr>
+                  <td>Ratio</td>
+                  <td><b>:</b></td>
+                  <td>
+                      {{$product->ratio ?? '-'}}
+                  </td>
+                </tr>
+                <tr>
+                  <td>Alias</td>
+                  <td><b>:</b></td>
+                  <td>
+                      {{$product->alias ?? '-'}}
                   </td>
                 </tr>
                 <tr>
