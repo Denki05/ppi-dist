@@ -201,6 +201,7 @@
                                     <th class="text-center">Counter</th>
                                     <th class="text-center">Parfume Scent</th>
                                     <th class="text-center">Range Scent</th>
+                                    <th class="text-center">Color Scent</th>
                                     <th class="text-center">Action</th>
                                   </tr>
                                 </thead>
@@ -273,6 +274,7 @@
           {name: 'counter', "visible": false},
           {name: 'parfume_scent', orderable: false, width: "25%"},
           {name: 'scent_range', orderable: false, searcable: false},
+          {name: 'color_scent', orderable: false, searcable: false},
           {name: 'action', orderable: false, searcable: false, width: "5%"}
         ],
         'order' : [[0,'desc']]
@@ -287,6 +289,7 @@
                     counter,
                     '<input class="form-control" id="parfume_scent['+counter+']" name="parfume_scent[]" data-placeholder="" style="width:100%" required>',
                     '<input type="number" class="form-control" name="scent_range[]" required>',
+                    '<input type="color" class="form-control" name="color_scent[]">',
                     '<a href="#" class="row-delete"><button type="button" class="btn btn-sm btn-circle btn-alt-danger" title="Delete"><i class="fa fa-trash"></i></button></a>'
                   ]).draw( false );
                   // $('.js-select2').select2()

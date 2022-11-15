@@ -12,14 +12,14 @@ class Fragrantica extends Model
     // protected $appends = ['image_url', 'image_hd_url'];s
     protected $fillable = [
                         'product_id', 'brand_reference_id', 
-                        'parfume_scent', 'scent_range'
+                        'parfume_scent', 'scent_range', 'color_scent'
                     ];
 
     protected $table = 'master_product_fragrantica';
 
     public function product()
     {
-        return $this->hasOne('App\Entities\Master\Product');
+        return $this->belongsTo('App\Entities\Master\Product');
     }
 
     public function brand_reference()

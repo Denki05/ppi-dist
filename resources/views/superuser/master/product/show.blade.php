@@ -195,22 +195,14 @@
                   </a>
                   <div class="cell accord-box"><b>main accords</b></div>
                   <div class="cell accord-box">
-                    <div class="accord-bar" style="color: rgb(255, 255, 255); background: rgb(119, 68, 20); opacity: 1; width: 75%; text-align: center; opacity: 1;">woody</div>
-                  </div>
-                  <div class="cell accord-box">
-                    <div class="accord-bar" style="color: rgb(255, 255, 255); background: rgb(60, 179, 113); opacity: 1; width: 55%; text-align: center;">green</div>
-                  </div>
-                  <div class="cell accord-box">
-                    <div class="accord-bar" style="color: rgb(255, 255, 255); background: rgb(51, 255, 227); opacity: 1; width: 52%; text-align: center;">fresh</div>
-                  </div>
-                  <div class="cell accord-box">
-                    <div class="accord-bar" style="color: rgb(255, 255, 255); background: rgb(247, 255, 128); opacity: 1; width: 48%; text-align: center;">citrus</div>
-                  </div>
-                  <div class="cell accord-box">
-                    <div class="accord-bar" style="color: rgb(255, 255, 255); background: rgb(180, 229, 208); opacity: 1; width: 48%; text-align: center;">aromatic</div>
+                    <?php $frag = DB::table('master_product_fragrantica')->where('product_id', $product->id)->orderby('scent_range', 'DESC')->get(); ?>
+                    @foreach($frag as $row)
+                    <div class="accord-bar" style="color: rgb(255, 255, 255); background: {{$row->color_scent}}; opacity: 1; width: {{$row->scent_range}}%; text-align: center; opacity: 1;">{{$row->parfume_scent}}</div>
+                    @endforeach
                   </div>
                   <br>
-                  <p>Alpha by <b>HMNS</b> is a fragrance for women and men. This is a new fragrance. Alpha was launched in 2019. The nose behind this fragrance is Agil Usman. Top notes are Citruses and Grass; middle notes are Green Tea and Woodsy Notes; base notes are Cedar and Vetiver. </p>
+                  <p>{{$product->description ?? '-'}}</p>
+                  <!-- <p>Alpha by <b>HMNS</b> is a fragrance for women and men. This is a new fragrance. Alpha was launched in 2019. The nose behind this fragrance is Agil Usman. Top notes are Citruses and Grass; middle notes are Green Tea and Woodsy Notes; base notes are Cedar and Vetiver. </p> -->
                 </div>
               </div>
             </div>

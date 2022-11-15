@@ -113,8 +113,8 @@ class Product extends Model
         return $this->hasMany('App\Entities\Penjualan\SalesOrderItem','product_id');
     }
 
-    public function fragrantica()
+    public function frag()
     {
-        return $this->belongsTo('App\Entities\Master\Fragrantica');
+        return $this->hasMany('App\Entities\Master\Fragrantica');
     }
 }

@@ -163,6 +163,7 @@ class ProductController extends Controller
                                 $frag->brand_reference_id = $product->brand_reference_id;
                                 $frag->parfume_scent = $request->parfume_scent[$key];
                                 $frag->scent_range = $request->scent_range[$key];
+                                $frag->color_scent = $request->color_scent[$key];
                                 $frag->save();
                             }
                         }
@@ -220,6 +221,7 @@ class ProductController extends Controller
         }
 
         $data['product'] = Product::findOrFail($id);
+        // $data['frag'] = Fragrantica::all();
 
         return view('superuser.master.product.show', $data);
     }
