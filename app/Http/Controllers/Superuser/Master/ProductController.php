@@ -154,16 +154,22 @@ class ProductController extends Controller
                 $product->status = Product::STATUS['ACTIVE'];
 
                 if ($product->save()) {
-                        $frag = new Fragrantica();
+                    if($request->parfume_scent) {
+                        foreach($request->parfume_scent as $key => $value){
+                            if($request->parfume_scent[$key]) {
 
-                        $frag->product_id = $product->id;
-                        $frag->brand_reference_id = $product->brand_reference_id;
+                                $frag = new Fragrantica;
+                                $frag->product_id = $product->id;
+                                $frag->brand_reference_id = $product->brand_reference_id;
+                                $frag->parfume_scent = $request->parfume_scent[$key];
+                                $frag->scent_range = $request->scent_range[$key];
+                                $frag->save();
+                            }
+                        }
+                    }
+                   
 
-                        $frag->parfume_scent = $request->parfume_scent;
-                        $frag->scent_range = $request->scent_range;
-
-                        $frag->save();
-
+                    // dd($value);
                     DB::commit();
 
                     $response['notification'] = [
@@ -179,6 +185,30 @@ class ProductController extends Controller
             }
         }
     }
+
+    // public function addMorePost(Request $request)
+    // {
+    //     $request->validate([
+
+    //         'addmore.*.parfume_scent' => 'required',
+    //         'addmore.*.scent_range' => 'required',
+    //         // 'addmore.*.price' => 'required',
+    //     ]);
+
+    //     foreach ($request->addmore as $key => $value) {
+    //         Fragrantica::create($value);
+    //     }
+
+    //     $response['notification'] = [
+    //         'alert' => 'notify',
+    //         'type' => 'success',
+    //         'content' => 'Success',
+    //     ];
+
+    //     $response['redirect_to'] = route('superuser.master.product.index');
+
+    //     return $this->response(200, $response);
+    // }
 
     public function show($id)
     {

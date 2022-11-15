@@ -146,7 +146,8 @@
         <div class="col-12 product-list">
           <h5>Select Product</h5>
 
-          <div class="row"> 
+          <div class="row">
+            <!-- <div class="col-3">Product Category</div> -->
             <div class="col-3">Product</div>
             <div class="col-1">Qty</div>
             <div class="col-3">Packaging</div>

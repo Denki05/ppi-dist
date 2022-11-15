@@ -31,6 +31,7 @@ Route::group([
         Route::get('/import_template', 'ProductController@import_template')->name('import_template');
         Route::post('/import', 'ProductController@import')->name('import');
         Route::get('/export', 'ProductController@export')->name('export');
+        // Route::post('/addMorePost', 'ProductController@addMorePost')->name('addMorePost');
 
         Route::post('/delete_multiple', 'ProductController@destroyMultiple')->name('delete_multiple');
 

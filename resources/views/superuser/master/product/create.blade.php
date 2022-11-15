@@ -174,11 +174,40 @@
                               <label for="alias">Url</label>
                               <input type="text" id="url" name="url" placeholder="Url Fragrantica" class="form-control">
                             </div>
-                            <!-- <p><span class="text-danger">*Input beserta rasio persentase Main Accord</span></p> -->
                             <hr>
-                            
-                            <br>
-                            <br>
+                            <div class="form-group">
+                              <h5>Main Accords</h5>
+                              <a href="#" class="row-add">
+                                <button type="button" class="btn bg-gd-sea border-0 text-white">
+                                  <i class="fa fa-plus mr-10"></i> Row
+                                </button>
+                              </a>
+                              <!-- <table class="table" id="dynamicTable">  
+                                <tr>
+                                    <th>Parfume Scent</th>
+                                    <th>Range Scent</th>
+                                    <th></th>
+                                </tr>
+                                <tr>  
+                                    <td><input type="text" id="parfume_scent" name="addmore[0][parfume_scent]" placeholder="Enter your Scent" class="form-control" /></td>  
+                                    <td><input type="range" id="scent_range" name="addmore[0][scent_range]" placeholder="Enter your Range" class="form-control form-range" /></td>  
+                                    <td><input type="text" name="addmore[0][price]" placeholder="Enter your Price" class="form-control" /></td>  
+                                    <td><button type="button" name="add" id="add" class="btn btn-success"><i class="mdi mdi-plus"></i></button></td>  
+                                </tr>
+                              </table>  -->
+                              <table id="datatable" class="table table-hover">
+                                <thead>
+                                  <tr>
+                                    <th class="text-center">Counter</th>
+                                    <th class="text-center">Parfume Scent</th>
+                                    <th class="text-center">Range Scent</th>
+                                    <th class="text-center">Action</th>
+                                  </tr>
+                                </thead>
+                                <tbody>
+                                </tbody>
+                              </table>
+                            </div>
                             <div class="f1-buttons">
                                 <button type="button" class="btn btn-warning btn-previous"><i class="fa fa-arrow-left"></i> Previous</button>
                                 <button type="submit" class="btn btn-primary btn-submit"><i class="fa fa-save"></i> Submit</button>
@@ -193,6 +222,7 @@
 @endsection
 
 @include('superuser.asset.plugin.fileinput')
+@include('superuser.asset.plugin.datatables')
 @include('superuser.asset.plugin.select2')
 
 @push('scripts')
@@ -230,19 +260,46 @@
     });
 
     $('.js-select2').select2()
-
-    var i=1;
-     $("#add_row").click(function(){b=i-1;
-      $('#addr'+i).html($('#addr'+b).html()).find('td:first-child').html(i+1);
-      $('#tab_logic').append('<tr id="addr'+(i+1)+'"></tr>');
-      i++; 
-  });
-     $("#delete_row").click(function(){
-    	 if(i>1){
-		 $("#addr"+(i-1)).html('');
-		 i--;
-		 }
-	 });
   })
+</script>
+
+<script type="text/javascript">
+  $(document).ready(function() {
+    var table = $('#datatable').DataTable({
+        paging: false,
+        bInfo : false,
+        searching: false,
+        columns: [
+          {name: 'counter', "visible": false},
+          {name: 'parfume_scent', orderable: false, width: "25%"},
+          {name: 'scent_range', orderable: false, searcable: false},
+          {name: 'action', orderable: false, searcable: false, width: "5%"}
+        ],
+        'order' : [[0,'desc']]
+    })
+
+    var counter = 1;
+
+    $('a.row-add').on( 'click', function (e) {
+      e.preventDefault();
+      
+      table.row.add([
+                    counter,
+                    '<input class="form-control" id="parfume_scent['+counter+']" name="parfume_scent[]" data-placeholder="" style="width:100%" required>',
+                    '<input type="number" class="form-control" name="scent_range[]" required>',
+                    '<a href="#" class="row-delete"><button type="button" class="btn btn-sm btn-circle btn-alt-danger" title="Delete"><i class="fa fa-trash"></i></button></a>'
+                  ]).draw( false );
+                  // $('.js-select2').select2()
+                  // initailizeSelect2();
+      counter++;
+    });
+
+    $('#datatable tbody').on( 'click', '.row-delete', function (e) {
+      e.preventDefault();
+      
+      table.row( $(this).parents('tr') ).remove().draw();
+
+    });
+  });
 </script>
 @endpush
