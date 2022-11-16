@@ -55,7 +55,7 @@
                           </div>
                           <div class="form-group">
                             <label>Description</label>
-                            <textarea class="form-control" id="description" name="description" placeholder="Description"></textarea>
+                            <input type="text" id="description" name="description" placeholder="Description" class="form-control">
                           </div>
                           <div class="form-group">
                             <label>Notes</label>

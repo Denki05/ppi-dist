@@ -56,7 +56,7 @@
                           </div>
                           <div class="form-group">
                             <label>Description</label>
-                            <textarea class="form-control" id="description" name="description" placeholder="Description" value="{{ $product->description }}"></textarea>
+                            <input type="text" id="description" name="description" placeholder="Description" class="form-control" value="{{ $product->description }}">
                           </div>
                           <div class="form-group">
                             <label>Notes</label>
@@ -243,6 +243,8 @@
 
     //   hideLoadSpinner(select_type)
     // })
+
+    // var cbobject= document.testform.description;
   })
 </script>
 @endpush
