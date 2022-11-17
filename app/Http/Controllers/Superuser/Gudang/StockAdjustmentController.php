@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use App\Entities\Master\Warehouse;
 use App\Entities\Master\ProductMinStock;
+use App\Entities\Master\Product;
 use App\Entities\Gudang\StockAdjustment;
 use App\Entities\Setting\UserMenu;
 use App\Repositories\CodeRepo;
@@ -98,7 +99,7 @@ class StockAdjustmentController extends Controller
         if(empty($warehouse)){
             return redirect()->route('superuser.gudang.stock_adjustment.index')->with('error','Gudang tidak ditemukan');
         }
-        $product = ProductMinStock::where('warehouse_id',$warehouse->id)->get();
+        $product = Product::where('default_warehouse_id',$warehouse->id)->get();
         $data = [
             'warehouse' => $warehouse,
             'product' => $product

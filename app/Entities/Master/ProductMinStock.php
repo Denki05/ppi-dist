@@ -6,7 +6,7 @@ use App\Entities\Model;
 
 class ProductMinStock extends Model
 {
-    protected $fillable = ['product_id', 'warehouse_id', 'unit_id', 'quantity'];
+    protected $fillable = ['product_id', 'warehouse_id', 'unit_id', 'quantity', 'selling_price'];
     protected $table = 'master_product_min_stocks';
 
     public function product()

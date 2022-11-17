@@ -6,6 +6,7 @@ use App\DataTables\Master\ContactTable;
 use App\Entities\Master\CustomerContact;
 use App\Entities\Master\Contact;
 use App\Entities\Master\Customer;
+use App\Repositories\MasterRepo;
 use App\Entities\Master\CustomerOtherAddress;
 use App\Exports\Master\ContactExport;
 use App\Exports\Master\ContactImportTemplate;
@@ -63,9 +64,20 @@ class CustomerContactController extends Controller
 
         $data['customers'] = Customer::all();
         $data['other_address'] = CustomerOtherAddress::all();
-        $data['contacts'] = Contact::all();
+        $data['contacts'] = MasterRepo::contacts();
 
         return view('superuser.master.customer_contact.create', $data);
+    }
+
+    public function getstore(request $request)
+    {
+        $customer_id = $request->customer_id;
+
+        $members = CustomerOtherAddress::where('customer_id', $customer_id)->get();
+
+        foreach ($members as $member){
+            echo "<option value='$member->id'>$member->name</option>";
+        }
     }
 
     public function store(Request $request)

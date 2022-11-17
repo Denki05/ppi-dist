@@ -39,8 +39,7 @@
       <div class="form-group row member" style="display:none;">
         <label class="col-md-3 col-form-label text-right" for="other_address">Member </label>
         <div class="col-md-7">
-          <select class="js-select2 form-control" id="other_address" name="other_address" data-placeholder="Select Member">
-          </select>
+          <select class="js-select2 form-control" id="other_address" name="other_address" data-placeholder="Select Member"></select>
         </div>
       </div>
       <div class="form-group row">
@@ -80,7 +79,7 @@
       </div>
       <div class="form-group row pt-30">
         <div class="col-md-6">
-          <a href="{{ route('superuser.master.customer.index') }}">
+          <a href="javascript:history.back()">
             <button type="button" class="btn bg-gd-cherry border-0 text-white">
               <i class="fa fa-arrow-left mr-10"></i> Back
             </button>
@@ -117,6 +116,7 @@
     });
 
     $('.js-select2').select2()
+    
     $('#image_npwp').fileinput({
       theme: 'explorer-fa',
       browseOnZoneClick: true,

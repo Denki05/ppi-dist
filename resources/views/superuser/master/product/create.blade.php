@@ -50,6 +50,10 @@
                             <input type="text" id="material_name" name="material_name" placeholder="Material Name" class="form-control">
                           </div>
                           <div class="form-group">
+                              <label>Ratio</label>
+                              <input type="number" class="form-control" id="ratio" name="ratio" min="0" value="0" step="0.0001">
+                            </div>
+                          <div class="form-group">
                             <label for="alias">Alias</label>
                             <input type="text" id="alias" name="alias" placeholder="Alias Name" class="form-control">
                           </div>
@@ -96,10 +100,6 @@
                             <div class="form-group">
                               <label>Default Quantity <span class="text-danger">*</span></label>
                               <input type="number" class="form-control" id="default_quantity" name="default_quantity" min="0" value="0" step="0.0001">
-                            </div>
-                            <div class="form-group">
-                              <label>Ratio</label>
-                              <input type="number" class="form-control" id="ratio" name="ratio" min="0" value="0" step="0.0001">
                             </div>
                             <div class="form-group">
                               <label>Unit <span class="text-danger">*</span></label>
@@ -288,7 +288,8 @@
       table.row.add([
                     counter,
                     '<input class="form-control" id="parfume_scent['+counter+']" name="parfume_scent[]" data-placeholder="" style="width:100%" required>',
-                    '<input type="number" class="form-control" name="scent_range[]" required>',
+                    // '<input type="number" class="form-control" name="scent_range[]" required>',
+                    '<input type="range" class="form-control-range" min="1" max="100" value="50" name="scent_range[]">',
                     '<input type="color" class="form-control" name="color_scent[]">',
                     '<a href="#" class="row-delete"><button type="button" class="btn btn-sm btn-circle btn-alt-danger" title="Delete"><i class="fa fa-trash"></i></button></a>'
                   ]).draw( false );

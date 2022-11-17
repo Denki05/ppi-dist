@@ -94,10 +94,10 @@
                 </a>
 
                 <a href="{{ route('superuser.master.dokumen.create') }}">
-                                                    <button type="button" class="btn btn-sm btn-circle btn-alt-danger" title="Add Document">
-                                                        <i class="mdi mdi-account-card-details"></i>
-                                                    </button>
-                                                </a>
+                    <button type="button" class="btn btn-sm btn-circle btn-alt-danger" title="Add Document">
+                        <i class="mdi mdi-file-document"></i>
+                    </button>
+                </a>
                 
               @elseif($row->status == $row::STATUS['DELETED'])
                 <a href="{{ route('superuser.master.customer.show', $row->id) }}">
@@ -117,7 +117,7 @@
                                 <th width="10%">Member</th>
                                 <th width="10%">Location</th>
                                 <th width="5%">Action</th>
-                                <th width="5%">Other Action</tg>
+                                <!-- <th width="5%">Other Action</tg> -->
                             </tr>
 
                             <tbody>
@@ -147,15 +147,7 @@
                                                 </a>
                                             </td>
                                             @endif  
-                                            @if ($index->status != $index::STATUS['DELETED'] AND $row->status != $row::STATUS['DELETED'])
-                                            <td>
-                                                <a href="{{ route('superuser.master.dokumen.create', [$index->id]) }}">
-                                                    <button type="button" class="btn btn-sm btn-circle btn-alt-danger" title="Add Document">
-                                                        <i class="mdi mdi-account-card-details"></i>
-                                                    </button>
-                                                </a>
-                                            </td>
-                                            @endif
+                                            
                                         </tr>
                                     @endif
                                 @endforeach

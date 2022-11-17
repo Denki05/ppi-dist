@@ -51,6 +51,10 @@
                             <input type="text" id="material_name" name="material_name" placeholder="Material Name" class="form-control" value="{{ $product->material_name }}">
                           </div>
                           <div class="form-group">
+                              <label>Ratio</label>
+                              <input type="number" class="form-control" id="ratio" name="ratio" min="0" value="{{ $product->ratio }}" step="0.0001">
+                            </div>
+                          <div class="form-group">
                             <label for="alias">Alias</label>
                             <input type="text" id="alias" name="alias" placeholder="Alias Name" class="form-control" value="{{ $product->alias }}">
                           </div>
@@ -97,10 +101,6 @@
                             <div class="form-group">
                               <label>Default Quantity <span class="text-danger">*</span></label>
                               <input type="number" class="form-control" id="default_quantity" name="default_quantity" min="0" value="{{ $product->default_quantity }}" step="0.0001">
-                            </div>
-                            <div class="form-group">
-                              <label>Ratio</label>
-                              <input type="number" class="form-control" id="ratio" name="ratio" min="0" value="{{ $product->ratio }}" step="0.0001">
                             </div>
                             <div class="form-group">
                               <label>Unit <span class="text-danger">*</span></label>

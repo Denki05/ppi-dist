@@ -44,7 +44,7 @@
       </form>
       <div class="row mb-30">
         <div class="col-12">
-          <table class="table table-striped table-vcenter table-responsive" id="datatables">
+          <table class="table table-hover" id="datatables">
             <thead>
               <tr>
                 <th>#</th>

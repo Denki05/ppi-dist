@@ -29,10 +29,6 @@
         <label class="col-md-3 col-form-label text-right" for="other_address">Member <span class="text-danger">*</span></label>
         <div class="col-md-7">
           <select class="js-select2 form-control" id="other_address" name="other_address" data-placeholder="Select Member">
-            <option></option>
-            @foreach ($other_address as $row)
-              <option value="{{ $row->id }}">{{ $row->name }}</option>
-            @endforeach
           </select>
         </div>
       </div>
@@ -51,7 +47,7 @@
       
       <div class="form-group row pt-30">
         <div class="col-md-6">
-          <a href="{{ route('superuser.master.customer.index') }}">
+          <a href="javascript:history.back()">
             <button type="button" class="btn bg-gd-cherry border-0 text-white">
               <i class="fa fa-arrow-left mr-10"></i> Back
             </button>
@@ -78,6 +74,29 @@
     Codebase.helpers('flatpickr')
 
     $('.js-select2').select2()
+    
+    $(function(){
+
+    $('#customer').on('change', function(){
+      let customer_id = $('#customer').val();
+
+      
+
+      $.ajax({
+        type : 'POST',
+        url : '{{route('superuser.master.customer_contact.getstore')}}',
+        data : {customer_id:customer_id},
+        cache : false,
+
+        success: function(msg){
+          $('#other_address').html(msg);
+        },
+        error : function(data){
+          console.log('error:',data)
+        },
+      })
+    })
+    });
   })
 </script>
 @endpush

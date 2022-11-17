@@ -59,7 +59,7 @@
   <div class="block-content block-content-full">
     <div class="row">
       <div class="col-12">
-        <table class="table table-striped table-vcenter table-responsive" >
+        <table class="table table-hover" >
           <thead>
             <tr>
               <th>Code</th>
@@ -95,7 +95,7 @@
     <div class="row">
       <div class="col-12">
         <h5>#Moving Stock</h5>
-        <table class="table table-striped table-vcenter table-responsive" id="datatables">
+        <table class="table table-hover" id="datatables">
           <thead>
             <tr>
               <th>Date</th>

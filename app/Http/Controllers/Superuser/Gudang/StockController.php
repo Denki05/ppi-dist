@@ -101,7 +101,6 @@ class StockController extends Controller
                                     $query2->where('status','>',1);
                                     $query2->where('warehouse_id',$value->warehouse_id);
                                 })->sum('qty');
-
             $move = StockMove::where('product_id',$value->product_id)
                                 ->where('warehouse_id',$value->warehouse_id)->get();
 
@@ -177,7 +176,7 @@ class StockController extends Controller
                                 $query2->where('status','>',1);
                                 $query2->where('warehouse_id',$result->warehouse_id);
                             })->sum('qty');
-
+       
         $move = StockMove::where('product_id',$result->product_id)
                             ->where('warehouse_id',$result->warehouse_id)->get();
 

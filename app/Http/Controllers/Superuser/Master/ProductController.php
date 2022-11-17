@@ -6,6 +6,7 @@ use App\DataTables\Master\ProductTable;
 use App\Entities\Master\Product;
 use App\Entities\Master\ProductCategory;
 use App\Entities\Master\ProductType;
+use App\Entities\Master\ProductMinStock;
 use App\Entities\Master\SubBrandReference;
 use App\Entities\Master\Fragrantica;
 use App\Exports\Master\ProductExport;
@@ -168,6 +169,15 @@ class ProductController extends Controller
                             }
                         }
                     }
+
+                    $stock = new ProductMinStock;
+                    $stock->product_id = $product->id;
+                    $stock->warehouse_id = $product->default_warehouse_id;
+                    $stock->unit_id = $product->default_unit_id;
+                    $stock->quantity = $product->default_quantity;
+                    $stock->selling_price = $product->selling_price;
+
+                    $stock->save();
                    
 
                     // dd($value);
@@ -332,6 +342,11 @@ class ProductController extends Controller
                 }
 
                 if ($product->save()) {
+                        // $update_stock = ProductMinStock::where('product_id', $product->id)
+                        //                     ->update([
+                        //                         'warehouse_id' => $product->default_warehouse_id
+                        //                     ]);
+
                     DB::commit();
 
                     $response['notification'] = [

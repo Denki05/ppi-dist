@@ -210,6 +210,7 @@ Route::group([
         Route::get('/import_template', 'CustomerContactController@import_template')->name('import_template');
         Route::post('/import', 'CustomerContactController@import')->name('import');
         Route::get('/export', 'CustomerContactController@export')->name('export');
+        Route::post('/getstore', 'CustomerContactController@getstore')->name('getstore');
     });
     Route::resource('customer_contact', 'CustomerContactController');
 });
