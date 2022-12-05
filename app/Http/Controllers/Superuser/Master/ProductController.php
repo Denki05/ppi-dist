@@ -57,6 +57,17 @@ class ProductController extends Controller
 
         return view('superuser.master.product.index');
     }
+    
+    public function getsubrand(request $request)
+    {
+        $brand_reference_id = $request->brand_reference_id;
+
+        $sub_brands = SubBrandReference::where('brand_reference_id', $brand_reference_id)->get();
+
+        foreach ($sub_brands as $sub_brand){
+            echo "<option value='$sub_brand->id'>$sub_brand->name</option>";
+        }
+    }
 
     public function create()
     {

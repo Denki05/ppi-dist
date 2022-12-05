@@ -146,6 +146,7 @@ class CustomerTypeController extends Controller
             }
         }
         $data['customer_type'] = CustomerType::findOrFail($id);
+        $data['category'] = MasterRepo::customer_categories();
 
         return view('superuser.master.customer_type.edit', $data);
     }
@@ -184,6 +185,13 @@ class CustomerTypeController extends Controller
                 $customer_type->description = $request->description;
 
                 if ($customer_type->save()) {
+                    foreach ($request->category as $category) {
+                        $customer_category_type = new CustomerCategoryType;
+                        $customer_category_type->category_id = $category;
+                        $customer_category_type->type_id = $customer_type->id;
+    
+                        $customer_category_type->save();
+                    }
                     DB::commit();
 
                     $response['notification'] = [

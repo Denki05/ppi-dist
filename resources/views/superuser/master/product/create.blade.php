@@ -138,10 +138,6 @@
                             <div class="form-group">
                               <label>Sub Brand Reference <span class="text-danger">*</span></label>
                               <select class="form-control" id="sub_brand_reference" name="sub_brand_reference" data-placeholder="Select Brand">
-                                <option></option>
-                                @foreach($sub_brand_references as $sub_brand_reference)
-                                <option value="{{ $sub_brand_reference->id }}">{{ $sub_brand_reference->name }}</option>
-                                @endforeach
                               </select>
                             </div>
                             <div class="form-group">
@@ -304,6 +300,29 @@
       table.row( $(this).parents('tr') ).remove().draw();
 
     });
-  });
+
+    $(function(){
+
+    $('#brand_reference').on('change', function(){
+      let brand_reference_id = $('#brand_reference').val();
+
+      
+
+      $.ajax({
+        type : 'POST',
+        url : '{{route('superuser.master.product.getsubrand')}}',
+        data : {brand_reference_id:brand_reference_id},
+        cache : false,
+
+        success: function(msg){
+          $('#sub_brand_reference').html(msg);
+        },
+        error : function(data){
+          console.log('error:',data)
+        },
+      })
+    })
+    });
+  })
 </script>
 @endpush

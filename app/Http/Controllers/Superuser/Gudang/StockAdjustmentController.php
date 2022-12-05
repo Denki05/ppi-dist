@@ -10,6 +10,7 @@ use App\Entities\Master\Product;
 use App\Entities\Gudang\StockAdjustment;
 use App\Entities\Setting\UserMenu;
 use App\Repositories\CodeRepo;
+use App\Entities\Gudang\StockMove;
 use Auth;
 use DB;
 

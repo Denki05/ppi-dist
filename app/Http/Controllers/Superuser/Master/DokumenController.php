@@ -50,8 +50,6 @@ class DokumenController extends Controller
         return view('superuser.master.dokumen.create', $data);
     }
 
-    
-
     public function getstore(request $request)
     {
         $customer_id = $request->customer_id;

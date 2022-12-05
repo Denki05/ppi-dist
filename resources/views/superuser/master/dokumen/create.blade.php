@@ -30,12 +30,12 @@
           </select>
         </div>
       </div>
-      <div class="form-group row cek_list">
+      <!-- <div class="form-group row cek_list">
         <label class="col-md-3 col-form-label text-right" for="for_member">Data For Members</label>
         <div class="col-md-7">
           <input type="checkbox" id="for_member" name="for_member" value="1">
         </div>
-      </div>
+      </div> -->
       <div class="form-group row member" style="display:none;">
         <label class="col-md-3 col-form-label text-right" for="other_address">Member </label>
         <div class="col-md-7">

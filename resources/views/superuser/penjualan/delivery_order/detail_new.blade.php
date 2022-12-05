@@ -108,7 +108,7 @@
           <div class="form-group row">
             <label class="col-6 col-md-3 col-form-label">Store / Member</label>
             <div class="col-6 col-md-9">
-              {{$result->customer->name ?? ''}} / {{$result->member->name}}
+              {{$result->customer->name ?? ''}} / {{$result->member->name ?? '-'}}
             </div>
           </div>
 

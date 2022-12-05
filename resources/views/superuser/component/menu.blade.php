@@ -128,13 +128,7 @@
                     <li class="nav-item">
                       <a class="nav-link" href="{{ route('superuser.gudang.stock_adjustment.index') }}" target="_blank">Stock Adjustment</a>
                     </li>
-                    <!-- <li class="dropdown">
-                        <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-expanded="false">Gudang <span class="caret"></span></a>
-                        <ul class="dropdown-menu" role="menu">
-                            <li><a href="{{ route('superuser.gudang.stock.index') }}">Stock</a></li>
-                            <li><a href="{{ route('superuser.gudang.stock_adjustment.index') }}">Stock Adjustment</a></li>
-                        </ul>
-                    </li> -->
+                    
                   </ul>
                 </div>
               </li>

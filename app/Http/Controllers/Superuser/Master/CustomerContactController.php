@@ -84,8 +84,8 @@ class CustomerContactController extends Controller
     {
         if ($request->ajax()) {
             $validator = Validator::make($request->all(), [
-                'customer' => 'required|integer',
-                'other_address' => 'required|integer',
+                // 'customer' => 'required|integer',
+                // 'other_address' => 'required|integer',
                 'contact' => 'required|unique:master_customer_contacts,contact_id',
             ]);
 

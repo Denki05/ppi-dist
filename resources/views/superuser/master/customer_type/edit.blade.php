@@ -28,6 +28,17 @@
         </div>
       </div>
       <div class="form-group row">
+        <label class="col-md-3 col-form-label text-right" for="category">Category <span class="text-danger">*</span></label>
+        <div class="col-md-7">
+          <select class="js-select2 form-control" id="category" name="category[]" data-placeholder="Select category" multiple>
+            <option></option>
+            @foreach($category as $cat)
+            <option value="{{ $cat->id }}">{{ $cat->name }}</option>
+            @endforeach
+          </select>
+        </div>
+      </div>
+      <div class="form-group row">
         <label class="col-md-3 col-form-label text-right" for="description">Description</label>
         <div class="col-md-7">
           <textarea class="form-control" id="description" name="description">{{ $customer_type->description }}</textarea>
@@ -52,6 +63,14 @@
 </div>
 @endsection
 
+@include('superuser.asset.plugin.select2')
+
 @push('scripts')
 <script src="{{ asset('utility/superuser/js/form.js') }}"></script>
+
+<script>
+  $(document).ready(function () {
+    $('.js-select2').select2()
+  });
+</script>
 @endpush
