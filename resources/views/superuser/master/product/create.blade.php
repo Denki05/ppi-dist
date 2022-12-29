@@ -284,13 +284,11 @@
       table.row.add([
                     counter,
                     '<input class="form-control" id="parfume_scent['+counter+']" name="parfume_scent[]" data-placeholder="" style="width:100%" required>',
-                    // '<input type="number" class="form-control" name="scent_range[]" required>',
+                    
                     '<input type="range" class="form-control-range" min="1" max="100" value="50" name="scent_range[]">',
                     '<input type="color" class="form-control" name="color_scent[]">',
                     '<a href="#" class="row-delete"><button type="button" class="btn btn-sm btn-circle btn-alt-danger" title="Delete"><i class="fa fa-trash"></i></button></a>'
                   ]).draw( false );
-                  // $('.js-select2').select2()
-                  // initailizeSelect2();
       counter++;
     });
 

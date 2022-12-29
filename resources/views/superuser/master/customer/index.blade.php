@@ -22,8 +22,6 @@
       <button type="button" class="btn btn-outline-primary min-width-125">Create</button>
     </a>
 
-    <button type="button" class="btn btn-outline-info ml-10" data-toggle="modal" data-target="#modal-manage">Manage</button>
-
     <!-- <button type="button" class="btn btn-outline-danger ml-10" onclick="deleteMultiple()">Delete Checked</button> -->
 
     <a class="ml-10" href="{{ route('superuser.master.customer_contact.create') }}">
@@ -170,11 +168,7 @@
 
 @section('modal')
 
-@include('superuser.component.modal-manage', [
-  'import_template_url' => route('superuser.master.customer.import_template'),
-  'import_url' => route('superuser.master.customer.import'),
-  'export_url' => route('superuser.master.customer.export')
-])
+
 
 @endsection
 

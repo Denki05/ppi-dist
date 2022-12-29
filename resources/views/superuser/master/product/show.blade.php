@@ -225,7 +225,7 @@
         </div>
         <div class="row mb-30">
           <div class="col-12">
-            <a href="{{route('superuser.master.customer.index')}}" class="btn btn-warning  btn-md text-white"><i class="fa fa-arrow-left"></i> Back</a>
+            <a href="{{route('superuser.master.produt.index')}}" class="btn btn-warning  btn-md text-white"><i class="fa fa-arrow-left"></i> Back</a>
           </div>
         </div>
       </div>
