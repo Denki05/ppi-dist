@@ -164,10 +164,12 @@ class PackingOrderController extends Controller
 
         $warehouse = Warehouse::all();
         $customer = Customer::all();
+        $other_adress = CustomerOtherAddress::all();
         $ekspedisi = Ekspedisi::all();
         $data = [
             'warehouse' => $warehouse,
             'customer' => $customer,
+            'other_adress' => $other_adress,
             'ekspedisi' => $ekspedisi
         ];
         return view($this->view."create_new",$data);
@@ -424,11 +426,13 @@ class PackingOrderController extends Controller
         }
         $warehouse = Warehouse::all();
         $customer = Customer::all();
+        $other_adress = CustomerOtherAddress::all();
         $ekspedisi = MasterRepo::vendors();
         $dokumen = Dokumen::all();
         $data = [
             'warehouse' => $warehouse,
             'customer' => $customer,
+            'other_adress' => $other_adress,
             'ekspedisi' => $ekspedisi,
             'result' => $result
         ];
@@ -533,6 +537,7 @@ class PackingOrderController extends Controller
                 $check_po_item = PackingOrderItem::where('do_id',$check_cost->do_id)->get();
                 $detail_po = PackingOrder::where('id',$check_cost->do_id)->first();
                 $detail_po_item = PackingOrderItem::where('do_id',$check_cost->do_id)->get();
+                
 
                 $idr_total = 0;
                 foreach ($detail_po_item as $key => $row) {
@@ -578,6 +583,8 @@ class PackingOrderController extends Controller
                     $data_json["Message"] = "Total Discount melebihi IDR total item pembelian";
                     goto ResultData;
                 }
+
+                
 
                 $data = [
                     'discount_1' => trim(htmlentities($post["discount_1"])),
@@ -702,6 +709,7 @@ class PackingOrderController extends Controller
 
                 $detail_po = PackingOrder::where('id',$check_cost->do_id)->first();
                 $detail_po_item = PackingOrderItem::where('do_id',$check_cost->do_id)->get();
+
                 $idr_total = 0;
                 foreach ($detail_po_item as $key => $row) {
                     $idr_total += ceil((($row->price * $detail_po->idr_rate) * $row->qty) - ($row->total_disc * $detail_po->idr_rate)); 
@@ -734,7 +742,6 @@ class PackingOrderController extends Controller
                 
                 $purchase_total_idr = ceil($idr_total - $total_discount_idr - $voucher_idr - $cashback_idr + $ppn);
                 $grand_total_idr = ceil($purchase_total_idr + $delivery_cost_idr + $other_cost_idr);
-
                 
                 if($total_discount_idr > $grand_total_idr){
                     $data_json["IsError"] = TRUE;
@@ -761,9 +768,16 @@ class PackingOrderController extends Controller
 
                 $update = PackingOrderDetail::where('do_id',$post["id"])->update($data);
 
-                //update plafon piutang
+                //Update saldo disini
+                // $saldo = CustomerSaldoLog::where('customer_id', $detail_po->customer_id)->first();
                 
+                // $saldo_log = $saldo->saldo_log - $grand_total_idr;
 
+                // $update_saldo = CustomerSaldoLog::where('customer_id', $detail_po->customer_id)
+                //                             ->update([
+                //                                 'saldo_log' => $saldo_log
+                //                             ]);
+                
                 //create invoicing disini
                 if (empty($detail_po->invoicing)) {
                     $data = [
@@ -782,7 +796,7 @@ class PackingOrderController extends Controller
                 $data_json["Message"] = "Packing Order Berhasil diubah";
                 goto ResultData;
             } catch(\Throwable $e){
-                dd($e);
+                // dd($e);
                 DB::rollback();
                 $data_json["IsError"] = TRUE;
                 $data_json["Message"] = $e->getMessage();

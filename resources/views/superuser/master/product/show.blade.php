@@ -204,7 +204,7 @@
             <div class="col-md-6">
               <div class="block">
                 <div class="block-content block-content-full">
-                  <h2>{{$product->name}}</h2>
+                  <h2>{{$product->name}} | {{ $product->code }}</h2>
                   <a href="{{ $product->sub_brand_reference->link }}" target="_blank">
                     <p>{{ $product->sub_brand_reference->name }}</p>
                   </a>
@@ -225,7 +225,7 @@
         </div>
         <div class="row mb-30">
           <div class="col-12">
-            <a href="{{route('superuser.master.produt.index')}}" class="btn btn-warning  btn-md text-white"><i class="fa fa-arrow-left"></i> Back</a>
+            <a href="{{route('superuser.master.product.index')}}" class="btn btn-warning  btn-md text-white"><i class="fa fa-arrow-left"></i> Back</a>
           </div>
         </div>
       </div>

@@ -158,6 +158,7 @@ class StockAdjustmentController extends Controller
                                                 ->update([
                                                     'quantity' => $update_stock
                                                 ]);
+                                                
                 $insert = StockAdjustment::create($data);
                 DB::commit();
 

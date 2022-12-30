@@ -158,7 +158,7 @@
             <div class="col-6 col-md-6 col-form-label">
               <select class="form-control js-select2 select-other-address" {{ $result->status == 1 ? '' : 'disabled' }} name="customer_other_address_id">
                 <option value=""></option>
-                @foreach($customer as $index => $row)
+                @foreach($other_adress as $index => $row)
                 <option value="{{$row->id}}">{{$row->name}}</option>
                 @endforeach
               </select>

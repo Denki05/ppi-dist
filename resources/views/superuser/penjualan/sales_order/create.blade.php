@@ -13,7 +13,7 @@
       @csrf
       <input type="hidden" name="ajukankelanjutan" value="0">
       <div class="row">
-        <div class="col-12">
+        <div class="col-6">
           @if($step == 1 || $step == 2 || $step == 9)
           <div class="form-group row">
             <label class="col-md-2 col-form-label text-right" for="name">Sales Senior<span class="text-danger">*</span></label>
@@ -69,27 +69,7 @@
             </div>
           </div>
           @endif
-          @if($step == 1 || $step == 2)
-          <div class="form-group row">
-            <label class="col-md-2 col-form-label text-right">Member <span class="text-danger">*</span></label>
-            <div class="col-md-8">
-              <select class="form-control js-select2 select-customer" name="customer_id" <?php echo $step == 2 ? 'disabled' : '' ?>>
-                <option value="">==Select customer==</option>
-                @foreach($customer as $index => $row)
-                  <option value="{{$row->id}}">{{$row->name}}</option>
-                @endforeach
-              </select>
-            </div>
-          </div>
-          @endif
-          @if($step == 1 || $step == 2)
-          <div class="form-group row">
-            <label class="col-md-2 col-form-label text-right">Address</label>
-            <div class="col-md-8">
-              <textarea class="form-control" readonly name="address" rows="1"></textarea>
-            </div>
-          </div>
-          @endif
+          
           @if($step == 1)
           <div class="form-group row">
             <label class="col-md-2 col-form-label text-right">Transaction<span class="text-danger">*</span></label>
@@ -116,27 +96,41 @@
             </div>
           </div>
           @endif
+          
+          
+          
+        </div>
+
+        <div class="col-6">
           @if($step == 1 || $step == 2)
-          <div class="form-group row">
-            <label class="col-md-2 col-form-label text-right">Note</label>
-            <div class="col-md-8">
-              <textarea class="form-control" name="note" rows="3"></textarea>
+            <div class="form-group row">
+              <label class="col-md-2 col-form-label text-right">Customer <span class="text-danger">*</span></label>
+              <div class="col-md-8">
+                <select class="form-control js-select2 select-customer" name="customer_id" <?php echo $step == 2 ? 'disabled' : '' ?>>
+                  <option value="">==Select customer==</option>
+                  @foreach($customer as $index => $row)
+                    <option value="{{$row->id}}">{{$row->name}}</option>
+                  @endforeach
+                </select>
+              </div>
             </div>
-          </div>
-          @endif
-          @if($step == 1 || $step == 2)
-          <div class="form-group row">
-            <label class="col-md-2 col-form-label text-right">Product Category<span class="text-danger">*</span></label>
-            <div class="col-md-8">
-              <select class="form-control js-select2 select-category" name="brand_type" data-index="0">
-                <option value="">==Select product category==</option>
-                @foreach($product_category as $index => $row)
-                  <option value="{{$row->id}}">{{$row->name}}</option>
-                @endforeach
-              </select>
+            @endif
+            @if($step == 1 || $step == 2)
+            <div class="form-group row">
+              <label class="col-md-2 col-form-label text-right">Address</label>
+              <div class="col-md-8">
+                <textarea class="form-control" readonly name="address" rows="1"></textarea>
+              </div>
             </div>
-          </div>
-          @endif
+            @endif
+            @if($step == 1 || $step == 2)
+            <div class="form-group row">
+              <label class="col-md-2 col-form-label text-right">Note</label>
+              <div class="col-md-8">
+                <textarea class="form-control" name="note" rows="3"></textarea>
+              </div>
+            </div>
+            @endif
         </div>
       </div>
 
@@ -148,12 +142,24 @@
 
           <div class="row">
             <!-- <div class="col-3">Product Category</div> -->
+            <div class="col-3">Product Category<span class="text-danger">*</span></div>
             <div class="col-3">Product</div>
             <div class="col-1">Qty</div>
             <div class="col-3">Packaging</div>
           </div>
 
           <div class="row mt-10 product-row">
+            @if($step == 1 || $step == 2)
+            <div class="col-md-3">
+              <select class="form-control js-select2 select-category" name="brand_type" data-index="0">
+                <option value="">==Select product category==</option>
+                @foreach($product_category as $index => $row)
+                  <option value="{{$row->id}}">{{$row->name}}</option>
+                @endforeach
+              </select>
+            </div>
+            @endif
+
             <div class="col-3">
               <select class="form-control js-select2 select-product" name="product_id[]" data-index="0">
                 <option value="">==Select product==</option>
@@ -182,7 +188,7 @@
 
       <hr />
 
-      <div class="row mb-30">
+      <div class="row mb-30" align="center">
         <div class="col-12">
           <a href="{{route('superuser.penjualan.sales_order.index_' . strtolower($step_txt))}}" class="btn btn-warning  btn-md text-white"><i class="fa fa-arrow-left"></i> Back</a>
           <button class="btn btn-primary btn-md btn-simpan" type="button"><i class="fa fa-save"></i> Simpan</button>

@@ -11,6 +11,7 @@ use App\Entities\Penjualan\PackingOrderItem;
 use App\Entities\Penjualan\PackingOrderDetail;
 use App\Entities\Penjualan\DeliveryOrderMutationItem;
 use App\Entities\Master\Customer;
+use App\Entities\Master\CustomerOtherAddress;
 use App\Entities\Master\Company;
 use App\Entities\Master\Warehouse;
 use App\Entities\Master\ProductCategory;
