@@ -142,7 +142,7 @@
 
           <div class="row">
             <!-- <div class="col-3">Product Category</div> -->
-            <div class="col-3">Product Category<span class="text-danger">*</span></div>
+            <div class="col-3">Category<span class="text-danger">*</span></div>
             <div class="col-3">Product</div>
             <div class="col-1">Qty</div>
             <div class="col-3">Packaging</div>
