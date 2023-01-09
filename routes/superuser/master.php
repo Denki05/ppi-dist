@@ -214,4 +214,11 @@ Route::group([
         Route::post('/getstore', 'CustomerContactController@getstore')->name('getstore');
     });
     Route::resource('customer_contact', 'CustomerContactController');
+
+    Route::group(['as' => 'brand_lokal.', 'prefix' => '/brand_lokal'], function () {
+        // Route::get('/import_template', 'BrandReferenceController@import_template')->name('import_template');
+        // Route::post('/import', 'BrandReferenceController@import')->name('import');
+        // Route::get('/export', 'BrandReferenceController@export')->name('export');
+    });
+    Route::resource('brand_lokal', 'BrandLokalController');
 });
