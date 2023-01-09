@@ -3,13 +3,13 @@
 @section('content')
 <nav class="breadcrumb bg-white push">
   <span class="breadcrumb-item">Master</span>
-  <a class="breadcrumb-item" href="{{ route('superuser.master.sub_brand_reference.index') }}">Sub Brand Reference</a>
+  <a class="breadcrumb-item" href="{{ route('superuser.master.sub_brand_reference.index') }}">Searah</a>
   <span class="breadcrumb-item active">Create</span>
 </nav>
 <div id="alert-block"></div>
 <div class="block">
   <div class="block-header block-header-default">
-    <h3 class="block-title">Create Sub Brand Reference</h3>
+    <h3 class="block-title">Create Searah</h3>
   </div>
   <div class="block-content">
     <form class="ajax" data-action="{{ route('superuser.master.sub_brand_reference.store') }}" data-type="POST" enctype="multipart/form-data">
@@ -20,7 +20,7 @@
         </div>
       </div> --}}
       <div class="form-group row">
-        <label class="col-md-3 col-form-label text-right" for="brand_reference">Brand Reference <span class="text-danger">*</span></label>
+        <label class="col-md-3 col-form-label text-right" for="brand_reference">Brand Fragrantica <span class="text-danger">*</span></label>
         <div class="col-md-7">
           <select class="js-select2 form-control" id="brand_reference" name="brand_reference" data-placeholder="Select Brand Reference">
             <option></option>

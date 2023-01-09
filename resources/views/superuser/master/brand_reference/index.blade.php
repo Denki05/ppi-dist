@@ -3,7 +3,7 @@
 @section('content')
 <nav class="breadcrumb bg-white push">
   <span class="breadcrumb-item">Master</span>
-  <span class="breadcrumb-item active">Brand Reference</span>
+  <span class="breadcrumb-item active">Brand Fragrantica</span>
 </nav>
 @if($errors->any())
 <div class="alert alert-danger alert-dismissable" role="alert">

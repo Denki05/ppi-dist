@@ -3,14 +3,14 @@
 @section('content')
 <nav class="breadcrumb bg-white push">
   <span class="breadcrumb-item">Master</span>
-  <a class="breadcrumb-item" href="{{ route('superuser.master.brand_reference.index') }}">Brand Reference</a>
+  <a class="breadcrumb-item" href="{{ route('superuser.master.brand_reference.index') }}">Brand Fragrantica</a>
   <a class="breadcrumb-item" href="{{ route('superuser.master.brand_reference.show', $brand_reference->id) }}">{{ $brand_reference->id }}</a>
   <span class="breadcrumb-item active">Edit</span>
 </nav>
 <div id="alert-block"></div>
 <div class="block">
   <div class="block-header block-header-default">
-    <h3 class="block-title">Edit Brand Reference</h3>
+    <h3 class="block-title">Edit Brand Fragrantica</h3>
   </div>
   <div class="block-content">
     <form class="ajax" data-action="{{ route('superuser.master.brand_reference.update', $brand_reference) }}" data-type="POST" enctype="multipart/form-data">

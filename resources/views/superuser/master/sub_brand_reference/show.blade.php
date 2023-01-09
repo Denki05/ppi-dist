@@ -3,12 +3,12 @@
 @section('content')
 <nav class="breadcrumb bg-white push">
   <span class="breadcrumb-item">Master</span>
-  <a class="breadcrumb-item" href="{{ route('superuser.master.sub_brand_reference.index') }}">Sub Brand Reference</a>
+  <a class="breadcrumb-item" href="{{ route('superuser.master.sub_brand_reference.index') }}">Searah</a>
   <span class="breadcrumb-item active">{{ $sub_brand_reference->id }}</span>
 </nav>
 <div class="block">
   <div class="block-header block-header-default">
-    <h3 class="block-title">Show Sub Brand Reference</h3>
+    <h3 class="block-title">Show Searah</h3>
   </div>
   <div class="block-content">
     <div class="row">
