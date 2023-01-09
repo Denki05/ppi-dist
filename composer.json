@@ -9,6 +9,7 @@
     "license": "MIT",
     "require": {
         "php": "^7.2",
+        "alfa6661/laravel-autonumber": "^1.2",
         "anlutro/l4-settings": "^0.11.0",
         "barryvdh/laravel-dompdf": "^0.8.7",
         "consoletvs/charts": "6.*",

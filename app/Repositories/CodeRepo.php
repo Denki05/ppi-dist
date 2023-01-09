@@ -21,6 +21,7 @@ use App\Entities\Finance\Invoicing;
 use App\Entities\Finance\Payable;
 use App\Entities\Gudang\StockAdjustment;
 use App\Entities\Gudang\Receiving;
+use App\Entities\Master\BrandLokal;
 
 class CodeRepo
 {
@@ -136,4 +137,6 @@ class CodeRepo
     {
         return self::generate('RC', Receiving::class);
     }
+
+    
 }

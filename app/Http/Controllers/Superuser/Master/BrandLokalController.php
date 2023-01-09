@@ -7,9 +7,11 @@ use App\Entities\Master\BrandLokal;
 use App\DataTables\Master\BrandLokalTable;
 use App\Http\Controllers\Controller;
 use App\Entities\Setting\UserMenu;
+use App\Repositories\CodeRepo;
 use Validator;
 use Auth;
 use DB;
+use Carbon\Carbon;
 
 class BrandLokalController extends Controller
 {
@@ -97,8 +99,10 @@ class BrandLokalController extends Controller
             if ($validator->passes()) {
                 DB::beginTransaction();
 
+                
                 $brand_lokal = new BrandLokal;
 
+                // $brand_lokal->code = $getAutoNumberOptions;
                 $brand_lokal->brand_name = $request->brand_name;
                 $brand_lokal->category = $request->category;
                 $brand_lokal->type = $request->type;
@@ -227,7 +231,7 @@ class BrandLokalController extends Controller
      * @param  int  $id
      * @return \Illuminate\Http\Response
      */
-    public function destroy($id)
+    public function destroy(Request $request, $id)
     {
         if(Auth::user()->is_superuser == 0){
             if(empty($this->access) || empty($this->access->user) || $this->access->can_delete == 0){

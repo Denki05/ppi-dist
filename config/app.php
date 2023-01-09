@@ -170,6 +170,7 @@ return [
         Swap\Laravel\SwapServiceProvider::class,
         Yajra\DataTables\DataTablesServiceProvider::class,
         Barryvdh\DomPDF\ServiceProvider::class,
+        Alfa6661\AutoNumber\AutoNumberServiceProvider::class,
         
         /*
          * Application Service Providers...

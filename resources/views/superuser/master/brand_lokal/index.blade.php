@@ -31,7 +31,7 @@
         <tr>
           <th>#</th>
           <th>Created at</th>
-          <th>Brand Name</th>
+          <th>Code</th>
           <th>Category</th>
           <th>Type</th>
           <th>Status</th>
@@ -79,7 +79,7 @@ $(document).ready(function() {
           sort: 'timestamp'
         }
       },
-      {data: 'brand_name'},
+      {data: 'code'},
       {data: 'category'},
       {data: 'type'},
       {data: 'status'},
