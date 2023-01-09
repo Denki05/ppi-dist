@@ -17,12 +17,17 @@
     </button>
 </div>
 @endif
+
+<!-- button add -->
 @if($step == 1 || $step == 9)
 <div class="block">
   <div class="block-content block-content-full">
       <div class="row">
-        <div class="col-12">
+        <div class="col-lg-3">
           <a href="{{route('superuser.penjualan.sales_order.create', $step)}}" class="btn btn-primary"><i class="fa fa-plus"></i> Add Sales Order {{ $step_txt }} (SO)</a>
+        </div>
+        <div class="col-lg-3">
+          
         </div>
       </div>
   </div>
@@ -33,7 +38,6 @@
   <div class="block-content block-content-full">
       <form method="get" action="{{ route('superuser.penjualan.sales_order.index_' . strtolower($step_txt)) }}">
         <div class="row">
-          
           @if($step == 1 || $step == 2)
           <div class="col-lg-3">
             <div class="form-group">

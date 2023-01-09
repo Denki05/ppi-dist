@@ -39,6 +39,7 @@ class SalesOrder extends Model
     	3 => 'PPI',
     	4 => 'LONGDA'
     ];
+    
     const STEP = [
     	1 => 'AWAL',
     	2 => 'LANJUTAN',

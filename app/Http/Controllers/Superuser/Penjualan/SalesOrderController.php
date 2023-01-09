@@ -150,6 +150,11 @@ class SalesOrderController extends Controller
         return view($this->view."index",$data);
     }
 
+    public function get_customer(Request $request, $step = NULL)
+    {
+        
+    }
+
     public function index_awal(Request $request)
     {
         return $this->index($request, 1);
