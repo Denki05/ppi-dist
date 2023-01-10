@@ -11,28 +11,40 @@
     <h3 class="block-title">Show Brand Fragrantica</h3>
   </div>
   <div class="block-content">
-    <div class="row">
-      <label class="col-md-3 col-form-label text-right">Code</label>
-      <div class="col-md-7">
-        <div class="form-control-plaintext">{{ $brand_reference->code }}</div>
-      </div>
-    </div>
-    <div class="row">
-      <label class="col-md-3 col-form-label text-right">Name</label>
-      <div class="col-md-7">
-        <div class="form-control-plaintext">{{ $brand_reference->name }}</div>
-      </div>
-    </div>
-    <div class="row">
-      <label class="col-md-3 col-form-label text-right">Description</label>
-      <div class="col-md-7">
-        <div class="form-control-plaintext">{{ $brand_reference->description }}</div>
-      </div>
-    </div>
-    <div class="row">
-      <label class="col-md-3 col-form-label text-right">Status</label>
-      <div class="col-md-7">
-        <div class="form-control-plaintext">{{ $brand_reference->status() }}</div>
+    <div class="container">
+      <div class="row">
+          <div class="col-6">
+            <div class="form-group row">
+              <label class="col-md-2 col-form-label text-right">Code</label>
+              <div class="col-md-8">
+                {{$brand_reference->code}}
+              </div>
+            </div>
+          </div>
+          <div class="col-6">
+            <div class="form-group row">
+              <label class="col-md-2 col-form-label text-right">Name</label>
+              <div class="col-md-8">
+                {{$brand_reference->name}}
+              </div>
+            </div>
+          </div>
+          <div class="col-6">
+            <div class="form-group row">
+              <label class="col-md-2 col-form-label text-right">Description: </label>
+              <div class="col-md-8">
+                {{$brand_reference->description ?? '-' }} 
+              </div>
+            </div>
+          </div>
+          <div class="col-6">
+            <div class="form-group row">
+              <label class="col-md-2 col-form-label text-right">Status: </label>
+              <div class="col-md-8">
+                {{$brand_reference->status()}}
+              </div>
+            </div>
+          </div>
       </div>
     </div>
     <div class="row pt-30 mb-15">
@@ -66,7 +78,7 @@
     <h3 class="block-title">Sub Brand Reference</h3>
   </div>
   <div class="block-content block-content-full">
-    <table id="datatable" class="table table-striped table-vcenter table-responsive">
+    <table id="datatable" class="table table-striped ">
       <thead>
         <tr>
           <th>#</th>

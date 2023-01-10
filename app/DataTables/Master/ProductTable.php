@@ -14,8 +14,8 @@ class ProductTable extends Table
      */
     private function query()
     {
-        $model = Product::select('master_products.id', 'master_products.code', 'master_product_categories.name as category_name', 'master_products.name', 'master_products.status', 'master_products.created_at')
-        ->join('master_product_categories', 'master_product_categories.id', '=', 'master_products.category_id');
+        $model = Product::select('master_product.id', 'master_product.code', 'master_brand_lokal.brand_name as brand_name', 'master_product.name', 'master_product.status', 'master_product.created_at')
+        ->join('master_brand_lokal', 'master_brand_lokal.id', '=', 'master_product.brand_lokal_id');
 
         return $model;
     }

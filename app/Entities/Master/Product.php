@@ -11,13 +11,13 @@ class Product extends Model
 
     protected $appends = ['image_url', 'image_hd_url'];
     protected $fillable = [
-                        'brand_reference_id', 'sub_brand_reference_id', 'category_id', 'type_id',
+                        'brand_lokal_id', 'sub_brand_reference_id', 'category_id', 'type_id',
                         'code', 'name', 'material_code', 'material_name', 'alias', 'description', 
                         'default_quantity', 'default_unit_id', 'ratio', 'default_warehouse_id',
-                        'buying_price', 'selling_price', 'image', 'image_hd', 'url', 'status'
+                        'buying_price', 'selling_price', 'image', 'image_hd', 'status'
                     ];
 
-    protected $table = 'master_products';
+    protected $table = 'master_product';
     public static $directory_image = 'superuser_assets/media/master/product/';
     
     const NOTE = [
@@ -34,25 +34,30 @@ class Product extends Model
         'INACTIVE' => 2
     ];
 
-    public function brand_reference()
-    {
-        return $this->BelongsTo('App\Entities\Master\BrandReference');
-    }
+    // public function brand_reference()
+    // {
+    //     return $this->BelongsTo('App\Entities\Master\BrandReference');
+    // }
 
     public function sub_brand_reference()
     {
         return $this->BelongsTo('App\Entities\Master\SubBrandReference');
     }
 
-    public function category()
+    public function brand_ppi()
     {
-        return $this->BelongsTo('App\Entities\Master\ProductCategory');
+        return $this->BelongsTo('App\Entities\Master\BrandLokal');
     }
 
-    public function type()
-    {
-        return $this->BelongsTo('App\Entities\Master\ProductType');
-    }
+    // public function category()
+    // {
+    //     return $this->BelongsTo('App\Entities\Master\ProductCategory');
+    // }
+
+    // public function type()
+    // {
+    //     return $this->BelongsTo('App\Entities\Master\ProductType');
+    // }
 
     public function default_unit()
     {

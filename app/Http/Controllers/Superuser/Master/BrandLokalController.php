@@ -81,8 +81,6 @@ class BrandLokalController extends Controller
             $validator = Validator::make($request->all(), [
                 // 'code' => 'required|string|unique:master_brand_references,code',
                 'brand_name' => 'required|string',
-                'category' => 'required|string',
-                'type' => 'required|string',
             ]);
 
             if ($validator->fails()) {
@@ -104,9 +102,6 @@ class BrandLokalController extends Controller
 
                 // $brand_lokal->code = $getAutoNumberOptions;
                 $brand_lokal->brand_name = $request->brand_name;
-                $brand_lokal->category = $request->category;
-                $brand_lokal->type = $request->type;
-                $brand_lokal->packaging = $request->packaging;
                 $brand_lokal->status = BrandLokal::STATUS['ACTIVE'];
 
                 if ($brand_lokal->save()) {
@@ -185,8 +180,6 @@ class BrandLokalController extends Controller
             $validator = Validator::make($request->all(), [
                 // 'code' => 'required|string|unique:master_brand_references,code,' . $brand_reference->id,
                 'brand_name' => 'required|string',
-                'category' => 'required|string',
-                'type' => 'required|string',
             ]);
 
             if ($validator->fails()) {
@@ -204,9 +197,6 @@ class BrandLokalController extends Controller
                 DB::beginTransaction();
 
                 $brand_lokal->brand_name = $request->brand_name;
-                $brand_lokal->category = $request->category;
-                $brand_lokal->type = $request->type;
-                $brand_lokal->packaging = $request->packaging;
 
                 if ($brand_lokal->save()) {
                     DB::commit();

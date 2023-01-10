@@ -127,37 +127,26 @@
                         <fieldset>
                             <h4>Product Brand</h4>
                             <div class="form-group">
-                              <label>Brand Reference <span class="text-danger">*</span></label>
-                              <select class="form-control" id="brand_reference" name="brand_reference" data-placeholder="Select Brand">
+                              <label>Brand <span class="text-danger">*</span></label>
+                              <select class="form-control" id="brand_ppi" name="brand_ppi" data-placeholder="Select Brand">
                                 <option></option>
-                                @foreach($brand_references as $brand_reference)
-                                <option value="{{ $brand_reference->id }}">{{ $brand_reference->name }}</option>
+                                @foreach($brand_ppi as $brand_ppi)
+                                <option value="{{ $brand_ppi->id }}">{{$brand_ppi->brand_name}} - {{$brand_ppi->category}}</option>
                                 @endforeach
                               </select>
                             </div>
+                            
                             <div class="form-group">
-                              <label>Sub Brand Reference <span class="text-danger">*</span></label>
-                              <select class="form-control" id="sub_brand_reference" name="sub_brand_reference" data-placeholder="Select Brand">
-                              </select>
-                            </div>
-                            <div class="form-group">
-                              <label>Category <span class="text-danger">*</span></label>
-                              <select class="form-control" id="category" name="category" data-placeholder="Select Category">
+                              <label>Searah <span class="text-danger">*</span></label>
+                              <select class="form-control" id="searah" name="searah" data-placeholder="Select Searah">
                                 <option></option>
-                                @foreach($product_categories as $category)
-                                <option value="{{ $category->id }}" data-types-id="{{ $category->types->pluck('id') }}">{{ $category->name }}</option>
+                                @foreach($sub_brand_references as $searah)
+                                <option value="{{ $searah->id }}">{{ $searah->name }}</option>
                                 @endforeach
                               </select>
                             </div>
-                            <div class="form-group">
-                              <label for="type">Type <span class="text-danger">*</span></label>
-                              <select class="form-control" id="type" name="type" data-placeholder="Select Type">
-                                <option></option>
-                                @foreach($product_types as $type)
-                                <option value="{{ $type->id }}">{{ $type->name }}</option>
-                                @endforeach
-                              </select>
-                            </div>
+                            
+                            
                             <div class="f1-buttons">
                                 <button type="button" class="btn btn-warning btn-previous"><i class="fa fa-arrow-left"></i> Previous</button>
                                 <button type="button" class="btn btn-primary btn-next">Next <i class="fa fa-arrow-right"></i></button>
@@ -301,19 +290,19 @@
 
     $(function(){
 
-    $('#brand_reference').on('change', function(){
-      let brand_reference_id = $('#brand_reference').val();
+    $('#brand_ppi').on('change', function(){
+      let brand_ppi = $('#brand_ppi').val();
 
       
 
       $.ajax({
         type : 'POST',
-        url : '{{route('superuser.master.product.getsubrand')}}',
-        data : {brand_reference_id:brand_reference_id},
+        url : '{{route('superuser.master.product.getcategory')}}',
+        data : {brand_ppi:brand_ppi},
         cache : false,
 
         success: function(msg){
-          $('#sub_brand_reference').html(msg);
+          $('#category').html(msg);
         },
         error : function(data){
           console.log('error:',data)

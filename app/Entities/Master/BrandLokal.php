@@ -10,7 +10,7 @@ class BrandLokal extends Model
 {
     use SoftDeletes, AutoNumberTrait;
 
-    protected $fillable = ['code' ,'brand_name', 'category', 'type', 'packaging', 'status'];
+    protected $fillable = ['code' ,'brand_name', 'status'];
     protected $table = 'master_brand_lokal';
 
     const STATUS = [

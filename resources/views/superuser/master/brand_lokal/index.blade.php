@@ -32,7 +32,6 @@
           <th>#</th>
           <th>Created at</th>
           <th>Code</th>
-          <th>Category</th>
           <th>Type</th>
           <th>Status</th>
           <th>Action</th>
@@ -80,7 +79,6 @@ $(document).ready(function() {
         }
       },
       {data: 'code'},
-      {data: 'category'},
       {data: 'type'},
       {data: 'status'},
       {data: 'action', orderable: false, searcable: false}

@@ -11,44 +11,50 @@
     <h3 class="block-title">Show Searah</h3>
   </div>
   <div class="block-content">
-    <div class="row">
-      <label class="col-md-3 col-form-label text-right">Code</label>
-      <div class="col-md-7">
-        <div class="form-control-plaintext">{{ $sub_brand_reference->code }}</div>
-      </div>
-    </div>
-    <div class="row">
-      <label class="col-md-3 col-form-label text-right">Brand Reference</label>
-      <div class="col-md-7">
-        <div class="form-control-plaintext">
-          <a href="{{ route('superuser.master.brand_reference.show', $sub_brand_reference->brand_reference->id) }}">
-            {{ $sub_brand_reference->brand_reference->name }}
-          </a>
-        </div>
-      </div>
-    </div>
-    <div class="row">
-      <label class="col-md-3 col-form-label text-right">Name</label>
-      <div class="col-md-7">
-        <div class="form-control-plaintext">{{ $sub_brand_reference->name }}</div>
-      </div>
-    </div>
-    <div class="row">
-      <label class="col-md-3 col-form-label text-right">Link URL Fragrantica</label>
-      <div class="col-md-7">
-        <div class="form-control-plaintext">{{ $sub_brand_reference->link }}</div>
-      </div>
-    </div>
-    <div class="row">
-      <label class="col-md-3 col-form-label text-right">Description (Top, Body, Base)</label>
-      <div class="col-md-7">
-        <div class="form-control-plaintext">{{ $sub_brand_reference->description }}</div>
-      </div>
-    </div>
-    <div class="row">
-      <label class="col-md-3 col-form-label text-right">Status</label>
-      <div class="col-md-7">
-        <div class="form-control-plaintext">{{ $sub_brand_reference->status() }}</div>
+    <div class="container">
+      <div class="row">
+          <div class="col-6">
+            <div class="form-group row">
+              <label class="col-md-2 col-form-label text-right">Code: </label>
+              <div class="col-md-8">
+                <div class="form-control-plaintext">{{ $sub_brand_reference->code }}</div>
+              </div>
+            </div>
+          </div>
+          <div class="col-6">
+            <div class="form-group row">
+              <label class="col-md-2 col-form-label text-right">Name: </label>
+              <div class="col-md-8">
+                <a href="{{ route('superuser.master.brand_reference.show', $sub_brand_reference->brand_reference->id) }}">
+                  <div class="form-control-plaintext">{{ $sub_brand_reference->name }}</div>
+                </a>
+              </div>
+            </div>
+          </div>
+          <div class="col-6">
+            <div class="form-group row">
+              <label class="col-md-2 col-form-label text-right">URL Fragrantica: </label>
+              <div class="col-md-8">
+                <div class="form-control-plaintext">{{ $sub_brand_reference->link }}</div>
+              </div>
+            </div>
+          </div>
+          <div class="col-6">
+            <div class="form-group row">
+              <label class="col-md-2 col-form-label text-right">Description: </label>
+              <div class="col-md-8">
+                <div class="form-control-plaintext">{{ $sub_brand_reference->description }}</div>
+              </div>
+            </div>
+          </div>
+          <div class="col-6">
+            <div class="form-group row">
+              <label class="col-md-2 col-form-label text-right">Status: </label>
+              <div class="col-md-7">
+                <div class="form-control-plaintext">{{ $sub_brand_reference->status() }}</div>
+              </div>
+            </div>
+          </div>
       </div>
     </div>
     <div class="row pt-30 mb-15">

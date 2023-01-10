@@ -4,10 +4,11 @@ namespace App\Http\Controllers\Superuser\Master;
 
 use App\DataTables\Master\ProductTable;
 use App\Entities\Master\Product;
-use App\Entities\Master\ProductCategory;
-use App\Entities\Master\ProductType;
+// use App\Entities\Master\ProductCategory;
+// use App\Entities\Master\ProductType;
 use App\Entities\Master\ProductMinStock;
 use App\Entities\Master\SubBrandReference;
+use App\Entities\Master\BrandLokal;
 use App\Entities\Master\Fragrantica;
 use App\Exports\Master\ProductExport;
 use App\Exports\Master\ProductImportTemplate;
@@ -57,17 +58,8 @@ class ProductController extends Controller
 
         return view('superuser.master.product.index');
     }
+
     
-    public function getsubrand(request $request)
-    {
-        $brand_reference_id = $request->brand_reference_id;
-
-        $sub_brands = SubBrandReference::where('brand_reference_id', $brand_reference_id)->get();
-
-        foreach ($sub_brands as $sub_brand){
-            echo "<option value='$sub_brand->id'>$sub_brand->name</option>";
-        }
-    }
 
     public function create()
     {
@@ -78,15 +70,17 @@ class ProductController extends Controller
             }
         }
 
-        $data['brand_references'] = MasterRepo::brand_references();
+        $data['brand_ppi'] = BrandLokal::get();
+
         $data['sub_brand_references'] = MasterRepo::sub_brand_references();
-        $data['product_categories'] = MasterRepo::product_categories();
-        $data['product_types'] = MasterRepo::product_types();
+        // $data['product_categories'] = MasterRepo::product_categories();
+        // $data['product_types'] = MasterRepo::product_types();
         $data['units'] = MasterRepo::units();
         $data['warehouses'] = MasterRepo::warehouses();
         $data['product_notes'] = Product::NOTE;
         $data['fragrantica'] = Fragrantica::all();
 
+        // dd($data['brand_ppi']);
         return view('superuser.master.product.create', $data);
     }
 
@@ -94,16 +88,14 @@ class ProductController extends Controller
     {
         if ($request->ajax()) {
             $validator = Validator::make($request->all(), [
-                'brand_reference' => 'required|integer',
-                'sub_brand_reference' => 'required|integer',
-                'category' => 'required|integer',
-                'type' => 'required|integer',
+                'brand_ppi' => 'required|integer',
+                'searah' => 'required|integer',
 
                 'code' => 'required|string',
                 'name' => 'required|string',
                 'material_code' => 'required|string',
                 'material_name' => 'required|string',
-                'alias' => 'required|string',
+                // 'alias' => 'required|string',
                 'buying_price' => 'nullable|numeric|min:0',
                 'selling_price' => 'nullable|numeric|min:0',
                 'description' => 'nullable|string',
@@ -111,7 +103,7 @@ class ProductController extends Controller
 
                 'default_quantity' => 'required|numeric',
                 'default_unit' => 'required|integer',
-                'ratio' => 'required|numeric',
+                // 'ratio' => 'required|numeric',
                 'default_warehouse' => 'required|integer',
 
                 'image' => 'nullable|image|mimes:jpeg,png,jpg|max:2048',
@@ -132,12 +124,12 @@ class ProductController extends Controller
             if ($validator->passes()) {
                 DB::beginTransaction();
 
+                
+
                 $product = new Product;
 
-                $product->brand_reference_id = $request->brand_reference;
-                $product->sub_brand_reference_id = $request->sub_brand_reference;
-                $product->category_id = $request->category;
-                $product->type_id = $request->type;
+                $product->brand_lokal_id = $request->brand_ppi;
+                $product->sub_brand_reference_id = $request->searah;
 
                 $product->code = $request->code;
                 $product->name = $request->name;
@@ -153,7 +145,6 @@ class ProductController extends Controller
                 $product->default_unit_id = $request->default_unit;
                 $product->ratio = $request->ratio;
                 $product->default_warehouse_id = $request->default_warehouse;
-                $product->url = $request->url;
 
                 if (!empty($request->file('image'))) {
                     $product->image = UploadMedia::image($request->file('image'), Product::$directory_image);
