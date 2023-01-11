@@ -14,7 +14,7 @@ class BrandLokalTable extends Table
      */
     private function query()
     {
-        $model = BrandLokal::select('id', 'code', 'brand_name', 'category', 'type', 'status', 'created_at');
+        $model = BrandLokal::select('id', 'code', 'brand_name', 'status', 'created_at');
 
         return $model;
     }

@@ -131,11 +131,16 @@
                               <select class="form-control" id="brand_ppi" name="brand_ppi" data-placeholder="Select Brand">
                                 <option></option>
                                 @foreach($brand_ppi as $brand_ppi)
-                                <option value="{{ $brand_ppi->id }}">{{$brand_ppi->brand_name}} - {{$brand_ppi->category}}</option>
+                                <option value="{{ $brand_ppi->id }}">{{$brand_ppi->brand_name}}</option>
                                 @endforeach
                               </select>
                             </div>
-                            
+                            <div class="form-group">
+                              <label>Category <span class="text-danger">*</span></label>
+                              <select class="form-control" id="category" name="category" data-placeholder="Select Brand">
+                                <option value="">==Select Category==</option>
+                              </select>
+                            </div>
                             <div class="form-group">
                               <label>Searah <span class="text-danger">*</span></label>
                               <select class="form-control" id="searah" name="searah" data-placeholder="Select Searah">
@@ -291,14 +296,14 @@
     $(function(){
 
     $('#brand_ppi').on('change', function(){
-      let brand_ppi = $('#brand_ppi').val();
+      let brand_local_id = $('#brand_ppi').val();
 
       
 
       $.ajax({
         type : 'POST',
         url : '{{route('superuser.master.product.getcategory')}}',
-        data : {brand_ppi:brand_ppi},
+        data : {brand_local_id:brand_local_id},
         cache : false,
 
         success: function(msg){

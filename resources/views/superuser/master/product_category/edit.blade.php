@@ -22,49 +22,33 @@
         </div>
       </div>
       <div class="form-group row">
-        <label class="col-md-3 col-form-label text-right" for="name">Name <span class="text-danger">*</span></label>
+        <label class="col-md-3 col-form-label text-right" for="name">Category <span class="text-danger">*</span></label>
         <div class="col-md-7">
           <input type="text" class="form-control" id="name" name="name" value="{{ $product_category->name }}">
         </div>
       </div>
-      {{-- <div class="form-group row">
-        <label class="col-md-3 col-form-label text-right" for="type">Type <span class="text-danger">*</span></label>
+      <div class="form-group row">
+        <label class="col-md-3 col-form-label text-right" for="name">Type <span class="text-danger">*</span></label>
         <div class="col-md-7">
-          <select class="js-select2 form-control" id="type" name="type" data-placeholder="Select Type">
-            <option></option>
-            @foreach($product_types as $type)
-            <option value="{{ $type->id }}" {{ ($type->id == $product_category->type_id) ? 'selected' : '' }}>{{ $type->name }}</option>
-            @endforeach
+          <input type="text" class="form-control" id="type" name="type" value="{{ $product_category->type }}">
+        </div>
+      </div>
+      <div class="form-group row">
+        <label class="col-md-3 col-form-label text-right" for="packaging">Packaging <span class="text-danger">*</span></label>
+        <div class="col-md-7">
+          <select class="js-select2 form-control" id="packaging" name="packaging" data-placeholder="Select Packaging">
+            <option value="">==Select Packaging==</option>
+            <option value="100gr">100 gr</option>
+            <option value="500gr">500 gr</option>
+            <option value="2500gr">2.5 kg</option>
+            <option value="5000gr">5000 gr / 5 kg</option>
+            <option value="25kg">25 kg</option>
           </select>
-        </div>
-      </div> --}}
-      <div class="form-group row">
-        <label class="col-md-3 col-form-label text-right" for="description">Description</label>
-        <div class="col-md-7">
-          <textarea class="form-control" id="description" name="description">{{ $product_category->description }}</textarea>
-        </div>
-      </div>
-      <div class="form-group row">
-        <label class="col-md-3 col-form-label text-right" for="image_header_list">Image Header List</label>
-        <div class="col-md-7">
-          @if(!empty($product_category->image_header_list))
-          <a href="<?= asset($product_category->image_header_list); ?>" target="_blank" class="btn btn-info btn-xs mb-2">Lihat</a>
-          @endif
-          <input type="file" class="form-control" id="image_header_list" name="image_header_list" accept="image/*">
-        </div>
-      </div>
-      <div class="form-group row">
-        <label class="col-md-3 col-form-label text-right" for="image_header_price">Image Header Price</label>
-        <div class="col-md-7">
-          @if(!empty($product_category->image_header_price))
-          <a href="<?= asset($product_category->image_header_price); ?>" target="_blank" class="btn btn-info btn-xs mb-2">Lihat</a>
-          @endif
-          <input type="file" class="form-control" id="image_header_price" name="image_header_price" accept="image/*">
         </div>
       </div>
       <div class="form-group row pt-30">
         <div class="col-md-6">
-          <a href="{{ route('superuser.master.product_category.show', $product_category->id) }}">
+          <a href="{{ route('superuser.master.product_category.index') }}">
             <button type="button" class="btn bg-gd-cherry border-0 text-white">
               <i class="fa fa-arrow-left mr-10"></i> Back
             </button>

@@ -4,6 +4,7 @@ namespace App\Entities\Master;
 
 use App\Entities\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Alfa6661\AutoNumber\AutoNumberTrait;
 
 class Product extends Model
 {
@@ -11,7 +12,7 @@ class Product extends Model
 
     protected $appends = ['image_url', 'image_hd_url'];
     protected $fillable = [
-                        'brand_lokal_id', 'sub_brand_reference_id', 'category_id', 'type_id',
+                        'factory_id', 'category_id', 'sub_brand_reference_id', 'category_id',
                         'code', 'name', 'material_code', 'material_name', 'alias', 'description', 
                         'default_quantity', 'default_unit_id', 'ratio', 'default_warehouse_id',
                         'buying_price', 'selling_price', 'image', 'image_hd', 'status'
@@ -34,19 +35,14 @@ class Product extends Model
         'INACTIVE' => 2
     ];
 
-    // public function brand_reference()
-    // {
-    //     return $this->BelongsTo('App\Entities\Master\BrandReference');
-    // }
-
     public function sub_brand_reference()
     {
-        return $this->BelongsTo('App\Entities\Master\SubBrandReference');
+        return $this->BelongsTo('App\Entities\Master\SubBrandReference', 'sub_brand_reference_id');
     }
 
     public function brand_ppi()
     {
-        return $this->BelongsTo('App\Entities\Master\BrandLokal');
+        return $this->BelongsTo('App\Entities\Master\BrandLokal', 'brand_lokal_id');
     }
 
     // public function category()

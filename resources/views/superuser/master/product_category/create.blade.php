@@ -13,45 +13,40 @@
   </div>
   <div class="block-content">
     <form class="ajax" data-action="{{ route('superuser.master.product_category.store') }}" data-type="POST" enctype="multipart/form-data">
-      {{-- <div class="form-group row">
-        <label class="col-md-3 col-form-label text-right" for="code">Code <span class="text-danger">*</span></label>
-        <div class="col-md-7">
-          <input type="text" class="form-control" id="code" name="code" onkeyup="nospaces(this)">
-        </div>
-      </div> --}}
       <div class="form-group row">
-        <label class="col-md-3 col-form-label text-right" for="name">Name <span class="text-danger">*</span></label>
+        <label class="col-md-3 col-form-label text-right" for="name">Brand <span class="text-danger">*</span></label>
+        <div class="col-md-7">
+          <select class="js-select2 form-control" id="brand_lokal" name="brand_lokal" data-placeholder="Select Brand">
+            <option value="">==Select Brand==</option>
+            @foreach($brand_lokal as $i)
+            <option value="{{$i->id}}">{{$i->brand_name}}</option>
+            @endforeach
+          </select>
+        </div>
+      </div>
+      <div class="form-group row">
+        <label class="col-md-3 col-form-label text-right" for="name">Category <span class="text-danger">*</span></label>
         <div class="col-md-7">
           <input type="text" class="form-control" id="name" name="name">
         </div>
       </div>
-      {{-- <div class="form-group row">
-        <label class="col-md-3 col-form-label text-right" for="type">Type <span class="text-danger">*</span></label>
+      <div class="form-group row">
+        <label class="col-md-3 col-form-label text-right" for="type">Type</label>
         <div class="col-md-7">
-          <select class="js-select2 form-control" id="type" name="type" data-placeholder="Select Type">
-            <option></option>
-            @foreach($product_types as $type)
-            <option value="{{ $type->id }}">{{ $type->name }}</option>
-            @endforeach
+          <input type="text" class="form-control" id="type" name="type">
+        </div>
+      </div>
+      <div class="form-group row">
+        <label class="col-md-3 col-form-label text-right" for="packaging">Packaging <span class="text-danger">*</span></label>
+        <div class="col-md-7">
+          <select class="js-select2 form-control" id="packaging" name="packaging" data-placeholder="Select Packaging">
+            <option value="">==Select Packaging==</option>
+            <option value="100gr">100 gr</option>
+            <option value="500gr">500 gr</option>
+            <option value="2500gr">2.5 kg</option>
+            <option value="5000gr">5000 gr / 5 kg</option>
+            <option value="25kg">25 kg</option>
           </select>
-        </div>
-      </div> --}}
-      <div class="form-group row">
-        <label class="col-md-3 col-form-label text-right" for="description">Description</label>
-        <div class="col-md-7">
-          <textarea class="form-control" id="description" name="description"></textarea>
-        </div>
-      </div>
-      <div class="form-group row">
-        <label class="col-md-3 col-form-label text-right" for="image_header_list">Image Header List</label>
-        <div class="col-md-7">
-          <input type="file" class="form-control" id="image_header_list" name="image_header_list" accept="image/*">
-        </div>
-      </div>
-      <div class="form-group row">
-        <label class="col-md-3 col-form-label text-right" for="image_header_price">Image Header Price</label>
-        <div class="col-md-7">
-          <input type="file" class="form-control" id="image_header_price" name="image_header_price" accept="image/*">
         </div>
       </div>
       <div class="form-group row pt-30">

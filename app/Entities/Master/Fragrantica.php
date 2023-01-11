@@ -19,11 +19,11 @@ class Fragrantica extends Model
 
     public function product()
     {
-        return $this->belongsTo('App\Entities\Master\Product');
+        return $this->BelongsTo('App\Entities\Master\Product', 'product_id');
     }
 
     public function brand_reference()
     {
-        return $this->BelongsTo('App\Entities\Master\BrandReference');
+        return $this->BelongsTo('App\Entities\Master\BrandReference', 'brand_reference_id');
     }
 }

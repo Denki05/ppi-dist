@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Superuser\Master;
 
 use App\DataTables\Master\ProductCategoryTable;
 use App\Entities\Master\ProductCategory;
+use App\Entities\Master\BrandLokal;
 use App\Exports\Master\ProductCategoryExport;
 use App\Exports\Master\ProductCategoryImportTemplate;
 use App\Http\Controllers\Controller;
@@ -59,19 +60,20 @@ class ProductCategoryController extends Controller
                 return redirect()->route('superuser.index')->with('error','Anda tidak punya akses untuk membuka menu terkait');
             }
         }
-        // $data['product_types'] = MasterRepo::product_types();
 
-        return view('superuser.master.product_category.create');
+        $data['brand_lokal'] = BrandLokal::get();
+
+        return view('superuser.master.product_category.create', $data);
     }
 
     public function store(Request $request)
     {
         if ($request->ajax()) {
             $validator = Validator::make($request->all(), [
-                // 'code' => 'required|string|unique:master_product_categories,code',
+                'brand_lokal' => 'required',
                 'name' => 'required|string',
-                // 'type' => 'required|integer',
-                'description' => 'nullable|string',
+                'type' => 'nullable|string',
+                'packaging' => 'nullable|string',
             ]);
 
             if ($validator->fails()) {
@@ -85,57 +87,16 @@ class ProductCategoryController extends Controller
                 return $this->response(400, $response);
             }
 
-            $image_header_price = $request->file('image_header_price');
-            $image_header_list = $request->file('image_header_list');
-
-            if(!empty($image_header_price)){
-                $extension = $image_header_price->getClientOriginalExtension();
-                $valid_ext = ['jpeg','png','jpg','gif'];
-
-                if(!in_array(strtolower($extension), $valid_ext)){
-                    $response['notification'] = [
-                        'alert' => 'block',
-                        'type' => 'alert-danger',
-                        'header' => 'Error',
-                        'content' => 'Format image diperbolehkan yaitu jpeg,jpg,png,gif',
-                    ];
-
-                    return $this->response(400, $response);
-                }
-
-                $image_header_price = $image_header_price->store('images/master/product_category', 'public');
-            }
-
-            if(!empty($image_header_list)){
-                $extension = $image_header_list->getClientOriginalExtension();
-                $valid_ext = ['jpeg','png','jpg','gif'];
-
-                if(!in_array(strtolower($extension), $valid_ext)){
-                    $response['notification'] = [
-                        'alert' => 'block',
-                        'type' => 'alert-danger',
-                        'header' => 'Error',
-                        'content' => 'Format image diperbolehkan yaitu jpeg,jpg,png,gif',
-                    ];
-
-                    return $this->response(400, $response);
-                }
-
-                $image_header_list = $image_header_list->store('images/master/product_category', 'public');
-            }
-
             if ($validator->passes()) {
                 DB::beginTransaction();
 
                 $product_category = new ProductCategory;
 
-                // $product_category->type_id = $request->type;
-                $product_category->code = CodeRepo::generateProductCategory();
+                $product_category->brand_lokal_id = $request->brand_lokal;
                 $product_category->name = $request->name;
-                $product_category->description = $request->description;
+                $product_category->type = $request->type;
+                $product_category->packaging = $request->packaging;
                 $product_category->status = ProductCategory::STATUS['ACTIVE'];
-                $product_category->image_header_list = $image_header_list;
-                $product_category->image_header_price = $image_header_price;
 
                 if ($product_category->save()) {
                     DB::commit();
@@ -195,8 +156,8 @@ class ProductCategoryController extends Controller
             $validator = Validator::make($request->all(), [
                 // 'code' => 'required|string|unique:master_product_categories,code,' . $product_category->id,
                 'name' => 'required|string',
-                // 'type' => 'required|integer',
-                'description' => 'nullable|string',
+                'type' => 'required|string',
+                'packaging' => 'required|string',
             ]);
 
             if ($validator->fails()) {
@@ -210,60 +171,12 @@ class ProductCategoryController extends Controller
                 return $this->response(400, $response);
             }
 
-            $image_header_price = $request->file('image_header_price');
-            $image_header_list = $request->file('image_header_list');
-
-            if(!empty($image_header_price)){
-                $extension = $image_header_price->getClientOriginalExtension();
-                $valid_ext = ['jpeg','png','jpg','gif'];
-
-                if(!in_array(strtolower($extension), $valid_ext)){
-                    $response['notification'] = [
-                        'alert' => 'block',
-                        'type' => 'alert-danger',
-                        'header' => 'Error',
-                        'content' => 'Format image diperbolehkan yaitu jpeg,jpg,png,gif',
-                    ];
-
-                    return $this->response(400, $response);
-                }
-
-                $image_header_price = $image_header_price->store('images/master/product_category', 'public');
-            }
-            else{
-                $image_header_price = $product_category->image_header_price;
-            }
-
-            if(!empty($image_header_list)){
-                $extension = $image_header_list->getClientOriginalExtension();
-                $valid_ext = ['jpeg','png','jpg','gif'];
-
-                if(!in_array(strtolower($extension), $valid_ext)){
-                    $response['notification'] = [
-                        'alert' => 'block',
-                        'type' => 'alert-danger',
-                        'header' => 'Error',
-                        'content' => 'Format image diperbolehkan yaitu jpeg,jpg,png,gif',
-                    ];
-
-                    return $this->response(400, $response);
-                }
-
-                $image_header_list = $image_header_list->store('images/master/product_category', 'public');
-            }
-            else{
-                $image_header_list = $product_category->image_header_list;
-            }
-
             if ($validator->passes()) {
                 DB::beginTransaction();
 
-                // $product_category->type_id = $request->type;
-                // $product_category->code = $request->code;
                 $product_category->name = $request->name;
-                $product_category->description = $request->description;
-                $product_category->image_header_list = $image_header_list;
-                $product_category->image_header_price = $image_header_price;
+                $product_category->type = $request->type;
+                $product_category->packaging = $request->packaging;
 
                 if ($product_category->save()) {
                     DB::commit();

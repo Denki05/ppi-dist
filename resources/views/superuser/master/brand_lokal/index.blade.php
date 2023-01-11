@@ -32,7 +32,7 @@
           <th>#</th>
           <th>Created at</th>
           <th>Code</th>
-          <th>Type</th>
+          <th>Name</th>
           <th>Status</th>
           <th>Action</th>
         </tr>
@@ -79,7 +79,7 @@ $(document).ready(function() {
         }
       },
       {data: 'code'},
-      {data: 'type'},
+      {data: 'brand_name'},
       {data: 'status'},
       {data: 'action', orderable: false, searcable: false}
     ],

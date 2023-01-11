@@ -100,7 +100,6 @@ class BrandLokalController extends Controller
                 
                 $brand_lokal = new BrandLokal;
 
-                // $brand_lokal->code = $getAutoNumberOptions;
                 $brand_lokal->brand_name = $request->brand_name;
                 $brand_lokal->status = BrandLokal::STATUS['ACTIVE'];
 

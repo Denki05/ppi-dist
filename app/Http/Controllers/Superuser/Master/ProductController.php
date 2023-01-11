@@ -4,7 +4,7 @@ namespace App\Http\Controllers\Superuser\Master;
 
 use App\DataTables\Master\ProductTable;
 use App\Entities\Master\Product;
-// use App\Entities\Master\ProductCategory;
+use App\Entities\Master\ProductCategory;
 // use App\Entities\Master\ProductType;
 use App\Entities\Master\ProductMinStock;
 use App\Entities\Master\SubBrandReference;
@@ -59,7 +59,18 @@ class ProductController extends Controller
         return view('superuser.master.product.index');
     }
 
-    
+    public function getcategory(Request $request)
+    {
+        $brand_local_id = $request->brand_local_id;
+
+        $category = ProductCategory::where('status', 1)
+                                ->where('brand_lokal_id', $brand_local_id)
+                                ->get();
+
+        foreach ($category as $cat){
+            echo "<option value='$cat->id'>$cat->name - $cat->type - $cat->packaging</option>";
+        }
+    }
 
     public function create()
     {
@@ -90,8 +101,8 @@ class ProductController extends Controller
             $validator = Validator::make($request->all(), [
                 'brand_ppi' => 'required|integer',
                 'searah' => 'required|integer',
+                'category' => 'required|integer',
 
-                'code' => 'required|string',
                 'name' => 'required|string',
                 'material_code' => 'required|string',
                 'material_name' => 'required|string',
@@ -124,14 +135,13 @@ class ProductController extends Controller
             if ($validator->passes()) {
                 DB::beginTransaction();
 
-                
-
                 $product = new Product;
 
+                $product->code = $request->code;
                 $product->brand_lokal_id = $request->brand_ppi;
                 $product->sub_brand_reference_id = $request->searah;
+                $product->category_id = $request->category;
 
-                $product->code = $request->code;
                 $product->name = $request->name;
                 $product->material_code = $request->material_code;
                 $product->material_name = $request->material_name;
@@ -163,7 +173,7 @@ class ProductController extends Controller
 
                                 $frag = new Fragrantica;
                                 $frag->product_id = $product->id;
-                                $frag->brand_reference_id = $product->brand_reference_id;
+                                $frag->brand_reference_id = $product->sub_brand_reference->brand_reference->id;
                                 $frag->parfume_scent = $request->parfume_scent[$key];
                                 $frag->scent_range = $request->scent_range[$key];
                                 $frag->color_scent = $request->color_scent[$key];
