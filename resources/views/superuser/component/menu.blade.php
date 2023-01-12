@@ -31,7 +31,7 @@
                             <li><a href="{{ route('superuser.master.product.index') }}" target="_blank">Product List</a></li>
                             <li><a href="{{ route('superuser.master.product_category.index') }}" target="_blank">Product Category</a></li>
                             {{--<li><a href="{{ route('superuser.master.product_type.index') }}" target="_blank">Product Type</a></li>--}}
-                            <li><a href="{{ route('superuser.master.brand_lokal.index') }}" target="_blank">Brand Lokal</a></li>
+                            {{--<li><a href="{{ route('superuser.master.brand_lokal.index') }}" target="_blank">Brand Lokal</a></li>--}}
                             <li><a href="{{ route('superuser.master.brand_reference.index') }}" target="_blank">Brand Fragrantica</a></li>
                             <li><a href="{{ route('superuser.master.sub_brand_reference.index') }}" target="_blank">Searah</a></li>
                             <li><a href="{{ route('superuser.master.unit.index') }}" target="_blank">Unit</a></li>

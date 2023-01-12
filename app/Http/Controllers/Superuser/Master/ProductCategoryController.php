@@ -70,7 +70,7 @@ class ProductCategoryController extends Controller
     {
         if ($request->ajax()) {
             $validator = Validator::make($request->all(), [
-                'brand_lokal' => 'required',
+                'brand_ppi' => 'required',
                 'name' => 'required|string',
                 'type' => 'nullable|string',
                 'packaging' => 'nullable|string',
@@ -92,7 +92,8 @@ class ProductCategoryController extends Controller
 
                 $product_category = new ProductCategory;
 
-                $product_category->brand_lokal_id = $request->brand_lokal;
+                $product_category->brand_lokal_id = $request->brand_ppi;
+                $product_category->brand_name = $request->brand_name;
                 $product_category->name = $request->name;
                 $product_category->type = $request->type;
                 $product_category->packaging = $request->packaging;

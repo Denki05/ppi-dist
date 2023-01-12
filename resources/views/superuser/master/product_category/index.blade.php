@@ -32,7 +32,9 @@
           <th>#</th>
           <th>Created at</th>
           <th>Code</th>
-          <th>Name</th>
+          <th>Category</th>
+          <th>Type</th>
+          <th>Packaging</th>
           <th>Status</th>
           <th>Action</th>
         </tr>
@@ -80,6 +82,8 @@ $(document).ready(function() {
       },
       {data: 'code'},
       {data: 'name'},
+      {data: 'type'},
+      {data: 'packaging'},
       {data: 'status'},
       {data: 'action', orderable: false, searcable: false}
     ],

@@ -61,10 +61,10 @@ class ProductController extends Controller
 
     public function getcategory(Request $request)
     {
-        $brand_local_id = $request->brand_local_id;
+        $brand_id = $request->brand_id;
 
         $category = ProductCategory::where('status', 1)
-                                ->where('brand_lokal_id', $brand_local_id)
+                                ->where('brand_lokal_id', $brand_id)
                                 ->get();
 
         foreach ($category as $cat){
@@ -82,10 +82,8 @@ class ProductController extends Controller
         }
 
         $data['brand_ppi'] = BrandLokal::get();
-
+        $data['category'] = ProductCategory::get();
         $data['sub_brand_references'] = MasterRepo::sub_brand_references();
-        // $data['product_categories'] = MasterRepo::product_categories();
-        // $data['product_types'] = MasterRepo::product_types();
         $data['units'] = MasterRepo::units();
         $data['warehouses'] = MasterRepo::warehouses();
         $data['product_notes'] = Product::NOTE;
@@ -99,7 +97,7 @@ class ProductController extends Controller
     {
         if ($request->ajax()) {
             $validator = Validator::make($request->all(), [
-                'brand_ppi' => 'required|integer',
+                'brand_name' => 'required|integer',
                 'searah' => 'required|integer',
                 'category' => 'required|integer',
 
@@ -138,7 +136,7 @@ class ProductController extends Controller
                 $product = new Product;
 
                 $product->code = $request->code;
-                $product->brand_lokal_id = $request->brand_ppi;
+                $product->brand_name = $request->brand_name;
                 $product->sub_brand_reference_id = $request->searah;
                 $product->category_id = $request->category;
 

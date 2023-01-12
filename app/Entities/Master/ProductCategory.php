@@ -10,7 +10,7 @@ class ProductCategory extends Model
 {
     use SoftDeletes, AutoNumberTrait;
 
-    protected $fillable = ['brand_lokal_id', 'code', 'name', 'type', 'status','packaging','status'];
+    protected $fillable = ['brand_lokal_id', 'brand_name', 'code', 'name', 'type', 'status','packaging','status'];
     protected $table = 'master_product_category';
 
     const STATUS = [

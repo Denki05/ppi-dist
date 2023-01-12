@@ -36,7 +36,8 @@
         <tr>
           <th><input type="checkbox" onclick="$('input.check-entity').prop('checked', this.checked);" /></th>
           <th>Code</th>
-          <th>Product Brand</th>
+          <th>Brand</th>
+          <th>Category</th>
           <th>Name</th>
           <th>Status</th>
           <th>Action</th>
@@ -77,7 +78,8 @@ $(document).ready(function() {
     columns: [
       {data: 'check', orderable: false, searcable: false},
       {data: 'code'},
-      {data: 'brand_name', name: 'master_brand_lokal.brand_name'},
+      {data: 'brand_name'},
+      {data: 'category_name', name: '.category_name'},
       {data: 'name'},
       {data: 'status'},
       {data: 'action', orderable: false, searcable: false}

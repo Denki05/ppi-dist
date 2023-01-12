@@ -128,10 +128,10 @@
                             <h4>Product Brand</h4>
                             <div class="form-group">
                               <label>Brand <span class="text-danger">*</span></label>
-                              <select class="form-control" id="brand_ppi" name="brand_ppi" data-placeholder="Select Brand">
+                              <select class="form-control" id="brand_name" name="brand_name" data-placeholder="Select Brand">
                                 <option></option>
                                 @foreach($brand_ppi as $brand_ppi)
-                                <option value="{{ $brand_ppi->id }}">{{$brand_ppi->brand_name}}</option>
+                                <option value="{{ $brand_ppi->brand_name }}">{{$brand_ppi->brand_name}}</option>
                                 @endforeach
                               </select>
                             </div>
@@ -296,14 +296,14 @@
     $(function(){
 
     $('#brand_ppi').on('change', function(){
-      let brand_local_id = $('#brand_ppi').val();
+      let brand_name = $('#brand_name').val();
 
       
 
       $.ajax({
         type : 'POST',
         url : '{{route('superuser.master.product.getcategory')}}',
-        data : {brand_local_id:brand_local_id},
+        data : {brand_name:brand_name},
         cache : false,
 
         success: function(msg){

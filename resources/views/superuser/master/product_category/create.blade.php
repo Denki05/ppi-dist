@@ -14,14 +14,15 @@
   <div class="block-content">
     <form class="ajax" data-action="{{ route('superuser.master.product_category.store') }}" data-type="POST" enctype="multipart/form-data">
       <div class="form-group row">
-        <label class="col-md-3 col-form-label text-right" for="name">Brand <span class="text-danger">*</span></label>
+        <label class="col-md-3 col-form-label text-right" for="brand_ppi">Brand <span class="text-danger">*</span></label>
         <div class="col-md-7">
-          <select class="js-select2 form-control" id="brand_lokal" name="brand_lokal" data-placeholder="Select Brand">
+          <select class="js-select2 form-control" id="brand_ppi" name="brand_ppi" data-placeholder="Select Brand">
             <option value="">==Select Brand==</option>
             @foreach($brand_lokal as $i)
             <option value="{{$i->id}}">{{$i->brand_name}}</option>
             @endforeach
           </select>
+          <input type="hidden" name="brand_name">
         </div>
       </div>
       <div class="form-group row">
@@ -43,6 +44,7 @@
             <option value="">==Select Packaging==</option>
             <option value="100gr">100 gr</option>
             <option value="500gr">500 gr</option>
+            <option value="5000gr">5000 gr / 5 kg</option>
             <option value="2500gr">2.5 kg</option>
             <option value="5000gr">5000 gr / 5 kg</option>
             <option value="25kg">25 kg</option>
@@ -75,6 +77,14 @@
 <script>
   $(document).ready(function () {
     $('.js-select2').select2()
-  })
+  });
+
+  $(function(){
+    $('#brand_ppi').on('change', function(){
+        let brand_name = (objHasProp($('#brand_ppi').select2('data')[0], 'text')) ? $('#brand_ppi').select2('data')[0].text : '';
+        $('input[name=brand_name]').val(brand_name);
+    })
+  });
+  
 </script>
 @endpush
