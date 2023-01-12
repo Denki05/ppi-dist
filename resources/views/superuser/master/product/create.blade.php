@@ -128,19 +128,24 @@
                             <h4>Product Brand</h4>
                             <div class="form-group">
                               <label>Brand <span class="text-danger">*</span></label>
-                              <select class="form-control" id="brand_name" name="brand_name" data-placeholder="Select Brand">
-                                <option></option>
+                              <select class="form-control" id="brand_name"  name="brand_name" data-placeholder="Select Brand">
+                                <option value="">==Select Brand==</option>
                                 @foreach($brand_ppi as $brand_ppi)
                                 <option value="{{ $brand_ppi->brand_name }}">{{$brand_ppi->brand_name}}</option>
                                 @endforeach
                               </select>
                             </div>
+
                             <div class="form-group">
                               <label>Category <span class="text-danger">*</span></label>
-                              <select class="form-control" id="category" name="category" data-placeholder="Select Brand">
+                              <select class="form-control" id="category"  name="category" data-placeholder="Select Brand">
                                 <option value="">==Select Category==</option>
+                                @foreach($category as $cat)
+                                <option value="{{ $cat->id }}">{{$cat->brand_name}} - {{$cat->name}} - {{$cat->type}} - {{$cat->packaging}}</option>
+                                @endforeach
                               </select>
                             </div>
+                            
                             <div class="form-group">
                               <label>Searah <span class="text-danger">*</span></label>
                               <select class="form-control" id="searah" name="searah" data-placeholder="Select Searah">
@@ -160,10 +165,10 @@
                         <!-- step 4 -->
                         <fieldset>
                             <h4>Fragrantica Detail</h4>
-                            <div class="form-group">
-                              <label for="alias">Url</label>
+                            <!-- <div class="form-group">
+                              <label for="url">Url</label>
                               <input type="text" id="url" name="url" placeholder="Url Fragrantica" class="form-control">
-                            </div>
+                            </div> -->
                             <hr>
                             <div class="form-group">
                               <h5>Main Accords</h5>
@@ -291,30 +296,7 @@
       
       table.row( $(this).parents('tr') ).remove().draw();
 
-    });
-
-    $(function(){
-
-    $('#brand_ppi').on('change', function(){
-      let brand_name = $('#brand_name').val();
-
-      
-
-      $.ajax({
-        type : 'POST',
-        url : '{{route('superuser.master.product.getcategory')}}',
-        data : {brand_name:brand_name},
-        cache : false,
-
-        success: function(msg){
-          $('#category').html(msg);
-        },
-        error : function(data){
-          console.log('error:',data)
-        },
-      })
     })
-    });
-  })
+  });
 </script>
 @endpush

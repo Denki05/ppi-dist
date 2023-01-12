@@ -59,19 +59,6 @@ class ProductController extends Controller
         return view('superuser.master.product.index');
     }
 
-    public function getcategory(Request $request)
-    {
-        $brand_id = $request->brand_id;
-
-        $category = ProductCategory::where('status', 1)
-                                ->where('brand_lokal_id', $brand_id)
-                                ->get();
-
-        foreach ($category as $cat){
-            echo "<option value='$cat->id'>$cat->name - $cat->type - $cat->packaging</option>";
-        }
-    }
-
     public function create()
     {
         // Access
@@ -97,7 +84,7 @@ class ProductController extends Controller
     {
         if ($request->ajax()) {
             $validator = Validator::make($request->all(), [
-                'brand_name' => 'required|integer',
+                'brand_name' => 'required',
                 'searah' => 'required|integer',
                 'category' => 'required|integer',
 
