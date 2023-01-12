@@ -73,7 +73,7 @@ class ProductCategoryController extends Controller
                 'brand_ppi' => 'required',
                 'name' => 'required|string',
                 'type' => 'nullable|string',
-                'packaging' => 'nullable|string',
+                // 'packaging' => 'nullable|string',
             ]);
 
             if ($validator->fails()) {

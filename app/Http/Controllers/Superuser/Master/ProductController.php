@@ -135,6 +135,7 @@ class ProductController extends Controller
                 $product->selling_price = $request->selling_price;
                 $product->description = $request->description;
                 $product->note = $request->note;
+                $product->gender = $request->gender;
 
                 $product->default_quantity = $request->default_quantity;
                 $product->default_unit_id = $request->default_unit;

@@ -58,6 +58,15 @@
                             <input type="text" id="alias" name="alias" placeholder="Alias Name" class="form-control">
                           </div>
                           <div class="form-group">
+                            <label for="alias">Gender</label>
+                            <select class="form-control" id="gender"  name="gender" data-placeholder="Select Gender">
+                              <option value="">==Select Gender==</option>
+                              <option value="male">MALE</option>
+                              <option value="female">FEMALE</option>
+                              <option value="unisex">UNISEX</option>
+                            </select>
+                          </div>
+                          <div class="form-group">
                             <label>Description</label>
                             <input type="text" id="description" name="description" placeholder="Description" class="form-control">
                           </div>

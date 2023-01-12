@@ -32,6 +32,7 @@
           <th>#</th>
           <th>Created at</th>
           <th>Code</th>
+          <th>Brand</th>
           <th>Category</th>
           <th>Type</th>
           <th>Packaging</th>
@@ -81,6 +82,7 @@ $(document).ready(function() {
         }
       },
       {data: 'code'},
+      {data: 'brand_name'},
       {data: 'name'},
       {data: 'type'},
       {data: 'packaging'},
