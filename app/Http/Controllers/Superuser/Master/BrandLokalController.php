@@ -112,7 +112,7 @@ class BrandLokalController extends Controller
                         'content' => 'Success',
                     ];
 
-                    $response['redirect_to'] = route('superuser.master.brand_lokal.index');
+                    $response['redirect_to'] = route('superuser.master.product_category.index');
 
                     return $this->response(200, $response);
                 }

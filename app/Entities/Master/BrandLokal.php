@@ -27,6 +27,11 @@ class BrandLokal extends Model
     //     return $this->hasMany('App\Entities\Master\Product')->orderBy('name');
     // }
 
+    public function product_category()
+    {
+        return $this->hasMany('App\Entities\Master\ProductCategory', 'brand_lokal_id');
+    }
+
     public function getAutoNumberOptions()
     {
         return [

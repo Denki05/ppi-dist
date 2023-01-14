@@ -29,6 +29,11 @@ class ProductCategory extends Model
         return $this->hasMany('App\Entities\Master\Product', 'category_id');
     }
 
+    public function brand_lokal()
+    {
+        return $this->BelongsTo('App\Entities\Master\BrandLokal', 'brand_lokal_id');
+    }
+
     public function getAutoNumberOptions()
     {
         return [

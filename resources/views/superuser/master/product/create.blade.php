@@ -158,7 +158,7 @@
                             <div class="form-group">
                               <label>Searah <span class="text-danger">*</span></label>
                               <select class="form-control" id="searah" name="searah" data-placeholder="Select Searah">
-                                <option></option>
+                                <option value="">==Select Searah==</option>
                                 @foreach($sub_brand_references as $searah)
                                 <option value="{{ $searah->id }}">{{ $searah->name }}</option>
                                 @endforeach

@@ -27,7 +27,7 @@
       </div>
       <div class="form-group row pt-30">
         <div class="col-md-6">
-          <a href="{{ route('superuser.master.brand_lokal.index') }}">
+          <a href="{{ route('superuser.master.product_category.index') }}">
             <button type="button" class="btn bg-gd-cherry border-0 text-white">
               <i class="fa fa-arrow-left mr-10"></i> Back
             </button>

@@ -102,8 +102,8 @@ class ProductController extends Controller
                 // 'ratio' => 'required|numeric',
                 'default_warehouse' => 'required|integer',
 
-                'image' => 'nullable|image|mimes:jpeg,png,jpg|max:2048',
-                'image_hd' => 'nullable|image|mimes:jpeg,png,jpg|max:2048',
+                // 'image' => 'nullable|image|mimes:jpeg,png,jpg|max:2048',
+                // 'image_hd' => 'nullable|image|mimes:jpeg,png,jpg|max:2048',
             ]);
 
             if ($validator->fails()) {

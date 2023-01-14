@@ -38,7 +38,7 @@ class ProductCategoryController extends Controller
     }
     public function json(Request $request, ProductCategoryTable $datatable)
     {
-        return $datatable->build();
+        return $datatable->build($request);
     }
 
     public function index()
@@ -49,7 +49,10 @@ class ProductCategoryController extends Controller
                 return redirect()->route('superuser.index')->with('error','Anda tidak punya akses untuk membuka menu terkait');
             }
         }
-        return view('superuser.master.product_category.index');
+
+        $data['brand_lokal'] = BrandLokal::all();
+        
+        return view('superuser.master.product_category.index', $data);
     }
 
     public function create()

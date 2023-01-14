@@ -79,7 +79,7 @@ $(document).ready(function() {
       {data: 'check', orderable: false, searcable: false},
       {data: 'code'},
       {data: 'brand_name'},
-      {data: 'category_name', name: '.category_name'},
+      {data: 'category_name', name: 'master_product_category.category_name'},
       {data: 'name'},
       {data: 'status'},
       {data: 'action', orderable: false, searcable: false}
