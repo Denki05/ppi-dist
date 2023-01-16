@@ -22,8 +22,9 @@ class Vendor extends Model
         'ACTIVE' => 1
     ];
     const TYPE = [
-    	'Non Ekspedisi' => 0,
-        'Ekspedisi' => 1
+    	'NON EKSPEDISI' => 0,
+        'EKSPEDISI' => 1,
+        'FACTORY' => 2,
     ];
 
     public function type()

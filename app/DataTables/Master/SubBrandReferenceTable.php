@@ -5,6 +5,7 @@ namespace App\DataTables\Master;
 use App\DataTables\Table;
 use App\Entities\Master\SubBrandReference;
 use Carbon\Carbon;
+use Illuminate\Http\Request;
 
 class SubBrandReferenceTable extends Table
 {
@@ -12,9 +13,26 @@ class SubBrandReferenceTable extends Table
      * Get query source of dataTable.
      *
      */
-    private function query()
+    public function query(Request $request)
     {
-        $model = SubBrandReference::select('id', 'brand_reference_id', 'code', 'name', 'status', 'created_at')->with('brand_reference');
+        $model = SubBrandReference::where('master_sub_brand_references.status', 1)
+                            ->where(function ($query) use ($request) {
+                                if ($request->filter_searah != 'all') {
+                                    $query->where('master_sub_brand_references.name', $request->filter_searah);
+                                } else {
+                                    $query;
+                                }
+                            })
+                            ->leftJoin('master_brand_references', 'master_sub_brand_references.brand_reference_id', '=', 'master_brand_references.id')
+                            ->selectRaw('
+                                master_sub_brand_references.id AS id, 
+                                master_sub_brand_references.name AS searah_name, 
+                                master_sub_brand_references.code AS searah_code, 
+                                master_sub_brand_references.status AS status, 
+                                master_brand_references.id AS brand_id, 
+                                master_brand_references.name AS brand_name, 
+                                master_sub_brand_references.created_at AS created_date
+                            ');
 
         return $model;
     }
@@ -22,9 +40,10 @@ class SubBrandReferenceTable extends Table
     /**
      * Build DataTable class.
      */
-    public function build()
+    public function build(Request $request)
     {
-        $table = Table::of($this->query());
+        $table = Table::of($this->query($request));
+        
         $table->addIndexColumn();
 
         $table->setRowClass(function (SubBrandReference $model) {
@@ -35,46 +54,46 @@ class SubBrandReferenceTable extends Table
             return $model->status();
         });
 
-        $table->editColumn('created_at', function (SubBrandReference $model) {
+        $table->editColumn('created_date', function (SubBrandReference $model) {
             return [
-              'display' => Carbon::parse($model->created_at)->format('j F Y H:i:s'),
-              'timestamp' => $model->created_at
+              'display' => Carbon::parse($model->created_date)->format('j F Y H:i:s'),
+              'timestamp' => $model->created_date
             ];
         });
 
-        $table->addColumn('action', function (SubBrandReference $model) {
-            $view = route('superuser.master.sub_brand_reference.show', $model);
-            $edit = route('superuser.master.sub_brand_reference.edit', $model);
-            $destroy = route('superuser.master.sub_brand_reference.destroy', $model);
+        // $table->addColumn('action', function (SubBrandReference $model) {
+        //     $view = route('superuser.master.sub_brand_reference.show', $model);
+        //     $edit = route('superuser.master.sub_brand_reference.edit', $model);
+        //     $destroy = route('superuser.master.sub_brand_reference.destroy', $model);
 
-            if ($model->status == $model::STATUS['DELETED']) {
-                return "
-                    <a href=\"{$view}\">
-                        <button type=\"button\" class=\"btn btn-sm btn-circle btn-alt-secondary\" title=\"View\">
-                            <i class=\"fa fa-eye\"></i>
-                        </button>
-                    </a>
-                ";
-            }
+        //     if ($model->status == $model::STATUS['DELETED']) {
+        //         return "
+        //             <a href=\"{$view}\">
+        //                 <button type=\"button\" class=\"btn btn-sm btn-circle btn-alt-secondary\" title=\"View\">
+        //                     <i class=\"fa fa-eye\"></i>
+        //                 </button>
+        //             </a>
+        //         ";
+        //     }
             
-            return "
-                <a href=\"{$view}\">
-                    <button type=\"button\" class=\"btn btn-sm btn-circle btn-alt-secondary\" title=\"View\">
-                        <i class=\"fa fa-eye\"></i>
-                    </button>
-                </a>
-                <a href=\"{$edit}\">
-                    <button type=\"button\" class=\"btn btn-sm btn-circle btn-alt-warning\" title=\"Edit\">
-                        <i class=\"fa fa-pencil\"></i>
-                    </button>
-                </a>
-                <a href=\"javascript:deleteConfirmation('{$destroy}')\">
-                    <button type=\"button\" class=\"btn btn-sm btn-circle btn-alt-danger\" title=\"Delete\">
-                        <i class=\"fa fa-times\"></i>
-                    </button>
-                </a>
-            ";
-        });
+        //     return "
+        //         <a href=\"{$view}\">
+        //             <button type=\"button\" class=\"btn btn-sm btn-circle btn-alt-secondary\" title=\"View\">
+        //                 <i class=\"fa fa-eye\"></i>
+        //             </button>
+        //         </a>
+        //         <a href=\"{$edit}\">
+        //             <button type=\"button\" class=\"btn btn-sm btn-circle btn-alt-warning\" title=\"Edit\">
+        //                 <i class=\"fa fa-pencil\"></i>
+        //             </button>
+        //         </a>
+        //         <a href=\"javascript:deleteConfirmation('{$destroy}')\">
+        //             <button type=\"button\" class=\"btn btn-sm btn-circle btn-alt-danger\" title=\"Delete\">
+        //                 <i class=\"fa fa-times\"></i>
+        //             </button>
+        //         </a>
+        //     ";
+        // });
 
         return $table->make(true);
     }

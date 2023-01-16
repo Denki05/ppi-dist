@@ -14,7 +14,7 @@ class VendorTable extends Table
      */
     private function query()
     {
-        $model = Vendor::select('id', 'code', 'name', 'status', 'created_at');
+        $model = Vendor::select('id', 'code', 'name', 'type', 'status', 'created_at');
 
         return $model;
     }
@@ -33,6 +33,10 @@ class VendorTable extends Table
 
         $table->editColumn('status', function (Vendor $model) {
             return $model->status();
+        });
+
+        $table->editColumn('type', function (Vendor $model) {
+            return $model->type();
         });
 
         $table->editColumn('created_at', function (Vendor $model) {

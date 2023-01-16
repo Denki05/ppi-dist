@@ -37,6 +37,7 @@
           <th>Created at</th>
           <th>Code</th>
           <th>Name</th>
+          <th>Type</th>
           <th>Status</th>
           <th>Action</th>
         </tr>
@@ -85,6 +86,7 @@ $(document).ready(function() {
       },
       {data: 'code'},
       {data: 'name'},
+      {data: 'type'},
       {data: 'status'},
       {data: 'action', orderable: false, searcable: false}
     ],
@@ -98,11 +100,11 @@ $(document).ready(function() {
     ],
     createdRow: function(row, data, index) {
       if (data.status == 'ACTIVE') {
-        $('td:eq(4)', row).css('color', 'Green');
-        $('td:eq(4)', row).css('font-weight', 'bold');
+        $('td:eq(5)', row).css('color', 'Green');
+        $('td:eq(5)', row).css('font-weight', 'bold');
       }else if (data.status == 'DELETED') {
-        $('td:eq(4)', row).css('color', 'Red');
-        $('td:eq(4)', row).css('font-weight', 'bold');
+        $('td:eq(5)', row).css('color', 'Red');
+        $('td:eq(5)', row).css('font-weight', 'bold');
       }
     },
   });

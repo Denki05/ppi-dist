@@ -68,9 +68,13 @@
             <input class="form-check-input" type="radio" name="type" id="type" value="1">
             <label class="form-check-label" for="type">Ekspedisi</label>
           </div>
-          <div class="form-check form-check-inline">
+          <div class="col-md-3 form-check form-check-inline">
             <input class="form-check-input" type="radio" name="type" id="type" value="0">
             <label class="form-check-label" for="type">Non Ekspedisi</label>
+          </div>
+          <div class="col-md-3 form-check form-check-inline">
+            <input class="form-check-input" type="radio" name="type" id="type" value="2">
+            <label class="form-check-label" for="type">Factory</label>
           </div>
         </div>
       </div>

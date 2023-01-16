@@ -1,10 +1,6 @@
 @extends('superuser.app')
 
 @section('content')
-<!-- <nav class="breadcrumb bg-white push">
-  <span class="breadcrumb-item">Master</span>
-  <span class="breadcrumb-item active">Product</span>
-</nav> -->
 @if($errors->any())
 <div class="alert alert-danger alert-dismissable" role="alert">
   <button type="button" class="close" data-dismiss="alert" aria-label="Close">
@@ -29,9 +25,8 @@
       <button type="button" class="btn btn-outline-secondary" title="Print Product"><i class="mdi mdi-printer"></i></button>
     </a>
   </div>
-  <hr class="my-20">
   <div class="block-content block-content-full">
-    <table id="datatable" class="table table-hover">
+    <table id="datatable" class="table table-striped">
       <thead>
         <tr>
           <th><input type="checkbox" onclick="$('input.check-entity').prop('checked', this.checked);" /></th>

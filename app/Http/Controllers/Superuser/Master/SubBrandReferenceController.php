@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Superuser\Master;
 
 use App\DataTables\Master\SubBrandReferenceTable;
 use App\Entities\Master\SubBrandReference;
+use App\Entities\Master\BrandReference;
 use App\Exports\Master\SubBrandReferenceExport;
 use App\Exports\Master\SubBrandReferenceImportTemplate;
 use App\Http\Controllers\Controller;
@@ -37,7 +38,7 @@ class SubBrandReferenceController extends Controller
     }
     public function json(Request $request, SubBrandReferenceTable $datatable)
     {
-        return $datatable->build();
+        return $datatable->build($request);
     }
 
     public function index()
@@ -48,7 +49,11 @@ class SubBrandReferenceController extends Controller
                 return redirect()->route('superuser.index')->with('error','Anda tidak punya akses untuk membuka menu terkait');
             }
         }
-        return view('superuser.master.sub_brand_reference.index');
+
+        $data['brand'] = BrandReference::get();
+        $data['searah'] = SubBrandReference::get(); 
+
+        return view('superuser.master.sub_brand_reference.index', $data);
     }
 
     public function create()

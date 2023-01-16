@@ -29,7 +29,6 @@
           <div class="block">
             <div class="block-content">
               <div class="form-group row">
-                
                 <label class="col-md-2 col-form-label text-left" for="filter_brand">Brand :</label>
                 <div class="col-md-4">
                   <select class="form-control js-select2" id="filter_brand" name="filter_brand" data-placeholder="Select Brand">
@@ -39,6 +38,7 @@
                     @endforeach
                   </select>
                 </div>
+                
               </div>
             </div>
           </div>
