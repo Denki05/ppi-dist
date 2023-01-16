@@ -42,16 +42,6 @@
           </div>          
         </div>
         <div class="col-lg-3">
-          <div class="form-group">
-            <select class="form-control js-select2" name="id_type">
-              <option value="">==All Type==</option>
-              @foreach($product_type as $index => $row)
-                <option value="{{$row->id}}">{{$row->name}}</option>
-              @endforeach
-            </select>
-          </div>          
-        </div>
-        <div class="col-lg-3">
           <button class="btn btn-primary"><i class="fa fa-search"></i></button>
         </div>
       </div>

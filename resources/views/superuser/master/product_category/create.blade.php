@@ -28,7 +28,13 @@
       <div class="form-group row">
         <label class="col-md-3 col-form-label text-right" for="name">Category <span class="text-danger">*</span></label>
         <div class="col-md-7">
-          <input type="text" class="form-control" id="name" name="name">
+          <select class="js-select2 form-control" id="name" name="name" data-placeholder="Select Brand">
+            <option value="">==Select Brand==</option>
+            @foreach($category as $cat)
+            <option>{{$cat->name}}</option>
+            @endforeach
+          </select>
+          <input type="hidden" name="brand_name">
         </div>
       </div>
       <div class="form-group row">
@@ -76,7 +82,9 @@
 <script src="{{ asset('utility/superuser/js/form.js') }}"></script>
 <script>
   $(document).ready(function () {
-    $('.js-select2').select2()
+    $('.js-select2').select2({
+      tags: true
+    })
   });
 
   $(function(){

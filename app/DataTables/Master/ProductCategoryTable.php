@@ -59,39 +59,27 @@ class ProductCategoryTable extends Table
             ];
         });
 
-        // $table->addColumn('action', function (ProductCategory $model) {
-        //     $view = route('superuser.master.product_category.show', $model);
-        //     $edit = route('superuser.master.product_category.edit', $model);
-        //     $destroy = route('superuser.master.product_category.destroy', $model);
+        $table->addColumn('action', function (ProductCategory $model) {
+            $view = route('superuser.master.product_category.show', $model);
 
-        //     if ($model->status == $model::STATUS['DELETED']) {
-        //         return "
-        //             <a href=\"{$view}\">
-        //                 <button type=\"button\" class=\"btn btn-sm btn-circle btn-alt-secondary\" title=\"View\">
-        //                     <i class=\"fa fa-eye\"></i>
-        //                 </button>
-        //             </a>
-        //         ";
-        //     }
+            if ($model->status == $model::STATUS['DELETED']) {
+                return "
+                    <a href=\"{$view}\">
+                        <button type=\"button\" class=\"btn btn-sm btn-circle btn-alt-secondary\" title=\"View\">
+                            <i class=\"fa fa-eye\"></i>
+                        </button>
+                    </a>
+                ";
+            }
 
-        //     return "
-        //         <a href=\"{$view}\">
-        //             <button type=\"button\" class=\"btn btn-sm btn-circle btn-alt-secondary\" title=\"View\">
-        //                 <i class=\"fa fa-eye\"></i>
-        //             </button>
-        //         </a>
-        //         <a href=\"{$edit}\">
-        //             <button type=\"button\" class=\"btn btn-sm btn-circle btn-alt-warning\" title=\"Edit\">
-        //                 <i class=\"fa fa-pencil\"></i>
-        //             </button>
-        //         </a>
-        //         <a href=\"javascript:deleteConfirmation('{$destroy}')\">
-        //             <button type=\"button\" class=\"btn btn-sm btn-circle btn-alt-danger\" title=\"Delete\">
-        //                 <i class=\"fa fa-times\"></i>
-        //             </button>
-        //         </a>
-        //     ";
-        // });
+            return "
+                <a href=\"{$view}\">
+                    <button type=\"button\" class=\"btn btn-sm btn-circle btn-alt-secondary\" title=\"View\">
+                        <i class=\"fa fa-eye\"></i>
+                    </button>
+                </a>
+            ";
+        });
 
         return $table->make(true);
     }

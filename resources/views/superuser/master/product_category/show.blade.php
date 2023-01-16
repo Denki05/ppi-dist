@@ -8,57 +8,36 @@
 </nav>
 <div class="block">
   <div class="block-header block-header-default">
-    <h3 class="block-title">Show Product Category</h3>
+    <h3 class="block-title">Show Product Category :</h3>
   </div>
   <div class="block-content">
-    <div class="row">
-      <label class="col-md-3 col-form-label text-right">Code</label>
-      <div class="col-md-7">
-        <div class="form-control-plaintext">{{ $product_category->code }}</div>
-      </div>
-    </div>
-    <div class="row">
-      <label class="col-md-3 col-form-label text-right">Name</label>
-      <div class="col-md-7">
-        <div class="form-control-plaintext">{{ $product_category->name }}</div>
-      </div>
-    </div>
-    {{-- <div class="row">
-      <label class="col-md-3 col-form-label text-right">Type</label>
-      <div class="col-md-7">
-        <div class="form-control-plaintext">{{ optional($product_category->type)->name }}</div>
-      </div>
-    </div> --}}
-    <div class="row">
-      <label class="col-md-3 col-form-label text-right">Description</label>
-      <div class="col-md-7">
-        <div class="form-control-plaintext">{{ $product_category->description }}</div>
-      </div>
-    </div>
-    <div class="row">
-      <label class="col-md-3 col-form-label text-right">Image Header List</label>
-      <div class="col-md-7">
-        <div class="form-control-plaintext">
-          @if(!empty($product_category->image_header_list))
-          <a href="<?= asset($product_category->image_header_list); ?>" target="_blank">Lihat</a>
-          @endif
+    <div class="container">
+      <div class="row">
+        <label class="col-md-3 col-form-label text-right">Brand Name :</label>
+        <div class="col-md-7">
+          <div class="form-control-plaintext">{{ $product_category->brand_name }}</div>
         </div>
       </div>
-    </div>
-    <div class="row">
-      <label class="col-md-3 col-form-label text-right">Image Header Price</label>
-      <div class="col-md-7">
-        <div class="form-control-plaintext">
-          @if(!empty($product_category->image_header_price))
-          <a href="<?= asset($product_category->image_header_price); ?>" target="_blank">Lihat</a>
-          @endif
+      <div class="row">
+        <label class="col-md-3 col-form-label text-right">Code :</label>
+        <div class="col-md-7">
+          <div class="form-control-plaintext">{{ $product_category->code }}</div>
         </div>
       </div>
-    </div>
-    <div class="row">
-      <label class="col-md-3 col-form-label text-right">Status</label>
-      <div class="col-md-7">
-        <div class="form-control-plaintext">{{ $product_category->status() }}</div>
+      <div class="row">
+        <label class="col-md-3 col-form-label text-right">Detail </label>
+        <div class="col-md-3">
+          <div class="form-control-plaintext">Category: {{ $product_category->name ?? '-' }}</div>
+        </div>
+        <div class="col-md-3">
+          <div class="form-control-plaintext">Type:  {{ $product_category-> ?? '-' }}</div>
+        </div>
+      </div>
+      <div class="row">
+        <label class="col-md-3 col-form-label text-right">Status :</label>
+        <div class="col-md-7">
+          <div class="form-control-plaintext">{{ $product_category->status() }}</div>
+        </div>
       </div>
     </div>
     <div class="row pt-30 mb-15">
@@ -88,13 +67,13 @@
 </div>
 
 <div class="row">
-  {{-- <div class="col-md-6">
+   <div class="col-md-12">
     <div class="block">
       <div class="block-header block-header-default">
         <h3 class="block-title">Product</h3>
       </div>
       <div class="block-content block-content-full">
-        <table id="datatable-product" class="table table-striped table-vcenter table-responsive">
+        <table id="datatable-product" class="table table-striped">
           <thead>
             <tr>
               <th>#</th>
@@ -122,48 +101,6 @@
         </table>
       </div>
     </div>
-  </div> --}}
-
-  <div class="col-md-6">
-    <div class="block">
-      <div class="block-header block-header-default">
-        <h3 class="block-title">Type</h3>
-
-        @if($product_category->status != $product_category::STATUS['DELETED'])
-        <a href="{{ route('superuser.master.product_category.type.manage', [$product_category->id]) }}">
-          <button type="button" class="btn btn-outline-warning min-width-125 pull-right">Manage</button>
-        </a>
-        @endif
-      </div>
-      <div class="block-content block-content-full">
-        <table id="datatable-type" class="table table-striped table-vcenter table-responsive">
-          <thead>
-            <tr>
-              <th>#</th>
-              <th>Code</th>
-              <th>Name</th>
-              <th>Action</th>
-            </tr>
-          </thead>
-          <tbody>
-            @foreach($product_category->types as $type)
-            <tr>
-              <td>{{ $loop->iteration }}</td>
-              <td>{{ $type->code }}</td>
-              <td>{{ $type->name }}</td>
-              <td>
-                <a href="{{ route('superuser.master.product_type.show', $type->id) }}" target="_blank">
-                  <button type="button" class="btn btn-sm btn-circle btn-alt-secondary" title="Show Type">
-                    <i class="fa fa-eye"></i>
-                  </button>
-                </a>
-              </td>
-            </tr>
-            @endforeach
-          </tbody>
-        </table>
-      </div>
-    </div>
   </div>
 </div>
 @endsection
@@ -174,7 +111,7 @@
 @push('scripts')
 <script type="text/javascript">
   $(document).ready(function() {
-    $('#datatable-type').DataTable()
+    $('#datatable-product').DataTable()
   })
 </script>
 @endpush

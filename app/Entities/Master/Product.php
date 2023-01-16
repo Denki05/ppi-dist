@@ -45,15 +45,11 @@ class Product extends Model
         return $this->BelongsTo('App\Entities\Master\BrandLokal', 'brand_lokal_id');
     }
 
-    // public function category()
-    // {
-    //     return $this->BelongsTo('App\Entities\Master\ProductCategory');
-    // }
+    public function category()
+    {
+        return $this->BelongsTo('App\Entities\Master\ProductCategory');
+    }
 
-    // public function type()
-    // {
-    //     return $this->BelongsTo('App\Entities\Master\ProductType');
-    // }
 
     public function default_unit()
     {

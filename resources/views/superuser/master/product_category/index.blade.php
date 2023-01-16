@@ -70,6 +70,7 @@
             <th>Type</th>
             <th>Packaging</th>
             <th>Status</th>
+            <th>Action</th>
           </tr>
         </thead>
       </table>
@@ -122,7 +123,8 @@ $(document).ready(function() {
       {data: 'name', name: 'master_product_category.name'},
       {data: 'type', name: 'master_product_category.type'},
       {data: 'packaging', name: 'master_product_category.packaging'},
-      {data: 'status', name: 'master_product_category.status'}
+      {data: 'status', name: 'master_product_category.status'},
+      {data: 'action'}
     ],
     order: [
       [1, 'desc']

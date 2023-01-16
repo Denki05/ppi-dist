@@ -135,9 +135,9 @@
                   <td>Brand Reference</td>
                   <td><b>:</b></td>
                   <td>
-                    <a href="{{ route('superuser.master.brand_reference.show', $product->brand_reference_id) }}">
-                      {{ $product->brand_reference->name }}
-                    </a>
+                    
+                      {{ $product->sub_brand_reference->brand_reference->name }}
+                    
                   </td>
                 </tr>
                 <tr>
@@ -150,21 +150,10 @@
                   </td>
                 </tr>
                 <tr>
-                  <td>Category</td>
+                  <td>Category | Type | Packaging</td>
                   <td><b>:</b></td>
                   <td>
-                    <a href="{{ route('superuser.master.product_category.show', $product->category_id) }}">
-                      {{ $product->category->name }}
-                    </a>
-                  </td>
-                </tr>
-                <tr>
-                  <td>Type</td>
-                  <td><b>:</b></td>
-                  <td>
-                    <a href="{{ route('superuser.master.product_type.show', $product->type_id) }}">
-                      {{ $product->type->name }}
-                    </a>
+                      {{ $product->category->name }} | {{$product->category->type}} | {{$product->category->packaging}}
                   </td>
                 </tr>
                 <tr>

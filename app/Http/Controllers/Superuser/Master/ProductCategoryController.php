@@ -65,6 +65,7 @@ class ProductCategoryController extends Controller
         }
 
         $data['brand_lokal'] = BrandLokal::get();
+        $data['category'] = ProductCategory::get();
 
         return view('superuser.master.product_category.create', $data);
     }

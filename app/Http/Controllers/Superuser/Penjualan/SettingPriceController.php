@@ -70,11 +70,9 @@ class SettingPriceController extends Controller
         
         $product = Product::all();
         $product_category = ProductCategory::all();
-        $product_type = ProductType::all();
         $data = [
             'table' => $table,
             'product' => $product,
-            'product_type' => $product_type,
             'product_category' => $product_category,
         ];
         return view($this->view."index",$data);
