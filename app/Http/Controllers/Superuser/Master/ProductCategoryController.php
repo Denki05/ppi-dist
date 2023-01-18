@@ -67,8 +67,6 @@ class ProductCategoryController extends Controller
         }
     }
 
-    
-
     public function create(Request $request)
     {
         // Access
@@ -93,7 +91,7 @@ class ProductCategoryController extends Controller
             $validator = Validator::make($request->all(), [
                 'brand_ppi' => 'required',
                 'name' => 'required|string',
-                'type' => 'nullable|string',
+                // 'type' => 'nullable|string',
                 // 'packaging' => 'nullable|string',
             ]);
 
