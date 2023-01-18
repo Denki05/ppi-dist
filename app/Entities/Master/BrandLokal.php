@@ -4,13 +4,12 @@ namespace App\Entities\Master;
 
 use App\Entities\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
-use Alfa6661\AutoNumber\AutoNumberTrait;
 
 class BrandLokal extends Model
 {
-    use SoftDeletes, AutoNumberTrait;
+    use SoftDeletes;
 
-    protected $fillable = ['code' ,'brand_name', 'status'];
+    protected $fillable = ['brand_name', 'status'];
     protected $table = 'master_brand_lokal';
 
     const STATUS = [
@@ -27,20 +26,8 @@ class BrandLokal extends Model
     //     return $this->hasMany('App\Entities\Master\Product')->orderBy('name');
     // }
 
-    public function product_category()
+    public function category()
     {
         return $this->hasMany('App\Entities\Master\ProductCategory', 'brand_lokal_id');
-    }
-
-    public function getAutoNumberOptions()
-    {
-        return [
-            'code' => [
-                'format' => function () {
-                    return date('Y') . '.BR.?';
-                },
-                'length' => 3
-            ]
-        ];
     }
 }

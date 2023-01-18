@@ -67,7 +67,9 @@ class ProductCategoryController extends Controller
         }
     }
 
-    public function create()
+    
+
+    public function create(Request $request)
     {
         // Access
         if(Auth::user()->is_superuser == 0){
@@ -76,9 +78,10 @@ class ProductCategoryController extends Controller
             }
         }
 
-        $data['brand_lokal'] = BrandLokal::get();
+        $data['brand_lokal'] = BrandLokal::all();
         $data['category_pack'] = ProductCategory::get()->unique('packaging');
         $data['category_name'] = ProductCategory::get()->unique('name');
+        $data['category'] = ProductCategory::get();
 
         return view('superuser.master.product_category.create', $data);
     }

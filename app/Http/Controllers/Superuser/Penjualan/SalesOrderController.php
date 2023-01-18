@@ -216,14 +216,14 @@ class SalesOrderController extends Controller
         $sales = Sales::all();
         $ekspedisi = Ekspedisi::all();
         $product_category = ProductCategory::all();
-        $product_type = ProductType::all();
+        // $product_type = ProductType::all();
         $data = [
             'customer' => $customer,
             'warehouse' => $warehouse,
             'sales' => $sales,
             'ekspedisi' => $ekspedisi,
             'product_category' => $product_category,
-            'product_type' => $product_type,
+            // 'product_type' => $product_type,
             'step' => $step,
             'step_txt' => SalesOrder::STEP[$step]
         ];

@@ -29,12 +29,12 @@
           <div class="block">
             <div class="block-content">
               <div class="form-group row">
-                <label class="col-md-2 col-form-label text-left" for="filter_brand">Brand :</label>
+                <label class="col-md-2 col-form-label text-left" for="brand_ppi">Brand :</label>
                 <div class="col-md-4">
-                  <select class="form-control js-select2" id="filter_brand" name="filter_brand" data-placeholder="Select Brand">
+                  <select class="form-control js-select2" id="brand_ppi" name="brand_ppi" data-placeholder="Select Brand">
                     <option value="">==Find Brand==</option>
                     @foreach($brand_lokal as $brand)
-                    <option value="{{$brand->brand_name}}">{{$brand->brand_name}}</option>
+                    <option value="{{$brand->id}}">{{$brand->brand_name}}</option>
                     @endforeach
                   </select>
                 </div>
@@ -98,7 +98,7 @@ $(document).ready(function() {
   
   let datatableUrl = '{{ route('superuser.master.product_category.json') }}';
   let firstDatatableUrl = datatableUrl +
-        '?filter_brand=all';
+        '?brand_ppi=all';
 
   var datatable = $('#datatable').DataTable({
     processing: true,
@@ -137,8 +137,8 @@ $(document).ready(function() {
   });
   $('#filter').on('click', function(e) {
         e.preventDefault();
-        var filter_brand = $('#filter_brand').val();
-        let newDatatableUrl = datatableUrl + '?filter_brand=' + filter_brand;
+        var brand_ppi = $('#brand_ppi').val();
+        let newDatatableUrl = datatableUrl + '?brand_ppi=' + brand_ppi;
         datatable.ajax.url(newDatatableUrl).load();
   })
 });

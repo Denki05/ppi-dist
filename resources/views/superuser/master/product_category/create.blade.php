@@ -1,11 +1,11 @@
 @extends('superuser.app')
 
 @section('content')
-<nav class="breadcrumb bg-white push">
+{{--<nav class="breadcrumb bg-white push">
   <span class="breadcrumb-item">Master</span>
   <a class="breadcrumb-item" href="{{ route('superuser.master.product_category.index') }}">Product Category</a>
   <span class="breadcrumb-item active">Create</span>
-</nav>
+</nav>--}}
 <div id="alert-block"></div>
 <div class="row">
   <div class="col-md-6">
@@ -76,20 +76,18 @@
   <div class="col-md-6">
     <div class="block">
       <div class="block-header block-header-default">
-        <h3 class="block-title"></h3>
+        <h3 class="block-title">List Category </h3>
       </div>
       <div class="block-content block-content-full">
-        <table id="table_cek" class="table table-hover">
+        <table id="category-table-check" class="table table-bordered">
           <thead>
             <tr>
-              <th>#</th>
-              <th>Brand</th>
+              <th>Category</th>
               <th>Type</th>
               <th>Pack</th>
             </tr>
           </thead>
           <tbody>
-           
           </tbody>
         </table>
       </div>
@@ -99,6 +97,7 @@
 @endsection
 
 @include('superuser.asset.plugin.select2')
+@include('superuser.asset.plugin.datatables')
 
 @push('scripts')
 <script src="{{ asset('utility/superuser/js/form.js') }}"></script>
@@ -137,5 +136,46 @@
     })
   });
 
+</script>
+
+<script>
+  $(document).ready(function () {
+    let datatableUrl = '{{ route('superuser.master.product_category.json') }}';
+    let firstDatatableUrl = datatableUrl +
+          '?brand_ppi=all';
+
+    var datatable = $('#category-table-check').DataTable({
+      processing: true,
+      serverSide: true,
+      "bPaginate": false,
+      "bFilter": false,
+      "bInfo": false,
+      ajax: {
+        "url": datatableUrl,
+        "dataType": "json",
+        "type": "GET",
+        "data":{ _token: "{{csrf_token()}}"}
+      },
+      columns: [
+        {data: 'name'},
+        {data: 'type'},
+        {data: 'packaging'},
+      ],
+      order: [
+        [1, 'desc']
+      ],
+      pageLength: 5,
+      lengthMenu: [
+        [5, 15, 20],
+        [5, 15, 20]
+      ],
+    });
+    $('#brand_ppi').on('change', function(e) {
+        e.preventDefault();
+        var brand_filter = $('#brand_ppi').val();
+        let newDatatableUrl = datatableUrl + '?brand_ppi=' + brand_filter;
+        datatable.ajax.url(newDatatableUrl).load();
+    })
+  })
 </script>
 @endpush

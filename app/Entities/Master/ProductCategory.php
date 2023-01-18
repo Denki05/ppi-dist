@@ -31,7 +31,7 @@ class ProductCategory extends Model
 
     public function brand_lokal()
     {
-        return $this->BelongsTo('App\Entities\Master\BrandLokal', 'brand_lokal_id');
+        return $this->belongsTo('App\Entities\Master\BrandLokal', 'brand_lokal_id');
     }
 
     public function getAutoNumberOptions()

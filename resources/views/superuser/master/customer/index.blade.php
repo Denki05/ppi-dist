@@ -46,8 +46,8 @@
                     <div class="col-md-9">
                       <select class="form-control js-select2" name="province">
                         <option value="">==All Provinsi==</option>
-                        @foreach($customers as $index => $row)
-                        <option value="{{$row->id}}">{{$row->text_provinsi}}</option>
+                        @foreach($provinsi as $index => $row)
+                        <option value="{{$row->prov_id}}">{{$row->prov_name}}</option>
                         @endforeach
                       </select>
                     </div>--}}
@@ -56,11 +56,11 @@
               <div class="col-lg-6">
                 <div class="form-group row">
                   <div class="col-md-3">
-                    <label class="col-md-3 col-form-label text-right">Search</label>
+                    <!-- <label class="col-md-3 col-form-label text-right">Search</label> -->
                   </div>
                   <div class="col-md-9">
                     <div class="input-group mb-3">
-                        <input type="text" class="form-control" placeholder="Keyword" name="search">
+                        <input type="text" class="form-control" placeholder="Search" name="search">
                         <div class="input-group-append">
                           <button type="submit" class="btn btn-primary"><i class="fa fa-search"></i></button>
                         </div>

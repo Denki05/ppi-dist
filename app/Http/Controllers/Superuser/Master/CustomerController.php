@@ -64,20 +64,29 @@ class CustomerController extends Controller
         }
 
         $search = $request->input('search');
-        $filter_customer = $request->input('customer_name');
+        $province = $request->input('province');
         $customer = Customer::where(function($query2) use($search){
                                 if(!empty($search)){
                                     $query2->where('name','like','%'.$search.'%');
                                 }
-                            })  
+                            })
+                            ->where(function($query2) use($province){
+    							if(!empty($province)){
+    								$query2->where(function($query3) use($province){
+    									$query3->where('provinsi',$province);
+    								});
+    							}
+    						})
                             ->orderBy('id','ASC')
-                            ->paginate(5);
+                            ->paginate(10);
 
         $other_address = CustomerOtherAddress::get();
+        $prov = DB::table('provinsi')->get();
         
         $data =[
             'other_address' => $other_address,
             'customers' => $customer,
+            'provinsi' => $prov,
         ];
 
         return view('superuser.master.customer.index', $data);
