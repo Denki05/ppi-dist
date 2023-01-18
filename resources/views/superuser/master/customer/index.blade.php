@@ -16,20 +16,62 @@
   @endforeach
 </div>
 @endif
+
+<nav class="breadcrumb bg-white push">
+  <a href="{{route('superuser.master.customer.create')}}" class="btn btn-primary btn-lg active" role="button" target="_blank" aria-pressed="true" style="margin-left: 10px !important;">Create</a>
+  <a href="{{route('superuser.master.customer_contact.create')}}" class="btn btn-primary btn-lg active" role="button" target="_blank" aria-pressed="true" style="margin-left: 10px !important;">Add Contact</a>
+</nav>
+
 <div class="block">
-  <div class="block-content">
-    <a href="{{ route('superuser.master.customer.create') }}">
-      <button type="button" class="btn btn-outline-primary min-width-125">Create</button>
-    </a>
-
-    <!-- <button type="button" class="btn btn-outline-danger ml-10" onclick="deleteMultiple()">Delete Checked</button> -->
-
-    <a class="ml-10" href="{{ route('superuser.master.customer_contact.create') }}">
-      <button type="button" class="btn btn-outline-secondary min-width-125">Add Contact</button>
-    </a>
-  </div>
   <div class="block-content block-content-full">
-    <table id="customer-table" class="table table-striped">
+  <div class="form-group row">
+  <form>
+            <div class="row">
+              <div class="col-lg-3">
+                <div class="form-group row">
+                  {{--<label class="col-md-3 col-form-label text-right">Customer</label>
+                  <div class="col-md-9">
+                    <select class="form-control js-select2" name="customer_name">
+                      <option value="">==All Customer==</option>
+                      @foreach($customers as $index => $row)
+                      <option value="{{$row->name}}">{{$row->name}}</option>
+                      @endforeach
+                    </select>
+                  </div>--}}
+                </div>   
+              </div>
+              <div class="col-lg-3">
+                  <div class="form-group row">
+                    {{--<label class="col-md-3 col-form-label text-right">Area</label>
+                    <div class="col-md-9">
+                      <select class="form-control js-select2" name="province">
+                        <option value="">==All Provinsi==</option>
+                        @foreach($customers as $index => $row)
+                        <option value="{{$row->id}}">{{$row->text_provinsi}}</option>
+                        @endforeach
+                      </select>
+                    </div>--}}
+                  </div>
+              </div>
+              <div class="col-lg-6">
+                <div class="form-group row">
+                  <div class="col-md-3">
+                    <label class="col-md-3 col-form-label text-right">Search</label>
+                  </div>
+                  <div class="col-md-9">
+                    <div class="input-group mb-3">
+                        <input type="text" class="form-control" placeholder="Keyword" name="search">
+                        <div class="input-group-append">
+                          <button type="submit" class="btn btn-primary"><i class="fa fa-search"></i></button>
+                        </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </form>
+      </div>
+    <table id="customer-table" class="table ">
       <thead class="thead-dark">
         <tr>
           <th></th>
@@ -49,9 +91,7 @@
                 <div class="col-sm-6">
                   <div class="row mb-2">
                     <a href="#" class="link">
-                      <button type="button" name='edit' id='{{ $row->id }}'
-                      class="edit btn btn-xs btn-outline-secondary btn-sm my-0">
-                        <i class="mdi mdi-plus-box"></i></button>
+                      <button type="button" name='edit' id='{{ $row->id }}'>#</button>
                     </a>
                   </div>
                 </div>
@@ -165,20 +205,11 @@
 
 @include('superuser.asset.plugin.swal2')
 @include('superuser.asset.plugin.datatables')
-
-@section('modal')
-
-
-
-@endsection
+@include('superuser.asset.plugin.select2')
 
 @push('scripts')
 <script type="text/javascript">
   $(function () {
-	    $('#customer-table').DataTable({
-		    "searching": true
-      });
-
       $('.link').click(function() {
         event.preventDefault();
       });
@@ -187,6 +218,16 @@
         escape: false,
         showHeader: false
       });
+      
 });
+</script>
+
+<script>
+  $(document).ready(function () {
+    $('.js-select2').select2({
+    })
+
+    $('#customer-table').DataTable();
+  });
 </script>
 @endpush

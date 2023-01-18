@@ -57,11 +57,13 @@ Route::group([
         Route::get('/import_template', 'ProductCategoryController@import_template')->name('import_template');
         Route::post('/import', 'ProductCategoryController@import')->name('import');
         Route::get('/export', 'ProductCategoryController@export')->name('export');
+        Route::post('/getproductcategory', 'ProductCategoryController@getproductcategory')->name('getproductcategory');
 
         Route::group(['as' => 'type.'], function() {
-            Route::get('/{id}/type', 'ProductCategoryTypeController@manage')->name('manage');
-            Route::post('/{id}/type', 'ProductCategoryTypeController@add')->name('add');
-            Route::get('/{id}/type/{type_id}/remove', 'ProductCategoryTypeController@remove')->name('remove');
+            // Route::get('/{id}/type', 'ProductCategoryTypeController@manage')->name('manage');
+            // Route::post('/{id}/type', 'ProductCategoryTypeController@add')->name('add');
+            // Route::get('/{id}/type/{type_id}/remove', 'ProductCategoryTypeController@remove')->name('remove');
+            
         });
     });
     Route::resource('product_category', 'ProductCategoryController');

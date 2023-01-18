@@ -25,12 +25,21 @@
         </div>
       </div>
       <div class="row">
-        <label class="col-md-3 col-form-label text-right">Detail </label>
-        <div class="col-md-3">
-          <div class="form-control-plaintext">Category: {{ $product_category->name ?? '-' }}</div>
+        <label class="col-md-3 col-form-label text-right">Category :</label>
+        <div class="col-md-7">
+          <div class="form-control-plaintext">{{ $product_category->name }}</div>
         </div>
-        <div class="col-md-3">
-          <div class="form-control-plaintext">Type:  {{ $product_category-> ?? '-' }}</div>
+      </div>
+      <div class="row">
+        <label class="col-md-3 col-form-label text-right">Type :</label>
+        <div class="col-md-7">
+          <div class="form-control-plaintext">{{ $product_category->type }}</div>
+        </div>
+      </div>
+      <div class="row">
+        <label class="col-md-3 col-form-label text-right">Packaging :</label>
+        <div class="col-md-7">
+          <div class="form-control-plaintext">{{ $product_category->packaging }}</div>
         </div>
       </div>
       <div class="row">

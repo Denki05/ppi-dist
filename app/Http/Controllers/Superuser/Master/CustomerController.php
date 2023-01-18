@@ -54,7 +54,7 @@ class CustomerController extends Controller
         return $datatable->build();
     }
 
-    public function index()
+    public function index(Request $request)
     {
         // Access
         if(Auth::user()->is_superuser == 0){
@@ -63,8 +63,22 @@ class CustomerController extends Controller
             }
         }
 
-        $data['customers'] = Customer::paginate(5);
-        $data['other_address'] = CustomerOtherAddress::all();
+        $search = $request->input('search');
+        $filter_customer = $request->input('customer_name');
+        $customer = Customer::where(function($query2) use($search){
+                                if(!empty($search)){
+                                    $query2->where('name','like','%'.$search.'%');
+                                }
+                            })  
+                            ->orderBy('id','ASC')
+                            ->paginate(5);
+
+        $other_address = CustomerOtherAddress::get();
+        
+        $data =[
+            'other_address' => $other_address,
+            'customers' => $customer,
+        ];
 
         return view('superuser.master.customer.index', $data);
     }

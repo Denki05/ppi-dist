@@ -55,6 +55,18 @@ class ProductCategoryController extends Controller
         return view('superuser.master.product_category.index', $data);
     }
 
+    public function getproductcategory(Request $request)
+    {
+        $brand_lokal_id = $request->brand_lokal_id;
+
+        $category = ProductCategory::where('brand_lokal_id', $brand_lokal_id)->get()->unique('name');
+
+        foreach($category as $cat)
+        {
+            echo "<option value='$cat->name'>$cat->name</option>";
+        }
+    }
+
     public function create()
     {
         // Access
@@ -65,7 +77,8 @@ class ProductCategoryController extends Controller
         }
 
         $data['brand_lokal'] = BrandLokal::get();
-        $data['category'] = ProductCategory::get();
+        $data['category_pack'] = ProductCategory::get()->unique('packaging');
+        $data['category_name'] = ProductCategory::get()->unique('name');
 
         return view('superuser.master.product_category.create', $data);
     }
@@ -73,6 +86,7 @@ class ProductCategoryController extends Controller
     public function store(Request $request)
     {
         if ($request->ajax()) {
+            
             $validator = Validator::make($request->all(), [
                 'brand_ppi' => 'required',
                 'name' => 'required|string',

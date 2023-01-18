@@ -32,7 +32,7 @@
                 <label class="col-md-2 col-form-label text-left" for="filter_brand">Brand :</label>
                 <div class="col-md-4">
                   <select class="form-control js-select2" id="filter_brand" name="filter_brand" data-placeholder="Select Brand">
-                    <option value="">All</option>
+                    <option value="">==Find Brand==</option>
                     @foreach($brand_lokal as $brand)
                     <option value="{{$brand->brand_name}}">{{$brand->brand_name}}</option>
                     @endforeach
@@ -67,7 +67,7 @@
             <th>Code</th>
             <th>Brand</th>
             <th>Category</th>
-            <th>Type</th>
+            <th>type</th>
             <th>Packaging</th>
             <th>Status</th>
             <th>Action</th>
@@ -120,9 +120,9 @@ $(document).ready(function() {
       },
       {data: 'code', name: 'master_product_category.code'},
       {data: 'brandName', name: 'master_product_category.brand_name'},
-      {data: 'name', name: 'master_product_category.name'},
-      {data: 'type', name: 'master_product_category.type'},
-      {data: 'packaging', name: 'master_product_category.packaging'},
+      {data: 'name'},
+      {data: 'type'},
+      {data: 'packaging'},
       {data: 'status', name: 'master_product_category.status'},
       {data: 'action'}
     ],
