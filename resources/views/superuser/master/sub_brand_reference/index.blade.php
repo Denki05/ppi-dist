@@ -62,10 +62,9 @@
         <tr>
           <th>#</th>
           <th>Created at</th>
-          <th>Code</th>
           <th>Brand Fragrantica</th>
           <th>Searah</th>
-          <th>Status</th>
+          <th>Action</th>
         </tr>
       </thead>
     </table>
@@ -110,10 +109,9 @@ $(document).ready(function() {
           sort: 'timestamp'
         }, name: 'master_sub_brand_references.created_at'
       },
-      {data: 'searah_code', name: 'master_sub_brand_references.code'},
       {data: 'brand_name', name: 'master_brand_references.name'},
       {data: 'searah_name', name: 'master_sub_brand_references.name'},
-      {data: 'status', name: 'master_sub_brand_references.status'}
+      {data: 'action'}
     ],
     order: [
       [1, 'desc']

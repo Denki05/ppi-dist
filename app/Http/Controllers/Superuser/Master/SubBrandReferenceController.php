@@ -17,6 +17,7 @@ use Illuminate\Http\Request;
 use App\Entities\Setting\UserMenu;
 use Validator;
 use Auth;
+use App\Helper\UploadMedia;
 
 class SubBrandReferenceController extends Controller
 {
@@ -77,6 +78,8 @@ class SubBrandReferenceController extends Controller
                 'name' => 'required|string',
                 'link' => 'nullable|string',
                 'description' => 'nullable|string',
+                // 'image_botol' => 'nullable|image|mimes:jpeg,png,jpg|max:2048',
+                // 'image_table_botol' => 'nullable|image|mimes:jpeg,png,jpg|max:2048',
             ]);
 
             if ($validator->fails()) {
@@ -100,6 +103,14 @@ class SubBrandReferenceController extends Controller
                 $sub_brand_reference->name = $request->name;
                 $sub_brand_reference->link = $request->link;
                 $sub_brand_reference->description = $request->description;
+
+                if (!empty($request->file('image_botol'))) {
+                    $sub_brand_reference->image_botol = UploadMedia::image($request->file('image_botol'), SubBrandReference::$directory_image);
+                }
+
+                if (!empty($request->file('image_table_botol'))) {
+                    $sub_brand_reference->image_table_botol = UploadMedia::image($request->file('image_table_botol'), SubBrandReference::$directory_image);
+                }
                 $sub_brand_reference->status = SubBrandReference::STATUS['ACTIVE'];
 
                 if ($sub_brand_reference->save()) {
@@ -184,6 +195,20 @@ class SubBrandReferenceController extends Controller
                 $sub_brand_reference->name = $request->name;
                 $sub_brand_reference->link = $request->link;
                 $sub_brand_reference->description = $request->description;
+
+                if (!empty($request->file('image_botol'))) {
+                    if (is_file_exists(SubBrandReference::$directory_image.$sub_brand_reference->image_botol)) {
+                        remove_file(SubBrandReference::$directory_image.$sub_brand_reference->image_botol);
+                    }
+                    $sub_brand_reference->image_botol = UploadMedia::image($request->file('image_botol'), SubBrandReference::$directory_image);
+                }
+
+                if (!empty($request->file('image_table_botol'))) {
+                    if (is_file_exists(SubBrandReference::$directory_image.$sub_brand_reference->image_table_botol)) {
+                        remove_file(SubBrandReference::$directory_image.$sub_brand_reference->image_table_botol);
+                    }
+                    $sub_brand_reference->image_table_botol = UploadMedia::image($request->file('image_table_botol'), SubBrandReference::$directory_image);
+                }
 
                 if ($sub_brand_reference->save()) {
                     DB::commit();

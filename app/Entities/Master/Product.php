@@ -70,6 +70,7 @@ class Product extends Model
     {
         return $this->hasMany('App\Entities\Penjualan\SettingPriceLog');
     }
+    
     public function getImageUrlAttribute()
     {
         if (!$this->image OR !file_exists(Self::$directory_image.$this->image)) {
@@ -113,5 +114,14 @@ class Product extends Model
     public function frag()
     {
         return $this->hasMany('App\Entities\Master\Fragrantica');
+    }
+
+    public function updatedBySuperuser()
+    {
+        $superuser = Superuser::find($this->updated_by);
+
+        if ($superuser) {
+            return $superuser->name ?? $superuser->username;
+        }
     }
 }

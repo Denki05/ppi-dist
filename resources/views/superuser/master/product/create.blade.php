@@ -35,7 +35,7 @@
                           <h4>Product Details</h4>
                           <div class="form-group">
                             <label for="code">Code <span class="text-danger">*</span></label>
-                            <input type="text" id="code" name="code" placeholder="Product Code" class="form-control" onkeyup="nospaces(this)">
+                            <input type="text" id="code" name="code" placeholder="Product Code" class="form-control">
                           </div>
                           <div class="form-group">
                             <label for="name">Name</label>
@@ -150,7 +150,7 @@
                               <select class="form-control" id="category"  name="category" data-placeholder="Select Brand">
                                 <option value="">==Select Category==</option>
                                 @foreach($category as $cat)
-                                <option value="{{ $cat->id }}">{{$cat->brand_name}} - {{$cat->name}} - {{$cat->type}} - {{$cat->packaging}}</option>
+                                <option value="{{ $cat->id }}">{{ $cat->name }} - {{ $cat->packaging->pack_value }}</option>
                                 @endforeach
                               </select>
                             </div>

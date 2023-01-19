@@ -61,39 +61,39 @@ class SubBrandReferenceTable extends Table
             ];
         });
 
-        // $table->addColumn('action', function (SubBrandReference $model) {
-        //     $view = route('superuser.master.sub_brand_reference.show', $model);
-        //     $edit = route('superuser.master.sub_brand_reference.edit', $model);
-        //     $destroy = route('superuser.master.sub_brand_reference.destroy', $model);
+        $table->addColumn('action', function (SubBrandReference $model) {
+            $view = route('superuser.master.sub_brand_reference.show', $model);
+            $edit = route('superuser.master.sub_brand_reference.edit', $model);
+            $destroy = route('superuser.master.sub_brand_reference.destroy', $model);
 
-        //     if ($model->status == $model::STATUS['DELETED']) {
-        //         return "
-        //             <a href=\"{$view}\">
-        //                 <button type=\"button\" class=\"btn btn-sm btn-circle btn-alt-secondary\" title=\"View\">
-        //                     <i class=\"fa fa-eye\"></i>
-        //                 </button>
-        //             </a>
-        //         ";
-        //     }
+            if ($model->status == $model::STATUS['DELETED']) {
+                return "
+                    <a href=\"{$view}\">
+                        <button type=\"button\" class=\"btn btn-sm btn-circle btn-alt-secondary\" title=\"View\">
+                            <i class=\"fa fa-eye\"></i>
+                        </button>
+                    </a>
+                ";
+            }
             
-        //     return "
-        //         <a href=\"{$view}\">
-        //             <button type=\"button\" class=\"btn btn-sm btn-circle btn-alt-secondary\" title=\"View\">
-        //                 <i class=\"fa fa-eye\"></i>
-        //             </button>
-        //         </a>
-        //         <a href=\"{$edit}\">
-        //             <button type=\"button\" class=\"btn btn-sm btn-circle btn-alt-warning\" title=\"Edit\">
-        //                 <i class=\"fa fa-pencil\"></i>
-        //             </button>
-        //         </a>
-        //         <a href=\"javascript:deleteConfirmation('{$destroy}')\">
-        //             <button type=\"button\" class=\"btn btn-sm btn-circle btn-alt-danger\" title=\"Delete\">
-        //                 <i class=\"fa fa-times\"></i>
-        //             </button>
-        //         </a>
-        //     ";
-        // });
+            return "
+                <a href=\"{$view}\">
+                    <button type=\"button\" class=\"btn btn-sm btn-circle btn-alt-secondary\" title=\"View\">
+                        <i class=\"fa fa-eye\"></i>
+                    </button>
+                </a>
+                <a href=\"{$edit}\">
+                    <button type=\"button\" class=\"btn btn-sm btn-circle btn-alt-warning\" title=\"Edit\">
+                        <i class=\"fa fa-pencil\"></i>
+                    </button>
+                </a>
+                <a href=\"javascript:deleteConfirmation('{$destroy}')\">
+                    <button type=\"button\" class=\"btn btn-sm btn-circle btn-alt-danger\" title=\"Delete\">
+                        <i class=\"fa fa-times\"></i>
+                    </button>
+                </a>
+            ";
+        });
 
         return $table->make(true);
     }

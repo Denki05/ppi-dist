@@ -34,16 +34,16 @@ $(document).ready(function() {
     	var current_active_step = $(this).parents('.f1').find('.f1-step.active');
     	var progress_line = $(this).parents('.f1').find('.f1-progress-line');
     	
-    	// validasi form
-    	parent_fieldset.find('input[type="text"],input[type="file"], input[type="number"], textarea, select').each(function() {
-    		if( $(this).val() == "" ) {
-    			$(this).addClass('input-error');
-    			next_step = false;
-    		}
-    		else {
-    			$(this).removeClass('input-error');
-    		}
-    	});
+    	// // validasi form
+    	// parent_fieldset.find('input[type="text"],input[type="file"], input[type="number"], textarea, select').each(function() {
+    	// 	if( $(this).val() == "" ) {
+    	// 		$(this).addClass('input-error');
+    	// 		next_step = false;
+    	// 	}
+    	// 	else {
+    	// 		$(this).removeClass('input-error');
+    	// 	}
+    	// });
     	
     	if( next_step ) {
     		parent_fieldset.fadeOut(400, function() {

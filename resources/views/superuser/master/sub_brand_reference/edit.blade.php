@@ -50,6 +50,20 @@
           <textarea class="form-control" id="description" name="description">{{ $sub_brand_reference->description }}</textarea>
         </div>
       </div>
+
+      <div class="form-group row">
+        <label class="col-md-3 col-form-label text-right" for="description">Image Bottel</label>
+        <div class="col-md-7">
+          <input type="file" id="image_botol" name="image_botol" data-max-file-size="2000" accept="image/png, image/jpeg">
+        </div>
+      </div>
+      <div class="form-group row">
+        <label class="col-md-3 col-form-label text-right" for="image_table_botol">Image Main Accords</label>
+        <div class="col-md-7">
+          <input type="file" id="image_table_botol" name="image_table_botol" data-max-file-size="2000" accept="image/png, image/jpeg">
+        </div>
+      </div>
+
       <div class="form-group row pt-30">
         <div class="col-md-6">
           <a href="{{ route('superuser.master.sub_brand_reference.show', $sub_brand_reference->id) }}">
@@ -70,12 +84,41 @@
 @endsection
 
 @include('superuser.asset.plugin.select2')
+@include('superuser.asset.plugin.fileinput')
 
 @push('scripts')
 <script src="{{ asset('utility/superuser/js/form.js') }}"></script>
 <script>
   $(document).ready(function () {
     $('.js-select2').select2()
+
+    $('#image_botol').fileinput({
+      theme: 'explorer-fa',
+      browseOnZoneClick: true,
+      showCancel: false,
+      showClose: false,
+      showUpload: false,
+      browseLabel: '',
+      removeLabel: '',
+      fileActionSettings: {
+        showDrag: false,
+        showRemove: false
+      },
+    });
+
+    $('#image_table_botol').fileinput({
+      theme: 'explorer-fa',
+      browseOnZoneClick: true,
+      showCancel: false,
+      showClose: false,
+      showUpload: false,
+      browseLabel: '',
+      removeLabel: '',
+      fileActionSettings: {
+        showDrag: false,
+        showRemove: false
+      },
+    });
   })
 </script>
 @endpush

@@ -89,8 +89,8 @@ class ProductController extends Controller
                 'category' => 'required|integer',
 
                 'name' => 'required|string',
-                'material_code' => 'required|string',
-                'material_name' => 'required|string',
+                // 'material_code' => 'required|string',
+                // 'material_name' => 'required|string',
                 // 'alias' => 'required|string',
                 'buying_price' => 'nullable|numeric|min:0',
                 'selling_price' => 'nullable|numeric|min:0',
@@ -194,30 +194,6 @@ class ProductController extends Controller
             }
         }
     }
-
-    // public function addMorePost(Request $request)
-    // {
-    //     $request->validate([
-
-    //         'addmore.*.parfume_scent' => 'required',
-    //         'addmore.*.scent_range' => 'required',
-    //         // 'addmore.*.price' => 'required',
-    //     ]);
-
-    //     foreach ($request->addmore as $key => $value) {
-    //         Fragrantica::create($value);
-    //     }
-
-    //     $response['notification'] = [
-    //         'alert' => 'notify',
-    //         'type' => 'success',
-    //         'content' => 'Success',
-    //     ];
-
-    //     $response['redirect_to'] = route('superuser.master.product.index');
-
-    //     return $this->response(200, $response);
-    // }
 
     public function show($id)
     {

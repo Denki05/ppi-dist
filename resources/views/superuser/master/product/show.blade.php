@@ -132,7 +132,7 @@
             <table class="table user-view-table m-0" id="document_table">
               <tbody>
                 <tr>
-                  <td>Brand Reference</td>
+                  <td>Fragrantica</td>
                   <td><b>:</b></td>
                   <td>
                     
@@ -141,7 +141,7 @@
                   </td>
                 </tr>
                 <tr>
-                  <td>Sub Brand Reference</td>
+                  <td>Searah</td>
                   <td><b>:</b></td>
                   <td>
                     <a href="{{ route('superuser.master.sub_brand_reference.show', $product->sub_brand_reference_id) }}">
@@ -150,10 +150,17 @@
                   </td>
                 </tr>
                 <tr>
-                  <td>Category | Type | Packaging</td>
+                  <td>Brand</td>
                   <td><b>:</b></td>
                   <td>
-                      {{ $product->category->name }} | {{$product->category->type}} | {{$product->category->packaging}}
+                      {{ $product->category->brand_name }}
+                  </td>
+                </tr>
+                <tr>
+                  <td>Category</td>
+                  <td><b>:</b></td>
+                  <td>
+                      {{ $product->category->name }}
                   </td>
                 </tr>
                 <tr>
@@ -186,7 +193,7 @@
             <div class="col-md-6">
               <div class="block">
                 <div class="block-content block-content-full">
-                  <img src="{{ $product->image_url ?? img_holder() }}" class="img-thumbnail">
+                  <img src="{{ $product->sub_brand_reference->image_botol_url ?? img_holder() }}" class="img-fluid">
                 </div>
               </div>
             </div>
@@ -197,15 +204,18 @@
                   <a href="{{ $product->sub_brand_reference->link }}" target="_blank">
                     <p>{{ $product->sub_brand_reference->name }}</p>
                   </a>
-                  <div class="cell accord-box"><b>main accords</b></div>
-                  <div class="cell accord-box">
+                  <div class="cell accord-box">main accords</div>
+                  <div class="block-content block-content-full">
+                    <img src="{{ $product->sub_brand_reference->image_table_botol_url ?? img_holder() }}" class="img-fluid">
+                  </div>
+                  <!-- <div class="cell accord-box">
                     <?php $frag = DB::table('master_product_fragrantica')->where('product_id', $product->id)->orderby('scent_range', 'DESC')->get(); ?>
                     @foreach($frag as $row)
                     <div class="accord-bar" style="color: rgb(255, 255, 255); background: {{$row->color_scent}}; opacity: 1; width: {{$row->scent_range}}%; text-align: center; opacity: 1;">{{$row->parfume_scent}}</div>
                     @endforeach
-                  </div>
+                  </div> -->
                   <br>
-                  <p>{{$product->description ?? '-'}}</p>
+                  <p>{{$product->sub_brand_reference->description ?? '-'}}</p>
                   <!-- <p>Alpha by <b>HMNS</b> is a fragrance for women and men. This is a new fragrance. Alpha was launched in 2019. The nose behind this fragrance is Agil Usman. Top notes are Citruses and Grass; middle notes are Green Tea and Woodsy Notes; base notes are Cedar and Vetiver. </p> -->
                 </div>
               </div>
