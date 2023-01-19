@@ -49,8 +49,8 @@
             <div class="col-md-7">
               <select class="js-select2 form-control" id="packaging" name="packaging" data-placeholder="Select Packaging">
                 <option value="">Select Packaging</option>
-                @foreach($category_pack as $pack)
-                <option value="{{$pack->packaging}}">{{$pack->packaging}}</option>
+                @foreach($packaging as $pack)
+                <option value="{{$pack->id}}">{{$pack->pack_value}}</option>
                 @endforeach
               </select>
             </div>

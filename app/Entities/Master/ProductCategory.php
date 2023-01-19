@@ -10,7 +10,7 @@ class ProductCategory extends Model
 {
     use SoftDeletes, AutoNumberTrait;
 
-    protected $fillable = ['brand_lokal_id', 'brand_name', 'code', 'name', 'type', 'status','packaging','status'];
+    protected $fillable = ['brand_lokal_id', 'packaging_id', 'brand_name', 'code', 'name', 'type', 'status','packaging','status'];
     protected $table = 'master_product_category';
 
     const STATUS = [
@@ -32,6 +32,11 @@ class ProductCategory extends Model
     public function brand_lokal()
     {
         return $this->belongsTo('App\Entities\Master\BrandLokal', 'brand_lokal_id');
+    }
+
+    public function packaging()
+    {
+        return $this->belongsTo('App\Entities\Master\Packaging', 'packaging_id');
     }
 
     public function getAutoNumberOptions()

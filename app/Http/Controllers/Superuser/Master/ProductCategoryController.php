@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Superuser\Master;
 use App\DataTables\Master\ProductCategoryTable;
 use App\Entities\Master\ProductCategory;
 use App\Entities\Master\BrandLokal;
+use App\Entities\Master\Packaging;
 use App\Exports\Master\ProductCategoryExport;
 use App\Exports\Master\ProductCategoryImportTemplate;
 use App\Http\Controllers\Controller;
@@ -77,9 +78,10 @@ class ProductCategoryController extends Controller
         }
 
         $data['brand_lokal'] = BrandLokal::all();
-        $data['category_pack'] = ProductCategory::get()->unique('packaging');
+        // $data['category_pack'] = ProductCategory::get()->unique('packaging');
         $data['category_name'] = ProductCategory::get()->unique('name');
         $data['category'] = ProductCategory::get();
+        $data['packaging'] = Packaging::get();
 
         return view('superuser.master.product_category.create', $data);
     }
@@ -92,7 +94,7 @@ class ProductCategoryController extends Controller
                 'brand_ppi' => 'required',
                 'name' => 'required|string',
                 // 'type' => 'nullable|string',
-                // 'packaging' => 'nullable|string',
+                'packaging' => 'nullable|string',
             ]);
 
             if ($validator->fails()) {
@@ -115,7 +117,7 @@ class ProductCategoryController extends Controller
                 $product_category->brand_name = $request->brand_name;
                 $product_category->name = $request->name;
                 $product_category->type = $request->type;
-                $product_category->packaging = $request->packaging;
+                $product_category->packaging_id = $request->packaging;
                 $product_category->status = ProductCategory::STATUS['ACTIVE'];
 
                 if ($product_category->save()) {

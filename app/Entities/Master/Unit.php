@@ -16,4 +16,9 @@ class Unit extends Model
         'DELETED' => 0,
         'ACTIVE' => 1
     ];
+
+    public function packaging()
+    {
+        return $this->hasMany('App\Entities\Master\Packaging', 'unit_id');
+    }
 }

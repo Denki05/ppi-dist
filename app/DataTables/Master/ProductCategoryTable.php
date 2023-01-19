@@ -23,12 +23,15 @@ class ProductCategoryTable extends Table
                 'master_brand_lokal.brand_name AS brandName', 
                 'master_brand_lokal.id AS brand_id', 
                 'master_product_category.name AS name', 
-                'master_product_category.type AS type', 
-                'master_product_category.packaging AS packaging', 
+                'master_product_category.type AS type',
                 'master_product_category.status AS status', 
                 'master_product_category.created_at AS category_date', 
+                'master_packaging.pack_value AS packaging',
         );
+
         $model = $model->leftJoin('master_brand_lokal', 'master_product_category.brand_lokal_id', '=', 'master_brand_lokal.id');
+
+        $model = $model->leftJoin('master_packaging', 'master_product_category.packaging_id', '=', 'master_packaging.id');
 
         if($request->brand_ppi != 'all') {
             $model = $model->where('master_brand_lokal.id', $request->brand_ppi);
