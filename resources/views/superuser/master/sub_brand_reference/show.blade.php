@@ -1,50 +1,73 @@
 @extends('superuser.app')
 
 @section('content')
-<nav class="breadcrumb bg-white push">
-  <span class="breadcrumb-item">Master</span>
-  <a class="breadcrumb-item" href="{{ route('superuser.master.sub_brand_reference.index') }}">Searah</a>
-  <span class="breadcrumb-item active">{{ $sub_brand_reference->id }}</span>
-</nav>
 <div class="block">
   <div class="block-header block-header-default">
     <h3 class="block-title">Show Searah</h3>
   </div>
   <div class="block-content">
-    <div class="row">
-      <label class="col-md-3 col-form-label text-right">Brand Original :</label>
-      <div class="col-md-7">
-        <div class="form-control-plaintext">{{ $sub_brand_reference->brand_reference->name }}</div>
-      </div>
-    </div>
-    <div class="row">
-      <label class="col-md-3 col-form-label text-right">Code :</label>
-      <div class="col-md-7">
-        <div class="form-control-plaintext">{{ $sub_brand_reference->code }}</div>
-      </div>
-    </div>
-    <div class="row">
-      <label class="col-md-3 col-form-label text-right">Searah :</label>
-      <div class="col-md-7">
-        <div class="form-control-plaintext">{{ $sub_brand_reference->name }}</div>
-      </div>
-    </div>
-    <div class="row">
-      <label class="col-md-3 col-form-label text-right">Link :</label>
-      <div class="col-md-7">
-        <div class="form-control-plaintext">
-          <a href="{{ $sub_brand_reference->link }}" target="_blank">
-            {{ $sub_brand_reference->link }}
-          </a>
+    <!-- <div class="container mt-5 mb-5">
+        <div class="row d-flex justify-content-center">
+            <div class="col-md-10">
+                <div class="card">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="images p-3">
+                                <div class="text-center p-4"> <img id="main-image" src="{{ $sub_brand_reference->image_botol_url ?? img_holder() }}" width="120%" height="auto" /> </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="product p-4">
+                                <div class="mt-4 mb-3"> <span class="text-uppercase text-muted brand">{{ $sub_brand_reference->brand_reference->name }}</span>
+                                    <h5 class="text-uppercase">
+                                      <a href="{{ $sub_brand_reference->link }}" target="_blank">
+                                        {{ $sub_brand_reference->name }}
+                                      </a>
+                                    </h5>
+                                </div>
+                                <div class="price d-flex flex-row align-items-center"><span class="text-uppercase" style="font-weight: bold;">Notes :</span></div>
+                                <p class="about">
+                                  {{ $sub_brand_reference->description }}
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
         </div>
-      </div>
+    </div> -->
+    
+    <div class="pop-up-container">
+            
+            <div class="product-details">
+              <div class="product-left">
+                <div class="product-info">
+                  <div class="product-manufacturer">
+                    {{ $sub_brand_reference->brand_reference->name }}
+                  </div>
+                  <div class="product-title">
+                    <a href="{{ $sub_brand_reference->link }}" class="product-title">
+                      {{ $sub_brand_reference->name }}
+                    </a>
+                  </div>
+                </div>
+                <div class="product-image">
+                  <img src="{{ $sub_brand_reference->image_botol_url }}" />
+                </div>
+              </div>
+              <div class="product-right">
+                <div class="product-description">
+                  <h5>Description</h5>
+                  {{ $sub_brand_reference->description }}
+                </div>
+                <div class="product-available">
+                  <h5 align="center">Main Accords</h5>
+                  <img src="{{ $sub_brand_reference->image_table_botol_url }}" />
+                </div>
+              </div>
+            </div>
     </div>
-    <div class="row">
-      <label class="col-md-3 col-form-label text-right">Description :</label>
-      <div class="col-md-7">
-        <div class="form-control-plaintext">{{ $sub_brand_reference->description }}</div>
-      </div>
-    </div>
+  
     <div class="row pt-30 mb-15">
       <div class="col-md-6">
         <a href="{{ route('superuser.master.sub_brand_reference.index') }}">

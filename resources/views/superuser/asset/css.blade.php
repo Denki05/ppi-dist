@@ -29,6 +29,7 @@
 
 <!-- Multi form -->
 <link rel="stylesheet" href="{{ asset('superuser_assets/css/multi.tab.css') }}">
+<link rel="stylesheet" href="{{ asset('superuser_assets/css/show.searah.css') }}">
 <!-- <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.4.1/css/bootstrap.min.css"> -->
 <link rel="stylesheet" href="https://pro.fontawesome.com/releases/v5.10.0/css/all.css">
 

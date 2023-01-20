@@ -98,6 +98,15 @@
             <table class="table user-view-table m-0" id="address_table">
               <tbody>
                 <tr>
+                  <td>Default Warehouse</td>
+                  <td><b>:</b></td>
+                  <td>
+                    <a href="{{ route('superuser.master.warehouse.show', $product->default_warehouse_id) }}">
+                      {{ $product->default_warehouse->name }}
+                    </a>
+                  </td>
+                </tr>
+                <tr>
                   <td>Default Quantity</td>
                   <td><b>:</b></td>
                   <td>{{$product->default_quantity}}</td>
@@ -109,15 +118,6 @@
                   <a href="{{ route('superuser.master.unit.show', $product->default_unit_id) }}">
                     {{ $product->default_unit->name }}
                   </a>
-                  </td>
-                </tr>
-                <tr>
-                  <td>Default Warehouse</td>
-                  <td><b>:</b></td>
-                  <td>
-                    <a href="{{ route('superuser.master.warehouse.show', $product->default_warehouse_id) }}">
-                      {{ $product->default_warehouse->name }}
-                    </a>
                   </td>
                 </tr>
               </tbody>

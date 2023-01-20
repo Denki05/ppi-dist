@@ -21,6 +21,6 @@ class Packaging extends Model
 
     public function unit()
     {
-        return $this->belongsTo('App\Entities\Master\Unit', 'unti_id');
+        return $this->belongsTo('App\Entities\Master\Unit', 'unit_id');
     }
 }
