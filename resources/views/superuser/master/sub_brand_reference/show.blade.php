@@ -61,7 +61,7 @@
                   {{ $sub_brand_reference->description }}
                 </div>
                 <div class="product-available">
-                  <h5 align="center">Main Accords</h5>
+                  <!-- <h5 align="center">Main Accords</h5> -->
                   <img src="{{ $sub_brand_reference->image_table_botol_url }}" />
                 </div>
               </div>
