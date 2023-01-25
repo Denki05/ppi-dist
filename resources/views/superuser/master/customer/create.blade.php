@@ -50,7 +50,6 @@
                               </div>
                               <div class="form-group">
                                 <label>Category</label>
-                                <br>
                                   <select class="js-select2 form-control" id="category" name="category" style="width:100%;" placeholder="Pilih Kategori Store">
                                       <option>Select Category</option>
                                       @foreach($category as $category)
@@ -59,11 +58,8 @@
                                   </select>
                               </div>
                               <div class="form-group">
-                                  <label>Type</label>
-                                  <br>
-                                  <select class="js-select2 form-control" id="type" name="type[]" style="width:100%;" placeholder="Pilih Type Store" multiple>
-                                      <option>Pilih Type Store</option>
-                                  </select>
+                                <label for="zone">Zoning</label>
+                                <input type="text" class="form-control" id="zone" name="zone" placeholder="Zoning Wilayah">
                               </div>
                             </div>
                             <div class="row">
@@ -104,8 +100,8 @@
                             <div class="container">
                               <div class="row">
                                 <div class="form-group">
-                                  <label>Provinsi</label>
-                                  <br>
+                                  <label>Area Detail</label>
+                                  
                                     <select class="js-select2 form-control" id="provinsi" name="provinsi" style="width:100%;" placeholder="Pilih Provinsi">
                                         <option>Pilih provinsi</option>
                                         @foreach ($provinces as $provinsi)
@@ -184,14 +180,18 @@
                         <!-- step 4 -->
                         <fieldset>
                             <h4>Data Document</h4>
-                            <div class="container">
-                              <div class="form-group">
-                                  <label>Image NPWP</label>
-                                  <input type="file" id="image_npwp" name="image_npwp" data-max-file-size="2000" accept="image/png, image/jpeg">
-                              </div>
-                              <div class="form-group">
-                                  <label>Image KTP</label>
-                                  <input type="file" id="image_ktp" name="image_ktp" data-max-file-size="2000" accept="image/png, image/jpeg">
+                              <div class="container">
+                                <div class="row">
+                                  <div class="col">
+                                  <div class="form-group">
+                                    <label>Image NPWP</label>
+                                    <input type="file" id="image_npwp" name="image_npwp" data-max-file-size="2000" accept="image/png, image/jpeg">
+                                  </div>
+                                  <div class="form-group">
+                                    <label>Image KTP</label>
+                                    <input type="file" id="image_ktp" name="image_ktp" data-max-file-size="2000" accept="image/png, image/jpeg">
+                                  </div>
+                                </div>
                               </div>
                               <div class="f1-buttons">
                                   <button type="button" class="btn btn-warning btn-previous"><i class="fa fa-arrow-left"></i> Previous</button>
@@ -357,26 +357,6 @@
         })
       })
     })
-
-    $(function () {
-      $('#category').on('change', function(){
-          let category_id = $('#category').val();
-
-          $.ajax({
-            type : 'POST',
-            url : '{{route('superuser.master.customer.getcustomertype')}}',
-            data : {category_id:category_id},
-            cache : false,
-
-            success: function(msg){
-              $('#type').html(msg);
-            },
-            error : function(data){
-              console.log('error:',data)
-            },
-          })
-        })
-    });
   })
 </script>
 @endpush

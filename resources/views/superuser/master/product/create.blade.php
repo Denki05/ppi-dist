@@ -33,50 +33,60 @@
                 		<!-- step 1 -->
                     <fieldset>
                             <h4>Product Brand</h4>
-                            <div class="form-group">
-                              <label>Brand <span class="text-danger">*</span></label>
-                              <select class="js-select2 form-control" id="brand_name"  name="brand_name" data-placeholder="Pilih Brand">
-                                <option value=""></option>
-                                @foreach($brand_ppi as $brand_ppi)
-                                <option value="{{ $brand_ppi->brand_name }}">{{$brand_ppi->brand_name}}</option>
-                                @endforeach
-                              </select>
+                            <div class="container">
+                              <div class="row">
+                                <div class="col">
+                                  <div class="form-group">
+                                    <label>Brand <span class="text-danger">*</span></label>
+                                    <select class="js-select2 form-control" id="brand_name"  name="brand_name" data-placeholder="Pilih Brand">
+                                      <option value=""></option>
+                                      @foreach($brand_ppi as $brand_ppi)
+                                      <option value="{{ $brand_ppi->brand_name }}">{{$brand_ppi->brand_name}}</option>
+                                      @endforeach
+                                    </select>
+                                  </div>
+                                </div>
+                                <div class="col">
+                                  <div class="form-group">
+                                    <label>Kategori <span class="text-danger">*</span></label>
+                                    <select class="js-select2 form-control" id="category"  name="category" data-placeholder="Pilih Kategori">
+                                      <option value="">==Select Category==</option>
+                                      @foreach($category as $cat)
+                                      <option value="{{ $cat->id }}">{{ $cat->name }} - {{ $cat->type }} - {{ $cat->packaging->pack_value }}</option>
+                                      @endforeach
+                                    </select>
+                                  </div>
+                                </div>
+                              </div>
+                              <div class="row">
+                                <div class="form-group">
+                                  <label>Searah <span class="text-danger">*</span></label>
+                                  <select class="js-select2 form-control" id="searah" name="searah" data-placeholder="Pilih Searah">
+                                    <option value="">==Select Searah==</option>
+                                    @foreach($sub_brand_references as $searah)
+                                    <option value="{{ $searah->id }}">{{ $searah->name }}</option>
+                                    @endforeach
+                                  </select>
+                                </div>
+                                <div class="col">
+                                  <div class="form-group">
+                                      <label>Image
+                                        <i class="mdi mdi-comment-question-outline" data-toggle="popover" data-placement="left" title="Image" data-content="Standard / small image quality. (For Apps, etc)"></i>
+                                      </label>
+                                      <input type="file" id="image" name="image" data-max-file-size="2000" accept="image/png, image/jpeg">
+                                  </div>
+                                </div>
+                                <div class="col">
+                                  <div class="form-group">
+                                      <label>Image HD
+                                        <i class="mdi mdi-comment-question-outline" data-toggle="popover" data-placement="left" title="Image HD" data-content="Better image quality. (For Printing, etc)"></i>
+                                      </label>
+                                      <input type="file" id="image_hd" name="image_hd" data-max-file-size="2000" accept="image/png, image/jpeg">
+                                  </div>
+                                </div>
+                              </div>
                             </div>
-
-                            <div class="form-group">
-                              <label>Kategori <span class="text-danger">*</span></label>
-                              <select class="js-select2 form-control" id="category"  name="category" data-placeholder="Pilih Kategori">
-                                <option value="">==Select Category==</option>
-                                @foreach($category as $cat)
-                                <option value="{{ $cat->id }}">{{ $cat->name }} - {{ $cat->type }} - {{ $cat->packaging->pack_value }}</option>
-                                @endforeach
-                              </select>
-                            </div>
-                            
-                            <div class="form-group">
-                              <label>Searah <span class="text-danger">*</span></label>
-                              <select class="js-select2 form-control" id="searah" name="searah" data-placeholder="Pilih Searah">
-                                <option value="">==Select Searah==</option>
-                                @foreach($sub_brand_references as $searah)
-                                <option value="{{ $searah->id }}">{{ $searah->name }}</option>
-                                @endforeach
-                              </select>
-                            </div>
-                            <div class="form-group">
-                                <label>Image
-                                  <i class="mdi mdi-comment-question-outline" data-toggle="popover" data-placement="left" title="Image" data-content="Standard / small image quality. (For Apps, etc)"></i>
-                                </label>
-                                <input type="file" id="image" name="image" data-max-file-size="2000" accept="image/png, image/jpeg">
-                            </div>
-                            <div class="form-group">
-                                <label>Image HD
-                                  <i class="mdi mdi-comment-question-outline" data-toggle="popover" data-placement="left" title="Image HD" data-content="Better image quality. (For Printing, etc)"></i>
-                                </label>
-                                <input type="file" id="image_hd" name="image_hd" data-max-file-size="2000" accept="image/png, image/jpeg">
-                            </div>
-                            
                             <div class="f1-buttons">
-                                
                                 <button type="button" class="btn btn-primary btn-next">Next <i class="fa fa-arrow-right"></i></button>
                             </div>
                         </fieldset>
@@ -175,7 +185,7 @@
                                 </div>
                               </div>
                               <div class="col">
-                                <div class="form-group row col-6">
+                                <div class="form-group row col-3">
                                   <label>Default Quantity <span class="text-danger">*</span></label>
                                   <input type="number" class="form-control" id="default_quantity" name="default_quantity" min="0" value="0" step="0.0001">
                                 </div>

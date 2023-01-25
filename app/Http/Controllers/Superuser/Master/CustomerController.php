@@ -194,8 +194,6 @@ class CustomerController extends Controller
                 // 'code' => 'required|string|unique:master_customers,code',
                 'name' => 'required|string',
                 'category' => 'required|integer',
-                'type' => 'required|array',
-                'type.*' => 'required|integer',
                 'email' => 'nullable|email',
                 'phone' => 'nullable|string',
                 'npwp' => 'nullable|string',
@@ -242,6 +240,7 @@ class CustomerController extends Controller
 
                 $customer->category_id = $request->category;
                 // $customer->type_id = $request->type;
+                $customer->zone = $request->zone;
 
                 $customer->email = $request->email;
                 $customer->phone = $request->phone;
@@ -285,19 +284,12 @@ class CustomerController extends Controller
                 $customer->status = Customer::STATUS['ACTIVE'];
 
                 if ($customer->save()) {
-                    foreach ($request->type as $type) {
-                        $customer_type_pivot = new CustomerTypePivot;
-                        $customer_type_pivot->customer_id = $customer->id;
-                        $customer_type_pivot->type_id = $type;
-    
-                        $customer_type_pivot->save();
-                    }
 
-                        $log_saldo = new CustomerSaldoLog;
-                        $log_saldo->customer_id = $customer->id;
-                        $log_saldo->saldo_log = $request->plafon_piutang;
-                        $log_saldo->note = CustomerSaldoLog::NOTE['SALDO AWAL'];
-                        $log_saldo->save();
+                        // $log_saldo = new CustomerSaldoLog;
+                        // $log_saldo->customer_id = $customer->id;
+                        // $log_saldo->saldo_log = $request->plafon_piutang;
+                        // $log_saldo->note = CustomerSaldoLog::NOTE['SALDO AWAL'];
+                        // $log_saldo->save();
                     
 
                     DB::commit();

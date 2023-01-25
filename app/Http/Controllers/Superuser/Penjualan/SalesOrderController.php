@@ -150,9 +150,16 @@ class SalesOrderController extends Controller
         return view($this->view."index",$data);
     }
 
-    public function get_customer(Request $request, $step = NULL)
+    public function getmember(Request $request)
     {
-        
+        $customer_id = $request->customer_id;
+
+        $member = CustomerOtherAddress::where('customer_id', $customer_id)->get();
+
+        foreach ($member as $a)
+        {
+            echo "<option value='$a->id'>$a->name</option>";
+        }
     }
 
     public function index_awal(Request $request)
@@ -211,7 +218,8 @@ class SalesOrderController extends Controller
             }
         }
 
-        $customer = Customer::all();
+        $customer = Customer::where('status', 1)->get();
+        $member = CustomerOtherAddress::where('status', 1)->get();
         $warehouse = Warehouse::all();
         $sales = Sales::all();
         $ekspedisi = Ekspedisi::all();
@@ -219,6 +227,7 @@ class SalesOrderController extends Controller
         // $product_type = ProductType::all();
         $data = [
             'customer' => $customer,
+            'member' => $member,
             'warehouse' => $warehouse,
             'sales' => $sales,
             'ekspedisi' => $ekspedisi,
@@ -284,9 +293,10 @@ class SalesOrderController extends Controller
                     $insert->origin_warehouse_id = trim(htmlentities($post["origin_warehouse_id"]));
                     $insert->destination_warehouse_id = $gudang["id"] ?? null;
                 }
+                $insert->customer_other_address_id = trim(htmlentities($post["customer_other_address_id"]));
                 $insert->so_for = trim(htmlentities($customer["so_for"]));
                 $insert->type_transaction = trim(htmlentities($post["type_transaction"]));
-                $insert->brand_type = trim(htmlentities($post["brand_type"]));
+                // $insert->brand_type = trim(htmlentities($post["brand_type"]));
                 $insert->note = trim(htmlentities($post["note"]));
                 $insert->created_by = Auth::id();
                 $insert->status = $post["ajukankelanjutan"] == 1 ? 2 : 1;
@@ -314,7 +324,7 @@ class SalesOrderController extends Controller
             } catch (\Exception $e) {
                 DB::rollback();
 
-                // dd($e);
+                dd($e);
                 $data_json["IsError"] = TRUE;
                 $data_json["Message"] = "Sales Order Gagal Ditambahkan";
     

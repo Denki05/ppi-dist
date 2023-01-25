@@ -13,7 +13,7 @@ class Customer extends Model
     protected $fillable = [
         'category_id', /* 'type_id', */ 'code', 'name',
         'email', 'phone', 'npwp', 'ktp', 'has_ppn', 'address',
-        'owner_name', 'plafon_piutang', 'saldo', 'gps_latitude', 'gps_longitude',
+        'owner_name', 'plafon_piutang', 'saldo', 'gps_latitude', 'gps_longitude', 'zone',
         'provinsi', 'kota', 'kecamatan', 'kelurahan',
         'text_provinsi', 'text_kota', 'text_kecamatan', 'text_kelurahan',
         'zipcode', 'image_npwp', 'image_ktp', 'image_store', 'notification_email', 'status'

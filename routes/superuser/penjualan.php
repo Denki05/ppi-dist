@@ -39,6 +39,7 @@ Route::group([
         Route::post('/destroy_item', 'SalesOrderController@destroy_item')->name('destroy_item');
 
         Route::get('/get_product', 'SalesOrderController@get_product')->name('get_product');
+        Route::post('/getmember', 'SalesOrderController@getmember')->name('getmember');
 
         Route::post('/ajax_customer_detail', 'SalesOrderController@ajax_customer_detail')->name('ajax_customer_detail');
         Route::post('/ajax_warehouse_detail', 'SalesOrderController@ajax_warehouse_detail')->name('ajax_warehouse_detail');

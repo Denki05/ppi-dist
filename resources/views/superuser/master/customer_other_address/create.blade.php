@@ -35,23 +35,23 @@
                 		<fieldset>
                 		    <h4>Data Profile</h4>
                 			      <div class="form-group">
-                			          <label for="name">Name<span class="text-danger">*</span></label>
-                                <input type="text" id="name" name="name" placeholder="Name Member" class="form-control">
+                			          <label for="name">Nama<span class="text-danger">*</span></label>
+                                <input type="text" id="name" name="name" placeholder="Nama" class="form-control">
                             </div>
                             <div class="form-group">
-                			          <label for="contact_person">Contact Person</label>
-                                <input type="text" id="contact_person" name="contact_person" placeholder="Contact Person" class="form-control">
+                			          <label for="contact_person">Owner</label>
+                                <input type="text" id="contact_person" name="contact_person" placeholder="Penanggung Jawab" class="form-control">
                             </div>
                             <div class="form-group">
-                			          <label for="phone">Phone</label>
-                                <input type="number" id="phone" name="phone" placeholder="Phone" class="form-control">
+                			          <label for="phone">Telepon / Hp</label>
+                                <input type="number" id="phone" name="phone" placeholder="Telepon / Hp" class="form-control">
                             </div>
                             <div class="form-group">
-                                <label for="address">Address<span class="text-danger">*</span></label>
-                                <input type="text" name="address" id="address" placeholder="Member Address" class="form-control">
+                                <label for="address">Alamat<span class="text-danger">*</span></label>
+                                <input type="text" name="address" id="address" placeholder="Alamat Member" class="form-control">
                             </div>
                             <div class="form-group">
-                                <label>Image Store</label>
+                                <label>Foto Toko</label>
                                 <input type="file" id="image_store" name="image_store" data-max-file-size="2000" accept="image/png, image/jpeg">
                             </div>
                             <div class="f1-buttons">
@@ -65,7 +65,7 @@
                             <div class="form-group row">
                               <label>Area Detail</label>
                                 <select class="js-select2 form-control" id="provinsi" name="provinsi" style="width: 100%;">
-                                    <option>Select Provinsi</option>
+                                    <option>Pilih Provinsi</option>
                                     @foreach ($provinces as $provinsi)
                                     <option value="{{ $provinsi->prov_id }}">{{ $provinsi->prov_name }}</option>
                                     @endforeach
@@ -74,25 +74,25 @@
                             </div>
                             <div class="form-group">
                                 <select class="js-select2 form-control" id="kota" name="kota" style="width: 100%;">
-                                    <option>Select Kota</option>
+                                    <option>Pilih Kota</option>
                                 </select>
                                 <input type="hidden" name="text_kota">
                             </div>
                             <div class="form-group">
                                 <select class="js-select2 form-control" id="kecamatan" name="kecamatan" style="width: 100%;">
-                                    <option>Select Kecamatan</option>
+                                    <option>Pilih Kecamatan</option>
                                 </select>
                                 <input type="hidden" name="text_kecamatan">
                             </div>
                             <div class="form-group">
                                 <select class="js-select2 form-control" id="kelurahan" name="kelurahan" style="width: 100%;">
-                                    <option>Select Kelurahan</option>
+                                    <option>Pilih Kelurahan</option>
                                 </select>
                                 <input type="hidden" name="text_kelurahan">
                             </div>
                             <div class="form-group">
                                 <select class="js-select2 form-control" id="zipcode" name="zipcode" style="width: 100%;">
-                                    <option>Select Zipcode</option>
+                                    <option>Pilih Zipcode</option>
                                 </select>
                                 <input type="hidden" name="text_zipcode">
                             </div>
