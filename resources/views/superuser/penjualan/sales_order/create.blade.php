@@ -412,7 +412,6 @@
 
   var param = [];
   param["category_id"] = "";
-  param["type_id"] = "";
 
   loadProduct({});
 
@@ -422,7 +421,6 @@
     param["category_id"] = $(this).val();
     loadProduct({
       category_id:param["category_id"],
-      type_id : param["type_id"], 
       index: $(this).data("index")
     })
   })

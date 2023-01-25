@@ -9,6 +9,8 @@ use App\Entities\Master\ProductCategory;
 use App\Entities\Master\ProductMinStock;
 use App\Entities\Master\SubBrandReference;
 use App\Entities\Master\BrandLokal;
+use App\Entities\Master\Vendor;
+use App\Entities\Master\Unit;
 use App\Entities\Master\Fragrantica;
 use App\Exports\Master\ProductExport;
 use App\Exports\Master\ProductImportTemplate;
@@ -71,10 +73,11 @@ class ProductController extends Controller
         $data['brand_ppi'] = BrandLokal::get();
         $data['category'] = ProductCategory::get();
         $data['sub_brand_references'] = MasterRepo::sub_brand_references();
-        $data['units'] = MasterRepo::units();
+        $data['units'] = Unit::get();
         $data['warehouses'] = MasterRepo::warehouses();
         $data['product_notes'] = Product::NOTE;
         $data['fragrantica'] = Fragrantica::all();
+        $data['factory'] = Vendor::where('type', 2)->get();
 
         // dd($data['brand_ppi']);
         return view('superuser.master.product.create', $data);
@@ -89,9 +92,6 @@ class ProductController extends Controller
                 'category' => 'required|integer',
 
                 'name' => 'required|string',
-                // 'material_code' => 'required|string',
-                // 'material_name' => 'required|string',
-                // 'alias' => 'required|string',
                 'buying_price' => 'nullable|numeric|min:0',
                 'selling_price' => 'nullable|numeric|min:0',
                 'description' => 'nullable|string',
@@ -126,13 +126,16 @@ class ProductController extends Controller
                 $product->brand_name = $request->brand_name;
                 $product->sub_brand_reference_id = $request->searah;
                 $product->category_id = $request->category;
+                $product->factory_id = $request->factory;
 
                 $product->name = $request->name;
                 $product->material_code = $request->material_code;
                 $product->material_name = $request->material_name;
                 $product->alias = $request->alias;
-                $product->buying_price = $request->buying_price;
-                $product->selling_price = $request->selling_price;
+                $product->buying_price_under = $request->buying_price_under;
+                $product->buying_price_high = $request->buying_price_high;
+                $product->selling_price_under = $request->selling_price_under;
+                $product->selling_price_high = $request->selling_price_high;
                 $product->description = $request->description;
                 $product->note = $request->note;
                 $product->gender = $request->gender;

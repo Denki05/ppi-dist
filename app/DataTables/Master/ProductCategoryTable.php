@@ -26,7 +26,7 @@ class ProductCategoryTable extends Table
                 'master_product_category.type AS type',
                 'master_product_category.status AS status', 
                 'master_product_category.created_at AS category_date', 
-                'master_packaging.pack_value AS packaging',
+                'master_packaging.pack AS packaging',
         );
 
         $model = $model->leftJoin('master_brand_lokal', 'master_product_category.brand_lokal_id', '=', 'master_brand_lokal.id');

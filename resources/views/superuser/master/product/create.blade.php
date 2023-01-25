@@ -52,7 +52,7 @@
                                     <select class="js-select2 form-control" id="category"  name="category" data-placeholder="Pilih Kategori">
                                       <option value="">==Select Category==</option>
                                       @foreach($category as $cat)
-                                      <option value="{{ $cat->id }}">{{ $cat->name }} - {{ $cat->type }} - {{ $cat->packaging->pack_value }}</option>
+                                      <option value="{{ $cat->id }}">{{ $cat->name }} - {{ $cat->type }} - {{ $cat->packaging->pack }}</option>
                                       @endforeach
                                     </select>
                                   </div>
@@ -162,6 +162,15 @@
                         <fieldset>
                             <h4>Warehouse</h4>
                             <div class="row">
+                              <div class="form-group">
+                                <label>Factory <span class="text-danger">*</span></label>
+                                <select class="js-select2 form-control" id="factory" name="factory" style="width:100%;" placeholder="Pilih Pabrik" required>
+                                  <option>Pilih Pabrik</option>
+                                  @foreach($factory as $factory)
+                                  <option value="{{ $factory->id }}">{{ $factory->name }}</option>
+                                  @endforeach
+                                </select>
+                              </div>
                               <div class="form-group">
                                 <label>Default Warehouse <span class="text-danger">*</span></label>
                                 <select class="js-select2 form-control" id="default_warehouse" name="default_warehouse" style="width:100%;" placeholder="Pilih Gudang" required>

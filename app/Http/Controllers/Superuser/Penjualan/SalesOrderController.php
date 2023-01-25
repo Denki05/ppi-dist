@@ -15,7 +15,7 @@ use App\Entities\Master\CustomerOtherAddress;
 use App\Entities\Master\Company;
 use App\Entities\Master\Warehouse;
 use App\Entities\Master\ProductCategory;
-use App\Entities\Master\ProductType;
+use App\Entities\Master\BrandLokal;
 use App\Entities\Master\Product;
 use App\Entities\Master\Sales;
 use App\Entities\Master\Ekspedisi;
@@ -224,6 +224,7 @@ class SalesOrderController extends Controller
         $sales = Sales::all();
         $ekspedisi = Ekspedisi::all();
         $product_category = ProductCategory::all();
+        $brand_ppi = BrandLokal::all();
         // $product_type = ProductType::all();
         $data = [
             'customer' => $customer,
@@ -232,6 +233,7 @@ class SalesOrderController extends Controller
             'sales' => $sales,
             'ekspedisi' => $ekspedisi,
             'product_category' => $product_category,
+            'brand_ppi' => $brand_ppi,
             // 'product_type' => $product_type,
             'step' => $step,
             'step_txt' => SalesOrder::STEP[$step]
@@ -439,7 +441,7 @@ class SalesOrderController extends Controller
         $warehouse = Warehouse::all();
         $sales = Sales::all();
         $product_category = ProductCategory::all();
-        $product_type = ProductType::all();
+        // $product_type = ProductType::all();
         $ekspedisi = Ekspedisi::all();
 
         $data = [
@@ -447,7 +449,7 @@ class SalesOrderController extends Controller
             'warehouse' => $warehouse,
             'sales' => $sales,
             'product_category' => $product_category,
-            'product_type' => $product_type,
+            // 'product_type' => $product_type,
             'ekspedisi' => $ekspedisi,
             'result' => $result,
             'step' => $step,
@@ -1035,9 +1037,9 @@ class SalesOrderController extends Controller
                         if(!empty($post["category_id"])){
                             $query2->where('category_id',$post["category_id"]);
                         }
-                        if(!empty($post["type_id"])){
-                            $query2->where('type_id',$post["type_id"]);
-                        }
+                        // if(!empty($post["type_id"])){
+                        //     $query2->where('type_id',$post["type_id"]);
+                        // }
                     })->get();
 
             $data_json["IsError"] = FALSE;

@@ -50,7 +50,7 @@
               <select class="js-select2 form-control" id="packaging" name="packaging" data-placeholder="Select Packaging">
                 <option value="">Select Packaging</option>
                 @foreach($packaging as $pack)
-                <option value="{{$pack->id}}">{{$pack->pack_value}}</option>
+                <option value="{{$pack->id}}">{{ $pack->pack }}</option>
                 @endforeach
               </select>
             </div>
