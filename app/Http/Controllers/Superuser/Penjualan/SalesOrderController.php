@@ -1049,7 +1049,16 @@ class SalesOrderController extends Controller
                         if(!empty($post["category_id"])){
                             $query2->where('category_id',$post["category_id"]);
                         }
-                    })->get();
+                    })
+                    ->leftJoin('master_product_category', 'master_product.category_id', '=', 'master_product_category.id')
+                    ->leftJoin('master_packaging', 'master_product_category.packaging_id', '=', 'master_packaging.id')
+                    ->select(
+                        'master_product.name as product_name', 
+                        'master_product.code as product_code',
+                        'master_product.category_id', 
+                        'master_product_category.name as category_name', 
+                        'master_packaging.pack as packaging'
+                    )->get();
             $data_json["IsError"] = FALSE;
             $data_json["Data"] = $table;
             goto ResultData;

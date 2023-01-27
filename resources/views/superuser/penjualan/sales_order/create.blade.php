@@ -288,16 +288,16 @@
       html += "  <div class='col-2'>";
       html += "    <input type='hidden' class='form-control' value='" + brandId + "'>";
       html += brandText;
-      html = "<div class='row mt-10 product-row brand-" + categoryId + "'>";
+      html += "  </div>";
       html += "  <div class='col-2'>";
       html += "    <input type='hidden' class='form-control' value='" + categoryId + "'>";
       html += categoryText;
       html += "  </div>";
-      html += "  <div class='col-3'>";
+      html += "  <div class='col-2'>";
       html += "    <input type='hidden' name='product_id[]' class='form-control' value='" + productId + "'>";
       html += productText;
       html += "  </div>";
-      html += "  <div class='col-1 text-right'>";
+      html += "  <div class='col-2 text-right'>";
       html += "    <input type='hidden' name='qty[]' class='form-control' value='" + qty + "'>";
       html += qty;
       html += "  </div>";
@@ -484,7 +484,7 @@
         let option = "";
         option = '<option value="">Pilih Product</option>';
         $.each(resp.Data,function(i,e){
-          option += '<option value="'+e.id+'">'+e.code+' - '+e.name+'</option>';
+          option += '<option value="'+e.id+'">'+e.product_code+' - '+e.product_name+' - '+e.packaging+'</option>';
         })
         //$(".select-product[data-index=0]").length
         $('.select-product[data-index=' + param.index + ']').html(option);
