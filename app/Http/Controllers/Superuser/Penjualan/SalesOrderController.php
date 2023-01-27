@@ -1049,8 +1049,27 @@ class SalesOrderController extends Controller
                         if(!empty($post["category_id"])){
                             $query2->where('category_id',$post["category_id"]);
                         }
-                        if(!empty($post["brand_name"])){
-                            $query2->where('brand_name',$post["brand_name"]);
+                    })->get();
+            $data_json["IsError"] = FALSE;
+            $data_json["Data"] = $table;
+            goto ResultData;
+        }
+        else{
+            $data_json["IsError"] = TRUE;
+            $data_json["Message"] = "Invalid Method";
+            goto ResultData;
+        }
+        ResultData:
+        return response()->json($data_json,200);
+    }
+
+    public function get_category(Request $request){
+        $data_json = [];
+        $post = $request->all();
+        if($request->method() == "GET"){
+            $table = ProductCategory::where(function($query2) use($post){
+                        if(!empty($post["brand_lokal_id"])){
+                            $query2->where('brand_lokal_id',$post["brand_lokal_id"]);
                         }
                     })->get();
             $data_json["IsError"] = FALSE;

@@ -151,32 +151,38 @@
           <h5>Select Product</h5>
 
           <div class="row">
-            <div class="col-3">Product Category</div>
+            <div class="col-2">Brand</div>
+            <div class="col-2">Category</div>
             <div class="col-3">Product</div>
             <div class="col-1">Qty</div>
-            <div class="col-3">Packaging</div>
+            <div class="col-2">Packaging</div>
           </div>
 
           <div class="row mt-10 product-row">
-            <div class="col-3">
-              <select class="form-control js-select2 select-category" data-index="0">
-                <option value="">==Select product category==</option>
-                @foreach($product_category as $index => $row)
-                  <option value="{{$row->id}}">{{$row->name}}</option>
+            <div class="col-2">
+              <select class="form-control js-select2 select-brand" data-index="0">
+                <option value="">Pilih Brand</option>
+                @foreach($brand_ppi as $index => $row)
+                  <option value="{{$row->id}}">{{$row->brand_name}}</option>
                 @endforeach
+              </select>
+            </div>
+            <div class="col-2">
+              <select class="form-control js-select2 select-category" data-index="0">
+                <option value="">Pilih Category</option>
               </select>
             </div>
             <div class="col-3">
               <select class="form-control js-select2 select-product" name="product_id[]" data-index="0">
-                <option value="">==Select product==</option>
+                <option value="">Pilih Product</option>
               </select>
             </div>
             <div class="col-1">
               <input type="number" name="qty[]" class="form-control input-qty" data-index="0" step="any">
             </div>
-            <div class="col-3">
+            <div class="col-2">
               <select name="packaging[]" class="form-control js-select2 select-packaging" data-index="0">
-                <option value="">==Select packaging==</option>
+                <option value="">Pilih Kemasan</option>
                 <option value="1">100gr (0.1)</option>
                 <option value="2">500gr (0.5)</option>
                 <option value="3">Jerigen 5kg (5)</option>
@@ -260,6 +266,8 @@
     })
 
     $(document).on('click','#buttonAddProduct',function(){
+      const brandId = $('.select-brand[data-index=0]').val();
+      const brandText = $('.select-brand[data-index=0] option:selected').text();
       const categoryId = $('.select-category[data-index=0]').val();
       const categoryText = $('.select-category[data-index=0] option:selected').text();
       const productId = $('.select-product[data-index=0]').val();
@@ -267,7 +275,7 @@
       const qty = $('.input-qty[data-index=0]').val();
       const packagingId = $('.select-packaging[data-index=0]').val();
       const packagingText = $('.select-packaging[data-index=0] option:selected').text();
-      if (categoryId === null || categoryId === '' || productId === null || productId === '' || qty === null || qty === '' || packagingId == null || packagingId === '') {
+      if (brandId === null || brandId === '' || categoryId === null || categoryId === '' || productId === null || productId === '' || qty === null || qty === '' || packagingId == null || packagingId === '') {
         Swal.fire(
           'Error!',
           'Please input all the data',
@@ -276,8 +284,12 @@
         return;
       }
 
-      let html = "<div class='row mt-10 product-row category-" + categoryId + "'>";
-      html += "  <div class='col-3'>";
+      let html = "<div class='row mt-10 product-row brand-" + brandId + "'>";
+      html += "  <div class='col-2'>";
+      html += "    <input type='hidden' class='form-control' value='" + brandId + "'>";
+      html += brandText;
+      html = "<div class='row mt-10 product-row brand-" + categoryId + "'>";
+      html += "  <div class='col-2'>";
       html += "    <input type='hidden' class='form-control' value='" + categoryId + "'>";
       html += categoryText;
       html += "  </div>";
@@ -289,7 +301,7 @@
       html += "    <input type='hidden' name='qty[]' class='form-control' value='" + qty + "'>";
       html += qty;
       html += "  </div>";
-      html += "  <div class='col-3'>";
+      html += "  <div class='col-2'>";
       html += "    <input type='hidden' name='packaging[]' class='form-control' value='" + packagingId + "'>";
       html += packagingText;
       html += "  </div>";
@@ -298,8 +310,8 @@
       html += "  </div>";
       html += "</div>";
       
-      if ($('.product-row.category-' + categoryId).length > 0) {
-        $('body').find('.product-row.category-' + categoryId + ':last').after(html);
+      if ($('.product-row.brand-' + brandId).length > 0) {
+        $('body').find('.product-row.brand-' + brandId + ':last').after(html);
       } else {
         $('body').find('.product-list').append(html);
       }
@@ -307,12 +319,13 @@
       //let option = '<option value="">==Select product==</option>';
       //$('.select-product[data-index=0]').html(option);
 
+      $('.select-brand[data-index=0]').val('').change();
       $('.select-category[data-index=0]').val('').change();
       $('.select-product[data-index=0]').val('').change();
       $('.input-qty[data-index=0]').val('');
       $('.select-packaging[data-index=0]').val('').change();
 
-      $('.select-category[data-index=0]').select2('focus');
+      $('.select-brand[data-index=0]').select2('focus');
 
       productCount++;
     })
@@ -411,6 +424,42 @@
   }
 
   var param = [];
+  param["brand_lokal_id"] = "";
+
+  loadCategory({});
+
+  $(document).on('change','.select-brand',function(){
+    if ($(this).val() === '') return;
+
+    param["brand_lokal_id"] = $(this).val();
+    loadCategory({
+      brand_lokal_id:param["brand_lokal_id"],
+      index: $(this).data("index")
+    })
+  })
+
+  function loadCategory(param){
+    $.ajax({
+      url : '{{route('superuser.penjualan.sales_order.get_category')}}',
+      method : "GET",
+      data : param,
+      dataType : "JSON",
+      success : function(resp){
+        let option = "";
+        option = '<option value="">Pilih Category</option>';
+        $.each(resp.Data,function(i,e){
+          option += '<option value="'+e.id+'">'+e.name+' - '+e.type+'</option>';
+        })
+        //$(".select-product[data-index=0]").length
+        $('.select-category[data-index=' + param.index + ']').html(option);
+      },
+      error : function(){
+        alert("Cek Koneksi Internet");
+      }
+    })
+  }
+
+  var param = [];
   param["category_id"] = "";
 
   loadProduct({});
@@ -433,7 +482,7 @@
       dataType : "JSON",
       success : function(resp){
         let option = "";
-        option = '<option value="">==Select product==</option>';
+        option = '<option value="">Pilih Product</option>';
         $.each(resp.Data,function(i,e){
           option += '<option value="'+e.id+'">'+e.code+' - '+e.name+'</option>';
         })
