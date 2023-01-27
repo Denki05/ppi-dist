@@ -78,9 +78,7 @@
                 <th>Warehouse</th>
                 @endif
 
-                @if($step == 1 || $step == 2)
-                <th>Invoice Brand</th>
-                @endif
+                
 
                 @if($step == 1 || $step == 2)
                 <th>Sales Senior / Sales</th>
@@ -114,11 +112,7 @@
                     @endif
                   </td>
 
-                  @if($step == 1 || $step == 2)
-                  <td>
-                    {{$row->so_brand_type()->scalar ?? ''}}
-                  </td>
-                  @endif
+                  
                   
                   @if($step == 1 || $step == 2)
                   <td>

@@ -57,7 +57,7 @@
             <label class="col-md-2 col-form-label text-right" for="name">Sales Senior<span class="text-danger">*</span></label>
             <div class="col-md-8">
               <select class="form-control js-select2" name="sales_senior_id" <?php echo $step == 2 ? 'disabled' : '' ?>>
-                <option value="">==Select sales senior==</option>
+                <option value="">Pilih Sales Senior</option>
                 @foreach($sales as $index => $row)
                   <option value="{{$row->id}}">{{$row->name}}</option>
                 @endforeach
@@ -70,7 +70,7 @@
             <label class="col-md-2 col-form-label text-right" for="name">Sales <span class="text-danger">*</span></label>
             <div class="col-md-8">
               <select class="form-control js-select2" name="sales_id" <?php echo $step == 2 ? 'disabled' : '' ?>>
-                <option value="">==Select sales==</option>
+                <option value="">Pilih Sales</option>
                 @foreach($sales as $index => $row)
                   <option value="{{$row->id}}">{{$row->name}}</option>
                 @endforeach
@@ -112,7 +112,7 @@
             <label class="col-md-2 col-form-label text-right">Transaction<span class="text-danger">*</span></label>
             <div class="col-md-8">
               <select class="form-control js-select2" name="type_transaction">
-                <option value="">==Select type transaction==</option>
+                <option value="">Pilih Transaksi Type</option>
                 <option value="1">Cash</option>
                 <option value="2">Tempo</option>
                 <option value="3">Marketplace</option>
@@ -307,7 +307,7 @@
       //let option = '<option value="">==Select product==</option>';
       //$('.select-product[data-index=0]').html(option);
 
-      //$('.select-category[data-index=0]').val('').change();
+      $('.select-category[data-index=0]').val('').change();
       $('.select-product[data-index=0]').val('').change();
       $('.input-qty[data-index=0]').val('');
       $('.select-packaging[data-index=0]').val('').change();

@@ -161,7 +161,7 @@ class SalesOrderController extends Controller
             echo "<option value='$a->id'>$a->name</option>";
         }
     }
-
+    
     public function index_awal(Request $request)
     {
         return $this->index($request, 1);
@@ -270,6 +270,16 @@ class SalesOrderController extends Controller
             if(empty($post["customer_id"])){
                 $data_json["IsError"] = TRUE;
                 $data_json["Message"] = "Customer wajib dipilih";
+                goto ResultData;
+            }
+            if(empty($post["product_id"])){
+                $data_json["IsError"] = TRUE;
+                $data_json["Message"] = "Product wajib dipilih";
+                goto ResultData;
+            }
+            if(empty($post["qty"])){
+                $data_json["IsError"] = TRUE;
+                $data_json["Message"] = "Quantity tidak boleh kosong";
                 goto ResultData;
             }
             $customer = [];
@@ -438,6 +448,7 @@ class SalesOrderController extends Controller
             abort(404);
         }
         $customer = Customer::all();
+        $member = CustomerOtherAddress::get();
         $warehouse = Warehouse::all();
         $sales = Sales::all();
         $product_category = ProductCategory::all();
@@ -446,6 +457,7 @@ class SalesOrderController extends Controller
 
         $data = [
             'customer' => $customer,
+            'member' => $member,
             'warehouse' => $warehouse,
             'sales' => $sales,
             'product_category' => $product_category,
@@ -1037,11 +1049,10 @@ class SalesOrderController extends Controller
                         if(!empty($post["category_id"])){
                             $query2->where('category_id',$post["category_id"]);
                         }
-                        // if(!empty($post["type_id"])){
-                        //     $query2->where('type_id',$post["type_id"]);
-                        // }
+                        if(!empty($post["brand_name"])){
+                            $query2->where('brand_name',$post["brand_name"]);
+                        }
                     })->get();
-
             $data_json["IsError"] = FALSE;
             $data_json["Data"] = $table;
             goto ResultData;
