@@ -31,8 +31,8 @@
               <div class="form-group row">
                 <label class="col-md-2 col-form-label text-left" for="brand_ppi">Brand :</label>
                 <div class="col-md-4">
-                  <select class="form-control js-select2" id="brand_ppi" name="brand_ppi" data-placeholder="Select Brand">
-                    <option value="">==Find Brand==</option>
+                  <select class="js-select2 form-control" id="brand_ppi" name="brand_ppi" data-placeholder="Select Brand">
+                    <option value="">Cari Brand</option>
                     @foreach($brand_lokal as $brand)
                     <option value="{{$brand->id}}">{{$brand->brand_name}}</option>
                     @endforeach
@@ -67,7 +67,6 @@
             <th>Code</th>
             <th>Brand</th>
             <th>Category</th>
-            <th>type</th>
             <th>Packaging</th>
             <th>Status</th>
             <th>Action</th>
@@ -81,6 +80,7 @@
 
 @include('superuser.asset.plugin.swal2')
 @include('superuser.asset.plugin.datatables')
+@include('superuser.asset.plugin.select2')
 
 @section('modal')
 
@@ -95,7 +95,10 @@
 @push('scripts')
 <script type="text/javascript">
 $(document).ready(function() {
-  
+  $('.js-select2').select2({
+    })
+
+
   let datatableUrl = '{{ route('superuser.master.product_category.json') }}';
   let firstDatatableUrl = datatableUrl +
         '?brand_ppi=all';
@@ -121,9 +124,8 @@ $(document).ready(function() {
       {data: 'code', name: 'master_product_category.code'},
       {data: 'brandName', name: 'master_product_category.brand_name'},
       {data: 'name'},
-      {data: 'type'},
-      {data: 'packaging'},
-      {data: 'status', name: 'master_product_category.status'},
+      {data: 'pack_name', name: 'master_packaging.pack_name'},
+      {data: 'status'},
       {data: 'action'}
     ],
     order: [

@@ -50,7 +50,7 @@
               <select class="js-select2 form-control" id="packaging" name="packaging" data-placeholder="Select Packaging">
                 <option value="">Select Packaging</option>
                 @foreach($packaging as $pack)
-                <option value="{{$pack->id}}">{{ $pack->pack }}</option>
+                <option value="{{$pack->id}}">{{ $pack->pack_name }}</option>
                 @endforeach
               </select>
             </div>
@@ -159,7 +159,7 @@
       columns: [
         {data: 'name'},
         {data: 'type'},
-        {data: 'packaging'},
+        {data: 'pack_name'},
       ],
       order: [
         [1, 'desc']

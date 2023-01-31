@@ -52,7 +52,7 @@
                                     <select class="js-select2 form-control" id="category"  name="category" data-placeholder="Pilih Kategori">
                                       <option value="">==Select Category==</option>
                                       @foreach($category as $cat)
-                                      <option value="{{ $cat->id }}">{{ $cat->name }} - {{ $cat->type }} - {{ $cat->packaging->pack }}</option>
+                                      <option value="{{ $cat->id }}">{{ $cat->name }} - {{ $cat->packaging->pack_name }}</option>
                                       @endforeach
                                     </select>
                                   </div>
@@ -287,8 +287,6 @@
         showRemove: false
       },
     });
-
-    $('.js-select2').select2()
   })
 </script>
 

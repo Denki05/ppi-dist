@@ -17,15 +17,14 @@ Route::group([
     });
 
     Route::group(['as' => 'sales_order.', 'prefix' => '/sales_order'], function () {
-        Route::get('/', 'SalesOrderController@index')->name('index');
+        Route::get('/index', 'SalesOrderController@index')->name('index');
         Route::get('/so_awal', 'SalesOrderController@index_awal')->name('index_awal');
         Route::get('/so_lanjutan', 'SalesOrderController@index_lanjutan')->name('index_lanjutan');
         Route::get('/so_mutasi', 'SalesOrderController@index_mutasi')->name('index_mutasi');
-        Route::get('/create', 'SalesOrderController@create')->name('create');
-        Route::get('/create/{step}', 'SalesOrderController@create')->name('create');
+        Route::get('/{id}/create/{step}', 'SalesOrderController@create')->name('create');
         Route::get('/{id}/edit/{step}', 'SalesOrderController@edit')->name('edit');
         Route::get('/{id}/detail', 'SalesOrderController@detail')->name('detail');
-        Route::post('/store', 'SalesOrderController@store')->name('store');
+        Route::post('/{id}/store', 'SalesOrderController@store')->name('store');
         Route::post('/update', 'SalesOrderController@update')->name('update');
         Route::post('/lanjutkan', 'SalesOrderController@lanjutkan')->name('lanjutkan');
         Route::post('/kembali', 'SalesOrderController@kembali')->name('kembali');
@@ -44,6 +43,7 @@ Route::group([
 
         Route::post('/ajax_customer_detail', 'SalesOrderController@ajax_customer_detail')->name('ajax_customer_detail');
         Route::post('/ajax_warehouse_detail', 'SalesOrderController@ajax_warehouse_detail')->name('ajax_warehouse_detail');
+        Route::post('/ajax_product_detail', 'SalesOrderController@ajax_product_detail')->name('ajax_product_detail');
         
         Route::get('/{id}/print_rejected_so', 'SalesOrderController@print_rejected_so')->name('print_rejected_so');
     });

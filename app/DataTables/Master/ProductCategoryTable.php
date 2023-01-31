@@ -4,6 +4,7 @@ namespace App\DataTables\Master;
 
 use App\DataTables\Table;
 use App\Entities\Master\ProductCategory;
+// use App\Entities\Master\Packaging;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
@@ -26,7 +27,7 @@ class ProductCategoryTable extends Table
                 'master_product_category.type AS type',
                 'master_product_category.status AS status', 
                 'master_product_category.created_at AS category_date', 
-                'master_packaging.pack AS packaging',
+                'master_packaging.pack_name',
         );
 
         $model = $model->leftJoin('master_brand_lokal', 'master_product_category.brand_lokal_id', '=', 'master_brand_lokal.id');

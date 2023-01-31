@@ -12,19 +12,24 @@
   @endforeach
 </div>
 @endif
+<nav class="breadcrumb bg-white push">
+  <a href="{{ route('superuser.master.product.create') }}" class="btn btn-primary btn-lg active" role="button" target="_blank" aria-pressed="true" style="margin-left: 10px !important;">Add Product</a>
+  <a href="{{ route('superuser.master.product.cetak') }}" class="btn btn-primary btn-lg active" role="button" target="_blank" aria-pressed="true" style="margin-left: 10px !important;">Print Product</a>
+  <button type="button" class="btn btn-outline-danger ml-10" onclick="deleteMultiple()">Delete Checked</button>
+</nav>
 <div class="block">
-  <div class="block-content">
+  {{--<div class="block-content">
     <a href="{{ route('superuser.master.product.create') }}">
       <button type="button" class="btn btn-outline-primary" title="Create Product"><i class="mdi mdi-file-plus"></i></button>
     </a>
 
-    {{--<button type="button" class="btn btn-outline-info ml-10" data-toggle="modal" data-target="#modal-manage">Manage</button>--}}
+    <button type="button" class="btn btn-outline-info ml-10" data-toggle="modal" data-target="#modal-manage">Manage</button>
 
-    {{--<button type="button" class="btn btn-outline-danger ml-10" onclick="deleteMultiple()">Delete Checked</button>--}}
+    <button type="button" class="btn btn-outline-danger ml-10" onclick="deleteMultiple()">Delete Checked</button>
     <a class="ml-10" href="{{ route('superuser.master.product.cetak') }}">
       <button type="button" class="btn btn-outline-secondary" title="Print Product"><i class="mdi mdi-printer"></i></button>
     </a>
-  </div>
+  </div>--}}
   <div class="block-content block-content-full">
     <table id="datatable" class="table table-striped">
       <thead>
@@ -34,6 +39,7 @@
           <th>Brand</th>
           <th>Category</th>
           <th>Name</th>
+          <th>Kemasan</th>
           <th>Status</th>
           <th>Action</th>
         </tr>
@@ -76,6 +82,7 @@ $(document).ready(function() {
       {data: 'brand_name'},
       {data: 'category_name', name: 'master_product_category.category_name'},
       {data: 'name'},
+      {data: 'pack_name', name: 'master_packaging.pack_name'},
       {data: 'status'},
       {data: 'action', orderable: false, searcable: false}
     ],

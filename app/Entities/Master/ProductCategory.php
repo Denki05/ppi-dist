@@ -10,7 +10,7 @@ class ProductCategory extends Model
 {
     use SoftDeletes, AutoNumberTrait;
 
-    protected $fillable = ['brand_lokal_id', 'packaging_id', 'brand_name', 'code', 'name', 'type', 'status','packaging','status'];
+    protected $fillable = ['brand_lokal_id', 'packaging_id', 'brand_name', 'code', 'name', 'type','status'];
     protected $table = 'master_product_category';
 
     const STATUS = [
@@ -18,11 +18,7 @@ class ProductCategory extends Model
         'ACTIVE' => 1
     ];
 
-    // public function types()
-    // {
-    //     // return $this->belongsTo('App\Entities\Master\ProductType');
-    //     return $this->belongsToMany('App\Entities\Master\ProductType', 'master_product_category_types', 'category_id', 'type_id')->withPivot('id');
-    // }
+    
 
     public function products()
     {

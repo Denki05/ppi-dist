@@ -49,9 +49,10 @@ class CustomerController extends Controller
             return $next($request);
         });
     }
+
     public function json(Request $request, CustomerTable $datatable)
     {
-        return $datatable->build();
+        return $datatable->build($request);
     }
 
     public function index(Request $request)

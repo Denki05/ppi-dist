@@ -19,7 +19,7 @@
 @endif
 
 <!-- button add -->
-@if($step == 1 || $step == 9)
+{{--@if($step == 1 || $step == 9)
 <div class="block">
   <div class="block-content block-content-full">
       <div class="row">
@@ -32,9 +32,55 @@
       </div>
   </div>
 </div>
-@endif
+@endif--}}
+
+<!-- add SO via search -->
 <div class="block">
-  <hr class="my-20">
+  <div class="block-content">
+    <div class="form-group row">
+    @foreach($customers as $key)
+          <div class="col-md-9">
+            <div class="block">
+              <div class="block-content">
+                <div class="form-group row">
+                  <label class="col-md-2 col-form-label text-left" for="customer_name">Search Customer </label>
+                  <div class="col-md-4">
+                    <select class="js-select2 form-control" id="customer_name" name="customer_name" data-placeholder="Select Customer">
+                      <option value=""></option>
+                      <option value="{{ $key->id }}">{{$key->name}}</option>
+                      
+                    </select>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="col-md-3">
+            @if($step == 1 || $step == 9)
+            <div class="block">
+              <div class="block-content block-content-full">
+                  <div class="row">
+                    <div class="col">
+                      <a href="{{route('superuser.penjualan.sales_order.create', ['step' => $step, 'id' => $key->id])}}" class="btn btn-primary"> Add Sales Order {{ $step_txt }} (SO)</a>
+                    </div>
+                  </div>
+              </div>
+              <?php
+              //  dd($key->id); 
+              ?>
+            </div>
+            @endif
+          </div>
+          @endforeach
+    </div>
+  </div>
+</div>
+
+<!-- list SO -->
+<div class="block">
+  <div class="block-header block-header-default">
+    <h3 class="block-title">List Sales Order</h3>
+  </div>
   <div class="block-content block-content-full">
       <form method="get" action="{{ route('superuser.penjualan.sales_order.index_' . strtolower($step_txt)) }}">
         <div class="row">
@@ -61,6 +107,7 @@
           </div>
         </div>
       </form>
+      
       <div class="row mb-30">
         <div class="col-12">
           <table class="table table-hover" id="datatables">
@@ -208,12 +255,24 @@
 @include('superuser.asset.plugin.select2')
 @include('superuser.asset.plugin.datatables')
 
+
 @push('scripts')
 
   <script type="text/javascript">
     
     $(function(){
       $('#datatables').DataTable( {
+        "paging":   false,
+        "ordering": true,
+        "info":     false,
+        "searching" : false,
+        "columnDefs": [{
+          "targets": 0,
+          "orderable": false
+        }]
+      });
+
+      $('#table-Customer').DataTable( {
         "paging":   false,
         "ordering": true,
         "info":     false,

@@ -27,6 +27,36 @@
       <div class="row">
         <div class="col-12">
           <h5>#Data Pesanan</h5>
+          @if($step == 1 || $step == 2)
+          <div class="form-group row">
+            <label class="col-md-2 col-form-label text-right">Store</label>
+            <div class="col-md-8">
+              <select class="form-control js-select2 select-customer" name="customer_id" @if($step == 2) disabled @endif>
+                <option value="">Pilih Store</option>
+                @foreach($customer as $index => $row)
+                  <option value="{{$row->id}}" @if($result->customer_id == $row->id && $result->so_for == 1) selected @endif>{{$row->name}}</option>
+                @endforeach
+              </select>
+            </div>
+            @if($step == 2)
+            <div class="col-md-2">
+              <button type="button" class="btn-cek-customer btn btn-danger btn-md">Cek Invoice</button>
+            </div>
+            @endif
+          </div>
+          @endif
+          @if($step == 1 || $step == 2)
+          <div class="form-group row">
+            <label class="col-md-2 col-form-label text-right">Address</label>
+            <div class="col-md-8">
+              @if($result->so_for == 1)
+              <textarea type="text" name="address" class="form-control" readonly>{{$result->customer->address ?? ''}}</textarea>
+              @else
+              <textarea type="text" name="address" class="form-control" readonly>{{$result->warehouse->address ?? ''}}</textarea>
+              @endif
+            </div>
+          </div>
+          @endif
           @if($step == 1 || $step == 2 || $step == 9)
           <div class="form-group row">
             <label class="col-md-2 col-form-label text-right" for="name">Sales Senior<span class="text-danger">*</span></label>
@@ -82,36 +112,7 @@
             </div>
           </div>
           @endif
-          @if($step == 1 || $step == 2)
-          <div class="form-group row">
-            <label class="col-md-2 col-form-label text-right">Customer</label>
-            <div class="col-md-8">
-              <select class="form-control js-select2 select-customer" name="customer_id" @if($step == 2) disabled @endif>
-                <option value="">==Select customer==</option>
-                @foreach($customer as $index => $row)
-                  <option value="{{$row->id}}" @if($result->customer_id == $row->id && $result->so_for == 1) selected @endif>{{$row->name}}</option>
-                @endforeach
-              </select>
-            </div>
-            @if($step == 2)
-            <div class="col-md-2">
-              <button type="button" class="btn-cek-customer btn btn-danger btn-md">Cek Invoice</button>
-            </div>
-            @endif
-          </div>
-          @endif
-          @if($step == 1 || $step == 2)
-          <div class="form-group row">
-            <label class="col-md-2 col-form-label text-right">Address</label>
-            <div class="col-md-8">
-              @if($result->so_for == 1)
-              <textarea type="text" name="address" class="form-control" readonly>{{$result->customer->address ?? ''}}</textarea>
-              @else
-              <textarea type="text" name="address" class="form-control" readonly>{{$result->warehouse->address ?? ''}}</textarea>
-              @endif
-            </div>
-          </div>
-          @endif
+          
           @if($step == 1 && $result->status == 3)
           <div class="form-group row">
             <label class="col-md-2 col-form-label text-right">Keterangan Tidak Lanjut</label>

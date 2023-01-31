@@ -49,6 +49,7 @@ class SalesOrderController extends Controller
             return $next($request);
         });
     }
+
     public function index(Request $request, $step = NULL)
     {
         // Access
@@ -117,9 +118,9 @@ class SalesOrderController extends Controller
                             ->orderBy('id','DESC')
                             ->paginate(10);
 
-        $table->withPath('?field='.$field."&search=".$search."&so_for=".$so_for);
+        $customers = Customer::get();
 
-        $customer = Customer::get();
+        $table->withPath('?field='.$field."&search=".$search."&so_for=".$so_for);
 
         foreach ($table as $key => $value) {
             $so_item = new SalesOrderItem;
@@ -141,7 +142,7 @@ class SalesOrderController extends Controller
 
         $data = [
             'table' => $table,
-            'customer' => $customer,
+            'customers' => $customers,
             'step' => $step,
             'step_txt' => SalesOrder::STEP[$step],
             'customerids' => isset($customerDb)?$customerDb:null
@@ -209,7 +210,7 @@ class SalesOrderController extends Controller
      *
      * @return \Illuminate\Http\Response
      */
-    public function create($step)
+    public function create($id, $step)
     {
         // Access
         if(Auth::user()->is_superuser == 0){
@@ -218,14 +219,13 @@ class SalesOrderController extends Controller
             }
         }
 
-        $customer = Customer::where('status', 1)->get();
+        $customer = Customer::find($id);
         $member = CustomerOtherAddress::where('status', 1)->get();
         $warehouse = Warehouse::all();
         $sales = Sales::all();
         $ekspedisi = Ekspedisi::all();
         $product_category = ProductCategory::all();
         $brand_ppi = BrandLokal::all();
-        // $product_type = ProductType::all();
         $data = [
             'customer' => $customer,
             'member' => $member,
@@ -234,10 +234,10 @@ class SalesOrderController extends Controller
             'ekspedisi' => $ekspedisi,
             'product_category' => $product_category,
             'brand_ppi' => $brand_ppi,
-            // 'product_type' => $product_type,
             'step' => $step,
             'step_txt' => SalesOrder::STEP[$step]
         ];
+        
         return view($this->view."create",$data);
     }
 
@@ -247,19 +247,15 @@ class SalesOrderController extends Controller
      * @param  \Illuminate\Http\Request  $request
      * @return \Illuminate\Http\Response
      */
-    public function store(Request $request)
+    public function store(Request $request, $id)
     {
         $data_json = [];
         $post = $request->all();
+        $cust_id = Customer::find($id);
         if($request->method() == "POST"){
             if(empty($post["sales_senior_id"])){
                 $data_json["IsError"] = TRUE;
                 $data_json["Message"] = "Sales senior wajib dipilih";
-                goto ResultData;
-            }
-            if(empty($post["sales_id"])){
-                $data_json["IsError"] = TRUE;
-                $data_json["Message"] = "Sales wajib dipilih";
                 goto ResultData;
             }
             if(empty($post["sales_id"])){
@@ -272,16 +268,6 @@ class SalesOrderController extends Controller
                 $data_json["Message"] = "Customer wajib dipilih";
                 goto ResultData;
             }
-            if(empty($post["product_id"])){
-                $data_json["IsError"] = TRUE;
-                $data_json["Message"] = "Product wajib dipilih";
-                goto ResultData;
-            }
-            if(empty($post["qty"])){
-                $data_json["IsError"] = TRUE;
-                $data_json["Message"] = "Quantity tidak boleh kosong";
-                goto ResultData;
-            }
             $customer = [];
             $gudang = [];
             if(!empty($post["customer_id"])){
@@ -292,24 +278,28 @@ class SalesOrderController extends Controller
                 $gudang["id"] = empty($post["destination_warehouse_id"]) ? null : $post["destination_warehouse_id"];
                 $customer["so_for"] = 2;
             }
-            
+
             DB::beginTransaction();
             try {
                 $insert = new SalesOrder;
                 $insert->code = CodeRepo::generateSO();
-                $insert->sales_senior_id = trim(htmlentities($post["sales_senior_id"]));
-                $insert->sales_id = trim(htmlentities($post["sales_id"]));
+                $insert->sales_senior_id = $request->sales_senior_id;
+                $insert->sales_id = $request->sales_id;
                 if ($customer["so_for"] == 1) {
                     $insert->customer_id = $customer["id"] ?? null;
                 } else {
                     $insert->origin_warehouse_id = trim(htmlentities($post["origin_warehouse_id"]));
                     $insert->destination_warehouse_id = $gudang["id"] ?? null;
                 }
-                $insert->customer_other_address_id = trim(htmlentities($post["customer_other_address_id"]));
-                $insert->so_for = trim(htmlentities($customer["so_for"]));
-                $insert->type_transaction = trim(htmlentities($post["type_transaction"]));
-                // $insert->brand_type = trim(htmlentities($post["brand_type"]));
-                $insert->note = trim(htmlentities($post["note"]));
+                
+                if (empty($post["customer_other_address_id"])){
+                    $insert->customer_other_address_id = null;
+                }else{
+                    $insert->customer_other_address_id = $request->customer_other_address_id;
+                }
+                $insert->so_for = $customer["so_for"];
+                $insert->type_transaction = $request->type_transaction;
+                $insert->note = $request->note;
                 $insert->created_by = Auth::id();
                 $insert->status = $post["ajukankelanjutan"] == 1 ? 2 : 1;
                 $insert->save();
@@ -609,7 +599,7 @@ class SalesOrderController extends Controller
                 goto ResultData;
             } catch (\Exception $e) {
 
-                dd($e);
+                // dd($e);
                 DB::rollback();
 
                 $data_json["IsError"] = TRUE;
@@ -1054,10 +1044,11 @@ class SalesOrderController extends Controller
                     ->leftJoin('master_packaging', 'master_product_category.packaging_id', '=', 'master_packaging.id')
                     ->select(
                         'master_product.name as product_name', 
+                        'master_product.id as id', 
                         'master_product.code as product_code',
                         'master_product.category_id', 
                         'master_product_category.name as category_name', 
-                        'master_packaging.pack as packaging'
+                        'master_packaging.pack_name as packaging'
                     )->get();
             $data_json["IsError"] = FALSE;
             $data_json["Data"] = $table;
@@ -1133,6 +1124,40 @@ class SalesOrderController extends Controller
                 goto ResultData;
 
             }catch(\Throwable $e){
+                $data_json["IsError"] = TRUE;
+                $data_json["Message"] = $e->getMessage();
+                goto ResultData;
+            }
+        }
+        else{
+            $data_json["IsError"] = TRUE;
+            $data_json["Message"] = "Invalid Method";
+            goto ResultData;
+        }
+        ResultData:
+        return response()->json($data_json,200);
+    }
+
+    public function ajax_product_detail(Request $request){
+        $data_json = [];
+        $post = $request->all();
+        if($request->method() == "POST"){
+            try{
+                $result = Product::where('master_product.id',$post["id"])
+                    ->leftJoin('master_product_category', 'master_product.category_id', '=', 'master_product_category.id')
+                    ->leftJoin('master_packaging', 'master_product_category.packaging_id', '=', 'master_packaging.id')
+                    ->select(
+                        'master_product.id as product_id', 
+                        'master_packaging.pack as packaging'
+                    )
+                    ->get();
+                $data_json["IsError"] = FALSE;
+                $data_json["Data"] = $result;
+                goto ResultData;
+
+            }catch(\Throwable $e){
+
+                // dd($e);
                 $data_json["IsError"] = TRUE;
                 $data_json["Message"] = $e->getMessage();
                 goto ResultData;
