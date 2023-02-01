@@ -15,6 +15,7 @@ use App\Models\District;
 use App\Models\Village;
 use App\Models\Zipcode;
 use App\Helper\UploadMedia;
+use DB;
 
 class CustomerOtherAddressController extends Controller
 {
@@ -134,8 +135,22 @@ class CustomerOtherAddressController extends Controller
                     abort(404);
                 }
 
+                $countMember = DB::table('master_customers')
+                                ->where('id', $customer->id)
+                                ->selectRaw('count_member as kode')
+                                ->get(); 
+                
+                $kd = "";
+
+                foreach ($countMember as $key)
+                {
+                    $tmp = ((int) $key->kode)+1;
+                    $kd = sprintf("%01s", $tmp);
+                }
+
                 $other_address = new CustomerOtherAddress;
 
+                $other_address->id = $customer->id.'.'.$kd;
                 $other_address->customer_id = $customer->id;
 
                 $other_address->name = $request->name;
@@ -171,6 +186,11 @@ class CustomerOtherAddressController extends Controller
 
                 
                 if ($other_address->save()) {
+                    
+                    $updateCust = Customer::where('id', $customer->id)->update([
+                        'count_member' => $kd
+                    ]);
+
                     $response['notification'] = [
                         'alert' => 'notify',
                         'type' => 'success',

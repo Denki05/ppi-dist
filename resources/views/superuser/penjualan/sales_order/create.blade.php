@@ -32,16 +32,6 @@
                           <h4 align="left">Data Order</h4>
                           <div class="container">
                             <div class="row">
-                              
-                              
-                                <@if($step == 1 || $step == 2)
-                                <div class="form-group row">
-                                  <label class="col-md-2 col-form-label text-right">Customer</label>
-                                  <div class="col-md-8">
-                                    <input class="form-control" value="{{$customer->name}}">
-                                  </div>
-                                </div>
-                                @endif
                                 @if($step == 1 || $step == 2)
                                 <div class="form-group row">
                                   <label class="col-md-2 col-form-label text-right">Member <span class="text-danger">*</span></label>

@@ -9,18 +9,24 @@ class CustomerOtherAddress extends Model
    
     protected $appends = ['img_ktp', 'img_npwp'];
     protected $fillable = [
-        'customer_id', 'name', 'contact_person', 'npwp', 'ktp', 'phone', 'address',
+        'customer_id', 'member_default', 'name', 'contact_person', 'npwp', 'ktp', 'phone', 'address',
         'gps_latitude', 'gps_longitude',
         'provinsi', 'kota', 'kecamatan', 'kelurahan',
         'text_provinsi', 'text_kota', 'text_kecamatan', 'text_kelurahan',
         'zipcode', 'image_npwp', 'image_ktp', 'status'
     ];
     protected $table = 'master_customer_other_addresses';
+    public $incrementing = false;
     public static $directory_image = 'superuser_assets/media/master/member/';
 
     const STATUS = [
         'DELETED' => 0,
         'ACTIVE' => 1
+    ];
+
+    const MEMBER_DEFAULT = [
+        'NO' => 0,
+        'YES' => 1
     ];
     
     public function customer()

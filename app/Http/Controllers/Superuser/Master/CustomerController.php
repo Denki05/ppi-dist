@@ -241,6 +241,7 @@ class CustomerController extends Controller
 
                 $customer->category_id = $request->category;
                 // $customer->type_id = $request->type;
+                $customer->count_member =  1;
                 $customer->zone = $request->zone;
 
                 $customer->email = $request->email;
@@ -286,11 +287,32 @@ class CustomerController extends Controller
 
                 if ($customer->save()) {
 
-                        // $log_saldo = new CustomerSaldoLog;
-                        // $log_saldo->customer_id = $customer->id;
-                        // $log_saldo->saldo_log = $request->plafon_piutang;
-                        // $log_saldo->note = CustomerSaldoLog::NOTE['SALDO AWAL'];
-                        // $log_saldo->save();
+                    $other_address = new CustomerOtherAddress;
+
+                    $other_address->id = $customer->id . '.' . $customer->count_member;
+                    $other_address->customer_id = $customer->id;
+                    $other_address->member_default = 1;
+    
+                    $other_address->name = $customer->name;
+                    $other_address->contact_person = $customer->owner_name;
+                    $other_address->phone =  $customer->phone;
+                    $other_address->address = $customer->address;
+    
+                    $other_address->gps_latitude = $customer->gps_latitude;
+                    $other_address->gps_longitude = $customer->gps_longitude;
+    
+                    $other_address->provinsi = $customer->provinsi;
+                    $other_address->kota = $customer->kota;
+                    $other_address->kecamatan = $customer->kecamatan;
+                    $other_address->kelurahan = $customer->kelurahan;
+                    $other_address->text_provinsi = $customer->text_provinsi;
+                    $other_address->text_kota = $customer->text_kota;
+                    $other_address->text_kecamatan = $customer->text_kecamatan;
+                    $other_address->text_kelurahan = $customer->text_kelurahan;
+    
+                    $other_address->zipcode = $customer->zipcode;
+                    $other_address->status = CustomerOtherAddress::STATUS['ACTIVE'];
+                    $other_address->save();
                     
 
                     DB::commit();

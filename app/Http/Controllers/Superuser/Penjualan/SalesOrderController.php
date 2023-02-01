@@ -263,11 +263,7 @@ class SalesOrderController extends Controller
                 $data_json["Message"] = "Sales wajib dipilih";
                 goto ResultData;
             }
-            if(empty($post["customer_id"])){
-                $data_json["IsError"] = TRUE;
-                $data_json["Message"] = "Customer wajib dipilih";
-                goto ResultData;
-            }
+           
             $customer = [];
             $gudang = [];
             if(!empty($post["customer_id"])){
@@ -286,7 +282,7 @@ class SalesOrderController extends Controller
                 $insert->sales_senior_id = $request->sales_senior_id;
                 $insert->sales_id = $request->sales_id;
                 if ($customer["so_for"] == 1) {
-                    $insert->customer_id = $customer["id"] ?? null;
+                    $insert->customer_id = $cust_id->id ?? null;
                 } else {
                     $insert->origin_warehouse_id = trim(htmlentities($post["origin_warehouse_id"]));
                     $insert->destination_warehouse_id = $gudang["id"] ?? null;
