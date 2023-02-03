@@ -32,19 +32,6 @@
                           <h4 align="left">Data Order</h4>
                           <div class="container">
                             <div class="row">
-                                @if($step == 1 || $step == 2)
-                                <div class="form-group row">
-                                  <label class="col-md-2 col-form-label text-right">Member <span class="text-danger">*</span></label>
-                                  <div class="col-md-8">
-                                    <select class="form-control js-select2 other_address" name="customer_other_address_id" <?php echo $step == 2 ? 'disabled' : '' ?>>
-                                      <option value="">Pilih Member</option>
-                                      @foreach($member as $index => $row)
-                                        <option value="{{$row->id}}">{{$row->name}}</option>
-                                      @endforeach
-                                    </select>
-                                  </div>
-                                </div>
-                                @endif
                                 @if($step == 1 || $step == 2 || $step == 9)
                                 <div class="form-group row">
                                   <label class="col-md-2 col-form-label text-right" for="name">Sales Senior<span class="text-danger">*</span></label>
@@ -347,7 +334,7 @@
       if(confirm("Apakah anda yakin ingin menambakan sales order ini ?")){
         let _form = $('#frmCreate');
         $.ajax({
-          url : '{{route('superuser.penjualan.sales_order.store', [$customer->id])}}',
+          url : '{{route('superuser.penjualan.sales_order.store', [$customer->id, $member->id])}}',
           method : "POST",
           data : $('#frmCreate').serializeArray(),
           dataType : "JSON",
