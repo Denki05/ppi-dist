@@ -37,27 +37,6 @@
 <!-- add SO via search -->
 <div class="block">
   <div class="block-content block-content-full">
-  <div class="form-group row">
-  <form>
-            <div class="row">
-              <div class="col-lg-6">
-                <div class="form-group row">
-                  <div class="col-md-3">
-                    <label class="col-md-3 col-form-label text-right">Search</label>
-                  </div>
-                  <div class="col-md-9">
-                    <div class="input-group mb-3">
-                        <input type="text" class="form-control" placeholder="Search" name="search">
-                        <div class="input-group-append">
-                          <button type="submit" class="btn btn-primary"><i class="fa fa-search"></i></button>
-                        </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </form>
-      </div>
     <table id="customer-table" class="table ">
       <thead class="thead-dark">
         <tr>
@@ -107,7 +86,7 @@
                                         <tr>
                                             <td>{{ $index->name }}</td>
                                             <td>
-                                              <select class="form-control js-select2">
+                                              <select class="form-control js-select2 select-brand">
                                                 <option value="">Pilih Brand Invoice</option>
                                                 @foreach ($brand as $key => $i)
                                                   <option value="{{ $i->id }}">{{ $i->brand_name }}</option>
@@ -116,7 +95,7 @@
                                             </td>
                                             <td>
                                               @if($step == 1 || $step == 9)
-                                                <a href="{{route('superuser.penjualan.sales_order.create', ['id' => $row->id, 'step' => $step, 'member' => $index->id])}}" class="btn btn-primary"><i class="fa fa-plus"></i> Add Sales Order {{ $step_txt }} (SO)</a>
+                                                <a id="add-so" href="{{route('superuser.penjualan.sales_order.create', ['id' => $row->id, 'step' => $step, 'member' => $index->id])}}" class="btn btn-primary"><i class="fa fa-plus"></i> Add Sales Order {{ $step_txt }} (SO)</a>
                                               @endif
                                             </td>
                                         </tr>
