@@ -21,10 +21,10 @@ Route::group([
         Route::get('/so_awal', 'SalesOrderController@index_awal')->name('index_awal');
         Route::get('/so_lanjutan', 'SalesOrderController@index_lanjutan')->name('index_lanjutan');
         Route::get('/so_mutasi', 'SalesOrderController@index_mutasi')->name('index_mutasi');
-        Route::get('/{id}/create/{step}/{member}', 'SalesOrderController@create')->name('create');
+        Route::get('/{store}/create/{step}/{member}', 'SalesOrderController@create')->name('create');
         Route::get('/{id}/edit/{step}', 'SalesOrderController@edit')->name('edit');
         Route::get('/{id}/detail', 'SalesOrderController@detail')->name('detail');
-        Route::post('/{id}/{member}/store', 'SalesOrderController@store')->name('store');
+        Route::post('/{store}/{member}/store', 'SalesOrderController@store')->name('store');
         Route::post('/update', 'SalesOrderController@update')->name('update');
         Route::post('/lanjutkan', 'SalesOrderController@lanjutkan')->name('lanjutkan');
         Route::post('/kembali', 'SalesOrderController@kembali')->name('kembali');

@@ -100,6 +100,9 @@
                               </div>
                             </div>
                             @endif
+                            @if($step == 1)
+                              <input type="hidden" class="form-control" name="brand_type" value="{{ $brand }}">
+                            @endif
                             @if($step == 2)
                             <div class="form-group row">
                               <label class="col-md-2 col-form-label text-right">Ekspedisi</label>

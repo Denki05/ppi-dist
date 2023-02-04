@@ -75,18 +75,22 @@
                   <td colspan="8">
                     <table class="table-active table table-bordered">
                             <tr>
-                                <th>Member</th>
-                                <th>Invoice Brand</th>
+                                <th width="30%">Member</th>
+                                <th width="10%">Invoice Brand</th>
                                 <th width="10%"></th>
                             </tr>
 
                             <tbody>
                                 @foreach ($other_address as $index)
                                     @if ($row->id == $index->customer_id)
+                                      <form method="GET" id="frmcrt" action="{{route('superuser.penjualan.sales_order.create', ['store' => $row->id, 'step' => $step, 'member' => $index->id])}}">
+                                        @csrf
                                         <tr>
-                                            <td>{{ $index->name }}</td>
                                             <td>
-                                              <select class="form-control js-select2 select-brand">
+                                              {{$index->name}}
+                                            </td>
+                                            <td>
+                                              <select class="form-control js-select2" name="brand_type">
                                                 <option value="">Pilih Brand Invoice</option>
                                                 @foreach ($brand as $key => $i)
                                                   <option value="{{ $i->id }}">{{ $i->brand_name }}</option>
@@ -94,11 +98,10 @@
                                               </select>
                                             </td>
                                             <td>
-                                              @if($step == 1 || $step == 9)
-                                                <a id="add-so" href="{{route('superuser.penjualan.sales_order.create', ['id' => $row->id, 'step' => $step, 'member' => $index->id])}}" class="btn btn-primary"><i class="fa fa-plus"></i> Add Sales Order {{ $step_txt }} (SO)</a>
-                                              @endif
+                                              <input class="btn btn-primary" type="submit" value="Add Sales Order {{ $step_txt }} (SO)">
                                             </td>
-                                        </tr>
+                                        </tr>   
+                                      </form>
                                     @endif
                                 @endforeach
                             </tbody>
@@ -181,6 +184,8 @@
           $('#frmKembali').submit();
         }
       })
+
+      
     });
   </script>
 @endpush

@@ -192,7 +192,7 @@ class SalesOrderController extends Controller
      *
      * @return \Illuminate\Http\Response
      */
-    public function create($id, $step, $member)
+    public function create(Request $request, $store, $step, $member)
     {
         // Access
         if(Auth::user()->is_superuser == 0){
@@ -201,7 +201,9 @@ class SalesOrderController extends Controller
             }
         }
 
-        $customer = Customer::find($id);
+        $brand = $request->brand_type;
+        // dd($brand);
+        $customer = Customer::find($store);
         $member = CustomerOtherAddress::find($member);
         $warehouse = Warehouse::all();
         $sales = Sales::all();
@@ -211,6 +213,7 @@ class SalesOrderController extends Controller
         $data = [
             'customer' => $customer,
             'member' => $member,
+            'brand' => $brand,
             'warehouse' => $warehouse,
             'sales' => $sales,
             'ekspedisi' => $ekspedisi,
@@ -220,6 +223,7 @@ class SalesOrderController extends Controller
             'step_txt' => SalesOrder::STEP[$step]
         ];
         
+        // dd($testId);
         return view($this->view."create",$data);
     }
 
@@ -229,12 +233,13 @@ class SalesOrderController extends Controller
      * @param  \Illuminate\Http\Request  $request
      * @return \Illuminate\Http\Response
      */
-    public function store(Request $request, $id, $member)
+    public function store(Request $request, $store, $member)
     {
         $data_json = [];
         $post = $request->all();
-        $cust_id = Customer::find($id);
-        $member = CustomerOtheraddress::find($member);
+        $cust = Customer::find($store);
+        $member = CustomerOtherAddress::find($member);
+        
         if($request->method() == "POST"){
             if(empty($post["sales_senior_id"])){
                 $data_json["IsError"] = TRUE;
@@ -264,19 +269,12 @@ class SalesOrderController extends Controller
                 $insert->code = CodeRepo::generateSO();
                 $insert->sales_senior_id = $request->sales_senior_id;
                 $insert->sales_id = $request->sales_id;
-                if ($customer["so_for"] == 1) {
-                    $insert->customer_id = $cust_id->id ?? null;
-                } else {
-                    $insert->origin_warehouse_id = trim(htmlentities($post["origin_warehouse_id"]));
-                    $insert->destination_warehouse_id = $gudang["id"] ?? null;
-                }
                 
-                if (empty($post["customer_other_address_id"])){
-                    $insert->customer_other_address_id = null;
-                }else{
-                    $insert->customer_other_address_id = $request->customer_other_address_id;
-                }
-                $insert->so_for = $customer["so_for"];
+                $insert->customer_id = $cust->id;
+                $insert->customer_other_address_id = $member->id;
+
+                $insert->brand_type = $request->brand_type;
+                $insert->so_for = 1;
                 $insert->type_transaction = $request->type_transaction;
                 $insert->note = $request->note;
                 $insert->created_by = Auth::id();
@@ -299,13 +297,14 @@ class SalesOrderController extends Controller
                 
                 DB::commit();
 
+                // dd($insert->save());
                 $data_json["IsError"] = FALSE;
                 $data_json["Message"] = "Sales Order Berhasil Ditambahkan";
                 goto ResultData;
             } catch (\Exception $e) {
                 DB::rollback();
 
-                dd($e);
+                // dd($e);
                 $data_json["IsError"] = TRUE;
                 $data_json["Message"] = "Sales Order Gagal Ditambahkan";
     
