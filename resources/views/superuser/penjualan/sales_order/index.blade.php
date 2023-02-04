@@ -77,6 +77,8 @@
                             <tr>
                                 <th width="30%">Member</th>
                                 <th width="10%">Invoice Brand</th>
+                                <th width="10%">TL</th>
+                                <th width="10%">Sales</th>
                                 <th width="10%"></th>
                             </tr>
 
@@ -97,7 +99,22 @@
                                                 @endforeach
                                               </select>
                                             </td>
-                                            
+                                            <td>
+                                              <select class="form-control js-select2" name="tl">
+                                                <option value="">Pilih Team Leader</option>
+                                                @foreach ($sales as $sale => $s)
+                                                  <option value="{{ $s->id }}">{{ $s->name }}</option>
+                                                @endforeach
+                                              </select>
+                                            </td>
+                                            <td>
+                                              <select class="form-control js-select2" name="salesman">
+                                                <option value="">Pilih Sales</option>
+                                                @foreach ($sales as $sale => $s)
+                                                  <option value="{{ $s->id }}">{{ $s->name }}</option>
+                                                @endforeach
+                                              </select>
+                                            </td>
                                             <td>
                                               <input class="btn btn-primary" type="submit" value="Add Sales Order {{ $step_txt }} (SO)">
                                             </td>

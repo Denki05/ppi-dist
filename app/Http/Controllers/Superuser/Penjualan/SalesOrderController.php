@@ -121,11 +121,13 @@ class SalesOrderController extends Controller
         $customers = Customer::get();
         $other_address = CustomerOtherAddress::get();
         $brand = BrandLokal::get();
-
+        $sales = Sales::where('is_active', 1)->get();
+        
         $data = [
             'customers' => $customers,
             'other_address' => $other_address,
             'brand' => $brand,
+            'sales' => $sales,
             'step' => $step,
             'step_txt' => SalesOrder::STEP[$step],
         ];
