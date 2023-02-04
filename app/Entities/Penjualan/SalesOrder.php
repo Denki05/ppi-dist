@@ -21,6 +21,8 @@ class SalesOrder extends Model
         'vendor_id',
     	'type_transaction',
     	'brand_type',
+    	'tl',
+    	'sales',
     	'status',
         'keterangan_tidak_lanjut',
     	'so_for',
@@ -34,10 +36,25 @@ class SalesOrder extends Model
     	3 => 'MARKETING'
     ];
     const BRAND_TYPE = [
-    	1 => 'GCF',
-    	2 => 'Senses',
+    	1 => 'Senses',
+    	2 => 'GCF',
     	3 => 'PPI',
     	4 => 'LONGDA'
+    ];
+
+    const TL = [
+        1 => 'Ivan',
+        2 => 'Erwin',
+        3 => 'Nia',
+        4 => 'Kantor'
+    ];
+
+    const SALES = [
+        1 => 'Ganes',
+        2 => 'Lindy',
+        3 => 'Erwin',
+        4 => 'Ivan',
+        5 => 'Kantor',
     ];
     
     const STEP = [

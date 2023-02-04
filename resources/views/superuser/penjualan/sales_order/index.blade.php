@@ -97,6 +97,7 @@
                                                 @endforeach
                                               </select>
                                             </td>
+                                            
                                             <td>
                                               <input class="btn btn-primary" type="submit" value="Add Sales Order {{ $step_txt }} (SO)">
                                             </td>
