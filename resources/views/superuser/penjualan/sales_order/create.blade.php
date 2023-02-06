@@ -1,135 +1,107 @@
 @extends('superuser.app')
 
 @section('content')
-
+<nav class="breadcrumb bg-white push">
+  <span class="breadcrumb-item">Penjualan</span>
+  <a class="breadcrumb-item" href="{{ route('superuser.penjualan.sales_order.index_' . strtolower($step_txt)) }}">Sales Order {{ $step_txt }}</a>
+  <span class="breadcrumb-item active">Create Sales Order</span>
+</nav>
+<div id="alert-block"></div>
 <div class="block">
-  <div class="block-header block-header-default">
-    <h3 class="block-title">Create Sales Order Awal</h3>
-  </div>
-            <div class="block-conten" align="center">
-                <div class="col-md-10 col-md-offset-1">
-                	<form id="frmCreate" data-type="POST" enctype="multipart/form-data" class="f1 ajax">
-                   @csrf
-                    <input type="hidden" name="ajukankelanjutan" value="0">
-                		<div class="f1-steps2">
-                			<div class="f1-progress2">
-                			    <div class="f1-progress-line2" data-now-value="50" data-number-of-steps="2"></div>
-                			</div>
-                      <div class="f1-step active">
-                          <div class="f1-step-icon"><i class="fa fa-store"></i></div>
-                        <p>Order Detail</p>
-                      </div>
-                			<div class="f1-step">
-                				<div class="f1-step-icon"><i class="fa fa-list"></i></div>
-                				<p>Product Order</p>
-                			</div>
-                		</div>
-                   
-                    
-                		<!-- step 1 -->
-                		<fieldset>
-                        <br>
-                          <h4 align="left">Data Order</h4>
-                          <div class="container">
-                            <div class="row">
-                            @if($step == 1 || $step == 2 || $step == 9)
-                              <input type="hidden" class="form-control" name="sales_senior_id" value="{{ $sales_senior_id }}">
-                            @endif
-                            @if($step == 1 || $step == 2 || $step == 9)
-                              <input type="hidden" class="form-control" name="sales_id" value="{{ $sales_id }}">
-                            @endif 
-                            @if($step == 9)
-                            <div class="form-group row">
-                              <label class="col-md-2 col-form-label text-right">Origin warehouse<span class="text-danger">*</span></label>
-                              <div class="col-md-8">
-                                <select class="form-control js-select2" name="origin_warehouse_id">
-                                  <option value="">==Select origin warehouse==</option>
-                                  @foreach($warehouse as $index => $row)
-                                    <option value="{{$row->id}}">{{$row->name}}</option>
-                                  @endforeach
-                                </select>
-                              </div>
-                            </div>
-                            @endif
-                            @if($step == 9)
-                            <div class="form-group row">
-                              <label class="col-md-2 col-form-label text-right">Destination warehouse</label>
-                              <div class="col-md-1 d-none">
-                                <input type="checkbox" name="checkbox_destination_warehouse" value="1" class="form-control select-checkbox mx-auto" style="width: 20px;">
-                              </div>
-                              <div class="col-md-8">
-                                <select class="form-control js-select2 select-warehouse" name="destination_warehouse_id" disabled>
-                                  <option value="">==Select destination warehouse==</option>
-                                  @foreach($warehouse as $index => $row)
-                                    <option value="{{$row->id}}">{{$row->name}}</option>
-                                  @endforeach
-                                </select>
-                              </div>
-                            </div>
-                            @endif
-                            @if($step == 1)
-                            <div class="form-group row">
-                              <label class="col-md-2 col-form-label text-right">Transaction<span class="text-danger">*</span></label>
-                              <div class="col-md-8">
-                                <select class="form-control js-select2" name="type_transaction">
-                                  <option value="">Pilih Transaksi Type</option>
-                                  <option value="1">Cash</option>
-                                  <option value="2">Tempo</option>
-                                  <option value="3">Marketplace</option>
-                                </select>
-                              </div>
-                            </div>
-                            @endif
-                            @if($step == 1)
-                              <input type="hidden" class="form-control" name="brand_type" value="{{ $brand }}">
-                            @endif
-                            @if($step == 2)
-                            <div class="form-group row">
-                              <label class="col-md-2 col-form-label text-right">Ekspedisi</label>
-                              <div class="col-md-8">
-                                <select class="form-control js-select2" name="ekspedisi_id">
-                                  <option value="">==Select ekspedisi==</option>
-                                  @foreach($ekspedisi as $index => $row)
-                                  <option value="{{$row->id}}">{{$row->name}}</option>
-                                  @endforeach
-                                </select>
-                              </div>
-                            </div>
-                            @endif
-                            @if($step == 1 || $step == 2)
-                            <div class="form-group row">
-                              <label class="col-md-2 col-form-label text-right">Note</label>
-                              <div class="col-md-8">
-                                <textarea class="form-control" name="note" rows="3"></textarea>
-                              </div>
-                            </div>
-                            @endif
-                          </div>
-                            <div class="f1-buttons">
-                              <a href="{{route('superuser.penjualan.sales_order.index_' . strtolower($step_txt))}}" class="btn btn-warning  btn-md text-white"><i class="fa fa-arrow-left"></i> Back</a>
-                              <button type="button" class="btn btn-primary btn-next">Next <i class="fa fa-arrow-right"></i></button>
-                            </div>
-                        </fieldset>
-                        <!-- step 2 -->
-                        <fieldset>
-                            <h4>Product List</h4>
-                              <div class="card">
-                                  <div class="card-header">
-                                      Select Product
-                                  </div>
-                                  <div class="card-body">
-                                    <div class="row">
-                                      <div class="col-12 product-list">
-                                        <div class="row">
-                                          <div class="col-2">Brand</div>
-                                          <div class="col-2">Category</div>
-                                          <div class="col-3">Product</div>
-                                          <div class="col-1">Qty</div>
-                                          <div class="col-2">Packaging</div>
-                                        </div>
+  <div class="block-content">
+    <form id="frmCreate" action="#" data-type="POST" enctype="multipart/form-data">
+      @csrf
+      <input type="hidden" name="ajukankelanjutan" value="0">
+      <div class="row">
+        <div class="col-12">
+          @if($step == 1 || $step == 2 || $step == 9)
+            <input type="hidden" class="form-control" name="sales_senior_id" value="{{ $sales_senior_id }}">
+          @endif
+          @if($step == 1 || $step == 2 || $step == 9)
+            <input type="hidden" class="form-control" name="sales_id" value="{{ $sales_id }}">
+          @endif
+          @if($step == 9)
+          <div class="form-group row">
+            <label class="col-md-2 col-form-label text-right">Origin warehouse<span class="text-danger">*</span></label>
+            <div class="col-md-8">
+              <select class="form-control js-select2" name="origin_warehouse_id">
+                <option value="">==Select origin warehouse==</option>
+                @foreach($warehouse as $index => $row)
+                  <option value="{{$row->id}}">{{$row->name}}</option>
+                @endforeach
+              </select>
+            </div>
+          </div>
+          @endif
+          @if($step == 9)
+          <div class="form-group row">
+            <label class="col-md-2 col-form-label text-right">Destination warehouse</label>
+            <div class="col-md-1 d-none">
+              <input type="checkbox" name="checkbox_destination_warehouse" value="1" class="form-control select-checkbox mx-auto" style="width: 20px;">
+            </div>
+            <div class="col-md-8">
+              <select class="form-control js-select2 select-warehouse" name="destination_warehouse_id" disabled>
+                <option value="">==Select destination warehouse==</option>
+                @foreach($warehouse as $index => $row)
+                  <option value="{{$row->id}}">{{$row->name}}</option>
+                @endforeach
+              </select>
+            </div>
+          </div>
+          @endif
+          @if($step == 1)
+          <div class="form-group row">
+            <label class="col-md-2 col-form-label text-right">Transaksi<span class="text-danger">*</span></label>
+            <div class="col-md-8">
+              <select class="form-control js-select2" name="type_transaction">
+                <option value="">Pilih Jenis Transaksi</option>
+                <option value="1">Cash</option>
+                <option value="2">Tempo</option>
+                <option value="3">Marketplace</option>
+              </select>
+            </div>
+          </div>
+          @endif
+          @if($step == 2)
+          <div class="form-group row">
+            <label class="col-md-2 col-form-label text-right">Ekspedisi</label>
+            <div class="col-md-8">
+              <select class="form-control js-select2" name="ekspedisi_id">
+                <option value="">==Select ekspedisi==</option>
+                @foreach($ekspedisi as $index => $row)
+                <option value="{{$row->id}}">{{$row->name}}</option>
+                @endforeach
+              </select>
+            </div>
+          </div>
+          @endif
+          @if($step == 1 || $step == 2)
+          <div class="form-group row">
+            <label class="col-md-2 col-form-label text-right">Note</label>
+            <div class="col-md-8">
+              <textarea class="form-control" name="note" rows="3"></textarea>
+            </div>
+          </div>
+          @endif
+        </div>
+      </div>
 
-                                        <div class="row mt-10 product-row">
-                                          <div class="col-2">
+      <hr />
+
+      <div class="row">
+        <div class="col-12 product-list">
+          <h5>Select Product</h5>
+
+          <div class="row">
+            <div class="col-2">Brand</div>
+            <div class="col-2">Category</div>
+            <div class="col-3">Product</div>
+            <div class="col-1">Qty</div>
+            <div class="col-2">Packaging</div>
+          </div>
+
+          <div class="row mt-10 product-row">
+          <div class="col-2">
                                             <select class="form-control js-select2 select-brand" data-index="0">
                                               <option value="">Pilih Brand</option>
                                               @foreach($brand_ppi as $index => $row)
@@ -162,23 +134,38 @@
                                               <option value="7">Free</option>
                                             </select>
                                           </div>
-                                          <div class="col-1"><button type="button" id="buttonAddProduct" class="btn btn-primary"><em class="fa fa-plus"></em></button></div>
-                                        </div>
-                                        <hr />
-                                      </div>
-                                    </div>
-                                  </div>
-                                </div>
-                                <div class="f1-buttons">
-                                  <button type="button" class="btn btn-warning btn-previous"><i class="fa fa-arrow-left"></i> Previous</button>
-                                  <button class="btn btn-primary btn-md btn-simpan" type="button"><i class="fa fa-save"></i> Simpan</button>
-                                  <button class="btn btn-primary btn-md btn-simpan-dan-ajukan-ke-lanjutan" type="button"><i class="fa fa-save"></i> Simpan dan ajukan ke Lanjutan</button>
-                                </div>
-                        </fieldset>
-                	</form>
-                </div>
-            </div>
+            <div class="col-1"><button type="button" id="buttonAddProduct" class="btn btn-primary"><em class="fa fa-plus"></em></button></div>
+          </div>
+          <hr />
+
         </div>
+      </div>
+
+      <hr />
+
+      <!-- <div class="row mb-30">
+        <div class="col-12">
+          <a href="{{route('superuser.penjualan.sales_order.index_' . strtolower($step_txt))}}" class="btn btn-warning  btn-md text-white"><i class="fa fa-arrow-left"></i> Back</a>
+          <button class="btn btn-primary btn-md btn-simpan" type="button"><i class="fa fa-save"></i> Simpan</button>
+          <button class="btn btn-primary btn-md btn-simpan-dan-ajukan-ke-lanjutan" type="button"><i class="fa fa-save"></i> Simpan dan ajukan ke Lanjutan</button>
+        </div>
+      </div> -->
+      <div class="row pt-30 mb-15">
+        <div class="col-md-6">
+          <a href="{{route('superuser.penjualan.sales_order.index_' . strtolower($step_txt))}}">
+            <button type="button" class="btn bg-gd-cherry border-0 text-white">
+              <i class="fa fa-arrow-left mr-10"></i> Back
+            </button>
+          </a>
+        </div>
+        <div class="col-md-6 text-right">
+          <button class="btn btn-primary btn-md btn-simpan" type="button"><i class="fa fa-save"></i> Simpan</button>
+          <button class="btn btn-primary btn-md btn-simpan-dan-ajukan-ke-lanjutan" type="button"><i class="fa fa-save"></i> Simpan dan ajukan ke Lanjutan</button>
+        </div>
+      </div>
+    </form>
+  </div>
+</div>
 @endsection
 
 @include('superuser.asset.plugin.select2')
@@ -463,28 +450,24 @@
     })
   }
 
-  $(function () {
-      $('.select-customer').on('change', function(){
-          let customer_id = $('.select-customer').val();
+  // $(function () {
+  //     $('.select-customer').on('change', function(){
+  //         let customer_id = $('.select-customer').val();
 
-          $.ajax({
-            type : 'POST',
-            url : '{{route('superuser.penjualan.sales_order.getmember')}}',
-            data : {customer_id:customer_id},
-            cache : false,
+  //         $.ajax({
+  //           type : 'POST',
+  //           url : '{{route('superuser.penjualan.sales_order.getmember')}}',
+  //           data : {customer_id:customer_id},
+  //           cache : false,
 
-            success: function(msg){
-              $('.other_address').html(msg);
-            },
-            error : function(data){
-              console.log('error:',data)
-            },
-          })
-        })
-    });
+  //           success: function(msg){
+  //             $('.other_address').html(msg);
+  //           },
+  //           error : function(data){
+  //             console.log('error:',data)
+  //           },
+  //         })
+  //       })
+  //   });
 </script>
 @endpush
-
-
-
-
