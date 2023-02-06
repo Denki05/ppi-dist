@@ -100,17 +100,17 @@
                                               </select>
                                             </td>
                                             <td>
-                                              <select class="form-control js-select2" name="tl">
+                                              <select class="form-control js-select2" name="sales_senior_id">
                                                 <option value="">Pilih Team Leader</option>
-                                                @foreach ($sales as $sale => $s)
-                                                  <option value="{{ $s->id }}">{{ $s->name }}</option>
+                                                @foreach($sales as $tl => $ss)
+                                                  <option value="{{ $ss->id }}">{{ $ss->name }}</option>
                                                 @endforeach
                                               </select>
                                             </td>
                                             <td>
-                                              <select class="form-control js-select2" name="salesman">
-                                                <option value="">Pilih Sales</option>
-                                                @foreach ($sales as $sale => $s)
+                                              <select class="form-control js-select2" name="sales_id">
+                                                <option value="">Pilih Salesman</option>
+                                                @foreach($sales as $salesman => $s)
                                                   <option value="{{ $s->id }}">{{ $s->name }}</option>
                                                 @endforeach
                                               </select>

@@ -32,32 +32,12 @@
                           <h4 align="left">Data Order</h4>
                           <div class="container">
                             <div class="row">
-                                @if($step == 1 || $step == 2 || $step == 9)
-                                <div class="form-group row">
-                                  <label class="col-md-2 col-form-label text-right" for="name">Sales Senior<span class="text-danger">*</span></label>
-                                  <div class="col-md-8">
-                                    <select class="form-control js-select2" name="sales_senior_id" <?php echo $step == 2 ? 'disabled' : '' ?>>
-                                      <option value="">Pilih Sales Senior</option>
-                                      @foreach($sales as $index => $row)
-                                        <option value="{{$row->id}}">{{$row->name}}</option>
-                                      @endforeach
-                                    </select>
-                                  </div>
-                                </div>
-                                @endif
                             @if($step == 1 || $step == 2 || $step == 9)
-                            <div class="form-group row">
-                              <label class="col-md-2 col-form-label text-right" for="name">Sales <span class="text-danger">*</span></label>
-                              <div class="col-md-8">
-                                <select class="form-control js-select2" name="sales_id" <?php echo $step == 2 ? 'disabled' : '' ?>>
-                                  <option value="">Pilih Sales</option>
-                                  @foreach($sales as $index => $row)
-                                    <option value="{{$row->id}}">{{$row->name}}</option>
-                                  @endforeach
-                                </select>
-                              </div>
-                            </div>
+                              <input type="hidden" class="form-control" name="sales_senior_id" value="{{ $sales_senior_id }}">
                             @endif
+                            @if($step == 1 || $step == 2 || $step == 9)
+                              <input type="hidden" class="form-control" name="sales_id" value="{{ $sales_id }}">
+                            @endif 
                             @if($step == 9)
                             <div class="form-group row">
                               <label class="col-md-2 col-form-label text-right">Origin warehouse<span class="text-danger">*</span></label>

@@ -122,7 +122,7 @@ class SalesOrderController extends Controller
         $other_address = CustomerOtherAddress::get();
         $brand = BrandLokal::get();
         $sales = Sales::where('is_active', 1)->get();
-        
+
         $data = [
             'customers' => $customers,
             'other_address' => $other_address,
@@ -204,20 +204,22 @@ class SalesOrderController extends Controller
         }
 
         $brand = $request->brand_type;
-        // dd($brand);
+        $sales_senior_id = $request->sales_senior_id;
+        $sales_id = $request->sales_id;
         $customer = Customer::find($store);
         $member = CustomerOtherAddress::find($member);
         $warehouse = Warehouse::all();
-        $sales = Sales::all();
         $ekspedisi = Ekspedisi::all();
         $product_category = ProductCategory::all();
         $brand_ppi = BrandLokal::all();
+
         $data = [
             'customer' => $customer,
             'member' => $member,
+            'sales_senior_id' => $sales_senior_id,
+            'sales_id' => $sales_id,
             'brand' => $brand,
             'warehouse' => $warehouse,
-            'sales' => $sales,
             'ekspedisi' => $ekspedisi,
             'product_category' => $product_category,
             'brand_ppi' => $brand_ppi,
@@ -225,7 +227,7 @@ class SalesOrderController extends Controller
             'step_txt' => SalesOrder::STEP[$step]
         ];
         
-        // dd($testId);
+        // dd($sales_id);
         return view($this->view."create",$data);
     }
 
@@ -243,17 +245,6 @@ class SalesOrderController extends Controller
         $member = CustomerOtherAddress::find($member);
         
         if($request->method() == "POST"){
-            if(empty($post["sales_senior_id"])){
-                $data_json["IsError"] = TRUE;
-                $data_json["Message"] = "Sales senior wajib dipilih";
-                goto ResultData;
-            }
-            if(empty($post["sales_id"])){
-                $data_json["IsError"] = TRUE;
-                $data_json["Message"] = "Sales wajib dipilih";
-                goto ResultData;
-            }
-           
             $customer = [];
             $gudang = [];
             if(!empty($post["customer_id"])){
@@ -269,13 +260,14 @@ class SalesOrderController extends Controller
             try {
                 $insert = new SalesOrder;
                 $insert->code = CodeRepo::generateSO();
-                $insert->sales_senior_id = $request->sales_senior_id;
-                $insert->sales_id = $request->sales_id;
+                
                 
                 $insert->customer_id = $cust->id;
                 $insert->customer_other_address_id = $member->id;
 
                 $insert->brand_type = $request->brand_type;
+                $insert->sales_senior_id = $request->sales_senior_id;
+                $insert->sales_id = $request->sales_id;
                 $insert->so_for = 1;
                 $insert->type_transaction = $request->type_transaction;
                 $insert->note = $request->note;
@@ -299,14 +291,14 @@ class SalesOrderController extends Controller
                 
                 DB::commit();
 
-                // dd($insert->save());
+                
                 $data_json["IsError"] = FALSE;
                 $data_json["Message"] = "Sales Order Berhasil Ditambahkan";
                 goto ResultData;
             } catch (\Exception $e) {
                 DB::rollback();
 
-                // dd($e);
+                dd($e);
                 $data_json["IsError"] = TRUE;
                 $data_json["Message"] = "Sales Order Gagal Ditambahkan";
     
