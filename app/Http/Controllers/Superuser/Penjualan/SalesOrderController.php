@@ -59,64 +59,64 @@ class SalesOrderController extends Controller
             }
         }
 
-        // $field = $request->input('field');
-        // $search = $request->input('search');
-        // $so_for = $request->input('so_for');
+        $field = $request->input('field');
+        $search = $request->input('search');
+        $so_for = $request->input('so_for');
 
-        // $table = SalesOrder::where(function($query2) use($field,$search,$so_for,$step){
-        //                         if(!empty($field) && !empty($search)) {
-        //                             $fieldDb = '';
-        //                             $ids = array();
-        //                             if ($field == 'customer') {
-        //                                 $customerDb = Customer::where('name', 'like', '%'.$search.'%')->get();
-        //                                 for($c=0; $c<count($customerDb); $c++) $ids[$c] = $customerDb[$c]->id;
-        //                                 $fieldDb = 'customer_id';
-        //                             } else if ($field == 'sales') {
-        //                                 $salesDb = Sales::where('name', 'like', '%'.$search.'%')->get();
-        //                                 for($c=0; $c<count($salesDb); $c++) $ids[$c] = $salesDb[$c]->id;
-        //                                 $fieldDb = 'sales_id';
-        //                             } else if ($field == 'transaksi') {
-        //                                 if (str_contains('cash', strtolower($search))) {
-        //                                     $ids = [1];
-        //                                 } else if (str_contains('tempo', strtolower($search))) {
-        //                                     $ids = [2];
-        //                                 } else if (str_contains('marketplace', strtolower($search))) {
-        //                                     $ids = [3];
-        //                                 }
-        //                                 $fieldDb = 'type_transaction';
-        //                             }
+        $table = SalesOrder::where(function($query2) use($field,$search,$so_for,$step){
+                                if(!empty($field) && !empty($search)) {
+                                    $fieldDb = '';
+                                    $ids = array();
+                                    if ($field == 'customer') {
+                                        $customerDb = Customer::where('name', 'like', '%'.$search.'%')->get();
+                                        for($c=0; $c<count($customerDb); $c++) $ids[$c] = $customerDb[$c]->id;
+                                        $fieldDb = 'customer_id';
+                                    } else if ($field == 'sales') {
+                                        $salesDb = Sales::where('name', 'like', '%'.$search.'%')->get();
+                                        for($c=0; $c<count($salesDb); $c++) $ids[$c] = $salesDb[$c]->id;
+                                        $fieldDb = 'sales_id';
+                                    } else if ($field == 'transaksi') {
+                                        if (str_contains('cash', strtolower($search))) {
+                                            $ids = [1];
+                                        } else if (str_contains('tempo', strtolower($search))) {
+                                            $ids = [2];
+                                        } else if (str_contains('marketplace', strtolower($search))) {
+                                            $ids = [3];
+                                        }
+                                        $fieldDb = 'type_transaction';
+                                    }
                                     
                                     
-        //                             if ($fieldDb != '') {
-        //                                 $query2->where(function($query3)  use ($field, $fieldDb, $ids){
-        //                                     if ($field == 'sales') {
-        //                                         $query3->where('sales_senior_id',$ids);
-        //                                         $query3->orWhereIn('sales_id',$ids);
-        //                                     } else {
-        //                                         $query3->whereIn($fieldDb, $ids);
-        //                                     }
-        //                                 });
-        //                             } else {
-        //                                 $query2->where($field, 'like', '%'.$search.'%');
-        //                             }
-        //                         }
-        //                         if(!empty($so_for)){
-        //                             $query2->where('so_for','=',$so_for);
-        //                         }
-        //                         if(!empty($step)){
-        //                             if ($step === 1) { // SO awal
-        //                                 $query2->whereIn('status', [1, 2, 3]);
-        //                                 $query2->where('so_for', 1);
-        //                             } else if ($step === 2) { // SO lanjutan
-        //                                 $query2->whereIn('status', [2, 4]);
-        //                                 $query2->where('so_for', 1);
-        //                             } else if ($step === 9) { // SO mutasi
-        //                                 $query2->where('so_for', 2);
-        //                             }
-        //                         }
-        //                     })
-        //                     ->orderBy('id','DESC')
-        //                     ->paginate(10);
+                                    if ($fieldDb != '') {
+                                        $query2->where(function($query3)  use ($field, $fieldDb, $ids){
+                                            if ($field == 'sales') {
+                                                $query3->where('sales_senior_id',$ids);
+                                                $query3->orWhereIn('sales_id',$ids);
+                                            } else {
+                                                $query3->whereIn($fieldDb, $ids);
+                                            }
+                                        });
+                                    } else {
+                                        $query2->where($field, 'like', '%'.$search.'%');
+                                    }
+                                }
+                                if(!empty($so_for)){
+                                    $query2->where('so_for','=',$so_for);
+                                }
+                                if(!empty($step)){
+                                    if ($step === 1) { // SO awal
+                                        $query2->whereIn('status', [1, 2, 3]);
+                                        $query2->where('so_for', 1);
+                                    } else if ($step === 2) { // SO lanjutan
+                                        $query2->whereIn('status', [2, 4]);
+                                        $query2->where('so_for', 1);
+                                    } else if ($step === 9) { // SO mutasi
+                                        $query2->where('so_for', 2);
+                                    }
+                                }
+                            })
+                            ->orderBy('id','DESC')
+                            ->paginate(10);
 
         $customers = Customer::get();
         $other_address = CustomerOtherAddress::get();
@@ -129,6 +129,7 @@ class SalesOrderController extends Controller
             'brand' => $brand,
             'sales' => $sales,
             'step' => $step,
+            'table' => $table,
             'step_txt' => SalesOrder::STEP[$step],
         ];
 
@@ -858,10 +859,10 @@ class SalesOrderController extends Controller
                 $sales_order->updated_by = Auth::id();
                 $sales_order->save();
 
-                $categories = SalesOrderItem::select('master_products.category_id')
+                $categories = SalesOrderItem::select('master_product.category_id')
                                             ->where('so_id', $post["id"])
-                                            ->join('master_products', 'master_products.id', '=', 'penjualan_so_item.product_id')
-                                            ->groupBy('master_products.category_id')->get();
+                                            ->join('master_product', 'master_product.id', '=', 'penjualan_so_item.product_id')
+                                            ->groupBy('master_product.category_id')->get();
                 
                 $jumlahitem = 0;
                 foreach($categories as $category) {
@@ -873,7 +874,7 @@ class SalesOrderController extends Controller
                     $packing_order->type_transaction  = $sales_order->type_transaction;
                     $packing_order->idr_rate = trim(htmlentities($post["idr_rate"]));
                     $packing_order->other_address = 0;
-                    $packing_order->note = $company->note;
+                    $packing_order->note = $company->note ?? null;
                     $packing_order->status = 1;
                     $packing_order->created_by = Auth::id();
                     $packing_order->save();
@@ -988,6 +989,7 @@ class SalesOrderController extends Controller
             } catch (\Exception $e) {
                 DB::rollback();
 
+                dd($e);
                 $data_json["IsError"] = TRUE;
                 $data_json["Message"] = "Sales Order Gagal Diubah, ".$e;
     

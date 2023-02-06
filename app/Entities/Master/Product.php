@@ -15,7 +15,7 @@ class Product extends Model
                         'factory_id', 'category_id', 'sub_brand_reference_id', 'category_id', 'brand_name',
                         'code', 'name', 'material_code', 'material_name', 'alias', 'description', 
                         'default_quantity', 'default_unit_id', 'ratio', 'default_warehouse_id',
-                        'buying_price_under', 'buying_price_high', 'selling_price_under', 'selling_price_high', 'image', 'image_hd', 'status', 'gender'
+                        'buying_price', 'selling_price', 'image', 'image_hd', 'status', 'gender'
                     ];
 
     protected $table = 'master_product';

@@ -20,7 +20,6 @@ use App\Entities\Penjualan\SalesOrder;
 use App\Entities\Penjualan\SalesOrderItem;
 use App\Entities\Setting\UserMenu;
 use App\Repositories\CodeRepo;
-use App\Entities\Master\Ekspedisi;
 use Auth;
 use DB;
 use PDF;
@@ -145,11 +144,11 @@ class PackingOrderController extends Controller
 
         $warehouse = Warehouse::all();
         $customer = Customer::all();
-        $ekspedisi = Ekspedisi::all();
+        $vendor = Vendor::all();
         $data = [
             'warehouse' => $warehouse,
             'customer' => $customer,
-            'ekspedisi' => $ekspedisi
+            'vendor' => $vendor
         ];
         return view($this->view."create",$data);
     }
@@ -165,12 +164,12 @@ class PackingOrderController extends Controller
         $warehouse = Warehouse::all();
         $customer = Customer::all();
         $other_adress = CustomerOtherAddress::all();
-        $ekspedisi = Ekspedisi::all();
+        $vendor = Vendor::where('type', 1)->get();
         $data = [
             'warehouse' => $warehouse,
             'customer' => $customer,
             'other_adress' => $other_adress,
-            'ekspedisi' => $ekspedisi
+            'vendor' => $vendor
         ];
         return view($this->view."create_new",$data);
     }
@@ -427,13 +426,13 @@ class PackingOrderController extends Controller
         $warehouse = Warehouse::all();
         $customer = Customer::all();
         $other_adress = CustomerOtherAddress::all();
-        $ekspedisi = MasterRepo::vendors();
+        $vendor = Vendor::where('type', 1)->get();
         $dokumen = Dokumen::all();
         $data = [
             'warehouse' => $warehouse,
             'customer' => $customer,
             'other_adress' => $other_adress,
-            'ekspedisi' => $ekspedisi,
+            'vendor' => $vendor,
             'result' => $result
         ];
         return view($this->view."edit_new",$data);

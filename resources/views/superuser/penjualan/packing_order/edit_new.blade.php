@@ -194,11 +194,11 @@
           </div>
 
           <div class="form-group row">
-            <label class="col-6 col-md-3 col-form-label font-weight-bold">Kurir</label>
+            <label class="col-6 col-md-3 col-form-label font-weight-bold">Eksepedisi</label>
             <div class="col-6 col-md-6 col-form-label">
               <select class="form-control js-select2" {{ $result->status == 1 ? '' : 'disabled' }} name="ekspedisi_id">
-                <option value="">==Select ekspedisi==</option>
-                @foreach($ekspedisi as $index => $row)
+                <option value="">Pilih Ekspedisi</option>
+                @foreach($vendor as $index => $row)
                 <option value="{{$row->id}}" @if($result->ekspedisi_id == $row->id) selected @endif>{{$row->name}}</option>
                 @endforeach
               </select>
