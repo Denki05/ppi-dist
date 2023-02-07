@@ -64,8 +64,7 @@
                               <tr>
                                   <th width="30%">Member</th>
                                   <th width="10%">Invoice Brand</th>
-                                  <th width="10%">TL</th>
-                                  <th width="10%">Sales</th>
+                                  
                                   <th width="10%"></th>
                               </tr>
 
@@ -83,22 +82,6 @@
                                                   <option value="">Pilih Brand Invoice</option>
                                                   @foreach ($brand as $key => $i)
                                                     <option value="{{ $i->id }}">{{ $i->brand_name }}</option>
-                                                  @endforeach
-                                                </select>
-                                              </td>
-                                              <td>
-                                                <select class="form-control js-select2" name="sales_senior_id">
-                                                  <option value="">Pilih Team Leader</option>
-                                                  @foreach($sales as $tl => $ss)
-                                                    <option value="{{ $ss->id }}">{{ $ss->name }}</option>
-                                                  @endforeach
-                                                </select>
-                                              </td>
-                                              <td>
-                                                <select class="form-control js-select2" name="sales_id">
-                                                  <option value="">Pilih Salesman</option>
-                                                  @foreach($sales as $salesman => $s)
-                                                    <option value="{{ $s->id }}">{{ $s->name }}</option>
                                                   @endforeach
                                                 </select>
                                               </td>

@@ -121,13 +121,11 @@ class SalesOrderController extends Controller
         $customers = Customer::get();
         $other_address = CustomerOtherAddress::get();
         $brand = BrandLokal::get();
-        $sales = Sales::where('is_active', 1)->get();
 
         $data = [
             'customers' => $customers,
             'other_address' => $other_address,
             'brand' => $brand,
-            'sales' => $sales,
             'step' => $step,
             'table' => $table,
             'step_txt' => SalesOrder::STEP[$step],
@@ -205,21 +203,19 @@ class SalesOrderController extends Controller
         }
 
         $brand = $request->brand_type;
-        $sales_senior_id = $request->sales_senior_id;
-        $sales_id = $request->sales_id;
         $customer = Customer::find($store);
         $member = CustomerOtherAddress::find($member);
         $warehouse = Warehouse::all();
         $ekspedisi = Ekspedisi::all();
         $product_category = ProductCategory::all();
         $brand_ppi = BrandLokal::all();
+        $sales = Sales::where('is_active', 1)->get();
 
         $data = [
             'customer' => $customer,
             'member' => $member,
-            'sales_senior_id' => $sales_senior_id,
-            'sales_id' => $sales_id,
             'brand' => $brand,
+            'sales' => $sales,
             'warehouse' => $warehouse,
             'ekspedisi' => $ekspedisi,
             'product_category' => $product_category,

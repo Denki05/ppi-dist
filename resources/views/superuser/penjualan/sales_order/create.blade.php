@@ -15,10 +15,30 @@
       <div class="row">
         <div class="col-12">
           @if($step == 1 || $step == 2 || $step == 9)
-            <input type="hidden" class="form-control" name="sales_senior_id" value="{{ $sales_senior_id }}">
+            <div class="form-group row">
+            <label class="col-md-2 col-form-label text-right">Team Leader<span class="text-danger">*</span></label>
+            <div class="col-md-8">
+              <select class="form-control js-select2" name="sales_senior_id">
+                <option value="">Pilih Team Leader</option>
+                @foreach($sales as $index => $row)
+                  <option value="{{$row->id}}">{{$row->name}}</option>
+                @endforeach
+              </select>
+            </div>
+          </div>
           @endif
           @if($step == 1 || $step == 2 || $step == 9)
-            <input type="hidden" class="form-control" name="sales_id" value="{{ $sales_id }}">
+          <div class="form-group row">
+            <label class="col-md-2 col-form-label text-right">Salesman<span class="text-danger">*</span></label>
+            <div class="col-md-8">
+              <select class="form-control js-select2" name="sales_id">
+                <option value="">Pilih Sales</option>
+                @foreach($sales as $index => $row)
+                  <option value="{{$row->id}}">{{$row->name}}</option>
+                @endforeach
+              </select>
+            </div>
+          </div>
           @endif
           @if($step == 9)
           <div class="form-group row">
@@ -143,47 +163,7 @@
         </div>
       </div>
       <hr />
-      <div class="block-header block-header-default" id="frm-cash" style="display:none;">
-        <div class="container">
-          <div class="form-group row justify-content-end">
-            <label class="col-md-3 col-form-label text-right" for="subtotal">IDR Sub Total</label>
-            <div class="col-md-2">
-              <input type="text" class="form-control" id="subtotal" name="subtotal" readonly>
-            </div>
-          </div>
-          <div class="form-group row justify-content-end">
-            <label class="col-md-3 col-form-label text-right" for="tax">
-              <div class="form-check">
-                <input class="form-check-input" type="checkbox" value="" id="tax_checked" name="tax_checked">
-                <label class="form-check-label" for="tax_checked">
-                  Tax
-                </label>
-              </div>
-            </label>
-            <div class="col-md-2">
-              <input type="number" class="form-control" id="tax" name="tax" readonly>
-            </div>
-          </div>
-          <div class="form-group row justify-content-end">
-            <label class="col-md-3 col-form-label text-right" for="discount">IDR Discount</label>
-            <div class="col-md-2">
-              <input type="text" class="form-control" id="discount" name="discount">
-            </div>
-          </div>
-          <div class="form-group row justify-content-end">
-            <label class="col-md-3 col-form-label text-right" for="shipping_fee">Courier</label>
-            <div class="col-md-2">
-              <input type="text" class="form-control" id="shipping_fee" name="shipping_fee">
-            </div>
-          </div>
-          <div class="form-group row justify-content-end">
-            <label class="col-md-3 col-form-label text-right" for="grand_total">IDR Total</label>
-            <div class="col-md-2">
-              <input type="text" class="form-control" id="grand_total" name="grand_total" readonly>
-            </div>
-          </div>
-        </div>
-      </div>
+      
       <div class="row pt-30 mb-15">
         <div class="col-md-6">
           <a href="{{route('superuser.penjualan.sales_order.index_' . strtolower($step_txt))}}">
@@ -487,35 +467,17 @@
     })
   }
 
-  $('.select-transaksi').on('change', function() {
-      if ( this.value == '1')
-      {
-        $("#frm-cash").show();
-      }
-      else
-      {
-        $("#frm-cash").hide();
-      }
-    });
-
-  // $(function () {
-  //     $('.select-customer').on('change', function(){
-  //         let customer_id = $('.select-customer').val();
-
-  //         $.ajax({
-  //           type : 'POST',
-  //           url : '{{route('superuser.penjualan.sales_order.getmember')}}',
-  //           data : {customer_id:customer_id},
-  //           cache : false,
-
-  //           success: function(msg){
-  //             $('.other_address').html(msg);
-  //           },
-  //           error : function(data){
-  //             console.log('error:',data)
-  //           },
-  //         })
-  //       })
+  // $('.select-transaksi').on('change', function() {
+  //     if ( this.value == '1')
+  //     {
+  //       $("#frm-cash").show();
+  //     }
+  //     else
+  //     {
+  //       $("#frm-cash").hide();
+  //     }
   //   });
+
+  
 </script>
 @endpush
