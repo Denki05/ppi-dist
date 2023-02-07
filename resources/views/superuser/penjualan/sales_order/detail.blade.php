@@ -29,7 +29,7 @@
           <div class="form-group row">
             <label class="col-md-2 col-form-label text-right" for="name">Sales Senior</label>
             <div class="col-md-8">
-              <input type="text" class="form-control" value="{{$result->sales->name ?? ''}}" readonly>
+              <input type="text" class="form-control" value="{{$result->sales_senior->name ?? ''}}" readonly>
             </div>
           </div>
           <div class="form-group row">
@@ -47,7 +47,7 @@
           
           @if($result->so_for == 1)
           <div class="form-group row">
-            <label class="col-md-2 col-form-label text-right">Customer</label>
+            <label class="col-md-2 col-form-label text-right">Store</label>
             <div class="col-md-8">
               <input type="text" class="form-control" value="{{$result->customer->name ?? ''}}" readonly>
             </div>
@@ -70,6 +70,21 @@
               @endif
             </div>
           </div>
+          @if($result->member->member_default == 1)
+            <div class="form-group row">
+              <label class="col-md-2 col-form-label text-right">Member</label>
+              <div class="col-md-8">
+                <input type="text" class="form-control" value="{{$result->customer->name ?? ''}}" readonly>
+              </div>
+            </div>
+          @else
+            <div class="form-group row">
+              <label class="col-md-2 col-form-label text-right">Member</label>
+              <div class="col-md-8">
+                <input type="text" class="form-control" value="{{$result->member->name ?? ''}}" readonly>
+              </div>
+            </div>
+          @endif
           <div class="form-group row">
             <label class="col-md-2 col-form-label text-right">Transaction</label>
             <div class="col-md-8">
@@ -104,7 +119,7 @@
             <thead>
               <th>Code</th>
               <th>Produk</th>
-              <th>Product Type</th>
+              <th>Brand | Category</th>
               <th>Qty</th>
               <th>Packaging</th>
             </thead>
@@ -115,7 +130,7 @@
                   <tr>
                     <td>{{$row->product->code ?? ''}}</td>
                     <td>{{$row->product->name ?? ''}}</td>
-                    <td>{{$row->product->type->name ?? ''}}</td>
+                    <td>{{$row->product->category->brand_name ?? ''}} | {{ $row->product->category->name }}</td>
                     <td>
                       @if($row->status <> 4)
                         {{$row->qty ?? '0'}}

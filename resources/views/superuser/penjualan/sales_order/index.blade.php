@@ -1,10 +1,10 @@
 @extends('superuser.app')
 
 @section('content')
-<nav class="breadcrumb bg-white push">
+<!-- <nav class="breadcrumb bg-white push">
   <span class="breadcrumb-item">Penjualan</span>
-  <span class="breadcrumb-item active">Sales Order</span>
-</nav>
+  <span class="breadcrumb-item active">Sales Order {{ $step_txt }}</span>
+</nav> -->
 @if(session('error') || session('success'))
 <div class="alert alert-{{ session('error') ? 'danger' : 'success' }} alert-dismissible fade show" role="alert">
     @if (session('error'))
@@ -124,7 +124,7 @@
 <div class="block">
   <div class="block-content block-content-full">
   <div class="block-header block-header-default">
-    <h3 class="block-title">Sales Order List</h3>
+    <h3 class="block-title">Sales Order {{ $step_txt }}</h3>
   </div>
     <div class="row mb-30">
         <div class="col-12">
@@ -133,23 +133,25 @@
               <tr>
                 <th>#</th>
 
-                @if($step == 1 || $step == 2 || $step == 9)
+                @if($step == 1 || $step == 2)
                 <th>Code</th>
                 @endif
 
                 @if($step == 1 || $step == 2)
-                <th>Store / Member</th>
+                <th>Customer</th>
                 @elseif($step == 9)
                 <th>Warehouse</th>
                 @endif
 
-                @if($step == 1 || $step == 2)
-                <th>Sales Senior / Sales</th>
+                @if($step == 1)
+                <th>Sales</th>
                 @endif
                 
-                @if($step == 2)
-                <th>Type Transaction</th>
+                @if($step == 1 || $step == 2)
+                <th>Transaksi Type</th>
                 @endif
+
+                
 
                 @if($step == 1 || $step == 2 || $step == 9)
                 <th>Tanggal Dibuat</th>
@@ -163,31 +165,26 @@
                 <tr>
                   <td>{{$index+1}}</td>
 
-                  @if($step == 1 || $step == 2 || $step == 9)
+                  @if($step == 1 || $step == 2)
                   <td><a href="{{route('superuser.penjualan.sales_order.detail',$row->id)}}">{{$row->code}}</a></td>
                   @endif
 
                   <td>
                     @if($row->so_for == 1)
-                      {{$row->customer->name ?? ''}}
+                      {{ $row->customer->name }} - {{ $row->member->name }}
                     @elseif($row->so_for == 2)
                       {{$row->customer_gudang->name ?? ''}}
                     @endif
                   </td>
                   
-                  @if($step == 1 || $step == 2)
+                  @if($step == 1)
                   <td>
-                    {{$row->sales_senior->name ?? ''}} / <br>
-                    {{$row->sales->name ?? ''}}
+                    {{$row->sales_senior->name ?? ''}} | {{ $row->sales->name ?? '' }} <br>
                   </td>
                   @endif
 
-                  @if($step == 2)
+                  @if($step == 1 || $step == 2)
                   <td>{{$row->so_type_transaction()->scalar ?? ''}}</td>
-                  @endif
-
-                  @if($step == 2)
-                  <td>{{$row->ekspedisi->name ?? null}}</td>
                   @endif
 
                   @if($step == 1 || $step == 9)
@@ -201,12 +198,12 @@
                   </td>
                   @endif
 
-                  @php
+                  <!-- @php
                     $soQty = 0;
                     foreach($row->so_detail as $index => $so_detail) {
                       $soQty = $soQty + $so_detail->qty;
                     }
-                  @endphp
+                  @endphp -->
 
                   @if(($step == 1 || $step == 2 || $step == 9) && ($row->so_for == 1))
                   <td>

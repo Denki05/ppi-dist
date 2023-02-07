@@ -83,7 +83,7 @@ class CodeRepo
         return self::generate('V', Vendor::class);
     }
     public static function generateSO(){
-        return self::generate('SO', SalesOrder::class);   
+        return self::generate('SO', SalesOrder::class); 
     }
     public static function generatePO(){
         return self::generate('PRE', PackingOrder::class);   

@@ -244,7 +244,6 @@ class SalesOrderController extends Controller
         $post = $request->all();
         $cust = Customer::find($store);
         $member = CustomerOtherAddress::find($member);
-        
         if($request->method() == "POST"){
             $customer = [];
             $gudang = [];
@@ -289,6 +288,11 @@ class SalesOrderController extends Controller
                         $insertDetail->save();
                     }
                 }
+
+                // if( $request->type_transaction == 1)
+                // {
+                    
+                // }
                 
                 DB::commit();
 
@@ -299,7 +303,7 @@ class SalesOrderController extends Controller
             } catch (\Exception $e) {
                 DB::rollback();
 
-                dd($e);
+                // dd($e);
                 $data_json["IsError"] = TRUE;
                 $data_json["Message"] = "Sales Order Gagal Ditambahkan";
     
@@ -870,6 +874,7 @@ class SalesOrderController extends Controller
                     $packing_order->code = CodeRepo::generatePO();
                     $packing_order->so_id  = $sales_order->id;
                     $packing_order->customer_id  = $sales_order->customer_id;
+                    $packing_order->customer_other_address_id  = $sales_order->customer_other_address_id;
                     $packing_order->warehouse_id = $sales_order->origin_warehouse_id;
                     $packing_order->type_transaction  = $sales_order->type_transaction;
                     $packing_order->idr_rate = trim(htmlentities($post["idr_rate"]));
@@ -989,7 +994,7 @@ class SalesOrderController extends Controller
             } catch (\Exception $e) {
                 DB::rollback();
 
-                dd($e);
+                // dd($e);
                 $data_json["IsError"] = TRUE;
                 $data_json["Message"] = "Sales Order Gagal Diubah, ".$e;
     
@@ -1021,6 +1026,7 @@ class SalesOrderController extends Controller
                         'master_product.id as id', 
                         'master_product.code as product_code',
                         'master_product.category_id', 
+                        'master_product.selling_price as price', 
                         'master_product_category.name as category_name', 
                         'master_packaging.pack_name as packaging'
                     )->get();

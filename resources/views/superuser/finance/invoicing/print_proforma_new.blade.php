@@ -150,7 +150,7 @@
                   @if($result->do->other_address === 0)
                     {{$result->do->customer->name}}
                   @elseif($result->do->other_address === 1)
-                    {{$result->do->member->name}}
+                    {{ $result->do->member['name'] }}
                   @endif
                 </td>               
               </tr>
@@ -202,7 +202,7 @@
                   @if($result->do->other_address === 0)
                     {{$result->do->customer->address ?? ''}}
                   @elseif($result->do->other_address === 1)
-                    {{$result->do->member->address ?? ''}}
+                    {{$result->do->member['address'] }}
                   @endif
                 </td>
               </tr>

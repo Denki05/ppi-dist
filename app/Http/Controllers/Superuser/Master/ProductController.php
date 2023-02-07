@@ -132,10 +132,8 @@ class ProductController extends Controller
                 $product->material_code = $request->material_code;
                 $product->material_name = $request->material_name;
                 $product->alias = $request->alias;
-                $product->buying_price_under = $request->buying_price_under;
-                $product->buying_price_high = $request->buying_price_high;
-                $product->selling_price_under = $request->selling_price_under;
-                $product->selling_price_high = $request->selling_price_high;
+                $product->buying_price = $request->buying_price;
+                $product->selling_price = $request->selling_price;
                 $product->description = $request->description;
                 $product->note = $request->note;
                 $product->gender = $request->gender;

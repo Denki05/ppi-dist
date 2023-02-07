@@ -13,10 +13,16 @@
   <title>{{$code}}</title>
   <style type="text/css">
     body{
+      color: #333;
+      font-family: Arial,sans-serif;
       font-size: 12px;
     }
+    table.borderless {
+      border-collapse: collapse;
+      border-spacing: 0;
+    }
     .borderless td, .borderless th {
-        border: none;
+      border: none;
     }
     
     .info td, .info th {
@@ -52,6 +58,9 @@
       text-align: center;
       font-size: 12px;
     }
+    table.table-data td {
+      padding: 0 5px;
+    }
 
     @page{
       margin-top: 15px;
@@ -67,10 +76,15 @@
     .p-note{
       padding: 2px;
       width: 100%;
-      border:1px solid grey;
       word-wrap: break-word;
-      box-sizing:
-      border-box;
+      box-sizing: border-box;
+      text-align: justify;
+      border:1px solid grey;
+      font-size: 70%;
+    }
+    .p-note p {
+      line-height: 1;
+      margin: 5px 0;
     }
 
     /*Footer*/
@@ -97,18 +111,29 @@
             <img src="<?= base_path('public/superuser_assets/media/master/company/'.$company->logo) ?>" style="width: 100%;height: 100%;">
           </div>
       </div>
-      <div class="column-float" style="width: 55%;margin-top: 15px;">
-        <h2 style="text-align: center;margin: 0;padding: 0;margin-bottom: 5 !important;padding-bottom: 0 !important;">PROFORMA INVOICE</h2>
-        <h3 style="text-align: center;margin: 0;padding: 0;margin-bottom: 5 !important;padding-bottom: 0 !important;">{{date('d-m-Y',strtotime($result->do->created_at))}}</h3>
-        <div style="font-size: 15px;">
-          <div style="float: left;width: 50%;display: block;text-align: center;">
-            Sales : {{$sales}}
-          </div>
-          <div style="float: right;width: 50%;display: block;text-align: center;">
-            Order : {{$code}}
-          </div>
-          <div style="clear: both;"></div>
-        </div>
+      <div class="column-float note" style="width: 20%;">
+      </div>
+      <div class="column-float" style="width: 35%;margin-top: 10px;">
+        <h3 style="margin: 0;padding: 0;margin-bottom: 5 !important;padding-bottom: 0 !important;">PROFORMA INVOICE</h2>
+        <table class="table borderless info" style="width: 100%">
+          <tbody>
+            <tr>
+              <td style="width: 35% !important;">Tanggal</td>
+              <td style="width: 2% !important;">:</td>
+              <td style="width: 63% !important;">{{date('d-m-Y',strtotime($result->do->created_at))}}</td>
+            </tr>
+            <tr>
+              <td style="width: 35% !important;">Order</td>
+              <td style="width: 2% !important;">:</td>
+              <td style="width: 63% !important;">{{$code}}</td>
+            </tr>
+              <tr>
+                <td style="width: 35% !important;">Sales</td>
+                <td style="width: 2% !important;">:</td>
+                <td style="width: 63% !important;">{{$sales}}</td>
+              </tr>
+          </tbody>
+        </table>
       </div>
     </div>
 
@@ -118,14 +143,27 @@
           <table class="table borderless info" style="width: 100%;">
             <tbody>
               <tr>
-                <td style="width: 35% !important;"><strong>Customer</strong></td>
+                
+                <td style="width: 35% !important;">Pelanggan</td>
                 <td style="width: 2% !important;">:</td>
-                <td style="width: 63% !important;">{{$result->do->customer->name ?? ''}}</td>
+                <td style="width: 63% !important;">
+                  @if($result->do->other_address === 0)
+                    {{$result->do->customer->name}}
+                  @elseif($result->do->other_address === 1)
+                    {{ $result->do->member['name'] }}
+                  @endif
+                </td>               
               </tr>
               <tr>
-                <td style="width: 35% !important;"><strong>Up</strong></td>
+                <td style="width: 35% !important;">Up</td>
                 <td style="width: 2% !important;">:</td>
-                <td style="width: 63% !important;">{{$result->do->customer->owner_name ?? ''}}</td>
+                <td style="width: 63% !important;">
+                  @if($result->do->other_address === 0)
+                    {{$result->do->customer->owner_name ?? ''}}
+                  @elseif($result->do->other_address === 1)
+                    {{$result->do->member->contact_person ?? ''}}
+                  @endif
+                </td>
               </tr>
             </tbody>
           </table>
@@ -134,40 +172,39 @@
           <table class="table borderless info" style="width: 100%">
             <tbody>
               <tr>
-                <td style="width: 35% !important;"><strong>Telepon</strong></td>
+                <td style="width: 35% !important;">Telepon</td>
                 <td style="width: 2% !important;">:</td>
                 <td style="width: 63% !important;">{{$result->do->customer->phone ?? ''}}</td>
               </tr>
               <tr>
-                <td style="width: 35% !important;"><strong>NIK/NPWP</strong></td>
+                <td style="width: 35% !important;">Jenis</td>
                 <td style="width: 2% !important;">:</td>
-                <td style="width: 63% !important;">{{$result->do->customer->npwp ?? ''}}</td>
+                <td style="width: 63% !important;">{{$result->do->do_type_transaction()->scalar ?? ''}}</td>
               </tr>
             </tbody>
           </table>
         </div>
-      </div>
-
-      <div>
-        <table class="table borderless info" style="width: 100%;">
-          <tbody>
-            <tr>
-              <td style="width: 17.5% !important;"><strong>Alamat</strong></td>
-              <td style="width: 2% !important;">:</td>
-              <td style="width: 81.5% !important;">{{$result->do->customer->address ?? ''}}</td>
-            </tr>
-          </tbody>
-        </table>
       </div>
 
       <div class="row-float">
         <div class="column-float" style="width: 50%;">
           <table class="table borderless info" style="width: 100%;">
             <tbody>
-              <tr>
-                <td style="width: 35% !important;"><strong>Kirim</strong></td>
+                <tr>
+                <td style="width: 35% !important;">NIK/NPWP</td>
                 <td style="width: 2% !important;">:</td>
-                <td style="width: 63% !important;">{{$result->do->ekspedisi->name ?? ''}}</td>
+                <td style="width: 63% !important;">{{$result->do->customer->npwp ?? ''}}</td>
+              </tr>
+              <tr>
+                <td style="width: 35% !important;">Alamat</td>
+                <td style="width: 2% !important;">:</td>
+                <td style="width: 63% !important;">
+                  @if($result->do->other_address === 0)
+                    {{$result->do->customer->address ?? ''}}
+                  @elseif($result->do->other_address === 1)
+                    {{$result->do->member['address'] }}
+                  @endif
+                </td>
               </tr>
             </tbody>
           </table>
@@ -176,25 +213,27 @@
           <table class="table borderless info" style="width: 100%">
             <tbody>
               <tr>
-                <td style="width: 35% !important;"><strong>Telepon</strong></td>
+                <td style="width: 35% !important;">Alamat Kirim</td>
                 <td style="width: 2% !important;">:</td>
-                <td style="width: 63% !important;">{{$result->do->customer_other_address->phone ?? ''}}</td>
+                <td style="width: 63% !important;">{{$result->do->customer_other_address->address ?? ''}}</td>
               </tr>
             </tbody>
           </table>
         </div>
       </div>
 
-      <div>
-        <table class="table borderless info" style="width: 100%;">
-          <tbody>
-            <tr>
-              <td style="width: 17.5% !important;"><strong>Alamat Kirim</strong></td>
-              <td style="width: 2% !important;">:</td>
-              <td style="width: 81.5% !important;">{{$result->do->customer_other_address->address ?? ''}}</td>
-            </tr>
-          </tbody>
-        </table>
+      <div class="row-float">
+        <div class="column-float" style="width: 100%;">
+          <table class="table borderless info" style="width: 100%;">
+            <tbody>
+              <tr>
+                <td style="width: 17.5% !important;">Note</td>
+                <td style="width: 1% !important;">:</td>
+                <td style="width: 81.5% !important;">{{$result->do->so->note ?? ''}}</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
       </div>
     </div>
 
@@ -202,14 +241,16 @@
       <table class="table-data" style="width: 100%;">
         <thead>
           <tr>
-            <th style="width: 22%;">Product</th>
-            <th style="width: 7%;">Acuan</th>
-            <th style="width: 6%;">Qty</th>
-            <th style="width: 13%;">Packaging</th>
-            <th style="width: 13%;">Harga</th>
-            <th style="width: 10%;">Disc Cash</th>
-            <th style="width: 15%;">Netto</th>
-            <th style="width: 14%;">Sub Total</th>
+            <th style="width: 5%;">No</th>
+            <th style="width: 10%;">KODE</th>
+            <th style="width: 15%;">DESKRIPSI</th>
+            <th style="width: 7%;">ACUAN (USD)</th>
+            <th style="width: 6%;">JUMLAH (Kg)</th>
+            <th style="width: 13%;">KEMASAN</th>
+            <th style="width: 10%;">HARGA</th>
+            <th style="width: 10%;">DISKON (CASH)</th>
+            <th style="width: 10%;">NETTO</th>
+            <th style="width: 15%;">JUMLAH</th>
           </tr>
         </thead>
         <tbody>
@@ -222,20 +263,22 @@
               $idr_total += $sub_total; 
             ?>
             <tr>
-              <td>{{$row->product->code ?? ''}} - {{$row->product->name ?? ''}}</td>
-              <td>{{$row->price}}</td>
+              <td class="text-right">{{$index + 1}}</td>
+              <td class="text-left">{{$row->product->code ?? ''}}</td>
+              <td class="text-left">{{$row->product->name ?? ''}}</td>
+              <td>{{number_format($row->price,2,',','.')}}</td>
               <td>{{$row->qty}}</td>
-              <td>{{$row->packaging_txt()->scalar ?? ''}}</td>
-              <td>
+              <td class="text-left">{{$row->packaging_txt()->scalar ?? ''}}</td>
+              <td class="text-right">
                 {{number_format($harga,0,',','.')}}
               </td>
-              <td>
+              <td class="text-right">
                 {{number_format($disc_cash,0,',','.')}}
               </td>
-              <td>
+              <td class="text-right">
                 {{number_format($neto,0,',','.')}}
               </td>
-              <td>
+              <td class="text-right">
                 {{number_format($sub_total,0,',','.')}}
               </td>
             </tr>
@@ -246,17 +289,33 @@
 
     @if($result->do->type_transaction == 1 || $result->do->type_transaction == 3)
     <div class="row-float" style="font-size: 12px;">
-      <div class="column-float note" style="width: 65%;">
-        @if(!empty($result->do->note ?? ''))
-        <div class="p-note">
-          <?= htmlspecialchars_decode($result->do->note ?? ''); ?>
+          <div class="column-float note" style="width: 65%">
+        Terbilang : {{\CustomHelper::terbilang($result->do->do_cost->grand_total_idr)}}<br><br>
+        *Kurs USD : {{number_format($result->do->idr_rate,0,',','.')}}
+        
+        <div class="row-float">
+          <div class="column-float note" style="width: 65%">
+            @if(!empty($result->do->note ?? ''))
+            <div class="p-note">
+              <?= htmlspecialchars_decode($result->do->note ?? ''); ?>
+            </div>
+            @else
+            <p style="width: 100%;border:1px solid grey;height: 100px;">
+            </p>
+            @endif
+          </div>
+          <div style="width: 25%; float: right;">
+            Hormat Kami,
+            <br>
+            <br>
+            <br>
+            <br>
+            (....................)
+          </div>
         </div>
-        @else
-        <p style="width: 100%;border:1px solid grey;height: 100px;">
-        </p>
-        @endif
-
       </div>
+
+      <!--
       <div class="column-float" style="width: 35%;">
         <div class="row">
           <table style="width: 100%;">
@@ -334,18 +393,32 @@
         </div>
         
       </div>
+      -->
     </div>
     @else
     <div class="row-float" style="font-size: 12px;">
-      <div class="column-float" style="width: 65%">
-        @if(!empty($result->do->note ?? ''))
-        <div class="p-note">
-          <?= htmlspecialchars_decode($result->do->note ?? ''); ?>
-        </div>
-        @else
-        <p style="width: 100%;border:1px solid grey;height: 100px;margin-top: 0;padding-top: 0;">
-        </p>
-        @endif
+      <div class="column-float note" style="width: 65%;">
+        *Kurs USD : {{number_format($result->do->idr_rate,0,',','.')}}
+        
+        <div class="row-float">
+          <div class="column-float note" style="width: 65%">
+            @if(!empty($result->do->note ?? ''))
+            <div class="p-note">
+              <?= htmlspecialchars_decode($result->do->note ?? ''); ?>
+            </div>
+            @else
+            <p style="width: 100%;border:1px solid grey;height: 100px;margin-top: 0;padding-top: 0;">
+            </p>
+            @endif
+          </div>
+          <div style="width: 25%; float: right;">
+            Hormat Kami,
+            <br>
+            <br>
+            <br>
+            <br>
+            (....................)
+          </div>
       </div>
     </div>
     @endif

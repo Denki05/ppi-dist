@@ -766,16 +766,6 @@ class PackingOrderController extends Controller
                 ];
 
                 $update = PackingOrderDetail::where('do_id',$post["id"])->update($data);
-
-                //Update saldo disini
-                // $saldo = CustomerSaldoLog::where('customer_id', $detail_po->customer_id)->first();
-                
-                // $saldo_log = $saldo->saldo_log - $grand_total_idr;
-
-                // $update_saldo = CustomerSaldoLog::where('customer_id', $detail_po->customer_id)
-                //                             ->update([
-                //                                 'saldo_log' => $saldo_log
-                //                             ]);
                 
                 //create invoicing disini
                 if (empty($detail_po->invoicing)) {

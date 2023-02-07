@@ -53,7 +53,7 @@
           <div class="form-group row">
             <label class="col-md-2 col-form-label text-right">Transaksi<span class="text-danger">*</span></label>
             <div class="col-md-8">
-              <select class="form-control js-select2" name="type_transaction">
+              <select class="form-control js-select2 select-transaksi" name="type_transaction">
                 <option value="">Pilih Jenis Transaksi</option>
                 <option value="1">Cash</option>
                 <option value="2">Tempo</option>
@@ -79,12 +79,13 @@
           <div class="form-group row">
             <label class="col-md-2 col-form-label text-right">Note</label>
             <div class="col-md-8">
-              <textarea class="form-control" name="note" rows="3"></textarea>
+              <textarea class="form-control" name="note" rows="1"></textarea>
             </div>
           </div>
           @endif
         </div>
       </div>
+      
 
       <hr />
 
@@ -101,55 +102,88 @@
           </div>
 
           <div class="row mt-10 product-row">
-          <div class="col-2">
-                                            <select class="form-control js-select2 select-brand" data-index="0">
-                                              <option value="">Pilih Brand</option>
-                                              @foreach($brand_ppi as $index => $row)
-                                                <option value="{{$row->id}}">{{$row->brand_name}}</option>
-                                              @endforeach
-                                            </select>
-                                          </div>
-                                          <div class="col-2">
-                                            <select class="form-control js-select2 select-category" data-index="0">
-                                              <option value="">Pilih Category</option>
-                                            </select>
-                                          </div>
-                                          <div class="col-3">
-                                            <select class="form-control js-select2 select-product" name="product_id[]" data-index="0">
-                                              <option value="">Pilih Product</option>
-                                            </select>
-                                          </div>
-                                          <div class="col-1">
-                                            <input type="number" name="qty[]" class="form-control input-qty" data-index="0" step="any">
-                                          </div>
-                                          <div class="col-2">
-                                            <select name="packaging[]" class="form-control js-select2 select-packaging" data-index="0">
-                                              <option value="">Pilih Kemasan</option>
-                                              <option value="1">100gr (0.1)</option>
-                                              <option value="2">500gr (0.5)</option>
-                                              <option value="3">Jerigen 5kg (5)</option>
-                                              <option value="4">Alumunium 5kg (5)</option>
-                                              <option value="5">Jerigen 25kg (25)</option>
-                                              <option value="6">Drum 25kg (25)</option>
-                                              <option value="7">Free</option>
-                                            </select>
-                                          </div>
-            <div class="col-1"><button type="button" id="buttonAddProduct" class="btn btn-primary"><em class="fa fa-plus"></em></button></div>
+            <div class="col-2">
+              <select class="form-control js-select2 select-brand" data-index="0">
+                <option value="">Pilih Brand</option>
+                @foreach($brand_ppi as $index => $row)
+                <option value="{{$row->id}}">{{$row->brand_name}}</option>
+                @endforeach
+              </select>
+            </div>
+            <div class="col-2">
+              <select class="form-control js-select2 select-category" data-index="0">
+                <option value="">Pilih Category</option>
+              </select>
+            </div>
+            <div class="col-3">
+              <select class="form-control js-select2 select-product" name="product_id[]" data-index="0">
+                <option value="">Pilih Product</option>
+              </select>
+            </div>
+            <div class="col-1">
+              <input type="number" name="qty[]" class="form-control input-qty" data-index="0" step="any">
+            </div>
+            <div class="col-2">
+              <select name="packaging[]" class="form-control js-select2 select-packaging" data-index="0">
+                <option value="">Pilih Kemasan</option>
+                <option value="1">100gr (0.1)</option>
+                <option value="2">500gr (0.5)</option>
+                <option value="3">Jerigen 5kg (5)</option>
+                <option value="4">Alumunium 5kg (5)</option>
+                <option value="5">Jerigen 25kg (25)</option>
+                <option value="6">Drum 25kg (25)</option>
+                <option value="7">Free</option>
+              </select>
+            </div>
+
+            <div class="col-1"><button type="button" id="buttonAddProduct" class="btn btn-primary"><i class="mdi mdi-plus"></i></button></div>
           </div>
           <hr />
 
         </div>
       </div>
-
       <hr />
-
-      <!-- <div class="row mb-30">
-        <div class="col-12">
-          <a href="{{route('superuser.penjualan.sales_order.index_' . strtolower($step_txt))}}" class="btn btn-warning  btn-md text-white"><i class="fa fa-arrow-left"></i> Back</a>
-          <button class="btn btn-primary btn-md btn-simpan" type="button"><i class="fa fa-save"></i> Simpan</button>
-          <button class="btn btn-primary btn-md btn-simpan-dan-ajukan-ke-lanjutan" type="button"><i class="fa fa-save"></i> Simpan dan ajukan ke Lanjutan</button>
+      <div class="block-header block-header-default" id="frm-cash" style="display:none;">
+        <div class="container">
+          <div class="form-group row justify-content-end">
+            <label class="col-md-3 col-form-label text-right" for="subtotal">IDR Sub Total</label>
+            <div class="col-md-2">
+              <input type="text" class="form-control" id="subtotal" name="subtotal" readonly>
+            </div>
+          </div>
+          <div class="form-group row justify-content-end">
+            <label class="col-md-3 col-form-label text-right" for="tax">
+              <div class="form-check">
+                <input class="form-check-input" type="checkbox" value="" id="tax_checked" name="tax_checked">
+                <label class="form-check-label" for="tax_checked">
+                  Tax
+                </label>
+              </div>
+            </label>
+            <div class="col-md-2">
+              <input type="number" class="form-control" id="tax" name="tax" readonly>
+            </div>
+          </div>
+          <div class="form-group row justify-content-end">
+            <label class="col-md-3 col-form-label text-right" for="discount">IDR Discount</label>
+            <div class="col-md-2">
+              <input type="text" class="form-control" id="discount" name="discount">
+            </div>
+          </div>
+          <div class="form-group row justify-content-end">
+            <label class="col-md-3 col-form-label text-right" for="shipping_fee">Courier</label>
+            <div class="col-md-2">
+              <input type="text" class="form-control" id="shipping_fee" name="shipping_fee">
+            </div>
+          </div>
+          <div class="form-group row justify-content-end">
+            <label class="col-md-3 col-form-label text-right" for="grand_total">IDR Total</label>
+            <div class="col-md-2">
+              <input type="text" class="form-control" id="grand_total" name="grand_total" readonly>
+            </div>
+          </div>
         </div>
-      </div> -->
+      </div>
       <div class="row pt-30 mb-15">
         <div class="col-md-6">
           <a href="{{route('superuser.penjualan.sales_order.index_' . strtolower($step_txt))}}">
@@ -160,12 +194,15 @@
         </div>
         <div class="col-md-6 text-right">
           <button class="btn btn-primary btn-md btn-simpan" type="button"><i class="fa fa-save"></i> Simpan</button>
+          
           <button class="btn btn-primary btn-md btn-simpan-dan-ajukan-ke-lanjutan" type="button"><i class="fa fa-save"></i> Simpan dan ajukan ke Lanjutan</button>
         </div>
       </div>
     </form>
   </div>
 </div>
+
+
 @endsection
 
 @include('superuser.asset.plugin.select2')
@@ -449,6 +486,17 @@
       }
     })
   }
+
+  $('.select-transaksi').on('change', function() {
+      if ( this.value == '1')
+      {
+        $("#frm-cash").show();
+      }
+      else
+      {
+        $("#frm-cash").hide();
+      }
+    });
 
   // $(function () {
   //     $('.select-customer').on('change', function(){

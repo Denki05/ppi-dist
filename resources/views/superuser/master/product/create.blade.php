@@ -211,29 +211,29 @@
                               <div class="row">
                                 <div class="col">
                                   <div class="form-group">
-                                    <label for="buying_price">Harga Beli Bawah</label>
-                                    <input type="number" class="form-control" id="buying_price_under" name="buying_price_under" min="0" value="0" step="0.0001">
+                                    <label for="buying_price">Harga Beli </label>
+                                    <input type="number" class="form-control" id="buying_price" name="buying_price" min="0" value="0" step="0.0001">
                                   </div>
                                 </div>
                                 <div class="col">
                                   <div class="form-group">
-                                    <label for="buying_price">Harga Beli Atas</label>
-                                    <input type="number" class="form-control" id="buying_price_high" name="buying_price_high" min="0" value="0" step="0.0001">
+                                    <label for="buying_price">Harga Jual </label>
+                                    <input type="number" class="form-control" id="selling_price" name="selling_price" min="0" value="0" step="0.0001">
                                   </div>
                                 </div>
-                                <div class="w-100"></div>
-                                <div class="col">
+                                <!-- <div class="w-100"></div> -->
+                                <!-- <div class="col">
                                   <div class="form-group">
                                     <label for="buying_price">Harga Jual Bawah</label>
                                     <input type="number" class="form-control" id="selling_price_under" name="selling_price_under" min="0" value="0" step="0.0001">
                                   </div>
-                                </div>
-                                <div class="col">
+                                </div> -->
+                                <!-- <div class="col">
                                   <div class="form-group">
                                     <label for="buying_price">Harga Jual Atas</label>
                                     <input type="number" class="form-control" id="selling_price_high" name="selling_price_high" min="0" value="0" step="0.0001">
                                   </div>
-                                </div>
+                                </div> -->
                               </div>
                             </div>
                             <span class="text-danger">*Harga dalam kurs USD</span>

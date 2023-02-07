@@ -70,7 +70,7 @@ class PackingOrder extends Model
     	return $this->BelongsTo('App\Entities\Penjualan\SalesOrder','so_id','id');
     }
     public function member(){
-        return $this->BelongsTo('App\Entities\Master\CustomerOtherAddress','customer_other_address_id','id');
+        return $this->BelongsTo('App\Entities\Master\CustomerOtherAddress', 'customer_other_address_id', 'id');
     }
     public function warehouse(){
     	return $this->BelongsTo('App\Entities\Master\Warehouse','warehouse_id','id');
