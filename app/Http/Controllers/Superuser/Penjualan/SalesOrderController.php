@@ -415,7 +415,7 @@ class SalesOrderController extends Controller
         $warehouse = Warehouse::all();
         $sales = Sales::all();
         $product_category = ProductCategory::all();
-        // $product_type = ProductType::all();
+        $brand_lokal = BrandLokal::all();
         $ekspedisi = Ekspedisi::all();
 
         $data = [
@@ -424,7 +424,7 @@ class SalesOrderController extends Controller
             'warehouse' => $warehouse,
             'sales' => $sales,
             'product_category' => $product_category,
-            // 'product_type' => $product_type,
+            'brand_lokal' => $brand_lokal,
             'ekspedisi' => $ekspedisi,
             'result' => $result,
             'step' => $step,
@@ -990,7 +990,7 @@ class SalesOrderController extends Controller
             } catch (\Exception $e) {
                 DB::rollback();
 
-                // dd($e);
+                dd($e);
                 $data_json["IsError"] = TRUE;
                 $data_json["Message"] = "Sales Order Gagal Diubah, ".$e;
     
