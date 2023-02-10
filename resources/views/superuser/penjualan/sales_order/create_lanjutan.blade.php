@@ -49,12 +49,68 @@
     </div>
     <div class="main-column" id="main-column-middle">
       <div class="content">
-        
+      <h5>#Detail Pesanan</h5>
+      <hr>
+        <table class="table table-bordered" id="tableDetailPesanan">
+            <thead>
+              <tr>
+                <th scope="col" width="5%">NO</th>
+                <th scope="col" width="15%">Product</th>
+                <th scope="col" width="5%">Qty</th>
+                <th scope="col" width="10%">Kemasan</th>
+                <th scope="col" width="5%">In Stock</th>
+                <th scope="col" width="5%">Price</th>
+                <th scope="col" width="20%">Subtotal</th>
+              </tr>
+            </thead>
+            <tbody>
+              @if(count($result->so_detail) <= 0)
+                <tr>
+                  <td colspan="13" align="center">Data tidak ditemukan</td>
+                </tr>
+              @endif
+              @if(count($result->so_detail) > 0)
+                @foreach($result->so_detail as $index => $row)
+                  <input type="hidden" name="repeater[{{$index}}][product_id]" value="{{$row->product_id}}">
+                  <input type="hidden" name="repeater[{{$index}}][so_qty]" value="{{$row->qty}}">
+                  <input type="hidden" name="repeater[{{$index}}][so_item_id]" value="{{$row->id}}">
+                  <input type="hidden" name="repeater[{{$index}}][packaging]" class="form-control" readonly value="{{$row->packaging_txt()->scalar ?? ''}}">
+                  <input type="hidden" name="repeater[{{$index}}][price]" class="form-control" readonly value="{{$row->product->selling_price ?? 0}}">
+                    <tr class="index{{$index}}" data-index="{{$index}}">
+                      <td>{{$index + 1}}</td>
+                      <td>{{$row->product->code ?? ''}} - {{$row->product->name ?? ''}}</td>
+                      <td>{{$row->qty}}</td>
+                      <td>{{$row->packaging_txt()->scalar ?? ''}}</td>
+                      <td>
+                        <input type="number" name="repeater[{{$index}}][do_qty]" class="form-control count" data-index="{{$index}}" value="{{$row->qty}}" step="any" min="0" max="{{$row->qty}}">
+                      </td>
+                      <td>
+                        ${{$row->product->selling_price}}
+                      </td>
+                      <td>
+
+                      </td>
+                    </tr>
+                @endforeach
+              @endif
+          </tbody>
+        </table>
       </div>
     </div>
     <div class="main-column" id="main-column-right">
       <div class="content">
-        
+      <h5>#Discount</h5>
+      <hr>
+        <div class="row">
+        @if($step == 2)
+                    <div class="form-group row">
+                      <label class="col-md-2 col-form-label text-right">Kurs<span class="text-danger">*</span></label>
+                      <div class="col-md-10">
+                        <input type="text" name="idr_rate" class="form-control" step="any">
+                      </div>
+                    </div>
+                    @endif
+        </div>
       </div>
     </div>
 </div>

@@ -194,6 +194,7 @@ body {
   padding: 0 500px 0 0;
   white-space: nowrap;
   overflow: hidden;
+  background: #ffffff;
 }
 
 .main-column {
@@ -203,16 +204,16 @@ body {
 }
 
 #main-column-left {
-  width: 28%;
-  background: #00FFB4;
+  width: 25%;
+  background: #ffffff;
 }
 #main-column-middle {
-  width: 500px;
-  background: #434343;
+  width: 860px;
+  background: #ffffff;
 }
 #main-column-right {
-  width: 50%;
-  background: #FF9000;
+  width: 30%;
+  background: #ffffff;
 }
 
 .content {
