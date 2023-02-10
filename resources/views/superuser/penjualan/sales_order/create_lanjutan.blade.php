@@ -5,44 +5,37 @@
 @extends('superuser.app')
 
 @section('content')
-  <div class="container-fluid text-center">    
-    <div class="row content">
-      <div class="col-sm-2 sidenav border">
-        <div class="well">
-          <div class="row">
-            <label class="col-md-3 col-form-label text-right">Code</label>
-            <div class="col-md-7">
-              <div class="form-control-plaintext">{{ $result->code }}</div>
-            </div>
+<div id="main">
+    <div class="main-column" id="main-column-left">
+      <div class="content">
+      <h5>#Detail SO</h5>
+      <hr>
+        <div class="row">
+          <label class="col-xs-4 col-sm-4 col-md-4 control-label" for="textinput">Code</label>
+          <div class="col-xs-8 col-sm-8 col-md-8">
+            <p>{{ $result->code }}</p>
           </div>
         </div>
-        <div class="well">
-          <div class="row">
-            <label class="col-md-3 col-form-label text-right">Create</label>
-            <div class="col-md-7">
-              <div class="form-control-plaintext">{{ date("d-m-Y", strtotime($result->created_at)) }}</div>
-            </div>
+        <div class="row">
+          <label class="col-xs-4 col-sm-4 col-md-4 control-label" for="textinput">Create</label>
+          <div class="col-xs-8 col-sm-8 col-md-8">
+            <p>{{ date('d-m-Y', strtotime($result->created_at)) }}</p>
           </div>
         </div>
-        <div class="well text-left">
-          <div class="row">
-            <label>Customer :</label>
-            <div class="col-10">
-              <input type="text" readonly class="form-control-plaintext " value="{{ $result->member->name }}">
-            </div>
+        <div class="row">
+          <label class="col-xs-4 col-sm-4 col-md-4 control-label" for="textinput">Customer</label>
+          <div class="col-xs-8 col-sm-8 col-md-8">
+            <p>{{ $result->member->name }}</p>
           </div>
         </div>
-        <div class="well text-left">
-          <div class="row">
-            <label>Alamat :</label>
-            <div class="col-10">
-              <input type="text" readonly class="form-control-plaintext " value="{{ $result->member->address }}">
-            </div>
+        <div class="row">
+          <label class="col-xs-4 col-sm-4 col-md-4 control-label" for="textinput">Alamat</label>
+          <div class="col-xs-8 col-sm-8 col-md-8">
+            <p>{{ $result->member->address }}</p>
           </div>
         </div>
-        <div class="well text-left">
-          <div class="row">
-            <label>Gudang <span class="text-danger">*</span> :</label>
+        <div class="form-group row">
+          <label class="col-xs-4 col-sm-4 col-md-4 control-label" for="origin_warehouse_id">Gudang<span class="text-danger">*</span></label>
             <div class="col-10">
               <select class="form-control js-select2" name="origin_warehouse_id">
                 <option value="">Pilih Gudang</option>
@@ -51,26 +44,21 @@
                 @endforeach
               </select>
             </div>
-          </div>
-        </div>
-      </div>
-      <div class="col-sm-8 text-left"> 
-        <h1>Welcome</h1>
-        <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.</p>
-        <hr>
-        <h3>Test</h3>
-        <p>Lorem ipsum...</p>
-      </div>
-      <div class="col-sm-2 sidenav">
-        <div class="well">
-          <p>ADS</p>
-        </div>
-        <div class="well">
-          <p>ADS</p>
         </div>
       </div>
     </div>
-  </div>
+    <div class="main-column" id="main-column-middle">
+      <div class="content">
+        
+      </div>
+    </div>
+    <div class="main-column" id="main-column-right">
+      <div class="content">
+        
+      </div>
+    </div>
+</div>
+
 
 <!-- Modal -->
 @include('superuser.penjualan.sales_order.customer_performance_modal')

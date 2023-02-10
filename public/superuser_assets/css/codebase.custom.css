@@ -189,3 +189,32 @@ body {
   letter-spacing: 0.1em;
 }
 
+#main {
+  min-width: 500px;
+  padding: 0 500px 0 0;
+  white-space: nowrap;
+  overflow: hidden;
+}
+
+.main-column {
+  position: relative;
+  display: inline-block;
+  vertical-align: top;
+}
+
+#main-column-left {
+  width: 28%;
+  background: #00FFB4;
+}
+#main-column-middle {
+  width: 500px;
+  background: #434343;
+}
+#main-column-right {
+  width: 50%;
+  background: #FF9000;
+}
+
+.content {
+  white-space: normal;
+}
