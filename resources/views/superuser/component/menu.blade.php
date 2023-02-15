@@ -1,7 +1,6 @@
-
-        <nav class="bottom-navbar">
+<nav class="bottom-navbar" style="height: 40px;">
           <div class="container">
-            <ul class="nav page-navigation">
+            <ul class="nav page-navigation mt-0">
               <li class="nav-item">
                 <a class="nav-link {{ (Route::currentRouteName() == 'superuser.index') ? 'active' : '' }}" href="{{ route('superuser.index') }}">
                   <i class="mdi mdi-home-variant menu-icon"></i>

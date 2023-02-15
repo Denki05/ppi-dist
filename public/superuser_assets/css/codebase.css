@@ -29453,7 +29453,8 @@ textarea.is-invalid.tt-hint {
   margin-bottom: 0; }
 
 .card-text:last-child {
-  margin-bottom: 0; }
+  margin-bottom: 0;
+}
 
 .card-link + .card-link {
   margin-left: 1rem; }
@@ -36738,7 +36739,7 @@ code {
   background: #fff;
   border: 1px solid #e4e9f0; }
   .card .card-body {
-    padding: 30px 28px; }
+    padding: 15px 10px; }
     .card .card-body + .card-body {
       padding-top: 1rem; }
   .card .card-title {
