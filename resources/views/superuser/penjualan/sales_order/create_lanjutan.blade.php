@@ -1,8 +1,3 @@
-<?php
-  $sub_total = 0;
-  $idr_sub_total = 0;
-?>
-
 @foreach($result->so_detail as $index => $row)
   @php $row->product->name @endphp
 @endforeach
@@ -228,82 +223,96 @@
 
   <!-- Detail Pesanan -->
   <div class="row">
-    <div class="col-12">
-      <div class="card mb-2 border-0">
-        <div class="card-body">
-          <table class="table table-bordered" id="tableDetailPesanan">
-              <thead>
-                <tr>
-                  <th scope="col" width="2%">#</th>
-                  <th scope="col" width="2%">NO</th>
-                  <th scope="col" width="5%">Code</th>
-                  <th scope="col" width="10%">Product</th>
-                  <th scope="col" width="2%">Acuan<br>(USD)</th>
-                  <th scope="col" width="2%">Qty<br>(KG)</th>
-                  <th scope="col" width="5%">In Stock</th>
-                  <th scope="col" width="5%">Kemasan</th>
-                  <th scope="col" width="5%">Harga</th>
-                  <th scope="col" width="2%">Disc</th>
-                  <th scope="col" width="5%">Netto</th>
-                  <th scope="col" width="10%">Jumlah</th>
-                </tr>
-              </thead>
-              <tbody>
-                @if(count($result->so_detail) <= 0)
+    <form method="POST" action="">  
+      <div class="col-12">
+        <div class="card mb-2 border-0">
+          <div class="card-body">
+            <table class="table table-bordered" id="tableDetailPesanan">
+                <thead>
                   <tr>
-                    <td colspan="13" align="center">Data tidak ditemukan</td>
+                    <th scope="col" width="2%">#</th>
+                    <th scope="col" width="2%">NO</th>
+                    <th scope="col" width="5%">Code</th>
+                    <th scope="col" width="10%">Product</th>
+                    <th scope="col" width="2%">Acuan<br>(USD)</th>
+                    <th scope="col" width="2%">Qty<br>(KG)</th>
+                    <th scope="col" width="5%">In Stock</th>
+                    <th scope="col" width="5%">Kemasan</th>
+                    <th scope="col" width="5%">Harga</th>
+                    <th scope="col" width="2%">Disc</th>
+                    <th scope="col" width="5%">Netto</th>
+                    <th scope="col" width="10%">Jumlah</th>
                   </tr>
-                @endif
-                @if(count($result->so_detail) > 0)
-                  @foreach($result->so_detail as $index => $row)
-                      <tr class="row-item">
-                        <td><input type="checkbox" name="checkProductList" step="any"></td>
-                        <td>{{$index + 1}}</td>
-                        <td class="product_code">{{$row->product->code ?? ''}}</td>
-                        <td class="product_name">{{$row->product->name ?? ''}}</td>
-                        <td>
-                          $<span class="invoice-item-price-label">{{$row->product->selling_price}}</span>
-                          <input type="hidden" class="form-control invoice-item-price" readonly value="{{$row->product->selling_price}}">
-                        </td>
-                        <td>{{ $row->qty }}</td>
-                        <td>
-                          <input type="text" style="width: 50px;  margin-right: auto; margin-left: auto; text-align: center;"  class="form-control invoice-item-qty" value="{{$row->qty}}" step="any" min="0" max="{{$row->qty}}">
-                        </td>
-                        <td>{{$row->packaging_txt()->scalar ?? ''}}</td>
-                        <td class="text-right">
-                          $<span class="invoice-price"></span>
-                        </td>
-                        <td class="text-right">
-                          <input type="text" style="width: 50px;  margin-right: auto; margin-left: auto; text-align: center;" class="form-control detail-disc-cash"  step="any" min="0">
-                        </td>
-                        <td class="text-right">
-                          <span class="invoice-netto"></span>
-                        </td>
-                        <td class="text-right">
-                          <span class="invoice-subtotal-label"></span>
-                        </td>
-                      </tr>
-                  @endforeach
-                @endif
-              </tbody>
-              <tfoot>
-                <tr class="row-footer-subtotal">
-                  <td colspan="11" class="text-right"><span><b>Subtotal</b></span></td>
-                  <td class="text-right">
-                    <strong><span class="invoice-subtotal-label"></span></strong>
-                  </td>
-                </tr>
-                <tr class="row-footer-subtotal">
-                  <td colspan="11" class="text-right"><span><b>Total Akhir</b></span></td>
-                  <td class="text-right">
-                    <strong><span class="invoice-subtotal-label"></span></strong>
-                  </td>
-                </tr>
-              </tfoot>
-          </table>
+                </thead>
+                <tbody>
+                  @if(count($result->so_detail) <= 0)
+                    <tr>
+                      <td colspan="13" align="center">Data tidak ditemukan</td>
+                    </tr>
+                  @endif
+                  @if(count($result->so_detail) > 0)
+                    @foreach($result->so_detail as $index => $row)
+                        
+                        <tr>
+                          <td>
+                            <input type="checkbox" name="checkProductList" step="any">
+                          </td>
+                          <td>
+                            {{$index + 1}}
+                          </td>
+                          <td>
+                            <span>{{ $row->product['code'] }}</span>
+                          </td>
+                          <td>
+                            <span>{{ $row->product['name'] }}</span>
+                          </td>
+                          <td>
+                            $<span class="item-price2">{{ $row->product['selling_price'] }}</span>
+                          </td>
+                          <td>
+                            <span>{{ $row['qty'] }}</span>
+                          </td>
+                          <td>
+                            <input type="text" style="width: 50px;  margin-right: auto; margin-left: auto; text-align: center;" class="form-control in_stock" value="{{ $row->qty }}"></input>
+                          </td>
+                          <td>
+                            {{$row->packaging_txt()->scalar ?? ''}}
+                          </td>
+                          <td>
+                            <span class="price_before_disc"></span>
+                          </td>
+                          <td>
+                          <input type="text" style="width: 50px;  margin-right: auto; margin-left: auto; text-align: center;" class="form-control disc_cash"></input>
+                          </td>
+                          <td>
+                            <span class="price_after_disc"></span>
+                          </td>
+                          <td>
+                            <span class="subtotal_item"></span>
+                          </td>
+                        </tr>
+                    @endforeach
+                  @endif
+                </tbody>
+                <tfoot>
+                  <tr class="row-footer-subtotal">
+                    <td colspan="11" class="text-right"><span><b>Subtotal</b></span></td>
+                    <td class="text-right">
+                      <strong><span class="invoice-subtotal-label"></span></strong>
+                    </td>
+                  </tr>
+                  <tr class="row-footer-subtotal">
+                    <td colspan="11" class="text-right"><span><b>Total Akhir</b></span></td>
+                    <td class="text-right">
+                      <strong><span class="invoice-subtotal-label"></span></strong>
+                    </td>
+                  </tr>
+                </tfoot>
+            </table>
+          </div>
         </div>
       </div>
-    </div>
+    </form>
   </div>
 </div>
 @endsection
@@ -325,7 +334,24 @@
         ] 
     });
 
-    $('.js-select2').select2();
+    $('.js-select2').select2(); 
+
+    $('.in_stock').on('input', function() {
+      var selector = $(this).closest("tr") //get closest tr
+      var price = parseInt(selector.find('.item-price2').text()) //get price
+      var disc = parseInt(selector.find('.disc_cash').text()) //get disc
+      var qty = parseInt($(this).val());
+      var prodtotal = price * qty;
+      selector.find('.price_after_disc').html(prodtotal); //add total in same row
+      var result = 0;
+      //loop through total column
+      $("tr .price_after_disc").each(function() {
+        //check if the text is not ""
+        result += ($(this).text().trim() != "") ? parseInt($(this).text()) : 0
+      })
+      //add result inside subtotal
+      $(".subtotal_item").text(result)
+    })
   })
 </script>
 @endpush
