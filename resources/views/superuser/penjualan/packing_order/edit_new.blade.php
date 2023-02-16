@@ -607,6 +607,7 @@
       },
     })
   }
+  
   function total(){
     let idr_sub_total = $('input[name="idr_sub_total"]').val();
     let discount_1 = parseFloat($('input[name="discount_1"]').val());
