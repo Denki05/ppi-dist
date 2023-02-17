@@ -67,7 +67,7 @@
                     <input type="checkbox" value="{{$row->id}}" style="width: 20px;height: 20px;">
                   </td>
                   <td>{{$row->code}}</td>
-                  <td>{{$row->name}}</td>
+                  <td>{{$row->name}}-{{$row->category->type}}</td>
                   <td>{{$row->buying_price}}</td>
                   <td>{{$row->selling_price}}</td>
                   <td>
