@@ -213,15 +213,6 @@
             </div>
           </div>
 
-          <!-- <div class="form-group row">
-            <label class="col-6 col-md-3 col-form-label font-weight-bold">Validasi KTP</label>
-            <div class="col-6 col-md-6 col-form-label">
-              <input type="hidden" name="delivery_cost_note" class="form-control" value="{{$result->do_cost->delivery_cost_note}}">
-              <input type="text" name="delivery_cost_idr" class="form-control count formatRupiah" {{ $result->status == 1 ? '' : 'readonly' }} value="{{number_format($result->do_cost->delivery_cost_idr ?? 0,0,',','.')}}">
-              <button type="button" class="btn btn-outline-info ml-10" data-toggle="modal" data-target="#modal-manage">Manage</button>
-            </div>
-          </div> -->
-
           <div class="form-group row">
             <div class="col-6">
               <button type="button" class="btn btn-warning" onclick="changeStep(1)">Back</button>

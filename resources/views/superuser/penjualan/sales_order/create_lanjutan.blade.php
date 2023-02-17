@@ -109,12 +109,8 @@
                   <div class="form-group row">
                     <label style="font-size: 10pt;" class="col-md-4 col-form-label text-right">Disc Cash</label>
                       <div class="col-4">
-                        <!-- <select name="base_disc" id="base_disc" class="form-control js-select2">
-                            <option></option>
-                            <option data-discount="2">$2</option>
-                            <option data-discount="4">$4</option>
-                        </select> -->
                         <input type="text" class="base_disc form-control formatRupiah" onkeyup="discountOnChange()" />
+                        <input type="hidden" class="form-control formatRupiah total_discount_cash_idr" value="{{number_format($idr_sub_total,0,',','.')}}"></input>
                       </div>
                   </div>
                 @endif
@@ -142,7 +138,7 @@
                 <div class="form-group row">
                   <label class="col-md-4 col-form-label text-right">Voucher</label>
                   <div class="col-md-6">
-                    <input type="number" name="idr_rate" class="form-control text-center" step="any">
+                    <input type="text" name="voucher_idr" class="form-control count formatRupiah" value="{{number_format($result->do_cost->voucher_idr ?? 0,0,',','.')}}">
                   </div>
                 </div>
                 @endif
@@ -175,7 +171,7 @@
                 <div class="form-group row">
                   <label class="col-md-4 col-form-label text-right">Ongkir</label>
                   <div class="col-md-6">
-                    <input type="number" name="idr_rate" class="form-control text-center" step="any">
+                    <input type="text" name="delivery_cost_idr" class="form-control count formatRupiah" {{ $result->status == 1 ? '' : 'readonly' }} value="{{number_format($result->do_cost->delivery_cost_idr ?? 0,0,',','.')}}">
                   </div>
                 </div>
                 @endif
@@ -275,10 +271,10 @@
                             <span>{{ $row->product['name'] }}</span>
                           </td>
                           <td>
-                            <span class="item-price" name="item-price">{{ $row->product->selling_price }}</span>
+                            $<span class="do-detail-price" data-id="{{$row->id}}">{{$row->product->selling_price}}</span>
                           </td>
-                          <td>
-                            <span class="item-qty" name="item-qty">{{ $row->qty }}</span>
+                          <td class="do-detail-qty" data-id="{{$row->id}}">
+                            {{$row->qty}}
                           </td>
                           <td>
                             <input type="text" style="width: 50px;  margin-right: auto; margin-left: auto; text-align: center;" class="form-control in_stock" value="{{ $row->qty }}"></input>
@@ -293,10 +289,10 @@
                             <input type="text" name="do_details[{{$index}}][usd_disc]" value="{{$row->usd_disc}}" class="form-control formatRupiah do-detail-disc-usd" data-id="{{$row->id}}" onchange="discountOnChange({{$row->id}})" />
                           </td>
                           <td>
-                            <input type="text" style="text-align: right;" name="idr_sub_total" class="form-control" readonly value="{{number_format($idr_sub_total,0,',','.')}}">
+                            <input type="text" name="idr_sub_total" class="form-control" readonly value="{{number_format($idr_sub_total,0,',','.')}}">
                           </td>
                           <td>
-                            <span class="purchase_total_idr">{{number_format($idr_sub_total,0,',','.')}}</span>
+                            $<span class="do-detail-total" data-id="{{$row->id}}">{{$row->total}}</span>
                           </td>
                         </tr>
                     @endforeach
@@ -613,7 +609,7 @@
     let discount_2 = parseFloat($('input[name="discount_2"]').val());
     let discount_idr = $('input[name="discount_idr"]').val();
     let voucher_idr = $('input[name="voucher_idr"]').val();
-    let cashback_idr = $('input[name="cashback_idr"]').val();
+    // let cashback_idr = $('input[name="cashback_idr"]').val();
     let delivery_cost_idr = $('input[name="delivery_cost_idr"]').val();
     let other_cost_idr = $('input[name="other_cost_idr"]').val();
     let sub_total_discount = 0;
@@ -623,23 +619,17 @@
 
 
     idr_sub_total = parseFloat(idr_sub_total.split('.').join(''));
-    //discount_idr = parseFloat(discount_idr.split('.').join(''));
     voucher_idr = parseFloat(voucher_idr.split('.').join(''));
-    cashback_idr = parseFloat(cashback_idr.split('.').join(''));
     delivery_cost_idr = parseFloat(delivery_cost_idr.split('.').join(''));
-    //other_cost_idr = parseFloat(other_cost_idr.split('.').join(''));
 
     idr_sub_total = (isNaN(idr_sub_total)) ? 0 : idr_sub_total;
     discount_1 = (isNaN(discount_1)) ? 0 : discount_1 / 100;
     discount_2 = (isNaN(discount_2)) ? 0 : discount_2 / 100;
-    //discount_idr = (isNaN(discount_idr)) ? 0 : discount_idr;
     voucher_idr = (isNaN(voucher_idr)) ? 0 : voucher_idr;
-    cashback_idr = (isNaN(cashback_idr)) ? 0 : cashback_idr;
     delivery_cost_idr = (isNaN(delivery_cost_idr)) ? 0 : delivery_cost_idr;
     other_cost_idr = (isNaN(other_cost_idr)) ? 0 : other_cost_idr;
 
     sub_total_discount = Math.ceil((idr_sub_total * discount_1) + ((idr_sub_total - (idr_sub_total * discount_1)) * discount_2));
-    //sub_total_discount = Math.ceil((idr_sub_total * discount_1) + ((idr_sub_total - (idr_sub_total * discount_1)) * discount_2) + discount_idr);
 
     if($('.checkbox_ppn').is(":checked")){
       sub_ppn = Math.ceil((idr_sub_total - sub_total_discount) * 10/100);
@@ -648,7 +638,7 @@
       sub_ppn = 0;
     }
 
-    sub_purchase_total= Math.ceil(idr_sub_total - sub_total_discount - voucher_idr - cashback_idr + sub_ppn);
+    sub_purchase_total= Math.ceil(idr_sub_total - sub_total_discount - voucher_idr + sub_ppn);
     grand_total_idr = Math.ceil(sub_purchase_total + delivery_cost_idr);
     //grand_total_idr = Math.ceil(sub_purchase_total + delivery_cost_idr + other_cost_idr);
 
