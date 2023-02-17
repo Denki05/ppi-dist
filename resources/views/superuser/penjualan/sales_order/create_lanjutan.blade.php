@@ -108,9 +108,13 @@
                 @if($step == 2)
                   <div class="form-group row">
                     <label style="font-size: 10pt;" class="col-md-4 col-form-label text-right">Disc Cash</label>
-                      <div class="col-4">
+                      <div class="col-3">
                         <input type="text" class="base_disc form-control formatRupiah" onkeyup="discountOnChange()" />
-                        <input type="hidden" class="form-control formatRupiah total_discount_cash_idr" value="{{number_format($idr_sub_total,0,',','.')}}"></input>
+                      </div>
+                      <div class="col-5">
+                      <div class="col-10 col-md-10 col-form-label total_discount_cash_idr">
+                        {{number_format($idr_sub_total,0,',','.')}}
+                      </div>
                       </div>
                   </div>
                 @endif
@@ -271,9 +275,9 @@
                             <span>{{ $row->product['name'] }}</span>
                           </td>
                           <td>
-                            $<span class="do-detail-price" data-id="{{$row->id}}">{{$row->product->selling_price}}</span>
+                            $<span class="do-detail-price" data-id="{{$row->product->id}}">{{$row->product->selling_price}}</span>
                           </td>
-                          <td class="do-detail-qty" data-id="{{$row->id}}">
+                          <td class="do-detail-qty" data-id="{{$row->product->id}}">
                             {{$row->qty}}
                           </td>
                           <td>
@@ -286,13 +290,13 @@
                             <input type="text" style="text-align: right;" name="idr_total_before_discount" class="form-control" readonly value="{{number_format($idr_sub_total,0,',','.')}}">
                           </td>
                           <td>
-                            <input type="text" name="do_details[{{$index}}][usd_disc]" value="{{$row->usd_disc}}" class="form-control formatRupiah do-detail-disc-usd" data-id="{{$row->id}}" onchange="discountOnChange({{$row->id}})" />
+                            <input type="text" name="do_details[{{$index}}][usd_disc]" value="{{$row->usd_disc}}" class="form-control formatRupiah do-detail-disc-usd" data-id="{{$row->product->id}}" onchange="discountOnChange({{$row->id}})" />
                           </td>
                           <td>
                             <input type="text" name="idr_sub_total" class="form-control" readonly value="{{number_format($idr_sub_total,0,',','.')}}">
                           </td>
                           <td>
-                            $<span class="do-detail-total" data-id="{{$row->id}}">{{$row->total}}</span>
+                            $<span class="do-detail-total" data-id="{{$row->product->id}}">{{$row->total}}</span>
                           </td>
                         </tr>
                     @endforeach
