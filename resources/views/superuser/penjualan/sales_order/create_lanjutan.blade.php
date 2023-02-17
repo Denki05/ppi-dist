@@ -1,3 +1,7 @@
+<?php
+  $sub_total = 0;
+  $idr_sub_total = 0;
+?>
 @foreach($result->so_detail as $index => $row)
   @php $row->product->name @endphp
 @endforeach
@@ -105,15 +109,26 @@
                   <div class="form-group row">
                     <label style="font-size: 10pt;" class="col-md-4 col-form-label text-right">Disc Cash</label>
                       <div class="col-4">
-                        <select class="form-control js-select2 base_disc" style="font-size: 9pt;">
-                          <option value=""></option>
-                          <option value="2">$2</option>
-                          <option value="4">$4</option>
+                        <select name="base_disc" id="base_disc" class="form-control js-select2">
+                            <option></option>
+                            <option data-discount="2">$2</option>
+                            <option data-discount="4">$4</option>
                         </select>
                       </div>
                   </div>
                 @endif
               </div>
+              <!-- <div class="col-sm">
+                <div>
+                    <label for="price">Harga</label>
+                    <input type="text" name="price" readonly />
+                    <br>
+                    <label for="price">Discount</label>
+                    <input type="text" name="discount" readonly />
+                    <br>
+                    <h4>Total: <span id="total">0</span></h4>
+                </div>
+              </div> -->
             </div>
           </div>
         </div>
@@ -252,7 +267,10 @@
                   @endif
                   @if(count($result->so_detail) > 0)
                     @foreach($result->so_detail as $index => $row)
-                        
+                        <?php
+                          $sub_total += floatval($row->total) ?? 0;
+                          $idr_sub_total += ceil((($row->price * $result->idr_rate) * $row->qty) - ($row->total_disc * $result->idr_rate)); 
+                        ?>
                         <tr>
                           <td>
                             <input type="checkbox" name="checkProductList" step="any">
@@ -267,10 +285,10 @@
                             <span>{{ $row->product['name'] }}</span>
                           </td>
                           <td>
-                            $<span class="item-price2">{{ $row->product['selling_price'] }}</span>
+                            <span class="item-price" name="item-price">{{ $row->product->selling_price }}</span>
                           </td>
                           <td>
-                            <span>{{ $row['qty'] }}</span>
+                            <span class="item-qty" name="item-qty">{{ $row->qty }}</span>
                           </td>
                           <td>
                             <input type="text" style="width: 50px;  margin-right: auto; margin-left: auto; text-align: center;" class="form-control in_stock" value="{{ $row->qty }}"></input>
@@ -279,10 +297,10 @@
                             {{$row->packaging_txt()->scalar ?? ''}}
                           </td>
                           <td>
-                            <span class="price_before_disc"></span>
+                            <span class="price_before_disc" name="price_before_disc"></span>
                           </td>
                           <td>
-                          <input type="text" style="width: 50px;  margin-right: auto; margin-left: auto; text-align: center;" class="form-control disc_cash"></input>
+                            <input type="text" name="disc-cash" class="form-control" style="width: 50px;  margin-right: auto; margin-left: auto; text-align: center;" readonly />
                           </td>
                           <td>
                             <span class="price_after_disc"></span>
@@ -336,22 +354,14 @@
 
     $('.js-select2').select2(); 
 
-    $('.in_stock').on('input', function() {
-      var selector = $(this).closest("tr") //get closest tr
-      var price = parseInt(selector.find('.item-price2').text()) //get price
-      var disc = parseInt(selector.find('.disc_cash').text()) //get disc
-      var qty = parseInt($(this).val());
-      var prodtotal = price * qty;
-      selector.find('.price_after_disc').html(prodtotal); //add total in same row
-      var result = 0;
-      //loop through total column
-      $("tr .price_after_disc").each(function() {
-        //check if the text is not ""
-        result += ($(this).text().trim() != "") ? parseInt($(this).text()) : 0
-      })
-      //add result inside subtotal
-      $(".subtotal_item").text(result)
-    })
+    $('#base_disc').on('change', function(){
+      // ambil data dari elemen option yang dipilih
+      const disc = $('#base_disc option:selected').data('discount');
+      // tampilkan data ke element
+      $('[name=disc-cash]').val(disc);
+    });
+
+    
   })
 </script>
 @endpush
