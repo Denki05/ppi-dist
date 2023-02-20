@@ -121,7 +121,7 @@
                     <div class="col-md-8">
                       <select class="form-control js-select2" name="ekspedisi_id">
                         <option value="">==Select ekspedisi==</option>
-                        @foreach($ekspedisi as $index => $row)
+                        @foreach($vendor as $index => $row)
                         <option value="{{$row->id}}" @if($result->ekspedisi_id == $row->id) selected @endif>{{$row->name}}</option>
                         @endforeach
                       </select>

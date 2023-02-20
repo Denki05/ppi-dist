@@ -435,7 +435,7 @@ class PackingOrderController extends Controller
             'vendor' => $vendor,
             'result' => $result
         ];
-        return view($this->view."edit_new",$data);
+        return view($this->view."edit",$data);
     }
 
     public function detail($id)

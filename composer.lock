@@ -2397,16 +2397,16 @@
         },
         {
             "name": "maatwebsite/excel",
-            "version": "3.1.46",
+            "version": "3.1.47",
             "source": {
                 "type": "git",
                 "url": "https://github.com/SpartnerNL/Laravel-Excel.git",
-                "reference": "ba0b9b9305d5b603c3938d4d1d4a13025c92c241"
+                "reference": "fd928d68a1422d6abce73255b4406b3c5659e197"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/SpartnerNL/Laravel-Excel/zipball/ba0b9b9305d5b603c3938d4d1d4a13025c92c241",
-                "reference": "ba0b9b9305d5b603c3938d4d1d4a13025c92c241",
+                "url": "https://api.github.com/repos/SpartnerNL/Laravel-Excel/zipball/fd928d68a1422d6abce73255b4406b3c5659e197",
+                "reference": "fd928d68a1422d6abce73255b4406b3c5659e197",
                 "shasum": ""
             },
             "require": {
@@ -2461,7 +2461,7 @@
             ],
             "support": {
                 "issues": "https://github.com/SpartnerNL/Laravel-Excel/issues",
-                "source": "https://github.com/SpartnerNL/Laravel-Excel/tree/3.1.46"
+                "source": "https://github.com/SpartnerNL/Laravel-Excel/tree/3.1.47"
             },
             "funding": [
                 {
@@ -2473,7 +2473,7 @@
                     "type": "github"
                 }
             ],
-            "time": "2023-01-26T20:40:09+00:00"
+            "time": "2023-02-16T15:09:07+00:00"
         },
         {
             "name": "maennchen/zipstream-php",
@@ -4800,26 +4800,26 @@
         },
         {
             "name": "recca0120/terminal",
-            "version": "v1.10.0",
+            "version": "v1.11.0",
             "source": {
                 "type": "git",
                 "url": "https://github.com/recca0120/laravel-terminal.git",
-                "reference": "4dfb44f48e48a4c8707ebd430e4e3a300aa3a1a5"
+                "reference": "902f92d214307ae42bfe503e1b9aa4a455c5b014"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/recca0120/laravel-terminal/zipball/4dfb44f48e48a4c8707ebd430e4e3a300aa3a1a5",
-                "reference": "4dfb44f48e48a4c8707ebd430e4e3a300aa3a1a5",
+                "url": "https://api.github.com/repos/recca0120/laravel-terminal/zipball/902f92d214307ae42bfe503e1b9aa4a455c5b014",
+                "reference": "902f92d214307ae42bfe503e1b9aa4a455c5b014",
                 "shasum": ""
             },
             "require": {
-                "illuminate/config": "^5.1|^6.0|^7.0|^8.0|^9.0",
-                "illuminate/console": "^5.1|^6.0|^7.0|^8.0|^9.0",
-                "illuminate/database": "^5.1|^6.0|^7.0|^8.0|^9.0",
-                "illuminate/events": "^5.1|^6.0|^7.0|^8.0|^9.0",
-                "illuminate/filesystem": "^5.1|^6.0|^7.0|^8.0|^9.0",
-                "illuminate/routing": "^5.1|^6.0|^7.0|^8.0|^9.0",
-                "illuminate/view": "^5.1|^6.0|^7.0|^8.0|^9.0",
+                "illuminate/config": "^5.1|^6.0|^7.0|^8.0|^9.0|^10.0",
+                "illuminate/console": "^5.1|^6.0|^7.0|^8.0|^9.0|^10.0",
+                "illuminate/database": "^5.1|^6.0|^7.0|^8.0|^9.0|^10.0",
+                "illuminate/events": "^5.1|^6.0|^7.0|^8.0|^9.0|^10.0",
+                "illuminate/filesystem": "^5.1|^6.0|^7.0|^8.0|^9.0|^10.0",
+                "illuminate/routing": "^5.1|^6.0|^7.0|^8.0|^9.0|^10.0",
+                "illuminate/view": "^5.1|^6.0|^7.0|^8.0|^9.0|^10.0",
                 "php": ">=5.5.9",
                 "symfony/finder": "^2.7|^3.0|^4.0|^5.0|^6.0",
                 "webmozart/glob": "^4.1"
@@ -4828,7 +4828,7 @@
                 "mikey179/vfsstream": "^1.6",
                 "mockery/mockery": "^0.9.4|^1.0",
                 "nesbot/carbon": "^1.20|^2.0",
-                "phpunit/phpunit": "^4.8|^5.1|^6.1|^7.0|^8.0|^9.0",
+                "phpunit/phpunit": "^4.8|^5.1|^6.1|^7.0|^8.0|^9.0|^10.0",
                 "roave/security-advisories": "dev-latest",
                 "vlucas/phpdotenv": "^4.0|^5.1"
             },
@@ -4869,9 +4869,9 @@
             ],
             "support": {
                 "issues": "https://github.com/recca0120/laravel-terminal/issues",
-                "source": "https://github.com/recca0120/laravel-terminal/tree/v1.10.0"
+                "source": "https://github.com/recca0120/laravel-terminal/tree/v1.11.0"
             },
-            "time": "2022-02-08T16:56:00+00:00"
+            "time": "2023-02-15T12:26:42+00:00"
         },
         {
             "name": "sabberworm/php-css-parser",

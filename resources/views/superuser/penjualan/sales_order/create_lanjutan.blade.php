@@ -108,13 +108,8 @@
                 @if($step == 2)
                   <div class="form-group row">
                     <label style="font-size: 10pt;" class="col-md-4 col-form-label text-right">Disc Cash</label>
-                      <div class="col-3">
-                        <input type="text" class="base_disc form-control formatRupiah" onkeyup="discountOnChange()" />
-                      </div>
                       <div class="col-5">
-                      <div class="col-10 col-md-10 col-form-label total_discount_cash_idr">
-                        {{number_format($idr_sub_total,0,',','.')}}
-                      </div>
+                        <input type="text" class="base_disc form-control" onkeyup="discountOnChange()" /></th>
                       </div>
                   </div>
                 @endif
@@ -236,17 +231,16 @@
                 <thead>
                   <tr>
                     <th scope="col" width="2%">#</th>
-                    <th scope="col" width="2%">NO</th>
-                    <th scope="col" width="5%">Code</th>
+                    <th scope="col" width="10%">Code</th>
                     <th scope="col" width="10%">Product</th>
                     <th scope="col" width="2%">Acuan<br>(USD)</th>
                     <th scope="col" width="2%">Qty<br>(KG)</th>
                     <th scope="col" width="5%">In Stock</th>
                     <th scope="col" width="5%">Kemasan</th>
-                    <th scope="col" width="5%">Harga</th>
-                    <th scope="col" width="2%">Disc</th>
-                    <th scope="col" width="5%">Netto</th>
-                    <th scope="col" width="10%">Jumlah</th>
+                    <th scope="col" width="10%">Harga</th>
+                    <th scope="col" width="5%">Disc</th>
+                    <th scope="col" width="10%">Netto</th>
+                    <th scope="col" width="15%">Jumlah</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -257,14 +251,8 @@
                   @endif
                   @if(count($result->so_detail) > 0)
                     @foreach($result->so_detail as $index => $row)
-                        <?php
-                          $sub_total += floatval($row->total) ?? 0;
-                          $idr_sub_total += ceil((($row->price * $result->idr_rate) * $row->qty) - ($row->total_disc * $result->idr_rate)); 
-                        ?>
+                        
                         <tr>
-                          <td>
-                            <input type="checkbox" name="checkProductList" step="any">
-                          </td>
                           <td>
                             {{$index + 1}}
                           </td>
@@ -275,28 +263,30 @@
                             <span>{{ $row->product['name'] }}</span>
                           </td>
                           <td>
-                            $<span class="do-detail-price" data-id="{{$row->product->id}}">{{$row->product->selling_price}}</span>
+                            $<span class="do-detail-price" data-id="{{$row->id}}">{{$row->product->selling_price}}</span>
                           </td>
-                          <td class="do-detail-qty" data-id="{{$row->product->id}}">
+                          <td class="do-detail-qty" data-id="{{$row->id}}">
                             {{$row->qty}}
                           </td>
                           <td>
-                            <input type="text" style="width: 50px;  margin-right: auto; margin-left: auto; text-align: center;" class="form-control in_stock" value="{{ $row->qty }}"></input>
+                            <input type="text" style="width: 50px;  margin-right: auto; margin-left: auto; text-align: center;" name="in_stock" class="form-control in_stock" value="{{ $row->qty }}"></input>
                           </td>
                           <td>
                             {{$row->packaging_txt()->scalar ?? ''}}
                           </td>
+
+                          <!-- total before disc -->
                           <td>
-                            <input type="text" style="text-align: right;" name="idr_total_before_discount" class="form-control" readonly value="{{number_format($idr_sub_total,0,',','.')}}">
+                            <input type="text" style="text-align: right;" name="idr_total_before_discount" class="form-control" data-id="{{$row->id}}" readonly>
                           </td>
                           <td>
-                            <input type="text" name="do_details[{{$index}}][usd_disc]" value="{{$row->usd_disc}}" class="form-control formatRupiah do-detail-disc-usd" data-id="{{$row->product->id}}" onchange="discountOnChange({{$row->id}})" />
+                          <input type="text" name="do_details[{{$index}}][usd_disc]" value="{{$row->usd_disc}}" class="form-control do-detail-disc-usd" data-id="{{$row->id}}" onchange="discountOnChange({{$row->id}})" />
                           </td>
                           <td>
-                            <input type="text" name="idr_sub_total" class="form-control" readonly value="{{number_format($idr_sub_total,0,',','.')}}">
+                            <input type="text" name="idr_sub_total" class="form-control" readonly >
                           </td>
                           <td>
-                            $<span class="do-detail-total" data-id="{{$row->product->id}}">{{$row->total}}</span>
+                            $<span class="do-detail-total" data-id="{{$row->id}}">{{$row->total}}</span>
                           </td>
                         </tr>
                     @endforeach
@@ -304,13 +294,13 @@
                 </tbody>
                 <tfoot>
                   <tr class="row-footer-subtotal">
-                    <td colspan="11" class="text-right"><span><b>Subtotal</b></span></td>
+                    <td colspan="10" class="text-right"><span><b>Subtotal</b></span></td>
                     <td class="text-right">
                       <strong><span class="invoice-subtotal-label"></span></strong>
                     </td>
                   </tr>
                   <tr class="row-footer-subtotal">
-                    <td colspan="11" class="text-right"><span><b>Total Akhir</b></span></td>
+                    <td colspan="10" class="text-right"><span><b>Total Akhir</b></span></td>
                     <td class="text-right">
                       <strong><span class="invoice-subtotal-label"></span></strong>
                     </td>
@@ -344,276 +334,12 @@
 
     $('.js-select2').select2(); 
 
-    // $('#base_disc').on('change', function(){
-    //   // ambil data dari elemen option yang dipilih
-    //   const disc = $('#base_disc option:selected').data('discount');
-    //   // tampilkan data ke element
-    //   $('[name=disc-cash]').val(disc);
-    // });
-  })
-</script>
-<script>
-  var ekspedisiList = [<?php
-    if(isset($ekspedisi) && sizeof($ekspedisi) > 0) {
-      $index = 0;
-      foreach($ekspedisi as $index => $row) {
-        echo $row;
-
-        if ($index < sizeof($ekspedisi)) {
-          echo ',';
-        }
-
-        $index++;
-      }
-    }
-  ?>];
-
-  $(function(){
-    $('button[type="submit"]').removeAttr('disabled');
-
-    summernote = $('.summernote').length;
-    if(summernote > 0){
-      $('.summernote').summernote({
-          toolbar: [
-             ['style', ['style']],
-               ['font', ['bold', 'italic', 'underline', 'clear']],
-               ['fontname', ['fontname']],
-               ['color', ['color']],
-               ['para', ['ul', 'ol', 'paragraph']],
-          ],
-      });
-    }
-
-    $('.js-select2').select2();
-
-    customer_other_address('{{$result->customer_id}}','{{$result->customer_other_address_id}}');
-   
-    $(document).on('change','.count',function(){
-        total();
-    })
-    $(document).on('keyup','.count',function(){
-        total();
-    })
-
-    $(document).on('click','.checkbox_ppn',function(){
-        if($(this).is(":checked")){
-          $('input[name="ppn"]').val(10);
-          total();
-        }
-        else{  
-          $('input[name="ppn"]').val(0);
-        }
-
-    })
-
-    
-
-    $(document).on('change','select[name="ekspedisi_id"]',function(){
-      let ekspedisi_id = $('select[name="ekspedisi_id"]').val();
-      if (ekspedisi_id == "") {
-        $('input[name="delivery_cost_note"]').val("");
-      } else {
-        const ekspedisi = ekspedisiList.find(eks => eks.id == ekspedisi_id);
-        $('input[name="delivery_cost_note"]').val(ekspedisi.name);
-      }
-    })
-
-    $(document).on('keyup','input[name="delivery_cost_idr"]',function(){
-      let delivery_cost_idr = $('input[name="delivery_cost_idr"]').val();
-      delivery_cost_idr = parseFloat(delivery_cost_idr.split('.').join(''));
-      $('input[name="perkiraan_ongkir_view"]').val(formatRupiah(delivery_cost_idr));
-    })
-
-    $(document).on('click','.btn-delete',function(){
-      let id = $(this).data('id');
-      $('#frmDestroyItem').find('input[name="id"]').val(id);
-      if(confirm("Apakah anda yakin ingin menghapus item ini ?")){
-        $('#frmDestroyItem').submit();
-      }
-    })
-
-    $(document).on('change','.select-other-address',function(){
-      let val = $(this).val();
-      if(val != ""){
-        customer_other_detail(val,0);
-      }else{
-        $('textarea[name="delivery_address"]').val("");
-      }
-    })
-
-    $(document).on('keyup','.formatRupiah',function(){
-      let val = $(this).val();
-      $(this).val(formatRupiah(val));
-    })
-
-    $(document).on('submit','#frmUpdateNew',function(e){
-      e.preventDefault();
-      if(confirm("Apakah anda yakin ingin menyimpan data ini?")){
-        let _form = $('#frmUpdateNew');
-        $.ajax({
-          url : '{{route('superuser.penjualan.packing_order.update_new')}}',
-          method : "POST",
-          data : getFormData(_form),
-          dataType : "JSON",
-          beforeSend : function(){
-            $('#frmUpdateDataPemesan').find('button[type="submit"]').html('Loading...');
-          },
-          success : function(resp){
-            if(resp.IsError == true){
-              showToast('danger',resp.Message);
-            }
-            else{
-              Swal.fire(
-                'Success!',
-                resp.Message,
-                'success'
-              ).then((result) => {
-                location.reload();
-              })
-            }
-          },
-          error : function(){
-            alert('Cek Koneksi Internet');
-          },
-          complete : function(){
-            $('#frmUpdateNew').find('button[type="submit"]').html('<i class="fa fa-save"> Save</i>');
-          }
-        })
-      }
-    })
-
-    $(document).on('submit','#frmUpdateDataPemesan',function(e){
-      e.preventDefault();
-      if(confirm("Apakah anda yakin ingin mengubah data pemesan ?")){
-        let _form = $('#frmUpdateDataPemesan');
-        $.ajax({
-          url : '{{route('superuser.penjualan.packing_order.update')}}',
-          method : "POST",
-          data : getFormData(_form),
-          dataType : "JSON",
-          beforeSend : function(){
-            $('#frmUpdateDataPemesan').find('button[type="submit"]').html('Loading...');
-          },
-          success : function(resp){
-            if(resp.IsError == true){
-              showToast('danger',resp.Message);
-            }
-            else{
-              Swal.fire(
-                'Success!',
-                resp.Message,
-                'success'
-              ).then((result) => {
-                  location.reload();
-              })
-            }
-          },
-          error : function(){
-            alert('Cek Koneksi Internet');
-          },
-          complete : function(){
-            $('#frmUpdateDataPemesan').find('button[type="submit"]').html('<i class="fa fa-save"> Save</i>');
-          }
-        })
-      }
-    })
-
-    $(document).on('submit','#frmSimpanCost',function(e){
-      e.preventDefault();
-      total();
-      if(confirm("Apakah anda yakin ingin menyimpan rincian cost packing order ?")){
-        let _form = $('#frmSimpanCost');
-        total();
-        $.ajax({
-          url : '{{route('superuser.penjualan.packing_order.update_cost')}}',
-          method : "POST",
-          data : getFormData(_form),
-          dataType : "JSON",
-          beforeSend : function(){
-            $('#frmSimpanCost').find('button[type="submit"]').html('Loading...');
-          },
-          success : function(resp){
-            if(resp.IsError == true){
-              showToast('danger',resp.Message);
-            }
-            else{
-              Swal.fire(
-                'Success!',
-                resp.Message,
-                'success'
-              ).then((result) => {
-                  location.reload();
-              })
-            }
-          },
-          error : function(){
-            alert('Cek Koneksi Internet');
-          },
-          complete : function(){
-            $('#frmSimpanCost').find('button[type="submit"]').html('<i class="fa fa-save"> Save</i>');
-          }
-        })
-      }
-    })
-  })
-
-  function customer_other_address(customer_id,selected=0){
-    ajaxcsrfscript();
-    $.ajax({
-      url : '{{route('superuser.penjualan.packing_order.ajax_customer_other_address')}}',
-      method : "POST",
-      data : {customer_id:customer_id},
-      dataType : "JSON",
-      success : function(resp){
-        if(resp.IsError == true){
-          showToast('danger',resp.Message);
-        }
-        else{
-          let option = '<option value="">{{$result->customer->name}}</option>';
-          $.each(resp.Data,function(i,e){
-            if(selected != 0){
-              option += '<option value="'+e.id+'" selected>'+e.name+'</option>';
-            }
-            else{
-              option += '<option value="'+e.id+'">'+e.name+'</option>';
-            }
-          })
-          $('.select-other-address').html(option);
-        }
-      },
-      error : function(){
-        alert('Cek Koneksi Internet');
-      },
-    })
-  }
-  function customer_other_detail(id,selected=0){
-    ajaxcsrfscript();
-    $.ajax({
-      url : '{{route('superuser.penjualan.packing_order.ajax_customer_other_address_detail')}}',
-      method : "POST",
-      data : {id:id},
-      dataType : "JSON",
-      success : function(resp){
-        if(resp.IsError == true){
-          showToast('danger',resp.Message);
-        }
-        else{
-          $('textarea[name="delivery_address"]').val(resp.Data.address);
-        }
-      },
-      error : function(){
-        alert('Cek Koneksi Internet');
-      },
-    })
-  }
-  
-  function total(){
-    let idr_sub_total = $('input[name="idr_sub_total"]').val();
+    function total(){
+    let idr_sub_total = parseFloat(<?= $idr_sub_total ?>);
     let discount_1 = parseFloat($('input[name="discount_1"]').val());
     let discount_2 = parseFloat($('input[name="discount_2"]').val());
     let discount_idr = $('input[name="discount_idr"]').val();
     let voucher_idr = $('input[name="voucher_idr"]').val();
-    // let cashback_idr = $('input[name="cashback_idr"]').val();
     let delivery_cost_idr = $('input[name="delivery_cost_idr"]').val();
     let other_cost_idr = $('input[name="other_cost_idr"]').val();
     let sub_total_discount = 0;
@@ -622,18 +348,22 @@
     let grand_total_idr = 0;
 
 
-    idr_sub_total = parseFloat(idr_sub_total.split('.').join(''));
+    discount_idr = parseFloat(discount_idr.split('.').join(''));
     voucher_idr = parseFloat(voucher_idr.split('.').join(''));
+    cashback_idr = parseFloat(cashback_idr.split('.').join(''));
     delivery_cost_idr = parseFloat(delivery_cost_idr.split('.').join(''));
+    other_cost_idr = parseFloat(other_cost_idr.split('.').join(''));
 
     idr_sub_total = (isNaN(idr_sub_total)) ? 0 : idr_sub_total;
     discount_1 = (isNaN(discount_1)) ? 0 : discount_1 / 100;
     discount_2 = (isNaN(discount_2)) ? 0 : discount_2 / 100;
+    discount_idr = (isNaN(discount_idr)) ? 0 : discount_idr;
     voucher_idr = (isNaN(voucher_idr)) ? 0 : voucher_idr;
+    cashback_idr = (isNaN(cashback_idr)) ? 0 : cashback_idr;
     delivery_cost_idr = (isNaN(delivery_cost_idr)) ? 0 : delivery_cost_idr;
     other_cost_idr = (isNaN(other_cost_idr)) ? 0 : other_cost_idr;
 
-    sub_total_discount = Math.ceil((idr_sub_total * discount_1) + ((idr_sub_total - (idr_sub_total * discount_1)) * discount_2));
+    sub_total_discount = Math.ceil((idr_sub_total * discount_1) + ((idr_sub_total - (idr_sub_total * discount_1)) * discount_2) + discount_idr);
 
     if($('.checkbox_ppn').is(":checked")){
       sub_ppn = Math.ceil((idr_sub_total - sub_total_discount) * 10/100);
@@ -642,9 +372,8 @@
       sub_ppn = 0;
     }
 
-    sub_purchase_total= Math.ceil(idr_sub_total - sub_total_discount - voucher_idr + sub_ppn);
-    grand_total_idr = Math.ceil(sub_purchase_total + delivery_cost_idr);
-    //grand_total_idr = Math.ceil(sub_purchase_total + delivery_cost_idr + other_cost_idr);
+    sub_purchase_total= Math.ceil(idr_sub_total - sub_total_discount - voucher_idr - cashback_idr + sub_ppn);
+    grand_total_idr = Math.ceil(sub_purchase_total + delivery_cost_idr + other_cost_idr);
 
 
     if(sub_total_discount < 0){
@@ -660,13 +389,12 @@
       grand_total_idr = 0;
     }
     
-    //$('.total_discount_cash_idr').html(formatRupiah(idr_sub_total - sub_total_discount));
     $('input[name="discount_total"]').val(formatRupiah(sub_total_discount)); 
     $('input[name="ppn"]').val(formatRupiah(sub_ppn));
-    $('.purchase_total_idr').html(formatRupiah(idr_sub_total - sub_total_discount));
+    $('input[name="purchase_total_idr"]').val(formatRupiah(sub_purchase_total));
     $('input[name="grand_total_idr"]').val(formatRupiah(grand_total_idr));
   }
-  /* Fungsi formatRupiah */
+
   function formatRupiah(angka, prefix){
     angka = angka.toString();
     var number_string = angka.replace(/[^,\d]/g, '').toString(),
@@ -684,67 +412,7 @@
     rupiah = split[1] != undefined ? rupiah + ',' + split[1] : rupiah;
     return prefix == undefined ? rupiah : (rupiah ? 'Rp. ' + rupiah : '');
   }
-
-  function changeStep(stepNumber) {
-    $(".wizard .step").removeClass('active');
-    $(".wizard .step-container").removeClass('active');
-
-    $("#step" + stepNumber).addClass('active');
-    $("#step" + stepNumber + "Container").addClass('active');
-    
-    $('.js-select2').select2();
-    total();
-  }
-
-  function discountOnChange() {
-    const discUsd = $("input.base_disc").val();
-    const allDisc = $("input.do-detail-disc-usd");
-    let totalDisc = 0;
-    for(let i = 0; i < allDisc.length; i++) {
-      $(allDisc[i]).val(discUsd);
-      setDoDetailTotal($(allDisc[i]).data('id'));
-    }
-    updateIdrSubTotal();
-  }
-
-  function setDoDetailTotal(id) {
-    const qty = $("td.do-detail-qty[data-id='" + id + "']")[0].innerHTML;
-    const price = $("span.do-detail-price[data-id='" + id + "']")[0].innerHTML;
-    const discUsd = $("input.do-detail-disc-usd[data-id='" + id + "']").val();
-
-    $("span.do-detail-total[data-id='" + id + "']")[0].innerHTML = (price - (discUsd != null ? discUsd : 0)) * qty;
-  }
-
-  function updateIdrSubTotal() {
-    const idr_sub_total = parseFloat(<?= $idr_sub_total ?>);
-
-    const allQty = $("td.do-detail-qty");
-    const allPrice = $("span.do-detail-price");
-    let totalBeforeDisc = 0;
-    for(let i = 0; i < allPrice.length; i++) {
-      totalBeforeDisc += parseFloat(allQty[i].innerHTML) * parseFloat(allPrice[i].innerHTML);
-    }
-    let idrRate = $('input[name="idr_rate"]').val();
-    idrRate = parseFloat(idrRate.split('.').join(''));
-    $('input[name="idr_total_before_discount"]').val(formatRupiah(totalBeforeDisc * idrRate)); // ini total sebelom diskon
-
-    const allTotal = $("span.do-detail-total");
-    let totalAfterDisc = 0;
-    for(let i = 0; i < allTotal.length; i++) {
-      totalAfterDisc += parseFloat(allTotal[i].innerHTML);
-    }
-    $('input[name="idr_sub_total"]').val(formatRupiah(totalAfterDisc * idrRate)); // ini total setelah diskon
-
-    const allDisc = $("input.do-detail-disc-usd");
-    let totalDisc = 0;
-    for(let i = 0; i < allDisc.length; i++) {
-      totalDisc += parseFloat(allQty[i].innerHTML) * parseFloat($(allDisc[i]).val());
-    }
-
-    $("div.total_discount_cash_idr")[0].innerHTML = formatRupiah(totalDisc * idrRate);
-    total();
-  }
-  updateIdrSubTotal();
-  
+  })
 </script>
+
 @endpush
