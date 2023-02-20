@@ -306,6 +306,16 @@
         $(this).parents('tr').find('input[name="harga"]').change();
       }
     });
+
+    $('#datatable tbody').on( 'keyup', 'input[name="disc-cash"]', function (e) {
+      var pricebeforeDisc = $(this).parents('tr').find('input[name="harga"]').val();
+      var idrRate = $('#idr_rate').val();
+      var disc = $(this).val() * idrRate;
+      var totalAfterDisc = pricebeforeDisc - disc;
+
+      $(this).parents('tr').find('input[name="netto"]').val(totalAfterDisc);
+      $(this).parents('tr').find('input[name="netto"]').change();
+    });
   })
 </script>
 @endpush
