@@ -13,96 +13,67 @@
       @csrf
       <input type="hidden" name="ajukankelanjutan" value="0">
       <div class="row">
-        <div class="col-12">
-          @if($step == 1 || $step == 2 || $step == 9)
-            <div class="form-group row">
-            <label class="col-md-2 col-form-label text-right">Team Leader<span class="text-danger">*</span></label>
-            <div class="col-md-8">
-              <select class="form-control js-select2" name="sales_senior_id">
-                <option value="">Pilih Team Leader</option>
-                @foreach($sales as $index => $row)
-                  <option value="{{$row->id}}">{{$row->name}}</option>
-                @endforeach
-              </select>
+        <div class="col-6">
+          <div class="card">
+            <div class="card-body">
+              <div class="row">
+                <div class="col-sm-6">
+                  @if($step == 1 || $step == 2 || $step == 9)
+                    <div class="form-group row">
+                    <label class="col-md-4 col-form-label text-right">Team Leader<span class="text-danger">*</span></label>
+                    <div class="col-md-6">
+                      <select class="form-control js-select2" name="sales_senior_id">
+                        <option value="">Team Leader</option>
+                        @foreach($sales as $index => $row)
+                          <option value="{{$row->id}}">{{$row->name}}</option>
+                        @endforeach
+                      </select>
+                    </div>
+                  </div>
+                  @endif
+                </div>
+                <div class="col-sm-6">
+                  @if($step == 1 || $step == 2 || $step == 9)
+                    <div class="form-group row">
+                    <label class="col-md-4 col-form-label text-right">Team Leader<span class="text-danger">*</span></label>
+                    <div class="col-md-6">
+                      <select class="form-control js-select2" name="sales_id">
+                        <option value="">Salesman</option>
+                        @foreach($sales as $index => $row)
+                          <option value="{{$row->id}}">{{$row->name}}</option>
+                        @endforeach
+                      </select>
+                    </div>
+                  </div>
+                  @endif
+                </div>
+              </div>
             </div>
           </div>
-          @endif
-          @if($step == 1 || $step == 2 || $step == 9)
-          <div class="form-group row">
-            <label class="col-md-2 col-form-label text-right">Salesman<span class="text-danger">*</span></label>
-            <div class="col-md-8">
-              <select class="form-control js-select2" name="sales_id">
-                <option value="">Pilih Sales</option>
-                @foreach($sales as $index => $row)
-                  <option value="{{$row->id}}">{{$row->name}}</option>
-                @endforeach
-              </select>
+        </div>
+
+        <div class="col-6">
+          <div class="card">
+            <div class="card-body">
+              <div class="row">
+                <div class="col-md-6">
+                  @if($step == 1)
+                    <div class="form-group row">
+                      <label class="col-md-4 col-form-label text-right">Transaksi<span class="text-danger">*</span></label>
+                      <div class="col-md-8">
+                        <select class="form-control js-select2 select-transaksi" name="type_transaction">
+                          <option value="">Type Transaksi</option>
+                          <option value="1">Cash</option>
+                          <option value="2">Tempo</option>
+                          <option value="3">Marketplace</option>
+                        </select>
+                      </div>
+                    </div>
+                    @endif
+                </div>
+              </div>
             </div>
           </div>
-          @endif
-          @if($step == 9)
-          <div class="form-group row">
-            <label class="col-md-2 col-form-label text-right">Origin warehouse<span class="text-danger">*</span></label>
-            <div class="col-md-8">
-              <select class="form-control js-select2" name="origin_warehouse_id">
-                <option value="">==Select origin warehouse==</option>
-                @foreach($warehouse as $index => $row)
-                  <option value="{{$row->id}}">{{$row->name}}</option>
-                @endforeach
-              </select>
-            </div>
-          </div>
-          @endif
-          @if($step == 9)
-          <div class="form-group row">
-            <label class="col-md-2 col-form-label text-right">Destination warehouse</label>
-            <div class="col-md-1 d-none">
-              <input type="checkbox" name="checkbox_destination_warehouse" value="1" class="form-control select-checkbox mx-auto" style="width: 20px;">
-            </div>
-            <div class="col-md-8">
-              <select class="form-control js-select2 select-warehouse" name="destination_warehouse_id" disabled>
-                <option value="">==Select destination warehouse==</option>
-                @foreach($warehouse as $index => $row)
-                  <option value="{{$row->id}}">{{$row->name}}</option>
-                @endforeach
-              </select>
-            </div>
-          </div>
-          @endif
-          @if($step == 1)
-          <div class="form-group row">
-            <label class="col-md-2 col-form-label text-right">Transaksi<span class="text-danger">*</span></label>
-            <div class="col-md-8">
-              <select class="form-control js-select2 select-transaksi" name="type_transaction">
-                <option value="">Pilih Jenis Transaksi</option>
-                <option value="1">Cash</option>
-                <option value="2">Tempo</option>
-                <option value="3">Marketplace</option>
-              </select>
-            </div>
-          </div>
-          @endif
-          @if($step == 2)
-          <div class="form-group row">
-            <label class="col-md-2 col-form-label text-right">Ekspedisi</label>
-            <div class="col-md-8">
-              <select class="form-control js-select2" name="ekspedisi_id">
-                <option value="">==Select ekspedisi==</option>
-                @foreach($ekspedisi as $index => $row)
-                <option value="{{$row->id}}">{{$row->name}}</option>
-                @endforeach
-              </select>
-            </div>
-          </div>
-          @endif
-          @if($step == 1 || $step == 2)
-          <div class="form-group row">
-            <label class="col-md-2 col-form-label text-right">Note</label>
-            <div class="col-md-8">
-              <textarea class="form-control" name="note" rows="1"></textarea>
-            </div>
-          </div>
-          @endif
         </div>
       </div>
       
