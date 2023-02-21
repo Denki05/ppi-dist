@@ -109,7 +109,11 @@
                   <div class="form-group row">
                     <label style="font-size: 10pt;" class="col-md-4 col-form-label text-right">Disc Cash</label>
                       <div class="col-5">
-                        <input type="text" class="base_disc form-control" onkeyup="discountOnChange()" /></th>
+                        <select class="form-control js-select2 base_disc" id="base_id">
+                            <option value="0">0</option>
+                            <option value="2">$2</option>
+                            <option value="4">$4</option>
+                        </select>
                       </div>
                   </div>
                 @endif
@@ -261,6 +265,20 @@
                   </tr>
                 @endforeach
               </tbody>
+              <tfoot>
+                  <tr class="row-footer-subtotal">
+                    <td colspan="10" class="text-right"><span><b>Subtotal</b></span></td>
+                    <td class="text-right">
+                      <strong><span class="invoice-subtotal-label"></span></strong>
+                    </td>
+                  </tr>
+                  <tr class="row-footer-subtotal">
+                    <td colspan="10" class="text-right"><span><b>Total Akhir</b></span></td>
+                    <td class="text-right">
+                      <strong><span class="invoice-subtotal-label"></span></strong>
+                    </td>
+                  </tr>
+              </tfoot>
             </table>
           </div>
         </div>
@@ -307,14 +325,20 @@
       }
     });
 
-    $('#datatable tbody').on( 'keyup', 'input[name="disc-cash"]', function (e) {
-      var pricebeforeDisc = $(this).parents('tr').find('input[name="harga"]').val();
-      var idrRate = $('#idr_rate').val();
-      var disc = $(this).val() * idrRate;
-      var totalAfterDisc = pricebeforeDisc - disc;
+    // $('#datatable tbody').on( 'keyup', 'input[name="disc-cash"]', function (e) {
+    //   var pricebeforeDisc = $(this).parents('tr').find('input[name="harga"]').val();
+    //   var idrRate = $('#idr_rate').val();
+    //   var disc = $(this).val() * idrRate;
+    //   var totalAfterDisc = pricebeforeDisc - disc;
 
-      $(this).parents('tr').find('input[name="netto"]').val(totalAfterDisc);
-      $(this).parents('tr').find('input[name="netto"]').change();
+    //   $(this).parents('tr').find('input[name="netto"]').val(totalAfterDisc);
+    //   $(this).parents('tr').find('input[name="netto"]').change();
+    // });
+
+    $(document.body).on('change',".base_disc",function (e) {
+      //doStuff
+      const baseDisc = $(".base_disc option:selected").val();
+      const discCash =  $('input[name="disc-cash"]').val(baseDisc);
     });
   })
 </script>
