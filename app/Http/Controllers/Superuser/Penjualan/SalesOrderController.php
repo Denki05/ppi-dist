@@ -134,6 +134,14 @@ class SalesOrderController extends Controller
         return view($this->view."index",$data);
     }
 
+    public function search_sku(Request $request)
+    {
+        $products = Product::where('name', 'LIKE', '%'.$request->input('q', '').'%')
+            ->where('status', Product::STATUS['ACTIVE'])
+            ->get(['id', 'code as text', 'name', 'selling_price']);
+        return ['results' => $products];
+    }
+
     public function getmember(Request $request)
     {
         $customer_id = $request->customer_id;

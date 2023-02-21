@@ -17,6 +17,7 @@ Route::group([
     });
 
     Route::group(['as' => 'sales_order.', 'prefix' => '/sales_order'], function () {
+        Route::get('/search_sku', 'SalesOrderController@search_sku')->name('search_sku');
         Route::get('/index', 'SalesOrderController@index')->name('index');
         Route::get('/so_awal', 'SalesOrderController@index_awal')->name('index_awal');
         Route::get('/so_lanjutan', 'SalesOrderController@index_lanjutan')->name('index_lanjutan');

@@ -110,56 +110,30 @@
       <hr />
 
       <div class="row">
-        <div class="col-12 product-list">
-          <h5>Select Product</h5>
-
-          <div class="row">
-            <div class="col-2">Brand</div>
-            <div class="col-2">Category</div>
-            <div class="col-3">Product</div>
-            <div class="col-1">Qty</div>
-            <div class="col-2">Packaging</div>
-          </div>
-
-          <div class="row mt-10 product-row">
-            <div class="col-2">
-              <select class="form-control js-select2 select-brand" data-index="0">
-                <option value="">Pilih Brand</option>
-                @foreach($brand_ppi as $index => $row)
-                <option value="{{$row->id}}">{{$row->brand_name}}</option>
-                @endforeach
-              </select>
-            </div>
-            <div class="col-2">
-              <select class="form-control js-select2 select-category" data-index="0">
-                <option value="">Pilih Category</option>
-              </select>
-            </div>
-            <div class="col-3">
-              <select class="form-control js-select2 select-product" name="product_id[]" data-index="0">
-                <option value="">Pilih Product</option>
-              </select>
-            </div>
-            <div class="col-1">
-              <input type="number" name="qty[]" class="form-control input-qty" data-index="0" step="any">
-            </div>
-            <div class="col-2">
-              <select name="packaging[]" class="form-control js-select2 select-packaging" data-index="0">
-                <option value="">Pilih Kemasan</option>
-                <option value="1">100gr (0.1)</option>
-                <option value="2">500gr (0.5)</option>
-                <option value="3">Jerigen 5kg (5)</option>
-                <option value="4">Alumunium 5kg (5)</option>
-                <option value="5">Jerigen 25kg (25)</option>
-                <option value="6">Drum 25kg (25)</option>
-                <option value="7">Free</option>
-              </select>
-            </div>
-
-            <div class="col-1"><button type="button" id="buttonAddProduct" class="btn btn-primary"><i class="mdi mdi-plus"></i></button></div>
-          </div>
-          <hr />
-
+        <div class="block-header block-header-default">
+          <h3 class="block-title">Add Product</h3>
+          <a href="#" class="row-add">
+            <button type="button" class="btn bg-gd-sea border-0 text-white">
+              <i class="fa fa-plus mr-10"></i> Row
+            </button>
+          </a>
+        </div>
+        <div class="block-content">
+          <table id="datatable" class="table table-striped table-vcenter">
+            <thead>
+              <tr>
+                <th class="text-center">Counter</th>
+                <th class="text-center">Product</th>
+                <th class="text-center">Brand</th>
+                <th class="text-center">Category</th>
+                <th class="text-center">Qty</th>
+                <th class="text-center">Pack</th>
+                <th class="text-center">Action</th>
+              </tr>
+            </thead>
+            <tbody>
+            </tbody>
+          </table>
         </div>
       </div>
       <hr />
@@ -187,15 +161,81 @@
 
 @include('superuser.asset.plugin.select2')
 @include('superuser.asset.plugin.swal2')
+@include('superuser.asset.plugin.datatables')
 
 @push('scripts')
 <script>
-  var productCount = 1;
-
   $(function(){
     $('button[type="submit"]').removeAttr('disabled');
 
     $('.js-select2').select2();
+
+    var table = $('#datatable').DataTable({
+        paging: false,
+        bInfo : false,
+        searching: false,
+        columns: [
+          {name: 'counter', "visible": false},
+          {name: 'sku', orderable: false, width: "25%"},
+          {name: 'name', orderable: false, searcable: false},
+          {name: 'quantity', orderable: false, searcable: false, width: "5%"},
+          {name: 'price', orderable: false, searcable: false},
+          {name: 'total', orderable: false, searcable: false},
+          {name: 'action', orderable: false, searcable: false, width: "5%"}
+        ],
+        'order' : [[0,'desc']]
+    })
+
+    var counter = 1;
+
+    $('a.row-add').on( 'click', function (e) {
+      e.preventDefault();
+      
+      table.row.add([
+                    counter,
+                    '<select class="js-select2 form-control js-ajax" id="sku['+counter+']" name="sku[]" data-placeholder="Select SKU" style="width:100%" required></select>',
+                    '<span class="name"></span>',
+                    '<input type="number" class="form-control" name="quantity[]" readonly required>',
+                    '<input type="number" class="form-control" name="price[]" readonly required>',
+                    '<input type="number" class="form-control" name="total[]" readonly>',
+                    '<a href="#" class="row-delete"><button type="button" class="btn btn-sm btn-circle btn-alt-danger" title="Delete"><i class="fa fa-trash"></i></button></a>'
+                  ]).draw( false );
+                  // $('.js-select2').select2()
+                  initailizeSelect2();
+      counter++;
+    });
+
+    function initailizeSelect2(){
+      $(".js-ajax").select2({
+        ajax: {
+          url: '{{ route('superuser.penjualan.sales_order.search_sku') }}',
+          dataType: 'json',
+          delay: 250,
+          data: function (params) {
+            return {
+              q: params.term,
+              _token: "{{csrf_token()}}"
+            };
+          },
+          cache: true
+        },
+        minimumInputLength: 3,
+      });
+
+      $('.js-ajax').on('select2:select', function (e) {
+        var name = e.params.data.name;
+        $(this).parents('tr').find('.name').text(name);
+        $(this).parents('tr').find('input[name="quantity[]"]').removeAttr('readonly');
+        $(this).parents('tr').find('input[name="price[]"]').removeAttr('readonly');
+      });
+
+    };
+
+    $('#datatable tbody').on( 'click', '.row-delete', function (e) {
+      e.preventDefault();
+      
+      table.row( $(this).parents('tr') ).remove().draw();
+    });
 
     $(document).on('click','.select-checkbox',function(){
       if($(this).is(':checked')){
@@ -237,70 +277,7 @@
       }
     })
 
-    $(document).on('click','#buttonAddProduct',function(){
-      const brandId = $('.select-brand[data-index=0]').val();
-      const brandText = $('.select-brand[data-index=0] option:selected').text();
-      const categoryId = $('.select-category[data-index=0]').val();
-      const categoryText = $('.select-category[data-index=0] option:selected').text();
-      const productId = $('.select-product[data-index=0]').val();
-      const productText = $('.select-product[data-index=0] option:selected').text();
-      const qty = $('.input-qty[data-index=0]').val();
-      const packagingId = $('.select-packaging[data-index=0]').val();
-      const packagingText = $('.select-packaging[data-index=0] option:selected').text();
-      if (brandId === null || brandId === '' || categoryId === null || categoryId === '' || productId === null || productId === '' || qty === null || qty === '' || packagingId == null || packagingId === '') {
-        Swal.fire(
-          'Error!',
-          'Please input all the data',
-          'error'
-        );
-        return;
-      }
-
-      let html = "<div class='row mt-10 product-row brand-" + brandId + "'>";
-      html += "  <div class='col-2'>";
-      html += "    <input type='hidden' class='form-control' value='" + brandId + "'>";
-      html += brandText;
-      html += "  </div>";
-      html += "  <div class='col-2'>";
-      html += "    <input type='hidden' class='form-control' value='" + categoryId + "'>";
-      html += categoryText;
-      html += "  </div>";
-      html += "  <div class='col-2'>";
-      html += "    <input type='hidden' name='product_id[]' class='form-control' value='" + productId + "'>";
-      html += productText;
-      html += "  </div>";
-      html += "  <div class='col-2 text-right'>";
-      html += "    <input type='hidden' name='qty[]' class='form-control' value='" + qty + "'>";
-      html += qty;
-      html += "  </div>";
-      html += "  <div class='col-2'>";
-      html += "    <input type='hidden' name='packaging[]' class='form-control' value='" + packagingId + "'>";
-      html += packagingText;
-      html += "  </div>";
-      html += "  <div class='col-1'>";
-      html += "    <button type='button' id='buttonDeleteProduct' class='btn btn-danger'><em class='fa fa-minus'></em></button>";
-      html += "  </div>";
-      html += "</div>";
-      
-      if ($('.product-row.brand-' + brandId).length > 0) {
-        $('body').find('.product-row.brand-' + brandId + ':last').after(html);
-      } else {
-        $('body').find('.product-list').append(html);
-      }
-
-      //let option = '<option value="">==Select product==</option>';
-      //$('.select-product[data-index=0]').html(option);
-
-      $('.select-brand[data-index=0]').val('').change();
-      $('.select-category[data-index=0]').val('').change();
-      $('.select-product[data-index=0]').val('').change();
-      $('.input-qty[data-index=0]').val('');
-      $('.select-packaging[data-index=0]').val('').change();
-
-      $('.select-brand[data-index=0]').select2('focus');
-
-      productCount++;
-    })
+    
 
     $(document).on('click','#buttonDeleteProduct',function(){
       $(this).parents(".product-row").remove();
@@ -466,6 +443,14 @@
       }
     })
   }
+
+  function delay(fn, ms) {
+      let timer = 0
+      return function(...args) {
+        clearTimeout(timer)
+        timer = setTimeout(fn.bind(this, ...args), ms || 0)
+      }
+    }
 
   // $('.select-transaksi').on('change', function() {
   //     if ( this.value == '1')
