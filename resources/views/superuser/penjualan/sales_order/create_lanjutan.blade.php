@@ -99,7 +99,7 @@
                   <div class="form-group row">
                     <label class="col-md-4 col-form-label text-right" style="font-size: 10pt;">Kurs<span class="text-danger">*</span></label>
                     <div class="col-5">
-                    <input type="text" name="idr_rate" id="idr_rate"  class="form-control">
+                    <input type="text" name="idr_rate" id="idr_rate"  class="form-control" value="1">
                     </div>
                   </div>
                   @endif
@@ -243,8 +243,7 @@
                   <th class="text-center">Packaging</th>
                   <th class="text-center">Harga</th>
                   <th class="text-center">Disc</th>
-                  <th class="text-center">Netto</th>
-                  <th class="text-center">Jumlah</th>
+                  <th class="text-center">jumlah</th>
                 </tr>
               </thead>
               <tbody>
@@ -253,27 +252,19 @@
                     <td>{{ $loop->iteration }}</td>
                     <td><select class="js-select2 form-control js-ajax" id="sku[{{ $loop->iteration }}]" name="sku[]" data-placeholder="Select SKU" style="width:100%" required><option value="{{ $detail->product_id }}">{{ $detail->product->code }}</option></select></td>
                     <td><span class="name">{{ $detail->product->name }}</span></td>
-                    <td><input type="number" class="form-control" name="price" value="{{ $detail->product->selling_price }}" readonly></td>
-                    <td><input type="number" class="form-control" name="qty" value="{{ $detail->qty }}" readonly></td>
-                    <td><input type="number" class="form-control" name="in_stock"  required></td>
+                    <td><input type="number" class="form-control price" name="price" value="{{ $detail->product->selling_price }}" readonly></td>
+                    <td><input type="number" class="form-control qty" name="qty" value="{{ $detail->qty }}" readonly></td>
+                    <td><input type="number" class="form-control in_stock" name="in_stock"  required></td>
                     <td><span class="packaging">{{ $detail->packaging_txt()->scalar }}</span></td>
-                    <td><input type="number" class="form-control" name="harga" readonly value="{{ $detail->harga }}"></td>
-                    <td><input type="number" class="form-control" name="disc-cash" required></td>
-                    <td><input type="number" class="form-control" name="netto" readonly value="{{ $detail->netto }}"></td>
-                    <td><input type="number" class="form-control" name="jumlah" readonly value="{{ $detail->total }}"></td>
-                    
+                    <td><input type="number" class="form-control harga" name="harga" readonly value="{{ $detail->harga }}"></td>
+                    <td><input type="number" class="form-control disc-cash" name="disc-cash" required></td>
+                    <td><input type="number" class="form-control netto" name="netto" readonly value="{{ $detail->total }}"></td>
                   </tr>
                 @endforeach
               </tbody>
               <tfoot>
                   <tr class="row-footer-subtotal">
-                    <td colspan="10" class="text-right"><span><b>Subtotal</b></span></td>
-                    <td class="text-right">
-                      <strong><span class="invoice-subtotal-label"></span></strong>
-                    </td>
-                  </tr>
-                  <tr class="row-footer-subtotal">
-                    <td colspan="10" class="text-right"><span><b>Total Akhir</b></span></td>
+                    <td colspan="9" class="text-right"><span><b>Subtotal</b></span></td>
                     <td class="text-right">
                       <strong><span class="invoice-subtotal-label"></span></strong>
                     </td>
@@ -305,40 +296,38 @@
         ] 
     });
 
-    $('.js-select2').select2(); 
-  
-    $('#datatable tbody').on( 'keyup', 'input[name="in_stock"]', function (e) {
-      var price = $(this).parents('tr').find('input[name="price"]').val();
-      // var disc = $(this).parents('tr').find('input[name="disc-cash"]').val() : 0;
-      var total = $(this).val() * price;
-
-      // $(this).parents('tr').find('input[name="harga"]').val(total);
-      // $(this).parents('tr').find('input[name="harga"]').change();
-      if($('#idr_rate').val() > 1){
-        total = parseFloat($('#idr_rate').val()) * parseFloat(total);
-        $(this).parents('tr').find('input[name="harga"]').val(total);
-        $(this).parents('tr').find('input[name="harga"]').change();
-      }
-      else{
-        $(this).parents('tr').find('input[name="harga"]').val(total);
-        $(this).parents('tr').find('input[name="harga"]').change();
-      }
-    });
-
-    // $('#datatable tbody').on( 'keyup', 'input[name="disc-cash"]', function (e) {
-    //   var pricebeforeDisc = $(this).parents('tr').find('input[name="harga"]').val();
-    //   var idrRate = $('#idr_rate').val();
-    //   var disc = $(this).val() * idrRate;
-    //   var totalAfterDisc = pricebeforeDisc - disc;
-
-    //   $(this).parents('tr').find('input[name="netto"]').val(totalAfterDisc);
-    //   $(this).parents('tr').find('input[name="netto"]').change();
-    // });
+    $('.js-select2').select2();
 
     $(document.body).on('change',".base_disc",function (e) {
-      //doStuff
       const baseDisc = $(".base_disc option:selected").val();
-      const discCash =  $('input[name="disc-cash"]').val(baseDisc);
+      
+      $('input[name="disc-cash"]').val(baseDisc);
+    });
+
+    $('#datatable tbody').on( 'keyup', 'input[name="in_stock"]', function (e) {
+      var price = $(this).parents('tr').find('input[name="price"]').val();
+      var disc = $(this).parents('tr').find('input[name="disc-cash"]').val();
+      // var totalBeforeDisc = $(this).val() * price;
+      let totalBeforeDisc = 0;
+      let totalAfterDisc = 0;
+      totalBeforeDisc = $(this).val() * price;
+
+      if($('#idr_rate').val() > 1){
+        totalBeforeDisc = parseFloat($('#idr_rate').val()) * parseFloat(totalBeforeDisc);
+        $(this).parents('tr').find('input[name="harga"]').val(totalBeforeDisc);
+        $(this).parents('tr').find('input[name="harga"]').change();
+
+        totalAfterDisc = parseFloat(totalBeforeDisc) - (parseFloat($('#idr_rate').val())*disc);
+        $(this).parents('tr').find('input[name="netto"]').val(totalAfterDisc);
+        $(this).parents('tr').find('input[name="netto"]').change();
+      }
+      else{
+        $(this).parents('tr').find('input[name="harga"]').val(totalBeforeDisc);
+        $(this).parents('tr').find('input[name="harga"]').change();
+
+        $(this).parents('tr').find('input[name="netto"]').val(totalAfterDisc);
+        $(this).parents('tr').find('input[name="netto"]').change();
+      }
     });
   })
 </script>
