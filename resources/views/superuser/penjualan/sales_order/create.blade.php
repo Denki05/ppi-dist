@@ -13,17 +13,16 @@
       @csrf
       <input type="hidden" name="ajukankelanjutan" value="0">
       <div class="row">
-        <div class="col-6">
+        <div class="col-4">
           <div class="card">
             <div class="card-body">
-              <div class="row">
-                <div class="col-sm-6">
+                <div class="col-10">
                   @if($step == 1 || $step == 2 || $step == 9)
                     <div class="form-group row">
                     <label class="col-md-4 col-form-label text-right">Team Leader<span class="text-danger">*</span></label>
-                    <div class="col-md-6">
+                    <div class="col-md-8">
                       <select class="form-control js-select2" name="sales_senior_id">
-                        <option value="">Team Leader</option>
+                        <option value="">Pilih TL</option>
                         @foreach($sales as $index => $row)
                           <option value="{{$row->id}}">{{$row->name}}</option>
                         @endforeach
@@ -32,13 +31,13 @@
                   </div>
                   @endif
                 </div>
-                <div class="col-sm-6">
+                <div class="col-10">
                   @if($step == 1 || $step == 2 || $step == 9)
                     <div class="form-group row">
-                    <label class="col-md-4 col-form-label text-right">Team Leader<span class="text-danger">*</span></label>
-                    <div class="col-md-6">
+                    <label class="col-md-4 col-form-label text-right">Salesman<span class="text-danger">*</span></label>
+                    <div class="col-md-8">
                       <select class="form-control js-select2" name="sales_id">
-                        <option value="">Salesman</option>
+                        <option value="">Pilih Salesman</option>
                         @foreach($sales as $index => $row)
                           <option value="{{$row->id}}">{{$row->name}}</option>
                         @endforeach
@@ -47,12 +46,11 @@
                   </div>
                   @endif
                 </div>
-              </div>
             </div>
           </div>
         </div>
 
-        <div class="col-6">
+        <div class="col-8">
           <div class="card">
             <div class="card-body">
               <div class="row">
@@ -60,7 +58,7 @@
                   @if($step == 1)
                     <div class="form-group row">
                       <label class="col-md-4 col-form-label text-right">Transaksi<span class="text-danger">*</span></label>
-                      <div class="col-md-8">
+                      <div class="col-md-6">
                         <select class="form-control js-select2 select-transaksi" name="type_transaction">
                           <option value="">Type Transaksi</option>
                           <option value="1">Cash</option>
@@ -71,42 +69,60 @@
                     </div>
                     @endif
                 </div>
+                <div class="col-md-6">
+                  @if($step == 1)
+                    <div class="form-group row">
+                      <label class="col-md-4 col-form-label text-right">Kurs</label>
+                      <div class="col-md-6">
+                        <input type="number" name="idr_rate" class="form-control" value="0">
+                      </div>
+                    </div>
+                    @endif
+                </div>
+                <div class="col-md-6">
+                  @if($step == 1)
+                    <div class="form-group row">
+                      <label class="col-md-4 col-form-label text-right">Note</label>
+                      <div class="col-8">
+                        <textarea class="form-control" name="note" rows="1"></textarea>
+                      </div>
+                    </div>
+                    @endif
+                </div>
               </div>
             </div>
           </div>
         </div>
       </div>
-      
 
       <hr />
-
-      <div class="row">
-        <div class="block-header block-header-default">
-          <h3 class="block-title">Add Product</h3>
-          <a href="#" class="row-add">
-            <button type="button" class="btn bg-gd-sea border-0 text-white">
-              <i class="fa fa-plus mr-10"></i> Row
-            </button>
-          </a>
+        <div class="block">
+          <div class="block-header block-header-default">
+            <h3 class="block-title">Add Product</h3>
+            <a href="#" class="row-add">
+              <button type="button" class="btn bg-gd-sea border-0 text-white">
+                <i class="fa fa-plus mr-10"></i> Row
+              </button>
+            </a>
+          </div>
+          <div class="block-content">
+            <table id="datatable" class="table table-striped table-vcenter">
+              <thead>
+                <tr>
+                  <th class="text-center">Counter</th>
+                  <th class="text-center">Select SKU</th>
+                  <th class="text-center">Product</th>
+                  <th class="text-center">Quantity</th>
+                  <th class="text-center">Price</th>
+                  <th class="text-center">Total</th>
+                  <th class="text-center">Action</th>
+                </tr>
+              </thead>
+              <tbody>
+              </tbody>
+            </table>
+          </div>
         </div>
-        <div class="block-content">
-          <table id="datatable" class="table table-striped table-vcenter">
-            <thead>
-              <tr>
-                <th class="text-center">Counter</th>
-                <th class="text-center">Product</th>
-                <th class="text-center">Brand</th>
-                <th class="text-center">Category</th>
-                <th class="text-center">Qty</th>
-                <th class="text-center">Pack</th>
-                <th class="text-center">Action</th>
-              </tr>
-            </thead>
-            <tbody>
-            </tbody>
-          </table>
-        </div>
-      </div>
       <hr />
       
       <div class="row pt-30 mb-15">
@@ -179,7 +195,7 @@
     function initailizeSelect2(){
       $(".js-ajax").select2({
         ajax: {
-          url: '{{ route('superuser.penjualan.sales_order.search_sku') }}',
+          url: '',
           dataType: 'json',
           delay: 250,
           data: function (params) {
@@ -301,7 +317,6 @@
       }
     })
   })
-
   function customer_address(id){
     ajaxcsrfscript();
     $.ajax({
@@ -434,6 +449,5 @@
   //     }
   //   });
 
-  
 </script>
 @endpush

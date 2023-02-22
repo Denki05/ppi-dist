@@ -20,6 +20,7 @@ class SalesOrder extends Model
         'ekspedisi_id',
         'vendor_id',
     	'type_transaction',
+    	'idr_rate',
     	'brand_type',
     	'tl',
     	'sales',

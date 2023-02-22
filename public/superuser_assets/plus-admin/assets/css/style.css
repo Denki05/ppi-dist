@@ -13184,7 +13184,7 @@ code {
   background: #fff;
   border: 1px solid #e4e9f0; }
   .card .card-body {
-    padding: 10px 5px 5px; }
+    padding: 15px 5px 5px 5px; }
     .card .card-body + .card-body {
       padding-top: 1rem; }
   .card .card-title {
