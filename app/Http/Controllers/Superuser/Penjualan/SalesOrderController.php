@@ -205,23 +205,21 @@ class SalesOrderController extends Controller
         }
 
         $brand = $request->brand_type;
+        $products = Product::all();
         $customer = Customer::find($store);
         $member = CustomerOtherAddress::find($member);
         $warehouse = Warehouse::all();
         $ekspedisi = Ekspedisi::all();
-        $product_category = ProductCategory::all();
-        $brand_ppi = BrandLokal::all();
         $sales = Sales::where('is_active', 1)->get();
 
         $data = [
             'customer' => $customer,
             'member' => $member,
             'brand' => $brand,
+            'products' => $products,
             'sales' => $sales,
             'warehouse' => $warehouse,
             'ekspedisi' => $ekspedisi,
-            'product_category' => $product_category,
-            'brand_ppi' => $brand_ppi,
             'step' => $step,
             'step_txt' => SalesOrder::STEP[$step]
         ];
