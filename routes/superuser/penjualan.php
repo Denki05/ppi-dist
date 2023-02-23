@@ -40,6 +40,7 @@ Route::group([
 
         Route::get('/get_product', 'SalesOrderController@get_product')->name('get_product');
         Route::get('/get_category', 'SalesOrderController@get_category')->name('get_category');
+        Route::get('/search_sku', 'SalesOrderController@search_sku')->name('search_sku');
         Route::post('/getmember', 'SalesOrderController@getmember')->name('getmember');
 
         Route::post('/ajax_customer_detail', 'SalesOrderController@ajax_customer_detail')->name('ajax_customer_detail');

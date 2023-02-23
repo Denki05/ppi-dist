@@ -96,7 +96,32 @@
       </div>
 
       <hr />
-        
+        <div class="block">
+          <div class="block-header block-header-default">
+            <h3 class="block-title">Add Product</h3>
+            <a href="#" class="row-add">
+              <button type="button" class="btn bg-gd-sea border-0 text-white">
+                <i class="fa fa-plus mr-10"></i> Row
+              </button>
+            </a>
+          </div>
+          <div class="block-content">
+            <table id="datatable" class="table table-striped table-vcenter">
+              <thead>
+                <tr>
+                  <th class="text-center">Counter</th>
+                  <th class="text-center">Product</th>
+                  <th class="text-center">Acuan(USD)</th>
+                  <th class="text-center">Quantity</th>
+                  <th class="text-center">Packaging</th>
+                  <th class="text-center">Action</th>
+                </tr>
+              </thead>
+              <tbody>
+              </tbody>
+            </table>
+          </div>
+        </div>
       <hr />
       
       <div class="row pt-30 mb-15">
@@ -125,11 +150,98 @@
 @include('superuser.asset.plugin.datatables')
 
 @push('scripts')
-<script>
-  $(function(){
+<script src="{{ asset('utility/superuser/js/form.js') }}"></script>
+<script type="text/javascript">
+  $(document).ready(function() {
     $('button[type="submit"]').removeAttr('disabled');
 
     $('.js-select2').select2();
+
+    var table = $('#datatable').DataTable({
+        paging: false,
+        bInfo : false,
+        searching: false,
+        columns: [
+          {name: 'counter', "visible": false},
+          {name: 'product', orderable: false, width: "25%"},
+          {name: 'price', orderable: false, searcable: false},
+          {name: 'qty', orderable: false, searcable: false, width: "5%"},
+          {name: 'packaging', orderable: false, searcable: false},
+          {name: 'action', orderable: false, searcable: false, width: "5%"}
+        ],
+        'order' : [[0,'desc']]
+    })
+
+    var counter = 1;
+    
+    $('a.row-add').on( 'click', function (e) {
+      e.preventDefault();
+      
+      table.row.add([
+                    counter,
+                    '<select class="js-select2 form-control js-ajax" id="product['+counter+']" name="product_id[]" data-placeholder="Select SKU" style="width:100%" required></select>',
+                    '<span class="price"></span>',
+                    '<input type="number" class="form-control" name="qty[]" required>',
+                    '<input type="number" class="form-control" name="packaging[]"  required>',
+                    '<a href="#" class="row-delete"><button type="button" class="btn btn-sm btn-circle btn-alt-danger" title="Delete"><i class="fa fa-trash"></i></button></a>'
+                  ]).draw( false );
+                  initailizeSelect2();
+      counter++;
+    });
+
+    function initailizeSelect2(){
+      $(".js-ajax").select2({
+        ajax: {
+          url: '{{ route('superuser.penjualan.sales_order.search_sku') }}',
+          dataType: 'json',
+          delay: 250,
+          data: function (params) {
+            return {
+              q: params.term,
+              page: params.page,
+              _token: "{{csrf_token()}}"
+            };
+          },
+          results: function (data, page) {
+            // parse the results into the format expected by Select2.
+            // since we are using custom formatting functions we do not need to
+            // alter the remote JSON data
+            return {
+              results: data
+            };
+          },
+          cache: true
+        },
+        minimumInputLength: 3,
+        escapeMarkup: function (markup) { return markup; },
+        templateResult: formatData,
+        templateSelection: formatDataSelection
+      });
+
+      $('.js-ajax').on('select2:select', function (e) {
+        var price = e.params.data.selling_price;
+        $(this).parents('tr').find('.price').text(price);
+      });
+
+    };
+
+    function formatData (data) {
+      if (data.loading) return data.name;
+
+      markup = "<h1>" + data.name + "</h1>" + "<p>" + data.code + "</p>";
+
+      return markup;
+    };
+
+    function formatDataSelection (data) {
+      return data.name;
+    };
+
+    $('#datatable tbody').on( 'click', '.row-delete', function (e) {
+      e.preventDefault();
+      
+      table.row( $(this).parents('tr') ).remove().draw();
+    });
 
     $(document).on('click','.select-checkbox',function(){
       if($(this).is(':checked')){
