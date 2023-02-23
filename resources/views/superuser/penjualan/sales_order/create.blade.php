@@ -228,7 +228,7 @@
     function formatData (data) {
       if (data.loading) return data.name;
 
-      markup = "<h1>" + data.name + "</h1>" + "<p>" + data.code + "</p>";
+      markup = data.code + "-" + data.name;
 
       return markup;
     };
