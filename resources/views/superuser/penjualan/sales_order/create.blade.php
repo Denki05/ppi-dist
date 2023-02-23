@@ -96,59 +96,7 @@
       </div>
 
       <hr />
-        <div class="card">
-          <div class="card-header">
-              <h5>#Product List</h5>
-          </div>
-
-          <div class="card-body">
-              <table class="table" id="products_table">
-                  <thead>
-                      <tr>
-                          <th width="25%">Product</th>
-                          <th width="10%">Brand</th>
-                          <th width="10%">Category</th>
-                          <th width="5%">Quantity</th>
-                          <th width="10%">Packaging</th>
-                      </tr>
-                  </thead>
-                  <tbody>
-                      <tr id="product0">
-                          <td>
-                              <select name="products[]" class="form-control js-select2">
-                                  <option value="">Pilih Product</option>
-                                  @foreach ($products as $product)
-                                      <option value="{{ $product->id }}">
-                                          {{$product->code}}-{{$product->name}}
-                                      </option>
-                                  @endforeach
-                              </select>
-                          </td>
-                          <td>
-                            <input class="form-control brand_name" name="brand_name" readonly>
-                          </td>
-                          <td>
-                            <input class="form-control category_name" name="category_name" readonly>
-                          </td>
-                          <td>
-                              <input type="number" name="qty[]" class="form-control" value="1" />
-                          </td>
-                          <td>
-                            <span><span>
-                          </td>
-                      </tr>
-                      <tr id="product1"></tr>
-                  </tbody>
-              </table>
-
-              <div class="row">
-                  <div class="col-md-12">
-                      <button id="add_row" class="btn btn-primary pull-left">+ Add Row</button>
-                      <button id='delete_row' class="pull-right btn btn-danger">- Delete Row</button>
-                  </div>
-              </div>
-          </div>
-        </div>
+        
       <hr />
       
       <div class="row pt-30 mb-15">
@@ -183,24 +131,7 @@
 
     $('.js-select2').select2();
 
-    $(document).ready(function(){
-      let row_number = 1;
-      $("#add_row").click(function(e){
-        e.preventDefault();
-        let new_row_number = row_number - 1;
-        $('#product' + row_number).html($('#product' + new_row_number).html()).find('td:first-child');
-        $('#products_table').append('<tr id="product' + (row_number + 1) + '"></tr>');
-        row_number++;
-      });
-
-      $("#delete_row").click(function(e){
-        e.preventDefault();
-        if(row_number > 1){
-          $("#product" + (row_number - 1)).html('');
-          row_number--;
-        }
-      });
-    });
+    
 
     $(document).on('click','.select-checkbox',function(){
       if($(this).is(':checked')){
