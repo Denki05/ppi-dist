@@ -131,8 +131,6 @@
 
     $('.js-select2').select2();
 
-    
-
     $(document).on('click','.select-checkbox',function(){
       if($(this).is(':checked')){
         $('select[name="destination_warehouse_id"]').attr('disabled',false);
@@ -172,8 +170,6 @@
         $('textarea[name="address"]').val("");
       }
     })
-
-    
 
     $(document).on('click','#buttonDeleteProduct',function(){
       $(this).parents(".product-row").remove();
@@ -330,7 +326,6 @@
         $.each(resp.Data,function(i,e){
           option += '<option value="'+e.id+'">'+e.product_code+' - '+e.product_name+' - '+e.packaging+'</option>';
         })
-        //$(".select-product[data-index=0]").length
         $('.select-product[data-index=' + param.index + ']').html(option);
       },
       error : function(){
@@ -346,17 +341,5 @@
         timer = setTimeout(fn.bind(this, ...args), ms || 0)
       }
     }
-
-  // $('.select-transaksi').on('change', function() {
-  //     if ( this.value == '1')
-  //     {
-  //       $("#frm-cash").show();
-  //     }
-  //     else
-  //     {
-  //       $("#frm-cash").hide();
-  //     }
-  //   });
-
 </script>
 @endpush
