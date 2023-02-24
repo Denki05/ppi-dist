@@ -328,7 +328,6 @@
 
     $(document.body).on('change',".base_disc",function (e) {
       const baseDisc = $(".base_disc option:selected").val();
-      
       $('input[name="disc-cash"]').val(baseDisc);
     });
 
