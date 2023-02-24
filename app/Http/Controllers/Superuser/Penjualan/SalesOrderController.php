@@ -290,6 +290,7 @@ class SalesOrderController extends Controller
                 $insert->sales_id = $request->sales_id;
                 $insert->so_for = 1;
                 $insert->type_transaction = $request->type_transaction;
+                $insert->idr_rate = $request->idr_rate;
                 $insert->note = $request->note;
                 $insert->created_by = Auth::id();
                 $insert->status = $post["ajukankelanjutan"] == 1 ? 2 : 1;

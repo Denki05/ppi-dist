@@ -99,7 +99,7 @@
                   <div class="form-group row">
                     <label class="col-md-4 col-form-label text-right" style="font-size: 10pt;">Kurs<span class="text-danger">*</span></label>
                     <div class="col-5">
-                    <input type="text" name="idr_rate" id="idr_rate"  class="form-control" value="1">
+                    <input type="text" name="idr_rate" id="idr_rate"  class="form-control" value="{{ $result->idr_rate }}">
                     </div>
                   </div>
                   @endif
