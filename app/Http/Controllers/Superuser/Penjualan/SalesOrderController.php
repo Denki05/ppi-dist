@@ -136,9 +136,19 @@ class SalesOrderController extends Controller
 
     public function search_sku(Request $request)
     {
-        $products = Product::where('name', 'LIKE', '%'.$request->input('q', '').'%')
-            ->where('status', Product::STATUS['ACTIVE'])
-            ->get(['id', 'code', 'name', 'selling_price']);
+        $products = Product::where('master_product.name', 'LIKE', '%'.$request->input('q', '').'%')
+            ->where('master_product.status', Product::STATUS['ACTIVE'])
+            ->leftJoin('master_product_category', 'master_product.category_id', '=', 'master_product_category.id')
+            ->leftJoin('master_packaging', 'master_product_category.packaging_id', '=', 'master_packaging.id')
+            ->get([
+                'master_product.id as id',
+                'master_product.code as productCode', 
+                'master_product.name as productName', 
+                'master_product.status as productStatus', 
+                'master_product.selling_price as productPrice', 
+                'master_packaging.id as packId', 
+                'master_packaging.pack_name as packagingName'
+            ]);
         return ['results' => $products];
     }
 

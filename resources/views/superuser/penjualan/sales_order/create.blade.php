@@ -182,7 +182,7 @@
                     '<select class="js-select2 form-control js-ajax" id="product['+counter+']" name="product_id[]" data-placeholder="Select SKU" style="width:100%" required></select>',
                     '<span class="price"></span>',
                     '<input type="number" class="form-control" name="qty[]" required>',
-                    '<input type="number" class="form-control" name="packaging[]"  required>',
+                    '<span class="packaging" name="packaging[]"></span>',
                     '<a href="#" class="row-delete"><button type="button" class="btn btn-sm btn-circle btn-alt-danger" title="Delete"><i class="fa fa-trash"></i></button></a>'
                   ]).draw( false );
                   initailizeSelect2();
@@ -219,22 +219,25 @@
       });
 
       $('.js-ajax').on('select2:select', function (e) {
-        var price = e.params.data.selling_price;
+        var price = e.params.data.productPrice;
+        var pack = e.params.data.packagingName;
+
         $(this).parents('tr').find('.price').text(price);
+        $(this).parents('tr').find('.packaging').text(pack);
       });
 
     };
 
     function formatData (data) {
-      if (data.loading) return data.name;
+      if (data.loading) return data.productName;
 
-      markup = data.code + "-" + data.name;
+      markup = data.productCode + '&nbsp - &nbsp' + data.productName + '&nbsp - &nbsp' + data.packagingName;
 
       return markup;
     };
 
     function formatDataSelection (data) {
-      return data.name;
+      return data.productName;
     };
 
     $('#datatable tbody').on( 'click', '.row-delete', function (e) {
