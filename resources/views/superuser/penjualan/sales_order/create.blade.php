@@ -74,7 +74,7 @@
                     <div class="form-group row">
                       <label class="col-md-4 col-form-label text-right">Kurs</label>
                       <div class="col-md-6">
-                        <input type="number" name="idr_rate" class="form-control" value="0">
+                        <input type="number" name="idr_rate" class="form-control formatRupiah" value="1">
                       </div>
                     </div>
                     @endif
@@ -477,6 +477,29 @@
         clearTimeout(timer)
         timer = setTimeout(fn.bind(this, ...args), ms || 0)
       }
+  }
+
+  function formatRupiah(angka, prefix){
+    angka = angka.toString();
+    var number_string = angka.replace(/[^,\d]/g, '').toString(),
+    split       = number_string.split(','),
+    sisa        = split[0].length % 3,
+    rupiah        = split[0].substr(0, sisa),
+    ribuan        = split[0].substr(sisa).match(/\d{3}/gi);
+   
+    // tambahkan titik jika yang di input sudah menjadi angka ribuan
+    if(ribuan){
+      separator = sisa ? '.' : '';
+      rupiah += separator + ribuan.join('.');
     }
+   
+    rupiah = split[1] != undefined ? rupiah + ',' + split[1] : rupiah;
+    return prefix == undefined ? rupiah : (rupiah ? 'Rp. ' + rupiah : '');
+  };
+
+  $(document).on('keyup','.formatRupiah',function(){
+      let val = $(this).val();
+      $(this).val(formatRupiah(val));
+  })
 </script>
 @endpush
