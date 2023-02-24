@@ -220,7 +220,7 @@ class SalesOrderController extends Controller
             }
         }
 
-        $brand = $request->brand_type;
+        $brand = BrandLokal::all();
         $products = Product::all();
         $customer = Customer::find($store);
         $member = CustomerOtherAddress::find($member);

@@ -24,7 +24,7 @@
 @if($step == 1)
   <div class="block">
     <div class="block-content block-content-full">
-      <table id="customer-table" class="table ">
+      <table id="customerTable" class="table ">
         <thead class="thead-dark">
           <tr>
             <th></th>
@@ -62,9 +62,9 @@
                     <td colspan="8">
                       <table class="table-active table table-bordered">
                               <tr>
-                                  <th width="30%">Member</th>
-                                  <th width="10%">Invoice Brand</th>
-                                  
+                                  <th width="15%">Member</th>
+                                  <th width="30%">Address</th>
+                                  <th width="20%">Region</th>
                                   <th width="10%"></th>
                               </tr>
 
@@ -78,12 +78,10 @@
                                                 {{$index->name}}
                                               </td>
                                               <td>
-                                                <select class="form-control js-select2" name="brand_type">
-                                                  <option value="">Pilih Brand Invoice</option>
-                                                  @foreach ($brand as $key => $i)
-                                                    <option value="{{ $i->id }}">{{ $i->brand_name }}</option>
-                                                  @endforeach
-                                                </select>
+                                                {{$index->address}}
+                                              </td>
+                                              <td>
+                                                {{$index->text_provinsi}}
                                               </td>
                                               <td>
                                                 <input class="btn btn-primary" type="submit" value="Add Sales Order {{ $step_txt }} (SO)">
@@ -269,7 +267,7 @@
         }]
       });
 
-      $('#table-Customer').DataTable( {
+      $('#customerTable').DataTable( {
         "paging":   false,
         "ordering": true,
         "info":     false,

@@ -89,6 +89,21 @@
                     </div>
                     @endif
                 </div>
+                <div class="col-md-6">
+                    @if($step == 1)
+                      <div class="form-group row">
+                        <label class="col-md-4 col-form-label text-right">Invoice Brand<span class="text-danger">*</span></label>
+                        <div class="col-md-6">
+                          <select class="form-control js-select2 brand_type" name="brand_type">
+                            <option value="">Pilih Brand</option>
+                            @foreach ($brand as $b => $key)
+                            <option value="{{ $key->id }}">{{ $key->brand_name }}</option>
+                            @endforeach
+                          </select>
+                        </div>
+                      </div>
+                    @endif
+                </div>
               </div>
             </div>
           </div>
