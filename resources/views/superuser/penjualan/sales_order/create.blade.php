@@ -80,16 +80,6 @@
                     @endif
                 </div>
                 <div class="col-md-6">
-                  @if($step == 1)
-                    <div class="form-group row">
-                      <label class="col-md-4 col-form-label text-right">Note</label>
-                      <div class="col-8">
-                        <textarea class="form-control" name="note" rows="1"></textarea>
-                      </div>
-                    </div>
-                    @endif
-                </div>
-                <div class="col-md-6">
                     @if($step == 1)
                       <div class="form-group row">
                         <label class="col-md-4 col-form-label text-right">Invoice Brand<span class="text-danger">*</span></label>
@@ -102,6 +92,16 @@
                           </select>
                         </div>
                       </div>
+                    @endif
+                </div>
+                <div class="col-md-6">
+                  @if($step == 1)
+                    <div class="form-group row">
+                      <label class="col-md-4 col-form-label text-right">Note</label>
+                      <div class="col-8">
+                        <textarea class="form-control" name="note" rows="1"></textarea>
+                      </div>
+                    </div>
                     @endif
                 </div>
               </div>
@@ -125,10 +125,12 @@
               <thead>
                 <tr>
                   <th class="text-center">Counter</th>
-                  <th class="text-center">Product</th>
+                  <th class="text-center">Cari Produk</th>
+                  <th class="text-center">Produk</th>
                   <th class="text-center">Acuan(USD)</th>
                   <th class="text-center">Quantity</th>
-                  <th class="text-center">Packaging</th>
+                  <th class="text-center">Pack</th>
+                  <th class="text-center">Kemasan</th>
                   <th class="text-center">Action</th>
                 </tr>
               </thead>
@@ -179,9 +181,11 @@
         columns: [
           {name: 'counter', "visible": false},
           {name: 'product', orderable: false, width: "25%"},
-          {name: 'price', orderable: false, searcable: false},
+          {name: 'name', orderable: false, searcable: false, width: "20%"},
+          {name: 'price', orderable: false, searcable: false, width: "10%"},
           {name: 'qty', orderable: false, searcable: false, width: "5%"},
-          {name: 'packaging', orderable: false, searcable: false},
+          {name: 'packaging', orderable: false, searcable: false, width: "5%"},
+          {name: 'kemasan', orderable: false, searcable: false, width: "20%"},
           {name: 'action', orderable: false, searcable: false, width: "5%"}
         ],
         'order' : [[0,'desc']]
@@ -194,12 +198,15 @@
       
       table.row.add([
                     counter,
-                    '<select class="js-select2 form-control js-ajax" id="product['+counter+']" name="product_id[]" data-placeholder="Select SKU" style="width:100%" required></select>',
+                    '<select class="js-select2 form-control js-ajax" id="product['+counter+']" name="product_id[]" data-placeholder="Select Product" style="width:100%" required></select>',
+                    '<span class="name"></span>',
                     '<span class="price"></span>',
-                    '<input type="number" class="form-control" name="qty[]" required>',
-                    '<span class="packaging" name="packaging[]"></span>',
+                    '<input type="number" class="form-control" name="qty[]" value="1" readonly required>',
+                    '<input type="text" class="form-control pack" name="packaging[]" readonly required>',
+                    '<span class="packname"></span>',
                     '<a href="#" class="row-delete"><button type="button" class="btn btn-sm btn-circle btn-alt-danger" title="Delete"><i class="fa fa-trash"></i></button></a>'
                   ]).draw( false );
+                  // $('.js-select2').select2()
                   initailizeSelect2();
       counter++;
     });
@@ -213,14 +220,10 @@
           data: function (params) {
             return {
               q: params.term,
-              page: params.page,
               _token: "{{csrf_token()}}"
             };
           },
-          results: function (data, page) {
-            // parse the results into the format expected by Select2.
-            // since we are using custom formatting functions we do not need to
-            // alter the remote JSON data
+          results: function (data, params) {
             return {
               results: data
             };
@@ -230,29 +233,33 @@
         minimumInputLength: 3,
         escapeMarkup: function (markup) { return markup; },
         templateResult: formatData,
-        templateSelection: formatDataSelection
+        placeholder: "Select Product",
       });
+
+      function formatData (data) {
+        if (data.loading) return data.productName;
+
+        markup = data.text + '&nbsp - &nbsp' + data.productName + '&nbsp - &nbsp' + data.packagingName;
+
+        return markup;
+      };
+
+      function formatDataSelection (data) {
+        return data.productName;
+      };
 
       $('.js-ajax').on('select2:select', function (e) {
+        var name = e.params.data.productName;
         var price = e.params.data.productPrice;
+        var no = e.params.data.packNo;
         var pack = e.params.data.packagingName;
-
-        $(this).parents('tr').find('.price').text(price);
-        $(this).parents('tr').find('.packaging').text(pack);
+        $(this).parents('tr').find('.name').text(name);
+        $(this).parents('tr').find('.packname').text(pack);
+        $(this).parents('tr').find('.pack').val(no);
+        $(this).parents('tr').find('.price').text('$' + price);
+        $(this).parents('tr').find('input[name="qty[]"]').removeAttr('readonly');
       });
 
-    };
-
-    function formatData (data) {
-      if (data.loading) return data.productName;
-
-      markup = data.productCode + '&nbsp - &nbsp' + data.productName + '&nbsp - &nbsp' + data.packagingName;
-
-      return markup;
-    };
-
-    function formatDataSelection (data) {
-      return data.productName;
     };
 
     $('#datatable tbody').on( 'click', '.row-delete', function (e) {

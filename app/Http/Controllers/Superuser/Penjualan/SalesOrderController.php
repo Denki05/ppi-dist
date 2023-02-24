@@ -142,15 +142,23 @@ class SalesOrderController extends Controller
             ->leftJoin('master_packaging', 'master_product_category.packaging_id', '=', 'master_packaging.id')
             ->get([
                 'master_product.id as id',
-                'master_product.code as productCode', 
+                'master_product.code as text', 
                 'master_product.name as productName', 
                 'master_product.status as productStatus', 
                 'master_product.selling_price as productPrice', 
-                'master_packaging.id as packId', 
+                'master_packaging.pack_no as packNo', 
                 'master_packaging.pack_name as packagingName'
             ]);
         return ['results' => $products];
     }
+
+    // public function search_sku(Request $request)
+    // {
+    //     $products = Product::where('name', 'LIKE', '%'.$request->input('q', '').'%')
+    //         ->where('status', Product::STATUS['ACTIVE'])
+    //         ->get(['id', 'code as text', 'name', 'selling_price']);
+    //     return ['results' => $products];
+    // }
 
     public function getmember(Request $request)
     {
@@ -240,7 +248,7 @@ class SalesOrderController extends Controller
             'step_txt' => SalesOrder::STEP[$step]
         ];
         
-        // dd($sales_id);
+        
         return view($this->view."create",$data);
     }
 
@@ -300,11 +308,6 @@ class SalesOrderController extends Controller
                         $insertDetail->save();
                     }
                 }
-
-                // if( $request->type_transaction == 1)
-                // {
-                    
-                // }
                 
                 DB::commit();
 

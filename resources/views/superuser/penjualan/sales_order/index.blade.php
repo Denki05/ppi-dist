@@ -24,7 +24,7 @@
 @if($step == 1)
   <div class="block">
     <div class="block-content block-content-full">
-      <table id="customerTable" class="table ">
+      <table id="customer-table" class="table ">
         <thead class="thead-dark">
           <tr>
             <th></th>
@@ -63,8 +63,8 @@
                       <table class="table-active table table-bordered">
                               <tr>
                                   <th width="15%">Member</th>
-                                  <th width="30%">Address</th>
-                                  <th width="20%">Region</th>
+                                  <th width="25%">Address</th>
+                                  <th width="15%">Region</th>
                                   <th width="10%"></th>
                               </tr>
 
@@ -267,7 +267,7 @@
         }]
       });
 
-      $('#customerTable').DataTable( {
+      $('#table-Customer').DataTable( {
         "paging":   false,
         "ordering": true,
         "info":     false,

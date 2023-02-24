@@ -6,7 +6,7 @@ use Illuminate\Database\Eloquent\Model;
 
 class Packaging extends Model
 {
-    protected $fillable = ['unit_id', 'pack_name', 'pack_value', 'description', 'status'];
+    protected $fillable = ['unit_id', 'pack_no', 'pack_name', 'pack_value', 'description', 'status'];
     protected $table = 'master_packaging';
 
     const STATUS = [
