@@ -179,7 +179,7 @@
                 <div class="form-group row">
                   <label class="col-md-4 col-form-label text-right">Ongkir</label>
                   <div class="col-md-6">
-                    <input type="text" name="delivery_cost_idr" class="form-control count formatRupiah" {{ $result->status == 1 ? '' : 'readonly' }} value="{{number_format($result->do_cost->delivery_cost_idr ?? 0,0,',','.')}}">
+                    <input type="text" name="delivery_cost_idr" class="form-control count value="{{number_format($result->do_cost->delivery_cost_idr ?? 0,0,',','.')}}">
                   </div>
                 </div>
                 @endif
@@ -334,12 +334,10 @@
 
     $('.js-select2').select2();
 
-    $(document).on('change',".base_disc"  ,function (e) {
+    $(document).on('change', '.base_disc'  ,function (e) {
       let val = $(this).val();
-      let index = $('.count').attr('data-index');
       // alert(val);
       $('.count-disc').val(val);
-      count_per_item(index)
     });
 
     
