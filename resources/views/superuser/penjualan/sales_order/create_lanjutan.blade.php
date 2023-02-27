@@ -336,8 +336,10 @@
 
     $(document).on('change',".base_disc"  ,function (e) {
       let val = $(this).val();
+      let index = $('.count').attr('data-index');
       // alert(val);
       $('.count-disc').val(val);
+      count_per_item(index)
     });
 
     
@@ -367,6 +369,7 @@
       let do_qty = parseFloat($('tr.index'+index+'').find('input[name="repeater['+index+'][do_qty]"]').val()); 
       let val_usd_disc = parseFloat($('tr.index'+index+'').find('input[name="repeater['+index+'][usd_disc]"]').val());
       let val_percent_disc = parseFloat($('tr.index'+index+'').find('input[name="repeater['+index+'][percent_disc]"]').val());
+      let kurs = $('#idr_rate').val();
 
       if(isNaN(val_usd_disc)){
         val_usd_disc = 0;
@@ -377,7 +380,7 @@
 
       let total_disc = (val_usd_disc + ((price - val_usd_disc) * (val_percent_disc/100))) * do_qty;
       
-      let sub_total  = parseFloat((do_qty * price) - total_disc);
+      let sub_total  = parseFloat((do_qty * price) - total_disc) * kurs;
 
       if(isNaN(total_disc)){
         total_disc = 0;
@@ -397,7 +400,8 @@
       let total = 0;
       $('tbody tr').each(function(index,e){
         let sub_total = parseFloat($('tr.index'+index+'').find('input[name="repeater['+index+'][total]"]').val());
-        
+        let kurs = $('#idr_rate').val();
+        // alert(kurs);
         if(isNaN(sub_total)){
           sub_total = 0;
         }
