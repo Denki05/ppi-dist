@@ -126,7 +126,7 @@
                   <input type="text" name="repeater[{{$index}}][packaging]" class="form-control" readonly value="{{$row->packaging_txt()->scalar ?? ''}}">
                 </td>
                 <td>
-                  <input type="text" name="repeater[{{$index}}][usd_disc]" class="form-control count" data-index="{{$index}}" step="any">
+                  <input type="text" name="repeater[{{$index}}][usd_disc]" class="form-control count count-disc" data-index="{{$index}}" step="any">
                 </td>
                 <td>
                   <input type="text" name="repeater[{{$index}}][percent_disc]" class="form-control count" data-index="{{$index}}" step="any">

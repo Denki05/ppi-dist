@@ -236,42 +236,50 @@
       <div class="col-12">
         <div class="card mb-2 border-0">
           <div class="card-body">
-            <table id="datatable" class="table table-striped">
+            <table class="table table-striped">
               <thead>
-                <tr>
-                  <th class="text-center" width="2%">#</th>
-                  <th class="text-center" width="10%">Code</th>
-                  <th class="text-center" width="15%">Product</th>
-                  <th class="text-center" width="2%">Acuan(USD)</th>
-                  <th class="text-center" width="5%">Quantity</th>
-                  <th class="text-center" width="5%">In Stock</th>
-                  <th class="text-center" width="10%">Packaging</th>
-                  <th class="text-center" width="13%">Harga</th>
-                  <th class="text-center" width="5%">Disc</th>
-                  <th class="text-center" width="13%">jumlah</th>
-                </tr>
+                <th>#</th>
+                <th>Product</th>
+                <th>Qty</th>
+                <th>In Stock</th>
+                <th>Price</th>
+                <th>Packaging</th>
+                <th>Disc (USD)</th>
+                <th>Total</th>
               </thead>
               <tbody>
+                
                 @foreach($result->so_detail as $index => $detail)
-                  <tr>
-                    <td>{{ $loop->iteration }}</td>
-                    <td><select class="js-select2 form-control js-ajax" id="sku[{{ $loop->iteration }}]" name="sku[]" data-placeholder="Select SKU" style="width:100%" required><option value="{{ $detail->product_id }}">{{ $detail->product->code }}</option></select></td>
-                    <td><span class="name">{{ $detail->product->name }} - <strong>{{ $detail->product->category->name }}</strong></span></td>
-                    <td><input type="number" class="form-control price" id="price" style="text-align: center;" name="price" value="{{ $detail->product->selling_price }}" readonly></td>
-                    <td><input type="number" class="form-control qty" id="qty" style="text-align: center;" name="qty" value="{{ $detail->qty }}" readonly></td>
-                    <td><input type="number" class="form-control in_stock" id="in_stock" style="text-align: center;" name="in_stock"  required></td>
-                    <td><span class="packaging">{{ $detail->packaging_txt()->scalar }}</span></td>
-                    <td><input type="number" class="form-control harga" id="harga" style="text-align: right;" name="harga" readonly value="{{ $detail->harga }}"></td>
-                    <td><input type="number" class="form-control disc-cash" name="disc-cash" required></td>
-                    <td><input type="number" class="form-control netto" style="text-align: right;" name="netto" readonly value="{{ $detail->total }}"></td>
-                  </tr>
+                <tr class="index{{$index}}" data-index="{{$index}}">
+                  <td>{{ $loop->iteration }}</td>
+                  <td>{{ $detail->product->code }} - <b>{{ $detail->product->name }}</td>
+                  <td>{{$detail->qty}}</td>
+                  
+                  <td>
+                    <input type="text" name="repeater[{{$index}}][do_qty]" class="form-control count" data-index="{{$index}}" step="any">
+                  </td>
+                  
+                  <td>
+                    <input type="text" name="repeater[{{$index}}][price]" class="form-control" readonly value="{{$detail->product->selling_price ?? 0}}">
+                  </td>
+                  <td>
+                    <input type="text" name="repeater[{{$index}}][packaging]" class="form-control" readonly value="{{$detail->packaging_txt()->scalar ?? ''}}">
+                  </td>
+                  <td>
+                    <input type="text" name="repeater[{{$index}}][usd_disc]" class="form-control count count-disc" data-index="{{$index}}" step="any">
+                  </td>
+                  
+                  <td>
+                    <input type="text" name="repeater[{{$index}}][total]" class="form-control" readonly>
+                  </td>
+                </tr>
                 @endforeach
               </tbody>
               <tfoot>
                   <tr class="row-footer-subtotal">
-                    <td colspan="9" class="text-right"><span><b>Subtotal</b></span></td>
+                    <td colspan="7" class="text-right"><span><b>Subtotal</b></span></td>
                     <td class="text-right">
-                      <input class="form-control sub_total_label" style="text-align: right;" id="sub_total_label" readonly>
+                      <input type="text" name="total" class="form-control" readonly>
                     </td>
                   </tr>
               </tfoot>
@@ -326,10 +334,78 @@
 
     $('.js-select2').select2();
 
-    $(document.body).on('change',".base_disc",function (e) {
-      const baseDisc = $(".base_disc option:selected").val();
-      $('input[name="disc-cash"]').val(baseDisc);
+    $(document).on('change',".base_disc"  ,function (e) {
+      let val = $(this).val();
+      // alert(val);
+      $('.count-disc').val(val);
     });
+
+    
+
+    // $(document).on('click','.select_per_item',function(){
+    //   total();
+    // })
+
+    $(document).on('keyup','.count',function(){
+      let index = $(this).attr('data-index');
+      count_per_item(index);
+      total();
+    })
+
+    // function isSelected(){
+    //   $('tbody').find('input[type="checkbox"]').attr('checked','checked');
+    //   $('tbody').find('input[type="checkbox"]').prop('checked', true);
+    // }
+    // function removeSelected(){
+    //   $('tbody').find('input[type="checkbox"]').removeAttr('checked');
+    //  $('tbody').find('input[type="checkbox"]').prop('checked', false);
+    // }
+
+    function count_per_item(indx){
+      let index = indx;
+      let price = parseFloat($('tr.index'+index+'').find('input[name="repeater['+index+'][price]"]').val()); 
+      let do_qty = parseFloat($('tr.index'+index+'').find('input[name="repeater['+index+'][do_qty]"]').val()); 
+      let val_usd_disc = parseFloat($('tr.index'+index+'').find('input[name="repeater['+index+'][usd_disc]"]').val());
+      let val_percent_disc = parseFloat($('tr.index'+index+'').find('input[name="repeater['+index+'][percent_disc]"]').val());
+
+      if(isNaN(val_usd_disc)){
+        val_usd_disc = 0;
+      }
+      if(isNaN(val_percent_disc)){
+        val_percent_disc = 0;
+      }
+
+      let total_disc = (val_usd_disc + ((price - val_usd_disc) * (val_percent_disc/100))) * do_qty;
+      
+      let sub_total  = parseFloat((do_qty * price) - total_disc);
+
+      if(isNaN(total_disc)){
+        total_disc = 0;
+      }
+
+      if(isNaN(sub_total)){
+        sub_total = 0;
+      }
+
+      $('tr.index'+index+'').find('input[name="repeater['+index+'][total_disc]"]').val(total_disc);
+      $('tr.index'+index+'').find('input[name="repeater['+index+'][total]"]').val(sub_total);
+      
+      total();
+    }
+
+    function total(){
+      let total = 0;
+      $('tbody tr').each(function(index,e){
+        let sub_total = parseFloat($('tr.index'+index+'').find('input[name="repeater['+index+'][total]"]').val());
+        
+        if(isNaN(sub_total)){
+          sub_total = 0;
+        }
+        total += sub_total;
+      }) ;
+
+      $('input[name="total"]').val(total);
+    }
     
   })
 </script>
