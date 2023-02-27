@@ -332,29 +332,29 @@
     });
 
     $('#datatable tbody').on( 'keyup', 'input[name="in_stock"]', function (e) {
-    var price = $(this).parents('tr').find('input[name="price"]').val();
-    var disc = $(this).parents('tr').find('input[name="disc-cash"]').val();
-    let totalBeforeDisc = 0;
-    let totalAfterDisc = 0;
-    totalBeforeDisc = $(this).val() * price;
+      var price = $(this).parents('tr').find('input[name="price"]').val();
+      var disc = $(this).parents('tr').find('input[name="disc-cash"]').val();
+      let totalBeforeDisc = 0;
+      let totalAfterDisc = 0;
+      totalBeforeDisc = $(this).val() * price;
 
-    if($('#idr_rate').val() > 1){
-      totalBeforeDisc = parseFloat($('#idr_rate').val()) * parseFloat(totalBeforeDisc);
-      $(this).parents('tr').find('input[name="harga"]').val(totalBeforeDisc);
-      $(this).parents('tr').find('input[name="harga"]').change();
+      if($('#idr_rate').val() > 1){
+        totalBeforeDisc = parseFloat($('#idr_rate').val()) * parseFloat(totalBeforeDisc);
+        $(this).parents('tr').find('input[name="harga"]').val(totalBeforeDisc);
+        $(this).parents('tr').find('input[name="harga"]').change();
 
-      totalAfterDisc = parseFloat(totalBeforeDisc) - (parseFloat($('#idr_rate').val()) * disc);
-      $(this).parents('tr').find('input[name="netto"]').val(totalAfterDisc);
-      $(this).parents('tr').find('input[name="netto"]').change();
-    }
-    else{
-      $(this).parents('tr').find('input[name="harga"]').val(totalBeforeDisc);
-      $(this).parents('tr').find('input[name="harga"]').change();
+        totalAfterDisc = parseFloat(totalBeforeDisc) - (parseFloat($('#idr_rate').val()) * disc);
+        $(this).parents('tr').find('input[name="netto"]').val(totalAfterDisc);
+        $(this).parents('tr').find('input[name="netto"]').change();
+      }
+      else{
+        $(this).parents('tr').find('input[name="harga"]').val(totalBeforeDisc);
+        $(this).parents('tr').find('input[name="harga"]').change();
 
-      $(this).parents('tr').find('input[name="netto"]').val(totalAfterDisc);
-      $(this).parents('tr').find('input[name="netto"]').change();
-    }
-  });
+        $(this).parents('tr').find('input[name="netto"]').val(totalAfterDisc);
+        $(this).parents('tr').find('input[name="netto"]').change();
+      }
+    });
 
     // SUM subtotal in product list
     $('#datatable tbody').on( 'change', 'input[name="netto"]', function (e) {
