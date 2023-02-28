@@ -149,7 +149,7 @@
                 <div class="form-group row">
                   <label class="col-md-4 col-form-label text-right">Voucher</label>
                   <div class="col-md-6">
-                    <input type="text" name="voucher_idr" id="voucher_idr" class="form-control count voucher_idr" value="{{number_format($result->do_cost->voucher_idr ?? 0,0,',','.')}}">
+                    <input type="text" name="voucher_idr" id="voucher_idr" class="form-control count voucher_idr" >
                   </div>
                 </div>
                 @endif
@@ -208,7 +208,7 @@
                 <div class="form-group row">
                   <label class="col-md-4 col-form-label text-right">Disc IDR</label>
                   <div class="col-md-6">
-                    <input type="number" name="disc_idr" id="disc_idr" class="form-control text-center disc_idr" step="any">
+                    <input type="text" name="disc_idr" id="disc_idr" class="form-control disc_idr " step="any">
                   </div>
                 </div>
                 @endif
@@ -320,32 +320,41 @@
 
     $('.js-select2').select2();
 
+    /* Fungsi formatRupiah */
+    function formatRupiah(angka, prefix){
+      angka = angka.toString();
+      var number_string = angka.replace(/[^,\d]/g, '').toString(),
+      split       = number_string.split(','),
+      sisa        = split[0].length % 3,
+      rupiah        = split[0].substr(0, sisa),
+      ribuan        = split[0].substr(sisa).match(/\d{3}/gi);
+    
+      // tambahkan titik jika yang di input sudah menjadi angka ribuan
+      if(ribuan){
+        separator = sisa ? '.' : '';
+        rupiah += separator + ribuan.join('.');
+      }
+    
+      rupiah = split[1] != undefined ? rupiah + ',' + split[1] : rupiah;
+      return prefix == undefined ? rupiah : (rupiah ? 'Rp. ' + rupiah : '');
+    }
+
+    $(document).on('keyup','.formatRupiah',function(){
+      let val = $(this).val();
+      $(this).val(formatRupiah(val));
+    })
+
     $(document).on('change', '.base_disc'  ,function (e) {
       let val = $(this).val();
       // alert(val);
       $('.count-disc').val(val);
     });
 
-    
-
-    // $(document).on('click','.select_per_item',function(){
-    //   total();
-    // })
-
     $(document).on('keyup','.count',function(){
       let index = $(this).attr('data-index');
       count_per_item(index);
       total();
     })
-
-    // function isSelected(){
-    //   $('tbody').find('input[type="checkbox"]').attr('checked','checked');
-    //   $('tbody').find('input[type="checkbox"]').prop('checked', true);
-    // }
-    // function removeSelected(){
-    //   $('tbody').find('input[type="checkbox"]').removeAttr('checked');
-    //  $('tbody').find('input[type="checkbox"]').prop('checked', false);
-    // }
 
     function count_per_item(indx){
       let index = indx;
