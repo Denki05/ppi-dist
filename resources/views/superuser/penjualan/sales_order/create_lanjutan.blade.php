@@ -136,7 +136,10 @@
                 <div class="form-group row">
                   <label class="col-md-4 col-form-label text-right">Disc %</label>
                   <div class="col-md-3">
-                    <input type="text" name="discount_1" class="form-control count" value="{{$result->do_cost->discount_1 ?? 0}}">
+                    <input type="text" name="disc_amount2_percent" id="disc_amount2_percent" class="form-control text-center disc_amount2_percent" value="{{$result->do_cost->discount_1 ?? 0}}">
+                  </div>
+                  <div class="col-md-5">
+                    <input type="text" name="disc_amount2_idr" id="disc_amount2_idr" class="form-control disc_amount2_idr text-center" readonly>
                   </div>
                 </div>
                 @endif
@@ -146,7 +149,7 @@
                 <div class="form-group row">
                   <label class="col-md-4 col-form-label text-right">Voucher</label>
                   <div class="col-md-6">
-                    <input type="text" name="voucher_idr" class="form-control count formatRupiah" value="{{number_format($result->do_cost->voucher_idr ?? 0,0,',','.')}}">
+                    <input type="text" name="voucher_idr" id="voucher_idr" class="form-control count voucher_idr" value="{{number_format($result->do_cost->voucher_idr ?? 0,0,',','.')}}">
                   </div>
                 </div>
                 @endif
@@ -156,7 +159,7 @@
                 <div class="form-group row">
                   <label class="col-md-4 col-form-label text-right">Subtotal</label>
                   <div class="col-md-6">
-                    <input type="number" name="idr_rate" class="form-control text-center" step="any" readonly>
+                    <input type="number" id="subtotal_2" name="subtotal_2" class="form-control text-center subtotal_2" step="any" readonly>
                   </div>
                 </div>
                 @endif
@@ -166,13 +169,16 @@
             <div class="row">
               <div class="col">
                 @if($step == 2)
-                <div class="form-group row">
-                  <label class="col-md-4 col-form-label text-right">Disc Kemasan</label>
-                  <div class="col-md-3">
-                    <input type="number" name="idr_rate" class="form-control text-center" step="any">
+                  <div class="form-group row">
+                    <label class="col-md-4 col-form-label text-right">Disc Kemasan</label>
+                    <div class="col-md-3">
+                      <input type="text" name="disc_kemasan_percent" id="disc_kemasan_percent" class="form-control disc_kemasan_percent text-center" value="{{$result->do_cost->discount_1 ?? 0}}">
+                    </div>
+                    <div class="col-md-5">
+                      <input type="text" name="disc_kemasan_idr" id="disc_kemasan_idr" class="form-control disc_kemasan_idr text-center" readonly>
+                    </div>
                   </div>
-                </div>
-                @endif
+                  @endif
               </div>
               <div class="col">
                 @if($step == 2)
@@ -202,7 +208,7 @@
                 <div class="form-group row">
                   <label class="col-md-4 col-form-label text-right">Disc IDR</label>
                   <div class="col-md-6">
-                    <input type="number" name="idr_rate" class="form-control text-center" step="any">
+                    <input type="number" name="disc_idr" id="disc_idr" class="form-control text-center disc_idr" step="any">
                   </div>
                 </div>
                 @endif
@@ -218,7 +224,7 @@
                 @endif
               </div>
               <div class="col-4">
-                <button type="button" class="btn btn-danger "><i class="fas fa-calculator pr-2" aria-hidden="true"></i>Calculate</button>
+                <button type="button" class="btn btn-danger"><i class="fas fa-calculator pr-2" aria-hidden="true"></i>Calculate</button>
                 <button type="button" class="btn btn-info"><i class="fas fa-save pr-2" aria-hidden="true"></i>Save</button>
               </div>
             </div>
@@ -277,9 +283,12 @@
               </tbody>
               <tfoot>
                   <tr class="row-footer-subtotal">
-                    <td colspan="7" class="text-right"><span><b>Subtotal</b></span></td>
+                    <td colspan="7" class="text-right">
+                      <b>Subtotal</b>
+                      <br><span class="text-danger">*Subtotal After Disc(USD)</span>
+                    </td>
                     <td class="text-right">
-                      <input type="text" name="total" class="form-control" readonly>
+                      <input type="text" name="total" id="total" class="form-control" readonly>
                     </td>
                   </tr>
               </tfoot>
@@ -308,29 +317,6 @@
              { "bSortable": false, "aTargets": [ 1, 4, 5, 6, 7, 8, 9, 10, 11 ] }
         ] 
     });
-
-    function formatRupiah(angka, prefix){
-      angka = angka.toString();
-      var number_string = angka.replace(/[^,\d]/g, '').toString(),
-      split       = number_string.split(','),
-      sisa        = split[0].length % 3,
-      rupiah        = split[0].substr(0, sisa),
-      ribuan        = split[0].substr(sisa).match(/\d{3}/gi);
-    
-      // tambahkan titik jika yang di input sudah menjadi angka ribuan
-      if(ribuan){
-        separator = sisa ? '.' : '';
-        rupiah += separator + ribuan.join('.');
-      }
-    
-      rupiah = split[1] != undefined ? rupiah + ',' + split[1] : rupiah;
-      return prefix == undefined ? rupiah : (rupiah ? 'Rp. ' + rupiah : '');
-    };
-
-    $(document).on('keyup','.formatRupiah',function(){
-      let val = $(this).val();
-      $(this).val(formatRupiah(val));
-    })
 
     $('.js-select2').select2();
 
@@ -391,14 +377,13 @@
       $('tr.index'+index+'').find('input[name="repeater['+index+'][total_disc]"]').val(total_disc);
       $('tr.index'+index+'').find('input[name="repeater['+index+'][total]"]').val(sub_total);
       
-      total();
+      sub_total1();
     }
 
-    function total(){
+    function sub_total1(){
       let total = 0;
       $('tbody tr').each(function(index,e){
         let sub_total = parseFloat($('tr.index'+index+'').find('input[name="repeater['+index+'][total]"]').val());
-        let kurs = $('#idr_rate').val();
         // alert(kurs);
         if(isNaN(sub_total)){
           sub_total = 0;
@@ -408,6 +393,53 @@
 
       $('input[name="total"]').val(total);
     }
+
+    // input disc % (agen)
+    $(document).on('input', "#disc_amount2_percent", function(e){
+        if($(this).val() != ''){
+            var subtotal = $('input[name="total"]').val();
+            var amount = parseFloat(subtotal) * parseFloat($(this).val()) / 100;
+            $('input[name="disc_amount2_idr"]').val(amount);
+        }else{
+            $('input[name="disc_amount2_idr').val(0);
+        }
+
+        sub_total2();
+    });
+
+
+    // input disc kemasan
+    $(document).on('input', "#disc_kemasan_percent", function(e){
+        if($(this).val() != ''){
+            var subtotal = $('input[name="subtotal_2"]').val();
+            var amount = parseFloat(subtotal) * parseFloat($(this).val()) / 100;
+            $('input[name="disc_kemasan_idr"]').val(amount);
+        }else{
+            $('input[name="disc_kemasan_idr').val(0);
+        }
+
+        sub_total2();
+    });
+
+    $("#disc_idr").on('input', function() {
+      sub_total2();
+    });
+
+    $("#voucher_idr").on('input', function() {
+      sub_total2();
+    });
+
+    function sub_total2(){
+      var subtotal = $('input[name="total"]').val();
+      var disc_agen = $('input[name="disc_amount2_idr"]').val();
+      var disc_kemasan = $('input[name="disc_kemasan_idr"]').val();
+      var disc_idr = $('#disc_idr').val();
+      var voucher_idr = $('#voucher_idr').val();
+      let subtotal_2 = (((subtotal - disc_agen) - disc_kemasan) - disc_idr) - voucher_idr;
+
+      $('input[name="subtotal_2"]').val(subtotal_2);
+    }
+
     
   })
 </script>
