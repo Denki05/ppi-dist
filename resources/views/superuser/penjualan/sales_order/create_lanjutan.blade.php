@@ -439,23 +439,13 @@
       $('input[name="subtotal_2"]').val(subtotal_2);
     }
 
-    // function calculated(){
-    //   let subtotal = $('input[name="subtotal_2"]').val();
-    //   let disc_idr = $('input[name="disc_idr"]').val();
-    //   let voucher_idr = $('input[name="voucher_idr"]').val();
-    //   let ongkir = $('input[name="delivery_cost_idr"]').val();
-
-    //   let subtotalFinal = 0;
-    //   subtotalFinal = ((subtotal - disc_idr) - voucher_idr) + ongkir;
-    //   $('#grand_total_final').val(subtotalFinal);
-    // }
-
     // calculated button after input voucher - disc idr
     $(document).on('click', '#button_cal', function(e){
       let subtotal = $('input[name="subtotal_2"]').val();
       let disc_idr = $('input[name="disc_idr"]').val();
       let voucher_idr = $('input[name="voucher_idr"]').val();
-      var subtotalFinal = (subtotal - disc_idr) - voucher_idr;
+      // let ongkir = $('input[name="delivery_cost_idr"]').val();
+      var subtotalFinal = subtotal - disc_idr - voucher_idr;
       var grandTotal = subtotalFinal;
 
       $('input[name="grand_total_final"]').val(grandTotal);
