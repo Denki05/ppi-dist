@@ -185,7 +185,7 @@
                 <div class="form-group row">
                   <label class="col-md-4 col-form-label text-right">Ongkir</label>
                   <div class="col-md-6">
-                    <input type="text" name="delivery_cost_idr" class="form-control count value="{{number_format($result->do_cost->delivery_cost_idr ?? 0,0,',','.')}}">
+                    <input type="text" name="delivery_cost_idr" id="delivery_cost_idr" class="form-control delivery_cost_idr">
                   </div>
                 </div>
                 @endif
@@ -195,7 +195,7 @@
                 <div class="form-group row">
                   <label class="col-md-4 col-form-label text-right">Grand Total</label>
                   <div class="col-md-6">
-                    <input type="number" name="idr_rate" class="form-control text-center" step="any" readonly>
+                    <input type="number" name="grand_total_final"  id="grand_total_final" class="form-control text-center grand_total_final" step="any" readonly>
                   </div>
                 </div>
                 @endif
@@ -224,8 +224,8 @@
                 @endif
               </div>
               <div class="col-4">
-                <button type="button" class="btn btn-danger"><i class="fas fa-calculator pr-2" aria-hidden="true"></i>Calculate</button>
-                <button type="button" class="btn btn-info"><i class="fas fa-save pr-2" aria-hidden="true"></i>Save</button>
+                <button type="button" class="btn btn-danger" id="button_cal"><i class="fas fa-calculator pr-2" aria-hidden="true"></i>Calculate</button>
+                <button type="button" class="btn btn-info" id="button_save"><i class="fas fa-save pr-2" aria-hidden="true"></i>Save</button>
               </div>
             </div>
           </div>
@@ -284,7 +284,7 @@
               <tfoot>
                   <tr class="row-footer-subtotal">
                     <td colspan="7" class="text-right">
-                      <b>Subtotal</b>
+                      <b>Total Item</b>
                       <br><span class="text-danger">*Subtotal After Disc(USD)</span>
                     </td>
                     <td class="text-right">
@@ -433,13 +433,33 @@
       var subtotal = $('input[name="total"]').val();
       var disc_agen = $('input[name="disc_amount2_idr"]').val();
       var disc_kemasan = $('input[name="disc_kemasan_idr"]').val();
-      var disc_idr = $('#disc_idr').val();
-      var voucher_idr = $('#voucher_idr').val();
-      let subtotal_2 = (((subtotal - disc_agen) - disc_kemasan) - disc_idr) - voucher_idr;
+      
+      let subtotal_2 = (subtotal - disc_agen) - disc_kemasan;
 
       $('input[name="subtotal_2"]').val(subtotal_2);
     }
 
+    // function calculated(){
+    //   let subtotal = $('input[name="subtotal_2"]').val();
+    //   let disc_idr = $('input[name="disc_idr"]').val();
+    //   let voucher_idr = $('input[name="voucher_idr"]').val();
+    //   let ongkir = $('input[name="delivery_cost_idr"]').val();
+
+    //   let subtotalFinal = 0;
+    //   subtotalFinal = ((subtotal - disc_idr) - voucher_idr) + ongkir;
+    //   $('#grand_total_final').val(subtotalFinal);
+    // }
+
+    // calculated button after input voucher - disc idr
+    $(document).on('click', '#button_cal', function(e){
+      let subtotal = $('input[name="subtotal_2"]').val();
+      let disc_idr = $('input[name="disc_idr"]').val();
+      let voucher_idr = $('input[name="voucher_idr"]').val();
+      var subtotalFinal = (subtotal - disc_idr) - voucher_idr;
+      var grandTotal = subtotalFinal;
+
+      $('input[name="grand_total_final"]').val(grandTotal);
+    });
     
   })
 </script>
