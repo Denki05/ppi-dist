@@ -174,8 +174,8 @@
                 <tr>
                   <td>{{$table->firstItem() + $index}}</td>
                   <td>{{$row->code}}</td>
-                  <td>{{$row->brand_reference->name ?? ''}}</td>
-                  <td>{{$row->name}}</td>
+                  <td>{{$row->category->brand_lokal->brand_name ?? ''}}</td>
+                  <td>{{$row->name}} - {{$row->category->type}}</td>
                   <td>{{$row->stock}}</td>
                   <td>{{$row->so}}</td>
                   <td>{{$row->do}}</td>

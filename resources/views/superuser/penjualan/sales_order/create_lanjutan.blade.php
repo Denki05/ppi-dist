@@ -149,7 +149,7 @@
                 <div class="form-group row">
                   <label class="col-md-4 col-form-label text-right">Voucher</label>
                   <div class="col-md-6">
-                    <input type="text" name="voucher_idr" id="voucher_idr" class="form-control count voucher_idr" >
+                    <input type="text" name="voucher_idr" id="voucher_idr" class="form-control count voucher_idr formatRupiah">
                   </div>
                 </div>
                 @endif
@@ -185,7 +185,7 @@
                 <div class="form-group row">
                   <label class="col-md-4 col-form-label text-right">Ongkir</label>
                   <div class="col-md-6">
-                    <input type="text" name="delivery_cost_idr" id="delivery_cost_idr" class="form-control delivery_cost_idr">
+                    <input type="text" name="delivery_cost_idr" id="delivery_cost_idr" class="form-control delivery_cost_idr formatRupiah">
                   </div>
                 </div>
                 @endif
@@ -208,7 +208,7 @@
                 <div class="form-group row">
                   <label class="col-md-4 col-form-label text-right">Disc IDR</label>
                   <div class="col-md-6">
-                    <input type="text" name="disc_idr" id="disc_idr" class="form-control disc_idr " step="any">
+                    <input type="text" name="disc_idr" id="disc_idr" class="form-control disc_idr formatRupiah" step="any">
                   </div>
                 </div>
                 @endif
@@ -276,7 +276,7 @@
                   </td>
                   
                   <td>
-                    <input type="text" name="repeater[{{$index}}][total]" class="form-control" readonly>
+                    <input type="text" name="repeater[{{$index}}][total]" class="form-control formatRupiah" readonly>
                   </td>
                 </tr>
                 @endforeach
@@ -288,7 +288,7 @@
                       <br><span class="text-danger">*Subtotal After Disc(USD)</span>
                     </td>
                     <td class="text-right">
-                      <input type="text" name="total" id="total" class="form-control" readonly>
+                      <input type="text" name="sub_total_item" id="sub_total_item" class="form-control formatRupiah" readonly>
                     </td>
                   </tr>
               </tfoot>
@@ -321,7 +321,7 @@
     $('.js-select2').select2();
 
     /* Fungsi formatRupiah */
-    function formatRupiah(angka, prefix){
+		function formatRupiah(angka, prefix){
       angka = angka.toString();
       var number_string = angka.replace(/[^,\d]/g, '').toString(),
       split       = number_string.split(','),
@@ -338,6 +338,7 @@
       rupiah = split[1] != undefined ? rupiah + ',' + split[1] : rupiah;
       return prefix == undefined ? rupiah : (rupiah ? 'Rp. ' + rupiah : '');
     }
+    
 
     $(document).on('keyup','.formatRupiah',function(){
       let val = $(this).val();
@@ -393,6 +394,7 @@
       let total = 0;
       $('tbody tr').each(function(index,e){
         let sub_total = parseFloat($('tr.index'+index+'').find('input[name="repeater['+index+'][total]"]').val());
+        
         // alert(kurs);
         if(isNaN(sub_total)){
           sub_total = 0;
@@ -400,7 +402,7 @@
         total += sub_total;
       }) ;
 
-      $('input[name="total"]').val(total);
+      $('input[name="sub_total_item"]').val(total);
     }
 
     // input disc % (agen)
