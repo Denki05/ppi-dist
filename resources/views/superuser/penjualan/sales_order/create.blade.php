@@ -74,7 +74,7 @@
                     <div class="form-group row">
                       <label class="col-md-4 col-form-label text-right">Kurs</label>
                       <div class="col-md-6">
-                        <input type="number" name="idr_rate" class="form-control formatRupiah" value="1">
+                        <input type="number" name="idr_rate" class="form-control" value="1">
                       </div>
                     </div>
                     @endif

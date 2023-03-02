@@ -894,7 +894,7 @@ class SalesOrderController extends Controller
                     $packing_order->warehouse_id = $sales_order->origin_warehouse_id;
                     $packing_order->type_transaction  = $sales_order->type_transaction;
                     $packing_order->idr_rate = trim(htmlentities($post["idr_rate"]));
-                    $packing_order->other_address = 0;
+                    $packing_order->other_address = 0 ?? Null;
                     $packing_order->note = $company->note ?? null;
                     $packing_order->status = 1;
                     $packing_order->created_by = Auth::id();
@@ -973,7 +973,7 @@ class SalesOrderController extends Controller
                                 'usd_disc' => $usd_disc,
                                 'total_disc' => $total_disc,
                                 'total' => floatval($do_qty * $price) - $total_disc ,
-                                'note' => trim(htmlentities($value["note"])),
+                                // 'note' => trim(htmlentities($value["note"])),
                                 'created_by' => Auth::id(),
                             ];
 

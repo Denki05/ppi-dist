@@ -205,6 +205,8 @@
               </div>
             </div>
 
+
+            <!-- form save packing order -->
             <div class="tab-pane pt-3" role="tabpanel" id="pembuatanPO">
               <form id="frmEditSOMaster" method="post" enctype="multipart/form-data">
                 @csrf

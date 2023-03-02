@@ -10,290 +10,302 @@
 
 @section('content')
 <div class="container-fluid">
-  <div class="row">
-    <div class="col-4">
-      <div class="card mb-2 border-0">
-        <div class="card-body">
-          <div class="row">
-            <div class="col">
-              <div class="row">
-                <label style="font-size: 10pt;" class="col-xs-4 col-sm-4 col-md-4 control-label" for="textinput">Code</label>
-                <div class="col-xs-6 col-sm-6 col-md-6">
-                  <p style="font-size: 9pt;">{{ $result->code }}</p>
-                </div>
-              </div>
-              </div>
+  <form id="frmEditSOMaster" method="post" enctype="multipart/form-data">
+  @csrf
+  <input type="hidden" name="id" value="{{$result->id}}">
+  <input type="hidden" name="step" value="{{$step}}">
+    <div class="row">
+      <div class="col-4">
+        <div class="card mb-2 border-0">
+          <div class="card-body">
+            <div class="row">
               <div class="col">
                 <div class="row">
-                  <label style="font-size: 10pt;" class="col-xs-6 col-sm-6 col-md-6 control-label" for="textinput">Tanggal</label>
+                  <label style="font-size: 10pt;" class="col-xs-4 col-sm-4 col-md-4 control-label" for="textinput">Code</label>
                   <div class="col-xs-6 col-sm-6 col-md-6">
-                    <p style="font-size: 9pt;">{{ date('d-m-Y',strtotime($result->created_at)) }}</p>
+                    <p style="font-size: 9pt;">{{ $result->code }}</p>
                   </div>
                 </div>
-              </div>
-          </div>
-        </div>
-      </div>
-
-      <div class="card mb-2 border-0">
-        <div class="card-body" >
-          <div class="row">
-            <div class="col">
-              <div class="form-label-group in-border">
-                <label style="font-size: 10pt;">Customer</label>
-                <p style="font-size: 9pt;">{{ $result->member->name }}</p>
-              </div>
-            </div>
-            <div class="col">
-              <div class="form-label-group in-border">
-                <label style="font-size: 10pt;">Address</label>
-                <p style="font-size: 9pt;">{{ $result->member->address }}</p>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <div class="card mb-2 border-0">
-        <div class="card-body" style="padding: 2px 5px 2px;">
-          <div class="row">
-            <div class="col">
-              <div class="form-label-group in-border">
-                <label style="font-size: 10pt;">Plafon Piutang</label>
-                <p style="font-size: 9pt;">{{ $result->customer->plafon_piutang }}</p>
-              </div>
-            </div>
-            <div class="col">
-              <div class="form-label-group in-border">
-                <label style="font-size: 10pt;">Saldo</label>
-                <p style="font-size: 9pt;">{{ $result->customer->saldo }}</p>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-    </div>
-    <div class="col-md-8">
-      <div class="row">
-        <div class="card mb-2 border-0">
-          <div class="card-body">
-            <div class="row">
-              <div class="col-sm">
-                @if($step == 2)
-                  <div class="form-group row">
-                    <label style="font-size: 10pt;" class="col-md-4 col-form-label text-right">Gudang<span class="text-danger">*</span></label>
-                      <div class="col-8">
-                        <select class="form-control js-select2" style="font-size: 9pt;" name="origin_warehouse_id">
-                          <option value="">Pilih Gudang</option>
-                          @foreach($warehouse as $index => $row)
-                          <option style="font-size: 10pt;" value="{{$row->id}}" @if($result->origin_warehouse_id == $row->id) selected @endif>{{$row->name}}</option>
-                          @endforeach
-                        </select>
-                      </div>
-                  </div>
-                  @endif
-              </div>
-              <div class="col-sm">
-                @if($step == 2)
-                  <div class="form-group row">
-                    <label class="col-md-4 col-form-label text-right" style="font-size: 10pt;">Kurs<span class="text-danger">*</span></label>
-                    <div class="col-5">
-                    <input type="text" name="idr_rate" id="idr_rate"  class="form-control formatRupiah" value="{{ number_format($result->idr_rate,0,',','.') }}">
-                    <!-- <input type="text" name="idr_rate" id="idr_rate"  class="form-control" value="{{ $result->idr_rate }}"> -->
+                </div>
+                <div class="col">
+                  <div class="row">
+                    <label style="font-size: 10pt;" class="col-xs-6 col-sm-6 col-md-6 control-label" for="textinput">Tanggal</label>
+                    <div class="col-xs-6 col-sm-6 col-md-6">
+                      <p style="font-size: 9pt;">{{ date('d-m-Y',strtotime($result->created_at)) }}</p>
                     </div>
                   </div>
-                  @endif
+                </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="card mb-2 border-0">
+          <div class="card-body" >
+            <div class="row">
+              <div class="col">
+                <div class="form-label-group in-border">
+                  <label style="font-size: 10pt;">Customer</label>
+                  <p style="font-size: 9pt;">{{ $result->member->name }}</p>
+                </div>
               </div>
-              <div class="col-sm">
-                @if($step == 2)
-                  <div class="form-group row">
-                    <label style="font-size: 10pt;" class="col-md-4 col-form-label text-right">Disc Cash</label>
-                      <div class="col-5">
-                        <select class="form-control js-select2 base_disc" id="base_id">
-                            <option value="0">0</option>
-                            <option value="2">$2</option>
-                            <option value="4">$4</option>
-                        </select>
-                      </div>
-                  </div>
-                @endif
+              <div class="col">
+                <div class="form-label-group in-border">
+                  <label style="font-size: 10pt;">Address</label>
+                  <p style="font-size: 9pt;">{{ $result->member->address }}</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="card mb-2 border-0">
+          <div class="card-body" style="padding: 2px 5px 2px;">
+            <div class="row">
+              <div class="col">
+                <div class="form-label-group in-border">
+                  <label style="font-size: 10pt;">Plafon Piutang</label>
+                  <p style="font-size: 9pt;">{{ $result->customer->plafon_piutang }}</p>
+                </div>
+              </div>
+              <div class="col">
+                <div class="form-label-group in-border">
+                  <label style="font-size: 10pt;">Saldo</label>
+                  <p style="font-size: 9pt;">{{ $result->customer->saldo }}</p>
+                </div>
               </div>
             </div>
           </div>
         </div>
       </div>
-      <div class="row">
-        <div class="card mb-2 border-0">
-          <div class="card-body">
-            <div class="row">
-              <div class="col">
-                @if($step == 2)
-                <div class="form-group row">
-                  <label class="col-md-4 col-form-label text-right">Disc %</label>
-                  <div class="col-md-3">
-                    <input type="text" name="disc_amount2_percent" id="disc_amount2_percent" class="form-control text-center disc_amount2_percent" value="{{$result->do_cost->discount_1 ?? 0}}">
-                  </div>
-                  <div class="col-md-5">
-                    <input type="text" name="disc_amount2_idr" id="disc_amount2_idr" class="form-control disc_amount2_idr text-center" readonly>
-                  </div>
+
+      <div class="col-md-8">
+        <div class="row">
+          <div class="card mb-2 border-0">
+            <div class="card-body">
+              <div class="row">
+                <div class="col-sm">
+                  @if($step == 2)
+                    <div class="form-group row">
+                      <label style="font-size: 10pt;" class="col-md-4 col-form-label text-right">Gudang<span class="text-danger">*</span></label>
+                        <div class="col-8">
+                          <select class="form-control js-select2" style="font-size: 9pt;" name="origin_warehouse_id">
+                            <option value="">Pilih Gudang</option>
+                            @foreach($warehouse as $index => $row)
+                            <option style="font-size: 10pt;" value="{{$row->id}}" @if($result->origin_warehouse_id == $row->id) selected @endif>{{$row->name}}</option>
+                            @endforeach
+                          </select>
+                        </div>
+                    </div>
+                    @endif
                 </div>
-                @endif
-              </div>
-              <div class="col">
-                @if($step == 2)
-                <div class="form-group row">
-                  <label class="col-md-4 col-form-label text-right">Voucher</label>
-                  <div class="col-md-6">
-                    <input type="text" name="voucher_idr" id="voucher_idr" class="form-control count voucher_idr formatRupiah">
-                  </div>
+                <div class="col-sm">
+                  @if($step == 2)
+                    <div class="form-group row">
+                      <label class="col-md-4 col-form-label text-right" style="font-size: 10pt;">Kurs<span class="text-danger">*</span></label>
+                      <div class="col-5">
+                      <input type="text" name="idr_rate" id="idr_rate"  class="form-control formatRupiah" value="{{ number_format($result->idr_rate,0,',','.') }}">
+                      <!-- <input type="text" name="idr_rate" id="idr_rate"  class="form-control" value="{{ $result->idr_rate }}"> -->
+                      </div>
+                    </div>
+                    @endif
                 </div>
-                @endif
-              </div>
-              <div class="col">
-                @if($step == 2)
-                <div class="form-group row">
-                  <label class="col-md-4 col-form-label text-right">Subtotal</label>
-                  <div class="col-md-6">
-                    <input type="text" id="subtotal_2" name="subtotal_2" class="form-control text-center subtotal_2" step="any" readonly>
-                  </div>
+                <div class="col-sm">
+                  @if($step == 2)
+                    <div class="form-group row">
+                      <label style="font-size: 10pt;" class="col-md-4 col-form-label text-right">Disc Cash</label>
+                        <div class="col-5">
+                          <select class="form-control js-select2 base_disc" id="base_id">
+                              <option value="0">0</option>
+                              <option value="2">$2</option>
+                              <option value="4">$4</option>
+                          </select>
+                        </div>
+                    </div>
+                  @endif
                 </div>
-                @endif
               </div>
             </div>
-
-            <div class="row">
-              <div class="col">
-                @if($step == 2)
+          </div>
+        </div>
+        <div class="row">
+          <div class="card mb-2 border-0">
+            <div class="card-body">
+              <div class="row">
+                <div class="col">
+                  @if($step == 2)
                   <div class="form-group row">
-                    <label class="col-md-4 col-form-label text-right">Disc Kemasan</label>
+                    <label class="col-md-4 col-form-label text-right">Disc %</label>
                     <div class="col-md-3">
-                      <input type="text" name="disc_kemasan_percent" id="disc_kemasan_percent" class="form-control disc_kemasan_percent text-center" value="{{$result->do_cost->discount_1 ?? 0}}">
+                      <input type="text" name="disc_amount2_percent" id="disc_amount2_percent" class="form-control text-center disc_amount2_percent" value="{{$result->do_cost->discount_1 ?? 0}}">
                     </div>
                     <div class="col-md-5">
-                      <input type="text" name="disc_kemasan_idr" id="disc_kemasan_idr" class="form-control disc_kemasan_idr text-center" readonly>
+                      <input type="text" name="disc_amount2_idr" id="disc_amount2_idr" class="form-control disc_amount2_idr text-center" readonly>
                     </div>
                   </div>
                   @endif
-              </div>
-              <div class="col">
-                @if($step == 2)
-                <div class="form-group row">
-                  <label class="col-md-4 col-form-label text-right">Ongkir</label>
-                  <div class="col-md-6">
-                    <input type="text" name="delivery_cost_idr" id="delivery_cost_idr" class="form-control delivery_cost_idr formatRupiah">
-                  </div>
                 </div>
-                @endif
-              </div>
-              <div class="col">
-                @if($step == 2)
-                <div class="form-group row">
-                  <label class="col-md-4 col-form-label text-right">Grand Total</label>
-                  <div class="col-md-6">
-                    <input type="text" name="grand_total_final"  id="grand_total_final" class="form-control text-center grand_total_final" step="any" readonly>
+                <div class="col">
+                  @if($step == 2)
+                  <div class="form-group row">
+                    <label class="col-md-4 col-form-label text-right">Voucher</label>
+                    <div class="col-md-6">
+                      <input type="text" name="voucher_idr" id="voucher_idr" class="form-control count voucher_idr formatRupiah">
+                    </div>
                   </div>
+                  @endif
                 </div>
-                @endif
+                <div class="col">
+                  @if($step == 2)
+                  <div class="form-group row">
+                    <label class="col-md-4 col-form-label text-right">Subtotal</label>
+                    <div class="col-md-6">
+                      <input type="text" id="subtotal_2" name="subtotal_2" class="form-control text-center subtotal_2" step="any" readonly>
+                    </div>
+                  </div>
+                  @endif
+                </div>
               </div>
-            </div>
 
-            <div class="row">
-              <div class="col-4">
-                @if($step == 2)
-                <div class="form-group row">
-                  <label class="col-md-4 col-form-label text-right">Disc IDR</label>
-                  <div class="col-md-6">
-                    <input type="text" name="disc_idr" id="disc_idr" class="form-control disc_idr formatRupiah" step="any">
-                  </div>
+              <div class="row">
+                <div class="col">
+                  @if($step == 2)
+                    <div class="form-group row">
+                      <label class="col-md-4 col-form-label text-right">Disc Kemasan</label>
+                      <div class="col-md-3">
+                        <input type="text" name="disc_kemasan_percent" id="disc_kemasan_percent" class="form-control disc_kemasan_percent text-center" value="{{$result->do_cost->discount_1 ?? 0}}">
+                      </div>
+                      <div class="col-md-5">
+                        <input type="text" name="disc_kemasan_idr" id="disc_kemasan_idr" class="form-control disc_kemasan_idr text-center" readonly>
+                      </div>
+                    </div>
+                    @endif
                 </div>
-                @endif
-              </div>
-              <div class="col-4">
-                @if($step == 2)
-                <div class="form-group row">
-                  <label class="col-md-4 col-form-label text-right">Resi Ongkir</label>
-                  <div class="col-md-6">
-                    <input type="number" name="resi_ongkir" id="resi_ongkir" class="form-control text-center formatRupiah" step="any">
+                <div class="col">
+                  @if($step == 2)
+                  <div class="form-group row">
+                    <label class="col-md-4 col-form-label text-right">Ongkir</label>
+                    <div class="col-md-6">
+                      <input type="text" name="delivery_cost_idr" id="delivery_cost_idr" class="form-control delivery_cost_idr formatRupiah">
+                    </div>
                   </div>
+                  @endif
                 </div>
-                @endif
+                <div class="col">
+                  @if($step == 2)
+                  <div class="form-group row">
+                    <label class="col-md-4 col-form-label text-right">Grand Total</label>
+                    <div class="col-md-6">
+                      <input type="text" name="grand_total_final"  id="grand_total_final" class="form-control text-center grand_total_final" step="any" readonly>
+                    </div>
+                  </div>
+                  @endif
+                </div>
               </div>
-              <div class="col-4">
-                <button type="button" class="btn btn-danger button_cal" id="button_cal"><i class="fas fa-calculator pr-2" aria-hidden="true"></i>Calculate</button>
-                <button class="btn btn-primary btn-md" type="submit" disabled="disabled"><i class="fa fa-save"></i> Save</button>
+
+              <div class="row">
+                <div class="col-4">
+                  @if($step == 2)
+                  <div class="form-group row">
+                    <label class="col-md-4 col-form-label text-right">Disc IDR</label>
+                    <div class="col-md-6">
+                      <input type="text" name="disc_idr" id="disc_idr" class="form-control disc_idr formatRupiah" step="any">
+                    </div>
+                  </div>
+                  @endif
+                </div>
+                <div class="col-4">
+                  @if($step == 2)
+                  <div class="form-group row">
+                    <label class="col-md-4 col-form-label text-right">Resi Ongkir</label>
+                    <div class="col-md-6">
+                      <input type="number" name="resi_ongkir" id="resi_ongkir" class="form-control text-center formatRupiah" step="any">
+                    </div>
+                  </div>
+                  @endif
+                </div>
+                <div class="col-4">
+                  <button type="button" class="btn btn-danger button_cal" id="button_cal"><i class="fas fa-calculator pr-2" aria-hidden="true"></i>Calculate</button>
+                  <button class="btn btn-primary btn-md" type="submit" disabled="disabled"><i class="fa fa-save"></i> Save</button>
+                </div>
               </div>
             </div>
           </div>
         </div>
       </div>
     </div>
-  </div>
 
   <br>
 
   <!-- Detail Pesanan -->
-  <div class="row">
-    <form method="POST" action="">  
-      <div class="col-12">
-        <div class="card mb-2 border-0">
-          <div class="card-body">
-            <table class="table table-striped">
-              <thead>
-                <th>#</th>
-                <th>Product</th>
-                <th>Qty</th>
-                <th>In Stock</th>
-                <th>Price</th>
-                <th>Packaging</th>
-                <th>Disc (USD)</th>
-                <th>Total</th>
-              </thead>
-              <tbody>
-                
-                @foreach($result->so_detail as $index => $detail)
-                <tr class="index{{$index}}" data-index="{{$index}}">
-                  <td>{{ $loop->iteration }}</td>
-                  <td>{{ $detail->product->code }} - <b>{{ $detail->product->name }}</td>
-                  <td>{{$detail->qty}}</td>
-                  
-                  <td>
-                    <input type="text" name="repeater[{{$index}}][do_qty]" class="form-control count" data-index="{{$index}}" step="any">
-                  </td>
-                  
-                  <td>
-                    <input type="text" name="repeater[{{$index}}][price]" class="form-control" readonly value="{{$detail->product->selling_price ?? 0}}">
-                  </td>
-                  <td>
-                    <input type="text" name="repeater[{{$index}}][packaging]" class="form-control" readonly value="{{$detail->packaging_txt()->scalar ?? ''}}">
-                  </td>
-                  <td>
-                    <input type="text" name="repeater[{{$index}}][usd_disc]" class="form-control count count-disc" data-index="{{$index}}" step="any">
-                  </td>
-                  
-                  <td>
-                    <input type="text" name="repeater[{{$index}}][total]" class="form-control formatRupiah" readonly>
-                  </td>
-                </tr>
-                @endforeach
-              </tbody>
-              <tfoot>
-                  <tr class="row-footer-subtotal">
-                    <td colspan="7" class="text-right">
-                      <b>Total Item</b>
-                      <br><span class="text-danger">*Subtotal After Disc(USD)</span>
-                    </td>
-                    <td class="text-right">
-                      <input type="text" name="sub_total_item" id="sub_total_item" class="form-control formatRupiah" readonly>
-                    </td>
-                  </tr>
-              </tfoot>
-            </table>
+    <div class="row">
+        <div class="col-12">
+          <div class="card mb-2 border-0">
+            <div class="card-body">
+              <table class="table table-striped">
+                <thead>
+                  <th>#</th>
+                  <th>Product</th>
+                  <th>Qty</th>
+                  <th>In Stock</th>
+                  <th>Price</th>
+                  <th>Packaging</th>
+                  <th>Disc (USD)</th>
+                  <th>Total</th>
+                </thead>
+                <tbody>
+                  @if(count($result->so_detail) <= 0)
+                    <tr>
+                      <td colspan="13" align="center">Data tidak ditemukan</td>
+                    </tr>
+                  @endif
+                  @if(count($result->so_detail) > 0)
+                    @foreach($result->so_detail as $index => $detail)
+                    <input type="hidden" name="repeater[{{$index}}][product_id]" value="{{$detail->product_id}}">
+                    <input type="hidden" name="repeater[{{$index}}][so_qty]" value="{{$detail->qty}}">
+                    <input type="hidden" name="repeater[{{$index}}][so_item_id]" value="{{$detail->id}}">
+                    <tr class="index{{$index}}" data-index="{{$index}}">
+                      <td>{{ $loop->iteration }}</td>
+                      <td>{{ $detail->product->code }} - <b>{{ $detail->product->name }}</td>
+                      <td>{{$detail->qty}}</td>
+                      
+                      <td>
+                        <input type="number" name="repeater[{{$index}}][do_qty]" class="form-control count" data-index="{{$index}}" value="{{$detail->qty}}" step="any" min="0" max="{{$detail->qty}}">
+                      </td>
+                      
+                      <td>
+                        <input type="text" name="repeater[{{$index}}][price]" class="form-control" readonly value="{{$detail->product->selling_price ?? 0}}">
+                      </td>
+                      <td>
+                        <input type="text" name="repeater[{{$index}}][packaging]" class="form-control" readonly value="{{$detail->packaging_txt()->scalar ?? ''}}">
+                      </td>
+                      <td>
+                        <input type="text" name="repeater[{{$index}}][usd_disc]" class="form-control count count-disc" data-index="{{$index}}" step="any">
+                      </td>
+                      
+                      <td>
+                        <input type="text" name="repeater[{{$index}}][total]" class="form-control formatRupiah" readonly>
+                      </td>
+                    </tr>
+                    @endforeach
+                  @endif
+                </tbody>
+                <tfoot>
+                    <tr class="row-footer-subtotal">
+                      <td colspan="7" class="text-right">
+                        <b>Total Item</b>
+                        <br><span class="text-danger">*Subtotal After Disc(USD)</span>
+                      </td>
+                      <td class="text-right">
+                        <input type="text" name="sub_total_item" id="sub_total_item" class="form-control formatRupiah" readonly>
+                      </td>
+                    </tr>
+                </tfoot>
+              </table>
+            </div>
           </div>
         </div>
-      </div>
-    </form>
-  </div>
+    </div>
+</form>
 </div>
 @endsection
 
@@ -356,12 +368,14 @@
       $(document).on('keyup','.count',function(){
         let index = $(this).attr('data-index');
         count_per_item(index);
+
       })
 
       function count_per_item(indx){
         let index = indx;
         let price = parseFloat($('tr.index'+index+'').find('input[name="repeater['+index+'][price]"]').val()); 
         let do_qty = parseFloat($('tr.index'+index+'').find('input[name="repeater['+index+'][do_qty]"]').val()); 
+        let so_qty = parseFloat($('tr.index'+index+'').find('input[name="repeater['+index+'][so_qty]"]').val()); 
         let val_usd_disc = parseFloat($('tr.index'+index+'').find('input[name="repeater['+index+'][usd_disc]"]').val());
         let val_percent_disc = parseFloat($('tr.index'+index+'').find('input[name="repeater['+index+'][percent_disc]"]').val());
         let kurs = $('#idr_rate').val();
@@ -496,6 +510,40 @@
         $('input[name="grand_total_final"]').val(formatRupiah(subFinal));
       });
     });
+
+    $(document).on('submit','#frmEditSOMaster',function(e){
+      e.preventDefault();
+      if(confirm("Apakah anda yakin melanjutkan Sales Order ini!")){
+        let _form = $('#frmEditSOMaster');
+        $.ajax({
+          url : '{{route('superuser.penjualan.sales_order.tutup_so')}}',
+          method : "POST",
+          data : $('#frmEditSOMaster').serializeArray(),
+          dataType : "JSON",
+          beforeSend : function(){
+            $('#frmEditSOMaster').find('button[type="submit"]').html('Loading...');
+          },
+          success : function(resp){
+            if(resp.IsError == true){
+              showToast('danger',resp.Message);
+            }
+            else{
+              Swal.fire(
+                'Success!',
+                resp.Message,
+                'success'
+              ).then((result) => {
+                document.location.href = '{{ route('superuser.penjualan.sales_order.index_' . strtolower($step_txt)) }}';
+              })
+              
+            }
+          },
+          complete : function(){
+            $('#frmEditSOMaster').find('button[type="submit"]').html('<i class="fa fa-save"> Save</i>');
+          }
+        })
+      }
+    })
     
   })
 </script>
