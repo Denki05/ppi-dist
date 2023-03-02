@@ -99,11 +99,7 @@
                   <div class="form-group row">
                     <label class="col-md-4 col-form-label text-right" style="font-size: 10pt;">Kurs<span class="text-danger">*</span></label>
                     <div class="col-5">
-                    @if ( $result->idr_rate > 1 )
-                      <input type="text" name="idr_rate" id="idr_rate"  class="form-control" value="{{ $result->idr_rate }}" readonly>
-                    @else
-                      <input type="text" name="idr_rate" id="idr_rate"  class="form-control" value="1">
-                    @endif
+                    <input type="text" name="idr_rate" id="idr_rate"  class="form-control formatRupiah" value="{{ number_format($result->idr_rate,0,',','.') }}">
                     <!-- <input type="text" name="idr_rate" id="idr_rate"  class="form-control" value="{{ $result->idr_rate }}"> -->
                     </div>
                   </div>
@@ -159,7 +155,7 @@
                 <div class="form-group row">
                   <label class="col-md-4 col-form-label text-right">Subtotal</label>
                   <div class="col-md-6">
-                    <input type="number" id="subtotal_2" name="subtotal_2" class="form-control text-center subtotal_2" step="any" readonly>
+                    <input type="text" id="subtotal_2" name="subtotal_2" class="form-control text-center subtotal_2" step="any" readonly>
                   </div>
                 </div>
                 @endif
@@ -195,7 +191,7 @@
                 <div class="form-group row">
                   <label class="col-md-4 col-form-label text-right">Grand Total</label>
                   <div class="col-md-6">
-                    <input type="number" name="grand_total_final"  id="grand_total_final" class="form-control text-center grand_total_final" step="any" readonly>
+                    <input type="text" name="grand_total_final"  id="grand_total_final" class="form-control text-center grand_total_final" step="any" readonly>
                   </div>
                 </div>
                 @endif
@@ -218,14 +214,14 @@
                 <div class="form-group row">
                   <label class="col-md-4 col-form-label text-right">Resi Ongkir</label>
                   <div class="col-md-6">
-                    <input type="number" name="idr_rate" class="form-control text-center" step="any">
+                    <input type="number" name="resi_ongkir" id="resi_ongkir" class="form-control text-center formatRupiah" step="any">
                   </div>
                 </div>
                 @endif
               </div>
               <div class="col-4">
-                <button type="button" class="btn btn-danger" id="button_cal"><i class="fas fa-calculator pr-2" aria-hidden="true"></i>Calculate</button>
-                <button type="button" class="btn btn-info" id="button_save"><i class="fas fa-save pr-2" aria-hidden="true"></i>Save</button>
+                <button type="button" class="btn btn-danger button_cal" id="button_cal"><i class="fas fa-calculator pr-2" aria-hidden="true"></i>Calculate</button>
+                <button class="btn btn-primary btn-md" type="submit" disabled="disabled"><i class="fa fa-save"></i> Save</button>
               </div>
             </div>
           </div>
@@ -318,7 +314,7 @@
         ] 
     });
 
-    $('.js-select2').select2();
+    
 
     /* Fungsi formatRupiah */
 		function formatRupiah(angka, prefix){
@@ -345,121 +341,160 @@
       $(this).val(formatRupiah(val));
     })
 
-    $(document).on('change', '.base_disc'  ,function (e) {
-      let val = $(this).val();
-      // alert(val);
-      $('.count-disc').val(val);
-    });
+    $(function(){
+      let global_total = 0 ;
+      $('button[type="submit"]').removeAttr('disabled');
 
-    $(document).on('keyup','.count',function(){
-      let index = $(this).attr('data-index');
-      count_per_item(index);
-      total();
-    })
+      $('.js-select2').select2();
 
-    function count_per_item(indx){
-      let index = indx;
-      let price = parseFloat($('tr.index'+index+'').find('input[name="repeater['+index+'][price]"]').val()); 
-      let do_qty = parseFloat($('tr.index'+index+'').find('input[name="repeater['+index+'][do_qty]"]').val()); 
-      let val_usd_disc = parseFloat($('tr.index'+index+'').find('input[name="repeater['+index+'][usd_disc]"]').val());
-      let val_percent_disc = parseFloat($('tr.index'+index+'').find('input[name="repeater['+index+'][percent_disc]"]').val());
-      let kurs = $('#idr_rate').val();
+      $(document).on('change', '.base_disc'  ,function () {
+        let val = $(this).val();
+        // alert(val);
+        $('.count-disc').val(val);
+      });
 
-      if(isNaN(val_usd_disc)){
-        val_usd_disc = 0;
-      }
-      if(isNaN(val_percent_disc)){
-        val_percent_disc = 0;
-      }
+      $(document).on('keyup','.count',function(){
+        let index = $(this).attr('data-index');
+        count_per_item(index);
+      })
 
-      let total_disc = (val_usd_disc + ((price - val_usd_disc) * (val_percent_disc/100))) * do_qty;
-      
-      let sub_total  = parseFloat((do_qty * price) - total_disc) * kurs;
+      function count_per_item(indx){
+        let index = indx;
+        let price = parseFloat($('tr.index'+index+'').find('input[name="repeater['+index+'][price]"]').val()); 
+        let do_qty = parseFloat($('tr.index'+index+'').find('input[name="repeater['+index+'][do_qty]"]').val()); 
+        let val_usd_disc = parseFloat($('tr.index'+index+'').find('input[name="repeater['+index+'][usd_disc]"]').val());
+        let val_percent_disc = parseFloat($('tr.index'+index+'').find('input[name="repeater['+index+'][percent_disc]"]').val());
+        let kurs = $('#idr_rate').val();
 
-      if(isNaN(total_disc)){
-        total_disc = 0;
-      }
+        kurs = parseFloat(kurs.split('.').join(''));
 
-      if(isNaN(sub_total)){
-        sub_total = 0;
-      }
+        if(isNaN(val_usd_disc)){
+          val_usd_disc = 0;
+        }
+        if(isNaN(val_percent_disc)){
+          val_percent_disc = 0;
+        }
 
-      $('tr.index'+index+'').find('input[name="repeater['+index+'][total_disc]"]').val(total_disc);
-      $('tr.index'+index+'').find('input[name="repeater['+index+'][total]"]').val(sub_total);
-      
-      sub_total1();
-    }
-
-    function sub_total1(){
-      let total = 0;
-      $('tbody tr').each(function(index,e){
-        let sub_total = parseFloat($('tr.index'+index+'').find('input[name="repeater['+index+'][total]"]').val());
+        let total_disc = (val_usd_disc + ((price - val_usd_disc) * (val_percent_disc/100))) * do_qty;
         
-        // alert(kurs);
+        let sub_total  = parseFloat((do_qty * price) - total_disc) * kurs;
+
+        if(isNaN(total_disc)){
+          total_disc = 0;
+        }
+
         if(isNaN(sub_total)){
           sub_total = 0;
         }
-        total += sub_total;
-      }) ;
 
-      $('input[name="sub_total_item"]').val(total);
-    }
+        $('tr.index'+index+'').find('input[name="repeater['+index+'][total_disc]"]').val(total_disc);
+        $('tr.index'+index+'').find('input[name="repeater['+index+'][total]"]').val(formatRupiah(sub_total));
+        
+        sub_total1();
+      }
 
-    // input disc % (agen)
-    $(document).on('input', "#disc_amount2_percent", function(e){
-        if($(this).val() != ''){
-            var subtotal = $('input[name="total"]').val();
-            var amount = parseFloat(subtotal) * parseFloat($(this).val()) / 100;
-            $('input[name="disc_amount2_idr"]').val(amount);
-        }else{
-            $('input[name="disc_amount2_idr').val(0);
-        }
+      // total item list
+      function sub_total1(){
+        let total = 0;
+        $('tbody tr').each(function(index,e){
+          let sub_total = $('tr.index'+index+'').find('input[name="repeater['+index+'][total]"]').val();
+          sub_total = parseFloat(sub_total.split('.').join(''));
+          // alert(kurs);
 
-        sub_total2();
-    });
+          sub_total = (isNaN(sub_total)) ? 0 : sub_total;
+          Math.ceil(total += sub_total);
+          
+        }) ;
+
+        $('input[name="sub_total_item"]').val(formatRupiah(total));
+      }
+
+      // input disc % (agen)
+      $(document).on('input', "#disc_amount2_percent", function(e){
+          if($(this).val() != ''){
+              let sub_total_item = $('input[name="sub_total_item"]').val();
+
+              sub_total_item = parseFloat(sub_total_item.split('.').join(''));
+              let amount = parseFloat(sub_total_item) * parseFloat($(this).val()) / 100;
+              $('input[name="disc_amount2_idr"]').val(formatRupiah(amount));
+          }else{
+              $('input[name="disc_amount2_idr').val(0);
+          }
+          sub_total2();
+      });
 
 
-    // input disc kemasan
-    $(document).on('input', "#disc_kemasan_percent", function(e){
-        if($(this).val() != ''){
-            var subtotal = $('input[name="subtotal_2"]').val();
-            var amount = parseFloat(subtotal) * parseFloat($(this).val()) / 100;
-            $('input[name="disc_kemasan_idr"]').val(amount);
-        }else{
-            $('input[name="disc_kemasan_idr').val(0);
-        }
+      // input disc kemasan
+      $(document).on('input', "#disc_kemasan_percent", function(e){
+          if($(this).val() != ''){
+              let sub_total_item = $('input[name="sub_total_item"]').val();
+              let disc_percent = $('input[name="disc_amount2_idr"]').val();
 
-        sub_total2();
-    });
+              sub_total_item = parseFloat(sub_total_item.split('.').join(''));
+              disc_percent = parseFloat(disc_percent.split('.').join(''));
 
-    $("#disc_idr").on('input', function() {
-      sub_total2();
-    });
+              let subAfterDiscPercent = Math.ceil(sub_total_item - disc_percent);
 
-    $("#voucher_idr").on('input', function() {
-      sub_total2();
-    });
+              var amount = parseFloat(subAfterDiscPercent) * parseFloat($(this).val()) / 100;
+              $('#disc_kemasan_idr').val(formatRupiah(amount));
+          }else{
+              $('#disc_kemasan_idr').val(0);
+          }
+          sub_total2();
+      });
 
-    function sub_total2(){
-      var subtotal = $('input[name="total"]').val();
-      var disc_agen = $('input[name="disc_amount2_idr"]').val();
-      var disc_kemasan = $('input[name="disc_kemasan_idr"]').val();
-      
-      let subtotal_2 = (subtotal - disc_agen) - disc_kemasan;
+      // $('#disc_amount2_idr').on('input', function(){
+      //   sub_total2();
+      // })
 
-      $('input[name="subtotal_2"]').val(subtotal_2);
-    }
+      // $('#disc_kemasan_idr').on('input', function(){
+      //   sub_total2();
+      // })
 
-    // calculated button after input voucher - disc idr
-    $(document).on('click', '#button_cal', function(e){
-      let subtotal = $('input[name="subtotal_2"]').val();
-      let disc_idr = $('input[name="disc_idr"]').val();
-      let voucher_idr = $('input[name="voucher_idr"]').val();
-      // let ongkir = $('input[name="delivery_cost_idr"]').val();
-      var subtotalFinal = subtotal - disc_idr - voucher_idr;
-      var grandTotal = subtotalFinal;
+      // sub total disc agen & kemasan
+      function sub_total2(){
+        let sub_total_item = $('input[name="sub_total_item"]').val();
+        let disc_agen = $('input[name="disc_amount2_idr"]').val();
+        let disc_kemasan = $('input[name="disc_kemasan_idr"]').val();
 
-      $('input[name="grand_total_final"]').val(grandTotal);
+        sub_total_item = parseFloat(sub_total_item.split('.').join(''));
+        disc_agen = parseFloat(disc_agen.split('.').join(''));
+        disc_kemasan = parseFloat(disc_kemasan.split('.').join(''));
+
+        sub_total_item = (isNaN(sub_total_item)) ? 0 : sub_total_item;
+        disc_agen = (isNaN(disc_agen)) ? 0 : disc_agen;
+        disc_kemasan = (isNaN(disc_kemasan)) ? 0 : disc_kemasan;
+        
+        let subtotal_2 = Math.ceil((sub_total_item - disc_agen) - disc_kemasan);
+
+        $('input[name="subtotal_2"]').val(formatRupiah(subtotal_2));
+      }
+
+      // calculated button after input voucher - disc idr
+      $(document).on('click', '#button_cal', function(e) {
+        e.preventDefault();
+
+        let subtotal = $('input[name="subtotal_2"]').val();
+        let disc_idr = $('input[name="disc_idr"]').val();
+        let voucher_idr = $('input[name="voucher_idr"]').val();
+        let ongkir = $('input[name="delivery_cost_idr"]').val();
+        let resi = $('input[name="resi_ongkir"]').val();
+        // alert(resi_ongkir);
+
+        subtotal = parseFloat(subtotal.split('.').join(''));
+        disc_idr = parseFloat(disc_idr.split('.').join(''));
+        voucher_idr = parseFloat(voucher_idr.split('.').join(''));
+        ongkir = parseFloat(ongkir.split('.').join(''));
+        resi = parseFloat(resi.split('.').join(''));
+
+        disc_idr = (isNaN(disc_idr)) ? 0 : disc_idr;
+        voucher_idr = (isNaN(voucher_idr)) ? 0 : voucher_idr;
+        ongkir = (isNaN(ongkir)) ? 0 : ongkir;
+        resi = (isNaN(resi)) ? 0 : resi;
+
+        subFinal = Math.ceil(((subtotal - disc_idr) - voucher_idr) + ongkir);
+        $('input[name="grand_total_final"]').val(formatRupiah(subFinal));
+      });
     });
     
   })
