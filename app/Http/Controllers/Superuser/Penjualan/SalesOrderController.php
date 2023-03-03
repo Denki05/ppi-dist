@@ -902,8 +902,11 @@ class SalesOrderController extends Controller
 
                     $packing_order_detail = new PackingOrderDetail;
                     $packing_order_detail->do_id = $packing_order->id;
+                    $packing_order_detail->discount_1 = trim(htmlentities($post["discount_1"]));
                     $packing_order_detail->created_by = Auth::id();
                     $packing_order_detail->save();
+
+                    DD($packing_order_detail->discount_2);
                     
                     $data = [];
                     foreach ($post["repeater"] as $key => $value) {
@@ -923,7 +926,7 @@ class SalesOrderController extends Controller
                         $so_qty = $value["so_qty"];
                         $do_qty = $value["do_qty"];
                         $rej_qty = $so_qty - $do_qty;
-                        $usd_disc = 0;
+                        $usd_disc = $value["usd_disc"];
                         $percent_disc = 0;
                         $total_discount = 0;
                     
