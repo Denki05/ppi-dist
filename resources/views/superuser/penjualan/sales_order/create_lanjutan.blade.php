@@ -1,7 +1,3 @@
-<?php
-  $sub_total = 0;
-  $idr_sub_total = 0;
-?>
 @foreach($result->so_detail as $index => $row)
   @php $row->product->name @endphp
 @endforeach
@@ -10,7 +6,7 @@
 
 @section('content')
 <div class="container-fluid">
-  <form id="frmEditSOMaster" method="post" enctype="multipart/form-data">
+  <form  method="POST" action="{{ route('superuser.penjualan.sales_order.tutup_so') }}">
   @csrf
   <input type="hidden" name="id" value="{{$result->id}}">
   <input type="hidden" name="step" value="{{$step}}">
@@ -132,17 +128,17 @@
             <div class="card-body">
               <div class="row">
                 <div class="col">
-                  @if($step == 2)
+                  
                   <div class="form-group row">
                     <label class="col-md-4 col-form-label text-right">Disc %</label>
                     <div class="col-md-3">
-                      <input type="text" name="disc_amount2_percent" id="disc_amount2_percent" class="form-control text-center disc_amount2_percent" value="{{$result->do_cost->discount_1 ?? 0}}">
+                      <input type="text" name="disc_agen_percent" id="disc_agen_percent" class="form-control text-center disc_agen_percent" value="{{$result->do_cost->discount_1 ?? 0}}">
                     </div>
                     <div class="col-md-5">
                       <input type="text" name="disc_amount2_idr" id="disc_amount2_idr" class="form-control disc_amount2_idr text-center" readonly>
                     </div>
                   </div>
-                  @endif
+                  
                 </div>
                 <div class="col">
                   @if($step == 2)
@@ -172,7 +168,7 @@
                     <div class="form-group row">
                       <label class="col-md-4 col-form-label text-right">Disc Kemasan</label>
                       <div class="col-md-3">
-                        <input type="text" name="disc_kemasan_percent" id="disc_kemasan_percent" class="form-control disc_kemasan_percent text-center" value="{{$result->do_cost->discount_1 ?? 0}}">
+                        <input type="text" name="disc_tambahan" id="disc_tambahan" class="form-control disc_tambahan text-center" value="{{$result->do_cost->discount_1 ?? 0}}">
                       </div>
                       <div class="col-md-5">
                         <input type="text" name="disc_kemasan_idr" id="disc_kemasan_idr" class="form-control disc_kemasan_idr text-center" readonly>
@@ -225,7 +221,7 @@
                 </div>
                 <div class="col-4">
                   <button type="button" class="btn btn-danger button_cal" id="button_cal"><i class="fas fa-calculator pr-2" aria-hidden="true"></i>Calculate</button>
-                  <button class="btn btn-primary btn-md" type="submit" disabled="disabled"><i class="fa fa-save"></i> Save</button>
+                  <button type="submit" class="btn btn-primary"><i class="fa fa-save"></i> Save</button>
                 </div>
               </div>
             </div>
@@ -424,7 +420,7 @@
       }
 
       // input disc % (agen)
-      $(document).on('input', "#disc_amount2_percent", function(e){
+      $(document).on('input', "#disc_agen_percent", function(e){
           if($(this).val() != ''){
               let sub_total_item = $('input[name="sub_total_item"]').val();
 
@@ -439,7 +435,7 @@
 
 
       // input disc kemasan
-      $(document).on('input', "#disc_kemasan_percent", function(e){
+      $(document).on('input', "#disc_tambahan", function(e){
           if($(this).val() != ''){
               let sub_total_item = $('input[name="sub_total_item"]').val();
               let disc_percent = $('input[name="disc_amount2_idr"]').val();
@@ -518,7 +514,7 @@
         $.ajax({
           url : '{{route('superuser.penjualan.sales_order.tutup_so')}}',
           method : "POST",
-          data : $('#frmEditSOMaster').serializeArray(),
+          data : getFormData(_form),
           dataType : "JSON",
           beforeSend : function(){
             $('#frmEditSOMaster').find('button[type="submit"]').html('Loading...');

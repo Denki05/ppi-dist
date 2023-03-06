@@ -29,6 +29,10 @@ class PackingOrderDetail extends Model
     	'deleted_by'
     ];
 
+    public function do(){
+    	return $this->BelongsTo('App\Entities\Penjualan\PackingOrder','do_id','id');
+    }
+
     public function getDiscount1Attribute($value)
     {
         return floatval($value);
