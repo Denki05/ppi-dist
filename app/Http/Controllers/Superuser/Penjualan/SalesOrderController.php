@@ -1097,11 +1097,8 @@ class SalesOrderController extends Controller
                     // app('App\Http\Controllers\Superuser\Penjualan\PackingOrderController')->reset_cost($packing_order->id);
                     
                     // Cetak proforma disini
-
                     $so = SalesOrder::where('id', $sales_order->id)->first();
                     $so_detail = SalesOrderItem::where('so_id', $so->id)->first();
-
-                    // DD($so->so_detail[1]);
                     
                     if($sales_order->type_transaction == 1){
                         $proforma = new SoProforma;
@@ -1120,7 +1117,6 @@ class SalesOrderController extends Controller
                             $proforma_detail->save();
                         }
                     }
-                    
                 }
                     
                 DB::commit();
