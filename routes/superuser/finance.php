@@ -22,6 +22,11 @@ Route::group([
         Route::get('/{id}/history_payable', 'InvoicingController@history_payable')->name('history_payable');
     });
 
+    Route::group(['as' => 'proforma.', 'prefix' => '/proforma'], function () {
+        Route::get('/', 'ProformaController@index')->name('index');
+        
+    });
+
     Route::group(['as' => 'payable.', 'prefix' => '/payable'], function () {
         Route::get('/', 'PayableController@index')->name('index');
         Route::get('/create', 'PayableController@create')->name('create');

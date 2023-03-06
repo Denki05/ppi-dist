@@ -1110,7 +1110,7 @@ class SalesOrderController extends Controller
                         $proforma->save();
 
                         foreach($data as $key => $detail){
-                            $proforma_detail = new SOProformaDetail;
+                            $proforma_detail = new SoProformaDetail;
                             $proforma_detail->so_proforma_id = $proforma->id;
                             $proforma_detail->product_id = $detail["product_id"];
                             $proforma_detail->qty = $detail["qty"];

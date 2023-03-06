@@ -142,6 +142,9 @@
                 <div class="submenu">
                   <ul class="submenu-item">
                     <li class="nav-item">
+                      <a class="nav-link" href="{{ route('superuser.finance.proforma.index') }}" target="_blank">Proforma</a>
+                    </li>
+                    <li class="nav-item">
                       <a class="nav-link" href="{{ route('superuser.finance.invoicing.index') }}" target="_blank">Invoicing</a>
                     </li>
                     <li class="nav-item">
