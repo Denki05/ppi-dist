@@ -9,6 +9,8 @@ use App\Entities\Penjualan\SalesOrderItem;
 use App\Entities\Penjualan\PackingOrder;
 use App\Entities\Penjualan\PackingOrderItem;
 use App\Entities\Penjualan\PackingOrderDetail;
+use App\Entities\Penjualan\SoProforma;
+use App\Entities\Penjualan\SoProformaDetail;
 use App\Entities\Penjualan\DeliveryOrderMutationItem;
 use App\Entities\Finance\Invoicing;
 use App\Entities\Master\Customer;
@@ -1094,29 +1096,31 @@ class SalesOrderController extends Controller
                     }
                     // app('App\Http\Controllers\Superuser\Penjualan\PackingOrderController')->reset_cost($packing_order->id);
                     
-                    //create invoicing disini
+                    // Cetak proforma disini
 
                     $so = SalesOrder::where('id', $sales_order->id)->first();
+                    $so_detail = SalesOrderItem::where('so_id', $so->id)->first();
 
-                    if($so->type_transaction == 1){
-                        // $data = [
-                        //     'code' => CodeRepo::generateInvoicing($packing_order->code),
-                        //     'do_id' =>trim(htmlentities($packing_order->id)),
-                        //     'grand_total_idr' => $grand_total_idr,
-                        //     'created_by' => Auth::id()
-                        // ];
+                    // DD($so->so_detail[1]);
+                    
+                    if($sales_order->type_transaction == 1){
+                        $proforma = new SoProforma;
+                        $proforma->so_id = $sales_order->id;
+                        $proforma->code = CodeRepo::generateProforma($sales_order->code);
+                        $proforma->grand_total_idr = $grand_total_idr;
+                        $proforma->status = 1;
+                        $proforma->created_by = Auth::id();
+                        $proforma->save();
 
-                        $inv = new Invoicing;
-                        $inv->code = CodeRepo::generateInvoicing($packing_order->do_code);
-                        $inv->do_id = $packing_order->id;
-                        $inv->grand_total_idr = $grand_total_idr;
-                        $inv->created_by = Auth::id();
-                        $inv->save();
-
-                        // $insert = Invoicing::create($data);
-
-                        // DD($inv->save());
+                        foreach($data as $key => $detail){
+                            $proforma_detail = new SOProformaDetail;
+                            $proforma_detail->so_proforma_id = $proforma->id;
+                            $proforma_detail->product_id = $detail["product_id"];
+                            $proforma_detail->qty = $detail["qty"];
+                            $proforma_detail->save();
+                        }
                     }
+                    
                 }
                     
                 DB::commit();

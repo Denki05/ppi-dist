@@ -66,6 +66,11 @@ class Product extends Model
         return $this->hasMany('App\Entities\Master\ProductMinStock');
     }
 
+    public function detail_proforma()
+    {
+        return $this->hasMany('App\Entities\Penjualan\SoProformaDetail');
+    }
+
     public function setting_price_log()
     {
         return $this->hasMany('App\Entities\Penjualan\SettingPriceLog');

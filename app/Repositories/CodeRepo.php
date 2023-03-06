@@ -126,6 +126,20 @@ class CodeRepo
         }
         return $code;
     }
+    public static function generateProforma($code){
+        $split = explode("-", $code);
+
+        if(count($split) == 1){
+
+            $split = explode("SO", $code);
+            $so_code = 'PRF'.$split[1];    
+        }
+        else{
+            $split = explode("-", $code);
+            $so_code = 'PRF-' .$split[1]."-".$split[2];
+        }
+        return $so_code;
+    }
     public static function generateStockAdjustment(){
         return self::generate('STADJ', StockAdjustment::class);   
     }
