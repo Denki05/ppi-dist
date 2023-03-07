@@ -128,7 +128,7 @@ class ProformaController extends Controller
 
             $proforma = SoProforma::where('id', $post["id"])->first();
 
-            if ($proforma->status == 2){
+            if ($proforma->status === 1){
                 return redirect()->back()->with('error','Failed to delete because it was paid off');
             }elseif($proforma->status == 1){
                 $update = SoProforma::where('id', $proforma->id)->update(['deleted_by' => Auth::id(), 'status' => 3]);
