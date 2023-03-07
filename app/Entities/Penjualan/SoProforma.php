@@ -44,5 +44,10 @@ class SoProforma extends Model
             return null;
         }
     }
+
+	public function status()
+    {
+        return (object) self::STATUS[$this->status];
+    }
     
 }

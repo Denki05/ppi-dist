@@ -32,6 +32,7 @@
                     <th>Transaction</th>
                     <th>Customer</th>
                     <th>Total</th>
+                    <th>Status</th>
                     <th>Created At</th>
                     <th>Action</th>
                 </tr>
@@ -47,6 +48,7 @@
                     <td>{{$row->so_type_transaction()->scalar ?? ''}}</td>
                     <td>{{$row->so->member->name ?? ''}}</td>
                     <td>{{number_format($row->grand_total_idr,0,',','.')}}</td>
+                    <td>{{ $row->status }}</td>
                     <td>
                         <?= date('d-m-Y h:i:s',strtotime($row->created_at)); ?>
                     </td>
