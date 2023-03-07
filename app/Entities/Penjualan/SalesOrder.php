@@ -92,6 +92,9 @@ class SalesOrder extends Model
     public function so_detail(){
     	return $this->hasMany('App\Entities\Penjualan\SalesOrderItem','so_id');
     }
+    public function do(){
+        return $this->hasMany('App\Entities\Penjualan\PackingOrder', 'so_id');
+    }
     public function so_type_transaction()
     {
         if (isset($this->type_transaction)) {

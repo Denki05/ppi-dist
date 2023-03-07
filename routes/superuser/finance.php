@@ -24,6 +24,7 @@ Route::group([
 
     Route::group(['as' => 'proforma.', 'prefix' => '/proforma'], function () {
         Route::get('/', 'ProformaController@index')->name('index');
+        Route::post('/cancel', 'ProformaController@cancel')->name('cancel');
         
     });
 

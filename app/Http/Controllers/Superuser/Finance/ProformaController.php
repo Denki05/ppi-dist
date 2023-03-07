@@ -6,8 +6,13 @@ use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use App\Entities\Penjualan\SoProforma;
 use App\Entities\Penjualan\SoProformaDetail;
+use App\Entities\Penjualan\SalesOrder;
+use App\Entities\Penjualan\PackingOrder;
+use App\Entities\Penjualan\PackingOrderDetail;
+use App\Entities\Penjualan\PackingOrderItem;
 use App\Entities\Setting\UserMenu;
 use Auth;
+use DB;
 
 class ProformaController extends Controller
 {
@@ -41,7 +46,12 @@ class ProformaController extends Controller
                return redirect()->route('superuser.index')->with('error','Anda tidak punya akses untuk membuka menu terkait');
            }
         }
-        return view($this->view."index");
+
+        $proforma = SoProforma::get();
+        $data = [
+            'proforma' => $proforma
+        ];
+        return view($this->view."index",$data);
     }
 
     /**
@@ -97,6 +107,56 @@ class ProformaController extends Controller
     public function update(Request $request, $id)
     {
         //
+    }
+
+    public function cancel(Request $request)
+    {
+        // Access
+        if(Auth::user()->is_superuser == 0){
+            if(empty($this->access) || empty($this->access->user) || $this->access->can_delete == 0){
+                return redirect()->route('superuser.index')->with('error','Anda tidak punya akses untuk membuka menu terkait');
+            }
+        }
+
+        DB::beginTransaction();
+        try{
+
+            $request->validate([
+                'id' => 'required'
+            ]);
+            $post = $request->all();
+
+            $proforma = SoProforma::where('id', $post["id"])->first();
+
+            if ($proforma->status == 2){
+                return redirect()->back()->with('error','Failed to delete because it was paid off');
+            }elseif($proforma->status == 1){
+                $update = SoProforma::where('id', $proforma->id)->update(['deleted_by' => Auth::id(), 'status' => 3]);
+                $delete = SoProforma::where('id', $proforma->id)->delete();
+
+                $delete_item = SoProformaDetail::where('so_proforma_id', $proforma->id)->delete();
+            }
+
+            $so = SalesOrder::where('id', $proforma->id)->first();
+            $update_so = SalesOrder::where('id', $so->id)->update(['status' => 2]);
+
+            $po = PackingOrder::where('so_id', $so->id)->first();
+
+            if($po->status === 2){
+                $update_po = PackingOrder::where('id', $po->id)->update(['deleted_by' => Auth::id()]);
+                $delete_po = PackingOrder::where('id', $po->id)->delete();
+
+                $delete_detail = PackingOrderDetail::where('do_id', $po->id)->delete();
+                $delete_item = PackingOrderItem::where('do_id', $po->id)->delete();
+            }
+            
+            DB::commit();
+            return redirect()->back()->with('success','Proforma berhasil di Cancel!');
+            
+        }catch(\Throwable $e){
+            DB::rollback();
+            return redirect()->back()->with('error',$e->getMessage());
+        }
     }
 
     /**

@@ -11,6 +11,7 @@ class SoProforma extends Model
     protected $table = "so_proforma";
     protected $fillable =[
     	'code',
+		'type_transaction',
     	'so_id',
 		'grand_total_idr',
     	'status',
@@ -19,14 +20,29 @@ class SoProforma extends Model
     	'deleted_by'
     ];
     const STATUS = [
-    	1 => 'Active',
-    	2 => 'Deleted',
-    	3 => 'Inactive'
+    	1 => 'ACTIVE',
+    	2 => 'PAID OFF',
+    	3 => 'DELETED',
+    ];
+
+	const TYPE_TRANSACTION = [
+    	1 => 'CASH',
+    	2 => 'TEMPO',
+    	3 => 'MARKETPLACE'
     ];
 
     
     public function so(){
     	return $this->BelongsTo('App\Entities\Penjualan\Salesorder','so_id','id');
+    }
+
+	public function so_type_transaction()
+    {
+        if (isset($this->type_transaction)) {
+            return (object) self::TYPE_TRANSACTION[$this->type_transaction];
+        } else {
+            return null;
+        }
     }
     
 }

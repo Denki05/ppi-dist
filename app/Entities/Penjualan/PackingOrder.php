@@ -80,7 +80,7 @@ class PackingOrder extends Model
     }
     public function do_other_cost(){
         return $this->hasMany('App\Entities\Penjualan\PackingOrderCost','do_id');
-    }
+	}
     public function do_type_transaction(){
     	return (object) self::STATUS[$this->type_transaction];
     }

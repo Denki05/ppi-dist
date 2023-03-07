@@ -722,7 +722,7 @@ class SalesOrderController extends Controller
             $update = SalesOrder::where('id',$post["id"])->update(['status' => 1]);
 
             DB::commit();
-            return redirect()->back()->with('success','Sales Order berhasil diajukan untuk dilanjutkan');  
+            return redirect()->back()->with('success','Sales Order tidak di lanjutkan');  
             
         }catch(\Throwable $e){
             DB::rollback();
@@ -1100,10 +1100,10 @@ class SalesOrderController extends Controller
                     $so = SalesOrder::where('id', $sales_order->id)->first();
                     $so_detail = SalesOrderItem::where('so_id', $so->id)->first();
                     
-                    if($sales_order->type_transaction == 1){
                         $proforma = new SoProforma;
                         $proforma->so_id = $sales_order->id;
                         $proforma->code = CodeRepo::generateProforma($sales_order->code);
+                        $proforma->type_transaction = $sales_order->type_transaction;
                         $proforma->grand_total_idr = $grand_total_idr;
                         $proforma->status = 1;
                         $proforma->created_by = Auth::id();
@@ -1116,7 +1116,6 @@ class SalesOrderController extends Controller
                             $proforma_detail->qty = $detail["qty"];
                             $proforma_detail->save();
                         }
-                    }
                 }
                     
                 DB::commit();
