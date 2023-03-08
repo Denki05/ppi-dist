@@ -12,6 +12,7 @@ class PayableDetail extends Model
     protected $fillable = [
     	'payable_id',
     	'invoice_id',
+    	'so_proforma_id',
     	'prev_account_receivable',
     	'total',
     	'updated_by',

@@ -3,7 +3,7 @@
 @section('content')
 <nav class="breadcrumb bg-white push">
   <span class="breadcrumb-item">Finance</span>
-  <span class="breadcrumb-item active">Invoicing Cash</span>
+  <span class="breadcrumb-item active">Proforma</span>
 </nav>
 @if(session('error') || session('success'))
 <div class="alert alert-{{ session('error') ? 'danger' : 'success' }} alert-dismissible fade show" role="alert">
@@ -53,7 +53,7 @@
                         <?= date('d-m-Y h:i:s',strtotime($row->created_at)); ?>
                     </td>
                     <td>
-                        <a class="btn btn-primary" href="#" role="button"><i class="fa fa-money" aria-hidden="true"></i></a>
+                        <a class="btn btn-primary btn-add-pay" href="#" role="button"><i class="fa fa-money" aria-hidden="true"></i></a>
                         <a class="btn btn-danger btn-cancel" data-id="{{$row->id}}" href="#" role="button"><i class="fa fa-ban" aria-hidden="true"></i></a>
                     </td>
                     </tr>
@@ -68,6 +68,13 @@
   @csrf
   <input type="hidden" name="id">
 </form>
+
+<!-- <form method="get" action="{{ route('superuser.finance.payable.index') }}" id="frmPayable">
+    @csrf
+    <input type="hidden" name="id">
+</form> -->
+
+@include('superuser.finance.proforma.modal-payable')
 @endsection
 
 @include('superuser.asset.plugin.select2')
@@ -96,6 +103,10 @@
             $('#frmCancel').find('input[name="id"]').val(id);
             $('#frmCancel').submit();
           }
+        })
+
+        $(document).on('click','.btn-add-pay',function(){
+          $('#modalSelectCustomer').modal('show');
         })
 
       });

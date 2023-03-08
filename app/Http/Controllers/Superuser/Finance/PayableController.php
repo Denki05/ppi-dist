@@ -8,6 +8,7 @@ use App\Entities\Master\Customer;
 use App\Entities\Master\CustomerOtherAddress;
 use App\Entities\Master\Company;
 use App\Entities\Finance\Invoicing;
+use App\Entities\Finance\SoProforma;
 use App\Entities\Finance\Payable;
 use App\Entities\Finance\PayableDetail;
 use App\Entities\Setting\UserMenu;
@@ -137,7 +138,7 @@ class PayableController extends Controller
                 foreach ($post["repeater"] as $index => $value) {
                     if(empty($value["invoice_id"])){
                         $data_json["IsError"] = TRUE;
-                        $data_json["Message"] = "Invoice ID tidak boleh kosong";
+                        $data_json["Message"] = "Proforma ID tidak boleh kosong";
                         goto ResultData;
                     }
                     if(!empty($value["payable"])){

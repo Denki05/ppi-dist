@@ -10,6 +10,8 @@ use App\Entities\Penjualan\SalesOrder;
 use App\Entities\Penjualan\PackingOrder;
 use App\Entities\Penjualan\PackingOrderDetail;
 use App\Entities\Penjualan\PackingOrderItem;
+use App\Entities\Master\CustomerOtherAddress;
+use App\Entities\Master\Customer;
 use App\Entities\Setting\UserMenu;
 use Auth;
 use DB;
@@ -48,8 +50,12 @@ class ProformaController extends Controller
         }
 
         $proforma = SoProforma::get();
+        $customer = Customer::get();
+        $member = CustomerOtherAddress::get();
         $data = [
-            'proforma' => $proforma
+            'proforma' => $proforma,
+            'customer' => $customer,
+            'member' => $member,
         ];
         return view($this->view."index",$data);
     }
