@@ -26,6 +26,9 @@ class PayableDetail extends Model
     public function invoice(){
     	return $this->BelongsTo('App\Entities\Finance\Invoicing','invoice_id','id');
     }
+    public function proforma(){
+    	return $this->BelongsTo('App\Entities\Penjualan\SoProforma','so_proforma_id','id');
+    }
     public function getTotalAttribute($value)
     {
         return floatval($value);

@@ -31,7 +31,7 @@
     </div>
     <div class="row">
       <div class="col-lg-2">
-        Store/Member
+        Customer
       </div>
       <div class="col-lg-10">
         : {{$customer->name}}
@@ -66,7 +66,7 @@
           <div class="table-responsive">
             <table class="table table-striped table-bordered">
               <thead>
-                <th>Invoice</th>
+                <th>Proforma</th>
                 <th>Account Receivable</th>
                 <th>Payabe</th>
               </thead>
@@ -75,16 +75,16 @@
                   $counter = 0;
                 ?>
                 @foreach($customer->do as $index => $row)
-                  @if($row->invoicing)
+                  @if($row->proforma)
                     <?php
-                      $total_invoicing = $row->invoicing->grand_total_idr ?? 0;
-                      $payable = $row->invoicing->payable_detail->sum('total');
-                      $sisa = $total_invoicing - $payable;
+                      $total_proforma = $row->proforma->grand_total_idr ?? 0;
+                      $payable = $row->proforma->payable_detail->sum('total');
+                      $sisa = $total_proforma - $payable;
                     ?>
                     @if($sisa > 0)
                     <tr class="repeater">
-                      <input type="hidden" name="repeater[{{$index}}][invoice_id]" value="{{$row->invoicing->id ?? ''}}">
-                      <td>{{$row->invoicing->code ?? ''}}</td>
+                      <input type="hidden" name="repeater[{{$index}}][so_proforma_id]" value="{{$row->proforma->id ?? ''}}">
+                      <td>{{$row->proforma->code}}</td>
                       <td>{{number_format($sisa,0,',','.')}}</td>
                       <td>
                         <input type="text" name="repeater[{{$index}}][payable]" class="form-control formatRupiah count">

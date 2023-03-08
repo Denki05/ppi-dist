@@ -13,6 +13,7 @@ class SoProforma extends Model
     	'code',
 		'type_transaction',
     	'so_id',
+    	'do_id',
 		'grand_total_idr',
     	'status',
     	'updated_by',
@@ -34,6 +35,10 @@ class SoProforma extends Model
     
     public function so(){
     	return $this->BelongsTo('App\Entities\Penjualan\Salesorder','so_id','id');
+    }
+
+	public function payable_detail(){
+    	return $this->hasMany('App\Entities\Finance\PayableDetail','so_proforma_id');
     }
 
 	public function so_type_transaction()

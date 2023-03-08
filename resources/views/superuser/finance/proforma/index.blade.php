@@ -53,7 +53,8 @@
                         <?= date('d-m-Y h:i:s',strtotime($row->created_at)); ?>
                     </td>
                     <td>
-                        <a class="btn btn-primary btn-add-pay" href="#" role="button"><i class="fa fa-money" aria-hidden="true"></i></a>
+                        <a class="btn btn-success btn-add-pay" href="#" role="button"><i class="fa fa-money" aria-hidden="true"></i></a>
+                        <a class="btn btn-primary btn-print" href="#" role="button"><i class="fa fa-print" aria-hidden="true"></i></a>
                         <a class="btn btn-danger btn-cancel" data-id="{{$row->id}}" href="#" role="button"><i class="fa fa-ban" aria-hidden="true"></i></a>
                     </td>
                     </tr>

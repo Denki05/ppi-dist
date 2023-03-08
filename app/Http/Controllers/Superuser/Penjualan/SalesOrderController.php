@@ -1102,6 +1102,7 @@ class SalesOrderController extends Controller
                     
                         $proforma = new SoProforma;
                         $proforma->so_id = $sales_order->id;
+                        $proforma->do_id = $packing_order->id;
                         $proforma->code = CodeRepo::generateProforma($sales_order->code);
                         $proforma->type_transaction = $sales_order->type_transaction;
                         $proforma->grand_total_idr = $grand_total_idr;

@@ -154,29 +154,6 @@ class ProformaController extends Controller
                         $delete_item = PackingOrderItem::where('do_id', $po->id)->delete();
                     }
             }
-
-            // if ($proforma->status === 2){
-            //     return redirect()->back()->with('error','Failed to delete because it was paid off');
-            // }elseif($proforma->status == 1){
-            //     $update = SoProforma::where('id', $proforma->id)->update(['deleted_by' => Auth::id(), 'status' => 3]);
-            //     $delete = SoProforma::where('id', $proforma->id)->delete();
-
-            //     $delete_item = SoProformaDetail::where('so_proforma_id', $proforma->id)->delete();
-            // }
-
-            // $so = SalesOrder::where('id', $proforma->id)->first();
-            // $update_so = SalesOrder::where('id', $so->id)->update(['status' => 2]);
-
-            // $po = PackingOrder::where('so_id', $so->id)->first();
-
-            // if($po->status === 2){
-            //     $update_po = PackingOrder::where('id', $po->id)->update(['deleted_by' => Auth::id()]);
-            //     $delete_po = PackingOrder::where('id', $po->id)->delete();
-
-            //     $delete_detail = PackingOrderDetail::where('do_id', $po->id)->delete();
-            //     $delete_item = PackingOrderItem::where('do_id', $po->id)->delete();
-            // }
-            
             DB::commit();
             return redirect()->back()->with('success','Proforma berhasil di Cancel!');
             

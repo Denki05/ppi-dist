@@ -93,6 +93,9 @@ class PackingOrder extends Model
     public function invoicing(){
         return $this->BelongsTo('App\Entities\Finance\Invoicing','id','do_id');
     }
+	public function proforma(){
+        return $this->BelongsTo('App\Entities\Penjualan\SoProforma','id','do_id');
+    }
     public function getIdrRateAttribute($value)
     {
         return floatval($value);

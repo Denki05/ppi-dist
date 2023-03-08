@@ -143,7 +143,7 @@ class PayableController extends Controller
                     }
                     if(!empty($value["payable"])){
                         $input_payable = floatval(str_replace(".", "", $value["payable"]));
-                        $get_invoice = Invoicing::where('id',$value["invoice_id"])->first();
+                        $get_invoice = SoProforma::where('id',$value["so_proforma_id"])->first();
                         $payable = $get_invoice->payable_detail->sum('total');
                         $sisa = $get_invoice->grand_total_idr - $payable;
                         
