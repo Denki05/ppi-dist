@@ -8,7 +8,8 @@ use App\Entities\Master\Customer;
 use App\Entities\Master\CustomerOtherAddress;
 use App\Entities\Master\Company;
 use App\Entities\Finance\Invoicing;
-use App\Entities\Finance\SoProforma;
+use App\Entities\Penjualan\SoProforma;
+use App\Entities\Penjualan\SalesOrder;
 use App\Entities\Finance\Payable;
 use App\Entities\Finance\PayableDetail;
 use App\Entities\Setting\UserMenu;
@@ -120,12 +121,12 @@ class PayableController extends Controller
                 }
                 if(!isset($post["repeater"])){
                     $data_json["IsError"] = TRUE;
-                    $data_json["Message"] = "Tidak ada invoice terkait";
+                    $data_json["Message"] = "Tidak ada proforma terkait";
                     goto ResultData;
                 }
                 if(count($post["repeater"]) == 0){
                     $data_json["IsError"] = TRUE;
-                    $data_json["Message"] = "Tidak ada invoice terkait";
+                    $data_json["Message"] = "Tidak ada proforma terkait";
                     goto ResultData;
                 }
                 $insert = Payable::create([
@@ -136,27 +137,27 @@ class PayableController extends Controller
                 ]);
                 $total_payable = 0;
                 foreach ($post["repeater"] as $index => $value) {
-                    if(empty($value["invoice_id"])){
+                    if(empty($value["so_proforma_id"])){
                         $data_json["IsError"] = TRUE;
                         $data_json["Message"] = "Proforma ID tidak boleh kosong";
                         goto ResultData;
                     }
                     if(!empty($value["payable"])){
                         $input_payable = floatval(str_replace(".", "", $value["payable"]));
-                        $get_invoice = SoProforma::where('id',$value["so_proforma_id"])->first();
-                        $payable = $get_invoice->payable_detail->sum('total');
-                        $sisa = $get_invoice->grand_total_idr - $payable;
+                        $get_proforma = SoProforma::where('id',$value["so_proforma_id"])->first();
+                        $payable = $get_proforma->payable_detail->sum('total');
+                        $sisa = $get_proforma->grand_total_idr - $payable;
                         
-                        if($payable >= $get_invoice->grand_total_idr){
+                        if($payable >= $get_proforma->grand_total_idr){
                             $data_json["IsError"] = TRUE;
-                            $data_json["Message"] = "Invoice ".$get_invoice->code. " sudah lunas";
+                            $data_json["Message"] = "Invoice ".$get_proforma->code. " sudah lunas";
                             goto ResultData;
                         }
                         $data = [
                             'payable_id' => $insert->id,
-                            'invoice_id' => $value["invoice_id"],
+                            'so_proforma_id' => $value["so_proforma_id"],
                             'total' => $input_payable,
-                            'prev_account_receivable' => $get_invoice->grand_total_idr - $payable,
+                            'prev_account_receivable' => $get_proforma->grand_total_idr - $payable,
                             'created_by' => Auth::id(),
                         ];
 
@@ -169,9 +170,20 @@ class PayableController extends Controller
                     $data_json["Message"] = "Tidak bisa melakukan payable.Tidak ada payable yang diinput";
                     goto ResultData;
                 }
+
                 $update = Payable::where('id',$insert->id)->update([
                     'total' => $total_payable
                 ]);
+
+                //Update status proforma
+                $get_prof = SoProforma::where('id', $value["so_proforma_id"])->first();
+                
+                if($get_prof->payable_detail->sum('total') == $get_prof->grand_total_idr){
+                    $update_profroma = SoProforma::where('id', $get_prof->id)->update(['status' => 3]);
+                }elseif ($get_prof->payable_detail->sum('total') <= $get_prof->grand_total_idr){
+                    $update_profroma = SoProforma::where('id', $get_prof->id)->update(['status' => 2]);
+                }
+
                 DB::commit();
 
                 $data_json["IsError"] = FALSE;
@@ -180,6 +192,7 @@ class PayableController extends Controller
 
             }catch(\Throwable $e){
                 DB::rollback();
+                dd($e);
                 $data_json["IsError"] = TRUE;
                 $data_json["Message"] = $e->getMessage();
                 goto ResultData;

@@ -68,7 +68,7 @@
               <thead>
                 <th>Proforma</th>
                 <th>Account Receivable</th>
-                <th>Payabe</th>
+                <th>Payabel</th>
               </thead>
               <tbody>
                 <?php

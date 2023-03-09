@@ -22,8 +22,9 @@ class SoProforma extends Model
     ];
     const STATUS = [
     	1 => 'ACTIVE',
-    	2 => 'PAID OFF',
-    	3 => 'DELETED',
+		2 => 'PARTIALLY',
+    	3 => 'PAID OFF',
+    	4 => 'DELETED',
     ];
 
 	const TYPE_TRANSACTION = [
@@ -35,6 +36,10 @@ class SoProforma extends Model
     
     public function so(){
     	return $this->BelongsTo('App\Entities\Penjualan\Salesorder','so_id','id');
+    }
+
+	public function do(){
+    	return $this->BelongsTo('App\Entities\Penjualan\PackingOrder','do_id','id');
     }
 
 	public function payable_detail(){

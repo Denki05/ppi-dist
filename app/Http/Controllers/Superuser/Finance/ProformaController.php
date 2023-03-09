@@ -11,10 +11,12 @@ use App\Entities\Penjualan\PackingOrder;
 use App\Entities\Penjualan\PackingOrderDetail;
 use App\Entities\Penjualan\PackingOrderItem;
 use App\Entities\Master\CustomerOtherAddress;
+use App\Entities\Master\Company;
 use App\Entities\Master\Customer;
 use App\Entities\Setting\UserMenu;
 use Auth;
 use DB;
+use PDF;
 
 class ProformaController extends Controller
 {
@@ -172,5 +174,28 @@ class ProformaController extends Controller
     public function destroy($id)
     {
         //
+    }
+
+    public function print_proforma($id){
+        // Access
+        if(Auth::user()->is_superuser == 0){
+            if(empty($this->access) || empty($this->access->user) || $this->access->can_print == 0){
+                return redirect()->route('superuser.index')->with('error','Anda tidak punya akses untuk membuka menu terkait');
+            }
+        }
+
+        $result = SoProforma::where('id',$id)->first();
+        $company = Company::first();
+        if(empty($result)){
+            abort(404);
+        }
+
+        $data = [
+            'result' => $result,
+            'company' => $company
+        ];
+
+        $pdf = PDF::loadview($this->view."print",$data)->setPaper('a4','landscape');
+        return $pdf->stream($result->do->do_code ?? '');
     }
 }
