@@ -54,24 +54,17 @@
           </div>
         </div>
 
-        <div class="card mb-2 border-0">
-          <div class="card-body" style="padding: 2px 5px 2px;">
+        <!-- <div class="card mb-2 border-0">
+          <div class="card-body" >
             <div class="row">
-              <div class="col">
-                <div class="form-label-group in-border">
-                  <label style="font-size: 10pt;">Plafon Piutang</label>
-                  <p style="font-size: 9pt;">{{ $result->customer->plafon_piutang }}</p>
-                </div>
-              </div>
-              <div class="col">
-                <div class="form-label-group in-border">
-                  <label style="font-size: 10pt;">Saldo</label>
-                  <p style="font-size: 9pt;">{{ $result->customer->saldo }}</p>
-                </div>
+              <label style="font-size: 10pt;" class="col-xs-4 col-sm-4 col-md-4 control-label" for="code">Transaksi Type :</label>
+              <div class="col-xs-6 col-sm-6 col-md-6">
+                <button type="button" class="btn btn-info">{{ $result->so_type_transaction()->scalar }}</button>
+                
               </div>
             </div>
           </div>
-        </div>
+        </div> -->
       </div>
 
       <div class="col-md-8">

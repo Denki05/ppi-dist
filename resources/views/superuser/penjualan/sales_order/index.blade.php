@@ -101,6 +101,7 @@
   </div>
 @endif
 
+@if($step == 1)
 <!-- List SO Awal -->
 <div class="block">
   <div class="block-content block-content-full">
@@ -114,11 +115,11 @@
               <tr>
                 <th>#</th>
 
-                @if($step == 1 || $step == 2)
+                @if($step == 1 )
                 <th>Code</th>
                 @endif
 
-                @if($step == 1 || $step == 2)
+                @if($step == 1)
                 <th>Customer</th>
                 @elseif($step == 9)
                 <th>Warehouse</th>
@@ -128,13 +129,13 @@
                 <th>Sales</th>
                 @endif
                 
-                @if($step == 1 || $step == 2)
+                @if($step == 1)
                 <th>Transaksi Type</th>
                 @endif
 
                 
 
-                @if($step == 1 || $step == 2 || $step == 9)
+                @if($step == 1 )
                 <th>Tanggal Dibuat</th>
                 @endif
 
@@ -146,7 +147,7 @@
                 <tr>
                   <td>{{$index+1}}</td>
 
-                  @if($step == 1 || $step == 2)
+                  @if($step == 1 )
                   <td><a href="{{route('superuser.penjualan.sales_order.detail',$row->id)}}">{{$row->code}}</a></td>
                   @endif
 
@@ -164,7 +165,7 @@
                   </td>
                   @endif
 
-                  @if($step == 1 || $step == 2)
+                  @if($step == 1)
                   <td>{{$row->so_type_transaction()->scalar ?? ''}}</td>
                   @endif
 
@@ -232,6 +233,136 @@
       </div>
     </div>
 </div>
+@elseif($step == 2)
+<!-- List SO Lanjutan -->
+<div class="card text-center">
+        <div class="card-header">
+          <h4 align="left">#TRANSAKSI</h4>
+            <ul class="nav nav-tabs card-header-tabs">
+                <li class="nav-item">
+                    <a class="nav-link active" data-toggle="tab" href="#so_lanjutan">SO {{ $step_txt }}</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" data-toggle="tab" href="#so_packed">SO Packed</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" data-toggle="tab" href="#do_proses">Delivery Order(DO)</a>
+                </li>
+            </ul>
+        </div>
+        <div class="tab-content card-body">
+            <div id="so_lanjutan" class="tab-pane active">
+              <table class="table table-striped" id="datatables">
+                <thead>
+                  <tr>
+                    <th>#</th>
+                    <th>Code</th>
+                    <th>Customer</th>
+                    <th>Transaksi Type</th>
+                    <th>Tanggal Buat</th>
+                    <th>Action</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  @foreach($table as $index => $row)
+                  <tr>
+                    <td>{{ $index+1 }}</td>
+                    <td>{{$row->code}}</td>
+                    <td>{{ $row->member->name }}</td>
+                    <td>{{$row->so_type_transaction()->scalar ?? ''}}</td>
+                    <td><?= date('d-m-Y h:i:s',strtotime($row->created_at)); ?></td>
+                    <td>
+                      @if ($step == 2 && $row->status === 2)
+                        <a href="{{route('superuser.penjualan.sales_order.edit',['id'=>$row->id, 'step'=>2])}}" class="btn btn-success btn-sm btn-flat"><i class="fa fa-check"></i> Kerjakan</a>
+                        <a href="#" class="btn btn-danger btn-sm btn-flat btn-kembali-ke-awal" data-id="{{$row->id}}"><i class="fa fa-times"></i> Kembali ke SO</a>
+                      @endif
+                      @if ($row->status === 4)
+                        <a href="{{route('superuser.penjualan.sales_order.detail',$row->id)}}" class="btn btn-primary btn-sm btn-flat"><i class="fa fa-eye"></i> Detail</a>
+                      @endif
+                      @if ($row->status === 4)
+                        <a href="{{route('superuser.penjualan.sales_order.print_rejected_so',$row->id)}}" class="btn btn-info btn-sm btn-flat" target="_blank"><i class="fa fa-print"></i> Print Rejected Item</a>
+                      @endif
+                    </td>
+                  </tr>
+                  @endforeach
+                </tbody>
+              </table>
+            </div>
+            <div id="so_packed" class="tab-pane">
+              <table class="table table-striped" id="datatables">
+                <thead>
+                  <tr>
+                    <th>#</th>
+                    <th>Code</th>
+                    <th>Customer</th>
+                    <th>Tanggal Buat</th>
+                    <th>Refrensi SO</th>
+                    <th>Status</th>
+                    <th>Action</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  @foreach($packing_order as $index => $row)
+                  <tr>
+                    <td>{{ $index+1 }}</td>
+                    <td>{{$row->code}}</td>
+                    <td>{{ $row->member->name }}</td>
+                    <td><?= date('d-m-Y h:i:s',strtotime($row->created_at)); ?></td>
+                    <td>{{$row->code}}</td>
+                    <td>
+                      @if($row->status <= 3)
+                      <span
+                          class="badge badge-{{ $row->do_status()->class }}">{{ $row->do_status()->msg }}</span>
+                      @else
+                        <span class="badge badge-success">Success</span>
+                      @endif
+                    </td>
+                    <td>
+                      @if($row->do[0]->status === 2)
+                        <div class="d-flex mb-2">
+                          <a href="#" class="btn btn-success btn-sm btn-flat btn-ready" data-id="{{$row->id}}"><i class="fa fa-send"></i> Naik Ke DO</a>
+                        </div>
+                      
+                      @endif
+                    </td>
+                  </tr>
+                  @endforeach
+                </tbody>
+              </table>
+            </div>
+            <div id="do_proses" class="tab-pane">
+              <table class="table table-striped" id="datatables">
+                <thead>
+                  <tr>
+                    <th>#</th>
+                    <th>DO Code</th>
+                    <th>Referensi SO</th>
+                    <th>Customer</th>
+                    <th>Status</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  @foreach($packing_order as $index => $row)
+                    <tr>
+                      <td>{{$index+1}}</td>
+                      <td>
+                        {{$row->do_code}}
+                      </td>
+                      <td>{ {$row->so->code }}</td>
+                      <td>
+                        {{ $row->member->name }}
+                      </td>
+                      <td>
+                        <span class="badge badge-{{ $row->do_status()->class }}"><b>{{ $row->do_status()->msg }}</b></span>
+                      </td>
+                    </tr>
+                  @endforeach
+                </tbody>
+              </table>
+            </div>
+        </div>
+  </div>
+@endif
 
 <form method="post" action="{{route('superuser.penjualan.sales_order.destroy')}}" id="frmDestroyItem">
     @csrf
@@ -242,6 +373,10 @@
     <input type="hidden" name="id">
 </form>
 <form method="post" action="{{route('superuser.penjualan.sales_order.kembali')}}" id="frmKembali">
+    @csrf
+    <input type="hidden" name="id">
+</form>
+<form method="post" action="{{route('superuser.penjualan.packing_order.ready')}}" id="frmReady">
     @csrf
     <input type="hidden" name="id">
 </form>
@@ -305,6 +440,32 @@
       })
 
       
+      $('#myTab a').click(function(){
+      var href = $(this).attr('href');
+      if(href == "#profile") {
+      $('.profile, .profile_else').css('display','')
+        $('.profile, .profile_else').addClass('show')
+        $('.profile, .profile_else').removeClass('hide')
+        $('.home, .home_else').removeClass('show')
+        $('.home, .home_else').addClass('hide')
+      }
+      if(href == "#home") {
+        $('.home, .home_else').addClass('show')
+        $('.home, .home_else').removeClass('hide')
+        $('.home, .home_else').css('display','')
+        $('.profile, .profile_else').removeClass('show')
+        $('.profile, .profile_else').addClass('hide')
+      }
+    })
+
+    $(document).on('click','.btn-ready',function(){
+      if(confirm("Apakah anda yakin ingin mengubah status packing order ke Ready?")){
+        let id = $(this).data('id');
+        $('#frmReady').find('input[name="id"]').val(id);
+        $('#frmReady').submit();
+      }
+    })
+
     });
   </script>
 @endpush

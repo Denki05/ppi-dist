@@ -892,19 +892,19 @@ class PackingOrderController extends Controller
         }
 
         try{
-            // $request->validate([
-            //     'id' => 'required'
-            // ]);
-            // $post = $request->all();
+            $request->validate([
+                'id' => 'required'
+            ]);
+            $post = $request->all();
 
-            // $update = PackingOrder::where('id',$post["id"])->update(['status' => 3]);
+            $update = PackingOrder::where('id',$post["id"])->update(['status' => 3]);
 
-            // if($update){
-            //     return redirect()->back()->with('success','Packing Order berhasil diubah ke Ready');    
-            // }
-            // else{
-            //     return redirect()->back()->with('error','Packing Order gagal diubah ke Ready');
-            // }
+            if($update){
+                return redirect()->back()->with('success','Packing Order berhasil diubah ke Ready');    
+            }
+            else{
+                return redirect()->back()->with('error','Packing Order gagal diubah ke Ready');
+            }
 
             
             

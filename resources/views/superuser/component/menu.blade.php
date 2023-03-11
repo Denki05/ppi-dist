@@ -93,16 +93,16 @@
                         <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-expanded="false">Sales Order <span class="caret"></span></a>
                         <ul class="dropdown-menu" role="menu">
                             <li class="nav-item"><a href="{{ route('superuser.penjualan.sales_order.index_awal') }}" target="_blank">Sales Order Awal (SOA)</a></li>
-                            <li class="nav-item"><a href="{{ route('superuser.penjualan.sales_order.index_lanjutan') }}" target="_blank">Sales Order Lanjutan (SOL)</a></li>
-                            <li class="nav-item"><a href="{{ route('superuser.penjualan.sales_order.index_mutasi') }}" target="_blank">Sales Order Mutation (SOM)</a></li>
-                            <li class="nav-item"><a href="{{ route('superuser.penjualan.canvasing.index') }}" target="_blank">Canvasing (Sales Mutation)</a></li>
+                            <li class="nav-item"><a href="{{ route('superuser.penjualan.sales_order.index_lanjutan') }}" target="_blank">Transaksi</a></li>
+                            <!-- <li class="nav-item"><a href="{{ route('superuser.penjualan.sales_order.index_mutasi') }}" target="_blank">Sales Order Mutation (SOM)</a></li> -->
+                            <!-- <li class="nav-item"><a href="{{ route('superuser.penjualan.canvasing.index') }}" target="_blank">Canvasing (Sales Mutation)</a></li> -->
                         </ul>
                     </li>
-                    <li class="nav-item">
+                    <!-- <li class="nav-item">
                       <a href="{{ route('superuser.penjualan.packing_order.index') }}" target="_blank" class="nav-link {{ is_active_route('superuser.master.ekspedisi.index') }}">
                         Packing Order (PO)
                       </a>
-                    </li>
+                    </li> -->
                     <li class="dropdown">
                         <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-expanded="false">Delivery Order (DO) <span class="caret"></span></a>
                         <ul class="dropdown-menu" role="menu">

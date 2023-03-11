@@ -124,10 +124,12 @@ class SalesOrderController extends Controller
         $customers = Customer::get();
         $other_address = CustomerOtherAddress::get();
         $brand = BrandLokal::get();
+        $packing_order = PackingOrder::get();
 
         $data = [
             'customers' => $customers,
             'other_address' => $other_address,
+            'packing_order' => $packing_order,
             'brand' => $brand,
             'step' => $step,
             'table' => $table,

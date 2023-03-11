@@ -35,3 +35,6 @@
 <link rel="stylesheet" href="https://pro.fontawesome.com/releases/v5.10.0/css/all.css">
 
 <link href="https://fonts.googleapis.com/css?family=Poppins" rel="stylesheet" />
+
+<!-- Transaksi View -->
+<link rel="stylesheet" href="{{ asset('superuser_assets/css/transaksi.tab.css') }}">
