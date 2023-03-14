@@ -82,10 +82,10 @@
                 <div class="col-md-12">
                     <table class="table">
                         <tr>
-                            <td align="center">
-                              @if($result->status == 1 && $result->status == 2)
+                            <td align="center" style="font-size: 18pt;">
+                              @if($result->status === 1 || $result->status === 2)
                                 <b><u>INVOICE PROFORMA</u></b>
-                              @elseif($result->status == 3)
+                              @elseif($result->status === 3)
                                 <b><u>INVOICE</u></b>
                               @endif
                             </td>

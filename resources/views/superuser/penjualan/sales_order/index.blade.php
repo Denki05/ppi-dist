@@ -241,7 +241,7 @@
                     <a class="nav-link active" data-toggle="tab" href="#so_lanjutan">SO {{ $step_txt }}</a>
                 </li>
                 <li class="nav-item">
-                    <a class="nav-link" data-toggle="tab" href="#so_packed">SO Packed</a>
+                    <a class="nav-link" data-toggle="tab" href="#so_packed">SO PACKED(validasi)</a>
                 </li>
                 <li class="nav-item">
                     <a class="nav-link" data-toggle="tab" href="#do_proses">Delivery Order(DO)</a>
@@ -306,7 +306,7 @@
                     <td>{{$row->code}}</td>
                     <td>{{ $row->member->name }}</td>
                     <td><?= date('d-m-Y h:i:s',strtotime($row->created_at)); ?></td>
-                    <td>{{$row->code}}</td>
+                    <td>{{$row->so->code}}</td>
                     <td>
                       @if($row->status <= 3)
                       <span
@@ -316,11 +316,33 @@
                       @endif
                     </td>
                     <td>
-                      @if($row->status === 2)
-                        <div class="d-flex mb-2">
-                          <a href="#" class="btn btn-success btn-sm btn-flat btn-ready" data-id="{{$row->id}}"><i class="fa fa-send"></i> Naik Ke DO</a>
-                        </div>
-                      
+                      @if($row->status == 1)
+                      <div class="d-flex mb-2">
+                        <a href="{{route('superuser.penjualan.packing_order.edit',$row->id)}}" class="btn btn-primary btn-sm btn-flat mx-1"><i class="fa fa-edit"></i> Kerjakan</a>
+                        <a href="#" class="btn btn-danger btn-sm btn-flat btn-delete" data-id="{{$row->id}}"><i class="fa fa-trash"></i> Delete</a>
+                      </div>
+                      @elseif($row->status == 2)
+                      <div class="d-flex mb-2">
+                        <a href="#" class="btn btn-success btn-sm btn-flat btn-ready" data-id="{{$row->id}}"><i class="fa fa-send"></i> Naik Ke DO</a>
+                        @if($row->invoicing != null)
+                        <a href="{{route('superuser.finance.invoicing.print_proforma',$row->invoicing->id)}}" class="btn btn-info btn-sm btn-flat mx-1" data-id="{{$row->invoicing->id}}" target="_blank"><i class="fa fa-print"></i> Print Proforma</a>
+                        <a href="{{route('superuser.finance.invoicing.print',$row->invoicing->id)}}" class="btn btn-primary btn-sm btn-flat mx-1" data-id="{{$row->invoicing->id}}" target="_blank"><i class="fa fa-print"></i> Print Invoice</a>
+                        @endif
+                      </div>
+                      @elseif($row->status == 3)
+                      <div class="d-flex mb-2">
+                        @if($row->invoicing != null)
+                        <a href="{{route('superuser.finance.invoicing.print_proforma',$row->invoicing->id)}}" class="btn btn-info btn-sm btn-flat mx-1" data-id="{{$row->invoicing->id}}" target="_blank"><i class="fa fa-print"></i> Print Proforma</a>
+                        <a href="{{route('superuser.finance.invoicing.print',$row->invoicing->id)}}" class="btn btn-primary btn-sm btn-flat mx-1" data-id="{{$row->invoicing->id}}" target="_blank"><i class="fa fa-print"></i> Print Invoice</a>
+                        @endif
+                      </div>
+                      @else
+                      <div class="d-flex mb-2">
+                        @if($row->invoicing != null)
+                        <a href="{{route('superuser.finance.invoicing.print_proforma',$row->invoicing->id)}}" class="btn btn-info btn-sm btn-flat mx-1" data-id="{{$row->invoicing->id}}" target="_blank"><i class="fa fa-print"></i> Print Proforma</a>
+                        <a href="{{route('superuser.finance.invoicing.print',$row->invoicing->id)}}" class="btn btn-primary btn-sm btn-flat mx-1" data-id="{{$row->invoicing->id}}" target="_blank"><i class="fa fa-print"></i> Print Invoice</a>
+                        @endif
+                      </div>
                       @endif
                     </td>
                   </tr>
