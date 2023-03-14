@@ -440,7 +440,7 @@ class SalesOrderController extends Controller
         $warehouse = Warehouse::all();
         $sales = Sales::all();
         $product_category = ProductCategory::all();
-        $brand_lokal = BrandLokal::all();
+        $brand = BrandLokal::get();
         $ekspedisi = Ekspedisi::all();
 
         $data = [
@@ -449,7 +449,7 @@ class SalesOrderController extends Controller
             'warehouse' => $warehouse,
             'sales' => $sales,
             'product_category' => $product_category,
-            'brand_lokal' => $brand_lokal,
+            'brand' => $brand,
             'ekspedisi' => $ekspedisi,
             'result' => $result,
             'step' => $step,
@@ -558,6 +558,7 @@ class SalesOrderController extends Controller
                 if ($step == 1) {
                     $sales_order->sales_senior_id = trim(htmlentities($post["sales_senior_id"]));
                     $sales_order->sales_id = trim(htmlentities($post["sales_id"]));
+                    $sales_order->type_transaction = trim(htmlentities($post["type_transaction"]));
                     $sales_order->customer_id = $customer["id"] ?? null;
                     $sales_order->note = trim(htmlentities($post["note"]));
                     $sales_order->updated_by = Auth::id();

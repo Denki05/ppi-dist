@@ -151,14 +151,12 @@
                   <td><a href="{{route('superuser.penjualan.sales_order.detail',$row->id)}}">{{$row->code}}</a></td>
                   @endif
 
+                  @if($step == 1)
                   <td>
-                    @if($row->so_for == 1)
-                      {{ $row->customer->name }} - {{ $row->member->name }}
-                    @elseif($row->so_for == 2)
-                      {{$row->customer_gudang->name ?? ''}}
-                    @endif
+                    {{$row->member->name}}
                   </td>
-                  
+                  @endif
+
                   @if($step == 1)
                   <td>
                     {{$row->sales_senior->name ?? ''}} | {{ $row->sales->name ?? '' }} <br>
@@ -318,7 +316,7 @@
                       @endif
                     </td>
                     <td>
-                      @if($row->do[0]->status === 2)
+                      @if($row->status === 2)
                         <div class="d-flex mb-2">
                           <a href="#" class="btn btn-success btn-sm btn-flat btn-ready" data-id="{{$row->id}}"><i class="fa fa-send"></i> Naik Ke DO</a>
                         </div>
@@ -348,7 +346,7 @@
                       <td>
                         {{$row->do_code}}
                       </td>
-                      <td>{ {$row->so->code }}</td>
+                      <td>{{$row->so->code }}</td>
                       <td>
                         {{ $row->member->name }}
                       </td>
@@ -438,25 +436,6 @@
           $('#frmKembali').submit();
         }
       })
-
-      
-      $('#myTab a').click(function(){
-      var href = $(this).attr('href');
-      if(href == "#profile") {
-      $('.profile, .profile_else').css('display','')
-        $('.profile, .profile_else').addClass('show')
-        $('.profile, .profile_else').removeClass('hide')
-        $('.home, .home_else').removeClass('show')
-        $('.home, .home_else').addClass('hide')
-      }
-      if(href == "#home") {
-        $('.home, .home_else').addClass('show')
-        $('.home, .home_else').removeClass('hide')
-        $('.home, .home_else').css('display','')
-        $('.profile, .profile_else').removeClass('show')
-        $('.profile, .profile_else').addClass('hide')
-      }
-    })
 
     $(document).on('click','.btn-ready',function(){
       if(confirm("Apakah anda yakin ingin mengubah status packing order ke Ready?")){
