@@ -25,6 +25,7 @@ class SalesOrder extends Model
     	'tl',
     	'sales',
     	'status',
+    	'condition',
         'keterangan_tidak_lanjut',
     	'so_for',
     	'updated_by',
@@ -65,6 +66,13 @@ class SalesOrder extends Model
         4 => 'TUTUP',
     	9 => 'MUTASI',
     ];
+
+    const CONDITION = [
+    	0 => 'DELETED',
+    	1 => 'ACTIVED',
+        2 => 'HOLD',
+    ];
+
     public function customer(){
     	return $this->BelongsTo('App\Entities\Master\Customer','customer_id','id');
     }
@@ -115,6 +123,12 @@ class SalesOrder extends Model
     {
         return (object) self::STEP[$this->status];
     }
+
+    public function so_condition()
+    {
+        return (object) self::CONDITION[$this->condition];
+    }
+
     public function user_update(){
         return $this->BelongsTo('App\Entities\Account\Superuser','updated_by','id');
     }

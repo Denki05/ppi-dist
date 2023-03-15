@@ -121,7 +121,7 @@
             <div class="card-body">
               <div class="row">
                 <div class="col">
-                  
+                @if($step == 2)
                   <div class="form-group row">
                     <label class="col-md-4 col-form-label text-right">Disc %</label>
                     <div class="col-md-3">
@@ -131,7 +131,7 @@
                       <input type="text" name="disc_amount2_idr" id="disc_amount2_idr" class="form-control disc_amount2_idr text-center" readonly>
                     </div>
                   </div>
-                  
+                  @endif
                 </div>
                 <div class="col">
                   @if($step == 2)

@@ -299,6 +299,7 @@ class SalesOrderController extends Controller
                 $insert->note = $request->note;
                 $insert->created_by = Auth::id();
                 $insert->status = $post["ajukankelanjutan"] == 1 ? 2 : 1;
+                $insert->condition = 1;
                 $insert->save();
 
                 if (sizeof($post["product_id"]) > 0) {
@@ -324,7 +325,7 @@ class SalesOrderController extends Controller
             } catch (\Exception $e) {
                 DB::rollback();
 
-                // dd($e);
+                dd($e);
                 $data_json["IsError"] = TRUE;
                 $data_json["Message"] = "Sales Order Gagal Ditambahkan";
     
@@ -972,12 +973,7 @@ class SalesOrderController extends Controller
                     $packing_order->idr_rate = $idr_rate;
                     $packing_order->other_address = 0 ?? Null;
                     $packing_order->note = $company->note ?? null;
-                    // $packing_order->status = 2;
-                    if($sales_order->type_transaction == 1){
-                        $packing_order->status = 2;
-                    }else{
-                        $packing_order->status = 1;
-                    }
+                    $packing_order->status = 2;
                     $packing_order->created_by = Auth::id();
                     $packing_order->save();
 
@@ -1097,9 +1093,9 @@ class SalesOrderController extends Controller
                     foreach ($data as $key => $value) {
                         $insert = PackingOrderItem::create($data[$key]);
                     }
-                    app('App\Http\Controllers\Superuser\Penjualan\PackingOrderController')->reset_cost($packing_order->id);
+                    // app('App\Http\Controllers\Superuser\Penjualan\PackingOrderController')->reset_cost($packing_order->id);
                     
-                    // Cetak Proforma untuk transaksi cash
+                    // Cetak proforma disini
                     $so = SalesOrder::where('id', $sales_order->id)->first();
                     $so_detail = SalesOrderItem::where('so_id', $so->id)->first();
                     

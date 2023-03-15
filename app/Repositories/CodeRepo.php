@@ -82,9 +82,27 @@ class CodeRepo
     {
         return self::generate('V', Vendor::class);
     }
+    
+    // Generate SO
     public static function generateSO(){
-        return self::generate('SO', SalesOrder::class); 
+        $count = SalesOrder::withTrashed()
+                              ->where('condition', '>', 0)
+                              ->whereYear('created_at',date('Y'))
+                              ->whereMonth('created_at',date('m'))
+                              ->get();
+                                   
+        if(count($count) > 0 ){
+            $count = count($count) + 1;
+
+            $code = 'SO-' .date('my')."-".sprintf('%03d', $count);
+        }
+        else{
+            $code = 'SO-' .date('my')."-".sprintf('%03d', 1);
+        }
+        return $code;
+
     }
+
     public static function generatePO(){
         return self::generate('PRE', PackingOrder::class);   
     }
