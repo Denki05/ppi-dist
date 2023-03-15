@@ -460,8 +460,8 @@
               let sub_total_item = $('input[name="sub_total_item"]').val();
               let disc_percent = $('input[name="disc_amount2_idr"]').val();
 
-              sub_total_item = parseFloat(sub_total_item.split('.').join(''));
-              disc_percent = parseFloat(disc_percent.split('.').join(''));
+              // sub_total_item = parseFloat(sub_total_item.split('.').join(''));
+              // disc_percent = parseFloat(disc_percent.split('.').join(''));
 
               let subAfterDiscPercent = Math.ceil(sub_total_item - disc_percent);
 
@@ -486,10 +486,6 @@
         let sub_total_item = $('input[name="sub_total_item"]').val();
         let disc_agen = $('input[name="disc_amount2_idr"]').val();
         let disc_kemasan = $('input[name="disc_kemasan_idr"]').val();
-
-        sub_total_item = parseFloat(sub_total_item.split('.').join(''));
-        disc_agen = parseFloat(disc_agen.split('.').join(''));
-        disc_kemasan = parseFloat(disc_kemasan.split('.').join(''));
 
         sub_total_item = (isNaN(sub_total_item)) ? 0 : sub_total_item;
         disc_agen = (isNaN(disc_agen)) ? 0 : disc_agen;
