@@ -18,6 +18,7 @@ use App\Entities\Penjualan\PackingOrderItem;
 use App\Entities\Penjualan\PackingOrderDetail;
 use App\Entities\Penjualan\SalesOrder;
 use App\Entities\Penjualan\SalesOrderItem;
+use App\Entities\Penjualan\SoProforma;
 use App\Entities\Setting\UserMenu;
 use App\Repositories\CodeRepo;
 use Auth;
@@ -897,16 +898,23 @@ class PackingOrderController extends Controller
             ]);
             $post = $request->all();
 
-            $update = PackingOrder::where('id',$post["id"])->update(['status' => 3]);
+            //Cek Pembayaran
 
-            if($update){
-                return redirect()->back()->with('success','Packing Order berhasil diubah ke Ready');    
-            }
-            else{
-                return redirect()->back()->with('error','Packing Order gagal diubah ke Ready');
-            }
+            $proforma = SoProforma::where('do_id', $post["id"])->first();
 
-            
+            if($proforma->type_transaction === 1){
+                if($proforma->status === 3){
+                    $update = PackingOrder::where('id', $post["id"])->update(['status' => 3]);
+                    
+                    return redirect()->back()->with('success','SO packed berhasil di proses'); 
+                }else{
+                    return redirect()->back()->with('error','SO packed gagal di proses! Cek pembayaran');
+                }
+            }elseif($proforma->type_transaction === 2 && $proforma->type_transaction === 3){
+                $update = PackingOrder::where('id', $post["id"])->update(['status' => 3]);
+
+                return redirect()->back()->with('success','SO packed berhasil di proses');
+            }
             
         }catch(\Throwable $e){
             return redirect()->back()->with('error',$e->getMessage());

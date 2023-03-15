@@ -1097,9 +1097,9 @@ class SalesOrderController extends Controller
                     foreach ($data as $key => $value) {
                         $insert = PackingOrderItem::create($data[$key]);
                     }
-                    // app('App\Http\Controllers\Superuser\Penjualan\PackingOrderController')->reset_cost($packing_order->id);
+                    app('App\Http\Controllers\Superuser\Penjualan\PackingOrderController')->reset_cost($packing_order->id);
                     
-                    // Cetak proforma disini
+                    // Cetak Proforma untuk transaksi cash
                     $so = SalesOrder::where('id', $sales_order->id)->first();
                     $so_detail = SalesOrderItem::where('so_id', $so->id)->first();
                     

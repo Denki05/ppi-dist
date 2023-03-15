@@ -92,8 +92,8 @@
                     <div class="form-group row">
                       <label class="col-md-4 col-form-label text-right" style="font-size: 10pt;">Kurs<span class="text-danger">*</span></label>
                       <div class="col-5">
-                      <input type="text" name="idr_rate" id="idr_rate"  class="form-control formatRupiah" value="{{ number_format($result->idr_rate,0,',','.') }}">
-                      <!-- <input type="text" name="idr_rate" id="idr_rate"  class="form-control" value="{{ $result->idr_rate }}"> -->
+                      <!-- <input type="text" name="idr_rate" id="idr_rate"  class="form-control formatRupiah" value="{{ number_format($result->idr_rate,0,',','.') }}"> -->
+                      <input type="text" name="idr_rate" id="idr_rate"  class="form-control" value="{{ $result->idr_rate }}">
                       </div>
                     </div>
                     @endif
@@ -138,7 +138,7 @@
                   <div class="form-group row">
                     <label class="col-md-4 col-form-label text-right">Voucher</label>
                     <div class="col-md-6">
-                      <input type="text" name="voucher_idr" id="voucher_idr" class="form-control count voucher_idr formatRupiah">
+                      <input type="text" name="voucher_idr" id="voucher_idr" class="form-control count voucher_idr ">
                     </div>
                   </div>
                   @endif
@@ -174,7 +174,7 @@
                   <div class="form-group row">
                     <label class="col-md-4 col-form-label text-right">Ongkir</label>
                     <div class="col-md-6">
-                      <input type="text" name="delivery_cost_idr" id="delivery_cost_idr" class="form-control delivery_cost_idr formatRupiah">
+                      <input type="text" name="delivery_cost_idr" id="delivery_cost_idr" class="form-control delivery_cost_idr ">
                     </div>
                   </div>
                   @endif
@@ -197,7 +197,7 @@
                   <div class="form-group row">
                     <label class="col-md-4 col-form-label text-right">Disc IDR</label>
                     <div class="col-md-6">
-                      <input type="text" name="disc_idr" id="disc_idr" class="form-control disc_idr formatRupiah" step="any">
+                      <input type="text" name="disc_idr" id="disc_idr" class="form-control disc_idr " step="any">
                     </div>
                   </div>
                   @endif
@@ -207,7 +207,7 @@
                   <div class="form-group row">
                     <label class="col-md-4 col-form-label text-right">Resi Ongkir</label>
                     <div class="col-md-6">
-                      <input type="number" name="resi_ongkir" id="resi_ongkir" class="form-control text-center formatRupiah" step="any">
+                      <input type="number" name="resi_ongkir" id="resi_ongkir" class="form-control text-center " step="any">
                     </div>
                   </div>
                   @endif
@@ -272,7 +272,7 @@
                       </td>
                       
                       <td>
-                        <input type="text" name="repeater[{{$index}}][total]" class="form-control formatRupiah" readonly>
+                        <input type="text" name="repeater[{{$index}}][total]" class="form-control" readonly>
                       </td>
                     </tr>
                     @endforeach
@@ -285,7 +285,7 @@
                         <br><span class="text-danger">*Subtotal After Disc(USD)</span>
                       </td>
                       <td class="text-right">
-                        <input type="text" name="sub_total_item" id="sub_total_item" class="form-control formatRupiah" readonly>
+                        <input type="text" name="sub_total_item" id="sub_total_item" class="form-control" readonly>
                       </td>
                     </tr>
                 </tfoot>
@@ -317,30 +317,57 @@
 
     
 
-    /* Fungsi formatRupiah */
-		function formatRupiah(angka, prefix){
-      angka = angka.toString();
-      var number_string = angka.replace(/[^,\d]/g, '').toString(),
-      split       = number_string.split(','),
-      sisa        = split[0].length % 3,
-      rupiah        = split[0].substr(0, sisa),
-      ribuan        = split[0].substr(sisa).match(/\d{3}/gi);
+    // /* Fungsi formatRupiah */
+		// function formatRupiah(angka, prefix){
+    //   angka = angka.toString();
+    //   var number_string = angka.replace(/[^,\d]/g, '').toString(),
+    //   split       = number_string.split(','),
+    //   sisa        = split[0].length % 3,
+    //   rupiah        = split[0].substr(0, sisa),
+    //   ribuan        = split[0].substr(sisa).match(/\d{3}/gi);
     
-      // tambahkan titik jika yang di input sudah menjadi angka ribuan
-      if(ribuan){
-        separator = sisa ? '.' : '';
-        rupiah += separator + ribuan.join('.');
-      }
+    //   // tambahkan titik jika yang di input sudah menjadi angka ribuan
+    //   if(ribuan){
+    //     separator = sisa ? '.' : '';
+    //     rupiah += separator + ribuan.join('.');
+    //   }
     
-      rupiah = split[1] != undefined ? rupiah + ',' + split[1] : rupiah;
-      return prefix == undefined ? rupiah : (rupiah ? 'Rp. ' + rupiah : '');
-    }
+    //   rupiah = split[1] != undefined ? rupiah + ',' + split[1] : rupiah;
+    //   return prefix == undefined ? rupiah : (rupiah ? 'Rp. ' + rupiah : '');
+    // }
+
+    // function formatRupiah(angka){
+    //     var number_string = angka.replace(/[^,\d]/g, '').toString(),
+    //     split           = number_string.split(','),
+    //     sisa            = split[0].length % 3,
+    //     angka_hasil     = split[0].substr(0, sisa),
+    //     ribuan          = split[0].substr(sisa).match(/\d{3}/gi);
+ 
+ 
+ 
+    //     // tambahkan titik jika yang di input sudah menjadi angka ribuan
+    //     if(ribuan){
+    //         separator = sisa ? '.' : '';
+    //         angka_hasil += separator + ribuan.join('.');
+    //     }
+ 
+    //     angka_hasil = split[1] != undefined ? angka_hasil + ',' + split[1] : angka_hasil;
+    //     return angka_hasil;
+    // }
+
+    // $('#formatRupiah').on('keyup',function(){
+    //     var angka = $(this).val();
+ 
+    //     var hasilAngka = formatRupiah(angka);
+ 
+    //     $(this).val(hasilAngka);
+    // });
     
 
-    $(document).on('keyup','.formatRupiah',function(){
-      let val = $(this).val();
-      $(this).val(formatRupiah(val));
-    })
+    // $(document).on('keyup','.formatRupiah',function(){
+    //   let val = $(this).val();
+    //   $(this).val(formatRupiah(val));
+    // })
 
     $(function(){
       let global_total = 0 ;
@@ -369,7 +396,7 @@
         let val_percent_disc = parseFloat($('tr.index'+index+'').find('input[name="repeater['+index+'][percent_disc]"]').val());
         let kurs = $('#idr_rate').val();
 
-        kurs = parseFloat(kurs.split('.').join(''));
+        // kurs = parseFloat(kurs.split('.').join(''));
 
         if(isNaN(val_usd_disc)){
           val_usd_disc = 0;
@@ -391,7 +418,7 @@
         }
 
         $('tr.index'+index+'').find('input[name="repeater['+index+'][total_disc]"]').val(total_disc);
-        $('tr.index'+index+'').find('input[name="repeater['+index+'][total]"]').val(formatRupiah(sub_total));
+        $('tr.index'+index+'').find('input[name="repeater['+index+'][total]"]').val(sub_total);
         
         sub_total1();
       }
@@ -409,7 +436,7 @@
           
         }) ;
 
-        $('input[name="sub_total_item"]').val(formatRupiah(total));
+        $('input[name="sub_total_item"]').val(total);
       }
 
       // input disc % (agen)
@@ -419,7 +446,7 @@
 
               sub_total_item = parseFloat(sub_total_item.split('.').join(''));
               let amount = parseFloat(sub_total_item) * parseFloat($(this).val()) / 100;
-              $('input[name="disc_amount2_idr"]').val(formatRupiah(amount));
+              $('input[name="disc_amount2_idr"]').val(amount);
           }else{
               $('input[name="disc_amount2_idr').val(0);
           }
@@ -439,7 +466,7 @@
               let subAfterDiscPercent = Math.ceil(sub_total_item - disc_percent);
 
               var amount = parseFloat(subAfterDiscPercent) * parseFloat($(this).val()) / 100;
-              $('#disc_kemasan_idr').val(formatRupiah(amount));
+              $('#disc_kemasan_idr').val(amount);
           }else{
               $('#disc_kemasan_idr').val(0);
           }
@@ -470,7 +497,7 @@
         
         let subtotal_2 = Math.ceil((sub_total_item - disc_agen) - disc_kemasan);
 
-        $('input[name="subtotal_2"]').val(formatRupiah(subtotal_2));
+        $('input[name="subtotal_2"]').val(subtotal_2);
       }
 
       // calculated button after input voucher - disc idr
@@ -496,7 +523,7 @@
         resi = (isNaN(resi)) ? 0 : resi;
 
         subFinal = Math.ceil(((subtotal - disc_idr) - voucher_idr) + ongkir);
-        $('input[name="grand_total_final"]').val(formatRupiah(subFinal));
+        $('input[name="grand_total_final"]').val(subFinal);
       });
     });
 
