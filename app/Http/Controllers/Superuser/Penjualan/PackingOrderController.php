@@ -1042,7 +1042,6 @@ class PackingOrderController extends Controller
             $result = PackingOrder::where('id', $post["id"])->first();
 
             //Kembalikan SO ke step lanjutan
-            // $get_so = SalesOrder::where('id', $result->so_id)->get();
 
             if($result->status === 2){
                 $update_so = SalesOrder::where('id', $result->so_id)->update(['status' => 3, 'count_rev' => 1]);

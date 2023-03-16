@@ -950,6 +950,7 @@ class SalesOrderController extends Controller
     
                 $sales_order->origin_warehouse_id = trim(htmlentities($post["origin_warehouse_id"]));
                 $sales_order->status = 4;
+                $sales_order->count_rev = 0;
                 $sales_order->updated_by = Auth::id();
                 $sales_order->save();
     
