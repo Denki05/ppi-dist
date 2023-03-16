@@ -305,30 +305,28 @@
                 <tbody>
                   @foreach($packing_order as $index => $row)
                   <tr>
-                    <td>{{ $index+1 }}</td>
-                    <td>{{$row->code}}</td>
-                    <td>{{ $row->member->name }}</td>
-                    <td><?= date('d-m-Y h:i:s',strtotime($row->created_at)); ?></td>
-                    <td>{{$row->so->code}} / {{$row->so->so_type_transaction()->scalar}}</td>
-                    <td>
-                      @if($row->status <= 3)
-                      <span
-                          class="badge badge-{{ $row->do_status()->class }}">{{ $row->do_status()->msg }}</span>
-                      @else
-                        <span class="badge badge-success">Success</span>
-                      @endif
-                    </td>
-                    <td>
-                      @if($row->status == 2)
-                        
-                          <a href="#" class="btn btn-success btn-sm btn-flat btn-ready" data-id="{{$row->id}}"><i class="fa fa-send"></i> Naik Ke DO</a>
-                          @if($row->type_transaction == 2)
-                          <a href="#" class="btn btn-danger btn-sm btn-flat" data-id="{{$row->id}}"><i class="fa fa-edit"></i> Revisi</a>
-                          @endif
-                        
-                      @endif
-                    </td>
+                    @if($row->status === 2)
+                      <td>{{ $index+1 }}</td>
+                      <td>{{$row->code}}</td>
+                      <td>{{ $row->member->name }}</td>
+                      <td><?= date('d-m-Y h:i:s',strtotime($row->created_at)); ?></td>
+                      <td>{{$row->so->code}} / {{$row->so->so_type_transaction()->scalar}}</td>
+                      <td>
+                        <span class="badge badge-{{ $row->do_status()->class }}"><b>{{ $row->do_status()->msg }}</b></span>
+                      </td>
+                      <td>
+                        @if($row->status == 2)
+                          
+                            <a href="#" class="btn btn-success btn-sm btn-flat btn-ready" data-id="{{$row->id}}"><i class="fa fa-send"></i> Naik Ke DO</a>
+                            @if($row->type_transaction == 2)
+                            <a href="#" class="btn btn-danger btn-sm btn-flat btn-revisi" data-id="{{$row->id}}"><i class="fa fa-edit"></i> Revisi</a>
+                            @endif
+                          
+                        @endif
+                      </td>
+                    @endif
                   </tr>
+                  
                   @endforeach
                 </tbody>
               </table>
@@ -347,17 +345,19 @@
                 <tbody>
                   @foreach($packing_order as $index => $row)
                     <tr>
-                      <td>{{$index+1}}</td>
-                      <td>
-                        {{$row->do_code}}
-                      </td>
-                      <td>{{$row->so->code }}</td>
-                      <td>
-                        {{ $row->member->name }}
-                      </td>
-                      <td>
-                        <span class="badge badge-{{ $row->do_status()->class }}"><b>{{ $row->do_status()->msg }}</b></span>
-                      </td>
+                      @if($row->status === 3)
+                        <td>{{$index+1}}</td>
+                        <td>
+                          {{$row->do_code}}
+                        </td>
+                        <td>{{$row->so->code }}</td>
+                        <td>
+                          {{ $row->member->name }}
+                        </td>
+                        <td>
+                          <span class="badge badge-{{ $row->do_status()->class }}"><b>{{ $row->do_status()->msg }}</b></span>
+                        </td>
+                      @endif
                     </tr>
                   @endforeach
                 </tbody>
@@ -380,6 +380,10 @@
     <input type="hidden" name="id">
 </form>
 <form method="post" action="{{route('superuser.penjualan.packing_order.ready')}}" id="frmReady">
+    @csrf
+    <input type="hidden" name="id">
+</form>
+<form method="post" action="{{route('superuser.penjualan.packing_order.revisi')}}" id="frmRevisi">
     @csrf
     <input type="hidden" name="id">
 </form>
@@ -443,10 +447,18 @@
       })
 
     $(document).on('click','.btn-ready',function(){
-      if(confirm("Apakah anda yakin ingin mengubah status packing order ke Ready?")){
+      if(confirm("Apakah anda yakin ingin mengubah status SO Validasi ke Ready?")){
         let id = $(this).data('id');
         $('#frmReady').find('input[name="id"]').val(id);
         $('#frmReady').submit();
+      }
+    })
+
+    $(document).on('click','.btn-revisi',function(){
+      if(confirm("Apakah anda yakin me revisi SO Validasi?")){
+        let id = $(this).data('id');
+        $('#frmRevisi').find('input[name="id"]').val(id);
+        $('#frmRevisi').submit();
       }
     })
 

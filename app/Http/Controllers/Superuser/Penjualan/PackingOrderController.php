@@ -1023,6 +1023,42 @@ class PackingOrderController extends Controller
             return redirect()->back()->with('error',$e->getMessage());
         }
     }
+
+    public function revisi(Request $request)
+    {
+        // Access
+        if(Auth::user()->is_superuser == 0){
+            if(empty($this->access) || empty($this->access->user) || $this->access->can_approve == 0){
+                return redirect()->route('superuser.index')->with('error','Anda tidak punya akses untuk membuka menu terkait');
+            }
+        }
+
+        try{
+            $request->validate([
+                'id' => 'required'
+            ]);
+            $post = $request->all();
+
+            $result = PackingOrder::where('id', $post["id"])->first();
+
+            //Kembalikan SO ke step lanjutan
+            // $get_so = SalesOrder::where('id', $result->so_id)->get();
+
+            if($result->status === 2){
+                $update_so = SalesOrder::where('id', $result->so_id)->update(['status' => 3, 'count_rev' => 1]);
+
+                $update_po = PackingOrder::where('id', $result->id)->update(['status' => 7]);
+
+                return redirect()->back()->with('success','SO Packed berhasil di kembalikan ke SO Lanjutan!');  
+            }else{
+                return redirect()->back()->with('error','Gagal di Kembalikan status saat ini DO!');
+            }
+                        
+        }catch(\Throwable $e){
+            return redirect()->back()->with('error',$e->getMessage());
+        }
+    }
+
     public function ajax_customer_detail(Request $request){
         $data_json = [];
         $post = $request->all();

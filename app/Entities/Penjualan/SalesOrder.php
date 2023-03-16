@@ -28,6 +28,7 @@ class SalesOrder extends Model
     	'condition',
         'keterangan_tidak_lanjut',
     	'so_for',
+        'count_rev',
     	'updated_by',
     	'created_by',
     	'deleted_by'
@@ -71,6 +72,11 @@ class SalesOrder extends Model
     	0 => 'DELETED',
     	1 => 'ACTIVED',
         2 => 'HOLD',
+    ];
+
+    const COUNT_REV = [
+    	0 => 'FALSE',
+    	1 => 'TRUE',
     ];
 
     public function customer(){
@@ -127,6 +133,11 @@ class SalesOrder extends Model
     public function so_condition()
     {
         return (object) self::CONDITION[$this->condition];
+    }
+
+    public function so_revisi()
+    {
+        return (object) self::COUNT_REV[$this->count_rev];
     }
 
     public function user_update(){

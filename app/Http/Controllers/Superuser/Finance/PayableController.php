@@ -184,6 +184,13 @@ class PayableController extends Controller
                     $update_profroma = SoProforma::where('id', $get_prof->id)->update(['status' => 2]);
                 }
 
+                // Cetak Invoice setelah payment
+                    $inv = new Invoicing;
+                    $inv->code = CodeRepo::generateInvoicing($get_prof->do->do_code);
+                    $inv->do_id = $get_prof->do->do_id;
+                    $inv->grand_total_idr = $get_proforma->grand_total_idr;
+                    $inv->save();
+
                 DB::commit();
 
                 $data_json["IsError"] = FALSE;

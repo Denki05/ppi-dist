@@ -300,6 +300,7 @@ class SalesOrderController extends Controller
                 $insert->created_by = Auth::id();
                 $insert->status = $post["ajukankelanjutan"] == 1 ? 2 : 1;
                 $insert->condition = 1;
+                $insert->count_rev = 0;
                 $insert->save();
 
                 if (sizeof($post["product_id"]) > 0) {
@@ -960,8 +961,6 @@ class SalesOrderController extends Controller
                 $jumlahitem = 0;
                 foreach($categories as $category) {
 
-                    $idr_rate = str_replace('.', '', $post["idr_rate"]);
-
                     $packing_order = new PackingOrder;
                     $packing_order->code = CodeRepo::generatePO();
                     $packing_order->do_code = CodeRepo::generateDO();
@@ -970,14 +969,12 @@ class SalesOrderController extends Controller
                     $packing_order->customer_other_address_id  = $sales_order->customer_other_address_id;
                     $packing_order->warehouse_id = $sales_order->origin_warehouse_id;
                     $packing_order->type_transaction  = $sales_order->type_transaction;
-                    $packing_order->idr_rate = $idr_rate;
+                    $packing_order->idr_rate = $post["idr_rate"];
                     $packing_order->other_address = 0 ?? Null;
                     $packing_order->note = $company->note ?? null;
                     $packing_order->status = 2;
                     $packing_order->created_by = Auth::id();
                     $packing_order->save();
-
-                    // dd($post[""]);
  
                     $disc_idr = str_replace('.', '', $post["disc_idr"]);
                     $voucher_idr = str_replace('.', '', $post["voucher_idr"]);

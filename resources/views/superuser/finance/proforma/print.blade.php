@@ -193,9 +193,9 @@
                                 <td>{{number_format($row->price,2,',','.')}}</td>
                                 <td>{{ $row->qty }}</td>
                                 <td class="text-left">{{$row->packaging_txt()->scalar ?? ''}}</td>
-                                <td>{{number_format($harga,0,',','.')}}</td>
+                                <td>{{number_format($harga,2,',','.')}}</td>
                                 <td class="text-right">
-                                  {{number_format($disc_cash,0,',','.')}}
+                                  {{number_format($disc_cash,2,',','.')}}
                                 </td>
                                 <td class="text-right">
                                   {{number_format($neto,0,',','.')}}

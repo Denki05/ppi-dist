@@ -59,6 +59,10 @@ class PackingOrder extends Model
     		'class' => 'success',
     		'msg' => 'Delivered'
     	],
+		7 => [
+    		'class' => 'warning',
+    		'msg' => 'Revisi'
+    	],
     ];
     public function do_detail(){
     	return $this->hasMany('App\Entities\Penjualan\PackingOrderItem','do_id');

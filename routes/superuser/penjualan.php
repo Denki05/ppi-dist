@@ -63,6 +63,7 @@ Route::group([
         Route::post('/order', 'PackingOrderController@order')->name('order');
         Route::post('/ready', 'PackingOrderController@ready')->name('ready');
         Route::post('/packed', 'PackingOrderController@packed')->name('packed');
+        Route::post('/revisi', 'PackingOrderController@revisi')->name('revisi');
 
         Route::get('/{id}/select_so', 'PackingOrderController@select_so')->name('select_so');
         Route::post('/store_so', 'PackingOrderController@store_so')->name('store_so');
