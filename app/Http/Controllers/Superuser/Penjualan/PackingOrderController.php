@@ -1044,7 +1044,7 @@ class PackingOrderController extends Controller
             //Kembalikan SO ke step lanjutan
 
             if($result->status === 2){
-                $update_so = SalesOrder::where('id', $result->so_id)->update(['status' => 3, 'count_rev' => 1]);
+                $update_so = SalesOrder::where('id', $result->so_id)->update(['status' => 1, 'count_rev' => 1]);
 
                 $update_po = PackingOrder::where('id', $result->id)->update(['status' => 7]);
 
