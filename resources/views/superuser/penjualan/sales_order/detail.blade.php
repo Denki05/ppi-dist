@@ -2,128 +2,94 @@
 
 @section('content')
 <nav class="breadcrumb bg-white push">
-  <span class="breadcrumb-item">Penjualan</span>
-  <a class="breadcrumb-item" href="{{ route('superuser.penjualan.sales_order.index_' . strtolower($step_txt)) }}">Sales Order {{ $step_txt }}</a>
-  <span class="breadcrumb-item active">Edit Sales Order</span>
+  <span class="breadcrumb-item">Sale</span>
+  <a class="breadcrumb-item" href="{{ route('superuser.penjualan.sales_order.index_' . strtolower($step_txt)) }}">SO {{ $step_txt }}</a>
+  <span class="breadcrumb-item active">Show</span>
 </nav>
-@if(session('error') || session('success'))
-<div class="alert alert-{{ session('error') ? 'danger' : 'success' }} alert-dismissible fade show" role="alert">
-    @if (session('error'))
-    <strong>Error!</strong> {!! session('error') !!}
-    @elseif (session('success'))
-    <strong>Berhasil!</strong> {!! session('success') !!}
-    @endif
-    <button type="button" class="close" data-dismiss="alert" aria-label="Close">
-        <span aria-hidden="true">&times;</span>
-    </button>
-</div>
-@endif
+<div id="alert-block"></div>
+
 <div class="block">
+  <div class="block-header block-header-default">
+    <h3 class="block-title">Show SO {{ $step_txt }}</h3>
+  </div>
   <div class="block-content">
-    <form>
-      @csrf
-      <input type="hidden" name="id" value="{{$result->id}}">
-      <div class="row">
-        <div class="col-12">
-          <h5>#Data Pesanan</h5>
-          <div class="form-group row">
-            <label class="col-md-2 col-form-label text-right" for="name">Sales Senior</label>
-            <div class="col-md-8">
-              <input type="text" class="form-control" value="{{$result->sales_senior->name ?? ''}}" readonly>
-            </div>
-          </div>
-          <div class="form-group row">
-            <label class="col-md-2 col-form-label text-right" for="name">Sales </label>
-            <div class="col-md-8">
-              <input type="text" class="form-control" value="{{$result->sales->name ?? ''}}" readonly>
-            </div>
-          </div>
-          <div class="form-group row">
-            <label class="col-md-2 col-form-label text-right">Origin warehouse</label>
-            <div class="col-md-8">
-              <input type="text" class="form-control" value="{{$result->origin_warehouse->name ?? ''}}" readonly>
-            </div>
-          </div>
-          
-          @if($result->so_for == 1)
-          <div class="form-group row">
-            <label class="col-md-2 col-form-label text-right">Store</label>
-            <div class="col-md-8">
-              <input type="text" class="form-control" value="{{$result->customer->name ?? ''}}" readonly>
-            </div>
-          </div>
-          @else
-          <div class="form-group row">
-            <label class="col-md-2 col-form-label text-right">Destination warehouse</label>
-            <div class="col-md-8">
-              <input type="text" class="form-control" value="{{$result->customer_gudang->name ?? ''}}" readonly>
-            </div>
-          </div>
-          @endif
-          <div class="form-group row">
-            <label class="col-md-2 col-form-label text-right">Address</label>
-            <div class="col-md-8">
-              @if($result->so_for == 1)
-              <textarea type="text" name="address" class="form-control" readonly>{{$result->customer->address ?? ''}}</textarea>
-              @else
-              <textarea type="text" name="address" class="form-control" readonly>{{$result->warehouse->address ?? ''}}</textarea>
-              @endif
-            </div>
-          </div>
-          @if($result->member->member_default == 1)
-            <div class="form-group row">
-              <label class="col-md-2 col-form-label text-right">Member</label>
-              <div class="col-md-8">
-                <input type="text" class="form-control" value="{{$result->customer->name ?? ''}}" readonly>
-              </div>
-            </div>
-          @else
-            <div class="form-group row">
-              <label class="col-md-2 col-form-label text-right">Member</label>
-              <div class="col-md-8">
-                <input type="text" class="form-control" value="{{$result->member->name ?? ''}}" readonly>
-              </div>
-            </div>
-          @endif
-          <div class="form-group row">
-            <label class="col-md-2 col-form-label text-right">Transaction</label>
-            <div class="col-md-8">
-              <input type="text" class="form-control" value="{{$result->so_type_transaction()->scalar ?? ''}}" readonly>
-            </div>
-          </div>
-          <div class="form-group row">
-            <label class="col-md-2 col-form-label text-right">Ekspedisi</label>
-            <div class="col-md-8">
-              <input type="text" class="form-control" value="{{$result->ekspedisi->name ?? ''}}" readonly>
-            </div>
-          </div>
-          <div class="form-group row">
-            <label class="col-md-2 col-form-label text-right">Note</label>
-            <div class="col-md-8">
-              <textarea class="form-control" readonly rows="3">{{$result->note}}</textarea>
-            </div>
-          </div>
-        </div>
+    <div class="form-group row">
+      <label class="col-md-3 col-form-label text-right" for="code">Code</label>
+      <div class="col-md-7">
+        <div class="form-control-plaintext">{{ $result->code }}</div>
       </div>
-    </form>
-    
+    </div>
+    <div class="form-group row">
+      <label class="col-md-3 col-form-label text-right" for="warehouse">Warehouse</label>
+      <div class="col-md-7">
+        <div class="form-control-plaintext">{{$result->origin_warehouse->name ?? ''}}</div>
+      </div>
+    </div>
+    <div class="form-group row">
+      <label class="col-md-3 col-form-label text-right" for="sales_senior">Sales Senior</label>
+      <div class="col-md-7">
+        <div class="form-control-plaintext">{{$result->sales_senior->name ?? ''}}</div>
+      </div>
+    </div>
+    <div class="form-group row">
+      <label class="col-md-3 col-form-label text-right" for="sales">Sales</label>
+      <div class="col-md-7">
+        <div class="form-control-plaintext">{{$result->sales->name ?? ''}}</div>
+      </div>
+    </div>
+    <div class="form-group row">
+      <label class="col-md-3 col-form-label text-right" for="customer">Customer</label>
+      <div class="col-md-7">
+        <div class="form-control-plaintext">{{ $result->member->name }}</div>
+      </div>
+    </div>
+    <div class="form-group row">
+      <label class="col-md-3 col-form-label text-right" for="address">Address</label>
+      <div class="col-md-7">
+        <div class="form-control-plaintext">{{ $result->member->address }}</div>
+      </div>
+    </div>
+    <div class="form-group row">
+      <label class="col-md-3 col-form-label text-right" for="ekspedisi">Ekspedisi</label>
+      <div class="col-md-7">
+        <div class="form-control-plaintext">{{$result->ekspedisi->name ?? ''}}</div>
+      </div>
+    </div>
+    <hr class="my-20">
+    <div class="form-group row">
+      <label class="col-md-3 col-form-label text-right" for="type_transaction">Type Transaction</label>
+      <div class="col-md-7">
+        <div class="form-control-plaintext">{{$result->so_type_transaction()->scalar ?? ''}}</div>
+      </div>
+    </div>
+    <div class="form-group row pt-30">
+      <div class="col-md-6">
+        <a href="{{ route('superuser.penjualan.sales_order.index_lanjutan') }}">
+          <button type="button" class="btn bg-gd-cherry border-0 text-white">
+            <i class="fa fa-arrow-left mr-10"></i> Back
+          </button>
+        </a>
+      </div>
+    </div>
   </div>
 </div>
+
 <div class="block">
+  <div class="block-header block-header-default">
+    <h3 class="block-title">Product</h3>
+  </div>
   <div class="block-content">
-    <div class="row">
-      <div class="col-12">
-        <h5>#Detail Item</h5>
-        <div class="tabel-responsive">
-          <table class="table table-striped">
-            <thead>
-              <th>Code</th>
-              <th>Produk</th>
-              <th>Brand | Category</th>
-              <th>Qty</th>
-              <th>Packaging</th>
-            </thead>
-            <tbody>
+    <table id="datatable" class="table table-striped">
+      <thead>
+        <tr>
+          <th class="text-center">Code</th>
+          <th class="text-center">Product</th>
+          <th class="text-center">Brand | Category</th>
+          <th class="text-center">Qty</th>
+          <th class="text-center">Packaging</th>
+        </tr>
+      </thead>
+      <tbody>
 
               @if(count($result->so_detail) > 0)
                 @foreach($result->so_detail as $index => $row)
@@ -146,24 +112,53 @@
                 <td colspan="5" class="text-center">Data tidak ditemukan</td>
               </tr>
               @endif
-            </tbody>
-          </table>
+      </tbody>
+    </table>
+  </div>
+  <div class="block-header block-header-default">
+    <div class="container">
+      <div class="form-group row justify-content-end">
+        <label class="col-md-3 col-form-label text-right" for="subtotal">IDR Sub Total</label>
+        <div class="col-md-2 text-right">
+          <div class="form-control-plaintext">-</div>
         </div>
       </div>
-    </div>
-    <div class="row mb-30">
-      <div class="col-12">
-        <a href="{{ URL::previous() }}" class="btn btn-warning  btn-md text-white"><i class="fa fa-arrow-left"></i> Back</a>
+      <div class="form-group row justify-content-end">
+        <label class="col-md-3 col-form-label text-right" for="tax">PPN</label>
+        <div class="col-md-2 text-right">
+          <div class="form-control-plaintext">-</div>
+        </div>
+      </div>
+      <div class="form-group row justify-content-end">
+        <label class="col-md-3 col-form-label text-right" for="discount">IDR Discount</label>
+        <div class="col-md-2 text-right">
+          <div class="form-control-plaintext">-</div>
+        </div>
+      </div>
+      <div class="form-group row justify-content-end">
+        <label class="col-md-3 col-form-label text-right" for="shipping_fee">Courier</label>
+        <div class="col-md-2 text-right">
+          <div class="form-control-plaintext">-</div>
+        </div>
+      </div>
+      <div class="form-group row justify-content-end">
+        <label class="col-md-3 col-form-label text-right" for="grand_total">IDR Total</label>
+        <div class="col-md-2 text-right">
+          <div class="form-control-plaintext">-</div>
+        </div>
       </div>
     </div>
   </div>
 </div>
 
-
 @endsection
-
-@include('superuser.asset.plugin.select2')
-@include('superuser.asset.plugin.swal2')
+@include('superuser.asset.plugin.datatables')
 
 @push('scripts')
+<script src="{{ asset('utility/superuser/js/form.js') }}"></script>
+<script type="text/javascript">
+  $(document).ready(function() {
+    $('#datatable').DataTable({})
+  });
+</script>
 @endpush

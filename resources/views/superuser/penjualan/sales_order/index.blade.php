@@ -277,9 +277,7 @@
                       @if ($row->status === 4)
                         <a href="{{route('superuser.penjualan.sales_order.detail',$row->id)}}" class="btn btn-primary btn-sm btn-flat"><i class="fa fa-eye"></i> Detail</a>
                       @endif
-                      @if ($row->status === 4)
-                        <a href="{{route('superuser.penjualan.sales_order.print_rejected_so',$row->id)}}" class="btn btn-info btn-sm btn-flat" target="_blank"><i class="fa fa-print"></i> Print Rejected Item</a>
-                      @endif
+                     
                     </td>
                   </tr>
                   @endforeach
@@ -461,6 +459,8 @@
         $('#frmRevisi').submit();
       }
     })
+
+    
 
     });
   </script>
