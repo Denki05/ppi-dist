@@ -5,11 +5,11 @@
 @extends('superuser.app')
 
 @section('content')
-<div class="container-fluid">
-  <form  method="POST" action="{{ route('superuser.penjualan.sales_order.tutup_so') }}">
+<form class="ajax" data-action="{{ route('superuser.penjualan.sales_order.tutup_so') }}" data-type="POST" enctype="multipart/form-data">
   @csrf
   <input type="hidden" name="id" value="{{$result->id}}">
   <input type="hidden" name="step" value="{{$step}}">
+
     <div class="row">
       <div class="col-4">
         <div class="card mb-2 border-0">
@@ -92,7 +92,6 @@
                     <div class="form-group row">
                       <label class="col-md-4 col-form-label text-right" style="font-size: 10pt;">Kurs<span class="text-danger">*</span></label>
                       <div class="col-5">
-                      <!-- <input type="text" name="idr_rate" id="idr_rate"  class="form-control formatRupiah" value="{{ number_format($result->idr_rate,0,',','.') }}"> -->
                       <input type="text" name="idr_rate" id="idr_rate"  class="form-control" value="{{ $result->idr_rate }}">
                       </div>
                     </div>
@@ -125,7 +124,7 @@
                   <div class="form-group row">
                     <label class="col-md-4 col-form-label text-right">Disc %</label>
                     <div class="col-md-3">
-                      <input type="text" name="disc_agen_percent" id="disc_agen_percent" class="form-control text-center disc_agen_percent" value="{{$result->do_cost->discount_1 ?? 0}}">
+                      <input type="text" name="disc_agen_percent" id="disc_agen_percent" class="form-control text-center disc_agen_percent" value="0" step="any">
                     </div>
                     <div class="col-md-5">
                       <input type="text" name="disc_amount2_idr" id="disc_amount2_idr" class="form-control disc_amount2_idr text-center" readonly>
@@ -161,7 +160,7 @@
                     <div class="form-group row">
                       <label class="col-md-4 col-form-label text-right">Disc Kemasan</label>
                       <div class="col-md-3">
-                        <input type="text" name="disc_tambahan" id="disc_tambahan" class="form-control disc_tambahan text-center" value="{{$result->do_cost->discount_1 ?? 0}}">
+                        <input type="text" name="disc_tambahan" id="disc_tambahan" class="form-control disc_tambahan text-center" value="0" step="any">
                       </div>
                       <div class="col-md-5">
                         <input type="text" name="disc_kemasan_idr" id="disc_kemasan_idr" class="form-control disc_kemasan_idr text-center" readonly>
@@ -223,9 +222,8 @@
       </div>
     </div>
 
-  <br>
+    <br>
 
-  <!-- Detail Pesanan -->
     <div class="row">
         <div class="col-12">
           <div class="card mb-2 border-0">
@@ -295,7 +293,6 @@
         </div>
     </div>
 </form>
-</div>
 @endsection
 
 @include('superuser.asset.plugin.select2')
@@ -303,6 +300,7 @@
 @include('superuser.asset.plugin.datatables')
 
 @push('scripts')
+<script src="{{ asset('utility/superuser/js/form.js') }}"></script>
 <script type="text/javascript">
   $(document).ready(function () {
     $('#tableDetailPesanan').DataTable({
@@ -523,39 +521,39 @@
       });
     });
 
-    $(document).on('submit','#frmEditSOMaster',function(e){
-      e.preventDefault();
-      if(confirm("Apakah anda yakin melanjutkan Sales Order ini!")){
-        let _form = $('#frmEditSOMaster');
-        $.ajax({
-          url : '{{route('superuser.penjualan.sales_order.tutup_so')}}',
-          method : "POST",
-          data : getFormData(_form),
-          dataType : "JSON",
-          beforeSend : function(){
-            $('#frmEditSOMaster').find('button[type="submit"]').html('Loading...');
-          },
-          success : function(resp){
-            if(resp.IsError == true){
-              showToast('danger',resp.Message);
-            }
-            else{
-              Swal.fire(
-                'Success!',
-                resp.Message,
-                'success'
-              ).then((result) => {
-                document.location.href = '{{ route('superuser.penjualan.sales_order.index_' . strtolower($step_txt)) }}';
-              })
+    // $(document).on('submit','#frmEditSOMaster',function(e){
+    //   e.preventDefault();
+    //   if(confirm("Apakah anda yakin melanjutkan Sales Order ini!")){
+    //     let _form = $('#frmEditSOMaster');
+    //     $.ajax({
+    //       url : '{{route('superuser.penjualan.sales_order.tutup_so')}}',
+    //       method : "POST",
+    //       data : getFormData(_form),
+    //       dataType : "JSON",
+    //       beforeSend : function(){
+    //         $('#frmEditSOMaster').find('button[type="submit"]').html('Loading...');
+    //       },
+    //       success : function(resp){
+    //         if(resp.IsError == true){
+    //           showToast('danger',resp.Message);
+    //         }
+    //         else{
+    //           Swal.fire(
+    //             'Success!',
+    //             resp.Message,
+    //             'success'
+    //           ).then((result) => {
+    //             document.location.href = '{{ route('superuser.penjualan.sales_order.index_' . strtolower($step_txt)) }}';
+    //           })
               
-            }
-          },
-          complete : function(){
-            $('#frmEditSOMaster').find('button[type="submit"]').html('<i class="fa fa-save"> Save</i>');
-          }
-        })
-      }
-    })
+    //         }
+    //       },
+    //       complete : function(){
+    //         $('#frmEditSOMaster').find('button[type="submit"]').html('<i class="fa fa-save"> Save</i>');
+    //       }
+    //     })
+    //   }
+    // })
     
   })
 </script>
