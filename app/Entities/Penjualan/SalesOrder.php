@@ -109,6 +109,10 @@ class SalesOrder extends Model
     public function do(){
         return $this->hasMany('App\Entities\Penjualan\PackingOrder', 'so_id');
     }
+
+    public function proforma(){
+    	return $this->hasMany('App\Entities\Penjualan\SoProforma','so_id');
+    }
     public function so_type_transaction()
     {
         if (isset($this->type_transaction)) {
