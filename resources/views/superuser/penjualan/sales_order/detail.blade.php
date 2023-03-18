@@ -127,6 +127,11 @@
   </div>
 </div>
 
+<form method="post" action="{{route('superuser.finance.proforma.cancel')}}" id="frmCancel">
+  @csrf
+  <input type="hidden" name="id">
+</form>
+
 @endsection
 @include('superuser.asset.plugin.datatables')
 
@@ -136,5 +141,13 @@
   $(document).ready(function() {
     $('#datatable').DataTable({})
   });
+
+  $(document).on('click','.btn-cancel',function(){
+      if(confirm("Apakah anda yakin ingin 'Cancel/Revisi' Proforma ini!")){
+        let id = $(this).data('id');
+      $('#frmCancel').find('input[name="id"]').val(id);
+      $('#frmCancel').submit();
+    }
+  })
 </script>
 @endpush
