@@ -25,7 +25,8 @@ class SalesOrder extends Model
     	'tl',
     	'sales',
     	'status',
-    	'condition',
+        'condition',
+    	'payment_status',
         'keterangan_tidak_lanjut',
     	'so_for',
         'count_rev',
@@ -66,6 +67,12 @@ class SalesOrder extends Model
         3 => 'AWAL PERLU REVISI',
         4 => 'TUTUP',
     	9 => 'MUTASI',
+    ];
+
+    const PAYMENT_STATUS = [
+    	0 => 'NEW',
+    	1 => 'PAID',
+        2 => 'PARTIALY',
     ];
 
     const CONDITION = [
@@ -137,6 +144,11 @@ class SalesOrder extends Model
     public function so_condition()
     {
         return (object) self::CONDITION[$this->condition];
+    }
+
+    public function so_payment()
+    {
+        return (object) self::PAYMENT_STATUS[$this->payment_status];
     }
 
     public function so_revisi()

@@ -303,7 +303,7 @@
                 <tbody>
                   @foreach($packing_order as $index => $row)
                   <tr>
-                    @if($row->status === 2)
+                    @if($row->status === 2 && $row->so->payment_status === 1 || $row->type_transaction === 2)
                       <td>{{ $index+1 }}</td>
                       <td>{{$row->code}}</td>
                       <td>{{ $row->member->name }}</td>

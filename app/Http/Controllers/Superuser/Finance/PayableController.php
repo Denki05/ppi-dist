@@ -180,14 +180,16 @@ class PayableController extends Controller
                 
                 if($get_prof->payable_detail->sum('total') == $get_prof->grand_total_idr){
                     $update_profroma = SoProforma::where('id', $get_prof->id)->update(['status' => 3]);
+                    $update_so = SalesOrder::where('id', $get_prof->so_id)->update(['payment_status' => 1]);
                 }elseif ($get_prof->payable_detail->sum('total') <= $get_prof->grand_total_idr){
                     $update_profroma = SoProforma::where('id', $get_prof->id)->update(['status' => 2]);
+                    $update_so = SalesOrder::where('id', $get_prof->so_id)->update(['payment_status' => 2]);
                 }
 
                 // Cetak Invoice setelah payment
                     $inv = new Invoicing;
                     $inv->code = CodeRepo::generateInvoicing($get_prof->do->do_code);
-                    $inv->do_id = $get_prof->do->do_id;
+                    $inv->do_id = $get_prof->do_id;
                     $inv->grand_total_idr = $get_proforma->grand_total_idr;
                     $inv->save();
 

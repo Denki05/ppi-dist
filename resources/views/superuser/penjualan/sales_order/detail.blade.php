@@ -70,15 +70,8 @@
         </a>
       </div>
       <div class="col-md-6 text-right">
-        @foreach ($result->proforma as $index => $row)
-        <a class="btn btn-primary btn-print" href="{{ route('superuser.finance.proforma.print_proforma', [$row->id]) }}" role="button"><i class="fa fa-print" aria-hidden="true"></i> Print Proforma</a>
-        <a class="btn btn-danger btn-cancel" data-id="{{$row->id}}" href="#" role="button"><i class="fa fa-ban" aria-hidden="true"></i> Cancel</a>
-        <!-- <a href="#">
-          <button type="button" class="btn bg-gd-leaf border-0 text-white">
-            Edit <i class="fa fa-pencil ml-10"></i>
-          </button>
-        </a> -->
-        @endforeach
+        <a class="btn btn-primary btn-print" href="{{ route('superuser.finance.proforma.print_proforma', [$result->id]) }}" role="button"><i class="fa fa-print" aria-hidden="true"></i> Print Proforma</a>
+        <a class="btn btn-danger btn-cancel" data-id="{{$result->id}}" href="#" role="button"><i class="fa fa-ban" aria-hidden="true"></i> Cancel</a>
       </div>
     </div>
   </div>
