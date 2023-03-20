@@ -921,23 +921,28 @@ class SalesOrderController extends Controller
     //     return response()->json($data_json,200);
     // }
 
-    public function tutup_so(Request $request){
-        if ($request->ajax()) {
-            $failed = "";
+    public function tutup_so(Request $request)
+    {
+        $failed = "";
+            if ($request->ajax()) {
 
             DB::beginTransaction();
 
             try{
-                $sales_order = SalesOrder::find($request->id);
 
-                //Access
                 if(Auth::user()->is_superuser == 0){
                     if(empty($this->access) || empty($this->access->user) || $this->access->can_delete == 0){
                         return redirect()->route('superuser.index')->with('error','Anda tidak punya akses untuk membuka menu terkait');
                     }
                 }
 
-                if ($sales_order->count_rev == 0){
+                $sales_order = SalesOrder::find($request->id);
+
+                if ($sales_order === null) {
+                    abort(404);
+                }
+
+                if ($sales_order->count_rev == 0) {
                     $sales_order->origin_warehouse_id = $request->origin_warehouse_id;
                     $sales_order->status = 4;
                     $sales_order->count_rev = 0;
@@ -965,7 +970,7 @@ class SalesOrderController extends Controller
                         $packing_order->status = 2;
                         $packing_order->created_by = Auth::id();
                         $packing_order->save();
-        
+
                         $packing_order_detail = new PackingOrderDetail;
                         $packing_order_detail->do_id = $packing_order->id;
                         $packing_order_detail->discount_1 = $request->disc_agen_percent;
@@ -978,7 +983,7 @@ class SalesOrderController extends Controller
                         $packing_order_detail->grand_total_idr = $request->grand_total_final;
                         $packing_order_detail->created_by = Auth::id();
                         $packing_order_detail->save();
-                        
+
                         $data = [];
                         foreach ($request->repeater as $key => $value) {
                             if (empty($value["so_qty"]) || (!empty($value["so_qty"]) && $value["so_qty"] <= 0)) {
@@ -1016,7 +1021,7 @@ class SalesOrderController extends Controller
         
                             if($so_qty < $qty_total){
                                 $failed = 'Jumlah DO,REJ melebihi SO Qty';
-                             }
+                            }
         
                             if($do_qty == 0 && $rej_qty == 0){
                                 $updateSO = SalesOrderItem::where('id',$value["so_item_id"])->update([
@@ -1059,8 +1064,8 @@ class SalesOrderController extends Controller
                             $insert = PackingOrderItem::create($data[$key]);
                         }
 
-                        app('App\Http\Controllers\Superuser\Penjualan\PackingOrderController')->reset_cost($packing_order->id);
-    
+                        // app('App\Http\Controllers\Superuser\Penjualan\PackingOrderController')->reset_cost($packing_order->id);
+
                         // Cetak proforma disini
                         $so = SalesOrder::where('id', $sales_order->id)->first();
                         $so_detail = SalesOrderItem::where('so_id', $so->id)->first();
@@ -1083,7 +1088,6 @@ class SalesOrderController extends Controller
                                 $proforma_detail->save();
                             }
                     }
-
                     DB::commit();
                     $response['notification'] = [
                         'alert' => 'notify',
@@ -1093,74 +1097,23 @@ class SalesOrderController extends Controller
 
                     $response['redirect_to'] = route('superuser.penjualan.sales_order.index_lanjutan');
                     return $this->response(200, $response);
-                }else{
+                } else {
                     $sales_order->origin_warehouse_id = $request->origin_warehouse_id;
                     $sales_order->status = 4;
                     $sales_order->count_rev = 0;
                     $sales_order->updated_by = Auth::id();
 
                     $valuePoDetail = [];
-                    $jumlahitem = 0;
-                    $data = [];
                     if($sales_order->save()){
                         foreach ($request->repeater as $key => $value) {
-                            $result = SalesOrderItem::where('id',$value["so_item_id"])->first();   
+                            
                         }
                         $get_po = PackingOrder::where('so_id', $sales_order->id)->first();
-
+    
                         $updatePo = PackingOrder::where('id', $get_po->id)->update([
                             'status' => 2
                         ]);
-
-                        $so_item_id = $value["so_item_id"];
-                        $price = $value["price"];
-                        $so_qty = $value["so_qty"];
-                        $do_qty = $value["do_qty"];
-                        $rej_qty = $so_qty - $do_qty;
-                        $usd_disc = $value["usd_disc"];
-                        $percent_disc = 0;
-                        $total_discount = 0;
-
-                        $qty_total = $do_qty + $rej_qty;
-                        $sisa = $so_qty - $do_qty;
-        
-                        if($so_qty < $qty_total){
-                            $failed = 'Jumlah DO,REJ melebihi SO Qty';
-                        }
-        
-                        if($do_qty == 0 && $rej_qty == 0){
-                            $updateSO = SalesOrderItem::where('id',$value["so_item_id"])->update([
-                                'qty' => 0
-                            ]);
-                        }
-                            
-                        if($do_qty > 0){
-                            $total_disc = floatval(($usd_disc + (($price - $usd_disc) * ($percent_disc/100))) * $do_qty);
-                            $data[] = [
-                                'do_id' => $get_po->id,
-                                'product_id' => $value["product_id"],
-                                'so_item_id' => $value["so_item_id"],
-                                'packaging' => $result->packaging,
-                                'qty' => $do_qty,
-                                'price' => $price,
-                                'usd_disc' => $usd_disc,
-                                'percent_disc' => $percent_disc,
-                                'total_disc' => $total_disc,
-                                'total' => floatval($do_qty * $price) - $total_disc,
-                                'created_by' => Auth::id(),
-                            ];
-        
-                            $updateSO = SalesOrderItem::where('id',$value["so_item_id"])->update([
-                                'qty_worked' => $do_qty
-                            ]);
-                        }
-        
-                        if(empty($do_qty) && $rej_qty > 0){
-                            $updateSO = SalesOrderItem::where('id',$value["so_item_id"])->update([
-                                'qty_worked' => $do_qty
-                            ]);
-                        }
-
+    
                         $valuePoDetail[] = [
                             'discount_1' => $request->disc_agen_percent,
                             'discount_2' => $request->disc_tambahan,
@@ -1173,53 +1126,50 @@ class SalesOrderController extends Controller
                             'updated_by' => Auth::id(),
                             'created_by' => Auth::id(),
                         ];
-
+    
                         // DD($valuePoDetail);
-
+    
                         if($get_po->status == 7){
                             foreach ($valuePoDetail as $key => $value) {
                                 $updatePoDetail = PackingOrderDetail::where('do_id', $get_po->id)->update($valuePoDetail[$key]);
-                            }  
+                            }
+    
+                            
                         }
-
-                        foreach ($data as $key => $value) {
-                            $insert = PackingOrderItem::create($data[$key]);
-                        }
-
+    
                         //Update Proforma
                         $get_pro = SoProforma::where('do_id', $get_po->id)->first();
-
+    
                         if($get_pro->grand_total_idr > 0){
                             $updatePro = SoProforma::where('id', $get_pro->id)->update([
                                 'grand_total_idr' => $request->grand_total_final
                             ]);
-
+    
                             foreach ($request->repeater as $key => $value) {
                                 $get_pro_detail = SoProformaDetail::where('so_proforma_id', $get_pro->id)->first();
-
+    
                                 $get_pro_detail->product_id = $value["product_id"];
                                 $get_pro_detail->qty = $value["so_qty"];
                                 $get_pro_detail->save();
-
+    
                                 // DD($value);
                             }
                         }
-
+    
                         DB::commit();
                         $response['notification'] = [
                             'alert' => 'notify',
                             'type' => 'success',
                             'content' => 'Success, SO Lanjutan berhasil diproses!',
                         ];
-
+    
                         $response['redirect_to'] = route('superuser.penjualan.sales_order.index_lanjutan');
                         return $this->response(200, $response);
                     }
                 }
-
             } catch (\Exception $e) {
                 DB::rollback();
-                DD($e);
+                // DD($e);
                 $response['notification'] = [
                     'alert' => 'block',
                     'type' => 'alert-danger',

@@ -5,7 +5,7 @@
 @extends('superuser.app')
 
 @section('content')
-<form class="ajax" data-action="{{ route('superuser.penjualan.sales_order.tutup_so') }}" data-type="POST" enctype="multipart/form-data">
+<form class="ajax" data-action="{{ route('superuser.penjualan.sales_order.tutup_so', ) }}" data-type="POST" enctype="multipart/form-data">
   @csrf
   <input type="hidden" name="id" value="{{$result->id}}">
   <input type="hidden" name="step" value="{{$step}}">
