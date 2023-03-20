@@ -1103,10 +1103,81 @@ class SalesOrderController extends Controller
 
                     $valuePoDetail = [];
                     if($sales_order->save()){
-                        foreach ($request->repeater as $key => $value) {
-                            
-                        }
+                        
+                        $jumlahitem = 0;
+                        $data = [];
+
                         $get_po = PackingOrder::where('so_id', $sales_order->id)->first();
+
+                        foreach ($request->repeater as $key => $value) {
+                            if (empty($value["so_qty"]) || (!empty($value["so_qty"]) && $value["so_qty"] <= 0)) {
+                                continue;
+                            }
+
+                            $result = SalesOrderItem::where('id',$value["so_item_id"])->first();
+                           
+
+                            $jumlahitem = $jumlahitem + 1;
+
+                            $so_item_id = $value["so_item_id"];
+                            $price = $value["price"];
+                            $so_qty = $value["so_qty"];
+                            $do_qty = $value["do_qty"];
+                            $rej_qty = $so_qty - $do_qty;
+                            $usd_disc = $value["usd_disc"];
+                            $percent_disc = 0;
+                            $total_discount = 0;
+
+                            if(empty($value["so_item_id"])){
+                                $failed = 'SO Item ID tidak boleh kosong';
+                            }
+                            if(empty($value["product_id"])){
+                                $failed = 'Product ID tidak boleh kosong';
+                            }
+                            if(empty($value["price"])){
+                                $failed = 'Harga tidak boleh kosong';
+                            }
+
+                            $qty_total = $do_qty + $rej_qty;
+                            $sisa = $so_qty - $do_qty;
+
+                            if($so_qty < $qty_total){
+                                $failed = 'Jumlah DO,REJ melebihi SO Qty';
+                            }
+
+                            if($do_qty == 0 && $rej_qty == 0){
+                                $updateSO = SalesOrderItem::where('id',$value["so_item_id"])->update([
+                                    'qty' => 0
+                                ]);
+                            }
+
+                            if($do_qty > 0){
+                                $total_disc = floatval(($usd_disc + (($price - $usd_disc) * ($percent_disc/100))) * $do_qty);
+                                $data[] = [
+                                    'do_id' => $get_po->id,
+                                    'product_id' => $value["product_id"],
+                                    'so_item_id' => $value["so_item_id"],
+                                    'packaging' => $result->packaging,
+                                    'qty' => $do_qty,
+                                    'price' => $price,
+                                    'usd_disc' => $usd_disc,
+                                    'percent_disc' => $percent_disc,
+                                    'total_disc' => $total_disc,
+                                    'total' => floatval($do_qty * $price) - $total_disc,
+                                    'created_by' => Auth::id(),
+                                ];
+                        
+                                $updateSO = SalesOrderItem::where('id',$value["so_item_id"])->update([
+                                    'qty_worked' => $do_qty
+                                ]);
+                            }
+                        
+                            if(empty($do_qty) && $rej_qty > 0){
+                                $updateSO = SalesOrderItem::where('id',$value["so_item_id"])->update([
+                                    'qty_worked' => $do_qty
+                                ]);
+                            }
+                        }
     
                         $updatePo = PackingOrder::where('id', $get_po->id)->update([
                             'status' => 2
@@ -1125,13 +1196,14 @@ class SalesOrderController extends Controller
                             'created_by' => Auth::id(),
                         ];
     
-                        // DD($valuePoDetail);
-    
                         if($get_po->status == 7){
                             foreach ($valuePoDetail as $key => $value) {
                                 $updatePoDetail = PackingOrderDetail::where('do_id', $get_po->id)->update($valuePoDetail[$key]);
                             }
     
+                            foreach( $data as $key => $value ){
+                                $insertItem = PackingOrderItem::create($data[$key]);
+                            }
                             
                         }
     
@@ -1143,15 +1215,13 @@ class SalesOrderController extends Controller
                                 'grand_total_idr' => $request->grand_total_final
                             ]);
     
-                            foreach ($request->repeater as $key => $value) {
-                                $get_pro_detail = SoProformaDetail::where('so_proforma_id', $get_pro->id)->first();
-    
-                                $get_pro_detail->product_id = $value["product_id"];
-                                $get_pro_detail->qty = $value["so_qty"];
-                                $get_pro_detail->save();
-    
-                                // DD($value);
-                            }
+                                foreach( $data as $key => $detail ){
+                                    $proforma_detail = new SoProformaDetail;
+                                    $proforma_detail->so_proforma_id = $get_pro->id;
+                                    $proforma_detail->product_id = $detail["product_id"];
+                                    $proforma_detail->qty = $detail["qty"];
+                                    $proforma_detail->save();
+                                }
                         }
     
                         DB::commit();
@@ -1167,7 +1237,7 @@ class SalesOrderController extends Controller
                 }
             } catch (\Exception $e) {
                 DB::rollback();
-                // DD($e);
+                DD($e);
                 $response['notification'] = [
                     'alert' => 'block',
                     'type' => 'alert-danger',
