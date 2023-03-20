@@ -1100,15 +1100,66 @@ class SalesOrderController extends Controller
                     $sales_order->updated_by = Auth::id();
 
                     $valuePoDetail = [];
+                    $jumlahitem = 0;
+                    $data = [];
                     if($sales_order->save()){
                         foreach ($request->repeater as $key => $value) {
-                            
+                            $result = SalesOrderItem::where('id',$value["so_item_id"])->first();   
                         }
                         $get_po = PackingOrder::where('so_id', $sales_order->id)->first();
 
                         $updatePo = PackingOrder::where('id', $get_po->id)->update([
                             'status' => 2
                         ]);
+
+                        $so_item_id = $value["so_item_id"];
+                        $price = $value["price"];
+                        $so_qty = $value["so_qty"];
+                        $do_qty = $value["do_qty"];
+                        $rej_qty = $so_qty - $do_qty;
+                        $usd_disc = $value["usd_disc"];
+                        $percent_disc = 0;
+                        $total_discount = 0;
+
+                        $qty_total = $do_qty + $rej_qty;
+                        $sisa = $so_qty - $do_qty;
+        
+                        if($so_qty < $qty_total){
+                            $failed = 'Jumlah DO,REJ melebihi SO Qty';
+                        }
+        
+                        if($do_qty == 0 && $rej_qty == 0){
+                            $updateSO = SalesOrderItem::where('id',$value["so_item_id"])->update([
+                                'qty' => 0
+                            ]);
+                        }
+                            
+                        if($do_qty > 0){
+                            $total_disc = floatval(($usd_disc + (($price - $usd_disc) * ($percent_disc/100))) * $do_qty);
+                            $data[] = [
+                                'do_id' => $get_po->id,
+                                'product_id' => $value["product_id"],
+                                'so_item_id' => $value["so_item_id"],
+                                'packaging' => $result->packaging,
+                                'qty' => $do_qty,
+                                'price' => $price,
+                                'usd_disc' => $usd_disc,
+                                'percent_disc' => $percent_disc,
+                                'total_disc' => $total_disc,
+                                'total' => floatval($do_qty * $price) - $total_disc,
+                                'created_by' => Auth::id(),
+                            ];
+        
+                            $updateSO = SalesOrderItem::where('id',$value["so_item_id"])->update([
+                                'qty_worked' => $do_qty
+                            ]);
+                        }
+        
+                        if(empty($do_qty) && $rej_qty > 0){
+                            $updateSO = SalesOrderItem::where('id',$value["so_item_id"])->update([
+                                'qty_worked' => $do_qty
+                            ]);
+                        }
 
                         $valuePoDetail[] = [
                             'discount_1' => $request->disc_agen_percent,
@@ -1128,9 +1179,11 @@ class SalesOrderController extends Controller
                         if($get_po->status == 7){
                             foreach ($valuePoDetail as $key => $value) {
                                 $updatePoDetail = PackingOrderDetail::where('do_id', $get_po->id)->update($valuePoDetail[$key]);
-                            }
+                            }  
+                        }
 
-                            
+                        foreach ($data as $key => $value) {
+                            $insert = PackingOrderItem::create($data[$key]);
                         }
 
                         //Update Proforma

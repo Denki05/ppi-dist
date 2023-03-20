@@ -71,7 +71,9 @@
       </div>
       <div class="col-md-6 text-right">
         <a class="btn btn-primary btn-print" href="{{ route('superuser.finance.proforma.print_proforma', [$result->id]) }}" role="button"><i class="fa fa-print" aria-hidden="true"></i> Print Proforma</a>
-        <a class="btn btn-danger btn-cancel" data-id="{{$result->id}}" href="#" role="button"><i class="fa fa-ban" aria-hidden="true"></i> Cancel</a>
+        @if ($result->type_transaction == 1)
+          <a class="btn btn-danger btn-cancel" data-id="{{$result->id}}" href="#" role="button"><i class="fa fa-ban" aria-hidden="true"></i> Cancel</a>
+        @endif
       </div>
     </div>
   </div>
