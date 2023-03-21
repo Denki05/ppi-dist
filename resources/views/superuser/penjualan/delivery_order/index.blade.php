@@ -88,10 +88,10 @@
                     @if($row->invoicing != null)
                     <a href="{{route('superuser.finance.invoicing.print_proforma',$row->invoicing->id)}}" class="btn btn-info btn-sm btn-flat mx-1" data-id="{{$row->invoicing->id}}" target="_blank"><i class="fa fa-print"></i> Print Proforma</a>
                     @endif
-                    @if($row->status > 2)
+                    @if($row->status > 3)
                     <a href="{{route('superuser.penjualan.delivery_order.print',$row->id)}}" class="btn btn-info btn-sm btn-flat" data-id="{{$row->id}}" target="_blank"><i class="fa fa-print"></i> Print DO</a>
                     @endif
-                    @if($row->status == 2 || $row->status == 1)
+                    @if($row->status == 3)
                     <a href="{{route('superuser.penjualan.delivery_order.print_manifest',$row->id)}}" class="btn btn-info btn-sm btn-flat" data-id="{{$row->id}}" target="_blank"><i class="fa fa-print"></i> Print Manifest</a>
                     @endif
                     

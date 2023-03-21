@@ -19,6 +19,7 @@ use App\Entities\Penjualan\PackingOrderDetail;
 use App\Entities\Penjualan\SalesOrder;
 use App\Entities\Penjualan\SalesOrderItem;
 use App\Entities\Penjualan\SoProforma;
+use App\Entities\Penjualan\SoProformaDetail;
 use App\Entities\Setting\UserMenu;
 use App\Repositories\CodeRepo;
 use Auth;
@@ -883,6 +884,44 @@ class PackingOrderController extends Controller
             return redirect()->back()->with('error',$e->getMessage());
         }
     }
+    // public function ready(Request $request)
+    // {
+    //     // Access
+    //     if(Auth::user()->is_superuser == 0){
+    //         if(empty($this->access) || empty($this->access->user) || $this->access->can_approve == 0){
+    //             return redirect()->route('superuser.index')->with('error','Anda tidak punya akses untuk membuka menu terkait');
+    //         }
+    //     }
+
+    //     try{
+    //         $request->validate([
+    //             'id' => 'required'
+    //         ]);
+    //         $post = $request->all();
+
+    //         //Cek Pembayaran
+
+    //         $proforma = SoProforma::where('do_id', $post["id"])->first();
+
+    //         if($proforma->type_transaction == 1){
+    //             if($proforma->status == 3){
+    //                 $update = PackingOrder::where('id', $post["id"])->update(['status' => 3]);
+                    
+    //                 return redirect()->back()->with('success','SO packed berhasil di proses'); 
+    //             }else{
+    //                 return redirect()->back()->with('error','SO packed gagal di proses! Cek pembayaran');
+    //             }
+    //         }elseif($proforma->type_transaction == 2 && $proforma->type_transaction == 3){
+    //             $update = PackingOrder::where('id', $post["id"])->update(['status' => 3]);
+
+    //             return redirect()->back()->with('success','SO packed berhasil di proses');
+    //         }
+            
+    //     }catch(\Throwable $e){
+    //         return redirect()->back()->with('error',$e->getMessage());
+    //     }
+    // }
+
     public function ready(Request $request)
     {
         // Access
@@ -891,35 +930,52 @@ class PackingOrderController extends Controller
                 return redirect()->route('superuser.index')->with('error','Anda tidak punya akses untuk membuka menu terkait');
             }
         }
-
         try{
             $request->validate([
                 'id' => 'required'
             ]);
             $post = $request->all();
-
-            //Cek Pembayaran
-
+            
             $proforma = SoProforma::where('do_id', $post["id"])->first();
+            $getDo = PackingOrder::where('id', $post["id"])->first();
 
-            if($proforma->type_transaction === 1){
-                if($proforma->status === 3){
-                    $update = PackingOrder::where('id', $post["id"])->update(['status' => 3]);
-                    
-                    return redirect()->back()->with('success','SO packed berhasil di proses'); 
-                }else{
-                    return redirect()->back()->with('error','SO packed gagal di proses! Cek pembayaran');
-                }
-            }elseif($proforma->type_transaction === 2 && $proforma->type_transaction === 3){
-                $update = PackingOrder::where('id', $post["id"])->update(['status' => 3]);
+            if(empty($getDo->do_code)){
+                PackingOrder::where('id',$getDo->id)->update([
+                    'do_code' => CodeRepo::generateDO()
+                ]);
+            }
 
-                return redirect()->back()->with('success','SO packed berhasil di proses');
+            // if($getDo->type_transaction == 1){
+            //     //cek pembayaran cash
+            //     if($proforma->status == 3){
+            //         $update = PackingOrder::where('id', $post["id"])->update(['status' => 3]);
+                                    
+            //         return redirect()->back()->with('success','SO packed berhasil di proses'); 
+            //     }elseif($proforma->status == 1){
+            //         return redirect()->back()->with('error','SO packed gagal di proses! Cek pembayaran');
+            //     }elseif($proforma->status == 2){
+            //         return redirect()->back()->with('error','SO packed gagal di proses! Cek pembayaran');
+            //     }
+            // }elseif($getDo->type_transaction == 2 && $getDo->type_transaction == 3){
+            //     $update = PackingOrder::where('id', $post["id"])->update(['status' => 3]);
+
+            //     return redirect()->back()->with('success','SO packed berhasil di proses');
+            // }
+
+            $update = PackingOrder::where('id',$post["id"])->update(['status' => 3]);
+
+            if($update){
+                return redirect()->back()->with('success','SO Packed berhasil berhasil diproses ke DO');    
+            }
+            else{
+                return redirect()->back()->with('error','Packing Order gagal diubah ke Packed');
             }
             
         }catch(\Throwable $e){
             return redirect()->back()->with('error',$e->getMessage());
         }
     }
+
     public function packed(Request $request)
     {
         // Access
@@ -1047,6 +1103,14 @@ class PackingOrderController extends Controller
                 $update_so = SalesOrder::where('id', $result->so_id)->update(['status' => 3, 'count_rev' => 1]);
 
                 $update_po = PackingOrder::where('id', $result->id)->update(['status' => 7]);
+
+                //Delete packing order item
+                $del_po_item = PackingOrderItem::where('do_id', $result->id)->delete();
+
+                //Delete proforma
+                $get_pro = Soproforma::where('do_id', $request->id)->first();
+
+                $del_proforma_item = SoProformaDetail::where('so_proforma_id', $get_pro->id)->delete();
 
                 return redirect()->back()->with('success','SO Packed berhasil di kembalikan ke SO Lanjutan!');  
             }else{

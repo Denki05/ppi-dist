@@ -633,7 +633,7 @@ class DeliveryOrderController extends Controller
         if(empty($result)){
             abort(404);
         }
-        if($result->status != 2 && $result->status != 1){
+        if($result->status == 2){
             return redirect()->back()->with('error','Tidak bisa print manifest.Status delivery order belum memenuhi syarat');
         }
         $data = [
