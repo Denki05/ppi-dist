@@ -33,6 +33,7 @@
                             {{--<li><a href="{{ route('superuser.master.brand_lokal.index') }}" target="_blank">Brand Lokal</a></li>--}}
                             {{--<li><a href="{{ route('superuser.master.brand_reference.index') }}" target="_blank">Brand Fragrantica</a></li>--}}
                             <li><a href="{{ route('superuser.master.sub_brand_reference.index') }}" target="_blank">Product Searah</a></li>
+                            <li><a href="{{ route('superuser.master.catalog.index') }}" target="_blank">Catalog Product</a></li>
                             {{--<li><a href="{{ route('superuser.master.unit.index') }}" target="_blank">Unit</a></li>--}}
                         </ul>
                     </li>

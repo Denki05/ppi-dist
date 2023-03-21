@@ -224,4 +224,11 @@ Route::group([
         // Route::get('/export', 'BrandReferenceController@export')->name('export');
     });
     Route::resource('brand_lokal', 'BrandLokalController');
+
+    Route::group(['as' => 'catalog.', 'prefix' => '/catalog'], function () {
+        // Route::get('/import_template', 'WarehouseController@import_template')->name('import_template');
+        // Route::post('/import', 'WarehouseController@import')->name('import');
+        // Route::get('/export', 'WarehouseController@export')->name('export');
+    });
+    Route::resource('catalog', 'CatalogController');
 });
