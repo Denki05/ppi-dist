@@ -241,14 +241,16 @@
                     <a class="nav-link active" data-toggle="tab" href="#so_lanjutan">SO {{ $step_txt }}</a>
                 </li>
                 <li class="nav-item">
-                    <a class="nav-link" data-toggle="tab" href="#so_packed">SO PACKED(validasi)</a>
+                    <a class="nav-link" data-toggle="tab" href="#so_packed">SO PACKED</a>
                 </li>
                 <li class="nav-item">
-                    <a class="nav-link" data-toggle="tab" href="#do_proses">Delivery Order(DO)</a>
+                    <a class="nav-link" data-toggle="tab" href="#proses">PROSES</a>
                 </li>
             </ul>
         </div>
         <div class="tab-content card-body">
+
+            <!-- SO Lanjutan -->
             <div id="so_lanjutan" class="tab-pane active">
               <table class="table table-striped" id="datatables">
                 <thead>
@@ -284,6 +286,8 @@
                 </tbody>
               </table>
             </div>
+
+            <!-- SO Packed -->
             <div id="so_packed" class="tab-pane">
               <div class="alert alert-warning" role="alert" align="left">
                 Revisi hanya transaksi <strong>Tempo</strong>
@@ -303,23 +307,27 @@
                 <tbody>
                   @foreach($packing_order as $index => $row)
                   <tr>
-                    @if($row->status === 2 && $row->so->payment_status === 1 || $row->type_transaction === 2)
+                    @if($row->so->payment_status == 1 || $row->type_transaction == 2)
                       <td>{{ $index+1 }}</td>
                       <td>{{$row->code}}</td>
                       <td>{{ $row->member->name }}</td>
                       <td><?= date('d-m-Y h:i:s',strtotime($row->created_at)); ?></td>
                       <td>{{$row->so->code}} / {{$row->so->so_type_transaction()->scalar}}</td>
                       <td>
-                        <span class="badge badge-{{ $row->do_status()->class }}"><b>{{ $row->do_status()->msg }}</b></span>
+                        <!-- <span class="badge badge-{{ $row->do_status()->class }}"><b>{{ $row->do_status()->msg }}</b></span> -->
+                        @if($row->status == 2)
+                          <span class="badge badge-{{ $row->do_status()->class }}"><b>{{ $row->do_status()->msg }}</b></span>
+                        @endif
+                        @if($row->status == 3)
+                          <span class="badge badge-success"><b>Success</b></span>
+                        @endif
                       </td>
                       <td>
                         @if($row->status == 2)
-                          
                             <a href="#" class="btn btn-success btn-sm btn-flat btn-ready" data-id="{{$row->id}}"><i class="fa fa-send"></i> Naik Ke DO</a>
                             @if($row->type_transaction == 2)
                             <a href="#" class="btn btn-danger btn-sm btn-flat btn-revisi" data-id="{{$row->id}}"><i class="fa fa-edit"></i> Revisi</a>
                             @endif
-                          
                         @endif
                       </td>
                     @endif
@@ -329,34 +337,46 @@
                 </tbody>
               </table>
             </div>
-            <div id="do_proses" class="tab-pane">
+
+            <!-- Proses -->
+            <div id="proses" class="tab-pane">
               <table class="table table-striped" id="datatables">
                 <thead>
                   <tr>
                     <th>#</th>
                     <th>DO Code</th>
-                    <th>Referensi SO</th>
-                    <th>Customer</th>
+                    <th>Refrensi SO</th>
+                    <th>Tanggal Buat</th>
+                    <th>Transaction Type</th>
                     <th>Status</th>
+                    <th>Action</th>
                   </tr>
                 </thead>
                 <tbody>
                   @foreach($packing_order as $index => $row)
-                    <tr>
-                      @if($row->status === 3)
-                        <td>{{$index+1}}</td>
-                        <td>
-                          {{$row->do_code}}
-                        </td>
-                        <td>{{$row->so->code }}</td>
-                        <td>
-                          {{ $row->member->name }}
-                        </td>
-                        <td>
-                          <span class="badge badge-{{ $row->do_status()->class }}"><b>{{ $row->do_status()->msg }}</b></span>
-                        </td>
-                      @endif
-                    </tr>
+                  <tr>
+                      <td>{{ $index+1 }}</td>
+                      <td>{{$row->do_code}}</td>
+                      <td>{{$row->so->code}}</td>
+                      <td><?= date('d-m-Y h:i:s',strtotime($row->created_at)); ?></td>
+                      <td>{{$row->so->so_type_transaction()->scalar}}</td>
+                      <td>
+                        @if($row->status == 3)
+                          <span class="badge badge-success"><b>SUBMIT DO</b></span>
+                        @endif
+                        @if($row->status == 4)
+                          <span class="badge badge-primary"><b>ON PROSES</b></span>
+                        @endif
+                        @if($row->status == 5)
+                          <span class="badge badge-warning"><b>CETAK SJ</b></span>
+                        @endif
+                      </td>
+                      <td>
+                        @if($row->type_transaction == 2)
+                          <!-- <a href="#" class="btn btn-danger btn-sm btn-flat btn-revisi" data-id="{{$row->id}}"><i class="fa fa-edit"></i> Revisi</a> -->
+                        @endif
+                      </td>
+                  </tr>
                   @endforeach
                 </tbody>
               </table>
