@@ -122,10 +122,12 @@ class PackingOrderController extends Controller
                             ->orderBy('id','DESC')
                             ->paginate(10);
         $table->withPath('packing_order?field='.$field.'&search='.$search);
+        
         $customer = Customer::all();
         $data = [
             'table' => $table,
-            'customer' => $customer
+            'customer' => $customer,
+            
         ];
         return view($this->view."index",$data);
     }

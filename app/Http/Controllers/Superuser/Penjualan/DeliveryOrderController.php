@@ -133,9 +133,11 @@ class DeliveryOrderController extends Controller
                             ->paginate(10);*/
         $table->withPath('delivery_order?field='.$field.'&search='.$search);
         $customer = Customer::all();
+        $packing = PackingOrder::first();
         $data = [
             'table' => $table,
-            'customer' => $customer
+            'customer' => $customer,
+            'packing' => $packing,
         ];
         return view($this->view."index",$data);
     }

@@ -38,3 +38,5 @@
 
 <!-- Transaksi View -->
 <link rel="stylesheet" href="{{ asset('superuser_assets/css/transaksi.tab.css') }}">
+<!-- tab DO -->
+<link rel="stylesheet" href="{{ asset('superuser_assets/css/tab.do.css') }}">
