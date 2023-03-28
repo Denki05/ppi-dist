@@ -47,24 +47,38 @@
               <div class="col">
                 <div class="form-label-group in-border">
                   <label style="font-size: 10pt;">Address</label>
-                  <p style="font-size: 9pt;">{{ $result->member->address }}</p>
+                  <p style="font-size: 9pt;">JL.Kendung Indah 1B/12 Sememi,Benowo,Kota Surabaya, Jawa Timur</p>
                 </div>
               </div>
             </div>
           </div>
         </div>
 
-        <!-- <div class="card mb-2 border-0">
+        <div class="card mb-2 border-0">
           <div class="card-body" >
             <div class="row">
-              <label style="font-size: 10pt;" class="col-xs-4 col-sm-4 col-md-4 control-label" for="code">Transaksi Type :</label>
-              <div class="col-xs-6 col-sm-6 col-md-6">
-                <button type="button" class="btn btn-info">{{ $result->so_type_transaction()->scalar }}</button>
-                
+              <div class="col">
+                <div class="form-label-group in-border">
+                  <label style="font-size: 10pt;">Transaksi Type</label>
+                    <p style="font-size: 10pt;">
+                    <span class="badge badge-info">{{ $result->so_type_transaction()->scalar }}</span>
+                    </p>
+                </div>
+              </div>
+              <div class="col">
+                <div class="form-label-group in-border">
+                  <label style="font-size: 10pt;">Ekspedisi</label><br>
+                  <select class="form-control js-select2" name="ekspedisi">
+                    <option value="">Pilih Ekspedisi</option>
+                    @foreach($ekspedisi as $index)
+                    <option value="{{ $index->id }}">{{ $index->name }}</option>
+                    @endforeach
+                  </select>
+                </div>
               </div>
             </div>
           </div>
-        </div> -->
+        </div>
       </div>
 
       <div class="col-md-8">
@@ -206,7 +220,7 @@
                   <div class="form-group row">
                     <label class="col-md-4 col-form-label text-right">Resi Ongkir</label>
                     <div class="col-md-6">
-                      <input type="number" name="resi_ongkir" id="resi_ongkir" class="form-control text-center " step="any">
+                      <input type="number" name="resi_ongkir" id="resi_ongkir" value="0" class="form-control text-center " step="any" readonly>
                     </div>
                   </div>
                   @endif
@@ -312,9 +326,7 @@
              { "bSortable": false, "aTargets": [ 1, 4, 5, 6, 7, 8, 9, 10, 11 ] }
         ] 
     });
-
     
-
     // /* Fungsi formatRupiah */
 		// function formatRupiah(angka, prefix){
     //   angka = angka.toString();

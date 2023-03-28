@@ -1101,8 +1101,8 @@ class PackingOrderController extends Controller
 
             //Kembalikan SO ke step lanjutan
 
-            if($result->status === 2){
-                $update_so = SalesOrder::where('id', $result->so_id)->update(['status' => 3, 'count_rev' => 1]);
+            if($result->status == 2 OR $result->status == 3 OR $result->status == 4){
+                $update_so = SalesOrder::where('id', $result->so_id)->update(['status' => 2, 'count_rev' => 1]);
 
                 $update_po = PackingOrder::where('id', $result->id)->update(['status' => 7]);
 
@@ -1114,9 +1114,9 @@ class PackingOrderController extends Controller
 
                 $del_proforma_item = SoProformaDetail::where('so_proforma_id', $get_pro->id)->delete();
 
-                return redirect()->back()->with('success','SO Packed berhasil di kembalikan ke SO Lanjutan!');  
-            }else{
-                return redirect()->back()->with('error','Gagal di Kembalikan status saat ini DO!');
+                return redirect()->back()->with('success','SO Packed berhasil di kembalikan ke SO!');  
+            }elseif($result->status == 5 OR $result->status == 6){
+                return redirect()->back()->with('error','Gagal di Kembalikan status saat ini DO dalam proses KIRIM!');
             }
                         
         }catch(\Throwable $e){

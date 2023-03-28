@@ -17,13 +17,13 @@
 <main style="background:#fff">
   
   <input style="display: none;" id="tab1" type="radio" name="tabs" checked>
-  <label for="tab1">DO Proses</label>
+  <label style="padding: 15px 25px;" for="tab1">DO Proses</label>
     
   <input style="display: none;" id="tab2" type="radio" name="tabs">
-  <label for="tab2">DO Siap Kirim</label>
+  <label style="padding: 15px 25px;" for="tab2">DO Siap Kirim</label>
     
   <input style="display: none;" id="tab3" type="radio" name="tabs">
-  <label for="tab3">DO Update Resi</label>
+  <label style="padding: 15px 25px;" for="tab3">DO Update Resi</label>
     
   <!-- <input id="tab4" type="radio" name="tabs">
   <label for="tab4">Drupal</label> -->
@@ -46,12 +46,13 @@
           </thead>
           <tbody>
           @foreach($table as $index => $row)
+            @if($row->status == 3)
             <tr>
               <td>{{ $loop->iteration }}</td>
               <td>{{ $row->do_code }}</td>
               <td>{{ $row->so->code }}</td>
               <td>{{ $row->member->name }}</td>
-              <td>-</td>
+              <td>{{ $row->print_count }}</td>
               <td>
                 @if($row->status == 3)
                 <span class="badge badge-{{ $row->do_status()->class }}"><b>{{ $row->do_status()->msg }}</b></span>
@@ -67,6 +68,7 @@
                 @endif
               </td>
             </tr>
+            @endif
           @endforeach
           </tbody>
         </table>
@@ -90,6 +92,7 @@
           </thead>
           <tbody>
           @foreach($table as $index => $row)
+            @if($row->status == 4)
             <tr>
               <td>{{ $loop->iteration }}</td>
               <td>{{ $row->do_code }}</td>
@@ -105,6 +108,7 @@
                 @endif
               </td>
             </tr>
+            @endif
           @endforeach
           </tbody>
         </table>
@@ -116,7 +120,7 @@
   <section id="content3">
   <div class="row mb-30">
       <div class="col-12">
-        <table class="table table-hover" id="do_kirim">
+        <table class="table table-hover" id="update_resi">
           <thead>
             <tr>
               <th>#</th>
@@ -128,6 +132,7 @@
           </thead>
           <tbody>
           @foreach($table as $index => $row)
+            @if($row->status == 5 OR $row->status == 6)
             <tr>
               <td>{{ $loop->iteration }}</td>
               <td>{{ $row->do_code }}</td>
@@ -143,6 +148,7 @@
                 @endif
               </td>
             </tr>
+            @endif
           @endforeach
           </tbody>
         </table>
@@ -160,10 +166,6 @@
   </section> -->
     
 </main>
-
-
-
-
 
 @endsection
 @include('superuser.asset.plugin.datatables')
@@ -183,6 +185,17 @@
         });
 
         $('#do_kirim').DataTable( {
+          "paging":   false,
+          "ordering": true,
+          "info":     false,
+          "searching" : false,
+          "columnDefs": [{
+            "targets": 0,
+            "orderable": false
+          }]
+        });
+
+        $('#update_resi').DataTable( {
           "paging":   false,
           "ordering": true,
           "info":     false,

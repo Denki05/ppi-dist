@@ -246,6 +246,9 @@
                 <li class="nav-item">
                     <a class="nav-link" data-toggle="tab" href="#proses">PROSES</a>
                 </li>
+                <li class="nav-item">
+                    <a class="nav-link" data-toggle="tab" href="#do_cancel">DO CANCEL</a>
+                </li>
             </ul>
         </div>
         <div class="tab-content card-body">
@@ -265,6 +268,7 @@
                 </thead>
                 <tbody>
                   @foreach($table as $index => $row)
+                  @if($row->status == 2)
                   <tr>
                     <td>{{ $index+1 }}</td>
                     <td>{{$row->code}}</td>
@@ -282,6 +286,7 @@
                      
                     </td>
                   </tr>
+                  @endif
                   @endforeach
                 </tbody>
               </table>
@@ -306,6 +311,7 @@
                 </thead>
                 <tbody>
                   @foreach($packing_order as $index => $row)
+                  @if($row->status == 2)
                   <tr>
                     @if($row->so->payment_status == 1 || $row->type_transaction == 2)
                       <td>{{ $index+1 }}</td>
@@ -332,7 +338,7 @@
                       </td>
                     @endif
                   </tr>
-                  
+                  @endif
                   @endforeach
                 </tbody>
               </table>
@@ -370,10 +376,16 @@
                         @if($row->status == 5)
                           <span class="badge badge-warning"><b>CETAK SJ</b></span>
                         @endif
+                        @if($row->status == 6)
+                          <span class="badge badge-info"><b>TERKIRIM</b></span>
+                        @endif
+                        @if($row->status == 7)
+                          <span class="badge badge-danger"><b>DO REVISI</b></span>
+                        @endif
                       </td>
                       <td>
-                        @if($row->type_transaction == 2)
-                          <!-- <a href="#" class="btn btn-danger btn-sm btn-flat btn-revisi" data-id="{{$row->id}}"><i class="fa fa-edit"></i> Revisi</a> -->
+                        @if($row->type_transaction == 2 && $row->count_cancel == 0)
+                          <a href="#" class="btn btn-danger btn-sm btn-flat btn-revisi" data-id="{{$row->id}}"><i class="fa fa-edit"></i> Revisi</a>
                         @endif
                       </td>
                   </tr>
@@ -381,6 +393,44 @@
                 </tbody>
               </table>
             </div>
+
+            <!-- DO Cancel -->
+              <div id="do_cancel" class="tab-pane">
+                <table class="table table-striped" id="datatables">
+                  <thead>
+                    <tr>
+                      <th>#</th>
+                      <th>DO Code</th>
+                      <th>Refrensi SO</th>
+                      <th>Customer</th>
+                      <th>Tanggal Buat</th>
+                      <th>Transaction Type</th>
+                      <th>Action</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    @foreach($packing_order as $index => $row)
+                    <tr>
+                        <td>{{ $index+1 }}</td>
+                        <td>{{$row->do_code}}</td>
+                        <td>{{$row->so->code}}</td>
+                        <td>{{$row->member->name}}</td>
+                        <td><?= date('d-m-Y h:i:s',strtotime($row->created_at)); ?></td>
+                        <td>{{$row->so->so_type_transaction()->scalar}}</td>
+                        
+                        <td>
+                          @if($row->status == 5)
+                            <a href="#" class="btn btn-danger btn-sm btn-flat btn-cancel" data-id="{{$row->id}}"><i class="fa fa-edit"></i> Cancel DO</a>
+                          @endif
+                          @if($row->status == 7)
+                          <a href="#" class="btn btn-info btn-sm btn-flat btn-frmdoedit" data-id="{{$row->id}}"><i class="fa fa-edit"></i> Form Revisi</a>
+                          @endif
+                        </td>
+                    </tr>
+                    @endforeach
+                  </tbody>
+                </table>
+              </div>
         </div>
   </div>
 @endif
@@ -402,6 +452,14 @@
     <input type="hidden" name="id">
 </form>
 <form method="post" action="{{route('superuser.penjualan.packing_order.revisi')}}" id="frmRevisi">
+    @csrf
+    <input type="hidden" name="id">
+</form>
+<form method="post" action="{{route('superuser.penjualan.delivery_order.cancel_proses')}}" id="frmCancel">
+    @csrf
+    <input type="hidden" name="id">
+</form>
+<form method="post" action="{{route('superuser.penjualan.delivery_order.do_edit')}}" id="frmDoEdit">
     @csrf
     <input type="hidden" name="id">
 </form>
@@ -438,6 +496,8 @@
         }]
       });
 
+      
+
       $('.js-select2').select2();
 
       $(document).on('click','.btn-delete',function(){
@@ -472,15 +532,29 @@
       }
     })
 
-    $(document).on('click','.btn-revisi',function(){
-      if(confirm("Apakah anda yakin me revisi SO Validasi?")){
+    $(document).on('click','.btn-frmedit',function(){
+      if(confirm("Apakah anda yakin melakukan Edit?")){
         let id = $(this).data('id');
         $('#frmRevisi').find('input[name="id"]').val(id);
         $('#frmRevisi').submit();
       }
     })
 
-    
+    $(document).on('click','.btn-cancel',function(){
+      if(confirm("Apakah anda yakin melakukan Cancel DO?")){
+        let id = $(this).data('id');
+        $('#frmCancel').find('input[name="id"]').val(id);
+        $('#frmCancel').submit();
+      }
+    })
+
+    $(document).on('click','.btn-frmdoedit',function(){
+      if(confirm("Apakah anda yakin melakukan Update DO?")){
+        let id = $(this).data('id');
+        $('#frmDoEdit').find('input[name="id"]').val(id);
+        $('#frmDoEdit').submit();
+      }
+    })
 
     });
   </script>

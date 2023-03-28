@@ -12,7 +12,9 @@ class PackingOrderDetail extends Model
     protected $fillable =[
     	'do_id',
     	'discount_1',
+        'discount_1_idr',
     	'discount_2',
+        'discount_2_idr',
     	'discount_idr',
     	'total_discount_idr',
     	'ppn',

@@ -6,7 +6,7 @@
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>{{ setting('website.name') }}</title>
     <meta name="robots" content="noindex, nofollow">
-    <link rel="shortcut icon" href="{{ asset('icon.png') }}">
+    <link rel="shortcut icon" href="{{ asset('superuser_assets/media/logo_ppi.png') }}">
     @stack('plugin-styles')
     @include('superuser.asset.css')
     @stack('styles')

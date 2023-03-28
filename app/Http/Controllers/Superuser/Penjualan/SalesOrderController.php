@@ -22,6 +22,7 @@ use App\Entities\Master\BrandLokal;
 use App\Entities\Master\Product;
 use App\Entities\Master\Sales;
 use App\Entities\Master\Ekspedisi;
+use App\Entities\Master\Vendor;
 use App\Entities\Setting\UserMenu;
 use App\Repositories\CodeRepo;
 use Auth;
@@ -444,7 +445,7 @@ class SalesOrderController extends Controller
         $sales = Sales::all();
         $product_category = ProductCategory::all();
         $brand = BrandLokal::get();
-        $ekspedisi = Ekspedisi::all();
+        $ekspedisi = Vendor::where('type', 1)->get();
 
         $data = [
             'customer' => $customer,
@@ -944,6 +945,7 @@ class SalesOrderController extends Controller
 
                 if ($sales_order->count_rev == 0) {
                     $sales_order->origin_warehouse_id = $request->origin_warehouse_id;
+                    $sales_order->ekspedisi_id = $request->ekspedisi;
                     $sales_order->status = 4;
                     $sales_order->count_rev = 0;
                     $sales_order->updated_by = Auth::id();
@@ -967,6 +969,7 @@ class SalesOrderController extends Controller
                         $packing_order->idr_rate = $request->idr_rate;
                         $packing_order->other_address = 0 ?? Null;
                         $packing_order->note = $company->note ?? null;
+                        $packing_order->vendor_id = $sales_order->ekspedisi_id;
                         $packing_order->status = 2;
                         $packing_order->created_by = Auth::id();
                         $packing_order->save();
@@ -974,7 +977,9 @@ class SalesOrderController extends Controller
                         $packing_order_detail = new PackingOrderDetail;
                         $packing_order_detail->do_id = $packing_order->id;
                         $packing_order_detail->discount_1 = $request->disc_agen_percent;
+                        $packing_order_detail->discount_1_idr = $request->disc_amount2_idr;
                         $packing_order_detail->discount_2 = $request->disc_tambahan;
+                        $packing_order_detail->discount_2_idr = $request->disc_kemasan_idr;
                         $packing_order_detail->discount_idr = $request->disc_idr;
                         $packing_order_detail->voucher_idr = $request->voucher_idr;
                         $packing_order_detail->purchase_total_idr = $request->subtotal_2;

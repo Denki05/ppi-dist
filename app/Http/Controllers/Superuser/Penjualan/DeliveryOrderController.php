@@ -14,6 +14,8 @@ use App\Entities\Penjualan\PackingOrderItem;
 use App\Entities\Penjualan\PackingOrderLogPrint;
 use App\Entities\Penjualan\SalesOrder;
 use App\Entities\Penjualan\SalesOrderItem;
+use App\Entities\Master\Vendor;
+use App\Entities\Master\Warehouse;
 use App\Entities\Gudang\StockMove;
 use App\Entities\Setting\UserMenu;
 use App\Repositories\CodeRepo;
@@ -289,7 +291,8 @@ class DeliveryOrderController extends Controller
             $update = PackingOrder::where('id',$post["id"])->update(['status' => 4]);
 
             DB::commit();
-            return redirect()->back()->with('success','Delivery Order berhasil diubah ke packed');  
+            return redirect()->route('superuser.penjualan.delivery_order.index')->with('success','Delivery Order berhasil diubah ke packed');
+
             
         }catch(\Throwable $e){
             DB::rollback();
@@ -329,7 +332,7 @@ class DeliveryOrderController extends Controller
             $update = PackingOrder::where('id',$post["id"])->update(['status' => 5]);
 
             DB::commit();
-            return redirect()->back()->with('success','Delivery Order berhasil diubah ke delivery');  
+            return redirect()->route('superuser.penjualan.delivery_order.index')->with('success','Delivery Order berhasil diubah ke delivery!');
             
         }catch(\Throwable $e){
             DB::rollback();
@@ -476,7 +479,7 @@ class DeliveryOrderController extends Controller
               
                 DB::commit();
 
-                return redirect()->route('superuser.penjualan.delivery_order.detail', $post["do_id"]);
+                return redirect()->route('superuser.penjualan.delivery_order.index')->with('success','DO berhasil update resi!');
 
             }catch(\Throwable $e){
                 DB::rollback();
@@ -493,76 +496,7 @@ class DeliveryOrderController extends Controller
         ResultData:
         return response()->json($data_json,200);
     }
-    // public function sent(Request $request){
-    //     $data_json = [];
-    //     $post = $request->all();
-    //     if($request->method() == "POST"){
-    //         DB::beginTransaction();
-    //         try{
-    //             if(empty($post["do_id"])){
-    //                 $data_json["IsError"] = TRUE;
-    //                 $data_json["Message"] = "Order ID tidak boleh kosong";
-    //                 goto ResultData;
-    //             }
 
-    //             if(count($post["repeater"]) == 0){
-    //                 $data_json["IsError"] = TRUE;
-    //                 $data_json["Message"] = "Form tidak boleh kosong";
-    //                 goto ResultData;
-    //             }
-    //             $delete_all = PackingOrderCost::where('do_id',$post["do_id"])->delete();
-    //             foreach ($post["repeater"] as $index => $value) {
-    //                 if(empty($value["note"])){
-    //                     $data_json["IsError"] = TRUE;
-    //                     $data_json["Message"] = "Note harus diisi";
-    //                     goto ResultData;
-    //                 }
-
-    //                 if(empty($value["cost_idr"])){
-    //                     $data_json["IsError"] = TRUE;
-    //                     $data_json["Message"] = "Cost harus diisi";
-    //                     goto ResultData;
-    //                 }
-
-                   
-    //                $data = [
-    //                    'do_id' => trim(htmlentities($post["do_id"])),
-    //                    'note' => trim(htmlentities($value["note"])),
-    //                    'cost_idr' => trim(htmlentities($value["cost_idr"])),
-    //                    'created_by' => Auth::id(),
-    //                    'updated_by' => Auth::id(),
-    //                ];
-
-    //                $insert = PackingOrderCost::create($data);
-                    
-
-                    
-    //             }
-
-    //             $update = PackingOrder::where('id',$post["do_id"])->update(['status' => 4]);
-              
-
-    //             DB::commit();
-
-    //             $data_json["IsError"] = FALSE;
-    //             $data_json["Message"] = "Cost berhasil diubah";
-    //             goto ResultData;
-
-    //         }catch(\Throwable $e){
-    //             DB::rollback();
-    //             $data_json["IsError"] = TRUE;
-    //             $data_json["Message"] = $e->getMessage();
-    //             goto ResultData;
-    //         }
-    //     }
-    //     else{
-    //         $data_json["IsError"] = TRUE;
-    //         $data_json["Message"] = "Invalid Method";
-    //         goto ResultData;
-    //     }
-    //     ResultData:
-    //     return response()->json($data_json,200);
-    // }
     public function get_cost(Request $request){
         $data_json = [];
         $post = $request->all();
@@ -601,7 +535,7 @@ class DeliveryOrderController extends Controller
             }
         }
 
-        $result = PackingOrder::where('id',$id)->first();
+        $result = PackingOrder::where('id',$id)->findOrFail();
         $company = Company::first();
         if(empty($result)){
             abort(404);
@@ -623,14 +557,14 @@ class DeliveryOrderController extends Controller
             }
         }
 
-        $result = PackingOrder::where('id',$id)->first();
+        $result = PackingOrder::findOrFail($id);
 
         $do_item = PackingOrderItem::where('do_id',$result->id)->with('product')
                                     ->get()
                                     ->sortBy(function($value) {
                                         return $value->product->name;
                                     });
-
+                            
         $company = Company::first();
         if(empty($result)){
             abort(404);
@@ -643,10 +577,79 @@ class DeliveryOrderController extends Controller
             'company' => $company,
             'result_item' => $do_item
         ];
-        
-        $pdf = PDF::loadview($this->view."print_manifest",$data)->setPaper('a4','landscape');
-        
+
+        $pdf = PDF::loadview($this->view."print_manifest",$data)->setPaper('a5','portrait');
         return $pdf->stream($result->code ?? '');
     }
 
+    public function cancel_proses(Request $request)
+    {
+        // Access
+        if(Auth::user()->is_superuser == 0){
+            if(empty($this->access) || empty($this->access->user) || $this->access->can_approve == 0){
+                return redirect()->route('superuser.penjualan.sales_order.index_lanjutan')->with('error','Anda tidak mempunyai akses untuk melakukan proses ini!');
+            }
+        }
+
+        DB::beginTransaction();
+        try{
+            $request->validate([
+                'id' => 'required'
+            ]);
+            $post = $request->all();
+            $result = PackingOrder::where('id',$post["id"])->first();
+
+            if($result->status == 2){
+                return redirect()->route('superuser.penjualan.sales_order.index_lanjutan')->with('error','Tidak bisa Cancel DO yang masih baru dibuat');
+            }
+            if(count($result->do_detail) == 0){
+                return redirect()->route('superuser.penjualan.sales_order.index_lanjutan')->with('error','Tidak ada item sama sekali');
+            }
+            if($result->do_cost->grand_total_idr == 0){
+                return redirect()->route('superuser.penjualan.sales_order.index_lanjutan')->with('error','Harga didalam packing list belum di set');
+            }
+            $update = PackingOrder::where('id',$post["id"])->update([
+                'status' => 7,
+                'count_cancel' => 1
+            ]);
+
+            DB::commit();
+            return redirect()->route('superuser.penjualan.sales_order.index_lanjutan')->with('success','DO berhasil di Cancel!');
+
+            
+        }catch(\Throwable $e){
+            DB::rollback();
+            return redirect()->back()->with('error',$e->getMessage());
+        }
+    }
+
+    public function do_edit(Request $request)
+    {
+        // Access
+        if(Auth::user()->is_superuser == 0){
+            if(empty($this->access) || empty($this->access->user) || $this->access->can_read == 0){
+                return redirect()->route('superuser.index')->with('error','Anda tidak punya akses untuk membuka menu terkait');
+            }
+        }
+
+        $post = $request->all();
+        $result = PackingOrder::where('id', $post["id"])->first();
+        $ekspedisi = Vendor::where('type', 1)->get();
+        $warehouse = Warehouse::get();
+
+        if(empty($result)){
+            abort(404);
+        }
+        $data = [
+            'result' => $result,
+            'ekspedisi' => $ekspedisi,
+            'warehouse' => $warehouse,
+        ];
+        return view($this->view."do_update",$data);
+    }
+
+    public function do_update(Request $request)
+    {
+
+    }
 }
