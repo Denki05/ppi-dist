@@ -220,15 +220,16 @@ class ProductController extends Controller
             }
         }
 
-        $data['product'] = Product::findOrFail($id);
+        $data['product'] = Product::find($id);
 
         $data['brand_references'] = MasterRepo::brand_references();
         $data['sub_brand_references'] = MasterRepo::sub_brand_references();
         $data['product_categories'] = MasterRepo::product_categories();
-        $data['product_types'] = MasterRepo::product_types();
+        $data['merek'] = BrandLokal::get();
         $data['units'] = MasterRepo::units();
         $data['warehouses'] = MasterRepo::warehouses();
         $data['product_notes'] = Product::NOTE;
+        $data['factory'] = Vendor::where('type', 2)->get();
         
         return view('superuser.master.product.edit', $data);
     }

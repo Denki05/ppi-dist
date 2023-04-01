@@ -162,6 +162,7 @@ class ProductCategoryController extends Controller
 
         $data['product_category'] = ProductCategory::findOrFail($id);
         // $data['product_types'] = MasterRepo::product_types();
+        $data['packaging'] = Packaging::get();
 
         return view('superuser.master.product_category.edit', $data);
     }
@@ -198,7 +199,7 @@ class ProductCategoryController extends Controller
 
                 $product_category->name = $request->name;
                 $product_category->type = $request->type;
-                $product_category->packaging = $request->packaging;
+                $product_category->packaging_id = $request->packaging;
 
                 if ($product_category->save()) {
                     DB::commit();

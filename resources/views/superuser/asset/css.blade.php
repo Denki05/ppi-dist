@@ -20,7 +20,6 @@
 <link rel="stylesheet" href="{{ asset('superuser_assets/plus-admin/assets/vendors/jquery-bar-rating/css-stars.css') }}">
 <link rel="stylesheet" href="{{ asset('superuser_assets/plus-admin/assets/vendors/font-awesome/css/font-awesome.min.css') }}">
 <link rel="stylesheet" href="{{ asset('superuser_assets/plus-admin/assets/css/style.css') }}">
-<link rel="stylesheet" href="{{ asset('superuser_assets/plus-admin/assets/images/favicon.png') }}">
 
 <!-- Multi Tab -->
 <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css">
@@ -36,7 +35,5 @@
 
 <link href="https://fonts.googleapis.com/css?family=Poppins" rel="stylesheet" />
 
-<!-- Transaksi View -->
-<link rel="stylesheet" href="{{ asset('superuser_assets/css/transaksi.tab.css') }}">
 <!-- tab DO -->
 <link rel="stylesheet" href="{{ asset('superuser_assets/css/tab.do.css') }}">

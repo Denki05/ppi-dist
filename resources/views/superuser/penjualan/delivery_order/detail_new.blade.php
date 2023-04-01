@@ -41,14 +41,14 @@
             <label class="col-md-3 col-form-label text-right" for="warehouse">Warehouse</label>
             <div class="col-md-7">
               <!-- <div class="form-control-plaintext">{{$result->origin_warehouse->name ?? '-'}}</div> -->
-              <input type="text" class="form-control" value="{{ $result->origin_warehouse->name ?? '-' }}" readonly>
+              <input type="text" class="form-control" value="{{ $result->warehouse->name ?? '-' }}" readonly>
             </div>
           </div>
           <div class="form-group row">
             <label class="col-md-3 col-form-label text-right" for="ekspedisi">Ekspedisi</label>
             <div class="col-md-7">
               <!-- <div class="form-control-plaintext">{{$result->ekspedisi->name ?? '-'}}</div> -->
-              <input type="text" class="form-control" value="{{$result->ekspedisi->name ?? '-'}}" readonly>
+              <input type="text" class="form-control" value="{{$result->vendor->name ?? '-'}}" readonly>
             </div>
           </div>
         </div>
@@ -133,13 +133,27 @@
   </div>
   <div class="card-body">
     <div class="block-content">
-      <div class="row">
+    <div class="row">
         <div class="col-6">
           <div class="form-group row">
             <label class="col-md-3 col-form-label text-right" for="code">DO Code</label>
             <div class="col-md-7">
               <!-- <div class="form-control-plaintext">{{ $result->do_code }}</div> -->
               <input class="form-control" type="text" value="{{ $result->do_code }}" readonly>
+            </div>
+          </div>
+          <div class="form-group row">
+            <label class="col-md-3 col-form-label text-right" for="warehouse">Warehouse</label>
+            <div class="col-md-7">
+              <!-- <div class="form-control-plaintext">{{$result->origin_warehouse->name ?? '-'}}</div> -->
+              <input type="text" class="form-control" value="{{ $result->warehouse->name ?? '-' }}" readonly>
+            </div>
+          </div>
+          <div class="form-group row">
+            <label class="col-md-3 col-form-label text-right" for="ekspedisi">Ekspedisi</label>
+            <div class="col-md-7">
+              <!-- <div class="form-control-plaintext">{{$result->ekspedisi->name ?? '-'}}</div> -->
+              <input type="text" class="form-control" value="{{$result->vendor->name ?? '-'}}" readonly>
             </div>
           </div>
         </div>
@@ -149,6 +163,21 @@
             <div class="col-md-7">
               <!-- <div class="form-control-plaintext">{{$result->member->name ?? ''}}</div> -->
               <input type="text" class="form-control" value="{{ $result->member->name}} | {{ $result->member->address }}" readonly>
+            </div>
+          </div>
+          <div class="form-group row">
+            <label class="col-md-3 col-form-label text-right" for="refrensi_so">Referensi SO</label>
+            <div class="col-md-7">
+              <!-- <div class="form-control-plaintext">{{$result->member->address ?? ''}}</div> -->
+              <input type="text" class="form-control" value="{{$result->so->code ?? '-'}}" readonly>
+            </div>
+          </div>
+          <div class="form-group row">
+            <label class="col-md-3 col-form-label text-right" for="status">Status</label>
+            <div class="col-md-7">
+              <div class="form-control-plaintext">
+                <span class="badge badge-{{ $result->do_status()->class }}"><b>{{ $result->do_status()->msg }}</b></span>
+              </div>
             </div>
           </div>
         </div>
@@ -162,11 +191,21 @@
           </a>
         </div>
         <div class="col-md-6 text-right">
-          <a href="{{route('superuser.penjualan.delivery_order.print', $result->id)}}" class="btn btn-info btn-sm btn-flat" data-id="{{$result->id}}" target="_blank"><i class="fa fa-print"></i> Print DO</a>
-          <a href="{{ route('superuser.finance.proforma.print_proforma', [$result->id]) }}" class="btn btn-info btn-sm btn-flat" target="_blank"><i class="fa fa-print"></i> Print Proforma</a>
-          @if($result->invoicing != null)
-          <a href="{{route('superuser.finance.invoicing.print_paid',$result->invoicing->id)}}" class="btn btn-primary btn-sm btn-flat" data-id="{{$result->invoicing->id}}" target="_blank"><i class="fa fa-print"></i> Print Invoice</a>
+          @if($result->count_cancel == 0)
+            <a href="{{route('superuser.penjualan.delivery_order.print', $result->id)}}" class="btn btn-info btn-sm btn-flat" data-id="{{$result->id}}" target="_blank"><i class="fa fa-print"></i> Print DO</a>
+            <a href="{{ route('superuser.finance.proforma.print_proforma', [$result->id]) }}" class="btn btn-info btn-sm btn-flat" target="_blank"><i class="fa fa-print"></i> Print Proforma</a>
+            @if($result->invoicing != null)
+            <a href="{{route('superuser.finance.invoicing.print_paid',$result->invoicing->id)}}" class="btn btn-primary btn-sm btn-flat" data-id="{{$result->invoicing->id}}" target="_blank"><i class="fa fa-print"></i> Print Invoice</a>
+            @endif
           @endif
+          @if($result->count_cancel == 2)
+            <a href="{{route('superuser.penjualan.delivery_order.print', $result->id)}}" class="btn btn-info btn-sm btn-flat" data-id="{{$result->id}}" target="_blank"><i class="fa fa-print"></i> Print DO Revisi</a>
+            <a href="{{ route('superuser.finance.proforma.print_proforma', [$result->id]) }}" class="btn btn-info btn-sm btn-flat" target="_blank"><i class="fa fa-print"></i> Print Proforma Revisi</a>
+            @if($result->invoicing != null)
+            <a href="{{route('superuser.finance.invoicing.print_paid',$result->invoicing->id)}}" class="btn btn-primary btn-sm btn-flat" data-id="{{$result->invoicing->id}}" target="_blank"><i class="fa fa-print"></i> Print Invoice Revisi</a>
+            @endif
+          @endif
+         
         </div>
       </div>
       <hr >

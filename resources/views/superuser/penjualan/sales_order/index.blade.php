@@ -268,7 +268,6 @@
                 </thead>
                 <tbody>
                   @foreach($table as $index => $row)
-                  @if($row->status == 2)
                   <tr>
                     <td>{{ $index+1 }}</td>
                     <td>{{$row->code}}</td>
@@ -286,7 +285,6 @@
                      
                     </td>
                   </tr>
-                  @endif
                   @endforeach
                 </tbody>
               </table>
@@ -384,7 +382,7 @@
                         @endif
                       </td>
                       <td>
-                        @if($row->type_transaction == 2 && $row->count_cancel == 0)
+                        @if($row->type_transaction == 2 && $row->status < 5)
                           <a href="#" class="btn btn-danger btn-sm btn-flat btn-revisi" data-id="{{$row->id}}"><i class="fa fa-edit"></i> Revisi</a>
                         @endif
                       </td>
@@ -410,23 +408,25 @@
                   </thead>
                   <tbody>
                     @foreach($packing_order as $index => $row)
-                    <tr>
-                        <td>{{ $index+1 }}</td>
-                        <td>{{$row->do_code}}</td>
-                        <td>{{$row->so->code}}</td>
-                        <td>{{$row->member->name}}</td>
-                        <td><?= date('d-m-Y h:i:s',strtotime($row->created_at)); ?></td>
-                        <td>{{$row->so->so_type_transaction()->scalar}}</td>
-                        
-                        <td>
-                          @if($row->status == 5)
-                            <a href="#" class="btn btn-danger btn-sm btn-flat btn-cancel" data-id="{{$row->id}}"><i class="fa fa-edit"></i> Cancel DO</a>
-                          @endif
-                          @if($row->status == 7)
-                          <a href="#" class="btn btn-info btn-sm btn-flat btn-frmdoedit" data-id="{{$row->id}}"><i class="fa fa-edit"></i> Form Revisi</a>
-                          @endif
-                        </td>
-                    </tr>
+                      @if($row->status == 5 OR $row->status == 7)
+                        <tr>
+                            <td>{{ $index+1 }}</td>
+                            <td>{{$row->do_code}}</td>
+                            <td>{{$row->so->code}}</td>
+                            <td>{{$row->member->name}}</td>
+                            <td><?= date('d-m-Y h:i:s',strtotime($row->created_at)); ?></td>
+                            <td>{{$row->so->so_type_transaction()->scalar}}</td>
+                            
+                            <td>
+                              @if($row->status == 5)
+                                <a href="#" class="btn btn-danger btn-sm btn-flat btn-cancel" data-id="{{$row->id}}"><i class="fa fa-edit"></i> Cancel DO</a>
+                              @endif
+                              @if($row->status == 7)
+                              <a href="#" class="btn btn-info btn-sm btn-flat btn-frmdoedit" data-id="{{$row->id}}"><i class="fa fa-edit"></i> Form Revisi</a>
+                              @endif
+                            </td>
+                        </tr>
+                      @endif
                     @endforeach
                   </tbody>
                 </table>

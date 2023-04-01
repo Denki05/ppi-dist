@@ -186,12 +186,23 @@ class PayableController extends Controller
                     $update_so = SalesOrder::where('id', $get_prof->so_id)->update(['payment_status' => 2]);
                 }
 
-                // Cetak Invoice setelah payment
-                    $inv = new Invoicing;
-                    $inv->code = CodeRepo::generateInvoicing($get_prof->do->do_code);
-                    $inv->do_id = $get_prof->do_id;
-                    $inv->grand_total_idr = $get_proforma->grand_total_idr;
-                    $inv->save();
+                $getSo = SalesOrder::where('id', $get_prof->so_id)->first();
+
+                if($getSo->type_transaction == 1){
+                    $pay = Payable::where('id' ,$insert->id)->first();
+                    $check_pay = PayableDetail::where('payable_id', $pay->id)->first();
+
+                    if($total_payable >= $check_pay->prev_account_receivable){
+                        // Cetak Invoice setelah payment
+                        $inv = new Invoicing;
+                        $inv->code = CodeRepo::generateInvoicing($get_prof->do->do_code);
+                        $inv->do_id = $get_prof->do_id;
+                        $inv->grand_total_idr = $get_proforma->grand_total_idr;
+                        $inv->save();
+                    }
+
+                    // DD($inv);
+                }
 
                 DB::commit();
 

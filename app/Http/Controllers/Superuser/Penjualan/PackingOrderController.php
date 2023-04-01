@@ -947,22 +947,22 @@ class PackingOrderController extends Controller
                 ]);
             }
 
-            // if($getDo->type_transaction == 1){
-            //     //cek pembayaran cash
-            //     if($proforma->status == 3){
-            //         $update = PackingOrder::where('id', $post["id"])->update(['status' => 3]);
+            if($getDo->type_transaction == 1){
+                //cek pembayaran cash
+                if($proforma->status == 3){
+                    $update = PackingOrder::where('id', $post["id"])->update(['status' => 3]);
                                     
-            //         return redirect()->back()->with('success','SO packed berhasil di proses'); 
-            //     }elseif($proforma->status == 1){
-            //         return redirect()->back()->with('error','SO packed gagal di proses! Cek pembayaran');
-            //     }elseif($proforma->status == 2){
-            //         return redirect()->back()->with('error','SO packed gagal di proses! Cek pembayaran');
-            //     }
-            // }elseif($getDo->type_transaction == 2 && $getDo->type_transaction == 3){
-            //     $update = PackingOrder::where('id', $post["id"])->update(['status' => 3]);
+                    return redirect()->back()->with('success','SO packed berhasil di proses'); 
+                }elseif($proforma->status == 1){
+                    return redirect()->back()->with('error','SO packed gagal di proses! Cek pembayaran');
+                }elseif($proforma->status == 2){
+                    return redirect()->back()->with('error','SO packed gagal di proses! Cek pembayaran');
+                }
+            }elseif($getDo->type_transaction == 2 && $getDo->type_transaction == 3){
+                $update = PackingOrder::where('id', $post["id"])->update(['status' => 3]);
 
-            //     return redirect()->back()->with('success','SO packed berhasil di proses');
-            // }
+                return redirect()->back()->with('success','SO packed berhasil di proses');
+            }
 
             $update = PackingOrder::where('id',$post["id"])->update(['status' => 3]);
 

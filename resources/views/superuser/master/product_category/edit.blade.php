@@ -38,11 +38,9 @@
         <div class="col-md-7">
           <select class="js-select2 form-control" id="packaging" name="packaging" data-placeholder="Select Packaging">
             <option value="">==Select Packaging==</option>
-            <option value="100gr">100 gr</option>
-            <option value="500gr">500 gr</option>
-            <option value="2500gr">2.5 kg</option>
-            <option value="5000gr">5000 gr / 5 kg</option>
-            <option value="25kg">25 kg</option>
+            @foreach($packaging as $key)
+            <option value="{{ $key->id }}">{{ $key->pack_name }}
+            @endforeach
           </select>
         </div>
       </div>

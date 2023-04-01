@@ -971,6 +971,7 @@ class SalesOrderController extends Controller
                         $packing_order->note = $company->note ?? null;
                         $packing_order->vendor_id = $sales_order->ekspedisi_id;
                         $packing_order->status = 2;
+                        $packing_order->count_cancel = 0;
                         $packing_order->created_by = Auth::id();
                         $packing_order->save();
 

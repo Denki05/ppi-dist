@@ -11223,7 +11223,7 @@ input:focus {
   font-family: "Open Sans";
   src: url("../../fonts/Opensans/OpenSans-Light.eot");
   /* IE9 Compat Modes */
-  src: url("../../fonts/Opensans/OpenSans-Light.woff2") format("woff2"), url("../../fonts/Opensans/OpenSans-Light.woff") format("woff"), url("../../fonts/Opensans/OpenSans-Light.ttf") format("truetype");
+  src: url("../../fonts/Opensans/OpenSans-Light.ttf") format("truetype");
   /* Safari, Android, iOS */
   font-weight: 300;
   font-style: normal; }
@@ -11232,7 +11232,7 @@ input:focus {
   font-family: "Open Sans";
   src: url("../../fonts/Opensans/OpenSans-Regular.eot");
   /* IE9 Compat Modes */
-  src: url("../../fonts/Opensans/OpenSans-Regular.woff2") format("woff2"), url("../../fonts/Opensans/OpenSans-Regular.woff") format("woff"), url("../../fonts/Opensans/OpenSans-Regular.ttf") format("truetype");
+  src: url("../../fonts/Opensans/OpenSans-Regular.ttf") format("truetype");
   /* Safari, Android, iOS */
   font-weight: 400;
   font-style: normal; }
@@ -11241,7 +11241,7 @@ input:focus {
   font-family: "Open Sans";
   src: url("../../fonts/Opensans/OpenSans-SemiBold.eot");
   /* IE9 Compat Modes */
-  src: url("../../fonts/Opensans/OpenSans-SemiBold.woff2") format("woff2"), url("../../fonts/Opensans/OpenSans-SemiBold.woff") format("woff"), url("../../fonts/Opensans/OpenSans-SemiBold.ttf") format("truetype");
+  src: url("../../fonts/Opensans/OpenSans-SemiBold.ttf") format("truetype");
   /* Safari, Android, iOS */
   font-weight: 600;
   font-style: normal; }
@@ -11250,7 +11250,7 @@ input:focus {
   font-family: "Open Sans";
   src: url("../../fonts/Opensans/OpenSans-Bold.eot");
   /* IE9 Compat Modes */
-  src: url("../../fonts/Opensans/OpenSans-Bold.woff2") format("woff2"), url("../../fonts/Opensans/OpenSans-Bold.woff") format("woff"), url("../../fonts/Opensans/OpenSans-Bold.ttf") format("truetype");
+  src: url("../../fonts/Opensans/OpenSans-Bold.ttf") format("truetype");
   /* Safari, Android, iOS */
   font-weight: 700;
   font-style: normal; }
