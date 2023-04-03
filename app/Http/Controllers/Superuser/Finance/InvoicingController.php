@@ -545,6 +545,8 @@ class InvoicingController extends Controller
 
         $result = Invoicing::where('id',$id)->first();
         
+        $get_do = PackingOrder::where('id', $result->do_id)->first();
+        
         // CR
         $my_report = "C:\\xampp\\htdocs\\ppi-dist\public\\cr\\invoice\\invoice_new.rpt"; 
         $my_pdf = "C:\\xampp\\htdocs\\ppi-dist\\public\\cr\\invoice\\export\\invoice.pdf";
@@ -568,9 +570,8 @@ class InvoicingController extends Controller
 
         //- field prompt or else report will hang - to get through
         $creport->EnableParameterPrompting = FALSE;
-        // $creport->RecordSelectionFormula = "{F_DOCLIGNE.DO_Piece}='$id'";
+        $creport->RecordSelectionFormula = "{penjualan_do.id}= $get_do->id";
 
-        // $zz = $creport->ParameterFields(1)->SetCurrentValue("2022-08-05");    
 
         //export to PDF process
         $creport->ExportOptions->DiskFileName=$my_pdf; //export to pdf
@@ -584,7 +585,7 @@ class InvoicingController extends Controller
         $crapp = null;
         $ObjectFactory = null;
 
-        $file = "C:\\xampp\\htdocs\\ppi-dist\\public\\cr\\invoice\\export\\invoice.pdf"; 
+        $file = "C:\\xampp\\htdocs\\ppi-dist\\public\\cr\\invoice\\export\\invoice.pdf";
 
         header("Content-Description: File Transfer"); 
         header("Content-Type: application/octet-stream"); 
