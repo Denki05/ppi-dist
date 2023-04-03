@@ -296,16 +296,18 @@ class DeliveryOrderController extends Controller
             $update = PackingOrder::where('id',$post["id"])->update(['status' => 4]);
 
             // Create Invoice
-            $proforma = SoProforma::where('do_id', $result->id)->first();
+            if ($result->type_transaction == 2){
+                $proforma = SoProforma::where('do_id', $result->id)->first();
 
-            $data = [
-                'code' => CodeRepo::generateInvoicing($result->do_code),
-                'do_id' => $result->id,
-                'grand_total_idr' => $proforma->grand_total_idr,
-                'created_by' => Auth::id(),
-            ];
-            
-            $insert = Invoicing::create($data);
+                $data = [
+                    'code' => CodeRepo::generateInvoicing($result->do_code),
+                    'do_id' => $result->id,
+                    'grand_total_idr' => $proforma->grand_total_idr,
+                    'created_by' => Auth::id(),
+                ];
+                
+                $insert = Invoicing::create($data);
+            }
 
             DB::commit();
             return redirect()->route('superuser.penjualan.delivery_order.index')->with('success','Delivery Order berhasil diubah ke packed');

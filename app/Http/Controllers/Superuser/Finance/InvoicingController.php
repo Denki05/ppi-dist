@@ -17,6 +17,7 @@ use App\Repositories\CodeRepo;
 use DB;
 use Auth;
 use PDF;
+use COM;
 
 class InvoicingController extends Controller
 {
@@ -464,7 +465,7 @@ class InvoicingController extends Controller
         //
     }
 
-    public function print($id, $paid = null, $type = null){
+    public function print($id){
 
         // Access
         if(Auth::user()->is_superuser == 0){
@@ -474,29 +475,65 @@ class InvoicingController extends Controller
         }
 
         $result = Invoicing::where('id',$id)->first();
-        $company = Company::first();
-        if(empty($result)){
-            abort(404);
-        }
 
-        $data = [
-            'result' => $result,
-            'company' => $company,
-            'watermark' => $result->do->type_transaction === 1 ? 'Paid' : 'Unpaid'
-        ];
+        $get_do = PackingOrder::where('id', $result->do_id)->first();
         
-        $pdf = PDF::loadview($this->view."print_new",$data)->setPaper('a4','portait');
-        return $pdf->stream($result->code ?? '');
+        // CR
+        $my_report = "C:\\xampp\\htdocs\\ppi-dist\public\\cr\\invoice\\invoice_new.rpt"; 
+        $my_pdf = "C:\\xampp\\htdocs\\ppi-dist\\public\\cr\\invoice\\export\\invoice.pdf";
+
+        //- Variables - Server Information 
+        $my_server = "DEV-PPIDIST"; 
+        $my_user = "root"; 
+        $my_password = ""; 
+        $my_database = "ppi-dist";
+        $COM_Object = "CrystalDesignRunTime.Application";
+
+
+        //-Create new COM object-depends on your Crystal Report version
+        $crapp= New COM($COM_Object) or die("Unable to Create Object");
+        $creport = $crapp->OpenReport($my_report,1); // call rpt report
+
+        // to refresh data before
+
+        //- Set database logon info - must have
+        $creport->Database->Tables(1)->SetLogOnInfo($my_server, $my_database, $my_user, $my_password);
+
+        //- field prompt or else report will hang - to get through
+        $creport->EnableParameterPrompting = FALSE;
+        $creport->RecordSelectionFormula = "{penjualan_do.id}= $get_do->id";
+
+
+        //export to PDF process
+        $creport->ExportOptions->DiskFileName=$my_pdf; //export to pdf
+        $creport->ExportOptions->PDFExportAllPages=true;
+        $creport->ExportOptions->DestinationType=1; // export to file
+        $creport->ExportOptions->FormatType=31; // PDF type
+        $creport->Export(false);
+
+        //------ Release the variables ------
+        $creport = null;
+        $crapp = null;
+        $ObjectFactory = null;
+
+        $file = "C:\\xampp\\htdocs\\ppi-dist\\public\\cr\\invoice\\export\\invoice.pdf";
+
+        header("Content-Description: File Transfer"); 
+        header("Content-Type: application/octet-stream"); 
+        header("Content-Disposition: attachment; filename=\"". basename($file) ."\""); 
+
+        readfile ($file);
+        exit();
     }
 
-    public function print_paid($id, $type = null){
-        return $this->print($id, true, $type);
-    }
+    // public function print_paid($id, $type = null){
+    //     return $this->print($id, true, $type);
+    // }
 
-    public function print_portait($id){
+    // public function print_portait($id){
 
-        return $this->print($id, true, 2);
-    }
+    //     return $this->print($id, true, 2);
+    // }
 
     public function print_proforma($id){
         // Access
@@ -507,19 +544,56 @@ class InvoicingController extends Controller
         }
 
         $result = Invoicing::where('id',$id)->first();
-        $company = Company::first();
-        if(empty($result)){
-            abort(404);
-        }
+        
+        // CR
+        $my_report = "C:\\xampp\\htdocs\\ppi-dist\public\\cr\\invoice\\invoice_new.rpt"; 
+        $my_pdf = "C:\\xampp\\htdocs\\ppi-dist\\public\\cr\\invoice\\export\\invoice.pdf";
 
-        $data = [
-            'result' => $result,
-            'company' => $company
-        ];
+        //- Variables - Server Information 
+        $my_server = "DEV-PPIDIST"; 
+        $my_user = "root"; 
+        $my_password = ""; 
+        $my_database = "ppi-dist";
+        $COM_Object = "CrystalDesignRunTime.Application";
 
-        $pdf = PDF::loadview($this->view."print_proforma_new",$data)->setPaper('a4','portait');
-        return $pdf->stream($result->do->do_code ?? '');
+
+        //-Create new COM object-depends on your Crystal Report version
+        $crapp= New COM($COM_Object) or die("Unable to Create Object");
+        $creport = $crapp->OpenReport($my_report,1); // call rpt report
+
+        // to refresh data before
+
+        //- Set database logon info - must have
+        $creport->Database->Tables(1)->SetLogOnInfo($my_server, $my_database, $my_user, $my_password);
+
+        //- field prompt or else report will hang - to get through
+        $creport->EnableParameterPrompting = FALSE;
+        // $creport->RecordSelectionFormula = "{F_DOCLIGNE.DO_Piece}='$id'";
+
+        // $zz = $creport->ParameterFields(1)->SetCurrentValue("2022-08-05");    
+
+        //export to PDF process
+        $creport->ExportOptions->DiskFileName=$my_pdf; //export to pdf
+        $creport->ExportOptions->PDFExportAllPages=true;
+        $creport->ExportOptions->DestinationType=1; // export to file
+        $creport->ExportOptions->FormatType=31; // PDF type
+        $creport->Export(false);
+
+        //------ Release the variables ------
+        $creport = null;
+        $crapp = null;
+        $ObjectFactory = null;
+
+        $file = "C:\\xampp\\htdocs\\ppi-dist\\public\\cr\\invoice\\export\\invoice.pdf"; 
+
+        header("Content-Description: File Transfer"); 
+        header("Content-Type: application/octet-stream"); 
+        header("Content-Disposition: attachment; filename=\"". basename($file) ."\""); 
+
+        readfile ($file);
+        exit();
     }
+
     private function reset_cost_if_change_idr_rate($do_id,$idr_rate){
         $do = PackingOrder::where('id',$do_id)->first();
         $result = PackingOrderDetail::where('do_id',$do_id)->first();
