@@ -26,7 +26,7 @@
   <div class="block-content">
     <div class="row">
       <div class="col-12">
-        <h5>#Data Pesanan</h5>
+        <h5>#Data Pesanan {{ $result->so->code }}</h5>
         <div class="form-group row">
           <label class="col-md-2 col-form-label text-right">Warehouse</label>
           <div class="col-md-8">
@@ -73,7 +73,7 @@
         <div class="form-group row">
           <label class="col-md-2 col-form-label text-right">Ekspedisi</label>
           <div class="col-md-8">
-            <input type="text" class="form-control" value="{{$result->ekspedisi->name ?? ''}}" readonly>
+            <input type="text" class="form-control" value="{{$result->vendor->name ?? ''}}" readonly>
           </div>
         </div>
         <div class="form-group row">
@@ -92,8 +92,9 @@
       <div class="col-12">
         <h5>#Item</h5>
         <div class="table table-responsive">
-          <table class="table table-striped table-bordered">
+          <table class="table table-striped" id="datatables">
             <thead>
+              <th>#</th>
               <th>Code</th>
               <th>Product</th>
               <th>Qty</th>
@@ -111,6 +112,7 @@
                 $idr_sub_total += ceil((($row->price * $result->idr_rate) * $row->qty) - ($row->total_disc * $result->idr_rate));
               ?>
               <tr>
+                <td>{{ $loop->iteration }}</td>
                 <td>{{$row->product->code ?? ''}}</td>
                 <td>{{$row->product->name ?? ''}}</td>
                 <td>{{$row->qty ?? ''}}</td>
@@ -241,6 +243,7 @@
 
 @include('superuser.asset.plugin.swal2')
 @include('superuser.asset.plugin.select2')
+@include('superuser.asset.plugin.datatables')
 
 @push('scripts')
 <script>
@@ -258,6 +261,17 @@
         });
         $('.summernote').summernote('disable');
       }
+
+        $('#datatables').DataTable( {
+          "paging":   false,
+          "ordering": true,
+          "info":     false,
+          "searching" : false,
+          "columnDefs": [{
+            "targets": 0,
+            "orderable": false
+          }]
+        })
     })  
 </script>
 @endpush

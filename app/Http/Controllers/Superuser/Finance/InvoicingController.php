@@ -476,12 +476,19 @@ class InvoicingController extends Controller
 
         $result = Invoicing::where('id',$id)->first();
 
+        // GET DO & ITEM
         $get_do = PackingOrder::where('id', $result->do_id)->first();
+        $get_do_item = PackingOrderItem::where('do_id', $get_do->id)->count();
+        $list_item = 12;
         
-        // CR
-        $my_report = "C:\\xampp\\htdocs\\ppi-dist\public\\cr\\invoice\\invoice_new.rpt"; 
-        $my_pdf = "C:\\xampp\\htdocs\\ppi-dist\\public\\cr\\invoice\\export\\invoice.pdf";
-
+        if($get_do_item <= $list_item){
+            $my_report = "C:\\xampp\\htdocs\\ppi-dist\public\\cr\\invoice\\invoice_new_1.rpt"; 
+            $my_pdf = 'C:\\xampp\\htdocs\\ppi-dist\\public\\cr\\invoice\\export\\'.$result->code.'.pdf';
+        }elseif($get_do_item >= $list_item){
+            $my_report = "C:\\xampp\\htdocs\\ppi-dist\public\\cr\\invoice\\invoice_new_2.rpt"; 
+            $my_pdf = 'C:\\xampp\\htdocs\\ppi-dist\\public\\cr\\invoice\\export\\'.$result->code.'.pdf';
+        }
+       
         //- Variables - Server Information 
         $my_server = "DEV-PPIDIST"; 
         $my_user = "root"; 
@@ -493,8 +500,6 @@ class InvoicingController extends Controller
         //-Create new COM object-depends on your Crystal Report version
         $crapp= New COM($COM_Object) or die("Unable to Create Object");
         $creport = $crapp->OpenReport($my_report,1); // call rpt report
-
-        // to refresh data before
 
         //- Set database logon info - must have
         $creport->Database->Tables(1)->SetLogOnInfo($my_server, $my_database, $my_user, $my_password);
@@ -516,12 +521,14 @@ class InvoicingController extends Controller
         $crapp = null;
         $ObjectFactory = null;
 
-        $file = "C:\\xampp\\htdocs\\ppi-dist\\public\\cr\\invoice\\export\\invoice.pdf";
+        $file = 'C:\\xampp\\htdocs\\ppi-dist\\public\\cr\\invoice\\export\\'.$result->code.'.pdf';
 
         header("Content-Description: File Transfer"); 
         header("Content-Type: application/octet-stream"); 
+        header("Content-Transfer-Encoding: Binary"); 
         header("Content-Disposition: attachment; filename=\"". basename($file) ."\""); 
-
+        ob_clean();
+        flush();
         readfile ($file);
         exit();
     }
@@ -548,7 +555,7 @@ class InvoicingController extends Controller
         $get_do = PackingOrder::where('id', $result->do_id)->first();
         
         // CR
-        $my_report = "C:\\xampp\\htdocs\\ppi-dist\public\\cr\\invoice\\invoice_new.rpt"; 
+        $my_report = "C:\\xampp\\htdocs\\ppi-dist\public\\cr\\invoice\\invoice_new_1.rpt"; 
         $my_pdf = "C:\\xampp\\htdocs\\ppi-dist\\public\\cr\\invoice\\export\\invoice.pdf";
 
         //- Variables - Server Information 

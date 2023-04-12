@@ -27,6 +27,7 @@ use Validator;
 use PDF;
 use DB;
 use Auth;
+use COM;
 
 
 class DeliveryOrderController extends Controller
@@ -568,6 +569,7 @@ class DeliveryOrderController extends Controller
         $pdf = PDF::loadview($this->view."print_proforma",$data)->setPaper('a4','potrait');
         return $pdf->stream($result->code ?? '');
     }
+
     public function print_manifest($id){
         // Access
         if(Auth::user()->is_superuser == 0){
@@ -576,29 +578,63 @@ class DeliveryOrderController extends Controller
             }
         }
 
-        $result = PackingOrder::findOrFail($id);
+        $result = PackingOrder::find($id);
+        $list_item = 12;
 
-        $do_item = PackingOrderItem::where('do_id',$result->id)->with('product')
-                                    ->get()
-                                    ->sortBy(function($value) {
-                                        return $value->product->name;
-                                    });
-                            
-        $company = Company::first();
-        if(empty($result)){
-            abort(404);
-        }
-        if($result->status == 2){
-            return redirect()->back()->with('error','Tidak bisa print manifest.Status delivery order belum memenuhi syarat');
-        }
-        $data = [
-            'result' => $result,
-            'company' => $company,
-            'result_item' => $do_item
-        ];
+        $result_item = PackingOrderItem::where('do_id', $result->id)->count();
 
-        $pdf = PDF::loadview($this->view."print_manifest",$data)->setPaper('a5','portrait');
-        return $pdf->stream($result->code ?? '');
+        // DD($result_item);
+
+        // CR
+        if($result_item <= $list_item){
+            $my_report = "C:\\xampp\\htdocs\\ppi-dist\public\\cr\\packing_plan\\packing_plan_1.rpt"; 
+            $my_pdf = 'C:\\xampp\\htdocs\\ppi-dist\\public\\cr\\packing_plan\\export\\'.$result->code.'.pdf';
+        }elseif($result_item >= $list_item){
+            $my_report = "C:\\xampp\\htdocs\\ppi-dist\public\\cr\\packing_plan\\packing_plan_2.rpt"; 
+            $my_pdf = 'C:\\xampp\\htdocs\\ppi-dist\\public\\cr\\packing_plan\\export\\'.$result->code.'.pdf';
+        }
+
+        $my_server = "DEV-PPIDIST"; 
+        $my_user = "root"; 
+        $my_password = ""; 
+        $my_database = "ppi-dist";
+        $COM_Object = "CrystalDesignRunTime.Application";
+
+
+        //-Create new COM object-depends on your Crystal Report version
+        $crapp= New COM($COM_Object) or die("Unable to Create Object");
+        $creport = $crapp->OpenReport($my_report,1); // call rpt report
+
+        //- Set database logon info - must have
+        $creport->Database->Tables(1)->SetLogOnInfo($my_server, $my_database, $my_user, $my_password);
+
+        //- field prompt or else report will hang - to get through
+        $creport->EnableParameterPrompting = FALSE;
+        $creport->RecordSelectionFormula = "{penjualan_do.id}= $result->id";
+
+
+        //export to PDF process
+        $creport->ExportOptions->DiskFileName=$my_pdf; //export to pdf
+        $creport->ExportOptions->PDFExportAllPages=true;
+        $creport->ExportOptions->DestinationType=1; // export to file
+        $creport->ExportOptions->FormatType=31; // PDF type
+        $creport->Export(false);
+
+        //------ Release the variables ------
+        $creport = null;
+        $crapp = null;
+        $ObjectFactory = null;
+
+        $file = 'C:\\xampp\\htdocs\\ppi-dist\\public\\cr\\packing_plan\\export\\'.$result->code.'.pdf';
+
+        header("Content-Description: File Transfer"); 
+        header("Content-Type: application/octet-stream"); 
+        header("Content-Transfer-Encoding: Binary"); 
+        header("Content-Disposition: attachment; filename=\"". basename($file) ."\""); 
+        ob_clean();
+        flush();
+        readfile ($file);
+        exit();
     }
 
     public function cancel_proses(Request $request)

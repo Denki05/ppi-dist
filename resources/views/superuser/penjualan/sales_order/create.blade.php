@@ -124,7 +124,7 @@
             <table id="datatable" class="table table-striped table-vcenter">
               <thead>
                 <tr>
-                  <th class="text-center">Counter</th>
+                  <th class="text-center">#</th>
                   <th class="text-center">Cari Produk</th>
                   <th class="text-center">Produk</th>
                   <th class="text-center">Acuan(USD)</th>
@@ -179,7 +179,7 @@
         bInfo : false,
         searching: false,
         columns: [
-          {name: 'counter', "visible": false},
+          {name: 'counter'},
           {name: 'product', orderable: false, width: "25%"},
           {name: 'name', orderable: false, searcable: false, width: "20%"},
           {name: 'price', orderable: false, searcable: false, width: "10%"},

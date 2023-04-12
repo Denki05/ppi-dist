@@ -17,6 +17,7 @@ use App\Entities\Setting\UserMenu;
 use Auth;
 use DB;
 use PDF;
+use COM;
 
 class ProformaController extends Controller
 {
@@ -185,17 +186,54 @@ class ProformaController extends Controller
         }
 
         $result = SoProforma::where('id',$id)->first();
-        $company = Company::first();
-        if(empty($result)){
-            abort(404);
-        }
 
-        $data = [
-            'result' => $result,
-            'company' => $company
-        ];
+        $get_do = PackingOrder::where('id', $result->do_id)->first();
+        
+        // CR
+        $my_report = "C:\\xampp\\htdocs\\ppi-dist\public\\cr\\invoice\\invoice_new.rpt"; 
+        $my_pdf = 'C:\\xampp\\htdocs\\ppi-dist\\public\\cr\\invoice\\export\\'.$result->code.'.pdf';
 
-        $pdf = PDF::loadview($this->view."print",$data)->setPaper('a4','landscape');
-        return $pdf->stream($result->do->do_code ?? '');
+        //- Variables - Server Information 
+        $my_server = "DEV-PPIDIST"; 
+        $my_user = "root"; 
+        $my_password = ""; 
+        $my_database = "ppi-dist";
+        $COM_Object = "CrystalDesignRunTime.Application";
+
+
+        //-Create new COM object-depends on your Crystal Report version
+        $crapp= New COM($COM_Object) or die("Unable to Create Object");
+        $creport = $crapp->OpenReport($my_report,1); // call rpt report
+
+        //- Set database logon info - must have
+        $creport->Database->Tables(1)->SetLogOnInfo($my_server, $my_database, $my_user, $my_password);
+
+        //- field prompt or else report will hang - to get through
+        $creport->EnableParameterPrompting = FALSE;
+        $creport->RecordSelectionFormula = "{penjualan_do.id}= $get_do->id";
+
+
+        //export to PDF process
+        $creport->ExportOptions->DiskFileName=$my_pdf; //export to pdf
+        $creport->ExportOptions->PDFExportAllPages=true;
+        $creport->ExportOptions->DestinationType=1; // export to file
+        $creport->ExportOptions->FormatType=31; // PDF type
+        $creport->Export(false);
+
+        //------ Release the variables ------
+        $creport = null;
+        $crapp = null;
+        $ObjectFactory = null;
+
+        $file = 'C:\\xampp\\htdocs\\ppi-dist\\public\\cr\\invoice\\export\\'.$result->code.'.pdf';
+
+        header("Content-Description: File Transfer"); 
+        header("Content-Type: application/octet-stream"); 
+        header("Content-Transfer-Encoding: Binary"); 
+        header("Content-Disposition: attachment; filename=\"". basename($file) ."\""); 
+        ob_clean();
+        flush();
+        readfile ($file);
+        exit();
     }
 }

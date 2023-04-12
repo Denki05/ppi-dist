@@ -87,6 +87,7 @@
     <table id="datatable" class="table table-striped">
       <thead>
         <tr>
+          <th class="text-center">#</th>
           <th class="text-center">Code</th>
           <th class="text-center">Product</th>
           <th class="text-center">Brand | Category</th>
@@ -99,6 +100,7 @@
               @if(count($result->so_detail) > 0)
                 @foreach($result->so_detail as $index => $row)
                   <tr>
+                    <td>{{$loop->iteration}}</td>
                     <td>{{$row->product->code ?? ''}}</td>
                     <td>{{$row->product->name ?? ''}}</td>
                     <td>{{$row->product->category->brand_name ?? ''}} | {{ $row->product->category->name }}</td>

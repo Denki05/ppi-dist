@@ -35,7 +35,7 @@
                             <h4>Product Brand</h4>
                             <div class="container">
                               <div class="row">
-                                <div class="col">
+                                <div class="col-6">
                                   <div class="form-group">
                                     <label>Brand <span class="text-danger">*</span></label>
                                     <select class="js-select2 form-control" id="brand_name"  name="brand_name" data-placeholder="Pilih Brand">
@@ -46,7 +46,7 @@
                                     </select>
                                   </div>
                                 </div>
-                                <div class="col">
+                                <div class="col-6">
                                   <div class="form-group">
                                     <label>Kategori <span class="text-danger">*</span></label>
                                     <select class="js-select2 form-control" id="category"  name="category" data-placeholder="Pilih Kategori">

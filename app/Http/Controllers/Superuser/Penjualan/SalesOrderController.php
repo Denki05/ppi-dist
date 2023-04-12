@@ -328,7 +328,7 @@ class SalesOrderController extends Controller
             } catch (\Exception $e) {
                 DB::rollback();
 
-                dd($e);
+                // dd($e);
                 $data_json["IsError"] = TRUE;
                 $data_json["Message"] = "Sales Order Gagal Ditambahkan";
     
@@ -951,13 +951,15 @@ class SalesOrderController extends Controller
                     $sales_order->updated_by = Auth::id();
                     $sales_order->save();
 
-                    $categories = SalesOrderItem::select('master_product.category_id')
-                                            ->where('so_id', $request->id)
-                                            ->join('master_product', 'master_product.id', '=', 'penjualan_so_item.product_id')
-                                            ->groupBy('master_product.category_id')->get();
+                    // DD($sales_order->save());
+
+                    // $categories = SalesOrderItem::select('master_product.category_id')
+                    //                         ->where('so_id', $request->id)
+                    //                         ->join('master_product', 'master_product.id', '=', 'penjualan_so_item.product_id')
+                    //                         ->groupBy('master_product.category_id')->get();
                     
-                    $jumlahitem = 0;
-                    foreach($categories as $category) {
+                    
+                    // foreach($categories as $category) {
                         $packing_order = new PackingOrder;
                         $packing_order->code = CodeRepo::generatePO();
                         $packing_order->do_code = CodeRepo::generateDO();
@@ -974,6 +976,8 @@ class SalesOrderController extends Controller
                         $packing_order->count_cancel = 0;
                         $packing_order->created_by = Auth::id();
                         $packing_order->save();
+
+                        // DD($packing_order->code);
 
                         $packing_order_detail = new PackingOrderDetail;
                         $packing_order_detail->do_id = $packing_order->id;
@@ -997,11 +1001,11 @@ class SalesOrderController extends Controller
                             }
         
                             $result = SalesOrderItem::where('id',$value["so_item_id"])->first();
-                            if ($result->product->category->id !== $category->category_id) {
-                                continue;
-                            }
+                            // if ($result->product->category->id !== $category->category_id) {
+                            //     continue;
+                            // }
         
-                            $jumlahitem = $jumlahitem + 1;
+                            // $jumlahitem = $jumlahitem + 1;
         
                             $so_item_id = $value["so_item_id"];
                             $price = $value["price"];
@@ -1091,7 +1095,7 @@ class SalesOrderController extends Controller
                                 $proforma_detail->qty = $detail["qty"];
                                 $proforma_detail->save();
                             }
-                    }
+                    // }
                     DB::commit();
                     $response['notification'] = [
                         'alert' => 'notify',

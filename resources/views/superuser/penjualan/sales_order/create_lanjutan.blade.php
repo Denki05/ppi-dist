@@ -1,7 +1,3 @@
-@foreach($result->so_detail as $index => $row)
-  @php $row->product->name @endphp
-@endforeach
-
 @extends('superuser.app')
 
 @section('content')
@@ -326,58 +322,6 @@
              { "bSortable": false, "aTargets": [ 1, 4, 5, 6, 7, 8, 9, 10, 11 ] }
         ] 
     });
-    
-    // /* Fungsi formatRupiah */
-		// function formatRupiah(angka, prefix){
-    //   angka = angka.toString();
-    //   var number_string = angka.replace(/[^,\d]/g, '').toString(),
-    //   split       = number_string.split(','),
-    //   sisa        = split[0].length % 3,
-    //   rupiah        = split[0].substr(0, sisa),
-    //   ribuan        = split[0].substr(sisa).match(/\d{3}/gi);
-    
-    //   // tambahkan titik jika yang di input sudah menjadi angka ribuan
-    //   if(ribuan){
-    //     separator = sisa ? '.' : '';
-    //     rupiah += separator + ribuan.join('.');
-    //   }
-    
-    //   rupiah = split[1] != undefined ? rupiah + ',' + split[1] : rupiah;
-    //   return prefix == undefined ? rupiah : (rupiah ? 'Rp. ' + rupiah : '');
-    // }
-
-    // function formatRupiah(angka){
-    //     var number_string = angka.replace(/[^,\d]/g, '').toString(),
-    //     split           = number_string.split(','),
-    //     sisa            = split[0].length % 3,
-    //     angka_hasil     = split[0].substr(0, sisa),
-    //     ribuan          = split[0].substr(sisa).match(/\d{3}/gi);
- 
- 
- 
-    //     // tambahkan titik jika yang di input sudah menjadi angka ribuan
-    //     if(ribuan){
-    //         separator = sisa ? '.' : '';
-    //         angka_hasil += separator + ribuan.join('.');
-    //     }
- 
-    //     angka_hasil = split[1] != undefined ? angka_hasil + ',' + split[1] : angka_hasil;
-    //     return angka_hasil;
-    // }
-
-    // $('#formatRupiah').on('keyup',function(){
-    //     var angka = $(this).val();
- 
-    //     var hasilAngka = formatRupiah(angka);
- 
-    //     $(this).val(hasilAngka);
-    // });
-    
-
-    // $(document).on('keyup','.formatRupiah',function(){
-    //   let val = $(this).val();
-    //   $(this).val(formatRupiah(val));
-    // })
 
     $(function(){
       let global_total = 0 ;
@@ -532,40 +476,6 @@
         $('input[name="grand_total_final"]').val(subFinal);
       });
     });
-
-    // $(document).on('submit','#frmEditSOMaster',function(e){
-    //   e.preventDefault();
-    //   if(confirm("Apakah anda yakin melanjutkan Sales Order ini!")){
-    //     let _form = $('#frmEditSOMaster');
-    //     $.ajax({
-    //       url : '{{route('superuser.penjualan.sales_order.tutup_so')}}',
-    //       method : "POST",
-    //       data : getFormData(_form),
-    //       dataType : "JSON",
-    //       beforeSend : function(){
-    //         $('#frmEditSOMaster').find('button[type="submit"]').html('Loading...');
-    //       },
-    //       success : function(resp){
-    //         if(resp.IsError == true){
-    //           showToast('danger',resp.Message);
-    //         }
-    //         else{
-    //           Swal.fire(
-    //             'Success!',
-    //             resp.Message,
-    //             'success'
-    //           ).then((result) => {
-    //             document.location.href = '{{ route('superuser.penjualan.sales_order.index_' . strtolower($step_txt)) }}';
-    //           })
-              
-    //         }
-    //       },
-    //       complete : function(){
-    //         $('#frmEditSOMaster').find('button[type="submit"]').html('<i class="fa fa-save"> Save</i>');
-    //       }
-    //     })
-    //   }
-    // })
     
   })
 </script>

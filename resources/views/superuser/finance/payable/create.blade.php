@@ -67,6 +67,7 @@
             <table class="table table-striped table-bordered">
               <thead>
                 <th>Proforma</th>
+                <th>Refrensi SO</th>
                 <th>Account Receivable</th>
                 <th>Payabel</th>
               </thead>
@@ -85,6 +86,7 @@
                     <tr class="repeater">
                       <input type="hidden" name="repeater[{{$index}}][so_proforma_id]" value="{{$row->proforma->id ?? ''}}">
                       <td>{{$row->proforma->code}}</td>
+                      <td>{{$row->so->code}}</td>
                       <td>{{number_format($sisa,0,',','.')}}</td>
                       <td>
                         <input type="text" name="repeater[{{$index}}][payable]" class="form-control formatRupiah count">
