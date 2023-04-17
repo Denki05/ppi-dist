@@ -564,7 +564,7 @@ class SalesOrderController extends Controller
                     $sales_order->sales_id = trim(htmlentities($post["sales_id"]));
                     $sales_order->type_transaction = trim(htmlentities($post["type_transaction"]));
                     $sales_order->idr_rate = trim(htmlentities($post["idr_rate"]));
-                    $sales_order->customer_id = $customer["id"] ?? null;
+                    $sales_order->customer_id = trim(htmlentities($post["customer_id"]));
                     $sales_order->note = trim(htmlentities($post["note"]));
                     $sales_order->updated_by = Auth::id();
                     $sales_order->status = $step;
@@ -957,7 +957,6 @@ class SalesOrderController extends Controller
                     //                         ->where('so_id', $request->id)
                     //                         ->join('master_product', 'master_product.id', '=', 'penjualan_so_item.product_id')
                     //                         ->groupBy('master_product.category_id')->get();
-                    
                     
                     // foreach($categories as $category) {
                         $packing_order = new PackingOrder;

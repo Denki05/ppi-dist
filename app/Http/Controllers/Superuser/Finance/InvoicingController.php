@@ -481,7 +481,7 @@ class InvoicingController extends Controller
         $get_do_item = PackingOrderItem::where('do_id', $get_do->id)->count();
         $list_item = 12;
         
-        if($get_do_item <= $list_item){
+        if($get_do_item <= $list_item || $get_do_item == $list_item){
             $my_report = "C:\\xampp\\htdocs\\ppi-dist\public\\cr\\invoice\\invoice_rev.rpt"; 
             $my_pdf = 'C:\\xampp\\htdocs\\ppi-dist\\public\\cr\\invoice\\export\\'.$result->code.'.pdf';
         }elseif($get_do_item >= $list_item){
