@@ -587,14 +587,14 @@ class DeliveryOrderController extends Controller
 
         // CR
         if($result_item <= $list_item){
-            $my_report = "C:\\xampp\\htdocs\\ppi-dist\public\\cr\\packing_plan\\packing_plan_1.rpt"; 
+            $my_report = "C:\\xampp\\htdocs\\ppi-dist\public\\cr\\packing_plan\\packing_plan_rev.rpt"; 
             $my_pdf = 'C:\\xampp\\htdocs\\ppi-dist\\public\\cr\\packing_plan\\export\\'.$result->code.'.pdf';
         }elseif($result_item >= $list_item){
-            $my_report = "C:\\xampp\\htdocs\\ppi-dist\public\\cr\\packing_plan\\packing_plan_2.rpt"; 
+            $my_report = "C:\\xampp\\htdocs\\ppi-dist\public\\cr\\packing_plan\\packing_plan_rev.rpt"; 
             $my_pdf = 'C:\\xampp\\htdocs\\ppi-dist\\public\\cr\\packing_plan\\export\\'.$result->code.'.pdf';
         }
 
-        $my_server = "DEV-PPIDIST"; 
+        $my_server = "DEV-SERVER"; 
         $my_user = "root"; 
         $my_password = ""; 
         $my_database = "ppi-dist";

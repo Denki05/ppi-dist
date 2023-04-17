@@ -297,6 +297,8 @@ class CustomerController extends Controller
                     $other_address->contact_person = $customer->owner_name;
                     $other_address->phone =  $customer->phone;
                     $other_address->address = $customer->address;
+                    $other_address->npwp = $customer->npwp;
+                    $other_address->ktp = $customer->ktp;
     
                     $other_address->gps_latitude = $customer->gps_latitude;
                     $other_address->gps_longitude = $customer->gps_longitude;

@@ -32,7 +32,7 @@
                 		</div>
                 		<!-- step 1 -->
                     <fieldset>
-                            <h4>Product Brand</h4>
+                            <h4>#Product Brand</h4>
                             <div class="container">
                               <div class="row">
                                 <div class="col-6">
@@ -91,7 +91,7 @@
                             </div>
                         </fieldset>
                         <fieldset>
-                          <h4>Product Details</h4>
+                          <h4>#Product Details</h4>
                           <div class="container">
                             <div class="row">
                               <div class="col">
@@ -152,6 +152,12 @@
                                 @endforeach
                               </select>
                             </div>
+                            <div class="form-group">
+                              <input class="form-check-input" type="checkbox" value="1" id="free_product" name="free_product">
+                              <label class="form-check-label" for="flexCheckDefault">
+                                Free Product?
+                              </label>
+                            </div>
                           </div>
                           <div class="f1-buttons">
                             <button type="button" class="btn btn-warning btn-previous"><i class="fa fa-arrow-left"></i> Previous</button>
@@ -160,7 +166,7 @@
                         </fieldset>
                         <!-- step 2 -->
                         <fieldset>
-                            <h4>Warehouse</h4>
+                            <h4>#Warehouse</h4>
                             <div class="row">
                               <div class="form-group">
                                 <label>Factory <span class="text-danger">*</span></label>
@@ -206,7 +212,7 @@
                             </div>
                         </fieldset>
                         <fieldset>
-                            <h4>Product Cost</h4>
+                            <h4>#Product Cost</h4>
                             <div class="container">
                               <div class="row">
                                 <div class="col">

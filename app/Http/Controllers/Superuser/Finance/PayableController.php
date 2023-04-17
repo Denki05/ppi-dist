@@ -201,7 +201,9 @@ class PayableController extends Controller
                         $inv->save();
                     }
 
-                    // DD($inv);
+                    // update payable detail
+                    $update_pay_detail = PayableDetail::where('payable_id', $pay->id)->update(['invoice_id' => $inv->id]);
+
                 }
 
                 DB::commit();

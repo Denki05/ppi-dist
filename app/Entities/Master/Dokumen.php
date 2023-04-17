@@ -22,7 +22,7 @@ class Dokumen extends Model
                             'image_npwp',
                             'image_ktp'
     ];
-    protected $table = 'master_dokumen';
+    protected $table = 'master_document';
     public static $directory_image = 'superuser_assets/media/master/dokumen/';
 
     const CARD = [

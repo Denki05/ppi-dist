@@ -482,15 +482,15 @@ class InvoicingController extends Controller
         $list_item = 12;
         
         if($get_do_item <= $list_item){
-            $my_report = "C:\\xampp\\htdocs\\ppi-dist\public\\cr\\invoice\\invoice_new_1.rpt"; 
+            $my_report = "C:\\xampp\\htdocs\\ppi-dist\public\\cr\\invoice\\invoice_rev.rpt"; 
             $my_pdf = 'C:\\xampp\\htdocs\\ppi-dist\\public\\cr\\invoice\\export\\'.$result->code.'.pdf';
         }elseif($get_do_item >= $list_item){
-            $my_report = "C:\\xampp\\htdocs\\ppi-dist\public\\cr\\invoice\\invoice_new_2.rpt"; 
+            $my_report = "C:\\xampp\\htdocs\\ppi-dist\public\\cr\\invoice\\invoice_rev_2.rpt"; 
             $my_pdf = 'C:\\xampp\\htdocs\\ppi-dist\\public\\cr\\invoice\\export\\'.$result->code.'.pdf';
         }
        
         //- Variables - Server Information 
-        $my_server = "DEV-PPIDIST"; 
+        $my_server = "DEV-SERVER"; 
         $my_user = "root"; 
         $my_password = ""; 
         $my_database = "ppi-dist";

@@ -100,7 +100,7 @@
                           <tr>
                             <th>Invoice Date</th>
                             <th>Invoice Number</th>
-                            <th>Store | Member</th>
+                            <th>Customer</th>
                             <th>Area</th>
                             <th>Revenue</th>
                             <th>Paid</th>

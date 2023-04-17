@@ -12,13 +12,13 @@ class Product extends Model
 
     protected $appends = ['image_url', 'image_hd_url'];
     protected $fillable = [
-                        'factory_id', 'category_id', 'brand_reference_id', 'sub_brand_reference_id', 'category_id', 'brand_name',
+                        'vendor_id', 'category_id', 'brand_reference_id', 'sub_brand_reference_id', 'brand_name',
                         'code', 'name', 'material_code', 'material_name', 'alias', 'description', 
                         'default_quantity', 'default_unit_id', 'ratio', 'default_warehouse_id',
-                        'buying_price', 'selling_price', 'image', 'image_hd', 'status', 'gender'
+                        'buying_price', 'selling_price', 'image', 'image_hd', 'status', 'gender', 'free_product'
                     ];
 
-    protected $table = 'master_product';
+    protected $table = 'master_products';
     public static $directory_image = 'superuser_assets/media/master/product/';
     
     const NOTE = [
@@ -35,6 +35,11 @@ class Product extends Model
         'INACTIVE' => 2
     ];
 
+    const FREE_PRODUCT = [
+        'NO' => 0,
+        'YES' => 1,
+    ];
+
     public function sub_brand_reference()
     {
         return $this->BelongsTo('App\Entities\Master\SubBrandReference', 'sub_brand_reference_id');
@@ -49,7 +54,6 @@ class Product extends Model
     {
         return $this->BelongsTo('App\Entities\Master\ProductCategory');
     }
-
 
     public function default_unit()
     {
@@ -127,6 +131,15 @@ class Product extends Model
 
         if ($superuser) {
             return $superuser->name ?? $superuser->username;
+        }
+    }
+
+    public function free_product()
+    {
+        if (isset($this->free_product)) {
+            return (object) self::STATUS[$this->FREE_PRODUCT];
+        } else {
+            return null;
         }
     }
 }

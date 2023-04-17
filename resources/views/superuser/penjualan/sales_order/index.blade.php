@@ -24,79 +24,93 @@
 @if($step == 1)
   <div class="block">
     <div class="block-content block-content-full">
-      <table id="customer-table" class="table ">
-        <thead class="thead-dark">
-          <tr>
-            <th></th>
-            <th>Store</th>
-            <th>Address</th>
-            <th>Category</th>
-            <th>Status</th>
-          </tr>
-        </thead>
-        <tbody>
-          @foreach ($customers as $row)
-            <tr class="clickable js-tabularinfo-toggle" data-toggle="collapse" id="row2" data-target=".a{{ $row->id }}">
-                <td>
-                  <div class="col-sm-6">
-                    <div class="row mb-2">
-                      <a href="#" class="link">
-                        <button type="button" name='edit' id='{{ $row->id }}'>#</button>
-                      </a>
+          <form>
+            <div class="row">
+              <div class="col-lg-2 pt-2">
+                <h5>#SALES ORDER AWAL</h5>
+              </div>
+              <div class="col-lg-3">
+                <div class="form-group row">
+                  <label class="col-md-3 col-form-label text-right">Customer</label>
+                  <div class="col-md-9">
+                    <select class="form-control js-select2" name="customer_id">
+                      <option value="">==All Customer==</option>
+                      @foreach($other_address as $index => $row)
+                      <option value="{{$row->id}}">{{$row->name}}</option>
+                      @endforeach
+                    </select>
+                  </div>
+                </div>   
+              </div>
+              <div class="col-lg-3">
+              <div class="form-group row">
+                  <label class="col-md-3 col-form-label text-right">Area</label>
+                  <div class="col-md-9">
+                    <select class="form-control js-select2" name="province">
+                      <option value="">==All Provinsi==</option>
+                      @foreach($other_address as $index => $row)
+                      <option value="{{$row->id}}">{{$row->text_provinsi}}</option>
+                      @endforeach
+                    </select>
+                  </div>
+                </div>
+              </div>
+              <div class="col-lg-4">
+                <div class="form-group row">
+                  <div class="col-md-3">
+                    <label class="col-md-3 col-form-label text-right">Search</label>
+                  </div>
+                  <div class="col-md-9">
+                    <div class="input-group mb-3">
+                        <input type="text" class="form-control" placeholder="Keyword" name="search">
+                        <div class="input-group-append">
+                          <button type="submit" class="btn btn-primary"><i class="fa fa-search"></i></button>
+                        </div>
                     </div>
                   </div>
-                </td>
-                <td>{{ $row->name }}</td>
-                <td>{{ $row->address }}</td>
-                <td>{{ $row->category->name ?? '-' }}</td>
-                <td>
-                  @if($row->status == $row::STATUS['ACTIVE'])
-                    <span class="badge badge-success">ACTIVE</span>
-                  @elseif($row->status == $row::STATUS['DELETED'])
-                    <span class="badge badge-danger">IN ACTIVE</span>
-                  @endif
-                </td>
-            </tr>
-
-            <tr class="tabularinfo__subblock collapse a{{ $row->id }}">
-                    <td colspan="8">
-                      <table class="table-active table table-bordered">
-                              <tr>
-                                  <th width="15%">Member</th>
-                                  <th width="25%">Address</th>
-                                  <th width="15%">Region</th>
-                                  <th width="10%"></th>
-                              </tr>
-
-                              <tbody>
-                                  @foreach ($other_address as $index)
-                                      @if ($row->id == $index->customer_id)
-                                        <form method="GET" id="frmcrt" action="{{route('superuser.penjualan.sales_order.create', ['store' => $row->id, 'step' => $step, 'member' => $index->id])}}">
-                                          @csrf
-                                          <tr>
-                                              <td>
-                                                {{$index->name}}
-                                              </td>
-                                              <td>
-                                                {{$index->address}}
-                                              </td>
-                                              <td>
-                                                {{$index->text_provinsi}}
-                                              </td>
-                                              <td>
-                                                <input class="btn btn-primary" type="submit" value="Add Sales Order {{ $step_txt }} (SO)">
-                                              </td>
-                                          </tr>   
-                                        </form>
-                                      @endif
-                                  @endforeach
-                              </tbody>
-                      </table>
-                  </td>
-              </tr>
-          @endforeach
-        </tbody>
-      </table>
+                </div>
+              </div>
+            </div>
+          </form>
+          <div class="table-responsive">
+            <table class="table table-striped" id="customer_table">
+              <thead>
+                <tr>
+                  <th>#</th>
+                  <th>Name</th>
+                  <th>Address</th>
+				  <th>Kota</th>
+                  <th>Area</th>
+                  <th>Action</th>
+                </tr>
+              </thead>
+              <tbody>
+                @foreach($other_address as $key => $row)
+                    <tr>
+                      <td>
+                        {{ $loop->iteration }}
+                      </td>
+                      <td>
+                        {{$row->name}}
+                      </td>
+                      <td>
+                        {{$row->address}}
+                      </td>
+					  <td>
+                        {{$row->text_kota}}
+                      </td>
+                      <td>
+                        {{$row->text_provinsi}}
+                      </td>
+                      <td>
+                        <!-- <input class="btn btn-primary" type="submit" value="Add Sales Order {{ $step_txt }} (SO)"> -->
+                        <a href="{{route('superuser.penjualan.sales_order.create', ['store' => $row->customer->id, 'step' => $step, 'member' => $row->id])}}" class="btn btn-primary btn-lg active" role="button" aria-pressed="true">Add Sales Order {{ $step_txt }} (SO)</a>
+                      </td>
+                    </tr>
+                @endforeach
+              </tbody>
+            </table>
+          </div>
     </div>
   </div>
 @endif
@@ -153,7 +167,7 @@
 
                   @if($step == 1)
                   <td>
-                    {{$row->member->name}}
+                    {{$row->member->name ?? $row->customer->name}}
                   </td>
                   @endif
 
@@ -470,10 +484,8 @@
 
 
 @push('scripts')
-
-  <script type="text/javascript">
-    
-    $(function(){
+<script type="text/javascript">
+	$(function(){
       $('#datatables').DataTable( {
         "paging":   false,
         "ordering": true,
@@ -485,7 +497,7 @@
         }]
       });
 
-      $('#table-Customer').DataTable( {
+      $('#customer_table').DataTable( {
         "paging":   false,
         "ordering": true,
         "info":     false,
@@ -495,8 +507,6 @@
           "orderable": false
         }]
       });
-
-      
 
       $('.js-select2').select2();
 
@@ -557,5 +567,5 @@
     })
 
     });
-  </script>
+</script>
 @endpush

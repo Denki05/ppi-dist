@@ -14,7 +14,7 @@ class CustomerOtherAddressTable extends Table
      */
     private function query()
     {
-        $model = CustomerOtherAddress::select('id', 'customer_id', 'name', 'address', 'text_kota', 'status');
+        $model = CustomerOtherAddress::select('id', 'customer_id', 'name', 'contact_person', 'phone', 'address', 'text_kota', 'text_provinsi', 'status');
 
         return $model;  
     }

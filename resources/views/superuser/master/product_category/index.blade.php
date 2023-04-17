@@ -119,10 +119,10 @@ $(document).ready(function() {
         render: {
           _: 'display',
           sort: 'timestamp'
-        }, name: 'master_product_category.created_at'
+        }, name: 'master_product_categories.created_at'
       },
-      {data: 'code', name: 'master_product_category.code'},
-      {data: 'brandName', name: 'master_product_category.brand_name'},
+      {data: 'code', name: 'master_product_categories.code'},
+      {data: 'brandName', name: 'master_product_categories.brand_name'},
       {data: 'name'},
       {data: 'pack_name', name: 'master_packaging.pack_name'},
       {data: 'status'},

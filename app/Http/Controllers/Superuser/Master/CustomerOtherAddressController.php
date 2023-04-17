@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Superuser\Master;
 
 use App\Entities\Master\Customer;
 use App\Entities\Master\CustomerOtherAddress;
+use App\DataTables\Master\CustomerOtherAddressTable;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use App\Entities\Setting\UserMenu;
@@ -35,6 +36,12 @@ class CustomerOtherAddressController extends Controller
             return $next($request);
         });
     }
+	
+	public function json(Request $request, CustomerOtherAddressTable $datatable)
+    {
+        return $datatable->build($request);
+    }
+	
     public function create($id)
     {
         // Access

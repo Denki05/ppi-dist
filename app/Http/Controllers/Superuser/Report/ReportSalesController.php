@@ -95,7 +95,7 @@ class ReportSalesController extends Controller
                 }
                 else{
                     $final_array[$v->do_id]["sales_senior"][] = $sales_order->sales_senior->toArray() ?? null;
-                    $final_array[$v->do_id]["sales"][] = $sales_order->sales->toArray();
+                    $final_array[$v->do_id]["sales"][] = $sales_order->sales->toArray() ?? null;
                     $final_array[$v->do_id]["do"] = $order[$key]->toArray();
                     $final_array[$v->do_id]["invoice"] = $value->invoicing->toArray() ?? null;
                     $final_array[$v->do_id]["payable"] = $value->invoicing->payable_detail()->get()->toArray() ?? null;    

@@ -142,16 +142,16 @@ class SalesOrderController extends Controller
 
     public function search_sku(Request $request)
     {
-        $products = Product::where('master_product.name', 'LIKE', '%'.$request->input('q', '').'%')
-            ->where('master_product.status', Product::STATUS['ACTIVE'])
-            ->leftJoin('master_product_category', 'master_product.category_id', '=', 'master_product_category.id')
-            ->leftJoin('master_packaging', 'master_product_category.packaging_id', '=', 'master_packaging.id')
+        $products = Product::where('master_products.name', 'LIKE', '%'.$request->input('q', '').'%')
+            ->where('master_products.status', Product::STATUS['ACTIVE'])
+            ->leftJoin('master_product_categories', 'master_products.category_id', '=', 'master_product_categories.id')
+            ->leftJoin('master_packaging', 'master_product_categories.packaging_id', '=', 'master_packaging.id')
             ->get([
-                'master_product.id as id',
-                'master_product.code as text', 
-                'master_product.name as productName', 
-                'master_product.status as productStatus', 
-                'master_product.selling_price as productPrice', 
+                'master_products.id as id',
+                'master_products.code as text', 
+                'master_products.name as productName', 
+                'master_products.status as productStatus', 
+                'master_products.selling_price as productPrice', 
                 'master_packaging.pack_no as packNo', 
                 'master_packaging.pack_name as packagingName'
             ]);
@@ -239,7 +239,7 @@ class SalesOrderController extends Controller
         $customer = Customer::find($store);
         $member = CustomerOtherAddress::find($member);
         $warehouse = Warehouse::all();
-        $ekspedisi = Ekspedisi::all();
+		$ekspedisi = Ekspedisi::all();
         $sales = Sales::where('is_active', 1)->get();
 
         $data = [
@@ -328,7 +328,7 @@ class SalesOrderController extends Controller
             } catch (\Exception $e) {
                 DB::rollback();
 
-                // dd($e);
+                dd($e);
                 $data_json["IsError"] = TRUE;
                 $data_json["Message"] = "Sales Order Gagal Ditambahkan";
     
@@ -1269,15 +1269,15 @@ class SalesOrderController extends Controller
                             $query2->where('category_id',$post["category_id"]);
                         }
                     })
-                    ->leftJoin('master_product_category', 'master_product.category_id', '=', 'master_product_category.id')
-                    ->leftJoin('master_packaging', 'master_product_category.packaging_id', '=', 'master_packaging.id')
+                    ->leftJoin('master_product_categories', 'master_products.category_id', '=', 'master_product_categories.id')
+                    ->leftJoin('master_packaging', 'master_product_categories.packaging_id', '=', 'master_packaging.id')
                     ->select(
-                        'master_product.name as product_name', 
-                        'master_product.id as id', 
-                        'master_product.code as product_code',
-                        'master_product.category_id', 
-                        'master_product.selling_price as price', 
-                        'master_product_category.name as category_name', 
+                        'master_products.name as product_name', 
+                        'master_products.id as id', 
+                        'master_products.code as product_code',
+                        'master_products.category_id', 
+                        'master_products.selling_price as price', 
+                        'master_products.name as category_name', 
                         'master_packaging.pack_name as packaging'
                     )->get();
             $data_json["IsError"] = FALSE;

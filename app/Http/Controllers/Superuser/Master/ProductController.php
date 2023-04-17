@@ -126,22 +126,30 @@ class ProductController extends Controller
                 $product->brand_name = $request->brand_name;
                 $product->sub_brand_reference_id = $request->searah;
                 $product->category_id = $request->category;
-                $product->factory_id = $request->factory;
+                $product->vendor_id = $request->factory;
 
                 $product->name = $request->name;
                 $product->material_code = $request->material_code;
                 $product->material_name = $request->material_name;
                 $product->alias = $request->alias;
                 $product->buying_price = $request->buying_price;
-                $product->selling_price = $request->selling_price;
+                // $product->selling_price = $request->selling_price;
+                if($request->free_product == 0){
+                    $product->selling_price = $request->selling_price;
+                }elseif($request->free_product == 1){
+                    $product->selling_price = 0;
+                }
                 $product->description = $request->description;
                 $product->note = $request->note;
                 $product->gender = $request->gender;
+                $product->free_product = $request->free_product;
 
                 $product->default_quantity = $request->default_quantity;
                 $product->default_unit_id = $request->default_unit;
                 $product->ratio = $request->ratio;
                 $product->default_warehouse_id = $request->default_warehouse;
+
+                
 
                 if (!empty($request->file('image'))) {
                     $product->image = UploadMedia::image($request->file('image'), Product::$directory_image);
@@ -192,6 +200,8 @@ class ProductController extends Controller
 
                     return $this->response(200, $response);
                 }
+
+                DD($product->save());
             }
         }
     }

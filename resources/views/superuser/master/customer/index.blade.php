@@ -20,6 +20,7 @@
 <nav class="breadcrumb bg-white push">
   <a href="{{route('superuser.master.customer.create')}}" class="btn btn-primary btn-lg active" role="button" target="_blank" aria-pressed="true" style="margin-left: 10px !important;">Create</a>
   <a href="{{route('superuser.master.customer_contact.create')}}" class="btn btn-primary btn-lg active" role="button" target="_blank" aria-pressed="true" style="margin-left: 10px !important;">Add Contact</a>
+  <button type="button" class="btn btn-outline-info ml-10" data-toggle="modal" data-target="#modal-manage">Manage</button>
 </nav>
 
 <div class="block">
@@ -206,6 +207,16 @@
 @include('superuser.asset.plugin.swal2')
 @include('superuser.asset.plugin.datatables')
 @include('superuser.asset.plugin.select2')
+
+@section('modal')
+
+@include('superuser.component.modal-manage', [
+  'import_template_url' => route('superuser.master.customer.import_template'),
+  'import_url' => route('superuser.master.customer.import'),
+  'export_url' => route('superuser.master.customer.export')
+])
+
+@endsection
 
 @push('scripts')
 <script type="text/javascript">
