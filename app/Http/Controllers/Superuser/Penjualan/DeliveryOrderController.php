@@ -579,20 +579,9 @@ class DeliveryOrderController extends Controller
         }
 
         $result = PackingOrder::find($id);
-        $list_item = 12;
-
-        $result_item = PackingOrderItem::where('do_id', $result->id)->count();
-
-        // DD($result_item);
-
-        // CR
-        if($result_item <= $list_item){
-            $my_report = "C:\\xampp\\htdocs\\ppi-dist\public\\cr\\packing_plan\\packing_plan_rev.rpt"; 
-            $my_pdf = 'C:\\xampp\\htdocs\\ppi-dist\\public\\cr\\packing_plan\\export\\'.$result->code.'.pdf';
-        }elseif($result_item >= $list_item){
-            $my_report = "C:\\xampp\\htdocs\\ppi-dist\public\\cr\\packing_plan\\packing_plan_rev.rpt"; 
-            $my_pdf = 'C:\\xampp\\htdocs\\ppi-dist\\public\\cr\\packing_plan\\export\\'.$result->code.'.pdf';
-        }
+        
+        $my_report = "C:\\xampp\\htdocs\\ppi-dist\public\\cr\\packing_plan\\packing_plan_rev.rpt"; 
+        $my_pdf = 'C:\\xampp\\htdocs\\ppi-dist\\public\\cr\\packing_plan\\export\\'.$result->code.'.pdf';
 
         $my_server = "DEV-SERVER"; 
         $my_user = "root"; 

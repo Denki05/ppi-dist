@@ -478,16 +478,9 @@ class InvoicingController extends Controller
 
         // GET DO & ITEM
         $get_do = PackingOrder::where('id', $result->do_id)->first();
-        $get_do_item = PackingOrderItem::where('do_id', $get_do->id)->count();
-        $list_item = 12;
-        
-        if($get_do_item <= $list_item || $get_do_item == $list_item){
-            $my_report = "C:\\xampp\\htdocs\\ppi-dist\public\\cr\\invoice\\invoice_rev.rpt"; 
-            $my_pdf = 'C:\\xampp\\htdocs\\ppi-dist\\public\\cr\\invoice\\export\\'.$result->code.'.pdf';
-        }elseif($get_do_item >= $list_item){
-            $my_report = "C:\\xampp\\htdocs\\ppi-dist\public\\cr\\invoice\\invoice_rev_2.rpt"; 
-            $my_pdf = 'C:\\xampp\\htdocs\\ppi-dist\\public\\cr\\invoice\\export\\'.$result->code.'.pdf';
-        }
+
+        $my_report = "C:\\xampp\\htdocs\\ppi-dist\public\\cr\\invoice\\invoice_rev_2.rpt"; 
+        $my_pdf = 'C:\\xampp\\htdocs\\ppi-dist\\public\\cr\\invoice\\export\\'.$result->code.'.pdf';
        
         //- Variables - Server Information 
         $my_server = "DEV-SERVER"; 
