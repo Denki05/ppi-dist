@@ -96,4 +96,9 @@ class Customer extends Model
     {
         return $this->hasMany(Dokumen::class);
     }
+
+   public function sales_order()
+   {
+    return $this->hasMany('App\Entities\Penjualan\SalesOrder', 'customer_id');
+   }
 }

@@ -159,4 +159,9 @@ class SalesOrder extends Model
     public function user_update(){
         return $this->BelongsTo('App\Entities\Account\Superuser','updated_by','id');
     }
+
+    public function store()
+    {
+      return $this->belongsTo(Customer::class);
+    }
 }

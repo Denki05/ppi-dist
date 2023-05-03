@@ -29,4 +29,8 @@ class Invoicing extends Model
     {
         return floatval($value);
     }
+    public function sale_return()
+    {
+        return $this->hasOne('App\Entities\Penjualan\SaleReturn', 'invoice_id');
+    }
 }

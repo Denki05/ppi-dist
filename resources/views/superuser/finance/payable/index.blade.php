@@ -31,7 +31,7 @@
             <div class="form-group">
               <select class="form-control js-select2" name="customer_id">
                 <option value="">==All Customer==</option>
-                @foreach($customer as $index => $row)
+                @foreach($customers as $index => $row)
                   <option value="{{$row->id}}">{{$row->name}}</option>
                 @endforeach
               </select>

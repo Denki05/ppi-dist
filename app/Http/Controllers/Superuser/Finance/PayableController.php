@@ -66,9 +66,9 @@ class PayableController extends Controller
                         })
                         ->orderBy('id','DESC')
                         ->paginate(10);
-        $customer = Customer::get();
+        $customers = Customer::get();
         $data = [
-            'customer' => $customer,
+            'customers' => $customers,
             'table' => $table
         ];
         return view($this->view."index",$data);

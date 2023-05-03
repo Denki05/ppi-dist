@@ -12,6 +12,7 @@ class Payable extends Model
     protected $fillable = [
     	'code',
     	'customer_id',
+    	'so_id',
     	'total',
     	'updated_by',
     	'created_by',

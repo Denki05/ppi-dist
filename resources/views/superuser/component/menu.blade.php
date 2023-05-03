@@ -111,6 +111,11 @@
                             <li class="nav-item"><a href="{{ route('superuser.penjualan.delivery_order_mutation.index') }}" target="_blank">Delivery Order Mutation (DOM)</a></li>
                         </ul>
                     </li>
+                    <li class="nav-item">
+                      <a href="{{ route('superuser.penjualan.sale_return.index') }}"  target="_blank" class="nav-link {{ is_active_route('superuser.master.ekspedisi.index') }}">
+                        Sales Return
+                      </a>
+                    </li>
                   </ul>
                 </div>
               </li>

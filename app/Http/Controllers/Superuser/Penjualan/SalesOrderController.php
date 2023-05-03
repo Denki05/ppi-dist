@@ -25,6 +25,7 @@ use App\Entities\Master\Ekspedisi;
 use App\Entities\Master\Vendor;
 use App\Entities\Setting\UserMenu;
 use App\Repositories\CodeRepo;
+use App\Helper\CustomHelper;
 use Auth;
 use DB;
 use PDF;
@@ -990,6 +991,7 @@ class SalesOrderController extends Controller
                         $packing_order_detail->delivery_cost_idr = $request->delivery_cost_idr;
                         $packing_order_detail->other_cost_idr = $request->resi_ongkir;
                         $packing_order_detail->grand_total_idr = $request->grand_total_final;
+                        $packing_order_detail->terbilang = CustomHelper::terbilang($request->grand_total_final);
                         $packing_order_detail->created_by = Auth::id();
                         $packing_order_detail->save();
 
