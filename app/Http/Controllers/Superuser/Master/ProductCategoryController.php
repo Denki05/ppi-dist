@@ -37,10 +37,10 @@ class ProductCategoryController extends Controller
             return $next($request);
         });
     }
-    // public function json(Request $request, ProductCategoryTable $datatable)
-    // {
-    //     return $datatable->build($request);
-    // }
+    public function json(Request $request, ProductCategoryTable $datatable)
+    {
+        return $datatable->build($request);
+    }
 
     public function index()
     {
@@ -94,7 +94,6 @@ class ProductCategoryController extends Controller
             $validator = Validator::make($request->all(), [
                 'brand_ppi' => 'required',
                 'name' => 'required|string',
-                // 'type' => 'nullable|string',
                 'packaging' => 'nullable|string',
             ]);
 

@@ -38,10 +38,10 @@ class SubBrandReferenceController extends Controller
             return $next($request);
         });
     }
-    // public function json(Request $request, SubBrandReferenceTable $datatable)
-    // {
-    //     return $datatable->build($request);
-    // }
+    public function json(Request $request, SubBrandReferenceTable $datatable)
+    {
+        return $datatable->build($request);
+    }
 
     public function index()
     {
