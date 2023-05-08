@@ -37,10 +37,10 @@ class ProductCategoryController extends Controller
             return $next($request);
         });
     }
-    public function json(Request $request, ProductCategoryTable $datatable)
-    {
-        return $datatable->build($request);
-    }
+    // public function json(Request $request, ProductCategoryTable $datatable)
+    // {
+    //     return $datatable->build($request);
+    // }
 
     public function index()
     {
@@ -52,6 +52,7 @@ class ProductCategoryController extends Controller
         }
 
         $data['brand_lokal'] = BrandLokal::all();
+        $data['category'] = ProductCategory::get();
         
         return view('superuser.master.product_category.index', $data);
     }

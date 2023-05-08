@@ -25,7 +25,7 @@
 <div class="block">
   <div class="block-content">
     <div class="form-group row">
-        <div class="col-md-9">
+        <!-- <div class="col-md-9">
           <div class="block">
             <div class="block-content">
               <div class="form-group row">
@@ -42,8 +42,8 @@
               </div>
             </div>
           </div>
-        </div>
-        <div class="col-md-3">
+        </div> -->
+        <!-- <div class="col-md-3">
           <div class="block">
             <div class="block-content">
               <div class="form-group row">
@@ -55,11 +55,11 @@
               </div>
             </div>
           </div>
-        </div>
+        </div> -->
       </div>
-    <hr class="my-20">
+    <!-- <hr class="my-20"> -->
     <div class="block-content block-content-full">
-      <table id="datatable" class="table table-striped">
+      <table id="product_category" class="table table-striped">
         <thead>
           <tr>
             <th>#</th>
@@ -72,6 +72,24 @@
             <th>Action</th>
           </tr>
         </thead>
+        <tbody>
+          @foreach($category as $key => $row)
+            <tr>
+              <td>{{ $key+1 }}</td>
+              <td>{{ $row->created_at }}</td>
+              <td>{{ $row->code }}</td>
+              <td>{{ $row->brand_name }}</td>
+              <td>{{ $row->name }}</td>
+              <td>{{ $row->packaging->pack_name }}</td>
+              <td>{{ $row->status() }}</td>
+              <td>
+                  <a href="{{ route('superuser.master.product_category.show', $row->id) }}" class="btn btn-primary" role="button"><i class="fa fa-eye"></i></a>
+                  <a href="{{ route('superuser.master.product_category.edit', $row->id) }}" class="btn btn-warning" role="button"><i class="fa fa-edit"></i></a>
+                  <a href="{{ route('superuser.master.product_category.destroy', $row->id) }}" class="btn btn-danger" role="button"><i class="fa fa-trash"></i></a>
+              </td>
+            </tr>
+          @endforeach
+        </tbody>
       </table>
     </div>
   </div>
@@ -95,54 +113,62 @@
 @push('scripts')
 <script type="text/javascript">
 $(document).ready(function() {
-  $('.js-select2').select2({
-    })
+  $('.js-select2').select2({})
 
-
-  let datatableUrl = '{{ route('superuser.master.product_category.json') }}';
-  let firstDatatableUrl = datatableUrl +
-        '?brand_ppi=all';
-
-  var datatable = $('#datatable').DataTable({
-    processing: true,
-    serverSide: true,
-    ajax: {
-      "url": datatableUrl,
-      "dataType": "json",
-      "type": "GET",
-      "data":{ _token: "{{csrf_token()}}"}
-    },
-    columns: [
-      {data: 'DT_RowIndex', name: 'id'},
-      {
-        data: 'category_date',
-        render: {
-          _: 'display',
-          sort: 'timestamp'
-        }, name: 'master_product_categories.created_at'
-      },
-      {data: 'code', name: 'master_product_categories.code'},
-      {data: 'brandName', name: 'master_product_categories.brand_name'},
-      {data: 'name'},
-      {data: 'pack_name', name: 'master_packaging.pack_name'},
-      {data: 'status'},
-      {data: 'action'}
-    ],
-    order: [
-      [1, 'desc']
-    ],
-    pageLength: 5,
-    lengthMenu: [
-      [5, 15, 20],
-      [5, 15, 20]
-    ],
+  $('#product_category').DataTable( {
+        "paging":   true,
+        "ordering": true,
+        "info":     false,
+        "searching" : true,
+        "columnDefs": [{
+          "targets": 0,
+          "orderable": false
+        }]
   });
-  $('#filter').on('click', function(e) {
-        e.preventDefault();
-        var brand_ppi = $('#brand_ppi').val();
-        let newDatatableUrl = datatableUrl + '?brand_ppi=' + brand_ppi;
-        datatable.ajax.url(newDatatableUrl).load();
-  })
+  // let datatableUrl = '{{ route('superuser.master.product_category.json') }}';
+  // let firstDatatableUrl = datatableUrl +
+  //       '?brand_ppi=all';
+
+  // var datatable = $('#datatable').DataTable({
+  //   processing: true,
+  //   serverSide: true,
+  //   ajax: {
+  //     "url": datatableUrl,
+  //     "dataType": "json",
+  //     "type": "GET",
+  //     "data":{ _token: "{{csrf_token()}}"}
+  //   },
+  //   columns: [
+  //     {data: 'DT_RowIndex', name: 'id'},
+  //     {
+  //       data: 'category_date',
+  //       render: {
+  //         _: 'display',
+  //         sort: 'timestamp'
+  //       }, name: 'master_product_categories.created_at'
+  //     },
+  //     {data: 'code', name: 'master_product_categories.code'},
+  //     {data: 'brandName', name: 'master_product_categories.brand_name'},
+  //     {data: 'name'},
+  //     {data: 'pack_name', name: 'master_packaging.pack_name'},
+  //     {data: 'status'},
+  //     {data: 'action'}
+  //   ],
+  //   order: [
+  //     [1, 'desc']
+  //   ],
+  //   pageLength: 5,
+  //   lengthMenu: [
+  //     [5, 15, 20],
+  //     [5, 15, 20]
+  //   ],
+  // });
+  // $('#filter').on('click', function(e) {
+  //       e.preventDefault();
+  //       var brand_ppi = $('#brand_ppi').val();
+  //       let newDatatableUrl = datatableUrl + '?brand_ppi=' + brand_ppi;
+  //       datatable.ajax.url(newDatatableUrl).load();
+  // })
 });
 </script>
 @endpush
