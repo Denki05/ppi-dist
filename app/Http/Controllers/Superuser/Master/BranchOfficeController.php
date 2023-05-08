@@ -38,8 +38,9 @@ class BranchOfficeController extends Controller
     public function index()
     {
         // Access
+        // Access
         if(Auth::user()->is_superuser == 0){
-            if(empty($this->access)){
+            if(empty($this->access) || empty($this->access->user) || $this->access->can_read == 0){
                 return redirect()->route('superuser.index')->with('error','Anda tidak punya akses untuk membuka menu terkait');
             }
         }

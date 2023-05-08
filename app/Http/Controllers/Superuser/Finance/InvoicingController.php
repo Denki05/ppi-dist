@@ -27,7 +27,6 @@ class InvoicingController extends Controller
      * @return \Illuminate\Http\Response
      */
     public function __construct(){
-        $this->view = "superuser.finance.invoicing.";
         $this->route = "superuser.finance.invoicing";
         $this->user_menu = new UserMenu;
         $this->access = null;
@@ -47,7 +46,7 @@ class InvoicingController extends Controller
     {
         // Access
         if(Auth::user()->is_superuser == 0){
-            if(empty($this->access)){
+            if(empty($this->access) || empty($this->access->user) || $this->access->can_read == 0){
                 return redirect()->route('superuser.index')->with('error','Anda tidak punya akses untuk membuka menu terkait');
             }
         }
@@ -81,7 +80,7 @@ class InvoicingController extends Controller
             'table' => $table,
             'customer' => $customer
         ];
-        return view($this->view."index",$data);
+        return view('superuser.finance.invoicing.index' ,$data);
     }
 
     /**

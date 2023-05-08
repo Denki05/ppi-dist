@@ -143,7 +143,7 @@ class UserController extends Controller
                 	'username' => trim(htmlentities($post["username"])),
                 	'password' => bcrypt(trim(htmlentities($post["password"]))),
                 	'division' => trim(htmlentities($post["division"])),
-                	'is_superuser' =>0,
+                	'is_superuser' => 0,
                 	'is_active' => 1,
                 	'created_by' => Auth::id(),
                 ];
