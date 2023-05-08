@@ -31,20 +31,46 @@
     </a>
   </div>--}}
   <div class="block-content block-content-full">
-    <table id="datatables" class="table table-striped">
-      <thead>
-        <tr>
-          <th><input type="checkbox" onclick="$('input.check-entity').prop('checked', this.checked);" /></th>
-          <th>Code</th>
-          <th>Brand</th>
-          <th>Category</th>
-          <th>Name</th>
-          <th>Kemasan</th>
-          <th>Status</th>
-          <th>Action</th>
-        </tr>
-      </thead>
-    </table>
+  <table class="table table-striped" id="product_list">
+              <thead>
+                <tr>
+                  <th>#</th>
+                  <th>Code</th>
+                  <th>Brand</th>
+                  <th>Category</th>
+                  <th>Name</th>
+                  <th>Kemasan</th>
+                  <th>Status</th>
+                  <th>Action</th>
+                </tr>
+              </thead>
+              <tbody>
+                @foreach($product_list as $key => $row)
+                    <tr>
+                      <td>
+                        {{ $loop->iteration }}
+                      </td>
+                      <td>
+                        {{$row->code}}
+                      </td>
+                      <td>
+                        {{$row->brand_name}}
+                      </td>
+					            <td>
+                        {{$row->category->name}}
+                      </td>
+                      <td>{{ $row->name }}</td>
+                      <td>{{ $row->category->packaging->pack_name }}</td>
+                      <td>{{ $row->status() }}</td>
+                      <td>
+                        <a href="{{ route('superuser.master.product.show', $row->id) }}" class="btn btn-primary" role="button"><i class="fa fa-eye"></i></a>
+                        <a href="{{ route('superuser.master.product.edit', $row->id) }}" class="btn btn-warning" role="button"><i class="fa fa-edit"></i></a>
+                        <a href="{{ route('superuser.master.product.destroy', $row->id) }}" class="btn btn-danger" role="button"><i class="fa fa-trash"></i></a>
+                      </td>
+                    </tr>
+                @endforeach
+              </tbody>
+            </table>
   </div>
 </div>
 @endsection
@@ -65,84 +91,16 @@
 @push('scripts')
 <script type="text/javascript">
 $(document).ready(function() {
-  let datatableUrl = '{{ route('superuser.master.product.json') }}';
-
-  $('#datatables').DataTable({
-    processing: true,
-    serverSide: true,
-    ajax: {
-      "url": datatableUrl,
-      "dataType": "json",
-      "type": "GET",
-      "data":{ _token: "{{csrf_token()}}"}
-    },
-    columns: [
-      {data: 'check', orderable: false, searcable: false},
-      {data: 'code'},
-      {data: 'brand_name'},
-      {data: 'category_name', name: 'master_product_categories.category_name'},
-      {data: 'name'},
-      {data: 'pack_name', name: 'master_packaging.pack_name'},
-      {data: 'status'},
-      {data: 'action', orderable: false, searcable: false}
-    ],
-    order: [
-      [1, 'desc']
-    ],
-    pageLength: 10,
-    lengthMenu: [
-      [15, 20, 50],
-      [15, 20, 50]
-    ],
+  $('#product_list').DataTable( {
+        "paging":   true,
+        "ordering": true,
+        "info":     false,
+        "searching" : true,
+        "columnDefs": [{
+          "targets": 0,
+          "orderable": false
+        }]
   });
 });
-
-function deleteMultiple() {
-  Swal.fire({
-    title: 'Are you sure?',
-    type: 'warning',
-    showCancelButton: true,
-    allowOutsideClick: false,
-    allowEscapeKey: false,
-    allowEnterKey: false,
-    backdrop: false,
-  }).then(result => {
-    if (result.value) {
-      Swal.fire({
-        title: 'Deleting...',
-        allowOutsideClick: false,
-        allowEscapeKey: false,
-        allowEnterKey: false,
-        backdrop: false,
-        onOpen: () => {
-          Swal.showLoading()
-        }
-      })
-      const ids = [];
-      for (let i = 0; i < $('.check-entity:checked').length; i++) {
-        ids.push($('.check-entity:checked')[i].value);
-      }
-      //ajaxcsrfscript();
-      $.ajax({
-        url : '{{route('superuser.master.product.delete_multiple')}}',
-        method : "POST",
-        data : {ids:ids},
-        dataType : "JSON",
-      }).then( response => {
-        Swal.fire({
-          title: 'Deleted!',
-          text: 'Your data has been deleted.',
-          type: 'success',
-          backdrop: false,
-        }).then(() => {
-          redirect(response.redirect_to);
-        })
-      })
-      .catch(error => {
-        Swal.fire('Error!','Cek Koneksi Internet','error')
-      });
-    }
-  });
-}
 </script>
 @endpush

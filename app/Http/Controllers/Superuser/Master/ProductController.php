@@ -44,10 +44,10 @@ class ProductController extends Controller
             return $next($request);
         });
     }
-    public function json(Request $request, ProductTable $datatable)
-    {
-        return $datatable->build();
-    }
+    // public function json(Request $request, ProductTable $datatable)
+    // {
+    //     return $datatable->build();
+    // }
 
     public function index()
     {
@@ -58,7 +58,13 @@ class ProductController extends Controller
             }
         }
 
-        return view('superuser.master.product.index');
+        $product_list = Product::get();
+
+        $data = [
+            'product_list' => $product_list,
+        ];
+
+        return view('superuser.master.product.index', $data);
     }
 
     public function create()
