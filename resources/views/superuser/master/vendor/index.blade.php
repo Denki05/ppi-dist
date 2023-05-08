@@ -30,7 +30,7 @@
   </div>
   <hr class="my-20">
   <div class="block-content block-content-full">
-    <table id="datatable" class="table table-hover">
+    <table id="vendor_list" class="table table-hover">
       <thead>
         <tr>
           <th>#</th>
@@ -65,7 +65,7 @@
 $(document).ready(function() {
   let datatableUrl = '{{ route('superuser.master.vendor.json') }}';
 
-  $('#datatable').DataTable({
+  $('#vendor_list').DataTable({
     
     processing: true,
     serverSide: true,

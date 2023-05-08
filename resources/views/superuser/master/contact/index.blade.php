@@ -26,7 +26,7 @@
   </div>
   <hr class="my-20">
   <div class="block-content block-content-full">
-    <table id="datatable" class="table table-hover">
+    <table id="contact_list" class="table table-hover">
       <thead>
         <tr>
           <th>#</th>
@@ -75,7 +75,7 @@
 $(document).ready(function() {
   let datatableUrl = '{{ route('superuser.master.contact.json') }}';
 
-  $('#datatable').DataTable({
+  $('#contact_list').DataTable({
     processing: true,
     serverSide: true,
     ajax: {

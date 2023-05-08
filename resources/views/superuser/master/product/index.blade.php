@@ -31,48 +31,20 @@
     </a>
   </div>--}}
   <div class="block-content block-content-full">
-  <table class="table table-striped" id="product_list">
-              <thead>
-                <tr>
-                  <th>#</th>
-                  <th>Code</th>
-                  <th>Brand</th>
-                  <th>Category</th>
-                  <th>Name</th>
-                  <th>Kemasan</th>
-                  <th>Status</th>
-                  <th>Action</th>
-                </tr>
-              </thead>
-              <tbody>
-                @foreach($product_list as $key => $row)
-                    <tr>
-                      <td>
-                        {{ $loop->iteration }}
-                      </td>
-                      <td>
-                        {{$row->code}}
-                      </td>
-                      <td>
-                        {{$row->brand_name}}
-                      </td>
-					            <td>
-                        {{$row->category->name}}
-                      </td>
-                      <td>{{ $row->name }}</td>
-                      <td>{{ $row->category->packaging->pack_name }}</td>
-                      <td>{{ $row->status() }}</td>
-                      <td>
-                        @if($row->status == 1 )
-                        <a href="{{ route('superuser.master.product.show', $row->id) }}" class="btn btn-primary" role="button"><i class="fa fa-eye"></i></a>
-                        <a href="{{ route('superuser.master.product.edit', $row->id) }}" class="btn btn-warning" role="button"><i class="fa fa-edit"></i></a>
-                        <!-- <a href="{{ route('superuser.master.product.destroy', $row->id) }}" class="btn btn-danger" role="button"><i class="fa fa-trash"></i></a> -->
-                        @endif
-                      </td>
-                    </tr>
-                @endforeach
-              </tbody>
-            </table>
+  <table class="table table-striped" id="datatables">
+      <thead>
+        <tr>
+          <th>#</th>
+          <th>Code</th>
+          <th>Brand</th>
+          <th>Category</th>
+          <th>Name</th>
+          <th>Kemasan</th>
+          <th>Status</th>
+          <th>Action</th>
+        </tr>
+      </thead>
+    </table>
   </div>
 </div>
 @endsection
@@ -93,15 +65,35 @@
 @push('scripts')
 <script type="text/javascript">
 $(document).ready(function() {
-  $('#product_list').DataTable( {
-        "paging":   true,
-        "ordering": true,
-        "info":     false,
-        "searching" : true,
-        "columnDefs": [{
-          "targets": 0,
-          "orderable": false
-        }]
+  let datatableUrl = '{{ route('superuser.master.product.json') }}';
+
+  $('#datatables').DataTable({
+    processing: true,
+    serverSide: false,
+    ajax: {
+      "url": datatableUrl,
+      "dataType": "json",
+      "type": "GET",
+      "data":{ _token: "{{csrf_token()}}"}
+    },
+    columns: [
+      {data: 'DT_RowIndex', name: 'master_products.id'},
+      {data: 'code'},
+      {data: 'brand_name'},
+      {data: 'category_name', name: 'master_product_categories.category_name'},
+      {data: 'name'},
+      {data: 'pack_name', name: 'master_packaging.pack_name'},
+      {data: 'status'},
+      {data: 'action', orderable: false, searcable: false}
+    ],
+    order: [
+      [1, 'desc']
+    ],
+    pageLength: 10,
+    lengthMenu: [
+      [15, 20, 50],
+      [15, 20, 50]
+    ],
   });
 });
 </script>
