@@ -31,7 +31,7 @@
     </a>
   </div>--}}
   <div class="block-content block-content-full">
-    <table id="datatable" class="table table-striped">
+    <table id="datatables" class="table table-striped">
       <thead>
         <tr>
           <th><input type="checkbox" onclick="$('input.check-entity').prop('checked', this.checked);" /></th>
@@ -67,7 +67,7 @@
 $(document).ready(function() {
   let datatableUrl = '{{ route('superuser.master.product.json') }}';
 
-  $('#datatable').DataTable({
+  $('#datatables').DataTable({
     processing: true,
     serverSide: true,
     ajax: {
@@ -80,7 +80,7 @@ $(document).ready(function() {
       {data: 'check', orderable: false, searcable: false},
       {data: 'code'},
       {data: 'brand_name'},
-      {data: 'category_name', name: 'master_product_category.category_name'},
+      {data: 'category_name', name: 'master_product_categories.category_name'},
       {data: 'name'},
       {data: 'pack_name', name: 'master_packaging.pack_name'},
       {data: 'status'},

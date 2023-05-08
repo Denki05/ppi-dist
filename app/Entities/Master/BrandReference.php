@@ -19,7 +19,7 @@ class BrandReference extends Model
 
     public function sub_brand_references()
     {
-        return $this->hasMany('App\Entities\Master\SubBrandReference')->orderBy('name');
+        return $this->hasMany('App\Entities\Master\SubBrandReference', 'brand_reference_id');
     }
     public function products()
     {

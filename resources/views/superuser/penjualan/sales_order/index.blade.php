@@ -79,7 +79,7 @@
                   <th>#</th>
                   <th>Name</th>
                   <th>Address</th>
-				  <th>Kota</th>
+				          <th>Kota</th>
                   <th>Area</th>
                   <th>Action</th>
                 </tr>

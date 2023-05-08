@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Superuser\Master;
 use App\DataTables\Master\SubBrandReferenceTable;
 use App\Entities\Master\SubBrandReference;
 use App\Entities\Master\BrandReference;
+use App\Entities\Master\CustomerOtherAddress;
 use App\Exports\Master\SubBrandReferenceExport;
 use App\Exports\Master\SubBrandReferenceImportTemplate;
 use App\Http\Controllers\Controller;
@@ -37,10 +38,10 @@ class SubBrandReferenceController extends Controller
             return $next($request);
         });
     }
-    public function json(Request $request, SubBrandReferenceTable $datatable)
-    {
-        return $datatable->build($request);
-    }
+    // public function json(Request $request, SubBrandReferenceTable $datatable)
+    // {
+    //     return $datatable->build($request);
+    // }
 
     public function index()
     {
@@ -51,8 +52,11 @@ class SubBrandReferenceController extends Controller
             }
         }
 
-        $data['brand'] = BrandReference::get();
-        $data['searah'] = SubBrandReference::get(); 
+        $parfume_searah = SubBrandReference::get();
+
+        $data = [
+            'parfume_searah' => $parfume_searah,
+        ];
 
         return view('superuser.master.sub_brand_reference.index', $data);
     }
@@ -124,8 +128,6 @@ class SubBrandReferenceController extends Controller
 
                     return $this->response(200, $response);
                 }
-
-                DD($sub_brand_reference->save());
             }
         }
     }

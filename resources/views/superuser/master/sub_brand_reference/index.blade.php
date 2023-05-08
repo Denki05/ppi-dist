@@ -25,7 +25,7 @@
 <div class="block">
   <div class="block-content">
       <div class="form-group row">
-        <div class="col-md-9">
+        <!-- <div class="col-md-9">
           <div class="block">
             <div class="block-content">
               <div class="form-group row">
@@ -33,7 +33,7 @@
                 <div class="col-md-4">
                   <select class="form-control js-select2" id="filter_searah" name="filter_searah" data-placeholder="Find Searah Name">
                     <option value="">All</option>
-                    @foreach($searah as $searah)
+                    @foreach($parfume_searah as $searah)
                     <option value="{{$searah->name}}">{{$searah->name}}</option>
                     @endforeach
                   </select>
@@ -41,8 +41,8 @@
               </div>
             </div>
           </div>
-        </div>
-        <div class="col-md-3">
+        </div> -->
+        <!-- <div class="col-md-3">
           <div class="block">
             <div class="block-content">
               <div class="form-group row">
@@ -54,22 +54,45 @@
               </div>
             </div>
           </div>
-        </div>
+        </div> -->
       </div>
-  <div class="block-content block-content-full">
-    <table id="datatable" class="table table-striped">
-      <thead>
-        <tr>
-          <th>#</th>
-          <th>Created at</th>
-          <th>Brand Fragrantica</th>
-          <th>Searah</th>
-          <th>Action</th>
-        </tr>
-      </thead>
-    </table>
-    </div>
-  </div>
+      <div class="table-responsive">
+            <table class="table table-striped" id="searah">
+              <thead>
+                <tr>
+                  <th>#</th>
+                  <th>Created</th>
+                  <th>Brand Fragrantica</th>
+				          <th>Searah</th>
+                  <th>Action</th>
+                </tr>
+              </thead>
+              <tbody>
+                @foreach($parfume_searah as $key => $row)
+                    <tr>
+                      <td>
+                        {{ $loop->iteration }}
+                      </td>
+                      <td>
+                        {{$row->created_at}}
+                      </td>
+                      <td>
+                        {{$row->brand_reference->name}}
+                      </td>
+					            <td>
+                        {{$row->name}}
+                      </td>
+                      <td>
+                        <a href="{{ route('superuser.master.sub_brand_reference.show', $row->id) }}" class="btn btn-primary" role="button"><i class="fa fa-eye"></i></a>
+                        <a href="{{ route('superuser.master.sub_brand_reference.edit', $row->id) }}" class="btn btn-warning" role="button"><i class="fa fa-edit"></i></a>
+                        <a href="{{ route('superuser.master.sub_brand_reference.destroy', $row->id) }}" class="btn btn-danger" role="button"><i class="fa fa-trash"></i></a>
+                      </td>
+                    
+                    </tr>
+                @endforeach
+              </tbody>
+            </table>
+          </div>
 </div>
 @endsection
 
@@ -82,52 +105,63 @@
 $(document).ready(function() {
   $('.js-select2').select2()
 
-  let datatableUrl = '{{ route('superuser.master.sub_brand_reference.json') }}';
-  let firstDatatableUrl = datatableUrl +
-        '?filter_searah=all';
-
-  var datatable = $('#datatable').DataTable({
-    language: {
-          processing: "<span class='fa-stack fa-lg'>\n\
-                                <i class='fa fa-spinner fa-spin fa-stack-2x fa-fw'></i>\n\
-                           </span>",
-    },
-    processing: true,
-    serverSide: true,
-    ajax: {
-      "url": datatableUrl,
-      "dataType": "json",
-      "type": "GET",
-      "data":{ _token: "{{csrf_token()}}"}
-    },
-    columns: [
-      {data: 'DT_RowIndex', name: 'searah_id'},
-      {
-        data: 'created_date',
-        render: {
-          _: 'display',
-          sort: 'timestamp'
-        }, name: 'master_sub_brand_references.created_at'
-      },
-      {data: 'brand_name', name: 'master_brand_references.name'},
-      {data: 'searah_name', name: 'master_sub_brand_references.name'},
-      {data: 'action'}
-    ],
-    order: [
-      [1, 'desc']
-    ],
-    pageLength: 5,
-    lengthMenu: [
-      [5, 15, 20],
-      [5, 15, 20]
-    ],
+  $('#searah').DataTable( {
+        "paging":   true,
+        "ordering": true,
+        "info":     false,
+        "searching" : true,
+        "columnDefs": [{
+          "targets": 0,
+          "orderable": false
+        }]
   });
-  $('#filter').on('click', function(e) {
-        e.preventDefault();
-        var filter_searah = $('#filter_searah').val();
-        let newDatatableUrl = datatableUrl + '?filter_searah=' + filter_searah;
-        datatable.ajax.url(newDatatableUrl).load();
-  })
+
+  // let datatableUrl = '{{ route('superuser.master.sub_brand_reference.json') }}';
+  // let firstDatatableUrl = datatableUrl +
+  //       '?filter_searah=all';
+
+  // var datatable = $('#datatable').DataTable({
+  //   language: {
+  //         processing: "<span class='fa-stack fa-lg'>\n\
+  //                               <i class='fa fa-spinner fa-spin fa-stack-2x fa-fw'></i>\n\
+  //                          </span>",
+  //   },
+  //   processing: true,
+  //   serverSide: true,
+  //   ajax: {
+  //     "url": datatableUrl,
+  //     "dataType": "json",
+  //     "type": "GET",
+  //     "data":{ _token: "{{csrf_token()}}"}
+  //   },
+  //   columns: [
+  //     {data: 'DT_RowIndex', name: 'searah_id'},
+  //     {
+  //       data: 'created_date',
+  //       render: {
+  //         _: 'display',
+  //         sort: 'timestamp'
+  //       }, name: 'master_sub_brand_references.created_at'
+  //     },
+  //     {data: 'brand_name', name: 'master_brand_references.name'},
+  //     {data: 'searah_name', name: 'master_sub_brand_references.name'},
+  //     {data: 'action'}
+  //   ],
+  //   order: [
+  //     [1, 'desc']
+  //   ],
+  //   pageLength: 5,
+  //   lengthMenu: [
+  //     [5, 15, 20],
+  //     [5, 15, 20]
+  //   ],
+  // });
+  // $('#filter').on('click', function(e) {
+  //       e.preventDefault();
+  //       var filter_searah = $('#filter_searah').val();
+  //       let newDatatableUrl = datatableUrl + '?filter_searah=' + filter_searah;
+  //       datatable.ajax.url(newDatatableUrl).load();
+  // })
 });
 </script>
 @endpush
