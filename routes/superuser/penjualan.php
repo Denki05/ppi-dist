@@ -32,6 +32,7 @@ Route::group([
         Route::post('/tidak_lanjut_so', 'SalesOrderController@tidak_lanjut_so')->name('tidak_lanjut_so');
         Route::post('/tutup_so', 'SalesOrderController@tutup_so')->name('tutup_so');
         Route::post('/destroy', 'SalesOrderController@destroy')->name('destroy');
+        Route::get('/{id}/print_proforma', 'SalesOrderController@print_proforma')->name('print_proforma');
 
         Route::get('/{id}/edit_item', 'SalesOrderController@edit_item')->name('edit_item');
         Route::post('/store_item', 'SalesOrderController@store_item')->name('store_item');

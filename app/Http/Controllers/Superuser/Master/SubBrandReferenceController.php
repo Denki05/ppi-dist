@@ -78,8 +78,6 @@ class SubBrandReferenceController extends Controller
                 'name' => 'required|string',
                 'link' => 'nullable|string',
                 'description' => 'nullable|string',
-                // 'image_botol' => 'nullable|image|mimes:jpeg,png,jpg|max:2048',
-                // 'image_table_botol' => 'nullable|image|mimes:jpeg,png,jpg|max:2048',
             ]);
 
             if ($validator->fails()) {
@@ -126,6 +124,8 @@ class SubBrandReferenceController extends Controller
 
                     return $this->response(200, $response);
                 }
+
+                DD($sub_brand_reference->save());
             }
         }
     }

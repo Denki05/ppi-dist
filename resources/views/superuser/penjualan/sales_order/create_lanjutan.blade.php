@@ -43,7 +43,7 @@
               <div class="col">
                 <div class="form-label-group in-border">
                   <label style="font-size: 10pt;">Address</label>
-                  <p style="font-size: 9pt;">JL.Kendung Indah 1B/12 Sememi,Benowo,Kota Surabaya, Jawa Timur</p>
+                  <p style="font-size: 9pt;">{{ $result->member->address }}</p>
                 </div>
               </div>
             </div>
