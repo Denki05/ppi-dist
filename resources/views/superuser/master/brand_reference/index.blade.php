@@ -26,7 +26,7 @@
   </div>
   <hr class="my-20">
   <div class="block-content block-content-full">
-    <table id="datatable" class="table table-hover">
+    <table id="brand_ref" class="table table-hover">
       <thead>
         <tr>
           <th>#</th>
@@ -60,9 +60,9 @@
 $(document).ready(function() {
   let datatableUrl = '{{ route('superuser.master.brand_reference.json') }}';
 
-  $('#datatable').DataTable({
+  $('#brand_ref').DataTable({
     processing: true,
-    serverSide: true,
+    serverSide: false,
     ajax: {
       "url": datatableUrl,
       "dataType": "json",
