@@ -63,9 +63,11 @@
                       <td>{{ $row->category->packaging->pack_name }}</td>
                       <td>{{ $row->status() }}</td>
                       <td>
+                        @if($row->status == 1 )
                         <a href="{{ route('superuser.master.product.show', $row->id) }}" class="btn btn-primary" role="button"><i class="fa fa-eye"></i></a>
                         <a href="{{ route('superuser.master.product.edit', $row->id) }}" class="btn btn-warning" role="button"><i class="fa fa-edit"></i></a>
-                        <a href="{{ route('superuser.master.product.destroy', $row->id) }}" class="btn btn-danger" role="button"><i class="fa fa-trash"></i></a>
+                        <!-- <a href="{{ route('superuser.master.product.destroy', $row->id) }}" class="btn btn-danger" role="button"><i class="fa fa-trash"></i></a> -->
+                        @endif
                       </td>
                     </tr>
                 @endforeach
