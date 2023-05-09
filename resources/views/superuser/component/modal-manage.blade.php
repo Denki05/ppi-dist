@@ -4,11 +4,6 @@
       <div class="block block-themed block-transparent mb-0">
         <div class="block-header bg-primary-dark">
           <h3 class="block-title">Manage</h3>
-          <div class="block-options">
-            <button type="button" class="btn-block-option" data-dismiss="modal" aria-label="Close">
-              <i class="si si-close"></i>
-            </button>
-          </div>
         </div>
         <div class="block-content pb-20">
           <div class="row">
@@ -53,12 +48,11 @@
           </div>
         </div>
       </div>
-      {{-- <div class="modal-footer">
-        <button type="button" class="btn btn-alt-secondary" data-dismiss="modal">Close</button>
-        <button type="button" class="btn btn-alt-success" data-dismiss="modal">
-          <i class="fa fa-check"></i> Perfect
+       <div class="modal-footer">
+        <button type="button" class="btn btn-alt-secondary" data-dismiss="modal">
+          <i class="fa fa-close"></i>
         </button>
-      </div> --}}
+      </div>
     </div>
   </div>
 </div>

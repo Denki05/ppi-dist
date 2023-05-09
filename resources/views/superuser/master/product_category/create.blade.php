@@ -146,7 +146,7 @@
 
     var datatable = $('#category-table-check').DataTable({
       processing: true,
-      serverSide: true,
+      serverSide: false,
       "bPaginate": false,
       "bFilter": false,
       "bInfo": false,

@@ -93,7 +93,7 @@ $(document).ready(function() {
                            </span>",
     },
     processing: true,
-    serverSide: true,
+    serverSide: false,
     ajax: {
       "url": datatableUrl,
       "dataType": "json",

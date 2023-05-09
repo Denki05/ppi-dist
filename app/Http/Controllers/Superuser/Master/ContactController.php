@@ -4,6 +4,9 @@ namespace App\Http\Controllers\Superuser\Master;
 
 use App\DataTables\Master\ContactTable;
 use App\Entities\Master\Contact;
+use App\Entities\Master\Customer;
+use App\Entities\Master\CustomerOtherAddress;
+use App\Entities\Master\Vendor;
 use App\Exports\Master\ContactExport;
 use App\Exports\Master\ContactImportTemplate;
 use App\Http\Controllers\Controller;
@@ -36,6 +39,27 @@ class ContactController extends Controller
     public function json(Request $request, ContactTable $datatable)
     {
         return $datatable->build();
+    }
+
+    public function get_store(Request $request)
+    {
+        $store = Customer::all()->pluck('name', 'id');
+
+        return response()->json($store);
+    }
+
+    public function get_member(Request $request)
+    {
+        $member = CustomerOtherAddress::all()->pluck('name', 'id');
+
+        return response()->json($member);
+    }
+
+    public function get_vendor(Request $request)
+    {
+       $vendor = Vendor::all()->pluck('name', 'id');
+
+       return response()->json($vendor);
     }
 
     public function index()
@@ -102,6 +126,7 @@ class ContactController extends Controller
                 $contact->status = Contact::STATUS['ACTIVE'];
 
                 if ($contact->save()) {
+                    
                     DB::commit();
 
                     $response['notification'] = [
@@ -110,7 +135,7 @@ class ContactController extends Controller
                         'content' => 'Success',
                     ];
 
-                    $response['redirect_to'] = route('superuser.master.contact.index');
+                    $response['redirect_to'] = route('superuser.master.contact.show', $contact->id);
 
                     return $this->response(200, $response);
                 }

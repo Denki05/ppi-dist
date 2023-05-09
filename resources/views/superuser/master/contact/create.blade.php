@@ -60,6 +60,21 @@
         <div class="col-md-7">
           <textarea class="form-control" id="address" name="address"></textarea>
         </div>
+      </div>   
+      <div class="form-group row">
+        <label class="col-md-3 col-form-label text-right" for="sync">Sync</label>
+        <div class="col-md-2">
+          <select class="form-control js-select2 manage_sync" id="manage_sync">
+            <option value="">Get Account</option>
+            <option value="store">Store</option>
+            <option value="member">Member</option>
+            <option value="vendor">Vendor</option>
+          </select>
+        </div>
+        <div class="col-md-4">
+          <select class="form-control js-select2" name="manage_id" id="manage_id">
+          </select>
+        </div>
       </div>
       <div class="form-group row pt-30">
         <div class="col-md-6">
@@ -81,12 +96,92 @@
 @endsection
 
 @include('superuser.asset.plugin.flatpickr')
+@include('superuser.asset.plugin.select2')
 
 @push('scripts')
 <script src="{{ asset('utility/superuser/js/form.js') }}"></script>
 <script type="text/javascript">
   $(document).ready(function() {
     Codebase.helpers('flatpickr')
+    $('.js-select2').select2()
+    
+    $(document).on('change', '#manage_sync'  ,function () {
+        let sync = $(this).val();
+        
+        if(sync == "store"){
+          $.ajax({
+           type:"get",
+           url:"{{ route('superuser.master.contact.get_store') }}",
+           success:function(res)
+           {     
+                $("#manage_id").empty();
+                $("#manage_id").append('<option>--Select Customer--</option>');
+                if(res)
+                {
+                    $.each(res,function(key,value){
+                        $('#manage_id').append($("<option/>", {
+                           value: key,
+                           text: value
+                        }));
+                    });
+                }
+           }
+
+          });
+        }
+    });
+
+    $(document).on('change', '#manage_sync'  ,function () {
+        let sync = $(this).val();
+        
+        if(sync == "member"){
+          $.ajax({
+           type:"get",
+           url:"{{ route('superuser.master.contact.get_member') }}",
+           success:function(res)
+           {     
+                $("#manage_id").empty();
+                $("#manage_id").append('<option>--Select Member--</option>');
+                if(res)
+                {
+                    $.each(res,function(key,value){
+                        $('#manage_id').append($("<option/>", {
+                           value: key,
+                           text: value
+                        }));
+                    });
+                }
+           }
+
+          });
+        }
+    });
+
+    $(document).on('change', '#manage_sync'  ,function () {
+        let sync = $(this).val();
+        
+        if(sync == "vendor"){
+          $.ajax({
+           type:"get",
+           url:"{{ route('superuser.master.contact.get_vendor') }}",
+           success:function(res)
+           {     
+                $("#manage_id").empty();
+                $("#manage_id").append('<option>--Select Vendor--</option>');
+                if(res)
+                {
+                    $.each(res,function(key,value){
+                        $('#manage_id').append($("<option/>", {
+                           value: key,
+                           text: value
+                        }));
+                    });
+                }
+           }
+
+          });
+        }
+    });
   })
 </script>
 @endpush

@@ -19,7 +19,7 @@
 
 <nav class="breadcrumb bg-white push">
   <a href="{{route('superuser.master.customer.create')}}" class="btn btn-primary btn-lg active" role="button" target="_blank" aria-pressed="true" style="margin-left: 10px !important;">Create</a>
-  <a href="{{route('superuser.master.customer_contact.create')}}" class="btn btn-primary btn-lg active" role="button" target="_blank" aria-pressed="true" style="margin-left: 10px !important;">Add Contact</a>
+  <!-- <a href="{{route('superuser.master.customer_contact.create')}}" class="btn btn-primary btn-lg active" role="button" target="_blank" aria-pressed="true" style="margin-left: 10px !important;">Add Contact</a> -->
   <button type="button" class="btn btn-outline-info ml-10" data-toggle="modal" data-target="#modal-manage">Manage</button>
 </nav>
 
