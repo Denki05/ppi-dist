@@ -39,7 +39,7 @@
 $(document).ready(function() {
   $('#datatable').DataTable({
     processing: true,
-    serverSide: true,
+    serverSide: false,
     ajax: {
       "url": '{{ route('superuser.account.superuser.json') }}',
       "dataType": "json",

@@ -63,7 +63,7 @@ $(document).ready(function() {
 
   $('#datatable').DataTable({
     processing: true,
-    serverSide: true,
+    serverSide: false,
     ajax: {
       "url": datatableUrl,
       "dataType": "json",

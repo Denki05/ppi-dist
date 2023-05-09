@@ -77,7 +77,7 @@ $(document).ready(function() {
 
   $('#contact_list').DataTable({
     processing: true,
-    serverSide: true,
+    serverSide: false,
     ajax: {
       "url": datatableUrl,
       "dataType": "json",

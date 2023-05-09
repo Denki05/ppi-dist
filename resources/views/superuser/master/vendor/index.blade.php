@@ -68,7 +68,7 @@ $(document).ready(function() {
   $('#vendor_list').DataTable({
     
     processing: true,
-    serverSide: true,
+    serverSide: false,
     ajax: {
       "url": datatableUrl,
       "dataType": "json",
