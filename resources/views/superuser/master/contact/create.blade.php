@@ -64,7 +64,7 @@
       <div class="form-group row">
         <label class="col-md-3 col-form-label text-right" for="sync">Sync</label>
         <div class="col-md-2">
-          <select class="form-control js-select2 manage_sync" id="manage_sync">
+          <select class="form-control js-select2 manage_sync" id="manage_sync" name="manage_sync">
             <option value="">Get Account</option>
             <option value="store">Store</option>
             <option value="member">Member</option>

@@ -5,6 +5,8 @@ namespace App\Http\Controllers\Superuser\Master;
 use App\DataTables\Master\ContactTable;
 use App\Entities\Master\Contact;
 use App\Entities\Master\Customer;
+use App\Entities\Master\CustomerContact;
+use App\Entities\Master\VendorContact;
 use App\Entities\Master\CustomerOtherAddress;
 use App\Entities\Master\Vendor;
 use App\Exports\Master\ContactExport;
@@ -126,9 +128,29 @@ class ContactController extends Controller
                 $contact->status = Contact::STATUS['ACTIVE'];
 
                 if ($contact->save()) {
-                    
-                    DB::commit();
+                    if($request->manage_sync == 'store'){
+                        $cust_cont = new CustomerContact;
+                        $cust_cont->customer_id = $request->manage_id;
+                        $cust_cont->customer_other_address_id = NULL;
+                        $cust_cont->contact_id = $contact->id;
+                        $cust_cont->status = CustomerContact::STATUS['ACTIVE'];
+                        $cust_cont->save();
+                    }elseif($request->manage_sync == 'member'){
+                        $member_cont = new CustomerContact;
+                        $member_cont->customer_id = NULL;
+                        $member_cont->customer_other_address_id = $request->manage_id;
+                        $member_cont->contact_id = $contact->id;
+                        $member_cont->status = CustomerContact::STATUS['ACTIVE'];
+                        $member_cont->save();
+                    }elseif($request->manage_sync == 'vendor'){
+                        $vendor_cont = new VendorContact;
+                        $vendor_cont->vendor_id = $request->manage_id;
+                        $vendor_cont->contact_id = $contact->id;
+                        $vendor_cont->save();
+                    }
 
+                    DB::commit();
+                    
                     $response['notification'] = [
                         'alert' => 'notify',
                         'type' => 'success',
