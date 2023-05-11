@@ -1,10 +1,6 @@
 @extends('superuser.app')
 
 @section('content')
-<nav class="breadcrumb bg-white push">
-  <span class="breadcrumb-item">Finance</span>
-  <span class="breadcrumb-item active">Payable</span>
-</nav>
 @if(session('error') || session('success'))
 <div class="alert alert-{{ session('error') ? 'danger' : 'success' }} alert-dismissible fade show" role="alert">
     @if (session('error'))
@@ -18,78 +14,113 @@
 </div>
 @endif
 <div class="block">
-  <hr class="my-20">
   <div class="block-content block-content-full">
-      <div class="row mb-30">
-        <div class="col-12">
-          <a href="#" class="btn btn-primary btn-add"><i class="fa fa-plus"></i> Add Payable</a>
-        </div>
-      </div>
-      <form method="get" action="{{ route('superuser.finance.payable.index') }}">
-        <div class="row">
-          <div class="col-lg-3">
-            <div class="form-group">
-              <select class="form-control js-select2" name="customer_id">
-                <option value="">==All Customer==</option>
-                @foreach($customer as $index => $row)
-                  <option value="{{$row->id}}">{{$row->name}}</option>
-                @endforeach
-              </select>
-            </div>          
-          </div>
-          <div class="col-lg-6">
-            <div class="input-group mb-3">
-                <input type="text" class="form-control" placeholder="Keyword" name="search">
-                <div class="input-group-append">
-                  <button type="submit" class="btn btn-primary"><i class="fa fa-search"></i></button>
+    <div class="form-group row">
+    <form>
+            <div class="row">
+              <div class="col-lg-3">
+                <div class="form-group row">
+                  {{--<label class="col-md-3 col-form-label text-right">Customer</label>
+                  <div class="col-md-9">
+                    <select class="form-control js-select2" name="customer_name">
+                      <option value="">==All Customer==</option>
+                      @foreach($customers as $index => $row)
+                      <option value="{{$row->name}}">{{$row->name}}</option>
+                      @endforeach
+                    </select>
+                  </div>--}}
+                </div>   
+              </div>
+              <div class="col-lg-3">
+                  <div class="form-group row">
+                    {{--<label class="col-md-3 col-form-label text-right">Area</label>
+                    <div class="col-md-9">
+                      <select class="form-control js-select2" name="province">
+                        <option value="">==All Provinsi==</option>
+                        @foreach($provinsi as $index => $row)
+                        <option value="{{$row->prov_id}}">{{$row->prov_name}}</option>
+                        @endforeach
+                      </select>
+                    </div>--}}
+                  </div>
+              </div>
+              <div class="col-lg-6">
+                <div class="form-group row">
+                  <div class="col-md-3">
+                    <!-- <label class="col-md-3 col-form-label text-right">Search</label> -->
+                  </div>
+                  <div class="col-md-9">
+                    <div class="input-group mb-3">
+                        <input type="text" class="form-control" placeholder="Search" name="search">
+                        <div class="input-group-append">
+                          <button type="submit" class="btn btn-primary"><i class="fa fa-search"></i></button>
+                        </div>
+                    </div>
+                  </div>
                 </div>
               </div>
-          </div>
-        </div>
-      </form>
-      <div class="row mb-30">
-        <div class="col-12">
-          <table class="table table-striped" id="datatables">
-            <thead>
-              <tr>
-                <th>#</th>
-                <th>Payable Code</th>
-                <th>Store</th>
-                <th>Total</th>
-                <th>Created At</th>
-                <th>Action</th>
-              </tr>
-            </thead>
-            <tbody>
-              @foreach($table as $index => $row)
-                <tr>
-                  <td>{{$table->firstItem() + $index}}</td>
-                  <td>{{$row->code}}</td>
-                  <td>{{$row->customer->name ?? ''}}</td>
-                  <td>{{number_format($row->total,0,',','.')}}</td>
-                  <td>
-                    <?= date('d-m-Y h:i:s',strtotime($row->created_at)); ?>
-                  </td>
-                  <td>
-                    <a href="{{route('superuser.finance.payable.detail',$row->id)}}" class="btn btn-primary btn-sm btn-flat"><i class="fa fa-eye"></i> Detail</a>
-                    <a href="{{route('superuser.finance.payable.print',$row->id)}}" class="btn btn-info btn-sm btn-flat" data-id="{{$row->id}}" target="_blank"><i class="fa fa-print"></i> Print</a>
-                  </td>
-                </tr>
-              @endforeach
-            </tbody>
-          </table>
-        </div>
-      </div>
-      
-      <div class="row mb-30">
-        <div class="col-12">
-          {{$table->links()}}
-        </div>
+            </div>
+          </form>
+    <table id="store_table" class="table ">
+      <thead class="thead-dark">
+        <tr>
+          <th>#</th>
+          <th>Store</th>
+          <th>Category</th>
+        </tr>
+      </thead>
+      <tbody>
+        @foreach ($customer as $row)
+          <tr class="clickable js-tabularinfo-toggle" data-toggle="collapse" id="row2" data-target=".a{{ $row->id }}">
+              <td>
+                <div class="col-sm-6">
+                  <div class="row mb-2">
+                    <a href="#" class="link">
+                      <!-- <button type="button" name='edit' id='{{ $row->id }}'>#</button> -->
+                      <button type="button" class="btn btn-secondary btn-sm" name="edit" id="{{ $row->id }}">-</button>
+                    </a>
+                  </div>
+                </div>
+              </td>
+              <td style="font-size: 12pt; font-weight:bold;">{{ $row->name }}</td>
+              <td style="font-size: 10pt;">{{ $row->category->name ?? '-' }}</td>
+          </tr>
+
+          <tr class="tabularinfo__subblock collapse a{{ $row->id }}">
+                  <td colspan="8">
+                    <table class="table-active table table-bordered">
+                            <!-- <tr>
+                                <th>#</th>
+                                <th>Member</th>
+                                <th>Action</th>
+                            </tr> -->
+
+                            <tbody>
+                                @foreach ($member as $index)
+                                    @if ($row->id == $index->customer_id)
+                                        <tr>
+                                            <td>{{ $loop->iteration }}</td>
+                                            <td style="font-size: 10pt; font-weight:bold;">{{ $index->name }}</td>
+                                            <td>
+                                              <a class="btn btn-primary" href="{{ route('superuser.finance.payable.create', [$row->id]) }}" role="button"><i class="fa fa-credit-card-alt" aria-hidden="true"></i></a>
+                                            </td>
+                                        </tr>
+                                    @endif
+                                @endforeach
+                            </tbody>
+                    </table>
+                </td>
+            </tr>
+        @endforeach
+      </tbody>
+    </table>
+    </div>
+      <div class="d-flex justify-content-center">
+        {!! $customer->links() !!}
       </div>
   </div>
 </div>
 
-@include('superuser.finance.payable.modal')
 @endsection
 
 <!-- Modal -->
@@ -103,7 +134,7 @@
   <script type="text/javascript">
     $(function(){
       $(function(){
-        $('#datatables').DataTable( {
+        $('#store_table').DataTable( {
           "paging":   false,
           "ordering": true,
           "info":     false,

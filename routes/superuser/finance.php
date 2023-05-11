@@ -31,7 +31,7 @@ Route::group([
 
     Route::group(['as' => 'payable.', 'prefix' => '/payable'], function () {
         Route::get('/', 'PayableController@index')->name('index');
-        Route::get('/create', 'PayableController@create')->name('create');
+        Route::get('/{id}/create', 'PayableController@create')->name('create');
         Route::get('/{id}/detail', 'PayableController@detail')->name('detail');
         Route::post('/store', 'PayableController@store')->name('store');
         Route::get('/{id}/print', 'PayableController@print')->name('print');

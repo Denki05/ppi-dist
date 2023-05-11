@@ -3,72 +3,94 @@
 @section('content')
 <nav class="breadcrumb bg-white push">
   <span class="breadcrumb-item">Finance</span>
-  <span class="breadcrumb-item">Payable</span>
-  <span class="breadcrumb-item active">Create</span>
+  <a class="breadcrumb-item" href="{{ route('superuser.finance.payable.index') }}">Payable</a>
+  <span class="breadcrumb-item active">Create Payable</span>
 </nav>
-@if(session('error') || session('success'))
-<div class="alert alert-{{ session('error') ? 'danger' : 'success' }} alert-dismissible fade show" role="alert">
-    @if (session('error'))
-    <strong>Error!</strong> {!! session('error') !!}
-    @elseif (session('success'))
-    <strong>Berhasil!</strong> {!! session('success') !!}
-    @endif
-    <button type="button" class="close" data-dismiss="alert" aria-label="Close">
-        <span aria-hidden="true">&times;</span>
-    </button>
-</div>
-@endif
+<div id="alert-block"></div>
 <div class="block">
-  <hr class="my-20">
-  <div class="block-content block-content-full">
-    <div class="row">
-      <div class="col-lg-2">
-        Store Code
-      </div>
-      <div class="col-lg-10">
-        : {{$customer->code}}
-      </div>
-    </div>
-    <div class="row">
-      <div class="col-lg-2">
-        Store/Member
-      </div>
-      <div class="col-lg-10">
-        : {{$customer->name}}
-      </div>
-    </div>
-    <div class="row">
-      <div class="col-lg-2">
-        Address
-      </div>
-      <div class="col-lg-10">
-        : {{$customer->address}}
-      </div>
-    </div>
-    <div class="row">
-      <div class="col-lg-2">
-        Phone
-      </div>
-      <div class="col-lg-10">
-        : {{$customer->phone}}
-      </div>
-    </div>
-  </div>
-</div>
-<div class="block">
-  <hr class="my-20">
-  <div class="block-content block-content-full">
-    <form id="frmPayable" method="post">
+  <div class="block-content">
+    <form id="frmCreate" action="#" data-type="POST" enctype="multipart/form-data">
       @csrf
       <input type="hidden" name="customer_id" value="{{$customer->id}}">
       <div class="row">
-        <div class="col-12">
-          <div class="table-responsive">
-            <table class="table table-striped table-bordered">
+        <div class="col-4">
+          <div class="card">
+            <div class="card-body">
+                <div class="col-10">
+                    <div class="form-group row">
+                      <label class="col-md-4 col-form-label text-right">Store</label>
+                      <div class="col-md-8">
+                        <input type="text" class="form-control-plaintext" value="{{ $customer->name }}">
+                    </div>
+                  </div>
+                </div>
+                <div class="col-10">
+                    <div class="form-group row">
+                      <label class="col-md-4 col-form-label text-right">Address</label>
+                      <div class="col-md-8">
+                        <input type="text" class="form-control-plaintext" value="{{ $customer->address }}">
+                    </div>
+                  </div>
+                </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="col-8">
+          <div class="card">
+            <div class="card-body">
+              <div class="row">
+                <div class="col-md-6">
+                    <div class="form-group row">
+                      <label class="col-md-4 col-form-label text-right">Type<span class="text-danger">*</span></label>
+                      <div class="col-md-6">
+                        <select class="form-control js-select2 type_payment" name="type_payment">
+                          <option value="">Type payment</option>
+                          <option value="1">Lunas per nota</option>
+                          <option value="2">Lunas beberapa nota</option>
+                          <option value="3">Cicilan</option>
+                        </select>
+                      </div>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="form-group row">
+                      <label class="col-md-4 col-form-label text-right">Note</label>
+                      <div class="col-8">
+                        <textarea class="form-control" name="note" rows="1"></textarea>
+                      </div>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                      <div class="form-group row">
+                        <label class="col-md-4 col-form-label text-right">Jumlah payment<span class="text-danger">*</span></label>
+                        <div class="col-md-6">
+                          <input type="text" class="form-control" name="payment_cash" id="payment_cash">
+                        </div>
+                      </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <hr />
+        <div class="block">
+          <div class="block-header block-header-default">
+            <h3 class="block-title">#INVOICE LIST</h3>
+          </div>
+          <div class="block-content">
+            <table id="datatable" class="table table-striped table-vcenter">
               <thead>
-                <th>Invoice</th>
-                <th>Account Receivable</th>
-                <th>Payabe</th>
+                <tr>
+                  <th class="text-center">#</th>
+                  <th class="text-center">Refrensi INV</th>
+                  <th class="text-center">Refrensi SO</th>
+                  <th class="text-center">Account Receivable</th>
+                  <th class="text-center">Payabel</th>
+                  <th class="text-center">Sisa</th>
+                </tr>
               </thead>
               <tbody>
                 <?php
@@ -82,12 +104,19 @@
                       $sisa = $total_invoicing - $payable;
                     ?>
                     @if($sisa > 0)
-                    <tr class="repeater">
+                    <tr class="index{{$index}}" data-index="{{$index}}">
                       <input type="hidden" name="repeater[{{$index}}][invoice_id]" value="{{$row->invoicing->id ?? ''}}">
-                      <td>{{$row->invoicing->code ?? ''}}</td>
-                      <td>{{number_format($sisa,0,',','.')}}</td>
+                      <td>{{ $loop->iteration }}</td>
+                      <td>{{ $row->invoicing->code }}</td>
+                      <td>{{$row->so->code ?? ''}}</td>
                       <td>
-                        <input type="text" name="repeater[{{$index}}][payable]" class="form-control formatRupiah count">
+                        <input type="text" class="form-control count" name="repeater[{{$index}}][sisa]" data-index="{{$index}}" step="any" value="{{$sisa}}" readonly>
+                      </td>
+                      <td>
+                        <input type="text" name="repeater[{{$index}}][payable]" data-index="{{$index}}" class="form-control count">
+                      </td>
+                      <td>
+                        <input type="text" class="form-control" name="repeater[{{$index}}][payment_sisa]" data-index="{{$index}}" readonly>
                       </td>
                     </tr>
                     <?php $counter++ ?>
@@ -103,135 +132,62 @@
             </table>
           </div>
         </div>
-      </div>
-      <div class="row">
-        <div class="col-12">
-          <div class="form-group row">
-            <label class="col-md-8 col-form-label text-right">Total</label>
-            <div class="col-md-4">
-              <input type="text" class="form-control total" readonly>
-            </div>
-          </div>
+      <hr />
+      
+      <div class="row pt-30 mb-15">
+        <div class="col-md-6">
+          <a href="{{route('superuser.finance.payable.index')}}">
+            <button type="button" class="btn bg-gd-cherry border-0 text-white">
+              <i class="fa fa-arrow-left mr-10"></i> Back
+            </button>
+          </a>
         </div>
-      </div>
-      <div class="row">
-        <div class="col-12">
-          <a href="{{route('superuser.finance.payable.index')}}" class="btn btn-warning"><i class="fa fa-arrow-left"></i> Back</a>
-          <button type="submit" class="btn btn-primary"><i class="fa fa-save"> Save </i></button>
+        <div class="col-md-6 text-right">
+          <button class="btn btn-primary btn-md btn-simpan" type="button"><i class="fa fa-save"></i> Simpan</button>
         </div>
       </div>
     </form>
   </div>
 </div>
+
+
 @endsection
 
-<!-- Modal -->
-
-
 @include('superuser.asset.plugin.select2')
-@include('superuser.asset.plugin.datatables')
 @include('superuser.asset.plugin.swal2')
+@include('superuser.asset.plugin.datatables')
+
 
 @push('scripts')
+<script src="{{ asset('utility/superuser/js/form.js') }}"></script>
+<script type="text/javascript">
+  $(document).ready(function() {
+    $('.js-select2').select2();
 
-  <script type="text/javascript">
-    $(function(){
-      $('#datatables').DataTable( {
-        "paging":   false,
-        "ordering": true,
-        "info":     false,
-        "searching" : false,
-        "columnDefs": [{
-          "targets": 0,
-          "orderable": false
-        }]
-      });
+    $(document).on('keyup','.count',function(){
+        let index = $(this).attr('data-index');
+        count_per_item(index);
 
-
-      $('.js-select2').select2();
-
-      $(document).on('keyup','.count',function(){
-        total();
-      })
-
-      $(document).on('keyup','.formatRupiah',function(){
-        let val = $(this).val();
-        $(this).val(formatRupiah(val));
-      })
-
-      $(document).on('submit','#frmPayable',function(e){
-        e.preventDefault();
-        if(confirm("Apakah anda yakin ingin melakukan pembayaran ini ?")){
-          let _form = $('#frmPayable');
-          $.ajax({
-            url : '{{route('superuser.finance.payable.store')}}',
-            method : "POST",
-            data : getFormData(_form),
-            dataType : "JSON",
-            beforeSend : function(){
-              $('button[type="submit"]').html('Loading...');
-            },
-            success : function(resp){
-              if(resp.IsError == true){
-                showToast('danger',resp.Message);
-              }
-              else{
-                Swal.fire(
-                  'Success!',
-                  resp.Message,
-                  'success'
-                ).then((result) => {
-                    window.location.href = '{{route('superuser.finance.payable.index')}}';
-                })
-              }
-            },
-            error : function(){
-              alert('Cek Koneksi Internet');
-            },
-            complete : function(){
-              $('button[type="submit"]').html('<i class="fa fa-save"> Save</i>');
-            }
-          })
-        }
-      })
     })
 
-    function total(){
-      let total = 0 ;
-      $('#frmPayable tr.repeater').each(function(i,e){
-        let val = $('#frmPayable tr.repeater').eq(i).find('.count').val();
-        if(val != "" && val != undefined){
-          val = parseFloat(val.split('.').join(''));
-        }
-        else{
-          val = 0;
+    function count_per_item(indx){
+        let index = indx;
+        let sisa = parseFloat($('tr.index'+index+'').find('input[name="repeater['+index+'][sisa]"]').val()); 
+        let payable = parseFloat($('tr.index'+index+'').find('input[name="repeater['+index+'][payable]"]').val()); 
+
+
+        if(isNaN(payable)){
+          payable = 0;
         }
         
-        if(isNaN(val)){
-          val = 0;
+        let payment_sisa  = sisa - payable;
+
+        if(isNaN(payment_sisa)){
+          payment_sisa = 0;
         }
-        total += val;
-      })
 
-      $('.total').val(formatRupiah(total));
+        $('tr.index'+index+'').find('input[name="repeater['+index+'][payment_sisa]"]').val(payment_sisa);
     }
-
-    function formatRupiah(angka, prefix){
-      angka = angka.toString();
-      var number_string = angka.replace(/[^,\d]/g, '').toString(),
-      split       = number_string.split(','),
-      sisa        = split[0].length % 3,
-      rupiah        = split[0].substr(0, sisa),
-      ribuan        = split[0].substr(sisa).match(/\d{3}/gi);
-     
-      // tambahkan titik jika yang di input sudah menjadi angka ribuan
-      if(ribuan){
-        separator = sisa ? '.' : '';
-        rupiah += separator + ribuan.join('.');
-      }
-     
-      rupiah = split[1] != undefined ? rupiah + ',' + split[1] : rupiah;
-      return prefix == undefined ? rupiah : (rupiah ? 'Rp. ' + rupiah : '');
-    }
-  </script>
+  })
+</script>
 @endpush

@@ -744,7 +744,7 @@ class PackingOrderController extends Controller
                 }
                 
                 $purchase_total_idr = ceil($idr_total - $total_discount_idr - $voucher_idr - $cashback_idr + $ppn);
-                $grand_total_idr = ceil($purchase_total_idr + $delivery_cost_idr + $other_cost_idr);
+                $grand_total_idr = ceil($purchase_total_idr + $delivery_cost_idr);
                 
                 if($total_discount_idr > $grand_total_idr){
                     $data_json["IsError"] = TRUE;

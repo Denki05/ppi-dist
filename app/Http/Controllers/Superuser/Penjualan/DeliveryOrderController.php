@@ -298,12 +298,12 @@ class DeliveryOrderController extends Controller
 
             // Create Invoice
             if ($result->type_transaction == 2){
-                $proforma = SoProforma::where('do_id', $result->id)->first();
+                $do_detail = PackingOrderDetail::where('do_id', $result->id)->first();
 
                 $data = [
                     'code' => CodeRepo::generateInvoicing($result->do_code),
                     'do_id' => $result->id,
-                    'grand_total_idr' => $proforma->grand_total_idr,
+                    'grand_total_idr' => $do_detail->grand_total_idr,
                     'created_by' => Auth::id(),
                 ];
                 
