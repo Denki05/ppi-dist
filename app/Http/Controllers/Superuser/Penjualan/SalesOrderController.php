@@ -286,6 +286,28 @@ class SalesOrderController extends Controller
 
             DB::beginTransaction();
             try {
+                if(empty($post["sales_senior_id"])){
+                    $data_json["IsError"] = TRUE;
+                    $data_json["Message"] = "Sales Senior wajib dipilih";
+                    goto ResultData;
+                }
+                if(empty($post["sales_id"])){
+                    $data_json["IsError"] = TRUE;
+                    $data_json["Message"] = "Sales wajib dipilih";
+                    goto ResultData;
+                }
+                if(empty($post["idr_rate"])){
+                    $data_json["IsError"] = TRUE;
+                    $data_json["Message"] = "IDR Rate tidak boleh kosong";
+                    goto ResultData;
+                }
+
+                if(empty($post["type_transaction"])){
+                    $data_json["IsError"] = TRUE;
+                    $data_json["Message"] = "Type transaction wajib dipilih";
+                    goto ResultData;
+                }
+
                 $insert = new SalesOrder;
                 $insert->code = CodeRepo::generateSO();
                 
@@ -330,9 +352,9 @@ class SalesOrderController extends Controller
             } catch (\Exception $e) {
                 DB::rollback();
 
-                dd($e);
+                
                 $data_json["IsError"] = TRUE;
-                $data_json["Message"] = "Sales Order Gagal Ditambahkan";
+                $data_json["Message"] = $e->getMessage();
     
                 return response()->json($data_json,400);
             }
@@ -1076,27 +1098,20 @@ class SalesOrderController extends Controller
                             $insert = PackingOrderItem::create($data[$key]);
                         }
 
-                        // Cetak proforma disini
-                        $so = SalesOrder::where('id', $sales_order->id)->first();
-                        $so_detail = SalesOrderItem::where('so_id', $so->id)->first();
-                        
-                            $proforma = new SoProforma;
-                            $proforma->so_id = $sales_order->id;
-                            $proforma->do_id = $packing_order->id;
-                            $proforma->code = CodeRepo::generateProforma($sales_order->code);
-                            $proforma->type_transaction = $sales_order->type_transaction;
-                            $proforma->grand_total_idr = $packing_order_detail->grand_total_idr;
-                            $proforma->status = 1;
-                            $proforma->created_by = Auth::id();
-                            $proforma->save();
+                        // Cetak Invoice disini
+                        if($sales_order->type_transaction == 1 || $packing_order->type_transaction == 1){
+                            if(empty($packing_order->invoicing))
+                            {
+                                $data = [
+                                    'code' => CodeRepo::generateInvoicing($packing_order->do_code),
+                                    'do_id' => $packing_order->id,
+                                    'grand_total_idr' => $packing_order_detail->grand_total_idr,
+                                    'created_by' => Auth::id()
+                                ];
 
-                            foreach($data as $key => $detail){
-                                $proforma_detail = new SoProformaDetail;
-                                $proforma_detail->so_proforma_id = $proforma->id;
-                                $proforma_detail->product_id = $detail["product_id"];
-                                $proforma_detail->qty = $detail["qty"];
-                                $proforma_detail->save();
+                                $insertInv = Invoicing::create($data);
                             }
+                        }
                     // }
                     DB::commit();
                     $response['notification'] = [
@@ -1218,24 +1233,6 @@ class SalesOrderController extends Controller
                             }
                             
                         }
-    
-                        //Update Proforma
-                        $get_pro = SoProforma::where('do_id', $get_po->id)->first();
-    
-                        if($get_pro->grand_total_idr > 0){
-                            $updatePro = SoProforma::where('id', $get_pro->id)->update([
-                                'grand_total_idr' => $request->grand_total_final
-                            ]);
-    
-                                foreach( $data as $key => $detail ){
-                                    $proforma_detail = new SoProformaDetail;
-                                    $proforma_detail->so_proforma_id = $get_pro->id;
-                                    $proforma_detail->product_id = $detail["product_id"];
-                                    $proforma_detail->qty = $detail["qty"];
-                                    $proforma_detail->save();
-                                }
-                        }
-    
                         DB::commit();
                         $response['notification'] = [
                             'alert' => 'notify',
@@ -1249,7 +1246,6 @@ class SalesOrderController extends Controller
                 }
             } catch (\Exception $e) {
                 DB::rollback();
-                DD($e);
                 $response['notification'] = [
                     'alert' => 'block',
                     'type' => 'alert-danger',

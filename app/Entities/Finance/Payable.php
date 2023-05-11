@@ -12,11 +12,25 @@ class Payable extends Model
     protected $fillable = [
     	'code',
     	'customer_id',
-    	'so_id',
+    	'type',
     	'total',
+        'status',
+        'note',
     	'updated_by',
     	'created_by',
     	'deleted_by'
+    ];
+
+    const STATUS = [
+        'DELETED' => 0,
+        'ACTIVE' => 1,
+        'ACC' => 2,
+    ];
+
+    const TYPE = [
+        'LUNAS PER NOTA' => 1,
+        'LUNAS BEBERAPA NOTA' => 2,
+        'CICILAN' => 3,
     ];
 
     public function customer(){
