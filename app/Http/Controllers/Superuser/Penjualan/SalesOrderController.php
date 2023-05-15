@@ -627,7 +627,7 @@ class SalesOrderController extends Controller
                 goto ResultData;
             } catch (\Exception $e) {
 
-                // dd($e);
+                dd($e);
                 DB::rollback();
 
                 $data_json["IsError"] = TRUE;

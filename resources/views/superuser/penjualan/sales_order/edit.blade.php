@@ -25,6 +25,7 @@
       @csrf
       <input type="hidden" name="id" value="{{$result->id}}">
       <input type="hidden" name="step" value="{{$step}}">
+      <input type="hidden" name="customer_id" id="customer_id" value="{{ $result->customer->id }}">
       <div class="row">
         <div class="col-4">
           <div class="card">

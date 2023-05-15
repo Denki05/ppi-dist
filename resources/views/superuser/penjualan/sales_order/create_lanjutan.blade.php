@@ -7,72 +7,79 @@
   <input type="hidden" name="step" value="{{$step}}">
 
     <div class="row">
-      <div class="col-4">
+      <div class="col-md-4">
         <div class="card mb-2 border-0">
           <div class="card-body">
             <div class="row">
               <div class="col">
-                <div class="row">
-                  <label style="font-size: 10pt;" class="col-xs-4 col-sm-4 col-md-4 control-label" for="textinput">Code</label>
-                  <div class="col-xs-6 col-sm-6 col-md-6">
-                    <p style="font-size: 9pt;">{{ $result->code }}</p>
-                  </div>
+                <div class="form-label-group in-border">
+                  <label>Code</label>
+                  <input type="text" class="form-control" value="{{ $result->code }}" readonly>
                 </div>
+              </div>
+              <div class="col">
+                <div class="form-label-group in-border">
+                  <label>Date</label>
+                  <input type="text" class="form-control" value="{{ date('d-m-Y',strtotime($result->created_at)) }}" readonly>
                 </div>
-                <div class="col">
-                  <div class="row">
-                    <label style="font-size: 10pt;" class="col-xs-6 col-sm-6 col-md-6 control-label" for="textinput">Tanggal</label>
-                    <div class="col-xs-6 col-sm-6 col-md-6">
-                      <p style="font-size: 9pt;">{{ date('d-m-Y',strtotime($result->created_at)) }}</p>
+              </div>
+            </div>
+
+            <div class="row">
+              <div class="col">
+                <div class="form-label-group in-border">
+                  <label>Customer</label>
+                  <input type="text" class="form-control" value="{{ $result->member->name }}" readonly>
+                </div>
+              </div>
+              <div class="col">
+                <div class="form-label-group in-border">
+                  <label>Address</label>
+                  <!-- <input type="text" class="form-control" value="{{ $result->member->address }}" readonly> -->
+                  <textarea class="form-control" id="exampleFormControlTextarea1" rows="1">{{ $result->member->address }}</textarea>
+                </div>
+              </div>
+            </div>
+
+            <div class="row">
+              <div class="col">
+                <div class="form-label-group in-border">
+                  <label>Note</label>
+                  <input type="text" class="form-control" value="{{ $result->note }}" readonly>
+                </div>
+              </div>
+              <div class="col">
+                <div class="form-label-group in-border">
+                  <label>Transaksi Type</label><br>
+                  @if($result->type_transaction == 1)
+                    <button type="button" class="btn btn-info">CASH</button>
+                  @endif
+                  @if($result->type_transaction == 2)
+                    <button type="button" class="btn btn-info">TEMPO</button>
+                  @endif
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="card mb-2 border-0">
+          <div class="card-body" >
+                    <div class="form-group row">
+                      <label class="col-md-3 col-form-label text-right">Ekspedisi</label>
+                      <div class="col-md-6">
+                        <select class="form-control js-select2" name="ekspedisi">
+                          <option value="">Pilih Ekspedisi</option>
+                          @foreach($ekspedisi as $index)
+                          <option value="{{ $index->id }}">{{ $index->name }}</option>
+                          @endforeach
+                        </select>
+                      </div>
+                      <div class="col-md-2">
+                        <input type="checkbox" class="form-check-input" id="ongkir_1">
+                        <label>Ongkir bayar ditempat</label>
+                      </div>
                     </div>
-                  </div>
-                </div>
-            </div>
-          </div>
-        </div>
-
-        <div class="card mb-2 border-0">
-          <div class="card-body" >
-            <div class="row">
-              <div class="col">
-                <div class="form-label-group in-border">
-                  <label style="font-size: 10pt;">Customer</label>
-                  <p style="font-size: 9pt;">{{ $result->member->name }}</p>
-                </div>
-              </div>
-              <div class="col">
-                <div class="form-label-group in-border">
-                  <label style="font-size: 10pt;">Address</label>
-                  <p style="font-size: 9pt;">{{ $result->member->address }}</p>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <div class="card mb-2 border-0">
-          <div class="card-body" >
-            <div class="row">
-              <div class="col">
-                <div class="form-label-group in-border">
-                  <label style="font-size: 10pt;">Transaksi Type</label>
-                    <p style="font-size: 10pt;">
-                    <span class="badge badge-info">{{ $result->so_type_transaction()->scalar }}</span>
-                    </p>
-                </div>
-              </div>
-              <div class="col">
-                <div class="form-label-group in-border">
-                  <label style="font-size: 10pt;">Ekspedisi</label><br>
-                  <select class="form-control js-select2" name="ekspedisi">
-                    <option value="">Pilih Ekspedisi</option>
-                    @foreach($ekspedisi as $index)
-                    <option value="{{ $index->id }}">{{ $index->name }}</option>
-                    @endforeach
-                  </select>
-                </div>
-              </div>
-            </div>
           </div>
         </div>
       </div>
