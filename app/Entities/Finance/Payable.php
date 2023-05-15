@@ -23,7 +23,7 @@ class Payable extends Model
     const STATUS = [
         'DELETED' => 0,
         'ACTIVE' => 1,
-        'ACC' => 2,
+        'APPROVE' => 2,
     ];
 
     const TYPE = [
@@ -43,6 +43,11 @@ class Payable extends Model
     public function getTotalAttribute($value)
     {
         return floatval($value);
+    }
+
+    public function status()
+    {
+        return array_search($this->status, self::STATUS);
     }
 
 }

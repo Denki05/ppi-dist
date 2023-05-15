@@ -17,6 +17,7 @@ use DB;
 use Auth;
 use PDF;
 use Carbon\Carbon;
+use Validator;
 
 class PayableController extends Controller
 {
@@ -245,6 +246,28 @@ class PayableController extends Controller
     public function update(Request $request, $id)
     {
         //
+    }
+
+    public function approve($id)
+    {
+        // Access
+        if(Auth::user()->is_superuser == 0){
+           if(empty($this->access) || empty($this->access->user) || $this->access->can_read == 0){
+               return redirect()->route('superuser.index')->with('error','Anda tidak punya akses untuk membuka menu terkait');
+           }
+        }
+
+        $payable = Payable::findOrFail($id);
+
+        if($payable == null){
+            abort(404);
+        }
+
+        $payable->status = Payable::STATUS['APPROVE'];
+        $payable->updated_by = Auth::id();
+        $payable->save();
+
+        return redirect()->back()->with('success', 'Pembayaran '.$payable->code.' '.'di Approve!');
     }
 
     /**
