@@ -119,7 +119,7 @@ class SaleReturnController extends Controller
             'sales_return' => $sales_retun
         ];
 
-        return view('superuser.penjualan.sale_return.index', $data);
+        return view("superuser.coming-soon");
     }
 
     public function create()
