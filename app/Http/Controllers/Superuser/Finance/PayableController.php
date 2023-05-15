@@ -16,6 +16,7 @@ use App\Entities\Penjualan\PackingOrder;
 use DB;
 use Auth;
 use PDF;
+use Carbon\Carbon;
 
 class PayableController extends Controller
 {
@@ -201,12 +202,13 @@ class PayableController extends Controller
             }
         }
 
-        $result = Payable::where('id',$id)->first();
-        if(empty($result)){
-            abort(404);
-        }
+        $customer = Customer::where('id', $id)->first();
+
+        $result = Payable::where('customer_id', $customer->id)->whereRaw('Date(created_at) = CURDATE()')->get();
+        
         $data = [
-            'result' => $result
+            'result' => $result,
+            'customer' => $customer,
         ];
         return view($this->view."detail",$data);
     }

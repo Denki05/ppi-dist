@@ -22,59 +22,24 @@
   <hr class="my-20">
   <div class="block-content block-content-full">
     <div class="row">
-      <div class="col-lg-2">
-        <strong>Payable Code</strong>
-      </div>
-      <div class="col-lg-10">
-        : {{$result->code}}
-      </div>
-    </div>
-    <div class="row">
-      <div class="col-lg-2">
-        <strong>Customer</strong>
-      </div>
-      <div class="col-lg-10">
-        : {{$result->customer->name ?? ''}}
-      </div>
-    </div>
-    <div class="row">
-      <div class="col-lg-2">
-        <strong>Total</strong>
-      </div>
-      <div class="col-lg-10">
-        : {{number_format($result->total,0,',','.')}}
-      </div>
-    </div>
-    <div class="row">
-      <div class="col-lg-2">
-        <strong>Created at</strong>
-      </div>
-      <div class="col-lg-10">
-        : {{$result->created_at}}
-      </div>
-    </div>
-  </div>
-</div>
-<div class="block">
-  <hr class="my-20">
-  <div class="block-content block-content-full">
-    <div class="row">
       <div class="col-12">
         <div class="table-responsive">
           <table class="table table-striped table->bordered">
             <thead>
-              <th>Invoice</th>
-              <th>Prev Account Receivable</th>
+              <th>#</th>
+              <th>Created</th>
+              <th>Code</th>
               <th>Total</th>
+              <th>Action</th>
             </thead>
             <tbody>
-              @foreach($result->payable_detail as $index => $row)
+              @foreach($result as $index => $row)
                 <tr>
-                  <td>
-                    <a href="{{route('superuser.finance.invoicing.history_payable',$row->invoice->id ?? '')}}">{{$row->invoice->code ?? ''}}</a>
-                  </td>
-                  <td>{{number_format($row->prev_account_receivable,0,',','.')}}</td>
+                  <td>{{ $index+1 }}</td>
+                  <td>{{ $row->created_at }}</td>
+                  <td>{{ $row->code }}</td>
                   <td>{{number_format($row->total,0,',','.')}}</td>
+                  <td></td>
                 </tr>
               @endforeach
             </tbody>
