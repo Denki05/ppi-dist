@@ -44,16 +44,27 @@
               <div class="col-4">
                 <div class="row">
                   <div class="col-lg-4">
-                    Total Piutang
+                    Detail
                   </div>
-                  <?php
-                    // $piutang = $customer->invoicing->sum('grand_total_idr');
-                  ?>
                   <div class="col-lg-8">
-                    <input type="text" class="form-control" value="" readonly>
+                    <a href="{{ route('superuser.finance.payable.detail', $customer->id) }}" class="btn btn-secondary btn-lg" role="button"><i class="fa fa-list"></i></a>
                   </div>
                 </div>
               </div>
+              <!-- <div class="col-4">
+                <div class="row">
+                  <div class="col-lg-4">
+                    Total Piutang
+                  </div>
+                  
+                  @foreach($customer->do as $index => $row)
+                    
+                  @endforeach
+                  <div class="col-lg-8">
+                    <input type="text" class="form-control" value="{{ $sisa_piutang ?? 0 }}" readonly>
+                  </div>
+                </div>
+              </div> -->
             </div>
             <br>
             <div class="row">
@@ -77,16 +88,7 @@
                   </div>
                 </div>
               </div>
-              <div class="col-4">
-                <div class="row">
-                  <div class="col-lg-4">
-                    Detail
-                  </div>
-                  <div class="col-lg-8">
-                    <a href="{{ route('superuser.finance.payable.detail', $customer->id) }}" class="btn btn-secondary btn-lg" role="button"><i class="fa fa-list"></i></a>
-                  </div>
-                </div>
-              </div>
+              
             </div>
             
   </div>

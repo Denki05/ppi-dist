@@ -970,7 +970,7 @@ class SalesOrderController extends Controller
                 if ($sales_order->count_rev == 0) {
                     $sales_order->origin_warehouse_id = $request->origin_warehouse_id;
                     $sales_order->ekspedisi_id = $request->ekspedisi;
-                    $sales_order->shipping_cost_buyer = $request->shipping_cost_buyer;
+                    $sales_order->shipping_cost_buyer = $request->shipping_cost_buyer ?? 0;
                     $sales_order->status = 4;
                     $sales_order->count_rev = 0;
                     $sales_order->updated_by = Auth::id();
@@ -1255,7 +1255,7 @@ class SalesOrderController extends Controller
                     }
                 }
             } catch (\Exception $e) {
-                // DD($e);
+                DD($e);
                 DB::rollback();
                 $response['notification'] = [
                     'alert' => 'block',

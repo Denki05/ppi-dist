@@ -129,7 +129,7 @@ class InvoicingController extends Controller
         $data = [
             'result' => $result
         ];
-        return view($this->view."detail",$data);
+        return view('superuser.finance.invoicing.detail' ,$data);
     }
 
     public function history_payable($id)
@@ -145,7 +145,7 @@ class InvoicingController extends Controller
         $data = [
             'result' => $result
         ];
-        return view($this->view."history_payable",$data);
+        return view('superuser.finance.invoicing.history_payable', $data);
     }
 
     /**

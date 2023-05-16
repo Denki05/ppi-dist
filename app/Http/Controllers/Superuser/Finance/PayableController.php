@@ -233,7 +233,16 @@ class PayableController extends Controller
      */
     public function edit($id)
     {
-        //
+        // Access
+        if(Auth::user()->is_superuser == 0){
+            if(empty($this->access) || empty($this->access->user) || $this->access->can_read == 0){
+                return redirect()->route('superuser.index')->with('error','Anda tidak punya akses untuk membuka menu terkait');
+            }
+        }
+
+        $data['result'] = Payable::findOrFail($id);
+
+        return view('superuser.finance.payable.edit', $data);
     }
 
     /**
@@ -252,7 +261,7 @@ class PayableController extends Controller
     {
         // Access
         if(Auth::user()->is_superuser == 0){
-           if(empty($this->access) || empty($this->access->user) || $this->access->can_read == 0){
+           if(empty($this->access) || empty($this->access->user) || $this->access->can_approve == 0){
                return redirect()->route('superuser.index')->with('error','Anda tidak punya akses untuk membuka menu terkait');
            }
         }
@@ -278,8 +287,16 @@ class PayableController extends Controller
      */
     public function destroy($id)
     {
-        //
+        // Access
+        if(Auth::user()->is_superuser == 0){
+            if(empty($this->access) || empty($this->access->user) || $this->access->can_delete == 0){
+                return redirect()->route('superuser.index')->with('error','Anda tidak punya akses untuk membuka menu terkait');
+            }
+        }
+
+        
     }
+
     public function print($id){
         // Access
         if(Auth::user()->is_superuser == 0){

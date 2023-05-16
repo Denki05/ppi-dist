@@ -77,7 +77,7 @@
               <tr>
                 <td>{{$index+1}}</td>
                 <td>
-                  <a href="{{route('superuser.finance.payable.detail',$row->payable->id ?? '')}}">{{$row->payable->code ?? ''}}</a>
+                  {{$row->payable->code ?? ''}}
                 </td>
                 <td>{{number_format($row->total,0,',','.')}}</td>
                 <td>{{$row->created_at}}</td>

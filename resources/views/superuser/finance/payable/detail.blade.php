@@ -41,20 +41,12 @@
                   <td>{{ $row->created_at }}</td>
                   <td>{{ $row->code }}</td>
                   <td>{{number_format($row->total,0,',','.')}}</td>
-                  <td>
-                  @if($row->status == 0)
-                    <span class="badge badge-danger">{{ $row->status() }}</span>
-                    @endif
-                    @if($row->status == 1)
-                    <span class="badge badge-secondary">{{ $row->status() }}</span>
-                    @endif
-                    @if($row->status == 2)
-                    <span class="badge badge-success">{{ $row->status() }}</span>
-                    @endif
-                  </td>
+                  <td>{{ $row->status() }}</td>
                   <td>
                     @if($row->status == 1)
-                    <a href="{{route('superuser.finance.payable.approve', $row->id)}}" class="btn btn-success"><i class="fa fa-check"></i></a>
+                    <a href="{{route('superuser.finance.payable.approve', $row->id)}}" class="btn btn-success" title="Approve"><i class="fa fa-check"></i></a>
+                    <a href="{{ route('superuser.finance.payable.edit', $row->id) }}" class="btn btn-warning" title="Edit"><i class="fa fa-pencil"></i></a>
+                    <a href="#" class="btn btn-danger" title="Delete"><i class="fa fa-trash"></i></a>
                     @endif
                   </td>
                 </tr>
