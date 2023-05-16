@@ -269,7 +269,7 @@
 
             <!-- SO Lanjutan -->
             <div id="so_lanjutan" class="tab-pane active">
-              <table class="table table-striped" id="datatables">
+              <table class="table table-striped" id="so_transaksi">
                 <thead>
                   <tr>
                     <th>#</th>
@@ -486,7 +486,7 @@
 @push('scripts')
 <script type="text/javascript">
 	$(function(){
-      $('#datatables').DataTable( {
+      $('#so_transaksi').DataTable( {
         "paging":   false,
         "ordering": true,
         "info":     false,

@@ -970,10 +970,13 @@ class SalesOrderController extends Controller
                 if ($sales_order->count_rev == 0) {
                     $sales_order->origin_warehouse_id = $request->origin_warehouse_id;
                     $sales_order->ekspedisi_id = $request->ekspedisi;
+                    $sales_order->shipping_cost_buyer = $request->shipping_cost_buyer;
                     $sales_order->status = 4;
                     $sales_order->count_rev = 0;
                     $sales_order->updated_by = Auth::id();
                     $sales_order->save();
+
+                    // dd($sales_order->shipping_cost_buyer);
 
                     // DD($sales_order->save());
 
@@ -1011,12 +1014,19 @@ class SalesOrderController extends Controller
                         $packing_order_detail->discount_idr = $request->disc_idr;
                         $packing_order_detail->voucher_idr = $request->voucher_idr;
                         $packing_order_detail->purchase_total_idr = $request->subtotal_2;
-                        $packing_order_detail->delivery_cost_idr = $request->delivery_cost_idr;
+                        if($sales_order->shipping_cost_buyer == 0){
+                            $packing_order_detail->delivery_cost_idr = $request->delivery_cost_idr;
+                        }elseif($sales_order->shipping_cost_buyer == 1){
+                            $packing_order_detail->delivery_cost_idr = 0;
+                        }
+                        // $packing_order_detail->delivery_cost_idr = $request->delivery_cost_idr;
                         $packing_order_detail->other_cost_idr = $request->resi_ongkir;
                         $packing_order_detail->grand_total_idr = $request->grand_total_final;
                         $packing_order_detail->terbilang = CustomHelper::terbilang($request->grand_total_final);
                         $packing_order_detail->created_by = Auth::id();
                         $packing_order_detail->save();
+
+                        // DD($request->delivery_cost_idr);
 
                         $data = [];
                         foreach ($request->repeater as $key => $value) {
@@ -1245,6 +1255,7 @@ class SalesOrderController extends Controller
                     }
                 }
             } catch (\Exception $e) {
+                // DD($e);
                 DB::rollback();
                 $response['notification'] = [
                     'alert' => 'block',

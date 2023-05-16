@@ -76,8 +76,8 @@
                         </select>
                       </div>
                       <div class="col-md-2">
-                        <input type="checkbox" class="form-check-input" id="ongkir_1">
-                        <label>Ongkir bayar ditempat</label>
+                        <input type="checkbox" class="form-check-input" value="1" id="shipping_cost_buyer" name="shipping_cost_buyer">
+                        <label>Bayar ditempat</label>
                       </div>
                     </div>
           </div>
@@ -457,6 +457,10 @@
         $('input[name="subtotal_2"]').val(subtotal_2);
       }
 
+      $('#shipping_cost_buyer').change(function(){
+        $('input[name="delivery_cost_idr"]').val(($(this).is(':checked')) ? "0" : "");
+      })
+
       // calculated button after input voucher - disc idr
       $(document).on('click', '#button_cal', function(e) {
         e.preventDefault();
@@ -466,7 +470,6 @@
         let voucher_idr = $('input[name="voucher_idr"]').val();
         let ongkir = $('input[name="delivery_cost_idr"]').val();
         let resi = $('input[name="resi_ongkir"]').val();
-        // alert(resi_ongkir);
 
         subtotal = parseFloat(subtotal.split('.').join(''));
         disc_idr = parseFloat(disc_idr.split('.').join(''));

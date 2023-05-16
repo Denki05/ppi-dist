@@ -25,6 +25,7 @@ class SalesOrder extends Model
     	'tl',
     	'sales',
     	'status',
+        'shipping_cost_buyer',
         'condition',
     	'payment_status',
         'keterangan_tidak_lanjut',
@@ -86,6 +87,11 @@ class SalesOrder extends Model
     	1 => 'TRUE',
     ];
 
+    const SHIPPING_COST_BUYER = [
+    	0 => 'NO',
+    	1 => 'YES',
+    ];
+
     public function customer(){
     	return $this->BelongsTo('App\Entities\Master\Customer','customer_id','id');
     }
@@ -139,6 +145,11 @@ class SalesOrder extends Model
     public function so_status()
     {
         return (object) self::STEP[$this->status];
+    }
+
+    public function shipp_cost_buyer()
+    {
+        return (object) self::shipping_cost_buyer[$this->shipping_cost_buyer];
     }
 
     public function so_condition()
