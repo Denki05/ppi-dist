@@ -325,7 +325,7 @@ class PayableController extends Controller
                             'content' => 'Success',
                         ];
 
-                        $response['redirect_to'] = route('superuser.finance.payable.index');
+                        $response['redirect_to'] = route('superuser.finance.payable.detail', $payment->id);
 
                         return $this->response(200, $response);
                     }

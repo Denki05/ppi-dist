@@ -24,7 +24,7 @@
     <div class="row">
       <div class="col-12">
         <div class="table-responsive">
-          <table class="table table-striped table->bordered" id="detail_payable">
+          <table class="table table-striped table->bordered" id="datatables">
             <thead>
               <th>#</th>
               <th>Created</th>
@@ -48,6 +48,9 @@
                     <a href="{{ route('superuser.finance.payable.edit', $row->id) }}" class="btn btn-warning" title="Edit"><i class="fa fa-pencil"></i></a>
                     <a href="#" class="btn btn-danger" title="Delete"><i class="fa fa-trash"></i></a>
                     @endif
+                    @if($row->status == 2)
+                      <a href="#" class="btn btn-info" title="Show"><i class="fa fa-eye"></i></a>
+                    @endif
                   </td>
                 </tr>
               @endforeach
@@ -58,34 +61,19 @@
     </div>
     <div class="row mb-30">
       <div class="col-12">
-        <a href="{{route('superuser.finance.payable.index')}}" class="btn btn-warning"><i class="fa fa-arrow-left"></i> Back</a>
+        <a href="{{route('superuser.finance.payable.create', $customer->id)}}" class="btn btn-warning"><i class="fa fa-arrow-left"></i> Back</a>
       </div>
     </div>
   </div>
 </div>
 @endsection
 
-<!-- Modal -->
-
 
 @include('superuser.asset.plugin.select2')
 @include('superuser.asset.plugin.datatables')
 @include('superuser.asset.plugin.swal2')
+@include('superuser.asset.plugin.daterangepicker')
 
 @push('scripts')
-
-  <script type="text/javascript">
-    $(function(){
-      $('#detail_payable').DataTable( {
-          "paging":   false,
-          "ordering": true,
-          "info":     false,
-          "searching" : false,
-          "columnDefs": [{
-            "targets": 0,
-            "orderable": false
-          }]
-        });
-    })
-  </script>
+@include('superuser.finance.payable.js')
 @endpush

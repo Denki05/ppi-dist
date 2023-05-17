@@ -1,11 +1,6 @@
 @extends('superuser.app')
 
 @section('content')
-<!-- <nav class="breadcrumb bg-white push">
-  <span class="breadcrumb-item">Finance</span>
-  <a class="breadcrumb-item" href="{{ route('superuser.finance.payable.index') }}">Payable</a>
-  <span class="breadcrumb-item active">Edit</span>
-</nav> -->
 <div id="alert-block"></div>
 <form class="ajax" data-action="{{ route('superuser.finance.payable.update', $result->id) }}" data-type="POST" enctype="multipart/form-data">
   <div class="block">
@@ -74,7 +69,7 @@
         </div>
         <hr>
         <div class="block-content">
-          <table id="datatable_debet" class="table table-striped">
+          <table id="datatables" class="table table-striped">
             <thead>
               <tr>
                 <th class="text-center" >#</th>
@@ -88,15 +83,15 @@
                   <tr>
                     <input type="hidden" class="form-control" name="payable_detail[]" value="{{$key->id}}">
                     <input type="hidden" class="form-control" name="invoice_id[]" value="{{$key->invoice_id}}">
-                    <td>{{ $loop->iteration }}</td>
-                    <td>
+                    <td width="5%">{{ $loop->iteration }}</td>
+                    <td width="25%">
                       <span>{{ $key->invoice->code }}</span>
                     </td>
-                    <td>
-                      <input type="number" class="form-control count" name="account_receivable[]" value="{{ $key->invoice->grand_total_idr }}" readonly>
+                    <td width="25%">
+                      <input style="text-align: center;" type="number" class="form-control count" name="account_receivable[]" value="{{ $key->invoice->grand_total_idr }}" readonly>
                     </td>
-                    <td>
-                      <input type="number" class="form-control count" name="payable[]" value="{{ $key->total }}" required>
+                    <td width="25%">
+                      <input style="text-align: center;" type="number" class="form-control count" name="payable[]" value="{{ $key->total }}" required>
                     </td>
                   </tr>
               @endforeach
@@ -134,7 +129,7 @@
 <script src="{{ asset('utility/superuser/js/form.js') }}"></script>
 <script>
   $(document).ready(function () {
-    $('#datatable_debet').DataTable( {
+    $('#datatables').DataTable( {
           "paging":   false,
           "ordering": true,
           "info":     false,
