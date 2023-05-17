@@ -254,7 +254,96 @@ class PayableController extends Controller
      */
     public function update(Request $request, $id)
     {
-        //
+        if ($request->ajax()) {
+            $payment = Payable::find($id);
+
+            if ($payment == null){
+                abort(404);
+            }
+
+            $validator = Validator::make($request->all(), [
+                'code' => 'required|string',
+            ]);
+
+            if ($validator->fails()) {
+                $response['notification'] = [
+                    'alert' => 'block',
+                    'type' => 'alert-danger',
+                    'header' => 'Error',
+                    'content' => $validator->errors()->all(),
+                ];
+
+                return $this->response(400, $response);
+            }
+
+            if($payment->status == 2) {
+                $response['notification'] = [
+                    'alert' => 'block',
+                    'type' => 'alert-danger',
+                    'header' => 'Error',
+                    'content' => 'Payment harus status aktiv',
+                ];
+                return $this->response(400, $response);
+            }
+
+            if ($validator->passes()) {
+                DB::beginTransaction();
+
+                try{
+
+                    $payment->code = $request->code;
+
+                    if ($payment->save()) {
+                        if($request->payable_detail){
+                            $total_payable = 0;
+                            foreach($request->payable_detail as $key => $value){
+                                if($request->payable_detail[$key]) {
+                                    $get_invoice = Invoicing::find($request->invoice_id[$key]);
+                                    
+                                    $payable_detail = PayableDetail::find($request->payable_detail[$key]);
+                                    $payable_detail->total = $request->payable[$key];
+                                    $payable_detail->prev_account_receivable = $get_invoice->grand_total_idr - $request->payable[$key];
+                                    $payable_detail->updated_by = Auth::id();
+                                    $payable_detail->save();
+
+                                    $total_payable += $request->payable[$key];
+                                }
+                            }
+                        }
+
+                        // Update header payable
+                        $update_payable = Payable::where('id', $payment->id)->update([
+                            'total' => $total_payable,
+                            'updated_by' => Auth::id(),
+                        ]);
+
+                        DB::commit();
+
+                        $response['notification'] = [
+                            'alert' => 'notify',
+                            'type' => 'success',
+                            'content' => 'Success',
+                        ];
+
+                        $response['redirect_to'] = route('superuser.finance.payable.index');
+
+                        return $this->response(200, $response);
+                    }
+
+                }catch (\Exception $e) {
+                    dd($e);
+                    DB::rollback();
+                    $response['notification'] = [
+                        'alert' => 'block',
+                        'type' => 'alert-danger',
+                        'header' => 'Error',
+                        'content' => "Internal Server Error!",
+                    ];
+
+                    return $this->response(400, $response);
+                }
+            }
+        }
     }
 
     public function approve($id)
