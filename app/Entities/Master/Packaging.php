@@ -19,6 +19,11 @@ class Packaging extends Model
         return $this->hasMany('App\Entities\Master\ProductCategory', 'packaging_id');
     }
 
+    public function sales_order_item()
+    {
+        return $this->hasMany('App\Entities\Penjualan\SalesOrderItem', 'packaging_id');
+    }
+
     public function unit()
     {
         return $this->belongsTo('App\Entities\Master\Unit', 'unit_id');

@@ -280,7 +280,7 @@
                         <input type="text" name="repeater[{{$index}}][price]" class="form-control" readonly value="{{$detail->product->selling_price ?? 0}}">
                       </td>
                       <td>
-                        <input type="text" name="repeater[{{$index}}][packaging]" class="form-control" readonly value="{{$detail->packaging_txt()->scalar ?? ''}}">
+                        <input type="text" name="repeater[{{$index}}][packaging]" class="form-control" readonly value="{{$detail->packaging->pack_name ?? ''}}">
                       </td>
                       <td>
                         <input type="text" name="repeater[{{$index}}][usd_disc]" class="form-control count count-disc" data-index="{{$index}}" step="any">

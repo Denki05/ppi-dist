@@ -30,6 +30,7 @@ class SalesOrder extends Model
     	'payment_status',
         'keterangan_tidak_lanjut',
     	'so_for',
+    	'so_indent',
         'count_rev',
     	'updated_by',
     	'created_by',

@@ -131,6 +131,7 @@
                   <th class="text-center">Quantity</th>
                   <th class="text-center">Pack</th>
                   <th class="text-center">Kemasan</th>
+                  <th class="text-center">Free?</th>
                   <th class="text-center">Action</th>
                 </tr>
               </thead>
@@ -178,14 +179,15 @@
         paging: false,
         bInfo : false,
         searching: false,
-        columns: [
+        column: [
           {name: 'counter'},
           {name: 'product', orderable: false, width: "25%"},
           {name: 'name', orderable: false, searcable: false, width: "20%"},
           {name: 'price', orderable: false, searcable: false, width: "10%"},
           {name: 'qty', orderable: false, searcable: false, width: "5%"},
-          {name: 'packaging', orderable: false, searcable: false, width: "5%"},
+          {name: 'packaging', orderable: false, searcable: false, width: "10%"},
           {name: 'kemasan', orderable: false, searcable: false, width: "20%"},
+          {name: 'free', orderable: false, searcable: false, width: "20%"},
           {name: 'action', orderable: false, searcable: false, width: "5%"}
         ],
         'order' : [[0,'desc']]
@@ -202,8 +204,9 @@
                     '<span class="name"></span>',
                     '<span class="price"></span>',
                     '<input type="number" class="form-control" name="qty[]" value="1" readonly required>',
-                    '<input type="text" class="form-control pack" name="packaging[]" readonly required>',
+                    '<input type="number" class="form-control pack" name="packaging_id[]" readonly required>',
                     '<span class="packname"></span>',
+                    '<input type="checkbox" class="form-check-input" value="1" name="free_product[]" id="free_product"> <input type="hidden" class="form-check-input" value="0" name="free_product[]" id="free_product">',
                     '<a href="#" class="row-delete"><button type="button" class="btn btn-sm btn-circle btn-alt-danger" title="Delete"><i class="fa fa-trash"></i></button></a>'
                   ]).draw( false );
                   // $('.js-select2').select2()
@@ -251,11 +254,12 @@
       $('.js-ajax').on('select2:select', function (e) {
         var name = e.params.data.productName;
         var price = e.params.data.productPrice;
-        var no = e.params.data.packNo;
+        var no = e.params.data.packValue;
         var pack = e.params.data.packagingName;
+        var packId = e.params.data.packId;
         $(this).parents('tr').find('.name').text(name);
         $(this).parents('tr').find('.packname').text(pack);
-        $(this).parents('tr').find('.pack').val(no);
+        $(this).parents('tr').find('.pack').val(packId);
         $(this).parents('tr').find('.price').text('$' + price);
         $(this).parents('tr').find('input[name="qty[]"]').removeAttr('readonly');
       });
@@ -501,5 +505,7 @@
       let val = $(this).val();
       $(this).val(formatRupiah(val));
   })
+
+  
 </script>
 @endpush

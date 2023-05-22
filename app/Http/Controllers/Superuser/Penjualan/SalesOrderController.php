@@ -17,6 +17,7 @@ use App\Entities\Master\Customer;
 use App\Entities\Master\CustomerOtherAddress;
 use App\Entities\Master\Company;
 use App\Entities\Master\Warehouse;
+use App\Entities\Master\Packaging;
 use App\Entities\Master\ProductCategory;
 use App\Entities\Master\BrandLokal;
 use App\Entities\Master\Product;
@@ -154,19 +155,13 @@ class SalesOrderController extends Controller
                 'master_products.name as productName', 
                 'master_products.status as productStatus', 
                 'master_products.selling_price as productPrice', 
-                'master_packaging.pack_no as packNo', 
-                'master_packaging.pack_name as packagingName'
+                'master_packaging.id as packId', 
+                'master_packaging.pack_value as packValue', 
+                'master_packaging.pack_name as packagingName',
+                'master_packaging.packaging_packing as packagingKemasan'
             ]);
         return ['results' => $products];
     }
-
-    // public function search_sku(Request $request)
-    // {
-    //     $products = Product::where('name', 'LIKE', '%'.$request->input('q', '').'%')
-    //         ->where('status', Product::STATUS['ACTIVE'])
-    //         ->get(['id', 'code as text', 'name', 'selling_price']);
-    //     return ['results' => $products];
-    // }
 
     public function getmember(Request $request)
     {
@@ -319,6 +314,7 @@ class SalesOrderController extends Controller
                 $insert->sales_senior_id = $request->sales_senior_id;
                 $insert->sales_id = $request->sales_id;
                 $insert->so_for = 1;
+                // $insert->so_indent = 1;
                 $insert->type_transaction = $request->type_transaction;
                 $insert->idr_rate = $request->idr_rate;
                 $insert->note = $request->note;
@@ -328,20 +324,34 @@ class SalesOrderController extends Controller
                 $insert->payment_status = 0;
                 $insert->count_rev = 0;
                 $insert->save();
-
+                
                 if (sizeof($post["product_id"]) > 0) {
                     for ($i = 0; $i < sizeof($post["product_id"]); $i++) {
                         if(empty($post["product_id"][$i])) continue;
+
+                        $get_so_item = SalesOrderItem::where('so_id', $insert->id)
+                                         ->where('product_id', $post["product_id"][$i])
+                                         ->where('packaging_id', $post["packaging_id"][$i])
+                                         ->where('free_product', 0)
+                                         ->first();
+                        
+                        if($get_so_item){
+                            $data_json["IsError"] = TRUE;
+                            $data_json["Message"] = "Item sudah ada";
+                            goto ResultData;
+                        }
 
                         $insertDetail = new SalesOrderItem;
                         $insertDetail->so_id = $insert->id;
                         $insertDetail->product_id = trim(htmlentities($post["product_id"][$i]));
                         $insertDetail->qty = trim(htmlentities($post["qty"][$i]));
-                        $insertDetail->packaging = trim(htmlentities($post["packaging"][$i]));
+                        $insertDetail->packaging_id = trim(htmlentities($post["packaging_id"][$i]));
+                        $insertDetail->free_product = trim(htmlentities($post["free_product"][$i]));
                         $insertDetail->created_by = Auth::id();
                         $insertDetail->save();
                     }
                 }
+
                 
                 DB::commit();
 
@@ -350,9 +360,8 @@ class SalesOrderController extends Controller
                 $data_json["Message"] = "Sales Order Berhasil Ditambahkan";
                 goto ResultData;
             } catch (\Exception $e) {
+                dd($e);
                 DB::rollback();
-
-                
                 $data_json["IsError"] = TRUE;
                 $data_json["Message"] = $e->getMessage();
     
@@ -367,70 +376,71 @@ class SalesOrderController extends Controller
         ResultData:
         return response()->json($data_json,200);
     }
-    public function store_item(Request $request)
-    {
-        $data_json = [];
-        $post = $request->all();
-        if($request->method() == "POST"){
-            if(empty($post["so_id"])){
-                $data_json["IsError"] = TRUE;
-                $data_json["Message"] = "ID Sales Order tidak boleh kosong";
-                goto ResultData;
-            }
-            if(empty($post["product_id"])){
-                $data_json["IsError"] = TRUE;
-                $data_json["Message"] = "Product wajib dipilih";
-                goto ResultData;
-            }
-            if(empty($post["qty"])){
-                $data_json["IsError"] = TRUE;
-                $data_json["Message"] = "Quantity tidak boleh kosong";
-                goto ResultData;
-            }
-            if(empty($post["packaging"])){
-                $data_json["IsError"] = TRUE;
-                $data_json["Message"] = "Packaging tidak boleh kosong";
-                goto ResultData;
-            }
+
+    // public function store_item(Request $request)
+    // {
+    //     $data_json = [];
+    //     $post = $request->all();
+    //     if($request->method() == "POST"){
+    //         if(empty($post["so_id"])){
+    //             $data_json["IsError"] = TRUE;
+    //             $data_json["Message"] = "ID Sales Order tidak boleh kosong";
+    //             goto ResultData;
+    //         }
+    //         if(empty($post["product_id"])){
+    //             $data_json["IsError"] = TRUE;
+    //             $data_json["Message"] = "Product wajib dipilih";
+    //             goto ResultData;
+    //         }
+    //         if(empty($post["qty"])){
+    //             $data_json["IsError"] = TRUE;
+    //             $data_json["Message"] = "Quantity tidak boleh kosong";
+    //             goto ResultData;
+    //         }
+    //         if(empty($post["packaging"])){
+    //             $data_json["IsError"] = TRUE;
+    //             $data_json["Message"] = "Packaging tidak boleh kosong";
+    //             goto ResultData;
+    //         }
             
-            $get_so_item = SalesOrderItem::where('so_id',$post["so_id"])
-                                         ->where('product_id',$post["product_id"])
-                                         ->where('packaging',$post["packaging"])
-                                         ->first();
-            if($get_so_item){
-                $data_json["IsError"] = TRUE;
-                $data_json["Message"] = "Item sudah ada";
-                goto ResultData;
-            }
-            $data = [
-                'so_id' => trim(htmlentities($post["so_id"])),
-                'product_id' => trim(htmlentities($post["product_id"])),
-                'qty' => trim(htmlentities($post["qty"])),
-                'packaging' => trim(htmlentities($post["packaging"])),
-                'created_by' => Auth::id(),
-            ];
+    //         $get_so_item = SalesOrderItem::where('so_id',$post["so_id"])
+    //                                      ->where('product_id',$post["product_id"])
+    //                                      ->where('packaging',$post["packaging"])
+    //                                      ->first();
+    //         if($get_so_item){
+    //             $data_json["IsError"] = TRUE;
+    //             $data_json["Message"] = "Item sudah ada";
+    //             goto ResultData;
+    //         }
+    //         $data = [
+    //             'so_id' => trim(htmlentities($post["so_id"])),
+    //             'product_id' => trim(htmlentities($post["product_id"])),
+    //             'qty' => trim(htmlentities($post["qty"])),
+    //             'packaging' => trim(htmlentities($post["packaging"])),
+    //             'created_by' => Auth::id(),
+    //         ];
 
-            $insert = SalesOrderItem::create($data);
+    //         $insert = SalesOrderItem::create($data);
 
-            if($insert){
-                $data_json["IsError"] = FALSE;
-                $data_json["Message"] = "Item Berhasil Ditambahkan ke SO";
-                goto ResultData;
-            }
-            else{
-                $data_json["IsError"] = TRUE;
-                $data_json["Message"] = "Item Gagal Ditambahkan ke SO";
-                goto ResultData;
-            }
-        }
-        else{
-            $data_json["IsError"] = TRUE;
-            $data_json["Message"] = "Invalid Method";
-            goto ResultData;
-        }
-        ResultData:
-        return response()->json($data_json,200);
-    }
+    //         if($insert){
+    //             $data_json["IsError"] = FALSE;
+    //             $data_json["Message"] = "Item Berhasil Ditambahkan ke SO";
+    //             goto ResultData;
+    //         }
+    //         else{
+    //             $data_json["IsError"] = TRUE;
+    //             $data_json["Message"] = "Item Gagal Ditambahkan ke SO";
+    //             goto ResultData;
+    //         }
+    //     }
+    //     else{
+    //         $data_json["IsError"] = TRUE;
+    //         $data_json["Message"] = "Invalid Method";
+    //         goto ResultData;
+    //     }
+    //     ResultData:
+    //     return response()->json($data_json,200);
+    // }
 
     /**
      * Display the specified resource.
@@ -470,6 +480,7 @@ class SalesOrderController extends Controller
         $product_category = ProductCategory::all();
         $brand = BrandLokal::get();
         $ekspedisi = Vendor::where('type', 1)->get();
+        $packaging = Packaging::get();
 
         $data = [
             'customer' => $customer,
@@ -482,7 +493,7 @@ class SalesOrderController extends Controller
             'result' => $result,
             'step' => $step,
             'step_txt' => SalesOrder::STEP[$step],
-            'packaging_dictionary' => SalesOrderItem::PACKAGING
+            'packaging' => $packaging,
         ];
         if ($step == 2) {
             $doList = $result->member->do;

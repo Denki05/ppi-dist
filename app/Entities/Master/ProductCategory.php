@@ -32,7 +32,7 @@ class ProductCategory extends Model
 
     public function packaging()
     {
-        return $this->belongsTo('App\Entities\Master\Packaging', 'packaging_id');
+        return $this->belongsTo('App\Entities\Master\Packaging', 'packaging_id', 'id');
     }
 
     public function getAutoNumberOptions()
