@@ -20,7 +20,7 @@ class PackingOrderItem extends Model
         	'total_disc',
         	'total',
         	'note',
-            'packaging',
+            'packaging_id',
         	'updated_by',
         	'created_by',
         	'deleted_by'

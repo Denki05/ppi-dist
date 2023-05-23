@@ -114,30 +114,63 @@
         <div class="block">
           <div class="block-header block-header-default">
             <h3 class="block-title">Add Product</h3>
-            <a href="#" class="row-add">
-              <button type="button" class="btn bg-gd-sea border-0 text-white">
-                <i class="fa fa-plus mr-10"></i> Row
-              </button>
-            </a>
+            
           </div>
           <div class="block-content">
-            <table id="datatable" class="table table-striped table-vcenter">
-              <thead>
-                <tr>
-                  <th class="text-center">#</th>
-                  <th class="text-center">Cari Produk</th>
-                  <th class="text-center">Produk</th>
-                  <th class="text-center">Acuan(USD)</th>
-                  <th class="text-center">Quantity</th>
-                  <th class="text-center">Pack</th>
-                  <th class="text-center">Kemasan</th>
-                  <th class="text-center">Free?</th>
-                  <th class="text-center">Action</th>
-                </tr>
-              </thead>
-              <tbody>
-              </tbody>
-            </table>
+            <div class="row">
+              <div class="col-12 product-list">
+                <div class="row">
+                  <div class="col">Brand</div>
+                  <div class="col">Category</div>
+                  <div class="col">Product</div>
+                  <div class="col">Qty</div>
+                  <div class="col">Packaging</div>
+                  <div class="col">Action</div>
+                </div>
+
+                <div class="row mt-10 product-row">
+                  <div class="col">
+                    <select class="form-control js-select2 select-brand" data-index="0">
+                      <option value="">Select Brand</option>
+                      @foreach($brand as $index => $row)
+                        <option value="{{$row->id}}">{{$row->brand_name}}</option>
+                      @endforeach
+                    </select>
+                  </div>
+                  <div class="col">
+                    <select class="form-control js-select2 select-category" data-index="0">
+                      <option value="">Select Category</option>
+                      @foreach($product_category as $index => $row)
+                        <option value="{{$row->id}}">{{$row->name}}</option>
+                      @endforeach
+                    </select>
+                  </div>
+                  <div class="col">
+                    <select class="form-control js-select2 select-product" name="product_id[]" data-index="0">
+                      <option value="">Select product</option>
+                    </select>
+                  </div>
+                  <div class="col">
+                    <input type="number" name="qty[]" class="form-control input-qty" data-index="0" step="any">
+                  </div>
+                  <div class="col">
+                    <select name="packaging[]" class="form-control js-select2 select-packaging" data-index="0">
+                      <option value="">==Select packaging==</option>
+                      <option value="1">100gr (0.1)</option>
+                      <option value="2">500gr (0.5)</option>
+                      <option value="3">Jerigen 5kg (5)</option>
+                      <option value="4">Alumunium 5kg (5)</option>
+                      <option value="5">Jerigen 25kg (25)</option>
+                      <option value="6">Drum 25kg (25)</option>
+                      <option value="7">Free</option>
+                    </select>
+                  </div>
+                  <div class="col"><button type="button" id="buttonAddProduct" class="btn btn-primary"><em class="fa fa-plus"></em></button></div>
+                </div>
+                <hr />
+
+              </div>
+            </div>
           </div>
         </div>
       <hr />
@@ -168,109 +201,13 @@
 @include('superuser.asset.plugin.datatables')
 
 @push('scripts')
-<script src="{{ asset('utility/superuser/js/form.js') }}"></script>
-<script type="text/javascript">
-  $(document).ready(function() {
+<script>
+  var productCount = 1;
+
+  $(function(){
     $('button[type="submit"]').removeAttr('disabled');
 
     $('.js-select2').select2();
-
-    var table = $('#datatable').DataTable({
-        paging: false,
-        bInfo : false,
-        searching: false,
-        column: [
-          {name: 'counter'},
-          {name: 'product', orderable: false, width: "25%"},
-          {name: 'name', orderable: false, searcable: false, width: "20%"},
-          {name: 'price', orderable: false, searcable: false, width: "10%"},
-          {name: 'qty', orderable: false, searcable: false, width: "5%"},
-          {name: 'packaging', orderable: false, searcable: false, width: "10%"},
-          {name: 'kemasan', orderable: false, searcable: false, width: "20%"},
-          {name: 'free', orderable: false, searcable: false, width: "20%"},
-          {name: 'action', orderable: false, searcable: false, width: "5%"}
-        ],
-        'order' : [[0,'desc']]
-    })
-
-    var counter = 1;
-    
-    $('a.row-add').on( 'click', function (e) {
-      e.preventDefault();
-      
-      table.row.add([
-                    counter,
-                    '<select class="js-select2 form-control js-ajax" id="product['+counter+']" name="product_id[]" data-placeholder="Select Product" style="width:100%" required></select>',
-                    '<span class="name"></span>',
-                    '<span class="price"></span>',
-                    '<input type="number" class="form-control" name="qty[]" value="1" readonly required>',
-                    '<input type="number" class="form-control pack" name="packaging_id[]" readonly required>',
-                    '<span class="packname"></span>',
-                    '<input type="checkbox" class="form-check-input" value="1" name="free_product[]" id="free_product"> <input type="hidden" class="form-check-input" value="0" name="free_product[]" id="free_product">',
-                    '<a href="#" class="row-delete"><button type="button" class="btn btn-sm btn-circle btn-alt-danger" title="Delete"><i class="fa fa-trash"></i></button></a>'
-                  ]).draw( false );
-                  // $('.js-select2').select2()
-                  initailizeSelect2();
-      counter++;
-    });
-
-    function initailizeSelect2(){
-      $(".js-ajax").select2({
-        ajax: {
-          url: '{{ route('superuser.penjualan.sales_order.search_sku') }}',
-          dataType: 'json',
-          delay: 250,
-          data: function (params) {
-            return {
-              q: params.term,
-              _token: "{{csrf_token()}}"
-            };
-          },
-          results: function (data, params) {
-            return {
-              results: data
-            };
-          },
-          cache: true
-        },
-        minimumInputLength: 3,
-        escapeMarkup: function (markup) { return markup; },
-        templateResult: formatData,
-        placeholder: "Select Product",
-      });
-
-      function formatData (data) {
-        if (data.loading) return data.productName;
-
-        markup = data.text + '&nbsp - &nbsp' + data.productName + '&nbsp - &nbsp' + data.packagingName;
-
-        return markup;
-      };
-
-      function formatDataSelection (data) {
-        return data.productName;
-      };
-
-      $('.js-ajax').on('select2:select', function (e) {
-        var name = e.params.data.productName;
-        var price = e.params.data.productPrice;
-        var no = e.params.data.packValue;
-        var pack = e.params.data.packagingName;
-        var packId = e.params.data.packId;
-        $(this).parents('tr').find('.name').text(name);
-        $(this).parents('tr').find('.packname').text(pack);
-        $(this).parents('tr').find('.pack').val(packId);
-        $(this).parents('tr').find('.price').text('$' + price);
-        $(this).parents('tr').find('input[name="qty[]"]').removeAttr('readonly');
-      });
-
-    };
-
-    $('#datatable tbody').on( 'click', '.row-delete', function (e) {
-      e.preventDefault();
-      
-      table.row( $(this).parents('tr') ).remove().draw();
-    });
 
     $(document).on('click','.select-checkbox',function(){
       if($(this).is(':checked')){
@@ -310,6 +247,71 @@
       }else{
         $('textarea[name="address"]').val("");
       }
+    })
+
+    $(document).on('click','#buttonAddProduct',function(){
+      const brandId = $('.select-brand[data-index=0]').val();
+      const brandText = $('.select-brand[data-index=0] option:selected').text();
+      const categoryId = $('.select-category[data-index=0]').val();
+      const categoryText = $('.select-category[data-index=0] option:selected').text();
+      const productId = $('.select-product[data-index=0]').val();
+      const productText = $('.select-product[data-index=0] option:selected').text();
+      const qty = $('.input-qty[data-index=0]').val();
+      const packagingId = $('.select-packaging[data-index=0]').val();
+      const packagingText = $('.select-packaging[data-index=0] option:selected').text();
+      if (brandId === null || brandId === '' || categoryId === null || categoryId === '' || productId === null || productId === '' || qty === null || qty === '' || packagingId == null || packagingId === '') {
+        Swal.fire(
+          'Error!',
+          'Please input all the data',
+          'error'
+        );
+        return;
+      }
+
+      let html = "<div class='row mt-10 product-row brand-" + brandId + "'>";
+      html += "  <div class='col-2'>";
+      html += "    <input type='hidden' class='form-control' value='" + brandId + "'>";
+      html += brandText;
+      html += "  </div>";
+      html += "  <div class='col-2'>";
+      html += "    <input type='hidden' class='form-control' value='" + categoryId + "'>";
+      html += categoryText;
+      html += "  </div>";
+      html += "  <div class='col-2'>";
+      html += "    <input type='hidden' name='product_id[]' class='form-control' value='" + productId + "'>";
+      html += productText;
+      html += "  </div>";
+      html += "  <div class='col-2 text-right'>";
+      html += "    <input type='hidden' name='qty[]' class='form-control' value='" + qty + "'>";
+      html += qty;
+      html += "  </div>";
+      html += "  <div class='col-2'>";
+      html += "    <input type='hidden' name='packaging[]' class='form-control' value='" + packagingId + "'>";
+      html += packagingText;
+      html += "  </div>";
+      html += "  <div class='col-1'>";
+      html += "    <button type='button' id='buttonDeleteProduct' class='btn btn-danger'><em class='fa fa-minus'></em></button>";
+      html += "  </div>";
+      html += "</div>";
+      
+      if ($('.product-row.brand-' + brandId).length > 0) {
+        $('body').find('.product-row.brand-' + brandId + ':last').after(html);
+      } else {
+        $('body').find('.product-list').append(html);
+      }
+
+      //let option = '<option value="">==Select product==</option>';
+      //$('.select-product[data-index=0]').html(option);
+
+      $('.select-brand[data-index=0]').val('').change();
+      $('.select-category[data-index=0]').val('').change();
+      $('.select-product[data-index=0]').val('').change();
+      $('.input-qty[data-index=0]').val('');
+      $('.select-packaging[data-index=0]').val('').change();
+
+      $('.select-brand[data-index=0]').select2('focus');
+
+      productCount++;
     })
 
     $(document).on('click','#buttonDeleteProduct',function(){
@@ -363,6 +365,7 @@
       }
     })
   })
+
   function customer_address(id){
     ajaxcsrfscript();
     $.ajax({
@@ -427,7 +430,7 @@
       dataType : "JSON",
       success : function(resp){
         let option = "";
-        option = '<option value="">Pilih Category</option>';
+        option = '<option value="">Select Category</option>';
         $.each(resp.Data,function(i,e){
           option += '<option value="'+e.id+'">'+e.name+' - '+e.type+'</option>';
         })
@@ -463,10 +466,11 @@
       dataType : "JSON",
       success : function(resp){
         let option = "";
-        option = '<option value="">Pilih Product</option>';
+        option = '<option value="">Select Product</option>';
         $.each(resp.Data,function(i,e){
-          option += '<option value="'+e.id+'">'+e.product_code+' - '+e.product_name+' - '+e.packaging+'</option>';
+          option += '<option value="'+e.id+'">'+e.code+' - '+e.name+' - '+e.packaging+'</option>';
         })
+        //$(".select-product[data-index=0]").length
         $('.select-product[data-index=' + param.index + ']').html(option);
       },
       error : function(){
@@ -474,38 +478,5 @@
       }
     })
   }
-
-  function delay(fn, ms) {
-      let timer = 0
-      return function(...args) {
-        clearTimeout(timer)
-        timer = setTimeout(fn.bind(this, ...args), ms || 0)
-      }
-  }
-
-  function formatRupiah(angka, prefix){
-    angka = angka.toString();
-    var number_string = angka.replace(/[^,\d]/g, '').toString(),
-    split       = number_string.split(','),
-    sisa        = split[0].length % 3,
-    rupiah        = split[0].substr(0, sisa),
-    ribuan        = split[0].substr(sisa).match(/\d{3}/gi);
-   
-    // tambahkan titik jika yang di input sudah menjadi angka ribuan
-    if(ribuan){
-      separator = sisa ? '.' : '';
-      rupiah += separator + ribuan.join('.');
-    }
-   
-    rupiah = split[1] != undefined ? rupiah + ',' + split[1] : rupiah;
-    return prefix == undefined ? rupiah : (rupiah ? 'Rp. ' + rupiah : '');
-  };
-
-  $(document).on('keyup','.formatRupiah',function(){
-      let val = $(this).val();
-      $(this).val(formatRupiah(val));
-  })
-
-  
 </script>
 @endpush

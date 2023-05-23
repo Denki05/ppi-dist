@@ -252,6 +252,7 @@
                   <th>Qty</th>
                   <th>In Stock</th>
                   <th>Price</th>
+                  <th>Free</th>
                   <th>Packaging</th>
                   <th>Disc (USD)</th>
                   <th>Total</th>
@@ -271,16 +272,18 @@
                       <td>{{ $loop->iteration }}</td>
                       <td>{{ $detail->product->code }} - <b>{{ $detail->product->name }}</td>
                       <td>{{$detail->qty}}</td>
-                      
                       <td>
                         <input type="number" name="repeater[{{$index}}][do_qty]" class="form-control count" data-index="{{$index}}" value="{{$detail->qty}}" step="any" min="0" max="{{$detail->qty}}">
                       </td>
-                      
                       <td>
-                        <input type="text" name="repeater[{{$index}}][price]" class="form-control" readonly value="{{$detail->product->selling_price ?? 0}}">
+                        <input type="text" name="repeater[{{$index}}][price]" class="form-control price" readonly value="@if($detail->free_product == 1) 0 @else {{$detail->product->selling_price}} @endif">
                       </td>
                       <td>
-                        <input type="text" name="repeater[{{$index}}][packaging]" class="form-control" readonly value="{{$detail->packaging->pack_name ?? ''}}">
+                        <input class="form-check-input free_product" type="checkbox" value="{{$detail->free_product}}" name="repeater[{{$index}}][free_product]" @if($detail->free_product == 1) checked=checked @endif disabled>
+                      </td>
+                      <td>
+                        <input type="text" name="kemasan" class="form-control" readonly value="{{$detail->packaging->pack_name ?? ''}}">
+                        <input type="hidden" name="repeater[{{$index}}][packaging]" class="form-control" readonly value="{{$detail->packaging->id ?? ''}}">
                       </td>
                       <td>
                         <input type="text" name="repeater[{{$index}}][usd_disc]" class="form-control count count-disc" data-index="{{$index}}" step="any">
@@ -338,7 +341,7 @@
 
       $(document).on('change', '.base_disc'  ,function () {
         let val = $(this).val();
-        // alert(val);
+
         $('.count-disc').val(val);
       });
 

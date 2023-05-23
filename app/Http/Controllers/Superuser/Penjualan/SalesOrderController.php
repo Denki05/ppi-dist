@@ -238,6 +238,7 @@ class SalesOrderController extends Controller
         $warehouse = Warehouse::all();
 		$ekspedisi = Ekspedisi::all();
         $sales = Sales::where('is_active', 1)->get();
+        $product_category = ProductCategory::get();
 
         $data = [
             'customer' => $customer,
@@ -247,6 +248,7 @@ class SalesOrderController extends Controller
             'sales' => $sales,
             'warehouse' => $warehouse,
             'ekspedisi' => $ekspedisi,
+            'product_category' => $product_category,
             'step' => $step,
             'step_txt' => SalesOrder::STEP[$step]
         ];
@@ -314,7 +316,6 @@ class SalesOrderController extends Controller
                 $insert->sales_senior_id = $request->sales_senior_id;
                 $insert->sales_id = $request->sales_id;
                 $insert->so_for = 1;
-                // $insert->so_indent = 1;
                 $insert->type_transaction = $request->type_transaction;
                 $insert->idr_rate = $request->idr_rate;
                 $insert->note = $request->note;
@@ -1090,7 +1091,7 @@ class SalesOrderController extends Controller
                                     'do_id' => $packing_order->id,
                                     'product_id' => $value["product_id"],
                                     'so_item_id' => $value["so_item_id"],
-                                    'packaging' => $result->packaging,
+                                    'packaging_id' => $value["packaging"],
                                     'qty' => $do_qty,
                                     'price' => $price,
                                     'usd_disc' => $usd_disc,
@@ -1288,18 +1289,7 @@ class SalesOrderController extends Controller
                         if(!empty($post["category_id"])){
                             $query2->where('category_id',$post["category_id"]);
                         }
-                    })
-                    ->leftJoin('master_product_categories', 'master_products.category_id', '=', 'master_product_categories.id')
-                    ->leftJoin('master_packaging', 'master_product_categories.packaging_id', '=', 'master_packaging.id')
-                    ->select(
-                        'master_products.name as product_name', 
-                        'master_products.id as id', 
-                        'master_products.code as product_code',
-                        'master_products.category_id', 
-                        'master_products.selling_price as price', 
-                        'master_products.name as category_name', 
-                        'master_packaging.pack_name as packaging'
-                    )->get();
+                    })->get();
             $data_json["IsError"] = FALSE;
             $data_json["Data"] = $table;
             goto ResultData;
