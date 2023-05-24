@@ -154,15 +154,8 @@
                     <input type="number" name="qty[]" class="form-control input-qty" data-index="0" step="any">
                   </div>
                   <div class="col">
-                    <select name="packaging[]" class="form-control js-select2 select-packaging" data-index="0">
-                      <option value="">==Select packaging==</option>
-                      <option value="1">100gr (0.1)</option>
-                      <option value="2">500gr (0.5)</option>
-                      <option value="3">Jerigen 5kg (5)</option>
-                      <option value="4">Alumunium 5kg (5)</option>
-                      <option value="5">Jerigen 25kg (25)</option>
-                      <option value="6">Drum 25kg (25)</option>
-                      <option value="7">Free</option>
+                    <select name="packaging_id[]" class="form-control js-select2 select-packaging" data-index="0">
+                      <option value="">Select packaging</option>
                     </select>
                   </div>
                   <div class="col"><button type="button" id="buttonAddProduct" class="btn btn-primary"><em class="fa fa-plus"></em></button></div>
@@ -274,7 +267,7 @@
       html += brandText;
       html += "  </div>";
       html += "  <div class='col-2'>";
-      html += "    <input type='hidden' class='form-control' value='" + categoryId + "'>";
+      html += "    <input type='hidden' name='category_id[]' class='form-control' value='" + categoryId + "'>";
       html += categoryText;
       html += "  </div>";
       html += "  <div class='col-2'>";
@@ -286,7 +279,7 @@
       html += qty;
       html += "  </div>";
       html += "  <div class='col-2'>";
-      html += "    <input type='hidden' name='packaging[]' class='form-control' value='" + packagingId + "'>";
+      html += "    <input type='hidden' name='packaging_id[]' class='form-control' value='" + packagingId + "'>";
       html += packagingText;
       html += "  </div>";
       html += "  <div class='col-1'>";
@@ -299,9 +292,6 @@
       } else {
         $('body').find('.product-list').append(html);
       }
-
-      //let option = '<option value="">==Select product==</option>';
-      //$('.select-product[data-index=0]').html(option);
 
       $('.select-brand[data-index=0]').val('').change();
       $('.select-category[data-index=0]').val('').change();
@@ -432,9 +422,8 @@
         let option = "";
         option = '<option value="">Select Category</option>';
         $.each(resp.Data,function(i,e){
-          option += '<option value="'+e.id+'">'+e.name+' - '+e.type+'</option>';
+          option += '<option value="'+e.id+'">'+e.name+'</option>';
         })
-        //$(".select-product[data-index=0]").length
         $('.select-category[data-index=' + param.index + ']').html(option);
       },
       error : function(){
@@ -466,12 +455,15 @@
       dataType : "JSON",
       success : function(resp){
         let option = "";
+        let option2 = "";
         option = '<option value="">Select Product</option>';
+        option2 = '<input type="text" value="" palaceholder="Input Kemasan">';
         $.each(resp.Data,function(i,e){
-          option += '<option value="'+e.id+'">'+e.code+' - '+e.name+' - '+e.packaging+'</option>';
+          option += '<option value="'+e.id+'">'+e.productCode+' - '+e.productName+'</option>';
+          option2 += '<option value="'+e.packId+'">'+e.packName+'</option>';
         })
-        //$(".select-product[data-index=0]").length
         $('.select-product[data-index=' + param.index + ']').html(option);
+        $('.select-packaging[data-index=' + param.index + ']').html(option2);
       },
       error : function(){
         alert("Cek Koneksi Internet");

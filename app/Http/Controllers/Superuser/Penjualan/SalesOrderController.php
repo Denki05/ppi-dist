@@ -332,7 +332,7 @@ class SalesOrderController extends Controller
 
                         $get_so_item = SalesOrderItem::where('so_id', $insert->id)
                                          ->where('product_id', $post["product_id"][$i])
-                                         ->where('packaging_id', $post["packaging_id"][$i])
+                                         ->where('category_id', $post["category_id"][$i])
                                          ->where('free_product', 0)
                                          ->first();
                         
@@ -1289,7 +1289,20 @@ class SalesOrderController extends Controller
                         if(!empty($post["category_id"])){
                             $query2->where('category_id',$post["category_id"]);
                         }
-                    })->get();
+                    })
+                    ->where('master_products.status', 1)
+                    ->leftJoin('master_product_categories', 'master_products.category_id', '=', 'master_product_categories.id')
+                    ->leftJoin('master_packaging', 'master_product_categories.packaging_id', '=', 'master_packaging.id')
+                    ->select(
+                        'master_products.name as productName', 
+                        'master_products.id as id', 
+                        'master_products.status as status', 
+                        'master_products.code as productCode',
+                        'master_products.category_id', 
+                        'master_products.selling_price as price', 
+                        'master_packaging.id as packId',
+                        'master_packaging.pack_name as packName'
+                    )->get();
             $data_json["IsError"] = FALSE;
             $data_json["Data"] = $table;
             goto ResultData;

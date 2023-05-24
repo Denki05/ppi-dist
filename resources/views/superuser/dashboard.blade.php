@@ -99,7 +99,7 @@
                         <thead>
                           <tr>
                             <th>Invoice Date</th>
-                            <th>Invoice Number</th>
+                            <th>Invoice Code</th>
                             <th>Customer</th>
                             <th>Area</th>
                             <th>Revenue</th>
@@ -124,20 +124,10 @@
                               <?= date('d-m-Y',strtotime($row->created_at)); ?>
                             </td>
                             <td>{{$row->code}}</td>
-                            <td>
-                              @if($row->do->other_address == 0)
-                                {{$row->do->customer->name ?? '-'}}
-                              @elseif($row->do->other_address == 1)
-                                {{$row->do->member->name ?? '-'}}
-                              @endif
-                            </td>
+                            <td>{{ $row->do->customer->name ?? '' }}</td>
                             <td>
                               <b>
-                              @if($row->do->other_address == 0)
-                                {{$row->do->customer->text_provinsi ?? '-'}}
-                              @elseif($row->do->other_address == 1)
-                                {{$row->do->member->text_provinsi ?? '-'}}
-                              @endif
+                              {{$row->do->customer->text_provinsi ?? ''}}
                               </b>
                             </td>
                             <td>{{number_format($row->grand_total_idr,0,',','.')}}</td>
