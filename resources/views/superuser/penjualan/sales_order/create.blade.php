@@ -120,16 +120,17 @@
             <div class="row">
               <div class="col-12 product-list">
                 <div class="row">
-                  <div class="col">Brand</div>
+                  <div class="col-2">Brand</div>
                   <div class="col">Category</div>
-                  <div class="col">Product</div>
-                  <div class="col">Qty</div>
+                  <div class="col-3">Product</div>
+                  <div class="col-1">Qty</div>
                   <div class="col">Packaging</div>
+                  <div class="col-1">Free</div>
                   <div class="col">Action</div>
                 </div>
 
                 <div class="row mt-10 product-row">
-                  <div class="col">
+                  <div class="col-2">
                     <select class="form-control js-select2 select-brand" data-index="0">
                       <option value="">Select Brand</option>
                       @foreach($brand as $index => $row)
@@ -145,18 +146,22 @@
                       @endforeach
                     </select>
                   </div>
-                  <div class="col">
+                  <div class="col-3">
                     <select class="form-control js-select2 select-product" name="product_id[]" data-index="0">
                       <option value="">Select product</option>
                     </select>
                   </div>
-                  <div class="col">
+                  <div class="col-1">
                     <input type="number" name="qty[]" class="form-control input-qty" data-index="0" step="any">
                   </div>
                   <div class="col">
                     <select name="packaging_id[]" class="form-control js-select2 select-packaging" data-index="0">
                       <option value="">Select packaging</option>
                     </select>
+                  </div>
+                  <div class="col-1">
+                    <input type="checkbox" class="form-check-input input-gift" id="gift" name="gift" onclick="validate()">
+                    <input class="form-control input-free" type="hidden" id="free_product" name="free_product[]" data-index="0" step="any">
                   </div>
                   <div class="col"><button type="button" id="buttonAddProduct" class="btn btn-primary"><em class="fa fa-plus"></em></button></div>
                 </div>
@@ -202,23 +207,23 @@
 
     $('.js-select2').select2();
 
-    $(document).on('click','.select-checkbox',function(){
-      if($(this).is(':checked')){
-        $('select[name="destination_warehouse_id"]').attr('disabled',false);
+    // $(document).on('click','.select-checkbox',function(){
+    //   if($(this).is(':checked')){
+    //     $('select[name="destination_warehouse_id"]').attr('disabled',false);
 
-        $('select[name="customer_id"]').val(null).trigger('change')
-        $('select[name="customer_id"]').attr('disabled',true);
-        $('textarea[name="address"]').val("");
-      }
-      else{
-       $('select[name="customer_id"]').attr('disabled',false);
+    //     $('select[name="customer_id"]').val(null).trigger('change')
+    //     $('select[name="customer_id"]').attr('disabled',true);
+    //     $('textarea[name="address"]').val("");
+    //   }
+    //   else{
+    //    $('select[name="customer_id"]').attr('disabled',false);
 
-       $('select[name="destination_warehouse_id"]').val(null).trigger('change')
-       $('select[name="destination_warehouse_id"]').attr('disabled',true);
-       $('textarea[name="address"]').val("");
+    //    $('select[name="destination_warehouse_id"]').val(null).trigger('change')
+    //    $('select[name="destination_warehouse_id"]').attr('disabled',true);
+    //    $('textarea[name="address"]').val("");
 
-      }
-    })
+    //   }
+    // })
 
     if (1 == {{ $step == 9 ? 1 : 2}}) {
       $('.select-checkbox').click();
@@ -252,7 +257,9 @@
       const qty = $('.input-qty[data-index=0]').val();
       const packagingId = $('.select-packaging[data-index=0]').val();
       const packagingText = $('.select-packaging[data-index=0] option:selected').text();
-      if (brandId === null || brandId === '' || categoryId === null || categoryId === '' || productId === null || productId === '' || qty === null || qty === '' || packagingId == null || packagingId === '') {
+      const free = $('.input-free[data-index=0]').val();
+
+      if (brandId === null || brandId === '' || categoryId === null || categoryId === '' || productId === null || productId === '' || qty === null || qty === '' || packagingId == null || packagingId === '' ) {
         Swal.fire(
           'Error!',
           'Please input all the data',
@@ -282,6 +289,10 @@
       html += "    <input type='hidden' name='packaging_id[]' class='form-control' value='" + packagingId + "'>";
       html += packagingText;
       html += "  </div>";
+      html += "  <div class='col-1 text-right'>";
+      html += "    <input type='hidden' name='free_product[]' class='form-control free' value='" + free + "'>";
+      html += free;
+      html += "  </div>";
       html += "  <div class='col-1'>";
       html += "    <button type='button' id='buttonDeleteProduct' class='btn btn-danger'><em class='fa fa-minus'></em></button>";
       html += "  </div>";
@@ -298,6 +309,7 @@
       $('.select-product[data-index=0]').val('').change();
       $('.input-qty[data-index=0]').val('');
       $('.select-packaging[data-index=0]').val('').change();
+      $('.input-free[data-index=0]').val();
 
       $('.select-brand[data-index=0]').select2('focus');
 
@@ -422,7 +434,7 @@
         let option = "";
         option = '<option value="">Select Category</option>';
         $.each(resp.Data,function(i,e){
-          option += '<option value="'+e.id+'">'+e.name+'</option>';
+          option += '<option value="'+e.catId+'">'+e.categoryName+' - '+e.packValue+' '+e.satuan+'</option>';
         })
         $('.select-category[data-index=' + param.index + ']').html(option);
       },
@@ -457,9 +469,9 @@
         let option = "";
         let option2 = "";
         option = '<option value="">Select Product</option>';
-        option2 = '<input type="text" value="" palaceholder="Input Kemasan">';
+        option2 = '<option value="">Select Packaging</option>';
         $.each(resp.Data,function(i,e){
-          option += '<option value="'+e.id+'">'+e.productCode+' - '+e.productName+'</option>';
+          option += '<option value="'+e.id+'">'+e.productCode+' - '+e.productName+' - $'+e.productPrice+'</option>';
           option2 += '<option value="'+e.packId+'">'+e.packName+'</option>';
         })
         $('.select-product[data-index=' + param.index + ']').html(option);
@@ -469,6 +481,17 @@
         alert("Cek Koneksi Internet");
       }
     })
+  }
+
+  function validate() {
+    var gift = document.getElementById("gift");
+    if (gift.checked) {
+      // alert("checked");
+      $('.input-free[data-index=0]').val(1);
+    } else {
+      // alert("You didn't check it! Let me check it for you.");
+      $('.input-free[data-index=0]').val(0);
+    }
   }
 </script>
 @endpush

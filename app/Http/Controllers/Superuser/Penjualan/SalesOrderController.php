@@ -330,18 +330,6 @@ class SalesOrderController extends Controller
                     for ($i = 0; $i < sizeof($post["product_id"]); $i++) {
                         if(empty($post["product_id"][$i])) continue;
 
-                        $get_so_item = SalesOrderItem::where('so_id', $insert->id)
-                                         ->where('product_id', $post["product_id"][$i])
-                                         ->where('category_id', $post["category_id"][$i])
-                                         ->where('free_product', 0)
-                                         ->first();
-                        
-                        if($get_so_item){
-                            $data_json["IsError"] = TRUE;
-                            $data_json["Message"] = "Item sudah ada";
-                            goto ResultData;
-                        }
-
                         $insertDetail = new SalesOrderItem;
                         $insertDetail->so_id = $insert->id;
                         $insertDetail->product_id = trim(htmlentities($post["product_id"][$i]));
@@ -1299,7 +1287,7 @@ class SalesOrderController extends Controller
                         'master_products.status as status', 
                         'master_products.code as productCode',
                         'master_products.category_id', 
-                        'master_products.selling_price as price', 
+                        'master_products.selling_price as productPrice', 
                         'master_packaging.id as packId',
                         'master_packaging.pack_name as packName'
                     )->get();
@@ -1324,7 +1312,18 @@ class SalesOrderController extends Controller
                         if(!empty($post["brand_lokal_id"])){
                             $query2->where('brand_lokal_id',$post["brand_lokal_id"]);
                         }
-                    })->get();
+                    })
+                    ->leftJoin('master_packaging', 'master_product_categories.packaging_id', '=', 'master_packaging.id')
+                    ->leftJoin('master_units', 'master_packaging.unit_id', '=', 'master_units.id')
+                    ->select(
+                        'master_product_categories.id as catId',
+                        'master_product_categories.name as categoryName',
+                        'master_packaging.id as packId',
+                        'master_packaging.pack_value as packValue',
+                        'master_packaging.packaging_packing as packWight',
+                        'master_units.abbreviation as satuan'
+                        )
+                    ->get();
             $data_json["IsError"] = FALSE;
             $data_json["Data"] = $table;
             goto ResultData;
