@@ -311,12 +311,11 @@ class SalesOrderController extends Controller
                 
                 $insert->customer_id = $cust->id;
                 $insert->customer_other_address_id = $member->id;
-
-                $insert->brand_type = $request->brand_type;
                 $insert->sales_senior_id = $request->sales_senior_id;
                 $insert->sales_id = $request->sales_id;
                 $insert->so_for = 1;
                 $insert->type_transaction = $request->type_transaction;
+                $insert->type_so = 'nonppn';
                 $insert->idr_rate = $request->idr_rate;
                 $insert->note = $request->note;
                 $insert->created_by = Auth::id();
