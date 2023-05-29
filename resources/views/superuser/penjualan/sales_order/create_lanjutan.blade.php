@@ -298,7 +298,7 @@
                 </tbody>
                 <tfoot>
                     <tr class="row-footer-subtotal">
-                      <td colspan="7" class="text-right">
+                      <td colspan="8" class="text-right">
                         <b>Total Item</b>
                         <br><span class="text-danger">*Subtotal After Disc(USD)</span>
                       </td>

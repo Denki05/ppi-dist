@@ -330,6 +330,17 @@ class SalesOrderController extends Controller
                     for ($i = 0; $i < sizeof($post["product_id"]); $i++) {
                         if(empty($post["product_id"][$i])) continue;
 
+                        $get_so_item = SalesOrderItem::where('so_id', $insert->id)
+                            ->where('product_id', $post["product_id"][$i])
+                            ->where('free_product', $post["free_product"][$i])
+                            ->first();
+
+                        if($get_so_item){
+                            $data_json["IsError"] = TRUE;
+                            $data_json["Message"] = "Item sudah ada";
+                            goto ResultData;
+                        }
+
                         $insertDetail = new SalesOrderItem;
                         $insertDetail->so_id = $insert->id;
                         $insertDetail->product_id = trim(htmlentities($post["product_id"][$i]));
@@ -731,6 +742,7 @@ class SalesOrderController extends Controller
             return redirect()->back()->with('success','Sales Order berhasil diajukan untuk dilanjutkan');  
             
         }catch(\Throwable $e){
+            dd($e);
             DB::rollback();
             return redirect()->back()->with('error',$e->getMessage());
         }

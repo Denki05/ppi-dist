@@ -160,7 +160,7 @@
                     </select>
                   </div>
                   <div class="col-1">
-                    <input type="checkbox" class="form-check-input input-gift" id="gift" name="gift" onclick="validate()">
+                    <input type="checkbox" class="form-check-input input-gift" id="gift" name="gift" onclick="validate()" checked>
                     <input class="form-control input-free" type="hidden" id="free_product" name="free_product[]" data-index="0" step="any">
                   </div>
                   <div class="col"><button type="button" id="buttonAddProduct" class="btn btn-primary"><em class="fa fa-plus"></em></button></div>
@@ -493,5 +493,6 @@
       $('.input-free[data-index=0]').val(0);
     }
   }
+
 </script>
 @endpush
