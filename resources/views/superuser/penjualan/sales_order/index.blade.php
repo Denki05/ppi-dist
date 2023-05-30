@@ -249,13 +249,13 @@
 <!-- List SO Lanjutan -->
 <div class="card text-center">
         <div class="card-header">
-          <h4 align="left">#TRANSAKSI</h4>
+          <h4 align="left">#SALES ORDER LANJUTAN</h4>
             <ul class="nav nav-tabs card-header-tabs">
                 <li class="nav-item">
                     <a class="nav-link active" data-toggle="tab" href="#so_lanjutan">SO {{ $step_txt }}</a>
                 </li>
                 <li class="nav-item">
-                    <a class="nav-link" data-toggle="tab" href="#so_packed">SO PACKED</a>
+                    <a class="nav-link" data-toggle="tab" href="#so_packed">SO VALIDASI</a>
                 </li>
                 <li class="nav-item">
                     <a class="nav-link" data-toggle="tab" href="#proses">PROSES</a>

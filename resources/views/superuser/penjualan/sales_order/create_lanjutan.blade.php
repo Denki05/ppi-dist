@@ -472,18 +472,15 @@
         let disc_idr = $('input[name="disc_idr"]').val();
         let voucher_idr = $('input[name="voucher_idr"]').val();
         let ongkir = $('input[name="delivery_cost_idr"]').val();
-        let resi = $('input[name="resi_ongkir"]').val();
 
         subtotal = parseFloat(subtotal.split('.').join(''));
         disc_idr = parseFloat(disc_idr.split('.').join(''));
         voucher_idr = parseFloat(voucher_idr.split('.').join(''));
         ongkir = parseFloat(ongkir.split('.').join(''));
-        resi = parseFloat(resi.split('.').join(''));
 
         disc_idr = (isNaN(disc_idr)) ? 0 : disc_idr;
         voucher_idr = (isNaN(voucher_idr)) ? 0 : voucher_idr;
         ongkir = (isNaN(ongkir)) ? 0 : ongkir;
-        resi = (isNaN(resi)) ? 0 : resi;
 
         subFinal = Math.ceil(((subtotal - disc_idr) - voucher_idr) + ongkir);
         $('input[name="grand_total_final"]').val(subFinal);
