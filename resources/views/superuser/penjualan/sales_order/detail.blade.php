@@ -70,7 +70,7 @@
         </a>
       </div>
       <div class="col-md-6 text-right">
-        <a class="btn btn-primary btn-print" href="#" role="button"><i class="fa fa-print" aria-hidden="true"></i> Print Proforma</a>
+        <a class="btn btn-primary btn-print" href="{{ route('superuser.finance.invoicing.print', $result->id)}}" role="button"><i class="fa fa-print" aria-hidden="true"></i> Print Proforma</a>
         @if ($result->type_transaction == 1 && $result->payment_status == 0)
           <a class="btn btn-danger btn-cancel" data-id="{{$result->id}}" href="#" role="button"><i class="fa fa-ban" aria-hidden="true"></i> Cancel</a>
         @endif
@@ -90,7 +90,7 @@
           <th class="text-center">#</th>
           <th class="text-center">Code</th>
           <th class="text-center">Product</th>
-          <th class="text-center">Brand | Category</th>
+          <th class="text-center">Brand</th>
           <th class="text-center">Qty</th>
           <th class="text-center">Packaging</th>
         </tr>
@@ -103,7 +103,7 @@
                     <td>{{$loop->iteration}}</td>
                     <td>{{$row->product->code ?? ''}}</td>
                     <td>{{$row->product->name ?? ''}}</td>
-                    <td>{{$row->product->category->brand_name ?? ''}} | {{ $row->product->category->name }}</td>
+                    <td>{{$row->product->category->brand_name ?? ''}}</td>
                     <td>
                       @if($row->status <> 4)
                         {{$row->qty ?? '0'}}
@@ -111,7 +111,7 @@
                         {{$row->qty_worked ?? '0'}}
                       @endif
                     </td>
-                    <td>{{$row->packaging_txt()->scalar ?? ''}}</td>
+                    <td>{{$row->product->category->packaging->pack_name}}</td>
                   </tr>
                 @endforeach
               @else

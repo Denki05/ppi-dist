@@ -39,7 +39,7 @@
               <div class="col">
                 <div class="form-label-group in-border">
                   <label>Address</label>
-                  <textarea class="form-control" name="customer-address" value="" rows="0" readonly></textarea>
+                  <textarea class="form-control" name="customer-address" value="" rows="1" readonly></textarea>
                 </div>
               </div>
             </div>

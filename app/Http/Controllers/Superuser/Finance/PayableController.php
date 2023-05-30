@@ -10,6 +10,7 @@ use App\Entities\Master\Company;
 use App\Entities\Finance\Invoicing;
 use App\Entities\Finance\Payable;
 use App\Entities\Finance\PayableDetail;
+use App\Entities\Penjualan\SalesOrder;
 use App\Entities\Setting\UserMenu;
 use App\Repositories\CodeRepo;
 use App\Entities\Penjualan\PackingOrder;
@@ -363,7 +364,20 @@ class PayableController extends Controller
 
         $payable->status = Payable::STATUS['APPROVE'];
         $payable->updated_by = Auth::id();
-        $payable->save();
+        
+        if ($payable->save()){
+            $get_detail = PayableDetail::where('payable_id', $payable->id)->first();
+            $get_invoice = Invoicing::where('id', $get_detail->invoice_id)->first();
+
+            $so = SalesOrder::where('id', $get_invoice->do->so_id)->first();
+
+            if ($so->type_transaction == 1){
+                $update_so_payment = SalesOrder::where('id', $so->id)->update(['payment_status' => 1]);
+            }elseif($so->type_transaction == 2){
+                $update_so_payment = SalesOrder::where('id', $so->id)->update(['payment_status' => 2]);
+            }
+        }
+
 
         return redirect()->back()->with('success', 'Pembayaran '.$payable->code.' '.'di Approve!');
     }
