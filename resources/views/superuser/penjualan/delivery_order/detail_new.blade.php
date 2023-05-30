@@ -109,7 +109,7 @@
                 <td>{{$index+1}}</td>
                 <td>{{ $row->product->code }} - {{$row->product->name}}</td>
                 <td>{{$row->qty}}</td>
-                <td>{{$row->packaging_txt()->scalar ?? ''}}</td>
+                <td>{{$row->packaging->pack_name}}</td>
                 <td><input type="checkbox" class="confirm-item" value="{{$row->id}}" /></td>
               </tr>
             @endforeach

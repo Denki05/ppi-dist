@@ -181,7 +181,7 @@
               <td class='text-left'>{{$row->product->name ?? ''}}</td>
               <td>{{$row->qty}}</td>
               <td>Kg</td>
-              <td>{{$row->packaging_txt()->scalar ?? ''}}</td>
+              <td>{{$row->packaging}}</td>
               <td>
                 @if($row->packaging == 7)
                 Free

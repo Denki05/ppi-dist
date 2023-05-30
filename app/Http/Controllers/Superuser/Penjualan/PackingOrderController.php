@@ -938,7 +938,6 @@ class PackingOrderController extends Controller
             ]);
             $post = $request->all();
             
-            $proforma = SoProforma::where('do_id', $post["id"])->first();
             $getDo = PackingOrder::where('id', $post["id"])->first();
 
             if(empty($getDo->do_code)){
@@ -947,30 +946,13 @@ class PackingOrderController extends Controller
                 ]);
             }
 
-            if($getDo->type_transaction == 1){
-                //cek pembayaran cash
-                if($proforma->status == 3){
-                    $update = PackingOrder::where('id', $post["id"])->update(['status' => 3]);
-                                    
-                    return redirect()->back()->with('success','SO packed berhasil di proses'); 
-                }elseif($proforma->status == 1){
-                    return redirect()->back()->with('error','SO packed gagal di proses! Cek pembayaran');
-                }elseif($proforma->status == 2){
-                    return redirect()->back()->with('error','SO packed gagal di proses! Cek pembayaran');
-                }
-            }elseif($getDo->type_transaction == 2 && $getDo->type_transaction == 3){
-                $update = PackingOrder::where('id', $post["id"])->update(['status' => 3]);
-
-                return redirect()->back()->with('success','SO packed berhasil di proses');
-            }
-
             $update = PackingOrder::where('id',$post["id"])->update(['status' => 3]);
 
             if($update){
-                return redirect()->back()->with('success','SO Packed berhasil berhasil diproses ke DO');    
+                return redirect()->back()->with('success','SO berhasil berhasil diproses ke DO');    
             }
             else{
-                return redirect()->back()->with('error','Packing Order gagal diubah ke Packed');
+                return redirect()->back()->with('error','SO gagal diproses ke DO');
             }
             
         }catch(\Throwable $e){

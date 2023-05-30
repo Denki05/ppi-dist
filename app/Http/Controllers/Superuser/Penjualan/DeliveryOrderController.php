@@ -242,30 +242,50 @@ class DeliveryOrderController extends Controller
         }
 
         $result = PackingOrder::where('id',$id)->first();
-        $company = Company::first();
-        if(empty($result)){
-            abort(404);
-        }
-        if($result->status <= 3){
-            return redirect()->back()->with('error','Tidak bisa print delivery order. Status delivery order belum memenuhi syarat');
-        }
-        $data = [
-            'result' => $result,
-            'company' => $company
-        ];
-        $log = PackingOrderLogPrint::create([
-            'do_id' => $id,
-            'created_by' => Auth::id()
-        ]);
         
-        $width = 21;
-        $height = 14.8;
-        $customPaper = array(0,0,($width/2.54*72),($height/2.54*72));
-        $pdf = PDF::loadview($this->view."print_new",$data)->setPaper($customPaper,'portait');
-        if(!empty($result->do_code)){
-            return $pdf->stream($result->do_code ?? '');    
-        }
-        return $pdf->stream($result->do_code ?? '');
+        $my_report = "C:\\xampp\\htdocs\\ppi-dist\public\\cr\\do\\do.rpt"; 
+        $my_pdf = 'C:\\xampp\\htdocs\\ppi-dist\\public\\cr\\do\\export\\'.$result->do_code.'.pdf';
+
+        $my_server = "DEV-SERVER"; 
+        $my_user = "root"; 
+        $my_password = ""; 
+        $my_database = "ppi-dist";
+        $COM_Object = "CrystalDesignRunTime.Application";
+
+        //-Create new COM object-depends on your Crystal Report version
+        $crapp= New COM($COM_Object) or die("Unable to Create Object");
+        $creport = $crapp->OpenReport($my_report,1); // call rpt report
+
+        //- Set database logon info - must have
+        $creport->Database->Tables(1)->SetLogOnInfo($my_server, $my_database, $my_user, $my_password);
+
+        //- field prompt or else report will hang - to get through
+        $creport->EnableParameterPrompting = FALSE;
+        $creport->RecordSelectionFormula = "{penjualan_do.id}= $result->id";
+
+
+        //export to PDF process
+        $creport->ExportOptions->DiskFileName=$my_pdf; //export to pdf
+        $creport->ExportOptions->PDFExportAllPages=true;
+        $creport->ExportOptions->DestinationType=1; // export to file
+        $creport->ExportOptions->FormatType=31; // PDF type
+        $creport->Export(false);
+
+        //------ Release the variables ------
+        $creport = null;
+        $crapp = null;
+        $ObjectFactory = null;
+
+        $file = 'C:\\xampp\\htdocs\\ppi-dist\\public\\cr\\do\\export\\'.$result->do_code.'.pdf';
+
+        header("Content-Description: File Transfer"); 
+        header("Content-Type: application/octet-stream"); 
+        header("Content-Transfer-Encoding: Binary"); 
+        header("Content-Disposition: attachment; filename=\"". basename($file) ."\""); 
+        ob_clean();
+        flush();
+        readfile ($file);
+        exit();
     }
 
     public function packed(Request $request)
@@ -547,28 +567,28 @@ class DeliveryOrderController extends Controller
         ResultData:
         return response()->json($data_json,200);
     }
-    public function print_proforma($id){
-        // Access
-        if(Auth::user()->is_superuser == 0){
-            if(empty($this->access) || empty($this->access->user) || $this->access->can_print == 0){
-                return redirect()->route('superuser.index')->with('error','Anda tidak punya akses untuk membuka menu terkait');
-            }
-        }
+    // public function print_proforma($id){
+    //     // Access
+    //     if(Auth::user()->is_superuser == 0){
+    //         if(empty($this->access) || empty($this->access->user) || $this->access->can_print == 0){
+    //             return redirect()->route('superuser.index')->with('error','Anda tidak punya akses untuk membuka menu terkait');
+    //         }
+    //     }
 
-        $result = PackingOrder::where('id',$id)->findOrFail();
-        $company = Company::first();
-        if(empty($result)){
-            abort(404);
-        }
+    //     $result = PackingOrder::where('id',$id)->findOrFail();
+    //     $company = Company::first();
+    //     if(empty($result)){
+    //         abort(404);
+    //     }
 
-        $data = [
-            'result' => $result,
-            'company' => $company
-        ];
+    //     $data = [
+    //         'result' => $result,
+    //         'company' => $company
+    //     ];
 
-        $pdf = PDF::loadview($this->view."print_proforma",$data)->setPaper('a4','potrait');
-        return $pdf->stream($result->code ?? '');
-    }
+    //     $pdf = PDF::loadview($this->view."print_proforma",$data)->setPaper('a4','potrait');
+    //     return $pdf->stream($result->code ?? '');
+    // }
 
     public function print_manifest($id){
         // Access
