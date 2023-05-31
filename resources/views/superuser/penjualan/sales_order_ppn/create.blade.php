@@ -266,6 +266,64 @@
       </div>
     </div>
 
+        <div class="block">
+          <div class="block-content">
+            <div class="row">
+              <div class="col-12 product-list">
+                <div class="row">
+                  <div class="col-2">Brand</div>
+                  <div class="col">Category</div>
+                  <div class="col-3">Product</div>
+                  <div class="col-1">Qty</div>
+                  <div class="col">Packaging</div>
+                  <div class="col-1">Free</div>
+                  <div class="col">Action</div>
+                </div>
+
+                <div class="row mt-10 product-row">
+                  <div class="col-2">
+                    <select class="form-control js-select2 select-brand" data-index="0">
+                      <option value="">Select Brand</option>
+                      @foreach($brand as $index => $row)
+                        <option value="{{$row->id}}">{{$row->brand_name}}</option>
+                      @endforeach
+                    </select>
+                  </div>
+                  <div class="col">
+                    <select class="form-control js-select2 select-category" data-index="0">
+                      <option value="">Select Category</option>
+                      @foreach($product_category as $index => $row)
+                        <option value="{{$row->id}}">{{$row->name}}</option>
+                      @endforeach
+                    </select>
+                  </div>
+                  <div class="col-3">
+                    <select class="form-control js-select2 select-product" name="product_id[]" data-index="0">
+                      <option value="">Select product</option>
+                    </select>
+                  </div>
+                  <div class="col-1">
+                    <input type="number" name="qty[]" class="form-control input-qty" data-index="0" step="any">
+                  </div>
+                  <div class="col">
+                    <select name="packaging_id[]" class="form-control js-select2 select-packaging" data-index="0">
+                      <option value="">Select packaging</option>
+                    </select>
+                  </div>
+                  <div class="col-1">
+                    <input type="checkbox" class="form-check-input input-gift" id="gift" name="gift" onclick="validate()" checked>
+                    <input class="form-control input-free" type="hidden" id="free_product" name="free_product[]" data-index="0" step="any">
+                  </div>
+                  <div class="col"><button type="button" id="buttonAddProduct" class="btn btn-primary"><em class="fa fa-plus"></em></button></div>
+                </div>
+                <hr />
+
+              </div>
+            </div>
+          </div>
+        </div>
+      <hr />
+
 @endsection
 
 @include('superuser.asset.plugin.select2')
