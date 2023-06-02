@@ -3,7 +3,7 @@
 @section('content')
 <nav class="breadcrumb bg-white push">
   <span class="breadcrumb-item">Master</span>
-  <a class="breadcrumb-item" href="{{ route('superuser.master.customer.index') }}">Customer</a>
+  <a class="breadcrumb-item" href="{{ route('superuser.master.customer.index') }}">Store</a>
   <span class="breadcrumb-item active">Show</span>
 </nav>
 <div class="row">

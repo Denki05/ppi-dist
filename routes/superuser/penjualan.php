@@ -148,6 +148,7 @@ Route::group([
     Route::group(['as' => 'sales_order_ppn.', 'prefix' => '/sales_order_ppn'], function () {
         Route::get('/', 'SalesOrderPpnController@index')->name('index');
         Route::post('/ajax_customer_detail', 'SalesOrderPpnController@ajax_customer_detail')->name('ajax_customer_detail');
+        Route::get('/search_sku', 'SalesOrderPpnController@search_sku')->name('search_sku');
     });
     Route::resource('sales_order_ppn', 'SalesOrderPpnController');
 });
