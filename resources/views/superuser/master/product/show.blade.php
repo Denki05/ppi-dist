@@ -88,17 +88,6 @@
                     <span class="badge badge-info">{{$product->note}}</span>
                   </td>
                 </tr>
-                <tr>
-                  <td>Free Product</td>
-                  <td><b>:</b></td>
-                  <td>
-                      @if($product->free_product == 0 )
-                        <span class="badge badge-info">NO</span>
-                      @elseif($product->free_product == 1)
-                        <span class="badge badge-info">YES</span>
-                      @endif
-                  </td>
-                </tr>
               </tbody>
             </table>
           </div>

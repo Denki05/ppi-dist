@@ -28,6 +28,25 @@ use COM;
 
 class SalesOrderPpnController extends Controller
 {
+    public function search_sku(Request $request)
+    {
+        $products = Product::where('master_products.name', 'LIKE', '%'.$request->input('q', '').'%')
+            ->where('master_products.status', Product::STATUS['ACTIVE'])
+            ->leftJoin('master_product_categories', 'master_products.category_id', '=', 'master_product_categories.id')
+            ->leftJoin('master_packaging', 'master_product_categories.packaging_id', '=', 'master_packaging.id')
+            ->get([
+                'master_products.id as id',
+                'master_products.code as text', 
+                'master_products.name as productName', 
+                'master_products.status as productStatus', 
+                'master_products.selling_price as productPrice', 
+                'master_packaging.id as packId', 
+                'master_packaging.pack_value as packValue', 
+                'master_packaging.pack_name as packagingName',
+                'master_packaging.packaging_packing as packagingKemasan'
+            ]);
+        return ['results' => $products];
+    }
 
     public function index(Request $request)
     {

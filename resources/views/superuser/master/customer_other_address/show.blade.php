@@ -4,155 +4,139 @@
 <nav class="breadcrumb bg-white push">
   <span class="breadcrumb-item">Master</span>
   <a class="breadcrumb-item" href="{{ route('superuser.master.customer.index') }}">Member</a>
-  <span class="breadcrumb-item active">{{ $other_address->name }}</span>
+  <span class="breadcrumb-item active">Show</span>
 </nav>
-<div class="block">
-  <div class="block-header block-header-default">
-    <h3 class="block-title">Show Member</h3>
-  </div>
-
-  <div class="container">
-              <div class="row">
-                <div class="col-xs-12 ">
-                  <nav>
-                    <div class="nav nav-tabs nav-fill" id="nav-tab" role="tablist">
-                      <a class="nav-item nav-link active" id="nav-home-tab" data-toggle="tab" href="#nav-home" role="tab" aria-controls="nav-home" aria-selected="true">Profile</a>
-                      <a class="nav-item nav-link" id="nav-profile-tab" data-toggle="tab" href="#nav-profile" role="tab" aria-controls="nav-profile" aria-selected="false">Address</a>
-                      <a class="nav-item nav-link" id="nav-contact-tab" data-toggle="tab" href="#nav-contact" role="tab" aria-controls="nav-contact" aria-selected="false">Location</a>
-                      <a class="nav-item nav-link" id="nav-about-tab" data-toggle="tab" href="#nav-about" role="tab" aria-controls="nav-about" aria-selected="false">Document</a>
-                    </div>
-                  </nav>
-                  <div class="tab-content py-3 px-3 px-sm-0" id="nav-tabContent">
-                    <div class="tab-pane fade show active" id="nav-home" role="tabpanel" aria-labelledby="nav-home-tab">
-                      A
-                    </div>
-                    <div class="tab-pane fade" id="nav-profile" role="tabpanel" aria-labelledby="nav-profile-tab">
-                      B
-                    </div>
-                    <div class="tab-pane fade" id="nav-contact" role="tabpanel" aria-labelledby="nav-contact-tab">
-                      C
-                    </div>
-                    <div class="tab-pane fade" id="nav-about" role="tabpanel" aria-labelledby="nav-about-tab">
-                      D
-                    </div>
-                  </div>
-                
-                </div>
-              </div>
+<div class="card">
+  <h5 class="card-header">#Member Show</h5>
+  <div class="card-body">
+    <div class="container">
+      <div class="row">
+        <div class="col-6">
+          <div class="form-group">
+            <label>Name Member</label>
+            <input class="form-control" type="text" value="{{ $other_address->name }}" readonly>                          
+          </div>
+        </div>
+        <div class="col-6">
+          <div class="form-group">
+            <label>Owner</label>
+            <input class="form-control" type="text" value="{{ $other_address->contact_person }}" readonly>                          
+          </div>
         </div>
       </div>
-</div>
-
-
-
-  <!-- <div class="block-content">
-    <div class="row">
-      <label class="col-md-3 col-form-label text-right">Name</label>
-      <div class="col-md-7">
-        <div class="form-control-plaintext">{{ $other_address->name }}</div>
-      </div>
-    </div>
-    <div class="row">
-      <label class="col-md-3 col-form-label text-right">Store</label>
-      <div class="col-md-7">
-        <div class="form-control-plaintext">
-            {{ $other_address->customer->name }}
+      <div class="row">
+        <div class="col-6">
+          <div class="form-group">
+            <label>Category</label>
+            <input class="form-control" type="text" value="{{ $other_address->customer->category->name }}" readonly>     
+          </div>
+        </div>
+        <div class="col-6">
+          <div class="form-group">
+            <label>Telepon</label>
+            <input class="form-control" type="text" value="{{ $other_address->phone }}" readonly>                          
+          </div>
         </div>
       </div>
-    </div>
-    <div class="row">
-      <label class="col-md-3 col-form-label text-right">Contact Person</label>
-      <div class="col-md-7">
-        <div class="form-control-plaintext">{{ $other_address->contact_person }}</div>
+      <div class="row">
+        <div class="col-12">
+          <div class="form-group">
+            <label>Alamat</label>
+            <input class="form-control" type="text" value="{{ $other_address->address }}" readonly>     
+          </div>
+        </div>
       </div>
-    </div>
-    <div class="row">
-      <label class="col-md-3 col-form-label text-right">NPWP</label>
-      <div class="col-md-7">
-        <div class="form-control-plaintext">{{ $other_address->npwp }}</div>
+      
+      <hr>
+
+      <div class="row">
+        <div class="col-6">
+          <div class="form-group">
+            <label>KTP</label>
+            <input class="form-control" type="text" value="{{ $other_address->ktp  }}" readonly>     
+          </div>
+        </div>
+        <div class="col-6">
+          <div class="form-group">
+            <label>NPWP</label>
+            <input class="form-control" type="text" value="{{ $other_address->npwp }}" readonly>                          
+          </div>
+        </div>
       </div>
-    </div>
-    <div class="row">
-      <label class="col-md-3 col-form-label text-right">KTP</label>
-      <div class="col-md-7">
-        <div class="form-control-plaintext">{{ $other_address->ktp }}</div>
+      <div class="row">
+        <div class="col-6">
+          <div class="form-group">
+            <label>Foto KTP</label>
+            <a href="{{ $other_address->img_ktp }}" class="img-link img-link-zoom-in img-thumb img-lightbox">
+              <img src="{{ $other_address->img_ktp }}" class="img-fluid img-show-small">
+            </a>
+          </div>
+        </div>
+        <div class="col-6">
+          <div class="form-group">
+            <label>Foto NPWP</label>
+            <a href="{{ $other_address->img_npwp }}" class="img-link img-link-zoom-in img-thumb img-lightbox">
+              <img src="{{ $other_address->img_npwp }}" class="img-fluid img-show-small">
+            </a>                      
+          </div>
+        </div>
       </div>
-    </div>
-    <div class="row">
-      <label class="col-md-3 col-form-label text-right">Phone</label>
-      <div class="col-md-7">
-        <div class="form-control-plaintext">{{ $other_address->phone }}</div>
+
+      <hr>
+
+      <div class="row">
+        <div class="col">
+          <div class="form-group">
+            <label>Provinsi</label>
+            <input class="form-control" type="text" value="{{ $other_address->text_provinsi  }}" readonly>     
+          </div>
+        </div>
+        <div class="col">
+          <div class="form-group">
+            <label>Kota</label>
+            <input class="form-control" type="text" value="{{ $other_address->text_kota }}" readonly>                          
+          </div>
+        </div>
+        <div class="col">
+          <div class="form-group">
+            <label>Kecamatan</label>
+            <input class="form-control" type="text" value="{{ $other_address->text_kecamatan }}" readonly>                          
+          </div>
+        </div>
+        <div class="col">
+          <div class="form-group">
+            <label>Kelurahan</label>
+            <input class="form-control" type="text" value="{{ $other_address->text_kelurahan }}" readonly>                          
+          </div>
+        </div>
       </div>
-    </div>
-    <div class="row">
-      <label class="col-md-3 col-form-label text-right">Address</label>
-      <div class="col-md-7">
-        <div class="form-control-plaintext">{{ $other_address->address }}</div>
+
+      <hr>
+
+      <div class="row">
+        <div class="col-6">
+          <div class="form-group">
+            <label>Member Default</label>
+            @if($other_address->member_default == 0)
+            <span class="badge badge-warning">NO</span>
+            @elseif($other_address->member_default == 1)
+            <span class="badge badge-success">YES</span>
+            @endif
+          </div>
+        </div>
+        <div class="col-6">
+          <div class="form-group">
+            <label>Status</label>
+            @if($other_address->status == 0)
+            <span class="badge badge-danger">DELETED</span>
+            @elseif($other_address->status == 1)
+            <span class="badge badge-success">ACTIVE</span>
+            @endif
+          </div>
+        </div>
       </div>
-    </div>
-    </div>
-    <div class="row">
-      <label class="col-md-3 col-form-label text-right">GPS Coordinate</label>
-      <div class="col-md-3">
-        <div class="form-control-plaintext">Latitude: {{ $other_address->gps_latitude ?? '-'}}</div>
-      </div>
-      <div class="col-md-3">
-        <div class="form-control-plaintext">Longitude:  {{ $other_address->gps_longitude ?? '-'}}</div>
-      </div>
-    </div>
-    <div class="row">
-      <label class="col-md-3 col-form-label text-right">Provinsi</label>
-      <div class="col-md-7">
-        <div class="form-control-plaintext">{{ $other_address->text_provinsi ?? '-' }}</div>
-      </div>
-    </div>
-    <div class="row">
-      <label class="col-md-3 col-form-label text-right">Kota</label>
-      <div class="col-md-7">
-        <div class="form-control-plaintext">{{ $other_address->text_kota ?? '-' }}</div>
-      </div>
-    </div>
-    <div class="row">
-      <label class="col-md-3 col-form-label text-right">Kecamatan</label>
-      <div class="col-md-7">
-        <div class="form-control-plaintext">{{ $other_address->text_kecamatan ?? '-' }}</div>
-      </div>
-    </div>
-    <div class="row">
-      <label class="col-md-3 col-form-label text-right">Kelurahan</label>
-      <div class="col-md-7">
-        <div class="form-control-plaintext">{{ $other_address->text_kelurahan ?? '-' }}</div>
-      </div>
-    </div>
-    <div class="row">
-      <label class="col-md-3 col-form-label text-right">Zipcode</label>
-      <div class="col-md-7">
-        <div class="form-control-plaintext">{{ $other_address->zipcode ?? '-' }}</div>
-      </div>
-    </div>
-    <div class="row">
-      <label class="col-md-3 col-form-label text-right">Image NPWP</label>
-      <div class="col-md-7">
-        <a href="{{ $other_address->img_npwp }}" class="img-link img-link-zoom-in img-thumb img-lightbox">
-          <img src="{{ $other_address->img_npwp }}" class="img-fluid img-show-small">
-        </a>
-      </div>
-    </div>
-    <div class="row">
-      <label class="col-md-3 col-form-label text-right">Image KTP</label>
-      <div class="col-md-7">
-        <a href="{{ $other_address->img_ktp }}" class="img-link img-link-zoom-in img-thumb img-lightbox">
-          <img src="{{ $other_address->img_ktp }}" class="img-fluid img-show-small">
-        </a>
-      </div>
-    </div>
-    <div class="row">
-      <label class="col-md-3 col-form-label text-right">Status</label>
-      <div class="col-md-7">
-        <div class="form-control-plaintext">{{ $other_address->status() }}</div>
-      </div>
-    </div>
-    <div class="row pt-30 mb-15">
+
+      <div class="row pt-30 mb-15">
       <div class="col-md-6">
         <a href="{{ route('superuser.master.customer.index') }}">
           <button type="button" class="btn bg-gd-cherry border-0 text-white">
@@ -160,22 +144,40 @@
           </button>
         </a>
       </div>
+      @if($other_address->status != $other_address::STATUS['DELETED'])
+      <div class="col-md-6 text-right">
+        <a href="javascript:deleteConfirmation('{{ route('superuser.master.customer_other_address.destroy', $other_address->id) }}', true)">
+          <button type="button" class="btn bg-gd-pulse border-0 text-white">
+            Delete <i class="fa fa-trash ml-10"></i>
+          </button>
+        </a>
+        <a href="{{ route('superuser.master.customer_other_address.edit', $other_address->id) }}">
+          <button type="button" class="btn bg-gd-leaf border-0 text-white">
+            Edit <i class="fa fa-pencil ml-10"></i>
+          </button>
+        </a>
+      </div>
+      @endif
     </div>
-  </div> -->
+    </div>
+  </div>
 </div>
-
-
-
 @endsection
 
 @include('superuser.asset.plugin.datatables')
 @include('superuser.asset.plugin.magnific-popup')
 @include('superuser.asset.plugin.swal2')
-@include('superuser.asset.plugin.nav-menu')
 
 @push('scripts')
+<script src="{{ asset('utility/superuser/js/form.js') }}"></script>
 <script type="text/javascript">
   $(document).ready(function() {
+    $('#datatable').DataTable({
+      columnDefs: [
+        { orderable: false, targets: [3] }
+      ]
+    })
+
     $('a.img-lightbox').magnificPopup({
       type: 'image',
       closeOnContentClick: true,
@@ -183,7 +185,5 @@
 
     Codebase.helpers('table-tools')
   })
-
- 
 </script>
 @endpush

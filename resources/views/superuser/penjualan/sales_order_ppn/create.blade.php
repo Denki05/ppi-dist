@@ -2,262 +2,133 @@
 
 @section('content')
 <nav class="breadcrumb bg-white push">
-  <span class="breadcrumb-item">Sales</span>
-  <span class="breadcrumb-item">Sale Order PPN</span>
+  <span class="breadcrumb-item">Sale</span>
+  <a class="breadcrumb-item" href="{{ route('superuser.penjualan.sales_order.index') }}">Sales Order PPN</a>
   <span class="breadcrumb-item active">Create</span>
 </nav>
-@if($errors->any())
-<div class="alert alert-danger alert-dismissable" role="alert">
-  <button type="button" class="close" data-dismiss="alert" aria-label="Close">
-      <span aria-hidden="true">×</span>
-  </button>
-  <h3 class="alert-heading font-size-h4 font-w400">Error</h3>
-  @foreach ($errors->all() as $error)
-  <p class="mb-0">{{ $error }}</p>
-  @endforeach
-</div>
-@endif
-
 <div id="alert-block"></div>
 
-    <div class="row">
-      <div class="col-md-4">
-        <div class="card mb-2 border-0">
-          <div class="card-body">
-            <div class="row">
-              <div class="col">
-                <div class="form-label-group in-border">
-                  <label>Customer</label>
-                  <select class="form-control js-select2 select-customer" name="customer_other_address_id">
-                    <option value="">Pilih Customer</option>
-                    @foreach ($member as $key => $row)
-                    <option value="{{$row->id}}">{{ $row->name }}</option>
-                    @endforeach
-                  </select>
-                </div>
-              </div>
-              <div class="col">
-                <div class="form-label-group in-border">
-                  <label>Address</label>
-                  <textarea class="form-control" name="customer-address" value="" rows="1" readonly></textarea>
-                </div>
-              </div>
-            </div>
-
-            <div class="row">
-              <div class="col">
-                <div class="form-label-group in-border">
-                  <label>Sales Senior</label>
-                  <select class="form-control js-select2 select-customer" name="sales_senior_id">
-                    <option value="">Pilih Sales Senior</option>
-                    @foreach ($sales as $key => $row)
-                    <option value="{{$row->id}}">{{ $row->name }}</option>
-                    @endforeach
-                  </select>
-                </div>
-              </div>
-              <div class="col">
-                <div class="form-label-group in-border">
-                  <label>Sales</label>
-                  <select class="form-control js-select2 select-customer" name="sales_id">
-                    <option value="">Pilih Sales</option>
-                    @foreach ($sales as $key => $row)
-                    <option value="{{$row->id}}">{{ $row->name }}</option>
-                    @endforeach
-                  </select>
-                </div>
-              </div>
-            </div>
-
-            <div class="row">
-              <div class="col">
-                <div class="form-label-group in-border">
-                  <label>Transaksi</label>
-                  <select class="form-control js-select2 select-customer" name="type_transaction">
-                    <option value="">Pilih type transaksi</option>
-                    <option value="1">Cash</option>
-                    <option value="2">Tempo</option>
-                  </select>
-                </div>
-              </div>
-              <div class="col">
-                <div class="form-label-group in-border">
-                  <label>Note</label>
-                  <textarea class="form-control" name="note" rows="1"></textarea>
-                </div>
-              </div>
+<form class="ajax" data-action="#" data-type="POST" enctype="multipart/form-data">
+  <div class="row">
+    <div class="col-4">
+      <div class="card">
+        <div class="card-body">
+          <div class="form-group row">
+            <label class="col-md-3 col-form-label text-right" for="customer_other_address_id">Customer <span class="text-danger">*</span></label>
+            <div class="col-md-7">
+                <select class="form-control js-select2 select-customer" id="customer_other_address_id" name="customer_other_address_id" data-placeholder="Select Customer">
+                  <option></option>
+                  @foreach($member as $row)
+                  <option value="{{ $row->id }}">{{ $row->name }}</option>
+                  @endforeach
+                </select>
             </div>
           </div>
-        </div>
-
-        <div class="card mb-2 border-0">
-          <div class="card-body" >
-                    <div class="form-group row">
-                      <label class="col-md-3 col-form-label text-right">Ekspedisi</label>
-                      <div class="col-md-6">
-                        <select class="form-control js-select2" name="ekspedisi">
-                          <option value="">Pilih Ekspedisi</option>
-                          @foreach($ekspedisi as $index)
-                          <option value="{{ $index->id }}">{{ $index->name }}</option>
-                          @endforeach
-                        </select>
-                      </div>
-                      <div class="col-md-2">
-                        <input type="checkbox" class="form-check-input" value="1" id="shipping_cost_buyer" name="shipping_cost_buyer">
-                        <label>Bayar ditempat</label>
-                      </div>
-                    </div>
+          <div class="form-group row">
+            <label class="col-md-3 col-form-label text-right" for="customer_address">Alamat </label>
+            <div class="col-md-7">
+              <input type="text" class="form-control" id="customer_address" name="customer_address" readonly>
+            </div>
           </div>
         </div>
       </div>
-
-      <div class="col-md-8">
-        <div class="row">
-          <div class="card mb-2 border-0">
-            <div class="card-body">
-              <div class="row">
-                <div class="col-sm">
-                  
-                    <div class="form-group row">
-                      <label style="font-size: 10pt;" class="col-md-4 col-form-label text-right">Gudang<span class="text-danger">*</span></label>
-                        <div class="col-8">
-                          <select class="form-control js-select2" style="font-size: 9pt;" name="origin_warehouse_id">
-                            <option value="">Pilih Gudang</option>
-                            @foreach($warehouse as $index => $row)
-                            <option style="font-size: 10pt;" value="{{$row->id}}">{{$row->name}}</option>
-                            @endforeach
-                          </select>
-                        </div>
-                    </div>
-                    
+    </div>
+    <div class="col-8">
+      <div class="card">
+        <div class="card-body">
+          <div class="row">
+            <div class="col">
+              <div class="form-group row">
+                <label class="col-md-4 col-form-label text-right" for="warehouse_id">Gudang</label>
+                <div class="col-md-7">
+                    <select class="form-control js-select2" id="warehouse_id" name="warehouse_id" data-placeholder="Select Gudang">
+                      <option></option>
+                      @foreach($warehouse as $row)
+                      <option value="{{ $row->id }}">{{ $row->name }}</option>
+                      @endforeach
+                    </select>
                 </div>
-                <div class="col-sm">
-                  
-                    <div class="form-group row">
-                      <label class="col-md-4 col-form-label text-right" style="font-size: 10pt;">Kurs<span class="text-danger">*</span></label>
-                      <div class="col-5">
-                      <input type="text" name="idr_rate" id="idr_rate"  class="form-control" value="">
-                      </div>
-                    </div>
-                    
-                </div>
-                <div class="col-sm">
-                  
-                    <div class="form-group row">
-                      <label style="font-size: 10pt;" class="col-md-4 col-form-label text-right">Disc Cash</label>
-                        <div class="col-5">
-                          <select class="form-control js-select2 base_disc" id="base_id">
-                              <option value="0">0</option>
-                              <option value="2">$2</option>
-                              <option value="4">$4</option>
-                          </select>
-                        </div>
-                    </div>
-                  
+              </div>
+            </div>
+            <div class="col">
+              <div class="form-group row">
+                <label class="col-md-4 col-form-label text-right" for="ekspedisi">Ekspedisi</label>
+                <div class="col-md-7">
+                    <select class="form-control js-select2" id="ekspedisi" name="ekspedisi" data-placeholder="Select Ekspedisi">
+                      <option></option>
+                      @foreach($ekspedisi as $row)
+                      <option value="{{ $row->id }}">{{ $row->name }}</option>
+                      @endforeach
+                    </select>
                 </div>
               </div>
             </div>
           </div>
-        </div>
-        <div class="row">
-          <div class="card mb-2 border-0">
-            <div class="card-body">
-              <div class="row">
-                <div class="col">
-                  <div class="form-group row">
-                    <label class="col-md-4 col-form-label text-right">Disc %</label>
-                    <div class="col-md-3">
-                      <input type="text" name="disc_agen_percent" id="disc_agen_percent" class="form-control text-center disc_agen_percent" value="0" step="any">
-                    </div>
-                    <div class="col-md-5">
-                      <input type="text" name="disc_amount2_idr" id="disc_amount2_idr" class="form-control disc_amount2_idr text-center" readonly>
-                    </div>
-                  </div>
-                </div>
-                <div class="col">
-                  
-                  
-                  <div class="form-group row">
-                      <label class="col-md-4 col-form-label text-right">Disc IDR</label>
-                      <div class="col-md-6">
-                        <input type="text" name="disc_idr" id="disc_idr" class="form-control disc_idr " step="any">
-                      </div>
-                    </div>
-                  
-                </div>
-                <div class="col">
-                  
-                  <div class="form-group row">
-                    <label class="col-md-4 col-form-label text-right">Subtotal</label>
-                    <div class="col-md-6">
-                      <input type="text" id="subtotal_2" name="subtotal_2" class="form-control text-center subtotal_2" step="any" readonly>
-                    </div>
-                  </div>
-                  
+          <div class="row">
+            <div class="col">
+              <div class="form-group row">
+                <label class="col-md-4 col-form-label text-right" for="type_transaction">Type Transaksi <span class="text-danger">*</span></label>
+                <div class="col-md-7">
+                    <select class="form-control js-select2" id="type_transaction" name="type_transaction" data-placeholder="Select Transaksi">
+                      <option value="">Pilih Transaksi</option>
+                      <option value="1">CASH</option>
+                      <option value="2">TEMPO</option>
+                      <option value="3">MARKETPLACE</option>
+                    </select>
                 </div>
               </div>
-
-              <div class="row">
-                <div class="col">
-                  
-                    <div class="form-group row">
-                      <label class="col-md-4 col-form-label text-right">Disc Kemasan %</label>
-                      <div class="col-md-3">
-                        <input type="text" name="disc_tambahan" id="disc_tambahan" class="form-control disc_tambahan text-center" value="0" step="any">
-                      </div>
-                      <div class="col-md-5">
-                        <input type="text" name="disc_kemasan_idr" id="disc_kemasan_idr" class="form-control disc_kemasan_idr text-center" readonly>
-                      </div>
-                    </div>
-                    
-                </div>
-                <div class="col">
-
-                  <div class="form-group row">
-                    <label class="col-md-4 col-form-label text-right">Voucher</label>
-                    <div class="col-md-6">
-                      <input type="text" name="voucher_idr" id="voucher_idr" class="form-control count voucher_idr ">
-                    </div>
-                  </div>
-                    
-                </div>
-                <div class="col">
-                  
-                  <div class="form-group row">
-                    <label class="col-md-4 col-form-label text-right">Grand Total</label>
-                    <div class="col-md-6">
-                      <input type="text" name="grand_total_final"  id="grand_total_final" class="form-control text-center grand_total_final" step="any" readonly>
-                    </div>
-                  </div>
-                  
+            </div>
+            <div class="col">
+              <div class="form-group row">
+                <label class="col-md-4 col-form-label text-right" for="idr_rate">Kurs <span class="text-danger">*</span></label>
+                <div class="col-md-7">
+                  <input type="text" name="idr_rate" id="idr_rate"  class="form-control" >
                 </div>
               </div>
-
-              <div class="row">
-                <div class="col">
-                  <div class="form-group row">
-                    <label class="col-md-4 col-form-label text-right">PPN</label>
-                    <div class="col-md-3">
-                      <input type="text" name="disc_agen_percent" id="tax_amount_percent" class="form-control text-center tax_amount_percent" value="0" step="any">
-                    </div>
-                    <div class="col-md-5">
-                      <input type="text" name="disc_amount2_idr" id="tax_amount_idr" class="form-control tax_amount_idr text-center" readonly>
-                    </div>
-                  </div>
+            </div>
+          </div>
+          <div class="row">
+            <div class="col">
+              <div class="form-group row">
+                <label class="col-md-4 col-form-label text-right" for="sales_senior_id">Sales Senior <span class="text-danger">*</span></label>
+                <div class="col-md-7">
+                    <select class="form-control js-select2" id="sales_senior_id" name="sales_senior_id" data-placeholder="Select Sales Senior">
+                      <option></option>
+                      @foreach($sales as $row)
+                      <option value="{{ $row->id }}">{{ $row->name }}</option>
+                      @endforeach
+                    </select>
                 </div>
-
-                <div class="col-4">
-                  <div class="form-group row">
-                    <label class="col-md-4 col-form-label text-right">Ongkir</label>
-                    <div class="col-md-6">
-                      <input type="text" name="delivery_cost_idr" id="delivery_cost_idr" class="form-control delivery_cost_idr ">
-                    </div>
-                  </div>
+              </div>
+            </div>
+            <div class="col">
+              <div class="form-group row">
+                <label class="col-md-4 col-form-label text-right" for="sales_id">Sales <span class="text-danger">*</span></label>
+                <div class="col-md-7">
+                    <select class="form-control js-select2" id="sales_id" name="sales_id" data-placeholder="Select Sales">
+                      <option></option>
+                      @foreach($sales as $row)
+                      <option value="{{ $row->id }}">{{ $row->name }}</option>
+                      @endforeach
+                    </select>
                 </div>
-                
-                <div class="col-4">
-                  <button type="button" class="btn btn-danger button_cal" id="button_cal"><i class="fas fa-calculator pr-2" aria-hidden="true"></i>Calculate</button>
-                  <button type="submit" class="btn btn-primary"><i class="fa fa-save"></i> Save</button>
+              </div>
+            </div>
+          </div>
+          <div class="row">
+            <div class="col">
+              <div class="form-group row">
+                <label class="col-md-4 col-form-label text-right" for="sales_id">PPN <span class="text-danger">*</span></label>
+                <div class="col-md-7">
+                  <input class="form-check-input" type="checkbox" value="ppn" id="ppn_check" name="ppn_check" checked>
+                </div>
+              </div>
+            </div>
+            <div class="col">
+              <div class="form-group row">
+                <label class="col-md-4 col-form-label text-right" for="sales_id">Note <span class="text-danger">*</span></label>
+                <div class="col-md-7">
+                    <input type="text" class="form-control" name="note" id="note">
                 </div>
               </div>
             </div>
@@ -265,23 +136,239 @@
         </div>
       </div>
     </div>
+  </div>
+
+  <br>
+
+  <div class="block">
+    <div class="block-header block-header-default">
+      <h3 class="block-title">Add Product</h3>
+      <a href="#" class="row-add">
+        <button type="button" class="btn bg-gd-sea border-0 text-white">
+          <i class="fa fa-plus mr-10"></i> Row
+        </button>
+      </a>
+    </div>
+    <div class="block-content">
+      <table id="datatable" class="table table-striped table-vcenter table-responsive">
+        <thead>
+          <tr>
+            <th class="text-center">Counter</th>
+            <th class="text-center">Select SKU</th>
+            <th class="text-center">Product</th>
+            <th class="text-center">Quantity</th>
+            <th class="text-center">Price</th>
+            <th class="text-center">Total</th>
+            <th class="text-center">Action</th>
+          </tr>
+        </thead>
+        <tbody>
+        </tbody>
+      </table>
+    </div>
+    <div class="block-header block-header-default">
+      <div class="container">
+        <div class="form-group row justify-content-end">
+          <label class="col-md-3 col-form-label text-right" for="subtotal">IDR Sub Total</label>
+          <div class="col-md-2">
+            <input type="text" class="form-control" id="subtotal" name="subtotal" readonly>
+          </div>
+        </div>
+        <div class="form-group row justify-content-end">
+          <label class="col-md-3 col-form-label text-right" for="tax">
+            <div class="form-check">
+              <input class="form-check-input" type="checkbox" value="" id="tax_checked" name="tax_checked">
+              <label class="form-check-label" for="tax_checked">
+                Tax
+              </label>
+            </div>
+          </label>
+          <div class="col-md-2">
+            <input type="number" class="form-control" id="tax" name="tax" readonly>
+          </div>
+        </div>
+        <div class="form-group row justify-content-end">
+          <label class="col-md-3 col-form-label text-right" for="discount">IDR Discount</label>
+          <div class="col-md-2">
+            <input type="text" class="form-control" id="discount" name="discount">
+          </div>
+        </div>
+        <div class="form-group row justify-content-end">
+          <label class="col-md-3 col-form-label text-right" for="shipping_fee">Courier</label>
+          <div class="col-md-2">
+            <input type="text" class="form-control" id="shipping_fee" name="shipping_fee">
+          </div>
+        </div>
+        <div class="form-group row justify-content-end">
+          <label class="col-md-3 col-form-label text-right" for="grand_total">IDR Total</label>
+          <div class="col-md-2">
+            <input type="text" class="form-control" id="grand_total" name="grand_total" readonly>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</form>
 
 @endsection
-
+@include('superuser.asset.plugin.datatables')
 @include('superuser.asset.plugin.select2')
 
 @push('scripts')
 <script src="{{ asset('utility/superuser/js/form.js') }}"></script>
 <script type="text/javascript">
-  $(function(){
-    $('.js-select2').select2();
+  $(document).ready(function() {
+    $('.js-select2').select2()
+  
+    var table = $('#datatable').DataTable({
+        paging: false,
+        bInfo : false,
+        searching: false,
+        columns: [
+          {name: 'counter', "visible": false},
+          {name: 'sku', orderable: false, width: "25%"},
+          {name: 'name', orderable: false, searcable: false},
+          {name: 'quantity', orderable: false, searcable: false, width: "5%"},
+          {name: 'price', orderable: false, searcable: false},
+          {name: 'total', orderable: false, searcable: false},
+          {name: 'action', orderable: false, searcable: false, width: "5%"}
+        ],
+        'order' : [[0,'desc']]
+    })
+  
+    var counter = 1;
+  
+    $('a.row-add').on( 'click', function (e) {
+      e.preventDefault();
+      
+      table.row.add([
+                    counter,
+                    '<select class="js-select2 form-control js-ajax" id="sku['+counter+']" name="sku[]" data-placeholder="Select SKU" style="width:100%" required></select>',
+                    '<span class="name"></span>',
+                    '<input type="number" class="form-control" name="quantity[]" readonly required>',
+                    '<input type="number" class="form-control" name="price[]" readonly required>',
+                    '<input type="number" class="form-control" name="total[]" readonly>',
+                    '<a href="#" class="row-delete"><button type="button" class="btn btn-sm btn-circle btn-alt-danger" title="Delete"><i class="fa fa-trash"></i></button></a>'
+                  ]).draw( false );
+                  // $('.js-select2').select2()
+                  initailizeSelect2();
+      counter++;
+    });
+
+    function initailizeSelect2(){
+      $(".js-ajax").select2({
+        ajax: {
+          url: '{{ route('superuser.penjualan.sales_order.search_sku') }}',
+          dataType: 'json',
+          delay: 250,
+          data: function (params) {
+            return {
+              q: params.term,
+              _token: "{{csrf_token()}}"
+            };
+          },
+          cache: true
+        },
+        minimumInputLength: 3,
+      });
+
+      $('.js-ajax').on('select2:select', function (e) {
+        var name = e.params.data.name;
+        $(this).parents('tr').find('.name').text(name);
+        $(this).parents('tr').find('input[name="quantity[]"]').removeAttr('readonly');
+        $(this).parents('tr').find('input[name="price[]"]').removeAttr('readonly');
+      });
+
+    };
+    
+  
+    $('#datatable tbody').on( 'click', '.row-delete', function (e) {
+      e.preventDefault();
+      
+      table.row( $(this).parents('tr') ).remove().draw();
+      
+      var subtotal = 0;
+      $('input[name="total[]"]').each(function(){
+        subtotal += Number($(this).val());
+      });
+      $('#subtotal').val(subtotal);
+
+      $("#tax_checked").change();
+      grandtotal();
+
+    });
+
+    $('#datatable tbody').on( 'keyup', 'input[name="quantity[]"]', function (e) {
+      var price = $(this).parents('tr').find('input[name="price[]"]').val();
+      var total = $(this).val() * price;
+
+      $(this).parents('tr').find('input[name="total[]"]').val(total);
+      $(this).parents('tr').find('input[name="total[]"]').change();
+
+    });
+
+    $('#datatable tbody').on( 'keyup', 'input[name="price[]"]', function (e) {
+      var quantity = $(this).parents('tr').find('input[name="quantity[]"]').val();
+      var total = $(this).val() * quantity;
+
+      $(this).parents('tr').find('input[name="total[]"]').val(total);
+      $(this).parents('tr').find('input[name="total[]"]').change();
+    });
+    
+    $('#datatable tbody').on( 'change', 'input[name="total[]"]', function (e) {
+      var subtotal = 0;
+      $('input[name="total[]"]').each(function(){
+        subtotal += Number($(this).val());
+      });
+      $('#subtotal').val(subtotal);
+
+      $("#tax_checked").change();
+      grandtotal();
+    });
+
+    $("#tax_checked").change(function() {
+        if(this.checked) {
+          var tax = ($('#subtotal').val() * 10) / 100;
+
+          $('#tax').val(tax);
+        } else {
+          $('#tax').val('');
+        }
+        grandtotal();
+    });
+
+    $("#discount").on('keyup', function() {
+        grandtotal();
+    });
+
+    $("#shipping_fee").on('keyup', function() {
+        grandtotal();
+    });
+
+    function grandtotal() {
+      var subtotal = Number($('#subtotal').val());
+      var tax = Number($('#tax').val());
+      var discount = Number($('#discount').val());
+      var shipping_fee = Number($('#shipping_fee').val());
+      var grandtotal = subtotal + tax - discount + shipping_fee;
+
+      $('#grand_total').val(grandtotal);
+    }
+  
+    function delay(fn, ms) {
+      let timer = 0
+      return function(...args) {
+        clearTimeout(timer)
+        timer = setTimeout(fn.bind(this, ...args), ms || 0)
+      }
+    }
 
     $(document).on('change','.select-customer',function(){
       let val = $(this).val();
       if(val != ""){
         customer_address(val);
       }else{
-        $('textarea[name="customer-address"]').val("");
+        $('input[name="customer_address"]').val("");
       }
     })
 
@@ -297,7 +384,7 @@
             showToast('danger',resp.Message);
             }
             else{
-            $('textarea[name="customer-address"]').val(resp.Data.address);
+            $('input[name="customer_address"]').val(resp.Data.address);
             }
         },
         error : function(){
@@ -305,6 +392,7 @@
         },
         })
     }
+  
   });
 </script>
 @endpush
