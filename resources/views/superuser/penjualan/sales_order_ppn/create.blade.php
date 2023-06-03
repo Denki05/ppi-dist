@@ -273,10 +273,11 @@
       });
 
       $('.js-ajax').on('select2:select', function (e) {
-        var name = e.params.data.name;
+        var name = e.params.data.productName;
+        var price = e.params.data.productPrice;
         $(this).parents('tr').find('.name').text(name);
         $(this).parents('tr').find('input[name="quantity[]"]').removeAttr('readonly');
-        $(this).parents('tr').find('input[name="price[]"]').removeAttr('readonly');
+        $(this).parents('tr').find('input[name="price[]"]').val(price);
       });
 
     };
@@ -300,7 +301,8 @@
 
     $('#datatable tbody').on( 'keyup', 'input[name="quantity[]"]', function (e) {
       var price = $(this).parents('tr').find('input[name="price[]"]').val();
-      var total = $(this).val() * price;
+      var idr_rate = $('input[name="idr_rate"]').val();
+      var total = ($(this).val() * price) * idr_rate;
 
       $(this).parents('tr').find('input[name="total[]"]').val(total);
       $(this).parents('tr').find('input[name="total[]"]').change();
