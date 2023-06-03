@@ -134,16 +134,10 @@ class ProductController extends Controller
                 $product->material_name = $request->material_name;
                 $product->alias = $request->alias;
                 $product->buying_price = $request->buying_price;
-                // $product->selling_price = $request->selling_price;
-                if($request->free_product == 0){
-                    $product->selling_price = $request->selling_price;
-                }elseif($request->free_product == 1){
-                    $product->selling_price = 0;
-                }
+                $product->selling_price = $request->selling_price;
                 $product->description = $request->description;
                 $product->note = $request->note;
                 $product->gender = $request->gender;
-                $product->free_product = $request->free_product;
 
                 $product->default_quantity = $request->default_quantity;
                 $product->default_unit_id = $request->default_unit;

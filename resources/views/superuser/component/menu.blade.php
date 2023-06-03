@@ -28,12 +28,12 @@
                         <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-expanded="false">Product <span class="caret"></span></a>
                         <ul class="dropdown-menu" role="menu">
                             <li><a href="{{ route('superuser.master.product.index') }}" target="_blank">Product List</a></li>
-                            <li><a href="{{ route('superuser.master.product_category.index') }}" target="_blank">Product Category</a></li>
+                            <li><a href="{{ route('superuser.master.product_category.index') }}" target="_blank">Category</a></li>
                             {{--<li><a href="{{ route('superuser.master.product_type.index') }}" target="_blank">Product Type</a></li>--}}
                             {{--<li><a href="{{ route('superuser.master.brand_lokal.index') }}" target="_blank">Brand Lokal</a></li>--}}
                             {{--<li><a href="{{ route('superuser.master.brand_reference.index') }}" target="_blank">Brand Fragrantica</a></li>--}}
-                            <li><a href="{{ route('superuser.master.sub_brand_reference.index') }}" target="_blank">Product Searah</a></li>
-                            <li><a href="{{ route('superuser.master.catalog.index') }}" target="_blank">Catalog Product</a></li>
+                            <li><a href="{{ route('superuser.master.sub_brand_reference.index') }}" target="_blank">Searah</a></li>
+                            {{--<li><a href="{{ route('superuser.master.catalog.index') }}" target="_blank">Catalog Product</a></li>--}}
                             {{--<li><a href="{{ route('superuser.master.unit.index') }}" target="_blank">Unit</a></li>--}}
                         </ul>
                     </li>
@@ -44,7 +44,7 @@
                         <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-expanded="false">Store <span class="caret"></span></a>
                         <ul class="dropdown-menu" role="menu">
                             <li><a href="{{ route('superuser.master.customer.index') }}" target="_blank">Store List</a></li>
-                            <li><a href="{{ route('superuser.master.customer_category.index') }}" target="_blank">Store Category</a></li>
+                            <li><a href="{{ route('superuser.master.customer_category.index') }}" target="_blank">Category</a></li>
                             {{--<li><a href="{{ route('superuser.master.customer_type.index') }}" target="_blank">Store Type</a></li>--}}
                             <!-- <li><a href="{{ route('superuser.master.customer_contact.index') }}" target="_blank">Contact</a></li> -->
                         </ul>

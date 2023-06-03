@@ -35,11 +35,6 @@ class Product extends Model
         'INACTIVE' => 2
     ];
 
-    const FREE_PRODUCT = [
-        'NO' => 0,
-        'YES' => 1,
-    ];
-
     public function sub_brand_reference()
     {
         return $this->BelongsTo('App\Entities\Master\SubBrandReference', 'sub_brand_reference_id');
@@ -131,15 +126,6 @@ class Product extends Model
 
         if ($superuser) {
             return $superuser->name ?? $superuser->username;
-        }
-    }
-
-    public function free_product()
-    {
-        if (isset($this->free_product)) {
-            return (object) self::STATUS[$this->FREE_PRODUCT];
-        } else {
-            return null;
         }
     }
 }

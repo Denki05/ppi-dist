@@ -328,7 +328,7 @@
 
     $("#tax_checked").change(function() {
         if(this.checked) {
-          var tax = ($('#subtotal').val() * 10) / 100;
+          var tax = ($('#subtotal').val() * 11) / 100;
 
           $('#tax').val(tax);
         } else {
