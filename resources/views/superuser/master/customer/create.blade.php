@@ -1,11 +1,6 @@
 @extends('superuser.app')
 
 @section('content')
-<!-- <nav class="breadcrumb bg-white push">
-  <span class="breadcrumb-item">Master</span>
-  <a class="breadcrumb-item" href="{{ route('superuser.master.customer.index') }}">Store</a>
-  <span class="breadcrumb-item active">Create</span>
-</nav> -->
 <div class="block">
             <div class="block-conten" align="center">
                 <div class="col-md-10 col-md-offset-1">
@@ -14,10 +9,10 @@
                 			<div class="f1-progress">
                 			    <div class="f1-progress-line" data-now-value="25" data-number-of-steps="4" style="width: 25%;"></div>
                 			</div>
-                            <div class="f1-step active">
-                                <div class="f1-step-icon"><i class="mdi mdi-account"></i></div>
-                                <p>Profile</p>
-                            </div>
+                      <div class="f1-step active">
+                        <div class="f1-step-icon"><i class="mdi mdi-account"></i></div>
+                          <p>Profile</p>
+                      </div>
                 			<div class="f1-step">
                 				<div class="f1-step-icon"><i class="mdi mdi-crosshairs-gps"></i></div>
                 				<p>Geo Tag</p>
@@ -31,61 +26,92 @@
                 				<p>Document</p>
                 			</div>
                 		</div>
-                		<!-- step 1 -->
+                		
+                    <!-- Data Profile -->
                 		<fieldset>
                 		    <h4>Data Profile</h4>
                           <div class="container">
                             <div class="row">
                               <div class="col">
-                                <div class="form-group">
-                                    <label for="name">Nama<span class="text-danger">*</span></label>
+                                <div class="form-group row">
+                                  <label for="name" class="col-sm-2 col-form-label">Nama <span class="text-danger">*</span></label>
+                                  <div class="col-sm-10">
                                     <input type="text" id="name" name="name" placeholder="Name Store" class="form-control">
+                                  </div>
                                 </div>
                               </div>
                               <div class="col">
-                                <div class="form-group">
-                                  <label for="has_ppn">Customer PPN <span style="font-style: italic;" class="text-danger">*check for customers ppn</span></label><br>
-                                  <input type="checkbox" id="has_ppn" name="has_ppn" value="1">
+                                <div class="form-group row">
+                                  <label for="address" class="col-sm-2 col-form-label">Alamat <span class="text-danger">*</span></label>
+                                  <div class="col-sm-10">
+                                    <input type="text" name="address" id="address" placeholder="Store Address" class="form-control">
+                                  </div>
                                 </div>
-                              </div>
-                              <div class="form-group">
-                                <label>Category</label>
-                                  <select class="js-select2 form-control" id="category" name="category" style="width:100%;" placeholder="Pilih Kategori Store">
-                                      <option>Select Category</option>
-                                      @foreach($category as $category)
-                                      <option value="{{ $category->id }}">{{ $category->name }}</option>
-                                      @endforeach
-                                  </select>
-                              </div>
-                              <div class="form-group">
-                                <label for="zone">Zoning</label>
-                                <input type="text" class="form-control" id="zone" name="zone" placeholder="Zoning Wilayah">
                               </div>
                             </div>
                             <div class="row">
-                              <div class="form-group">
-                                  <label for="email">Email</label>
-                                  <input type="email" id="email" name="email" placeholder="Email" class="form-control">
+                              <div class="col">
+                                <div class="form-group row">
+                                  <label for="category" class="col-sm-2 col-form-label">Category<span class="text-danger">*</span></label>
+                                  <div class="col-sm-10">
+                                    <select class="js-select2 form-control" id="category" name="category" style="width:100%;" placeholder="Pilih Kategori Store">
+                                        <option>Select Category</option>
+                                        @foreach($category as $category)
+                                        <option value="{{ $category->id }}">{{ $category->name }}</option>
+                                        @endforeach
+                                    </select>
+                                  </div>
+                                </div>
                               </div>
-                              <div class="form-group">
-                                  <label for="phone">Telepone</label>
-                                  <input type="number" id="phone" name="phone" placeholder="Phone" class="form-control">
+                              <div class="col">
+                                <div class="form-group row">
+                                  <label for="zone" class="col-sm-2 col-form-label">Zone <span class="text-danger">*</span></label>
+                                  <div class="col-sm-10">
+                                    <input type="text" name="zone" id="zone" placeholder="Zone Area" class="form-control">
+                                  </div>
+                                </div>
                               </div>
-                              <div class="form-group">
-                                  <label for="address">Alamat<span class="text-danger">*</span></label>
-                                  <input type="text" name="address" id="address" placeholder="Store Address" class="form-control">
+                            </div>
+                            <div class="row">
+                              <div class="col">
+                                <div class="form-group row">
+                                  <label for="phone" class="col-sm-2 col-form-label">Telp <span class="text-danger">*</span></label>
+                                  <div class="col-sm-10">
+                                    <input type="number" id="phone" name="phone" placeholder="Phone" class="form-control">
+                                  </div>
+                                </div>
                               </div>
-                              <div class="form-group">
-                                  <label for="owner_name">Owner</label>
-                                  <input type="text" id="owner_name" name="owner_name" placeholder="Owner Store" class="form-control">
+                              <div class="col">
+                                <div class="form-group row">
+                                  <label for="email" class="col-sm-2 col-form-label">email <span class="text-danger">*</span></label>
+                                  <div class="col-sm-10">
+                                    <input type="email" id="email" name="email" placeholder="Email" class="form-control">
+                                  </div>
+                                </div>
                               </div>
-                              <div class="form-group">
-                                  <label for="website">Website</label>
-                                  <input type="text" id="website" name="website" placeholder="Website Store" class="form-control">
+                            </div>
+                            <div class="row">
+                              <div class="col">
+                                <div class="form-group row">
+                                  <label for="owner_name" class="col-sm-2 col-form-label">Owner <span class="text-danger">*</span></label>
+                                  <div class="col-sm-10">
+                                    <input type="text" id="owner_name" name="owner_name" placeholder="Owner Store" class="form-control">
+                                  </div>
+                                </div>
                               </div>
-                              <div class="form-group">
-                                  <label>Foto Store</label>
-                                  <input type="file" id="image_store" name="image_store" data-max-file-size="2000" accept="image/png, image/jpeg">
+                              <div class="col">
+                                <div class="form-group row">
+                                  <label for="website" class="col-sm-2 col-form-label">Website <span class="text-danger">*</span></label>
+                                  <div class="col-sm-10">
+                                    <input type="text" id="website" name="website" placeholder="Website Store" class="form-control">
+                                  </div>
+                                </div>
+                              </div>
+                            </div>
+                            <div class="row">
+                              <div class="mb-3">
+                                <label for="image_store" class="form-label">Image Store</label>
+                                <input class="form-control form-control-lg" id="image_store" name="image_store" type="file">
                               </div>
                             </div>
                           </div>
@@ -94,58 +120,68 @@
                               <button type="button" class="btn btn-primary btn-next">Next <i class="fa fa-arrow-right"></i></button>
                             </div>
                         </fieldset>
-                        <!-- step 2 -->
+                        
+                        <!-- Geo Tag -->
                         <fieldset>
                             <h4>Data Geo Tag</h4>
                             <div class="container">
                               <div class="row">
-                                <div class="form-group">
-                                  <label>Area Detail</label>
-                                  
-                                    <select class="js-select2 form-control" id="provinsi" name="provinsi" style="width:100%;" placeholder="Pilih Provinsi">
-                                        <option>Pilih provinsi</option>
-                                        @foreach ($provinces as $provinsi)
-                                        <option value="{{ $provinsi->prov_id }}">{{ $provinsi->prov_name }}</option>
-                                        @endforeach
-                                    </select>
-                                    <input type="hidden" name="text_provinsi">
+                              <div class="form-row">
+                                <div class="form-group col-md-4">
+                                  <label for="provinsi">Provinsi</label>
+                                  <select class="js-select2 form-control" id="provinsi" name="provinsi" style="width:100%;" placeholder="Pilih Provinsi">
+                                    <option>Pilih provinsi</option>
+                                    @foreach ($provinces as $provinsi)
+                                    <option value="{{ $provinsi->prov_id }}">{{ $provinsi->prov_name }}</option>
+                                    @endforeach
+                                  </select>
+                                  <input type="hidden" name="text_provinsi">
                                 </div>
-                                <div class="form-group">
-                                    <select class="js-select2 form-control" id="kota" name="kota" style="width:100%;" placeholder="Pilih Kota">
-                                        <option>Pilih Kota</option>
-                                    </select>
-                                    <input type="hidden" name="text_kota">
+                                <div class="form-group col-md-2">
+                                  <label for="kota">Kota</label>
+                                  <select class="js-select2 form-control" id="kota" name="kota" style="width:100%;" placeholder="Pilih Kota">
+                                    <option>Pilih Kota</option>
+                                  </select>
+                                  <input type="hidden" name="text_kota">
                                 </div>
-                                <div class="form-group">
-                                    <select class="js-select2 form-control" id="kecamatan" name="kecamatan" style="width:100%;" placeholder="Pilih Kecamatan">
-                                        <option>Pilih Kecamatan</option>
-                                    </select>
-                                    <input type="hidden" name="text_kecamatan">
+                                <div class="form-group col-md-2">
+                                  <label for="kecamatan">Kecamatan</label>
+                                  <select class="js-select2 form-control" id="kecamatan" name="kecamatan" style="width:100%;" placeholder="Pilih Kecamatan">
+                                    <option>Pilih Kecamatan</option>
+                                  </select>
+                                  <input type="hidden" name="text_kecamatan">
                                 </div>
-                                <div class="form-group">
-                                    <select class="js-select2 form-control" id="kelurahan" name="kelurahan" style="width:100%;" placeholder="Pilih Kelurahan">
-                                        <option>Pilih Kelurahan</option>
-                                    </select>
-                                    <input type="hidden" name="text_kelurahan">
+                                <div class="form-group col-md-2">
+                                  <label for="kelurahan">Kelurahan</label>
+                                  <select class="js-select2 form-control" id="kelurahan" name="kelurahan" style="width:100%;" placeholder="Pilih Kelurahan">
+                                    <option>Pilih Kelurahan</option>
+                                  </select>
+                                  <input type="hidden" name="text_kelurahan">
                                 </div>
-                                <div class="form-group">
-                                    <select class="js-select2 form-control" id="zipcode" name="zipcode" style="width:100%;" placeholder="Pilih Kode Pos">
-                                        <option>Pilih Kode Pos</option>
-                                    </select>
-                                    <input type="hidden" name="text_zipcode">
+                                <div class="form-group col-md-2">
+                                  <label for="zipcode">Zipcode</label>
+                                  <select class="js-select2 form-control" id="zipcode" name="zipcode" style="width:100%;" placeholder="Pilih Kode Pos">
+                                    <option>Pilih Kode Pos</option>
+                                  </select>
+                                  <input type="hidden" name="text_zipcode">
                                 </div>
+                              </div>
                               </div>
                               <div class="row">
                                 <div class="col">
-                                  <div class="form-group">
-                                      <label for="gps_latitude">GPS Latitude</label>
-                                      <input type="text" name="gps_latitude" id="gps_latitude" placeholder="Latitude" class="form-control">
+                                  <div class="form-group row">
+                                      <label for="gps_latitude" class="col-sm-2 col-form-label">GPS Latitude<span class="text-danger">*</span></label>
+                                      <div class="col-sm-10">
+                                        <input type="text" name="gps_latitude" id="gps_latitude" placeholder="Latitude" class="form-control">
+                                      </div>
                                   </div>
                                 </div>
                                 <div class="col">
-                                  <div class="form-group">
-                                      <label for="gps_longitude">GPS Logitude</label>
+                                  <div class="form-group row">
+                                    <label for="gps_longitude" class="col-sm-2 col-form-label">GPS Latitude<span class="text-danger">*</span></label>
+                                    <div class="col-sm-10">
                                       <input type="text" name="gps_longitude" id="gps_longitude" placeholder="Longitude" class="form-control">
+                                    </div>
                                   </div>
                                 </div>
                               </div>
@@ -155,21 +191,49 @@
                               </div>
                             </div>
                         </fieldset>
-                        <!-- step 3 -->
+                        
+                        <!-- Finance -->
                         <fieldset>
-                            <h4>Data Finance</h4>
+                            <h5>Data Finance</h5>
                             <div class="container">
-                              <div class="form-group">
-                                  <label>Plafon Piutang</label>
-                                  <input type="number" class="form-control" id="plafon_piutang" name="plafon_piutang" min="0" value="0" step="0.0001">
+                              <div class="row">
+                                <div class="col">
+                                  <div class="form-group row">
+                                    <label for="plafon_piutang" class="col-sm-2 col-form-label">Plafon Piutang <span class="text-danger">*</span></label>
+                                    <div class="col-sm-10">
+                                    <input type="number" class="form-control" id="plafon_piutang" name="plafon_piutang" min="0" value="0" step="0.0001">
+                                    </div>
+                                  </div>
+                                </div>
+                                <div class="col">
+                                  <div class="form-group row">
+                                    <div class="col-sm-2">Customer PPN</div>
+                                    <div class="col-sm-10">
+                                      <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" value="1" id="has_ppn" name="has_ppn">
+                                        <span style="font-style: italic;" class="text-danger">*check for customers ppn</span></label><br>
+                                      </div>
+                                    </div>
+                                  </div>
+                                </div>
                               </div>
-                              <div class="form-group">
-                                  <label>NPWP</label>
-                                  <input type="number" class="form-control" id="npwp" name="npwp" min="0" value="0">
-                              </div>
-                              <div class="form-group">
-                                  <label>KTP</label>
-                                  <input type="number" class="form-control" id="ktp" name="ktp" min="0" value="0">
+                              <div class="row">
+                                <div class="col">
+                                  <div class="form-group row">
+                                    <label for="ktp" class="col-sm-2 col-form-label">KTP <span class="text-danger">*</span></label>
+                                    <div class="col-sm-10">
+                                      <input type="number" class="form-control" id="ktp" name="ktp" min="0" value="0">
+                                    </div>
+                                  </div>
+                                </div>
+                                <div class="col">
+                                  <div class="form-group row">
+                                    <label for="npwp" class="col-sm-2 col-form-label">NPWP <span class="text-danger">*</span></label>
+                                    <div class="col-sm-10">
+                                      <input type="number" class="form-control" id="npwp" name="npwp" min="0" value="0">
+                                    </div>
+                                  </div>
+                                </div>
                               </div>
                               <div class="f1-buttons">
                                   <button type="button" class="btn btn-warning btn-previous"><i class="fa fa-arrow-left"></i> Previous</button>
@@ -177,19 +241,23 @@
                               </div>
                             </div>
                         </fieldset>
-                        <!-- step 4 -->
+                        
+                        <!-- Document Image -->
                         <fieldset>
                             <h4>Data Document</h4>
                               <div class="container">
                                 <div class="row">
                                   <div class="col">
-                                  <div class="form-group">
-                                    <label>Image NPWP</label>
-                                    <input type="file" id="image_npwp" name="image_npwp" data-max-file-size="2000" accept="image/png, image/jpeg">
+                                    <div class="form-group">
+                                      <label>Image NPWP</label>
+                                      <input type="file" id="image_npwp" name="image_npwp" data-max-file-size="2000" accept="image/png, image/jpeg">
+                                    </div>
                                   </div>
-                                  <div class="form-group">
-                                    <label>Image KTP</label>
-                                    <input type="file" id="image_ktp" name="image_ktp" data-max-file-size="2000" accept="image/png, image/jpeg">
+                                  <div class="col">
+                                    <div class="form-group">
+                                      <label>Image KTP</label>
+                                      <input type="file" id="image_ktp" name="image_ktp" data-max-file-size="2000" accept="image/png, image/jpeg">
+                                    </div>
                                   </div>
                                 </div>
                               </div>
@@ -240,19 +308,19 @@
       },
     });
 
-    $('#image_store').fileinput({
-      theme: 'explorer-fa',
-      browseOnZoneClick: true,
-      showCancel: false,
-      showClose: false,
-      showUpload: false,
-      browseLabel: '',
-      removeLabel: '',
-      fileActionSettings: {
-        showDrag: false,
-        showRemove: false
-      },
-    });
+    // $('#image_store').fileinput({
+    //   theme: 'explorer-fa',
+    //   browseOnZoneClick: true,
+    //   showCancel: false,
+    //   showClose: false,
+    //   showUpload: false,
+    //   browseLabel: '',
+    //   removeLabel: '',
+    //   fileActionSettings: {
+    //     showDrag: false,
+    //     showRemove: false
+    //   },
+    // });
 
     $('.js-select2').select2()
 
