@@ -93,15 +93,16 @@ class ProductController extends Controller
                 'category' => 'required|integer',
 
                 'name' => 'required|string',
-                'buying_price' => 'nullable|numeric|min:0',
+                'code' => 'required|string',
+                // 'buying_price' => 'nullable|numeric|min:0',
                 'selling_price' => 'nullable|numeric|min:0',
                 'description' => 'nullable|string',
                 'note' => 'nullable|string',
 
-                'default_quantity' => 'required|numeric',
-                'default_unit' => 'required|integer',
+                // 'default_quantity' => 'required|numeric',
+                // 'default_unit' => 'required|string',
                 // 'ratio' => 'required|numeric',
-                'default_warehouse' => 'required|integer',
+                // 'default_warehouse' => 'required|string',
 
                 // 'image' => 'nullable|image|mimes:jpeg,png,jpg|max:2048',
                 // 'image_hd' => 'nullable|image|mimes:jpeg,png,jpg|max:2048',
@@ -133,16 +134,16 @@ class ProductController extends Controller
                 $product->material_code = $request->material_code;
                 $product->material_name = $request->material_name;
                 $product->alias = $request->alias;
-                $product->buying_price = $request->buying_price;
+                $product->buying_price = $request->buying_price ?? 0;
                 $product->selling_price = $request->selling_price;
                 $product->description = $request->description;
                 $product->note = $request->note;
                 $product->gender = $request->gender;
 
-                $product->default_quantity = $request->default_quantity;
-                $product->default_unit_id = $request->default_unit;
+                $product->default_quantity = $request->default_quantity ?? 0;
+                // $product->default_unit_id = $request->default_unit ?? null;
                 $product->ratio = $request->ratio;
-                $product->default_warehouse_id = $request->default_warehouse;
+                // $product->default_warehouse_id = $request->default_warehouse ?? NULL;
 
                 
 
@@ -172,14 +173,14 @@ class ProductController extends Controller
                         }
                     }
 
-                    $stock = new ProductMinStock;
-                    $stock->product_id = $product->id;
-                    $stock->warehouse_id = $product->default_warehouse_id;
-                    $stock->unit_id = $product->default_unit_id;
-                    $stock->quantity = $product->default_quantity;
-                    $stock->selling_price = $product->selling_price;
+                    // $stock = new ProductMinStock;
+                    // $stock->product_id = $product->id;
+                    // $stock->warehouse_id = $product->default_warehouse_id;
+                    // $stock->unit_id = $product->default_unit_id;
+                    // $stock->quantity = $product->default_quantity;
+                    // $stock->selling_price = $product->selling_price;
 
-                    $stock->save();
+                    // $stock->save();
                    
 
                     // dd($value);
@@ -196,7 +197,7 @@ class ProductController extends Controller
                     return $this->response(200, $response);
                 }
 
-                DD($product->save());
+                // DD($product->save());
             }
         }
     }

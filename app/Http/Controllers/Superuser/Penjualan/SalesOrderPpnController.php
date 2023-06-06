@@ -43,7 +43,8 @@ class SalesOrderPpnController extends Controller
                 'master_packaging.id as packId', 
                 'master_packaging.pack_value as packValue', 
                 'master_packaging.pack_name as packagingName',
-                'master_packaging.packaging_packing as packagingKemasan'
+                'master_packaging.packaging_packing as packagingKemasan', 
+                'master_product_categories.name as catName'
             ]);
         return ['results' => $products];
     }

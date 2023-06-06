@@ -14,12 +14,12 @@
                 			    <div class="f1-progress-line" data-now-value="25" data-number-of-steps="4" style="width: 25%;"></div>
                 			</div>
                       <div class="f1-step active">
-                				<div class="f1-step-icon"><i class="mdi mdi-source-branch"></i></div>
-                				<p>Brand</p>
-                			</div>
-                      <div class="f1-step">
                         <div class="f1-step-icon"><i class="mdi mdi-account-card-details"></i></div>
                         <p>Details</p>
+                			</div>
+                      <div class="f1-step">
+                        <div class="f1-step-icon"><i class="mdi mdi-source-branch"></i></div>
+                				<p>Brand</p>
                       </div>
                 			<div class="f1-step">
                 				<div class="f1-step-icon"><i class="mdi mdi-home"></i></div>
@@ -30,52 +30,165 @@
                 				<p>Cost</p>
                 			</div>
                 		</div>
-                		<!-- step 1 -->
+                		
+                    <!-- Detail Product -->
                     <fieldset>
-                            <h4>#Product Brand</h4>
+                            <h4>#Product Detail's</h4>
                             <div class="container">
                               <div class="row">
-                                <div class="col-6">
+                                <div class="col">
+                                  <div class="form-group">
+                                    <label for="code">Code <span class="text-danger">*</span></label>
+                                    <input type="text" id="code" name="code" placeholder="Product Code" class="form-control">
+                                  </div>
+                                </div>
+                                <div class="col">
+                                  <div class="form-group">
+                                    <label for="name">Name</label>
+                                    <input type="text" id="name" name="name" placeholder="Product Name" class="form-control">
+                                  </div>
+                                </div>
+                              </div>
+                              <div class="row">
+                                  <div class="col">
+                                    <div class="form-group">
+                                      <label for="material_code">Material Code <span class="text-danger">*</span></label>
+                                      <input type="text" id="material_code" name="material_code" placeholder="Material Code" class="form-control">
+                                    </div>
+                                  </div>
+                                  <div class="col">
+                                    <div class="form-group">
+                                      <label for="material_name">Material Name <span class="text-danger">*</label>
+                                      <input type="text" id="material_name" name="material_name" placeholder="Material Name" class="form-control">
+                                    </div>
+                                  </div>
+                              </div>
+                              <div class="row">
+                                <div class="col">
+                                    <div class="form-group">
+                                      <label for="alias">Alias</label>
+                                      <input type="text" id="alias" name="alias" placeholder="Alias Name" class="form-control">
+                                    </div>
+                                  </div>
+                                  <div class="col">
+                                    <div class="form-group">
+                                      <label>Ratio</label>
+                                  <input type="number" class="form-control" id="ratio" name="ratio" min="0" value="0" step="0.0001">
+                                    </div>
+                                  </div>
+                              </div>
+
+                              <hr>
+
+                              <div class="row">
+                                <div class="col">
+                                    <div class="form-group">
+                                      <label for="alias">Factory <span class="text-danger">*</span></label>
+                                      <select class="js-select2 form-control" id="factory" name="factory" style="width:100%;" placeholder="Pilih Pabrik" required>
+                                        <option>Pilih Pabrik</option>
+                                        @foreach($factory as $factory)
+                                        <option value="{{ $factory->id }}">{{ $factory->name }}</option>
+                                        @endforeach
+                                      </select>
+                                    </div>
+                                  </div>
+                                  <div class="col">
+                                    <div class="form-group">
+                                      <label for="alias">Gender</label>
+                                      <select class="js-select2 form-control" id="gender" name="gender" style="width:100%;" placeholder="Pilih Gender">
+                                        <option value="">Pilih Gender</option>
+                                        <option value="male">Male</option>
+                                        <option value="female">Female</option>
+                                        <option value="unisex">Unisex</option>
+                                        <option value="-">-</option>
+                                      </select>
+                                    </div>
+                                  </div>
+                                </div>
+                                <div class="row">
+                                  <div class="col">
+                                    <div class="form-group">
+                                      <label>Catatan</label>
+                                      <select class="js-select2 form-control" id="note" name="note" style="width:100%;" placeholder="Pilih Note">
+                                        <option>Pilih Note</option>
+                                        @foreach($product_notes as $note)
+                                        <option value="{{ $note }}">{{ $note }}</option>
+                                        @endforeach
+                                      </select>
+                                    </div>
+                                  </div>
+                                  <div class="col">
+                                    <div class="form-group">
+                                      <label>Keterangan</label>
+                                      <input type="text" id="description" name="description" placeholder="Keterangan" class="form-control">
+                                    </div>
+                                  </div>
+                                </div>
+                                <div class="row">
+                                  <div class="col-2">
+                                    <div class="form-group">
+                                      <label for="buying_price">Price List </label>
+                                      <input type="number" class="form-control" id="selling_price" name="selling_price" min="0" value="0">
+                                    </div>
+                                  </div>
+                                  <div class="col-4">
+                                    <span class="text-danger">*Harga dalam kurs USD</span>
+                                  </div>
+                                </div>
+                              </div>
+                              <div class="f1-buttons">
+                                  <button type="button" class="btn btn-primary btn-next">Next <i class="fa fa-arrow-right"></i></button>
+                              </div>
+                        </fieldset>
+                        
+                        <!-- Detail Brand -->
+                        <fieldset>
+                          <h4>#Product Brand's</h4>
+                            <div class="container">
+                              <div class="row">
+                                <div class="col">
                                   <div class="form-group">
                                     <label>Brand <span class="text-danger">*</span></label>
-                                    <select class="js-select2 form-control" id="brand_name"  name="brand_name" data-placeholder="Pilih Brand">
-                                      <option value=""></option>
-                                      @foreach($brand_ppi as $brand_ppi)
-                                      <option value="{{ $brand_ppi->brand_name }}">{{$brand_ppi->brand_name}}</option>
-                                      @endforeach
+                                    <select class="js-select2 form-control" id="brand_name"  name="brand_name" style="width:100%;" data-placeholder="Pilih Brand">
+                                        <option value=""></option>
+                                        @foreach($brand_ppi as $brand_ppi)
+                                        <option value="{{ $brand_ppi->brand_name }}">{{$brand_ppi->brand_name}}</option>
+                                        @endforeach
                                     </select>
                                   </div>
                                 </div>
-                                <div class="col-6">
+                                <div class="col">
                                   <div class="form-group">
-                                    <label>Kategori <span class="text-danger">*</span></label>
-                                    <select class="js-select2 form-control" id="category"  name="category" data-placeholder="Pilih Kategori">
-                                      <option value="">==Select Category==</option>
-                                      @foreach($category as $cat)
-                                      <option value="{{ $cat->id }}">{{ $cat->name }} - {{ $cat->packaging->pack_name }}</option>
-                                      @endforeach
+                                    <label>Category <span class="text-danger">*</span></label>
+                                    <select class="js-select2 form-control" id="category"  name="category" style="width:100%;" data-placeholder="Pilih Kategori">
+                                        <option value="">==Select Category==</option>
+                                        @foreach($category as $cat)
+                                        <option value="{{ $cat->id }}">{{ $cat->name }} - {{ $cat->packaging->pack_name }}</option>
+                                        @endforeach
                                     </select>
                                   </div>
                                 </div>
                               </div>
                               <div class="row">
                                 <div class="form-group">
-                                  <label>Searah <span class="text-danger">*</span></label>
-                                  <select class="js-select2 form-control" id="searah" name="searah" data-placeholder="Pilih Searah">
-                                    <option value="">==Select Searah==</option>
+                                  <label>Searah Fragrantica <span class="text-danger">*</span></label>
+                                  <select class="js-select2 form-control" id="searah"  name="searah" style="width:100%;" data-placeholder="Pilih Kategori">
+                                    <option value="">Pilih Searah</option>
                                     @foreach($sub_brand_references as $searah)
-                                    <option value="{{ $searah->id }}">{{ $searah->name }}</option>
+                                    <option value="{{ $searah->id }}">{{$searah->brand_reference->name}} - {{ $searah->name }}</option>
                                     @endforeach
                                   </select>
                                 </div>
+                              </div>
+                              <div class="row">
                                 <div class="col">
                                   <div class="form-group">
-                                      <label>Image
-                                        <i class="mdi mdi-comment-question-outline" data-toggle="popover" data-placement="left" title="Image" data-content="Standard / small image quality. (For Apps, etc)"></i>
-                                      </label>
-                                      <input type="file" id="image" name="image" data-max-file-size="2000" accept="image/png, image/jpeg">
+                                        <label>Image
+                                          <i class="mdi mdi-comment-question-outline" data-toggle="popover" data-placement="left" title="Image" data-content="Standard / small image quality. (For Apps, etc)"></i>
+                                        </label>
+                                        <input type="file" id="image" name="image" data-max-file-size="2000" accept="image/png, image/jpeg">
+                                    </div>
                                   </div>
-                                </div>
                                 <div class="col">
                                   <div class="form-group">
                                       <label>Image HD
@@ -87,82 +200,15 @@
                               </div>
                             </div>
                             <div class="f1-buttons">
-                                <button type="button" class="btn btn-primary btn-next">Next <i class="fa fa-arrow-right"></i></button>
+                              <button type="button" class="btn btn-warning btn-previous"><i class="fa fa-arrow-left"></i> Previous</button>
+                              <button type="submit" class="btn btn-primary btn-submit"><i class="fa fa-save"></i> Submit</button>
                             </div>
-                        </fieldset>
-                        <fieldset>
-                          <h4>#Product Details</h4>
-                          <div class="container">
-                            <div class="row">
-                              <div class="col">
-                                <div class="form-group">
-                                  <label for="code">Code <span class="text-danger">*</span></label>
-                                  <input type="text" id="code" name="code" placeholder="Product Code" class="form-control">
-                                </div>
-                              </div>
-                              <div class="col">
-                                <div class="form-group">
-                                  <label for="name">Name</label>
-                                  <input type="text" id="name" name="name" placeholder="Product Name" class="form-control">
-                                </div>
-                              </div>
-                            </div>
-                            <div class="row">
-                              <div class="col">
-                                  <div class="form-group">
-                                    <label for="material_code">Material Code <span class="text-danger">*</span></label>
-                                    <input type="text" id="material_code" name="material_code" placeholder="Material Code" class="form-control">
-                                  </div>
-                                </div>
-                                <div class="col">
-                                  <div class="form-group">
-                                    <label for="material_name">Material Name <span class="text-danger">*</label>
-                                    <input type="text" id="material_name" name="material_name" placeholder="Material Name" class="form-control">
-                                  </div>
-                                </div>
-                            </div>
-                            <div class="form-group">
-                              <label for="alias">Alias</label>
-                              <input type="text" id="alias" name="alias" placeholder="Alias Name" class="form-control">
-                            </div>
-                            <div class="form-group">
-                              <label>Ratio</label>
-                              <input type="number" class="form-control" id="ratio" name="ratio" min="0" value="0" step="0.0001">
-                            </div>
-                            <div class="form-group">
-                              <label for="alias">Gender</label>
-                              <select class="js-select2 form-control" id="gender" name="gender" style="width:100%;" placeholder="Pilih Gender">
-                                <option value="">Pilih Gender</option>
-                                <option value="male">Male</option>
-                                <option value="female">Female</option>
-                                <option value="unisex">Unisex</option>
-                                <option value="-">-</option>
-                              </select>
-                            </div>
-                            <div class="form-group">
-                              <label>Keterangan</label>
-                              <input type="text" id="description" name="description" placeholder="Keterangan" class="form-control">
-                            </div>
-                            <div class="form-group">
-                              <label>Catatan</label>
-                              <select class="js-select2 form-control" id="note" name="note" style="width:100%;" placeholder="Pilih Note">
-                                <option>Pilih Note</option>
-                                @foreach($product_notes as $note)
-                                <option value="{{ $note }}">{{ $note }}</option>
-                                @endforeach
-                              </select>
-                            </div>
-                          </div>
-                          <div class="f1-buttons">
-                            <button type="button" class="btn btn-warning btn-previous"><i class="fa fa-arrow-left"></i> Previous</button>
-                            <button type="button" class="btn btn-primary btn-next">Next <i class="fa fa-arrow-right"></i></button>
-                          </div>
                         </fieldset>
                         <!-- step 2 -->
                         <fieldset>
                             <h4>#Warehouse</h4>
                             <div class="row">
-                              <div class="form-group">
+                              {{--<div class="form-group">
                                 <label>Factory <span class="text-danger">*</span></label>
                                 <select class="js-select2 form-control" id="factory" name="factory" style="width:100%;" placeholder="Pilih Pabrik" required>
                                   <option>Pilih Pabrik</option>
@@ -170,10 +216,10 @@
                                   <option value="{{ $factory->id }}">{{ $factory->name }}</option>
                                   @endforeach
                                 </select>
-                              </div>
+                              </div>--}}
                               <div class="form-group">
                                 <label>Default Warehouse <span class="text-danger">*</span></label>
-                                <select class="js-select2 form-control" id="default_warehouse" name="default_warehouse" style="width:100%;" placeholder="Pilih Gudang" required>
+                                <select class="js-select2 form-control" id="default_warehouse" name="default_warehouse" style="width:100%;" placeholder="Pilih Gudang">
                                   <option>Pilih Gudang</option>
                                   @foreach($warehouses as $warehouse)
                                   <option value="{{ $warehouse->id }}">{{ $warehouse->name }}</option>
@@ -185,7 +231,7 @@
                               <div class="col">
                                 <div class="form-group">
                                   <label>Default Unit <span class="text-danger">*</span></label>
-                                  <select class="js-select2 form-control" id="default_unit" name="default_unit" style="width:100%;" placeholder="Pilih Unit" required>
+                                  <select class="js-select2 form-control" id="default_unit" name="default_unit" style="width:100%;" placeholder="Pilih Unit">
                                     <option>Pilih Unit Satuan</option>
                                     @foreach($units as $unit)
                                     <option value="{{ $unit->id }}">{{ $unit->abbreviation }} / {{ $unit->name }}</option>
@@ -221,25 +267,12 @@
                                     <input type="number" class="form-control" id="selling_price" name="selling_price" min="0" value="0" step="0.0001">
                                   </div>
                                 </div>
-                                <!-- <div class="w-100"></div> -->
-                                <!-- <div class="col">
-                                  <div class="form-group">
-                                    <label for="buying_price">Harga Jual Bawah</label>
-                                    <input type="number" class="form-control" id="selling_price_under" name="selling_price_under" min="0" value="0" step="0.0001">
-                                  </div>
-                                </div> -->
-                                <!-- <div class="col">
-                                  <div class="form-group">
-                                    <label for="buying_price">Harga Jual Atas</label>
-                                    <input type="number" class="form-control" id="selling_price_high" name="selling_price_high" min="0" value="0" step="0.0001">
-                                  </div>
-                                </div> -->
                               </div>
                             </div>
                             <span class="text-danger">*Harga dalam kurs USD</span>
                             <div class="f1-buttons">
                               <button type="button" class="btn btn-warning btn-previous"><i class="fa fa-arrow-left"></i> Previous</button>
-                              <button type="submit" class="btn btn-primary btn-submit"><i class="fa fa-save"></i> Submit</button>
+                              
                             </div>
                         </fieldset>
                 	</form>
