@@ -1,17 +1,14 @@
 @extends('superuser.app')
 
 @section('content')
-<div class="block">
-  <div class="block-header block-header-default">
-    <h3 class="block-title">Create Product</h3>
-  </div>
+
   <div class="block">
             <div class="block-conten" align="center">
                 <div class="col-md-10 col-md-offset-1">
                 	<form data-action="{{ route('superuser.master.product.store') }}" data-type="POST" enctype="multipart/form-data" class="f1 ajax">
                 		<div class="f1-steps">
                 			<div class="f1-progress">
-                			    <div class="f1-progress-line" data-now-value="25" data-number-of-steps="4" style="width: 25%;"></div>
+                			    <div class="f1-progress-line" data-now-value="25" data-number-of-steps="4"></div>
                 			</div>
                       <div class="f1-step active">
                         <div class="f1-step-icon"><i class="mdi mdi-account-card-details"></i></div>
@@ -35,104 +32,124 @@
                     <fieldset>
                             <h4>#Product Detail's</h4>
                             <div class="container">
-                              <div class="row">
-                                <div class="col">
-                                  <div class="form-group">
-                                    <label for="code">Code <span class="text-danger">*</span></label>
-                                    <input type="text" id="code" name="code" placeholder="Product Code" class="form-control">
+                                <div class="row">
+                                  <div class="col">
+                                    <div class="form-group row">
+                                      <label for="inputPassword" class="col-sm-2 col-form-label">Code <span class="text-danger">*</span></label>
+                                      <div class="col-sm-10">
+                                        <input type="text" id="code" name="code" placeholder="Product Code" class="form-control">
+                                      </div>
+                                    </div>
+                                  </div>
+                                  <div class="col">
+                                    <div class="form-group row">
+                                      <label for="inputPassword" class="col-sm-2 col-form-label">Name <span class="text-danger">*</span></label>
+                                      <div class="col-sm-10">
+                                        <input type="text" id="name" name="name" placeholder="Product Name" class="form-control">
+                                      </div>
+                                    </div>  
                                   </div>
                                 </div>
-                                <div class="col">
-                                  <div class="form-group">
-                                    <label for="name">Name</label>
-                                    <input type="text" id="name" name="name" placeholder="Product Name" class="form-control">
-                                  </div>
-                                </div>
-                              </div>
                               <div class="row">
                                   <div class="col">
-                                    <div class="form-group">
-                                      <label for="material_code">Material Code <span class="text-danger">*</span></label>
-                                      <input type="text" id="material_code" name="material_code" placeholder="Material Code" class="form-control">
+                                    <div class="form-group row">
+                                      <label for="material_code" class="col-sm-2 col-form-label">Material Code <span class="text-danger">*</span></label>
+                                      <div class="col-sm-10">
+                                        <input type="text" id="material_code" name="material_code" placeholder="Material Code" class="form-control">
+                                      </div>  
                                     </div>
                                   </div>
-                                  <div class="col">
-                                    <div class="form-group">
-                                      <label for="material_name">Material Name <span class="text-danger">*</label>
-                                      <input type="text" id="material_name" name="material_name" placeholder="Material Name" class="form-control">
+                                    <div class="col">
+                                      <div class="form-group row">
+                                        <label for="material_name" class="col-sm-2 col-form-label">Material Name <span class="text-danger">*</span></label>
+                                        <div class="col-sm-10">
+                                          <input type="text" id="material_name" name="material_name" placeholder="Material Name" class="form-control">
+                                        </div>
                                     </div>
                                   </div>
                               </div>
                               <div class="row">
                                 <div class="col">
-                                    <div class="form-group">
-                                      <label for="alias">Alias</label>
-                                      <input type="text" id="alias" name="alias" placeholder="Alias Name" class="form-control">
+                                    <div class="form-group row">
+                                      <label for="alias" class="col-sm-2 col-form-label">Alias <span class="text-danger">*</span></label>
+                                      <div class="col-sm-10">
+                                        <input type="text" id="alias" name="alias" placeholder="Alias Name" class="form-control">
+                                      </div>
                                     </div>
                                   </div>
                                   <div class="col">
-                                    <div class="form-group">
-                                      <label>Ratio</label>
-                                  <input type="number" class="form-control" id="ratio" name="ratio" min="0" value="0" step="0.0001">
+                                    <div class="form-group row">
+                                      <label for="ratio" class="col-sm-2 col-form-label">Ratio <span class="text-danger">*</span></label>
+                                      <div class="col-sm-10">
+                                        <input type="number" class="form-control" id="ratio" name="ratio" min="0" value="0" step="0.0001">
+                                      </div>
                                     </div>
                                   </div>
                               </div>
 
                               <hr>
 
-                              <div class="row">
-                                <div class="col">
-                                    <div class="form-group">
-                                      <label for="alias">Factory <span class="text-danger">*</span></label>
-                                      <select class="js-select2 form-control" id="factory" name="factory" style="width:100%;" placeholder="Pilih Pabrik" required>
-                                        <option>Pilih Pabrik</option>
-                                        @foreach($factory as $factory)
-                                        <option value="{{ $factory->id }}">{{ $factory->name }}</option>
-                                        @endforeach
-                                      </select>
+                                <div class="row">
+                                  <div class="col">
+                                    <div class="form-group row">
+                                      <label for="factory" class="col-sm-2 col-form-label">Factory <span class="text-danger">*</span></label>
+                                      <div class="col-sm-10">
+                                        <select class="js-select2 form-control" id="factory" name="factory" style="width:100%;" placeholder="Pilih Pabrik" required>
+                                          <option>Pilih Pabrik</option>
+                                          @foreach($factory as $factory)
+                                          <option value="{{ $factory->id }}">{{ $factory->name }}</option>
+                                          @endforeach
+                                        </select>
+                                      </div>
                                     </div>
                                   </div>
                                   <div class="col">
-                                    <div class="form-group">
-                                      <label for="alias">Gender</label>
-                                      <select class="js-select2 form-control" id="gender" name="gender" style="width:100%;" placeholder="Pilih Gender">
-                                        <option value="">Pilih Gender</option>
-                                        <option value="male">Male</option>
-                                        <option value="female">Female</option>
-                                        <option value="unisex">Unisex</option>
-                                        <option value="-">-</option>
-                                      </select>
+                                    <div class="form-group row">
+                                      <label for="selling_price" class="col-sm-2 col-form-label">Price List <span class="text-danger">*</span></label>
+                                      <div class="col-sm-6">
+                                        <input type="number" class="form-control" id="selling_price" name="selling_price" min="0" value="0">
+                                        <span class="text-danger">*Harga dalam USD</span>
+                                      </div>
+                                    </div>  
+                                  </div>
+                                </div>
+                                <div class="row">
+                                  <div class="col">
+                                    <div class="form-group row">
+                                      <label for="inputPassword" class="col-sm-2 col-form-label">Catatan</label>
+                                      <div class="col-sm-10">
+                                        <select class="js-select2 form-control" id="note" name="note" style="width:100%;" placeholder="Pilih Note">
+                                          <option>Pilih Note</option>
+                                          @foreach($product_notes as $note)
+                                          <option value="{{ $note }}">{{ $note }}</option>
+                                          @endforeach
+                                        </select>
+                                      </div>
+                                    </div>
+                                  </div>
+                                  <div class="col">
+                                    <div class="form-group row">
+                                      <label for="gender" class="col-sm-2 col-form-label">Gender</label>
+                                      <div class="col-sm-10">
+                                        <select class="js-select2 form-control" id="gender" name="gender" style="width:100%;" placeholder="Pilih Gender">
+                                          <option value="">Pilih Gender</option>
+                                          <option value="male">Male</option>
+                                          <option value="female">Female</option>
+                                          <option value="unisex">Unisex</option>
+                                          <option value="-">-</option>
+                                        </select>
+                                      </div>
                                     </div>
                                   </div>
                                 </div>
                                 <div class="row">
                                   <div class="col">
-                                    <div class="form-group">
-                                      <label>Catatan</label>
-                                      <select class="js-select2 form-control" id="note" name="note" style="width:100%;" placeholder="Pilih Note">
-                                        <option>Pilih Note</option>
-                                        @foreach($product_notes as $note)
-                                        <option value="{{ $note }}">{{ $note }}</option>
-                                        @endforeach
-                                      </select>
+                                    <div class="form-group row">
+                                      <!-- <label for="description" class="col-sm-2 col-form-label">Keterangan</label> -->
+                                      <div class="col-sm-12">
+                                        <textarea class="form-control" name="description" placeholder="Keterangan" rows="1"></textarea>
+                                      </div>
                                     </div>
-                                  </div>
-                                  <div class="col">
-                                    <div class="form-group">
-                                      <label>Keterangan</label>
-                                      <input type="text" id="description" name="description" placeholder="Keterangan" class="form-control">
-                                    </div>
-                                  </div>
-                                </div>
-                                <div class="row">
-                                  <div class="col-2">
-                                    <div class="form-group">
-                                      <label for="buying_price">Price List </label>
-                                      <input type="number" class="form-control" id="selling_price" name="selling_price" min="0" value="0">
-                                    </div>
-                                  </div>
-                                  <div class="col-4">
-                                    <span class="text-danger">*Harga dalam kurs USD</span>
                                   </div>
                                 </div>
                               </div>
@@ -147,39 +164,47 @@
                             <div class="container">
                               <div class="row">
                                 <div class="col">
-                                  <div class="form-group">
-                                    <label>Brand <span class="text-danger">*</span></label>
-                                    <select class="js-select2 form-control" id="brand_name"  name="brand_name" style="width:100%;" data-placeholder="Pilih Brand">
-                                        <option value=""></option>
-                                        @foreach($brand_ppi as $brand_ppi)
-                                        <option value="{{ $brand_ppi->brand_name }}">{{$brand_ppi->brand_name}}</option>
-                                        @endforeach
-                                    </select>
+                                  <div class="form-group row">
+                                      <label for="brand_name" class="col-sm-2 col-form-label">Brand <span class="text-danger">*</span></label>
+                                      <div class="col-sm-10">
+                                        <select class="js-select2 form-control" id="brand_name"  name="brand_name" style="width:100%;" data-placeholder="Pilih Brand">
+                                          <option value=""></option>
+                                          @foreach($brand_ppi as $brand_ppi)
+                                          <option value="{{ $brand_ppi->brand_name }}">{{$brand_ppi->brand_name}}</option>
+                                          @endforeach
+                                      </select>
+                                    </div>
                                   </div>
-                                </div>
-                                <div class="col">
-                                  <div class="form-group">
-                                    <label>Category <span class="text-danger">*</span></label>
-                                    <select class="js-select2 form-control" id="category"  name="category" style="width:100%;" data-placeholder="Pilih Kategori">
-                                        <option value="">==Select Category==</option>
-                                        @foreach($category as $cat)
-                                        <option value="{{ $cat->id }}">{{ $cat->name }} - {{ $cat->packaging->pack_name }}</option>
-                                        @endforeach
-                                    </select>
                                   </div>
-                                </div>
+                                  <div class="col">
+                                    <div class="form-group row">
+                                      <label for="category" class="col-sm-2 col-form-label">Category<span class="text-danger">*</span></label>
+                                      <div class="col-sm-10">
+                                        <select class="js-select2 form-control" id="category"  name="category" style="width:100%;" data-placeholder="Pilih Kategori">
+                                            <option value="">==Select Category==</option>
+                                            @foreach($category as $cat)
+                                            <option value="{{ $cat->id }}">{{ $cat->name }} - {{ $cat->packaging->pack_name }}</option>
+                                            @endforeach
+                                        </select>
+                                      </div>
+                                    </div>
+                                  </div>
                               </div>
                               <div class="row">
-                                <div class="form-group">
-                                  <label>Searah Fragrantica <span class="text-danger">*</span></label>
-                                  <select class="js-select2 form-control" id="searah"  name="searah" style="width:100%;" data-placeholder="Pilih Kategori">
-                                    <option value="">Pilih Searah</option>
-                                    @foreach($sub_brand_references as $searah)
-                                    <option value="{{ $searah->id }}">{{$searah->brand_reference->name}} - {{ $searah->name }}</option>
-                                    @endforeach
-                                  </select>
+                                <div class="col">
+                                  <div class="form-group row">
+                                    <label for="searah" class="col-sm-1 col-form-label">Searah<span class="text-danger">*</span></label>
+                                    <div class="col-sm-10">
+                                      <select class="js-select2 form-control" id="searah"  name="searah" style="width:100%;" data-placeholder="Pilih Searah">
+                                        <option value="">Pilih Searah</option>
+                                        @foreach($sub_brand_references as $searah)
+                                        <option value="{{ $searah->id }}">{{$searah->brand_reference->name}} - {{ $searah->name }}</option>
+                                        @endforeach
+                                      </select>
+                                    </div>
+                                  </div>   
                                 </div>
-                              </div>
+                              </div> 
                               <div class="row">
                                 <div class="col">
                                   <div class="form-group">
@@ -279,7 +304,6 @@
                 </div>
             </div>
         </div>
-</div>
 <div id="alert-block"></div>
 @endsection
 
