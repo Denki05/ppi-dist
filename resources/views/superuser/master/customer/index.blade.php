@@ -99,7 +99,7 @@
               </td>
               <td>{{ $row->code }}</td>
               <td>{{ $row->name }}</td>
-              <td>{{ $row->address }} - <br><b>{{ $row->text_kota }}</b></br></td>
+              <td>{{ $row->address }} - <br><b>{{ $row->text_kota ?? '' }}</b></br></td>
               <td><b>{{ $row->text_provinsi }}</b></td>
               <td>{{ $row->category->name ?? '-' }}</td>
               <td>

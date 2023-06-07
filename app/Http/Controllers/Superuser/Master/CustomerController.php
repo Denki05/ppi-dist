@@ -357,7 +357,7 @@ class CustomerController extends Controller
         }
 
         $data['customer'] = Customer::findOrFail($id);
-        $data['customer_categories'] = MasterRepo::customer_categories();
+        $data['category'] = CustomerCategory::get();
         $data['customer_types'] = MasterRepo::customer_types();
         $data['provinces'] = Province::all();
 
@@ -377,8 +377,6 @@ class CustomerController extends Controller
                 // 'code' => 'required|string|unique:master_customers,code,' . $customer->id,
                 'name' => 'required|string',
                 'category' => 'required|integer',
-                'type' => 'required|array',
-                'type.*' => 'required|integer',
                 'email' => 'nullable|email',
                 'phone' => 'nullable|string',
                 'npwp' => 'nullable|string',
@@ -389,15 +387,15 @@ class CustomerController extends Controller
                 'plafon_piutang' => 'nullable|numeric',
                 'gps_latitude' => 'nullable|string',
                 'gps_longitude' => 'nullable|string',
-                'provinsi' => 'nullable|string',
-                'kota' => 'nullable|string',
-                'kecamatan' => 'nullable|string',
-                'kelurahan' => 'nullable|string',
-                'text_provinsi' => 'nullable|required_with:provinsi|string',
-                'text_kota' => 'nullable|required_with:kota|string',
-                'text_kecamatan' => 'nullable|required_with:kecamatan|string',
-                'text_kelurahan' => 'nullable|required_with:kelurahan|string',
-                'zipcode' => 'nullable|string',
+                // 'provinsi' => 'nullable|string',
+                // 'kota' => 'nullable|string',
+                // 'kecamatan' => 'nullable|string',
+                // 'kelurahan' => 'nullable|string',
+                // 'text_provinsi' => 'nullable|required_with:provinsi|string',
+                // 'text_kota' => 'nullable|required_with:kota|string',
+                // 'text_kecamatan' => 'nullable|required_with:kecamatan|string',
+                // 'text_kelurahan' => 'nullable|required_with:kelurahan|string',
+                // 'zipcode' => 'nullable|string',
                 'image_npwp' => 'nullable|image|mimes:jpeg,png,jpg|max:2048',
                 'image_ktp' => 'nullable|image|mimes:jpeg,png,jpg|max:2048',
                 'image_store' => 'nullable|image|mimes:jpeg,png,jpg|max:2048',
@@ -434,7 +432,7 @@ class CustomerController extends Controller
                 $customer->website = $request->website;
                 $customer->plafon_piutang = ($request->plafon_piutang) ? $request->plafon_piutang : 0;
                 $customer->saldo = $request->plafon_piutang;
-                $customer->has_ppn = 0;
+                $customer->has_ppn = ($request->has_ppn) ? $request->has_ppn : 0;
 
                 $customer->gps_latitude = $request->gps_latitude;
                 $customer->gps_longitude = $request->gps_longitude;
@@ -477,20 +475,12 @@ class CustomerController extends Controller
                 $customer->notification_email = ($request->notification_email) ? true : false;
 
                 if ($customer->save()) {
-                    $customer->types()->detach();
-                    foreach ($request->type as $type) {
-                        $customer_type_pivot = new CustomerTypePivot;
-                        $customer_type_pivot->customer_id = $customer->id;
-                        $customer_type_pivot->type_id = $type;
-    
-                        $customer_type_pivot->save();
-                    }
 
-                    $log_saldo = new CustomerSaldoLog;
-                    $log_saldo->customer_id = $customer->id;
-                    $log_saldo->saldo_log = $request->plafon_piutang;
-                    $log_saldo->note = CustomerSaldoLog::NOTE['SALDO UPDATE'];
-                    $log_saldo->save();
+                    // $log_saldo = new CustomerSaldoLog;
+                    // $log_saldo->customer_id = $customer->id;
+                    // $log_saldo->saldo_log = $request->plafon_piutang;
+                    // $log_saldo->note = CustomerSaldoLog::NOTE['SALDO UPDATE'];
+                    // $log_saldo->save();
 
                     DB::commit();
 

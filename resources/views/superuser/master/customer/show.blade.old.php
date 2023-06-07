@@ -23,18 +23,7 @@
                         </div>
                     </div>
                 </div>
-                <div class="row">
-                    <label class="col-md-3 col-form-label text-right">Type</label>
-                    <div class="col-md-7">
-                        <div class="form-control-plaintext">
-                            @foreach($customer->types as $type)
-                                <a href="{{ route('superuser.master.customer_type.show', $type->id) }}" target="_blank" class="badge badge-info">
-                                    {{ $type->name ?? ''}}
-                                </a>
-                            @endforeach
-                        </div>
-                    </div>
-                </div>
+                
                 <div class="row">
                     <label class="col-md-3 col-form-label text-right">PPN</label>
                     <div class="col-md-7">

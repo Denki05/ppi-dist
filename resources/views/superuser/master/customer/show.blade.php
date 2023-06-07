@@ -23,7 +23,7 @@
                         </div>
                     </div>
                 </div>
-                <div class="row">
+                {{--<div class="row">
                     <label class="col-md-3 col-form-label text-right">Type</label>
                     <div class="col-md-7">
                         <div class="form-control-plaintext">
@@ -34,7 +34,7 @@
                             @endforeach
                         </div>
                     </div>
-                </div>
+                </div>--}}
                 <div class="row">
                     <label class="col-md-3 col-form-label text-right">PPN</label>
                     <div class="col-md-7">
@@ -177,7 +177,30 @@
             </div>
         </div>
     </div>
-  </div>
+</div>
+    <div class="row pt-30 mb-15">
+      <div class="col-md-6">
+        <a href="{{ route('superuser.master.customer.index') }}">
+          <button type="button" class="btn bg-gd-cherry border-0 text-white">
+            <i class="fa fa-arrow-left mr-10"></i> Back
+          </button>
+        </a>
+      </div>
+      @if($customer->status != $customer::STATUS['DELETED'])
+      <div class="col-md-6 text-right">
+        <a href="javascript:deleteConfirmation('{{ route('superuser.master.customer.destroy', $customer->id) }}', true)">
+          <button type="button" class="btn bg-gd-pulse border-0 text-white">
+            Delete <i class="fa fa-trash ml-10"></i>
+          </button>
+        </a>
+        <a href="{{ route('superuser.master.customer.edit', $customer->id) }}">
+          <button type="button" class="btn bg-gd-leaf border-0 text-white">
+            Edit <i class="fa fa-pencil ml-10"></i>
+          </button>
+        </a>
+      </div>
+      @endif
+    </div>
 @endsection
 
 @include('superuser.asset.plugin.datatables')

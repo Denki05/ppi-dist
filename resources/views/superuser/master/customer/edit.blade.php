@@ -1,198 +1,290 @@
 @extends('superuser.app')
 
 @section('content')
-<nav class="breadcrumb bg-white push">
-  <span class="breadcrumb-item">Master</span>
-  <a class="breadcrumb-item" href="{{ route('superuser.master.customer.index') }}">Store</a>
-  <a class="breadcrumb-item" href="{{ route('superuser.master.customer.show', $customer->id) }}">{{ $customer->id }}</a>
-  <span class="breadcrumb-item active">Edit</span>
-</nav>
 <div class="block">
-  <div class="block-header block-header-default">
-    <h3 class="block-title">Edit Store</h3>
-  </div>
-  <div class="block-content">
-    <form class="ajax" data-action="{{ route('superuser.master.customer.update', $customer) }}" data-type="POST" enctype="multipart/form-data">
-      <input type="hidden" name="_method" value="PUT">
-      <div class="form-group row">
-        <label class="col-md-3 col-form-label text-right" for="code">Code <span class="text-danger">*</span></label>
-        <div class="col-md-7">
-          <input type="text" class="form-control" id="code" name="code" onkeyup="nospaces(this)" value="{{ $customer->code }}" disabled>
+            <div class="block-conten" align="center">
+                <div class="col-md-10 col-md-offset-1">
+                	<form data-action="{{ route('superuser.master.customer.update', $customer->id) }}" data-type="POST" enctype="multipart/form-data" class="f1 ajax">
+                    <input type="hidden" name="_method" value="PUT">
+                    <div class="f1-steps">
+                			<div class="f1-progress">
+                			    <div class="f1-progress-line" data-now-value="25" data-number-of-steps="4" style="width: 25%;"></div>
+                			</div>
+                      <div class="f1-step active">
+                        <div class="f1-step-icon"><i class="mdi mdi-account"></i></div>
+                          <p>Profile</p>
+                      </div>
+                			<div class="f1-step">
+                				<div class="f1-step-icon"><i class="mdi mdi-crosshairs-gps"></i></div>
+                				<p>Geo Tag</p>
+                			</div>
+                			<div class="f1-step">
+                				<div class="f1-step-icon"><i class="mdi mdi-currency-usd"></i></div>
+                				<p>Finance</p>
+                			</div>
+                      <div class="f1-step">
+                				<div class="f1-step-icon"><i class="mdi mdi-file-document-box"></i></div>
+                				<p>Document</p>
+                			</div>
+                		</div>
+                		
+                    <!-- Data Profile -->
+                		<fieldset>
+                		    <h5>Data Profile</h5>
+                          <div class="container">
+                            <div class="row">
+                              <div class="col">
+                                <div class="form-group row">
+                                  <label for="name" class="col-sm-2 col-form-label">Nama <span class="text-danger">*</span></label>
+                                  <div class="col-sm-10">
+                                    <input type="text" id="name" name="name" placeholder="Name Store" class="form-control" value="{{$customer->name}}">
+                                  </div>
+                                </div>
+                              </div>
+                              <div class="col">
+                                <div class="form-group row">
+                                  <label for="category" class="col-sm-2 col-form-label">Category<span class="text-danger">*</span></label>
+                                  <div class="col-sm-10">
+                                    <select class="js-select2 form-control" id="category" name="category" style="width:100%;" placeholder="Pilih Kategori Store">
+                                        <option>Select Category</option>
+                                        @foreach($category as $category)
+                                        <option value="{{ $category->id }}" {{ ($category->id == $customer->category_id ) ? 'selected' : '' }}>{{ $category->name }}</option>
+                                        @endforeach
+                                    </select>
+                                  </div>
+                                </div>
+                              </div>
+                            </div>
+                            <div class="row">
+                              <div class="col">
+                                <div class="form-group row">
+                                  <label for="owner_name" class="col-sm-2 col-form-label">Owner <span class="text-danger">*</span></label>
+                                  <div class="col-sm-10">
+                                    <input type="text" id="owner_name" name="owner_name" placeholder="Owner Store" class="form-control" value="{{ $customer->owner_name }}">
+                                  </div>
+                                </div>
+                              </div>
+                              <div class="col">
+                                <div class="form-group row">
+                                  <label for="phone" class="col-sm-2 col-form-label">Telp <span class="text-danger">*</span></label>
+                                  <div class="col-sm-10">
+                                    <input type="number" name="phone" placeholder="Phone" class="form-control" value="{{ $customer->phone }}">
+                                  </div>
+                                </div>
+                              </div>
+                            </div>
+                            <div class="row">
+                              <div class="col">
+                                <div class="form-group row">
+                                  <label for="email" class="col-sm-2 col-form-label">email</label>
+                                  <div class="col-sm-10">
+                                    <input type="email" name="email" placeholder="Email" class="form-control" value="{{ $customer->email }}">
+                                  </div>
+                                </div>
+                              </div>
+                              <div class="col">
+                                <div class="form-group row">
+                                  <label for="website" class="col-sm-2 col-form-label">Web / Sosmed</label>
+                                  <div class="col-sm-10">
+                                    <input type="text" id="website" name="website" placeholder="Website Store" class="form-control" value="{{ $customer->website }}">
+                                  </div>
+                                </div>
+                              </div>
+                            </div>
+                            <div class="row">
+                              <div class="mb-3">
+                                <label for="image_store" class="form-label">Image Store</label>
+                                <input class="form-control form-control-lg" id="image_store" name="image_store" type="file">
+                              </div>
+                            </div>
+                          </div>
+                            <div class="f1-buttons">
+                              <a href="{{route('superuser.master.customer.index')}}" class="btn btn-warning  btn-md text-white"><i class="fa fa-arrow-left"></i> Back</a>
+                              <button type="button" class="btn btn-primary btn-next">Next <i class="fa fa-arrow-right"></i></button>
+                            </div>
+                        </fieldset>
+                        
+                        <!-- Geo Tag -->
+                        <fieldset>
+                            <h5>Data Geo Tag</h5>
+                            <div class="container">
+                              <div class="row">
+                              <div class="form-row">
+                                <div class="form-group col-md-4">
+                                  <label for="provinsi">Provinsi</label>
+                                  <select class="js-select2 form-control" id="provinsi" name="provinsi" style="width:100%;" placeholder="Pilih Provinsi">
+                                    <option>Pilih provinsi</option>
+                                    @foreach ($provinces as $provinsi)
+                                    <option value="{{ $provinsi->prov_id }}" {{ ($provinsi->prov_id == $customer->provinsi ) ? 'selected' : '' }}>{{ $provinsi->prov_name }}</option>
+                                    @endforeach
+                                  </select>
+                                  <input type="hidden" name="text_provinsi">
+                                </div>
+                                <div class="form-group col-md-2">
+                                  <label for="kota">Kota</label>
+                                  <select class="js-select2 form-control" id="kota" name="kota" style="width:100%;" placeholder="Pilih Kota">
+                                    <option>Pilih Kota</option>
+                                  </select>
+                                  <input type="hidden" name="text_kota">
+                                </div>
+                                <div class="form-group col-md-2">
+                                  <label for="kecamatan">Kecamatan</label>
+                                  <select class="js-select2 form-control" id="kecamatan" name="kecamatan" style="width:100%;" placeholder="Pilih Kecamatan">
+                                    <option>Pilih Kecamatan</option>
+                                  </select>
+                                  <input type="hidden" name="text_kecamatan">
+                                </div>
+                                <div class="form-group col-md-2">
+                                  <label for="kelurahan">Kelurahan</label>
+                                  <select class="js-select2 form-control" id="kelurahan" name="kelurahan" style="width:100%;" placeholder="Pilih Kelurahan">
+                                    <option>Pilih Kelurahan</option>
+                                  </select>
+                                  <input type="hidden" name="text_kelurahan">
+                                </div>
+                                <div class="form-group col-md-2">
+                                  <label for="zipcode">Zipcode</label>
+                                  <select class="js-select2 form-control" id="zipcode" name="zipcode" style="width:100%;" placeholder="Pilih Kode Pos">
+                                    <option>Pilih Kode Pos</option>
+                                  </select>
+                                  <input type="hidden" name="text_zipcode">
+                                </div>
+                              </div>
+                              <div class="row">
+                                <div class="col">
+                                  <div class="form-group row">
+                                    <label for="address" class="col-sm-2 col-form-label">Alamat <span class="text-danger">*</span></label>
+                                    <div class="col-sm-10">
+                                      <!-- <input type="text" name="address" id="address" placeholder="Store Address" class="form-control"> -->
+                                      <textarea class="form-control" id="address" name="address" rows="4">{{$customer->address}}</textarea>
+                                    </div>
+                                  </div>
+                                </div>
+                                <div class="col">
+                                  <div class="form-group row">
+                                      <label for="gps_latitude" class="col-sm-2 col-form-label">GPS Latitude<span class="text-danger">*</span></label>
+                                      <div class="col-sm-10">
+                                        <input type="text" name="gps_latitude" id="gps_latitude" placeholder="Latitude" class="form-control" value="{{$customer->gps_latitude}}">
+                                      </div>
+                                      <label for="gps_longitude" class="col-sm-2 col-form-label">GPS Longitude<span class="text-danger">*</span></label>
+                                      <div class="col-sm-10">
+                                        <input type="text" name="gps_longitude" id="gps_longitude" placeholder="Longitude" class="form-control" value="{{$customer->gps_longitude}}">
+                                      </div>
+                                  </div>
+                                </div>
+                              </div>
+                              <div class="row">
+                                <div class="mb-3">
+                                  <label for="image_store" class="form-label">Zoning</label>
+                                  <input type="text" name="zone" id="zone" placeholder="Zone Area" class="form-control" value="{{$customer->zone}}">
+                                </div>
+                              </div>
+                              <div class="f1-buttons">
+                                <button type="button" class="btn btn-warning btn-previous"><i class="fa fa-arrow-left"></i> Previous</button>
+                                <button type="button" class="btn btn-primary btn-next">Next <i class="fa fa-arrow-right"></i></button>
+                              </div>
+                            </div>
+                        </fieldset>
+                        
+                        <!-- Finance -->
+                        <fieldset>
+                            <h5>Data Finance</h5>
+                            <div class="container">
+                              <div class="row">
+                                <div class="col">
+                                  <div class="form-group row">
+                                    <label for="plafon_piutang" class="col-sm-2 col-form-label">Plafon Piutang <span class="text-danger">*</span></label>
+                                    <div class="col-sm-10">
+                                    <input type="number" class="form-control" id="plafon_piutang" name="plafon_piutang" min="0" value="0" step="0.0001" value="{{$customer->plafon_piutang}}">
+                                    </div>
+                                  </div>
+                                </div>
+                                <div class="col">
+                                  <div class="form-group row">
+                                    <div class="col-sm-2">Customer PPN</div>
+                                    <div class="col-sm-10">
+                                      <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" value="1" name="has_ppn" @if($customer->has_ppn == '1') checked="checked"  @endif/>
+                                        <span style="font-style: italic;" class="text-danger">*check for customers ppn</span></label><br>
+                                      </div>
+                                    </div>
+                                  </div>
+                                </div>
+                              </div>
+                              <div class="row">
+                                <div class="col">
+                                  <div class="form-group row">
+                                    <label for="ktp" class="col-sm-2 col-form-label">KTP <span class="text-danger">*</span></label>
+                                    <div class="col-sm-10">
+                                      <!-- <input type="number" class="form-control" id="ktp" name="ktp" min="0" value="0"> -->
+                                      <div class="form-row">
+                                        @php 
+                                          $ktp = explode('/', $customer->ktp);
+                                        @endphp
+                                        <div class="col">
+                                          <input type="text" class="form-control" name="name_card_ktp" placeholder="Name Card" value="{{$ktp[0]}}">
+                                        </div>
+                                        <div class="col">
+                                          <input type="number" class="form-control" name="ktp"  placeholder="Number Card" value="{{$ktp[1]}}">
+                                        </div>
+                                      </div>
+                                    </div>
+                                  </div>
+                                </div>
+                                <div class="col">
+                                  <div class="form-group row">
+                                    <label for="npwp" class="col-sm-2 col-form-label">NPWP <span class="text-danger">*</span></label>
+                                    <div class="col-sm-10">
+                                    <div class="form-row">
+                                        @php
+                                          $npwp = explode('/', $customer->npwp);
+                                        @endphp
+                                        <div class="col">
+                                          <input type="text" class="form-control" name="name_card_npwp" placeholder="Name Card" value="{{$npwp[0]}}">
+                                        </div>
+                                        <div class="col">
+                                          <input type="number" class="form-control" name="npwp" placeholder="Number Card" value="{{$npwp[1]}}">
+                                        </div>
+                                      </div>
+                                    </div>
+                                  </div>
+                                </div>
+                              </div>
+                              <div class="f1-buttons">
+                                  <button type="button" class="btn btn-warning btn-previous"><i class="fa fa-arrow-left"></i> Previous</button>
+                                  <button type="button" class="btn btn-primary btn-next">Next <i class="fa fa-arrow-right"></i></button>
+                              </div>
+                            </div>
+                        </fieldset>
+                        
+                        <!-- Document Image -->
+                        <fieldset>
+                            <h5>Data Document</h5>
+                              <div class="container">
+                                <div class="row">
+                                  <div class="col">
+                                    <div class="form-group">
+                                      <label>Image NPWP</label>
+                                      <input type="file" id="image_npwp" name="image_npwp" data-max-file-size="2000" accept="image/png, image/jpeg">
+                                    </div>
+                                  </div>
+                                  <div class="col">
+                                    <div class="form-group">
+                                      <label>Image KTP</label>
+                                      <input type="file" id="image_ktp" name="image_ktp" data-max-file-size="2000" accept="image/png, image/jpeg">
+                                    </div>
+                                  </div>
+                                </div>
+                              </div>
+                              <div class="f1-buttons">
+                                  <button type="button" class="btn btn-warning btn-previous"><i class="fa fa-arrow-left"></i> Previous</button>
+                                  <button type="submit" class="btn btn-primary btn-submit"><i class="fa fa-save"></i> Submit</button>
+                              </div>
+                            </div>
+                        </fieldset>
+                	</form>
+                </div>
+            </div>
         </div>
-      </div>
-      <div class="form-group row">
-        <label class="col-md-3 col-form-label text-right" for="name">Name <span class="text-danger">*</span></label>
-        <div class="col-md-7">
-          <input type="text" class="form-control" id="name" name="name" value="{{ $customer->name }}">
-        </div>
-      </div>
-      <div class="form-group row">
-        <label class="col-md-3 col-form-label text-right" for="category">Category <span class="text-danger">*</span></label>
-        <div class="col-md-7">
-          <select class="js-select2 form-control" id="category" name="category" data-placeholder="Select Category">
-            <option></option>
-            @foreach($customer_categories as $category)
-            <option value="{{ $category->id }}" {{ ($category->id == $customer->category_id) ? 'selected' : '' }}>{{ $category->name }}</option>
-            @endforeach
-          </select>
-        </div>
-      </div>
-      <div class="form-group row">
-        <label class="col-md-3 col-form-label text-right" for="type">Type <span class="text-danger">*</span></label>
-        <div class="col-md-7">
-          <select class="js-select2 form-control" id="type" name="type[]" data-placeholder="Select Type" multiple>
-            <option></option>
-            @foreach($customer_types as $type)
-            <option value="{{ $type->id }}">{{ $type->name }}</option>
-            @endforeach
-          </select>
-        </div>
-      </div>
-      <div class="form-group row">
-        <label class="col-md-3 col-form-label text-right" for="email">Email</label>
-        <div class="col-md-6">
-          <input type="email" class="form-control" id="email" name="email" value="{{ $customer->email }}">
-        </div>
-        <div class="col-md-1 text-center">
-          <label class="css-control css-control-primary css-checkbox">
-            <input type="checkbox" class="css-control-input" name="notification_email" {{ ($customer->notification_email) ? 'checked' : '' }}>
-            <span class="css-control-indicator"></span>
-          </label>
-        </div>
-      </div>
-      <div class="form-group row">
-        <label class="col-md-3 col-form-label text-right" for="phone">Phone</label>
-        <div class="col-md-7">
-          <input type="text" class="form-control" id="phone" name="phone" value="{{ $customer->phone }}">
-        </div>
-      </div>
-      <div class="form-group row">
-        <label class="col-md-3 col-form-label text-right" for="npwp">NPWP</label>
-        <div class="col-md-7">
-          <input type="text" class="form-control" id="npwp" name="npwp" value="{{ $customer->npwp }}">
-        </div>
-      </div>
-      <div class="form-group row">
-        <label class="col-md-3 col-form-label text-right" for="ktp">KTP</label>
-        <div class="col-md-7">
-          <input type="text" class="form-control" id="ktp" name="ktp" value="{{ $customer->ktp }}">
-        </div>
-      </div>
-      <div class="form-group row">
-        <label class="col-md-3 col-form-label text-right" for="address">Address <span class="text-danger">*</span></label>
-        <div class="col-md-7">
-          <textarea class="form-control" id="address" name="address">{{ $customer->address }}</textarea>
-        </div>
-      </div>
-      <div class="form-group row">
-        <label class="col-md-3 col-form-label text-right" for="owner_name">Owner Name</label>
-        <div class="col-md-7">
-          <input type="text" class="form-control" id="owner_name" name="owner_name" value="{{ $customer->owner_name }}">
-        </div>
-      </div>
-      <div class="form-group row">
-        <label class="col-md-3 col-form-label text-right" for="website">Website</label>
-        <div class="col-md-7">
-          <input type="text" class="form-control" id="website" name="website" value="{{ $customer->website }}">
-        </div>
-      </div>
-      <div class="form-group row">
-        <label class="col-md-3 col-form-label text-right" for="plafon_piutang">Plafon Piutang <span class="text-danger">*</span></label>
-        <div class="col-md-7">
-          <input type="number" class="form-control" id="plafon_piutang" name="plafon_piutang" min="0" value="{{ $customer->plafon_piutang  }}" step="0.0001">
-        </div>
-      </div>
-      <div class="form-group row">
-        <label class="col-md-3 col-form-label text-right">GPS Coordinate</label>
-        <div class="col-md-3">
-          <input type="text" class="form-control" id="gps_latitude" name="gps_latitude" placeholder="Latitude" value="{{ $customer->gps_latitude }}">
-        </div>
-        <div class="col-md-1"></div>
-        <div class="col-md-3">
-          <input type="text" class="form-control" id="gps_longitude" name="gps_longitude" placeholder="Longitude" value="{{ $customer->gps_longitude }}">
-        </div>
-      </div>
-      <div class="form-group row">
-        <label class="col-md-3 col-form-label text-right">Provinsi</label>
-        <div class="col-md-7">
-          <select class="js-select2 form-control" id="provinsi" name="provinsi" data-placeholder="Select Provinsi">
-            <option></option>
-            @foreach ($provinces as $provinsi)
-              <option value="{{ $provinsi->prov_id }}">{{ $provinsi->prov_name }}</option>
-            @endforeach
-          </select>
-          <input type="hidden" name="text_provinsi">
-        </div>
-      </div>
-      <div class="form-group row">
-        <label class="col-md-3 col-form-label text-right">Kota</label>
-        <div class="col-md-7">
-          <select class="js-select2 form-control" id="kota" name="kota" data-placeholder="Select Kota" data-value="{{ $customer->kota }}">
-            <option></option>
-          </select>
-          <input type="hidden" name="text_kota">
-        </div>
-      </div>
-      <div class="form-group row">
-        <label class="col-md-3 col-form-label text-right">Kecamatan</label>
-        <div class="col-md-7">
-          <select class="js-select2 form-control" id="kecamatan" name="kecamatan" data-placeholder="Select Kecamatan" data-value="{{ $customer->kecamatan }}">
-            <option></option>
-          </select>
-          <input type="hidden" name="text_kecamatan">
-        </div>
-      </div>
-      <div class="form-group row">
-        <label class="col-md-3 col-form-label text-right">Kelurahan</label>
-        <div class="col-md-7">
-          <select class="js-select2 form-control" id="kelurahan" name="kelurahan" data-placeholder="Select Kelurahan" data-value="{{ $customer->kelurahan }}">
-            <option></option>
-          </select>
-          <input type="hidden" name="text_kelurahan">
-        </div>
-      </div>
-      <div class="form-group row">
-        <label class="col-md-3 col-form-label text-right" for="zipcode">Zipcode</label>
-        <div class="col-md-7">
-          <input type="text" class="form-control" id="zipcode" name="zipcode" value="{{ $customer->zipcode }}">
-        </div>
-      </div>
-      <div class="form-group row">
-        <label class="col-md-3 col-form-label text-right">Image NPWP</label>
-        <div class="col-md-7">
-          <input type="file" id="image_npwp" name="image_npwp" data-max-file-size="2000" accept="image/png, image/jpeg" data-src="{{ $customer->img_npwp }}">
-        </div>
-      </div>
-      <div class="form-group row">
-        <label class="col-md-3 col-form-label text-right">Image KTP</label>
-        <div class="col-md-7">
-          <input type="file" id="image_ktp" name="image_ktp" data-max-file-size="2000" accept="image/png, image/jpeg" data-src="{{ $customer->img_ktp }}">
-        </div>
-      </div>
-      <div class="form-group row">
-        <label class="col-md-3 col-form-label text-right">Image Store</label>
-        <div class="col-md-7">
-          <input type="file" id="image_store" name="image_store" data-max-file-size="2000" accept="image/png, image/jpeg" data-src="{{ $customer->img_store }}">
-        </div>
-      </div>
-      <div class="form-group row pt-30">
-        <div class="col-md-6">
-          <a href="{{ route('superuser.master.customer.show', $customer->id) }}">
-            <button type="button" class="btn bg-gd-cherry border-0 text-white">
-              <i class="fa fa-arrow-left mr-10"></i> Back
-            </button>
-          </a>
-        </div>
-        <div class="col-md-6 text-right">
-          <button type="submit" class="btn bg-gd-corporate border-0 text-white">
-            Submit <i class="fa fa-arrow-right ml-10"></i>
-          </button>
-        </div>
-      </div>
-    </form>
-  </div>
-</div>
-<div id="alert-block"></div>
 @endsection
 
 @include('superuser.asset.plugin.fileinput')
@@ -210,17 +302,10 @@
       showUpload: false,
       browseLabel: '',
       removeLabel: '',
-      initialPreview: $('#image_npwp').data('src'),
-      initialPreviewAsData: true,
       fileActionSettings: {
         showDrag: false,
         showRemove: false
       },
-      initialPreviewConfig: [
-      {
-          caption: '{{ $customer->image_npwp }}'
-      }
-    ]
     });
 
     $('#image_ktp').fileinput({
@@ -231,39 +316,25 @@
       showUpload: false,
       browseLabel: '',
       removeLabel: '',
-      initialPreview: $('#image_ktp').data('src'),
-      initialPreviewAsData: true,
       fileActionSettings: {
         showDrag: false,
         showRemove: false
       },
-      initialPreviewConfig: [
-      {
-          caption: '{{ $customer->image_ktp }}'
-      }
-    ]
     });
 
-    $('#image_store').fileinput({
-      theme: 'explorer-fa',
-      browseOnZoneClick: true,
-      showCancel: false,
-      showClose: false,
-      showUpload: false,
-      browseLabel: '',
-      removeLabel: '',
-      initialPreview: $('#image_store').data('src'),
-      initialPreviewAsData: true,
-      fileActionSettings: {
-        showDrag: false,
-        showRemove: false
-      },
-      initialPreviewConfig: [
-      {
-          caption: '{{ $customer->image_store }}'
-      }
-    ]
-    });
+    // $('#image_store').fileinput({
+    //   theme: 'explorer-fa',
+    //   browseOnZoneClick: true,
+    //   showCancel: false,
+    //   showClose: false,
+    //   showUpload: false,
+    //   browseLabel: '',
+    //   removeLabel: '',
+    //   fileActionSettings: {
+    //     showDrag: false,
+    //     showRemove: false
+    //   },
+    // });
 
     $('.js-select2').select2()
 
@@ -367,9 +438,9 @@
           })
         })
       })
-    })  
-
-    $('.js-select2#type').val({{ json_encode($customer->types->pluck('id')->toArray()) }}).change()
+    })
   })
 </script>
 @endpush
+
+
