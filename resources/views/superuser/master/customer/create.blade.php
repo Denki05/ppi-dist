@@ -29,7 +29,7 @@
                 		
                     <!-- Data Profile -->
                 		<fieldset>
-                		    <h4>Data Profile</h4>
+                		    <h5>Data Profile</h5>
                           <div class="container">
                             <div class="row">
                               <div class="col">
@@ -57,24 +57,6 @@
                             <div class="row">
                               <div class="col">
                                 <div class="form-group row">
-                                  <label for="phone" class="col-sm-2 col-form-label">Telp <span class="text-danger">*</span></label>
-                                  <div class="col-sm-10">
-                                    <input type="number" id="phone" name="phone" placeholder="Phone" class="form-control">
-                                  </div>
-                                </div>
-                              </div>
-                              <div class="col">
-                                <div class="form-group row">
-                                  <label for="email" class="col-sm-2 col-form-label">email <span class="text-danger">*</span></label>
-                                  <div class="col-sm-10">
-                                    <input type="email" id="email" name="email" placeholder="Email" class="form-control">
-                                  </div>
-                                </div>
-                              </div>
-                            </div>
-                            <div class="row">
-                              <div class="col">
-                                <div class="form-group row">
                                   <label for="owner_name" class="col-sm-2 col-form-label">Owner <span class="text-danger">*</span></label>
                                   <div class="col-sm-10">
                                     <input type="text" id="owner_name" name="owner_name" placeholder="Owner Store" class="form-control">
@@ -83,7 +65,25 @@
                               </div>
                               <div class="col">
                                 <div class="form-group row">
-                                  <label for="website" class="col-sm-2 col-form-label">Website <span class="text-danger">*</span></label>
+                                  <label for="phone" class="col-sm-2 col-form-label">Telp <span class="text-danger">*</span></label>
+                                  <div class="col-sm-10">
+                                    <input type="number" name="phone" placeholder="Phone" class="form-control">
+                                  </div>
+                                </div>
+                              </div>
+                            </div>
+                            <div class="row">
+                              <div class="col">
+                                <div class="form-group row">
+                                  <label for="email" class="col-sm-2 col-form-label">email</label>
+                                  <div class="col-sm-10">
+                                    <input type="email" name="email" placeholder="Email" class="form-control">
+                                  </div>
+                                </div>
+                              </div>
+                              <div class="col">
+                                <div class="form-group row">
+                                  <label for="website" class="col-sm-2 col-form-label">Web / Sosmed</label>
                                   <div class="col-sm-10">
                                     <input type="text" id="website" name="website" placeholder="Website Store" class="form-control">
                                   </div>
@@ -105,7 +105,7 @@
                         
                         <!-- Geo Tag -->
                         <fieldset>
-                            <h4>Data Geo Tag</h4>
+                            <h5>Data Geo Tag</h5>
                             <div class="container">
                               <div class="row">
                               <div class="form-row">
@@ -214,7 +214,15 @@
                                   <div class="form-group row">
                                     <label for="ktp" class="col-sm-2 col-form-label">KTP <span class="text-danger">*</span></label>
                                     <div class="col-sm-10">
-                                      <input type="number" class="form-control" id="ktp" name="ktp" min="0" value="0">
+                                      <!-- <input type="number" class="form-control" id="ktp" name="ktp" min="0" value="0"> -->
+                                      <div class="form-row">
+                                        <div class="col">
+                                          <input type="text" class="form-control" name="name_card_ktp" placeholder="Name Card">
+                                        </div>
+                                        <div class="col">
+                                          <input type="number" class="form-control" name="ktp" min="0" value="0" placeholder="Number Card">
+                                        </div>
+                                      </div>
                                     </div>
                                   </div>
                                 </div>
@@ -222,7 +230,14 @@
                                   <div class="form-group row">
                                     <label for="npwp" class="col-sm-2 col-form-label">NPWP <span class="text-danger">*</span></label>
                                     <div class="col-sm-10">
-                                      <input type="number" class="form-control" id="npwp" name="npwp" min="0" value="0">
+                                    <div class="form-row">
+                                        <div class="col">
+                                          <input type="text" class="form-control" name="name_card_npwp" placeholder="Name Card">
+                                        </div>
+                                        <div class="col">
+                                          <input type="number" class="form-control" name="npwp" min="0" value="0" placeholder="Number Card">
+                                        </div>
+                                      </div>
                                     </div>
                                   </div>
                                 </div>
@@ -236,7 +251,7 @@
                         
                         <!-- Document Image -->
                         <fieldset>
-                            <h4>Data Document</h4>
+                            <h5>Data Document</h5>
                               <div class="container">
                                 <div class="row">
                                   <div class="col">

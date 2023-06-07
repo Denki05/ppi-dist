@@ -195,7 +195,7 @@ class CustomerController extends Controller
                 // 'code' => 'required|string|unique:master_customers,code',
                 'name' => 'required|string',
                 'category' => 'required|integer',
-                'email' => 'nullable|email',
+                // 'email' => 'nullable|email',
                 'phone' => 'nullable|string',
                 'npwp' => 'nullable|string',
                 'ktp' => 'nullable|string',
@@ -205,15 +205,15 @@ class CustomerController extends Controller
                 'plafon_piutang' => 'nullable|numeric',
                 // 'gps_latitude' => 'nullable|string',
                 // 'gps_longitude' => 'nullable|string',
-                'provinsi' => 'nullable|string',
-                'kota' => 'nullable|string',
-                'kecamatan' => 'nullable|string',
-                'kelurahan' => 'nullable|string',
-                'text_provinsi' => 'nullable|required_with:provinsi|string',
-                'text_kota' => 'nullable|required_with:kota|string',
-                'text_kecamatan' => 'nullable|required_with:kecamatan|string',
-                'text_kelurahan' => 'nullable|required_with:kelurahan|string',
-                'zipcode' => 'nullable|string',
+                // 'provinsi' => 'nullable|string',
+                // 'kota' => 'nullable|string',
+                // 'kecamatan' => 'nullable|string',
+                // 'kelurahan' => 'nullable|string',
+                // 'text_provinsi' => 'nullable|required_with:provinsi|string',
+                // 'text_kota' => 'nullable|required_with:kota|string',
+                // 'text_kecamatan' => 'nullable|required_with:kecamatan|string',
+                // 'text_kelurahan' => 'nullable|required_with:kelurahan|string',
+                // 'zipcode' => 'nullable|string',
                 // 'image_store' => 'nullable|image|mimes:jpeg,png,jpg|max:2048',
                 'image_ktp' => 'nullable|image|mimes:jpeg,png,jpg|max:2048',
                 'image_npwp' => 'nullable|image|mimes:jpeg,png,jpg|max:2048',
@@ -246,8 +246,8 @@ class CustomerController extends Controller
 
                 $customer->email = $request->email;
                 $customer->phone = $request->phone;
-                $customer->npwp = $request->npwp;
-                $customer->ktp = $request->ktp;
+                $customer->npwp = implode("/", [$request->name_card_npwp,$request->npwp]);
+                $customer->ktp = implode("/", [$request->name_card_ktp,$request->ktp]);
                 $customer->address = $request->address;
 
                 $customer->owner_name = $request->owner_name;
