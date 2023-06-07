@@ -77,6 +77,7 @@ class ProductController extends Controller
         $data['units'] = Unit::get();
         $data['warehouses'] = MasterRepo::warehouses();
         $data['product_notes'] = Product::NOTE;
+        $data['gender'] = Product::GENDER;
         $data['fragrantica'] = Fragrantica::all();
         $data['factory'] = Vendor::where('type', 2)->get();
 
@@ -231,11 +232,13 @@ class ProductController extends Controller
         $data['brand_references'] = MasterRepo::brand_references();
         $data['sub_brand_references'] = MasterRepo::sub_brand_references();
         $data['product_categories'] = MasterRepo::product_categories();
+        $data['brand_ppi'] = BrandLokal::get();
         $data['merek'] = BrandLokal::get();
         $data['units'] = MasterRepo::units();
         $data['warehouses'] = MasterRepo::warehouses();
         $data['product_notes'] = Product::NOTE;
-        $data['factory'] = Vendor::where('type', 2)->get();
+        $data['gender'] = Product::GENDER;
+        $data['vendor'] = Vendor::where('type', 2)->get();
         
         return view('superuser.master.product.edit', $data);
     }
@@ -250,25 +253,24 @@ class ProductController extends Controller
             }
 
             $validator = Validator::make($request->all(), [
-                'brand_reference' => 'required|integer',
-                'sub_brand_reference' => 'required|integer',
+                'brand_name' => 'required|string',
+                'searah' => 'required|integer',
                 'category' => 'required|integer',
-                'type' => 'required|integer',
 
                 'code' => 'required|string',
                 'name' => 'required|string',
                 'material_code' => 'required|string',
                 'material_name' => 'required|string',
                 // 'alias' => 'required|string',
-                'buying_price' => 'nullable|numeric|min:0',
+                // 'buying_price' => 'nullable|numeric|min:0',
                 'selling_price' => 'nullable|numeric|min:0',
-                'description' => 'nullable|string',
+                // 'description' => 'nullable|string',
                 'note' => 'nullable|string',
 
-                'default_quantity' => 'required|numeric',
-                'default_unit' => 'required|integer',
+                // 'default_quantity' => 'required|numeric',
+                // 'default_unit' => 'required|integer',
                 // 'ratio' => 'required|string',
-                'default_warehouse' => 'required|integer',
+                // 'default_warehouse' => 'required|integer',
 
                 'image' => 'nullable|image|mimes:jpeg,png,jpg|max:2048',
                 'image_hd' => 'nullable|image|mimes:jpeg,png,jpg|max:2048',
@@ -288,8 +290,8 @@ class ProductController extends Controller
             if ($validator->passes()) {
                 DB::beginTransaction();
 
-                $product->brand_reference_id = $request->brand_reference;
-                $product->sub_brand_reference_id = $request->sub_brand_reference;
+                $product->brand_name = $request->brand_name;
+                $product->sub_brand_reference_id = $request->searah;
                 $product->category_id = $request->category;
                 $product->type_id = $request->type;
 
@@ -298,18 +300,15 @@ class ProductController extends Controller
                 $product->material_code = $request->material_code;
                 $product->material_name = $request->material_name;
                 $product->alias = $request->alias;
-                $product->buying_price_under = $request->buying_price_under;
-                $product->buying_price_high = $request->buying_price_high;
-                $product->selling_price_under = $request->selling_price_under;
-                $product->selling_price_high = $request->selling_price_high;
+                $product->buying_price = $request->buying_price ?? 0;
+                $product->selling_price = $request->selling_price;
                 $product->description = $request->description;
                 $product->note = $request->note;
 
-                $product->default_quantity = $request->default_quantity;
+                $product->default_quantity = $request->default_quantity ?? null;
                 $product->ratio = $request->ratio;
-                $product->default_unit_id = $request->default_unit;
-                $product->default_warehouse_id = $request->default_warehouse;
-                $product->url = $request->url;
+                // $product->default_unit_id = $request->default_unit ?? 1;
+                // $product->default_warehouse_id = $request->default_warehouse ?? null;
 
                 if (!empty($request->file('image'))) {
                     if (is_file_exists(Product::$directory_image.$product->image)) {

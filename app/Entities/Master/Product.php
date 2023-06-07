@@ -29,6 +29,12 @@ class Product extends Model
         'SAMPLE',
     ];
 
+    const GENDER = [
+        'MALE',
+        'FEMALE',
+        'UNISEX',
+    ];
+
     const STATUS = [
         'DELETED' => 0,
         'ACTIVE' => 1,

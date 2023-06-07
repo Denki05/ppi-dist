@@ -103,9 +103,7 @@
                   <td>Default Warehouse</td>
                   <td><b>:</b></td>
                   <td>
-                    <a href="{{ route('superuser.master.warehouse.show', $product->default_warehouse_id) }}">
-                      {{ $product->default_warehouse->name }}
-                    </a>
+                      {{ $product->default_warehouse->name  ?? '-'}}
                   </td>
                 </tr>
                 <tr>
@@ -117,9 +115,7 @@
                   <td>Default Unit</td>
                   <td><b>:</b></td>
                   <td>
-                  <a href="{{ route('superuser.master.unit.show', $product->default_unit_id) }}">
-                    {{ $product->default_unit->name }}
-                  </a>
+                    {{ $product->default_unit->name ?? '-' }}
                   </td>
                 </tr>
               </tbody>

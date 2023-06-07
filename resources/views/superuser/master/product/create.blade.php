@@ -132,11 +132,10 @@
                                       <label for="gender" class="col-sm-2 col-form-label">Gender</label>
                                       <div class="col-sm-10">
                                         <select class="js-select2 form-control" id="gender" name="gender" style="width:100%;" placeholder="Pilih Gender">
-                                          <option value="">Pilih Gender</option>
-                                          <option value="male">Male</option>
-                                          <option value="female">Female</option>
-                                          <option value="unisex">Unisex</option>
-                                          <option value="-">-</option>
+                                          <option>Pilih Note</option>
+                                          @foreach($gender as $gender)
+                                          <option value="{{ $gender }}">{{ $gender }}</option>
+                                          @endforeach
                                         </select>
                                       </div>
                                     </div>
@@ -279,7 +278,7 @@
                         <fieldset>
                             <h4>#Product Cost</h4>
                             <div class="container">
-                              <div class="row">
+                              {{--<div class="row">
                                 <div class="col">
                                   <div class="form-group">
                                     <label for="buying_price">Harga Beli </label>
@@ -292,7 +291,7 @@
                                     <input type="number" class="form-control" id="selling_price" name="selling_price" min="0" value="0" step="0.0001">
                                   </div>
                                 </div>
-                              </div>
+                              </div>--}}
                             </div>
                             <span class="text-danger">*Harga dalam kurs USD</span>
                             <div class="f1-buttons">

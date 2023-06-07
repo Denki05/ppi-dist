@@ -42,16 +42,6 @@
                               </div>
                               <div class="col">
                                 <div class="form-group row">
-                                  <label for="address" class="col-sm-2 col-form-label">Alamat <span class="text-danger">*</span></label>
-                                  <div class="col-sm-10">
-                                    <input type="text" name="address" id="address" placeholder="Store Address" class="form-control">
-                                  </div>
-                                </div>
-                              </div>
-                            </div>
-                            <div class="row">
-                              <div class="col">
-                                <div class="form-group row">
                                   <label for="category" class="col-sm-2 col-form-label">Category<span class="text-danger">*</span></label>
                                   <div class="col-sm-10">
                                     <select class="js-select2 form-control" id="category" name="category" style="width:100%;" placeholder="Pilih Kategori Store">
@@ -60,14 +50,6 @@
                                         <option value="{{ $category->id }}">{{ $category->name }}</option>
                                         @endforeach
                                     </select>
-                                  </div>
-                                </div>
-                              </div>
-                              <div class="col">
-                                <div class="form-group row">
-                                  <label for="zone" class="col-sm-2 col-form-label">Zone <span class="text-danger">*</span></label>
-                                  <div class="col-sm-10">
-                                    <input type="text" name="zone" id="zone" placeholder="Zone Area" class="form-control">
                                   </div>
                                 </div>
                               </div>
@@ -166,23 +148,33 @@
                                   <input type="hidden" name="text_zipcode">
                                 </div>
                               </div>
-                              </div>
                               <div class="row">
+                                <div class="col">
+                                  <div class="form-group row">
+                                    <label for="address" class="col-sm-2 col-form-label">Alamat <span class="text-danger">*</span></label>
+                                    <div class="col-sm-10">
+                                      <!-- <input type="text" name="address" id="address" placeholder="Store Address" class="form-control"> -->
+                                      <textarea class="form-control" id="address" name="address" rows="4"></textarea>
+                                    </div>
+                                  </div>
+                                </div>
                                 <div class="col">
                                   <div class="form-group row">
                                       <label for="gps_latitude" class="col-sm-2 col-form-label">GPS Latitude<span class="text-danger">*</span></label>
                                       <div class="col-sm-10">
                                         <input type="text" name="gps_latitude" id="gps_latitude" placeholder="Latitude" class="form-control">
                                       </div>
+                                      <label for="gps_longitude" class="col-sm-2 col-form-label">GPS Longitude<span class="text-danger">*</span></label>
+                                      <div class="col-sm-10">
+                                        <input type="text" name="gps_longitude" id="gps_longitude" placeholder="Longitude" class="form-control">
+                                      </div>
                                   </div>
                                 </div>
-                                <div class="col">
-                                  <div class="form-group row">
-                                    <label for="gps_longitude" class="col-sm-2 col-form-label">GPS Latitude<span class="text-danger">*</span></label>
-                                    <div class="col-sm-10">
-                                      <input type="text" name="gps_longitude" id="gps_longitude" placeholder="Longitude" class="form-control">
-                                    </div>
-                                  </div>
+                              </div>
+                              <div class="row">
+                                <div class="mb-3">
+                                  <label for="image_store" class="form-label">Zoning</label>
+                                  <input type="text" name="zone" id="zone" placeholder="Zone Area" class="form-control">
                                 </div>
                               </div>
                               <div class="f1-buttons">
