@@ -213,13 +213,13 @@
         <div class="form-group row justify-content-end">
           <label class="col-md-3 col-form-label text-right" for="subtotal">SubTotal</label>
           <div class="col-md-2">
-            <input type="text" class="form-control" id="subtotal" name="subtotal" readonly>
+            <input type="text" class="form-control subtotal" id="subtotal" name="subtotal" readonly>
           </div>
         </div>
         <div class="form-group row justify-content-end">
           <label class="col-md-3 col-form-label text-right" for="disc_percent">Disc%</label>
           <div class="col-md-1">
-            <input type="text" class="form-control" id="disc_percent" name="disc_percent">
+            <input type="text" class="form-control disc_percent" id="disc_percent" name="disc_percent">
           </div>
           <div class="col-md-2">
             <input type="text" class="form-control" id="disc_percent_idr" name="disc_percent_idr" readonly>
@@ -237,7 +237,7 @@
         <div class="form-group row justify-content-end">
           <label class="col-md-3 col-form-label text-right" for="tax_ammount">Pajak</label>
           <div class="col-md-1">
-            <input type="text" class="form-control" id="tax_ammount" name="tax_ammount">
+            <input class="form-check-input" type="checkbox" value="" id="tax_ammount" name="tax_ammount">
           </div>
           <div class="col-md-2">
             <input type="text" class="form-control" id="tax_ammount_idr" name="tax_ammount_idr" readonly>
@@ -385,6 +385,86 @@
       $(this).parents('tr').find('input[name="total[]"]').change();
 
     });
+
+    $('#datatable tbody').on( 'keyup', 'input[name="disc_cash[]"]', function (e) {
+      var price = $(this).parents('tr').find('input[name="price[]"]').val();
+      var qty = $(this).parents('tr').find('input[name="qty[]"]').val();
+      var kurs = $('#idr_rate').val();
+      
+      var total = ((price - $(this).val()) * qty) * kurs;
+
+      $(this).parents('tr').find('input[name="total[]"]').val(total);
+      $(this).parents('tr').find('input[name="total[]"]').change();
+
+    });
+
+    $('#datatable tbody').on( 'change', 'input[name="total[]"]', function (e) {
+      var subtotal = 0;
+      $('input[name="total[]"]').each(function(){
+        subtotal += Number($(this).val());
+      });
+      $('#subtotal').val(subtotal);
+
+      $("#tax_ammount").change();
+      grandtotal();
+    });
+
+    $("#disc_percent").on('keyup', function() {
+      let ammount = ($("#subtotal").val() * $(this).val()) / 100;
+
+      $("#disc_percent_idr").val(ammount);
+      grandtotal();
+    });
+
+    $("#disc_pack").on('keyup', function(){
+      let subtotal = $("#subtotal").val();
+      let disc_percent = $("#disc_percent_idr").val();
+
+      let disc_after_percent = subtotal - disc_percent;
+      let ammount = (disc_after_percent * $(this).val()) / 100;
+      $("#disc_pack_idr").val(ammount);
+      grandtotal();
+    });
+
+    $("#voucher_idr").on('keyup', function() {
+        grandtotal();
+    });
+
+    $("#delivery_cost").on('keyup', function() {
+        grandtotal();
+    });
+
+    $("#tax_ammount").change(function() {
+        if(this.checked) {
+          var tax = ($('#subtotal').val() * 11) / 100;
+
+          $('#tax_ammount_idr').val(tax);
+        } else {
+          $('#tax_ammount_idr').val('');
+        }
+        grandtotal();
+    });
+
+    function grandtotal() {
+      var subtotal = Number($('#subtotal').val());
+      var tax = Number($('#tax_ammount_idr').val());
+      var discPercent = Number($('#disc_percent_idr').val());
+      var discPack = Number($('#disc_pack_idr').val());
+      var voucher = Number($('#voucher_idr').val());
+      var ongkir = Number($('#delivery_cost').val());
+      
+      var grandtotal = subtotal - discPercent - discPack + tax - voucher + ongkir;
+
+      $('#grand_total_idr').val(grandtotal);
+    }
+
+    function delay(fn, ms) {
+      let timer = 0
+      return function(...args) {
+        clearTimeout(timer)
+        timer = setTimeout(fn.bind(this, ...args), ms || 0)
+      }
+    }
 
     $(document).on('change','.select-customer',function(){
       let val = $(this).val();
