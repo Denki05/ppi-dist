@@ -99,6 +99,11 @@ class SalesOrderPpnController extends Controller
     public function store(Request $request)
     {
         if ($request->ajax()) {
+            if(Auth::user()->is_superuser == 0){
+                if(empty($this->access) || empty($this->access->user) || $this->access->can_approve == 0){
+                    return redirect()->route('superuser.index')->with('error','Anda tidak punya akses untuk membuka menu terkait');
+                }
+            }
 
             DB::beginTransaction();
             try{
@@ -278,6 +283,37 @@ class SalesOrderPpnController extends Controller
 
                 return $this->response(400, $response);
             }
+        }
+    }
+
+    public function lanjutkan(Request $request, $id)
+    {
+        // Access
+        if(Auth::user()->is_superuser == 0){
+            if(empty($this->access) || empty($this->access->user) || $this->access->can_approve == 0){
+                return redirect()->route('superuser.index')->with('error','Anda tidak punya akses untuk membuka menu terkait');
+            }
+        }
+
+        DB::beginTransaction();
+
+        try {
+            
+            $sales_order  = SalesOrder::find($id);
+
+            if ($sales_order === null) {
+                abort(404);
+            }
+
+            // if($sales_order->type_transaction == 1){
+                
+            // }else{
+
+            // }
+
+        } catch (\Throwable $th) {
+            DB::rollback();
+            return redirect()->back()->with('error',$e->getMessage());
         }
     }
 

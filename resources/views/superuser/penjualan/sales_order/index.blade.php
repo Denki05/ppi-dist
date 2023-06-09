@@ -124,7 +124,7 @@
   </div>
     <div class="row mb-30">
         <div class="col-12">
-          <table class="table table-striped" id="datatables">
+          <table class="table table-striped" id="so_awal">
             <thead>
               <tr>
                 <th>#</th>
@@ -252,7 +252,7 @@
           <h4 align="left">#SALES ORDER LANJUTAN</h4>
             <ul class="nav nav-tabs card-header-tabs">
                 <li class="nav-item">
-                    <a class="nav-link active" data-toggle="tab" href="#so_lanjutan">SO {{ $step_txt }}</a>
+                    <a class="nav-link active" data-toggle="tab" href="#so_lanutan_1">SO {{ $step_txt }}</a>
                 </li>
                 <li class="nav-item">
                     <a class="nav-link" data-toggle="tab" href="#so_packed">SO VALIDASI</a>
@@ -261,15 +261,15 @@
                     <a class="nav-link" data-toggle="tab" href="#proses">PROSES</a>
                 </li>
                 <li class="nav-item">
-                    <a class="nav-link" data-toggle="tab" href="#do_cancel">DO CANCEL</a>
+                    <a class="nav-link" data-toggle="tab" href="#do_cancel_proses">DO CANCEL</a>
                 </li>
             </ul>
         </div>
         <div class="tab-content card-body">
 
             <!-- SO Lanjutan -->
-            <div id="so_lanjutan" class="tab-pane active">
-              <table class="table table-striped" id="so_transaksi">
+            <div id="so_lanjutan_1" class="tab-pane active">
+              <table class="table table-striped" id="so_lanjutan">
                 <thead>
                   <tr>
                     <th>#</th>
@@ -309,7 +309,7 @@
               <div class="alert alert-warning" role="alert" align="left">
                 Revisi hanya transaksi <strong>Tempo</strong>
               </div>
-              <table class="table table-striped" id="datatables">
+              <table class="table table-striped" id="so_validasi">
                 <thead>
                   <tr>
                     <th>#</th>
@@ -358,7 +358,7 @@
 
             <!-- Proses -->
             <div id="proses" class="tab-pane">
-              <table class="table table-striped" id="datatables">
+              <table class="table table-striped" id="so_proses">
                 <thead>
                   <tr>
                     <th>#</th>
@@ -407,8 +407,8 @@
             </div>
 
             <!-- DO Cancel -->
-              <div id="do_cancel" class="tab-pane">
-                <table class="table table-striped" id="datatables">
+              <div id="do_cancel_proses" class="tab-pane">
+                <table class="table table-striped" id="do_cancel">
                   <thead>
                     <tr>
                       <th>#</th>
@@ -486,7 +486,51 @@
 @push('scripts')
 <script type="text/javascript">
 	$(function(){
-      $('#so_transaksi').DataTable( {
+      $('#so_lanjutan').DataTable( {
+        "paging":   false,
+        "ordering": true,
+        "info":     false,
+        "searching" : false,
+        "columnDefs": [{
+          "targets": 0,
+          "orderable": false
+        }]
+      });
+
+      $('#so_validasi').DataTable( {
+        "paging":   false,
+        "ordering": true,
+        "info":     false,
+        "searching" : false,
+        "columnDefs": [{
+          "targets": 0,
+          "orderable": false
+        }]
+      });
+
+      $('#so_proses').DataTable( {
+        "paging":   false,
+        "ordering": true,
+        "info":     false,
+        "searching" : false,
+        "columnDefs": [{
+          "targets": 0,
+          "orderable": false
+        }]
+      });
+
+      $('#do_cancel').DataTable( {
+        "paging":   false,
+        "ordering": true,
+        "info":     false,
+        "searching" : false,
+        "columnDefs": [{
+          "targets": 0,
+          "orderable": false
+        }]
+      });
+
+      $('#so_awal').DataTable( {
         "paging":   false,
         "ordering": true,
         "info":     false,
