@@ -7,7 +7,22 @@
   <span class="breadcrumb-item active">Create</span>
 </nav>
 
-<form class="ajax" data-action="#" data-type="POST" enctype="multipart/form-data">
+@if($errors->any())
+<div class="alert alert-danger alert-dismissable" role="alert">
+  <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+      <span aria-hidden="true">×</span>
+  </button>
+  <h3 class="alert-heading font-size-h4 font-w400">Error</h3>
+  @foreach ($errors->all() as $error)
+  <p class="mb-0">{{ $error }}</p>
+  @endforeach
+</div>
+@endif
+
+<div id="alert-block"></div>
+<form class="ajax" data-action="{{ route('superuser.penjualan.sales_order_ppn.store') }}" data-type="POST" enctype="multipart/form-data">
+  <@csrf
+  <input type="hidden" name="ajukankelanjutan" value="0">
   <div class="row">
     <div class="col-8">
       <div class="card">
@@ -43,9 +58,9 @@
           <div class="row">
             <div class="col">
               <div class="form-group row">
-                <label class="col-md-4 col-form-label text-right" for="warehouse_id">Gudang <span class="text-danger">*</span></label>
+                <label class="col-md-4 col-form-label text-right" for="origin_warehouse_id">Gudang <span class="text-danger">*</span></label>
                 <div class="col-md-7">
-                  <select class="form-control js-select2" id="warehouse_id" name="warehouse_id" data-placeholder="Pilih Gudang">
+                  <select class="form-control js-select2" id="origin_warehouse_id" name="origin_warehouse_id" data-placeholder="Pilih Gudang">
                     <option></option>
                     @foreach($warehouse as $row)
                     <option value="{{ $row->id }}">{{ $row->name }}</option>
@@ -107,6 +122,7 @@
                 <option value="{{$row->id}}">{{$row->name}}</option>
                 @endforeach
                 </select>
+                <input type="hidden" class="form-control" name="customer_id" id="customer_id">
               </div>
             </div>
           </div>
@@ -173,6 +189,20 @@
               </div>
             </div>
           </div>
+          <div class="form-group row pt-30">
+            <div class="col-md-6">
+              <a href="{{ route('superuser.penjualan.sales_order_ppn.index') }}">
+                <button type="button" class="btn bg-gd-cherry border-0 text-white">
+                  <i class="fa fa-arrow-left mr-10"></i> Back
+                </button>
+              </a>
+            </div>
+            <div class="col-md-6 text-right">
+              <button type="submit" class="btn bg-gd-corporate border-0 text-white">
+                Submit <i class="fa fa-arrow-right ml-10"></i>
+              </button>
+            </div>
+          </div>
         </div>
       </div>
     </div>
@@ -235,6 +265,12 @@
           </div>
         </div>
         <div class="form-group row justify-content-end">
+          <label class="col-md-3 col-form-label text-right" for="discount_idr">Disc IDR</label>
+          <div class="col-md-2">
+            <input type="text" class="form-control" id="discount_idr" name="discount_idr">
+          </div>
+        </div>
+        <div class="form-group row justify-content-end">
           <label class="col-md-3 col-form-label text-right" for="tax_ammount">Pajak</label>
           <div class="col-md-1">
             <input class="form-check-input" type="checkbox" value="" id="tax_ammount" name="tax_ammount">
@@ -258,13 +294,12 @@
         <div class="form-group row justify-content-end">
           <label class="col-md-3 col-form-label text-right" for="grand_total_idr">Grand Total</label>
           <div class="col-md-2">
-            <input type="text" class="form-control" id="grand_total_idr" name="grand_total_idr">
+            <input type="text" class="form-control" id="grand_total_idr" name="grand_total_idr" readonly>
           </div>
         </div>
       </div>
     </div>
   </div>
-
 </form>
 
 @endsection
@@ -283,7 +318,7 @@
         searching: false,
         columns: [
           {name: 'counter', "visible": false},
-          {name: 'product_id', orderable: false, width: "25%"},
+          {name: 'product', orderable: false, width: "25%"},
           {name: 'name', orderable: false, searcable: false, width: "15%"},
           {name: 'qty', orderable: false, searcable: false, width: "10%"},
           {name: 'packaging_id', orderable: false, searcable: false, width: "15%"},
@@ -302,7 +337,7 @@
       
       table.row.add([
                     counter,
-                    '<select class="js-select2 form-control js-ajax" id="product_id['+counter+']" name="product_id[]" data-placeholder="Select Product" style="width:100%" required></select>',
+                    '<select class="js-select2 form-control js-ajax" id="product['+counter+']" name="product[]" data-placeholder="Select Product" style="width:100%" required></select>',
                     '<span class="name"></span>',
                     '<input type="number" class="form-control" name="qty[]" required>',
                     '<input type="hidden" class="form-control" name="packaging_id[]" readonly required><input type="text" class="form-control" name="pack_name" readonly>',
@@ -426,6 +461,10 @@
       grandtotal();
     });
 
+    $("#discount_idr").on('keyup', function() {
+        grandtotal();
+    });
+
     $("#voucher_idr").on('keyup', function() {
         grandtotal();
     });
@@ -450,10 +489,11 @@
       var tax = Number($('#tax_ammount_idr').val());
       var discPercent = Number($('#disc_percent_idr').val());
       var discPack = Number($('#disc_pack_idr').val());
+      var disc_idr = Number($('#discount_idr').val());
       var voucher = Number($('#voucher_idr').val());
       var ongkir = Number($('#delivery_cost').val());
       
-      var grandtotal = subtotal - discPercent - discPack + tax - voucher + ongkir;
+      var grandtotal = subtotal - discPercent - discPack - disc_idr + tax - voucher + ongkir;
 
       $('#grand_total_idr').val(grandtotal);
     }
@@ -491,11 +531,13 @@
             showToast('danger',resp.Message);
             }
             else{
-            $('input[name="customer_recipient"]').val(resp.Data.contact_person + ' ' + '-' + ' ' + resp.Data.name);
-            $('input[name="text_provinsi"]').val(resp.Data.text_provinsi);
-            $('input[name="text_kota"]').val(resp.Data.text_kota);
-            $('input[name="zipcode"]').val(resp.Data.zipcode);
-            $('input[name="customer_address"]').val(resp.Data.address);
+              $('input[name="customer_recipient"]').val(resp.Data.contact_person + ' ' + '-' + ' ' + resp.Data.name);
+              // $('input[name="text_provinsi"]').val(resp.Data.text_provinsi);
+              $('input[name="text_provinsi"]').val(resp.Data.text_provinsi);
+              $('input[name="text_kota"]').val(resp.Data.text_kota);
+              $('input[name="zipcode"]').val(resp.Data.zipcode);
+              $('input[name="customer_address"]').val(resp.Data.address);
+              $('#customer_id').val(resp.Data.customer_id);
             }
         },
         error : function(){

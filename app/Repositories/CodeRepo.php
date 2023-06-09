@@ -103,6 +103,26 @@ class CodeRepo
 
     }
 
+    // So PPN
+    public static function generatePPN(){
+        $count = SalesOrder::withTrashed()
+                              ->where('condition', '>', 0)
+                              ->whereYear('created_at',date('Y'))
+                              ->whereMonth('created_at',date('m'))
+                              ->get();
+                                   
+        if(count($count) > 0 ){
+            $count = count($count) + 1;
+
+            $code = 'SO-PPN/' .date('my')."-".sprintf('%03d', $count);
+        }
+        else{
+            $code = 'SO-PPN/' .date('my')."-".sprintf('%03d', 1);
+        }
+        return $code;
+
+    }
+
     // Generate CTG
     public static function generateCTG(){
         $count = Catalog::withTrashed()

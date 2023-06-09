@@ -5,50 +5,16 @@
   <span class="breadcrumb-item">Sales</span>
   <span class="breadcrumb-item active">Sale Order PPN</span>
 </nav>
-@if($errors->any())
-<div class="alert alert-danger alert-dismissable" role="alert">
-  <button type="button" class="close" data-dismiss="alert" aria-label="Close">
-      <span aria-hidden="true">×</span>
-  </button>
-  <h3 class="alert-heading font-size-h4 font-w400">Error</h3>
-  @foreach ($errors->all() as $error)
-  <p class="mb-0">{{ $error }}</p>
-  @endforeach
-</div>
-@endif
-
-<div id="alert-block"></div>
-
-@if(session()->has('collect_success') || session()->has('collect_error'))
-<div class="container">
-  <div class="row">
-    <div class="col pl-0">
-      <div class="alert alert-success alert-dismissable" role="alert" style="max-height: 300px; overflow-y: auto;">
-        <h3 class="alert-heading font-size-h4 font-w400">Successful Import</h3>
-        //@foreach (session()->get('collect_success') as $msg)
-        <p class="mb-0">{{ $msg }}</p>
-        @endforeach
-      </div>
-    </div>
-    <div class="col pr-0">
-      <div class="alert alert-danger alert-dismissable" role="alert" style="max-height: 300px; overflow-y: auto;">
-        <h3 class="alert-heading font-size-h4 font-w400">Failed Import</h3>
-        @foreach (session()->get('collect_error') as $msg)
-        <p class="mb-0">{{ $msg }}</p>
-        @endforeach
-      </div>
-    </div>
-  </div>
-</div>
-@endif
-
-@if(session()->has('message'))
-<div class="alert alert-success alert-dismissable" role="alert">
-  <button type="button" class="close" data-dismiss="alert" aria-label="Close">
-      <span aria-hidden="true">×</span>
-  </button>
-  <h3 class="alert-heading font-size-h4 font-w400">Success</h3>
-  <p class="mb-0">{{ session()->get('message') }}</p>
+@if(session('error') || session('success'))
+<div class="alert alert-{{ session('error') ? 'danger' : 'success' }} alert-dismissible fade show" role="alert">
+    @if (session('error'))
+    <strong>Error!</strong> {!! session('error') !!}
+    @elseif (session('success'))
+    <strong>Berhasil!</strong> {!! session('success') !!}
+    @endif
+    <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+        <span aria-hidden="true">&times;</span>
+    </button>
 </div>
 @endif
 
@@ -71,9 +37,36 @@
           <th class="text-center">Action</th>
         </tr>
       </thead>
+      <tbody>
+        @foreach($so_ppn as $key)
+          <tr>
+            <td>{{$loop->iteration}}</td>
+            <td>{{$key->created_at}}</td>
+            <td>{{$key->code}}</td>
+            <td>{{$key->member->name}}</td>
+            <td>{{$key->sales->name}}</td>
+            <td>
+              @if($key->status == 1)
+                <a href="{{route('superuser.penjualan.sales_order_ppn.lanjutkan', $key->id)}}" class="btn btn-success btn-sm btn-flat"><i class="fa fa-check"></i> Lanjutan</a>
+              @endif
+              @if ($key->status == 2)
+                <a href="#" class="btn btn-primary btn-sm btn-flat"><i class="fa fa-eye"></i> Show</a>
+              @endif
+              @if ($key->status == 1)
+                <a href="#" class="btn btn-warning btn-sm btn-flat"><i class="fa fa-pencil"></i> Edit</a>
+              @endif
+              @if ($key->status == 1)
+                <a href="#" class="btn btn-danger btn-sm btn-flat"><i class="fa fa-trash"></i> Delete</a>
+              @endif
+            </td>
+          </tr>
+        @endforeach
+      </tbody>
     </table>
   </div>
 </div>
+
+
 @endsection
 
 @include('superuser.asset.plugin.select2')

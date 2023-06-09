@@ -1,6 +1,21 @@
 @extends('superuser.app')
 
 @section('content')
+
+@if($errors->any())
+<div class="alert alert-danger alert-dismissable" role="alert">
+  <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+      <span aria-hidden="true">×</span>
+  </button>
+  <h3 class="alert-heading font-size-h4 font-w400">Error</h3>
+  @foreach ($errors->all() as $error)
+  <p class="mb-0">{{ $error }}</p>
+  @endforeach
+</div>
+@endif
+
+<div id="alert-block"></div>
+
 <form class="ajax" data-action="{{ route('superuser.penjualan.sales_order.tutup_so', ) }}" data-type="POST" enctype="multipart/form-data">
   @csrf
   <input type="hidden" name="id" value="{{$result->id}}">
