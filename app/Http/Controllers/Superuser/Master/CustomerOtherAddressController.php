@@ -142,28 +142,28 @@ class CustomerOtherAddressController extends Controller
                     abort(404);
                 }
 
-                $countMember = DB::table('master_customers')
-                                ->where('id', $customer->id)
-                                ->selectRaw('count_member as kode')
-                                ->get(); 
+                // $countMember = DB::table('master_customers')
+                //                 ->where('id', $customer->id)
+                //                 ->selectRaw('count_member as kode')
+                //                 ->get(); 
                 
-                $kd = "";
+                // $kd = "";
 
-                foreach ($countMember as $key)
-                {
-                    $tmp = ((int) $key->kode)+1;
-                    $kd = sprintf("%01s", $tmp);
-                }
+                // foreach ($countMember as $key)
+                // {
+                //     $tmp = ((int) $key->kode)+1;
+                //     $kd = sprintf("%01s", $tmp);
+                // }
 
                 $other_address = new CustomerOtherAddress;
 
-                $other_address->id = $customer->id.'.'.$kd;
                 $other_address->customer_id = $customer->id;
+                $other_address->member_default = 0;
 
                 $other_address->name = $request->name;
                 $other_address->contact_person = $request->contact_person;
-                $other_address->npwp = $request->npwp;
-                $other_address->ktp = $request->ktp;
+                $other_address->npwp = implode("/", [$request->name_card_npwp,$request->npwp]);
+                $other_address->ktp = implode("/", [$request->name_card_ktp,$request->ktp]);
                 $other_address->phone = $request->phone;
                 $other_address->address = $request->address;
 
@@ -178,7 +178,6 @@ class CustomerOtherAddressController extends Controller
                 $other_address->text_kota = $request->text_kota;
                 $other_address->text_kecamatan = $request->text_kecamatan;
                 $other_address->text_kelurahan = $request->text_kelurahan;
-
                 $other_address->zipcode = $request->zipcode;
 
                 if (!empty($request->file('image_ktp'))) {

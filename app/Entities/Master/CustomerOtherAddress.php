@@ -16,7 +16,6 @@ class CustomerOtherAddress extends Model
         'zipcode', 'image_npwp', 'image_ktp', 'status'
     ];
     protected $table = 'master_customer_other_addresses';
-    public $incrementing = false;
     public static $directory_image = 'superuser_assets/media/master/member/';
 
     const STATUS = [

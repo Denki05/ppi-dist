@@ -305,11 +305,14 @@ class SalesOrderPpnController extends Controller
                 abort(404);
             }
 
-            // if($sales_order->type_transaction == 1){
-                
-            // }else{
+            $get_do = Packingorder::where('so_id', $sales_order->id)->first();
+            $get_invoice = Invoicing::where('do_id', $get_do->id)->get();
 
-            // }
+            if($sales_order->type_transaction == 1){
+                if($sales_order->payment_status == 0){
+                    return redirect()->route('superuser.penjualan.sales_order_ppn.index')->with('error','<a href="'.route('superuser.penjualan.sales_order_ppn.show', $sales_order->id).'">'.$sales_order->code.'</a> : There is no payment can not be continued!');
+                }
+            }
 
         } catch (\Throwable $th) {
             DB::rollback();

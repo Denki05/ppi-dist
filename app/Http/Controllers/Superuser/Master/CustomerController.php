@@ -289,7 +289,8 @@ class CustomerController extends Controller
 
                     $other_address = new CustomerOtherAddress;
 
-                    $other_address->id = $customer->id . '.' . $customer->count_member;
+                    // $other_address->id = $customer->id . '.' . $customer->count_member;
+                    $other_address->id = implode(".", [$customer->id, $customer->count_member]);
                     $other_address->customer_id = $customer->id;
                     $other_address->member_default = 1;
     
