@@ -252,7 +252,7 @@
           <h4 align="left">#SALES ORDER LANJUTAN</h4>
             <ul class="nav nav-tabs card-header-tabs">
                 <li class="nav-item">
-                    <a class="nav-link active" data-toggle="tab" href="#so_lanutan_1">SO {{ $step_txt }}</a>
+                    <a class="nav-link active" data-toggle="tab" href="#so_lan">SO {{ $step_txt }}</a>
                 </li>
                 <li class="nav-item">
                     <a class="nav-link" data-toggle="tab" href="#so_packed">SO VALIDASI</a>
@@ -268,7 +268,7 @@
         <div class="tab-content card-body">
 
             <!-- SO Lanjutan -->
-            <div id="so_lanjutan_1" class="tab-pane active">
+            <div id="so_lan" class="tab-pane active">
               <table class="table table-striped" id="so_lanjutan">
                 <thead>
                   <tr>
