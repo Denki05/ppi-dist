@@ -309,7 +309,7 @@
               <div class="alert alert-warning" role="alert" align="left">
                 Revisi hanya transaksi <strong>Tempo</strong>
               </div>
-              <table class="table table-striped" id="so_validasi">
+              <table class="table table-striped" id="valiadasi">
                 <thead>
                   <tr>
                     <th>#</th>
