@@ -90,9 +90,9 @@
                 <div class="col-md-7">
                   <select class="form-control js-select2" id="type_transaction" name="type_transaction" data-placeholder="Select Transaksi">
                     <option value="">Pilih Transaksi</option>
-                    <option value="1">CASH</option>
-                    <option value="2">TEMPO</option>
-                    <option value="3">MARKETPLACE</option>
+                    @foreach($type_transaction as $row)
+                    <option value="{{$row}}" {{ ($row == $sales_order->type_transaction ) ? 'selected' : '' }}>{{$row}}</option>
+                    @endforeach
                   </select>
                 </div>
               </div>

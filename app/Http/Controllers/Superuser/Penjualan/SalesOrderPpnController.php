@@ -9,6 +9,7 @@ use App\Entities\Penjualan\SalesOrderItem;
 use App\Entities\Penjualan\PackingOrder;
 use App\Entities\Penjualan\PackingOrderItem;
 use App\Entities\Penjualan\PackingOrderDetail;
+use App\Entities\Penjualan\DeliveryOrderMutationItem;
 use App\Entities\Finance\Invoicing;
 use App\Entities\Master\Customer;
 use App\Entities\Master\CustomerOtherAddress;
@@ -81,6 +82,7 @@ class SalesOrderPpnController extends Controller
         $warehouse = Warehouse::get();
         $brand = BrandLokal::get();
         $product_category = ProductCategory::get();
+        $type_transaction = SalesOrder::TYPE_TRANSACTION;
 
 
         $data = [
@@ -91,6 +93,7 @@ class SalesOrderPpnController extends Controller
             'warehouse' => $warehouse,
             'brand' => $brand,
             'product_category' => $product_category,
+            'type_transaction' => $type_transaction,
         ];
 
         return view('superuser.penjualan.sales_order_ppn.create', $data);
@@ -241,6 +244,7 @@ class SalesOrderPpnController extends Controller
                                     $data = [
                                         'code' => CodeRepo::generateInvoicing($packing_order->do_code),
                                         'do_id' => $packing_order->id,
+                                        'customer_other_address_id' => $packing_order->customer_other_address_id,
                                         'grand_total_idr' => $packing_order_detail->grand_total_idr,
                                         'created_by' => Auth::id()
                                     ];
@@ -302,6 +306,7 @@ class SalesOrderPpnController extends Controller
         $data['brand'] = BrandLokal::get();
         $data['product_category'] = ProductCategory::get();
         $data['member'] = CustomerOtherAddress::get();
+        $data['type_transaction'] = SalesOrder::TYPE_TRANSACTION;
 
         return view('superuser.penjualan.sales_order_ppn.edit', $data);
     }
@@ -406,33 +411,6 @@ class SalesOrderPpnController extends Controller
         }
     }
 
-    // public function lanjutkan(Request $request)
-    // {
-    //     // Access
-    //     if(Auth::user()->is_superuser == 0){
-    //         if(empty($this->access) || empty($this->access->user) || $this->access->can_approve == 0){
-    //             return redirect()->route('superuser.index')->with('error','Anda tidak punya akses untuk membuka menu terkait');
-    //         }
-    //     }
-
-    //     DB::beginTransaction();
-    //     try{
-    //         $request->validate([
-    //             'id' => 'required'
-    //         ]);
-    //         $post = $request->all();
-    //         $update = SalesOrder::where('id',$post["id"])->update(['status' => 4]);
-
-    //         DB::commit();
-    //         return redirect()->back()->with('success','Sales Order berhasil diajukan untuk dilanjutkan');  
-            
-    //     }catch(\Throwable $e){
-    //         // dd($e);
-    //         DB::rollback();
-    //         return redirect()->back()->with('error',$e->getMessage());
-    //     }
-    // }
-
     public function ajax_customer_detail(Request $request){
         $data_json = [];
         $post = $request->all();
@@ -458,5 +436,81 @@ class SalesOrderPpnController extends Controller
         }
         ResultData:
         return response()->json($data_json,200);
+    }
+
+    public function delete(Request $request)
+    {
+        // Access
+        if(Auth::user()->is_superuser == 0){
+            if(empty($this->access) || empty($this->access->user) || $this->access->can_delete == 0){
+                return redirect()->route('superuser.index')->with('error','Anda tidak punya akses untuk membuka menu terkait');
+            }
+        }
+
+        DB::beginTransaction();
+        try{
+            $request->validate([
+                'id' => 'required'
+            ]);
+            $post = $request->all();
+            
+            $get_so = SalesOrder::where('id', $post["id"])->first();
+
+            $delivery_order = PackingOrder::where('so_id', $get_so->id)->first();
+
+            if($delivery_order){
+                if($delivery_order->status == 3){
+                    return redirect()->back()->with('error','<a href="'.route('superuser.penjualan.sales_order_ppn.show', $get_so->id).'">'.$get_so->code.'</a> : Gagal menghapus. Item SO ini sudah digunakan di Packing Order / Delivery Order Mutation');
+                }
+            }
+
+            if($delivery_order){
+                $id_do = $delivery_order->id;
+
+                $delivery_order_item = PackingOrderItem::where('do_id', $id_do)->first();
+                $delivery_order_cost = PackingOrderDetail::where('do_id', $id_do)->first();
+                
+                if(count($delivery_order->do_detail) <= 1){
+                    $delivery_order_item->delete();
+                    $delivery_order_cost->delete();
+                    $delivery_order->delete();
+                }else{
+                    $update_do = PackingOrder::where('id', $id_do)->update([
+                        'deleted_by' => Auth::id(),
+                        'updated_by' =>  Auth::id(),
+                    ]);
+
+                    $update_do_item = PackingOrderItem::where('do_id', $id_do)->update([
+                        'deleted_by' => Auth::id(),
+                        'updated_by' =>  Auth::id(),
+                    ]);
+
+                    $update_do_cost = PackingOrderDetail::where('do_id', $id_do)->update([
+                        'deleted_by' => Auth::id(),
+                        'updated_by' =>  Auth::id(),
+                    ]);
+
+                    // destroy
+                    $destroy_do = PackingOrder::where('id', $id_do)->delete();
+                    $destroy_do_item = PackingOrderItem::where('do_id', $id_do)->delete();
+                    $destroy_do_cost = PackingOrderDetail::where('do_id', $id_do)->delete();
+                }
+            }
+
+            $update_so = SalesOrder::where('id', $get_so->id)->update([
+                'deleted_by' => Auth::id(),
+                'condition' => 0,
+            ]);
+
+            $destroy_so = SalesOrder::where('id', $get_so->id)->delete();
+            $destroy_so_item = SalesOrderItem::where('so_id', $get_so->id)->delete();
+                
+            DB::commit();
+            return redirect()->back()->with('success','<a href="'.route('superuser.penjualan.sales_order_ppn.show', $get_so->id).'">'.$get_so->code.'</a> : Sales order data successfully deleted!');
+        }catch(\Throwable $e){
+            // dd($e);
+            DB::rollback();
+            return redirect()->back()->with('error',$e->getMessage());
+        }
     }
 }

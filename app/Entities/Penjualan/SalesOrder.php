@@ -77,6 +77,12 @@ class SalesOrder extends Model
         2 => 'PARTIALY',
     ];
 
+    const TYPE_TRANSACTION = [
+    	1 => 'CASH',
+        2 => 'TEMPO',
+        3 => 'MARKETPLACE',
+    ];
+
     const CONDITION = [
     	0 => 'DELETED',
     	1 => 'ACTIVED',

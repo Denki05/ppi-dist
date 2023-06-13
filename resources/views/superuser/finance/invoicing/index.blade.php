@@ -88,8 +88,8 @@
                   </td>
                   <td>
                     <a href="{{route('superuser.finance.invoicing.detail',$row->do->id ?? 0)}}" class="btn btn-primary btn-sm btn-flat"><i class="fa fa-eye"></i> Detail</a>
-                    <a href="{{route('superuser.finance.invoicing.print',$row->id)}}" class="btn btn-info btn-sm btn-flat" data-id="{{$row->id}}" target="_blank"><i class="fa fa-print"></i> Print Invoice</a>
-                    <a href="{{route('superuser.finance.invoicing.print_proforma',$row->id)}}" class="btn btn-info btn-sm btn-flat" data-id="{{$row->id}}" target="_blank"><i class="fa fa-print"></i> Print Proforma</a>
+                    <a href="{{route('superuser.finance.invoicing.print',$row->id)}}" class="btn btn-info btn-sm btn-flat" data-id="{{$row->id}}" target="_blank"><i class="fa fa-print"></i> Print</a>
+                    {{--<a href="{{route('superuser.finance.invoicing.print_proforma',$row->id)}}" class="btn btn-info btn-sm btn-flat" data-id="{{$row->id}}" target="_blank"><i class="fa fa-print"></i> Print Proforma</a>--}}
                   </td>
                 </tr>
               @endforeach

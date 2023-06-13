@@ -56,7 +56,7 @@
                 <a href="{{route('superuser.penjualan.sales_order_ppn.edit', $key->id)}}" class="btn btn-warning btn-sm btn-flat"><i class="fa fa-pencil"></i> Edit</a>
               @endif
               @if ($key->status == 1)
-                <a href="#" class="btn btn-danger btn-sm btn-flat"><i class="fa fa-trash"></i> Delete</a>
+                <a href="#" class="btn btn-danger btn-sm btn-flat btn-delete" data-id="{{$key->id}}"><i class="fa fa-trash"></i> Delete</a>
               @endif
             </td>
           </tr>
@@ -67,6 +67,10 @@
 </div>
 
 
+<form method="post" action="{{route('superuser.penjualan.sales_order_ppn.delete')}}" id="frmDestroyItem">
+    @csrf
+    <input type="hidden" name="id">
+</form>
 @endsection
 
 @include('superuser.asset.plugin.select2')
@@ -86,6 +90,16 @@
           "orderable": false
         }]
       });
+
+      $('.js-select2').select2();
+
+      $(document).on('click','.btn-delete',function(){
+        if(confirm("Apakah anda yakin ingin menghapus SO ini ? ")){
+          let id = $(this).data('id');
+          $('#frmDestroyItem').find('input[name="id"]').val(id);
+          $('#frmDestroyItem').submit();
+        }
+      })
   });
 </script>
 @endpush
