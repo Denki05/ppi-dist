@@ -33,6 +33,7 @@
         "yajra/laravel-datatables-oracle": "^9.0"
     },
     "require-dev": {
+        "backpack/generators": "^3.1",
         "facade/ignition": "^1.4",
         "fzaninotto/faker": "^1.4",
         "mockery/mockery": "^1.0",

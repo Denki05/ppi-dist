@@ -49,11 +49,11 @@
               @if($key->status == 1)
                 <a href="{{route('superuser.penjualan.sales_order_ppn.lanjutkan', $key->id)}}" class="btn btn-success btn-sm btn-flat"><i class="fa fa-check"></i> Lanjutan</a>
               @endif
-              @if ($key->status == 2)
-                <a href="#" class="btn btn-primary btn-sm btn-flat"><i class="fa fa-eye"></i> Show</a>
+              @if ($key->status == 4)
+                <a href="{{route('superuser.penjualan.sales_order_ppn.show', $key->id)}}" class="btn btn-primary btn-sm btn-flat"><i class="fa fa-eye"></i> Show</a>
               @endif
               @if ($key->status == 1)
-                <a href="#" class="btn btn-warning btn-sm btn-flat"><i class="fa fa-pencil"></i> Edit</a>
+                <a href="{{route('superuser.penjualan.sales_order_ppn.edit', $key->id)}}" class="btn btn-warning btn-sm btn-flat"><i class="fa fa-pencil"></i> Edit</a>
               @endif
               @if ($key->status == 1)
                 <a href="#" class="btn btn-danger btn-sm btn-flat"><i class="fa fa-trash"></i> Delete</a>

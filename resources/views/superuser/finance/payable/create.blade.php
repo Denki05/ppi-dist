@@ -27,7 +27,7 @@
                     Store
                   </div>
                   <div class="col-lg-10">
-                    <input type="text" class="form-control" value="{{$customer->name}}" readonly>
+                    <input type="text" class="form-control" value="{{$member->name}}" readonly>
                   </div>
                 </div>
               </div>
@@ -37,7 +37,7 @@
                     Phone
                   </div>
                   <div class="col-lg-10">
-                    <input type="text" class="form-control" value="{{$customer->phone}}" readonly>
+                    <input type="text" class="form-control" value="{{$member->phone}}" readonly>
                   </div>
                 </div>
               </div>
@@ -47,24 +47,11 @@
                     Detail
                   </div>
                   <div class="col-lg-8">
-                    <a href="{{ route('superuser.finance.payable.detail', $customer->id) }}" class="btn btn-secondary btn-lg" role="button"><i class="fa fa-list"></i></a>
+                    <a href="{{ route('superuser.finance.payable.detail', $member->id) }}" class="btn btn-secondary btn-lg" role="button"><i class="fa fa-list"></i></a>
                   </div>
                 </div>
               </div>
-              <!-- <div class="col-4">
-                <div class="row">
-                  <div class="col-lg-4">
-                    Total Piutang
-                  </div>
-                  
-                  @foreach($customer->do as $index => $row)
-                    
-                  @endforeach
-                  <div class="col-lg-8">
-                    <input type="text" class="form-control" value="{{ $sisa_piutang ?? 0 }}" readonly>
-                  </div>
-                </div>
-              </div> -->
+              
             </div>
             <br>
             <div class="row">
@@ -74,7 +61,7 @@
                     Address
                   </div>
                   <div class="col-lg-10">
-                    <input type="text" class="form-control" value="{{$customer->address}}" readonly>
+                    <input type="text" class="form-control" value="{{$member->address}}" readonly>
                   </div>
                 </div>
               </div>
@@ -101,7 +88,7 @@
   <div class="block-content block-content-full">
     <form id="frmPayable" method="post">
       @csrf
-      <input type="hidden" name="customer_id" value="{{$customer->id}}">
+      <input type="hidden" name="customer_other_address_id" value="{{$member->id}}">
       <div class="row">
         <div class="col-12">
           <div class="table-responsive">
@@ -119,7 +106,7 @@
                 <?php
                   $counter = 0;
                 ?>
-                @foreach($customer->do as $index => $row)
+                @foreach($member->do as $index => $row)
                   @if($row->invoicing)
                     <?php
                       $total_invoicing = $row->invoicing->grand_total_idr ?? 0;
@@ -230,7 +217,7 @@
           if(confirm("Apakah anda yakin ingin melakukan pembayaran ini ?")){
             let _form = $('#frmPayable');
             $.ajax({
-              url : '{{route('superuser.finance.payable.store', $customer->id)}}',
+              url : '{{route('superuser.finance.payable.store', $member->id)}}',
               method : "POST",
               data : getFormData(_form),
               dataType : "JSON",

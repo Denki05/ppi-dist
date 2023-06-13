@@ -86,10 +86,10 @@ class PayableController extends Controller
             }
         }
 
-        $customer = Customer::findOrFail($id);
+        $member = CustomerOtherAddress::findOrFail($id);
 
         $data = [
-            'customer' => $customer,
+            'member' => $member,
         ];
 
         return view($this->view."create",$data);
@@ -108,7 +108,7 @@ class PayableController extends Controller
         if($request->method() == "POST"){
             DB::beginTransaction();
             try{
-                if(empty($post["customer_id"])){
+                if(empty($post["customer_other_address_id"])){
                     $data_json["IsError"] = TRUE;
                     $data_json["Message"] = "Customer ID tidak boleh kosong";
                     goto ResultData;
@@ -126,11 +126,11 @@ class PayableController extends Controller
                     goto ResultData;
                 }
 
-                $customer = Customer::find($id);
+                $customer = CustomerOtherAddress::find($id);
 
                 $insert = Payable::create([
                     'code' => CodeRepo::generatePayable(),
-                    'customer_id' => $customer->id,
+                    'customer_other_address_id' => $customer->id,
                     'status' => Payable::STATUS['ACTIVE'],
                     'created_by' => Auth::id(),
                     'total' => 0
@@ -204,13 +204,13 @@ class PayableController extends Controller
             }
         }
 
-        $customer = Customer::where('id', $id)->first();
+        $member = CustomerOtherAddress::where('id', $id)->first();
 
-        $result = Payable::where('customer_id', $customer->id)->whereRaw('Date(created_at) = CURDATE()')->get();
+        $result = Payable::where('customer_other_address_id', $member->id)->whereRaw('Date(created_at) = CURDATE()')->get();
         
         $data = [
             'result' => $result,
-            'customer' => $customer,
+            'member' => $member,
         ];
         return view($this->view."detail",$data);
     }

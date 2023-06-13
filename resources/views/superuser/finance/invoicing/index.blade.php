@@ -65,7 +65,8 @@
                 <th>#</th>
                 <th>INV Code</th>
                 <th>DO Code</th>
-                <th>Store / Member</th>
+                <th>Acccount</th>
+                <th>Member</th>
                 <th>Total</th>
                 <th>Created At</th>
                 <th>Action</th>
@@ -79,7 +80,8 @@
                     <a href="{{route('superuser.finance.invoicing.history_payable',$row->id)}}">{{$row->code}}</a>
                   </td>
                   <td>{{$row->do->do_code ?? ''}}</td>
-                  <td>{{$row->do->customer->name ?? ''}} / {{$row->do->member->name ?? ''}}</td>
+                  <td>{{$row->do->customer->name ?? '-'}}</td>
+                  <td>{{$row->do->member->name ?? ''}}</td>
                   <td>{{number_format($row->grand_total_idr,0,',','.')}}</td>
                   <td>
                     <?= date('d-m-Y h:i:s',strtotime($row->created_at)); ?>

@@ -286,6 +286,78 @@ class SalesOrderPpnController extends Controller
         }
     }
 
+    public function edit($id)
+    {
+        if(Auth::user()->is_superuser == 0){
+            if(empty($this->access) || empty($this->access->user) || $this->access->can_edit == 0){
+                return redirect()->route('superuser.index')->with('error','Anda tidak punya akses untuk membuka menu terkait');
+            }
+        }
+
+        $data['sales_order'] = SalesOrder::findOrFail($id);
+
+        $data['sales'] = Sales::where('is_active', 1)->get();
+        $data['warehouse'] = Warehouse::get();
+        $data['ekspedisi'] = Vendor::where('type', 1)->get();
+        $data['brand'] = BrandLokal::get();
+        $data['product_category'] = ProductCategory::get();
+        $data['member'] = CustomerOtherAddress::get();
+
+        return view('superuser.penjualan.sales_order_ppn.edit', $data);
+    }
+
+    public function show($id)
+    {
+        if(Auth::user()->is_superuser == 0){
+            if(empty($this->access) || empty($this->access->user) || $this->access->can_read == 0){
+                return redirect()->route('superuser.index')->with('error','Anda tidak punya akses untuk membuka menu terkait');
+            }
+        }
+
+        $data['sales_order'] = SalesOrder::findOrFail($id);
+
+        $data['table'] = SalesOrder::where('penjualan_so.id', $id)
+                        ->leftJoin('penjualan_so_item', 'penjualan_so.id', '=', 'penjualan_so_item.so_id')
+                        ->leftJoin('penjualan_do', 'penjualan_so.id', '=', 'penjualan_do.so_id')
+                        ->leftjoin('penjualan_do_details', 'penjualan_do.id', '=', 'penjualan_do_details.do_id')
+                        ->leftJoin('penjualan_do_item', 'penjualan_do.id', '=', 'penjualan_do_item.do_id')
+                        ->leftJoin('master_products', 'penjualan_do_item.product_id', '=', 'master_products.id')
+                        ->leftJoin('master_product_categories', 'master_products.category_id', '=', 'master_product_categories.id')
+                        ->leftJoin('master_packaging', 'master_product_categories.packaging_id', '=', 'master_packaging.id')
+                        ->select(
+                            'master_products.code as productCode',
+                            'master_products.name as productName',
+                            'master_product_categories.name as categoryName',
+                            'penjualan_do_item.qty as doQty',
+                            'master_packaging.pack_name as packagingName',
+                            'penjualan_do_item.usd_disc as doUsdDisc',
+                            'master_products.selling_price as productPrice',
+                            'penjualan_so.idr_rate as soKurs',
+                            'penjualan_do_details.discount_1 as discPercent',
+                            'penjualan_do_details.discount_1_idr as discPercentIdr',
+                            'penjualan_do_details.discount_2 as discPack',
+                            'penjualan_do_details.discount_2_idr as discPackIdr',
+                            'penjualan_do_details.discount_idr as discIdr',
+                            'penjualan_do_details.ppn as taxAmmount',
+                            'penjualan_do_details.voucher_idr as voucherIdr',
+                            'penjualan_do_details.delivery_cost_idr as ongkirIdr',
+                            'penjualan_do_details.grand_total_idr as grandTotalIdr',
+                            'penjualan_do_details.purchase_total_idr as doPurchaseTotal',
+                        )
+                        ->get();
+
+        $data['sales'] = Sales::where('is_active', 1)->get();
+        $data['warehouse'] = Warehouse::get();
+        $data['ekspedisi'] = Vendor::where('type', 1)->get();
+        $data['brand'] = BrandLokal::get();
+        $data['product_category'] = ProductCategory::get();
+        $data['member'] = CustomerOtherAddress::get();
+
+        // dd($data['table']);
+
+        return view('superuser.penjualan.sales_order_ppn.show', $data);
+    }
+
     public function lanjutkan(Request $request, $id)
     {
         // Access
@@ -305,13 +377,27 @@ class SalesOrderPpnController extends Controller
                 abort(404);
             }
 
-            $get_do = Packingorder::where('so_id', $sales_order->id)->first();
-            $get_invoice = Invoicing::where('do_id', $get_do->id)->get();
+            // $get_do = Packingorder::where('so_id', $sales_order->id)->first();
+            // $get_invoice = Invoicing::where('do_id', $get_do->id)->get();
 
             if($sales_order->type_transaction == 1){
                 if($sales_order->payment_status == 0){
                     return redirect()->route('superuser.penjualan.sales_order_ppn.index')->with('error','<a href="'.route('superuser.penjualan.sales_order_ppn.show', $sales_order->id).'">'.$sales_order->code.'</a> : There is no payment can not be continued!');
+                }elseif($sales_order->payment_status == 1){
+                    $sales_order->status = 4;
+                    $sales_order->updated_by = Auth::id();
+                    $sales_order->save();
+
+                    DB::commit();
+                    return redirect()->back()->with('success','<a href="'.route('superuser.penjualan.sales_order_ppn.show', $sales_order->id).'">'.$sales_order->code.'</a> : SO successfully to the next proceed!');
                 }
+            }elseif($sales_order->type_transaction == 2){
+                $sales_order->status = 4;
+                $sales_order->updated_by = Auth::id();
+                $sales_order->save();
+
+                DB::commit();
+                return redirect()->back()->with('success','Sales Order berhasil diajukan untuk dilanjutkan');
             }
 
         } catch (\Throwable $th) {

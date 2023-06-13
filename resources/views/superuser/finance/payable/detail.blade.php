@@ -61,7 +61,7 @@
     </div>
     <div class="row mb-30">
       <div class="col-12">
-        <a href="{{route('superuser.finance.payable.create', $customer->id)}}" class="btn btn-warning"><i class="fa fa-arrow-left"></i> Back</a>
+        <a href="{{route('superuser.finance.payable.create', $member->id)}}" class="btn btn-warning"><i class="fa fa-arrow-left"></i> Back</a>
       </div>
     </div>
   </div>

@@ -102,7 +102,7 @@
                                             <td>{{ $loop->iteration }}</td>
                                             <td style="font-size: 10pt; font-weight:bold;">{{ $index->name }}</td>
                                             <td>
-                                              <a class="btn btn-primary" href="{{ route('superuser.finance.payable.create', [$row->id]) }}" role="button"><i class="fa fa-credit-card-alt" aria-hidden="true"></i></a>
+                                              <a class="btn btn-primary" href="{{ route('superuser.finance.payable.create', [$index->id]) }}" role="button"><i class="fa fa-credit-card-alt" aria-hidden="true"></i></a>
                                             </td>
                                         </tr>
                                     @endif

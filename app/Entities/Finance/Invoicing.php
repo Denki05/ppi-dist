@@ -12,6 +12,7 @@ class Invoicing extends Model
     protected $fillable = [
     	'code',
     	'do_id',
+        'customer_other_address_id',
     	'grand_total_idr',
         'image',
     	'updated_by',
