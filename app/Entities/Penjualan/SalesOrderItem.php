@@ -44,7 +44,7 @@ class SalesOrderItem extends Model
             return floatval($value);
         }
 
-        public function do_item(){
-            return $this->hasMany('App\Entities\Penjualan\PackingOrderItem','so_item_id');
+        public function doItem(){
+            return $this->hasMany('App\Entities\Penjualan\PackingOrderItem', 'so_item_id');
         }
 }

@@ -33,7 +33,7 @@ class PackingOrderDetail extends Model
     ];
 
     public function do(){
-    	return $this->BelongsTo('App\Entities\Penjualan\PackingOrder','do_id','id');
+    	return $this->BelongsTo('App\Entities\Penjualan\PackingOrder');
     }
 
     public function getDiscount1Attribute($value)

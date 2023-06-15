@@ -299,7 +299,8 @@ class SalesOrderPpnController extends Controller
         }
 
         $data['sales_order'] = SalesOrder::findOrFail($id);
-
+        
+        $data['do'] = PackingOrder::where('so_id', $id)->first();
         $data['sales'] = Sales::where('is_active', 1)->get();
         $data['warehouse'] = Warehouse::get();
         $data['ekspedisi'] = Vendor::where('type', 1)->get();
@@ -309,6 +310,173 @@ class SalesOrderPpnController extends Controller
         $data['type_transaction'] = SalesOrder::TYPE_TRANSACTION;
 
         return view('superuser.penjualan.sales_order_ppn.edit', $data);
+    }
+
+    public function update(Request $request, $id)
+    {
+        if ($request->ajax()) {
+            $sales_order = SalesOrder::find($id);
+
+            if ($sales_order == null) {
+                abort(404);
+            }
+
+            $validator = Validator::make($request->all(), [
+                'customer_other_address_id' => 'required|string',
+                'customer_id' => 'required|string',
+                'origin_warehouse_id' => 'required|string',
+                'sales_senior_id' => 'required|string',
+                'sales_id' => 'required|string',
+                'idr_rate' => 'required|string',
+                'type_transaction' => 'required|string',
+                'ekspedisi_id' => 'required|string',
+            ]);
+
+            if ($validator->fails()) {
+                $response['notification'] = [
+                    'alert' => 'block',
+                    'type' => 'alert-danger',
+                    'header' => 'Error',
+                    'content' => $validator->errors()->all(),
+                ];
+  
+                return $this->response(400, $response);
+            }
+
+            if ($validator->passes()) {
+                $sales_order->sales_senior_id = $request->sales_senior_id;
+                $sales_order->sales_id = $request->sales_id;
+                $sales_order->origin_warehouse_id = $request->origin_warehouse_id;
+                $sales_order->customer_other_address_id = $request->customer_other_address_id;
+                $sales_order->customer_id = $request->customer_id;
+                $sales_order->idr_rate = $request->idr_rate;
+                $sales_order->vendor_id = $request->ekspedisi_id;
+                $sales_order->type_transaction = $request->type_transaction;
+                $sales_order->condition = 1;
+                $sales_order->payment_status = 0;
+                $sales_order->type_so = 'ppn';
+                $sales_order->updated_by = Auth::id();
+
+                if ($sales_order->save()) {
+
+                    $packing_order = PackingOrder::where('so_id', $sales_order->id)->first();
+
+                    $packing_order->warehouse_id = $sales_order->origin_warehouse_id;
+                    $packing_order->customer_id = $sales_order->customer_id;
+                    $packing_order->customer_other_address_id = $sales_order->customer_other_address_id;
+                    $packing_order->vendor_id = $sales_order->vendor_id;
+                    $packing_order->idr_rate = $sales_order->idr_rate;
+                    $packing_order->type_transaction = $sales_order->type_transaction;
+                    $packing_order->count_cancel = 1;
+                    $packing_order->note = $request->note;
+                    $packing_order->save();
+
+                    $packing_order_detail = PackingOrderDetail::where('do_id', $packing_order->id)->first();
+
+                    $packing_order_detail->discount_1 = $request->disc_percent;
+                    $packing_order_detail->discount_1_idr = $request->disc_percent_idr;
+                    $packing_order_detail->discount_2 = $request->disc_pack;
+                    $packing_order_detail->discount_2_idr = $request->disc_pack_idr;
+                    $packing_order_detail->discount_idr = $request->discount_idr;
+                    $packing_order_detail->ppn = $request->tax_ammount_idr;
+                    $packing_order_detail->voucher_idr = $request->voucher_idr;
+                    $packing_order_detail->delivery_cost_idr = $request->delivery_cost;
+                    $packing_order_detail->purchase_total_idr = $request->subtotal;
+                    $packing_order_detail->grand_total_idr = $request->grand_total_idr;
+                    $packing_order_detail->terbilang = CustomHelper::terbilang($request->grand_total_idr);
+                    $packing_order_detail->updated_by = Auth::id();
+                    $packing_order_detail->save();
+
+                    if($request->ids_delete) {
+                        $pieces = explode(",",$request->ids_delete);
+                        foreach($pieces as $piece){
+                            SalesOrderitem::where('id', $piece)->delete();
+                        }
+                    }
+
+                    if($request->product) {
+                        foreach($request->product as $key => $value){
+                            if($request->product[$key]) {
+
+                                if($request->edit[$key]) {
+                                    $sales_order_item = SalesOrderitem::find($request->edit[$key]);
+
+                                    $sales_order_item->product_id = $request->product[$key];
+                                    $sales_order_item->qty = $request->qty[$key];
+                                    $sales_order_item->packaging_id = $request->packaging_id[$key];
+                                    $sales_order_item->free_product = 0;
+                                    $sales_order_item->updated_by = Auth::id();
+                                    $sales_order_item->save();
+                                } else {
+                                    $sales_order_item = new SalesOrderitem;
+                                    $sales_order_item->so_id = $sales_order->id;
+                                    $sales_order_item->product_id = $request->product[$key];
+                                    $sales_order_item->qty = $request->qty[$key];
+                                    $sales_order_item->packaging_id = $request->packaging_id[$key];
+                                    $sales_order_item->free_product = 0;
+                                    $sales_order_item->created_by = Auth::id();
+                                    $sales_order_item->save();
+                                }
+                            }
+
+                            $price = $request->price[$key];
+                            $qty = $request->qty[$key];
+                            $usd_disc = $request->disc_cash[$key];
+                            $percent_disc = 0;
+                            $total_discount = 0;
+
+                            if($qty > 0){
+                                $total_disc = floatval(($usd_disc + (($price - $usd_disc) * ($percent_disc/100))) * $qty);
+                                $data[] = [
+                                    'product_id' => $request->product[$key],
+                                    'price' => $price,
+                                    'qty' => $qty,
+                                    'usd_disc' => $usd_disc,
+                                    'packaging_id' => $request->packaging_id[$key],
+                                    'percent_disc' => $percent_disc,
+                                    'total_disc' => $total_disc,
+                                    'total' => floatval($qty * $price) - $total_disc,
+                                    'updated_by' => Auth::id(),
+                                ];
+                            }
+                        }
+
+                        foreach ($data as $key => $value) {
+                            $update_item = PackingOrderItem::where('do_id', $packing_order->id)->update($data[$key]);
+                        }
+
+                        // update grand total invoice
+                        if(empty($packing_order->invoicing)){
+                            $data = [
+                                'code' => CodeRepo::generateInvoicing($packing_order->do_code),
+                                'do_id' => $packing_order->id,
+                                'customer_other_address_id' => $packing_order->customer_other_address_id,
+                                'grand_total_idr' => $packing_order_detail->grand_total_idr,
+                                'created_by' => Auth::id()
+                            ];
+                            $insertInv = Invoicing::create($data);
+                        }else{
+                            $data = [
+                                'customer_other_address_id' => $packing_order->customer_other_address_id,
+                                'grand_total_idr' => $packing_order_detail->grand_total_idr,
+                                'updated_by' => Auth::id()
+                            ];
+                            $update_inv = Invoicing::where('do_id', $packing_order->id)->update($data);
+                        }
+                    }
+
+                    $response['notification'] = [
+                        'alert' => 'notify',
+                        'type' => 'success',
+                        'content' => 'Success',
+                    ];
+
+                    $response['redirect_to'] = route('superuser.penjualan.sales_order_ppn.index');
+
+                    return $this->response(200, $response);
+                }
+            }
+        }
     }
 
     public function show($id)
@@ -381,9 +549,6 @@ class SalesOrderPpnController extends Controller
             if ($sales_order === null) {
                 abort(404);
             }
-
-            // $get_do = Packingorder::where('so_id', $sales_order->id)->first();
-            // $get_invoice = Invoicing::where('do_id', $get_do->id)->get();
 
             if($sales_order->type_transaction == 1){
                 if($sales_order->payment_status == 0){

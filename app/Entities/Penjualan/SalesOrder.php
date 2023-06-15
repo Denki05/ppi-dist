@@ -127,7 +127,7 @@ class SalesOrder extends Model
     	return $this->hasMany('App\Entities\Penjualan\SalesOrderItem','so_id');
     }
     public function do(){
-        return $this->hasMany('App\Entities\Penjualan\PackingOrder', 'so_id');
+        return $this->hasMany('App\Entities\Penjualan\PackingOrder', 'so_id', 'id');
     }
 
     public function proforma(){
