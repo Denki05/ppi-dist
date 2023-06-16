@@ -178,7 +178,7 @@
                   @endif
 
                   @if($step == 1)
-                  <td>{{$row->so_type_transaction()->scalar ?? ''}}</td>
+                  <td>{{$row->type_transaction ?? ''}}</td>
                   @endif
 
                   @if($step == 1 || $step == 9)
@@ -286,7 +286,7 @@
                     <td>{{ $index+1 }}</td>
                     <td>{{$row->code}}</td>
                     <td>{{ $row->member->name }}</td>
-                    <td>{{$row->so_type_transaction()->scalar ?? ''}}</td>
+                    <td>{{$row->type_transaction}}</td>
                     <td><?= date('d-m-Y h:i:s',strtotime($row->created_at)); ?></td>
                     <td>
                       @if ($step == 2 && $row->status === 2)
@@ -330,7 +330,7 @@
                       <td>{{$row->code}}</td>
                       <td>{{ $row->member->name }}</td>
                       <td><?= date('d-m-Y h:i:s',strtotime($row->created_at)); ?></td>
-                      <td>{{$row->so->code}} / {{$row->so->so_type_transaction()->scalar}}</td>
+                      <td>{{$row->so->code}} / {{$row->so->type_transaction}}</td>
                       <td>
                         <!-- <span class="badge badge-{{ $row->do_status()->class }}"><b>{{ $row->do_status()->msg }}</b></span> -->
                         @if($row->status == 2)
@@ -377,7 +377,7 @@
                       <td>{{$row->do_code}}</td>
                       <td>{{$row->so->code}}</td>
                       <td><?= date('d-m-Y h:i:s',strtotime($row->created_at)); ?></td>
-                      <td>{{$row->so->so_type_transaction()->scalar}}</td>
+                      <td>{{$row->so->type_transaction}}</td>
                       <td>
                         @if($row->status == 3)
                           <span class="badge badge-success"><b>SUBMIT DO</b></span>
@@ -429,7 +429,7 @@
                             <td>{{$row->so->code}}</td>
                             <td>{{$row->member->name}}</td>
                             <td><?= date('d-m-Y h:i:s',strtotime($row->created_at)); ?></td>
-                            <td>{{$row->so->so_type_transaction()->scalar}}</td>
+                            <td>{{$row->so->type_transaction}}</td>
                             
                             <td>
                               @if($row->status == 5)

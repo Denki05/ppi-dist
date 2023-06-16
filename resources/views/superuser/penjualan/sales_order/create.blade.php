@@ -60,10 +60,10 @@
                       <label class="col-md-4 col-form-label text-right">Transaksi<span class="text-danger">*</span></label>
                       <div class="col-md-6">
                         <select class="form-control js-select2 select-transaksi" name="type_transaction">
-                          <option value="">Type Transaksi</option>
-                          <option value="1">Cash</option>
-                          <option value="2">Tempo</option>
-                          <option value="3">Marketplace</option>
+                          <option value="">Jenis transaksi</option>
+                          @foreach($type_transaction as $row)
+                            <option value="{{$row}}">{{$row}}</option>
+                          @endforeach
                         </select>
                       </div>
                     </div>
