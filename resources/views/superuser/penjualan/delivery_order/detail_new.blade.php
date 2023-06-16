@@ -192,7 +192,7 @@
         </div>
         <div class="col-md-6 text-right">
           @if($result->count_cancel == 0)
-            <a href="#" class="btn btn-success btn-sm btn-flat" data-id="{{$result->id}}" target="_blank"><i class="fas fa-tag"></i> Print Label</a>
+            <a href="{{route('superuser.penjualan.delivery_order.print_label', $result->id)}}" class="btn btn-success btn-sm btn-flat" data-id="{{$result->id}}" target="_blank"><i class="fas fa-tag"></i> Print Label</a>
             <a href="{{route('superuser.penjualan.delivery_order.print', $result->id)}}" class="btn btn-info btn-sm btn-flat" data-id="{{$result->id}}" target="_blank"><i class="fa fa-file-o"></i> Print DO</a>
             @if($result->invoicing != null)
             <a href="{{route('superuser.finance.invoicing.print',$result->invoicing->id)}}" class="btn btn-warning btn-sm btn-flat" data-id="{{$result->invoicing->id}}" target="_blank"><i class="fas fa-file-invoice" aria-hidden="true"></i> Print Invoice</a>

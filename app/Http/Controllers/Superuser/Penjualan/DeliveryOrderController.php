@@ -583,8 +583,8 @@ class DeliveryOrderController extends Controller
             abort(404);
         }
 
-        $my_report = "C:\\xampp\\htdocs\\ppi-dist\public\\cr\\packing_plan\\packing_plan_rev.rpt"; 
-        $my_pdf = 'C:\\xampp\\htdocs\\ppi-dist\\public\\cr\\packing_plan\\export\\'.$result->code.'.pdf';
+        $my_report = "C:\\xampp\\htdocs\\ppi-dist\public\\cr\\do\\label_penerima.rpt"; 
+        $my_pdf = 'C:\\xampp\\htdocs\\ppi-dist\\public\\cr\\do\\export\\LabelKirim-'.$result->member->name.'.pdf';
 
         $my_server = "DEV-SERVER"; 
         $my_user = "root"; 
@@ -617,7 +617,7 @@ class DeliveryOrderController extends Controller
         $crapp = null;
         $ObjectFactory = null;
 
-        $file = 'C:\\xampp\\htdocs\\ppi-dist\\public\\cr\\packing_plan\\export\\'.$result->code.'.pdf';
+        $file = 'C:\\xampp\\htdocs\\ppi-dist\\public\\cr\\do\\export\\LabelKirim-'.$result->member->name.'.pdf';
 
         header("Content-Description: File Transfer"); 
         header("Content-Type: application/octet-stream"); 
