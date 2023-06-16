@@ -259,16 +259,16 @@
                 <input type="text" class="form-control" placeholder="Input Note" value="{{strlen($result->do_detail_cost->first()->delivery_cost_note) > 0 ? $result->do_detail_cost->delivery_cost_note : ($result->ekspedisi ? $result->ekspedisi->name : '')}}" name="delivery_cost_note" {{$result->status == 6 ? 'readonly' : ''}}>
               </div>
               <div class="col-md-4">
-                <input type="number" class="form-control" value="{{$result->do_cost->delivery_cost_idr ?? 0}}" name="delivery_cost_idr" step="any" {{$result->status == 6 ? 'readonly' : ''}}>
+                <input type="number" class="form-control" value="{{$result->do_detail_cost->first()->delivery_cost_idr ?? 0}}" name="delivery_cost_idr" step="any" {{$result->status == 5  || $result->status == 6 ? 'readonly' : ''}}>
               </div>
             </div>
             <div class="form-group row">
               <label class="col-md-2 col-form-label text-right" for="name">Other Cost(IDR)</label>
               <div class="col-md-4">
-                <input type="text" class="form-control" value="{{$result->do_cost->other_cost_note ?? ''}}" name="other_cost_note" placeholder="Input Note" {{$result->status == 6 ? 'readonly' : ''}}>
+                <input type="text" class="form-control" value="{{$result->do_detail_cost->first()->other_cost_note ?? ''}}" name="other_cost_note" placeholder="Input Note" {{$result->status == 6 ? 'readonly' : ''}}>
               </div>
               <div class="col-md-4">
-                <input type="number" class="form-control" value="{{$result->do_cost->other_cost_idr ?? 0}}" name="other_cost_idr" step="any" {{$result->status == 6 ? 'readonly' : ''}}>
+                <input type="number" class="form-control" value="{{$result->do_detail_cost->first()->other_cost_idr ?? 0}}" name="other_cost_idr" step="any" {{$result->status == 6 ? 'readonly' : ''}}>
               </div>
             </div>
 

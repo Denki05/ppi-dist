@@ -469,14 +469,14 @@ class DeliveryOrderController extends Controller
 
                 $result_cost = PackingOrderDetail::where('do_id',$post["do_id"])->first();
 
-                $grand_total_idr = ceil($result_cost->grand_total_idr - $result_cost->delivery_cost_idr - $result_cost->other_cost_idr + $delivery_cost_idr + $other_cost_idr);
+                // $grand_total_idr = ceil($result_cost->grand_total_idr - $result_cost->delivery_cost_idr - $result_cost->other_cost_idr + $delivery_cost_idr + $other_cost_idr);
 
                 $update_cost = PackingOrderDetail::where('do_id',$post["do_id"])->update([
                     'delivery_cost_note' => trim(htmlentities($post["delivery_cost_note"])),
-                    'delivery_cost_idr' => $delivery_cost_idr,
+                    // 'delivery_cost_idr' => $delivery_cost_idr,
                     'other_cost_note' => trim(htmlentities($post["other_cost_note"])),
                     'other_cost_idr' => $other_cost_idr,
-                    'grand_total_idr' => $grand_total_idr,
+                    // 'grand_total_idr' => $grand_total_idr,
                     'updated_by' => Auth::id(),
                 ]);
 
