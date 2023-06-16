@@ -332,7 +332,7 @@ class PayableController extends Controller
                     }
 
                 }catch (\Exception $e) {
-                    dd($e);
+                    // dd($e);
                     DB::rollback();
                     $response['notification'] = [
                         'alert' => 'block',
@@ -362,24 +362,39 @@ class PayableController extends Controller
             abort(404);
         }
 
-        $payable->status = Payable::STATUS['APPROVE'];
-        $payable->updated_by = Auth::id();
+        DB::beginTransaction();
+        try{
+
+            $payable->status = Payable::STATUS['APPROVE'];
+            $payable->updated_by = Auth::id();
         
-        if ($payable->save()){
-            $get_detail = PayableDetail::where('payable_id', $payable->id)->first();
-            $get_invoice = Invoicing::where('id', $get_detail->invoice_id)->first();
+            if ($payable->save()){
+                $get_detail = PayableDetail::where('payable_id', $payable->id)->first();
+                $get_invoice = Invoicing::where('id', $get_detail->invoice_id)->first();
 
-            $so = SalesOrder::where('id', $get_invoice->do->so_id)->first();
+                $so = SalesOrder::where('id', $get_invoice->do->so_id)->first();
 
-            if ($so->type_transaction == 1){
-                $update_so_payment = SalesOrder::where('id', $so->id)->update(['payment_status' => 1]);
-            }elseif($so->type_transaction == 2){
-                $update_so_payment = SalesOrder::where('id', $so->id)->update(['payment_status' => 2]);
+                if ($so->type_transaction == 'CASH'){
+                    $update_so_payment = SalesOrder::where('id', $so->id)->update(['payment_status' => 1]);
+                }elseif($so->type_transaction == 'TEMPO'){
+                    $update_so_payment = SalesOrder::where('id', $so->id)->update(['payment_status' => 2]);
+                }
+
+                DB::commit();
+                return redirect()->back()->with('success','<a href="'.route('superuser.finance.payable.index').'">'.$payable->code.'</a> : Payment has been successfully processed!');
             }
+        }catch (\Exception $e) {
+            dd($e);
+            DB::rollback();
+            $response['notification'] = [
+                'alert' => 'block',
+                'type' => 'alert-danger',
+                'header' => 'Error',
+                'content' => "Internal Server Error!",
+            ];
+
+            return $this->response(400, $response);
         }
-
-
-        return redirect()->back()->with('success', 'Pembayaran '.$payable->code.' '.'di Approve!');
     }
 
     /**

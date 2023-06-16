@@ -151,6 +151,7 @@ Route::group([
         Route::get('/search_sku', 'SalesOrderPpnController@search_sku')->name('search_sku');
         Route::get('/{id}/lanjutkan', 'SalesOrderPpnController@lanjutkan')->name('lanjutkan');
         Route::post('/delete', 'SalesOrderPpnController@delete')->name('delete');
+        Route::post('/{id}/update', 'SalesOrderPpnController@update')->name('update');
     });
     Route::resource('sales_order_ppn', 'SalesOrderPpnController');
 });

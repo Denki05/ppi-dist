@@ -127,19 +127,11 @@ class SalesOrder extends Model
     	return $this->hasMany('App\Entities\Penjualan\SalesOrderItem','so_id');
     }
     public function do(){
-        return $this->hasMany('App\Entities\Penjualan\PackingOrder', 'so_id');
+        return $this->hasMany('App\Entities\Penjualan\PackingOrder', 'so_id', 'id');
     }
 
     public function proforma(){
     	return $this->hasMany('App\Entities\Penjualan\SoProforma','so_id');
-    }
-    public function so_type_transaction()
-    {
-        if (isset($this->type_transaction)) {
-            return (object) self::STATUS[$this->type_transaction];
-        } else {
-            return null;
-        }
     }
     public function so_brand_type()
     {

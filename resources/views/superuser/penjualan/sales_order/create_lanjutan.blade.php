@@ -66,12 +66,7 @@
               <div class="col">
                 <div class="form-label-group in-border">
                   <label>Transaksi Type</label><br>
-                  @if($result->type_transaction == 1)
-                    <button type="button" class="btn btn-info">CASH</button>
-                  @endif
-                  @if($result->type_transaction == 2)
-                    <button type="button" class="btn btn-info">TEMPO</button>
-                  @endif
+                    <button type="button" class="btn btn-info">{{$result->type_transaction}}</button>
                 </div>
               </div>
             </div>

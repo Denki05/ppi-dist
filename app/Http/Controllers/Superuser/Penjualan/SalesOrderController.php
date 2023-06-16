@@ -240,6 +240,7 @@ class SalesOrderController extends Controller
 		$ekspedisi = Ekspedisi::all();
         $sales = Sales::where('is_active', 1)->get();
         $product_category = ProductCategory::get();
+        $type_transaction = SalesOrder::TYPE_TRANSACTION;
 
         $data = [
             'customer' => $customer,
@@ -251,7 +252,8 @@ class SalesOrderController extends Controller
             'ekspedisi' => $ekspedisi,
             'product_category' => $product_category,
             'step' => $step,
-            'step_txt' => SalesOrder::STEP[$step]
+            'step_txt' => SalesOrder::STEP[$step],
+            'type_transaction' => $type_transaction,
         ];
         
         
@@ -1117,7 +1119,7 @@ class SalesOrderController extends Controller
                         }
 
                         // Cetak Invoice disini
-                        if($sales_order->type_transaction == 1 || $packing_order->type_transaction == 1){
+                        if($sales_order->type_transaction == 'CASH' || $packing_order->type_transaction == 'CASH'){
                             if(empty($packing_order->invoicing))
                             {
                                 $data = [

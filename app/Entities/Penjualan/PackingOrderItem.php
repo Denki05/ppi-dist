@@ -33,7 +33,7 @@ class PackingOrderItem extends Model
         	return $this->BelongsTo('App\Entities\Master\Product','product_id','id');
         }
         public function so_item(){
-        	return $this->BelongsTo('App\Entities\Penjualan\SalesOrderItem','so_item_id','id');
+            return $this->belongsTo('App\Entities\Penjualan\SalesOrderItem', 'so_item_id', 'id');
         }
 
         public function packaging(){

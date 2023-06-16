@@ -305,25 +305,25 @@ class DeliveryOrderController extends Controller
             $post = $request->all();
             $result = PackingOrder::where('id',$post["id"])->first();
 
+            $do_cost = PackingOrderDetail::where('do_id', $result->id)->first();
+
             if($result->status == 1){
                 return redirect()->route('superuser.penjualan.packing_order.index')->with('error','Tidak bisa mengirim packing order yang masih baru dibuat');
             }
             if(count($result->do_detail) == 0){
                 return redirect()->route('superuser.penjualan.delivery_order.index')->with('error','Tidak ada item sama sekali');
             }
-            if($result->do_cost->grand_total_idr == 0){
+            if($do_cost->grand_total_idr == 0){
                 return redirect()->route('superuser.penjualan.delivery_order.index')->with('error','Harga didalam packing list belum di set');
             }
             $update = PackingOrder::where('id',$post["id"])->update(['status' => 4]);
 
             // Create Invoice
-            if ($result->type_transaction == 2){
-                $do_detail = PackingOrderDetail::where('do_id', $result->id)->first();
-
+            if ($result->type_transaction == 'TEMPO'){
                 $data = [
                     'code' => CodeRepo::generateInvoicing($result->do_code),
                     'do_id' => $result->id,
-                    'grand_total_idr' => $do_detail->grand_total_idr,
+                    'grand_total_idr' => $do_cost->grand_total_idr,
                     'created_by' => Auth::id(),
                 ];
                 
@@ -334,6 +334,7 @@ class DeliveryOrderController extends Controller
             return redirect()->route('superuser.penjualan.delivery_order.index')->with('success','Delivery Order berhasil diubah ke packed');
 
         }catch(\Throwable $e){
+            // DD($e);
             DB::rollback();
             return redirect()->back()->with('error',$e->getMessage());
         }
@@ -567,28 +568,66 @@ class DeliveryOrderController extends Controller
         ResultData:
         return response()->json($data_json,200);
     }
-    // public function print_proforma($id){
-    //     // Access
-    //     if(Auth::user()->is_superuser == 0){
-    //         if(empty($this->access) || empty($this->access->user) || $this->access->can_print == 0){
-    //             return redirect()->route('superuser.index')->with('error','Anda tidak punya akses untuk membuka menu terkait');
-    //         }
-    //     }
+    
+    Public function print_label($id)
+    {
+        if(Auth::user()->is_superuser == 0){
+            if(empty($this->access) || empty($this->access->user) || $this->access->can_print == 0){
+                return redirect()->route('superuser.index')->with('error','Anda tidak punya akses untuk membuka menu terkait');
+            }
+        }
 
-    //     $result = PackingOrder::where('id',$id)->findOrFail();
-    //     $company = Company::first();
-    //     if(empty($result)){
-    //         abort(404);
-    //     }
+        $result = PackingOrder::find($id);
 
-    //     $data = [
-    //         'result' => $result,
-    //         'company' => $company
-    //     ];
+        if($result == null){
+            abort(404);
+        }
 
-    //     $pdf = PDF::loadview($this->view."print_proforma",$data)->setPaper('a4','potrait');
-    //     return $pdf->stream($result->code ?? '');
-    // }
+        $my_report = "C:\\xampp\\htdocs\\ppi-dist\public\\cr\\packing_plan\\packing_plan_rev.rpt"; 
+        $my_pdf = 'C:\\xampp\\htdocs\\ppi-dist\\public\\cr\\packing_plan\\export\\'.$result->code.'.pdf';
+
+        $my_server = "DEV-SERVER"; 
+        $my_user = "root"; 
+        $my_password = ""; 
+        $my_database = "ppi-dist";
+        $COM_Object = "CrystalDesignRunTime.Application";
+
+
+        //-Create new COM object-depends on your Crystal Report version
+        $crapp= New COM($COM_Object) or die("Unable to Create Object");
+        $creport = $crapp->OpenReport($my_report,1); // call rpt report
+
+        //- Set database logon info - must have
+        $creport->Database->Tables(1)->SetLogOnInfo($my_server, $my_database, $my_user, $my_password);
+
+        //- field prompt or else report will hang - to get through
+        $creport->EnableParameterPrompting = FALSE;
+        $creport->RecordSelectionFormula = "{penjualan_do.id}= $result->id";
+
+
+        //export to PDF process
+        $creport->ExportOptions->DiskFileName=$my_pdf; //export to pdf
+        $creport->ExportOptions->PDFExportAllPages=true;
+        $creport->ExportOptions->DestinationType=1; // export to file
+        $creport->ExportOptions->FormatType=31; // PDF type
+        $creport->Export(false);
+
+        //------ Release the variables ------
+        $creport = null;
+        $crapp = null;
+        $ObjectFactory = null;
+
+        $file = 'C:\\xampp\\htdocs\\ppi-dist\\public\\cr\\packing_plan\\export\\'.$result->code.'.pdf';
+
+        header("Content-Description: File Transfer"); 
+        header("Content-Type: application/octet-stream"); 
+        header("Content-Transfer-Encoding: Binary"); 
+        header("Content-Disposition: attachment; filename=\"". basename($file) ."\""); 
+        ob_clean();
+        flush();
+        readfile ($file);
+        exit();
+    }
 
     public function print_manifest($id){
         // Access
@@ -870,7 +909,7 @@ class DeliveryOrderController extends Controller
                 }
             } catch (\Exception $e) {
                 DB::rollback();
-                DD($e);
+                // DD($e);
                 $response['notification'] = [
                     'alert' => 'block',
                     'type' => 'alert-danger',
