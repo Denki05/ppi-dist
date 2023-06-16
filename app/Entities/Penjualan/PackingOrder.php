@@ -81,9 +81,12 @@ class PackingOrder extends Model
     public function warehouse(){
     	return $this->BelongsTo('App\Entities\Master\Warehouse','warehouse_id','id');
     }
-    public function do_cost(){
-    	return $this->hasMany('App\Entities\Penjualan\PackingOrderDetail', 'do_id');
-    }
+    // public function do_cost(){
+    // 	return $this->hasMany('App\Entities\Penjualan\PackingOrderDetail', 'do_id');
+    // }
+	public function do_detail_cost(){
+		return $this->hasMany('App\Entities\Penjualan\PackingOrderDetail', 'do_id', 'id');
+	}
     public function do_other_cost(){
         return $this->hasMany('App\Entities\Penjualan\PackingOrderCost','do_id');
 	}

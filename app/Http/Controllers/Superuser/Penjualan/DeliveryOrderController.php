@@ -356,6 +356,7 @@ class DeliveryOrderController extends Controller
             ]);
             $post = $request->all();
             $result = PackingOrder::where('id',$post["id"])->first();
+            $do_cost = PackingOrderDetail::where('do_id', $result->id)->first();
 
             PackingOrder::where('id',$result->id)->update([
                 'date_sent' => date('Y-m-d')
@@ -367,7 +368,7 @@ class DeliveryOrderController extends Controller
             if(count($result->do_detail) == 0){
                 return redirect()->route('superuser.penjualan.delivery_order.index')->with('error','Tidak ada item sama sekali');
             }
-            if($result->do_cost->grand_total_idr == 0){
+            if($do_cost->grand_total_idr == 0){
                 return redirect()->route('superuser.penjualan.delivery_order.index')->with('error','Harga didalam packing list belum di set');
             }
             $update = PackingOrder::where('id',$post["id"])->update(['status' => 5]);
