@@ -490,31 +490,31 @@ class DeliveryOrderController extends Controller
                     ]);
                 }
 
-                $detail_do = PackingOrder::where('id',$post["do_id"])->first();
+                // $detail_do = PackingOrder::where('id',$post["do_id"])->first();
 
-                foreach ($detail_item as $key => $value) {
-                    // Definisi stock sebelum pemotongan
-                    $stock_product = ProductMinStock::where('product_id',$value->product_id)
-                                                    ->where('warehouse_id',$detail_do->warehouse_id)
-                                                    ->sum('quantity');
-                    // Definisi membaca product dan warehouse
-                    $move = StockMove::where('product_id',$value->product_id)
-                                        ->where('warehouse_id',$detail_do->warehouse_id)->get();
-                    // defisini stock in atau out
-                    $move_in = $move->sum('stock_in');
-                    $move_out = $move->sum('stock_out');
-                    // Pemotongan stock
-                    $sisa = (int)$stock_product + $move_in - $move_out - $value->qty;
-                    // Pencatatan stock setelah di potong
-                    $insert_stock_move = StockMove::create([
-                        'code_transaction' => $detail_do->do_code,
-                        'warehouse_id' => $detail_do->warehouse_id,
-                        'product_id' => $value->product_id,
-                        'stock_out' => $value->qty,
-                        'stock_balance' => $sisa,
-                        'created_by' => Auth::id()
-                    ]);
-                }
+                // foreach ($detail_item as $key => $value) {
+                //     // Definisi stock sebelum pemotongan
+                //     $stock_product = ProductMinStock::where('product_id',$value->product_id)
+                //                                     ->where('warehouse_id',$detail_do->warehouse_id)
+                //                                     ->sum('quantity');
+                //     // Definisi membaca product dan warehouse
+                //     $move = StockMove::where('product_id',$value->product_id)
+                //                         ->where('warehouse_id',$detail_do->warehouse_id)->get();
+                //     // defisini stock in atau out
+                //     $move_in = $move->sum('stock_in');
+                //     $move_out = $move->sum('stock_out');
+                //     // Pemotongan stock
+                //     $sisa = (int)$stock_product + $move_in - $move_out - $value->qty;
+                //     // Pencatatan stock setelah di potong
+                //     $insert_stock_move = StockMove::create([
+                //         'code_transaction' => $detail_do->do_code,
+                //         'warehouse_id' => $detail_do->warehouse_id,
+                //         'product_id' => $value->product_id,
+                //         'stock_out' => $value->qty,
+                //         'stock_balance' => $sisa,
+                //         'created_by' => Auth::id()
+                //     ]);
+                // }
 
 
                 $update = PackingOrder::where('id',$post["do_id"])->update(['status' => 6]);
