@@ -93,20 +93,7 @@ class CustomerController extends Controller
         return view('superuser.master.customer.index', $data);
     }
 
-    // public function cari(Request $request)
-	// {
-	// 	// menangkap data pencarian
-	// 	$cari = $request->cari;
- 
-    // 		// mengambil data dari table pegawai sesuai pencarian data
-	// 	$data['cari'] = DB::table('tbl_customers')
-	// 	->where('name','like',"%".$cari."%")
-	// 	->paginate();
- 
-    // 		// mengirim data pegawai ke view index
-    //         return view('superuser.master.customer.index', $data);
- 
-	// }
+    
 
     public function create()
     {
@@ -203,18 +190,6 @@ class CustomerController extends Controller
                 'owner_name' => 'nullable|string',
                 'website' => 'nullable|string',
                 'plafon_piutang' => 'nullable|numeric',
-                // 'gps_latitude' => 'nullable|string',
-                // 'gps_longitude' => 'nullable|string',
-                // 'provinsi' => 'nullable|string',
-                // 'kota' => 'nullable|string',
-                // 'kecamatan' => 'nullable|string',
-                // 'kelurahan' => 'nullable|string',
-                // 'text_provinsi' => 'nullable|required_with:provinsi|string',
-                // 'text_kota' => 'nullable|required_with:kota|string',
-                // 'text_kecamatan' => 'nullable|required_with:kecamatan|string',
-                // 'text_kelurahan' => 'nullable|required_with:kelurahan|string',
-                // 'zipcode' => 'nullable|string',
-                // 'image_store' => 'nullable|image|mimes:jpeg,png,jpg|max:2048',
                 'image_ktp' => 'nullable|image|mimes:jpeg,png,jpg|max:2048',
                 'image_npwp' => 'nullable|image|mimes:jpeg,png,jpg|max:2048',
                 'notification_email' => 'nullable'
@@ -240,7 +215,6 @@ class CustomerController extends Controller
                 $customer->name = $request->name;
 
                 $customer->category_id = $request->category;
-                // $customer->type_id = $request->type;
                 $customer->count_member =  1;
                 $customer->zone = $request->zone;
 
@@ -289,8 +263,7 @@ class CustomerController extends Controller
 
                     $other_address = new CustomerOtherAddress;
 
-                    // $other_address->id = $customer->id . '.' . $customer->count_member;
-                    $other_address->id = implode(".", [$customer->id, $customer->count_member]);
+                    $other_address->id = $customer->id.'.'.$customer->count_member;
                     $other_address->customer_id = $customer->id;
                     $other_address->member_default = 1;
     
