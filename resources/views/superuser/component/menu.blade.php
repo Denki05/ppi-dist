@@ -16,36 +16,36 @@
                 <div class="submenu">
                   <ul class="submenu-item">
                     <li class="nav-item">
-                      <a class="nav-link" href="{{ route('superuser.master.company.show') }}" target="_blank">Company</a>
+                      <a class="nav-link" href="{{ route('superuser.master.company.show') }}" >Company</a>
                     </li>
                     <li class="nav-item">
-                      <a class="nav-link" href="{{ route('superuser.master.branch_office.index') }}" target="_blank">Branch Office</a>
+                      <a class="nav-link" href="{{ route('superuser.master.branch_office.index') }}" >Branch Office</a>
                     </li>
                     <li class="nav-item">
-                      <a class="nav-link" href="{{ route('superuser.master.warehouse.index') }}" target="_blank">Warehouse</a>
+                      <a class="nav-link" href="{{ route('superuser.master.warehouse.index') }}" >Warehouse</a>
                     </li>
                     <li class="dropdown">
                         <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-expanded="false">Product <span class="caret"></span></a>
                         <ul class="dropdown-menu" role="menu">
-                            <li><a href="{{ route('superuser.master.product.index') }}" target="_blank">Product List</a></li>
-                            <li><a href="{{ route('superuser.master.product_category.index') }}" target="_blank">Category</a></li>
-                            {{--<li><a href="{{ route('superuser.master.product_type.index') }}" target="_blank">Product Type</a></li>--}}
-                            {{--<li><a href="{{ route('superuser.master.brand_lokal.index') }}" target="_blank">Brand Lokal</a></li>--}}
-                            {{--<li><a href="{{ route('superuser.master.brand_reference.index') }}" target="_blank">Brand Fragrantica</a></li>--}}
-                            <li><a href="{{ route('superuser.master.sub_brand_reference.index') }}" target="_blank">Searah</a></li>
-                            {{--<li><a href="{{ route('superuser.master.catalog.index') }}" target="_blank">Catalog Product</a></li>--}}
-                            {{--<li><a href="{{ route('superuser.master.unit.index') }}" target="_blank">Unit</a></li>--}}
+                            <li><a href="{{ route('superuser.master.product.index') }}" >Product List</a></li>
+                            <li><a href="{{ route('superuser.master.product_category.index') }}" >Category</a></li>
+                            {{--<li><a href="{{ route('superuser.master.product_type.index') }}" >Product Type</a></li>--}}
+                            {{--<li><a href="{{ route('superuser.master.brand_lokal.index') }}" >Brand Lokal</a></li>--}}
+                            {{--<li><a href="{{ route('superuser.master.brand_reference.index') }}" >Brand Fragrantica</a></li>--}}
+                            <li><a href="{{ route('superuser.master.sub_brand_reference.index') }}" >Searah</a></li>
+                            {{--<li><a href="{{ route('superuser.master.catalog.index') }}">Catalog Product</a></li>--}}
+                            {{--<li><a href="{{ route('superuser.master.unit.index') }}">Unit</a></li>--}}
                         </ul>
                     </li>
                     {{--<li class="nav-item">
-                      <a class="nav-link" href="{{ route('superuser.master.unit.index') }}" target="_blank">Unit</a>
+                      <a class="nav-link" href="{{ route('superuser.master.unit.index') }}" >Unit</a>
                     </li>--}}
                     <li class="dropdown">
                         <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-expanded="false">Store <span class="caret"></span></a>
                         <ul class="dropdown-menu" role="menu">
-                            <li><a href="{{ route('superuser.master.customer.index') }}" target="_blank">Store List</a></li>
-                            <li><a href="{{ route('superuser.master.customer_category.index') }}" target="_blank">Category</a></li>
-                            {{--<li><a href="{{ route('superuser.master.customer_type.index') }}" target="_blank">Store Type</a></li>--}}
+                            <li><a href="{{ route('superuser.master.customer.index') }}" >Store List</a></li>
+                            <li><a href="{{ route('superuser.master.customer_category.index') }}" >Category</a></li>
+                            {{--<li><a href="{{ route('superuser.master.customer_type.index') }}" >Store Type</a></li>--}}
                             <!-- <li><a href="{{ route('superuser.master.customer_contact.index') }}" target="_blank">Contact</a></li> -->
                         </ul>
                     </li>
@@ -56,20 +56,20 @@
                         </ul>
                     </li>--}}
                     <li class="nav-item">
-                      <a class="nav-link" href="{{ route('superuser.master.question.index') }}" target="_blank">Question</a>
+                      <a class="nav-link" href="{{ route('superuser.master.question.index') }}" >Question</a>
                     </li>
                     <li class="nav-item">
-                      <a href="{{ route('superuser.master.contact.index') }}" target="_blank" class="nav-link {{ is_active_route('superuser.master.contact.index') }}">
+                      <a href="{{ route('superuser.master.contact.index') }}"  class="nav-link {{ is_active_route('superuser.master.contact.index') }}">
                         Contact
                       </a>
                     </li>
                     <li class="nav-item">
-                      <a href="{{ route('superuser.master.vendor.index') }}" target="_blank" class="nav-link {{ is_active_route('superuser.master.vendor.index') }}">
+                      <a href="{{ route('superuser.master.vendor.index') }}"  class="nav-link {{ is_active_route('superuser.master.vendor.index') }}">
                         Vendor
                       </a>
                     </li>
                     {{--<li class="nav-item">
-                      <a href="{{ route('superuser.master.ekspedisi.index') }}" target="_blank" class="nav-link {{ is_active_route('superuser.master.ekspedisi.index') }}">
+                      <a href="{{ route('superuser.master.ekspedisi.index') }}"  class="nav-link {{ is_active_route('superuser.master.ekspedisi.index') }}">
                         Ekspedisi
                       </a>
                     </li>--}}
@@ -86,16 +86,16 @@
                 <div class="submenu">
                   <ul class="submenu-item">
                     <li class="nav-item">
-                      <a href="{{ route('superuser.penjualan.setting_price.index') }}"  target="_blank" class="nav-link {{ is_active_route('superuser.master.ekspedisi.index') }}">
+                      <a href="{{ route('superuser.penjualan.setting_price.index') }}"   class="nav-link {{ is_active_route('superuser.master.ekspedisi.index') }}">
                         Setting Price
                       </a>
                     </li>
                     <li class="dropdown">
                         <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-expanded="false">Sales Order <span class="caret"></span></a>
                         <ul class="dropdown-menu" role="menu">
-                            <li class="nav-item"><a href="{{ route('superuser.penjualan.sales_order.index_awal') }}" target="_blank">Sales Order Awal (SOA)</a></li>
-                            <li class="nav-item"><a href="{{ route('superuser.penjualan.sales_order.index_lanjutan') }}" target="_blank">Sales Order Lanjutan (SOL)</a></li>
-                            <li class="nav-item"><a href="{{ route('superuser.penjualan.sales_order_ppn.index') }}" target="_blank">SO PPN</a></li>
+                            <li class="nav-item"><a href="{{ route('superuser.penjualan.sales_order.index_awal') }}" >Sales Order Awal (SOA)</a></li>
+                            <li class="nav-item"><a href="{{ route('superuser.penjualan.sales_order.index_lanjutan') }}" >Sales Order Lanjutan (SOL)</a></li>
+                            <li class="nav-item"><a href="{{ route('superuser.penjualan.sales_order_ppn.index') }}" >SO PPN</a></li>
                             <!-- <li class="nav-item"><a href="{{ route('superuser.penjualan.sales_order.index_mutasi') }}" target="_blank">Sales Order Mutation (SOM)</a></li> -->
                             <!-- <li class="nav-item"><a href="{{ route('superuser.penjualan.canvasing.index') }}" target="_blank">Canvasing (Sales Mutation)</a></li> -->
                         </ul>
@@ -108,8 +108,8 @@
                     <li class="dropdown">
                         <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-expanded="false">Delivery Order (DO) <span class="caret"></span></a>
                         <ul class="dropdown-menu" role="menu">
-                            <li class="nav-item"><a href="{{ route('superuser.penjualan.delivery_order.index') }}" target="_blank">Proses DO (DO)</a></li>
-                            <li class="nav-item"><a href="{{ route('superuser.penjualan.delivery_order_mutation.index') }}" target="_blank">Delivery Order Mutation (DOM)</a></li>
+                            <li class="nav-item"><a href="{{ route('superuser.penjualan.delivery_order.index') }}" >Proses DO (DO)</a></li>
+                            <li class="nav-item"><a href="{{ route('superuser.penjualan.delivery_order_mutation.index') }}">Delivery Order Mutation (DOM)</a></li>
                         </ul>
                     </li>
                     <!-- <li class="nav-item">
@@ -130,10 +130,10 @@
                 <div class="submenu">
                   <ul class="submenu-item">
                     <li class="nav-item">
-                      <a class="nav-link" href="{{ route('superuser.gudang.stock.index') }}" target="_blank">Stock</a>
+                      <a class="nav-link" href="{{ route('superuser.gudang.stock.index') }}" >Stock</a>
                     </li>
                     <li class="nav-item">
-                      <a class="nav-link" href="{{ route('superuser.gudang.stock_adjustment.index') }}" target="_blank">Stock Adjustment</a>
+                      <a class="nav-link" href="{{ route('superuser.gudang.stock_adjustment.index') }}" >Stock Adjustment</a>
                     </li>
                     
                   </ul>
@@ -152,10 +152,10 @@
                       <a class="nav-link" href="{{ route('superuser.finance.proforma.index') }}" target="_blank">Proforma</a>
                     </li> -->
                     <li class="nav-item">
-                      <a class="nav-link" href="{{ route('superuser.finance.invoicing.index') }}" target="_blank">Invoicing</a>
+                      <a class="nav-link" href="{{ route('superuser.finance.invoicing.index') }}" >Invoicing</a>
                     </li>
                     <li class="nav-item">
-                      <a class="nav-link" href="{{ route('superuser.finance.payable.index') }}" target="_blank">Payable</a>
+                      <a class="nav-link" href="{{ route('superuser.finance.payable.index') }}" >Payable</a>
                     </li>
                   </ul>
                 </div>
@@ -170,13 +170,13 @@
                 <div class="submenu">
                   <ul class="submenu-item">
                     <li class="nav-item">
-                      <a class="nav-link" href="{{ route('superuser.report.sales.index') }}" target="_blank">Sales</a>
+                      <a class="nav-link" href="{{ route('superuser.report.sales.index') }}" >Sales</a>
                     </li>
                     <li class="nav-item">
-                      <a class="nav-link" href="{{ route('superuser.report.revenue.index') }}" target="_blank">Revenue</a>
+                      <a class="nav-link" href="{{ route('superuser.report.revenue.index') }}" >Revenue</a>
                     </li>
                     <li class="nav-item">
-                      <a class="nav-link" href="{{ route('superuser.report.product_performance.index') }}" target="_blank">Product Performance</a>
+                      <a class="nav-link" href="{{ route('superuser.report.product_performance.index') }}" >Product Performance</a>
                     </li>
                   </ul>
                 </div>

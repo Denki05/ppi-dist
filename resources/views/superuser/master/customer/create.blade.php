@@ -197,13 +197,29 @@
                                     </div>
                                   </div>
                                 </div>
-                                <div class="col">
+                                <!-- <div class="col">
                                   <div class="form-group row">
                                     <div class="col-sm-2">Customer PPN</div>
                                     <div class="col-sm-10">
                                       <div class="form-check">
                                         <input class="form-check-input" type="checkbox" value="1" id="has_ppn" name="has_ppn">
                                         <span style="font-style: italic;" class="text-danger">*check for customers ppn</span></label><br>
+                                      </div>
+                                    </div>
+                                  </div>
+                                </div> -->
+                                <div class="col">
+                                  <div class="form-group row">
+                                    <div class="col-sm-10">
+                                      <div class="form-row">
+                                        <div class="col">
+                                          <input class="form-check-input" type="checkbox" value="1" id="has_ppn" name="has_ppn">
+                                          <span style="font-style: italic;" class="text-danger">*check for customers ppn</span></label><br>
+                                        </div>
+                                        <div class="col">
+                                          <input class="form-check-input" type="checkbox" value="1" id="has_tempo" name="has_tempo">
+                                          <span style="font-style: italic;" class="text-danger">*check for customers tempo</span></label><br>
+                                        </div>
                                       </div>
                                     </div>
                                   </div>

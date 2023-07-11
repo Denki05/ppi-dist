@@ -228,7 +228,8 @@ class CustomerController extends Controller
                 $customer->website = $request->website;
                 $customer->plafon_piutang = ($request->plafon_piutang) ? $request->plafon_piutang : 0;
                 $customer->saldo = $request->plafon_piutang;
-                $customer->has_ppn = 0;
+                $customer->has_ppn = ($request->has_ppn) ? $request->has_ppn : 0;
+                $customer->has_tempo = ($request->has_tempo) ? $request->has_tempo : 0;
 
                 $customer->gps_latitude = $request->gps_latitude;
                 $customer->gps_longitude = $request->gps_longitude;
@@ -361,15 +362,6 @@ class CustomerController extends Controller
                 'plafon_piutang' => 'nullable|numeric',
                 'gps_latitude' => 'nullable|string',
                 'gps_longitude' => 'nullable|string',
-                // 'provinsi' => 'nullable|string',
-                // 'kota' => 'nullable|string',
-                // 'kecamatan' => 'nullable|string',
-                // 'kelurahan' => 'nullable|string',
-                // 'text_provinsi' => 'nullable|required_with:provinsi|string',
-                // 'text_kota' => 'nullable|required_with:kota|string',
-                // 'text_kecamatan' => 'nullable|required_with:kecamatan|string',
-                // 'text_kelurahan' => 'nullable|required_with:kelurahan|string',
-                // 'zipcode' => 'nullable|string',
                 'image_npwp' => 'nullable|image|mimes:jpeg,png,jpg|max:2048',
                 'image_ktp' => 'nullable|image|mimes:jpeg,png,jpg|max:2048',
                 'image_store' => 'nullable|image|mimes:jpeg,png,jpg|max:2048',
@@ -407,6 +399,7 @@ class CustomerController extends Controller
                 $customer->plafon_piutang = ($request->plafon_piutang) ? $request->plafon_piutang : 0;
                 $customer->saldo = $request->plafon_piutang;
                 $customer->has_ppn = ($request->has_ppn) ? $request->has_ppn : 0;
+                $customer->has_tempo = ($request->has_tempo) ? $request->has_tempo : 0;
 
                 $customer->gps_latitude = $request->gps_latitude;
                 $customer->gps_longitude = $request->gps_longitude;

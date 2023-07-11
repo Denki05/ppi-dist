@@ -1,7 +1,8 @@
 <?php
 
 Route::group([
-    'middleware' => ['role:Developer|SuperAdmin|Admin','auth:superuser'],
+    // 'middleware' => ['role:Developer|SuperAdmin|Admin|Superuser','auth:superuser'],
+    'middleware' => ['auth:superuser'],
     'as' => 'master.',
     'prefix' => '/master',
     'namespace' => 'Master'
