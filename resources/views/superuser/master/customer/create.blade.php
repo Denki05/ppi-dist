@@ -1,6 +1,13 @@
 @extends('superuser.app')
 
 @section('content')
+<nav class="breadcrumb bg-white push">
+  <span class="breadcrumb-item">Master</span>
+  <a class="breadcrumb-item" href="{{ route('superuser.master.customer.index') }}">Store</a>
+  <span class="breadcrumb-item active">Create</span>
+</nav>
+<div id="alert-block"></div>
+
 <div class="block">
             <div class="block-conten" align="center">
                 <div class="col-md-10 col-md-offset-1">
