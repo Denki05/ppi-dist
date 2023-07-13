@@ -228,11 +228,14 @@
                                       <div class="form-row">
                                         <div class="col">
                                           <input class="form-check-input" type="checkbox" value="1" id="has_ppn" name="has_ppn">
-                                          <span style="font-style: bold;" class="text-danger"><b>*check for customers ppn</b></span></label><br>
+                                          <span style="font-style: bold;" class="text-danger"><b>*Customers ppn</b></span></label><br>
                                         </div>
                                         <div class="col">
                                           <input class="form-check-input" type="checkbox" value="1" id="has_tempo" name="has_tempo">
-                                          <span style="font-style: bold;" class="text-danger"><b>*check for customers tempo</b></span></label><br>
+                                          <span style="font-style: bold;" class="text-danger"><b>*Customers tempo</b></span></label><br>
+                                        </div>
+                                        <div class="col">
+                                          <input class="form-control" id="tempo_limit" value="14" name="tempo_limit" placeholder="Tempo limit" disabled>
                                         </div>
                                       </div>
                                     </div>
@@ -344,6 +347,17 @@
         showDrag: false,
         showRemove: false
       },
+    });
+
+    $('#has_tempo').click(function () {
+        //check if checkbox is checked
+        if ($(this).is(':checked')) {
+
+            $('#tempo_limit').removeAttr('disabled'); //enable input
+
+        } else {
+            $('#tempo_limit').attr('disabled', true); //disable input
+        }
     });
 
     // $('#image_store').fileinput({

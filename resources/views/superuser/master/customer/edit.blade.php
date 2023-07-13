@@ -229,7 +229,7 @@
                                           <input type="text" class="form-control" name="name_card_ktp" placeholder="Name Card" value="{{$ktp[0]}}">
                                         </div>
                                         <div class="col">
-                                          <input type="number" class="form-control" name="ktp"  placeholder="Number Card" value="{{$ktp[0]}}">
+                                          <input type="number" class="form-control" name="ktp"  placeholder="Number Card" value="{{$ktp[1]}}">
                                         </div>
                                       </div>
                                     </div>
@@ -247,7 +247,7 @@
                                           <input type="text" class="form-control" name="name_card_npwp" placeholder="Name Card" value="{{$npwp[0]}}">
                                         </div>
                                         <div class="col">
-                                          <input type="number" class="form-control" name="npwp" placeholder="Number Card" value="{{$npwp[0]}}">
+                                          <input type="number" class="form-control" name="npwp" placeholder="Number Card" value="{{$npwp[1]}}">
                                         </div>
                                       </div>
                                     </div>
