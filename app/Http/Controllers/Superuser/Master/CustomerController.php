@@ -230,6 +230,7 @@ class CustomerController extends Controller
                 $customer->saldo = $request->plafon_piutang;
                 $customer->has_ppn = ($request->has_ppn) ? $request->has_ppn : 0;
                 $customer->has_tempo = ($request->has_tempo) ? $request->has_tempo : 0;
+                $customer->tempo_limit = ($request->tempo_limit) ? $request->tempo_limit : 0;
 
                 $customer->gps_latitude = $request->gps_latitude;
                 $customer->gps_longitude = $request->gps_longitude;
