@@ -28,7 +28,12 @@ class CustomerOtherAddress extends Model
         'YES' => 1
     ];
     
-    public function customer()
+    // public function customer()
+    // {
+    //     return $this->BelongsTo('App\Entities\Master\Customer', 'customer_id');
+    // }
+
+    public function store()
     {
         return $this->BelongsTo('App\Entities\Master\Customer', 'customer_id');
     }
