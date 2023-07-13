@@ -77,7 +77,7 @@
                                     <input type="text" name="phone" placeholder="Phone" class="form-control">
                                   </div>
                                 </div> -->
-                                <div class="form-group row">
+                                  <div class="form-group row">
                                     <label for="ktp" class="col-sm-2 col-form-label">Telepone <span class="text-danger">*</span></label>
                                     <div class="col-sm-10">
                                       <!-- <input type="number" class="form-control" id="ktp" name="ktp" min="0" value="0"> -->
@@ -257,7 +257,7 @@
                                       <!-- <input type="number" class="form-control" id="ktp" name="ktp" min="0" value="0"> -->
                                       <div class="form-row">
                                         <div class="col">
-                                          <input type="text" class="form-control" name="name_card_ktp" placeholder="Name Card">
+                                          <input type="text" class="form-control" name="name_card_ktp" placeholder="Name Card" value="-">
                                         </div>
                                         <div class="col">
                                           <input type="text" class="form-control" name="ktp" min="0" value="0" placeholder="Number Card">
@@ -272,7 +272,7 @@
                                     <div class="col-sm-10">
                                     <div class="form-row">
                                         <div class="col">
-                                          <input type="text" class="form-control" name="name_card_npwp" placeholder="Name Card">
+                                          <input type="text" class="form-control" name="name_card_npwp" placeholder="Name Card" value="-">
                                         </div>
                                         <div class="col">
                                           <input type="text" class="form-control" name="npwp" min="0" value="0" placeholder="Number Card">

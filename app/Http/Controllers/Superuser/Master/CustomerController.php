@@ -179,20 +179,18 @@ class CustomerController extends Controller
     {
         if ($request->ajax()) {
             $validator = Validator::make($request->all(), [
-                // 'code' => 'required|string|unique:master_customers,code',
                 'name' => 'required|string',
                 'category' => 'required|integer',
-                // 'email' => 'nullable|email',
                 'phone' => 'nullable|string',
                 'npwp' => 'nullable|string',
-                'ktp' => 'nullable|string',
+                // 'ktp' => 'nullable|string',
                 'address' => 'required|string',
                 'owner_name' => 'nullable|string',
                 'website' => 'nullable|string',
                 'plafon_piutang' => 'nullable|numeric',
                 'image_ktp' => 'nullable|image|mimes:jpeg,png,jpg|max:2048',
                 'image_npwp' => 'nullable|image|mimes:jpeg,png,jpg|max:2048',
-                'notification_email' => 'nullable'
+                // 'notification_email' => 'nullable'
             ]);
 
             if ($validator->fails()) {
@@ -336,6 +334,10 @@ class CustomerController extends Controller
         $data['category'] = CustomerCategory::get();
         $data['customer_types'] = MasterRepo::customer_types();
         $data['provinces'] = Province::all();
+        // $data['kabupaten'] = Regency::all();
+        // $data['kecamatan'] = District::all();
+        // $data['kelurahan'] = Village::all();
+        // $data['zipcode'] = Zipcode::all();
 
         return view('superuser.master.customer.edit', $data);
     }
@@ -390,9 +392,9 @@ class CustomerController extends Controller
                 // $customer->type_id = $request->type;
 
                 $customer->email = $request->email;
-                $customer->phone = $request->phone;
-                $customer->npwp = $request->npwp;
-                $customer->ktp = $request->ktp;
+                $customer->phone = implode(",", [$request->phone1, $request->phone2]);
+                $customer->npwp = implode("/", [$request->name_card_npwp,$request->npwp]);
+                $customer->ktp = implode("/", [$request->name_card_ktp,$request->ktp]);
                 $customer->address = $request->address;
 
                 $customer->owner_name = $request->owner_name;
@@ -401,6 +403,7 @@ class CustomerController extends Controller
                 $customer->saldo = $request->plafon_piutang;
                 $customer->has_ppn = ($request->has_ppn) ? $request->has_ppn : 0;
                 $customer->has_tempo = ($request->has_tempo) ? $request->has_tempo : 0;
+                $customer->tempo_limit = ($request->tempo_limit) ? $request->tempo_limit : 0;
 
                 $customer->gps_latitude = $request->gps_latitude;
                 $customer->gps_longitude = $request->gps_longitude;

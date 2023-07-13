@@ -81,11 +81,11 @@
       <thead class="thead-dark">
         <tr>
           <th></th>
-          <th>Code</th>
           <th>Store</th>
-          <th>Address</th>
-          <th>Region</th>
+          <th>City</th>
+          <th>Provinsi</th>
           <th>Category</th>
+          <th>Tempo</th>
           <th>Status</th>
           <th scope="col">Action</th>
         </tr>
@@ -103,11 +103,17 @@
                 </div>
               </td> -->
               <td><i class="tabularinfo__icon fa fa-plus"></i></td>
-              <td>{{ $row->code }}</td>
               <td>{{ $row->name }}</td>
-              <td>{{ $row->address }} - <br><b>{{ $row->text_kota ?? '' }}</b></br></td>
-              <td><b>{{ $row->text_provinsi }}</b></td>
+              <td>{{ $row->text_kota }}</td>
+              <td><b>{{ $row->text_provinsi ?? '' }}</b></td>
               <td>{{ $row->category->name ?? '-' }}</td>
+              <td>
+                @if($row->has_tempo == 0)
+                  <span class="badge badge-danger">NO</span>
+                @elseif($row->has_tempo == 1)
+                  <span class="badge badge-success">YES - {{$row->tempo_limit ?? ''}}</span>
+                @endif
+              </td>
               <td>
                 @if($row->status == $row::STATUS['ACTIVE'])
                   <span class="badge badge-success">ACTIVE</span>

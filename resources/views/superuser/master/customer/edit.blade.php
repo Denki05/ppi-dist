@@ -1,5 +1,11 @@
 @extends('superuser.app')
-
+<nav class="breadcrumb bg-white push">
+  <span class="breadcrumb-item">Master</span>
+  <a class="breadcrumb-item" href="{{ route('superuser.master.customer.index') }}">Store</a>
+  <a class="breadcrumb-item" href="{{ route('superuser.master.customer.show', $customer->id) }}">{{ $customer->name }}</a>
+  <span class="breadcrumb-item active">Edit</span>
+</nav>
+<div id="alert-block"></div>
 @section('content')
 <div class="block">
             <div class="block-conten" align="center">
@@ -65,12 +71,23 @@
                                 </div>
                               </div>
                               <div class="col">
+                                <?php 
+                                  $phone = explode(",", $customer->phone);
+                                ?>
                                 <div class="form-group row">
-                                  <label for="phone" class="col-sm-2 col-form-label">Telp <span class="text-danger">*</span></label>
-                                  <div class="col-sm-10">
-                                    <input type="number" name="phone" placeholder="Phone" class="form-control" value="{{ $customer->phone }}">
+                                    <label for="ktp" class="col-sm-2 col-form-label">Telepone <span class="text-danger">*</span></label>
+                                    <div class="col-sm-10">
+                                      <!-- <input type="number" class="form-control" id="ktp" name="ktp" min="0" value="0"> -->
+                                      <div class="form-row">
+                                        <div class="col">
+                                          <input type="text" class="form-control" name="phone1" min="0" value="{{$phone[0]}}" placeholder="Telephone 1">
+                                        </div>
+                                        <div class="col">
+                                          <input type="text" class="form-control" name="phone2" min="0" value="{{$phone[1]}}" placeholder="Telephone 2">
+                                        </div>
+                                      </div>
+                                    </div>
                                   </div>
-                                </div>
                               </div>
                             </div>
                             <div class="row">
@@ -78,7 +95,7 @@
                                 <div class="form-group row">
                                   <label for="email" class="col-sm-2 col-form-label">email</label>
                                   <div class="col-sm-10">
-                                    <input type="email" name="email" placeholder="Email" class="form-control" value="{{ $customer->email }}">
+                                    <input type="text" name="email" placeholder="Email" class="form-control" value="{{ $customer->email }}">
                                   </div>
                                 </div>
                               </div>
@@ -118,35 +135,35 @@
                                     <option value="{{ $provinsi->prov_id }}" {{ ($provinsi->prov_id == $customer->provinsi ) ? 'selected' : '' }}>{{ $provinsi->prov_name }}</option>
                                     @endforeach
                                   </select>
-                                  <input type="hidden" name="text_provinsi">
+                                  <input type="hidden" name="text_provinsi" value="{{$customer->text_provinsi}}">
                                 </div>
                                 <div class="form-group col-md-2">
                                   <label for="kota">Kota</label>
                                   <select class="js-select2 form-control" id="kota" name="kota" style="width:100%;" placeholder="Pilih Kota">
-                                    <option>Pilih Kota</option>
+                                    <option value="{{$customer->kota}}">{{$customer->text_kota}}</option>
                                   </select>
-                                  <input type="hidden" name="text_kota">
+                                  <input type="hidden" name="text_kota" value="{{$customer->text_kota}}">
                                 </div>
                                 <div class="form-group col-md-2">
                                   <label for="kecamatan">Kecamatan</label>
                                   <select class="js-select2 form-control" id="kecamatan" name="kecamatan" style="width:100%;" placeholder="Pilih Kecamatan">
-                                    <option>Pilih Kecamatan</option>
+                                    <option value="{{$customer->kecamatan}}">{{$customer->text_kecamatan}}</option>
                                   </select>
-                                  <input type="hidden" name="text_kecamatan">
+                                  <input type="hidden" name="text_kecamatan" value="{{$customer->text_kecamatan}}">
                                 </div>
                                 <div class="form-group col-md-2">
                                   <label for="kelurahan">Kelurahan</label>
                                   <select class="js-select2 form-control" id="kelurahan" name="kelurahan" style="width:100%;" placeholder="Pilih Kelurahan">
-                                    <option>Pilih Kelurahan</option>
+                                    <option value="{{$customer->kelurahan}}">{{$customer->text_kelurahan}}</option>
                                   </select>
-                                  <input type="hidden" name="text_kelurahan">
+                                  <input type="hidden" name="text_kelurahan" value="{{$customer->text_kelurahan}}">
                                 </div>
                                 <div class="form-group col-md-2">
                                   <label for="zipcode">Zipcode</label>
                                   <select class="js-select2 form-control" id="zipcode" name="zipcode" style="width:100%;" placeholder="Pilih Kode Pos">
-                                    <option>Pilih Kode Pos</option>
+                                    <option value="{{$customer->zipcode}}">{{$customer->zipcode}}</option>
                                   </select>
-                                  <input type="hidden" name="text_zipcode">
+                                  <input type="hidden" name="text_zipcode" value="{{$customer->zipcode}}">
                                 </div>
                               </div>
                               <div class="row">
@@ -204,11 +221,15 @@
                                       <div class="form-row">
                                         <div class="col">
                                           <input class="form-check-input" type="checkbox" value="1" id="has_ppn" name="has_ppn">
-                                          <span style="font-style: italic;" class="text-danger">*check for customers ppn</span></label><br>
+                                          <span class="text-danger"><b>*Customers ppn</b></span></label><br>
                                         </div>
                                         <div class="col">
-                                          <input class="form-check-input" type="checkbox" value="1" id="has_tempo" name="has_tempo">
-                                          <span style="font-style: italic;" class="text-danger">*check for customers tempo</span></label><br>
+                                          <!-- <input class="form-check-input" type="checkbox" value="1" id="has_tempo" name="has_tempo"> -->
+                                          <input type="checkbox" value="1" name="has_tempo" @if($customer->has_tempo == '1') checked="checked" @endif />
+                                          <span class="text-danger"><b>*Customers tempo</b></span></label><br>
+                                        </div>
+                                        <div class="col">
+                                          <input class="form-control" id="tempo_limit" value="{{$customer->tempo_limit}}" name="tempo_limit" placeholder="Tempo limit">
                                         </div>
                                       </div>
                                     </div>
@@ -444,6 +465,17 @@
         })
       })
     })
+
+    $('#has_tempo').click(function () {
+        //check if checkbox is checked
+        if ($(this).is(':checked')) {
+
+            $('#tempo_limit').removeAttr('disabled'); //enable input
+
+        } else {
+            $('#tempo_limit').attr('disabled', true); //disable input
+        }
+    });
   })
 </script>
 @endpush
