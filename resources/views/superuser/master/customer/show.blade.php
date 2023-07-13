@@ -67,8 +67,8 @@
                     <label class="col-md-3 col-form-label text-right">Foto KTP</label>
                     <div class="col-md-7">
                         <div class="form-control-plaintext">
-                            <a href="{{ $customer->img_npwp }}" class="img-link img-link-zoom-in img-thumb img-lightbox">
-                                <img src="{{ $customer->img_npwp }}" class="img-fluid img-show-small">
+                            <a href="{{ $customer->img_ktp }}" class="img-link img-link-zoom-in img-thumb img-lightbox">
+                                <img src="{{ $customer->img_ktp }}" class="img-fluid img-show-small">
                             </a>
                         </div>
                     </div>

@@ -222,14 +222,14 @@
                                     <div class="col-sm-10">
                                       <!-- <input type="number" class="form-control" id="ktp" name="ktp" min="0" value="0"> -->
                                       <div class="form-row">
-                                        @php 
-                                          $ktp = explode('/', $customer->ktp);
-                                        @endphp
+                                       <?php 
+                                        $ktp = explode("/", $customer->ktp);
+                                       ?>
                                         <div class="col">
                                           <input type="text" class="form-control" name="name_card_ktp" placeholder="Name Card" value="{{$ktp[0]}}">
                                         </div>
                                         <div class="col">
-                                          <input type="number" class="form-control" name="ktp"  placeholder="Number Card" value="{{$ktp[1]}}">
+                                          <input type="number" class="form-control" name="ktp"  placeholder="Number Card" value="{{$ktp[0]}}">
                                         </div>
                                       </div>
                                     </div>
@@ -240,14 +240,14 @@
                                     <label for="npwp" class="col-sm-2 col-form-label">NPWP <span class="text-danger">*</span></label>
                                     <div class="col-sm-10">
                                     <div class="form-row">
-                                        @php
-                                          $npwp = explode('/', $customer->npwp);
-                                        @endphp
+                                      <?php 
+                                        $npwp = explode("/", $customer->npwp);
+                                       ?>
                                         <div class="col">
                                           <input type="text" class="form-control" name="name_card_npwp" placeholder="Name Card" value="{{$npwp[0]}}">
                                         </div>
                                         <div class="col">
-                                          <input type="number" class="form-control" name="npwp" placeholder="Number Card" value="{{$npwp[1]}}">
+                                          <input type="number" class="form-control" name="npwp" placeholder="Number Card" value="{{$npwp[0]}}">
                                         </div>
                                       </div>
                                     </div>

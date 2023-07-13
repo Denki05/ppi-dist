@@ -67,7 +67,7 @@
                                 <div class="form-group row">
                                   <label for="phone" class="col-sm-2 col-form-label">Telp <span class="text-danger">*</span></label>
                                   <div class="col-sm-10">
-                                    <input type="number" name="phone" placeholder="Phone" class="form-control">
+                                    <input type="text" name="phone" placeholder="Phone" class="form-control">
                                   </div>
                                 </div>
                               </div>
@@ -214,11 +214,11 @@
                                       <div class="form-row">
                                         <div class="col">
                                           <input class="form-check-input" type="checkbox" value="1" id="has_ppn" name="has_ppn">
-                                          <span style="font-style: italic;" class="text-danger">*check for customers ppn</span></label><br>
+                                          <span style="font-style: bold;" class="text-danger"><b>*check for customers ppn</b></span></label><br>
                                         </div>
                                         <div class="col">
                                           <input class="form-check-input" type="checkbox" value="1" id="has_tempo" name="has_tempo">
-                                          <span style="font-style: italic;" class="text-danger">*check for customers tempo</span></label><br>
+                                          <span style="font-style: bold;" class="text-danger"><b>*check for customers tempo</b></span></label><br>
                                         </div>
                                       </div>
                                     </div>
@@ -236,7 +236,7 @@
                                           <input type="text" class="form-control" name="name_card_ktp" placeholder="Name Card">
                                         </div>
                                         <div class="col">
-                                          <input type="number" class="form-control" name="ktp" min="0" value="0" placeholder="Number Card">
+                                          <input type="text" class="form-control" name="ktp" min="0" value="0" placeholder="Number Card">
                                         </div>
                                       </div>
                                     </div>
@@ -251,7 +251,7 @@
                                           <input type="text" class="form-control" name="name_card_npwp" placeholder="Name Card">
                                         </div>
                                         <div class="col">
-                                          <input type="number" class="form-control" name="npwp" min="0" value="0" placeholder="Number Card">
+                                          <input type="text" class="form-control" name="npwp" min="0" value="0" placeholder="Number Card">
                                         </div>
                                       </div>
                                     </div>

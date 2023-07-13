@@ -24,6 +24,51 @@
 
 <div class="block">
   <div class="block-content">
+  <form>
+            <div class="row">
+              <div class="col-lg-3">
+                <div class="form-group row">
+                  {{--<label class="col-md-3 col-form-label text-right">Customer</label>
+                  <div class="col-md-9">
+                    <select class="form-control js-select2" name="customer_name">
+                      <option value="">==All Customer==</option>
+                      @foreach($customers as $index => $row)
+                      <option value="{{$row->name}}">{{$row->name}}</option>
+                      @endforeach
+                    </select>
+                  </div>--}}
+                </div>   
+              </div>
+              <div class="col-lg-3">
+                  <div class="form-group row">
+                    {{--<label class="col-md-3 col-form-label text-right">Area</label>
+                    <div class="col-md-9">
+                      <select class="form-control js-select2" name="province">
+                        <option value="">==All Provinsi==</option>
+                        @foreach($provinsi as $index => $row)
+                        <option value="{{$row->prov_id}}">{{$row->prov_name}}</option>
+                        @endforeach
+                      </select>
+                    </div>--}}
+                  </div>
+              </div>
+              <div class="col-lg-6">
+                <div class="form-group row">
+                  <div class="col-md-3">
+                    <!-- <label class="col-md-3 col-form-label text-right">Search</label> -->
+                  </div>
+                  <div class="col-md-9">
+                    <div class="input-group mb-3">
+                        <input type="text" class="form-control" placeholder="Search" name="search">
+                        <div class="input-group-append">
+                          <button type="submit" class="btn btn-primary"><i class="fa fa-search"></i></button>
+                        </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
     <a href="{{route('superuser.master.customer.create')}}">
       <button type="button" class="btn btn-primary btn-lg active">Create</button>
     </a>
@@ -114,10 +159,10 @@
                   <td colspan="8">
                     <table class="table-active table table-bordered">
                             <tr>
-                                <th width="10%">Member</th>
-                                <th width="10%">Alamat</th>
-                                <th width="10%">Default</th>
-                                <th width="5%">Action</th>
+                                <th width="10%">MEMBER</th>
+                                <th width="10%">ALAMAT</th>
+                                <th width="10%">DEFAULT</th>
+                                <th width="5%">ACTION</th>
                                 <!-- <th width="5%">Other Action</tg> -->
                             </tr>
 
@@ -169,6 +214,7 @@
       </tbody>
     </table>
   </div>
+  </form>
   <div class="d-flex justify-content-center">
     {!! $customers->links() !!}
   </div>
@@ -218,8 +264,8 @@
     $('.js-select2').select2({
     });
 
-    $(".table").DataTable({
-      searching: false,
+    $("#customer_table").DataTable({
+      searching: true,
     });
   });
 </script>

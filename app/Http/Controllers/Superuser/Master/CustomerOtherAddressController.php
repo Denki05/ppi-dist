@@ -142,21 +142,22 @@ class CustomerOtherAddressController extends Controller
                     abort(404);
                 }
 
-                // $countMember = DB::table('master_customers')
-                //                 ->where('id', $customer->id)
-                //                 ->selectRaw('count_member as kode')
-                //                 ->get(); 
+                $countMember = DB::table('master_customers')
+                                ->where('id', $customer->id)
+                                ->selectRaw('count_member as kode')
+                                ->get(); 
                 
-                // $kd = "";
+                $kd = "";
 
-                // foreach ($countMember as $key)
-                // {
-                //     $tmp = ((int) $key->kode)+1;
-                //     $kd = sprintf("%01s", $tmp);
-                // }
+                foreach ($countMember as $key)
+                {
+                    $tmp = ((int) $key->kode)+1;
+                    $kd = sprintf("%01s", $tmp);
+                }
 
                 $other_address = new CustomerOtherAddress;
 
+                $other_address->id = $customer->id.'.'.$kd;
                 $other_address->customer_id = $customer->id;
                 $other_address->member_default = 0;
 
