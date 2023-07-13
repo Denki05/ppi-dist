@@ -219,7 +219,7 @@ class CustomerController extends Controller
                 $customer->zone = $request->zone;
 
                 $customer->email = $request->email;
-                $customer->phone = $request->phone;
+                $customer->phone = implode(",", [$request->phone1, $request->phone2]);
                 $customer->npwp = implode("/", [$request->name_card_npwp,$request->npwp]);
                 $customer->ktp = implode("/", [$request->name_card_ktp,$request->ktp]);
                 $customer->address = $request->address;

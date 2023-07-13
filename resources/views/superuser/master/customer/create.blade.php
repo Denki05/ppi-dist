@@ -64,12 +64,26 @@
                                 </div>
                               </div>
                               <div class="col">
-                                <div class="form-group row">
+                                <!-- <div class="form-group row">
                                   <label for="phone" class="col-sm-2 col-form-label">Telp <span class="text-danger">*</span></label>
                                   <div class="col-sm-10">
                                     <input type="text" name="phone" placeholder="Phone" class="form-control">
                                   </div>
-                                </div>
+                                </div> -->
+                                <div class="form-group row">
+                                    <label for="ktp" class="col-sm-2 col-form-label">Telepone <span class="text-danger">*</span></label>
+                                    <div class="col-sm-10">
+                                      <!-- <input type="number" class="form-control" id="ktp" name="ktp" min="0" value="0"> -->
+                                      <div class="form-row">
+                                        <div class="col">
+                                          <input type="text" class="form-control" name="phone1" min="0" value="0" placeholder="Telephone 1">
+                                        </div>
+                                        <div class="col">
+                                          <input type="text" class="form-control" name="phone2" min="0" value="0" placeholder="Telephone 2">
+                                        </div>
+                                      </div>
+                                    </div>
+                                  </div>
                               </div>
                             </div>
                             <div class="row">
@@ -77,7 +91,7 @@
                                 <div class="form-group row">
                                   <label for="email" class="col-sm-2 col-form-label">email</label>
                                   <div class="col-sm-10">
-                                    <input type="email" name="email" placeholder="Email" class="form-control">
+                                    <input type="text" name="email" placeholder="Email" class="form-control">
                                   </div>
                                 </div>
                               </div>
