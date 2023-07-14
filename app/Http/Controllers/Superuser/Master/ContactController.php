@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Superuser\Master;
 
 use App\DataTables\Master\ContactTable;
 use App\Entities\Master\Contact;
+use App\Entities\Master\ContactPosition;
 use App\Entities\Master\Customer;
 use App\Entities\Master\CustomerContact;
 use App\Entities\Master\VendorContact;
@@ -14,6 +15,7 @@ use App\Exports\Master\ContactImportTemplate;
 use App\Http\Controllers\Controller;
 use App\Imports\Master\ContactImport;
 use App\Entities\Setting\UserMenu;
+use App\Helper\UploadMedia;
 use DB;
 use Excel;
 use Illuminate\Http\Request;
@@ -72,6 +74,7 @@ class ContactController extends Controller
                 return redirect()->route('superuser.index')->with('error','Anda tidak punya akses untuk membuka menu terkait');
             }
         }
+
         return view('superuser.master.contact.index');
     }
 
@@ -84,7 +87,9 @@ class ContactController extends Controller
             }
         }
 
-        return view('superuser.master.contact.create');
+        $data['position'] = Contact::get()->unique('position');
+
+        return view('superuser.master.contact.create', $data);
     }
 
     public function store(Request $request)
@@ -98,7 +103,7 @@ class ContactController extends Controller
                 'dob' => 'nullable|date|date_format:d-m-Y',
                 'npwp' => 'nullable',
                 'ktp' => 'nullable',
-                'address' => 'nullable'
+                // 'address' => 'nullable'
             ]);
 
             if ($validator->fails()) {
@@ -122,20 +127,19 @@ class ContactController extends Controller
                 $contact->email = $request->email;
                 $contact->position = $request->position;
                 $contact->dob = ($request->dob != null) ? date('Y-m-d', strtotime($request->dob)) : null;
-                $contact->npwp = $request->npwp;
-                $contact->ktp = $request->ktp;
-                $contact->address = $request->address;
+                $contact->npwp = implode("/", [$request->name, $request->npwp]);
+                $contact->ktp = implode("/", [$request->name, $request->ktp]);
+                if (!empty($request->file('image_ktp'))) {
+                    $contact->image_ktp = UploadMedia::image($request->file('image_ktp'), Contact::$directory_image);
+                }
+
+                if (!empty($request->file('image_npwp'))) {
+                    $contact->image_npwp = UploadMedia::image($request->file('image_npwp'), Contact::$directory_image);
+                }
                 $contact->status = Contact::STATUS['ACTIVE'];
 
                 if ($contact->save()) {
-                    if($request->manage_sync == 'store'){
-                        $cust_cont = new CustomerContact;
-                        $cust_cont->customer_id = $request->manage_id;
-                        $cust_cont->customer_other_address_id = NULL;
-                        $cust_cont->contact_id = $contact->id;
-                        $cust_cont->status = CustomerContact::STATUS['ACTIVE'];
-                        $cust_cont->save();
-                    }elseif($request->manage_sync == 'member'){
+                    if($request->manage_sync == 'member'){
                         $member_cont = new CustomerContact;
                         $member_cont->customer_id = NULL;
                         $member_cont->customer_other_address_id = $request->manage_id;

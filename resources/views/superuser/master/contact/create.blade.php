@@ -13,68 +13,112 @@
   </div>
   <div class="block-content">
     <form class="ajax" data-action="{{ route('superuser.master.contact.store') }}" data-type="POST" enctype="multipart/form-data">
-      <div class="form-group row">
-        <label class="col-md-3 col-form-label text-right" for="name">Name <span class="text-danger">*</span></label>
-        <div class="col-md-7">
-          <input type="text" class="form-control" id="name" name="name">
+      <div class="containe">
+        <div class="row">
+          <div class="col">
+            <div class="form-group row">
+              <label class="col-sm-2 col-form-label" for="name">Name <span class="text-danger">*</span></label>
+              <div class="col-sm-10">
+                <input type="text" class="form-control" id="name" name="name">
+              </div>
+            </div>
+          </div>
+          <div class="col">
+            <div class="form-group row">
+              <label class="col-sm-2 col-form-label" for="dob">DOB </label>
+              <div class="col-sm-10">
+                <input type="text" class="js-flatpickr form-control bg-white" placeholder="d-m-Y" data-date-format="d-m-Y" id="dob" name="dob">
+              </div>
+            </div>
+          </div>
         </div>
-      </div>
-      <div class="form-group row">
-        <label class="col-md-3 col-form-label text-right" for="phone">Phone <span class="text-danger">*</span></label>
-        <div class="col-md-7">
-          <input type="text" class="form-control" id="phone" name="phone">
+        <div class="row">
+          <div class="col">
+            <div class="form-group row">
+              <label for="sync" class="col-sm-2 col-form-label">Sync <span class="text-danger">*</span></label>
+              <div class="col-sm-10">
+                <div class="form-row">
+                  <div class="col">
+                    <select class="form-control js-select2 manage_sync" id="manage_sync" name="manage_sync">
+                      <option value="">Get Account</option>
+                      <option value="member">Member</option>
+                      <option value="vendor">Vendor</option>
+                    </select>
+                  </div>
+                  <div class="col">
+                    <select class="form-control js-select2" name="manage_id" id="manage_id">
+                      <option>Pilih Account</option>
+                    </select>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="col">
+            <div class="form-group row">
+              <label class="col-sm-2 col-form-label" for="position">Position <span class="text-danger">*</span></label>
+              <div class="col-sm-10">
+                <select class="js-select2 form-control" id="position" name="position" data-placeholder="Select or Add New">
+                  <option value="">Pilih Jabatan</option>
+                  @foreach($position as $row)
+                  <option value="{{$row->name}}">{{$row->name}}</option>
+                  @endforeach
+                </select>
+              </div>
+            </div>
+          </div>
         </div>
-      </div>
-      <div class="form-group row">
-        <label class="col-md-3 col-form-label text-right" for="email">Email </label>
-        <div class="col-md-7">
-          <input type="email" class="form-control" id="email" name="email">
+        <div class="row">
+          <div class="col">
+            <div class="form-group row">
+              <label class="col-sm-2 col-form-label" for="phone">Phone <span class="text-danger">*</span></label>
+              <div class="col-sm-10">
+                <input type="text" class="form-control" id="phone" name="phone">
+              </div>
+            </div>
+          </div>
+          <div class="col">
+            <div class="form-group row">
+              <label class="col-sm-2 col-form-label" for="email">Email </label>
+              <div class="col-sm-10">
+                <input type="email" class="form-control" id="email" name="email">
+              </div>
+            </div>
+          </div>
         </div>
-      </div>
-      <div class="form-group row">
-        <label class="col-md-3 col-form-label text-right" for="position">Position </label>
-        <div class="col-md-7">
-          <input type="text" class="form-control" id="position" name="position">
+        <div class="row">
+          <div class="col">
+            <div class="form-group row">
+              <label for="ktp" class="col-sm-2 col-form-label">KTP <span class="text-danger">*</span></label>
+              <div class="col-sm-10">
+                <div class="form-row">
+                  <div class="col">
+                    <input type="text" class="form-control" id="ktp" name="ktp">
+                  </div>
+                  <div class="col">
+                    <input class="form-control" type="file" id="image_ktp" name="image_ktp">
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="col">
+            <div class="form-group row">
+              <label for="ktp" class="col-sm-2 col-form-label">NPWP <span class="text-danger">*</span></label>
+              <div class="col-sm-10">
+                <div class="form-row">
+                  <div class="col">
+                    <input type="text" class="form-control" id="npwp" name="npwp">
+                  </div>
+                  <div class="col">
+                    <input class="form-control" type="file" id="image_npwp" name="image_npwp">
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
-      </div>
-      <div class="form-group row">
-        <label class="col-md-3 col-form-label text-right" for="dob">DOB </label>
-        <div class="col-md-7">
-          <input type="text" class="js-flatpickr form-control bg-white" placeholder="d-m-Y" data-date-format="d-m-Y" id="dob" name="dob">
-        </div>
-      </div>
-      <div class="form-group row">
-        <label class="col-md-3 col-form-label text-right" for="npwp">NPWP </label>
-        <div class="col-md-7">
-          <input type="text" class="form-control" id="npwp" name="npwp">
-        </div>
-      </div>
-      <div class="form-group row">
-        <label class="col-md-3 col-form-label text-right" for="ktp">KTP </label>
-        <div class="col-md-7">
-          <input type="text" class="form-control" id="ktp" name="ktp">
-        </div>
-      </div>
-      <div class="form-group row">
-        <label class="col-md-3 col-form-label text-right" for="address">Address</label>
-        <div class="col-md-7">
-          <textarea class="form-control" id="address" name="address"></textarea>
-        </div>
-      </div>   
-      <div class="form-group row">
-        <label class="col-md-3 col-form-label text-right" for="sync">Sync</label>
-        <div class="col-md-2">
-          <select class="form-control js-select2 manage_sync" id="manage_sync" name="manage_sync">
-            <option value="">Get Account</option>
-            <option value="store">Store</option>
-            <option value="member">Member</option>
-            <option value="vendor">Vendor</option>
-          </select>
-        </div>
-        <div class="col-md-4">
-          <select class="form-control js-select2" name="manage_id" id="manage_id">
-          </select>
-        </div>
+        
       </div>
       <div class="form-group row pt-30">
         <div class="col-md-6">
@@ -103,32 +147,8 @@
 <script type="text/javascript">
   $(document).ready(function() {
     Codebase.helpers('flatpickr')
-    $('.js-select2').select2()
-    
-    $(document).on('change', '#manage_sync'  ,function () {
-        let sync = $(this).val();
-        
-        if(sync == "store"){
-          $.ajax({
-           type:"get",
-           url:"{{ route('superuser.master.contact.get_store') }}",
-           success:function(res)
-           {     
-                $("#manage_id").empty();
-                $("#manage_id").append('<option>--Select Customer--</option>');
-                if(res)
-                {
-                    $.each(res,function(key,value){
-                        $('#manage_id').append($("<option/>", {
-                           value: key,
-                           text: value
-                        }));
-                    });
-                }
-           }
-
-          });
-        }
+    $('.js-select2').select2({
+      tags: true
     });
 
     $(document).on('change', '#manage_sync'  ,function () {
@@ -141,7 +161,7 @@
            success:function(res)
            {     
                 $("#manage_id").empty();
-                $("#manage_id").append('<option>--Select Member--</option>');
+                $("#manage_id").append('<option>Pilih Member</option>');
                 if(res)
                 {
                     $.each(res,function(key,value){
@@ -167,7 +187,7 @@
            success:function(res)
            {     
                 $("#manage_id").empty();
-                $("#manage_id").append('<option>--Select Vendor--</option>');
+                $("#manage_id").append('<option>Pilih Vendor</option>');
                 if(res)
                 {
                     $.each(res,function(key,value){
