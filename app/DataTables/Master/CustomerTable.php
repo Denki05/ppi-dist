@@ -6,7 +6,6 @@ use App\DataTables\Table;
 use App\Entities\Master\Customer;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
-use Illuminate\Database\Eloquent\ModelNotFoundException;
 
 class CustomerTable extends Table
 {
@@ -14,22 +13,27 @@ class CustomerTable extends Table
      * Get query source of dataTable.
      *
      */
-    public function query(Request $request)
+    private function query()
     {
-        $model = Customer::select(
-                           'master_customers.name as name', 
-                           'master_customers.id as id', 
-                           'master_customers.status as status',
-                           'master_customer_other_addresses.id as member_id'
-                        );
-                    
-                    $model = $model->leftJoin('master_customer_other_addresses', 'master_customer_other_addresses.customer_id', '=', 'master_customers.id');
+        // $model = CustomerOtherAddress::select('id', 'customer_id', 'name', 'contact_person', 'phone', 'address', 'text_kota', 'text_provinsi', 'status');
+        $model = Customer::leftJoin('master_customer_other_addresses', 'master_customer_other_addresses.customer_id', '=', 'master_customers.id')
+                    ->leftJoin('master_customer_categories', 'master_customer_categories.id', '=', 'master_customers.category_id')
+                    ->select(
+                        'master_customers.id as customer_id', 
+                        'master_customers.name as store_name', 
+                        'master_customers.text_kota', 
+                        'master_customers.text_provinsi', 
+                        'master_customers.tempo_limit as tempo_limit', 
+                        'master_customers.status', 
+                        'master_customer_other_addresses.id', 
+                        'master_customer_other_addresses.name as member_name', 
+                        'master_customer_other_addresses.address as member_alamat', 
+                        'master_customer_other_addresses.member_default as default', 
+                        'master_customer_categories.id', 
+                        'master_customer_categories.name as category_name'
+                    );
 
-                    if($request->customer_name != 'all') {
-                        $model = $model->where('master_customers.id', $request->customer_name);
-                    }
-                    
-        return $model;
+        return $model;  
     }
 
     /**
@@ -39,8 +43,6 @@ class CustomerTable extends Table
     {
         $table = Table::of($this->query($request));
 
-        $table->addIndexColumn();
-
         $table->setRowClass(function (Customer $model) {
             return $model->status == $model::STATUS['DELETED'] ? 'table-danger' : '';
         });
@@ -49,11 +51,9 @@ class CustomerTable extends Table
             return $model->status();
         });
 
-        
-
         $table->addColumn('action', function (Customer $model) {
             $view = route('superuser.master.customer.show', $model);
-            $edit = route('superuser.penjualan.sales_order.create', $model);
+            $edit = route('superuser.master.customer.edit', $model);
             $destroy = route('superuser.master.customer.destroy', $model);
 
             if ($model->status == $model::STATUS['DELETED']) {
@@ -67,10 +67,19 @@ class CustomerTable extends Table
             }
             
             return "
-                
+                <a href=\"{$view}\">
+                    <button type=\"button\" class=\"btn btn-sm btn-circle btn-alt-secondary\" title=\"View\">
+                        <i class=\"fa fa-eye\"></i>
+                    </button>
+                </a>
                 <a href=\"{$edit}\">
-                    <button type=\"button\" class=\"btn btn-sm btn-circle btn-alt-warning\" title=\"Add SO\">
-                        <i class=\"fa fa-plus\"></i>
+                    <button type=\"button\" class=\"btn btn-sm btn-circle btn-alt-warning\" title=\"Edit\">
+                        <i class=\"fa fa-pencil\"></i>
+                    </button>
+                </a>
+                <a href=\"{$destroy}\">
+                    <button type=\"button\" class=\"btn btn-sm btn-circle btn-alt-danger\" title=\"Delete\">
+                        <i class=\"fa fa-trash\"></i>
                     </button>
                 </a>
                 

@@ -26,6 +26,11 @@ class Customer extends Model
         'ACTIVE' => 1
     ];
 
+    const HAS_TEMPO = [
+        'NO' => 0,
+        'YES' => 1
+    ];
+
     public function category()
     {
         return $this->BelongsTo('App\Entities\Master\CustomerCategory');
