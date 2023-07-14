@@ -24,205 +24,32 @@
 
 <div class="block">
   <div class="block-content">
-  <form>
-            <div class="row">
-              <div class="col-lg-3">
-                <div class="form-group row">
-                  {{--<label class="col-md-3 col-form-label text-right">Customer</label>
-                  <div class="col-md-9">
-                    <select class="form-control js-select2" name="customer_name">
-                      <option value="">==All Customer==</option>
-                      @foreach($customers as $index => $row)
-                      <option value="{{$row->name}}">{{$row->name}}</option>
-                      @endforeach
-                    </select>
-                  </div>--}}
-                </div>   
-              </div>
-              <div class="col-lg-3">
-                  <div class="form-group row">
-                    {{--<label class="col-md-3 col-form-label text-right">Area</label>
-                    <div class="col-md-9">
-                      <select class="form-control js-select2" name="province">
-                        <option value="">==All Provinsi==</option>
-                        @foreach($provinsi as $index => $row)
-                        <option value="{{$row->prov_id}}">{{$row->prov_name}}</option>
-                        @endforeach
-                      </select>
-                    </div>--}}
-                  </div>
-              </div>
-              <div class="col-lg-6">
-                <div class="form-group row">
-                  <div class="col-md-3">
-                    <!-- <label class="col-md-3 col-form-label text-right">Search</label> -->
-                  </div>
-                  <div class="col-md-9">
-                    <div class="input-group mb-3">
-                        <input type="text" class="form-control" placeholder="Search" name="search">
-                        <div class="input-group-append">
-                          <button type="submit" class="btn btn-primary"><i class="fa fa-search"></i></button>
-                        </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-    <a href="{{route('superuser.master.customer.create')}}">
-      <button type="button" class="btn btn-primary btn-lg active">Create</button>
-    </a>
-
-    <!-- <button type="button" class="btn btn-outline-info ml-10" data-toggle="modal" data-target="#modal-manage">Manage</button> -->
-  </div>
-  <hr class="my-20">
-  <div class="block-content block-content-full">
-    <table id="customer_table" class="table ">
-      <thead class="thead-dark">
-        <tr>
-          <th></th>
-          <th>Store</th>
-          <th>City</th>
-          <th>Provinsi</th>
-          <th>Category</th>
-          <th>Tempo</th>
-          <th>Status</th>
-          <th scope="col">Action</th>
-        </tr>
-      </thead>
-      <tbody>
-        @foreach ($customers as $row)
-          <tr class="clickable js-tabularinfo-toggle" data-toggle="collapse" id="row2" data-target=".a{{ $row->id }}">
-              <!-- <td>
-                <div class="col-sm-6">
-                  <div class="row mb-2">
-                    <a href="#" class="link">
-                      <button type="button" name='edit' id='{{ $row->id }}'>#</button>
-                    </a>
-                  </div>
-                </div>
-              </td> -->
-              <td><i class="tabularinfo__icon fa fa-plus"></i></td>
-              <td>{{ $row->name }}</td>
-              <td>{{ $row->text_kota }}</td>
-              <td><b>{{ $row->text_provinsi ?? '' }}</b></td>
-              <td>{{ $row->category->name ?? '-' }}</td>
-              <td>
-                @if($row->has_tempo == 0)
-                  <span class="badge badge-danger">NO</span>
-                @elseif($row->has_tempo == 1)
-                  <span class="badge badge-success">YES - {{$row->tempo_limit ?? ''}}</span>
-                @endif
-              </td>
-              <td>
-                @if($row->status == $row::STATUS['ACTIVE'])
-                  <span class="badge badge-success">ACTIVE</span>
-                @elseif($row->status == $row::STATUS['DELETED'])
-                  <span class="badge badge-danger">IN ACTIVE</span>
-                @endif
-              </td>
-              <td>
-              @if($row->status == $row::STATUS['ACTIVE'])
-                <a href="{{ route('superuser.master.customer.show', $row->id) }}">
-                    <button type="button" class="btn btn-sm btn-circle btn-alt-secondary" title="View">
-                        <i class="mdi mdi-eye"></i>
-                    </button>
-                </a>
-                <a href="{{ route('superuser.master.customer.edit', $row->id) }}">
-                    <button type="button" class="btn btn-sm btn-circle btn-alt-secondary" title="Edit">
-                        <i class="mdi mdi-lead-pencil"></i>
-                    </button>
-                </a>
-                <a href="javascript:deleteConfirmation('{{ route('superuser.master.customer.destroy', $row->id) }}', true)">
-                    <button type="button" class="btn btn-sm btn-circle btn-alt-danger" title="Delete">
-                        <i class="mdi mdi-delete"></i>
-                    </button>
-                </a>
-                <a href="{{ route('superuser.master.customer.other_address.create', [$row->id]) }}">
-                    <button type="button" class="btn btn-sm btn-circle btn-alt-secondary" title="Add Member">
-                        <i class="mdi mdi-account-multiple-plus"></i>
-                    </button>
-                </a>
-
-                <a href="{{ route('superuser.master.dokumen.create') }}">
-                    <button type="button" class="btn btn-sm btn-circle btn-alt-danger" title="Add Document">
-                        <i class="mdi mdi-file-document"></i>
-                    </button>
-                </a>
-                
-              @elseif($row->status == $row::STATUS['DELETED'])
-                <a href="{{ route('superuser.master.customer.show', $row->id) }}">
-                      <button type="button" class="btn btn-sm btn-circle btn-alt-secondary" title="View">
-                          <i class="mdi mdi-eye"></i>
-                      </button>
-                </a>
-              @endif
-              </td>
-              
-          </tr>
-
-          <tr class="tabularinfo__subblock collapse a{{ $row->id }}">
-                  <td colspan="8">
-                    <table class="table-active table table-bordered">
-                            <tr>
-                                <th width="10%">MEMBER</th>
-                                <th width="10%">ALAMAT</th>
-                                <th width="10%">DEFAULT</th>
-                                <th width="5%">ACTION</th>
-                                <!-- <th width="5%">Other Action</tg> -->
-                            </tr>
-
-                            <tbody>
-                                @foreach ($other_address as $index)
-                                    @if ($row->id == $index->customer_id)
-                                        <tr>
-                                            <td width="20%"><b>{{ $index->name }}</b></td>
-                                            <td width="15%">
-                                              {{$index->address}}
-                                              <!-- <iframe  style="height:100px; width: 200px;" src="https://maps.google.com/maps?q={{ $index->gps_latitude }},{{ $index->gps_longitude }}&hl=es;z=14&amp;output=embed" ?? ></iframe> -->
-                                            </td>
-                                            <td width="5%">
-                                              @if($index->member_default == 0)
-                                                <span class="badge badge-primary">NO</span>
-                                              @endif
-                                              @if($index->member_default == 1)
-                                                <span class="badge badge-primary">YES</span>
-                                              @endif
-                                            </td>
-                                            @if ($index->status != $index::STATUS['DELETED'] AND $row->status != $row::STATUS['DELETED'])
-                                            <td>
-                                                <a href="{{ route('superuser.master.customer_other_address.show', $index->id) }}">
-                                                    <button type="button" class="btn btn-sm btn-circle btn-alt-secondary" title="View">
-                                                        <i class="fa fa-eye"></i>
-                                                    </button>
-                                                </a>
-                                                <a href="{{ route('superuser.master.customer_other_address.edit', $index->id) }}">
-                                                    <button type="button" class="btn btn-sm btn-circle btn-alt-secondary" title="Edit">
-                                                        <i class="mdi mdi-lead-pencil"></i>
-                                                    </button>
-                                                </a>
-                                                <a href="javascript:deleteConfirmation('{{ route('superuser.master.customer.other_address.destroy', [$row->id, $index->id]) }}')">
-                                                    <button type="button" class="btn btn-sm btn-circle btn-alt-danger" title="Delete">
-                                                        <i class="fa fa-times"></i>
-                                                    </button>
-                                                </a>
-                                            </td>
-                                            @endif  
-                                            
-                                        </tr>
-                                    @endif
-                                @endforeach
-                            </tbody>
-                    </table>
-                </td>
+    <div id="Wrapper1">
+      <table id="Table1" class="table table-striped table-bordered display compact hover stripe dataTable no-footer" style="width:100%!important">
+        <thead>
+            <tr class="bir-selection-color1 text-center">
+                <th>Expand</th>
+                <th>Store</th>
+                <th>Category</th>
+                <th>Kota</th>
+                <th>Provinsi</th>
+                <th>Tempo</th>
+                <th>Action</th>
             </tr>
-        @endforeach
-      </tbody>
-    </table>
-  </div>
-  </form>
-  <div class="d-flex justify-content-center">
-    {!! $customers->links() !!}
+        </thead>
+      </table>
+    </div>
+    <div id="Wrapper2" style="display:none;">
+        <table id="Table2" class="table table-striped table-bordered display compact hover stripe dataTable no-footer" style="padding-left: 15px!important">
+            <thead>
+                <tr class="bir-selection-color1 text-center">
+                    <th>Id</th>
+                    <th>HeaderId</th>
+                    <th>ProductId</th>
+                </tr>
+            </thead>
+        </table>
+    </div>
   </div>
 </div>
 @endsection
@@ -242,37 +69,133 @@
 @endsection
 
 @push('scripts')
-<!-- <script type="text/javascript">
-  $(function () {
-      $('.link').click(function() {
-        event.preventDefault();
-      });
-      
-      $('.js-tabularinfo').bootstrapTable({
-        escape: false,
-        showHeader: false
-      });
-      
-});
-</script> -->
-
 <script>
-  $(document).ready(function () {
-    $('.link').click(function() {
-      event.preventDefault();
+    // var dataSet1 = [{ "HeaderId": "1", "Group": "Group 1" }
+    //                     ];
+
+    // var dataSet2 = [{ "LineNumber": "1", "HeaderId": "1", "ProductId": "1011" },
+    //                 { "LineNumber": "2", "HeaderId": "1", "ProductId": "1012" }
+    //                 ];
+
+    //dataTables default values
+    var dataTablesdefaultPageLength = 10;
+    var dataTablesPageLengthDisplay = [10, 50, 100, 250, 500];
+
+    var dataTablesserverSide = false;
+    var dataTablesautoWidth = true;
+    var dataTablesresponsive = true;
+    var dataTablesprocessing = true;        // for show progress bar 
+    var dataTablesfilter = false;            // this is for disable filter (search box)
+    var dataTablesorderMulti = false;       // for disable multiple column at once  
+
+    var dataTablesscrollX = false;
+
+    $(document).ready(function () {
+
+        // Get the Detail Table as Template for Every Row
+        detailsTableHtml = $("#Table2").html();
+
+        var table1 = $("#Table1").DataTable({
+            async: true,
+                serverSide: false, // for process server side
+                deferRender: true, // deferred rendering
+                scrollX: dataTablesscrollX,
+                deferLoading: 0, //Disable Initial Load
+                processing: dataTablesprocessing, // for show progress bar
+                filter: dataTablesfilter,
+                orderMulti: true,
+                autoWidth: dataTablesautoWidth,
+                responsive: dataTablesresponsive,
+                pageLength: dataTablesdefaultPageLength,
+                lengthMenu: [dataTablesPageLengthDisplay, dataTablesPageLengthDisplay],
+                ajax : {
+                    "url": '{{route('superuser.master.customer.json')}}',
+                    "dataType": "json",
+                    "type": "GET",
+                    "data":{ _token: "{{csrf_token()}}"}
+                },
+                order: [[1, 'asc']],
+                columnDefs: [],
+                columns: [
+                {
+                    data: null, name: "Group", title: "", className: 'details-control', orderable: false, width: 5,
+                    render: function (data, type, row, meta) {
+                        return '<i class="fa fa-plus"></i>';
+                    }
+                },
+                { data: "store_name", name: "master_customer.name", title: "Store" },
+                { data: "category_name", name: "master_customer_categories.name", title: "Category", orderable: false },
+                { data: "text_kota", name: "master_customer.text_kota", title: "Kota", orderable: false },
+                { data: "text_provinsi", name: "master_customer.text_provinsi", title: "Profinsi", orderable: false },
+                { data: "tempo_limit", name: "master_customer.tempo_limit", title: "Tempo", orderable: false },
+                { data: "action", title: "Action", orderable: false },
+            ]
+            , rowId: 'customer_id'
+        });
+
+        $('#Table1 tbody').on('click', 'td i', function () {
+
+            var tr = $(this).closest('tr');
+            var row = table1.row(tr);
+
+            if (row.child.isShown()) {
+                // This row is already open - close it
+                destroyChild(row);
+                tr.removeClass('shown');
+            }
+            else {
+                // Open this row
+                createChild(row);
+                tr.addClass('shown');
+            }
+
+        });
     });
 
-    $('.js-tabularinfo').bootstrapTable({
-      escape: false,
-      showHeader: false
-    });
+    function createChild(row) {
+        // This is the table we'll convert into a DataTable
+        var table2 = $('<table class="display" width="100%"/>');
 
-    $('.js-select2').select2({
-    });
+        // Display it the child row
+        row.child(table2).show();
 
-    $("#customer_table").DataTable({
-      searching: true,
-    });
-  });
+        // Initialise as a DataTable
+        var usersTable = table2.DataTable({
+            async: true,
+          serverSide: false, // for process server side
+          scrollX: false, //Enable Horizonal Scroll
+          deferRender: true, // deferred rendering
+          processing: dataTablesprocessing, // for show progress bar
+          filter: false,
+          orderMulti: true,
+          info: false,
+          paging: false,
+          select: false,
+          autoWidth: dataTablesautoWidth,
+          responsive: dataTablesresponsive,
+          ajax : {
+                    "url": '{{route('superuser.master.customer.json')}}',
+                    "dataType": "json",
+                    "type": "GET",
+                    "data":{ _token: "{{csrf_token()}}"}
+          },
+            order: [[0, 'asc']],
+            columnDefs: [],
+            columns: [
+                { data: "member_name", name: "master_customer_other_addresses.name", title: "Member", autoWidth: true },
+                // { data: "HeaderId", name: "HeaderId", title: "Header ID", autoWidth: true },
+                // { data: "ProductId", name: "ProductId", title: "Product ID", autoWidth: true }
+            ]
+        });
+    }
+
+    function destroyChild(row) {
+        var table2 = $("table", row.child());
+        table2.detach();
+        table2.DataTable().destroy();
+
+        // And then hide the row
+        row.child.hide();
+    }
 </script>
 @endpush
