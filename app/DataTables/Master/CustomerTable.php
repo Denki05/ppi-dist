@@ -4,6 +4,7 @@ namespace App\DataTables\Master;
 
 use App\DataTables\Table;
 use App\Entities\Master\Customer;
+use App\Entities\Master\CustomerOtherAddress;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 
@@ -27,10 +28,11 @@ class CustomerTable extends Table
                         'master_customers.status', 
                         'master_customer_other_addresses.id', 
                         'master_customer_other_addresses.name as member_name', 
-                        'master_customer_other_addresses.address as member_alamat', 
-                        'master_customer_other_addresses.member_default as default', 
+                        'master_customer_other_addresses.text_kota as member_kota', 
+                        'master_customer_other_addresses.text_provinsi as member_provinsi', 
                         'master_customer_categories.id', 
-                        'master_customer_categories.name as category_name'
+                        'master_customer_categories.name as category_name', 
+                        'master_customer_other_addresses.member_default as member_default'
                     );
 
         return $model;  
@@ -55,6 +57,7 @@ class CustomerTable extends Table
             $view = route('superuser.master.customer.show', $model);
             $edit = route('superuser.master.customer.edit', $model);
             $destroy = route('superuser.master.customer.destroy', $model);
+            $add_member = route('superuser.master.customer.other_address.create', $model);
 
             if ($model->status == $model::STATUS['DELETED']) {
                 return "
@@ -70,6 +73,11 @@ class CustomerTable extends Table
                 <a href=\"{$view}\">
                     <button type=\"button\" class=\"btn btn-sm btn-circle btn-alt-secondary\" title=\"View\">
                         <i class=\"fa fa-eye\"></i>
+                    </button>
+                </a>
+                <a href=\"{$add_member}\">
+                    <button type=\"button\" class=\"btn btn-sm btn-circle btn-alt-secondary\" title=\"Add member\">
+                        <i class=\"fa fa-user\"></i>
                     </button>
                 </a>
                 <a href=\"{$edit}\">

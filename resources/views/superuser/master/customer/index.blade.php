@@ -25,27 +25,28 @@
 <div class="block">
   <div class="block-content">
     <div id="Wrapper1">
-      <table id="Table1" class="table table-striped table-bordered display compact hover stripe dataTable no-footer" style="width:100%!important">
+      <table id="Table1" class="table table-striped display compact hover stripe dataTable no-footer" style="width:100%!important">
         <thead>
             <tr class="bir-selection-color1 text-center">
-                <th>Expand</th>
-                <th>Store</th>
-                <th>Category</th>
-                <th>Kota</th>
-                <th>Provinsi</th>
-                <th>Tempo</th>
-                <th>Action</th>
+                <th></th>
+                <th></th>
+                <th></th>
+                <th></th>
+                <th></th>
+                <th></th>
+                <th></th>
             </tr>
         </thead>
       </table>
     </div>
     <div id="Wrapper2" style="display:none;">
-        <table id="Table2" class="table table-striped table-bordered display compact hover stripe dataTable no-footer" style="padding-left: 15px!important">
+        <table id="Table2" class="table table-striped display compact hover stripe dataTable no-footer" style="padding-left: 15px!important">
             <thead>
                 <tr class="bir-selection-color1 text-center">
-                    <th>Id</th>
-                    <th>HeaderId</th>
-                    <th>ProductId</th>
+                    <th></th>
+                    <th></th>
+                    <th></th>
+                    <th></th>
                 </tr>
             </thead>
         </table>
@@ -126,7 +127,7 @@
                 { data: "store_name", name: "master_customer.name", title: "Store" },
                 { data: "category_name", name: "master_customer_categories.name", title: "Category", orderable: false },
                 { data: "text_kota", name: "master_customer.text_kota", title: "Kota", orderable: false },
-                { data: "text_provinsi", name: "master_customer.text_provinsi", title: "Profinsi", orderable: false },
+                { data: "text_provinsi", name: "master_customer.text_provinsi", title: "Provinsi", orderable: false },
                 { data: "tempo_limit", name: "master_customer.tempo_limit", title: "Tempo", orderable: false },
                 { data: "action", title: "Action", orderable: false },
             ]
@@ -180,11 +181,24 @@
                     "data":{ _token: "{{csrf_token()}}"}
           },
             order: [[0, 'asc']],
-            columnDefs: [],
+            columnDefs : [
+                        { targets : [3],
+                            render : function (data, type, row) {
+                            switch(data) {
+                                case 0 : return '<span class="badge badge-danger">No</span>'; 
+                            break;
+                                case 1 : return '<span class="lbadge badge-success">Yes</span>'; 
+                            break;
+                            }
+                        }
+                    }
+                ],
             columns: [
                 { data: "member_name", name: "master_customer_other_addresses.name", title: "Member", autoWidth: true },
-                // { data: "HeaderId", name: "HeaderId", title: "Header ID", autoWidth: true },
-                // { data: "ProductId", name: "ProductId", title: "Product ID", autoWidth: true }
+                { data: "member_kota", name: "master_customer_other_addresses.text_kota", title: "Kota", autoWidth: true },
+                { data: "member_provinsi", name: "master_customer_other_addresses.text_provinsi", title: "Provinsi", autoWidth: true },
+                { data: "member_default", name: "master_customer_other_addresses.member_default", title: "Default", autoWidth: true },
+                
             ]
         });
     }
