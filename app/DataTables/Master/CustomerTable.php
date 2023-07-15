@@ -53,6 +53,10 @@ class CustomerTable extends Table
             return $model->status();
         });
 
+        $table->editColumn('action_member', function (Customer $model) {
+            
+        });
+
         $table->addColumn('action', function (Customer $model) {
             $view = route('superuser.master.customer.show', $model);
             $edit = route('superuser.master.customer.edit', $model);

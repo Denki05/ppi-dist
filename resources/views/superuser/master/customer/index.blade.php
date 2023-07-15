@@ -47,6 +47,7 @@
                     <th></th>
                     <th></th>
                     <th></th>
+                    <th></th>
                 </tr>
             </thead>
         </table>
@@ -184,22 +185,23 @@
             columnDefs : [
                         { targets : [3],
                             render : function (data, type, row) {
-                            switch(data) {
-                                case 0 : return '<span class="badge badge-danger">No</span>'; 
-                            break;
-                                case 1 : return '<span class="lbadge badge-success">Yes</span>'; 
-                            break;
+                                switch(data) {
+                                    case 0 : return '<span class="badge badge-danger">No</span>'; 
+                                break;
+                                    case 1 : return '<span class="lbadge badge-success">Yes</span>'; 
+                                break;
+                                }
                             }
-                        }
-                    }
+                        },
                 ],
             columns: [
                 { data: "member_name", name: "master_customer_other_addresses.name", title: "Member", autoWidth: true },
                 { data: "member_kota", name: "master_customer_other_addresses.text_kota", title: "Kota", autoWidth: true },
                 { data: "member_provinsi", name: "master_customer_other_addresses.text_provinsi", title: "Provinsi", autoWidth: true },
                 { data: "member_default", name: "master_customer_other_addresses.member_default", title: "Default", autoWidth: true },
+                { data: "action_member", title: "Action" }
                 
-            ]
+            ],
         });
     }
 
