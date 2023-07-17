@@ -7,6 +7,8 @@ use App\Entities\Master\Customer;
 use App\Entities\Master\CustomerOtherAddress;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
+use Illuminate\Database\Eloquent\ModelNotFoundException;
+use DB;
 
 class CustomerTable extends Table
 {
@@ -14,27 +16,30 @@ class CustomerTable extends Table
      * Get query source of dataTable.
      *
      */
-    private function query()
+    private function query(Request $request)
     {
-        $model = Customer::leftJoin('master_customer_other_addresses', 'master_customer_other_addresses.customer_id', '=', 'master_customers.id')
-                    ->leftJoin('master_customer_categories', 'master_customer_categories.id', '=', 'master_customers.category_id')
-                    ->select(
-                        'master_customers.id as customer_id', 
-                        'master_customers.name as store_name', 
-                        'master_customers.text_kota', 
-                        'master_customers.text_provinsi', 
-                        'master_customers.tempo_limit as tempo_limit', 
-                        'master_customers.status', 
-                        'master_customer_other_addresses.id', 
-                        'master_customer_other_addresses.name as member_name', 
-                        'master_customer_other_addresses.text_kota as member_kota', 
-                        'master_customer_other_addresses.text_provinsi as member_provinsi', 
-                        'master_customer_categories.id', 
-                        'master_customer_categories.name as category_name', 
-                        'master_customer_other_addresses.member_default as member_default'
-                    );
+        $model = Customer::select(
+            'master_customers.id as id',
+            'master_customers.name as store_name', 
+            'master_customers.text_kota as store_kota', 
+            'master_customers.text_provinsi as store_provinsi', 
+            'master_customers.has_tempo as store_tempo', 
+            'master_customers.tempo_limit as store_limit', 
+            'master_customers.status',
+            'master_customer_other_addresses.id as member_id',
+            'master_customer_other_addresses.name as member_name', 
+            'master_customer_other_addresses.text_kota as member_kota', 
+            'master_customer_other_addresses.text_provinsi as member_provinsi',
+            'master_customer_other_addresses.member_default as member_default', 
+            'master_customer_categories.id as cat_id',
+            'master_customer_categories.name as category_name'
+        );
 
-        return $model;  
+        $model = $model->leftJoin('master_customer_other_addresses', 'master_customer_other_addresses.customer_id', '=', 'master_customers.id');
+
+        $model = $model->leftJoin('master_customer_categories', 'master_customer_categories.id', '=', 'master_customers.category_id');
+
+        return $model;
     }
 
     /**

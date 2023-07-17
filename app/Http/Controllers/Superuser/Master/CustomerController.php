@@ -59,12 +59,46 @@ class CustomerController extends Controller
     {
         // Access
         if(Auth::user()->is_superuser == 0){
-            if(empty($this->access) || empty($this->access->user) || $this->access->can_read == 0){
+            if(empty($this->access)){
                 return redirect()->route('superuser.index')->with('error','Anda tidak punya akses untuk membuka menu terkait');
             }
         }
 
-        $data['customer'] = Customer::get();
+        $search = $request->input('search');
+        $province = $request->input('province');
+        $category = $request->input('category');
+        $customer = Customer::where(function($query2) use($search){
+                                if(!empty($search)){
+                                    $query2->where('name','like','%'.$search.'%');
+                                }
+                            })
+                            ->where(function($query2) use($province){
+    							if(!empty($province)){
+    								$query2->where(function($query3) use($province){
+    									$query3->where('provinsi',$province);
+    								});
+    							}
+    						})
+                            ->where(function($query2) use($category){
+    							if(!empty($category)){
+    								$query2->where(function($query4) use($category){
+    									$query4->where('category_id',$category);
+    								});
+    							}
+    						})
+                            ->orderBy('name','ASC')
+                            ->paginate(25);
+
+        $other_address = CustomerOtherAddress::get();
+        $prov = DB::table('provinsi')->get();
+        $cat = CustomerCategory::get();
+        
+        $data =[
+            'other_address' => $other_address,
+            'customers' => $customer,
+            'provinsi' => $prov,
+            'cat' => $cat
+        ];
 
         return view('superuser.master.customer.index', $data);
     }
