@@ -58,11 +58,18 @@
 @push('scripts')
 <script>
     $(document).ready(function() {
+      let datatableUrl = '{{ route('superuser.master.customer.json') }}';
+
       var table = $('#store_list').DataTable({
         processing: true,
         serverSide: false,
         searching: false,
-        ajax: '{{ route('superuser.master.customer.json') }}',
+        ajax: {
+          "url": datatableUrl,
+          "dataType": "json",
+          "type": "GET",
+          "data":{ _token: "{{csrf_token()}}"}
+        },
         columns: [
             {
                 "className":      'details-control',
