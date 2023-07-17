@@ -45,6 +45,14 @@
                     </div>
                 </div>
                 <div class="row">
+                    <label class="col-md-3 col-form-label text-right">Tempo Limit</label>
+                    <div class="col-md-7">
+                        <div class="form-control-plaintext">
+                            {{$customer->tempo_limit}}
+                        </div>
+                    </div>
+                </div>
+                <div class="row">
                     <label class="col-md-3 col-form-label text-right">KTP</label>
                     <div class="col-md-7">
                         <div class="form-control-plaintext">
