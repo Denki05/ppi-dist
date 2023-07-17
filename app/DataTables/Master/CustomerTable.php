@@ -16,7 +16,6 @@ class CustomerTable extends Table
      */
     private function query()
     {
-        // $model = CustomerOtherAddress::select('id', 'customer_id', 'name', 'contact_person', 'phone', 'address', 'text_kota', 'text_provinsi', 'status');
         $model = Customer::leftJoin('master_customer_other_addresses', 'master_customer_other_addresses.customer_id', '=', 'master_customers.id')
                     ->leftJoin('master_customer_categories', 'master_customer_categories.id', '=', 'master_customers.category_id')
                     ->select(
@@ -79,16 +78,17 @@ class CustomerTable extends Table
                         <i class=\"fa fa-eye\"></i>
                     </button>
                 </a>
-                <a href=\"{$add_member}\">
-                    <button type=\"button\" class=\"btn btn-sm btn-circle btn-alt-secondary\" title=\"Add member\">
-                        <i class=\"fa fa-user\"></i>
-                    </button>
-                </a>
                 <a href=\"{$edit}\">
                     <button type=\"button\" class=\"btn btn-sm btn-circle btn-alt-warning\" title=\"Edit\">
                         <i class=\"fa fa-pencil\"></i>
                     </button>
                 </a>
+                <a href=\"{$add_member}\">
+                    <button type=\"button\" class=\"btn btn-sm btn-circle btn-alt-secondary\" title=\"Add member\">
+                        <i class=\"fa fa-user\"></i>
+                    </button>
+                </a>
+                
                 <a href=\"{$destroy}\">
                     <button type=\"button\" class=\"btn btn-sm btn-circle btn-alt-danger\" title=\"Delete\">
                         <i class=\"fa fa-trash\"></i>

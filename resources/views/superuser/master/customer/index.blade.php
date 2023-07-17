@@ -60,7 +60,8 @@
     $(document).ready(function() {
       var table = $('#store_list').DataTable({
         processing: true,
-        serverSide: true,
+        serverSide: false,
+        searching: false,
         ajax: '{{ route('superuser.master.customer.json') }}',
         columns: [
             {
@@ -98,21 +99,6 @@
 
     /* Formatting function for row details - modify as you need */
     function format ( d ) {
-        // `d` is the original data object for the row
-        // return '<table class="table table table-hover">'+
-        //     '<tr>'+
-        //         '<td>Member:</td>'+
-        //         '<td>'+d.member_name+'</td>'+
-        //         '</tr>'+
-        //     '<tr>'+
-        //         '<td>Email:</td>'+
-        //         '<td>'+d.email+'</td>'+
-        //         '</tr>'+
-        //     '<tr>'+
-        //         '<td>Extra info:</td>'+
-        //         '<td>And any further details here (images etc)...</td>'+
-        //         '</tr>'+
-        //     '</table>';
         return '<table class="table">'+
                   '<thead>'+
                       '<tr class="table-active">'+
