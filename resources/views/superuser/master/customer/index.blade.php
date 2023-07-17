@@ -61,6 +61,11 @@
       let datatableUrl = '{{ route('superuser.master.customer.json') }}';
 
       var table = $('#store_list').DataTable({
+        language: {
+          processing: "<span class='fa-stack fa-lg'>\n\
+                                <i class='fa fa-spinner fa-spin fa-stack-2x fa-fw'></i>\n\
+                           </span>",
+        },
         processing: true,
         serverSide: false,
         searching: false,
@@ -84,7 +89,15 @@
             {data: 'tempo_limit', name: 'master_customers.tempo_limit'},
             {data: 'action', orderable: false, searcable: false}
         ],
-        order: [[1, 'asc']]
+        order: [[1, 'asc']],
+        pageLength: 10,
+        lengthMenu: [
+          [10, 25, 50, 100],
+          [10, 25, 50, 100]
+        ],
+        dom: "<'row'<'col-sm-2'l><'col-sm-7 text-left'B><'col-sm-3'f>>" +
+          "<'row'<'col-sm-12'tr>>" +
+          "<'row'<'col-sm-5'i><'col-sm-7'p>>",
     });
 
     // Add event listener for opening and closing details
