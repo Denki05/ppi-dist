@@ -87,8 +87,7 @@ class CustomerController extends Controller
     							}
     						})
                             ->orderBy('name','ASC')
-                            ->get();
-                            // ->paginate(25);
+                            ->paginate(25);
 
         $other_address = CustomerOtherAddress::get();
         $prov = DB::table('provinsi')->get();

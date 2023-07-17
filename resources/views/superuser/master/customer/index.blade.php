@@ -71,8 +71,8 @@
             </div>
           </form>
       </div>
-    <table id="datatables" class="table table-hover">
-      <thead >
+    <table id="datatables" class="table datatables">
+      <thead class="thead-dark">
         <tr>
           <th></th>
           <th>Store</th>
@@ -146,7 +146,7 @@
 
           <tr class="tabularinfo__subblock collapse a{{ $row->id }}">
                   <td colspan="8">
-                    <table class="table-active table table-bordered member_list" id="member_list">
+                    <table class="table-active table table-bordered">
                             <tr>
                                 <th width="10%">Member</th>
                                 <th width="10%">Kota</th>
@@ -202,7 +202,9 @@
       </tbody>
     </table>
   </div>
-  
+  <div class="d-flex justify-content-center">
+    {!! $customers->links() !!}
+  </div>
 </div>
 @endsection
 
@@ -216,11 +218,16 @@
     $('.js-select2').select2({
     })
 
-    $('#datatables').DataTable( {
-      processing: true,
-      serverSide: false,
-    });
+    $('#datatables').DataTable({});
 
+    $('.link').click(function() {
+        event.preventDefault();
+    });
+      
+    $('.js-tabularinfo').bootstrapTable({
+      escape: false,
+      showHeader: false
+    });
   });
 </script>
 @endpush
