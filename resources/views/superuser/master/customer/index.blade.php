@@ -71,8 +71,8 @@
             </div>
           </form>
       </div>
-    <table id="customer_table" class="table ">
-      <thead class="thead-dark">
+    <table id="datatables" class="table table-hover">
+      <thead >
         <tr>
           <th></th>
           <th>Store</th>
@@ -146,7 +146,7 @@
 
           <tr class="tabularinfo__subblock collapse a{{ $row->id }}">
                   <td colspan="8">
-                    <table class="table-active table table-bordered">
+                    <table class="table-active table table-bordered member_list" id="member_list">
                             <tr>
                                 <th width="10%">Member</th>
                                 <th width="10%">Kota</th>
@@ -164,7 +164,13 @@
                                               <!-- <iframe  style="height:100px; width: 200px;" src="https://maps.google.com/maps?q={{ $index->gps_latitude }},{{ $index->gps_longitude }}&hl=es;z=14&amp;output=embed" ?? ></iframe> -->
                                               {{ $index->text_kota }}
                                             </td>
-                                            <td>{{$index->member_default}}</td>
+                                            <td>
+                                              @if($row->member_default == 0)
+                                                <span class="badge badge-info">NO</span>
+                                              @elseif($row->status == 1)
+                                                <span class="badge badge-info">YES</span>
+                                              @endif
+                                            </td>
                                             @if ($index->status != $index::STATUS['DELETED'] AND $row->status != $row::STATUS['DELETED'])
                                             <td>
                                                 <a href="{{ route('superuser.master.customer_other_address.show', $index->id) }}">
@@ -196,9 +202,7 @@
       </tbody>
     </table>
   </div>
-  <div class="d-flex justify-content-center">
-    {!! $customers->links() !!}
-  </div>
+  
 </div>
 @endsection
 
@@ -212,16 +216,11 @@
     $('.js-select2').select2({
     })
 
-    $('#customer_table').DataTable({});
+    $('#datatables').DataTable( {
+      processing: true,
+      serverSide: false,
+    });
 
-    $('.link').click(function() {
-        event.preventDefault();
-    });
-      
-    $('.js-tabularinfo').bootstrapTable({
-      escape: false,
-      showHeader: false
-    });
   });
 </script>
 @endpush
