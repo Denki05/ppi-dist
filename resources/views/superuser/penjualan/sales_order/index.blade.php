@@ -29,47 +29,6 @@
               <div class="col-lg-2 pt-2">
                 <h5>#SALES ORDER AWAL</h5>
               </div>
-              <div class="col-lg-3">
-                <div class="form-group row">
-                  <label class="col-md-3 col-form-label text-right">Customer</label>
-                  <div class="col-md-9">
-                    <select class="form-control js-select2" name="customer_id">
-                      <option value="">==All Customer==</option>
-                      @foreach($other_address as $index => $row)
-                      <option value="{{$row->id}}">{{$row->name}}</option>
-                      @endforeach
-                    </select>
-                  </div>
-                </div>   
-              </div>
-              <div class="col-lg-3">
-              <div class="form-group row">
-                  <label class="col-md-3 col-form-label text-right">Area</label>
-                  <div class="col-md-9">
-                    <select class="form-control js-select2" name="province">
-                      <option value="">==All Provinsi==</option>
-                      @foreach($other_address as $index => $row)
-                      <option value="{{$row->id}}">{{$row->text_provinsi}}</option>
-                      @endforeach
-                    </select>
-                  </div>
-                </div>
-              </div>
-              <div class="col-lg-4">
-                <div class="form-group row">
-                  <div class="col-md-3">
-                    <label class="col-md-3 col-form-label text-right">Search</label>
-                  </div>
-                  <div class="col-md-9">
-                    <div class="input-group mb-3">
-                        <input type="text" class="form-control" placeholder="Keyword" name="search">
-                        <div class="input-group-append">
-                          <button type="submit" class="btn btn-primary"><i class="fa fa-search"></i></button>
-                        </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
             </div>
           </form>
           <div class="table-responsive">
