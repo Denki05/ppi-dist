@@ -104,7 +104,7 @@
                       </td>
                       <td>
                         <!-- <input class="btn btn-primary" type="submit" value="Add Sales Order {{ $step_txt }} (SO)"> -->
-                        <a href="{{route('superuser.penjualan.sales_order.create', ['store' => $row->customer->id, 'step' => $step, 'member' => $row->id])}}" class="btn btn-primary btn-lg active" role="button" aria-pressed="true">Add Sales Order {{ $step_txt }} (SO)</a>
+                        <a href="{{route('superuser.penjualan.sales_order.create', ['store' => $row->store->id, 'step' => $step, 'member' => $row->id])}}" class="btn btn-primary btn-lg active" role="button" aria-pressed="true">Add Sales Order {{ $step_txt }} (SO)</a>
                       </td>
                     </tr>
                 @endforeach
@@ -542,10 +542,10 @@
       });
 
       $('#customer_table').DataTable( {
-        "paging":   false,
+        "paging":   true,
         "ordering": true,
         "info":     false,
-        "searching" : false,
+        "searching" : true,
         "columnDefs": [{
           "targets": 0,
           "orderable": false

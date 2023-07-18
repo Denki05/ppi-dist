@@ -27,7 +27,7 @@
                     <li class="dropdown">
                         <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-expanded="false">Product <span class="caret"></span></a>
                         <ul class="dropdown-menu" role="menu">
-                            <li><a href="{{ route('superuser.master.product.index') }}" >Product List</a></li>
+                            <li><a href="{{ route('superuser.master.product.index') }}" >Product</a></li>
                             <li><a href="{{ route('superuser.master.product_category.index') }}" >Category</a></li>
                             {{--<li><a href="{{ route('superuser.master.product_type.index') }}" >Product Type</a></li>--}}
                             {{--<li><a href="{{ route('superuser.master.brand_lokal.index') }}" >Brand Lokal</a></li>--}}

@@ -234,8 +234,8 @@ class SalesOrderController extends Controller
 
         $brand = BrandLokal::all();
         $products = Product::all();
-        $customer = Customer::find($store);
-        $member = CustomerOtherAddress::find($member);
+        $customers = Customer::find($store);
+        $other_address = CustomerOtherAddress::find($member);
         $warehouse = Warehouse::all();
 		$ekspedisi = Ekspedisi::all();
         $sales = Sales::where('is_active', 1)->get();
@@ -243,8 +243,8 @@ class SalesOrderController extends Controller
         $type_transaction = SalesOrder::TYPE_TRANSACTION;
 
         $data = [
-            'customer' => $customer,
-            'member' => $member,
+            'customers' => $customers,
+            'other_address' => $other_address,
             'brand' => $brand,
             'products' => $products,
             'sales' => $sales,

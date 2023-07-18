@@ -321,7 +321,7 @@
       if(confirm("Apakah anda yakin ingin menambakan sales order ini ?")){
         let _form = $('#frmCreate');
         $.ajax({
-          url : '{{route('superuser.penjualan.sales_order.store', [$customer->id, $member->id])}}',
+          url : '{{route('superuser.penjualan.sales_order.store', [$other_address->id, $customers->id])}}',
           method : "POST",
           data : $('#frmCreate').serializeArray(),
           dataType : "JSON",
