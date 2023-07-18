@@ -37,7 +37,7 @@
                 <tr>
                   <th>#</th>
                   <th>Name</th>
-                  <th>Address</th>
+                  <th>Category</th>
 				          <th>Kota</th>
                   <th>Area</th>
                   <th>Action</th>
@@ -53,9 +53,9 @@
                         {{$row->name}}
                       </td>
                       <td>
-                        {{$row->address}}
+                        {{$row->store->category->name}}
                       </td>
-					  <td>
+					            <td>
                         {{$row->text_kota}}
                       </td>
                       <td>
@@ -500,15 +500,17 @@
         }]
       });
 
-      $('#customer_table').DataTable( {
-        "paging":   true,
-        "ordering": true,
-        "info":     false,
-        "searching" : true,
-        "columnDefs": [{
-          "targets": 0,
-          "orderable": false
-        }]
+      $('#customer_table').DataTable({
+        processing: true,
+        serverSide: false,
+        order: [
+          [1, 'asc']
+        ],
+        pageLength: 5,
+        lengthMenu: [
+          [5, 15, 20],
+          [5, 15, 20]
+        ],
       });
 
       $('.js-select2').select2();
