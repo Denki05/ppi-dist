@@ -84,9 +84,9 @@
 <!-- List SO Awal -->
 <div class="block">
   <div class="block-content block-content-full">
-  <div class="block-header block-header-default">
-    <h3 class="block-title">Sales Order {{ $step_txt }}</h3>
-  </div>
+    <div class="block-header block-header-default">
+      <h3 class="block-title">List SO {{ $step_txt }}</h3>
+    </div>
     <div class="row mb-30">
         <div class="col-12">
           <table class="table table-striped" id="so_awal">

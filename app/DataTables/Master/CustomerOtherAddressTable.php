@@ -21,6 +21,7 @@ class CustomerOtherAddressTable extends Table
             'master_customer_other_addresses.text_kota AS member_kota', 
             'master_customer_other_addresses.status AS status', 
             'master_customers.id AS store_id', 
+            'master_customer_categories.id AS id_category', 
             'master_customer_categories.name AS category_name', 
         );
 
@@ -31,6 +32,7 @@ class CustomerOtherAddressTable extends Table
         if($request->member_name != 'all') {
             $model = $model->where('master_customer_other_addresses.id', $request->member_name);
         }
+
         return $model;
     }
 
