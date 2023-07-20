@@ -64,6 +64,7 @@
                   <th>Created</th>
                   <th>Brand Fragrantica</th>
 				          <th>Searah</th>
+				          <th>URL</th>
                   <th>Action</th>
                 </tr>
               </thead>
@@ -117,6 +118,14 @@ $(document).ready(function() {
       },
       {data: 'brand_name', name: 'master_brand_references.name'},
       {data: 'searah_name', name: 'master_sub_brand_references.name'},
+      {
+        data: 'searah_link',
+        name: 'master_sub_brand_references.link',
+        render : function(data, type, row, meta) {
+          // return'<a class="d-inline-block fw-normal w-100 h-100 pe-auto" href="' + row.searah_link + '">' + "Get" + '</a>';
+          return '<a class="btn btn-primary" href="' + row.searah_link + '" role="button">' + "Get" + '</a>'
+        },
+      }, 
       {data: 'action'}
     ],
     order: [

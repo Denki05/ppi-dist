@@ -29,6 +29,7 @@ class SubBrandReferenceTable extends Table
                                 master_sub_brand_references.name AS searah_name, 
                                 master_sub_brand_references.code AS searah_code, 
                                 master_sub_brand_references.status AS status, 
+                                master_sub_brand_references.link AS searah_link, 
                                 master_brand_references.id AS brand_id, 
                                 master_brand_references.name AS brand_name, 
                                 master_sub_brand_references.created_at AS created_date
