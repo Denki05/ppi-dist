@@ -144,18 +144,6 @@ class SalesOrderController extends Controller
 
         return view($this->view."index",$data);
     }
-
-    public function getmember(Request $request)
-    {
-        $customer_id = $request->customer_id;
-
-        $member = CustomerOtherAddress::where('customer_id', $customer_id)->get();
-
-        foreach ($member as $a)
-        {
-            echo "<option value='$a->id'>$a->name</option>";
-        }
-    }
     
     public function index_awal(Request $request)
     {
