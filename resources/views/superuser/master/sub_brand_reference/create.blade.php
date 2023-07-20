@@ -25,7 +25,7 @@
           <select class="js-select2 form-control" id="brand_reference" name="brand_reference" data-placeholder="Select Brand Reference">
             <option></option>
             @foreach($brand_references as $brand_reference)
-            <option value="{{ $brand_reference->id }}">{{ $brand_reference->name }}</option>
+            <option value="{{ $brand_reference->id }}">{{$brand_reference->code}} - {{ $brand_reference->name }}</option>
             @endforeach
           </select>
         </div>
