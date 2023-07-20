@@ -53,7 +53,7 @@ class Product extends Model
 
     public function category()
     {
-        return $this->BelongsTo('App\Entities\Master\ProductCategory');
+        return $this->BelongsTo('App\Entities\Master\ProductCategory', 'category_id');
     }
 
     public function default_unit()

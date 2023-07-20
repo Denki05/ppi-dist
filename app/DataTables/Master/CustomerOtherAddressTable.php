@@ -5,6 +5,7 @@ namespace App\DataTables\Master;
 use App\DataTables\Table;
 use App\Entities\Master\CustomerOtherAddress;
 use Carbon\Carbon;
+use Illuminate\Http\Request;
 
 class CustomerOtherAddressTable extends Table
 {
@@ -12,19 +13,34 @@ class CustomerOtherAddressTable extends Table
      * Get query source of dataTable.
      *
      */
-    private function query()
+    private function query(Request $request)
     {
-        $model = CustomerOtherAddress::select('id', 'customer_id', 'name', 'contact_person', 'phone', 'address', 'text_kota', 'text_provinsi', 'status');
+        $model = CustomerOtherAddress::select(
+            'master_customer_other_addresses.id AS id', 
+            'master_customer_other_addresses.name AS member_name', 
+            'master_customer_other_addresses.text_kota AS member_kota', 
+            'master_customer_other_addresses.status AS status', 
+            'master_customers.id AS store_id', 
+            'master_customer_categories.name AS category_name', 
+        );
 
-        return $model;  
+        $model = $model->leftJoin('master_customers', 'master_customer_other_addresses.customer_id', '=', 'master_customers.id');
+
+        $model = $model->leftJoin('master_customer_categories', 'master_customers.category_id', '=', 'master_customer_categories.id');
+
+        if($request->member_name != 'all') {
+            $model = $model->where('master_customer_other_addresses.id', $request->member_name);
+        }
+        return $model;
     }
 
     /**
      * Build DataTable class.
      */
-    public function build()
+    public function build(Request $request)
     {
-        $table = Table::of($this->query());
+        $table = Table::of($this->query($request));
+
         $table->addIndexColumn();
 
         $table->setRowClass(function (CustomerOtherAddress $model) {
