@@ -1282,73 +1282,9 @@ class SalesOrderController extends Controller
         }
     }
 
-    public function get_product(Request $request){
-        $data_json = [];
-        $post = $request->all();
-        if($request->method() == "GET"){
-            $table = Product::where(function($query2) use($post){
-                        if(!empty($post["category_id"])){
-                            $query2->where('category_id',$post["category_id"]);
-                        }
-                    })
-                    ->where('master_products.status', 1)
-                    ->leftJoin('master_product_categories', 'master_products.category_id', '=', 'master_product_categories.id')
-                    ->leftJoin('master_packaging', 'master_product_categories.packaging_id', '=', 'master_packaging.id')
-                    ->select(
-                        'master_products.name as productName', 
-                        'master_products.id as id', 
-                        'master_products.status as status', 
-                        'master_products.code as productCode',
-                        'master_products.category_id', 
-                        'master_products.selling_price as productPrice', 
-                        'master_packaging.id as packId',
-                        'master_packaging.pack_name as packName'
-                    )->get();
-            $data_json["IsError"] = FALSE;
-            $data_json["Data"] = $table;
-            goto ResultData;
-        }
-        else{
-            $data_json["IsError"] = TRUE;
-            $data_json["Message"] = "Invalid Method";
-            goto ResultData;
-        }
-        ResultData:
-        return response()->json($data_json,200);
-    }
+    
 
-    // public function get_category(Request $request){
-    //     $data_json = [];
-    //     $post = $request->all();
-    //     if($request->method() == "GET"){
-    //         $table = ProductCategory::where(function($query2) use($post){
-    //                     if(!empty($post["brand_lokal_id"])){
-    //                         $query2->where('brand_lokal_id',$post["brand_lokal_id"]);
-    //                     }
-    //                 })
-    //                 ->leftJoin('master_packaging', 'master_product_categories.packaging_id', '=', 'master_packaging.id')
-    //                 ->leftJoin('master_units', 'master_packaging.unit_id', '=', 'master_units.id')
-    //                 ->select(
-    //                     'master_product_categories.id as catId',
-    //                     'master_product_categories.name as categoryName',
-    //                     'master_packaging.id as packId',
-    //                     'master_packaging.pack_value as packValue',
-    //                     'master_packaging.packaging_packing as packWight',
-    //                     'master_units.abbreviation as satuan'
-    //                     )
-    //                 ->get();
-    //         $data_json["IsError"] = FALSE;
-    //         $data_json["Data"] = $table;
-    //         goto ResultData;
-    //     }
-    //     else{
-    //         $data_json["IsError"] = TRUE;
-    //         $data_json["Message"] = "Invalid Method";
-    //         goto ResultData;
-    //     }
-    //     ResultData:
-    //     return response()->json($data_json,200);
-    // }
+    
 
     public function ajax_customer_detail(Request $request){
         $data_json = [];
@@ -1389,40 +1325,6 @@ class SalesOrderController extends Controller
                 goto ResultData;
 
             }catch(\Throwable $e){
-                $data_json["IsError"] = TRUE;
-                $data_json["Message"] = $e->getMessage();
-                goto ResultData;
-            }
-        }
-        else{
-            $data_json["IsError"] = TRUE;
-            $data_json["Message"] = "Invalid Method";
-            goto ResultData;
-        }
-        ResultData:
-        return response()->json($data_json,200);
-    }
-
-    public function ajax_product_detail(Request $request){
-        $data_json = [];
-        $post = $request->all();
-        if($request->method() == "POST"){
-            try{
-                $result = Product::where('master_product.id',$post["id"])
-                    ->leftJoin('master_product_category', 'master_product.category_id', '=', 'master_product_category.id')
-                    ->leftJoin('master_packaging', 'master_product_category.packaging_id', '=', 'master_packaging.id')
-                    ->select(
-                        'master_product.id as product_id', 
-                        'master_packaging.pack as packaging'
-                    )
-                    ->get();
-                $data_json["IsError"] = FALSE;
-                $data_json["Data"] = $result;
-                goto ResultData;
-
-            }catch(\Throwable $e){
-
-                // dd($e);
                 $data_json["IsError"] = TRUE;
                 $data_json["Message"] = $e->getMessage();
                 goto ResultData;

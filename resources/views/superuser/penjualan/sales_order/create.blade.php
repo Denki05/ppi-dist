@@ -114,28 +114,52 @@
         <div class="block">
           <div class="block-header block-header-default">
             <h3 class="block-title">Add Product</h3>
-            <a href="#" class="row-add">
-              <button type="button" class="btn bg-gd-sea border-0 text-white">
-                <i class="fa fa-plus mr-10"></i> Row
-              </button>
-            </a>
+            
           </div>
           <div class="block-content">
-            <table id="datatable" class="table table-striped">
-              <thead>
-                <tr>
-                  <th>Counter</th>
-                  <th>Category</th>
-                  <th>Product</th>
-                  <th>Price</th>
-                  <th>Qty</th>
-                  <th>Packaging</th>
-                  <th>Action</th>
-                </tr>
-              </thead>
-              <tbody>
-              </tbody>
-            </table>
+            <div class="row">
+              <div class="col-12 product-list">
+                <div class="row">
+                  <div class="col">Category</div>
+                  <div class="col-3">Product</div>
+                  <div class="col-1">Qty</div>
+                  <div class="col">Packaging</div>
+                  <div class="col-1">Free</div>
+                  <div class="col">Action</div>
+                </div>
+
+                <div class="row mt-10 product-row">
+                  <div class="col">
+                    <select class="form-control js-select2 select-category" data-index="0">
+                      <option value="">Select Category</option>
+                      @foreach($product_category as $index => $row)
+                        <option value="{{$row->id}}">{{$row->name}}</option>
+                      @endforeach
+                    </select>
+                  </div>
+                  <div class="col-3">
+                    <select class="form-control js-select2 select-product" name="product_id[]" data-index="0">
+                      <option value="">Select product</option>
+                    </select>
+                  </div>
+                  <div class="col-1">
+                    <input type="number" name="qty[]" class="form-control input-qty" data-index="0" step="any">
+                  </div>
+                  <div class="col">
+                    <select name="packaging_id[]" class="form-control js-select2 select-packaging" data-index="0">
+                      <option value="">Select packaging</option>
+                    </select>
+                  </div>
+                  <div class="col-1">
+                    <input type="checkbox" class="form-check-input input-gift" id="gift" name="gift" onclick="validate()" checked>
+                    <input class="form-control input-free" type="hidden" id="free_product" name="free_product[]" data-index="0" step="any">
+                  </div>
+                  <div class="col"><button type="button" id="buttonAddProduct" class="btn btn-primary"><em class="fa fa-plus"></em></button></div>
+                </div>
+                <hr />
+
+              </div>
+            </div>
           </div>
         </div>
       <hr />
@@ -174,11 +198,70 @@
 
     $('.js-select2').select2();
 
-    
+    $(document).on('click','#buttonAddProduct',function(){
+      const categoryId = $('.select-category[data-index=0]').val();
+      const categoryText = $('.select-category[data-index=0] option:selected').text();
+      const productId = $('.select-product[data-index=0]').val();
+      const productText = $('.select-product[data-index=0] option:selected').text();
+      const qty = $('.input-qty[data-index=0]').val();
+      const packagingId = $('.select-packaging[data-index=0]').val();
+      const packagingText = $('.select-packaging[data-index=0] option:selected').text();
+      const free = $('.input-free[data-index=0]').val();
 
-    
+      if (categoryId === null || categoryId === '' || productId === null || productId === '' || qty === null || qty === '' || packagingId == null || packagingId === '' ) {
+        Swal.fire(
+          'Error!',
+          'Please input all the data',
+          'error'
+        );
+        return;
+      }
 
-    
+      let html = "<div class='col-2'>";
+      html += "    <input type='hidden' name='category_id[]' class='form-control' value='" + categoryId + "'>";
+      html += categoryText;
+      html += "  </div>";
+      html += "  <div class='col-2'>";
+      html += "    <input type='hidden' name='product_id[]' class='form-control' value='" + productId + "'>";
+      html += productText;
+      html += "  </div>";
+      html += "  <div class='col-2 text-right'>";
+      html += "    <input type='hidden' name='qty[]' class='form-control' value='" + qty + "'>";
+      html += qty;
+      html += "  </div>";
+      html += "  <div class='col-2'>";
+      html += "    <input type='hidden' name='packaging_id[]' class='form-control' value='" + packagingId + "'>";
+      html += packagingText;
+      html += "  </div>";
+      html += "  <div class='col-1 text-right'>";
+      html += "    <input type='hidden' name='free_product[]' class='form-control free' value='" + free + "'>";
+      html += free;
+      html += "  </div>";
+      html += "  <div class='col-1'>";
+      html += "    <button type='button' id='buttonDeleteProduct' class='btn btn-danger'><em class='fa fa-minus'></em></button>";
+      html += "  </div>";
+      html += "</div>";
+      
+      if ($('.product-row.category-' + categoryId).length > 0) {
+        $('body').find('.product-row.category-' + categoryId + ':last').after(html);
+      } else {
+        $('body').find('.product-list').append(html);
+      }
+
+      $('.select-category[data-index=0]').val('').change();
+      $('.select-product[data-index=0]').val('').change();
+      $('.input-qty[data-index=0]').val('');
+      $('.select-packaging[data-index=0]').val('').change();
+      $('.input-free[data-index=0]').val();
+
+      $('.select-brand[data-index=0]').select2('focus');
+
+      productCount++;
+    })
+
+    $(document).on('click','#buttonDeleteProduct',function(){
+      $(this).parents(".product-row").remove();
+    })
 
     $(document).on('click','.btn-simpan',function(){
       $('#frmCreate').find('input[name="ajukankelanjutan"]').val(0);

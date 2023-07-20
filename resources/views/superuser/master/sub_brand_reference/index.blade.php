@@ -18,8 +18,8 @@
 @endif
 
 <nav class="breadcrumb bg-white push">
-  <a href="{{route('superuser.master.brand_reference.create')}}" class="btn btn-primary btn-lg active" role="button" target="_blank" aria-pressed="true" style="margin-left: 10px !important;">Add Brand Fragrantica</a>
-  <a href="{{route('superuser.master.sub_brand_reference.create')}}" class="btn btn-primary btn-lg active" role="button" target="_blank" aria-pressed="true" style="margin-left: 10px !important;">Add Searah</a>
+  <a href="{{route('superuser.master.brand_reference.create')}}" class="btn btn-primary btn-lg active" role="button" aria-pressed="true" style="margin-left: 10px !important;">Add Brand Fragrantica</a>
+  <a href="{{route('superuser.master.sub_brand_reference.create')}}" class="btn btn-primary btn-lg active" role="button" aria-pressed="true" style="margin-left: 10px !important;">Add Searah</a>
 </nav>
 
 <div class="block">
@@ -69,7 +69,8 @@
               </thead>
               
             </table>
-          </div>
+        </div>
+        <br>
 </div>
 @endsection
 
@@ -94,6 +95,11 @@ $(document).ready(function() {
     },
     processing: true,
     serverSide: false,
+    searching: false,
+    paging: false,
+    bInfo: false,
+    scrollX: false,
+    scrollY: false,
     ajax: {
       "url": datatableUrl,
       "dataType": "json",
