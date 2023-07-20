@@ -18,7 +18,7 @@ class Product extends Model
                         'buying_price', 'selling_price', 'image', 'image_hd', 'status', 'gender'
                     ];
 
-    protected $table = 'master_product';
+    protected $table = 'master_products';
     public static $directory_image = 'superuser_assets/media/master/product/';
     
     const NOTE = [

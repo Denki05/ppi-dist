@@ -1019,15 +1019,15 @@ class SalesOrderController extends Controller
                             $query2->where('category_id',$post["category_id"]);
                         }
                     })
-                    ->leftJoin('master_product_category', 'master_product.category_id', '=', 'master_product_category.id')
-                    ->leftJoin('master_packaging', 'master_product_category.packaging_id', '=', 'master_packaging.id')
+                    ->leftJoin('master_product_categories', 'master_products.category_id', '=', 'master_product_categories.id')
+                    ->leftJoin('master_packaging', 'master_product_categories.packaging_id', '=', 'master_packaging.id')
                     ->select(
-                        'master_product.name as product_name', 
-                        'master_product.id as id', 
-                        'master_product.code as product_code',
-                        'master_product.category_id', 
-                        'master_product.selling_price as price', 
-                        'master_product_category.name as category_name', 
+                        'master_products.name as product_name', 
+                        'master_products.id as id', 
+                        'master_products.code as product_code',
+                        'master_products.category_id', 
+                        'master_products.selling_price as price', 
+                        'master_products.name as category_name', 
                         'master_packaging.pack_name as packaging'
                     )->get();
             $data_json["IsError"] = FALSE;
@@ -1123,11 +1123,11 @@ class SalesOrderController extends Controller
         $post = $request->all();
         if($request->method() == "POST"){
             try{
-                $result = Product::where('master_product.id',$post["id"])
-                    ->leftJoin('master_product_category', 'master_product.category_id', '=', 'master_product_category.id')
-                    ->leftJoin('master_packaging', 'master_product_category.packaging_id', '=', 'master_packaging.id')
+                $result = Product::where('master_products.id',$post["id"])
+                    ->leftJoin('master_products', 'master_products.category_id', '=', 'master_product_categories.id')
+                    ->leftJoin('master_packaging', 'master_product_categories.packaging_id', '=', 'master_packaging.id')
                     ->select(
-                        'master_product.id as product_id', 
+                        'master_products.id as product_id', 
                         'master_packaging.pack as packaging'
                     )
                     ->get();
