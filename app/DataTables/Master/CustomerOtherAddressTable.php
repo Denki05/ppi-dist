@@ -59,36 +59,10 @@ class CustomerOtherAddressTable extends Table
         });
 
         $table->addColumn('action', function (CustomerOtherAddress $model) {
-            $view = route('superuser.master.customer_other_address.show', $model);
-            $edit = route('superuser.master.customer_other_address.edit', $model);
-            $destroy = route('superuser.master.customer_other_address.destroy', $model);
-
-            if ($model->status == $model::STATUS['DELETED']) {
-                return "
-                    <a href=\"{$view}\">
-                        <button type=\"button\" class=\"btn btn-sm btn-circle btn-alt-secondary\" title=\"View\">
-                            <i class=\"fa fa-eye\"></i>
-                        </button>
-                    </a>
-                ";
-            }
+            $add_so = route('superuser.penjualan.sales_order.create', ['store' => $model->store_id, 'step' => 1, 'member' => $model->id]);
             
             return "
-                <a href=\"{$view}\">
-                    <button type=\"button\" class=\"btn btn-sm btn-circle btn-alt-secondary\" title=\"View\">
-                        <i class=\"fa fa-eye\"></i>
-                    </button>
-                </a>
-                <a href=\"{$edit}\">
-                    <button type=\"button\" class=\"btn btn-sm btn-circle btn-alt-warning\" title=\"Edit\">
-                        <i class=\"fa fa-pencil\"></i>
-                    </button>
-                </a>
-                <a href=\"javascript:deleteConfirmation('{$destroy}')\">
-                    <button type=\"button\" class=\"btn btn-sm btn-circle btn-alt-danger\" title=\"Delete\">
-                        <i class=\"fa fa-times\"></i>
-                    </button>
-                </a>
+                <a href=\"{$add_so}\" class=\"btn btn-primary btn-lg active\" role=\"button\" aria-pressed=\"true\">Add Sales Order</a>
             ";
         });
         
