@@ -87,7 +87,7 @@ class ContactController extends Controller
             }
         }
 
-        $data['position'] = Contact::get()->unique('position');
+        $data['position'] = ContactPosition::get();
 
         return view('superuser.master.contact.create', $data);
     }
