@@ -63,7 +63,7 @@
           </div>
         </div>
         <div class="col-12">
-          <table class="table table-striped" id="member_list">
+          <table class="table table-striped" id="member_list" style="display:none;" width="100%">
             <thead>
               <tr>
                 <th>#</th>
@@ -601,6 +601,9 @@
       }
     })
 
-    });
+    $("#filter").on("click", function(){
+      $("#member_list").toggle();
+}   );
+});
 </script>
 @endpush
