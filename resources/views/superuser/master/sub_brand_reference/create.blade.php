@@ -49,7 +49,7 @@
         </div>
       </div>
       
-      <div class="form-group row">
+      {{--<div class="form-group row">
         <label class="col-md-3 col-form-label text-right" for="description">Image Bottel</label>
         <div class="col-md-7">
           <input type="file" id="image_botol" name="image_botol" data-max-file-size="2000" accept="image/png, image/jpeg">
@@ -60,7 +60,7 @@
         <div class="col-md-7">
           <input type="file" id="image_table_botol" name="image_table_botol" data-max-file-size="2000" accept="image/png, image/jpeg">
         </div>
-      </div>
+      </div>--}}
 
       <div class="form-group row pt-30">
         <div class="col-md-6">
