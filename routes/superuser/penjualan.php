@@ -17,8 +17,6 @@ Route::group([
     });
 
     Route::group(['as' => 'sales_order.', 'prfix' => '/sales_order'], function () {
-        Route::get('/search_sku', 'SalesOrderController@search_sku')->name('search_sku');
-        // Route::get('/getCategory', 'SalesOrderController@getCategory')->name('getCategory');
         Route::get('/index', 'SalesOrderController@index')->name('index');
         Route::get('/so_awal', 'SalesOrderController@index_awal')->name('index_awal');
         Route::get('/so_lanjutan', 'SalesOrderController@index_lanjutan')->name('index_lanjutan');
@@ -39,17 +37,9 @@ Route::group([
         Route::post('/store_item', 'SalesOrderController@store_item')->name('store_item');
         Route::post('/update_item', 'SalesOrderController@update_item')->name('update_item');
         Route::post('/destroy_item', 'SalesOrderController@destroy_item')->name('destroy_item');
-
-        Route::get('/get_product', 'SalesOrderController@get_product')->name('get_product');
-        Route::get('/get_category', 'SalesOrderController@get_category')->name('get_category');
-        Route::get('/get_packaging', 'SalesOrderController@get_packaging')->name('get_packaging');
-        Route::get('/search_sku', 'SalesOrderController@search_sku')->name('search_sku');
-        Route::post('/getmember', 'SalesOrderController@getmember')->name('getmember');
-
         Route::post('/ajax_customer_detail', 'SalesOrderController@ajax_customer_detail')->name('ajax_customer_detail');
         Route::post('/ajax_warehouse_detail', 'SalesOrderController@ajax_warehouse_detail')->name('ajax_warehouse_detail');
         Route::post('/ajax_product_detail', 'SalesOrderController@ajax_product_detail')->name('ajax_product_detail');
-        
         Route::get('/{id}/print_rejected_so', 'SalesOrderController@print_rejected_so')->name('print_rejected_so');
     });
 
