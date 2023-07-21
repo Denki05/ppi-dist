@@ -20,6 +20,7 @@
 <nav class="breadcrumb bg-white push">
   <a href="{{route('superuser.master.brand_reference.create')}}" class="btn btn-primary btn-lg active" role="button" aria-pressed="true" style="margin-left: 10px !important;">Add Brand Fragrantica</a>
   <a href="{{route('superuser.master.sub_brand_reference.create')}}" class="btn btn-primary btn-lg active" role="button" aria-pressed="true" style="margin-left: 10px !important;">Add Searah</a>
+  <button type="button" class="btn btn-outline-info ml-10" data-toggle="modal" data-target="#modal-manage">Manage</button>
 </nav>
 
 <div class="block">
@@ -78,6 +79,16 @@
 @include('superuser.asset.plugin.swal2')
 @include('superuser.asset.plugin.datatables')
 @include('superuser.asset.plugin.select2')
+
+@section('modal')
+
+@include('superuser.component.modal-manage', [
+  'import_template_url' => route('superuser.master.sub_brand_reference.import_template'),
+  'import_url' => route('superuser.master.sub_brand_reference.import'),
+  'export_url' => route('superuser.master.sub_brand_reference.export')
+])
+
+@endsection
 
 @push('scripts')
 <script type="text/javascript">
