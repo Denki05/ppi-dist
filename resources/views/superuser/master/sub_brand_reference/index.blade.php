@@ -84,7 +84,7 @@
 
 @include('superuser.component.modal-manage', [
   'import_template_url' => route('superuser.master.sub_brand_reference.import_template'),
-  'import_url' => route('superuser.master.sub_brand_reference.import'),
+  'import_url' => route('superuser.master.sub_brand_reference.import', $brand->id),
   'export_url' => route('superuser.master.sub_brand_reference.export')
 ])
 

@@ -52,10 +52,12 @@ class SubBrandReferenceController extends Controller
             }
         }
 
-        $parfume_searah = SubBrandReference::get();
+        $parfume_searah = SubBrandReference::all();
+        $brand = BrandReference::first();
 
         $data = [
             'parfume_searah' => $parfume_searah,
+            'brand' => $brand,
         ];
 
         return view('superuser.master.sub_brand_reference.index', $data);
@@ -259,14 +261,8 @@ class SubBrandReferenceController extends Controller
         return Excel::download(new SubBrandReferenceImportTemplate, $filename);
     }
 
-    public function import(Request $request)
+    public function import(Request $request, $id)
     {
-        // Access
-        if(Auth::user()->is_superuser == 0){
-            if(empty($this->access) || empty($this->access->user) || $this->access->can_create == 0){
-                return redirect()->route('superuser.index')->with('error','Anda tidak punya akses untuk membuka menu terkait');
-            }
-        }
         $validator = Validator::make($request->all(), [
             'import_file' => 'required|file|mimes:xls,xlsx|max:2048',
         ]);
@@ -276,9 +272,14 @@ class SubBrandReferenceController extends Controller
         }
 
         if ($validator->passes()) {
-            Excel::import(new SubBrandReferenceImport, $request->import_file);
-
-            return redirect()->back();
+            $import = new SubBrandReferenceImport($id);
+            Excel::import($import, $request->import_file);
+            
+            if($import->error) {
+                return redirect()->back()->withErrors($import->error);
+            }
+            
+            return redirect()->back()->with(['message' => 'Import success']);
         }
     }
 

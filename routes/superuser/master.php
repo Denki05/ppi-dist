@@ -146,7 +146,8 @@ Route::group([
 
     Route::group(['as' => 'sub_brand_reference.', 'prefix' => '/sub_brand_reference'], function () {
         Route::get('/import_template', 'SubBrandReferenceController@import_template')->name('import_template');
-        Route::post('/import', 'SubBrandReferenceController@import')->name('import');
+        // Route::post('/import', 'SubBrandReferenceController@import')->name('import');
+        Route::post('/import/{id}', 'SubBrandReferenceController@import')->name('import');
         Route::get('/export', 'SubBrandReferenceController@export')->name('export');
     });
     Route::resource('sub_brand_reference', 'SubBrandReferenceController');

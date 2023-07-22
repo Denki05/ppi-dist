@@ -10,7 +10,12 @@ class SubBrandReferenceImportTemplate implements FromArray, ShouldAutoSize
     public function array(): array
     {
         return [
-            ['brand_reference_id', 'name', 'link', 'description']
+            [
+                'brand_name', 
+                'name', 
+                'link', 
+                'description'
+            ]
         ];
     }
 }

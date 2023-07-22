@@ -26,7 +26,7 @@ class SubBrandReference extends Model
 
     public function brand_reference()
     {
-        return $this->BelongsTo('App\Entities\Master\BrandReference', 'brand_reference_id');
+        return $this->belongsTo('App\Entities\Master\BrandReference', 'brand_reference_id');
     }
 
     public function getImageBotolUrlAttribute()
