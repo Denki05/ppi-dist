@@ -25,6 +25,7 @@ class ContactTable extends Table
     public function build()
     {
         $table = Table::of($this->query());
+        
         $table->addIndexColumn();
 
         $table->setRowClass(function (Contact $model) {

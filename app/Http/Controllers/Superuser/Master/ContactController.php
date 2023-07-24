@@ -135,7 +135,7 @@ class ContactController extends Controller
 
                 $contact = new Contact();
 
-                $contact->id = $request->manage_id . '/' . $request->is_for . '/' . $kd;
+                $contact->id = $request->manage_id . '.' . $request->is_for . '-' . $kd;
                 $contact->name = $request->name;
                 $contact->phone = $request->phone;
                 $contact->email = $request->email;
@@ -291,7 +291,7 @@ class ContactController extends Controller
             $contact->status = Contact::STATUS['DELETED'];
 
             if ($contact->save()) {
-                $response['redirect_to'] = '#datatable';
+                $response['redirect_to'] = route('superuser.master.contact.index');
                 return $this->response(200, $response);
             }
         }
