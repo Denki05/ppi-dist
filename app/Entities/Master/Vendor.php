@@ -25,6 +25,7 @@ class Vendor extends Model
     	'NON EKSPEDISI' => 0,
         'EKSPEDISI' => 1,
         'FACTORY' => 2,
+        'MITRA' => 3,
     ];
 
     public function type()

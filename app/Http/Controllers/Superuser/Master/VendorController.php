@@ -59,7 +59,10 @@ class VendorController extends Controller
                 return redirect()->route('superuser.index')->with('error','Anda tidak punya akses untuk membuka menu terkait');
             }
         }
-        return view('superuser.master.vendor.create');
+
+        $data['type'] = Vendor::TYPE;
+
+        return view('superuser.master.vendor.create', $data);
     }
 
     public function store(Request $request)

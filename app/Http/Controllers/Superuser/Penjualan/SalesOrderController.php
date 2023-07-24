@@ -240,7 +240,7 @@ class SalesOrderController extends Controller
         $data_json = [];
         $post = $request->all();
         $cust = Customer::find($store);
-        $member = CustomerOtherAddress::find($member);
+        $other_address = CustomerOtherAddress::find($member);
         if($request->method() == "POST"){
             $customer = [];
             $gudang = [];
@@ -281,8 +281,8 @@ class SalesOrderController extends Controller
                 $insert->code = CodeRepo::generateSO();
                 
                 
-                $insert->customer_id = $cust->id;
-                $insert->customer_other_address_id = $member->id;
+                $insert->customer_id = $store;
+                $insert->customer_other_address_id = $member;
                 $insert->sales_senior_id = $request->sales_senior_id;
                 $insert->sales_id = $request->sales_id;
                 $insert->so_for = 1;
@@ -1427,5 +1427,73 @@ class SalesOrderController extends Controller
         flush();
         readfile ($file);
         exit();
+    }
+
+    public function get_category(Request $request){
+        $data_json = [];
+        $post = $request->all();
+        if($request->method() == "GET"){
+            $table = ProductCategory::where(function($query2) use($post){
+                        if(!empty($post["brand_lokal_id"])){
+                            $query2->where('brand_lokal_id',$post["brand_lokal_id"]);
+                        }
+                    })
+                    ->leftJoin('master_packaging', 'master_product_categories.packaging_id', '=', 'master_packaging.id')
+                    ->leftJoin('master_units', 'master_packaging.unit_id', '=', 'master_units.id')
+                    ->select(
+                        'master_product_categories.id as catId',
+                        'master_product_categories.name as categoryName',
+                        'master_packaging.id as packId',
+                        'master_packaging.pack_value as packValue',
+                        'master_packaging.packaging_packing as packWight',
+                        'master_units.abbreviation as satuan'
+                        )
+                    ->get();
+            $data_json["IsError"] = FALSE;
+            $data_json["Data"] = $table;
+            goto ResultData;
+        }
+        else{
+            $data_json["IsError"] = TRUE;
+            $data_json["Message"] = "Invalid Method";
+            goto ResultData;
+        }
+        ResultData:
+        return response()->json($data_json,200);
+    }
+
+    public function get_product(Request $request){
+        $data_json = [];
+        $post = $request->all();
+        if($request->method() == "GET"){
+            $table = Product::where(function($query2) use($post){
+                        if(!empty($post["category_id"])){
+                            $query2->where('category_id',$post["category_id"]);
+                        }
+                    })
+                    ->where('master_products.status', 1)
+                    ->leftJoin('master_product_categories', 'master_products.category_id', '=', 'master_product_categories.id')
+                    ->leftJoin('master_packaging', 'master_product_categories.packaging_id', '=', 'master_packaging.id')
+                    ->select(
+                        'master_products.name as productName', 
+                        'master_products.id as id', 
+                        'master_products.status as status', 
+                        'master_products.code as productCode',
+                        'master_products.category_id', 
+                        'master_products.selling_price as productPrice', 
+                        'master_packaging.id as packId',
+                        'master_packaging.pack_name as packName'
+                    )->get();
+            $data_json["IsError"] = FALSE;
+            $data_json["Data"] = $table;
+            goto ResultData;
+        }
+        else{
+            $data_json["IsError"] = TRUE;
+            $data_json["Message"] = "Invalid Method";
+            goto ResultData;
+        }
+        ResultData:
+        return response()->json($data_json,200);
     }
 }

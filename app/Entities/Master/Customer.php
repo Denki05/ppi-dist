@@ -106,4 +106,9 @@ class Customer extends Model
    {
     return $this->hasMany('App\Entities\Penjualan\SalesOrder', 'customer_id');
    }
+
+   public function has_tempo()
+    {
+        return array_search($this->has_tempo, self::HAS_TEMPO);
+    }
 }
