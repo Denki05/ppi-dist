@@ -61,10 +61,10 @@
                       <div class="col-md-6">
                         @if ($customers->has_tempo == 0)
                           <input type="text" class="form-control input-type-transaction" name="input-type-transaction" placeholder="CASH" readonly>
-                          <input type="hidden" class="form-control type_transaction" name="type_transaction" id="type_transaction" value="1">
+                          <input type="hidden" class="form-control type_transaction" name="type_transaction" id="type_transaction" value="CASH">
                         @elseif($customers->has_tempo == 1)
                           <input type="text" class="form-control input-type-transaction" name="input-type-transaction" placeholder="TEMPO" readonly>
-                          <input type="hidden" class="form-control type_transaction" name="type_transaction" id="type_transaction" value="2" placeholder="TEMPO">
+                          <input type="hidden" class="form-control type_transaction" name="type_transaction" id="type_transaction" value="TEMPO">
                         @endif
                       </div>
                     </div>
@@ -96,7 +96,7 @@
                       <label class="col-md-4 col-form-label text-right">Brand</label>
                       <div class="col-md-6">
                         <select class="form-control js-select2 select-brand" data-index="0">
-                          <option value="">Select Brand</option>
+                          <option value="">Pilih Merek</option>
                           @foreach($brand as $index => $row)
                           <option value="{{$row->id}}">{{$row->brand_name}}</option>
                           @endforeach
@@ -131,11 +131,14 @@
 
                 <div class="row mt-10 product-row">
                   <div class="col">
-                    <select class="form-control js-select2 select-category" data-index="0">
+                    <!-- <select class="form-control js-select2 select-category" data-index="0">
                       <option value="">Select Category</option>
                       @foreach($product_category as $index => $row)
                         <option value="{{$row->id}}">{{$row->name}}</option>
                       @endforeach
+                    </select> -->
+                    <select class="form-control js-select2 select-category" name="category[]" data-index="0">
+                      <option value="">Select Category</option>
                     </select>
                   </div>
                   <div class="col-3">

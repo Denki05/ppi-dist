@@ -20,13 +20,13 @@
         </div>
       </div> --}}
       <div class="form-group row">
-        <label class="col-md-3 col-form-label text-right" for="name">Name <span class="text-danger">*</span></label>
+        <label class="col-md-3 col-form-label text-right" for="name">Nama <span class="text-danger">*</span></label>
         <div class="col-md-7">
           <input type="text" class="form-control" id="name" name="name">
         </div>
       </div>
       <div class="form-group row">
-        <label class="col-md-3 col-form-label text-right" for="address">Address</label>
+        <label class="col-md-3 col-form-label text-right" for="address">Alamat</label>
         <div class="col-md-7">
           <textarea class="form-control" id="address" name="address"></textarea>
         </div>
@@ -38,13 +38,13 @@
         </div>
       </div>
       <div class="form-group row">
-        <label class="col-md-3 col-form-label text-right" for="phone">Phone</label>
+        <label class="col-md-3 col-form-label text-right" for="phone">Telepon</label>
         <div class="col-md-7">
           <input type="text" class="form-control" id="phone" name="phone">
         </div>
       </div>
       <div class="form-group row">
-        <label class="col-md-3 col-form-label text-right" for="owner_name">Owner Name</label>
+        <label class="col-md-3 col-form-label text-right" for="owner_name">PIC</label>
         <div class="col-md-7">
           <input type="text" class="form-control" id="owner_name" name="owner_name">
         </div>
@@ -56,13 +56,13 @@
         </div>
       </div>
       <div class="form-group row">
-        <label class="col-md-3 col-form-label text-right" for="description">Description</label>
+        <label class="col-md-3 col-form-label text-right" for="description">Keterangan</label>
         <div class="col-md-7">
           <textarea class="form-control" id="description" name="description"></textarea>
         </div>
       </div>
       <div class="form-group row">
-        <label class="col-md-3 col-form-label text-right" for="type">Type <span class="text-danger">*</span></label>
+        <label class="col-md-3 col-form-label text-right" for="type">Type Vendor <span class="text-danger">*</span></label>
         <div class="col-md-7">
           <div class="col-md-2 form-check form-check-inline">
             <input class="form-check-input" type="radio" name="type" id="type" value="1">

@@ -239,8 +239,6 @@ class SalesOrderController extends Controller
     {
         $data_json = [];
         $post = $request->all();
-        $cust = Customer::find($store);
-        $other_address = CustomerOtherAddress::find($member);
         if($request->method() == "POST"){
             $customer = [];
             $gudang = [];
@@ -281,8 +279,8 @@ class SalesOrderController extends Controller
                 $insert->code = CodeRepo::generateSO();
                 
                 
-                $insert->customer_id = $store;
-                $insert->customer_other_address_id = $member;
+                $insert->customer_id = $member;
+                $insert->customer_other_address_id = $store;
                 $insert->sales_senior_id = $request->sales_senior_id;
                 $insert->sales_id = $request->sales_id;
                 $insert->so_for = 1;

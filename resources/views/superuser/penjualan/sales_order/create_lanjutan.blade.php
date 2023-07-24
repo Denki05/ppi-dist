@@ -351,14 +351,13 @@
 
       $(document).on('change', '.base_disc'  ,function () {
         let val = $(this).val();
-
+        
         $('.count-disc').val(val);
       });
 
       $(document).on('keyup','.count',function(){
         let index = $(this).attr('data-index');
         count_per_item(index);
-
       })
 
       function count_per_item(indx){
