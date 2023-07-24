@@ -171,13 +171,10 @@ class VendorController extends Controller
             $validator = Validator::make($request->all(), [
                 'name' => 'required|string',
                 'address' => 'nullable|string',
-
                 'email' => 'nullable|email',
                 'phone' => 'nullable|string',
-
                 'owner_name' => 'nullable|string',
                 'website' => 'nullable|string',
-
                 'description' => 'nullable|string'
             ]);
 
@@ -206,6 +203,7 @@ class VendorController extends Controller
                 $vendor->website = $request->website;
                 
                 $vendor->description = $request->description;
+                $vendor->type = $request->type;
 
                 if ($vendor->save()) {
                     DB::commit();

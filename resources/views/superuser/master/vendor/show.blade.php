@@ -96,7 +96,7 @@
   </div>
 </div>
 
-@if($vendor->type == $vendor::TYPE['Non Ekspedisi'])
+@if($vendor->type == 0)
 <div class="block">
   <div class="block-header block-header-default">
     <h3 class="block-title">Transaction History</h3>

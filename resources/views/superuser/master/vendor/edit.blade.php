@@ -28,51 +28,9 @@
         </div>
       </div>
       <div class="form-group row">
-        <label class="col-md-3 col-form-label text-right" for="address">Address</label>
+        <label class="col-md-3 col-form-label text-right" for="address">Alamat</label>
         <div class="col-md-7">
           <textarea class="form-control" id="address" name="address">{{ $vendor->address }}</textarea>
-        </div>
-      </div>
-      <div class="form-group row">
-        <label class="col-md-3 col-form-label text-right">Provinsi</label>
-        <div class="col-md-7">
-          <select class="js-select2 form-control" id="provinsi" name="provinsi" data-placeholder="Select Provinsi" data-value="{{ $vendor->provinsi }}">
-            <option></option>
-          </select>
-          <input type="hidden" name="text_provinsi">
-        </div>
-      </div>
-      <div class="form-group row">
-        <label class="col-md-3 col-form-label text-right">Kota</label>
-        <div class="col-md-7">
-          <select class="js-select2 form-control" id="kota" name="kota" data-placeholder="Select Kota" data-value="{{ $vendor->kota }}">
-            <option></option>
-          </select>
-          <input type="hidden" name="text_kota">
-        </div>
-      </div>
-      <div class="form-group row">
-        <label class="col-md-3 col-form-label text-right">Kecamatan</label>
-        <div class="col-md-7">
-          <select class="js-select2 form-control" id="kecamatan" name="kecamatan" data-placeholder="Select Kecamatan" data-value="{{ $vendor->kecamatan }}">
-            <option></option>
-          </select>
-          <input type="hidden" name="text_kecamatan">
-        </div>
-      </div>
-      <div class="form-group row">
-        <label class="col-md-3 col-form-label text-right">Kelurahan</label>
-        <div class="col-md-7">
-          <select class="js-select2 form-control" id="kelurahan" name="kelurahan" data-placeholder="Select Kelurahan" data-value="{{ $vendor->kelurahan }}">
-            <option></option>
-          </select>
-          <input type="hidden" name="text_kelurahan">
-        </div>
-      </div>
-      <div class="form-group row">
-        <label class="col-md-3 col-form-label text-right" for="zipcode">Zipcode</label>
-        <div class="col-md-7">
-          <input type="text" class="form-control" id="zipcode" name="zipcode" value="{{ $vendor->zipcode }}">
         </div>
       </div>
       <div class="form-group row">
@@ -82,13 +40,13 @@
         </div>
       </div>
       <div class="form-group row">
-        <label class="col-md-3 col-form-label text-right" for="phone">Phone</label>
+        <label class="col-md-3 col-form-label text-right" for="phone">Telepon</label>
         <div class="col-md-7">
           <input type="text" class="form-control" id="phone" name="phone" value="{{ $vendor->phone }}">
         </div>
       </div>
       <div class="form-group row">
-        <label class="col-md-3 col-form-label text-right" for="owner_name">Owner Name</label>
+        <label class="col-md-3 col-form-label text-right" for="owner_name">PIC</label>
         <div class="col-md-7">
           <input type="text" class="form-control" id="owner_name" name="owner_name" value="{{ $vendor->owner_name }}">
         </div>
@@ -100,9 +58,30 @@
         </div>
       </div>
       <div class="form-group row">
-        <label class="col-md-3 col-form-label text-right" for="description">Description</label>
+        <label class="col-md-3 col-form-label text-right" for="description">Keterangan</label>
         <div class="col-md-7">
           <textarea class="form-control" id="description" name="description">{{ $vendor->description }}</textarea>
+        </div>
+      </div>
+      <div class="form-group row">
+        <label class="col-md-3 col-form-label text-right" for="type">Type Vendor <span class="text-danger">*</span></label>
+        <div class="col-md-7">
+          <div class="col-md-2 form-check form-check-inline">
+            <input class="form-check-input" type="radio" name="type" id="type" value="1" @if($vendor->type == 1) checked @endif>
+            <label class="form-check-label" for="type">Ekspedisi</label>
+          </div>
+          <div class="col-md-3 form-check form-check-inline">
+            <input class="form-check-input" type="radio" name="type" id="type" value="0" @if($vendor->type == 0) checked @endif>
+            <label class="form-check-label" for="type">Non Ekspedisi</label>
+          </div>
+          <div class="col-md-2 form-check form-check-inline">
+            <input class="form-check-input" type="radio" name="type" id="type" value="2" @if($vendor->type == 2) checked @endif>
+            <label class="form-check-label" for="type">Factory</label>
+          </div>
+          <div class="col-md-2 form-check form-check-inline">
+            <input class="form-check-input" type="radio" name="type" id="type" value="3" @if($vendor->type == 3) checked @endif>
+            <label class="form-check-label" for="type">Mitra</label>
+          </div>
         </div>
       </div>
       <div class="form-group row pt-30">

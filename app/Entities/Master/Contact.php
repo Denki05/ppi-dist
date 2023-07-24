@@ -12,6 +12,7 @@ class Contact extends Model
     protected $appends = ['img_ktp', 'img_npwp'];
     protected $fillable = ['name', 'phone', 'email', 'position', 'dob', 'npwp', 'ktp', 'image_ktp', 'image_npwp', 'address', 'status'];
     protected $table = 'master_contacts';
+    public $incrementing = false;
     public static $directory_image = 'superuser_assets/media/master/contact/';
 
     const STATUS = [
