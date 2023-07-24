@@ -10,7 +10,7 @@ class Contact extends Model
     use SoftDeletes;
 
     protected $appends = ['img_ktp', 'img_npwp'];
-    protected $fillable = ['name', 'phone', 'email', 'position', 'dob', 'npwp', 'ktp', 'image_ktp', 'image_npwp', 'address', 'status'];
+    protected $fillable = ['name', 'phone', 'email', 'position', 'dob', 'npwp', 'ktp', 'image_ktp', 'image_npwp', 'address', 'status', 'is_for'];
     protected $table = 'master_contacts';
     public $incrementing = false;
     public static $directory_image = 'superuser_assets/media/master/contact/';
@@ -19,6 +19,11 @@ class Contact extends Model
         'DELETED' => 0,
         'ACTIVE' => 1
     ];
+
+    const IS_FOR = [
+      'MEMBER' => 0,
+      'VENDOR' => 1
+  ];
 
     public function getImgKtpAttribute()
     {

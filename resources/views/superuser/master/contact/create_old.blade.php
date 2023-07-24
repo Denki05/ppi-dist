@@ -39,10 +39,10 @@
               <div class="col-sm-10">
                 <div class="form-row">
                   <div class="col">
-                    <select class="form-control js-select2 manage_sync" id="is_for" name="is_for">
+                    <select class="form-control js-select2 manage_sync" id="manage_sync" name="manage_sync">
                       <option value="">Get Account</option>
-                      <option value="1">Member</option>
-                      <option value="2">Vendor</option>
+                      <option value="member">Member</option>
+                      <option value="vendor">Vendor</option>
                     </select>
                   </div>
                   <div class="col">
@@ -151,10 +151,10 @@
       tags: true
     });
 
-    $(document).on('change', '#is_for'  ,function () {
+    $(document).on('change', '#manage_sync'  ,function () {
         let sync = $(this).val();
         
-        if(sync == "1"){
+        if(sync == "member"){
           $.ajax({
            type:"get",
            url:"{{ route('superuser.master.contact.get_member') }}",
@@ -177,10 +177,10 @@
         }
     });
 
-    $(document).on('change', '#is_for'  ,function () {
+    $(document).on('change', '#manage_sync'  ,function () {
         let sync = $(this).val();
         
-        if(sync == "2"){
+        if(sync == "vendor"){
           $.ajax({
            type:"get",
            url:"{{ route('superuser.master.contact.get_vendor') }}",

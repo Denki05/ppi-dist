@@ -98,12 +98,11 @@ class ContactController extends Controller
             $validator = Validator::make($request->all(), [
                 'name' => 'required|string',
                 'phone' => 'required|string',
-                'email' => 'nullable|email',
                 'position' => 'nullable',
                 'dob' => 'nullable|date|date_format:d-m-Y',
                 'npwp' => 'nullable',
                 'ktp' => 'nullable',
-                // 'address' => 'nullable'
+               
             ]);
 
             if ($validator->fails()) {
@@ -120,8 +119,23 @@ class ContactController extends Controller
             if ($validator->passes()) {
                 DB::beginTransaction();
 
+                $get_max_id = DB::table('master_contacts')
+                    ->max('id');
+                
+                if($get_max_id == null){
+                    $no = 1;
+                    $kd = sprintf("%03s", $no);
+                }else{
+                    $explode = explode("/", $get_max_id);
+                
+                    $tmp = $explode['2'] +1;
+                    $kd = sprintf("%03s", $tmp);
+                    $no = 1;
+                }
+
                 $contact = new Contact();
 
+                $contact->id = $request->manage_id . '/' . $request->is_for . '/' . $kd;
                 $contact->name = $request->name;
                 $contact->phone = $request->phone;
                 $contact->email = $request->email;
@@ -136,22 +150,23 @@ class ContactController extends Controller
                 if (!empty($request->file('image_npwp'))) {
                     $contact->image_npwp = UploadMedia::image($request->file('image_npwp'), Contact::$directory_image);
                 }
+                $contact->is_for = $request->is_for;
                 $contact->status = Contact::STATUS['ACTIVE'];
 
                 if ($contact->save()) {
-                    if($request->manage_sync == 'member'){
-                        $member_cont = new CustomerContact;
-                        $member_cont->customer_id = NULL;
-                        $member_cont->customer_other_address_id = $request->manage_id;
-                        $member_cont->contact_id = $contact->id;
-                        $member_cont->status = CustomerContact::STATUS['ACTIVE'];
-                        $member_cont->save();
-                    }elseif($request->manage_sync == 'vendor'){
-                        $vendor_cont = new VendorContact;
-                        $vendor_cont->vendor_id = $request->manage_id;
-                        $vendor_cont->contact_id = $contact->id;
-                        $vendor_cont->save();
-                    }
+                    // if($request->manage_sync == 'member'){
+                    //     $member_cont = new CustomerContact;
+                    //     $member_cont->customer_id = NULL;
+                    //     $member_cont->customer_other_address_id = $request->manage_id;
+                    //     $member_cont->contact_id = $contact->id;
+                    //     $member_cont->status = CustomerContact::STATUS['ACTIVE'];
+                    //     $member_cont->save();
+                    // }elseif($request->manage_sync == 'vendor'){
+                    //     $vendor_cont = new VendorContact;
+                    //     $vendor_cont->vendor_id = $request->manage_id;
+                    //     $vendor_cont->contact_id = $contact->id;
+                    //     $vendor_cont->save();
+                    // }
 
                     DB::commit();
                     
@@ -161,7 +176,7 @@ class ContactController extends Controller
                         'content' => 'Success',
                     ];
 
-                    $response['redirect_to'] = route('superuser.master.contact.show', $contact->id);
+                    $response['redirect_to'] = route('superuser.master.contact.index');
 
                     return $this->response(200, $response);
                 }
