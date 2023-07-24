@@ -84,7 +84,7 @@ $(document).ready(function() {
       {data: 'action', orderable: false, searcable: false}
     ],
     order: [
-      [1, 'desc']
+      [1, 'asc']
     ],
     pageLength: 5,
     lengthMenu: [
