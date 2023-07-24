@@ -47,7 +47,7 @@ class SubBrandReferenceImport implements ToCollection, WithHeadingRow, WithStart
             foreach ($rows as $row) {
                 $brand_reference = BrandReference::where('name', $row['brand_name'])->first();
                 if($brand_reference == null) {
-                    $collect_error = array('Brand Fragrantica '.$row['brand_name'].' NOT FOUND : all import aborted!');
+                    $collect_error = array('BRAND '.$row['brand_name'].' NOT FOUND : all import aborted!');
                     break;
                 }
 
