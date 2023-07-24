@@ -59,12 +59,13 @@
                     <div class="form-group row">
                       <label class="col-md-4 col-form-label text-right">Transaksi<span class="text-danger">*</span></label>
                       <div class="col-md-6">
-                        <select class="form-control js-select2 select-transaksi" name="type_transaction">
-                          <option value="">Jenis transaksi</option>
-                          @foreach($type_transaction as $row)
-                            <option value="{{$row}}">{{$row}}</option>
-                          @endforeach
-                        </select>
+                        @if ($customers->has_tempo == 0)
+                          <input type="text" class="form-control input-type-transaction" name="input-type-transaction" placeholder="CASH" readonly>
+                          <input type="hidden" class="form-control type_transaction" name="type_transaction" id="type_transaction" value="1">
+                        @elseif($customers->has_tempo == 1)
+                          <input type="text" class="form-control input-type-transaction" name="input-type-transaction" placeholder="TEMPO" readonly>
+                          <input type="hidden" class="form-control type_transaction" name="type_transaction" id="type_transaction" value="2" placeholder="TEMPO">
+                        @endif
                       </div>
                     </div>
                     @endif
@@ -94,9 +95,9 @@
                     <div class="form-group row">
                       <label class="col-md-4 col-form-label text-right">Brand</label>
                       <div class="col-md-6">
-                        <select class="form-control js-select2 select-brand" name="select-brand" id="select-brand">
-                          <option>Pilih Brand</option>
-                          @foreach($brand as $row)
+                        <select class="form-control js-select2 select-brand" data-index="0">
+                          <option value="">Select Brand</option>
+                          @foreach($brand as $index => $row)
                           <option value="{{$row->id}}">{{$row->brand_name}}</option>
                           @endforeach
                         </select>
@@ -117,20 +118,49 @@
             
           </div>
           <div class="block-content">
-            <table class="table table-bordered" id="dynamicTable">  
-              <tr>
-                  <th>Name</th>
-                  <th>Qty</th>
-                  <th>Price</th>
-                  <th>Action</th>
-              </tr>
-              <tr>  
-                  <td><input type="text" name="addmore[0][name]" placeholder="Enter your Name" class="form-control" /></td>  
-                  <td><input type="text" name="addmore[0][qty]" placeholder="Enter your Qty" class="form-control" /></td>  
-                  <td><input type="text" name="addmore[0][price]" placeholder="Enter your Price" class="form-control" /></td>  
-                  <td><button type="button" name="add" id="add" class="btn btn-success">Add More</button></td>  
-              </tr>  
-            </table> 
+            <div class="row">
+              <div class="col-12 product-list">
+                <div class="row">
+                  <div class="col">Category</div>
+                  <div class="col-3">Product</div>
+                  <div class="col-1">Qty</div>
+                  <div class="col">Packaging</div>
+                  <div class="col-1">Free</div>
+                  <div class="col">Action</div>
+                </div>
+
+                <div class="row mt-10 product-row">
+                  <div class="col">
+                    <select class="form-control js-select2 select-category" data-index="0">
+                      <option value="">Select Category</option>
+                      @foreach($product_category as $index => $row)
+                        <option value="{{$row->id}}">{{$row->name}}</option>
+                      @endforeach
+                    </select>
+                  </div>
+                  <div class="col-3">
+                    <select class="form-control js-select2 select-product" name="product_id[]" data-index="0">
+                      <option value="">Select product</option>
+                    </select>
+                  </div>
+                  <div class="col-1">
+                    <input type="number" name="qty[]" class="form-control input-qty" data-index="0" step="any">
+                  </div>
+                  <div class="col">
+                    <select name="packaging_id[]" class="form-control js-select2 select-packaging" data-index="0">
+                      <option value="">Select packaging</option>
+                    </select>
+                  </div>
+                  <div class="col-1">
+                    <input type="checkbox" class="form-check-input input-gift" id="gift" name="gift">
+                    <input class="form-control input-free" type="hidden" id="free_product" name="free_product[]" data-index="0" step="any">
+                  </div>
+                  <div class="col"><button type="button" id="buttonAddProduct" class="btn btn-primary"><em class="fa fa-plus"></em></button></div>
+                </div>
+                <hr />
+
+              </div>
+            </div>
           </div>
         </div>
       <hr />
@@ -217,16 +247,163 @@
     })
 
     // add product
-    var i = 0;
-       
-    $("#add").click(function(){
-        ++i;
-        $("#dynamicTable").append('<tr><td><input type="text" name="addmore['+i+'][name]" placeholder="Enter your Name" class="form-control" /></td><td><input type="text" name="addmore['+i+'][qty]" placeholder="Enter your Qty" class="form-control" /></td><td><input type="text" name="addmore['+i+'][price]" placeholder="Enter your Price" class="form-control" /></td><td><button type="button" class="btn btn-danger remove-tr">Remove</button></td></tr>');
+    $(document).on('click','#buttonAddProduct',function(){
+      const categoryId = $('.select-category[data-index=0]').val();
+      const categoryText = $('.select-category[data-index=0] option:selected').text();
+      const productId = $('.select-product[data-index=0]').val();
+      const productText = $('.select-product[data-index=0] option:selected').text();
+      const qty = $('.input-qty[data-index=0]').val();
+      const packagingId = $('.select-packaging[data-index=0]').val();
+      const packagingText = $('.select-packaging[data-index=0] option:selected').text();
+      const free = $('.input-free[data-index=0]').val();
+
+      if (categoryId === null || categoryId === '' || productId === null || productId === '' || qty === null || qty === '' || packagingId == null || packagingId === '' ) {
+        Swal.fire(
+          'Error!',
+          'Please input all the data',
+          'error'
+        );
+        return;
+      }
+
+      let html = "<div class='row mt-10 product-row brand-" + categoryId + "'>";
+      html += "  <div class='col-2'>";
+      html += "    <input type='hidden' class='form-control' value='" + categoryId + "'>";
+      html += categoryText;
+      html += "  </div>";
+      html += "  <div class='col-2'>";
+      html += "    <input type='hidden' name='product_id[]' class='form-control' value='" + productId + "'>";
+      html += productText;
+      html += "  </div>";
+      html += "  <div class='col-2 text-right'>";
+      html += "    <input type='hidden' name='qty[]' class='form-control' value='" + qty + "'>";
+      html += qty;
+      html += "  </div>";
+      html += "  <div class='col-2'>";
+      html += "    <input type='hidden' name='packaging_id[]' class='form-control' value='" + packagingId + "'>";
+      html += packagingText;
+      html += "  </div>";
+      html += "  <div class='col-1 text-right'>";
+      html += "    <input type='hidden' name='free_product[]' class='form-control free' value='" + free + "'>";
+      html += free;
+      html += "  </div>";
+      html += "  <div class='col-1'>";
+      html += "    <button type='button' id='buttonDeleteProduct' class='btn btn-danger'><em class='fa fa-minus'></em></button>";
+      html += "  </div>";
+      html += "</div>";
+      
+      if ($('.product-row.category-' + categoryId).length > 0) {
+        $('body').find('.product-row.category-' + categoryId + ':last').after(html);
+      } else {
+        $('body').find('.product-list').append(html);
+      }
+
+      $('.select-category[data-index=0]').val('').change();
+      $('.select-product[data-index=0]').val('').change();
+      $('.input-qty[data-index=0]').val('');
+      $('.select-packaging[data-index=0]').val('').change();
+      $('.input-free[data-index=0]').val();
+
+      $('.select-category[data-index=0]').select2('focus');
+
+      productCount++;
     });
-   
-    $(document).on('click', '.remove-tr', function(){  
-         $(this).parents('tr').remove();
-    }); 
+
+    $(document).on('click','#buttonDeleteProduct',function(){
+      $(this).parents(".product-row").remove();
+    });
+
+    var param = [];
+    param["brand_lokal_id"] = "";
+
+    loadCategory({});
+
+    $(document).on('change','.select-brand',function(){
+      if ($(this).val() === '') return;
+
+      param["brand_lokal_id"] = $(this).val();
+      loadCategory({
+        brand_lokal_id:param["brand_lokal_id"],
+        index: $(this).data("index")
+      })
+    })
+
+    function loadCategory(param){
+      $.ajax({
+        url : '{{route('superuser.penjualan.sales_order.get_category')}}',
+        method : "GET",
+        data : param,
+        dataType : "JSON",
+        success : function(resp){
+          let option = "";
+          option = '<option value="">Select Category</option>';
+          $.each(resp.Data,function(i,e){
+            option += '<option value="'+e.catId+'">'+e.categoryName+' - '+e.packValue+' '+e.satuan+'</option>';
+          })
+          $('.select-category[data-index=' + param.index + ']').html(option);
+        },
+        error : function(){
+          alert("Cek Koneksi Internet");
+        }
+      })
+    }
+
+    var param = [];
+    param["category_id"] = "";
+
+    loadProduct({});
+
+    $(document).on('change','.select-category',function(){
+      if ($(this).val() === '') return;
+
+      param["category_id"] = $(this).val();
+      loadProduct({
+        category_id:param["category_id"],
+        index: $(this).data("index")
+      })
+    })
+
+    function loadProduct(param){
+      $.ajax({
+        url : '{{route('superuser.penjualan.sales_order.get_product')}}',
+        method : "GET",
+        data : param,
+        dataType : "JSON",
+        success : function(resp){
+          let option = "";
+          let option2 = "";
+          option = '<option value="">Select Product</option>';
+          option2 = '<option value="">Select Packaging</option>';
+          $.each(resp.Data,function(i,e){
+            option += '<option value="'+e.id+'">'+e.productCode+' - '+e.productName+' - $'+e.productPrice+'</option>';
+            option2 += '<option value="'+e.packId+'">'+e.packName+'</option>';
+          })
+          $('.select-product[data-index=' + param.index + ']').html(option);
+          $('.select-packaging[data-index=' + param.index + ']').html(option2);
+        },
+        error : function(){
+          alert("Cek Koneksi Internet");
+        }
+      })
+    }
+
+    // function validate() {
+    //   var gift = $('#gift').val();
+    //   if (gift.checked) {
+    //     $('.input-free[data-index=0]').val(1);
+    //   } else {
+    //     // alert("You didn't check it! Let me check it for you.");
+    //     $('.input-free[data-index=0]').val(0);
+    //   }
+    // }
+
+    $('.input-gift').click(function(){
+    if($(this).is(':checked')){
+        $('.input-free[data-index=0]').val(1);
+    } else {
+        $('.input-free[data-index=0]').val(0);
+    }
+});
   })
 </script>
 @endpush

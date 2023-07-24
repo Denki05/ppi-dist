@@ -63,8 +63,8 @@
       </div>
       <div class="form-group row">
         <label class="col-md-3 col-form-label text-right" for="type">Type <span class="text-danger">*</span></label>
-        <div class="col-md-7 text-right">
-          <div class="col-md-3 form-check form-check-inline">
+        <div class="col-md-7">
+          <div class="col-md-2 form-check form-check-inline">
             <input class="form-check-input" type="radio" name="type" id="type" value="1">
             <label class="form-check-label" for="type">Ekspedisi</label>
           </div>
@@ -72,9 +72,13 @@
             <input class="form-check-input" type="radio" name="type" id="type" value="0">
             <label class="form-check-label" for="type">Non Ekspedisi</label>
           </div>
-          <div class="col-md-3 form-check form-check-inline">
+          <div class="col-md-2 form-check form-check-inline">
             <input class="form-check-input" type="radio" name="type" id="type" value="2">
             <label class="form-check-label" for="type">Factory</label>
+          </div>
+          <div class="col-md-2 form-check form-check-inline">
+            <input class="form-check-input" type="radio" name="type" id="type" value="3">
+            <label class="form-check-label" for="type">Mitra</label>
           </div>
         </div>
       </div>

@@ -41,6 +41,9 @@ Route::group([
         Route::post('/ajax_warehouse_detail', 'SalesOrderController@ajax_warehouse_detail')->name('ajax_warehouse_detail');
         Route::post('/ajax_product_detail', 'SalesOrderController@ajax_product_detail')->name('ajax_product_detail');
         Route::get('/{id}/print_rejected_so', 'SalesOrderController@print_rejected_so')->name('print_rejected_so');
+
+        Route::get('/get_category', 'SalesOrderController@get_category')->name('get_category');
+        Route::get('/get_product', 'SalesOrderController@get_product')->name('get_product');
     });
 
     Route::group(['as' => 'packing_order.', 'prefix' => '/packing_order'], function () {
