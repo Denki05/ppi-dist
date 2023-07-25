@@ -17,7 +17,7 @@
         <div class="row">
           <div class="col">
             <div class="form-group row">
-              <label class="col-sm-2 col-form-label" for="name">Name <span class="text-danger">*</span></label>
+              <label class="col-sm-2 col-form-label" for="name">Nama <span class="text-danger">*</span></label>
               <div class="col-sm-10">
                 <input type="text" class="form-control" id="name" name="name">
               </div>
@@ -35,7 +35,7 @@
         <div class="row">
           <div class="col">
             <div class="form-group row">
-              <label for="sync" class="col-sm-2 col-form-label">Sync <span class="text-danger">*</span></label>
+              <label for="sync" class="col-sm-2 col-form-label">Is For <span class="text-danger">*</span></label>
               <div class="col-sm-10">
                 <div class="form-row">
                   <div class="col">
@@ -56,7 +56,7 @@
           </div>
           <div class="col">
             <div class="form-group row">
-              <label class="col-sm-2 col-form-label" for="position">Position <span class="text-danger">*</span></label>
+              <label class="col-sm-2 col-form-label" for="position">Posisi <span class="text-danger">*</span></label>
               <div class="col-sm-10">
                 <select class="js-select2 form-control" id="position" name="position" data-placeholder="Select or Add New">
                   <option value="">Pilih Jabatan</option>
@@ -71,7 +71,7 @@
         <div class="row">
           <div class="col">
             <div class="form-group row">
-              <label class="col-sm-2 col-form-label" for="phone">Phone <span class="text-danger">*</span></label>
+              <label class="col-sm-2 col-form-label" for="phone">Telepon <span class="text-danger">*</span></label>
               <div class="col-sm-10">
                 <input type="text" class="form-control" id="phone" name="phone">
               </div>
