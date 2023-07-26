@@ -7,7 +7,7 @@ use App\Entities\Model;
 class Contact extends Model
 {
     protected $appends = ['img_ktp', 'img_npwp'];
-    protected $fillable = ['name', 'phone', 'email', 'position', 'dob', 'npwp', 'ktp', 'image_ktp', 'image_npwp', 'address', 'status', 'is_for'];
+    protected $fillable = ['manage_id', 'name', 'phone', 'email', 'position', 'dob', 'npwp', 'ktp', 'image_ktp', 'image_npwp', 'address', 'status', 'is_for'];
     protected $table = 'master_contacts';
     public $incrementing = false;
     public static $directory_image = 'superuser_assets/media/master/contact/';

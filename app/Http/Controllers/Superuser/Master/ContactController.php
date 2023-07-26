@@ -114,16 +114,19 @@ class ContactController extends Controller
 
                 $get_max_id = DB::table('master_contacts')
                     ->max('id');
+
+                // $pecah = explode("-", $get_max_id);
+                // dd($pecah);s
                 
                 if($get_max_id == null){
                     $no = 1;
                     $kd = sprintf("%03s", $no);
                 }else{
-                    $explode = explode("/", $get_max_id);
-                
-                    $tmp = $explode['2'] +1;
-                    $kd = sprintf("%03s", $tmp);
+                    $explode = explode("-", $get_max_id);
+                    
                     $no = 1;
+                    $tmp = $explode['1'] + $no;
+                    $kd = sprintf("%03s", $tmp);
                 }
 
                 $contact = new Contact();
@@ -144,6 +147,8 @@ class ContactController extends Controller
                     $contact->image_npwp = UploadMedia::image($request->file('image_npwp'), Contact::$directory_image);
                 }
                 $contact->is_for = $request->is_for;
+                $contact->manage_id = $request->manage_id;
+                DD($contact->manage_id);
                 $contact->status = Contact::STATUS['ACTIVE'];
 
                 if ($contact->save()) {
