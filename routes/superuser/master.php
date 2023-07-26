@@ -161,7 +161,7 @@ Route::group([
 
     Route::group(['as' => 'contact.', 'prefix' => '/contact'], function () {
         Route::get('/import_template', 'ContactController@import_template')->name('import_template');
-        Route::post('/import', 'ContactController@import')->name('import');
+        Route::post('/import/{id}', 'ContactController@import')->name('import');
         Route::get('/export', 'ContactController@export')->name('export');
         Route::get('/get_store', 'ContactController@get_store')->name('get_store');
         Route::get('/get_member', 'ContactController@get_member')->name('get_member');

@@ -54,7 +54,10 @@ class ContactController extends Controller
             }
         }
 
-        return view('superuser.master.contact.index');
+        $data['member'] = CustomerOtherAddress::first();
+        $data['vendor'] = vendor::first();
+
+        return view('superuser.master.contact.index', $data);
     }
 
     public function get_member(Request $request)
@@ -301,7 +304,7 @@ class ContactController extends Controller
         return Excel::download(new ContactImportTemplate, $filename);
     }
 
-    public function import(Request $request)
+    public function import(Request $request, $id)
     {
         // Access
         if(Auth::user()->is_superuser == 0){
@@ -318,10 +321,20 @@ class ContactController extends Controller
             return redirect()->back()->withErrors($validator->errors()->all());
         }
 
-        if ($validator->passes()) {
-            Excel::import(new ContactImport, $request->import_file);
+        // if ($validator->passes()) {
+        //     Excel::import(new ContactImport, $request->import_file);
 
-            return redirect()->back();
+        //     return redirect()->back();
+        // }
+        if ($validator->passes()) {
+            $import = new ContactImport($id);
+            Excel::import($import, $request->import_file);
+            
+            if($import->error) {
+                return redirect()->back()->withErrors($import->error);
+            }
+            
+            return redirect()->back()->with(['message' => 'Import success']);
         }
     }
 

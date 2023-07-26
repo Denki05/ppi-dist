@@ -50,7 +50,7 @@
 
 @include('superuser.component.modal-manage', [
   'import_template_url' => route('superuser.master.contact.import_template'),
-  'import_url' => route('superuser.master.contact.import'),
+  'import_url' => route('superuser.master.contact.import', [$member->id, $vendor->id]),
   'export_url' => route('superuser.master.contact.export'),
   'import_custom_message' => '
     DOB format : d-m-Y <br>

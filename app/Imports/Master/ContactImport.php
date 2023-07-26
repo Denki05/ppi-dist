@@ -21,16 +21,17 @@ use Illuminate\Support\Collection;
 use Maatwebsite\Excel\Validators\Failure;
 use DB;
 
+HeadingRowFormatter::default('none');
+
 class ContactImport implements ToCollection, WithHeadingRow, WithStartRow, SkipsOnFailure, SkipsOnError
 {
     use SkipsFailures, SkipsErrors;
 
     public $error;
 
-    public function  __construct($customer_other_address_id, $vendor_id)
+    public function  __construct($manage_id)
     {
-        $this->brand_reference_id = $brand_reference_id;
-        $this->vendor_id = $vendor_id;
+        $this->manage_id = $manage_id;
     }
 
     public function collection(Collection $rows)
@@ -38,20 +39,35 @@ class ContactImport implements ToCollection, WithHeadingRow, WithStartRow, Skips
         DB::beginTransaction();
         $collect_error = [];
 
-        $member = CustomerOtherAddress::find($this->customer_other_address_id);
+        $member = CustomerOtherAddress::find($this->manage_id);
+        $vendor = Vendor::find($this->manage_id);
 
-        $vendor = Vendor::find($this->vendor_id);
-
-        if($member == null || $vendor == null) {
+        if($member == null && $vendor == null) {
             $collect_error = array('Something went wrong, please reload page!');
         } else {
             foreach ($rows as $row) {
                 $member = CustomerOtherAddress::where('name', $row['account_name'])->first();
                 $vendor = Vendor::where('name', $row['account_name'])->first();
-                if($member == null || $vendor == null) {
+                if($member == null && $vendor == null) {
                     $collect_error = array('Account Name '.$row['account_name'].' NOT FOUND : all import aborted!');
                     break;
                 }
+
+                // create ID contact
+                $get_max_id = DB::table('master_contacts')
+                    ->max('id');
+
+                if($get_max_id == null){
+                    $no = 1;
+                    $kd = sprintf("%03s", $no);
+                }else{
+                    $explode = explode("-", $get_max_id);
+                        
+                    $no = 1;
+                    $tmp = $explode['1'] + $no;
+                    $kd = sprintf("%03s", $tmp);
+                }
+
 
                 $name_contact = $row['name'];
                 $dob =  ($row['dob'] != null) ? date('Y-m-d', strtotime($row['dob'])) : null;
@@ -65,18 +81,50 @@ class ContactImport implements ToCollection, WithHeadingRow, WithStartRow, Skips
                 $status = Contact::STATUS['ACTIVE'];
 
                 if($row['is_for'] == 1){
-                    
+                    $contact = new Contact;
+
+                    $contact->id = $member->id . '.' . $is_for . '-' . $kd;
+                    $contact->name = $name_contact;
+                    $contact->dob = $dob;
+                    $contact->is_for = $is_for;
+                    $contact->manage_id = $member->id;
+                    $contact->position = $posisi;
+                    $contact->phone = $telp;
+                    $contact->ktp = implode("/", [$name_contact, $no_ktp]);
+                    $contact->npwp = implode("/", [$name_contact, $no_npwp]);
+                    $contact->status = $status;
+                    if($contact->save()) {
+                    } else {
+                        $collect_error = array('Something went wrong, please reload page!');
+                        break;
+                    }
+                }else{
+                    $contact = new Contact;
+
+                    $contact->id = $vendor->id . '.' . $is_for . '-' . $kd;
+                    $contact->name = $name_contact;
+                    $contact->dob = $dob;
+                    $contact->is_for = $is_for;
+                    $contact->manage_id = $vendor->id;
+                    $contact->position = $posisi;
+                    $contact->phone = $telp;
+                    $contact->ktp = implode("/", [$name_contact, $no_ktp]);
+                    $contact->npwp = implode("/", [$name_contact, $no_npwp]);
+                    $contact->status = $status;
+                    if($contact->save()) {
+                    } else {
+                        $collect_error = array('Something went wrong, please reload page!');
+                        break;
+                    }
                 }
-
-                
-
-                // if($sub_brand_reference->save()) {
-                // } else {
-                //     $collect_error = array('Something went wrong, please reload page!');
-                //     break;
-                // }
-                
             }
+
+            if($collect_error) {
+                $this->error = $collect_error;
+                DB::rollBack();
+            } 
+            
+            DB::commit();
         }
 
         if($collect_error) {

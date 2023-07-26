@@ -10,7 +10,7 @@ class ContactImportTemplate implements FromArray, ShouldAutoSize
     public function array(): array
     {
         return [
-            ['name', 'phone', 'email', 'position', 'dob', 'npwp', 'ktp', 'address']
+            ['name', 'dob', 'is_for', 'account_name', 'position', 'telepon', 'email', 'ktp', 'npwp']
         ];
     }
 }
