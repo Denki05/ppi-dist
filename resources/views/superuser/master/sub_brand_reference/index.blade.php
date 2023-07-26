@@ -18,7 +18,7 @@
 @endif
 
 <nav class="breadcrumb bg-white push">
-  <a href="{{route('superuser.master.brand_reference.create')}}" class="btn btn-primary btn-lg active" role="button" aria-pressed="true" style="margin-left: 10px !important;">Add Brand Fragrantica</a>
+  <a href="{{route('superuser.master.brand_reference.index')}}" class="btn btn-primary btn-lg active" role="button" aria-pressed="true" style="margin-left: 10px !important;">Brand Fragrantica</a>
   <a href="{{route('superuser.master.sub_brand_reference.create')}}" class="btn btn-primary btn-lg active" role="button" aria-pressed="true" style="margin-left: 10px !important;">Add Searah</a>
   <button type="button" class="btn btn-outline-info ml-10" data-toggle="modal" data-target="#modal-manage">Manage</button>
 </nav>
@@ -33,7 +33,7 @@
                 <label class="col-md-2 col-form-label text-left" for="filter_brand">Searah :</label>
                 <div class="col-md-4">
                   <select class="form-control js-select2" id="filter_searah" name="filter_searah" data-placeholder="Find Searah Name">
-                    <option value="">All</option>
+                    <option value="all">All</option>
                     @foreach($parfume_searah as $searah)
                     <option value="{{$searah->name}}">{{$searah->name}}</option>
                     @endforeach
@@ -108,12 +108,12 @@ $(document).ready(function() {
     processing: true,
     serverSide: false,
     searching: false,
-    paging: false,
+    paging: true,
     bInfo: false,
     scrollX: false,
     scrollY: false,
     ajax: {
-      "url": datatableUrl,
+      "url": firstDatatableUrl,
       "dataType": "json",
       "type": "GET",
       "data":{ _token: "{{csrf_token()}}"}
@@ -142,10 +142,10 @@ $(document).ready(function() {
     order: [
       [1, 'desc']
     ],
-    pageLength: 5,
+    pageLength: 25,
     lengthMenu: [
-      [5, 15, 20],
-      [5, 15, 20]
+      [25, 50, 75],
+      [25, 50, 75]
     ],
   });
   $('#filter').on('click', function(e) {
