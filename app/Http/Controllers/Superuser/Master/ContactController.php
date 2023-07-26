@@ -45,11 +45,16 @@ class ContactController extends Controller
         return $datatable->build();
     }
 
-    public function get_store(Request $request)
+    public function index()
     {
-        $store = Customer::all()->pluck('name', 'id');
+       // Access
+        if(Auth::user()->is_superuser == 0){
+            if(empty($this->access) || empty($this->access->user) || $this->access->can_read == 0){
+                return redirect()->route('superuser.index')->with('error','Anda tidak punya akses untuk membuka menu terkait');
+            }
+        }
 
-        return response()->json($store);
+        return view('superuser.master.contact.index');
     }
 
     public function get_member(Request $request)
@@ -66,18 +71,6 @@ class ContactController extends Controller
        return response()->json($vendor);
     }
 
-    public function index()
-    {
-       // Access
-        if(Auth::user()->is_superuser == 0){
-            if(empty($this->access) || empty($this->access->user) || $this->access->can_read == 0){
-                return redirect()->route('superuser.index')->with('error','Anda tidak punya akses untuk membuka menu terkait');
-            }
-        }
-
-        return view('superuser.master.contact.index');
-    }
-
     public function create()
     {
         // Access
@@ -87,7 +80,7 @@ class ContactController extends Controller
             }
         }
 
-        $data['position'] = ContactPosition::get();
+        $data['posisi'] = Contact::get()->unique('position');
 
         return view('superuser.master.contact.create', $data);
     }

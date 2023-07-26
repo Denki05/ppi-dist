@@ -60,8 +60,8 @@
               <div class="col-sm-10">
                 <select class="js-select2 form-control" id="position" name="position" data-placeholder="Select or Add New">
                   <option value="">Pilih Jabatan</option>
-                  @foreach($position as $row)
-                  <option value="{{$row->name}}">{{$row->name}}</option>
+                  @foreach($posisi as $row)
+                  <option value="{{$row->position}}">{{$row->position}}</option>
                   @endforeach
                 </select>
               </div>
