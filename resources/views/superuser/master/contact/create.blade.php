@@ -19,7 +19,7 @@
             <div class="form-group row">
               <label class="col-sm-2 col-form-label" for="name">Nama <span class="text-danger">*</span></label>
               <div class="col-sm-10">
-                <input type="text" class="form-control" id="name" name="name">
+                <input type="text" class="form-control" id="name" name="name" placeholder="Input Nama">
               </div>
             </div>
           </div>
@@ -73,7 +73,7 @@
             <div class="form-group row">
               <label class="col-sm-2 col-form-label" for="phone">Telepon <span class="text-danger">*</span></label>
               <div class="col-sm-10">
-                <input type="text" class="form-control" id="phone" name="phone">
+                <input type="text" class="form-control" id="phone" name="phone" placeholder="Input Telepon">
               </div>
             </div>
           </div>
@@ -81,7 +81,7 @@
             <div class="form-group row">
               <label class="col-sm-2 col-form-label" for="email">Email </label>
               <div class="col-sm-10">
-                <input type="email" class="form-control" id="email" name="email">
+                <input type="email" class="form-control" id="email" name="email" placeholder="Input Email">
               </div>
             </div>
           </div>
@@ -93,7 +93,7 @@
               <div class="col-sm-10">
                 <div class="form-row">
                   <div class="col">
-                    <input type="text" class="form-control" id="ktp" name="ktp">
+                    <input type="text" class="form-control" id="ktp" name="ktp" placeholder="Input No KTP">
                   </div>
                   <div class="col">
                     <input class="form-control" type="file" id="image_ktp" name="image_ktp">
@@ -108,7 +108,7 @@
               <div class="col-sm-10">
                 <div class="form-row">
                   <div class="col">
-                    <input type="text" class="form-control" id="npwp" name="npwp">
+                    <input type="text" class="form-control" id="npwp" name="npwp" placeholder="Input No NPWP">
                   </div>
                   <div class="col">
                     <input class="form-control" type="file" id="image_npwp" name="image_npwp">
