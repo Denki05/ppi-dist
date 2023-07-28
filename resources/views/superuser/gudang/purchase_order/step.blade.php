@@ -120,29 +120,20 @@
     <table id="datatable" class="table table-striped">
       <thead>
         <tr>
-          <th class="text-center">SKU</th>
-          <th class="text-center">Qty</th>
-          <th class="text-center">Unit Price (RMB)</th>
-          <th class="text-center">Local Freight Cost (RMB)</th>
-          <th class="text-center">Komisi (IDR)</th>
-          <th class="text-center">Total Price (RMB)</th>
-          <th class="text-center">Kurs (RMB)</th>
-          <th class="text-center">Total Price (IDR)</th>
-          <th class="text-center">Unit Price (IDR)</th>
+          <th class="text-center">#</th>
+          <th class="text-center">Nama Varian</th>
+          <th class="text-center">Kode</th>
+          <th class="text-center">Qty (KG)</th>
+          <th class="text-center">Packaging</th>
+          <th class="text-center">Produksi</th>
+          <th class="text-center">Repack</th>
           <th class="text-center">Action</th>
         </tr>
       </thead>
       <tbody>
         
       </tbody>
-      <!-- <tfoot>
-        <tr>
-          <th colspan="5" style="text-align:right">Total RMB:</th>
-          <th colspan="3"></th>
-          <th style="text-align:right">Total IDR:</th>
-          <th></th>
-        </tr>
-      </tfoot> -->
+      
     </table>
   </div>
 </div>
@@ -158,11 +149,6 @@
 <script type="text/javascript">
   $(document).ready(function() {
     $('#datatable').DataTable()
-
-    $('a.img-lightbox').magnificPopup({
-      type: 'image',
-      closeOnContentClick: true,
-    });
   });
 </script>
 @endpush
