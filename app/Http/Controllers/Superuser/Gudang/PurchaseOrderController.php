@@ -7,6 +7,9 @@ use Illuminate\Http\Request;
 use App\Entities\Setting\UserMenu;
 use App\Entities\Gudang\PurchaseOrder;
 use App\Entities\Gudang\PurchaseOrderDetail;
+use App\Entities\Master\BrandLokal;
+use App\Entities\Master\Product;
+use App\Entities\Master\Packaging;
 use App\DataTables\Gudang\PurchaseOrderTable;
 use App\Entities\Master\Warehouse;
 use Auth;
@@ -125,6 +128,11 @@ class PurchaseOrderController extends Controller
         }
     }
 
+    public function store_item(Request $request, $id)
+    {
+
+    }
+
     /**
      * Display the specified resource.
      *
@@ -228,6 +236,8 @@ class PurchaseOrderController extends Controller
         }
 
         $data['purchase_order'] = PurchaseOrder::findOrFail($id);
+        $data['merek'] = BrandLokal::get();
+        $data['packaging'] = Packaging::get();
 
         if($data['purchase_order']->status == PurchaseOrder::STATUS['ACC'] OR $data['purchase_order']->status == PurchaseOrder::STATUS['DELETED']) {
             return abort(404);
@@ -372,5 +382,39 @@ class PurchaseOrderController extends Controller
     public function destroy($id)
     {
         //
+    }
+
+    public function get_product(Request $request){
+        $data_json = [];
+        $post = $request->all();
+        if($request->method() == "GET"){
+            $table = Product::where(function($query2) use($post){
+                        if(!empty($post["brand_lokal_id"])){
+                            $query2->where('brand_lokal_id',$post["brand_lokal_id"]);
+                        }
+                    })
+                    ->where('master_products.status', 1)
+                    ->leftJoin('master_product_categories', 'master_products.category_id', '=', 'master_product_categories.id')
+                    ->leftJoin('master_packaging', 'master_product_categories.packaging_id', '=', 'master_packaging.id')
+                    ->select(
+                        'master_products.name as productName', 
+                        'master_products.id as id', 
+                        'master_products.status as status', 
+                        'master_products.code as productCode',
+                        'master_product_categories.brand_lokal_id', 
+                        'master_packaging.id as packId',
+                        'master_packaging.pack_name as packName',
+                    )->get();
+            $data_json["IsError"] = FALSE;
+            $data_json["Data"] = $table;
+            goto ResultData;
+        }
+        else{
+            $data_json["IsError"] = TRUE;
+            $data_json["Message"] = "Invalid Method";
+            goto ResultData;
+        }
+        ResultData:
+        return response()->json($data_json,200);
     }
 }
