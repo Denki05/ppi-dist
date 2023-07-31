@@ -6,67 +6,53 @@
     <h3 class="block-title">Show Searah</h3>
   </div>
   <div class="block-content">
-    <!-- <div class="container mt-5 mb-5">
-        <div class="row d-flex justify-content-center">
-            <div class="col-md-10">
-                <div class="card">
-                    <div class="row">
-                        <div class="col-md-6">
-                            <div class="images p-3">
-                                <div class="text-center p-4"> <img id="main-image" src="{{ $sub_brand_reference->image_botol_url ?? img_holder() }}" width="120%" height="auto" /> </div>
-                            </div>
-                        </div>
-                        <div class="col-md-6">
-                            <div class="product p-4">
-                                <div class="mt-4 mb-3"> <span class="text-uppercase text-muted brand">{{ $sub_brand_reference->brand_reference->name }}</span>
-                                    <h5 class="text-uppercase">
-                                      <a href="{{ $sub_brand_reference->link }}" target="_blank">
-                                        {{ $sub_brand_reference->name }}
-                                      </a>
-                                    </h5>
-                                </div>
-                                <div class="price d-flex flex-row align-items-center"><span class="text-uppercase" style="font-weight: bold;">Notes :</span></div>
-                                <p class="about">
-                                  {{ $sub_brand_reference->description }}
-                                </p>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div> -->
     
-    <div class="pop-up-container">
-            
-            <div class="product-details">
-              <div class="product-left">
-                <div class="product-info">
-                  <div class="product-manufacturer">
-                    {{ $sub_brand_reference->brand_reference->name }}
-                  </div>
-                  <div class="product-title">
-                    <a href="{{ $sub_brand_reference->link }}" class="product-title">
-                      {{ $sub_brand_reference->name }}
-                    </a>
-                  </div>
-                </div>
-                <div class="product-image">
-                  <img src="{{ $sub_brand_reference->image_botol_url }}" />
-                </div>
-              </div>
-              <div class="product-right">
-                <div class="product-description">
-                  <h5>Description</h5>
-                  {{ $sub_brand_reference->description }}
-                </div>
-                <div class="product-available">
-                  <!-- <h5 align="center">Main Accords</h5> -->
-                  <img src="{{ $sub_brand_reference->image_table_botol_url }}" />
-                </div>
-              </div>
-            </div>
+    
+  <div class="row">
+    <div class="col-lg-8 mx-auto">
+
+      <!-- List group-->
+      <ul class="list-group shadow">
+
+        <!-- list group item-->
+        <li class="list-group-item">
+          <!-- Custom content-->
+          <div class="media align-items-lg-center flex-column flex-lg-row p-3">
+            <div class="media-body order-2 order-lg-1">
+              <h5 class="mt-0 font-weight-bold mb-2">{{$sub_brand_reference->name}}</h5>
+              <p class="font-italic text-muted mb-0 small">{{$sub_brand_reference->description}}</p>
+              {{--<div class="d-flex align-items-center justify-content-between mt-1">
+                <h6 class="font-weight-bold my-2">$120.00</h6>
+                <ul class="list-inline small">
+                  <li class="list-inline-item m-0"><i class="fa fa-star text-success"></i></li>
+                  <li class="list-inline-item m-0"><i class="fa fa-star text-success"></i></li>
+                  <li class="list-inline-item m-0"><i class="fa fa-star text-success"></i></li>
+                  <li class="list-inline-item m-0"><i class="fa fa-star text-success"></i></li>
+                  <li class="list-inline-item m-0"><i class="fa fa-star-o text-gray"></i></li>
+                </ul>
+              </div>--}}
+            </div><img src="{{ $sub_brand_reference->image_botol_url }}" alt="Generic placeholder image" width="200" class="ml-lg-5 order-1 order-lg-2">
+          </div>
+          <!-- End -->
+        </li>
+        <!-- End -->
+
+        <!-- list group item-->
+        
+        <!-- End -->
+
+        <!-- list group item -->
+        
+        <!-- End -->
+
+        <!-- list group item -->
+        
+        <!-- End -->
+
+      </ul>
+      <!-- End -->
     </div>
+  </div>
   
     <div class="row pt-30 mb-15">
       <div class="col-md-6">

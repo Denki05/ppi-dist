@@ -19,6 +19,8 @@ use App\Entities\Setting\UserMenu;
 use Validator;
 use Auth;
 use App\Helper\UploadMedia;
+use Illuminate\Support\Facades\Storage;
+use Intervention\Image\ImageManagerStatic as Image;
 
 class SubBrandReferenceController extends Controller
 {
@@ -287,5 +289,99 @@ class SubBrandReferenceController extends Controller
     {
         $filename = 'master-sub-brand-reference-' . date('d-m-Y_H-i-s') . '.xlsx';
         return Excel::download(new SubBrandReferenceExport, $filename);
+    }
+
+    public function edit_image($id)
+    {
+        // Access
+        if(Auth::user()->is_superuser == 0){
+            if(empty($this->access) || empty($this->access->user) || $this->access->can_update == 0){
+                return redirect()->route('superuser.index')->with('error','Anda tidak punya akses untuk membuka menu terkait');
+            }
+        }
+
+        $data['searah'] = SubBrandReference::findOrFail($id);
+
+        return view('superuser.master.sub_brand_reference.upload', $data);
+    }
+
+    public function update_image(Request $request, $id)
+    {
+        if ($request->ajax()) {
+            $sub_brand_reference = SubBrandReference::find($id);
+
+            if ($sub_brand_reference == null) {
+                abort(404);
+            }
+
+            $validator = Validator::make($request->all(), [
+                
+            ]);
+
+            if ($validator->fails()) {
+                $response['notification'] = [
+                    'alert' => 'block',
+                    'type' => 'alert-danger',
+                    'header' => 'Error',
+                    'content' => $validator->errors()->all(),
+                ];
+  
+                return $this->response(400, $response);
+            }
+
+            if ($validator->passes()) {
+                DB::beginTransaction();
+
+                $upload_image = $request->upload_image;
+                
+                $dom = new \DomDocument();
+                $dom->loadHtml( mb_convert_encoding($upload_image, 'HTML-ENTITIES', "UTF-8"), LIBXML_HTML_NOIMPLIED | LIBXML_HTML_NODEFDTD);
+
+                $images = $dom->getElementsByTagName('img');
+
+                foreach($images as $img){
+                    $src = $img->getAttribute('src');
+                    
+                    // if the img source is 'data-url'
+                    if(preg_match('/data:image/', $src)){
+                        
+                        // get the mimetype
+                        preg_match('/data:image\/(?<mime>.*?)\;/', $src, $groups);
+                        $mimetype = $groups['mime'];
+                        
+                        // Generating a random filename
+                        $filename = $sub_brand_reference->id;
+                        $filepath = "/images/master/searah/$filename.$mimetype";
+            
+                        // @see http://image.intervention.io/api/
+                        $image = Image::make($src)
+                          // resize if required
+                          /* ->resize(300, 200) */
+                          ->encode($mimetype, 100) 	// encode file to the specified mimetype
+                          ->save(public_path($filepath));
+                        
+                        $new_src = asset($filepath);
+                        $img->removeAttribute('src');
+                        $img->setAttribute('src', $new_src);
+                    } // <!--endif
+                } // <!--endforeach
+
+                $sub_brand_reference->image_botol = $filename.'.'.$mimetype;
+
+                if ($sub_brand_reference->save()) {
+                    DB::commit();
+
+                    $response['notification'] = [
+                        'alert' => 'notify',
+                        'type' => 'success',
+                        'content' => 'Success',
+                    ];
+
+                    $response['redirect_to'] = route('superuser.master.sub_brand_reference.index');
+
+                    return $this->response(200, $response);
+                }
+            }
+        }
     }
 }
