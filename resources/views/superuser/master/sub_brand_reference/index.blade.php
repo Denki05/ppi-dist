@@ -136,8 +136,8 @@ $(document).ready(function() {
           // return'<a class="d-inline-block fw-normal w-100 h-100 pe-auto" href="' + row.searah_link + '">' + "Get" + '</a>';
           return '<a class="btn btn-primary" href="' + row.searah_link + '" role="button">' + "Get" + '</a>'
         },
-      }, 
-      {data: 'action'}
+      },
+      {data: 'action', orderable: false, searcable: false}
     ],
     order: [
       [1, 'desc']

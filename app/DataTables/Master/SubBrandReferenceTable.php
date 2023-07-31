@@ -32,7 +32,8 @@ class SubBrandReferenceTable extends Table
                                 master_sub_brand_references.link AS searah_link, 
                                 master_brand_references.id AS brand_id, 
                                 master_brand_references.name AS brand_name, 
-                                master_sub_brand_references.created_at AS created_date
+                                master_sub_brand_references.created_at AS created_date,
+                                master_sub_brand_references.image_botol AS image_botol
                             ');
 
         return $model;
@@ -66,8 +67,53 @@ class SubBrandReferenceTable extends Table
             $view = route('superuser.master.sub_brand_reference.show', $model);
             $edit = route('superuser.master.sub_brand_reference.edit', $model);
             $destroy = route('superuser.master.sub_brand_reference.destroy', $model);
-
-            if ($model->status == $model::STATUS['DELETED']) {
+            $upload_image = route('superuser.master.sub_brand_reference.edit_image', $model);
+            
+            if($model->status == $model::STATUS['ACTIVE']){
+                if($model->image_botol == null){
+                    return "
+                        <a href=\"{$upload_image}\">
+                            <button type=\"button\" class=\"btn btn-sm btn-circle btn-alt-secondary\" title=\"Upload Image\">
+                                <i class=\"fa fa-upload\"></i>
+                            </button>
+                        </a>
+                        <a href=\"{$view}\">
+                                <button type=\"button\" class=\"btn btn-sm btn-circle btn-alt-secondary\" title=\"View\">
+                                    <i class=\"fa fa-eye\"></i>
+                                </button>
+                            </a>
+                            <a href=\"{$edit}\">
+                                <button type=\"button\" class=\"btn btn-sm btn-circle btn-alt-warning\" title=\"Edit\">
+                                    <i class=\"fa fa-pencil\"></i>
+                                </button>
+                            </a>
+                            <a href=\"javascript:deleteConfirmation('{$destroy}')\">
+                                <button type=\"button\" class=\"btn btn-sm btn-circle btn-alt-danger\" title=\"Delete\">
+                                    <i class=\"fa fa-trash\"></i>
+                                </button>
+                            </a>
+                    ";
+                }elseif($model->image_botol == null){
+                    return 
+                            "
+                            <a href=\"{$view}\">
+                                <button type=\"button\" class=\"btn btn-sm btn-circle btn-alt-secondary\" title=\"View\">
+                                    <i class=\"fa fa-eye\"></i>
+                                </button>
+                            </a>
+                            <a href=\"{$edit}\">
+                                <button type=\"button\" class=\"btn btn-sm btn-circle btn-alt-warning\" title=\"Edit\">
+                                    <i class=\"fa fa-pencil\"></i>
+                                </button>
+                            </a>
+                            <a href=\"javascript:deleteConfirmation('{$destroy}')\">
+                                <button type=\"button\" class=\"btn btn-sm btn-circle btn-alt-danger\" title=\"Delete\">
+                                    <i class=\"fa fa-trash\"></i>
+                                </button>
+                            </a>
+                            ";
+                }
+            }elseif($model->status == $model::STATUS['DELETED']){
                 return "
                     <a href=\"{$view}\">
                         <button type=\"button\" class=\"btn btn-sm btn-circle btn-alt-secondary\" title=\"View\">
@@ -77,23 +123,6 @@ class SubBrandReferenceTable extends Table
                 ";
             }
             
-            return "
-                <a href=\"{$view}\">
-                    <button type=\"button\" class=\"btn btn-sm btn-circle btn-alt-secondary\" title=\"View\">
-                        <i class=\"fa fa-eye\"></i>
-                    </button>
-                </a>
-                <a href=\"{$edit}\">
-                    <button type=\"button\" class=\"btn btn-sm btn-circle btn-alt-warning\" title=\"Edit\">
-                        <i class=\"fa fa-pencil\"></i>
-                    </button>
-                </a>
-                <a href=\"javascript:deleteConfirmation('{$destroy}')\">
-                    <button type=\"button\" class=\"btn btn-sm btn-circle btn-alt-danger\" title=\"Delete\">
-                        <i class=\"fa fa-times\"></i>
-                    </button>
-                </a>
-            ";
         });
 
         return $table->make(true);

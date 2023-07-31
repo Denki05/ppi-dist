@@ -149,6 +149,8 @@ Route::group([
         // Route::post('/import', 'SubBrandReferenceController@import')->name('import');
         Route::post('/import/{id}', 'SubBrandReferenceController@import')->name('import');
         Route::get('/export', 'SubBrandReferenceController@export')->name('export');
+        Route::get('/edit_image/{id}', 'SubBrandReferenceController@edit_image')->name('edit_image');
+        Route::put('/update_image/{id}', 'SubBrandReferenceController@update_image')->name('update_image');
     });
     Route::resource('sub_brand_reference', 'SubBrandReferenceController');
 

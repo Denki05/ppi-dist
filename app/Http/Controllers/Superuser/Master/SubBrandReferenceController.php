@@ -19,6 +19,7 @@ use App\Entities\Setting\UserMenu;
 use Validator;
 use Auth;
 use App\Helper\UploadMedia;
+use Illuminate\Support\Facades\Storage;
 
 class SubBrandReferenceController extends Controller
 {
@@ -287,5 +288,114 @@ class SubBrandReferenceController extends Controller
     {
         $filename = 'master-sub-brand-reference-' . date('d-m-Y_H-i-s') . '.xlsx';
         return Excel::download(new SubBrandReferenceExport, $filename);
+    }
+
+    public function edit_image($id)
+    {
+        // Access
+        if(Auth::user()->is_superuser == 0){
+            if(empty($this->access) || empty($this->access->user) || $this->access->can_update == 0){
+                return redirect()->route('superuser.index')->with('error','Anda tidak punya akses untuk membuka menu terkait');
+            }
+        }
+
+        $data['searah'] = SubBrandReference::findOrFail($id);
+
+        return view('superuser.master.sub_brand_reference.upload', $data);
+    }
+
+    public function update_image(Request $request, $id)
+    {
+        if ($request->ajax()) {
+            $sub_brand_reference = SubBrandReference::find($id);
+
+            if ($sub_brand_reference == null) {
+                abort(404);
+            }
+
+            $validator = Validator::make($request->all(), [
+                
+            ]);
+
+            if ($validator->fails()) {
+                $response['notification'] = [
+                    'alert' => 'block',
+                    'type' => 'alert-danger',
+                    'header' => 'Error',
+                    'content' => $validator->errors()->all(),
+                ];
+  
+                return $this->response(400, $response);
+            }
+
+            if ($validator->passes()) {
+                DB::beginTransaction();
+
+                $data = $request->input('upload_image');
+
+                //loading the html data from the summernote editor and select the img tags from it
+                $dom = new \DomDocument();
+                $dom->loadHtml($data, LIBXML_HTML_NOIMPLIED | LIBXML_HTML_NODEFDTD);    
+                $images = $dom->getElementsByTagName('img');
+            
+                foreach($images as $k => $img){
+                    //for now src attribute contains image encrypted data in a nonsence string
+                    $data = $img->getAttribute('src');
+                    //getting the original file name that is in data-filename attribute of img
+                    $file_name = $img->getAttribute('data-filename');
+                    //extracting the original file name and extension
+                    $arr = explode('.', $file_name);
+                    $upload_base_directory = 'public/';
+         
+                    $original_file_name='time()'.$k;
+                    $original_file_extension='jpg';
+         
+                    if (sizeof($arr) ==  2) {
+                         $original_file_name = $arr[0];
+                         $original_file_extension = $arr[1];
+                    }
+                    else
+                    {
+                         //the file name contains extra . in itself
+                         $original_file_name = implode("_",array_slice($arr,0,sizeof($arr)-1));
+                         $original_file_extension = $arr[sizeof($arr)-1];
+                    }
+         
+                    list($type, $data) = explode(';', $data);
+                    list(, $data)      = explode(',', $data);
+         
+                    $data = base64_decode($data);
+         
+                    $path = $upload_base_directory.$original_file_name.'.'.$original_file_extension;
+         
+                    //uploading the image to an actual file on the server and get the url to it to update the src attribute of images
+                    Storage::put($path, $data);
+         
+                    $img->removeAttribute('src');       
+                    //you can remove the data-filename attribute here too if you want.
+                    $img->setAttribute('src', Storage::url($path));
+                    // data base stuff here :
+                    //saving the attachments path in an array
+                }
+                $data = $dom->saveHTML();
+
+               
+                // $sub_brand_reference->image_botol = $data;
+
+                if ($sub_brand_reference->save()) {
+                    DB::commit();
+
+                    $response['notification'] = [
+                        'alert' => 'notify',
+                        'type' => 'success',
+                        'content' => 'Success',
+                    ];
+
+                    $response['redirect_to'] = route('superuser.master.sub_brand_reference.index');
+
+                    return $this->response(200, $response);
+                }
+            }
+        }
     }
 }
