@@ -17,7 +17,7 @@ class SubBrandReference extends Model
                     ];
     
     protected $table = 'master_sub_brand_references';
-    public static $directory_image = 'superuser_assets/media/master/searah/';
+    public static $directory_image = 'images/master/searah/';
 
     const STATUS = [
         'DELETED' => 0,

@@ -20,6 +20,7 @@ use Validator;
 use Auth;
 use App\Helper\UploadMedia;
 use Illuminate\Support\Facades\Storage;
+use Intervention\Image\ImageManagerStatic as Image;
 
 class SubBrandReferenceController extends Controller
 {
@@ -331,56 +332,41 @@ class SubBrandReferenceController extends Controller
             if ($validator->passes()) {
                 DB::beginTransaction();
 
-                $data = $request->input('upload_image');
-
-                //loading the html data from the summernote editor and select the img tags from it
+                $upload_image = $request->upload_image;
+                
                 $dom = new \DomDocument();
-                $dom->loadHtml($data, LIBXML_HTML_NOIMPLIED | LIBXML_HTML_NODEFDTD);    
-                $images = $dom->getElementsByTagName('img');
-            
-                foreach($images as $k => $img){
-                    //for now src attribute contains image encrypted data in a nonsence string
-                    $data = $img->getAttribute('src');
-                    //getting the original file name that is in data-filename attribute of img
-                    $file_name = $img->getAttribute('data-filename');
-                    //extracting the original file name and extension
-                    $arr = explode('.', $file_name);
-                    $upload_base_directory = 'public/';
-         
-                    $original_file_name='time()'.$k;
-                    $original_file_extension='jpg';
-         
-                    if (sizeof($arr) ==  2) {
-                         $original_file_name = $arr[0];
-                         $original_file_extension = $arr[1];
-                    }
-                    else
-                    {
-                         //the file name contains extra . in itself
-                         $original_file_name = implode("_",array_slice($arr,0,sizeof($arr)-1));
-                         $original_file_extension = $arr[sizeof($arr)-1];
-                    }
-         
-                    list($type, $data) = explode(';', $data);
-                    list(, $data)      = explode(',', $data);
-         
-                    $data = base64_decode($data);
-         
-                    $path = $upload_base_directory.$original_file_name.'.'.$original_file_extension;
-         
-                    //uploading the image to an actual file on the server and get the url to it to update the src attribute of images
-                    Storage::put($path, $data);
-         
-                    $img->removeAttribute('src');       
-                    //you can remove the data-filename attribute here too if you want.
-                    $img->setAttribute('src', Storage::url($path));
-                    // data base stuff here :
-                    //saving the attachments path in an array
-                }
-                $data = $dom->saveHTML();
+                $dom->loadHtml( mb_convert_encoding($upload_image, 'HTML-ENTITIES', "UTF-8"), LIBXML_HTML_NOIMPLIED | LIBXML_HTML_NODEFDTD);
 
-               
-                // $sub_brand_reference->image_botol = $data;
+                $images = $dom->getElementsByTagName('img');
+
+                foreach($images as $img){
+                    $src = $img->getAttribute('src');
+                    
+                    // if the img source is 'data-url'
+                    if(preg_match('/data:image/', $src)){
+                        
+                        // get the mimetype
+                        preg_match('/data:image\/(?<mime>.*?)\;/', $src, $groups);
+                        $mimetype = $groups['mime'];
+                        
+                        // Generating a random filename
+                        $filename = $sub_brand_reference->id;
+                        $filepath = "/images/master/searah/$filename.$mimetype";
+            
+                        // @see http://image.intervention.io/api/
+                        $image = Image::make($src)
+                          // resize if required
+                          /* ->resize(300, 200) */
+                          ->encode($mimetype, 100) 	// encode file to the specified mimetype
+                          ->save(public_path($filepath));
+                        
+                        $new_src = asset($filepath);
+                        $img->removeAttribute('src');
+                        $img->setAttribute('src', $new_src);
+                    } // <!--endif
+                } // <!--endforeach
+
+                $sub_brand_reference->image_botol = $filename.'.'.$mimetype;
 
                 if ($sub_brand_reference->save()) {
                     DB::commit();

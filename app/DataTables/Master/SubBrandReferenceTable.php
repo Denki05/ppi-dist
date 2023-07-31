@@ -93,7 +93,7 @@ class SubBrandReferenceTable extends Table
                                 </button>
                             </a>
                     ";
-                }elseif($model->image_botol == null){
+                }elseif($model->image_botol != null){
                     return 
                             "
                             <a href=\"{$view}\">
