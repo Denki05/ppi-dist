@@ -54,7 +54,11 @@
 <script type="text/javascript">
 $(document).ready(function () {
     $('#summernote').summernote({
-        height: 200,
+        toolbar: [
+            ['image', ['resizeFull', 'resizeHalf', 'resizeQuarter', 'resizeNone']],
+            ['float', ['floatLeft', 'floatRight', 'floatNone']],
+            ['remove', ['removeMedia']],
+        ]
     });
 });
 </script>
