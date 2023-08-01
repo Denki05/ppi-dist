@@ -241,7 +241,7 @@
                   <tr>
                     <td>{{ $index+1 }}</td>
                     <td>{{$row->code}}</td>
-                    <td>{{ $row->member->name }}</td>
+                    <td>{{ $row->member->name }} - {{ $row->member->text_kota }}</td>
                     <td>{{$row->type_transaction}}</td>
                     <td><?= date('d-m-Y h:i:s',strtotime($row->created_at)); ?></td>
                     <td>
@@ -281,10 +281,10 @@
                   @foreach($packing_order as $index => $row)
                   @if($row->status == 2)
                   <tr>
-                    @if($row->so->payment_status == 1 || $row->type_transaction == 2)
+                    @if($row->so->payment_status == 1 || $row->type_transaction == "TEMPO")
                       <td>{{ $index+1 }}</td>
                       <td>{{$row->code}}</td>
-                      <td>{{ $row->member->name }}</td>
+                      <td>{{ $row->member->name }} - {{$row->member->text_kota}}</td>
                       <td><?= date('d-m-Y h:i:s',strtotime($row->created_at)); ?></td>
                       <td>{{$row->so->code}} / {{$row->so->type_transaction}}</td>
                       <td>
