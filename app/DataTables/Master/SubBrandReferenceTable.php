@@ -67,16 +67,16 @@ class SubBrandReferenceTable extends Table
             $view = route('superuser.master.sub_brand_reference.show', $model);
             $edit = route('superuser.master.sub_brand_reference.edit', $model);
             $destroy = route('superuser.master.sub_brand_reference.destroy', $model);
-            $upload_image = route('superuser.master.sub_brand_reference.edit_image', $model);
+            // $upload_image = route('superuser.master.sub_brand_reference.edit_image', $model);
             
             if($model->status == $model::STATUS['ACTIVE']){
                 if($model->image_botol == null){
                     return "
-                        <a href=\"{$upload_image}\">
-                            <button type=\"button\" class=\"btn btn-sm btn-circle btn-alt-secondary\" title=\"Upload Image\">
+                        
+                            <button type=\"button\" class=\"btn btn-sm btn-circle btn-alt-secondary editImage\" title=\"Upload Image\">
                                 <i class=\"fa fa-upload\"></i>
                             </button>
-                        </a>
+                        
                         <a href=\"{$view}\">
                                 <button type=\"button\" class=\"btn btn-sm btn-circle btn-alt-secondary\" title=\"View\">
                                     <i class=\"fa fa-eye\"></i>
