@@ -58,21 +58,50 @@
         </div>
       </div>
       <div class="table-responsive">
-            <table class="table table-striped" id="searah_list">
-              <thead>
-                <tr>
-                  <th>#</th>
-                  <th>Created</th>
-                  <th>Brand Fragrantica</th>
-				          <th>Searah</th>
-				          <th>URL</th>
-                  <th>Action</th>
-                </tr>
-              </thead>
-              
-            </table>
+        <table class="table table-striped" id="searah_list">
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>Created</th>
+              <th>Brand Fragrantica</th>
+				      <th>Searah</th>
+				      <th>URL</th>
+              <th>Action</th>
+            </tr>
+          </thead>
+          <tbody>
+          </tbody>
+        </table>
         </div>
         <br>
+</div>
+
+<div id="myModal" class="modal fade" role="dialog">
+  <div class="modal-dialog">
+
+    <!-- Modal content-->
+    <div class="modal-content">
+      <div class="modal-header">
+        <h4 class="modal-title">Upload Image</h4>
+        <button type="button" class="close" data-dismiss="modal">&times;</button>
+      </div>
+      <form id="myForm" method="POST" role="form" enctype="multipart/form-data">
+      {{csrf_field()}}
+        <div class="modal-body">
+          <div class="form-group">
+            <label for="image_botol">Image Upload</label>
+            <textarea class="form-control upload_image" id="summernote" name="upload_image" ></textarea> 
+          </div>
+        </div>
+        <div class="modal-footer">
+          <input type="hidden" id="searah_id" value="0">
+          <button type="submit" class="btn btn-info">Save</button>
+          <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+        </div>
+      </form>
+    </div>
+
+  </div>
 </div>
 @endsection
 
@@ -91,7 +120,10 @@
 @endsection
 
 @push('scripts')
+<script src="{{ asset('utility/superuser/js/form.js') }}"></script>
+<script src="https://cdn.jsdelivr.net/npm/summernote@0.8.18/dist/summernote.min.js"></script>
 <script type="text/javascript">
+var CSRF_TOKEN = $('meta[name="csrf-token"]').attr('content'); 
 $(document).ready(function() {
   $('.js-select2').select2()
 
@@ -148,12 +180,40 @@ $(document).ready(function() {
       [25, 50, 75]
     ],
   });
+
   $('#filter').on('click', function(e) {
         e.preventDefault();
         var filter_searah = $('#filter_searah').val();
         let newDatatableUrl = datatableUrl + '?filter_searah=' + filter_searah;
         datatable.ajax.url(newDatatableUrl).load();
-  })
+  });
+
+  $('#summernote').summernote({
+    height: "200px"
+  });
+
+  $('#myForm').on('submit', function (e) {
+    e.preventDefault(); // prevent the form submit
+    var id = $('.upload_button').data('id');
+    var url = "{{ route('superuser.master.sub_brand_reference.update_image', ":id") }}";
+    url = url.replace(':id', id);
+    
+    var formData = new FormData(this); 
+    // build the ajax call
+    $.ajax({
+        url: url,
+        type: 'POST',
+        headers: {'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')},
+        data: formData,
+        contentType: false,
+        processData: false,
+        success: function (response) {
+          $("#myModal").modal('hide');
+          $("#myModal").find(".modal-body").html(response);
+          setTimeout(function () { document.location.reload(true); });
+        }
+    });
+  });
 });
 </script>
 @endpush

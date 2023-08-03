@@ -73,7 +73,7 @@ class SubBrandReferenceTable extends Table
             if($model->status == $model::STATUS['ACTIVE']){
                 if($model->image_botol == null){
                     return "
-                            <button type=\"button\" class=\"btn btn-sm btn-circle btn-alt-secondary upload_button\" data-id=\"$model->id\" title=\"View\" data-bs-toggle=\"modal\" data-bs-target=\"#updateModal\">
+                            <button type=\"button\" class=\"btn btn-sm btn-circle btn-alt-secondary upload_button\" data-id=\"$model->id\" title=\"View\" data-bs-toggle=\"modal\" data-bs-target=\"#myModal\">
                                 <i class=\"fa fa-upload\"></i>
                             </button>
                             <a href=\"{$view}\">
