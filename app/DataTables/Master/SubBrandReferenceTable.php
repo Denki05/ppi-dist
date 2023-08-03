@@ -33,7 +33,8 @@ class SubBrandReferenceTable extends Table
                                 master_brand_references.id AS brand_id, 
                                 master_brand_references.name AS brand_name, 
                                 master_sub_brand_references.created_at AS created_date,
-                                master_sub_brand_references.image_botol AS image_botol
+                                master_sub_brand_references.image_botol AS image_botol,
+                                master_sub_brand_references.description AS searah_note
                             ');
 
         return $model;
@@ -67,17 +68,15 @@ class SubBrandReferenceTable extends Table
             $view = route('superuser.master.sub_brand_reference.show', $model);
             $edit = route('superuser.master.sub_brand_reference.edit', $model);
             $destroy = route('superuser.master.sub_brand_reference.destroy', $model);
-            // $upload_image = route('superuser.master.sub_brand_reference.edit_image', $model);
+            $upload_image = route('superuser.master.sub_brand_reference.edit_image', $model);
             
             if($model->status == $model::STATUS['ACTIVE']){
                 if($model->image_botol == null){
                     return "
-                        
-                            <button type=\"button\" class=\"btn btn-sm btn-circle btn-alt-secondary editImage\" title=\"Upload Image\">
+                            <button type=\"button\" class=\"btn btn-sm btn-circle btn-alt-secondary upload_button\" data-id=\"$model->id\" title=\"View\" data-bs-toggle=\"modal\" data-bs-target=\"#updateModal\">
                                 <i class=\"fa fa-upload\"></i>
                             </button>
-                        
-                        <a href=\"{$view}\">
+                            <a href=\"{$view}\">
                                 <button type=\"button\" class=\"btn btn-sm btn-circle btn-alt-secondary\" title=\"View\">
                                     <i class=\"fa fa-eye\"></i>
                                 </button>

@@ -384,4 +384,31 @@ class SubBrandReferenceController extends Controller
             }
         }
     }
+
+    public function getSearahData(Request $request){
+
+        ## Read POST data 
+        $id = $request->post('id');
+
+        $searahData = SubBrandReference::find($id);
+
+        // dd($id);
+
+        $response = array();
+        if(!empty($searahData)){
+
+            $response['name'] = $searahData->name;
+            $response['code'] = $searahData->code;
+            $response['link'] = $searahData->link;
+            $response['image_botol'] = $searahData->image_botol;
+            $response['description'] = $searahData->description;
+
+            $response['success'] = 1;
+        }else{
+            $response['success'] = 0;
+        }
+
+        return response()->json($response);
+
+    }
 }
