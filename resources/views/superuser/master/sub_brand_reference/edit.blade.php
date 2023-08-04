@@ -40,8 +40,11 @@
       </div>
       <div class="form-group row">
         <label class="col-md-3 col-form-label text-right" for="link">Link URL Fragrantica</label>
-        <div class="col-md-7">
+        <div class="col-md-6">
           <input type="text" class="form-control" id="link" name="link" value="{{ $sub_brand_reference->link }}">
+        </div>
+        <div class="col-md-2">
+          <button onclick="location.href='{{$sub_brand_reference->link}}'" class="btn btn-danger text-uppercase mr-2 px-4"><i class="fa fa-link"></i></button>
         </div>
       </div>
       <div class="form-group row">
@@ -52,15 +55,9 @@
       </div>
 
       <div class="form-group row">
-        <label class="col-md-3 col-form-label text-right" for="description">Image Bottel</label>
+        <label class="col-md-3 col-form-label text-right" for="description">Image searah</label>
         <div class="col-md-7">
-          <input type="file" id="image_botol" name="image_botol" data-max-file-size="2000" accept="image/png, image/jpeg">
-        </div>
-      </div>
-      <div class="form-group row">
-        <label class="col-md-3 col-form-label text-right" for="image_table_botol">Image Main Accords</label>
-        <div class="col-md-7">
-          <input type="file" id="image_table_botol" name="image_table_botol" data-max-file-size="2000" accept="image/png, image/jpeg">
+          <textarea class="form-control" name="upload_image" id="summernote"></textarea>
         </div>
       </div>
 
@@ -88,36 +85,18 @@
 
 @push('scripts')
 <script src="{{ asset('utility/superuser/js/form.js') }}"></script>
+<script src="https://cdn.jsdelivr.net/npm/summernote@0.8.18/dist/summernote.min.js"></script>
 <script>
   $(document).ready(function () {
     $('.js-select2').select2()
 
-    $('#image_botol').fileinput({
-      theme: 'explorer-fa',
-      browseOnZoneClick: true,
-      showCancel: false,
-      showClose: false,
-      showUpload: false,
-      browseLabel: '',
-      removeLabel: '',
-      fileActionSettings: {
-        showDrag: false,
-        showRemove: false
-      },
-    });
-
-    $('#image_table_botol').fileinput({
-      theme: 'explorer-fa',
-      browseOnZoneClick: true,
-      showCancel: false,
-      showClose: false,
-      showUpload: false,
-      browseLabel: '',
-      removeLabel: '',
-      fileActionSettings: {
-        showDrag: false,
-        showRemove: false
-      },
+    $('#summernote').summernote({
+      height: "200px",
+      toolbar: [
+        ['image', ['resizeFull', 'resizeHalf', 'resizeQuarter', 'resizeNone']],
+        ['float', ['floatLeft', 'floatRight', 'floatNone']],
+        ['remove', ['removeMedia']]
+      ]
     });
   })
 </script>
