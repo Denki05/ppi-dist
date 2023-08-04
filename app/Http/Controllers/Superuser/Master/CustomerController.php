@@ -218,104 +218,136 @@ class CustomerController extends Controller
                 DB::beginTransaction();
                 try{
 
-                    $customer = new Customer;
+                    $input_name = $request->name;
+                    $input_kota = $request->kota;
+                    $input_category = $request->category;
+                    $name = null;
+                    $kota = null;
+                    $category = null;
+                    
+                    $customer = DB::table('master_customers')
+                        ->selectRaw('id, name, kota, status')
+                        ->where('status', Customer::STATUS["ACTIVE"])
+                        ->get();
 
-                    $customer->code = CodeRepo::generateCustomer();
-                    $customer->name = $request->name;
-
-                    $customer->category_id = $request->category;
-                    $customer->count_member =  1;
-                    $customer->zone = $request->zone;
-
-                    $customer->email = $request->email;
-                    $customer->phone = implode(",", [$request->phone1, $request->phone2]);
-                    $customer->npwp = implode("/", [$request->name_card_npwp,$request->npwp]);
-                    $customer->ktp = implode("/", [$request->name_card_ktp,$request->ktp]);
-                    $customer->address = $request->address;
-
-                    $customer->owner_name = $request->owner_name;
-                    $customer->website = $request->website;
-                    $customer->plafon_piutang = ($request->plafon_piutang) ? $request->plafon_piutang : 0;
-                    $customer->saldo = $request->plafon_piutang;
-                    $customer->has_ppn = ($request->has_ppn) ? $request->has_ppn : 0;
-                    $customer->has_tempo = ($request->has_tempo) ? $request->has_tempo : 0;
-                    $customer->tempo_limit = ($request->tempo_limit) ? $request->tempo_limit : 0;
-
-                    $customer->gps_latitude = $request->gps_latitude;
-                    $customer->gps_longitude = $request->gps_longitude;
-
-                    $customer->provinsi = $request->provinsi;
-                    $customer->kota = $request->kota;
-                    $customer->kecamatan = $request->kecamatan;
-                    $customer->kelurahan = $request->kelurahan;
-                    $customer->text_provinsi = $request->text_provinsi;
-                    $customer->text_kota = $request->text_kota;
-                    $customer->text_kecamatan = $request->text_kecamatan;
-                    $customer->text_kelurahan = $request->text_kelurahan;
-
-                    $customer->zipcode = $request->zipcode;
-
-                    if (!empty($request->file('image_ktp'))) {
-                        $customer->image_ktp = UploadMedia::image($request->file('image_ktp'), Customer::$directory_image);
+                    if($customer){
+                        foreach($customer as $cust){
+                            $name = $cust->name;
+                            $kota = $cust->kota;
+                            $category = $cust->category_id;
+                        }
                     }
 
-                    if (!empty($request->file('image_npwp'))) {
-                        $customer->image_npwp = UploadMedia::image($request->file('image_npwp'), Customer::$directory_image);
-                    }
-
-                    if (!empty($request->file('image_store'))) {
-                        $customer->image_store = UploadMedia::image($request->file('image_store'), Customer::$directory_image);
-                    }
-
-                    $customer->notification_email = ($request->notification_email) ? true : false;
-                    $customer->status = Customer::STATUS['ACTIVE'];
-
-                    if ($customer->save()) {
-
-                        $other_address = new CustomerOtherAddress;
-    
-                        $other_address->id = $customer->id.'.'.$customer->count_member;
-                        $other_address->customer_id = $customer->id;
-                        $other_address->member_default = 1;
-        
-                        $other_address->name = $customer->name;
-                        $other_address->contact_person = $customer->owner_name;
-                        $other_address->phone =  $customer->phone;
-                        $other_address->address = $customer->address;
-                        $other_address->npwp = $customer->npwp;
-                        $other_address->ktp = $customer->ktp;
-        
-                        $other_address->gps_latitude = $customer->gps_latitude;
-                        $other_address->gps_longitude = $customer->gps_longitude;
-        
-                        $other_address->provinsi = $customer->provinsi;
-                        $other_address->kota = $customer->kota;
-                        $other_address->kecamatan = $customer->kecamatan;
-                        $other_address->kelurahan = $customer->kelurahan;
-                        $other_address->text_provinsi = $customer->text_provinsi;
-                        $other_address->text_kota = $customer->text_kota;
-                        $other_address->text_kecamatan = $customer->text_kecamatan;
-                        $other_address->text_kelurahan = $customer->text_kelurahan;
-        
-                        $other_address->zipcode = $customer->zipcode;
-                        $other_address->status = CustomerOtherAddress::STATUS['ACTIVE'];
-                        $other_address->save();
-                        
-    
-                        DB::commit();
-    
+                    if ( strtolower($name) == strtolower($input_name) && $kota == $input_kota && $category == $input_category){
                         $response['notification'] = [
-                            'alert' => 'notify',
-                            'type' => 'success',
-                            'content' => 'Success',
+                            'alert' => 'block',
+                            'type' => 'alert-danger',
+                            'header' => 'Error',
+                            'content' => "Duplicate store found",
                         ];
-    
-                        $response['redirect_to'] = route('superuser.master.customer.index');
-    
-                        return $this->response(200, $response);
+        
+                        return $this->response(400, $response);
+                    }else {
+                        $customer = new Customer;
+
+                        $customer->code = CodeRepo::generateCustomer();
+                        $customer->name = $request->name;
+
+                        $customer->category_id = $request->category;
+                        $customer->count_member =  1;
+                        $customer->zone = $request->zone;
+
+                        $customer->email = $request->email;
+                        $customer->phone = implode(",", [$request->phone1, $request->phone2]);
+                        $customer->npwp = implode("/", [$request->name_card_npwp,$request->npwp]);
+                        $customer->ktp = implode("/", [$request->name_card_ktp,$request->ktp]);
+                        $customer->address = $request->address;
+
+                        $customer->owner_name = $request->owner_name;
+                        $customer->website = $request->website;
+                        $customer->plafon_piutang = ($request->plafon_piutang) ? $request->plafon_piutang : 0;
+                        $customer->saldo = $request->plafon_piutang;
+                        $customer->has_ppn = ($request->has_ppn) ? $request->has_ppn : 0;
+                        $customer->has_tempo = ($request->has_tempo) ? $request->has_tempo : 0;
+                        $customer->tempo_limit = ($request->tempo_limit) ? $request->tempo_limit : 0;
+
+                        $customer->gps_latitude = $request->gps_latitude;
+                        $customer->gps_longitude = $request->gps_longitude;
+
+                        $customer->provinsi = $request->provinsi;
+                        $customer->kota = $request->kota;
+                        $customer->kecamatan = $request->kecamatan;
+                        $customer->kelurahan = $request->kelurahan;
+                        $customer->text_provinsi = $request->text_provinsi;
+                        $customer->text_kota = $request->text_kota;
+                        $customer->text_kecamatan = $request->text_kecamatan;
+                        $customer->text_kelurahan = $request->text_kelurahan;
+
+                        $customer->zipcode = $request->zipcode;
+
+                        if (!empty($request->file('image_ktp'))) {
+                            $customer->image_ktp = UploadMedia::image($request->file('image_ktp'), Customer::$directory_image);
+                        }
+
+                        if (!empty($request->file('image_npwp'))) {
+                            $customer->image_npwp = UploadMedia::image($request->file('image_npwp'), Customer::$directory_image);
+                        }
+
+                        if (!empty($request->file('image_store'))) {
+                            $customer->image_store = UploadMedia::image($request->file('image_store'), Customer::$directory_image);
+                        }
+
+                        $customer->notification_email = ($request->notification_email) ? true : false;
+                        $customer->status = Customer::STATUS['ACTIVE'];
+
+                        if ($customer->save()) {
+
+                            $other_address = new CustomerOtherAddress;
+        
+                            $other_address->id = $customer->id.'.'.$customer->count_member;
+                            $other_address->customer_id = $customer->id;
+                            $other_address->member_default = 1;
+            
+                            $other_address->name = $customer->name;
+                            $other_address->contact_person = $customer->owner_name;
+                            $other_address->phone =  $customer->phone;
+                            $other_address->address = $customer->address;
+                            $other_address->npwp = $customer->npwp;
+                            $other_address->ktp = $customer->ktp;
+            
+                            $other_address->gps_latitude = $customer->gps_latitude;
+                            $other_address->gps_longitude = $customer->gps_longitude;
+            
+                            $other_address->provinsi = $customer->provinsi;
+                            $other_address->kota = $customer->kota;
+                            $other_address->kecamatan = $customer->kecamatan;
+                            $other_address->kelurahan = $customer->kelurahan;
+                            $other_address->text_provinsi = $customer->text_provinsi;
+                            $other_address->text_kota = $customer->text_kota;
+                            $other_address->text_kecamatan = $customer->text_kecamatan;
+                            $other_address->text_kelurahan = $customer->text_kelurahan;
+            
+                            $other_address->zipcode = $customer->zipcode;
+                            $other_address->status = CustomerOtherAddress::STATUS['ACTIVE'];
+                            $other_address->save();
+                            
+        
+                            DB::commit();
+        
+                            $response['notification'] = [
+                                'alert' => 'notify',
+                                'type' => 'success',
+                                'content' => 'Success',
+                            ];
+        
+                            $response['redirect_to'] = route('superuser.master.customer.index');
+        
+                            return $this->response(200, $response);
+                        }
                     }
                 } catch (\Exception $e) {
                     DB::rollback();
+                    dd($e);
                     $response['notification'] = [
                         'alert' => 'block',
                         'type' => 'alert-danger',
