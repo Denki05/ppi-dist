@@ -1,10 +1,6 @@
 @extends('superuser.app')
 
 @section('content')
-<nav class="breadcrumb bg-white push">
-  <span class="breadcrumb-item">Master</span>
-  <span class="breadcrumb-item active">Branch Office</span>
-</nav>
 @if($errors->any())
 <div class="alert alert-danger alert-dismissable" role="alert">
   <button type="button" class="close" data-dismiss="alert" aria-label="Close">
@@ -16,28 +12,44 @@
   @endforeach
 </div>
 @endif
-<div class="block">
-  <div class="block-content">
-    <a href="{{ route('superuser.master.branch_office.create') }}">
-      <button type="button" class="btn btn-outline-primary min-width-125">Create</button>
-    </a>
 
-    {{-- <button type="button" class="btn btn-outline-info ml-10" data-toggle="modal" data-target="#modal-manage">Manage</button> --}}
-  </div>
-  <hr class="my-20">
-  <div class="block-content block-content-full">
-    <table id="datatable" class="table table-hover">
-      <thead>
-        <tr>
-          <th>#</th>
-          <th>Created at</th>
-          <th>Code</th>
-          <th>Name</th>
-          <th>Status</th>
-          <th>Action</th>
-        </tr>
-      </thead>
-    </table>
+<div class="container-scroller">
+  <div class="container-fluid page-body-wrapper full-page-wrapper">
+    <div class="main-panel w-100  documentation">
+      <div class="content-wrapper">
+        <div class="container-fluid">
+          <div class="row">
+            <div class="col-lg-12 grid-margin stretch-card">
+              <div class="card">
+                <div class="card-header">
+                  <button type="button" class="btn btn-primary btn-icon-text" onclick="location.href='{{ route('superuser.master.branch_office.create') }}'">
+                    <i class="mdi mdi-plus btn-icon-prepend"></i>
+                      Create
+                  </button>
+                </div>
+                <div class="card-body">
+                  <div class="table-responsive">
+                    <table class="table table-hover" id="datatable">
+                      <thead>
+                        <tr>
+                          <th>#</th>
+                          <th>Created at</th>
+                          <th>Code</th>
+                          <th>Name</th>
+                          <th>Status</th>
+                          <th>Action</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              </div>
+            </div>
+        </div>
+      </div>
+    </div>
   </div>
 </div>
 @endsection
