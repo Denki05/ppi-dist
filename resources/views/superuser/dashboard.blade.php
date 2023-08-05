@@ -1,200 +1,388 @@
 @extends('superuser.app')
 
 @section('content')
-{{--<div class="row gutters-tiny">
-  <div class="col-4">
-    <a class="block" href="javascript:void(0)">
-      <div class="block-content block-content-full">
-        <div class="row">
-          <div class="col-6">
-            <i class="fa fa-dollar fa-2x text-body-bg-dark"></i>
-          </div>
-          <div class="col-6 text-right">
-            <span class="text-muted">{{ Swap::latest('USD/IDR')->getDate()->format('d M Y H:i:s') }}</span>
-          </div>
-        </div>
-        <div class="row">
-          <div class="col-6 text-right border-r">
-            <div class="font-size-h3 font-w600">USD</div>
-            <div class="font-size-h4 font-w600"><i class="fa fa-dollar"></i>1</div>
-          </div>
-          <div class="col-6">
-            <div class="font-size-h3 font-w600">IDR</div>
-            <div class="font-size-h4 font-w600">{{ rupiah(Swap::latest('USD/IDR', ['cache_ttl' => \Carbon\Carbon::now()->secondsUntilEndOfDay()])->getValue()) }}</div>
-          </div>
-        </div>
-      </div>
-    </a>
-  </div>
-</div>--}}
-
-@if(session('error') || session('success'))
-<div class="alert alert-{{ session('error') ? 'danger' : 'success' }} alert-dismissible fade show" role="alert">
-    @if (session('error'))
-    <strong>Error!</strong> {!! session('error') !!}
-    @elseif (session('success'))
-    <strong>Berhasil!</strong> {!! session('success') !!}
-    @endif
-    <button type="button" class="close" data-dismiss="alert" aria-label="Close">
-        <span aria-hidden="true">&times;</span>
-    </button>
-</div>
-@endif
-
-<div class="row">
-  <div class="col-12">
-    <div class="block">
-      <div class="block-content block-content-full">
-        @if($is_see == true)
-          <form>
-            <div class="row">
-              <div class="col-lg-2 pt-2">
-                <h5>Transaction List</h5>
-              </div>
-              <div class="col-lg-3">
-                <div class="form-group row">
-                  <label class="col-md-3 col-form-label text-right">Customer</label>
-                  <div class="col-md-9">
-                    <select class="form-control js-select2" name="customer_id">
-                      <option value="">==All Customer==</option>
-                      @foreach($customer as $index => $row)
-                      <option value="{{$row->id}}">{{$row->name}}</option>
-                      @endforeach
-                    </select>
-                  </div>
-                </div>   
-              </div>
-              <div class="col-lg-3">
-              <div class="form-group row">
-                  <label class="col-md-3 col-form-label text-right">Area</label>
-                  <div class="col-md-9">
-                    <select class="form-control js-select2" name="province">
-                      <option value="">==All Provinsi==</option>
-                      @foreach($customer as $index => $row)
-                      <option value="{{$row->id}}">{{$row->text_provinsi}}</option>
-                      @endforeach
-                    </select>
-                  </div>
-                </div>
-              </div>
-              <div class="col-lg-4">
-                <div class="form-group row">
-                  <div class="col-md-3">
-                    <label class="col-md-3 col-form-label text-right">Search</label>
-                  </div>
-                  <div class="col-md-9">
-                    <div class="input-group mb-3">
-                        <input type="text" class="form-control" placeholder="Keyword" name="search">
-                        <div class="input-group-append">
-                          <button type="submit" class="btn btn-primary"><i class="fa fa-search"></i></button>
-                        </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </form>
-          <div class="table-responsive">
-                      <table class="table table-hover" id="datatables">
-                        <thead>
-                          <tr>
-                            <th>Invoice Date</th>
-                            <th>Invoice Code</th>
-                            <th>Customer</th>
-                            <th>Area</th>
-                            <th>Revenue</th>
-                            <th>Paid</th>
-                            <th>Due Date</th>
-                            <th>Is Due Date</th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                            <?php 
-                              $total_invoice = 0;
-                              $total_paid = 0;
-                            ?>
-                            @if(count($invoice) == 0)
-                            <tr>
-                              <td colspan="8">Data tidak ditemukan</td>
-                            </tr>
-                            @endif
-                            @foreach($invoice as $index => $row)
-                          <tr>
-                            <td>
-                              <?= date('d-m-Y',strtotime($row->created_at)); ?>
-                            </td>
-                            <td>{{$row->code}}</td>
-                            <td>{{ $row->do->customer->name ?? '' }}</td>
-                            <td>
-                              <b>
-                              {{$row->do->customer->text_provinsi ?? ''}}
-                              </b>
-                            </td>
-                            <td>{{number_format($row->grand_total_idr,0,',','.')}}</td>
-                            <td>{{number_format($row->payable_detail->sum('total'),0,',','.')}}</td>
-                            <td>
-                              <?php
-                                $due_date = date('Y-m-d',strtotime($row->created_at."+ 30 days"));
-                                $due_date_60 = date('Y-m-d',strtotime($row->created_at."+ 60 days"));
-                              ?>
-                              <?= date('d-m-Y',strtotime($due_date)); ?>
-                            </td>
-                            <td>
-                              @if($due_date <= date('Y-m-d') && $row->grand_total_idr > $row->payable_detail->sum('total'))
-                                <span class="badge badge-warning">H+30</span>
-                              @elseif($due_date_60 <= date('Y-m-d') && $row->grand_total_idr > $row->payable_detail->sum('total'))
-                                <span class="badge badge-danger">H+60</span>
-                              @endif
-                              @if($row->grand_total_idr <= $row->payable_detail->sum('total'))
-                                <span class="badge badge-success">Paid Off</span>
-                              @endif
-                            </td>
-                          </tr>
-                          <?php
-                            $total_invoice += $row->grand_total_idr;
-                            $total_paid += $row->payable_detail->sum('total');
-                          ?>
-                          @endforeach
-                        </tbody>
-                        <tfoot class="text-center">
-                          <tr>
-                            <td colspan="4" class="text-right"><b>Total : </b></td>
-                            <td>{{number_format($total_invoice,0,',','.')}}</td>
-                            <td>{{number_format($total_paid,0,',','.')}}</td>
-                            <td colspan="2"></td>
-                          </tr>
-                        </tfoot>
-                      </table>
-                    </div>
-        @endif
-      </div>
-      
-    </div>
-  </div>
-</div>
-<div class="row">
-  <div class="col-md-6">
-    <div class="block">
-      <div class="block-header block-header-default">
-        <h4 class="block-title">Statistik Sales Order</h4>
-      </div>
-      <div class="block-content block-content-full">
-      <canvas id="mataChart" class="chartjs" width="undefined" height="undefined"></canvas>
-      </div>
-    </div>
-  </div>
-  {{--<div class="col-md-6">
-    <div class="block">
-      <div class="block-header block-header-default">
-        <h4 class="block-title">Statistik Brand</h4>
-      </div>
-      <div class="block-content block-content-full">
-      <canvas id="mataChart2" class="chartjs" width="undefined" height="undefined"></canvas>
-      </div>
-    </div>
-  </div>--}}
-</div>
-
+<div class="content-wrapper">
+					
+					<div class="row mt-4">
+						<div class="col-lg-8 grid-margin stretch-card">
+							<div class="card">
+								<div class="card-body">
+									<div class="row">
+										<div class="col-lg-4">
+											<h4 class="card-title">Sales Difference</h4>
+											<canvas id="salesDifference"></canvas>
+											<p class="mt-3 mb-4 mb-lg-0">Lorem ipsum dolor sit amet,
+												consectetur adipisicing elit.
+											</p>
+										</div>
+										<div class="col-lg-5">
+											<h4 class="card-title">Best Sellers</h4>
+											<div class="row">
+												<div class="col-sm-4">
+													<ul class="graphl-legend-rectangle">
+														<li><span class="bg-danger"></span>Automotive</li>
+														<li><span class="bg-warning"></span>Books</li>
+														<li><span class="bg-info"></span>Software</li>
+														<li><span class="bg-success"></span>Video games</li>
+													</ul>
+												</div>
+												<div class="col-sm-8 grid-margin">
+													<canvas id="bestSellers"></canvas>
+												</div>
+											</div>
+											<p class="mt-3 mb-4 mb-lg-0">Lorem ipsum dolor sit amet,
+												consectetur adipisicing elit.
+											</p>
+										</div>
+										<div class="col-lg-3">
+											<h4 class="card-title">Social Media Statistics</h4>
+											<div class="row">
+												<div class="col-sm-12">
+													<div class="progress progress-lg grouped mb-2">
+														<div class="progress-bar  bg-danger" role="progressbar" style="width: 40%" aria-valuenow="25" aria-valuemin="0" aria-valuemax="100"></div>
+														<div class="progress-bar bg-info" role="progressbar" style="width: 10%" aria-valuenow="50" aria-valuemin="0" aria-valuemax="100"></div>
+														<div class="progress-bar bg-warning" role="progressbar" style="width: 20%" aria-valuenow="50" aria-valuemin="0" aria-valuemax="100"></div>
+														<div class="progress-bar bg-success" role="progressbar" style="width: 30%" aria-valuenow="50" aria-valuemin="0" aria-valuemax="100"></div>
+													</div>
+												</div>
+												<div class="col-sm-12">
+													<ul class="graphl-legend-rectangle">
+														<li><span class="bg-danger"></span>Instagram (15%)</li>
+														<li><span class="bg-warning"></span>Facebook (20%)</li>
+														<li><span class="bg-info"></span>Website (25%)</li>
+														<li><span class="bg-success"></span>Youtube (40%)</li>
+													</ul>
+												</div>
+											</div>
+											<p class="mb-0 mt-2">Lorem ipsum dolor sit amet,
+												consectetur adipisicing elit.
+											</p>
+										</div>
+									</div>
+								</div>
+							</div>
+						</div>
+						<div class="col-lg-4 mb-3 mb-lg-0">
+							<div class="card congratulation-bg text-center">
+								<div class="card-body pb-0">
+									<img src="images/dashboard/face29.png" alt="">  
+									<h2 class="mt-3 text-white mb-3 font-weight-bold">Congratulations
+										Johnson
+									</h2>
+									<p>You have done 57.6% more sales today. 
+										Check your new badge in your profile.
+									</p>
+								</div>
+							</div>
+						</div>
+					</div>
+					<div class="row">
+						<div class="col-sm-8 flex-column d-flex stretch-card">
+							<div class="row">
+								<div class="col-lg-4 d-flex grid-margin stretch-card">
+									<div class="card bg-primary">
+										<div class="card-body text-white">
+											<h3 class="font-weight-bold mb-3">18,39 (75GB)</h3>
+											<div class="progress mb-3">
+												<div class="progress-bar  bg-warning" role="progressbar" style="width: 40%" aria-valuenow="25" aria-valuemin="0" aria-valuemax="100"></div>
+											</div>
+											<p class="pb-0 mb-0">Bandwidth usage</p>
+										</div>
+									</div>
+								</div>
+								<div class="col-lg-4 d-flex grid-margin stretch-card">
+									<div class="card sale-diffrence-border">
+										<div class="card-body">
+											<h2 class="text-dark mb-2 font-weight-bold">$6475</h2>
+											<h4 class="card-title mb-2">Sales Difference</h4>
+											<small class="text-muted">APRIL 2019</small>
+										</div>
+									</div>
+								</div>
+								<div class="col-lg-4 d-flex grid-margin stretch-card">
+									<div class="card sale-visit-statistics-border">
+										<div class="card-body">
+											<h2 class="text-dark mb-2 font-weight-bold">$3479</h2>
+											<h4 class="card-title mb-2">Visit Statistics</h4>
+											<small class="text-muted">APRIL 2019</small>
+										</div>
+									</div>
+								</div>
+							</div>
+							<div class="row">
+								<div class="col-sm-12 grid-margin d-flex stretch-card">
+									<div class="card">
+										<div class="card-body">
+											<div class="d-flex align-items-center justify-content-between">
+												<h4 class="card-title mb-2">Sales Difference</h4>
+												<div class="dropdown">
+													<a href="#" class="text-success btn btn-link  px-1"><i class="mdi mdi-refresh"></i></a>
+													<a href="#" class="text-success btn btn-link px-1 dropdown-toggle dropdown-arrow-none" data-bs-toggle="dropdown" id="settingsDropdownsales">
+														<i class="mdi mdi-dots-horizontal"></i></a>
+														<div class="dropdown-menu dropdown-menu-right navbar-dropdown" aria-labelledby="settingsDropdownsales">
+															<a class="dropdown-item">
+																<i class="mdi mdi-grease-pencil text-primary"></i>
+																Edit
+															</a>
+															<a class="dropdown-item">
+																<i class="mdi mdi-delete text-primary"></i>
+																Delete
+															</a>
+														</div>
+												</div>
+											</div>
+											<div>
+												<ul class="nav nav-tabs tab-no-active-fill" role="tablist">
+													<li class="nav-item">
+														<a class="nav-link active ps-2 pe-2" id="revenue-for-last-month-tab" data-bs-toggle="tab" href="#revenue-for-last-month" role="tab" aria-controls="revenue-for-last-month" aria-selected="true">Revenue for last month</a>
+													</li>
+													<li class="nav-item">
+														<a class="nav-link ps-2 pe-2" id="server-loading-tab" data-bs-toggle="tab" href="#server-loading" role="tab" aria-controls="server-loading" aria-selected="false">Server loading</a>
+													</li>
+													<li class="nav-item">
+														<a class="nav-link ps-2 pe-2" id="data-managed-tab" data-bs-toggle="tab" href="#data-managed" role="tab" aria-controls="data-managed" aria-selected="false">Data managed</a>
+													</li>
+													<li class="nav-item">
+														<a class="nav-link ps-2 pe-2" id="sales-by-traffic-tab" data-bs-toggle="tab" href="#sales-by-traffic" role="tab" aria-controls="sales-by-traffic" aria-selected="false">Sales by traffic</a>
+													</li>
+												</ul>
+												<div class="tab-content tab-no-active-fill-tab-content">
+													<div class="tab-pane fade show active" id="revenue-for-last-month" role="tabpanel" aria-labelledby="revenue-for-last-month-tab">
+														<div class="d-lg-flex justify-content-between">
+															<p class="mb-4">+5.2% vs last 7 days</p>
+															<div id="revenuechart-legend" class="revenuechart-legend">f</div>
+														</div>
+														<canvas id="revenue-for-last-month-chart"></canvas>
+													</div>
+													<div class="tab-pane fade" id="server-loading" role="tabpanel" aria-labelledby="server-loading-tab">
+														<div class="d-flex justify-content-between">
+															<p class="mb-4">+5.2% vs last 7 days</p>
+															<div id="serveLoading-legend" class="revenuechart-legend">f</div>
+														</div>
+														<canvas id="serveLoading"></canvas>
+													</div>
+													<div class="tab-pane fade" id="data-managed" role="tabpanel" aria-labelledby="data-managed-tab">
+														<div class="d-flex justify-content-between">
+															<p class="mb-4">+5.2% vs last 7 days</p>
+															<div id="dataManaged-legend" class="revenuechart-legend">f</div>
+														</div>
+														<canvas id="dataManaged"></canvas>
+													</div>
+													<div class="tab-pane fade" id="sales-by-traffic" role="tabpanel" aria-labelledby="sales-by-traffic-tab">
+														<div class="d-flex justify-content-between">
+															<p class="mb-4">+5.2% vs last 7 days</p>
+															<div id="salesTrafic-legend" class="revenuechart-legend">f</div>
+														</div>
+														<canvas id="salesTrafic"></canvas>
+													</div>
+												</div>
+											</div>
+										</div>
+									</div>
+								</div>
+							</div>
+						</div>
+						<div class="col-sm-4 flex-column d-flex stretch-card">
+							<div class="row flex-grow">
+								<div class="col-sm-12 grid-margin stretch-card">
+									<div class="card">
+										<div class="card-body">
+											<div class="row">
+												<div class="col-lg-8">
+													<h3 class="font-weight-bold text-dark">Canada,Ontario</h3>
+													<p class="text-dark">Monday 3.00 PM</p>
+													<div class="d-lg-flex align-items-baseline mb-3">
+														<h1 class="text-dark font-weight-bold">23<sup class="font-weight-light"><small>o</small><small class="font-weight-medium">c</small></sup></h1>
+														<p class="text-muted ms-3">Partly cloudy</p>
+													</div>
+												</div>
+												<div class="col-lg-4">
+													<div class="position-relative">
+														<img src="images/dashboard/live.png" class="w-100" alt="">
+														<div class="live-info badge badge-success">Live</div>
+													</div>
+												</div>
+											</div>
+											<div class="row">
+												<div class="col-sm-12 mt-4 mt-lg-0">
+													<div class="bg-primary text-white px-4 py-4 card">
+														<div class="row">
+															<div class="col-sm-6 pl-lg-5">
+																<h2>$1635</h2>
+																<p class="mb-0">Your Iincome</p>
+															</div>
+															<div class="col-sm-6 climate-info-border mt-lg-0 mt-2">
+																<h2>$2650</h2>
+																<p class="mb-0">Your Spending</p>
+															</div>
+														</div>
+													</div>
+												</div>
+											</div>
+											<div class="row pt-3 mt-md-1">
+												<div class="col">
+													<div class="d-flex purchase-detail-legend align-items-center">
+														<div id="circleProgress1" class="p-2"></div>
+														<div>
+															<p class="font-weight-medium text-dark text-small">Sessions</p>
+															<h3 class="font-weight-bold text-dark  mb-0">26.80%</h3>
+														</div>
+													</div>
+												</div>
+												<div class="col">
+													<div class="d-flex purchase-detail-legend align-items-center">
+														<div id="circleProgress2" class="p-2"></div>
+														<div>
+															<p class="font-weight-medium text-dark text-small">Users</p>
+															<h3 class="font-weight-bold text-dark  mb-0">56.80%</h3>
+														</div>
+													</div>
+												</div>
+											</div>
+										</div>
+									</div>
+								</div>
+								<div class="col-sm-12 grid-margin stretch-card">
+									<div class="card">
+										<div class="card-body">
+											<div class="row">
+												<div class="col-sm-12">
+													<div class="d-flex align-items-center justify-content-between">
+														<h4 class="card-title mb-0">Visits Today</h4>
+														<div class="dropdown">
+															<a href="#" class="text-success btn btn-link  px-1"><i class="mdi mdi-refresh"></i></a>
+															<a href="#" class="text-success btn btn-link px-1 dropdown-toggle dropdown-arrow-none" data-bs-toggle="dropdown" id="profileDropdownvisittoday"><i class="mdi mdi-dots-horizontal"></i></a>
+															<div class="dropdown-menu dropdown-menu-right navbar-dropdown" aria-labelledby="profileDropdownvisittoday">
+																<a class="dropdown-item">
+																	<i class="mdi mdi-grease-pencil text-primary"></i>
+																	Edit
+																</a>
+																<a class="dropdown-item">
+																	<i class="mdi mdi-delete text-primary"></i>
+																	Delete
+																</a>
+															</div>
+														</div>
+													</div>
+													<p class="mt-1">Calculated in last 30 days</p>
+													<div class="d-lg-flex align-items-center justify-content-between">
+														<h1 class="font-weight-bold text-dark">4332</h1>
+														<div class="mb-3">
+															<button type="button" class="btn btn-outline-light text-dark font-weight-normal">Day</button>
+															<button type="button" class="btn btn-outline-light text-dark font-weight-normal">Month</button>
+														</div>
+													</div>
+													<canvas id="visitorsToday"></canvas>
+												</div>
+											</div>
+										</div>
+									</div>
+								</div>
+							</div>
+						</div>
+					</div>
+					<div class="row">
+						<div class="col-lg-2 grid-margin stretch-card">
+							<div class="card">
+								<div class="card-body pb-0">
+									<div class="d-flex align-items-center justify-content-between">
+										<h2 class="text-success font-weight-bold">18390</h2>
+										<i class="mdi mdi-account-outline mdi-18px text-dark"></i>
+									</div>
+								</div>
+								<canvas id="newClient"></canvas>
+								<div class="line-chart-row-title">MY NEW CLIENTS</div>
+							</div>
+						</div>
+						<div class="col-lg-2 grid-margin stretch-card">
+							<div class="card">
+								<div class="card-body pb-0">
+									<div class="d-flex align-items-center justify-content-between">
+										<h2 class="text-danger font-weight-bold">839</h2>
+										<i class="mdi mdi-refresh mdi-18px text-dark"></i>
+									</div>
+								</div>
+								<canvas id="allProducts"></canvas>
+								<div class="line-chart-row-title">All Products</div>
+							</div>
+						</div>
+						<div class="col-lg-2 grid-margin stretch-card">
+							<div class="card">
+								<div class="card-body pb-0">
+									<div class="d-flex align-items-center justify-content-between">
+										<h2 class="text-info font-weight-bold">244</h2>
+										<i class="mdi mdi-file-document-outline mdi-18px text-dark"></i>
+									</div>
+								</div>
+								<canvas id="invoices"></canvas>
+								<div class="line-chart-row-title">NEW INVOICES</div>
+							</div>
+						</div>
+						<div class="col-lg-2 grid-margin stretch-card">
+							<div class="card">
+								<div class="card-body pb-0">
+									<div class="d-flex align-items-center justify-content-between">
+										<h2 class="text-warning font-weight-bold">3259</h2>
+										<i class="mdi mdi-folder-outline mdi-18px text-dark"></i>
+									</div>
+								</div>
+								<canvas id="projects"></canvas>
+								<div class="line-chart-row-title">All PROJECTS</div>
+							</div>
+						</div>
+						<div class="col-lg-2 grid-margin stretch-card">
+							<div class="card">
+								<div class="card-body pb-0">
+									<div class="d-flex align-items-center justify-content-between">
+										<h2 class="text-secondary font-weight-bold">586</h2>
+										<i class="mdi mdi-cart-outline mdi-18px text-dark"></i>
+									</div>
+								</div>
+								<canvas id="orderRecieved"></canvas>
+								<div class="line-chart-row-title">Orders Received</div>
+							</div>
+						</div>
+						<div class="col-lg-2 grid-margin stretch-card">
+							<div class="card">
+								<div class="card-body pb-0">
+									<div class="d-flex align-items-center justify-content-between">
+										<h2 class="text-dark font-weight-bold">7826</h2>
+										<i class="mdi mdi-cash text-dark mdi-18px"></i>
+									</div>
+								</div>
+								<canvas id="transactions"></canvas>
+								<div class="line-chart-row-title">TRANSACTIONS</div>
+							</div>
+						</div>
+					</div>
+					<div class="row">
+						<div class="col-sm-6 grid-margin grid-margin-md-0 stretch-card">
+							<div class="card">
+								<div class="card-body">
+									<div class="d-flex align-items-center justify-content-between">
+										<h4 class="card-title">Support Tracker</h4>
+										<h4 class="text-success font-weight-bold">Tickets<span class="text-dark ms-3">163</span></h4>
+									</div>
+									<div id="support-tracker-legend" class="support-tracker-legend"></div>
+									<canvas id="supportTracker"></canvas>
+								</div>
+							</div>
+						</div>
+						<div class="col-sm-6 grid-margin grid-margin-md-0 stretch-card">
+							<div class="card">
+								<div class="card-body">
+									<div class="d-lg-flex align-items-center justify-content-between mb-4">
+										<h4 class="card-title">Product Orders</h4>
+										<p class="text-dark">+5.2% vs last 7 days</p>
+									</div>
+									<div class="product-order-wrap padding-reduced">
+										<div id="productorder-gage" class="gauge productorder-gage"></div>
+									</div>
+								</div>
+							</div>
+						</div>
+					</div>
+				</div>
 @endsection
 
 @include('superuser.asset.plugin.select2')

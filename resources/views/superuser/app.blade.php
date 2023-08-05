@@ -14,35 +14,20 @@
   </head>
   <body>
     <div class="container-scroller">
-      <!-- partial:partials/_horizontal-navbar.html -->
-      <div class="horizontal-menu">
-        @include('superuser.component.menu')
-      </div>
+      @include('superuser.component.menu')
       <main id="container">
         <div class="content">
           @yield('content')
         </div>
       </main>
-      <footer id="page-footer" class="footer">
-        <div class="content font-size-xs clearfix">
-          <div class="float-left">
-            <p>This page took {{ round(microtime(true) - LARAVEL_START, 3) }} seconds to render</p>
-          </div>
-          <div class="float-right">
-            <a class="font-w600" href="https://willek.github.io" target="_blank">Copyright &copy; 2022 <b>Premium Parfume Indonesia</b>. All rights reserved.</span>
-          </div>
-        </div>
-      </footer>
-      <!-- <footer class="footer">
-            <div class="container">
-              <div class="d-sm-flex justify-content-center justify-content-sm-between">
-                <span class="text-muted text-center text-sm-left d-block d-sm-inline-block">Copyright &copy; 2022 <b>Premium Parfume Indonesia</b>. All rights reserved.</span>
-                <span class="float-none float-sm-right d-block mt-1 mt-sm-0 text-center">This template is made with <i class="mdi mdi-heart text-danger"></i>Developer</span>
-              </div>
+      <footer class="footer">
+          <div class="footer-wrap">
+            <div class="d-sm-flex justify-content-center justify-content-sm-between">
+              <span class="text-muted text-center text-sm-left d-block d-sm-inline-block">Copyright © <a href="https://www.bootstrapdash.com/" target="_blank">bootstrapdash.com </a>2021</span>
+              <span class="float-none float-sm-right d-block mt-1 mt-sm-0 text-center">Only the best <a href="https://www.bootstrapdash.com/" target="_blank"> Bootstrap dashboard </a> templates</span>
             </div>
-      </footer> -->
-      <!-- partial -->
-      <!-- page-body-wrapper ends -->
+          </div>
+      </footer>
     </div>
     @yield('modal')
     <script>
