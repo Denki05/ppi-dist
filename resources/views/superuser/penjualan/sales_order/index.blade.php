@@ -114,7 +114,6 @@
                 @if($step == 1 )
                 <th>Tanggal Dibuat</th>
                 @endif
-
                 <th>Action</th>
               </tr>
             </thead>
@@ -145,7 +144,7 @@
 
                   @if($step == 1 || $step == 9)
                   <td>
-                    <?= date('d-m-Y h:i:s',strtotime($row->created_at)); ?>
+                    <?= date('d-m-Y',strtotime($row->so_date)); ?>
                   </td>
                   @endif
                   @if($step == 2)

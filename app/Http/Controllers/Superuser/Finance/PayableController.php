@@ -53,22 +53,8 @@ class PayableController extends Controller
             }
         }
 
-        $search = $request->input('search');
-        $customer = Customer::where(function($query2) use($search){
-                                if(!empty($search)){
-                                    $query2->where('name','like','%'.$search.'%');
-                                }
-                            })
-                            ->orderBy('id','ASC')
-                            ->paginate(10);
-
-        $member = CustomerOtherAddress::get();
+        $data['other_address'] = CustomerOtherAddress::get();
         
-        $data =[
-            'customer' => $customer,
-            'member' => $member,
-        ];
-
         return view($this->view."index",$data);
     }
 
