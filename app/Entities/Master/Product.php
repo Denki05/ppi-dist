@@ -12,7 +12,7 @@ class Product extends Model
 
     protected $appends = ['image_url', 'image_hd_url'];
     protected $fillable = [
-                        'vendor_id', 'category_id', 'brand_reference_id', 'sub_brand_reference_id', 'brand_name',
+                        'vendor_id', 'packaging_id', 'category_id', 'type_id', 'brand_reference_id', 'sub_brand_reference_id', 'brand_name',
                         'code', 'name', 'material_code', 'material_name', 'alias', 'description', 
                         'default_quantity', 'default_unit_id', 'ratio', 'default_warehouse_id',
                         'buying_price', 'selling_price', 'image', 'image_hd', 'status', 'gender'
@@ -49,6 +49,11 @@ class Product extends Model
     public function brand_ppi()
     {
         return $this->BelongsTo('App\Entities\Master\BrandLokal', 'brand_lokal_id');
+    }
+
+    public function packaging()
+    {
+        return $this->BelongsTo('App\Entities\Master\Packaging', 'packaging_id');
     }
 
     public function category()

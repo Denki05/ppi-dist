@@ -19,7 +19,7 @@
 
 <nav class="breadcrumb bg-white push">
   {{--<a href="{{route('superuser.master.brand_lokal.create')}}" class="btn btn-primary btn-lg active" role="button" target="_blank" aria-pressed="true" style="margin-left: 10px !important;">Add Brand</a>--}}
-  <a href="{{route('superuser.master.product_category.create')}}" class="btn btn-primary btn-lg active" role="button" target="_blank" aria-pressed="true" style="margin-left: 10px !important;">Add Category</a>
+  <a href="{{route('superuser.master.product_category.create')}}" class="btn btn-primary btn-lg active" role="button" aria-pressed="true" style="margin-left: 10px !important;">Add Category</a>
 </nav>
 
 <div class="block">
@@ -67,7 +67,6 @@
             <th>Code</th>
             <th>Brand</th>
             <th>Category</th>
-            <th>Packaging</th>
             <th>Status</th>
             <th>Action</th>
           </tr>
@@ -123,7 +122,6 @@ $(document).ready(function() {
       {data: 'code', name: 'master_product_categories.code'},
       {data: 'brandName', name: 'master_product_categories.brand_name'},
       {data: 'name'},
-      {data: 'pack_name', name: 'master_packaging.pack_name'},
       {data: 'status'},
       {data: 'action'}
     ],

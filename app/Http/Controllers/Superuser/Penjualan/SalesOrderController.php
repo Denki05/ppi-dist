@@ -314,7 +314,7 @@ class SalesOrderController extends Controller
                         $insertDetail->so_id = $insert->id;
                         $insertDetail->product_id = trim(htmlentities($post["product_id"][$i]));
                         $insertDetail->qty = trim(htmlentities($post["qty"][$i]));
-                        $insertDetail->packaging_id = trim(htmlentities($post["packaging_id"][$i]));
+                        // $insertDetail->packaging_id = trim(htmlentities($post["packaging_id"][$i]));
                         $insertDetail->free_product = trim(htmlentities($post["free_product"][$i]));
                         $insertDetail->created_by = Auth::id();
                         $insertDetail->save();
@@ -1436,15 +1436,9 @@ class SalesOrderController extends Controller
                             $query2->where('brand_lokal_id',$post["brand_lokal_id"]);
                         }
                     })
-                    ->leftJoin('master_packaging', 'master_product_categories.packaging_id', '=', 'master_packaging.id')
-                    ->leftJoin('master_units', 'master_packaging.unit_id', '=', 'master_units.id')
                     ->select(
                         'master_product_categories.id as catId',
                         'master_product_categories.name as categoryName',
-                        'master_packaging.id as packId',
-                        'master_packaging.pack_value as packValue',
-                        'master_packaging.packaging_packing as packWight',
-                        'master_units.abbreviation as satuan'
                         )
                     ->get();
             $data_json["IsError"] = FALSE;
@@ -1471,7 +1465,7 @@ class SalesOrderController extends Controller
                     })
                     ->where('master_products.status', 1)
                     ->leftJoin('master_product_categories', 'master_products.category_id', '=', 'master_product_categories.id')
-                    ->leftJoin('master_packaging', 'master_product_categories.packaging_id', '=', 'master_packaging.id')
+                    ->leftJoin('master_packaging', 'master_products.packaging_id', '=', 'master_packaging.id')
                     ->select(
                         'master_products.name as productName', 
                         'master_products.id as id', 

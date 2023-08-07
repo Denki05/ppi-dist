@@ -13,7 +13,7 @@
 </div>
 @endif
 <nav class="breadcrumb bg-white push">
-  <a href="{{ route('superuser.master.product.create') }}" class="btn btn-primary btn-lg active" role="button" target="_blank" aria-pressed="true" style="margin-left: 10px !important;">Add Product</a>
+  <a href="{{ route('superuser.master.product.create') }}" class="btn btn-primary btn-lg active" role="button" aria-pressed="true" style="margin-left: 10px !important;">Add Product</a>
   {{--<a href="{{ route('superuser.master.product.cetak') }}" class="btn btn-primary btn-lg active" role="button" target="_blank" aria-pressed="true" style="margin-left: 10px !important;">Print Product</a>
   <button type="button" class="btn btn-outline-danger ml-10" onclick="deleteMultiple()">Delete Checked</button>--}}
 </nav>
@@ -75,7 +75,7 @@ $(document).ready(function() {
       {data: 'action', orderable: false, searcable: false}
     ],
     order: [
-      [1, 'desc']
+      [0, 'asc']
     ],
     pageLength: 10,
     lengthMenu: [

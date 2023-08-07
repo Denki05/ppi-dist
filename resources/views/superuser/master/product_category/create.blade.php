@@ -38,23 +38,6 @@
               </select>
             </div>
           </div>
-          <div class="form-group row">
-            <label class="col-md-3 col-form-label text-right" for="type">Type <span class="text-danger">*</span></label>
-            <div class="col-md-7">
-              <input id="type" name="type" class="form-control"></input>
-            </div>
-          </div>
-          <div class="form-group row">
-            <label class="col-md-3 col-form-label text-right" for="packaging">Packaging <span class="text-danger">*</span></label>
-            <div class="col-md-7">
-              <select class="js-select2 form-control" id="packaging" name="packaging" data-placeholder="Select Packaging">
-                <option value="">Select Packaging</option>
-                @foreach($packaging as $pack)
-                <option value="{{$pack->id}}">{{ $pack->pack_name }}</option>
-                @endforeach
-              </select>
-            </div>
-          </div>
           <div class="form-group row pt-30">
             <div class="col-md-6">
               <a href="{{ route('superuser.master.product_category.index') }}">
@@ -84,7 +67,6 @@
             <tr>
               <th>Category</th>
               <th>Type</th>
-              <th>Pack</th>
             </tr>
           </thead>
           <tbody>
@@ -158,8 +140,7 @@
       },
       columns: [
         {data: 'name'},
-        {data: 'type'},
-        {data: 'pack_name'},
+        {data: 'type'}
       ],
       order: [
         [1, 'desc']

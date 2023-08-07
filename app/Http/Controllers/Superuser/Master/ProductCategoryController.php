@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Superuser\Master;
 
 use App\DataTables\Master\ProductCategoryTable;
 use App\Entities\Master\ProductCategory;
+use App\Entities\Master\ProductType;
 use App\Entities\Master\BrandLokal;
 use App\Entities\Master\Packaging;
 use App\Exports\Master\ProductCategoryExport;
@@ -79,10 +80,9 @@ class ProductCategoryController extends Controller
         }
 
         $data['brand_lokal'] = BrandLokal::all();
-        // $data['category_pack'] = ProductCategory::get()->unique('packaging');
         $data['category_name'] = ProductCategory::get()->unique('name');
         $data['category'] = ProductCategory::get();
-        $data['packaging'] = Packaging::get();
+        $data['type'] = ProductType::get();
 
         return view('superuser.master.product_category.create', $data);
     }
@@ -116,8 +116,6 @@ class ProductCategoryController extends Controller
                 $product_category->brand_lokal_id = $request->brand_ppi;
                 $product_category->brand_name = $request->brand_name;
                 $product_category->name = $request->name;
-                $product_category->type = $request->type;
-                $product_category->packaging_id = $request->packaging;
                 $product_category->status = ProductCategory::STATUS['ACTIVE'];
 
                 if ($product_category->save()) {

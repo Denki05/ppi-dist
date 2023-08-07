@@ -292,8 +292,8 @@
                         <input class="form-check-input free_product" type="checkbox" value="{{$detail->free_product}}" name="repeater[{{$index}}][free_product]" @if($detail->free_product == 1) checked=checked @endif disabled>
                       </td>
                       <td>
-                        <input type="text" name="kemasan" class="form-control" readonly value="{{$detail->packaging->pack_name ?? ''}}">
-                        <input type="hidden" name="repeater[{{$index}}][packaging]" class="form-control" readonly value="{{$detail->packaging->id ?? ''}}">
+                        <input type="text" name="kemasan" class="form-control" readonly value="{{$detail->product->packaging->pack_name ?? ''}}">
+                        <input type="hidden" name="repeater[{{$index}}][packaging]" class="form-control" readonly value="{{$detail->product->packaging->id ?? ''}}">
                       </td>
                       <td>
                         <input type="text" name="repeater[{{$index}}][usd_disc]" class="form-control count count-disc" data-index="{{$index}}" step="any">

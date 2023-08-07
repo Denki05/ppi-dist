@@ -121,22 +121,15 @@
             <div class="row">
               <div class="col-12 product-list">
                 <div class="row">
-                  <div class="col">Category</div>
+                  <div class="col-2">Category</div>
                   <div class="col-3">Product</div>
                   <div class="col-1">Qty</div>
-                  <div class="col">Packaging</div>
                   <div class="col-1">Free</div>
                   <div class="col">Action</div>
                 </div>
 
                 <div class="row mt-10 product-row">
-                  <div class="col">
-                    <!-- <select class="form-control js-select2 select-category" data-index="0">
-                      <option value="">Select Category</option>
-                      @foreach($product_category as $index => $row)
-                        <option value="{{$row->id}}">{{$row->name}}</option>
-                      @endforeach
-                    </select> -->
+                  <div class="col-2">
                     <select class="form-control js-select2 select-category" name="category[]" data-index="0">
                       <option value="">Select Category</option>
                     </select>
@@ -148,11 +141,6 @@
                   </div>
                   <div class="col-1">
                     <input type="number" name="qty[]" class="form-control input-qty" data-index="0" step="any">
-                  </div>
-                  <div class="col">
-                    <select name="packaging_id[]" class="form-control js-select2 select-packaging" data-index="0">
-                      <option value="">Select packaging</option>
-                    </select>
                   </div>
                   <div class="col-1">
                     <input type="checkbox" class="form-check-input input-gift" id="gift" name="gift">
@@ -256,11 +244,9 @@
       const productId = $('.select-product[data-index=0]').val();
       const productText = $('.select-product[data-index=0] option:selected').text();
       const qty = $('.input-qty[data-index=0]').val();
-      const packagingId = $('.select-packaging[data-index=0]').val();
-      const packagingText = $('.select-packaging[data-index=0] option:selected').text();
       const free = $('.input-free[data-index=0]').val();
 
-      if (categoryId === null || categoryId === '' || productId === null || productId === '' || qty === null || qty === '' || packagingId == null || packagingId === '' ) {
+      if (categoryId === null || categoryId === '' || productId === null || productId === '' || qty === null || qty === '' ) {
         Swal.fire(
           'Error!',
           'Please input all the data',
@@ -282,11 +268,7 @@
       html += "    <input type='hidden' name='qty[]' class='form-control' value='" + qty + "'>";
       html += qty;
       html += "  </div>";
-      html += "  <div class='col-2'>";
-      html += "    <input type='hidden' name='packaging_id[]' class='form-control' value='" + packagingId + "'>";
-      html += packagingText;
-      html += "  </div>";
-      html += "  <div class='col-1 text-right'>";
+      html += "  <div class='col-1'>";
       html += "    <input type='hidden' name='free_product[]' class='form-control free' value='" + free + "'>";
       html += free;
       html += "  </div>";
@@ -304,7 +286,6 @@
       $('.select-category[data-index=0]').val('').change();
       $('.select-product[data-index=0]').val('').change();
       $('.input-qty[data-index=0]').val('');
-      $('.select-packaging[data-index=0]').val('').change();
       $('.input-free[data-index=0]').val();
 
       $('.select-category[data-index=0]').select2('focus');
@@ -341,7 +322,7 @@
           let option = "";
           option = '<option value="">Select Category</option>';
           $.each(resp.Data,function(i,e){
-            option += '<option value="'+e.catId+'">'+e.categoryName+' - '+e.packValue+' '+e.satuan+'</option>';
+            option += '<option value="'+e.catId+'">'+e.categoryName+'</option>';
           })
           $('.select-category[data-index=' + param.index + ']').html(option);
         },
@@ -374,15 +355,11 @@
         dataType : "JSON",
         success : function(resp){
           let option = "";
-          let option2 = "";
           option = '<option value="">Select Product</option>';
-          option2 = '<option value="">Select Packaging</option>';
           $.each(resp.Data,function(i,e){
-            option += '<option value="'+e.id+'">'+e.productCode+' - '+e.productName+' - $'+e.productPrice+'</option>';
-            option2 += '<option value="'+e.packId+'">'+e.packName+'</option>';
+            option += '<option value="'+e.id+'">'+e.productCode+' - '+e.productName+' - '+e.packName+'</option>';
           })
           $('.select-product[data-index=' + param.index + ']').html(option);
-          $('.select-packaging[data-index=' + param.index + ']').html(option2);
         },
         error : function(){
           alert("Cek Koneksi Internet");
@@ -390,23 +367,13 @@
       })
     }
 
-    // function validate() {
-    //   var gift = $('#gift').val();
-    //   if (gift.checked) {
-    //     $('.input-free[data-index=0]').val(1);
-    //   } else {
-    //     // alert("You didn't check it! Let me check it for you.");
-    //     $('.input-free[data-index=0]').val(0);
-    //   }
-    // }
-
     $('.input-gift').click(function(){
-    if($(this).is(':checked')){
-        $('.input-free[data-index=0]').val(1);
-    } else {
-        $('.input-free[data-index=0]').val(0);
-    }
-});
+      if($(this).is(':checked')){
+          $('.input-free[data-index=0]').val('Yes');
+      } else {
+          $('.input-free[data-index=0]').val('No');
+      }
+    });
   })
 </script>
 @endpush

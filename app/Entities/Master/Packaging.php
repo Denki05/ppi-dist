@@ -14,9 +14,9 @@ class Packaging extends Model
         'ACTIVE' => 1
     ];
 
-    public function category()
+    public function product()
     {
-        return $this->hasMany('App\Entities\Master\ProductCategory', 'packaging_id');
+        return $this->hasMany('App\Entities\Master\Product', 'packaging_id');
     }
 
     public function sales_order_item()
