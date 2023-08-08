@@ -12,6 +12,7 @@ class Payable extends Model
     protected $fillable = [
     	'code',
     	'customer_other_address_id',
+        'pay_date', 
     	'total',
         'status',
         'note',

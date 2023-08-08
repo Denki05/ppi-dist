@@ -19,6 +19,7 @@ class SalesOrder extends Model
         'customer_other_address_id',
         'ekspedisi_id',
         'vendor_id',
+        'so_date',
     	'type_transaction',
         'type_so',
     	'idr_rate',

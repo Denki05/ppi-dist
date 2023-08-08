@@ -16,7 +16,7 @@ class ProductTable extends Table
     {
         $model = Product::select('master_products.id', 'master_products.code', 'master_products.brand_name as brand_name', 'master_product_categories.name as category_name', 'master_products.name', 'master_products.status', 'master_products.created_at', 'master_packaging.pack_name')
         ->join('master_product_categories', 'master_product_categories.id', '=', 'master_products.category_id')
-        ->join('master_packaging', 'master_product_categories.packaging_id', '=', 'master_packaging.id')
+        ->join('master_packaging', 'master_products.packaging_id', '=', 'master_packaging.id')
         ->get();
 
         return $model;

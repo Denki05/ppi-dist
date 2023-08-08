@@ -153,14 +153,17 @@
                                 </div>
                               </div>
                               <div class="f1-buttons">
-                                  <button type="button" class="btn btn-primary btn-next">Next <i class="fa fa-arrow-right"></i></button>
+                                <a href="javascript:history.back()" class="btn btn-danger">Go Back <i class="fa fa-arrow-left"></i></a>
+                                <button type="button" class="btn btn-primary btn-next">Next <i class="fa fa-arrow-right"></i></button>
                               </div>
+
+                              <br>
                         </fieldset>
                         
                         <!-- Detail Brand -->
                         <fieldset>
                           <h4>#Product Brand's</h4>
-                            <div class="container">
+                          <div class="container">
                               <div class="row">
                                 <div class="col">
                                   <div class="form-group row">
@@ -177,33 +180,57 @@
                                   </div>
                                   <div class="col">
                                     <div class="form-group row">
+                                      <label for="searah" class="col-sm-2 col-form-label">Searah<span class="text-danger">*</span></label>
+                                      <div class="col-sm-10">
+                                        <select class="js-select2 form-control" id="searah"  name="searah" style="width:100%;" data-placeholder="Pilih Searah">
+                                          <option value="">Pilih Searah</option>
+                                          @foreach($sub_brand_references as $searah)
+                                          <option value="{{ $searah->id }}" {{ ($searah->id == $product->sub_brand_reference_id ) ? 'selected' : '' }}>{{$searah->brand_reference->name}} - {{ $searah->name }}</option>
+                                          @endforeach
+                                        </select>
+                                      </div>
+                                    </div>   
+                                </div>
+                              </div>
+                              <div class="row">
+                                  <div class="col">
+                                    <div class="form-group row">
                                       <label for="category" class="col-sm-2 col-form-label">Category<span class="text-danger">*</span></label>
                                       <div class="col-sm-10">
                                         <select class="js-select2 form-control" id="category"  name="category" style="width:100%;" data-placeholder="Pilih Kategori">
                                             <option value="">==Select Category==</option>
                                             @foreach($product_categories as $cat)
-                                            <option value="{{ $cat->id }}" {{ ($cat->id == $product->category_id ) ? 'selected' : '' }}>{{ $cat->name }} - {{ $cat->packaging->pack_name }}</option>
+                                            <option value="{{ $cat->id }}" {{ ($cat->id == $product->category_id ) ? 'selected' : '' }}>{{ $cat->name }}</option>
                                             @endforeach
                                         </select>
                                       </div>
                                     </div>
                                   </div>
-                              </div>
-                              <div class="row">
-                                <div class="col">
-                                  <div class="form-group row">
-                                    <label for="searah" class="col-sm-1 col-form-label">Searah<span class="text-danger">*</span></label>
-                                    <div class="col-sm-10">
-                                      <select class="js-select2 form-control" id="searah"  name="searah" style="width:100%;" data-placeholder="Pilih Searah">
-                                        <option value="">Pilih Searah</option>
-                                        @foreach($sub_brand_references as $searah)
-                                        <option value="{{ $searah->id }}" {{ ($searah->id == $product->sub_brand_reference_id ) ? 'selected' : '' }}>{{$searah->brand_reference->name}} - {{ $searah->name }}</option>
-                                        @endforeach
-                                      </select>
+                                  <div class="col">
+                                    <div class="form-group row">
+                                      <label for="category" class="col-sm-2 col-form-label">Type<span class="text-danger">*</span></label>
+                                      <div class="col-sm-10">
+                                        <select class="js-select2 form-control" id="type"  name="type" style="width:100%;" data-placeholder="Pilih Kategori">
+                                            <option value="">==Select Type==</option>
+                                            @foreach($type as $type)
+                                            <option value="{{ $type->id }}" {{ ($type->id == $product->type_id ) ? 'selected' : '' }}>{{ $type->name }}</option>
+                                            @endforeach
+                                        </select>
+                                      </div>
                                     </div>
-                                  </div>   
-                                </div>
+                                  </div>
                               </div> 
+                              <div class="row">
+                                <div class="form-group">
+                                  <label for="packaging">Packaging</label>
+                                  <select class="form-control js-select2" id="packaging" name="packaging" style="width:100%;" data-placeholder="Pilih Kemasan">
+                                    <option value="">Pilih Kemasan</option>  
+                                    @foreach($pack as $pack)
+                                    <option value="{{$pack->id}}" {{ ($pack->id == $product->packaging_id ) ? 'selected' : '' }}>{{$pack->pack_name}}</option>
+                                    @endforeach
+                                  </select>
+                                </div>
+                              </div>
                               <div class="row">
                                 <div class="col">
                                   <div class="form-group">

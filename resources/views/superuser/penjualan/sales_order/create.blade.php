@@ -12,156 +12,166 @@
     <form id="frmCreate" action="#" data-type="POST" enctype="multipart/form-data">
       @csrf
       <input type="hidden" name="ajukankelanjutan" value="0">
-      <div class="row">
-        <div class="col-4">
-          <div class="card">
-            <div class="card-body">
-                <div class="col-10">
-                  @if($step == 1 || $step == 2 || $step == 9)
-                    <div class="form-group row">
-                    <label class="col-md-4 col-form-label text-right">Team Leader<span class="text-danger">*</span></label>
-                    <div class="col-md-8">
-                      <select class="form-control js-select2" name="sales_senior_id">
-                        <option value="">Pilih TL</option>
-                        @foreach($sales as $index => $row)
-                          <option value="{{$row->id}}">{{$row->name}}</option>
-                        @endforeach
-                      </select>
-                    </div>
-                  </div>
-                  @endif
-                </div>
-                <div class="col-10">
-                  @if($step == 1 || $step == 2 || $step == 9)
-                    <div class="form-group row">
-                    <label class="col-md-4 col-form-label text-right">Salesman<span class="text-danger">*</span></label>
-                    <div class="col-md-8">
-                      <select class="form-control js-select2" name="sales_id">
-                        <option value="">Pilih Salesman</option>
-                        @foreach($sales as $index => $row)
-                          <option value="{{$row->id}}">{{$row->name}}</option>
-                        @endforeach
-                      </select>
-                    </div>
-                  </div>
-                  @endif
-                </div>
-            </div>
+      <div class="block">
+          <div class="block-header block-header-default">
+            <h3 class="block-title">#SO Detail</h3>
           </div>
-        </div>
-
-        <div class="col-8">
-          <div class="card">
-            <div class="card-body">
-              <div class="row">
-                <div class="col-md-6">
-                  @if($step == 1)
-                    <div class="form-group row">
-                      <label class="col-md-4 col-form-label text-right">Transaksi<span class="text-danger">*</span></label>
+          <div class="block-content">
+            <div class="row">
+              <div class="col-6">
+                <div class="card">
+                  <div class="card-body">
+                    <div class="row">
                       <div class="col-md-6">
-                        @if ($customers->has_tempo == 0)
-                          <input type="text" class="form-control input-type-transaction" name="input-type-transaction" placeholder="CASH" readonly>
-                          <input type="hidden" class="form-control type_transaction" name="type_transaction" id="type_transaction" value="CASH">
-                        @elseif($customers->has_tempo == 1)
-                          <input type="text" class="form-control input-type-transaction" name="input-type-transaction" placeholder="TEMPO" readonly>
-                          <input type="hidden" class="form-control type_transaction" name="type_transaction" id="type_transaction" value="TEMPO">
-                        @endif
+                        @if($step == 1)
+                          <div class="form-group row">
+                            <label class="col-md-4 col-form-label text-right">Sales Senior<span class="text-danger">*</span></label>
+                            <div class="col-md-8">
+                              <select class="form-control js-select2" name="sales_senior_id">
+                                <option value="">Pilih Sales senior</option>
+                                @foreach($sales as $index => $row)
+                                  <option value="{{$row->id}}">{{$row->name}}</option>
+                                @endforeach
+                              </select>
+                            </div>
+                          </div>
+                          @endif
                       </div>
-                    </div>
-                    @endif
-                </div>
-                <div class="col-md-6">
-                  @if($step == 1)
-                    <div class="form-group row">
-                      <label class="col-md-4 col-form-label text-right">Note</label>
-                      <div class="col-8">
-                        <textarea class="form-control" name="note" rows="1"></textarea>
-                      </div>
-                    </div>
-                    @endif
-                </div>
-                <div class="col-md-6">
-                  @if($step == 1)
-                    <div class="form-group row">
-                      <label class="col-md-4 col-form-label text-right">Kurs</label>
                       <div class="col-md-6">
-                        <input type="text" name="idr_rate" class="form-control" value="1">
+                        @if($step == 1)
+                          <div class="form-group row">
+                            <label class="col-md-4 col-form-label text-right">Sales<span class="text-danger">*</span></label>
+                            <div class="col-md-8">
+                              <select class="form-control js-select2" name="sales_id">
+                                <option value="">Pilih Sales</option>
+                                @foreach($sales as $index => $row)
+                                  <option value="{{$row->id}}">{{$row->name}}</option>
+                                @endforeach
+                              </select>
+                            </div>
+                          </div>
+                          @endif
                       </div>
                     </div>
-                    @endif
-                </div>
-                <div class="col-md-6">
-                  @if($step == 1)
-                    <div class="form-group row">
-                      <label class="col-md-4 col-form-label text-right">Brand</label>
+                    <div class="row">
                       <div class="col-md-6">
-                        <select class="form-control js-select2 select-brand" data-index="0">
-                          <option value="">Pilih Merek</option>
-                          @foreach($brand as $index => $row)
-                          <option value="{{$row->id}}">{{$row->brand_name}}</option>
-                          @endforeach
-                        </select>
+                        @if($step == 1)
+                          <div class="form-group row">
+                            <label class="col-md-4 col-form-label text-right">Order Date<span class="text-danger">*</span></label>
+                            <div class="col-md-8">
+                              <input type="date" class="form-control so_date" name="so_date">
+                            </div>
+                          </div>
+                          @endif
                       </div>
                     </div>
-                    @endif
+                  </div>
+                </div>
+              </div>
+              <div class="col-6">
+                <div class="card">
+                  <div class="card-body">
+                    <div class="row">
+                      <div class="col-md-6">
+                        @if($step == 1)
+                          <div class="form-group row">
+                            <label class="col-md-4 col-form-label text-right">Transaksi<span class="text-danger">*</span></label>
+                            <div class="col-md-6">
+                              @if ($customers->has_tempo == 0)
+                                <input type="text" class="form-control input-type-transaction" name="input-type-transaction" placeholder="CASH" readonly>
+                                <input type="hidden" class="form-control type_transaction" name="type_transaction" id="type_transaction" value="CASH">
+                              @elseif($customers->has_tempo == 1)
+                                <input type="text" class="form-control input-type-transaction" name="input-type-transaction" placeholder="TEMPO" readonly>
+                                <input type="hidden" class="form-control type_transaction" name="type_transaction" id="type_transaction" value="TEMPO">
+                              @endif
+                            </div>
+                          </div>
+                          @endif
+                      </div>
+                      <div class="col-md-6">
+                        @if($step == 1)
+                          <div class="form-group row">
+                            <label class="col-md-4 col-form-label text-right">Note</label>
+                            <div class="col-8">
+                              <textarea class="form-control" name="note" rows="1"></textarea>
+                            </div>
+                          </div>
+                          @endif
+                      </div>
+                      <div class="col-md-6">
+                        @if($step == 1)
+                          <div class="form-group row">
+                            <label class="col-md-4 col-form-label text-right">Kurs</label>
+                            <div class="col-md-6">
+                              <input type="text" name="idr_rate" class="form-control" value="1">
+                            </div>
+                          </div>
+                          @endif
+                      </div>
+                      <div class="col-md-6">
+                        @if($step == 1)
+                          <div class="form-group row">
+                            <label class="col-md-4 col-form-label text-right">Brand</label>
+                            <div class="col-md-6">
+                              <select class="form-control js-select2 select-brand" data-index="0">
+                                <option value="">Pilih Merek</option>
+                                @foreach($brand as $index => $row)
+                                <option value="{{$row->id}}">{{$row->brand_name}}</option>
+                                @endforeach
+                              </select>
+                            </div>
+                          </div>
+                          @endif
+                      </div>
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>
           </div>
         </div>
-      </div>
 
       <hr />
         <div class="block">
           <div class="block-header block-header-default">
-            <h3 class="block-title">Add Product</h3>
+            <h3 class="block-title">#Add Product</h3>
             
           </div>
           <div class="block-content">
-            <div class="row">
-              <div class="col-12 product-list">
-                <div class="row">
-                  <div class="col">Category</div>
-                  <div class="col-3">Product</div>
-                  <div class="col-1">Qty</div>
-                  <div class="col">Packaging</div>
-                  <div class="col-1">Free</div>
-                  <div class="col">Action</div>
-                </div>
+            <div class="container">
+              <div class="row">
+                <div class="col-12 product-list">
+                  <div class="row">
+                    <div class="col-2">Category</div>
+                    <div class="col-3">Product</div>
+                    <div class="col-1">Qty</div>
+                    <div class="col-1">Free</div>
+                    <div class="col">Action</div>
+                  </div>
 
-                <div class="row mt-10 product-row">
-                  <div class="col">
-                    <!-- <select class="form-control js-select2 select-category" data-index="0">
-                      <option value="">Select Category</option>
-                      @foreach($product_category as $index => $row)
-                        <option value="{{$row->id}}">{{$row->name}}</option>
-                      @endforeach
-                    </select> -->
-                    <select class="form-control js-select2 select-category" name="category[]" data-index="0">
-                      <option value="">Select Category</option>
-                    </select>
+                  <div class="row mt-10 product-row">
+                    <div class="col-2">
+                      <select class="form-control js-select2 select-category" name="category[]" data-index="0">
+                        <option value="">Select Category</option>
+                      </select>
+                    </div>
+                    <div class="col-3">
+                      <select class="form-control js-select2 select-product" name="product_id[]" data-index="0">
+                        <option value="">Select product</option>
+                      </select>
+                    </div>
+                    <div class="col-1">
+                      <input type="number" name="qty[]" class="form-control input-qty" data-index="0" step="any">
+                    </div>
+                    <div class="col-1">
+                      <input type="checkbox" class="form-check-input input-gift" id="gift" name="gift">
+                      <input class="form-control input-free" type="hidden" id="free_product" name="free_product[]" data-index="0" step="any">
+                    </div>
+                    <div class="col"><button type="button" id="buttonAddProduct" class="btn btn-primary"><em class="fa fa-plus"></em></button></div>
                   </div>
-                  <div class="col-3">
-                    <select class="form-control js-select2 select-product" name="product_id[]" data-index="0">
-                      <option value="">Select product</option>
-                    </select>
-                  </div>
-                  <div class="col-1">
-                    <input type="number" name="qty[]" class="form-control input-qty" data-index="0" step="any">
-                  </div>
-                  <div class="col">
-                    <select name="packaging_id[]" class="form-control js-select2 select-packaging" data-index="0">
-                      <option value="">Select packaging</option>
-                    </select>
-                  </div>
-                  <div class="col-1">
-                    <input type="checkbox" class="form-check-input input-gift" id="gift" name="gift">
-                    <input class="form-control input-free" type="hidden" id="free_product" name="free_product[]" data-index="0" step="any">
-                  </div>
-                  <div class="col"><button type="button" id="buttonAddProduct" class="btn btn-primary"><em class="fa fa-plus"></em></button></div>
-                </div>
-                <hr />
+                  <hr />
 
+                </div>
               </div>
             </div>
           </div>
@@ -256,11 +266,9 @@
       const productId = $('.select-product[data-index=0]').val();
       const productText = $('.select-product[data-index=0] option:selected').text();
       const qty = $('.input-qty[data-index=0]').val();
-      const packagingId = $('.select-packaging[data-index=0]').val();
-      const packagingText = $('.select-packaging[data-index=0] option:selected').text();
       const free = $('.input-free[data-index=0]').val();
 
-      if (categoryId === null || categoryId === '' || productId === null || productId === '' || qty === null || qty === '' || packagingId == null || packagingId === '' ) {
+      if (categoryId === null || categoryId === '' || productId === null || productId === '' || qty === null || qty === '' ) {
         Swal.fire(
           'Error!',
           'Please input all the data',
@@ -282,11 +290,7 @@
       html += "    <input type='hidden' name='qty[]' class='form-control' value='" + qty + "'>";
       html += qty;
       html += "  </div>";
-      html += "  <div class='col-2'>";
-      html += "    <input type='hidden' name='packaging_id[]' class='form-control' value='" + packagingId + "'>";
-      html += packagingText;
-      html += "  </div>";
-      html += "  <div class='col-1 text-right'>";
+      html += "  <div class='col-1'>";
       html += "    <input type='hidden' name='free_product[]' class='form-control free' value='" + free + "'>";
       html += free;
       html += "  </div>";
@@ -304,7 +308,6 @@
       $('.select-category[data-index=0]').val('').change();
       $('.select-product[data-index=0]').val('').change();
       $('.input-qty[data-index=0]').val('');
-      $('.select-packaging[data-index=0]').val('').change();
       $('.input-free[data-index=0]').val();
 
       $('.select-category[data-index=0]').select2('focus');
@@ -341,7 +344,7 @@
           let option = "";
           option = '<option value="">Select Category</option>';
           $.each(resp.Data,function(i,e){
-            option += '<option value="'+e.catId+'">'+e.categoryName+' - '+e.packValue+' '+e.satuan+'</option>';
+            option += '<option value="'+e.catId+'">'+e.categoryName+'</option>';
           })
           $('.select-category[data-index=' + param.index + ']').html(option);
         },
@@ -374,15 +377,11 @@
         dataType : "JSON",
         success : function(resp){
           let option = "";
-          let option2 = "";
           option = '<option value="">Select Product</option>';
-          option2 = '<option value="">Select Packaging</option>';
           $.each(resp.Data,function(i,e){
-            option += '<option value="'+e.id+'">'+e.productCode+' - '+e.productName+' - $'+e.productPrice+'</option>';
-            option2 += '<option value="'+e.packId+'">'+e.packName+'</option>';
+            option += '<option value="'+e.id+'">'+e.productCode+' - '+e.productName+' - '+e.packName+'</option>';
           })
           $('.select-product[data-index=' + param.index + ']').html(option);
-          $('.select-packaging[data-index=' + param.index + ']').html(option2);
         },
         error : function(){
           alert("Cek Koneksi Internet");
@@ -390,23 +389,13 @@
       })
     }
 
-    // function validate() {
-    //   var gift = $('#gift').val();
-    //   if (gift.checked) {
-    //     $('.input-free[data-index=0]').val(1);
-    //   } else {
-    //     // alert("You didn't check it! Let me check it for you.");
-    //     $('.input-free[data-index=0]').val(0);
-    //   }
-    // }
-
     $('.input-gift').click(function(){
-    if($(this).is(':checked')){
-        $('.input-free[data-index=0]').val(1);
-    } else {
-        $('.input-free[data-index=0]').val(0);
-    }
-});
+      if($(this).is(':checked')){
+          $('.input-free[data-index=0]').val('Yes');
+      } else {
+          $('.input-free[data-index=0]').val('No');
+      }
+    });
   })
 </script>
 @endpush

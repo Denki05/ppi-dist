@@ -5,12 +5,13 @@ namespace App\Http\Controllers\Superuser\Master;
 use App\DataTables\Master\ProductTable;
 use App\Entities\Master\Product;
 use App\Entities\Master\ProductCategory;
-// use App\Entities\Master\ProductType;
+use App\Entities\Master\ProductType;
 use App\Entities\Master\ProductMinStock;
 use App\Entities\Master\SubBrandReference;
 use App\Entities\Master\BrandLokal;
 use App\Entities\Master\Vendor;
 use App\Entities\Master\Unit;
+use App\Entities\Master\Packaging;
 use App\Entities\Master\Fragrantica;
 use App\Exports\Master\ProductExport;
 use App\Exports\Master\ProductImportTemplate;
@@ -80,6 +81,8 @@ class ProductController extends Controller
         $data['gender'] = Product::GENDER;
         $data['fragrantica'] = Fragrantica::all();
         $data['factory'] = Vendor::where('type', 2)->get();
+        $data['type'] = ProductType::get();
+        $data['pack'] = Packaging::get();
 
         // dd($data['brand_ppi']);
         return view('superuser.master.product.create', $data);
@@ -92,21 +95,14 @@ class ProductController extends Controller
                 'brand_name' => 'required',
                 'searah' => 'required|integer',
                 'category' => 'required|integer',
+                // 'type' => 'required|integer',
+                // 'packaging' => 'required|integer',
 
                 'name' => 'required|string',
                 'code' => 'required|string',
-                // 'buying_price' => 'nullable|numeric|min:0',
                 'selling_price' => 'nullable|numeric|min:0',
                 'description' => 'nullable|string',
                 'note' => 'nullable|string',
-
-                // 'default_quantity' => 'required|numeric',
-                // 'default_unit' => 'required|string',
-                // 'ratio' => 'required|numeric',
-                // 'default_warehouse' => 'required|string',
-
-                // 'image' => 'nullable|image|mimes:jpeg,png,jpg|max:2048',
-                // 'image_hd' => 'nullable|image|mimes:jpeg,png,jpg|max:2048',
             ]);
 
             if ($validator->fails()) {
@@ -129,6 +125,8 @@ class ProductController extends Controller
                 $product->brand_name = $request->brand_name;
                 $product->sub_brand_reference_id = $request->searah;
                 $product->category_id = $request->category;
+                $product->type_id = $request->type;
+                $product->packaging_id = $request->packaging;
                 $product->vendor_id = $request->factory;
 
                 $product->name = $request->name;
@@ -213,6 +211,7 @@ class ProductController extends Controller
         }
 
         $data['product'] = Product::findOrFail($id);
+        
         // $data['frag'] = Fragrantica::all();
 
         return view('superuser.master.product.show', $data);
@@ -239,6 +238,8 @@ class ProductController extends Controller
         $data['product_notes'] = Product::NOTE;
         $data['gender'] = Product::GENDER;
         $data['vendor'] = Vendor::where('type', 2)->get();
+        $data['type'] = ProductType::get();
+        $data['pack'] = Packaging::get();
         
         return view('superuser.master.product.edit', $data);
     }

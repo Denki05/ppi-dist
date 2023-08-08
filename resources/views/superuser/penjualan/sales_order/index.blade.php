@@ -114,7 +114,6 @@
                 @if($step == 1 )
                 <th>Tanggal Dibuat</th>
                 @endif
-
                 <th>Action</th>
               </tr>
             </thead>
@@ -145,7 +144,7 @@
 
                   @if($step == 1 || $step == 9)
                   <td>
-                    <?= date('d-m-Y h:i:s',strtotime($row->created_at)); ?>
+                    <?= date('d-m-Y',strtotime($row->so_date)); ?>
                   </td>
                   @endif
                   @if($step == 2)
@@ -319,7 +318,6 @@
                   <tr>
                     <th>#</th>
                     <th>DO Code</th>
-                    <th>Refrensi SO</th>
                     <th>Tanggal Buat</th>
                     <th>Transaction Type</th>
                     <th>Status</th>
@@ -331,9 +329,8 @@
                   <tr>
                       <td>{{ $index+1 }}</td>
                       <td>{{$row->do_code}}</td>
-                      <td>{{$row->so->code}}</td>
                       <td><?= date('d-m-Y h:i:s',strtotime($row->created_at)); ?></td>
-                      <td>{{$row->so->type_transaction}}</td>
+                      <td>{{$row->type_transaction}}</td>
                       <td>
                         @if($row->status == 3)
                           <span class="badge badge-success"><b>SUBMIT DO</b></span>
@@ -448,13 +445,13 @@
 	
   $(function(){
       $('#so_lanjutan').DataTable( {
-        "paging":   false,
-        "ordering": true,
+        "paging":   true,
+        "ordering": false,
         "info":     false,
         "searching" : false,
         "columnDefs": [{
-          "targets": 0,
-          "orderable": false
+          "targets": 2,
+          "orderable": true
         }]
       });
 

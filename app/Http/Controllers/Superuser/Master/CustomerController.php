@@ -226,7 +226,7 @@ class CustomerController extends Controller
                     $category = null;
                     
                     $customer = DB::table('master_customers')
-                        ->selectRaw('id, name, kota, status')
+                        ->selectRaw('id, name, kota, category_id, status')
                         ->where('status', Customer::STATUS["ACTIVE"])
                         ->get();
 
