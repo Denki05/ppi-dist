@@ -18,8 +18,9 @@
 @endif
 
 <nav class="breadcrumb bg-white push">
-  {{--<a href="{{route('superuser.master.brand_lokal.create')}}" class="btn btn-primary btn-lg active" role="button" target="_blank" aria-pressed="true" style="margin-left: 10px !important;">Add Brand</a>--}}
-  <a href="{{route('superuser.master.product_category.create')}}" class="btn btn-primary btn-lg active" role="button" aria-pressed="true" style="margin-left: 10px !important;">Add Category</a>
+  <a href="{{ route('superuser.master.product_category.create') }}">
+    <button type="button" class="btn btn-outline-primary" title="Create Type">Create</button>
+  </a>
 </nav>
 
 <div class="block">
