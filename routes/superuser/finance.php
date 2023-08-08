@@ -39,5 +39,6 @@ Route::group([
         Route::get('/approve/{id}', 'PayableController@approve')->name('approve');
         Route::get('/{id}/print', 'PayableController@print')->name('print');
         Route::get('/json', 'PayableController@json')->name('json');
+        Route::get('/get_invoice', 'PayableController@get_invoice')->name('get_invoice');
     });
 });

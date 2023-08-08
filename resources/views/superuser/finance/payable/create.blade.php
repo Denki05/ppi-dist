@@ -41,10 +41,10 @@
       <div class="col">
         <div class="form-group">
           <label for="customer_other_address_id">Customer</label>
-          <select class="form-control js-select2" name="customer_other_address_id">
+          <select class="form-control js-select2 select-customer" name="customer_other_address_id" id="other_address" data-index="0">
             <option value="">Pilih Customer</option>
             @foreach($other_address as $key)
-            <option value="{{$key->id}}">{{$key->name}}</option>
+            <option value="{{$key->id}}">{{$key->name}} - {{$key->text_kota}}</option>
             @endforeach
           </select>
         </div>
@@ -52,12 +52,48 @@
       <div class="col">
         <div class="form-group">
           <label for="invoice_id">Invoice</label>
-          <select class="form-control js-select2" name="invoice_id">
+          <select class="form-control js-select2 select-invoice" name="invoice_id" id="invoice" data-index="0">
             <option value="">Pilih Invoice</option>
-            @foreach($invoice as $key)
-            <option value="{{$key->id}}">{{$key->code}}</option>
-            @endforeach
           </select>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="block">
+  <div class="block-header block-header-default">
+    <h3 class="block-title">#Detail Invoice</h3>
+  </div>
+  <div class="block-content block-content-full">
+    <div class="container">
+      <div class="row" align="center">
+        <div class="col">
+          <div class="card bg-light mb-3" style="max-width: 18rem;">
+            <div class="card-header"></div>
+            <div class="card-body">
+              <h5 class="card-title">Light card title</h5>
+              <p class="card-text">Some quick example text to build on the card title and make up the bulk of the card's content.</p>
+            </div>
+          </div>
+        </div>
+        <div class="col">
+          <div class="card bg-light mb-3" style="max-width: 18rem;">
+            <div class="card-header">Header</div>
+            <div class="card-body">
+              <h5 class="card-title">Light card title</h5>
+              <p class="card-text">Some quick example text to build on the card title and make up the bulk of the card's content.</p>
+            </div>
+          </div>
+        </div>
+        <div class="col">
+          <div class="card bg-light mb-3" style="max-width: 18rem;">
+            <div class="card-header">Header</div>
+            <div class="card-body">
+              <h5 class="card-title">Light card title</h5>
+              <p class="card-text">Some quick example text to build on the card title and make up the bulk of the card's content.</p>
+            </div>
+          </div>
         </div>
       </div>
     </div>
@@ -76,6 +112,41 @@
   <script type="text/javascript">
     $(document).ready(function() {
       $('.js-select2').select2();
+
+      var param = [];
+      param["customer_other_address_id"] = "";
+
+      loadInvoice({});
+
+      $(document).on('change','.select-customer',function(){
+        if ($(this).val() === '') return;
+
+        param["customer_other_address_id"] = $(this).val();
+        loadInvoice({
+          customer_other_address_id:param["customer_other_address_id"],
+          index: $(this).data("index")
+        })
+      });
+
+      function loadInvoice(param){
+      $.ajax({
+        url : '{{route('superuser.finance.payable.get_invoice')}}',
+        method : "GET",
+        data : param,
+        dataType : "JSON",
+        success : function(resp){
+          let option = "";
+          option = '<option value="">Select Invoice</option>';
+          $.each(resp.Data,function(i,e){
+            option += '<option value="'+e.id+'">'+e.invoiceCode+'</option>';
+          })
+          $('.select-invoice[data-index=' + param.index + ']').html(option);
+        },
+        error : function(){
+          alert("Cek Koneksi Internet");
+        }
+      })
+    }
     })
   </script>
 @endpush
