@@ -77,7 +77,7 @@
 						</div>
 					</div>
 					<div class="row">
-						<div class="col-sm-8 flex-column d-flex stretch-card">
+						{{--<div class="col-sm-8 flex-column d-flex stretch-card">
 							<div class="row">
 								<div class="col-lg-4 d-flex grid-margin stretch-card">
 									<div class="card bg-primary">
@@ -181,8 +181,8 @@
 									</div>
 								</div>
 							</div>
-						</div>
-						<div class="col-sm-4 flex-column d-flex stretch-card">
+						</div>--}}
+						{{--<div class="col-sm-4 flex-column d-flex stretch-card">
 							<div class="row flex-grow">
 								<div class="col-sm-12 grid-margin stretch-card">
 									<div class="card">
@@ -279,38 +279,38 @@
 									</div>
 								</div>
 							</div>
-						</div>
+						</div>--}}
 					</div>
 					<div class="row">
 						<div class="col-lg-2 grid-margin stretch-card">
 							<div class="card">
 								<div class="card-body pb-0">
 									<div class="d-flex align-items-center justify-content-between">
-										<h2 class="text-success font-weight-bold">18390</h2>
+										<h2 class="text-success font-weight-bold">{{count($customer)}}</h2>
 										<i class="mdi mdi-account-outline mdi-18px text-dark"></i>
 									</div>
 								</div>
 								<canvas id="newClient"></canvas>
-								<div class="line-chart-row-title">MY NEW CLIENTS</div>
+								<div class="line-chart-row-title">Customer</div>
 							</div>
 						</div>
 						<div class="col-lg-2 grid-margin stretch-card">
 							<div class="card">
 								<div class="card-body pb-0">
 									<div class="d-flex align-items-center justify-content-between">
-										<h2 class="text-danger font-weight-bold">839</h2>
+										<h2 class="text-danger font-weight-bold">{{ count($product) }}</h2>
 										<i class="mdi mdi-refresh mdi-18px text-dark"></i>
 									</div>
 								</div>
 								<canvas id="allProducts"></canvas>
-								<div class="line-chart-row-title">All Products</div>
+								<div class="line-chart-row-title">Products</div>
 							</div>
 						</div>
 						<div class="col-lg-2 grid-margin stretch-card">
 							<div class="card">
 								<div class="card-body pb-0">
 									<div class="d-flex align-items-center justify-content-between">
-										<h2 class="text-info font-weight-bold">244</h2>
+										<h2 class="text-info font-weight-bold">{{count($invoice)}}</h2>
 										<i class="mdi mdi-file-document-outline mdi-18px text-dark"></i>
 									</div>
 								</div>
@@ -399,77 +399,6 @@
 
     $('.js-select2').select2();
   })
-
-  var ctx = document.getElementById('mataChart').getContext('2d');
-  var myChart = new Chart(ctx, {
-    type: 'bar',
-    data: {
-        labels: <?php echo json_encode($label); ?>,
-        datasets: [{
-            label: 'Statistik Sales Order',
-            data: <?php echo json_encode($jumlah_so); ?>,
-            backgroundColor: [
-                'rgba(255, 99, 132, 0.2)',
-                'rgba(54, 162, 235, 0.2)',
-                'rgba(255, 206, 86, 0.2)',
-                'rgba(75, 192, 192, 0.2)',
-                'rgba(153, 102, 255, 0.2)',
-                'rgba(255, 159, 64, 0.2)'
-            ],
-            borderColor: [
-                'rgba(255, 99, 132, 1)',
-                'rgba(54, 162, 235, 1)',
-                'rgba(255, 206, 86, 1)',
-                'rgba(75, 192, 192, 1)',
-                'rgba(153, 102, 255, 1)',
-                'rgba(255, 159, 64, 1)'
-            ],
-        }
-      ]
-    },
-    options: {
-        scales: {
-            y: {
-                beginAtZero: true
-            }
-        }
-    }
-});
-
-  var ctx = document.getElementById('mataChart2').getContext('2d');
-  var myChart = new Chart(ctx, {
-    type: 'line',
-    data: {
-        labels: <?php echo json_encode($label); ?>,
-        datasets: [{
-            label: 'Statistik Brand Order',
-            data: <?php echo json_encode($jumlah_pay); ?>,
-            backgroundColor: [
-                'rgba(255, 99, 132, 0.2)',
-                'rgba(54, 162, 235, 0.2)',
-                'rgba(255, 206, 86, 0.2)',
-                'rgba(75, 192, 192, 0.2)',
-                'rgba(153, 102, 255, 0.2)',
-                'rgba(255, 159, 64, 0.2)'
-            ],
-            borderColor: [
-                'rgba(255, 99, 132, 1)',
-                'rgba(54, 162, 235, 1)',
-                'rgba(255, 206, 86, 1)',
-                'rgba(75, 192, 192, 1)',
-                'rgba(153, 102, 255, 1)',
-                'rgba(255, 159, 64, 1)'
-            ],
-        }]
-    },
-    options: {
-        scales: {
-            y: {
-                beginAtZero: true
-            }
-        }
-    }
-});
 </script>
 
 
