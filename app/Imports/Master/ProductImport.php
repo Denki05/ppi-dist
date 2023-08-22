@@ -30,37 +30,88 @@ class ProductImport implements ToCollection, WithHeadingRow, WithStartRow, Skips
     use SkipsFailures, SkipsErrors;
 
     public $error;
+    public $success;
 
     public function collection(Collection $rows)
     {
-        foreach ($rows as $row) 
-        {
-            $searah = SubBrandReference::where('name', $row['searah'])->first();
-            $kategori = ProductCategory::where('name', $row['kategori'])->first();
-            $type = ProductType::where('name', $row['type'])->first();
-            $vendor = Vendor::where('name', $row['vendor'])->first();
-            $warehouse = Warehouse::where('name', $row['warehouse'])->first();
-            $packaging = Packaging::where('pack_name', $row['packaging'])->first();
+        DB::beginTransaction();
 
-            Product::create([
-                'sub_brand_reference_id' => $searah->id,
-                'category_id' => $kategori->id,
-                'packaging_id' => $kategori->id,
-                'type_id' => $type->id,
-                'vendor_id' => $vendor->id,
-                'brand_name' => $row['brand_name'],
-                'code' => $row['code'],
-                'name' => $row['name'],
-                'material_code' => $row['material_code'],
-                'material_name' => $row['material_name'],
-                'gender' => $row['gender'],
-                'description' => $row['description'],
-                'default_quantity' => $row['qty'],
-                'default_warehouse_id' => $warehouse->id,
-                'buying_price' => $row['buying_price'],
-                'selling_price' => $row['selling_price'],
-                'status' => Product::STATUS['ACTIVE'],
-            ]);
+        try{
+            $collect_error = [];
+            $collect_success = [];
+
+            foreach ($rows as $row) 
+            {
+                $searah = SubBrandReference::where('name', $row['searah'])->first();
+                if($searah == null) {
+                    $collect_error[] = $row['searah'] . '  "SEARAH" not found';
+                    break;
+                }
+
+                $kategori = ProductCategory::where('name', $row['kategori'])->first();
+                if($kategori == null) {
+                    $collect_error[] = $row['kategori'] . '  "CATEGORY" not found';
+                    break;
+                }
+
+                $type = ProductType::where('name', $row['type'])->first();
+
+                $vendor = Vendor::where('name', $row['vendor'])->first();
+                if($vendor == null) {
+                    $collect_error[] = $row['vendor'] . '  "VENDOR" not found';
+                    break;
+                }
+
+                $warehouse = Warehouse::where('name', $row['warehouse'])->first();
+                if($warehouse == null) {
+                    $collect_error[] = $row['warehouse'] . '  "WAREHOUSE" not found';
+                    break;
+                }
+
+                $packaging = Packaging::where('pack_name', $row['packaging'])->first();
+                if($packaging == null) {
+                    $collect_error[] = $row['packaging'] . '  "PACKAGING" not found';
+                    break;
+                }
+
+                $product = new Product;
+                $product->sub_brand_reference_id = $searah->id;
+                $product->category_id = $kategori->id;
+                $product->packaging_id = $packaging->id;
+                $product->type_id = $type->id ?? null;
+                $product->vendor_id = $vendor->id;
+                $product->brand_name = $row['brand_name'];
+                $product->code = $row['code'];
+                $product->name = $row['name'];
+                $product->material_code = $row['material_code'];
+                $product->material_name = $row['material_name'];
+                $product->gender = $row['gender'];
+                $product->description = $row['description'];
+                $product->default_quantity = $row['qty'];
+                $product->default_warehouse_id = $warehouse->id;
+                $product->buying_price = $row['buying_price'];
+                $product->selling_price = $row['selling_price'];
+                $product->status = Product::STATUS['ACTIVE'];
+                $product->save();
+
+                $collect_success[] = $product->code.'-'.$product->name;
+            }
+
+            if (!$collect_success) {
+                $collect_success[] = 'No successful import.';
+            }
+
+            if (!$collect_error) {
+                $collect_error[] = 'No failed import.';
+            }
+
+            $this->error = $collect_error;
+            $this->success = $collect_success;
+
+            DB::commit();
+        }catch (\Exception $e) {
+            $this->error = $e->getMessage();
+            DB::rollBack();
         }
     }
 

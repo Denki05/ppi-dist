@@ -1,7 +1,10 @@
 @extends('superuser.app')
 
 @section('content')
-
+<nav class="breadcrumb bg-white push">
+  <a href="{{ route('superuser.master.product.create') }}" class="btn btn-primary btn-lg active" role="button" aria-pressed="true" style="margin-left: 10px !important;">Create</a>
+  <button type="button" class="btn btn-outline-info ml-10" data-toggle="modal" data-target="#modal-manage">Manage</button>
+</nav>
 @if($errors->any())
 <div class="alert alert-danger alert-dismissable" role="alert">
   <button type="button" class="close" data-dismiss="alert" aria-label="Close">
@@ -14,10 +17,57 @@
 </div>
 @endif
 
-<nav class="breadcrumb bg-white push">
-  <a href="{{ route('superuser.master.product.create') }}" class="btn btn-primary btn-lg active" role="button" aria-pressed="true" style="margin-left: 10px !important;">Create</a>
-  <button type="button" class="btn btn-outline-info ml-10" data-toggle="modal" data-target="#modal-manage">Manage</button>
-</nav>
+<div id="alert-block"></div>
+
+@if(session()->has('collect_success'))
+<div class="container">
+  <div class="row"></div>
+  <div class="alert alert-success alert-dismissable">
+    <div class="alertwrapper clearfix">
+      <button type="button" class="close" data-dismiss="alert" aria-hidden="true">&times;</button>
+      <div class="alerticon successful">
+        <span class="glyphicon glyphicon-ok-sign"></span>
+      </div>
+      <div class="alertcontent">
+        <h4>Successful Import!</h4>
+        @foreach (session()->get('collect_success') as $msg)
+        <p class="mb-0">{{ $msg }}</p>
+        @endforeach
+      </div>
+    </div>
+  </div>
+</div>
+@endif
+
+@if(session()->has('collect_error'))
+<div class="container">
+  <div class="alert alert-danger alert-dismissable">
+    <div class="alertwrapper clearfix">
+      <button type="button" class="close" data-dismiss="alert" aria-hidden="true">&times;</button>
+      <div class="alerticon successful">
+        <span class="glyphicon glyphicon-ok-sign"></span>
+      </div>
+      <div class="alertcontent">
+        <h4>Failed Import!</h4>
+        @foreach (session()->get('collect_error') as $msg)
+        <p class="mb-0">{{ $msg }}</p>
+        @endforeach
+      </div>
+    </div>
+  </div>
+</div>
+@endif
+
+@if(session()->has('message'))
+<div class="alert alert-success alert-dismissable" role="alert">
+  <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+      <span aria-hidden="true">×</span>
+  </button>
+  <h3 class="alert-heading font-size-h4 font-w400">Success</h3>
+  <p class="mb-0">{{ session()->get('message') }}</p>
+</div>
+@endif
+
 <div class="block">
   <div class="block-content block-content-full">
   <table class="table table-striped" id="datatables">
