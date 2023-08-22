@@ -11,18 +11,20 @@ class ProductImportTemplate implements FromArray, ShouldAutoSize
     {
         return [
             [
-                'brand_reference_id',
-                'sub_brand_reference_id',
-                'category_id',
-                'type_id',
+                'searah',
+                'kategori',
+                'packaging',
+                'type',
+                'vendor',
+                'brand_name',
                 'code',
                 'name',
                 'material_code',
                 'material_name',
+                'gender',
                 'description',
-                'default_quantity',
-                'default_unit_id',
-                'default_warehouse_id',
+                'qty',
+                'warehouse',
                 'buying_price',
                 'selling_price',
             ]

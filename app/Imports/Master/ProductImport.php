@@ -9,75 +9,64 @@ use App\Entities\Master\ProductType;
 use App\Entities\Master\SubBrandReference;
 use App\Entities\Master\Unit;
 use App\Entities\Master\Warehouse;
-use App\Traits\ImportValidateHeader;
-use Maatwebsite\Excel\Concerns\ToModel;
+use App\Entities\Master\Packaging;
+use App\Entities\Master\Vendor;
+use Maatwebsite\Excel\Concerns\ToCollection;
+use Maatwebsite\Excel\Concerns\SkipsOnFailure;
+use Maatwebsite\Excel\Concerns\SkipsFailures;
+use Maatwebsite\Excel\Concerns\SkipsOnError;
+use Maatwebsite\Excel\Concerns\SkipsErrors;
 use Maatwebsite\Excel\Concerns\WithHeadingRow;
 use Maatwebsite\Excel\Concerns\WithStartRow;
 use Maatwebsite\Excel\Concerns\WithValidation;
 use Illuminate\Validation\Rule;
+use Maatwebsite\Excel\Imports\HeadingRowFormatter;
+use Illuminate\Support\Collection;
+use Maatwebsite\Excel\Validators\Failure;
+use DB;
 
-class ProductImport implements ToModel, WithHeadingRow, WithStartRow, WithValidation
+class ProductImport implements ToCollection, WithHeadingRow, WithStartRow, SkipsOnFailure, SkipsOnError
 {
-    use ImportValidateHeader;
+    use SkipsFailures, SkipsErrors;
 
-    public function model(array $row)
+    public $error;
+
+    public function collection(Collection $rows)
     {
-        $this->validateHeader([
-            'brand_reference_id',
-            'sub_brand_reference_id',
-            'category_id',
-            'type_id',
-            'code',
-            'name',
-            'material_code',
-            'material_name',
-            'description',
-            'default_quantity',
-            'default_unit_id',
-            'default_warehouse_id',
-            'buying_price',
-            'selling_price',
-        ], $row);
+        foreach ($rows as $row) 
+        {
+            $searah = SubBrandReference::where('name', $row['searah'])->first();
+            $kategori = ProductCategory::where('name', $row['kategori'])->first();
+            $type = ProductType::where('name', $row['type'])->first();
+            $vendor = Vendor::where('name', $row['vendor'])->first();
+            $warehouse = Warehouse::where('name', $row['warehouse'])->first();
+            $packaging = Packaging::where('pack_name', $row['packaging'])->first();
 
-        return new Product([
-            'brand_reference_id' => $row['brand_reference_id'],
-            'sub_brand_reference_id' => $row['sub_brand_reference_id'],
-            'category_id' => $row['category_id'],
-            'type_id' => $row['type_id'],
-            'code' => $row['code'],
-            'name' => $row['name'],
-            'material_code' => $row['material_code'],
-            'material_name' => $row['material_name'],
-            'description' => $row['description'],
-            'default_quantity' => $row['default_quantity'],
-            'default_unit_id' => $row['default_unit_id'],
-            'default_warehouse_id' => $row['default_warehouse_id'],
-            'buying_price' => $row['buying_price'],
-            'selling_price' => $row['selling_price'],
-            'status' => Product::STATUS['ACTIVE']
-        ]);
+            Product::create([
+                'sub_brand_reference_id' => $searah->id,
+                'category_id' => $kategori->id,
+                'packaging_id' => $kategori->id,
+                'type_id' => $type->id,
+                'vendor_id' => $vendor->id,
+                'brand_name' => $row['brand_name'],
+                'code' => $row['code'],
+                'name' => $row['name'],
+                'material_code' => $row['material_code'],
+                'material_name' => $row['material_name'],
+                'gender' => $row['gender'],
+                'description' => $row['description'],
+                'default_quantity' => $row['qty'],
+                'default_warehouse_id' => $warehouse->id,
+                'buying_price' => $row['buying_price'],
+                'selling_price' => $row['selling_price'],
+                'status' => Product::STATUS['ACTIVE'],
+
+            ]);
+        }
     }
 
     public function startRow(): int
     {
         return 2;
-    }
-
-    public function rules(): array {
-        return [
-            'brand_reference_id' => 'required|' . Rule::in(BrandReference::select('id')->pluck('id')->toArray()),
-            'sub_brand_reference_id' => 'required|' . Rule::in(SubBrandReference::select('id')->pluck('id')->toArray()),
-            'category_id' => 'required|' . Rule::in(ProductCategory::select('id')->pluck('id')->toArray()),
-            'type_id' => 'required|' . Rule::in(ProductType::select('id')->pluck('id')->toArray()),
-            'code' => 'required',
-            'name' => 'required',
-            'material_code' => 'required',
-            'material_name' => 'required',
-            'default_quantity' => 'required|numeric',
-            'default_unit_id' => 'required|integer|' . Rule::in(Unit::select('id')->pluck('id')->toArray()),
-            'default_warehouse_id' => 'required|integer|' . Rule::in(Warehouse::select('id')->pluck('id')->toArray()),
-            'buying_price' => 'required|numeric',
-            'selling_price' => 'required|numeric',
-        ];
     }
 }
