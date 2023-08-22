@@ -23,39 +23,27 @@
     <h3 class="block-title">#Payable Create</h3>
   </div>
   <div class="block-content block-content-full">
-    <div class="row">
-      <div class="col">
-        <div class="form-group">
-          <label for="payable_date">Payable Date</label>
-          <input type="date" class="form-control" id="payable_date" name="payable_date">
-        </div>
-      </div>
-      <div class="col">
-        <div class="form-group">
-          <label for="note">Note</label>
-          <input type="text" class="form-control" id="note" name="note">
-        </div>
+    <div class="form-group row">
+      <label class="col-md-3 col-form-label text-right" for="pay_date">Payable Date <span class="text-danger">*</span></label>
+      <div class="col-md-7">
+        <input type="date" class="form-control" id="pay_date" name="pay_date">
       </div>
     </div>
-    <div class="row">
-      <div class="col">
-        <div class="form-group">
-          <label for="customer_other_address_id">Customer</label>
-          <select class="form-control js-select2 select-customer" name="customer_other_address_id" id="other_address" data-index="0">
-            <option value="">Pilih Customer</option>
-            @foreach($other_address as $key)
-            <option value="{{$key->id}}">{{$key->name}} - {{$key->text_kota}}</option>
-            @endforeach
-          </select>
-        </div>
+    <div class="form-group row">
+      <label class="col-md-3 col-form-label text-right" for="member">Customer <span class="text-danger">*</span></label>
+      <div class="col-md-7">
+        <select class="js-select2 form-control" name="member" id="member">
+          <option value="all">Pilih Customer</option>
+          @foreach($other_address as $key)
+          <option value="{{$key->id}}">{{$key->name}}</option>
+          @endforeach
+        </select>
       </div>
-      <div class="col">
-        <div class="form-group">
-          <label for="invoice_id">Invoice</label>
-          <select class="form-control js-select2 select-invoice" name="invoice_id" id="invoice" data-index="0">
-            <option value="">Pilih Invoice</option>
-          </select>
-        </div>
+    </div>
+    <div class="form-group row">
+      <label class="col-md-3 col-form-label text-right" for="note">Note</label>
+      <div class="col-md-7">
+        <input type="text" class="form-control" id="note" name="note">
       </div>
     </div>
   </div>
@@ -66,87 +54,113 @@
     <h3 class="block-title">#Detail Invoice</h3>
   </div>
   <div class="block-content block-content-full">
-    <div class="container">
-      <div class="row" align="center">
-        <div class="col">
-          <div class="card bg-light mb-3" style="max-width: 18rem;">
-            <div class="card-header"></div>
-            <div class="card-body">
-              <h5 class="card-title">Light card title</h5>
-              <p class="card-text">Some quick example text to build on the card title and make up the bulk of the card's content.</p>
-            </div>
-          </div>
-        </div>
-        <div class="col">
-          <div class="card bg-light mb-3" style="max-width: 18rem;">
-            <div class="card-header">Header</div>
-            <div class="card-body">
-              <h5 class="card-title">Light card title</h5>
-              <p class="card-text">Some quick example text to build on the card title and make up the bulk of the card's content.</p>
-            </div>
-          </div>
-        </div>
-        <div class="col">
-          <div class="card bg-light mb-3" style="max-width: 18rem;">
-            <div class="card-header">Header</div>
-            <div class="card-body">
-              <h5 class="card-title">Light card title</h5>
-              <p class="card-text">Some quick example text to build on the card title and make up the bulk of the card's content.</p>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
+    <table class="table table-striped" id="datatables">
+      <thead>
+        <tr>
+          <th>#</th>
+          <th>Invoice</th>
+          <th>Grand Total</th>
+          <th>Total Bayar</th>
+          <th>Sisa</th>
+        </tr>
+      </thead>
+    </table>
   </div>
 </div>
 @endsection
 
-<!-- Modal -->
-
+@push('plugin-styles')
+<link rel="stylesheet" href="{{ url('https://cdn.datatables.net/select/1.3.1/css/select.dataTables.min.css') }}">
+@endpush
 
 @include('superuser.asset.plugin.select2')
 @include('superuser.asset.plugin.datatables')
 @include('superuser.asset.plugin.swal2')
 
 @push('scripts')
+  <script src="{{ url('https://cdn.datatables.net/select/1.3.1/js/dataTables.select.min.js') }}"></script>
+  <script src="{{ asset('utility/superuser/js/form.js') }}"></script>
   <script type="text/javascript">
     $(document).ready(function() {
       $('.js-select2').select2();
 
-      var param = [];
-      param["customer_other_address_id"] = "";
+      let datatableUrl = '{{ route('superuser.finance.invoicing.json') }}';
+      let firstDatatableUrl = datatableUrl +
+        '?member=all';
 
-      loadInvoice({});
-
-      $(document).on('change','.select-customer',function(){
-        if ($(this).val() === '') return;
-
-        param["customer_other_address_id"] = $(this).val();
-        loadInvoice({
-          customer_other_address_id:param["customer_other_address_id"],
-          index: $(this).data("index")
-        })
+      var datatable = $('#datatables').DataTable({
+        processing: true,
+        serverSide: false,
+        ajax: {
+          "url": datatableUrl,
+          "dataType": "json",
+          "type": "GET",
+          "data":{ 
+            _token: "{{csrf_token()}}"
+          }
+        },
+        columns: [
+          {data: 'id', width: '3%'},
+          {data: 'invoice_code', name: 'finance_invoicing.code'},
+          {
+            data: 'invoice_total',
+            // name: 'finance_invoicing.grand_total_idr',
+            // render: $.fn.dataTable.render.number('.', ',', 2, 'Rp. '),
+            // searchable: false
+            render: function (data, type, row, meta) {
+              return '<input class="form-control grand_total_idr" id="grand_total_idr" name="grand_total_idr[]" type="text" value="'+ parseFloat(row.invoice_total) +'" readonly>';
+            }
+          },
+          {
+            data: null,
+            render: function (data, type, row) {
+              return '<input class="form-control total_bayar" id="total_bayar" name="total_bayar[]" type="text" value="0">';
+            }
+          },
+          {
+            data: null,
+            render: function (data, type, row) {
+              return '<input class="form-control sisa" id="sisa" name="sisa[]" type="text" value="0">';
+            }
+          },
+        ],
+        columnDefs: [ {
+          orderable: false,
+          searcable: false,
+          // data: null,
+          defaultContent: '',
+          className: 'select-checkbox',
+          targets:   0
+        }],
+        select: {
+            style: 'os',
+            selector: 'td:not(:last-child)',
+        },
+        order: [
+          [1, 'asc']
+        ],
+        pageLength: 5,
+        lengthMenu: [
+          [5, 15, 20],
+          [5, 15, 20]
+        ],
+        "dom": '<"row"<"col-sm-12 col-md-6"l><"col-sm-12 col-md-6"f>> <"row"<"col-sm-12 col-md-12"p>> <"row"<"col-sm-12"rt>> <"row"<"col-sm-12 col-md-6"i><"col-sm-12 col-md-6"p>>'
       });
 
-      function loadInvoice(param){
-      $.ajax({
-        url : '{{route('superuser.finance.payable.get_invoice')}}',
-        method : "GET",
-        data : param,
-        dataType : "JSON",
-        success : function(resp){
-          let option = "";
-          option = '<option value="">Select Invoice</option>';
-          $.each(resp.Data,function(i,e){
-            option += '<option value="'+e.id+'">'+e.invoiceCode+'</option>';
-          })
-          $('.select-invoice[data-index=' + param.index + ']').html(option);
-        },
-        error : function(){
-          alert("Cek Koneksi Internet");
-        }
-      })
-    }
+      $('#member').on('change', function(e) {
+        e.preventDefault();
+        var member = $('#member').val();
+        let newDatatableUrl = datatableUrl + '?member=' + member;
+        datatable.ajax.url(newDatatableUrl).load();
+      });
+
+      $('#datatables tbody').on( 'keyup', 'input[name="total_bayar[]"]', function (e) {
+        var grand_total = parseFloat($(this).parents('tr').find('input[name="grand_total_idr[]"]').val());
+        var total_bayar = parseFloat($(this).val());
+        var sisa = grand_total - total_bayar;
+
+        $(this).parents('tr').find('input[name="sisa[]"]').val(sisa);
+      });
     })
   </script>
 @endpush

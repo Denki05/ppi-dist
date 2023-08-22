@@ -8,6 +8,7 @@ use App\Entities\Penjualan\PackingOrder;
 use App\Entities\Penjualan\PackingOrderCost;
 use App\Entities\Penjualan\PackingOrderDetail;
 use App\Entities\Penjualan\PackingOrderItem;
+use App\DataTables\Finance\InvoicingTable;
 use App\Entities\Master\Customer;
 use App\Entities\Master\Company;
 use App\Entities\Master\Ekspedisi;
@@ -42,6 +43,12 @@ class InvoicingController extends Controller
             return $next($request);
         });
     }
+
+    public function json(Request $request, InvoicingTable $datatable)
+    {
+        return $datatable->build($request);
+    }
+
     public function index(Request $request)
     {
         // Access

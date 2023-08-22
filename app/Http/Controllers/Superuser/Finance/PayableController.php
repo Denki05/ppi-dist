@@ -98,7 +98,17 @@ class PayableController extends Controller
         }
 
         $other_address = CustomerOtherAddress::get();
-        $invoice = Invoicing::get();
+        $invoice = Invoicing::where('finance_invoicing.customer_other_address_id', $request->member)
+                        ->leftJoin('master_customer_other_addresses', 'master_customer_other_addresses.id', '=', 'finance_invoicing.customer_other_address_id')
+                        ->select(
+                            'finance_invoicing.id', 
+                            'finance_invoicing.code', 
+                            'finance_invoicing.grand_total_idr', 
+                            'finance_invoicing.customer_other_address_id',
+                            'master_customer_other_addresses.id as id_member', 
+                            'master_customer_other_addresses.name'
+                        )
+                        ->get();
 
         $data = [
             'other_address' => $other_address,
@@ -360,33 +370,5 @@ class PayableController extends Controller
 
         $pdf = PDF::loadview($this->view."print",$data)->setPaper('a4','potrait');
         return $pdf->stream($result->code ?? '');
-    }
-
-    public function get_invoice(Request $request){
-        $data_json = [];
-        $post = $request->all();
-        if($request->method() == "GET"){
-            $table = Invoicing::where(function($query2) use($post){
-                        if(!empty($post["customer_other_address_id"])){
-                            $query2->where('customer_other_address_id',$post["customer_other_address_id"]);
-                        }
-                    })
-                   ->leftJoin('master_customer_other_addresses', 'finance_invoicing.customer_other_address_id', '=', 'master_customer_other_addresses.id')
-                    ->select(
-                        'finance_invoicing.id', 
-                        'finance_invoicing.code as invoiceCode', 
-                    )
-                    ->get();
-            $data_json["IsError"] = FALSE;
-            $data_json["Data"] = $table;
-            goto ResultData;
-        }
-        else{
-            $data_json["IsError"] = TRUE;
-            $data_json["Message"] = "Invalid Method";
-            goto ResultData;
-        }
-        ResultData:
-        return response()->json($data_json,200);
     }
 }

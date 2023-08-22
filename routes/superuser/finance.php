@@ -20,6 +20,7 @@ Route::group([
         Route::get('/{id}/print_paid', 'InvoicingController@print_paid')->name('print_paid');
         Route::get('/{id}/print_proforma', 'InvoicingController@print_proforma')->name('print_proforma');
         Route::get('/{id}/history_payable', 'InvoicingController@history_payable')->name('history_payable');
+        Route::get('/json', 'InvoicingController@json')->name('json');
     });
 
     Route::group(['as' => 'proforma.', 'prefix' => '/proforma'], function () {
@@ -39,6 +40,5 @@ Route::group([
         Route::get('/approve/{id}', 'PayableController@approve')->name('approve');
         Route::get('/{id}/print', 'PayableController@print')->name('print');
         Route::get('/json', 'PayableController@json')->name('json');
-        Route::get('/get_invoice', 'PayableController@get_invoice')->name('get_invoice');
     });
 });

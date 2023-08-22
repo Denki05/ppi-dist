@@ -1,6 +1,7 @@
 @extends('superuser.app')
 
 @section('content')
+
 @if($errors->any())
 <div class="alert alert-danger alert-dismissable" role="alert">
   <button type="button" class="close" data-dismiss="alert" aria-label="Close">
@@ -12,10 +13,10 @@
   @endforeach
 </div>
 @endif
+
 <nav class="breadcrumb bg-white push">
-  <a href="{{ route('superuser.master.product.create') }}" class="btn btn-primary btn-lg active" role="button" aria-pressed="true" style="margin-left: 10px !important;">Add Product</a>
-  {{--<a href="{{ route('superuser.master.product.cetak') }}" class="btn btn-primary btn-lg active" role="button" target="_blank" aria-pressed="true" style="margin-left: 10px !important;">Print Product</a>
-  <button type="button" class="btn btn-outline-danger ml-10" onclick="deleteMultiple()">Delete Checked</button>--}}
+  <a href="{{ route('superuser.master.product.create') }}" class="btn btn-primary btn-lg active" role="button" aria-pressed="true" style="margin-left: 10px !important;">Create</a>
+  <button type="button" class="btn btn-outline-info ml-10" data-toggle="modal" data-target="#modal-manage">Manage</button>
 </nav>
 <div class="block">
   <div class="block-content block-content-full">
