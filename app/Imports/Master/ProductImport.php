@@ -60,7 +60,6 @@ class ProductImport implements ToCollection, WithHeadingRow, WithStartRow, Skips
                 'buying_price' => $row['buying_price'],
                 'selling_price' => $row['selling_price'],
                 'status' => Product::STATUS['ACTIVE'],
-
             ]);
         }
     }
