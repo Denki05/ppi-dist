@@ -184,7 +184,6 @@ class ProductController extends Controller
                         return $this->response(200, $response);
                     }
                 }else{
-
                     $product = new Product;
                     $product->id = $request->code;
                     $product->code = $request->code;
@@ -218,6 +217,25 @@ class ProductController extends Controller
 
                     if ($product->save()) {
                         DB::commit();
+
+                        $warehouse = Warehouse::where('name', 'Gudang Araya')->first();
+                        $kemasan = $request->packaging;
+                        foreach($kemasan as $value){
+                                $child_product = new ProductChild;
+                                $child_product->id = $product->id.'.'.$value;
+                                $child_product->product_id = $product->id;
+                                $child_product->warehouse_id = $warehouse->id;
+                                $child_product->material_code = $request->material_code;
+                                $child_product->material_name = $request->material_name;
+                                $child_product->code = $request->code;
+                                $child_product->name = $request->name;
+                                $child_product->price = $request->selling_price;
+                                $child_product->stock = 1000;
+                                $child_product->gender = $request->gender;
+                                $child_product->note = $request->note;
+                                $child_product->status = ProductChild::STATUS['ACTIVE'];
+                                $child_product->save();
+                        }
 
                         $response['notification'] = [
                             'alert' => 'notify',

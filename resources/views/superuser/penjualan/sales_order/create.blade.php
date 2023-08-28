@@ -143,6 +143,7 @@
                 <div class="col-12 product-list">
                   <div class="row">
                     <div class="col-2">Category</div>
+                    <div class="col-3">Packaging</div>
                     <div class="col-3">Product</div>
                     <div class="col-1">Qty</div>
                     <div class="col-1">Free</div>
@@ -156,7 +157,12 @@
                       </select>
                     </div>
                     <div class="col-3">
-                      <select class="form-control js-select2 select-product" name="product_id[]" data-index="0">
+                      <select class="form-control js-select2 select-packaging" name="packaging[]" data-index="0">
+                        <option value="">Select Packaging</option>
+                      </select>
+                    </div>
+                    <div class="col-3">
+                      <select class="form-control js-select2 select-product" name="packaging[]" data-index="0">
                         <option value="">Select product</option>
                       </select>
                     </div>
@@ -265,6 +271,8 @@
       const categoryText = $('.select-category[data-index=0] option:selected').text();
       const productId = $('.select-product[data-index=0]').val();
       const productText = $('.select-product[data-index=0] option:selected').text();
+      const PackagingId = $('.select-packaging[data-index=0]').val();
+      const PackagingText = $('.select-packaging[data-index=0] option:selected').text();
       const qty = $('.input-qty[data-index=0]').val();
       const free = $('.input-free[data-index=0]').val();
 
@@ -281,6 +289,10 @@
       html += "  <div class='col-2'>";
       html += "    <input type='hidden' class='form-control' value='" + categoryId + "'>";
       html += categoryText;
+      html += "  </div>";
+      html += "  <div class='col-2'>";
+      html += "    <input type='hidden' name='packaging[]' class='form-control' value='" + PackagingId + "'>";
+      html += PackagingText;
       html += "  </div>";
       html += "  <div class='col-2'>";
       html += "    <input type='hidden' name='product_id[]' class='form-control' value='" + productId + "'>";
@@ -306,6 +318,7 @@
       }
 
       $('.select-category[data-index=0]').val('').change();
+      $('.select-packaging[data-index=0]').val('').change();
       $('.select-product[data-index=0]').val('').change();
       $('.input-qty[data-index=0]').val('');
       $('.input-free[data-index=0]').val();
@@ -379,7 +392,7 @@
           let option = "";
           option = '<option value="">Select Product</option>';
           $.each(resp.Data,function(i,e){
-            option += '<option value="'+e.id+'">'+e.productCode+' - '+e.productName+' - '+e.packName+'</option>';
+            option += '<option value="'+e.id+'">'+e.code+' - '+e.name+' - '+e.price+'</option>';
           })
           $('.select-product[data-index=' + param.index + ']').html(option);
         },

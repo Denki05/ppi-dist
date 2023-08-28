@@ -52,4 +52,13 @@ class ProductChild extends Model
         return $this->BelongsTo('App\Entities\Master\Product', 'product_id');
     }
 
+    public function warehouse()
+    {
+        return $this->BelongsTo('App\Entities\Master\Warehouse', 'warehouse_id');
+    }
+
+    public function kemasan()
+    {
+        return $this->BelongsTo('App\Entities\Master\Packaging', 'packaging_id');
+    }
 }

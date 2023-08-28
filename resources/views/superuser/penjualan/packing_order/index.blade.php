@@ -17,17 +17,7 @@
     </button>
 </div>
 @endif
-<!--
-<div class="block">
-  <div class="block-content block-content-full">
-      <div class="row">
-        <div class="col-12">
-          <a href="{{route('superuser.penjualan.packing_order.create')}}" class="btn btn-primary"><i class="fa fa-plus"></i> Add Packing Order(PO)</a>
-        </div>
-      </div>
-  </div>
-</div>
--->
+
 <div class="block">
   <hr class="my-20">
   <div class="block-content block-content-full">

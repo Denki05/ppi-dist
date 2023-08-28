@@ -253,6 +253,7 @@
                               <button type="button" class="btn btn-warning btn-previous"><i class="fa fa-arrow-left"></i> Previous</button>
                               <button type="submit" class="btn btn-primary btn-submit"><i class="fa fa-save"></i> Submit</button>
                             </div>
+                            <br>
                         </fieldset>
                         <!-- step 2 -->
                         <fieldset>

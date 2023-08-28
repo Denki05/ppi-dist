@@ -82,6 +82,11 @@ class Product extends Model
         return $this->hasMany('App\Entities\Penjualan\SoProformaDetail');
     }
 
+    public function product_child()
+    {
+        return $this->hasMany('App\Entities\Master\ProductChild', 'product_id');
+    }
+
     public function setting_price_log()
     {
         return $this->hasMany('App\Entities\Penjualan\SettingPriceLog');

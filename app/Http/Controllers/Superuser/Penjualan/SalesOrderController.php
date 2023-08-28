@@ -1455,28 +1455,51 @@ class SalesOrderController extends Controller
         return response()->json($data_json,200);
     }
 
+    // public function get_packaging(Request $request){
+    //     $data_json = [];
+    //     $post = $request->all();
+    //     if($request->method() == "GET"){
+    //         $table = Product::where(function($query2) use($post){
+    //                     if(!empty($post["category_id"])){
+    //                         $query2->where('category_id',$post["category_id"]);
+    //                     }
+    //                 })
+    //                 ->where('master_products.status', 1)
+    //                 ->leftJoin('master_product_categories', 'master_products.category_id', '=', 'master_product_categories.id')
+    //                 ->leftJoin('master_products_child', 'master_products.id', '=', 'master_products_child.product_id')
+    //                 ->select(
+                       
+    //                 )->get();
+    //         $data_json["IsError"] = FALSE;
+    //         $data_json["Data"] = $table;
+    //         goto ResultData;
+    //     }
+    //     else{
+    //         $data_json["IsError"] = TRUE;
+    //         $data_json["Message"] = "Invalid Method";
+    //         goto ResultData;
+    //     }
+    //     ResultData:
+    //     return response()->json($data_json,200);
+    // }
+
     public function get_product(Request $request){
         $data_json = [];
         $post = $request->all();
         if($request->method() == "GET"){
-            $table = Product::where(function($query2) use($post){
+            $table = DB::table('master_products')
+                    ->where(function($query2) use($post){
                         if(!empty($post["category_id"])){
                             $query2->where('category_id',$post["category_id"]);
                         }
                     })
                     ->where('master_products.status', 1)
                     ->leftJoin('master_product_categories', 'master_products.category_id', '=', 'master_product_categories.id')
-                    ->leftJoin('master_packaging', 'master_products.packaging_id', '=', 'master_packaging.id')
-                    ->select(
-                        'master_products.name as productName', 
-                        'master_products.id as id', 
-                        'master_products.status as status', 
-                        'master_products.code as productCode',
-                        'master_products.category_id', 
-                        'master_products.selling_price as productPrice', 
-                        'master_packaging.id as packId',
-                        'master_packaging.pack_name as packName'
-                    )->get();
+                    ->leftJoin('master_products_child', 'master_products.id', '=', 'master_products_child.product_id')
+                    ->selectRaw(
+                        'master_products_child.id as poductChildID, master_products_child.name as productName, master_products_child.code as productCode, master_products_child.price as productPrice'
+                    )
+                    ->get();
             $data_json["IsError"] = FALSE;
             $data_json["Data"] = $table;
             goto ResultData;
