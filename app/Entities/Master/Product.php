@@ -19,6 +19,7 @@ class Product extends Model
                     ];
 
     protected $table = 'master_products';
+    public $incrementing = false;
     public static $directory_image = 'superuser_assets/media/master/product/';
     
     const NOTE = [

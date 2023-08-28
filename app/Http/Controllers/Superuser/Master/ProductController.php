@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Superuser\Master;
 
 use App\DataTables\Master\ProductTable;
 use App\Entities\Master\Product;
+use App\Entities\Master\ProductChild;
 use App\Entities\Master\ProductCategory;
 use App\Entities\Master\ProductType;
 use App\Entities\Master\ProductMinStock;
@@ -12,6 +13,7 @@ use App\Entities\Master\BrandLokal;
 use App\Entities\Master\Vendor;
 use App\Entities\Master\Unit;
 use App\Entities\Master\Packaging;
+use App\Entities\Master\Warehouse;
 use App\Entities\Master\Fragrantica;
 use App\Exports\Master\ProductExport;
 use App\Exports\Master\ProductImportTemplate;
@@ -95,9 +97,6 @@ class ProductController extends Controller
                 'brand_name' => 'required',
                 'searah' => 'required|integer',
                 'category' => 'required|integer',
-                // 'type' => 'required|integer',
-                // 'packaging' => 'required|integer',
-
                 'name' => 'required|string',
                 'code' => 'required|string',
                 'selling_price' => 'nullable|numeric|min:0',
@@ -119,84 +118,118 @@ class ProductController extends Controller
             if ($validator->passes()) {
                 DB::beginTransaction();
 
-                $product = new Product;
+                if($request->brand_name == "Senses"){
+                    $code = explode(" ", $request->code);
 
-                $product->code = $request->code;
-                $product->brand_name = $request->brand_name;
-                $product->sub_brand_reference_id = $request->searah;
-                $product->category_id = $request->category;
-                $product->type_id = $request->type;
-                $product->packaging_id = $request->packaging;
-                $product->vendor_id = $request->factory;
+                    $product = new Product;
+                    $product->id = $code[1];
+                    $product->code = $request->code;
+                    $product->brand_name = $request->brand_name;
+                    $product->sub_brand_reference_id = $request->searah;
+                    $product->category_id = $request->category;
+                    $product->type_id = $request->type;
+                    $product->vendor_id = $request->factory;
 
-                $product->name = $request->name;
-                $product->material_code = $request->material_code;
-                $product->material_name = $request->material_name;
-                $product->alias = $request->alias;
-                $product->buying_price = $request->buying_price ?? 0;
-                $product->selling_price = $request->selling_price;
-                $product->description = $request->description;
-                $product->note = $request->note;
-                $product->gender = $request->gender;
+                    $product->name = $request->name;
+                    $product->material_code = $request->material_code;
+                    $product->material_name = $request->material_name;
+                    $product->alias = $request->alias;
+                    $product->buying_price = $request->buying_price ?? 0;
+                    $product->selling_price = $request->selling_price;
+                    $product->description = $request->description;
+                    $product->note = $request->note;
+                    $product->gender = $request->gender;
+                    $product->ratio = $request->ratio;
 
-                $product->default_quantity = $request->default_quantity ?? 0;
-                // $product->default_unit_id = $request->default_unit ?? null;
-                $product->ratio = $request->ratio;
-                // $product->default_warehouse_id = $request->default_warehouse ?? NULL;
-
-                
-
-                if (!empty($request->file('image'))) {
-                    $product->image = UploadMedia::image($request->file('image'), Product::$directory_image);
-                }
-
-                if (!empty($request->file('image_hd'))) {
-                    $product->image_hd = UploadMedia::image($request->file('image_hd'), Product::$directory_image);
-                }
-
-                $product->status = Product::STATUS['ACTIVE'];
-
-                if ($product->save()) {
-                    if($request->parfume_scent) {
-                        foreach($request->parfume_scent as $key => $value){
-                            if($request->parfume_scent[$key]) {
-
-                                $frag = new Fragrantica;
-                                $frag->product_id = $product->id;
-                                $frag->brand_reference_id = $product->sub_brand_reference->brand_reference->id;
-                                $frag->parfume_scent = $request->parfume_scent[$key];
-                                $frag->scent_range = $request->scent_range[$key];
-                                $frag->color_scent = $request->color_scent[$key];
-                                $frag->save();
-                            }
-                        }
+                    if (!empty($request->file('image'))) {
+                        $product->image = UploadMedia::image($request->file('image'), Product::$directory_image);
                     }
 
-                    // $stock = new ProductMinStock;
-                    // $stock->product_id = $product->id;
-                    // $stock->warehouse_id = $product->default_warehouse_id;
-                    // $stock->unit_id = $product->default_unit_id;
-                    // $stock->quantity = $product->default_quantity;
-                    // $stock->selling_price = $product->selling_price;
+                    if (!empty($request->file('image_hd'))) {
+                        $product->image_hd = UploadMedia::image($request->file('image_hd'), Product::$directory_image);
+                    }
 
-                    // $stock->save();
-                   
+                    $product->status = Product::STATUS['ACTIVE'];
 
-                    // dd($value);
-                    DB::commit();
+                    if ($product->save()) {
+                        DB::commit();
 
-                    $response['notification'] = [
-                        'alert' => 'notify',
-                        'type' => 'success',
-                        'content' => 'Success',
-                    ];
+                        $warehouse = Warehouse::where('name', 'Gudang Araya')->first();
+                        $kemasan = $request->packaging;
+                        foreach($kemasan as $value){
+                                $child_product = new ProductChild;
+                                $child_product->id = $product->id.'.'.$value;
+                                $child_product->product_id = $product->id;
+                                $child_product->warehouse_id = $warehouse->id;
+                                $child_product->material_code = $request->material_code;
+                                $child_product->material_name = $request->material_name;
+                                $child_product->code = $request->code;
+                                $child_product->name = $request->name;
+                                $child_product->price = $request->selling_price;
+                                $child_product->stock = 1000;
+                                $child_product->gender = $request->gender;
+                                $child_product->note = $request->note;
+                                $child_product->status = ProductChild::STATUS['ACTIVE'];
+                                $child_product->save();
+                        }
 
-                    $response['redirect_to'] = route('superuser.master.product.index');
+                        $response['notification'] = [
+                            'alert' => 'notify',
+                            'type' => 'success',
+                            'content' => 'Success',
+                        ];
 
-                    return $this->response(200, $response);
+                        $response['redirect_to'] = route('superuser.master.product.index');
+
+                        return $this->response(200, $response);
+                    }
+                }else{
+
+                    $product = new Product;
+                    $product->id = $request->code;
+                    $product->code = $request->code;
+                    $product->brand_name = $request->brand_name;
+                    $product->sub_brand_reference_id = $request->searah;
+                    $product->category_id = $request->category;
+                    $product->type_id = $request->type;
+                    $product->vendor_id = $request->factory;
+
+                    $product->name = $request->name;
+                    $product->material_code = $request->material_code;
+                    $product->material_name = $request->material_name;
+                    $product->alias = $request->alias;
+                    $product->buying_price = $request->buying_price ?? 0;
+                    $product->selling_price = $request->selling_price;
+                    $product->description = $request->description;
+                    $product->note = $request->note;
+                    $product->gender = $request->gender;
+
+                    $product->ratio = $request->ratio;
+
+                    if (!empty($request->file('image'))) {
+                        $product->image = UploadMedia::image($request->file('image'), Product::$directory_image);
+                    }
+
+                    if (!empty($request->file('image_hd'))) {
+                        $product->image_hd = UploadMedia::image($request->file('image_hd'), Product::$directory_image);
+                    }
+
+                    $product->status = Product::STATUS['ACTIVE'];
+
+                    if ($product->save()) {
+                        DB::commit();
+
+                        $response['notification'] = [
+                            'alert' => 'notify',
+                            'type' => 'success',
+                            'content' => 'Success',
+                        ];
+
+                        $response['redirect_to'] = route('superuser.master.product.index');
+
+                        return $this->response(200, $response);
+                    }
                 }
-
-                // DD($product->save());
             }
         }
     }
@@ -365,7 +398,7 @@ class ProductController extends Controller
             $product->status = Product::STATUS['DELETED'];
 
             if ($product->save()) {
-                $response['redirect_to'] = '#datatable';
+                $response['redirect_to'] = route('superuser.master.product.index');
                 return $this->response(200, $response);
             }
         }

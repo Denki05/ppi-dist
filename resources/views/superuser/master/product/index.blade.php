@@ -19,36 +19,20 @@
 
 <div id="alert-block"></div>
 
-@if(session()->has('collect_success'))
+@if(session()->has('collect_success') || session()->has('collect_error'))
 <div class="container">
-  <div class="row"></div>
-  <div class="alert alert-success alert-dismissable">
-    <div class="alertwrapper clearfix">
-      <button type="button" class="close" data-dismiss="alert" aria-hidden="true">&times;</button>
-      <div class="alerticon successful">
-        <span class="glyphicon glyphicon-ok-sign"></span>
-      </div>
-      <div class="alertcontent">
-        <h4>Successful Import!</h4>
+  <div class="row">
+    <div class="col pl-0">
+      <div class="alert alert-success alert-dismissable" role="alert" style="max-height: 300px; overflow-y: auto;">
+        <h3 class="alert-heading font-size-h4 font-w400">Successful Import</h3>
         @foreach (session()->get('collect_success') as $msg)
         <p class="mb-0">{{ $msg }}</p>
         @endforeach
       </div>
     </div>
-  </div>
-</div>
-@endif
-
-@if(session()->has('collect_error'))
-<div class="container">
-  <div class="alert alert-danger alert-dismissable">
-    <div class="alertwrapper clearfix">
-      <button type="button" class="close" data-dismiss="alert" aria-hidden="true">&times;</button>
-      <div class="alerticon successful">
-        <span class="glyphicon glyphicon-ok-sign"></span>
-      </div>
-      <div class="alertcontent">
-        <h4>Failed Import!</h4>
+    <div class="col pr-0">
+      <div class="alert alert-danger alert-dismissable" role="alert" style="max-height: 300px; overflow-y: auto;">
+        <h3 class="alert-heading font-size-h4 font-w400">Failed Import</h3>
         @foreach (session()->get('collect_error') as $msg)
         <p class="mb-0">{{ $msg }}</p>
         @endforeach
@@ -78,7 +62,6 @@
           <th>Brand</th>
           <th>Category</th>
           <th>Name</th>
-          <th>Kemasan</th>
           <th>Status</th>
           <th>Action</th>
         </tr>
@@ -121,7 +104,6 @@ $(document).ready(function() {
       {data: 'brand_name'},
       {data: 'category_name', name: 'master_product_categories.category_name'},
       {data: 'name'},
-      {data: 'pack_name', name: 'master_packaging.pack_name'},
       {data: 'status'},
       {data: 'action', orderable: false, searcable: false}
     ],

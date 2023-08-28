@@ -80,7 +80,7 @@ class ProductImport implements ToCollection, WithHeadingRow, WithStartRow, Skips
                 $product->packaging_id = $packaging->id;
                 $product->type_id = $type->id ?? null;
                 $product->vendor_id = $vendor->id;
-                $product->brand_name = $row['brand_name'];
+                $product->brand_name = $row['merek'];
                 $product->code = $row['code'];
                 $product->name = $row['name'];
                 $product->material_code = $row['material_code'];
