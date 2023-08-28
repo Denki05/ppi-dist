@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, shrink-to-fit=no">
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>{{ setting('website.name') }}</title>
-    <link rel="shortcut icon" href="{{ asset('icon.png') }}">
+    <link rel="shortcut icon" href="{{ asset('public/icon.png') }}">
     @include('superuser.asset.css')
     @stack('plugin-styles')
   </head>
@@ -84,7 +84,7 @@
     </div>
     @include('superuser.asset.js')
     @include('superuser.asset.plugin.notify')
-    <script src="{{ asset('utility/superuser/js/form.js') }}"></script>
+    <script src="{{ asset('public/utility/superuser/js/form.js') }}"></script>
     @stack('scripts')
     <script>
       $(document).ready(function () {
