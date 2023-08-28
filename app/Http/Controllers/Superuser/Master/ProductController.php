@@ -538,14 +538,8 @@ class ProductController extends Controller
         if ($validator->passes()) {
             $import = new ProductImport();
             Excel::import($import, $request->import_file);
-            
-            if($import->error) {
-                return redirect()->back()->with(['collect_error' => $import->error]);
-                // return redirect()->back()->withErrors($import->error);
-            }
-            
-            return redirect()->back()->with(['collect_success' => $import->success]);
-            // return redirect()->back()->with(['message' => 'Import success']);
+        
+            return redirect()->back()->with(['collect_success' => $import->success, 'collect_error' => $import->error]);
         }
     }
 

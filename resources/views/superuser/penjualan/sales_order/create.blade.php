@@ -392,7 +392,7 @@
           let option = "";
           option = '<option value="">Select Product</option>';
           $.each(resp.Data,function(i,e){
-            option += '<option value="'+e.id+'">'+e.code+' - '+e.name+' - '+e.price+'</option>';
+            option += '<option value="'+e.poductChildID+'">'+e.productCode+' - '+e.productName+' - '+e.productPrice+'</option>';
           })
           $('.select-product[data-index=' + param.index + ']').html(option);
         },

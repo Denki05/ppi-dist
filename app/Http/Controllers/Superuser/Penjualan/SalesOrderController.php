@@ -1455,34 +1455,6 @@ class SalesOrderController extends Controller
         return response()->json($data_json,200);
     }
 
-    // public function get_packaging(Request $request){
-    //     $data_json = [];
-    //     $post = $request->all();
-    //     if($request->method() == "GET"){
-    //         $table = Product::where(function($query2) use($post){
-    //                     if(!empty($post["category_id"])){
-    //                         $query2->where('category_id',$post["category_id"]);
-    //                     }
-    //                 })
-    //                 ->where('master_products.status', 1)
-    //                 ->leftJoin('master_product_categories', 'master_products.category_id', '=', 'master_product_categories.id')
-    //                 ->leftJoin('master_products_child', 'master_products.id', '=', 'master_products_child.product_id')
-    //                 ->select(
-                       
-    //                 )->get();
-    //         $data_json["IsError"] = FALSE;
-    //         $data_json["Data"] = $table;
-    //         goto ResultData;
-    //     }
-    //     else{
-    //         $data_json["IsError"] = TRUE;
-    //         $data_json["Message"] = "Invalid Method";
-    //         goto ResultData;
-    //     }
-    //     ResultData:
-    //     return response()->json($data_json,200);
-    // }
-
     public function get_product(Request $request){
         $data_json = [];
         $post = $request->all();
