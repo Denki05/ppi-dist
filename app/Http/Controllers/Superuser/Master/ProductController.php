@@ -416,11 +416,17 @@ class ProductController extends Controller
             $product->status = Product::STATUS['DELETED'];
 
             if ($product->save()) {
+
+                $update = ProductChild::where('product_id', $product->id)->update(['deleted_by' => Auth::id(), 'status' => 0]);
+                $child = ProductChild::where('product_id', $product->id)->delete();
+
                 $response['redirect_to'] = route('superuser.master.product.index');
                 return $this->response(200, $response);
             }
         }
     }
+
+    
 
     public function destroyMultiple(Request $request)
     {
@@ -725,38 +731,4 @@ class ProductController extends Controller
 
         return view('superuser.master.product.cetak.index', $data);
     }
-
-    // public function fragrant()
-    // {
-    //     $curl = curl_init();
-
-    //     curl_setopt_array($curl, array(
-    //         CURLOPT_URL => "https://www.fragrantica.com/perfume/Bath-and-Body-Works/Cactus-Blossom-56360.html",// your preferred link
-    //         CURLOPT_RETURNTRANSFER => true,
-    //         CURLOPT_ENCODING => "",
-    //         CURLOPT_TIMEOUT => 30000,
-    //         CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_1_1,
-    //         CURLOPT_CUSTOMREQUEST => "GET",
-    //         CURLOPT_HTTPHEADER => array(
-    //             // Set Here Your Requesred Headers
-    //             'Content-Type: application/json',
-    //         ),
-    //     ));
-
-    //     $response = curl_exec($curl);
-    //     $err = curl_error($curl);
-    //     curl_close($curl);
-
-    //     if($err){
-    //         echo "cURL Error #:" . $err;
-    //     }else{
-    //         print_r(json_decode($response));
-    //     }
-    //     // dd($response);
-    // }
-
-    // public function cetak_cr()
-    // {
-    //     $runtime = new \NetPhp\Core\NetPhpRuntime('COM', 'netutilities.NetPhpRuntime');
-    // }
 }

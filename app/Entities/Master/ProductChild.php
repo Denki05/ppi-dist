@@ -23,6 +23,8 @@ class ProductChild extends Model
                         'gender', 
                         'note', 
                         'status',
+                        'updated_by',
+                        'deleted_by',
                     ];
 
     protected $table = 'master_products_child';
