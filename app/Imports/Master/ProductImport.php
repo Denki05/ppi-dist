@@ -118,6 +118,47 @@ class ProductImport implements ToCollection, WithHeadingRow, WithStartRow, Skips
                                 $child_product->save();
                         }
                     }
+                }else{
+                    $product = new Product;
+                    $product->id = $row['code'];
+                    $product->sub_brand_reference_id = $searah->id;
+                    $product->category_id = $kategori->id;
+                    $product->type_id = $type->id ?? null;
+                    $product->vendor_id = $vendor->id;
+                    $product->brand_name = $row['merek'];
+                    $product->code = $row['code'];
+                    $product->name = $row['name'];
+                    $product->material_code = $row['material_code'];
+                    $product->material_name = $row['material_name'];
+                    $product->gender = $row['gender'];
+                    $product->description = $row['description'];
+                    $product->buying_price = $row['buying_price'];
+                    $product->selling_price = $row['selling_price'];
+                    $product->status = Product::STATUS['ACTIVE'];
+                    // $product->save();
+                    if($product->save()){
+                        $warehouse = Warehouse::where('name', 'Gudang Araya')->first();
+                        $pecah_kemasan = explode(',', $row['packaging']);
+                        $kemasan = Packaging::where('pack_name', $pecah_kemasan)->get();
+
+
+                        foreach($pecah_kemasan as $value){
+                                $child_product = new ProductChild;
+                                $child_product->id = $product->id.'.'.Packaging::where('pack_name', $value)->pluck('id')->first();
+                                $child_product->product_id = $product->id;
+                                $child_product->warehouse_id = $warehouse->id;
+                                $child_product->material_code = $row['material_code'];
+                                $child_product->material_name = $row['material_name'];
+                                $child_product->code = $row['code'];
+                                $child_product->name = $row['name'];
+                                $child_product->price = $row['selling_price'];
+                                $child_product->stock = 1000;
+                                $child_product->gender = $row['gender'];
+                                $child_product->note = $row['description'];
+                                $child_product->status = ProductChild::STATUS['ACTIVE'];
+                                $child_product->save();
+                        }
+                    }
                 }
 
                 $collect_success[] = $product->code.'-'.$product->name;
