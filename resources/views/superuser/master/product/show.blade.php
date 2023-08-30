@@ -251,8 +251,8 @@
                     $('#myModal').modal({ show: true });
                     setTimeout(function () {
                         window.location.reload(1);
-                    }, 600);
-            }, 600);
+                    }, 800);
+            }, 800);
           }
       });
     });
