@@ -234,7 +234,6 @@ class CustomerOtherAddressController extends Controller
             }
         }
 
-        // $data['customer'] = Customer::findOrFail($id);
         $data['other_address'] = CustomerOtherAddress::findOrFail($address_id);
         $data['provinces'] = Province::all();
 

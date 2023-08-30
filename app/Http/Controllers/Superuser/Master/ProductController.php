@@ -731,4 +731,6 @@ class ProductController extends Controller
 
         return view('superuser.master.product.cetak.index', $data);
     }
+
+    
 }
