@@ -149,8 +149,9 @@
                     <table class="table-active table table-bordered">
                             <tr>
                                 <th width="10%">Member</th>
-                                <th width="10%">Kota</th>
-                                <th width="10%">Default</th>
+                                <th width="5%">Kota</th>
+                                <th width="10%">Maps</th>
+                                <th width="5%">Default</th>
                                 <th width="5%">Action</th>
                                 <!-- <th width="5%">Other Action</tg> -->
                             </tr>
@@ -159,16 +160,18 @@
                                 @foreach ($other_address as $index)
                                     @if ($row->id == $index->customer_id)
                                         <tr>
-                                            <td width="20%">{{ $index->name }}</td>
+                                            <td width="10%">{{ $index->name }}</td>
                                             <td width="5%">
-                                              <!-- <iframe  style="height:100px; width: 200px;" src="https://maps.google.com/maps?q={{ $index->gps_latitude }},{{ $index->gps_longitude }}&hl=es;z=14&amp;output=embed" ?? ></iframe> -->
                                               {{ $index->text_kota }}
                                             </td>
-                                            <td>
-                                              @if($row->member_default == 0)
-                                                <span class="badge badge-info">NO</span>
-                                              @elseif($row->status == 1)
-                                                <span class="badge badge-info">YES</span>
+                                            <td width="5%">
+                                              <iframe  style="height:100px; width: 200px;" src="https://maps.google.com/maps?q={{ $index->gps_latitude }},{{ $index->gps_longitude }}&hl=es;z=14&amp;output=embed" ?? ></iframe>
+                                            </td>
+                                            <td width="5%">
+                                              @if($index->member_default == 0)
+                                              <span class="badge badge-info">NO</span>
+                                              @elseif($index->member_default == 1)
+                                              <span class="badge badge-info">YES</span>
                                               @endif
                                             </td>
                                             @if ($index->status != $index::STATUS['DELETED'] AND $row->status != $row::STATUS['DELETED'])
