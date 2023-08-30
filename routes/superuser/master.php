@@ -33,16 +33,13 @@ Route::group([
         Route::get('/import_template', 'ProductController@import_template')->name('import_template');
         Route::post('/import', 'ProductController@import')->name('import');
         Route::get('/export', 'ProductController@export')->name('export');
-        // Route::post('/addMorePost', 'ProductController@addMorePost')->name('addMorePost');
         Route::post('/getcategory', 'ProductController@getcategory')->name('getcategory');
-
         Route::post('/delete_multiple', 'ProductController@destroyMultiple')->name('delete_multiple');
-
         Route::get('/{id}/disable', 'ProductController@disable')->name('disable');
         Route::get('/{id}/enable', 'ProductController@enable')->name('enable');
-
         Route::get('/cetak', 'ProductController@cetak')->name('cetak');
         Route::post('/cetak/pdf', 'ProductController@cetakPdf')->name('pdf');
+        Route::post('/update_cost/{child_id}', 'ProductController@update_cost')->name('update_cost');
         
         Route::group(['as' => 'min_stock.'], function () {
             Route::get('/{id}/min_stock/create', 'ProductMinStockController@create')->name('create');

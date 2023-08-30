@@ -262,8 +262,6 @@ class ProductController extends Controller
         }
 
         $data['product'] = Product::findOrFail($id);
-        
-        // $data['frag'] = Fragrantica::all();
 
         return view('superuser.master.product.show', $data);
     }
@@ -732,5 +730,44 @@ class ProductController extends Controller
         return view('superuser.master.product.cetak.index', $data);
     }
 
-    
+    public function update_cost(Request $request, $child_id)
+    {
+        if ($request->ajax()) {
+            $productChild = ProductChild::find($child_id);
+
+            if ($productChild == null) {
+                abort(404);
+            }
+
+            $validator = Validator::make($request->all(), [
+                'price' => 'required',
+                
+            ]);
+
+            if ($validator->fails()) {
+                return response()->json(['errors' => $validator->errors()->all()]);
+            }
+
+            if ($validator->passes()) {
+                DB::beginTransaction();
+
+                $productChild->price = $request->price;
+
+                if ($productChild->save()) {
+
+                    DB::commit();
+
+                    $response['notification'] = [
+                        'alert' => 'notify',
+                        'type' => 'success',
+                        'content' => 'Success',
+                    ];
+
+                    $response['redirect_to'] = route('superuser.master.product.index');
+
+                    return $this->response(200, $response);
+                }
+            }
+        }
+    }   
 }

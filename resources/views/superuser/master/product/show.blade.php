@@ -1,19 +1,6 @@
 @extends('superuser.app')
 
 @section('content')
-@if(session('error') || session('success'))
-<div class="alert alert-{{ session('error') ? 'danger' : 'success' }} alert-dismissible fade show" role="alert">
-    @if (session('error'))
-    <strong>Error!</strong> {!! session('error') !!}
-    @elseif (session('success'))
-    <strong>Berhasil!</strong> {!! session('success') !!}
-    @endif
-    <button type="button" class="close" data-dismiss="alert" aria-label="Close">
-        <span aria-hidden="true">&times;</span>
-    </button>
-</div>
-@endif
-
 
 <div class="block">
   <div class="block-header block-header-default">
@@ -107,7 +94,7 @@
     <section id="content2">
       <div class="row mb-30">
         <div class="col-12">
-          <table class="table" id="packaging_list">
+          <table id="packaging_list" class="table" style="width:100%">
             <thead>
               <tr>
                 <th>#</th>
@@ -129,8 +116,8 @@
                   <td>{{$row->price}}</td>
                   <td>{{ number_format($row->stock) }}</td>
                   <td>
-                    <button type="button" class="btn btn-primary" data-toggle="modal" data-target="#myModal">
-                      Launch demo modal
+                    <button type="button" class="btn btn-sm btn-circle btn-alt-secondary upload_button" data-id="{{$row->id}}" title="Update price" data-bs-toggle="modal" data-bs-target="#myModal">
+                      <i class="fa fa-pencil"></i>
                     </button>
                   </td>
                 </tr>
@@ -185,35 +172,52 @@
   </div>
 </div>
 
-<div class="modal" tabindex="-1" role="dialog" id="myModal">
-  <div class="modal-dialog" role="document">
-    <form>  
-      <div class="modal-content">
-        <div class="modal-header">
-          <h5 class="modal-title">Modal title</h5>
-          <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-            <span aria-hidden="true">&times;</span>
-          </button>
-        </div>
+<!-- Modal update cost -->
+<div id="myModal" class="modal fade" role="dialog">
+  <div class="modal-dialog">
+
+  <!-- Alert -->
+    <div class="alert alert-success alert-dismissible fade show" role="alert" style="display:none;">
+      <strong>Success!</strong> to change the selling price!.
+      <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+        <span aria-hidden="true">&times;</span>
+      </button>
+    </div>
+    <!-- Modal content-->
+    <div class="modal-content">
+      <div class="modal-header">
+        <h4 class="modal-title">Update Cost Price</h4>
+        <button type="button" class="close" data-bs-dismiss="modal">&times;</button>
+      </div>
+      <form id="myForm" method="POST" role="form" enctype="multipart/form-data">
+      {{csrf_field()}}
         <div class="modal-body">
-          <input type="text" class="form-control" name="price" id="price">
+          <div class="form-group">
+            <label for="image_botol">Price :</label>
+            <input type="text" class="form-control" name="price">
+          </div>
         </div>
         <div class="modal-footer">
-          <button type="submit" id="submit" class="btn btn-primary">Save changes</button>
-          <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+          <input type="hidden" id="searah_id" value="0">
+          <button type="submit" class="btn btn-info">Save</button>
+          <button type="button" class="btn btn-danger" data-bs-dismiss="modal">Close</button>
         </div>
-      </div>
-    </form>
+      </form>
+    </div>
   </div>
 </div>
 
 @endsection
 @include('superuser.asset.plugin.datatables')
+@include('superuser.asset.plugin.magnific-popup')
+@include('superuser.asset.plugin.swal2')
 
 @push('scripts')
+<script src="{{ asset('public/utility/superuser/js/form.js') }}"></script>
 <script type="text/javascript">
   $(document).ready(function() {
-    $('#packaging_list').DataTable({
+
+    var table = $('#packaging_list').DataTable({
       info: false,
       ordering: false,
       paging: false,
@@ -225,11 +229,34 @@
       closeOnContentClick: true,
     });
 
-    $('#submit').on('click', function(){
-      var price = $('#price').val();
+    $('#myForm').on('submit', function (e) {
+      e.preventDefault(); // prevent the form submit
+      var id = $('.upload_button').data('id');
+      var url = "{{ route('superuser.master.product.update_cost', ":id") }}";
+      url = url.replace(':id', id);
+      var AlertMsg = $('div[role="alert"]');
 
-      alert(price);
-    })
+      var formData = new FormData(this); 
+      // build the ajax call
+      $.ajax({
+          url: url,
+          type: 'POST',
+          headers: {'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')},
+          data: formData,
+          contentType: false,
+          processData: false,
+          success: function (response) {
+            $(AlertMsg).show();
+            setTimeout(function () {
+                    $('#myModal').modal({ show: true });
+                    setTimeout(function () {
+                        window.location.reload(1);
+                    }, 600);
+            }, 600);
+          }
+      });
+    });
+  
   })
 </script>
 @endpush
