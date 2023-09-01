@@ -28,6 +28,7 @@ use App\Entities\Setting\UserMenu;
 use Validator;
 use Auth;
 use PDF;
+use Illuminate\Support\Str;
 
 class ProductController extends Controller
 {
@@ -260,6 +261,7 @@ class ProductController extends Controller
                 return redirect()->route('superuser.index')->with('error','Anda tidak punya akses untuk membuka menu terkait');
             }
         }
+
 
         $data['product'] = Product::findOrFail($id);
 
