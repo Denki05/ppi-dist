@@ -1,172 +1,163 @@
 @extends('superuser.app')
-
+<style>
+    .google-maps {
+        position: relative;
+        padding-bottom: 75%; // Kode ini aspek rasio dari tampilan
+        height: 0;
+        overflow: hidden;
+    }
+    .google-maps iframe {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100% !important;
+        height: 100% !important;
+    }
+</style>
 @section('content')
-<nav class="breadcrumb bg-white push">
-  <span class="breadcrumb-item">Master</span>
-  <a class="breadcrumb-item" href="{{ route('superuser.master.customer.index') }}">Member</a>
-  <span class="breadcrumb-item active">Show</span>
-</nav>
-<div class="row">
-    <div class="col">
-        <div class="block">
-            <div class="block-header block-header-default">
-                <h3 class="block-title">#Detail</h3>
-            </div>
-            <div class="block-content">
-                <div class="row">
-                    <label class="col-md-3 col-form-label text-right">Category</label>
-                    <div class="col-md-7">
-                        <div class="form-control-plaintext">
-                            
-                        </div>
-                    </div>
-                </div>
-                <div class="row">
-                    <label class="col-md-3 col-form-label text-right">Member Default</label>
-                    <div class="col-md-7">
-                        <div class="form-control-plaintext">
-                          
-                        </div>
-                    </div>
-                </div>
-                
-                <div class="row">
-                    <label class="col-md-3 col-form-label text-right">KTP</label>
-                    <div class="col-md-7">
-                        <div class="form-control-plaintext">
-                            {{ $other_address->ktp ?? '-' }}
-                        </div>
-                    </div>
-                </div>
-                
-                <div class="row">
-                    <label class="col-md-3 col-form-label text-right">NPWP</label>
-                    <div class="col-md-7">
-                        <div class="form-control-plaintext">
-                            {{ $other_address->npwp ?? '-' }}
-                        </div>
-                    </div>
-                </div>
-                <hr>
-                <div class="row">
-                    <div class="col">
-                      <label class="col-md-5 col-form-label text-right">Image Npwp</label>
-                      <div class="col-md-7">
-                          <div class="form-control-plaintext">
-                              <a href="{{ $other_address->img_npwp ?? '' }}" class="img-link img-link-zoom-in img-thumb img-lightbox">
-                                  <img src="{{ $other_address->img_npwp ?? '' }}" class="img-fluid img-show-small">
-                              </a>
-                          </div>
-                      </div>
-                    </div>
-                    <div class="col">
-                      <label class="col-md-5 col-form-label text-right">Image KTP</label>
-                      <div class="col-md-7">
-                          <div class="form-control-plaintext">
-                              <a href="{{ $other_address->img_ktp ?? '' }}" class="img-link img-link-zoom-in img-thumb img-lightbox">
-                                  <img src="{{ $other_address->img_ktp ?? '' }}" class="img-fluid img-show-small">
-                              </a>
-                          </div>
-                      </div>
-                    </div>
-                </div>
-            </div>
-        </div>
+    <div class="row">
+      <div class="col">
+        <nav aria-label="breadcrumb" class="bg-light rounded-3 p-3 mb-4">
+          <ol class="breadcrumb mb-0">
+            <li class="breadcrumb-item"><a href="#">Master</a></li>
+            <li class="breadcrumb-item"><a href="{{ route('superuser.master.customer.index') }}">Member</a></li>
+            <li class="breadcrumb-item active" aria-current="page">Show</li>
+          </ol>
+        </nav>
+      </div>
     </div>
-    <div class="col">
-      <div class="block">
-          <div class="block-header block-header-default">
-            <h3 class="block-title">#Profile Customer</h3>
+
+    <div class="row">
+      <div class="col-lg-4">
+        <div class="card mb-4">
+          <div class="card-body text-center">
+            <img src="https://mdbcdn.b-cdn.net/img/Photos/new-templates/bootstrap-chat/ava3.webp" alt="avatar"
+              class="rounded-circle img-fluid" style="width: 150px;">
+            <h5 class="my-3">{{$other_address->name}}</h5>
+            <p class="text-muted mb-1">{{$other_address->store->category->name}}</p>
+            <p class="text-muted mb-4">{{$other_address->text_provinsi}}</p>
+            <div class="d-flex justify-content-center mb-2">
+              <button type="button" class="btn btn-primary">Follow</button>
+              <button type="button" class="btn btn-outline-primary ms-1">Message</button>
+            </div>
           </div>
-              <div class="block-content">
-                <div class="row">
-                    <label class="col-md-3 col-form-label text-right">Name</label>
-                    <div class="col-md-7">
-                        <div class="form-control-plaintext">{{ $other_address->name }}</div>
-                    </div>
-                </div>
-                <div class="row">
-                    <label class="col-md-3 col-form-label text-right">Pemilik</label>
-                    <div class="col-md-7">
-                        <div class="form-control-plaintext">{{ $other_address->contact_person }}</div>
-                    </div>
-                </div>
-                <div class="row">
-                    <label class="col-md-3 col-form-label text-right">Telpon</label>
-                    <div class="col-md-7">
-                        <div class="form-control-plaintext">{{ $other_address->phone }}</div>
-                    </div>
-                </div>
-                <div class="row">
-                    <label class="col-md-3 col-form-label text-right">Email</label>
-                    <div class="col-md-7">
-                        <div class="form-control-plaintext">{{ $other_address->email }}</div>
-                    </div>
-                </div>
-                <div class="row">
-                    <label class="col-md-3 col-form-label text-right">Provinsi</label>
-                    <div class="col-md-7">
-                        <div class="form-control-plaintext">{{ $other_address->text_provinsi }}</div>
-                    </div>
-                </div>
-                <div class="row">
-                    <label class="col-md-3 col-form-label text-right">Kota</label>
-                    <div class="col-md-7">
-                        <div class="form-control-plaintext">{{ $other_address->text_kota }}</div>
-                    </div>
-                </div>
-                <div class="row">
-                    <label class="col-md-3 col-form-label text-right">Kecamatan</label>
-                    <div class="col-md-7">
-                        <div class="form-control-plaintext">{{ $other_address->text_kecamatan }}</div>
-                    </div>
-                </div>
-                <div class="row">
-                    <label class="col-md-3 col-form-label text-right">Kelurahan</label>
-                    <div class="col-md-7">
-                        <div class="form-control-plaintext">{{ $other_address->text_kelurahan }}</div>
-                    </div>
-                </div>
-                <div class="row">
-                    <label class="col-md-3 col-form-label text-right">Kode Pos</label>
-                    <div class="col-md-7">
-                        <div class="form-control-plaintext">{{ $other_address->zipcode }}</div>
-                    </div>
-                </div>
-                <div class="row">
-                    <label class="col-md-3 col-form-label text-right">Alamat</label>
-                    <div class="col-md-7">
-                        <div class="form-control-plaintext">{{ $other_address->address }}</div>
-                    </div>
-                </div>
-                <br>
+        </div>
+        <div class="card mb-4 mb-lg-0">
+          <div class="card-body p-0">
+            <div class="google-maps">
+              <iframe src="https://maps.google.com/maps?q={{ $other_address->gps_latitude }},{{ $other_address->gps_longitude }}&hl=es;z=14&amp;output=embed" width="600" height="450" frameborder="0" style="border:0;" allowfullscreen=""></iframe>
             </div>
+          </div>
+        </div>
+      </div>
+      <div class="col-lg-8">
+        <div class="card mb-4">
+          <div class="card-header">
+            <h4>Detail Profile</h4>
+          </div>
+          <div class="card-body">
+            <div class="row gutters">
+            <div class="col-xl-12 col-lg-12 col-md-12 col-sm-12 col-12">
+              <h6 class="mb-2 text-primary">Personal Details</h6>
+            </div>
+            <div class="col-xl-6 col-lg-6 col-md-6 col-sm-6 col-12">
+              <div class="form-group">
+                <label for="fullName">Full Name</label>
+                <input type="text" class="form-control" id="fullName" placeholder="Enter full name">
+              </div>
+            </div>
+            <div class="col-xl-6 col-lg-6 col-md-6 col-sm-6 col-12">
+              <div class="form-group">
+                <label for="eMail">Email</label>
+                <input type="email" class="form-control" id="eMail" placeholder="Enter email ID">
+              </div>
+            </div>
+            <div class="col-xl-6 col-lg-6 col-md-6 col-sm-6 col-12">
+              <div class="form-group">
+                <label for="phone">Phone</label>
+                <input type="text" class="form-control" id="phone" placeholder="Enter phone number">
+              </div>
+            </div>
+            <div class="col-xl-6 col-lg-6 col-md-6 col-sm-6 col-12">
+              <div class="form-group">
+                <label for="website">Website URL</label>
+                <input type="url" class="form-control" id="website" placeholder="Website url">
+              </div>
+            </div>
+          </div>
+          </div>
+        </div>
+        {{--<div class="row">
+          <div class="col-md-6">
+            <div class="card mb-4 mb-md-0">
+              <div class="card-body">
+                <p class="mb-4"><span class="text-primary font-italic me-1">assigment</span> Project Status
+                </p>
+                <p class="mb-1" style="font-size: .77rem;">Web Design</p>
+                <div class="progress rounded" style="height: 5px;">
+                  <div class="progress-bar" role="progressbar" style="width: 80%" aria-valuenow="80"
+                    aria-valuemin="0" aria-valuemax="100"></div>
+                </div>
+                <p class="mt-4 mb-1" style="font-size: .77rem;">Website Markup</p>
+                <div class="progress rounded" style="height: 5px;">
+                  <div class="progress-bar" role="progressbar" style="width: 72%" aria-valuenow="72"
+                    aria-valuemin="0" aria-valuemax="100"></div>
+                </div>
+                <p class="mt-4 mb-1" style="font-size: .77rem;">One Page</p>
+                <div class="progress rounded" style="height: 5px;">
+                  <div class="progress-bar" role="progressbar" style="width: 89%" aria-valuenow="89"
+                    aria-valuemin="0" aria-valuemax="100"></div>
+                </div>
+                <p class="mt-4 mb-1" style="font-size: .77rem;">Mobile Template</p>
+                <div class="progress rounded" style="height: 5px;">
+                  <div class="progress-bar" role="progressbar" style="width: 55%" aria-valuenow="55"
+                    aria-valuemin="0" aria-valuemax="100"></div>
+                </div>
+                <p class="mt-4 mb-1" style="font-size: .77rem;">Backend API</p>
+                <div class="progress rounded mb-2" style="height: 5px;">
+                  <div class="progress-bar" role="progressbar" style="width: 66%" aria-valuenow="66"
+                    aria-valuemin="0" aria-valuemax="100"></div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="col-md-6">
+            <div class="card mb-4 mb-md-0">
+              <div class="card-body">
+                <p class="mb-4"><span class="text-primary font-italic me-1">assigment</span> Project Status
+                </p>
+                <p class="mb-1" style="font-size: .77rem;">Web Design</p>
+                <div class="progress rounded" style="height: 5px;">
+                  <div class="progress-bar" role="progressbar" style="width: 80%" aria-valuenow="80"
+                    aria-valuemin="0" aria-valuemax="100"></div>
+                </div>
+                <p class="mt-4 mb-1" style="font-size: .77rem;">Website Markup</p>
+                <div class="progress rounded" style="height: 5px;">
+                  <div class="progress-bar" role="progressbar" style="width: 72%" aria-valuenow="72"
+                    aria-valuemin="0" aria-valuemax="100"></div>
+                </div>
+                <p class="mt-4 mb-1" style="font-size: .77rem;">One Page</p>
+                <div class="progress rounded" style="height: 5px;">
+                  <div class="progress-bar" role="progressbar" style="width: 89%" aria-valuenow="89"
+                    aria-valuemin="0" aria-valuemax="100"></div>
+                </div>
+                <p class="mt-4 mb-1" style="font-size: .77rem;">Mobile Template</p>
+                <div class="progress rounded" style="height: 5px;">
+                  <div class="progress-bar" role="progressbar" style="width: 55%" aria-valuenow="55"
+                    aria-valuemin="0" aria-valuemax="100"></div>
+                </div>
+                <p class="mt-4 mb-1" style="font-size: .77rem;">Backend API</p>
+                <div class="progress rounded mb-2" style="height: 5px;">
+                  <div class="progress-bar" role="progressbar" style="width: 66%" aria-valuenow="66"
+                    aria-valuemin="0" aria-valuemax="100"></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>--}}
       </div>
     </div>
-</div>
-  <div class="row pt-30 mb-15">
-      <div class="col-md-6">
-        <a href="{{ route('superuser.master.customer.index') }}">
-          <button type="button" class="btn bg-gd-cherry border-0 text-white">
-            <i class="fa fa-arrow-left mr-10"></i> Back
-          </button>
-        </a>
-      </div>
-      @if($other_address->status != $other_address::STATUS['DELETED'])
-      <div class="col-md-6 text-right">
-        <a href="javascript:deleteConfirmation('{{ route('superuser.master.customer_other_address.destroy', $other_address->id) }}', true)">
-          <button type="button" class="btn bg-gd-pulse border-0 text-white">
-            Delete <i class="fa fa-trash ml-10"></i>
-          </button>
-        </a>
-        <a href="{{ route('superuser.master.customer_other_address.edit', $other_address->id) }}">
-          <button type="button" class="btn bg-gd-leaf border-0 text-white">
-            Edit <i class="fa fa-pencil ml-10"></i>
-          </button>
-        </a>
-      </div>
-      @endif
-    </div>
+
 @endsection
 
 @include('superuser.asset.plugin.datatables')

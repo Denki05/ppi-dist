@@ -132,52 +132,33 @@
         </div>
 
       <hr />
-        <div class="block">
+      <div class="block">
           <div class="block-header block-header-default">
             <h3 class="block-title">#Add Product</h3>
-            
+            <a href="#" class="row-add">
+              <button type="button" class="btn bg-gd-sea border-0 text-white">
+                <i class="fa fa-plus mr-10"></i> Row
+              </button>
+            </a>
           </div>
           <div class="block-content">
             <div class="container">
               <div class="row">
-                <div class="col-12 product-list">
-                  <div class="row">
-                    <div class="col-2">Category</div>
-                    <div class="col-3">Packaging</div>
-                    <div class="col-3">Product</div>
-                    <div class="col-1">Qty</div>
-                    <div class="col-1">Free</div>
-                    <div class="col">Action</div>
-                  </div>
-
-                  <div class="row mt-10 product-row">
-                    <div class="col-2">
-                      <select class="form-control js-select2 select-category" name="category[]" data-index="0">
-                        <option value="">Select Category</option>
-                      </select>
-                    </div>
-                    <div class="col-3">
-                      <select class="form-control js-select2 select-packaging" name="packaging[]" data-index="0">
-                        <option value="">Select Packaging</option>
-                      </select>
-                    </div>
-                    <div class="col-3">
-                      <select class="form-control js-select2 select-product" name="packaging[]" data-index="0">
-                        <option value="">Select product</option>
-                      </select>
-                    </div>
-                    <div class="col-1">
-                      <input type="number" name="qty[]" class="form-control input-qty" data-index="0" step="any">
-                    </div>
-                    <div class="col-1">
-                      <input type="checkbox" class="form-check-input input-gift" id="gift" name="gift">
-                      <input class="form-control input-free" type="hidden" id="free_product" name="free_product[]" data-index="0" step="any">
-                    </div>
-                    <div class="col"><button type="button" id="buttonAddProduct" class="btn btn-primary"><em class="fa fa-plus"></em></button></div>
-                  </div>
-                  <hr />
-
-                </div>
+                <table id="datatable" class="table table-striped table-vcenter table-responsive">
+                  <thead>
+                    <tr>
+                      <th class="text-center">Counter</th>
+                      <th class="text-center">Category</th>
+                      <th class="text-center">Packaging</th>
+                      <th class="text-center">Product</th>
+                      <th class="text-center">Qty</th>
+                      <th class="text-center">Price</th>
+                      <th class="text-center">Action</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                  </tbody>
+                </table>
               </div>
             </div>
           </div>
@@ -266,148 +247,46 @@
     })
 
     // add product
-    $(document).on('click','#buttonAddProduct',function(){
-      const categoryId = $('.select-category[data-index=0]').val();
-      const categoryText = $('.select-category[data-index=0] option:selected').text();
-      const productId = $('.select-product[data-index=0]').val();
-      const productText = $('.select-product[data-index=0] option:selected').text();
-      const PackagingId = $('.select-packaging[data-index=0]').val();
-      const PackagingText = $('.select-packaging[data-index=0] option:selected').text();
-      const qty = $('.input-qty[data-index=0]').val();
-      const free = $('.input-free[data-index=0]').val();
+    var table = $('#datatable').DataTable({
+        paging: false,
+        bInfo : false,
+        searching: false,
+        columns: [
+          {name: 'counter', "visible": false},
+          {name: 'category', orderable: false, width: "15%"},
+          {name: 'packaging', orderable: false, searcable: false, width: "15%"},
+          {name: 'product', orderable: false, searcable: false, width: "25%"},
+          {name: 'qty', orderable: false, searcable: false, width: "5%"},
+          {name: 'price', orderable: false, searcable: false},
+          {name: 'action', orderable: false, searcable: false, width: "5%"}
+        ],
+        'order' : [[0,'desc']]
+    })
+    var counter = 1;
 
-      if (categoryId === null || categoryId === '' || productId === null || productId === '' || qty === null || qty === '' ) {
-        Swal.fire(
-          'Error!',
-          'Please input all the data',
-          'error'
-        );
-        return;
-      }
-
-      let html = "<div class='row mt-10 product-row brand-" + categoryId + "'>";
-      html += "  <div class='col-2'>";
-      html += "    <input type='hidden' class='form-control' value='" + categoryId + "'>";
-      html += categoryText;
-      html += "  </div>";
-      html += "  <div class='col-2'>";
-      html += "    <input type='hidden' name='packaging[]' class='form-control' value='" + PackagingId + "'>";
-      html += PackagingText;
-      html += "  </div>";
-      html += "  <div class='col-2'>";
-      html += "    <input type='hidden' name='product_id[]' class='form-control' value='" + productId + "'>";
-      html += productText;
-      html += "  </div>";
-      html += "  <div class='col-2 text-right'>";
-      html += "    <input type='hidden' name='qty[]' class='form-control' value='" + qty + "'>";
-      html += qty;
-      html += "  </div>";
-      html += "  <div class='col-1'>";
-      html += "    <input type='hidden' name='free_product[]' class='form-control free' value='" + free + "'>";
-      html += free;
-      html += "  </div>";
-      html += "  <div class='col-1'>";
-      html += "    <button type='button' id='buttonDeleteProduct' class='btn btn-danger'><em class='fa fa-minus'></em></button>";
-      html += "  </div>";
-      html += "</div>";
+    $('a.row-add').on( 'click', function (e) {
+      e.preventDefault();
       
-      if ($('.product-row.category-' + categoryId).length > 0) {
-        $('body').find('.product-row.category-' + categoryId + ':last').after(html);
-      } else {
-        $('body').find('.product-list').append(html);
-      }
-
-      $('.select-category[data-index=0]').val('').change();
-      $('.select-packaging[data-index=0]').val('').change();
-      $('.select-product[data-index=0]').val('').change();
-      $('.input-qty[data-index=0]').val('');
-      $('.input-free[data-index=0]').val();
-
-      $('.select-category[data-index=0]').select2('focus');
-
-      productCount++;
+      table.row.add([
+                    counter,
+                    '<select class="js-select2 form-control js-ajax" id="category['+counter+']" name="category[]" data-placeholder="Select Category" style="width:100%" required></select>',
+                    '<select class="js-select2 form-control js-ajax" id="packaging[]" name="packaging[]" data-placeholder="Select Packaging" style="width:100%" required></select>',
+                    '<select class="js-select2 form-control js-ajax" id="product[]" name="product[]" data-placeholder="Select Product" style="width:100%" required></select>',
+                    '<input type="number" class="form-control" name="total[]" readonly>',
+                    '<input type="number" class="form-control" name="quantity[]" readonly required>',
+                    '<input type="number" class="form-control" name="price[]" readonly required>',
+                    '<a href="#" class="row-delete"><button type="button" class="btn btn-sm btn-circle btn-alt-danger" title="Delete"><i class="fa fa-trash"></i></button></a>'
+                  ]).draw( false );
+                  // $('.js-select2').select2()
+                  initailizeSelect2();
+      counter++;
     });
+ 
+    $('#datatable tbody').on( 'click', '.row-delete', function (e) {
+      e.preventDefault();
+      
+      table.row( $(this).parents('tr') ).remove().draw();
 
-    $(document).on('click','#buttonDeleteProduct',function(){
-      $(this).parents(".product-row").remove();
-    });
-
-    var param = [];
-    param["brand_lokal_id"] = "";
-
-    loadCategory({});
-
-    $(document).on('change','.select-brand',function(){
-      if ($(this).val() === '') return;
-
-      param["brand_lokal_id"] = $(this).val();
-      loadCategory({
-        brand_lokal_id:param["brand_lokal_id"],
-        index: $(this).data("index")
-      })
-    })
-
-    function loadCategory(param){
-      $.ajax({
-        url : '{{route('superuser.penjualan.sales_order.get_category')}}',
-        method : "GET",
-        data : param,
-        dataType : "JSON",
-        success : function(resp){
-          let option = "";
-          option = '<option value="">Select Category</option>';
-          $.each(resp.Data,function(i,e){
-            option += '<option value="'+e.catId+'">'+e.categoryName+'</option>';
-          })
-          $('.select-category[data-index=' + param.index + ']').html(option);
-        },
-        error : function(){
-          alert("Cek Koneksi Internet");
-        }
-      })
-    }
-
-    var param = [];
-    param["category_id"] = "";
-
-    loadProduct({});
-
-    $(document).on('change','.select-category',function(){
-      if ($(this).val() === '') return;
-
-      param["category_id"] = $(this).val();
-      loadProduct({
-        category_id:param["category_id"],
-        index: $(this).data("index")
-      })
-    })
-
-    function loadProduct(param){
-      $.ajax({
-        url : '{{route('superuser.penjualan.sales_order.get_product')}}',
-        method : "GET",
-        data : param,
-        dataType : "JSON",
-        success : function(resp){
-          let option = "";
-          option = '<option value="">Select Product</option>';
-          $.each(resp.Data,function(i,e){
-            option += '<option value="'+e.poductChildID+'">'+e.productCode+' - '+e.productName+' - '+e.productPrice+'</option>';
-          })
-          $('.select-product[data-index=' + param.index + ']').html(option);
-        },
-        error : function(){
-          alert("Cek Koneksi Internet");
-        }
-      })
-    }
-
-    $('.input-gift').click(function(){
-      if($(this).is(':checked')){
-          $('.input-free[data-index=0]').val('Yes');
-      } else {
-          $('.input-free[data-index=0]').val('No');
-      }
     });
   })
 </script>
