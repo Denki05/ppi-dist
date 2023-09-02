@@ -40,7 +40,6 @@ Route::group([
         Route::get('/cetak', 'ProductController@cetak')->name('cetak');
         Route::post('/cetak/pdf', 'ProductController@cetakPdf')->name('pdf');
         Route::post('/update_cost/{child_id}', 'ProductController@update_cost')->name('update_cost');
-        // Route::get('/show/{id}', 'ProductController@show')->name('show')->where('id', "[\w\/]+");
         
         Route::group(['as' => 'min_stock.'], function () {
             Route::get('/{id}/min_stock/create', 'ProductMinStockController@create')->name('create');
