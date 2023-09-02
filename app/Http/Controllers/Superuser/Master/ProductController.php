@@ -29,6 +29,7 @@ use Validator;
 use Auth;
 use PDF;
 use Illuminate\Support\Str;
+use Illuminate\Http\Response;
 
 class ProductController extends Controller
 {
@@ -62,8 +63,9 @@ class ProductController extends Controller
             }
         }
 
+        $data['product'] = Product::get();
 
-        return view('superuser.master.product.index');
+        return view('superuser.master.product.index', $data);
     }
 
     public function create()
@@ -262,7 +264,6 @@ class ProductController extends Controller
             }
         }
 
-        $decode = base64_decode($id);
 
         $data['product'] = Product::findOrFail($decode);
 
