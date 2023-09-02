@@ -64,7 +64,7 @@ class ProductTable extends Table
         });
 
         $table->addColumn('action', function (Product $model) {
-            $view = route('superuser.master.product.show', $model);
+            $view = route('superuser.master.product.show', $model->id);
             $edit = route('superuser.master.product.edit', $model);
             $destroy = route('superuser.master.product.destroy', $model);
 

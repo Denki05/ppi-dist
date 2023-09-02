@@ -67,6 +67,43 @@
           <th>Action</th>
         </tr>
       </thead>
+      <tbody>
+        @foreach($product as $row)
+          <tr>
+            <td>{{$loop->iteration}}</td>
+            <td>{{$row->code}}</td>
+            <td>{{$row->brand_name}}</td>
+            <td>{{$row->category->name}}</td>
+            <td>{{$row->name}}</td>
+            <td>{{$row->status()}}</td>
+            <td>
+              @if($row->status == '1')
+                <a href="{{ route('superuser.master.product.show', base64_encode($row->id))}}">
+                  <button type="button" class="btn btn-sm btn-circle btn-alt-secondary" title="Show">
+                    <i class="mdi mdi-eye"></i>
+                  </button>
+                </a>
+                <a href="">
+                  <button type="button" class="btn btn-sm btn-circle btn-alt-secondary" title="Edit">
+                    <i class="mdi mdi-pencil"></i>
+                  </button>
+                </a>
+                <a href="javascript:deleteConfirmation()">
+                  <button type="button" class="btn btn-sm btn-circle btn-alt-secondary" title="Delete">
+                    <i class="mdi mdi-delete"></i>
+                  </button>
+                </a>
+              @elseif($row->status == '0')
+                <a href="">
+                  <button type="button" class="btn btn-sm btn-circle btn-alt-secondary" title="Show">
+                    <i class="mdi mdi-eye"></i>
+                  </button>
+                </a>
+              @endif
+            </td>
+          </tr>
+        @endforeach
+      </tbody>
     </table>
   </div>
 </div>
@@ -90,33 +127,7 @@
 $(document).ready(function() {
   let datatableUrl = '{{ route('superuser.master.product.json') }}';
 
-  $('#datatables').DataTable({
-    processing: true,
-    serverSide: false,
-    ajax: {
-      "url": datatableUrl,
-      "dataType": "json",
-      "type": "GET",
-      "data":{ _token: "{{csrf_token()}}"}
-    },
-    columns: [
-      {data: 'DT_RowIndex', name: 'master_products.id'},
-      {data: 'code'},
-      {data: 'brand_name'},
-      {data: 'category_name', name: 'master_product_categories.category_name'},
-      {data: 'name'},
-      {data: 'status'},
-      {data: 'action', orderable: false, searcable: false}
-    ],
-    order: [
-      [0, 'asc']
-    ],
-    pageLength: 10,
-    lengthMenu: [
-      [15, 20, 50],
-      [15, 20, 50]
-    ],
-  });
+  var table = $('#datatables').DataTable({});
 });
 </script>
 @endpush
