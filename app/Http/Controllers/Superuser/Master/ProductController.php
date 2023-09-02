@@ -264,8 +264,7 @@ class ProductController extends Controller
             }
         }
 
-        // $models = Product::where('id', base64_decode($id))->get();
-        $decode = base64_decode($id);
+
         $data['product'] = Product::findOrFail($decode);
 
         return view('superuser.master.product.show', $data);
