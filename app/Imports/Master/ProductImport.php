@@ -5,6 +5,7 @@ namespace App\Imports\Master;
 use App\Entities\Master\BrandReference;
 use App\Entities\Master\Product;
 use App\Entities\Master\ProductChild;
+use App\Entities\Master\ProductMinStock;
 use App\Entities\Master\ProductCategory;
 use App\Entities\Master\ProductType;
 use App\Entities\Master\SubBrandReference;
@@ -116,6 +117,14 @@ class ProductImport implements ToCollection, WithHeadingRow, WithStartRow, Skips
                                 $child_product->note = $row['description'];
                                 $child_product->status = ProductChild::STATUS['ACTIVE'];
                                 $child_product->save();
+
+                                $min_stock = new ProductMinStock;
+                                $min_stock->product_pack_id = $child_product->id;
+                                $min_stock->warehouse_id = $warehouse->id;
+                                $min_stock->unit_id = 1;
+                                $min_stock->quantity = $child_product->stock;
+                                $min_stock->selling_price = $child_product->price;
+                                $min_stock->save();
                         }
                     }
                 }else{
@@ -157,6 +166,17 @@ class ProductImport implements ToCollection, WithHeadingRow, WithStartRow, Skips
                                 $child_product->note = $row['description'];
                                 $child_product->status = ProductChild::STATUS['ACTIVE'];
                                 $child_product->save();
+
+                                $min_stock = new ProductMinStock;
+                                $min_stock->product_pack_id = $child_product->id;
+                                $min_stock->warehouse_id = $warehouse->id;
+                                $min_stock->unit_id = 1;
+                                $min_stock->quantity = $child_product->stock;
+                                $min_stock->selling_price = $child_product->price;
+                                $min_stock->save();
+
+                                // dd($min_stock);
+                                
                         }
                     }
                 }
@@ -177,7 +197,7 @@ class ProductImport implements ToCollection, WithHeadingRow, WithStartRow, Skips
 
             DB::commit();
         }catch (\Exception $e) {
-            dd($e);
+            // dd($e);
             $this->error = $e->getMessage();
             DB::rollBack();
         }
