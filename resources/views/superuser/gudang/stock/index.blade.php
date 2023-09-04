@@ -63,7 +63,7 @@
               @foreach($table as $index => $row)
                 <tr>
                   <td>{{$table->firstItem() + $index}}</td>
-                  <td>{{$row->product_pack->code ?? ''}} - {{$row->product_pack->name ?? ''}}</td>
+                  <td>{{$row->product_pack->code ?? ''}} - <b>{{$row->product_pack->name ?? ''}}</b></td>
                   <td>{{$row->product_pack->kemasan()}}</td>
                   <td>{{$row->warehouse->name ?? ''}}</td>
                   <td>{{$row->stock_in ?? ''}}</td>
@@ -111,8 +111,7 @@
             "orderable": false
           }]
         });
-
-
+        
         $('.js-select2').select2();
 
       });
