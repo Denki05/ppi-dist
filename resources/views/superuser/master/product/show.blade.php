@@ -107,7 +107,7 @@
             <tbody>
               @foreach($product->product_child as $row)
               <?php
-                $pecahId = explode('.', $row->id);
+                $pecahId = explode('-', $row->id);
                 $kemasan = DB::table('master_packaging')->where('id', $pecahId[1])->first();
               ?>
                 <tr>

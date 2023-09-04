@@ -84,7 +84,7 @@ class Product extends Model
 
     public function product_child()
     {
-        return $this->hasMany('App\Entities\Master\ProductChild', 'product_id');
+        return $this->hasMany('App\Entities\Master\ProductPack', 'product_id');
     }
 
     public function setting_price_log()

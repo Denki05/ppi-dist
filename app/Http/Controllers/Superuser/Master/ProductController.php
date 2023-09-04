@@ -4,7 +4,7 @@ namespace App\Http\Controllers\Superuser\Master;
 
 use App\DataTables\Master\ProductTable;
 use App\Entities\Master\Product;
-use App\Entities\Master\ProductChild;
+use App\Entities\Master\ProductPack;
 use App\Entities\Master\ProductCategory;
 use App\Entities\Master\ProductType;
 use App\Entities\Master\ProductMinStock;
@@ -160,7 +160,7 @@ class ProductController extends Controller
                         $warehouse = Warehouse::where('name', 'Gudang Araya')->first();
                         $kemasan = $request->packaging;
                         foreach($kemasan as $value){
-                                $child_product = new ProductChild;
+                                $child_product = new ProductPack;
                                 $child_product->id = $product->id.'.'.$value;
                                 $child_product->product_id = $product->id;
                                 $child_product->warehouse_id = $warehouse->id;
@@ -172,7 +172,7 @@ class ProductController extends Controller
                                 $child_product->stock = 1000;
                                 $child_product->gender = $request->gender;
                                 $child_product->note = $request->note;
-                                $child_product->status = ProductChild::STATUS['ACTIVE'];
+                                $child_product->status = ProductPack::STATUS['ACTIVE'];
                                 $child_product->save();
                         }
 
@@ -224,7 +224,7 @@ class ProductController extends Controller
                         $warehouse = Warehouse::where('name', 'Gudang Araya')->first();
                         $kemasan = $request->packaging;
                         foreach($kemasan as $value){
-                                $child_product = new ProductChild;
+                                $child_product = new ProductPack;
                                 $child_product->id = $product->id.'.'.$value;
                                 $child_product->product_id = $product->id;
                                 $child_product->warehouse_id = $warehouse->id;
@@ -236,7 +236,7 @@ class ProductController extends Controller
                                 $child_product->stock = 1000;
                                 $child_product->gender = $request->gender;
                                 $child_product->note = $request->note;
-                                $child_product->status = ProductChild::STATUS['ACTIVE'];
+                                $child_product->status = ProductPack::STATUS['ACTIVE'];
                                 $child_product->save();
                         }
 
@@ -419,8 +419,8 @@ class ProductController extends Controller
 
             if ($product->save()) {
 
-                $update = ProductChild::where('product_id', $product->id)->update(['deleted_by' => Auth::id(), 'status' => 0]);
-                $child = ProductChild::where('product_id', $product->id)->delete();
+                $update = ProductPack::where('product_id', $product->id)->update(['deleted_by' => Auth::id(), 'status' => 0]);
+                $child = ProductPack::where('product_id', $product->id)->delete();
 
                 $response['redirect_to'] = route('superuser.master.product.index');
                 return $this->response(200, $response);
@@ -737,7 +737,7 @@ class ProductController extends Controller
     public function update_cost(Request $request, $child_id)
     {
         if ($request->ajax()) {
-            $productChild = ProductChild::find($child_id);
+            $productChild = ProductPack::find($child_id);
 
             if ($productChild == null) {
                 abort(404);
