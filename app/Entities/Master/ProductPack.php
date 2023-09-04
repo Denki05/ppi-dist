@@ -62,7 +62,8 @@ class ProductPack extends Model
     public function kemasan()
     {
         $id_product = $this->id;
-        $pecah = explode(".", $id_product);
+        
+        $pecah = explode("-", $id_product);
 
         $packaging = Packaging::find($pecah[1]);
 
