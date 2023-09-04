@@ -4,7 +4,7 @@ namespace App\Imports\Master;
 
 use App\Entities\Master\BrandReference;
 use App\Entities\Master\Product;
-use App\Entities\Master\ProductChild;
+use App\Entities\Master\ProductPack;
 use App\Entities\Master\ProductMinStock;
 use App\Entities\Master\ProductCategory;
 use App\Entities\Master\ProductType;
@@ -103,7 +103,7 @@ class ProductImport implements ToCollection, WithHeadingRow, WithStartRow, Skips
 
 
                         foreach($pecah_kemasan as $value){
-                                $child_product = new ProductChild;
+                                $child_product = new ProductPack;
                                 $child_product->id = $product->id.'.'.Packaging::where('pack_name', $value)->pluck('id')->first();
                                 $child_product->product_id = $product->id;
                                 $child_product->warehouse_id = $warehouse->id;
@@ -152,7 +152,7 @@ class ProductImport implements ToCollection, WithHeadingRow, WithStartRow, Skips
 
 
                         foreach($pecah_kemasan as $value){
-                                $child_product = new ProductChild;
+                                $child_product = new ProductPack;
                                 $child_product->id = $product->id.'.'.Packaging::where('pack_name', $value)->pluck('id')->first();
                                 $child_product->product_id = $product->id;
                                 $child_product->warehouse_id = $warehouse->id;
@@ -173,10 +173,7 @@ class ProductImport implements ToCollection, WithHeadingRow, WithStartRow, Skips
                                 $min_stock->unit_id = 1;
                                 $min_stock->quantity = $child_product->stock;
                                 $min_stock->selling_price = $child_product->price;
-                                $min_stock->save();
-
-                                // dd($min_stock);
-                                
+                                $min_stock->save();                                
                         }
                     }
                 }

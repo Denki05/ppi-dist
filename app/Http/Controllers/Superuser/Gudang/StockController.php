@@ -55,15 +55,15 @@ class StockController extends Controller
         $search = $request->input('search');
 
         $warehouse = Warehouse::get();
-        $table = ProductMinStock::select(DB::raw('SUM(master_product_min_stocks.quantity) as stock_in'),'master_product_min_stocks.product_id','master_product_min_stocks.warehouse_id')
+        $table = ProductMinStock::select(DB::raw('SUM(master_product_min_stocks.quantity) as stock_in'),'master_product_min_stocks.product_packaging_id','master_product_min_stocks.warehouse_id')
                                 ->groupBy('warehouse_id')
-                                ->groupBy('product_id')
+                                ->groupBy('product_packaging_id')
                                 ->where(function($query2) use($warehouse_id){
                                     if(!empty($warehouse_id)){
                                         $query2->where('warehouse_id',$warehouse_id);
                                     }
                                 })
-                                ->whereHas('product',function($query2) use($search){
+                                ->whereHas('product_pack',function($query2) use($search){
                                     if(!empty($search)){
                                         $query2->where('name','like','%'.$search.'%');
                                         $query2->orWhere('code','like','%'.$search.'%');

@@ -51,6 +51,7 @@
                 <th>Code</th>
                 <th>Warehouse</th>
                 <th>Product</th>
+                <th>Packaging</th>
                 <th>In</th>
                 <th>Out</th>
                 <th>Stock</th>
@@ -63,9 +64,10 @@
               @foreach($table as $index => $row)
                 <tr>
                   <td>{{$table->firstItem() + $index}}</td>
-                  <td>{{$row->product->code ?? ''}}</td>
+                  <td>{{$row->product_pack->code ?? ''}}</td>
                   <td>{{$row->warehouse->name ?? ''}}</td>
-                  <td>{{$row->product->name ?? ''}}</td>
+                  <td>{{$row->product_pack->name ?? ''}}</td>
+                  <td>{{$row->product_pack->kemasan()}}</td>
                   <td>{{$row->stock_in ?? ''}}</td>
                   <td>{{$row->stock_out ?? ''}}</td>
                   <td>{{$row->stock ?? ''}}</td>

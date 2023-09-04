@@ -6,7 +6,7 @@ use App\Entities\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 // use Alfa6661\AutoNumber\AutoNumberTrait;
 
-class ProductChild extends Model
+class ProductPack extends Model
 {
     use SoftDeletes;
 
@@ -27,7 +27,7 @@ class ProductChild extends Model
                         'deleted_by',
                     ];
 
-    protected $table = 'master_products_child';
+    protected $table = 'master_products_packaging';
     public $incrementing = false;
     
     const NOTE = [
@@ -61,6 +61,13 @@ class ProductChild extends Model
 
     public function kemasan()
     {
-        return $this->BelongsTo('App\Entities\Master\Packaging', 'packaging_id');
+        $id_product = $this->id;
+        $pecah = explode(".", $id_product);
+
+        $packaging = Packaging::find($pecah[1]);
+
+        if($packaging){
+            return $packaging->pack_name;
+        }
     }
 }
