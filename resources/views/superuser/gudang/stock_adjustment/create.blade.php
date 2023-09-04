@@ -49,10 +49,10 @@
           <div class="form-group row">
             <label class="col-md-2 col-form-label text-right"> Select Product<span class="text-danger">*</span></label>
             <div class="col-md-8">
-              <select class="form-control js-select2 select-product" name="product_id">
+              <select class="form-control js-select2 select-product" name="product_packaging_id">
                 <option value="">==Select Product==</option>
                 @foreach($product as $index => $row)
-                  <option value="{{$row->id}}">{{$row->code ?? ''}} - {{$row->name ?? ''}}</option>
+                  <option value="{{$row->id}}">{{$row->code ?? ''}} - {{$row->name ?? ''}} - {{$row->kemasan()}}</option>
                 @endforeach
               </select>
             </div>
@@ -184,12 +184,12 @@
 
     });
 
-    function check_product_warehouse(product_id){
+    function check_product_warehouse(product_packaging_id ){
       ajaxcsrfscript();
       $.ajax({
         url : '{{route('superuser.gudang.stock_adjustment.check_product_warehouse')}}',
         method : "POST",
-        data : {warehouse_id : warehouse_id , product_id : product_id},
+        data : {warehouse_id : warehouse_id , product_packaging_id : product_packaging_id},
         dataType : "JSON",
         success : function(resp){
           if(resp.IsError == true){
