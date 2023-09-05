@@ -724,7 +724,7 @@ class SalesOrderController extends Controller
             return redirect()->back()->with('success','Sales Order berhasil diajukan untuk dilanjutkan');  
             
         }catch(\Throwable $e){
-            dd($e);
+            // dd($e);
             DB::rollback();
             return redirect()->back()->with('error',$e->getMessage());
         }

@@ -28,13 +28,13 @@
             <div class="row">
               <div class="col">
                 <div class="form-label-group in-border">
-                  <label>Code</label>
+                  <label>Invoice Code</label>
                   <input type="text" class="form-control" value="{{ $result->code }}" readonly>
                 </div>
               </div>
               <div class="col">
                 <div class="form-label-group in-border">
-                  <label>Date</label>
+                  <label>Invoice Date</label>
                   <input type="text" class="form-control" value="{{ date('d-m-Y',strtotime($result->created_at)) }}" readonly>
                 </div>
               </div>
@@ -44,7 +44,7 @@
               <div class="col">
                 <div class="form-label-group in-border">
                   <label>Customer</label>
-                  <input type="text" class="form-control" value="{{ $result->member->name }}" readonly>
+                  <input type="text" class="form-control" value="{{ $result->member->name }} {{$result->member->text_kota}}" readonly>
                 </div>
               </div>
               <div class="col">
