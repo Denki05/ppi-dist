@@ -67,8 +67,9 @@ class ProductPack extends Model
 
         $packaging = Packaging::find($pecah[1]);
 
-        if($packaging){
-            return $packaging->pack_name;
-        }
+        // if($packaging){
+        //     return $packaging->pack_name;
+        // }
+        return $packaging;
     }
 }

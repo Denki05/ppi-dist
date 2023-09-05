@@ -286,14 +286,14 @@
                         <input type="number" name="repeater[{{$index}}][do_qty]" class="form-control count" data-index="{{$index}}" value="{{$detail->qty}}" step="any" min="0" max="{{$detail->qty}}">
                       </td>
                       <td>
-                        <input type="text" name="repeater[{{$index}}][price]" class="form-control price" readonly value="@if($detail->free_product == 1) 0 @else {{$detail->product->selling_price}} @endif">
+                        <input type="text" name="repeater[{{$index}}][price]" class="form-control price" readonly value="@if($detail->free_product == 1) 0 @else {{$detail->product->price}} @endif">
                       </td>
                       <td>
                         <input class="form-check-input free_product" type="checkbox" value="{{$detail->free_product}}" name="repeater[{{$index}}][free_product]" @if($detail->free_product == 1) checked=checked @endif disabled>
                       </td>
                       <td>
-                        <input type="text" name="kemasan" class="form-control" readonly value="{{$detail->product->packaging->pack_name ?? ''}}">
-                        <input type="hidden" name="repeater[{{$index}}][packaging]" class="form-control" readonly value="{{$detail->product->packaging->id ?? ''}}">
+                        <input type="text" name="kemasan" class="form-control" readonly value="{{$detail->product->kemasan()->pack_name ?? ''}}">
+                        <input type="hidden" name="repeater[{{$index}}][packaging]" class="form-control" readonly value="{{$detail->product->kemasan()->id ?? ''}}">
                       </td>
                       <td>
                         <input type="text" name="repeater[{{$index}}][usd_disc]" class="form-control count count-disc" data-index="{{$index}}" step="any">
@@ -330,7 +330,7 @@
 @include('superuser.asset.plugin.datatables')
 
 @push('scripts')
-<script src="{{ asset('utility/superuser/js/form.js') }}"></script>
+<script src="{{ asset('public/utility/superuser/js/form.js') }}"></script>
 <script type="text/javascript">
   $(document).ready(function () {
     $('#tableDetailPesanan').DataTable({
@@ -401,7 +401,7 @@
         let total = 0;
         $('tbody tr').each(function(index,e){
           let sub_total = $('tr.index'+index+'').find('input[name="repeater['+index+'][total]"]').val();
-          sub_total = parseFloat(sub_total.split('.').join(''));
+          sub_total = parseFloat(sub_total);
           // alert(kurs);
 
           sub_total = (isNaN(sub_total)) ? 0 : sub_total;
@@ -417,7 +417,7 @@
           if($(this).val() != ''){
               let sub_total_item = $('input[name="sub_total_item"]').val();
 
-              sub_total_item = parseFloat(sub_total_item.split('.').join(''));
+              sub_total_item = parseFloat(sub_total_item);
               let amount = parseFloat(sub_total_item) * parseFloat($(this).val()) / 100;
               $('input[name="disc_amount2_idr"]').val(amount);
           }else{
@@ -482,10 +482,10 @@
         let voucher_idr = $('input[name="voucher_idr"]').val();
         let ongkir = $('input[name="delivery_cost_idr"]').val();
 
-        subtotal = parseFloat(subtotal.split('.').join(''));
-        disc_idr = parseFloat(disc_idr.split('.').join(''));
-        voucher_idr = parseFloat(voucher_idr.split('.').join(''));
-        ongkir = parseFloat(ongkir.split('.').join(''));
+        subtotal = parseFloat(subtotal);
+        disc_idr = parseFloat(disc_idr);
+        voucher_idr = parseFloat(voucher_idr);
+        ongkir = parseFloat(ongkir);
 
         disc_idr = (isNaN(disc_idr)) ? 0 : disc_idr;
         voucher_idr = (isNaN(voucher_idr)) ? 0 : voucher_idr;
