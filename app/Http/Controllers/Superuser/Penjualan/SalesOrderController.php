@@ -296,36 +296,47 @@ class SalesOrderController extends Controller
                 $insert->condition = 1;
                 $insert->payment_status = 0;
                 $insert->count_rev = 0;
-                if($insert->save()){
-                    if (sizeof($post["product_id"]) > 0) {
-                        for ($i = 0; $i < sizeof($post["product_id"]); $i++) {
-                            if(empty($post["product_id"][$i])) continue;
-    
-                            $get_so_item = SalesOrderItem::where('so_id', $insert->id)
-                                ->where('product_id', $post["product_id"][$i])
-                                ->where('free_product', $post["free_product"][$i])
-                                ->first();
-    
-                            if($get_so_item){
-                                $data_json["IsError"] = TRUE;
-                                $data_json["Message"] = "Item sudah ada";
-                                goto ResultData;
-                            }else{
-                                $insertDetail = new SalesOrderItem;
-                                $insertDetail->so_id = $insert->id;
-                                $insertDetail->product_id = trim(htmlentities(implode(".", [$post["product_id"][$i],$post["packaging_id"][$i]])));
-                                $insertDetail->qty = trim(htmlentities($post["qty"][$i]));
-                                // $insertDetail->packaging_id = trim(htmlentities($post["packaging_id"][$i]));
-                                $insertDetail->free_product = trim(htmlentities($post["free_product"][$i]));
-                                $insertDetail->created_by = Auth::id();
-                                $insertDetail->save();
+                $insert->save();
+
+                if (sizeof($post["product_id"]) > 0) {
+                    for ($i = 0; $i < sizeof($post["product_id"]); $i++) {
+                        if(empty($post["product_id"][$i])) continue;
+
+                        $duplicate_product = [];
+                        $duplicate = false;
+                        $listItem[] = [
+                            'product_id' => $post["product_id"][$i],
+                            'free_product' => $post["free_product"][$i],
+                        ];
+
+                        foreach($listItem as $row => $value){
+                            if(in_array($value, $duplicate_product)) {
+                                $duplicate = true;
+                                break;
+                            } else {
+                                array_push($duplicate_product, $value);
                             }
+
+                            // dd($value); 
                         }
+
+                        if($duplicate){
+                            $data_json["IsError"] = TRUE;
+                            $data_json["Message"] = "Item sudah ada";
+                            goto ResultData;
+                        }
+                            $insertDetail = new SalesOrderItem;
+                            $insertDetail->so_id = $insert->id;
+                            $insertDetail->product_id = trim(htmlentities($post["product_id"][$i]));
+                            $insertDetail->qty = trim(htmlentities($post["qty"][$i]));
+                            $insertDetail->packaging_id = trim(htmlentities($post["packaging_id"][$i]));
+                            $insertDetail->free_product = trim(htmlentities($post["free_product"][$i]));
+                            $insertDetail->created_by = Auth::id();
+                            $insertDetail->save();
                     }
                 }
                 
                 DB::commit();
-
                 
                 $data_json["IsError"] = FALSE;
                 $data_json["Message"] = "Sales Order Berhasil Ditambahkan";
