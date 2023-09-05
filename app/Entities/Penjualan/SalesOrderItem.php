@@ -25,7 +25,7 @@ class SalesOrderItem extends Model
         	return $this->BelongsTo('App\Entities\Penjualan\SalesOrder','so_id','id');
         }
         public function product(){
-        	return $this->BelongsTo('App\Entities\Master\Product','product_id','id');
+        	return $this->BelongsTo('App\Entities\Master\ProductPack','product_id','id');
         }
         
         // public function packaging_txt(){

@@ -327,7 +327,7 @@ class SalesOrderController extends Controller
                         }
                             $insertDetail = new SalesOrderItem;
                             $insertDetail->so_id = $insert->id;
-                            $insertDetail->product_id = trim(htmlentities($post["product_id"][$i]));
+                            $insertDetail->product_id = trim(htmlentities(implode("-", [$post["product_id"][$i],$post["packaging_id"][$i]])));
                             $insertDetail->qty = trim(htmlentities($post["qty"][$i]));
                             $insertDetail->packaging_id = trim(htmlentities($post["packaging_id"][$i]));
                             $insertDetail->free_product = trim(htmlentities($post["free_product"][$i]));
