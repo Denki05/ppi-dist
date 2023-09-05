@@ -22,6 +22,7 @@ use App\Entities\Master\Packaging;
 use App\Entities\Master\ProductCategory;
 use App\Entities\Master\BrandLokal;
 use App\Entities\Master\Product;
+use App\Entities\Master\ProductPack;
 use App\Entities\Master\Sales;
 use App\Entities\Master\Ekspedisi;
 use App\Entities\Master\Vendor;
@@ -32,6 +33,7 @@ use Auth;
 use DB;
 use PDF;
 use COM;
+use Carbon;
 
 class SalesOrderController extends Controller
 {
@@ -285,7 +287,7 @@ class SalesOrderController extends Controller
                 $insert->sales_id = $request->sales_id;
                 $insert->so_for = 1;
                 $insert->type_transaction = $request->type_transaction;
-                $insert->so_date = $request->so_date;
+                $insert->so_date = Carbon\Carbon::now();
                 $insert->type_so = 'nonppn';
                 $insert->idr_rate = $request->idr_rate;
                 $insert->note = $request->note;
@@ -294,34 +296,33 @@ class SalesOrderController extends Controller
                 $insert->condition = 1;
                 $insert->payment_status = 0;
                 $insert->count_rev = 0;
-                $insert->save();
-                
-                if (sizeof($post["product_id"]) > 0) {
-                    for ($i = 0; $i < sizeof($post["product_id"]); $i++) {
-                        if(empty($post["product_id"][$i])) continue;
-
-                        $get_so_item = SalesOrderItem::where('so_id', $insert->id)
-                            ->where('product_id', $post["product_id"][$i])
-                            ->where('free_product', $post["free_product"][$i])
-                            ->first();
-
-                        if($get_so_item){
-                            $data_json["IsError"] = TRUE;
-                            $data_json["Message"] = "Item sudah ada";
-                            goto ResultData;
+                if($insert->save()){
+                    if (sizeof($post["product_id"]) > 0) {
+                        for ($i = 0; $i < sizeof($post["product_id"]); $i++) {
+                            if(empty($post["product_id"][$i])) continue;
+    
+                            $get_so_item = SalesOrderItem::where('so_id', $insert->id)
+                                ->where('product_id', $post["product_id"][$i])
+                                ->where('free_product', $post["free_product"][$i])
+                                ->first();
+    
+                            if($get_so_item){
+                                $data_json["IsError"] = TRUE;
+                                $data_json["Message"] = "Item sudah ada";
+                                goto ResultData;
+                            }else{
+                                $insertDetail = new SalesOrderItem;
+                                $insertDetail->so_id = $insert->id;
+                                $insertDetail->product_id = trim(htmlentities(implode(".", [$post["product_id"][$i],$post["packaging_id"][$i]])));
+                                $insertDetail->qty = trim(htmlentities($post["qty"][$i]));
+                                // $insertDetail->packaging_id = trim(htmlentities($post["packaging_id"][$i]));
+                                $insertDetail->free_product = trim(htmlentities($post["free_product"][$i]));
+                                $insertDetail->created_by = Auth::id();
+                                $insertDetail->save();
+                            }
                         }
-
-                        $insertDetail = new SalesOrderItem;
-                        $insertDetail->so_id = $insert->id;
-                        $insertDetail->product_id = trim(htmlentities($post["product_id"][$i]));
-                        $insertDetail->qty = trim(htmlentities($post["qty"][$i]));
-                        // $insertDetail->packaging_id = trim(htmlentities($post["packaging_id"][$i]));
-                        $insertDetail->free_product = trim(htmlentities($post["free_product"][$i]));
-                        $insertDetail->created_by = Auth::id();
-                        $insertDetail->save();
                     }
                 }
-
                 
                 DB::commit();
 
@@ -1412,12 +1413,6 @@ class SalesOrderController extends Controller
 
         $file = 'C:\\xampp\\htdocs\\ppi-dist\\public\\cr\\proforma\\export\\'.$result->code.'.pdf';
 
-        // if($get_do->type_transaction == 1 && $get_do->so->payment_status == 1){
-        //     $file->SetWatermarkText("PAID");
-        // }elseif($get_do->type_transaction == 2 && $get_do->so->payment_status == 2){
-        //     $file->SetWatermarkText("COPY");
-        // }
-
         header("Content-Description: File Transfer"); 
         header("Content-Type: application/octet-stream"); 
         header("Content-Transfer-Encoding: Binary"); 
@@ -1459,19 +1454,50 @@ class SalesOrderController extends Controller
         $data_json = [];
         $post = $request->all();
         if($request->method() == "GET"){
-            $table = DB::table('master_products')
-                    ->where(function($query2) use($post){
+            $table = Product::where(function($query2) use($post){
                         if(!empty($post["category_id"])){
                             $query2->where('category_id',$post["category_id"]);
                         }
                     })
-                    ->where('master_products.status', 1)
                     ->leftJoin('master_product_categories', 'master_products.category_id', '=', 'master_product_categories.id')
-                    ->leftJoin('master_products_child', 'master_products.id', '=', 'master_products_child.product_id')
                     ->selectRaw(
-                        'master_products_child.id as poductChildID, master_products_child.name as productName, master_products_child.code as productCode, master_products_child.price as productPrice'
+                        'master_products.id as id, 
+                        master_products.name as productName, 
+                        master_products.code as productCode, 
+                        master_products.selling_price as productPrice'
                     )
                     ->get();
+            $data_json["IsError"] = FALSE;
+            $data_json["Data"] = $table;
+            goto ResultData;
+        }
+        else{
+            $data_json["IsError"] = TRUE;
+            $data_json["Message"] = "Invalid Method";
+            goto ResultData;
+        }
+        ResultData:
+        return response()->json($data_json,200);
+    }
+
+    public function get_packaging(Request $request){
+        $data_json = [];
+        $post = $request->all();
+        if($request->method() == "GET"){
+            $get_pack = ProductPack::where(function($query2) use($post){
+                    if(!empty($post["product_id"])){
+                        $query2->where('product_id', $post["product_id"]);
+                    }
+                })->first();
+            foreach(explode("-", $get_pack->id) as $row){
+                $table = Packaging::where(function($query2) use($row){
+                    if(!empty($row[1])){
+                        $query2->where('id', $row[1]);
+                    }
+                })
+                ->selectRaw('id, pack_name')
+                ->get();
+            }
             $data_json["IsError"] = FALSE;
             $data_json["Data"] = $table;
             goto ResultData;

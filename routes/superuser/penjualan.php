@@ -44,6 +44,7 @@ Route::group([
 
         Route::get('/get_category', 'SalesOrderController@get_category')->name('get_category');
         Route::get('/get_product', 'SalesOrderController@get_product')->name('get_product');
+        Route::get('/get_packaging', 'SalesOrderController@get_packaging')->name('get_packaging');
     });
 
     Route::group(['as' => 'packing_order.', 'prefix' => '/packing_order'], function () {

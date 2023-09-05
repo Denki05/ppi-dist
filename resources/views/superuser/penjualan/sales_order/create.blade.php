@@ -12,153 +12,150 @@
     <form id="frmCreate" action="#" data-type="POST" enctype="multipart/form-data">
       @csrf
       <input type="hidden" name="ajukankelanjutan" value="0">
-      <div class="block">
-          <div class="block-header block-header-default">
-            <h3 class="block-title">#SO Detail</h3>
-          </div>
-          <div class="block-content">
-            <div class="row">
-              <div class="col-6">
-                <div class="card">
-                  <div class="card-body">
-                    <div class="row">
-                      <div class="col-md-6">
-                        @if($step == 1)
-                          <div class="form-group row">
-                            <label class="col-md-4 col-form-label text-right">Sales Senior<span class="text-danger">*</span></label>
-                            <div class="col-md-8">
-                              <select class="form-control js-select2" name="sales_senior_id">
-                                <option value="">Pilih Sales senior</option>
-                                @foreach($sales as $index => $row)
-                                  <option value="{{$row->id}}">{{$row->name}}</option>
-                                @endforeach
-                              </select>
-                            </div>
-                          </div>
-                          @endif
-                      </div>
-                      <div class="col-md-6">
-                        @if($step == 1)
-                          <div class="form-group row">
-                            <label class="col-md-4 col-form-label text-right">Sales<span class="text-danger">*</span></label>
-                            <div class="col-md-8">
-                              <select class="form-control js-select2" name="sales_id">
-                                <option value="">Pilih Sales</option>
-                                @foreach($sales as $index => $row)
-                                  <option value="{{$row->id}}">{{$row->name}}</option>
-                                @endforeach
-                              </select>
-                            </div>
-                          </div>
-                          @endif
-                      </div>
-                    </div>
-                    <div class="row">
-                      <div class="col-md-6">
-                        @if($step == 1)
-                          <div class="form-group row">
-                            <label class="col-md-4 col-form-label text-right">Order Date<span class="text-danger">*</span></label>
-                            <div class="col-md-8">
-                              <input type="date" class="form-control so_date" name="so_date">
-                            </div>
-                          </div>
-                          @endif
-                      </div>
+      <div class="row">
+        <div class="col-4">
+          <div class="card">
+            <div class="card-body">
+                <div class="col-10">
+                  @if($step == 1 || $step == 2 || $step == 9)
+                    <div class="form-group row">
+                    <label class="col-md-4 col-form-label text-right">Team Leader<span class="text-danger">*</span></label>
+                    <div class="col-md-8">
+                      <select class="form-control js-select2" name="sales_senior_id">
+                        <option value="">Pilih TL</option>
+                        @foreach($sales as $index => $row)
+                          <option value="{{$row->id}}">{{$row->name}}</option>
+                        @endforeach
+                      </select>
                     </div>
                   </div>
+                  @endif
                 </div>
-              </div>
-              <div class="col-6">
-                <div class="card">
-                  <div class="card-body">
-                    <div class="row">
-                      <div class="col-md-6">
-                        @if($step == 1)
-                          <div class="form-group row">
-                            <label class="col-md-4 col-form-label text-right">Transaksi<span class="text-danger">*</span></label>
-                            <div class="col-md-6">
-                              @if ($customers->has_tempo == 0)
-                                <input type="text" class="form-control input-type-transaction" name="input-type-transaction" placeholder="CASH" readonly>
-                                <input type="hidden" class="form-control type_transaction" name="type_transaction" id="type_transaction" value="CASH">
-                              @elseif($customers->has_tempo == 1)
-                                <input type="text" class="form-control input-type-transaction" name="input-type-transaction" placeholder="TEMPO" readonly>
-                                <input type="hidden" class="form-control type_transaction" name="type_transaction" id="type_transaction" value="TEMPO">
-                              @endif
-                            </div>
-                          </div>
-                          @endif
-                      </div>
-                      <div class="col-md-6">
-                        @if($step == 1)
-                          <div class="form-group row">
-                            <label class="col-md-4 col-form-label text-right">Note</label>
-                            <div class="col-8">
-                              <textarea class="form-control" name="note" rows="1"></textarea>
-                            </div>
-                          </div>
-                          @endif
-                      </div>
-                      <div class="col-md-6">
-                        @if($step == 1)
-                          <div class="form-group row">
-                            <label class="col-md-4 col-form-label text-right">Kurs</label>
-                            <div class="col-md-6">
-                              <input type="text" name="idr_rate" class="form-control" value="1">
-                            </div>
-                          </div>
-                          @endif
-                      </div>
-                      <div class="col-md-6">
-                        @if($step == 1)
-                          <div class="form-group row">
-                            <label class="col-md-4 col-form-label text-right">Brand</label>
-                            <div class="col-md-6">
-                              <select class="form-control js-select2 select-brand" data-index="0">
-                                <option value="">Pilih Merek</option>
-                                @foreach($brand as $index => $row)
-                                <option value="{{$row->id}}">{{$row->brand_name}}</option>
-                                @endforeach
-                              </select>
-                            </div>
-                          </div>
-                          @endif
-                      </div>
+                <div class="col-10">
+                  @if($step == 1 || $step == 2 || $step == 9)
+                    <div class="form-group row">
+                    <label class="col-md-4 col-form-label text-right">Salesman<span class="text-danger">*</span></label>
+                    <div class="col-md-8">
+                      <select class="form-control js-select2" name="sales_id">
+                        <option value="">Pilih Salesman</option>
+                        @foreach($sales as $index => $row)
+                          <option value="{{$row->id}}">{{$row->name}}</option>
+                        @endforeach
+                      </select>
                     </div>
                   </div>
+                  @endif
+                </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="col-8">
+          <div class="card">
+            <div class="card-body">
+              <div class="row">
+                <div class="col-md-6">
+                  @if($step == 1)
+                    <div class="form-group row">
+                      <label class="col-md-4 col-form-label text-right">Transaksi<span class="text-danger">*</span></label>
+                      <div class="col-md-6">
+                        @if ($customers->has_tempo == 0)
+                          <input type="text" class="form-control input-type-transaction" name="input-type-transaction" placeholder="CASH" readonly>
+                          <input type="hidden" class="form-control type_transaction" name="type_transaction" id="type_transaction" value="CASH">
+                        @elseif($customers->has_tempo == 1)
+                          <input type="text" class="form-control input-type-transaction" name="input-type-transaction" placeholder="TEMPO" readonly>
+                          <input type="hidden" class="form-control type_transaction" name="type_transaction" id="type_transaction" value="TEMPO">
+                        @endif
+                      </div>
+                    </div>
+                    @endif
+                </div>
+                <div class="col-md-6">
+                  @if($step == 1)
+                    <div class="form-group row">
+                      <label class="col-md-4 col-form-label text-right">Note</label>
+                      <div class="col-8">
+                        <textarea class="form-control" name="note" rows="1"></textarea>
+                      </div>
+                    </div>
+                    @endif
+                </div>
+                <div class="col-md-6">
+                  @if($step == 1)
+                    <div class="form-group row">
+                      <label class="col-md-4 col-form-label text-right">Kurs</label>
+                      <div class="col-md-6">
+                        <input type="text" name="idr_rate" class="form-control" value="1">
+                      </div>
+                    </div>
+                    @endif
+                </div>
+                <div class="col-md-6">
+                  @if($step == 1)
+                    <div class="form-group row">
+                      <label class="col-md-4 col-form-label text-right">Brand</label>
+                      <div class="col-md-6">
+                        <select class="form-control js-select2 select-brand" data-index="0">
+                          <option value="">Pilih Merek</option>
+                          @foreach($brand as $index => $row)
+                          <option value="{{$row->id}}">{{$row->brand_name}}</option>
+                          @endforeach
+                        </select>
+                      </div>
+                    </div>
+                    @endif
                 </div>
               </div>
             </div>
           </div>
         </div>
+      </div>
 
       <hr />
-      <div class="block">
+        <div class="block">
           <div class="block-header block-header-default">
-            <h3 class="block-title">#Add Product</h3>
-            <a href="#" class="row-add">
-              <button type="button" class="btn bg-gd-sea border-0 text-white">
-                <i class="fa fa-plus mr-10"></i> Row
-              </button>
-            </a>
+            <h3 class="block-title">Add Product</h3>
+            
           </div>
           <div class="block-content">
-            <div class="container">
-              <div class="row">
-                <table id="datatable" class="table table-striped table-vcenter table-responsive">
-                  <thead>
-                    <tr>
-                      <th class="text-center">Counter</th>
-                      <th class="text-center">Category</th>
-                      <th class="text-center">Packaging</th>
-                      <th class="text-center">Product</th>
-                      <th class="text-center">Qty</th>
-                      <th class="text-center">Price</th>
-                      <th class="text-center">Action</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                  </tbody>
-                </table>
+            <div class="row">
+              <div class="col-12 product-list">
+                <div class="row">
+                  <div class="col-2">Category</div>
+                  <div class="col-3">Product</div>
+                  <div class="col-3">Packaging</div>
+                  <div class="col-1">Qty</div>
+                  <div class="col-1">Free</div>
+                  <div class="col">Action</div>
+                </div>
+
+                <div class="row mt-10 product-row">
+                  <div class="col-2">
+                    <select class="form-control js-select2 select-category" name="category[]" data-index="0">
+                      <option value="">Select Category</option>
+                    </select>
+                  </div>
+                  <div class="col-3">
+                    <select class="form-control js-select2 select-product" name="product_id[]" data-index="0">
+                      <option value="">Select product</option>
+                    </select>
+                  </div>
+                  <div class="col-3">
+                    <select name="packaging_id[]" class="form-control js-select2 select-packaging" data-index="0">
+                      <option value="">Select packaging</option>
+                    </select>
+                  </div>
+                  <div class="col-1">
+                    <input type="number" name="qty[]" class="form-control input-qty" data-index="0" step="any">
+                  </div>
+                  <div class="col-1">
+                    <input type="checkbox" class="form-check-input input-gift" id="gift" name="gift">
+                    <input class="form-control input-free" type="hidden" id="free_product" name="free_product[]" data-index="0" step="any">
+                  </div>
+                  <div class="col"><button type="button" id="buttonAddProduct" class="btn btn-primary"><em class="fa fa-plus"></em></button></div>
+                </div>
+                <hr />
+
               </div>
             </div>
           </div>
@@ -247,47 +244,187 @@
     })
 
     // add product
-    var table = $('#datatable').DataTable({
-        paging: false,
-        bInfo : false,
-        searching: false,
-        columns: [
-          {name: 'counter', "visible": false},
-          {name: 'category', orderable: false, width: "15%"},
-          {name: 'packaging', orderable: false, searcable: false, width: "15%"},
-          {name: 'product', orderable: false, searcable: false, width: "25%"},
-          {name: 'qty', orderable: false, searcable: false, width: "5%"},
-          {name: 'price', orderable: false, searcable: false},
-          {name: 'action', orderable: false, searcable: false, width: "5%"}
-        ],
-        'order' : [[0,'desc']]
+    $(document).on('click','#buttonAddProduct',function(){
+      const categoryId = $('.select-category[data-index=0]').val();
+      const categoryText = $('.select-category[data-index=0] option:selected').text();
+      const productId = $('.select-product[data-index=0]').val();
+      const productText = $('.select-product[data-index=0] option:selected').text();
+      const qty = $('.input-qty[data-index=0]').val();
+      const packagingId = $('.select-packaging[data-index=0]').val();
+      const packagingText = $('.select-packaging[data-index=0] option:selected').text();
+      const free = $('.input-free[data-index=0]').val();
+
+      if (categoryId === null || categoryId === '' || productId === null || productId === '' || qty === null || qty === '' || packagingId == null || packagingId === '' ) {
+        Swal.fire(
+          'Error!',
+          'Please input all the data',
+          'error'
+        );
+        return;
+      }
+
+      let html = "<div class='row mt-10 product-row brand-" + categoryId + "'>";
+      html += "  <div class='col-2'>";
+      html += "    <input type='hidden' class='form-control' value='" + categoryId + "'>";
+      html += categoryText;
+      html += "  </div>";
+      html += "  <div class='col-3'>";
+      html += "    <input type='hidden' name='product_id[]' class='form-control' value='" + productId + "'>";
+      html += productText;
+      html += "  </div>";
+      html += "  <div class='col-3'>";
+      html += "    <input type='hidden' name='packaging_id[]' class='form-control' value='" + packagingId + "'>";
+      html += packagingText;
+      html += "  </div>";
+      html += "  <div class='col-1 text-right'>";
+      html += "    <input type='hidden' name='qty[]' class='form-control' value='" + qty + "'>";
+      html += qty;
+      html += "  </div>";
+      html += "  <div class='col-1'>";
+      html += "    <input type='hidden' name='free_product[]' class='form-control free' value='" + free + "'>";
+      html += free;
+      html += "  </div>";
+      html += "  <div class='col'>";
+      html += "    <button type='button' id='buttonDeleteProduct' class='btn btn-danger'><em class='fa fa-minus'></em></button>";
+      html += "  </div>";
+      html += "</div>";
+      
+      if ($('.product-row.category-' + categoryId).length > 0) {
+        $('body').find('.product-row.category-' + categoryId + ':last').after(html);
+      } else {
+        $('body').find('.product-list').append(html);
+      }
+
+      $('.select-category[data-index=0]').val('').change();
+      $('.select-product[data-index=0]').val('').change();
+      $('.input-qty[data-index=0]').val('');
+      $('.select-packaging[data-index=0]').val('').change();
+      $('.input-free[data-index=0]').val();
+
+      $('.select-category[data-index=0]').select2('focus');
+
+      productCount++;
+    });
+
+    $(document).on('click','#buttonDeleteProduct',function(){
+      $(this).parents(".product-row").remove();
+    });
+
+    // load Category
+    var param = [];
+    param["brand_lokal_id"] = "";
+
+    loadCategory({});
+
+    $(document).on('change','.select-brand',function(){
+      if ($(this).val() === '') return;
+
+      param["brand_lokal_id"] = $(this).val();
+      loadCategory({
+        brand_lokal_id:param["brand_lokal_id"],
+        index: $(this).data("index")
+      })
     })
-    var counter = 1;
 
-    $('a.row-add').on( 'click', function (e) {
-      e.preventDefault();
-      
-      table.row.add([
-                    counter,
-                    '<select class="js-select2 form-control js-ajax" id="category['+counter+']" name="category[]" data-placeholder="Select Category" style="width:100%" required></select>',
-                    '<select class="js-select2 form-control js-ajax" id="packaging[]" name="packaging[]" data-placeholder="Select Packaging" style="width:100%" required></select>',
-                    '<select class="js-select2 form-control js-ajax" id="product[]" name="product[]" data-placeholder="Select Product" style="width:100%" required></select>',
-                    '<input type="number" class="form-control" name="total[]" readonly>',
-                    '<input type="number" class="form-control" name="quantity[]" readonly required>',
-                    '<input type="number" class="form-control" name="price[]" readonly required>',
-                    '<a href="#" class="row-delete"><button type="button" class="btn btn-sm btn-circle btn-alt-danger" title="Delete"><i class="fa fa-trash"></i></button></a>'
-                  ]).draw( false );
-                  // $('.js-select2').select2()
-                  initailizeSelect2();
-      counter++;
-    });
- 
-    $('#datatable tbody').on( 'click', '.row-delete', function (e) {
-      e.preventDefault();
-      
-      table.row( $(this).parents('tr') ).remove().draw();
+    function loadCategory(param){
+      $.ajax({
+        url : '{{route('superuser.penjualan.sales_order.get_category')}}',
+        method : "GET",
+        data : param,
+        dataType : "JSON",
+        success : function(resp){
+          let option = "";
+          option = '<option value="">Select Category</option>';
+          $.each(resp.Data,function(i,e){
+            option += '<option value="'+e.catId+'">'+e.categoryName+'</option>';
+          })
+          $('.select-category[data-index=' + param.index + ']').html(option);
+        },
+        error : function(){
+          alert("Cek Koneksi Internet");
+        }
+      })
+    }
+    
+    // load product
+    var param = [];
+    param["category_id"] = "";
 
-    });
+    loadProduct({});
+
+    $(document).on('change','.select-category',function(){
+      if ($(this).val() === '') return;
+
+      param["category_id"] = $(this).val();
+      loadProduct({
+        category_id:param["category_id"],
+        index: $(this).data("index")
+      })
+    })
+
+    function loadProduct(param){
+      $.ajax({
+        url : '{{route('superuser.penjualan.sales_order.get_product')}}',
+        method : "GET",
+        data : param,
+        dataType : "JSON",
+        success : function(resp){
+          let option = "";
+          option = '<option value="">Select Product</option>';
+          $.each(resp.Data,function(i,e){
+            option += '<option value="'+e.id+'">'+e.productCode+' - '+e.productName+'</option>';
+          })
+          $('.select-product[data-index=' + param.index + ']').html(option);
+        },
+        error : function(){
+          alert("Cek Koneksi Internet");
+        }
+      })
+    }
+
+    // load packaging
+    var param = [];
+    param["product_id"] = "";
+
+    loadPackaging({});
+
+    $(document).on('change','.select-product',function(){
+      if ($(this).val() === '') return;
+
+      param["product_id"] = $(this).val();
+      loadPackaging({
+        product_id:param["product_id"],
+        index: $(this).data("index")
+      })
+    })
+
+    function loadPackaging(param){
+      $.ajax({
+        url : '{{route('superuser.penjualan.sales_order.get_packaging')}}',
+        method : "GET",
+        data : param,
+        dataType : "JSON",
+        success : function(resp){
+          let option = "";
+          option = '<option value="">Select Packaging</option>';
+          $.each(resp.Data,function(i,e){
+            option += '<option value="'+e.id+'">'+e.pack_name+'</option>';
+          })
+          $('.select-packaging[data-index=' + param.index + ']').html(option);
+        },
+        error : function(){
+          alert("Cek Koneksi Internet");
+        }
+      })
+    }
+
+    $('.input-gift').click(function(){
+    if($(this).is(':checked')){
+        $('.input-free[data-index=0]').val(1);
+    } else {
+        $('.input-free[data-index=0]').val(0);
+    }
+});
   })
 </script>
 @endpush
