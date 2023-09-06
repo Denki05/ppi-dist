@@ -1098,7 +1098,7 @@ class SalesOrderController extends Controller
                                     ->where('warehouse_id', $row->so->origin_warehouse_id)
                                     ->sum('quantity');
                                 
-                                if($stock < $so_qty){
+                                if($stock < $value["so_qty"]){
                                     
                                     $out_of_stock = true;
                                     break;
@@ -1107,8 +1107,6 @@ class SalesOrderController extends Controller
 
                             if($out_of_stock){
                                 $errors[] = 'Out Of Stock, Please contact Administrator!';
-                            }else{
-                                
                             }
                         }
                         if (count($data) == 0) {
