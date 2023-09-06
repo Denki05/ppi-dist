@@ -414,11 +414,45 @@
 </main>
 @endif
 
+<form method="post" action="{{route('superuser.penjualan.sales_order.destroy')}}" id="frmDestroyItem">
+    @csrf
+    <input type="hidden" name="id">
+</form>
+<form method="post" action="{{route('superuser.penjualan.sales_order.lanjutkan')}}" id="frmLanjutkan">
+    @csrf
+    <input type="hidden" name="id">
+</form>
+<form method="post" action="{{route('superuser.penjualan.sales_order.kembali')}}" id="frmKembali">
+    @csrf
+    <input type="hidden" name="id">
+</form>
+<form method="post" action="{{route('superuser.penjualan.packing_order.ready')}}" id="frmReady">
+    @csrf
+    <input type="hidden" name="id">
+</form>
+<form method="post" action="{{route('superuser.penjualan.packing_order.revisi')}}" id="frmRevisi">
+    @csrf
+    <input type="hidden" name="id">
+</form>
+<form method="post" action="{{route('superuser.penjualan.delivery_order.cancel_proses')}}" id="frmCancel">
+    @csrf
+    <input type="hidden" name="id">
+</form>
+<form method="post" action="{{route('superuser.penjualan.delivery_order.do_edit')}}" id="frmDoEdit">
+    @csrf
+    <input type="hidden" name="id">
+</form>
 @endsection
+@include('superuser.asset.plugin.select2')
+@include('superuser.asset.plugin.swal2')
 @include('superuser.asset.plugin.datatables')
 
 @push('scripts')
 <script type="text/javascript">
+  let datatableUrl = '{{ route('superuser.master.customer_other_address.json') }}';
+  let firstDatatableUrl = datatableUrl +
+        '?member_name=all';
+
   $(function(){
     $('#so_lanjutan').DataTable( {
         "paging":   false,
@@ -462,6 +496,109 @@
           "targets": 0,
           "orderable": false
         }]
+    });
+
+    var datatable = $('#member_list').DataTable({
+        language: {
+              processing: "<span class='fa-stack fa-lg'>\n\
+                                    <i class='fa fa-spinner fa-spin fa-stack-2x fa-fw'></i>\n\
+                              </span>",
+        },
+        processing: true,
+        serverSide: false,
+        searching: false,
+        paging: false,
+        info: false,
+        ajax: {
+          "url": datatableUrl,
+          "dataType": "json",
+          "type": "GET",
+          "data":{ _token: "{{csrf_token()}}"}
+        },
+        columns: [
+          {data: 'DT_RowIndex', name: 'id'},
+          {data: 'member_name', name: 'master_customer_other_addresses.name'},
+          {data: 'member_kota', name: 'master_customer_other_addresses.text_kota'},
+          {data: 'category_name', name: 'master_customer_categories.name'},
+          {data: 'action'}
+        ],
+        order: [
+          [1, 'desc']
+        ],
+        pageLength: 5,
+        lengthMenu: [
+          [5, 15, 20],
+          [5, 15, 20]
+        ],
+      });
+
+      $('#filter').on('click', function(e) {
+        e.preventDefault();
+        var member_name = $('#member_name').val();
+        let newDatatableUrl = datatableUrl + '?member_name=' + member_name;
+        datatable.ajax.url(newDatatableUrl).load();
+      })
+
+      $('.js-select2').select2();
+
+      $(document).on('click','.btn-delete',function(){
+        if(confirm("Apakah anda yakin ingin menghapus SO ini ? ")){
+          let id = $(this).data('id');
+          $('#frmDestroyItem').find('input[name="id"]').val(id);
+          $('#frmDestroyItem').submit();
+        }
+      })
+
+      $(document).on('click','.btn-lanjutan',function(){
+        if(confirm("Apakah anda yakin ingin mengajukan sales order ke Lanjutan?")){
+          let id = $(this).data('id');
+          $('#frmLanjutkan').find('input[name="id"]').val(id);
+          $('#frmLanjutkan').submit();
+        }
+      })
+
+      $(document).on('click','.btn-kembali-ke-awal',function(){
+        if(confirm("Apakah anda yakin ingin mengembalikan sales order ini?")){
+          let id = $(this).data('id');
+          $('#frmKembali').find('input[name="id"]').val(id);
+          $('#frmKembali').submit();
+        }
+      })
+
+    $(document).on('click','.btn-ready',function(){
+      if(confirm("Apakah anda yakin ingin mengubah status SO Validasi ke Ready?")){
+        let id = $(this).data('id');
+        $('#frmReady').find('input[name="id"]').val(id);
+        $('#frmReady').submit();
+      }
+    })
+
+    $(document).on('click','.btn-frmedit',function(){
+      if(confirm("Apakah anda yakin melakukan Edit?")){
+        let id = $(this).data('id');
+        $('#frmRevisi').find('input[name="id"]').val(id);
+        $('#frmRevisi').submit();
+      }
+    })
+
+    $(document).on('click','.btn-cancel',function(){
+      if(confirm("Apakah anda yakin melakukan Cancel DO?")){
+        let id = $(this).data('id');
+        $('#frmCancel').find('input[name="id"]').val(id);
+        $('#frmCancel').submit();
+      }
+    })
+
+    $(document).on('click','.btn-frmdoedit',function(){
+      if(confirm("Apakah anda yakin melakukan Update DO?")){
+        let id = $(this).data('id');
+        $('#frmDoEdit').find('input[name="id"]').val(id);
+        $('#frmDoEdit').submit();
+      }
+    })
+
+    $("#filter").on("click", function(){
+      $("#member_list").toggle();
     });
   })
 </script>
