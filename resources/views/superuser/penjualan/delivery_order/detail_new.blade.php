@@ -107,9 +107,9 @@
             @foreach($result->do_detail as $index => $row)
               <tr>
                 <td>{{$index+1}}</td>
-                <td>{{ $row->product->code }} - {{$row->product->name}}</td>
+                <td>{{ $row->product_pack->code }} - {{$row->product_pack->name}}</td>
                 <td>{{$row->qty}}</td>
-                <td>{{$row->product->kemasan()->pack_name}}</td>
+                <td>{{$row->product_pack->kemasan()->pack_name}}</td>
                 <td><input type="checkbox" class="confirm-item" value="{{$row->id}}" /></td>
               </tr>
             @endforeach

@@ -19,7 +19,7 @@ class ProductPack extends Model
                         'code', 
                         'name',
                         'price', 
-                        'stock', 
+                        // 'stock', 
                         'gender', 
                         'note', 
                         'status',

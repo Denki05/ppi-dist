@@ -64,7 +64,7 @@
                 <tr>
                   <td>{{$table->firstItem() + $index}}</td>
                   <td>{{$row->product_pack->code ?? ''}} - <b>{{$row->product_pack->name ?? ''}}</b></td>
-                  <td>{{$row->product_pack->kemasan()}}</td>
+                  <td>{{$row->product_pack->kemasan()->pack_name}}</td>
                   <td>{{$row->warehouse->name ?? ''}}</td>
                   <td>{{$row->stock_in ?? ''}}</td>
                   <td>{{$row->stock_out ?? ''}}</td>
@@ -72,7 +72,7 @@
                   <td>{{$row->so ?? ''}}</td>
                   <td>{{$row->effective ?? ''}}</td>
                   <td>
-                    <a href="{{ route('superuser.gudang.stock.detail') }}?product_id={{$row->product_id}}&warehouse_id={{$row->warehouse_id}}" class="btn btn-primary btn-sm btn-flate"><i class="fa fa-eye"></i> Detail</a>
+                    <a href="{{ route('superuser.gudang.stock.detail') }}?product_packaging_id={{$row->product_packaging_id}}&warehouse_id={{$row->warehouse_id}}" class="btn btn-primary btn-sm btn-flate"><i class="fa fa-eye"></i> Detail</a>
                   </td>
                 </tr>
               @endforeach

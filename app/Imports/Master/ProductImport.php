@@ -112,7 +112,7 @@ class ProductImport implements ToCollection, WithHeadingRow, WithStartRow, Skips
                                 $child_product->code = $row['code'];
                                 $child_product->name = $row['name'];
                                 $child_product->price = $row['selling_price'];
-                                $child_product->stock = 1000;
+                                // $child_product->stock = 1000;
                                 $child_product->gender = $row['gender'];
                                 $child_product->note = $row['description'];
                                 $child_product->status = ProductPack::STATUS['ACTIVE'];
@@ -122,7 +122,7 @@ class ProductImport implements ToCollection, WithHeadingRow, WithStartRow, Skips
                                 $min_stock->product_packaging_id = $child_product->id;
                                 $min_stock->warehouse_id = $warehouse->id;
                                 $min_stock->unit_id = 1;
-                                $min_stock->quantity = $child_product->stock;
+                                $min_stock->quantity = 1000;
                                 $min_stock->selling_price = $child_product->price;
                                 $min_stock->save();
                         }

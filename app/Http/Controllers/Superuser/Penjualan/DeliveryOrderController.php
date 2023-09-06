@@ -495,12 +495,12 @@ class DeliveryOrderController extends Controller
 
                 foreach ($detail_item as $key => $value) {
                     // Definisi stock sebelum pemotongan
-                    $stock_product = ProductMinStock::where('product_id',$value->product_id)
-                                                    ->where('warehouse_id',$detail_do->warehouse_id)
+                    $stock_product = ProductMinStock::where('product_packaging_id', $value->product_id)
+                                                    ->where('warehouse_id', $detail_do->warehouse_id)
                                                     ->sum('quantity');
                     // Definisi membaca product dan warehouse
-                    $move = StockMove::where('product_id',$value->product_id)
-                                        ->where('warehouse_id',$detail_do->warehouse_id)->get();
+                    $move = StockMove::where('product_id', $value->product_id)
+                                        ->where('warehouse_id', $detail_do->warehouse_id)->get();
                     // defisini stock in atau out
                     $move_in = $move->sum('stock_in');
                     $move_out = $move->sum('stock_out');

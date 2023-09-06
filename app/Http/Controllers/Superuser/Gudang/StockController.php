@@ -81,28 +81,28 @@ class StockController extends Controller
             $stock = 0;
             $stock_out = 0;
             $effective = 0;
-            $so = SalesOrderItem::where('product_id',$value->product_id)
+            $so = SalesOrderItem::where('product_id',$value->product_packaging_id)
                                 ->whereHas('so',function($query2) use($value){
                                     $query2->where('origin_warehouse_id',$value->warehouse_id);
                                 })->sum('qty');
 
-            $do = PackingOrderItem::where('product_id',$value->product_id)
+            $do = PackingOrderItem::where('product_id', $value->product_packaging_id)
                                 ->whereHas('do',function($query2) use($value){
                                     $query2->where('status','>',1);
-                                    $query2->where('warehouse_id','=',$value->warehouse_id);
+                                    $query2->where('warehouse_id', '=', $value->warehouse_id);
                                 })->sum('qty');
 
-            $do_mutation = DeliveryOrderMutationItem::where('product_id',$value->product_id)
+            $do_mutation = DeliveryOrderMutationItem::where('product_id', $value->product_packaging_id)
                                 ->whereHas('do_mutation',function($query2) use($value){
                                     $query2->where('status','>',1);
                                     $query2->where('origin_warehouse_id',$value->warehouse_id);
                                 })->sum('qty');
-            $canvasing = CanvasingItem::where('product_id',$value->product_id)
+            $canvasing = CanvasingItem::where('product_id', $value->product_packaging_id)
                                 ->whereHas('canvasing',function($query2) use($value){
                                     $query2->where('status','>',1);
                                     $query2->where('warehouse_id',$value->warehouse_id);
                                 })->sum('qty');
-            $move = StockMove::where('product_id',$value->product_id)
+            $move = StockMove::where('product_id', $value->product_packaging_id)
                                 ->where('warehouse_id',$value->warehouse_id)->get();
 
 
@@ -111,7 +111,7 @@ class StockController extends Controller
 
             $stock_out = $move_out;
             $stock  = floatval($value->stock_in + $move_in - $move_out);
-            $effective = $stock - $so;
+            $effective = $stock;
 
             $value->stock = $stock;
             $value->stock_in = $move_in;
@@ -145,11 +145,11 @@ class StockController extends Controller
             }
         }
 
-        $result = ProductMinStock::select(DB::raw('SUM(master_product_min_stocks.quantity) as stock_in'),'master_product_min_stocks.product_id','master_product_min_stocks.warehouse_id')
-                                   ->where('product_id',$request->input('product_id'))
+        $result = ProductMinStock::select(DB::raw('SUM(master_product_min_stocks.quantity) as stock_in'),'master_product_min_stocks.product_packaging_id','master_product_min_stocks.warehouse_id')
+                                   ->where('product_packaging_id', $request->input('product_packaging_id'))
                                    ->where('warehouse_id',$request->input('warehouse_id'))
                                    ->groupBy('warehouse_id')
-                                   ->groupBy('product_id')
+                                   ->groupBy('product_packaging_id')
                                    ->first();
         if(empty($result)){
             abort(404);
