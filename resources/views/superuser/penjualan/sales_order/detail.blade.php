@@ -18,7 +18,7 @@
         <div class="form-group row">
           <label class="col-md-3 col-form-label text-right" for="type_transaction">Type Transaction</label>
           <div class="col-md-7">
-            <div class="form-control-plaintext">{{$result->so_type_transaction()->scalar ?? ''}}</div>
+            
           </div>
         </div>
         <div class="form-group row">
@@ -103,7 +103,7 @@
                     <td>{{$loop->iteration}}</td>
                     <td>{{$row->product->code ?? ''}}</td>
                     <td>{{$row->product->name ?? ''}}</td>
-                    <td>{{$row->product->category->brand_name ?? ''}}</td>
+                    <td>{{$row->product->product->brand_name ?? ''}}</td>
                     <td>
                       @if($row->status <> 4)
                         {{$row->qty ?? '0'}}
@@ -111,7 +111,7 @@
                         {{$row->qty_worked ?? '0'}}
                       @endif
                     </td>
-                    <td>{{$row->product->category->packaging->pack_name}}</td>
+                    <td>{{$row->product->kemasan()->pack_name}}</td>
                   </tr>
                 @endforeach
               @else

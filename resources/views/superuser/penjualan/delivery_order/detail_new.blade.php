@@ -57,7 +57,7 @@
             <label class="col-md-3 col-form-label text-right" for="customer">Customer</label>
             <div class="col-md-7">
               <!-- <div class="form-control-plaintext">{{$result->member->name ?? ''}}</div> -->
-              <input type="text" class="form-control" value="{{ $result->member->name}} | {{ $result->member->address }}" readonly>
+              <input type="text" class="form-control" value="{{ $result->member->name}} {{ $result->member->text_kota }}" readonly>
             </div>
           </div>
           <div class="form-group row">
@@ -109,7 +109,7 @@
                 <td>{{$index+1}}</td>
                 <td>{{ $row->product->code }} - {{$row->product->name}}</td>
                 <td>{{$row->qty}}</td>
-                <td>{{$row->packaging->pack_name}}</td>
+                <td>{{$row->product->kemasan()->pack_name}}</td>
                 <td><input type="checkbox" class="confirm-item" value="{{$row->id}}" /></td>
               </tr>
             @endforeach

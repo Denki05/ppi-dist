@@ -29,8 +29,8 @@ class PackingOrderItem extends Model
         public function do(){
         	return $this->BelongsTo('App\Entities\Penjualan\PackingOrder','do_id','id');
         }
-        public function product(){
-        	return $this->BelongsTo('App\Entities\Master\Product','product_id','id');
+        public function product_pack(){
+        	return $this->BelongsTo('App\Entities\Master\ProductPack','product_id','id');
         }
         public function so_item(){
             return $this->belongsTo('App\Entities\Penjualan\SalesOrderItem', 'so_item_id', 'id');

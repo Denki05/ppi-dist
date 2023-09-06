@@ -323,6 +323,7 @@ class DeliveryOrderController extends Controller
                 $data = [
                     'code' => CodeRepo::generateInvoicing($result->do_code),
                     'do_id' => $result->id,
+                    'customer_other_address_id' => $result->customer_other_address_id,
                     'grand_total_idr' => $do_cost->grand_total_idr,
                     'created_by' => Auth::id(),
                 ];

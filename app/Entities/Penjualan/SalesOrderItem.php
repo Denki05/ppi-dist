@@ -24,19 +24,8 @@ class SalesOrderItem extends Model
         public function so(){
         	return $this->BelongsTo('App\Entities\Penjualan\SalesOrder','so_id','id');
         }
-        public function product(){
+        public function product_pack(){
         	return $this->BelongsTo('App\Entities\Master\ProductPack','product_id','id');
-        }
-        
-        // public function packaging_txt(){
-        //     return (object) self::PACKAGING[$this->packaging];
-        // }
-        // public function packaging_val(){
-        //     return (object) self::PACKAGING_VALUE[$this->packaging];
-        // }
-
-        public function packaging(){
-            return $this->BelongsTo('App\Entities\Master\Packaging', 'packaging_id', 'id');
         }
 
         public function getQtyAttribute($value)
