@@ -1,6 +1,7 @@
 @extends('superuser.app')
 
 @section('content')
+
 @if(session('error') || session('success'))
 <div class="alert alert-{{ session('error') ? 'danger' : 'success' }} alert-dismissible fade show" role="alert">
     @if (session('error'))
@@ -13,6 +14,7 @@
     </button>
 </div>
 @endif
+
 <h4 style="font-weight: bold;">#DELIVERY ORDER</h4>
 <main style="background:#fff">
   

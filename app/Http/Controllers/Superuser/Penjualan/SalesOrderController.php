@@ -23,6 +23,7 @@ use App\Entities\Master\ProductCategory;
 use App\Entities\Master\BrandLokal;
 use App\Entities\Master\Product;
 use App\Entities\Master\ProductPack;
+use App\Entities\Master\ProductMinStock;
 use App\Entities\Master\Sales;
 use App\Entities\Master\Ekspedisi;
 use App\Entities\Master\Vendor;
@@ -327,7 +328,7 @@ class SalesOrderController extends Controller
                         }
                             $insertDetail = new SalesOrderItem;
                             $insertDetail->so_id = $insert->id;
-                            $insertDetail->product_id = trim(htmlentities(implode("-", [$post["product_id"][$i],$post["packaging_id"][$i]])));
+                            $insertDetail->product_packaging_id = trim(htmlentities(implode("-", [$post["product_id"][$i],$post["packaging_id"][$i]])));
                             $insertDetail->qty = trim(htmlentities($post["qty"][$i]));
                             $insertDetail->packaging_id = trim(htmlentities($post["packaging_id"][$i]));
                             $insertDetail->free_product = trim(htmlentities($post["free_product"][$i]));
@@ -1018,6 +1019,7 @@ class SalesOrderController extends Controller
                         $packing_order_detail->save();
 
                         $data = [];
+                        $out_of_stock = false;
                         foreach ($request->repeater as $key => $value) {
                             if (empty($value["so_qty"]) || (!empty($value["so_qty"]) && $value["so_qty"] <= 0)) {
                                 
@@ -1042,7 +1044,7 @@ class SalesOrderController extends Controller
                             if(empty($value["so_item_id"])){
                                 $errors[] = 'SO Item ID tidak boleh kosong';
                             }
-                            if(empty($value["product_id"])){
+                            if(empty($value["product_packaging_id"])){
                                 $errors[] = 'Product ID tidak boleh kosong';
                             }
                             if(empty($value["price"])){
@@ -1066,7 +1068,7 @@ class SalesOrderController extends Controller
                                 $total_disc = floatval(($usd_disc + (($price - $usd_disc) * ($percent_disc/100))) * $do_qty);
                                 $data[] = [
                                     'do_id' => $packing_order->id,
-                                    'product_id' => $value["product_id"],
+                                    'product_packaging_id' => $value["product_packaging_id"],
                                     'so_item_id' => $value["so_item_id"],
                                     'packaging_id' => $value["packaging"],
                                     'qty' => $do_qty,
@@ -1087,6 +1089,26 @@ class SalesOrderController extends Controller
                                 $updateSO = SalesOrderItem::where('id',$value["so_item_id"])->update([
                                     'qty_worked' => $do_qty
                                 ]);
+                            }
+
+                            // Potong stcok
+                            $order_item = SalesOrderItem::where('id', $value["so_item_id"])->get();
+                            foreach($order_item as $row){
+                                $stock = ProductMinStock::where('product_packaging_id', $row->product_packaging_id)
+                                    ->where('warehouse_id', $row->so->origin_warehouse_id)
+                                    ->sum('quantity');
+                                
+                                if($stock < $so_qty){
+                                    
+                                    $out_of_stock = true;
+                                    break;
+                                }
+                            }
+
+                            if($out_of_stock){
+                                $errors[] = 'Out Of Stock, Please contact Administrator!';
+                            }else{
+                                
                             }
                         }
                         if (count($data) == 0) {

@@ -11,7 +11,7 @@ class PackingOrderItem extends Model
         protected $table = "penjualan_do_item";
         protected $fillable =[
         	'do_id',
-        	'product_id',
+        	'product_packaging_id',
         	'so_item_id',
         	'qty',
         	'price',
@@ -30,7 +30,7 @@ class PackingOrderItem extends Model
         	return $this->BelongsTo('App\Entities\Penjualan\PackingOrder','do_id','id');
         }
         public function product_pack(){
-        	return $this->BelongsTo('App\Entities\Master\ProductPack','product_id','id');
+        	return $this->BelongsTo('App\Entities\Master\ProductPack','product_packaging_id','id');
         }
         public function so_item(){
             return $this->belongsTo('App\Entities\Penjualan\SalesOrderItem', 'so_item_id', 'id');

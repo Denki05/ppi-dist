@@ -275,7 +275,7 @@
                   @endif
                   @if(count($result->so_detail) > 0)
                     @foreach($result->so_detail as $index => $detail)
-                    <input type="hidden" name="repeater[{{$index}}][product_id]" value="{{$detail->product_id}}">
+                    <input type="hidden" name="repeater[{{$index}}][product_packaging_id]" value="{{$detail->product_packaging_id}}">
                     <input type="hidden" name="repeater[{{$index}}][so_qty]" value="{{$detail->qty}}">
                     <input type="hidden" name="repeater[{{$index}}][so_item_id]" value="{{$detail->id}}">
                     <tr class="index{{$index}}" data-index="{{$index}}">

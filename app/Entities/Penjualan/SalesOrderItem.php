@@ -11,7 +11,7 @@ class SalesOrderItem extends Model
         protected $table = "penjualan_so_item";
         protected $fillable =[
         	'so_id',
-        	'product_id',
+        	'product_packaging_id',
         	'qty',
         	'qty_worked',
             'packaging_id',
@@ -25,7 +25,7 @@ class SalesOrderItem extends Model
         	return $this->BelongsTo('App\Entities\Penjualan\SalesOrder','so_id','id');
         }
         public function product_pack(){
-        	return $this->BelongsTo('App\Entities\Master\ProductPack','product_id','id');
+        	return $this->BelongsTo('App\Entities\Master\ProductPack','product_packaging_id','id');
         }
 
         public function getQtyAttribute($value)
