@@ -333,7 +333,7 @@
                       <td><?= date('d-m-Y h:i:s',strtotime($row->created_at)); ?></td>
                       <td>{{$row->type_transaction}}</td>
                       <td>
-                      @if(!empty($row->status))
+                      @if($row->status == 2)
                           <span class="badge badge-secondary"><b>SO Lanjutan</b></span>
                         @endif
                         @if($row->status == 3)
