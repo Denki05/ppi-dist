@@ -101,9 +101,9 @@
                 @foreach($result->so_detail as $index => $row)
                   <tr>
                     <td>{{$loop->iteration}}</td>
-                    <td>{{$row->product->code ?? ''}}</td>
-                    <td>{{$row->product->name ?? ''}}</td>
-                    <td>{{$row->product->product->brand_name ?? ''}}</td>
+                    <td>{{$row->product_pack->code ?? ''}}</td>
+                    <td>{{$row->product_pack->name ?? ''}}</td>
+                    <td>{{$row->product_pack->product->brand_name ?? ''}}</td>
                     <td>
                       @if($row->status <> 4)
                         {{$row->qty ?? '0'}}
@@ -111,7 +111,7 @@
                         {{$row->qty_worked ?? '0'}}
                       @endif
                     </td>
-                    <td>{{$row->product->kemasan()->pack_name}}</td>
+                    <td>{{$row->product_pack->kemasan()->pack_name}}</td>
                   </tr>
                 @endforeach
               @else

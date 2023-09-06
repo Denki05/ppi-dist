@@ -280,20 +280,20 @@
                     <input type="hidden" name="repeater[{{$index}}][so_item_id]" value="{{$detail->id}}">
                     <tr class="index{{$index}}" data-index="{{$index}}">
                       <td>{{ $loop->iteration }}</td>
-                      <td>{{ $detail->product->code }} - <b>{{ $detail->product->name }}</td>
+                      <td>{{ $detail->product_pack->code }} - <b>{{ $detail->product_pack->name }}</td>
                       <td>{{$detail->qty}}</td>
                       <td>
                         <input type="number" name="repeater[{{$index}}][do_qty]" class="form-control count" data-index="{{$index}}" value="{{$detail->qty}}" step="any" min="0" max="{{$detail->qty}}">
                       </td>
                       <td>
-                        <input type="text" name="repeater[{{$index}}][price]" class="form-control price" readonly value="@if($detail->free_product == 1) 0 @else {{$detail->product->price}} @endif">
+                        <input type="text" name="repeater[{{$index}}][price]" class="form-control price" readonly value="@if($detail->free_product == 1) 0 @else {{$detail->product_pack->price}} @endif">
                       </td>
                       <td>
                         <input class="form-check-input free_product" type="checkbox" value="{{$detail->free_product}}" name="repeater[{{$index}}][free_product]" @if($detail->free_product == 1) checked=checked @endif disabled>
                       </td>
                       <td>
-                        <input type="text" name="kemasan" class="form-control" readonly value="{{$detail->product->kemasan()->pack_name ?? ''}}">
-                        <input type="hidden" name="repeater[{{$index}}][packaging]" class="form-control" readonly value="{{$detail->product->kemasan()->id ?? ''}}">
+                        <input type="text" name="kemasan" class="form-control" readonly value="{{$detail->product_pack->kemasan()->pack_name ?? ''}}">
+                        <input type="hidden" name="repeater[{{$index}}][packaging]" class="form-control" readonly value="{{$detail->product_pack->kemasan()->id ?? ''}}">
                       </td>
                       <td>
                         <input type="text" name="repeater[{{$index}}][usd_disc]" class="form-control count count-disc" data-index="{{$index}}" step="any">
