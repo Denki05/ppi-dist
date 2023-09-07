@@ -1019,7 +1019,6 @@ class SalesOrderController extends Controller
                         $packing_order_detail->save();
 
                         $data = [];
-                        $out_of_stock = false;
                         foreach ($request->repeater as $key => $value) {
                             if (empty($value["so_qty"]) || (!empty($value["so_qty"]) && $value["so_qty"] <= 0)) {
                                 
@@ -1090,32 +1089,37 @@ class SalesOrderController extends Controller
                                     'qty_worked' => $do_qty
                                 ]);
                             }
-
-                            // Potong stcok
-                            $order_item = SalesOrderItem::where('id', $value["so_item_id"])->get();
-                            foreach($order_item as $row){
-                                $stock = ProductMinStock::where('product_packaging_id', $row->product_packaging_id)
-                                    ->where('warehouse_id', $row->so->origin_warehouse_id)
-                                    ->sum('quantity');
-                                
-                                if($stock < $value["so_qty"]){
-                                    
-                                    $out_of_stock = true;
-                                    break;
-                                }
-                            }
-
-                            if($out_of_stock){
-                                $errors[] = 'Out Of Stock, Please contact Administrator!';
-                            }
                         }
+
                         if (count($data) == 0) {
                             DB::rollback();
                             $errors[] = 'Not item sales order are ready';
                         }
 
-                        foreach ($data as $key => $value) {
-                            $insert = PackingOrderItem::create($data[$key]);
+                        // Check Stock
+                        $out_of_stock = false;
+                        $product = 0;
+                        $order_item = SalesOrderItem::where('id', $value["so_item_id"])->get();
+                        foreach($order_item as $row){
+                            $stock = ProductMinStock::where('product_packaging_id', $row->product_packaging_id)
+                                ->where('warehouse_id', $row->so->origin_warehouse_id)
+                                ->sum('quantity');
+                            
+                            if($stock < $do_qty){
+                                $product = $value["product_packaging_id"];
+                                $out_of_stock = true;
+                                break;
+                            }
+                        }
+
+                        if($out_of_stock){
+                            DB::rollback();
+                            $product = ProductPack::find($product);
+                            $errors[] = 'Out Of Stock '.'<b>'.$product->name.'</b>'.', Please contact Administrator';
+                        }else{
+                            foreach ($data as $key => $value) {
+                                $insert = PackingOrderItem::create($data[$key]);
+                            }
                         }
 
                         // Cetak Invoice disini
