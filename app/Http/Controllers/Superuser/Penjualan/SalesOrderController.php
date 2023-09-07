@@ -325,7 +325,7 @@ class SalesOrderController extends Controller
                             $data_json["IsError"] = TRUE;
                             $data_json["Message"] = "Item sudah ada";
                             goto ResultData;
-                        }
+                        }else{
                             $insertDetail = new SalesOrderItem;
                             $insertDetail->so_id = $insert->id;
                             $insertDetail->product_packaging_id = trim(htmlentities(implode("-", [$post["product_id"][$i],$post["packaging_id"][$i]])));
@@ -334,6 +334,7 @@ class SalesOrderController extends Controller
                             $insertDetail->free_product = trim(htmlentities($post["free_product"][$i]));
                             $insertDetail->created_by = Auth::id();
                             $insertDetail->save();
+                        }
                     }
                 }
                 
