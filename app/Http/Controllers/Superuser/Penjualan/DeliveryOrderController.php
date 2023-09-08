@@ -317,7 +317,10 @@ class DeliveryOrderController extends Controller
             if($do_cost->grand_total_idr == 0){
                 return redirect()->route('superuser.penjualan.delivery_order.index')->with('error','Harga didalam packing list belum di set');
             }
+
             $update = PackingOrder::where('id',$post["id"])->update(['status' => 4]);
+            
+            DB::commit();
 
             // Create Invoice
             if ($result->type_transaction == 'TEMPO'){
@@ -331,10 +334,6 @@ class DeliveryOrderController extends Controller
                 
                 $insert = Invoicing::create($data);
             }
-
-            DB::commit();
-            return redirect()->route('superuser.penjualan.delivery_order.index')->with('success','Delivery Order berhasil diubah ke packed');
-
         }catch(\Throwable $e){
             // DD($e);
             DB::rollback();

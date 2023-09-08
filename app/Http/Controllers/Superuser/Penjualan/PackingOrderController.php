@@ -954,7 +954,6 @@ class PackingOrderController extends Controller
             else{
                 return redirect()->back()->with('error','SO gagal diproses ke DO');
             }
-            
         }catch(\Throwable $e){
             return redirect()->back()->with('error',$e->getMessage());
         }

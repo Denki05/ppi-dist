@@ -1020,6 +1020,8 @@ class SalesOrderController extends Controller
                         $packing_order_detail->save();
 
                         $data = [];
+                        $product = 0;
+                        $out_of_stock = false;
                         foreach ($request->repeater as $key => $value) {
                             if (empty($value["so_qty"]) || (!empty($value["so_qty"]) && $value["so_qty"] <= 0)) {
                                 
@@ -1084,6 +1086,19 @@ class SalesOrderController extends Controller
                                     'qty_worked' => $do_qty
                                 ]);
                             }
+
+                            // Check Stock
+                            foreach($sales_order->so_detail as $row){
+                                $stock = ProductMinStock::where('product_packaging_id', $row->product_packaging_id)->where('warehouse_id', $request->origin_warehouse_id)->first();
+
+                                if($stock){
+                                    if($stock->quantity < $do_qty){
+                                        $out_of_stock = true;
+                                        $product = $row->product_packaging_id;
+                                        break;
+                                    }
+                                }
+                            }
         
                             if(empty($do_qty) && $rej_qty > 0){
                                 $updateSO = SalesOrderItem::where('id',$value["so_item_id"])->update([
@@ -1097,26 +1112,10 @@ class SalesOrderController extends Controller
                             $errors[] = 'Not item sales order are ready';
                         }
 
-                        // Check Stock
-                        $out_of_stock = false;
-                        $product = 0;
-                        $order_item = SalesOrderItem::where('id', $value["so_item_id"])->get();
-                        foreach($order_item as $row){
-                            $stock = ProductMinStock::where('product_packaging_id', $row->product_packaging_id)
-                                ->where('warehouse_id', $row->so->origin_warehouse_id)
-                                ->sum('quantity');
-                            
-                            if($stock < $do_qty){
-                                $product = $value["product_packaging_id"];
-                                $out_of_stock = true;
-                                break;
-                            }
-                        }
-
                         if($out_of_stock){
-                            DB::rollback();
                             $product = ProductPack::find($product);
-                            $errors[] = 'Out Of Stock '.'<b>'.$product->name.'</b>'.', Please contact Administrator';
+                            $errors[] = 'Out Of Stock! <b>'.$product->name.'</b> Please contact Administrator';
+                            DB::rollback();
                         }else{
                             foreach ($data as $key => $value) {
                                 $insert = PackingOrderItem::create($data[$key]);
