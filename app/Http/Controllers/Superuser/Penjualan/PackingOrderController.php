@@ -9,6 +9,8 @@ use App\Entities\Master\Warehouse;
 use App\Entities\Master\Customer;
 use App\Entities\Master\Dokumen;
 use App\Entities\Master\Vendor;
+use App\Entities\Master\ProductMinStock;
+use App\Entities\Gudang\StockMove;
 use App\Repositories\MasterRepo;
 use App\Entities\Master\CustomerSaldoLog;
 use App\Entities\Master\CustomerOtherAddress;
@@ -943,6 +945,34 @@ class PackingOrderController extends Controller
             if(empty($getDo->do_code)){
                 PackingOrder::where('id',$getDo->id)->update([
                     'do_code' => CodeRepo::generateDO()
+                ]);
+            }
+
+            // Potong Stock
+            $get_stock = 0;
+            foreach($getDo->do_detail as $row => $value){
+                $stock = ProductMinStock::where('warehouse_id', $getDo->warehouse_id)->where('product_packaging_id', $value->product_packaging_id)->first();
+
+                $get_stock = $stock->quantity;
+                $stock->quantity = $get_stock - $value->qty;
+                $stock->save();
+
+                // log stock
+                $move = StockMove::where('product_packaging_id' , $value->product_id)
+                    ->where('warehouse_id', $getDo->warehouse_id)
+                    ->get();
+                $move_in = $move->sum('stock_in');
+                $move_out = $move->sum('stock_out');
+
+                $sisa = $get_stock + $move_in - $move_out - $value->qty;
+
+                $insert_stock_move = StockMove::create([
+                    'code_transaction' => $getDo->do_code,
+                    'warehouse_id' => $getDo->warehouse_id,
+                    'product_packaging_id' => $value->product_packaging_id,
+                    'stock_out' => $value->qty,
+                    'stock_balance' => $sisa,
+                    'created_by' => Auth::id()
                 ]);
             }
 
