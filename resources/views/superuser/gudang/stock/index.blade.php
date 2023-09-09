@@ -2,119 +2,108 @@
 
 @section('content')
 <nav class="breadcrumb bg-white push">
-  <span class="breadcrumb-item">Gudang</span>
+  <span class="breadcrumb-item">Inventory</span>
   <span class="breadcrumb-item active">Stock</span>
 </nav>
-@if(session('error') || session('success'))
-<div class="alert alert-{{ session('error') ? 'danger' : 'success' }} alert-dismissible fade show" role="alert">
-    @if (session('error'))
-    <strong>Error!</strong> {!! session('error') !!}
-    @elseif (session('success'))
-    <strong>Berhasil!</strong> {!! session('success') !!}
-    @endif
-    <button type="button" class="close" data-dismiss="alert" aria-label="Close">
-        <span aria-hidden="true">&times;</span>
-    </button>
+@if($errors->any())
+<div class="alert alert-danger alert-dismissable" role="alert">
+  <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+      <span aria-hidden="true">×</span>
+  </button>
+  <h3 class="alert-heading font-size-h4 font-w400">Error</h3>
+  @foreach ($errors->all() as $error)
+  <p class="mb-0">{{ $error }}</p>
+  @endforeach
 </div>
 @endif
 <div class="block">
+  <div class="block-content">
+    <div class="form-group row">
+      <label class="col-md-2 col-form-label text-left" for="warehouse">Warehouse <span class="text-danger">*</span></label>
+      <div class="col-md-3">
+        <select class="js-select2 form-control" id="warehouse" name="warehouse" data-placeholder="Select Warehouse">
+          <option></option>
+          @foreach($warehouses as $warehouse)
+          <option value="{{ $warehouse->id }}">{{ $warehouse->name }}</option>
+          @endforeach
+        </select>
+      </div>
+    </div>
+  </div>
   <hr class="my-20">
   <div class="block-content block-content-full">
-      <form method="get" action="{{ route('superuser.gudang.stock.index') }}">
-        <div class="row">
-          <div class="col-lg-3">
-            <div class="form-group">
-              <select class="form-control js-select2" name="warehouse_id">
-                <option value="">==All Warehouse==</option>
-                @foreach($warehouse as $index => $row)
-                <option value="{{$row->id}}">{{$row->name}}</option>
-                @endforeach
-              </select>
-            </div>
-          </div>
-          <div class="col-lg-6">
-            <div class="input-group mb-3">
-                <input type="text" class="form-control" placeholder="Keyword" name="search">
-                <div class="input-group-append">
-                  <button type="submit" class="btn btn-primary"><i class="fa fa-search"></i></button>
-                </div>
-              </div>
-          </div>
-        </div>
-      </form>
-      <div class="row mb-30">
-        <div class="col-12">
-          <table class="table table-hover" id="datatables">
-            <thead>
-              <tr>
-                <th>#</th>
-                <th>Product</th>
-                <th>Packaging</th>
-                <th>Warehouse</th>
-                <th>In</th>
-                <th>Out</th>
-                <th>Stock</th>
-                <th>Forecast</th>
-                <th>Effective</th>
-                <th>Detail</th>
-              </tr>
-            </thead>
-            <tbody>
-              @foreach($table as $index => $row)
-                <tr>
-                  <td>{{$table->firstItem() + $index}}</td>
-                  <td>{{$row->product_pack->code ?? ''}} - <b>{{$row->product_pack->name ?? ''}}</b></td>
-                  <td>{{$row->product_pack->kemasan()->pack_name}}</td>
-                  <td>{{$row->warehouse->name ?? ''}}</td>
-                  <td>{{$row->stock_in ?? ''}}</td>
-                  <td>{{$row->stock_out ?? ''}}</td>
-                  <td>{{$row->stock ?? ''}}</td>
-                  <td>{{$row->so ?? ''}}</td>
-                  <td>{{$row->effective ?? ''}}</td>
-                  <td>
-                    <a href="{{ route('superuser.gudang.stock.detail') }}?product_packaging_id={{$row->product_packaging_id}}&warehouse_id={{$row->warehouse_id}}" class="btn btn-primary btn-sm btn-flate"><i class="fa fa-eye"></i> Detail</a>
-                  </td>
-                </tr>
-              @endforeach
-            </tbody>
-          </table>
-        </div>
-      </div>
-      
-      <div class="row mb-30">
-        <div class="col-12">
-          {{$table->links()}}
-        </div>
-      </div>
+    <table id="datatable" class="table table-striped">
+      <thead>
+        <tr>
+          <th class="text-center">SKU</th>
+          <th class="text-center">Item</th>
+          <th class="text-center">In</th>
+          <th class="text-center">Out</th>
+          <th class="text-center">Stock</th>
+          <th class="text-center">Sell Forecast</th>
+          <th class="text-center">Effective</th>
+        </tr>
+      </thead>
+    </table>
   </div>
 </div>
 @endsection
 
-<!-- Modal -->
-
-
-@include('superuser.asset.plugin.select2')
+@include('superuser.asset.plugin.swal2')
 @include('superuser.asset.plugin.datatables')
+@include('superuser.asset.plugin.select2')
+
+@section('modal')
+
+@endsection
 
 @push('scripts')
+<script type="text/javascript">
+$(document).ready(function() {
+  $('.js-select2').select2()
+  let datatableUrl = '{{ route('superuser.gudang.stock.json') }}';
 
-  <script type="text/javascript">
-    $(function(){
-      $(function(){
-        $('#datatables').DataTable( {
-          "paging":   false,
-          "ordering": true,
-          "info":     false,
-          "searching" : false,
-          "columnDefs": [{
-            "targets": 0,
-            "orderable": false
-          }]
-        });
-        
-        $('.js-select2').select2();
+  $('#warehouse').on('select2:select', function (e) {
+    var data = e.params.data;
+    
+    let newDatatableUrl = datatableUrl+'?warehouse_id='+data.id;
+    $('#datatable').DataTable().ajax.url(newDatatableUrl).load();
+      
+  });
 
-      });
-    })
-  </script>
+  $('#datatable').DataTable({
+    processing: true,
+    // serverSide: true,
+    ajax: {
+      "url": datatableUrl,
+      "dataType": "json",
+      "type": "GET",
+      "data":{ _token: "{{csrf_token()}}"}
+    },
+    // columns: [
+    //   {data: 'DT_RowIndex', name: 'id'},
+    //   {
+    //     data: 'created_at',
+    //     render: {
+    //       _: 'display',
+    //       sort: 'timestamp'
+    //     }
+    //   },
+    //   {data: 'code'},
+    //   {data: 'warehouse_id'},
+    //   {data: 'status'},
+    //   {data: 'action', orderable: false, searcable: false}
+    // ],
+    order: [
+      [0, 'asc']
+    ],
+    pageLength: 10,
+    lengthMenu: [
+      [10, 25, 50, 100],
+      [10, 25, 50, 100]
+    ],
+    "dom": '<"row"<"col-sm-2"l><"col-sm-7 text-left"B><"col-sm-3"f>> <"row"<"col-sm-12 col-md-12"p>> <"row"<"col-sm-12"rt>> <"row"<"col-sm-12 col-md-6"i><"col-sm-12 col-md-6"p>>',
+  });
+});
+</script>
 @endpush
