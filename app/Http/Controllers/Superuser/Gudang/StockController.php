@@ -83,7 +83,7 @@ class StockController extends Controller
                 $sell = !empty($value['sell']) ? $value['sell'] : 0;
                 $stock = $in - $out;
                 $effective = $stock - $sell;
-                $data['data'][] = [$product->code, '<a href="' . route('superuser.gudang.stock.detail', [$warehouse, $product->id]) . '" target="_blank">' . $product->name . '</a>', $in, $out, $stock, $sell, $effective];
+                $data['data'][] = ['<a href="' . route('superuser.gudang.stock.detail', [$warehouse, base64_encode($product->id)]) . '" target="_blank">' . $product->code.' - '.$product->name . '</a>', $product->kemasan()->pack_name , $in, $out, $stock, $sell, $effective];
             }
 
             if (empty($collect)) {
@@ -112,7 +112,9 @@ class StockController extends Controller
 
     public function detail($warehouse, $product)
     {
-        $data['product'] = ProductPack::findOrFail($product);
+        $decode_product = base64_decode($product);
+
+        $data['product'] = ProductPack::findOrFail($decode_product);
         $data['warehouse'] = Warehouse::findOrFail($warehouse);
         $data['collects'] = [];
 

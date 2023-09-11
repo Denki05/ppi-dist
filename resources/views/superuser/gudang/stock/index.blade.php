@@ -35,8 +35,8 @@
     <table id="datatable" class="table table-striped">
       <thead>
         <tr>
-          <th class="text-center">SKU</th>
-          <th class="text-center">Item</th>
+          <th class="text-center">Product</th>
+          <th class="text-center">Packaging</th>
           <th class="text-center">In</th>
           <th class="text-center">Out</th>
           <th class="text-center">Stock</th>
