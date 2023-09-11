@@ -132,9 +132,19 @@
         </tr>
       </thead>
       <tbody>
-        
+        @foreach($purchase_order->po_detail as $row)
+          <tr>
+            <td>{{$loop->iteration}}</td>
+            <td>{{$row->product_pack->name}}</td>
+            <td>{{$row->product_pack->code}}</td>
+            <td>{{$row->qty}}</td>
+            <td>{{$row->product_pack->kemasan()->pack_name}}</td>
+            <td></td>
+            <td></td>
+            <td></td>
+          </tr>
+        @endforeach
       </tbody>
-      
     </table>
   </div>
 </div>
@@ -144,6 +154,7 @@
   <div class="modal-dialog modal-lg" style="max-width: 80%;">
     <div class="modal-content">
       <form class="ajax" data-action="{{ route('superuser.gudang.purchase_order.store_item', $purchase_order->id) }}" data-type="POST" enctype="multipart/form-data">
+        @csrf
         <div class="modal-header">
           <h5 class="modal-title">Input Product PO - #{{$purchase_order->code}}</h5>
           <button type="button" class="close" data-dismiss="modal" aria-label="Close">
@@ -153,7 +164,7 @@
         <div class="modal-body" style="max-height: 800px">
           <div class="form-group row">
             <div class="col-md-7">
-              <select class="form-control js-select2 select-brand" data-index="0">
+              <select class="form-control js-select2 select-brand" name="merek" data-index="0">
                 <option value="">Pilih Merek</option>
                 @foreach($merek as $merek => $row)
                 <option value="{{$row->id}}">{{$row->brand_name}}</option>
@@ -165,27 +176,38 @@
             <div class="row">
               <div class="col-12 product-list">
                 <div class="row">
+                  <div class="col-2">Category</div>
                   <div class="col-3">Product</div>
-                  <div class="col-1">Qty (KG)</div>
+                  <div class="col-1">Qty</div>
+                  <div class="col-1">Ori Pack</div>
                   <div class="col-3">Packaging</div>
-                  <div class="col-1">Action</div>
+                  <div class="col">Action</div>
                 </div>
 
                 <div class="row mt-10 product-row">
+                  <div class="col-2">
+                    <select class="form-control js-select2 select-category" name="category[]" data-index="0">
+                      <option value="">Select Category</option>
+                    </select>
+                  </div>
                   <div class="col-3">
-                    <select class="form-control js-select2 select-product" name="product_id[]" data-index="0">
-                      <option value="">Select product</option>
+                    <select class="form-control js-select2 select-product" name="product_packaging_id[]" data-index="0">
+                      <option value="">Select Product</option>
                     </select>
                   </div>
                   <div class="col-1">
                     <input type="number" name="qty[]" class="form-control input-qty" data-index="0" step="any">
+                  </div>
+                  <div class="col-1">
+                    <input type="checkbox" class="form-check-input input-gift" id="ori_pack" name="ori_pack">
+                    <input class="form-control input-ori_pack" type="hidden" id="free_product" name="ori_pack[]" data-index="0" step="any">
                   </div>
                   <div class="col-3">
                     <select name="packaging_id[]" class="form-control js-select2 select-packaging" data-index="0">
                       <option value="">Select packaging</option>
                     </select>
                   </div>
-                  <div class="col-1"><button type="button" id="buttonAddProduct" class="btn btn-primary"><em class="fa fa-plus"></em></button></div>
+                  <div class="col"><button type="button" id="buttonAddProduct" class="btn btn-primary"><em class="fa fa-plus"></em></button></div>
                 </div>
                 <hr />
 
@@ -208,7 +230,7 @@
 @include('superuser.asset.plugin.select2')
 
 @push('scripts')
-<script src="{{ asset('utility/superuser/js/form.js') }}"></script>
+<script src="{{ asset('public/utility/superuser/js/form.js') }}"></script>
 <script type="text/javascript">
   $(document).ready(function() {
     $('.js-select2').select2()
@@ -216,14 +238,17 @@
     $('#datatable').DataTable();
 
     $(document).on('click','#buttonAddProduct',function(){
+      const categoryId = $('.select-category[data-index=0]').val();
+      const categoryText = $('.select-category[data-index=0] option:selected').text();
       const productId = $('.select-product[data-index=0]').val();
       const productText = $('.select-product[data-index=0] option:selected').text();
       const qty = $('.input-qty[data-index=0]').val();
       const packagingId = $('.select-packaging[data-index=0]').val();
       const packagingText = $('.select-packaging[data-index=0] option:selected').text();
+      const free = $('.input-free[data-index=0]').val();
      
 
-      if (productId === null || productId === '' || qty === null || qty === '' || packagingId == null || packagingId === '' ) {
+      if (categoryId === null || categoryId === '' || productId === null || productId === '' || qty === null || qty === '' || packagingId == null || packagingId === '' ) {
         Swal.fire(
           'Error!',
           'Please input all the data',
@@ -232,34 +257,45 @@
         return;
       }
 
-      let html = "<div class='row mt-10 product-row product_id-" + productId + "'>";
+      let html = "<div class='row mt-10 product-row brand-" + categoryId + "'>";
       html += "  <div class='col-2'>";
-      html += "    <input type='hidden' class='form-control' value='" + productId + "'>";
+      html += "    <input type='hidden' class='form-control' value='" + categoryId + "'>";
+      html += categoryText;
+      html += "  </div>";
+      html += "  <div class='col-3'>";
+      html += "    <input type='hidden' name='product_packaging_id[]' class='form-control' value='" + productId + "'>";
       html += productText;
-      html += "  <div class='col-1'>";
+      html += "  </div>";
+      html += "  <div class='col-1 text-right'>";
       html += "    <input type='hidden' name='qty[]' class='form-control' value='" + qty + "'>";
       html += qty;
+      html += "  </div>";
+      html += "  <div class='col-1'>";
+      html += "    <input type='hidden' name='free_product[]' class='form-control free' value='" + free + "'>";
+      html += free;
       html += "  </div>";
       html += "  <div class='col-3'>";
       html += "    <input type='hidden' name='packaging_id[]' class='form-control' value='" + packagingId + "'>";
       html += packagingText;
       html += "  </div>";
-      html += "  <div class='col-1'>";
+      html += "  <div class='col'>";
       html += "    <button type='button' id='buttonDeleteProduct' class='btn btn-danger'><em class='fa fa-minus'></em></button>";
       html += "  </div>";
       html += "</div>";
       
-      if ($('.product-row.product_id-' + productId).length > 0) {
-        $('body').find('.product-row.product_id-' + productId + ':last').after(html);
+      if ($('.product-row.category-' + categoryId).length > 0) {
+        $('body').find('.product-row.category-' + categoryId + ':last').after(html);
       } else {
         $('body').find('.product-list').append(html);
       }
 
+      $('.select-category[data-index=0]').val('').change();
       $('.select-product[data-index=0]').val('').change();
       $('.input-qty[data-index=0]').val('');
+      $('.input-free[data-index=0]').val();
       $('.select-packaging[data-index=0]').val('').change();
 
-      $('.select-product_id[data-index=0]').select2('focus');
+      $('.select-category[data-index=0]').select2('focus');
 
       productCount++;
     });
@@ -268,35 +304,107 @@
       $(this).parents(".product-row").remove();
     });
 
+    // load Category
     var param = [];
     param["brand_lokal_id"] = "";
 
-    loadProduct({});
+    loadCategory({});
 
     $(document).on('change','.select-brand',function(){
       if ($(this).val() === '') return;
 
       param["brand_lokal_id"] = $(this).val();
-      loadProduct({
+      loadCategory({
         brand_lokal_id:param["brand_lokal_id"],
+        index: $(this).data("index")
+      })
+    })
+
+    function loadCategory(param){
+      $.ajax({
+        url : '{{route('superuser.penjualan.sales_order.get_category')}}',
+        method : "GET",
+        data : param,
+        dataType : "JSON",
+        success : function(resp){
+          let option = "";
+          option = '<option value="">Select Category</option>';
+          $.each(resp.Data,function(i,e){
+            option += '<option value="'+e.catId+'">'+e.categoryName+'</option>';
+          })
+          $('.select-category[data-index=' + param.index + ']').html(option);
+        },
+        error : function(){
+          alert("Cek Koneksi Internet");
+        }
+      })
+    }
+    
+    // load product
+    var param = [];
+    param["category_id"] = "";
+
+    loadProduct({});
+
+    $(document).on('change','.select-category',function(){
+      if ($(this).val() === '') return;
+
+      param["category_id"] = $(this).val();
+      loadProduct({
+        category_id:param["category_id"],
         index: $(this).data("index")
       })
     })
 
     function loadProduct(param){
       $.ajax({
-        url : '{{route('superuser.gudang.purchase_order.get_product')}}',
+        url : '{{route('superuser.penjualan.sales_order.get_product')}}',
         method : "GET",
         data : param,
         dataType : "JSON",
         success : function(resp){
           let option = "";
-          let option2 = "";
           option = '<option value="">Select Product</option>';
           $.each(resp.Data,function(i,e){
-            option += '<option value="'+e.id+'">'+e.productCode+' - '+e.productName+' ('+e.packName+')</option>';
+            option += '<option value="'+e.id+'">'+e.productCode+' - '+e.productName+'</option>';
           })
           $('.select-product[data-index=' + param.index + ']').html(option);
+        },
+        error : function(){
+          alert("Cek Koneksi Internet");
+        }
+      })
+    }
+
+    // load packaging
+    var param = [];
+    param["product_packaging_id"] = "";
+
+    loadPackaging({});
+
+    $(document).on('change','.select-product',function(){
+      if ($(this).val() === '') return;
+
+      param["product_packaging_id"] = $(this).val();
+      loadPackaging({
+        product_id:param["product_packaging_id"],
+        index: $(this).data("index")
+      })
+    })
+
+    function loadPackaging(param){
+      $.ajax({
+        url : '{{route('superuser.penjualan.sales_order.get_packaging')}}',
+        method : "GET",
+        data : param,
+        dataType : "JSON",
+        success : function(resp){
+          let option = "";
+          option = '<option value="">Select Packaging</option>';
+          $.each(resp.Data,function(i,e){
+            option += '<option value="'+e.id+'">'+e.pack_name+'</option>';
+          })
+          $('.select-packaging[data-index=' + param.index + ']').html(option);
         },
         error : function(){
           alert("Cek Koneksi Internet");

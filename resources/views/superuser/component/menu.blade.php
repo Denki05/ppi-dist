@@ -131,9 +131,9 @@
                     <li class="nav-item">
                       <a class="nav-link" href="{{ route('superuser.gudang.stock_adjustment.index') }}" >Stock Adjustment</a>
                     </li>
-                    {{--<li class="nav-item">
+                    <li class="nav-item">
                       <a class="nav-link" href="{{ route('superuser.gudang.purchase_order.index') }}" >Purchase Order</a>
-                    </li>--}}
+                    </li>
                   </ul>
                 </div>
               </li>

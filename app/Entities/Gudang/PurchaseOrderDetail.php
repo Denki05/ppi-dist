@@ -10,7 +10,7 @@ class PurchaseOrderDetail extends Model
 
     protected $fillable = [
         'po_id', 
-        'product_id', 
+        'product_packaging_id', 
         'qty', 
         'packaging_id', 
         'note_produksi',
@@ -20,8 +20,8 @@ class PurchaseOrderDetail extends Model
         'updated_by',
     ];
 
-    public function product(){
-    	return $this->BelongsTo('App\Entities\Master\Product','product_id','id');
+    public function product_pack(){
+    	return $this->BelongsTo('App\Entities\Master\ProductPack','product_packaging_id','id');
     }
 
     public function packaging(){

@@ -27,9 +27,7 @@ Route::group([
         Route::get('{id}/publish', 'PurchaseOrderController@publish')->name('publish');
         Route::get('{id}/save_modify/{save_type}', 'PurchaseOrderController@save_modify')->name('save_modify');
         Route::get('{id}/acc', 'PurchaseOrderController@acc')->name('acc');
-        Route::post('/store_item/{id}', 'PurchaseOrderController@store_item')->name('store_item');
-        Route::get('/search_sku', 'PurchaseOrderController@search_sku')->name('search_sku');
-        Route::get('/get_product', 'PurchaseOrderController@get_product')->name('get_product');
+        Route::post('/store_item/{purchase_id}', 'PurchaseOrderController@store_item')->name('store_item');
     });
     Route::resource('purchase_order', 'PurchaseOrderController');
 });

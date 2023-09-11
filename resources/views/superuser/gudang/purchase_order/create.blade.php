@@ -66,7 +66,7 @@
 @include('superuser.asset.plugin.select2')
 
 @push('scripts')
-<script src="{{ asset('utility/superuser/js/form.js') }}"></script>
+<script src="{{ asset('public/utility/superuser/js/form.js') }}"></script>
 <script>
   $(document).ready(function () {
     $('.js-select2').select2()
