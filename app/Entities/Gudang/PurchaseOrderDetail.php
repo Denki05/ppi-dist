@@ -3,6 +3,7 @@
 namespace App\Entities\Gudang;
 
 use Illuminate\Database\Eloquent\Model;
+use App\Entities\Master\ProductPack;
 
 class PurchaseOrderDetail extends Model
 {
@@ -20,15 +21,13 @@ class PurchaseOrderDetail extends Model
         'updated_by',
     ];
 
-    public function product_pack(){
-    	return $this->BelongsTo('App\Entities\Master\ProductPack','product_packaging_id','id');
+    public function product_pack()
+    {
+        return $this->hasMany(ProductPack::class, 'product_packaging_id', 'id');
     }
 
-    public function packaging(){
-    	return $this->BelongsTo('App\Entities\Master\Packaging','packaging_id','id');
-    }
-
-    public function po(){
-    	return $this->BelongsTo('App\Entities\Master\PurchaseOrder','po_id','id');
+    public function purchase_order()
+    {
+        return $this->belongsTo(PurchaseOrder::class, 'po_id', 'id');
     }
 }

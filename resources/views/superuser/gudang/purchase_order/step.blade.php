@@ -112,10 +112,10 @@
     
     <!-- <button type="button" class="btn btn-outline-info mr-10 min-width-125 pull-right" data-toggle="modal" data-target="#modal-manage">Import</button> -->
     
-    <!-- <a href="#">
+    <a href="{{ route('superuser.gudang.purchase_order.detail.create', [$purchase_order->id]) }}" target="_blank">
       <button type="button" class="btn btn-outline-primary min-width-125 pull-right">Create</button>
-    </a> -->
-    <button type="button" class="btn btn-outline-primary min-width-125 pull-right" data-toggle="modal" data-target=".bd-example-modal-lg">Add</button>
+    </a>
+    <!-- <button type="button" class="btn btn-outline-primary min-width-125 pull-right" data-toggle="modal" data-target=".bd-example-modal-lg">Add</button> -->
   </div>
   <div class="block-content">
     <table id="datatable" class="table table-striped">
@@ -132,18 +132,7 @@
         </tr>
       </thead>
       <tbody>
-        @foreach($purchase_order->po_detail as $row)
-          <tr>
-            <td>{{$loop->iteration}}</td>
-            <td>{{$row->product_pack->name}}</td>
-            <td>{{$row->product_pack->code}}</td>
-            <td>{{$row->qty}}</td>
-            <td>{{$row->product_pack->kemasan()->pack_name}}</td>
-            <td></td>
-            <td></td>
-            <td></td>
-          </tr>
-        @endforeach
+        
       </tbody>
     </table>
   </div>
@@ -151,9 +140,9 @@
 
 <!-- Modal input Product -->
 <div class="modal fade bd-example-modal-lg" role="dialog" aria-labelledby="myLargeModalLabel" aria-hidden="true">
-  <div class="modal-dialog modal-lg" style="max-width: 80%;">
+  <div class="modal-dialog modal-xl" style="max-width: 80%;">
     <div class="modal-content">
-      <form class="ajax" data-action="{{ route('superuser.gudang.purchase_order.store_item', $purchase_order->id) }}" data-type="POST" enctype="multipart/form-data">
+      <form class="ajax" data-action="" data-type="POST" enctype="multipart/form-data">
         @csrf
         <div class="modal-header">
           <h5 class="modal-title">Input Product PO - #{{$purchase_order->code}}</h5>
@@ -177,10 +166,12 @@
               <div class="col-12 product-list">
                 <div class="row">
                   <div class="col-2">Category</div>
-                  <div class="col-3">Product</div>
+                  <div class="col-2">Product</div>
                   <div class="col-1">Qty</div>
                   <div class="col-1">Ori Pack</div>
-                  <div class="col-3">Packaging</div>
+                  <div class="col-2">Packaging</div>
+                  <div class="col-2">Produksi</div>
+                  <div class="col-2">Repack</div>
                   <div class="col">Action</div>
                 </div>
 
@@ -190,7 +181,7 @@
                       <option value="">Select Category</option>
                     </select>
                   </div>
-                  <div class="col-3">
+                  <div class="col-2">
                     <select class="form-control js-select2 select-product" name="product_packaging_id[]" data-index="0">
                       <option value="">Select Product</option>
                     </select>
@@ -202,10 +193,16 @@
                     <input type="checkbox" class="form-check-input input-gift" id="ori_pack" name="ori_pack">
                     <input class="form-control input-ori_pack" type="hidden" id="free_product" name="ori_pack[]" data-index="0" step="any">
                   </div>
-                  <div class="col-3">
+                  <div class="col-2">
                     <select name="packaging_id[]" class="form-control js-select2 select-packaging" data-index="0">
                       <option value="">Select packaging</option>
                     </select>
+                  </div>
+                  <div class="col-2">
+                    <input type="text" name="note_produksi[]" class="form-control input-produksi" data-index="0" step="any">
+                  </div>
+                  <div class="col-2">
+                    <input type="text" name="note_repack[]" class="form-control input-repack" data-index="0" step="any">
                   </div>
                   <div class="col"><button type="button" id="buttonAddProduct" class="btn btn-primary"><em class="fa fa-plus"></em></button></div>
                 </div>

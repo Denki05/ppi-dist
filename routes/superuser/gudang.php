@@ -27,7 +27,14 @@ Route::group([
         Route::get('{id}/publish', 'PurchaseOrderController@publish')->name('publish');
         Route::get('{id}/save_modify/{save_type}', 'PurchaseOrderController@save_modify')->name('save_modify');
         Route::get('{id}/acc', 'PurchaseOrderController@acc')->name('acc');
-        Route::post('/store_item/{purchase_id}', 'PurchaseOrderController@store_item')->name('store_item');
+
+        Route::group(['as' => 'detail.'], function () {
+            Route::get('{purchase_id}/detail/create', 'PurchaseOrderDetailController@create')->name('create');
+            Route::post('{purchase_id}/detail', 'PurchaseOrderDetailController@store')->name('store');
+            Route::get('{id}/detail/{detail_id}/edit', 'PurchaseOrderDetailController@edit')->name('edit');
+            Route::put('{id}/detail/{detail_id}', 'PurchaseOrderDetailController@update')->name('update');
+            Route::delete('{id}/detail/{detail_id}', 'PurchaseOrderDetailController@destroy')->name('destroy');
+        });
     });
     Route::resource('purchase_order', 'PurchaseOrderController');
 });

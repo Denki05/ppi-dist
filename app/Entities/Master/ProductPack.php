@@ -54,9 +54,9 @@ class ProductPack extends Model
         return $this->BelongsTo('App\Entities\Master\Product', 'product_id');
     }
 
-    public function po_detail()
+    public function purchase_order_detail()
     {
-        return $this->BelongsTo('App\Entities\Gudang\PurchaseOrderDetail', 'product_packaging_id');
+        return $this->belongsTo(PurchaseOrderDetail::class, 'product_packaging_id', 'id');
     }
 
     public function warehouse()

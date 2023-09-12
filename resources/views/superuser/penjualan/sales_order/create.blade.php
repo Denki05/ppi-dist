@@ -115,7 +115,6 @@
         <div class="block">
           <div class="block-header block-header-default">
             <h3 class="block-title">Add Product</h3>
-            
           </div>
           <div class="block-content">
             <div class="row">
