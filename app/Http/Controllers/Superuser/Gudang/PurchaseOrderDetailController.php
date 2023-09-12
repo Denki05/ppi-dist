@@ -78,6 +78,7 @@ class PurchaseOrderDetailController extends Controller
 
                         $po_detail = new PurchaseOrderDetail;
                         $po_detail->po_id = $purchase_id;
+                        $po_detail->brand_lokal_id =  trim(htmlentities($post["merek"]));
                         $po_detail->product_packaging_id = trim(htmlentities(implode("-", [$post["product_packaging_id"][$i],$post["packaging_id"][$i]])));
                         $po_detail->qty = trim(htmlentities($post["qty"][$i]));
                         $po_detail->packaging_id = trim(htmlentities($post["packaging_id"][$i]));
@@ -124,37 +125,49 @@ class PurchaseOrderDetailController extends Controller
         //
     }
 
-    /**
-     * Show the form for editing the specified resource.
-     *
-     * @param  int  $id
-     * @return \Illuminate\Http\Response
-     */
-    public function edit($id)
+    public function edit($id, $detail)
     {
-        //
+        if(Auth::user()->is_superuser == 0){
+            if(empty($this->access) || empty($this->access->user) || $this->access->can_update == 0){
+                return redirect()->route('superuser.index')->with('error','Anda tidak punya akses untuk membuka menu terkait');
+            }
+        }
+
+        $data['purchase_order'] = PurchaseOrder::findOrFail($id);
+        $data['purchase_order_detail'] = PurchaseOrderDetail::findOrFail($detail);
+        $data['merek'] = BrandLokal::get();
+
+        return view('superuser.gudang.purchase_order_detail.edit', $data);
     }
 
-    /**
-     * Update the specified resource in storage.
-     *
-     * @param  \Illuminate\Http\Request  $request
-     * @param  int  $id
-     * @return \Illuminate\Http\Response
-     */
+    
     public function update(Request $request, $id)
     {
         //
     }
 
-    /**
-     * Remove the specified resource from storage.
-     *
-     * @param  int  $id
-     * @return \Illuminate\Http\Response
-     */
-    public function destroy($id)
+    public function destroy(Request $request, $id, $detail_id)
     {
-        //
+        if ($request->ajax()) {
+            if(Auth::user()->is_superuser == 0){
+                if(empty($this->access) || empty($this->access->user) || $this->access->can_delete == 0){
+                    return redirect()->route('superuser.index')->with('error','Anda tidak punya akses untuk membuka menu terkait');
+                }
+            }
+
+            $purchase_order = PurchaseOrder::find($id);
+            $purchase_order_detail = PurchaseOrderDetail::find($detail_id);
+
+            if ($purchase_order === null OR $purchase_order_detail === null) {
+                abort(404);
+            }
+
+            if ($purchase_order_detail->delete()) {
+                $purchase_order->save();
+                
+                $response['redirect_to'] = 'reload()';
+                return $this->response(200, $response);
+            }
+        }
     }
 }

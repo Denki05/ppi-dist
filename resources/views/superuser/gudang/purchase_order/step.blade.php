@@ -112,7 +112,7 @@
     
     <!-- <button type="button" class="btn btn-outline-info mr-10 min-width-125 pull-right" data-toggle="modal" data-target="#modal-manage">Import</button> -->
     
-    <a href="{{ route('superuser.gudang.purchase_order.detail.create', [$purchase_order->id]) }}" target="_blank">
+    <a href="{{ route('superuser.gudang.purchase_order.detail.create', [$purchase_order->id]) }}">
       <button type="button" class="btn btn-outline-primary min-width-125 pull-right">Create</button>
     </a>
     <!-- <button type="button" class="btn btn-outline-primary min-width-125 pull-right" data-toggle="modal" data-target=".bd-example-modal-lg">Add</button> -->
@@ -134,14 +134,25 @@
       <tbody>
         @foreach($purchase_order->purchase_order_detail as $row)
           <tr>
-            <td>{{ $loop->iteration }}</td>
-            <td>{{ $row->product_pack->name }}</td>
-            <td></td>
-            <td></td>
-            <td></td>
-            <td></td>
-            <td></td>
-            <td></td>
+            <td class="text-center">{{ $loop->iteration }}</td>
+            <td class="text-center">{{ $row->product_pack->name }}</td>
+            <td class="text-center">{{ $row->product_pack->code }}</td>
+            <td class="text-center">{{ $row->qty }}</td>
+            <td class="text-center">{{ $row->product_pack->kemasan()->pack_name }}</td>
+            <td class="text-center">{{ $row->note_produksi ?? '-' }}</td>
+            <td class="text-center">{{ $row->note_repack ?? '-' }}</td>
+            <td class="text-center">
+              <a href="{{ route('superuser.gudang.purchase_order.detail.edit', [$purchase_order->id, $row->id]) }}">
+                <button type="button" class="btn btn-sm btn-circle btn-alt-warning" title="Edit">
+                  <i class="fa fa-pencil"></i>
+                </button>
+              </a>
+              <a href="javascript:deleteConfirmation('{{ route('superuser.gudang.purchase_order.detail.destroy', [$purchase_order->id, $row->id]) }}')">
+                <button type="button" class="btn btn-sm btn-circle btn-alt-danger" title="Delete">
+                    <i class="fa fa-times"></i>
+                </button>
+              </a>
+            </td>
           </tr>
         @endforeach
       </tbody>
