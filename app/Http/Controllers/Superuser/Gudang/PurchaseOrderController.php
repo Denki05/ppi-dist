@@ -230,6 +230,7 @@ class PurchaseOrderController extends Controller
         }
 
         $data['purchase_order'] = PurchaseOrder::findOrFail($id);
+        // $data['purchase_order'] = PurchaseOrder::where('id', $id)->first();
         $data['merek'] = BrandLokal::get();
 
         if($data['purchase_order']->status == PurchaseOrder::STATUS['ACC'] OR $data['purchase_order']->status == PurchaseOrder::STATUS['DELETED']) {

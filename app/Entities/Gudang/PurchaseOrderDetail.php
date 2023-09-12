@@ -23,7 +23,7 @@ class PurchaseOrderDetail extends Model
 
     public function product_pack()
     {
-        return $this->hasMany(ProductPack::class, 'product_packaging_id', 'id');
+        return $this->belongsTo('App\Entities\Master\ProductPack', 'product_packaging_id', 'id');
     }
 
     public function purchase_order()

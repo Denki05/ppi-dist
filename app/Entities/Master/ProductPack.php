@@ -11,6 +11,7 @@ class ProductPack extends Model
     use SoftDeletes;
 
     protected $fillable = [
+                        'id', 
                         'product_id', 
                         'material_code', 
                         'material_name', 
@@ -51,17 +52,12 @@ class ProductPack extends Model
 
     public function product()
     {
-        return $this->BelongsTo('App\Entities\Master\Product', 'product_id');
-    }
-
-    public function purchase_order_detail()
-    {
-        return $this->belongsTo(PurchaseOrderDetail::class, 'product_packaging_id', 'id');
+        return $this->belongsTo('App\Entities\Master\Product', 'product_id');
     }
 
     public function warehouse()
     {
-        return $this->BelongsTo('App\Entities\Master\Warehouse', 'warehouse_id');
+        return $this->belongsTo('App\Entities\Master\Warehouse', 'warehouse_id');
     }
 
     public function kemasan()
