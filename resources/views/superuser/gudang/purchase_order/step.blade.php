@@ -134,7 +134,7 @@
       <tbody>
         @foreach($purchase_order->purchase_order_detail as $row)
           <tr>
-            <td class="text-center">{{ $loop->iteration }}</td>
+            <td class="text-center">{{ $row->id }}</td>
             <td class="text-center">{{ $row->product_pack->name }}</td>
             <td class="text-center">{{ $row->product_pack->code }}</td>
             <td class="text-center">{{ $row->qty }}</td>
