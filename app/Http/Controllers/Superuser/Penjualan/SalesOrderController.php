@@ -1520,20 +1520,16 @@ class SalesOrderController extends Controller
         $data_json = [];
         $post = $request->all();
         if($request->method() == "GET"){
-            $get_pack = ProductPack::where(function($query2) use($post){
-                    if(!empty($post["product_id"])){
-                        $query2->where('product_id', $post["product_id"]);
-                    }
-                })->first();
-            foreach(explode("-", $get_pack->id) as $row){
-                $table = Packaging::where(function($query2) use($row){
-                    if(!empty($row[1])){
-                        $query2->where('id', $row[1]);
-                    }
-                })
-                ->selectRaw('id, pack_name')
-                ->get();
-            }
+            $table = ProductPack::where(function($query2) use($post){
+                if(!empty($post["product_id"])){
+                    $query2->where('product_id', $post["product_id"]);
+                }
+            })
+            ->leftJoin('master_packaging', 'master_products_packaging.packaging_id', '=', 'master_packaging.id')
+            ->selectRaw(
+                'master_packaging.id, master_packaging.pack_name'
+            )
+            ->get();
             $data_json["IsError"] = FALSE;
             $data_json["Data"] = $table;
             goto ResultData;
