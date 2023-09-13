@@ -7,7 +7,7 @@
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>{{ setting('website.name') }}</title>
     <meta name="robots" content="noindex, nofollow">
-    <link rel="shortcut icon" href="{{ asset('public/superuser_assets/media/logo_ppi.png') }}">
+    <link rel="shortcut icon" href="{{ asset('superuser_assets/media/logo_ppi.png') }}">
     @stack('plugin-styles')
     @include('superuser.asset.css')
     @stack('styles')
@@ -50,7 +50,7 @@
     </script>
     @include('superuser.asset.js')
     @stack('scripts')
-    <script src="{{ asset('public/utility/superuser/js/common.js') }}"></script>
+    <script src="{{ asset('utility/superuser/js/common.js') }}"></script>
     @include('superuser.asset.prevent_direct_access')
   </body>
 </html>

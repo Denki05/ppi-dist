@@ -84,7 +84,7 @@
     </div>
     @include('superuser.asset.js')
     @include('superuser.asset.plugin.notify')
-    <script src="{{ asset('public/utility/superuser/js/form.js') }}"></script>
+    <script src="{{ asset('utility/superuser/js/form.js') }}"></script>
     @stack('scripts')
     <script>
       $(document).ready(function () {
