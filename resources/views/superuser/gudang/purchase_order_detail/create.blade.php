@@ -290,16 +290,16 @@
 
     // load packaging
     var param = [];
-    param["product_packaging_id"] = "";
+    param["product_id"] = "";
 
     loadPackaging({});
 
     $(document).on('change','.select-product',function(){
       if ($(this).val() === '') return;
 
-      param["product_packaging_id"] = $(this).val();
+      param["product_id"] = $(this).val();
       loadPackaging({
-        product_id:param["product_packaging_id"],
+        product_id:param["product_id"],
         index: $(this).data("index")
       })
     })

@@ -36,4 +36,4 @@
 <link href="https://fonts.googleapis.com/css?family=Poppins" rel="stylesheet" />
 
 <!-- tab DO -->
-<link rel="stylesheet" href="{{ asset('public/superuser_assets/css/tab.do.css') }}">
+<link rel="stylesheet" href="{{ asset('superuser_assets/css/tab.do.css') }}">

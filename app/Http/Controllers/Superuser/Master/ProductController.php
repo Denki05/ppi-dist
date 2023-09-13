@@ -164,6 +164,7 @@ class ProductController extends Controller
                                 $child_product->id = $product->id.'.'.$value;
                                 $child_product->product_id = $product->id;
                                 $child_product->warehouse_id = $warehouse->id;
+                                $child_product->packaging_id = $value;
                                 $child_product->material_code = $request->material_code;
                                 $child_product->material_name = $request->material_name;
                                 $child_product->code = $request->code;
@@ -236,6 +237,7 @@ class ProductController extends Controller
                                 $child_product->id = $product->id.'.'.$value;
                                 $child_product->product_id = $product->id;
                                 $child_product->warehouse_id = $warehouse->id;
+                                $child_product->packaging_id = $value;
                                 $child_product->material_code = $request->material_code;
                                 $child_product->material_name = $request->material_name;
                                 $child_product->code = $request->code;

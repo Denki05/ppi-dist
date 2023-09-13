@@ -95,7 +95,6 @@ class ProductImport implements ToCollection, WithHeadingRow, WithStartRow, Skips
                     $product->buying_price = $row['buying_price'];
                     $product->selling_price = $row['selling_price'];
                     $product->status = Product::STATUS['ACTIVE'];
-                    // $product->save();
                     if($product->save()){
                         $warehouse = Warehouse::where('name', 'Gudang Araya')->first();
                         $pecah_kemasan = explode(',', $row['packaging']);
@@ -103,16 +102,17 @@ class ProductImport implements ToCollection, WithHeadingRow, WithStartRow, Skips
 
 
                         foreach($pecah_kemasan as $value){
+
                                 $child_product = new ProductPack;
                                 $child_product->id = $product->id.'-'.Packaging::where('pack_name', $value)->pluck('id')->first();
                                 $child_product->product_id = $product->id;
                                 $child_product->warehouse_id = $warehouse->id;
+                                $child_product->packaging_id = Packaging::where('pack_name', $value)->pluck('id')->first();
                                 $child_product->material_code = $row['material_code'];
                                 $child_product->material_name = $row['material_name'];
                                 $child_product->code = $row['code'];
                                 $child_product->name = $row['name'];
                                 $child_product->price = $row['selling_price'];
-                                // $child_product->stock = 1000;
                                 $child_product->gender = $row['gender'];
                                 $child_product->note = $row['description'];
                                 $child_product->status = ProductPack::STATUS['ACTIVE'];
@@ -156,12 +156,12 @@ class ProductImport implements ToCollection, WithHeadingRow, WithStartRow, Skips
                                 $child_product->id = $product->id.'-'.Packaging::where('pack_name', $value)->pluck('id')->first();
                                 $child_product->product_id = $product->id;
                                 $child_product->warehouse_id = $warehouse->id;
+                                $child_product->packaging_id = Packaging::where('pack_name', $value)->pluck('id')->first();
                                 $child_product->material_code = $row['material_code'];
                                 $child_product->material_name = $row['material_name'];
                                 $child_product->code = $row['code'];
                                 $child_product->name = $row['name'];
                                 $child_product->price = $row['selling_price'];
-                                $child_product->stock = 1000;
                                 $child_product->gender = $row['gender'];
                                 $child_product->note = $row['description'];
                                 $child_product->status = ProductPack::STATUS['ACTIVE'];
@@ -171,9 +171,9 @@ class ProductImport implements ToCollection, WithHeadingRow, WithStartRow, Skips
                                 $min_stock->product_packaging_id = $child_product->id;
                                 $min_stock->warehouse_id = $warehouse->id;
                                 $min_stock->unit_id = 1;
-                                $min_stock->quantity = $child_product->stock;
+                                $min_stock->quantity = 1000;
                                 $min_stock->selling_price = $child_product->price;
-                                $min_stock->save();                                
+                                $min_stock->save();                             
                         }
                     }
                 }
