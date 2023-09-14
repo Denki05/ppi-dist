@@ -82,26 +82,6 @@ class CodeRepo
     {
         return self::generate('V', Vendor::class);
     }
-    
-    // Generate SO
-    public static function generateSO(){
-        $count = SalesOrder::withTrashed()
-                              ->where('condition', '>', 0)
-                              ->whereYear('created_at',date('Y'))
-                              ->whereMonth('created_at',date('m'))
-                              ->get();
-                                   
-        if(count($count) > 0 ){
-            $count = count($count) + 1;
-
-            $code = 'SO-' .date('my')."-".sprintf('%03d', $count);
-        }
-        else{
-            $code = 'SO-' .date('my')."-".sprintf('%03d', 1);
-        }
-        return $code;
-
-    }
 
     // So PPN
     public static function generatePPN(){
@@ -210,5 +190,24 @@ class CodeRepo
         return self::generate('RC', Receiving::class);
     }
 
+    public static function generateSO()
+    {
+        $get_max = SalesOrder::max('code');
+        $parts = explode('-', date("d-m-Y"));
+        $p1 = substr($parts[2], (strlen($parts[2]) - 2) );
+        $abjadMonth = array( '-', 'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L');
+        $p2 = $abjadMonth[date('n')];
+        $yearMonth = $p1.$p2;
+        $latestNumber = "";
+
+        if($get_max == 'false'){
+            $latestNumber = $yearMonth . '001';
+        }else{
+            $latestNumber = $get_max;
+            $id = (int) substr($latestNumber, strlen($yearMonth)) + 1;
+            $latestNumber = $yearMonth . str_pad($id, 3, 0, STR_PAD_LEFT);
+        }
+        return $latestNumber;
+    }
     
 }
