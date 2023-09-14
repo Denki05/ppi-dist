@@ -10,15 +10,13 @@ class Receiving extends Model
 	use SoftDeletes;
     protected $table = "receiving";
     protected $fillable = [
-    	'warehouse_id',
-        'code', 
-        'receiving_number',
-        'date', 
-        'batch', 
-        'number_po', 
-        'description', 
+    	'code', 
+        'warehouse_id', 
+        'pbm_date', 
         'status', 
-    	
+        'acc_by', 
+        'acc_at', 
+        'note',
     ];
 
     public function warehouse(){

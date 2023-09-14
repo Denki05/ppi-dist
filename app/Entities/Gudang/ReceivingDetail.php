@@ -11,22 +11,27 @@ class ReceivingDetail extends Model
     protected $table = "receiving_detail";
     protected $fillable = [
     	'receiving_id',
-        'product_id', 
-        'unit_id',
+        'po_id', 
+        'po_detail_id',
+        'product_pacakging_id', 
         'qty', 
-        'description', 
-    	
+        'sj_po', 
+        'note',
     ];
 
     public function receiving(){
-    	return $this->hasMany('App\Entities\Gudang\Receiving','receiving_id','id');
+    	return $this->belongsTo('App\Entities\Gudang\Receiving','receiving_id','id');
     }
 
-    public function product(){
-    	return $this->BelongsTo('App\Entities\Master\Product','product_id','id');
+    public function po(){
+        return $this->belongsTo('App\Entities\Gudang\PurchaseOrder', 'po_id', 'id');
     }
 
-    public function unit(){
-    	return $this->BelongsTo('App\Entities\Master\Product','unit_id','id');
+    public function po_deetail(){
+        return $this->belongsTo('App\Entities\Gudang\PurchaseOrderDetail', 'po_detail_id', 'id');
+    }
+
+    public function product_pack(){
+    	return $this->belongsTo('App\Entities\Master\ProductPack','product_pacakging_id','id');
     }
 }
