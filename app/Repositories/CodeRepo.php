@@ -136,10 +136,10 @@ class CodeRepo
         if(count($count) > 0 ){
             $count = count($count) + 1;
 
-            $code = 'DO-' .date('my')."-".sprintf('%05d', $count);
+            $code = 'DO' .date('my')."".sprintf('%05d', $count);
         }
         else{
-            $code = 'DO-' .date('my')."-".sprintf('%05d', 1);
+            $code = 'DO' .date('my')."".sprintf('%05d', 1);
         }
         return $code;
 
@@ -164,20 +164,7 @@ class CodeRepo
         }
         return $code;
     }
-    public static function generateProforma($code){
-        $split = explode("-", $code);
-
-        if(count($split) == 1){
-
-            $split = explode("SO", $code);
-            $so_code = 'PRF'.$split[1];    
-        }
-        else{
-            $split = explode("-", $code);
-            $so_code = 'PRF-' .$split[1]."-".$split[2];
-        }
-        return $so_code;
-    }
+   
     public static function generateStockAdjustment(){
         return self::generate('STADJ', StockAdjustment::class);   
     }
@@ -194,7 +181,7 @@ class CodeRepo
     {
         $get_max = SalesOrder::max('code');
         $parts = explode('-', date("d-m-Y"));
-        $p1 = substr($parts[2], (strlen($parts[2]) - 2) );
+        $p1 = substr($parts[2], (strlen($parts[2]) - 1) );
         $abjadMonth = array( '-', 'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L');
         $p2 = $abjadMonth[date('n')];
         $yearMonth = $p1.$p2;

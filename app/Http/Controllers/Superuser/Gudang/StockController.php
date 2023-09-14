@@ -42,7 +42,7 @@ class StockController extends Controller
                 ->where('origin_warehouse_id', $warehouse)
                 ->where('status', 4)
                 ->whereHas('do', function ($query) {
-                    $query->where('status', '3');
+                    $query->where('status', '>', '3');
                 })
                 ->groupBy('penjualan_so_item.product_packaging_id')
                 ->get();
@@ -59,7 +59,7 @@ class StockController extends Controller
                 ->where('status', 4)
                 ->where(function ($query) {
                     $query->whereHas('do', function ($query) {
-                        $query->where('status', '2');
+                        $query->where('status', '>', '2');
                     })->orDoesntHave('do');
                 })
                 ->select(\DB::raw('penjualan_so_item.product_packaging_id, SUM(penjualan_so_item.qty_worked) as totalquantity'))
