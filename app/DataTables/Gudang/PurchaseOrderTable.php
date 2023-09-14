@@ -65,56 +65,53 @@ class PurchaseOrderTable extends Table
             $destroy = route('superuser.gudang.purchase_order.destroy', $model);
             $acc = route('superuser.gudang.purchase_order.acc', $model);
 
-            switch ($model->status) {
-                case $model::STATUS['ACTIVE']:
-                    return "
-                        <a href=\"javascript:saveConfirmation2('{$acc}')\">
-                            <button type=\"button\" class=\"btn btn-sm btn-circle btn-alt-success\" title=\"ACC\">
-                                <i class=\"fa fa-check\"></i>
-                            </button>
-                        </a>
-                        <a href=\"{$edit}\">
-                            <button type=\"button\" class=\"btn btn-sm btn-circle btn-alt-warning\" title=\"Edit\">
-                                <i class=\"fa fa-pencil\"></i>
-                            </button>
-                        </a>
-                        <a href=\"javascript:deleteConfirmation('{$destroy}')\">
-                            <button type=\"button\" class=\"btn btn-sm btn-circle btn-alt-danger\" title=\"Delete\">
-                                <i class=\"fa fa-times\"></i>
-                            </button>
-                        </a>
-                    ";
-                case $model::STATUS['DRAFT']:
-                    return "
-                        <a href=\"{$edit}\">
-                            <button type=\"button\" class=\"btn btn-sm btn-circle btn-alt-warning\" title=\"Edit\">
-                                <i class=\"fa fa-pencil\"></i>
-                            </button>
-                        </a>
-                        <a href=\"javascript:deleteConfirmation('{$destroy}')\">
-                            <button type=\"button\" class=\"btn btn-sm btn-circle btn-alt-danger\" title=\"Delete\">
-                                <i class=\"fa fa-times\"></i>
-                            </button>
-                        </a>
-                    ";
-                case $model::STATUS['ACC']:
-                    return "
-                        <a href=\"{$view}\">
-                            <button type=\"button\" class=\"btn btn-sm btn-circle btn-alt-secondary\" title=\"View\">
-                                <i class=\"fa fa-eye\"></i>
-                            </button>
-                        </a>
-                    ";
-                default:
-                    return "
-                        <a href=\"{$view}\">
-                            <button type=\"button\" class=\"btn btn-sm btn-circle btn-alt-secondary\" title=\"View\">
-                                <i class=\"fa fa-eye\"></i>
-                            </button>
-                        </a>
-                    ";
+            $html_view = "
+                <a href=\"{$view}\">
+                    <button type=\"button\" class=\"btn btn-sm btn-circle btn-alt-secondary\" title=\"View\">
+                        <i class=\"mdi mdi-eye\"></i>
+                    </button>
+                </a>
+            ";
+
+            $html_edit = "
+                <a href=\"{$edit}\">
+                    <button type=\"button\" class=\"btn btn-sm btn-circle btn-alt-warning\" title=\"Edit\">
+                        <i class=\"mdi mdi-lead-pencil\"></i>
+                    </button>
+                </a>
+            ";
+
+            $html_destroy = "
+                <a href=\"javascript:deleteConfirmation('{$destroy}')\">
+                    <button type=\"button\" class=\"btn btn-sm btn-circle btn-alt-danger\" title=\"Delete\">
+                        <i class=\"mdi mdi-delete\"></i>
+                    </button>
+                </a>
+            ";
+
+            $html_acc = "
+                <a href=\"javascript:deleteConfirmation('{$acc}')\">
+                    <button type=\"button\" class=\"btn btn-sm btn-circle btn-alt-danger\" title=\"Acc\">
+                        <i class=\"mdi mdi-checkbox-marked-outline\"></i>
+                    </button>
+                </a>
+            ";
+
+            if ($model->status == $model::STATUS['ACTIVE']) {
+                return $html_acc . $html_edit . $html_destroy;
+            }
+            
+            if ($model->status == $model::STATUS['DRAFT']) {
+                return $html_edit . $html_destroy;
             }
 
+            if ($model->status == $model::STATUS['ACC']) {
+                return $html_view;
+            }
+
+            if ($model->status == $model::STATUS['DELETED']) {
+                return $html_view;
+            }
         });
 
         return $table->make(true);

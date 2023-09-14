@@ -33,7 +33,7 @@
                     <select class="form-control js-select2" id="member_name" name="member_name" data-placeholder="Cari Member">
                       <option value="">All</option>
                       @foreach($other_address as $row)
-                      <option value="{{$row->id}}">{{$row->name}} - {{$row->text_kota}}</option>
+                      <option value="{{$row->id}}">{{$row->name}}  {{$row->text_kota}}</option>
                       @endforeach
                     </select>
                   </div>
@@ -118,7 +118,7 @@
 
                   @if($step == 1)
                   <td>
-                    {{$row->member->name ?? $row->customer->name}}
+                    {{$row->member->name}} {{$row->member->text_kota}}
                   </td>
                   @endif
 

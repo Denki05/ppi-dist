@@ -53,7 +53,9 @@ class PurchaseOrderController extends Controller
             }
         }
 
-        return view($this->view."index");
+        $data['purchase_order'] = PurchaseOrder::get();
+
+        return view($this->view."index", $data);
     }
 
     /**
@@ -366,14 +368,28 @@ class PurchaseOrderController extends Controller
         }
     }
 
-    /**
-     * Remove the specified resource from storage.
-     *
-     * @param  int  $id
-     * @return \Illuminate\Http\Response
-     */
-    public function destroy($id)
+    public function destroy(Request $request, $id)
     {
-        //
+        // Access
+        if(Auth::user()->is_superuser == 0){
+            if(empty($this->access) || empty($this->access->user) || $this->access->can_delete == 0){
+                abort(405);
+            }
+        }
+        if ($request->ajax()) {
+            $purchase_order = PurchaseOrder::find($id);
+
+            if ($purchase_order === null) {
+                abort(404);
+            }
+
+            $purchase_order->status = PurchaseOrder::STATUS['DELETED'];
+
+            if ($purchase_order->save()) {
+                $response['redirect_to'] = route('superuser.gudang.purchase_order.index');
+                return $this->response(200, $response);
+            }
+        }
     }
+    
 }
