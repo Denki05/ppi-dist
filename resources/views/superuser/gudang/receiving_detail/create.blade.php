@@ -15,9 +15,9 @@
   <div class="block-content">
     <form class="ajax" data-action="{{ route('superuser.gudang.receiving.detail.store', $receiving->id) }}" data-type="POST" enctype="multipart/form-data">
       <div class="form-group row">
-        <label class="col-md-3 col-form-label text-right" for="ppb">Select PPB <span class="text-danger">*</span></label>
+        <label class="col-md-3 col-form-label text-right" for="ppb">Select PO <span class="text-danger">*</span></label>
         <div class="col-md-7">
-          <select class="js-select2 form-control" id="ppb" name="ppb" data-placeholder="Select PPB">
+          <select class="js-select2 form-control" id="ppb" name="ppb" data-placeholder="Select PO">
             <option></option>
             @foreach($purchase_orders as $purchase_order)
             <option value="{{ $purchase_order->id }}">{{ $purchase_order->code }}</option>
@@ -26,7 +26,7 @@
         </div>
       </div>
       <div class="form-group row">
-        <label class="col-md-3 col-form-label text-right" for="ppb_detail">Select SKU <span class="text-danger">*</span></label>
+        <label class="col-md-3 col-form-label text-right" for="ppb_detail">Select PRODUCT CODE <span class="text-danger">*</span></label>
         <div class="col-md-7">
           <select class="js-select2 form-control" id="ppb_detail" name="ppb_detail" data-placeholder="Select SKU">
             <option></option>
@@ -34,7 +34,7 @@
         </div>
       </div>
       <div class="form-group row">
-        <label class="col-md-3 col-form-label text-right" for="product_text">Product</label>
+        <label class="col-md-3 col-form-label text-right" for="product_text">PRODUCT NAME</label>
         <div class="col-md-4">
           <input type="text" class="form-control" id="product_text" name="product_text" readonly>
         </div>
@@ -142,7 +142,7 @@
             $('#ppb_detail').append(ph).trigger('change');
 
             for (i = 0; i < Object.keys(json.data).length; i++) {
-              let newOption = new Option(json.data[i].product.code, json.data[i].ppb_detail_id, false, false);
+              let newOption = new Option(json.data[i].product.code, json.data[i].po_detail_id, false, false);
               $('#ppb_detail').append(newOption).trigger('change');
             }
 

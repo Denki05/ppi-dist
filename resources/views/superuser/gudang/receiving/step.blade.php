@@ -94,7 +94,7 @@
   <div class="block-header block-header-default">
     <h3 class="block-title">Add Detail ({{ $receiving->details->count() }})</h3>
 
-    <button type="button" class="btn btn-outline-info mr-10 min-width-125 pull-right" data-toggle="modal" data-target="#modal-manage">Import</button>
+    {{--<button type="button" class="btn btn-outline-info mr-10 min-width-125 pull-right" data-toggle="modal" data-target="#modal-manage">Import</button>--}}
 
     <a href="{{ route('superuser.gudang.receiving.detail.create', [$receiving->id]) }}">
       <button type="button" class="btn btn-outline-primary min-width-125 pull-right">Create</button>

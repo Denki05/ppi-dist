@@ -23,19 +23,19 @@ class ReceivingDetailController extends Controller
                 case 'GET_SELECT_SKU':
                     $receiving = Receiving::where('status', '!=', Receiving::STATUS['DELETED'] )->pluck('id')->all();
                     $receiving_detail_ids = ReceivingDetail::whereIn('receiving_id', $receiving )
-                                    ->where('ppb_id', $request->id)
-                                    ->selectRaw('receiving_detail.id, receiving_detail.ppb_detail_id, receiving_detail.quantity, sum(receiving_detail_colly.quantity_ri) AS qty')
+                                    ->where('po_id', $request->id)
+                                    ->selectRaw('receiving_detail.id, receiving_detail.po_detail_id, receiving_detail.quantity, sum(receiving_detail_colly.quantity_ri) AS qty')
                                     ->join('receiving_detail_colly', 'receiving_detail_colly.receiving_detail_id', '=', 'receiving_detail.id')
-                                    ->groupBy('receiving_detail.id', 'ppb_detail_id', 'receiving_detail.quantity')
+                                    ->groupBy('receiving_detail.id', 'po_detail_id', 'receiving_detail.quantity')
                                     ->having('qty', \DB::raw('receiving_detail.quantity'))
-                                    ->pluck('ppb_detail_id')
+                                    ->pluck('po_detail_id')
                                     ->all();
 
                     $purchase_order_details = PurchaseOrderDetail::whereNotIn('id', $receiving_detail_ids)->where('po_id', $request->id)->get();
 
                     foreach($purchase_order_details as $purchase_order_detail) {
                         $data[] = [
-                            'ppb_detail_id' => $purchase_order_detail->id,
+                            'po_detail_id' => $purchase_order_detail->id,
                             'product'       => ProductPack::findOrFail($purchase_order_detail->product_pack->id),
                         ];
                     }
@@ -45,10 +45,10 @@ class ReceivingDetailController extends Controller
                 case 'GET_TEXT_DETAIL':
                     $purchase_order_detail = PurchaseOrderDetail::findOrFail($request->id);
 
-                    $quantity = ReceivingDetail::where('ppb_detail_id', $request->id)->sum('quantity');
+                    $quantity = ReceivingDetail::where('po_detail_id', $request->id)->sum('quantity');
 
                     $total_quantity_ri = 0;
-                    $receiving_detail = ReceivingDetail::where('ppb_detail_id', $request->id)->get();
+                    $receiving_detail = ReceivingDetail::where('po_detail_id', $request->id)->get();
                     foreach ($receiving_detail as $detail) {
                         $total_in_colly = ReceivingDetailColly::where('receiving_detail_id', $detail->id)->sum('quantity_ri');
                         $total_quantity_ri = $total_quantity_ri + $total_in_colly;
@@ -92,14 +92,14 @@ class ReceivingDetailController extends Controller
         $receiving = Receiving::where('status', '!=', Receiving::STATUS['DELETED'] )->pluck('id')->all();
     
         $receiving_detail_ids = ReceivingDetail::whereIn('receiving_id', $receiving )
-                                ->selectRaw('receiving_detail.id, receiving_detail.ppb_detail_id, receiving_detail.quantity, sum(receiving_detail_colly.quantity_ri) AS qty')
+                                ->selectRaw('receiving_detail.id, receiving_detail.po_detail_id, receiving_detail.quantity, sum(receiving_detail_colly.quantity_ri) AS qty')
                                 ->join('receiving_detail_colly', 'receiving_detail_colly.receiving_detail_id', '=', 'receiving_detail.id')
-                                ->groupBy('receiving_detail.id', 'ppb_detail_id', 'receiving_detail.quantity')
+                                ->groupBy('receiving_detail.id', 'po_detail_id', 'receiving_detail.quantity')
                                 ->having('qty', \DB::raw('receiving_detail.quantity'))
-                                ->pluck('ppb_detail_id')
+                                ->pluck('po_detail_id')
                                 ->all();
 
-        $receiving_detail_current = ReceivingDetail::where('receiving_id', $id)->pluck('ppb_detail_id')->all();
+        $receiving_detail_current = ReceivingDetail::where('receiving_id', $id)->pluck('po_detail_id')->all();
         $merge = array_merge($receiving_detail_ids, $receiving_detail_current);
         $purchase_order_details = PurchaseOrderDetail::whereNotIn('id', $merge)->pluck('po_id')->all();
         $purchase_orders = PurchaseOrder::whereIn('id', $purchase_order_details)

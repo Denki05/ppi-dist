@@ -80,7 +80,7 @@ class PurchaseOrderDetailController extends Controller
                         $po_detail->po_id = $purchase_id;
                         $po_detail->brand_lokal_id =  trim(htmlentities($post["merek"]));
                         $po_detail->product_packaging_id = trim(htmlentities(implode("-", [$post["product_packaging_id"][$i],$post["packaging_id"][$i]])));
-                        $po_detail->qty = trim(htmlentities($post["qty"][$i]));
+                        $po_detail->quantity = trim(htmlentities($post["qty"][$i]));
                         $po_detail->packaging_id = trim(htmlentities($post["packaging_id"][$i]));
                         $po_detail->note_produksi = trim(htmlentities($post["note_produksi"][$i])) ?? null;
                         $po_detail->note_repack = trim(htmlentities($post["note_repack"][$i])) ?? null;
