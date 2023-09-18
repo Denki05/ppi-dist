@@ -132,7 +132,10 @@
                       <a class="nav-link" href="{{ route('superuser.gudang.stock_adjustment.index') }}" >Stock Adjustment</a>
                     </li>
                     <li class="nav-item">
-                      <a class="nav-link" href="{{ route('superuser.gudang.purchase_order.index') }}" >Purchase Order</a>
+                      <a class="nav-link" href="{{ route('superuser.gudang.purchase_order.index') }}" >Purchase Order (PO)</a>
+                    </li>
+                    <li class="nav-item">
+                      <a class="nav-link" href="{{ route('superuser.gudang.receiving.index') }}" >Receiving</a>
                     </li>
                   </ul>
                 </div>

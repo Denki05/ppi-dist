@@ -37,4 +37,34 @@ Route::group([
         });
     });
     Route::resource('purchase_order', 'PurchaseOrderController');
+
+    Route::group(['as' => 'receiving.', 'perfix' => '/receiving'], function (){
+        // Route::get('/json', 'ReceivingController@json')->name('json');
+        Route::get('/step/{id}', 'ReceivingController@step')->name('step');
+        Route::get('{id}/publish', 'ReceivingController@publish')->name('publish');
+        Route::get('{id}/acc', 'ReceivingController@acc')->name('acc');
+        Route::get('/cancel_approve/{id}', 'ReceivingController@cancel_approve')->name('cancel_approve');
+
+        Route::group(['as' => 'detail.'], function () {
+            Route::get('{id}/detail/{detail_id}/colly', 'ReceivingDetailController@show')->name('show');
+            Route::get('{id}/detail/create', 'ReceivingDetailController@create')->name('create');
+            Route::post('{id}/detail', 'ReceivingDetailController@store')->name('store');
+            Route::delete('{id}/detail/{detail_id}/delete', 'ReceivingDetailController@destroy')->name('destroy');
+
+            Route::get('{id}/detail/{detail_id}/edit', 'ReceivingDetailController@edit')->name('edit');
+            Route::put('{id}/detail/{detail_id}', 'ReceivingDetailController@update')->name('update');
+
+            Route::post('detail/get_sku_json', 'ReceivingDetailController@get_sku_json')->name('get_sku_json');
+
+            Route::group(['as' => 'colly.'], function () {
+                Route::get('{id}/colly/{detail_id}/create', 'ReceivingDetailCollyController@create')->name('create');
+                Route::post('{id}/{detail_id}/colly', 'ReceivingDetailCollyController@store')->name('store');
+                Route::get('{id}/detail/{detail_id}/colly/{colly_id}/edit', 'ReceivingDetailCollyController@edit')->name('edit');
+                Route::put('{id}/detail/{detail_id}/colly/{colly_id}', 'ReceivingDetailCollyController@update')->name('update');
+                Route::delete('{id}/detail/{detail_id}/colly/{colly_id}/delete', 'ReceivingDetailCollyController@destroy')->name('destroy');
+            });
+
+        });
+    });
+    Route::resource('receiving', 'ReceivingController');
 });

@@ -137,6 +137,10 @@ class Product extends Model
         return $this->hasMany('App\Entities\Master\Fragrantica');
     }
 
+    public function factory(){
+        return $this->belongsTo('App\Entities\Master\Vendor', 'vendor_id', 'id');
+    }
+
     public function updatedBySuperuser()
     {
         $superuser = Superuser::find($this->updated_by);

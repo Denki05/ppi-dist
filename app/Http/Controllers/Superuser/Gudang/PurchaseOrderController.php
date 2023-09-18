@@ -14,6 +14,7 @@ use App\Entities\Master\Warehouse;
 use Auth;
 use DB;
 use Validator;
+use Carbon\Carbon;
 
 class PurchaseOrderController extends Controller
 {
@@ -301,7 +302,13 @@ class PurchaseOrderController extends Controller
                 $purchase_order->edit_counter += 1;
                 $purchase_order->edit_marker = 0;
             }elseif($save_type == 'save-acc'){
-                if(count($purchase_order->po_detail) == null){
+                // check data
+                // $po_detail = PurchaseOrderDetail::where('po_id', $purchase_order->id)->get();
+
+                // dd(count($po_detail));
+
+
+                if(count($purchase_order->purchase_order_detail) == null){
                     return redirect()->route('superuser.gudang.purchase_order.index')->with('error','<a href="'.route('superuser.gudang.purchase_order.show', $purchase_order->id).'">'.$purchase_order->code.'</a> : Tidak ada Item yang di input!');
                 }else{
                     $purchase_order->acc_at = Carbon::now()->toDateTimeString();
@@ -317,7 +324,7 @@ class PurchaseOrderController extends Controller
             }
         }catch (\Exception $e){
             DB::rollback();
-
+            dd($e);
             $response['notification'] = [
                 'alert' => 'block',
                 'type' => 'alert-danger',
@@ -325,7 +332,7 @@ class PurchaseOrderController extends Controller
                 'content' => "Internal Server Error!",
             ];
 
-            return $this->respone(400, $response);
+            return $this->response(400, $response);
         }
     }
 
@@ -356,6 +363,7 @@ class PurchaseOrderController extends Controller
                 return redirect()->route('superuser.gudang.purchase_order.index')->with('success','<a href="'.route('superuser.gudang.purchase_order.index').'">'.$purchase_order->code.'</a> : PO berhasil di Approve!');
             }
         }catch (\Exception $e) {
+            DD($e);
             DB::rollback();
             $response['notification'] = [
                 'alert' => 'block',
@@ -376,6 +384,7 @@ class PurchaseOrderController extends Controller
                 abort(405);
             }
         }
+        
         if ($request->ajax()) {
             $purchase_order = PurchaseOrder::find($id);
 

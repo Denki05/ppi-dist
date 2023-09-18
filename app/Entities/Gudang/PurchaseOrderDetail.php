@@ -13,7 +13,7 @@ class PurchaseOrderDetail extends Model
         'po_id', 
         'brand_lokal_id', 
         'product_packaging_id', 
-        'qty', 
+        'quantity', 
         'packaging_id', 
         'note_produksi',
         'note_repack', 
@@ -29,6 +29,6 @@ class PurchaseOrderDetail extends Model
 
     public function purchase_order()
     {
-        return $this->belongsTo(PurchaseOrder::class, 'po_id', 'id');
+        return $this->belongsTo('App\Entities\Gudang\PurchaseOrder', 'po_id');
     }
 }

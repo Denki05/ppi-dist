@@ -22,6 +22,7 @@ use App\Entities\Finance\Payable;
 use App\Entities\Gudang\StockAdjustment;
 use App\Entities\Gudang\Receiving;
 use App\Entities\Master\BrandLokal;
+use App\Entities\Gudang\PurchaseOrder;
 
 class CodeRepo
 {
@@ -177,6 +178,7 @@ class CodeRepo
         return self::generate('RC', Receiving::class);
     }
 
+    // Generate SO code
     public static function generateSO()
     {
         $get_max = SalesOrder::max('code');
@@ -196,5 +198,26 @@ class CodeRepo
         }
         return $latestNumber;
     }
-    
+
+    // Generate PO code
+    public static function generatePurchaseOrder()
+    {
+        $get_max = Purchaseorder::max('code');
+        $parts = explode('-', date("d-m-Y"));
+        $p1 = substr($parts[2], (strlen($parts[2]) - 2) );
+        $abjadMonth = array( '-', 'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L');
+        $p2 = $abjadMonth[date('n')];
+        $str_code = "B";
+        $yearMonth = $str_code.$p1.$p2;
+        $latestNumber = "";
+
+        if($get_max == 'false'){
+            $latestNumber = $yearMonth . '001';
+        }else{
+            $latestNumber = $get_max;
+            $id = (int) substr($latestNumber, strlen($yearMonth)) + 1;
+            $latestNumber = $yearMonth . str_pad($id, 3, 0, STR_PAD_LEFT);
+        }
+        return $latestNumber;
+    }
 }

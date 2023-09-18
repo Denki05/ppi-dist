@@ -19,65 +19,85 @@
     <!-- Data -->
     <section id="content1">
       <div class="row mb-30">
-        <div class="col-12">
+        <div class="col-6">
           <div class="row">
-            <label class="col-md-3 col-form-label text-right">Material Code</label>
+            <label class="col-md-3 col-form-label text-right">Kode Bahan</label>
             <div class="col-md-7">
               <div class="form-control-plaintext">{{ $product->material_code ?? '' }}</div>
             </div>
           </div>
           <div class="row">
-            <label class="col-md-3 col-form-label text-right">Material Name</label>
+            <label class="col-md-3 col-form-label text-right">Nama Bahan</label>
             <div class="col-md-7">
               <div class="form-control-plaintext">{{ $product->material_name ?? '' }}</div>
             </div>
           </div>
           <div class="row">
-            <label class="col-md-3 col-form-label text-right">Code</label>
+            <label class="col-md-3 col-form-label text-right">Kode Barang</label>
             <div class="col-md-7">
               <div class="form-control-plaintext">{{ $product->code ?? '' }}</div>
             </div>
           </div>
           <div class="row">
-            <label class="col-md-3 col-form-label text-right">Name</label>
+            <label class="col-md-3 col-form-label text-right">Nama Barang</label>
             <div class="col-md-7">
               <div class="form-control-plaintext">{{ $product->name ?? '' }}</div>
             </div>
           </div>
           <div class="row">
-            <label class="col-md-3 col-form-label text-right">Ratio</label>
+            <label class="col-md-3 col-form-label text-right">Pabrik</label>
             <div class="col-md-7">
-              <div class="form-control-plaintext">{{ $product->ratio ?? '' }}</div>
+              <div class="form-control-plaintext">{{ $product->factory->name ?? '' }}</div>
             </div>
           </div>
+          <div class="row">
+            <label class="col-md-3 col-form-label text-right">Merek</label>
+            <div class="col-md-7">
+              <div class="form-control-plaintext">{{ $product->brand_name ?? '' }}</div>
+            </div>
+          </div>
+          <div class="row">
+            <label class="col-md-3 col-form-label text-right">Kategori</label>
+            <div class="col-md-7">
+              <div class="form-control-plaintext">{{ $product->category->name ?? '' }}</div>
+            </div>
+          </div>
+          <div class="row">
+            <label class="col-md-3 col-form-label text-right">Gender</label>
+            <div class="col-md-7">
+              <div class="form-control-plaintext">{{ $product->gender ?? '' }}</div>
+            </div>
+          </div>
+        </div>
+        <div class="col-6">
           <div class="row">
             <label class="col-md-3 col-form-label text-right">Alias</label>
             <div class="col-md-7">
-              <div class="form-control-plaintext">{{ $product->alias ?? '' }}</div>
+              <div class="form-control-plaintext">{{ $product->alias ?? '-' }}</div>
             </div>
           </div>
           <div class="row">
-            <label class="col-md-3 col-form-label text-right">Buying Price</label>
+            <label class="col-md-3 col-form-label text-right">Ratio</label>
             <div class="col-md-7">
-              <div class="form-control-plaintext">{{ number_format($product->buying_price) }}</div>
+              <div class="form-control-plaintext">{{ $product->ratio ?? '-' }}</div>
             </div>
           </div>
           <div class="row">
-            <label class="col-md-3 col-form-label text-right">Selling Price</label>
+            <label class="col-md-3 col-form-label text-right">Harga Beli</label>
             <div class="col-md-7">
-              <div class="form-control-plaintext">{{ number_format($product->selling_price) }}</div>
+              <div class="form-control-plaintext">{{ '$' . number_format($product->buying_price, 2) }}</div>
             </div>
           </div>
           <div class="row">
-            <label class="col-md-3 col-form-label text-right">Description</label>
+            <label class="col-md-3 col-form-label text-right">Harga Jual</label>
             <div class="col-md-7">
-              <div class="form-control-plaintext">{{ $product->description }}</div>
+              <div class="form-control-plaintext">{{ '$' . number_format($product->selling_price, 2) }}</div>
             </div>
           </div>
           <div class="row">
             <label class="col-md-3 col-form-label text-right">Note</label>
             <div class="col-md-7">
-              <div class="form-control-plaintext">{{ $product->note }}</div>
+              <div class="form-control-plaintext">{{ $product->note ?? '-' }}</div>
             </div>
           </div>
           <div class="row">
@@ -131,7 +151,7 @@
     <!-- Brand -->
     <section id="content3">
     <div class="row mb-30">
-        <div class="col-12">
+        <div class="col-6">
           <div class="row">
             <label class="col-md-3 col-form-label text-right">Brand</label>
             <div class="col-md-7">
@@ -145,11 +165,16 @@
             </div>
           </div>
           <div class="row">
-            <label class="col-md-3 col-form-label text-right">Merek</label>
+            <label class="col-md-3 col-form-label text-right">Link Web</label>
             <div class="col-md-7">
-              <div class="form-control-plaintext">{{ $product->brand_name }}</div>
+              <div class="form-control-plaintext">
+                <a href="{{ $product->sub_brand_reference->link }}" class="link-primary" target="_blank">{{ $product->sub_brand_reference->link }}</a>
+              </div>
             </div>
           </div>
+          
+        </div>
+        <div class="col-6">
           <div class="row">
             <label class="col-md-3 col-form-label text-right">Image</label>
             <div class="col-md-7">

@@ -18,13 +18,16 @@
 </div>
 @endif
 <div class="block">
-    <hr class="my-20">
-    <div class="block-content block-content-full">
-      <div class="row mb-30">
+  <div class="block-content">
+      <!-- <div class="row mb-30">
         <div class="col-12">
           <a href="{{route('superuser.gudang.purchase_order.create')}}" class="btn btn-primary btn-add"><i class="fa fa-plus"></i> Add PO</a>
         </div>
-      </div>
+      </div> -->
+      <a href="{{route('superuser.gudang.purchase_order.create')}}">
+        <button type="button" class="btn btn-outline-primary min-width-125">New</button>
+      </a>
+      <hr class="my-20">
 
       <div class="row mb-30">
         <div class="col-12">
@@ -40,61 +43,7 @@
               <th class="text-center">Action</th>
             </tr>
           </thead>
-          {{--<tbody>
-            @foreach($purchase_order as $key)
-              <tr>
-                <td>{{ $loop->iteration }}</td>
-                <td>{{ $key->created_at }}</td>
-                <td>{{ $key->code }}</td>
-                <td>{{ $key->updated_by }}</td>
-                <td>{{ $key->edit_counter }}</td>
-                <td>{{ $key->status() }}</td>
-                <td>
-                  @if($key->status == '1')
-                    <a href="{{ route('superuser.gudang.purchase_order.acc', $key->id) }}">
-                      <button type="button" class="btn btn-sm btn-circle btn-alt-success" title="ACC">
-                        <i class="fa fa-check"></i>
-                      </button>
-                    </a>
-                    <a href="{{ route('superuser.gudang.purchase_order.edit', $key->id) }}">
-                      <button type="button" class="btn btn-sm btn-circle btn-alt-warning" title="Edit">
-                        <i class="fa fa-pencil"></i>
-                      </button>
-                    </a>
-                    <a href="{{  route('superuser.gudang.purchase_order.destroy', $key->id)  }}">
-                      <button type="button" class="btn btn-sm btn-circle btn-alt-danger" title="Delete">
-                        <i class="fa fa-times"></i>
-                      </button>
-                    </a>
-                  @endif
-                  @if($key->status == '3')
-                    <a href="{{ route('superuser.gudang.purchase_order.edit', $key->id) }}">
-                      <button type="button" class="btn btn-sm btn-circle btn-alt-warning" title="Edit">
-                        <i class="fa fa-pencil"></i>
-                      </button>
-                    </a>
-                    <a href="{{  route('superuser.gudang.purchase_order.destroy', $key->id)  }}">
-                      <button type="button" class="btn btn-sm btn-circle btn-alt-danger" title="Delete">
-                        <i class="fa fa-times"></i>
-                      </button>
-                    </a>
-                  @endif
-                  @if($key->status == '2')
-                    <a href="{{ route('superuser.gudang.purchase_order.edit', $key->id) }}">
-                      <button type="button" class="btn btn-sm btn-circle btn-alt-warning" title="Edit">
-                        <i class="fa fa-pencil"></i>
-                      </button>
-                    </a>
-                    <a href="{{  route('superuser.gudang.purchase_order.destroy', $key->id)  }}">
-                      <button type="button" class="btn btn-sm btn-circle btn-alt-danger" title="Delete">
-                        <i class="fa fa-times"></i>
-                      </button>
-                    </a>
-                  @endif
-                </td>
-              </tr>
-            @endforeach
-          </tbody>--}}
+          
         </table>
         </div>
       </div>
