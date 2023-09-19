@@ -19,6 +19,7 @@ class ProductImportTemplate implements FromArray, ShouldAutoSize
                 'merek',
                 'code',
                 'name',
+                'alias',
                 'material_code',
                 'material_name',
                 'gender',

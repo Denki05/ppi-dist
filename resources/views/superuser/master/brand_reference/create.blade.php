@@ -51,5 +51,5 @@
 @endsection
 
 @push('scripts')
-<script src="{{ asset('public/utility/superuser/js/form.js') }}"></script>
+<script src="{{ asset('utility/superuser/js/form.js') }}"></script>
 @endpush

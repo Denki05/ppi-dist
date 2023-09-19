@@ -88,6 +88,7 @@ class ProductImport implements ToCollection, WithHeadingRow, WithStartRow, Skips
                     $product->brand_name = $row['merek'];
                     $product->code = $row['code'];
                     $product->name = $row['name'];
+                    $product->alias = $row['alias'];
                     $product->material_code = $row['material_code'];
                     $product->material_name = $row['material_name'];
                     $product->gender = $row['gender'];
