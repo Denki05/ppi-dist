@@ -8,7 +8,7 @@ use Illuminate\Support\Facades\Auth;
 class ReceivingDetail extends Model
 {
     protected $fillable = [
-        'receiving_id', 'po_id', 'po_detail_id', 'product_packaging_id', 'quantity', 'total_quantity_ri', 'total_quantity_colly', 'delivery_cost', 'no_container' ,'description', 'total_ri_idr', 'grand_total'
+        'receiving_id', 'po_id', 'po_detail_id', 'product_packaging_id', 'quantity', 'total_quantity_ri', 'total_quantity_colly', 'delivery_cost', 'sj_po' ,'description', 'total_ri_idr', 'grand_total'
     ];
     protected $table = 'receiving_detail';
 
@@ -27,7 +27,7 @@ class ReceivingDetail extends Model
 
     public function purchase_order()
     {
-        return $this->belongsTo('App\Entities\Gudang\PurchaseOrder', 'ppb_id');
+        return $this->belongsTo('App\Entities\Gudang\PurchaseOrder', 'po_id');
     }
 
     public function ppb_detail()

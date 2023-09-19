@@ -46,16 +46,16 @@
           <input type="number" class="form-control" id="quantity" name="quantity" readonly>
         </div>
       </div>
-      <div class="form-group row">
+      {{--<div class="form-group row">
         <label class="col-md-3 col-form-label text-right" for="delivery_cost">Sea Freight</label>
         <div class="col-md-4">
           <input type="number" class="form-control" id="delivery_cost" name="delivery_cost" min="0" value="0" step="any">
         </div>
-      </div>
+      </div>--}}
       <div class="form-group row">
-        <label class="col-md-3 col-form-label text-right" for="no_container">No Container</label>
+        <label class="col-md-3 col-form-label text-right" for="sj_po">NO SJ</label>
         <div class="col-md-4">
-          <input type="text" class="form-control" id="no_container" name="no_container">
+          <input type="text" class="form-control" id="sj_po" name="sj_po">
         </div>
       </div>
       <div class="form-group row">

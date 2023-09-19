@@ -65,11 +65,7 @@
       </div>
 
       <div class="col-md-6 text-right">
-        {{-- <a href="javascript:saveConfirmation('{{ route('superuser.gudang.receiving.save_modify', [$receiving->id, 'save']) }}')">
-          <button type="button" class="btn bg-gd-pulse border-0 text-white">
-            Delete <i class="fa fa-trash ml-10"></i>
-          </button>
-        </a> --}}
+
         <a href="{{ route('superuser.gudang.receiving.edit', $receiving->id) }}">
           <button type="button" class="btn bg-gd-sea border-0 text-white">
             Edit <i class="fa fa-pencil ml-10"></i>
@@ -80,7 +76,7 @@
             Delete <i class="fa fa-trash ml-10"></i>
           </button>
         </a>
-        <a href="javascript:saveConfirmation2('{{ route('superuser.gudang.receiving.publish', $receiving->id) }}')">
+        <a href="javascript:saveConfirmation('{{ route('superuser.gudang.receiving.publish', $receiving->id) }}')">
           <button type="button" class="btn bg-gd-leaf border-0 text-white">
             ACC <i class="fa fa-check ml-10"></i>
           </button>
@@ -111,8 +107,7 @@
           <th class="text-center">PO Quantity</th>
           <th class="text-center">RI Quantity</th>
           <th class="text-center">Colly Quantity</th>
-          <th class="text-center">Sea Freight</th>
-          <th class="text-center">No Container</th>
+          <th class="text-center">NO SJ</th>
           <th class="text-center">Note</th>
           <th class="text-center">Action</th>
         </tr>
@@ -127,8 +122,7 @@
           <td class="text-center">{{ $receiving->price_format($detail->quantity) }}</td>
           <td class="text-center">{{ $receiving->price_format($detail->total_quantity_ri) }}{{ $detail->total_reject_ri($detail->id) ? ' [RE '.$receiving->price_format($detail->total_reject_ri($detail->id)).']' : '' }}</td>
           <td class="text-center">{{ $receiving->price_format($detail->total_quantity_colly) }}{{ $detail->total_reject_colly($detail->id) ? ' [RE '.$receiving->price_format($detail->total_reject_colly($detail->id)).']' : '' }}</td>
-          <td class="text-center">{{ $detail->delivery_cost }}</td>
-          <td class="text-center">{{ $detail->no_container }}</td>
+          <td class="text-center">{{ $detail->sj_po }}</td>
           <td class="text-center">{{ $detail->description }}</td>
           <td class="text-center" style="white-space: nowrap;">
             <a href="{{ route('superuser.gudang.receiving.detail.edit', [$receiving->id, $detail->id]) }}">
@@ -164,14 +158,7 @@
 <script src="{{ asset('utility/superuser/js/form.js') }}"></script>
 <script type="text/javascript">
   $(document).ready(function() {
-    $('#datatable').DataTable({
-      "dom": '<"row"<"col-sm-12 col-md-6"l><"col-sm-12 col-md-6"f>> <"row"<"col-sm-12 col-md-12"p>> <"row"<"col-sm-12"rt>> <"row"<"col-sm-12 col-md-6"i><"col-sm-12 col-md-6"p>>'
-    })
-
-    $('a.img-lightbox').magnificPopup({
-      type: 'image',
-      closeOnContentClick: true,
-    });
+    $('#datatable').DataTable({})
   })
 </script>
 @endpush

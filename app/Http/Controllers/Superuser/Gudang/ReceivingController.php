@@ -192,183 +192,20 @@ class ReceivingController extends Controller
 
             DB::beginTransaction();
             try {
-                $superuser = Auth::guard('superuser')->user();
-                $collect = [];
-                
-                $setting_tax = SettingFinance::where('type', $superuser->type)->where('branch_office_id', $superuser->branch_office_id)->where('key', 'receiving_tax')->first();
+                $receiving->acc_by = Auth::id();
+                $receiving->acc_at = Carbon::now()->toDateTimeString();
+                $receiving->status = Receiving::STATUS['ACC'];
 
-                if ($setting_tax == null or $setting_tax->coa_id == null) {
-                    $response['failed'] = 'Tax Setting is not set, please contact your Administrator!';
+                if ($receiving->save()) {
+                    DB::commit();
+
+                    if ($button_type == 'publish') {
+                        $response['redirect_to'] = route('superuser.gudang.receiving.index');
+                    } else {
+                        $response['redirect_to'] = '#datatable';
+                    }
+
                     return $this->response(200, $response);
-                } else {
-                    $total_persediaan = 0;
-                    $total_tax = 0;
-                    $deliv_cost = 0;
-
-                    foreach ($receiving->details as $detail) {
-                        if(($detail->total_quantity_ri == 0) && ($detail->total_reject_ri($detail->id) == 0)){
-                            $response['failed'] = 'Quantity RI and Quantity Reject is 0, cant save';
-                            DB::rollback();
-
-                            return $this->response(200, $response);
-                        }
-                        
-                        $harga_satuan = $detail->ppb_detail->total_price_idr / $detail->ppb_detail->quantity;
-                        $reject_idr = 0;
-                        if ($detail->total_reject_ri($detail->id)) {
-                            $reject_idr = $detail->total_reject_ri($detail->id) * $harga_satuan;
-
-                            if (!empty($collect[$detail->ppb_id])) {
-                                $collect[$detail->ppb_id] += $reject_idr;
-                            } else {
-                                $collect[$detail->ppb_id] = $reject_idr;
-                            }
-                        }
-                        
-                        $delivery_cost = 0;
-
-                        if($detail->total_quantity_ri > 0) {
-                            $delivery_cost = $detail->delivery_cost / $detail->total_quantity_ri;
-                        }
-
-                        foreach($detail->collys as $colly){
-                            $receiving_detail_colly = ReceivingDetailColly::find($colly->id);
-
-                            if($detail->total_quantity_ri != 0 ){
-                                $receiving_detail_colly->hpp = ($detail->ppb_detail->total_price_idr / $detail->ppb_detail->quantity) +
-                                                            ($detail->delivery_cost / $detail->total_quantity_ri);
-                            } else {
-                                $receiving_detail_colly->hpp = 0;
-                            }
-
-                            $receiving_detail_colly->save();
-                        }
-
-                        // HANDLE RECEIVING COA
-                        $qty_receive = ReceivingDetailColly::where('receiving_detail_id', $detail->id)->sum('quantity_ri');
-                        $total_persediaan_item = $detail->total_quantity_ri * ($harga_satuan + $delivery_cost);
-                        $total_persediaan = $total_persediaan + $total_persediaan_item;
-
-                        // SUM TAX
-                        $tax_satuan = 0;
-                        if ($detail->ppb_detail->total_tax > 0) {
-                            $tax_satuan = $detail->ppb_detail->total_tax / $detail->ppb_detail->quantity;
-                        }
-                        $total_tax_item = $qty_receive * $tax_satuan;
-                        $total_tax = $total_tax + $total_tax_item;
-
-                        //SUM Delivery Cost
-                        $deliv_cost += $detail->delivery_cost;
-                    }
-
-                    if($receiving->transaction_type == Receiving::TRANSACTION_TYPE['Tunai']) {
-                        $setting_receiving_acc = SettingFinance::where('type', $superuser->type)->where('branch_office_id', $superuser->branch_office_id)->where('key', 'receiving_debet')->first();
-
-                        $setting_finance = SettingFinance::where('type', $superuser->type)->where('branch_office_id', $superuser->branch_office_id)->where('key', 'ppb_tunai_debet')->first();
-
-                        $setting_finance_cost = SettingFinance::where('type', $superuser->type)->where('branch_office_id', $superuser->branch_office_id)->where('key', 'receiving_cost')->first();
-                        if($setting_finance == null OR $setting_finance->coa_id == null) {
-                            $failed = 'Finance Setting is not set, please contact your Administrator!';
-                        } else {
-                            // ADD JOURNAL
-                            $journal = new Journal;
-                            $journal->coa_id = $setting_receiving_acc->coa_id;
-                            $journal->name = Journal::PREJOURNAL['RI_ACC'] . $receiving->code;
-                            $journal->debet = $total_persediaan - $total_tax;
-                            $journal->status = Journal::STATUS['UNPOST'];
-                            $journal->save();
-        
-                            $journal = new Journal;
-                            $journal->coa_id = $setting_finance->coa_id;
-                            $journal->name = Journal::PREJOURNAL['RI_ACC'] . $receiving->code;
-                            $journal->credit = $total_persediaan - $deliv_cost;
-                            $journal->status = Journal::STATUS['UNPOST'];
-                            $journal->save();
-        
-                            $journal = new Journal;
-                            $journal->coa_id = $setting_finance_cost->coa_id;
-                            $journal->name = Journal::PREJOURNAL['RI_ACC'] . $receiving->code;
-                            $journal->credit = $deliv_cost;
-                            $journal->status = Journal::STATUS['UNPOST'];
-                            $journal->save();
-
-                            if ($total_tax > 0) {
-                                $journal = new Journal;
-                                $journal->coa_id = $setting_tax->coa_id;
-                                $journal->name = Journal::PREJOURNAL['RI_TAX'] . $receiving->code;
-                                $journal->debet = $total_tax;
-                                $journal->status = Journal::STATUS['UNPOST'];
-                                $journal->save();
-                            }
-        
-                            if ($collect) {
-                                foreach ($collect as $key => $value) {
-                                    $ppb = PurchaseOrder::find($key);
-        
-                                    // ADD JOURNAL
-                                    $journal = new Journal;
-                                    $journal->coa_id = $ppb->coa_id;
-                                    $journal->name = Journal::PREJOURNAL['RI_REJECT'] . $ppb->code;
-                                    $journal->debet = $value;
-                                    $journal->status = Journal::STATUS['UNPOST'];
-                                    $journal->save();
-        
-                                    $journal = new Journal;
-                                    $journal->coa_id = $setting_finance->coa_id;
-                                    $journal->name = Journal::PREJOURNAL['RI_REJECT'] . $ppb->code;
-                                    $journal->credit = $value;
-                                    $journal->status = Journal::STATUS['UNPOST'];
-                                    $journal->save();
-                                }
-                            }
-                        }
-                    }else{
-                        $setting_receiving_acc = SettingFinance::where('type', $superuser->type)->where('branch_office_id', $superuser->branch_office_id)->where('key', 'receiving_debet')->first();
-
-                        $setting_finance_credit = SettingFinance::where('type', $superuser->type)->where('branch_office_id', $superuser->branch_office_id)->where('key', 'ppb_non_tunai_debet')->first();
-
-                        $setting_finance_cost = SettingFinance::where('type', $superuser->type)->where('branch_office_id', $superuser->branch_office_id)->where('key', 'receiving_cost')->first();
-
-                        if($receiving->transaction_type == Receiving::TRANSACTION_TYPE['Non Tunai']){
-                            // ADD JOURNAL
-                            $journal = new Journal;
-                            $journal->coa_id = $setting_receiving_acc->coa_id;
-                            $journal->name = Journal::PREJOURNAL['RI_ACC'] . $receiving->code;
-                            $journal->debet = $total_persediaan - $total_tax;
-                            $journal->status = Journal::STATUS['UNPOST'];
-                            $journal->save();
-        
-                            $journal = new Journal;
-                            $journal->coa_id = $setting_finance_credit->coa_id;
-                            $journal->name = Journal::PREJOURNAL['RI_ACC'] . $receiving->code;
-                            $journal->credit = $total_persediaan - $deliv_cost;
-                            $journal->status = Journal::STATUS['UNPOST'];
-                            $journal->save();
-        
-                            $journal = new Journal;
-                            $journal->coa_id = $setting_finance_cost->coa_id;
-                            $journal->name = Journal::PREJOURNAL['RI_ACC'] . $receiving->code;
-                            $journal->credit = $deliv_cost;
-                            $journal->status = Journal::STATUS['UNPOST'];
-                            $journal->save();
-                        }
-                    }
-
-                    $receiving->acc_by = Auth::guard('superuser')->id();
-                    $receiving->acc_at = Carbon::now()->toDateTimeString();
-                    $receiving->status = Receiving::STATUS['ACC'];
-
-                    if ($receiving->save()) {
-                        DB::commit();
-
-                        if ($button_type == 'publish') {
-                            $response['redirect_to'] = route('superuser.purchasing.receiving.index');
-                        } else {
-                            $response['redirect_to'] = '#datatable';
-                        }
-
-                        return $this->response(200, $response);
-                    }
                 }
             } catch (\Exception $e) {
                 DB::rollback();

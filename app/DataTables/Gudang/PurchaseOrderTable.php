@@ -68,7 +68,7 @@ class PurchaseOrderTable extends Table
             switch ($model->status) {
                 case $model::STATUS['ACTIVE']:
                     return "
-                        <a href=\"javascript:saveConfirmation('{$acc}')\">
+                        <a href=\"javascript:saveConfirmation2('{$acc}')\">
                             <button type=\"button\" class=\"btn btn-sm btn-circle btn-alt-success\" title=\"ACC\">
                                 <i class=\"fa fa-check\"></i>
                             </button>
