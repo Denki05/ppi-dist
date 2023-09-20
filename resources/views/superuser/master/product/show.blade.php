@@ -47,7 +47,8 @@
           <div class="row">
             <label class="col-md-3 col-form-label text-right">Pabrik</label>
             <div class="col-md-7">
-              <div class="form-control-plaintext">{{ $product->factory->name ?? '' }}</div>
+              
+              <div class="form-control-plaintext"></div>
             </div>
           </div>
           <div class="row">

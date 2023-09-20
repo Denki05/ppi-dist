@@ -64,11 +64,10 @@ class ProductTable extends Table
         });
 
         $table->addColumn('action', function (Product $model) {
-<<<<<<< HEAD
+
             $view = route('superuser.master.product.show', base64_encode($model->id));
-=======
+
             $view = route('superuser.master.product.show', $model->id);
->>>>>>> 940c377cd068d4a97922d2b2ed37b2e80e124ff3
             $edit = route('superuser.master.product.edit', $model);
             $destroy = route('superuser.master.product.destroy', $model);
 

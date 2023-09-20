@@ -94,7 +94,7 @@
                                     <div class="form-group row">
                                       <label for="factory" class="col-sm-2 col-form-label">Factory <span class="text-danger">*</span></label>
                                       <div class="col-sm-10">
-                                        <select class="js-select2 form-control" id="factory" name="factory" style="width:100%;" placeholder="Pilih Pabrik" required>
+                                        <select class="js-select2 select2-multiple form-control" id="factory" name="factory[]" style="width:100%;" placeholder="Pilih Pabrik" required multiple="multiple">
                                           <option>Pilih Pabrik</option>
                                           @foreach($factory as $factory)
                                           <option value="{{ $factory->id }}">{{ $factory->name }}</option>

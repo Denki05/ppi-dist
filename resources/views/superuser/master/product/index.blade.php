@@ -83,12 +83,12 @@
                     <i class="mdi mdi-eye"></i>
                   </button>
                 </a>
-                <a href="">
+                <a href="{{ route('superuser.master.product.edit', base64_encode($row->id)) }}">
                   <button type="button" class="btn btn-sm btn-circle btn-alt-secondary" title="Edit">
                     <i class="mdi mdi-pencil"></i>
                   </button>
                 </a>
-                <a href="javascript:deleteConfirmation()">
+                <a href="javascript:deleteConfirmation('{{ route('superuser.master.product.destroy', $row->id) }}')">
                   <button type="button" class="btn btn-sm btn-circle btn-alt-secondary" title="Delete">
                     <i class="mdi mdi-delete"></i>
                   </button>

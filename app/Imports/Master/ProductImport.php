@@ -64,18 +64,6 @@ class ProductImport implements ToCollection, WithHeadingRow, WithStartRow, Skips
                     break;
                 }
 
-                // $warehouse = Warehouse::where('name', $row['warehouse'])->first();
-                // if($warehouse == null) {
-                //     $collect_error[] = $row['warehouse'] . '  "WAREHOUSE" not found';
-                //     break;
-                // }
-
-                // $packaging = Packaging::where('pack_name', $row['packaging'])->first();
-                // if($packaging == null) {
-                //     $collect_error[] = $row['packaging'] . '  "PACKAGING" not found';
-                //     break;
-                // }
-
                 if($row['merek'] == 'Senses' || $row['merek'] == 'SENSES'){
                     $id_product = explode(' ', $row['code']);
                     
@@ -88,7 +76,7 @@ class ProductImport implements ToCollection, WithHeadingRow, WithStartRow, Skips
                     $product->brand_name = $row['merek'];
                     $product->code = $row['code'];
                     $product->name = $row['name'];
-                    $product->alias = $row['alias'];
+                    $product->alias = $row['alias'] ?? null;
                     $product->material_code = $row['material_code'];
                     $product->material_name = $row['material_name'];
                     $product->gender = $row['gender'];

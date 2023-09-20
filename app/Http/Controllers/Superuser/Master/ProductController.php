@@ -131,7 +131,7 @@ class ProductController extends Controller
                     $product->sub_brand_reference_id = $request->searah;
                     $product->category_id = $request->category;
                     $product->type_id = $request->type;
-                    $product->vendor_id = $request->factory;
+                    $product->vendor_id = json_encode($request->factory);
 
                     $product->name = $request->name;
                     $product->material_code = $request->material_code;
@@ -161,7 +161,7 @@ class ProductController extends Controller
                         $kemasan = $request->packaging;
                         foreach($kemasan as $value){
                                 $child_product = new ProductPack;
-                                $child_product->id = $product->id.'.'.$value;
+                                $child_product->id = $product->id.'-'.$value;
                                 $child_product->product_id = $product->id;
                                 $child_product->warehouse_id = $warehouse->id;
                                 $child_product->packaging_id = $value;
@@ -234,7 +234,7 @@ class ProductController extends Controller
                         $kemasan = $request->packaging;
                         foreach($kemasan as $value){
                                 $child_product = new ProductPack;
-                                $child_product->id = $product->id.'.'.$value;
+                                $child_product->id = $product->id.'-'.$value;
                                 $child_product->product_id = $product->id;
                                 $child_product->warehouse_id = $warehouse->id;
                                 $child_product->packaging_id = $value;
@@ -297,7 +297,11 @@ class ProductController extends Controller
             }
         }
 
-        $data['product'] = Product::find($id);
+        // $data['product'] = Product::find($id);
+
+        $decode = base64_decode($id);
+
+        $data['product'] = Product::find($decode);
 
         $data['brand_references'] = MasterRepo::brand_references();
         $data['sub_brand_references'] = MasterRepo::sub_brand_references();
