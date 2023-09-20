@@ -22,9 +22,9 @@ class Product extends Model
     public $incrementing = false;
     public static $directory_image = 'superuser_assets/media/master/product/';
 
-    protected $casts = [
-        'vendor_id' => 'array',
-    ];
+    // protected $casts = [
+    //     'vendor_id' => 'array',
+    // ];
     
     const NOTE = [
         'BEST SELLER',
@@ -154,13 +154,13 @@ class Product extends Model
         }
     }
 
-    public function setVendorAttribute($value)
-    {
-        $this->attributes['vendor_id'] = json_encode($value);
-    }
+    // public function setVendorAttribute($value)
+    // {
+    //     $this->attributes['vendor_id'] = json_encode($value);
+    // }
 
-    public function getVendorAttribute($value)
-    {
-        return $this->attributes['vendor_id'] = json_decode($value);
-    }
+    // public function getVendorAttribute($value)
+    // {
+    //     return $this->attributes['vendor_id'] = json_decode($value);
+    // }
 }
