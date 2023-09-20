@@ -12,7 +12,7 @@ class Product extends Model
 
     protected $appends = ['image_url', 'image_hd_url'];
     protected $fillable = [
-                        'vendor_id', 'packaging_id', 'category_id', 'type_id', 'brand_reference_id', 'sub_brand_reference_id', 'brand_name',
+                        'packaging_id', 'category_id', 'type_id', 'brand_reference_id', 'sub_brand_reference_id', 'brand_name',
                         'code', 'name', 'material_code', 'material_name', 'alias', 'description', 
                         'default_quantity', 'default_unit_id', 'ratio', 'default_warehouse_id',
                         'buying_price', 'selling_price', 'image', 'image_hd', 'status', 'gender'
@@ -21,10 +21,6 @@ class Product extends Model
     protected $table = 'master_products';
     public $incrementing = false;
     public static $directory_image = 'superuser_assets/media/master/product/';
-
-    // protected $casts = [
-    //     'vendor_id' => 'array',
-    // ];
     
     const NOTE = [
         'BEST SELLER',
@@ -141,10 +137,6 @@ class Product extends Model
         return $this->hasMany('App\Entities\Master\Fragrantica');
     }
 
-    public function factory(){
-        return $this->belongsTo('App\Entities\Master\Vendor', 'vendor_id', 'id');
-    }
-
     public function updatedBySuperuser()
     {
         $superuser = Superuser::find($this->updated_by);
@@ -154,13 +146,8 @@ class Product extends Model
         }
     }
 
-    // public function setVendorAttribute($value)
-    // {
-    //     $this->attributes['vendor_id'] = json_encode($value);
-    // }
-
-    // public function getVendorAttribute($value)
-    // {
-    //     return $this->attributes['vendor_id'] = json_decode($value);
-    // }
+    public function vendor()
+    {
+        return $this->belongsToMany('App\Entities\Master\Vendor', 'vendor_products', 'product_id', 'vendor_id')->withPivot('id');
+    }
 }

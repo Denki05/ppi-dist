@@ -58,11 +58,11 @@ class ProductImport implements ToCollection, WithHeadingRow, WithStartRow, Skips
 
                 $type = ProductType::where('name', $row['type'])->first();
 
-                $vendor = Vendor::where('name', $row['vendor'])->first();
-                if($vendor == null) {
-                    $collect_error[] = $row['vendor'] . '  "VENDOR" not found';
-                    break;
-                }
+                // $vendor = Vendor::where('name', $row['vendor'])->first();
+                // if($vendor == null) {
+                //     $collect_error[] = $row['vendor'] . '  "VENDOR" not found';
+                //     break;
+                // }
 
                 if($row['merek'] == 'Senses' || $row['merek'] == 'SENSES'){
                     $id_product = explode(' ', $row['code']);
@@ -72,7 +72,7 @@ class ProductImport implements ToCollection, WithHeadingRow, WithStartRow, Skips
                     $product->sub_brand_reference_id = $searah->id;
                     $product->category_id = $kategori->id;
                     $product->type_id = $type->id ?? null;
-                    $product->vendor_id = $vendor->id;
+                    // $product->vendor_id = $vendor->id;
                     $product->brand_name = $row['merek'];
                     $product->code = $row['code'];
                     $product->name = $row['name'];
@@ -87,11 +87,8 @@ class ProductImport implements ToCollection, WithHeadingRow, WithStartRow, Skips
                     if($product->save()){
                         $warehouse = Warehouse::where('name', 'Gudang Araya')->first();
                         $pecah_kemasan = explode(',', $row['packaging']);
-                        $kemasan = Packaging::where('pack_name', $pecah_kemasan)->get();
-
 
                         foreach($pecah_kemasan as $value){
-
                                 $child_product = new ProductPack;
                                 $child_product->id = $product->id.'-'.Packaging::where('pack_name', $value)->pluck('id')->first();
                                 $child_product->product_id = $product->id;

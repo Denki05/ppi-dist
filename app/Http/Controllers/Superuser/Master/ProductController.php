@@ -11,6 +11,7 @@ use App\Entities\Master\ProductMinStock;
 use App\Entities\Master\SubBrandReference;
 use App\Entities\Master\BrandLokal;
 use App\Entities\Master\Vendor;
+use App\Entities\Master\VendorProduct;
 use App\Entities\Master\Unit;
 use App\Entities\Master\Packaging;
 use App\Entities\Master\Warehouse;
@@ -131,7 +132,14 @@ class ProductController extends Controller
                     $product->sub_brand_reference_id = $request->searah;
                     $product->category_id = $request->category;
                     $product->type_id = $request->type;
-                    $product->vendor_id = json_encode($request->factory);
+                    if($request->factory){
+                        foreach($request->factory as $key){
+                            $vendorProduct = new VendorProduct;
+                            $vendorProduct->vendor_id = $key;
+                            $vendorProduct->product_id = $product->id;
+                            $vendorProduct->save();
+                        }
+                    }
 
                     $product->name = $request->name;
                     $product->material_code = $request->material_code;
@@ -203,7 +211,14 @@ class ProductController extends Controller
                     $product->sub_brand_reference_id = $request->searah;
                     $product->category_id = $request->category;
                     $product->type_id = $request->type;
-                    $product->vendor_id = $request->factory;
+                    if($request->factory){
+                        foreach($request->factory as $key){
+                            $vendorProduct = new VendorProduct;
+                            $vendorProduct->vendor_id = $key;
+                            $vendorProduct->product_id = $product->id;
+                            $vendorProduct->save();
+                        }
+                    }
 
                     $product->name = $request->name;
                     $product->material_code = $request->material_code;
@@ -437,7 +452,8 @@ class ProductController extends Controller
                 abort(404);
             }
 
-            $product->status = Product::STATUS['DELETED'];
+            // $product->status = Product::STATUS['DELETED'];
+            $product->delete();
 
             if ($product->save()) {
 

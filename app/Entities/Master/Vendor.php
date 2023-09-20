@@ -44,4 +44,9 @@ class Vendor extends Model
     public function do(){
         return $this->hasMany('App\Entities\Penjualan\PackingOrder','ekspedisi_id');
     }
+
+    public function product()
+    {
+        return $this->belongsToMany('App\Entities\Master\Product', 'veendor_products', 'vendor_id', 'product_id')->withPivot('id');
+    }
 }

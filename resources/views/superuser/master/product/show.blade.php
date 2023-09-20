@@ -47,8 +47,9 @@
           <div class="row">
             <label class="col-md-3 col-form-label text-right">Pabrik</label>
             <div class="col-md-7">
-              
-              <div class="form-control-plaintext"></div>
+              @foreach($product->vendor as $vendor)
+              <div class="form-control-plaintext">{{ $vendor->name ?? '-' }}</div>
+              @endforeach
             </div>
           </div>
           <div class="row">

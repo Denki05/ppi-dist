@@ -32,42 +32,68 @@
                     <fieldset>
                             <h4>#Product Detail's</h4>
                             <div class="container">
-                                <div class="row">
-                                  <div class="col">
-                                    <div class="form-group row">
-                                      <label for="inputPassword" class="col-sm-2 col-form-label">Code <span class="text-danger">*</span></label>
-                                      <div class="col-sm-10">
-                                        <input type="text" id="code" name="code" placeholder="Product Code" class="form-control">
-                                      </div>
+                              <!-- Name & Code Product -->
+                              <div class="row">
+                                <div class="col">
+                                  <div class="form-group row">
+                                    <label for="inputPassword" class="col-sm-2 col-form-label">Code <span class="text-danger">*</span></label>
+                                    <div class="col-sm-10">
+                                      <input type="text" id="code" name="code" placeholder="Product Code" class="form-control">
                                     </div>
                                   </div>
-                                  <div class="col">
-                                    <div class="form-group row">
-                                      <label for="inputPassword" class="col-sm-2 col-form-label">Name <span class="text-danger">*</span></label>
-                                      <div class="col-sm-10">
-                                        <input type="text" id="name" name="name" placeholder="Product Name" class="form-control">
-                                      </div>
-                                    </div>  
-                                  </div>
                                 </div>
+                                <div class="col">
+                                  <div class="form-group row">
+                                    <label for="inputPassword" class="col-sm-2 col-form-label">Name <span class="text-danger">*</span></label>
+                                    <div class="col-sm-10">
+                                      <input type="text" id="name" name="name" placeholder="Product Name" class="form-control">
+                                    </div>
+                                  </div>  
+                                </div>
+                              </div>
+
+                              <!-- Material -->
                               <div class="row">
-                                  <div class="col">
+                                <div class="col">
                                     <div class="form-group row">
                                       <label for="material_code" class="col-sm-2 col-form-label">Material Code <span class="text-danger">*</span></label>
                                       <div class="col-sm-10">
                                         <input type="text" id="material_code" name="material_code" placeholder="Material Code" class="form-control">
+                                        <a href="#material_optional" class="link-primary link-offset-2 link-underline-opacity-25 link-underline-opacity-100-hover"><i class="fa-solid fa-circle-plus"></i> addMore</a>
                                       </div>  
                                     </div>
-                                  </div>
-                                    <div class="col">
-                                      <div class="form-group row">
-                                        <label for="material_name" class="col-sm-2 col-form-label">Material Name <span class="text-danger">*</span></label>
-                                        <div class="col-sm-10">
-                                          <input type="text" id="material_name" name="material_name" placeholder="Material Name" class="form-control">
-                                        </div>
+                                </div>
+                                <div class="col">
+                                  <div class="form-group row">
+                                      <label for="material_name" class="col-sm-2 col-form-label">Material Name <span class="text-danger">*</span></label>
+                                    <div class="col-sm-10">
+                                      <input type="text" id="material_name" name="material_name" placeholder="Material Name" class="form-control">
                                     </div>
                                   </div>
+                                </div>
                               </div>
+
+                              <!-- optional material -->
+                              <div class="row" id="material_optional" style="display:none;">
+                                <div class="col">
+                                    <div class="form-group row">
+                                      <label for="material_code" class="col-sm-2 col-form-label"></label>
+                                      <div class="col-sm-10">
+                                        <input type="text" id="material_code_2" name="material_code_2" placeholder="Material Code Optional" class="form-control">
+                                      </div>  
+                                    </div>
+                                </div>
+                                <div class="col">
+                                  <div class="form-group row">
+                                      <label for="material_name" class="col-sm-2 col-form-label"></label>
+                                    <div class="col-sm-10">
+                                      <input type="text" id="material_name_2" name="material_name_2" placeholder="Material Name Optional" class="form-control">
+                                    </div>
+                                  </div>
+                                </div>
+                              </div>
+
+                              <!-- Alias & Ratio -->
                               <div class="row">
                                 <div class="col">
                                     <div class="form-group row">
@@ -94,7 +120,7 @@
                                     <div class="form-group row">
                                       <label for="factory" class="col-sm-2 col-form-label">Factory <span class="text-danger">*</span></label>
                                       <div class="col-sm-10">
-                                        <select class="js-select2 select2-multiple form-control" id="factory" name="factory[]" style="width:100%;" placeholder="Pilih Pabrik" required multiple="multiple">
+                                        <select class="js-select2 form-control" id="factory" name="factory" style="width:100%;" placeholder="Pilih Pabrik" required>
                                           <option>Pilih Pabrik</option>
                                           @foreach($factory as $factory)
                                           <option value="{{ $factory->id }}">{{ $factory->name }}</option>
@@ -370,47 +396,19 @@
         showRemove: false
       },
     });
-  })
-</script>
 
-<script type="text/javascript">
-  $(document).ready(function() {
-    var table = $('#datatable').DataTable({
-        paging: false,
-        bInfo : false,
-        searching: false,
-        columns: [
-          {name: 'counter', "visible": false},
-          {name: 'parfume_scent', orderable: false, width: "25%"},
-          {name: 'scent_range', orderable: false, searcable: false},
-          {name: 'color_scent', orderable: false, searcable: false},
-          {name: 'action', orderable: false, searcable: false, width: "5%"}
-        ],
-        'order' : [[0,'desc']]
-    })
+    $('a[href^="#"]').on('click', function(event) {
 
-    var counter = 1;
+    var target = $( $(this).attr('href') );
+    target.fadeToggle(100);
+    /*if( target.length ) {
+        event.preventDefault();
+        $('html, body').animate({
+            scrollTop: target.offset().top
+        }, 2000);
+    }*/
 
-    $('a.row-add').on( 'click', function (e) {
-      e.preventDefault();
-      
-      table.row.add([
-                    counter,
-                    '<input class="form-control" id="parfume_scent['+counter+']" name="parfume_scent[]" data-placeholder="" style="width:100%" required>',
-                    
-                    '<input type="range" class="form-control-range" min="1" max="100" value="50" name="scent_range[]">',
-                    '<input type="color" class="form-control" name="color_scent[]">',
-                    '<a href="#" class="row-delete"><button type="button" class="btn btn-sm btn-circle btn-alt-danger" title="Delete"><i class="fa fa-trash"></i></button></a>'
-                  ]).draw( false );
-      counter++;
     });
-
-    $('#datatable tbody').on( 'click', '.row-delete', function (e) {
-      e.preventDefault();
-      
-      table.row( $(this).parents('tr') ).remove().draw();
-
-    })
-  });
+  })
 </script>
 @endpush
