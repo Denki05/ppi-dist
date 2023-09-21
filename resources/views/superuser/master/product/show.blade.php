@@ -19,95 +19,136 @@
     <!-- Data -->
     <section id="content1">
       <div class="row mb-30">
-        <div class="col-6">
+        <div class="col-8">
           <div class="row">
-            <label class="col-md-3 col-form-label text-right">Kode Bahan</label>
-            <div class="col-md-7">
-              <div class="form-control-plaintext">{{ $product->material_code ?? '' }}</div>
+            <div class="col">
+              <div class="form-group row">
+                <label for="example-text-input" class="col-3 col-form-label">Kode Bahan</label>
+                <div class="col-8">
+                  <input class="form-control" type="text" value="{{ $product->material_code }}" id="example-text-input" readonly>
+                  <br>
+                  <a href="#material_optional" class="link-primary"><i class="fa fa-plus-circle" aria-hidden="true"></i> Other Data</a>
+                </div>
+              </div>
+            </div>
+            <div class="col">
+              <div class="form-group row">
+                <label for="example-text-input" class="col-3 col-form-label">Nama Bahan</label>
+                <div class="col-8">
+                  <input class="form-control" type="text" value="{{ $product->material_name }}" id="example-text-input" readonly>
+                </div>
+              </div>
+            </div>
+            <div class="col">
+              <div class="form-group row">
+                <label for="example-text-input" class="col-3 col-form-label">Pabrik</label>
+                <div class="col-8">
+                  <input class="form-control" type="text" value="{{ $product->sourceVendor->name }}" id="example-text-input" readonly>
+                </div>
+              </div>
             </div>
           </div>
-          <div class="row">
-            <label class="col-md-3 col-form-label text-right">Nama Bahan</label>
-            <div class="col-md-7">
-              <div class="form-control-plaintext">{{ $product->material_name ?? '' }}</div>
+
+          <!-- Optional -->
+          <div class="row" id="material_optional" style="display: none;">
+            <div class="col">
+              <div class="form-group row">
+                <label for="example-text-input" class="col-3 col-form-label">Kode Bahan Opsional</label>
+                <div class="col-8">
+                  <input class="form-control" type="text" value="{{ $product->material_code_optional }}" id="example-text-input" readonly>
+                </div>
+              </div>
+            </div>
+            <div class="col">
+              <div class="form-group row">
+                <label for="example-text-input" class="col-3 col-form-label">Nama Bahan Opsional</label>
+                <div class="col-8">
+                  <input class="form-control" type="text" value="{{ $product->material_name_optional }}" id="example-text-input" readonly>
+                </div>
+              </div>
+            </div>
+            <div class="col">
+              <div class="form-group row">
+                <label for="example-text-input" class="col-3 col-form-label">Pabrik Opsional</label>
+                <div class="col-8">
+                  <input class="form-control" type="text" value="{{ $product->destinationVendor->name }}" id="example-text-input" readonly>
+                </div>
+              </div>
             </div>
           </div>
-          <div class="row">
-            <label class="col-md-3 col-form-label text-right">Kode Barang</label>
-            <div class="col-md-7">
-              <div class="form-control-plaintext">{{ $product->code ?? '' }}</div>
+          
+          <hr>
+          
+          <div class="form-group row">
+            <label for="example-text-input" class="col-2 col-form-label">Kode produk</label>
+            <div class="col-8">
+              <input class="form-control" type="text" value="{{ $product->code }}" id="example-text-input" readonly>
             </div>
           </div>
-          <div class="row">
-            <label class="col-md-3 col-form-label text-right">Nama Barang</label>
-            <div class="col-md-7">
-              <div class="form-control-plaintext">{{ $product->name ?? '' }}</div>
+          <div class="form-group row">
+            <label for="example-text-input" class="col-2 col-form-label">Nama produk</label>
+            <div class="col-8">
+              <input class="form-control" type="text" value="{{ $product->name }}" id="example-text-input" readonly>
             </div>
           </div>
-          <div class="row">
-            <label class="col-md-3 col-form-label text-right">Pabrik</label>
-            <div class="col-md-7">
-              @foreach($product->vendor as $vendor)
-              <div class="form-control-plaintext">{{ $vendor->name ?? '-' }}</div>
-              @endforeach
+          <div class="form-group row">
+            <label for="example-text-input" class="col-2 col-form-label">Merek</label>
+            <div class="col-8">
+              <input class="form-control" type="text" value="{{ $product->brand_name }}" id="example-text-input" readonly>
             </div>
           </div>
-          <div class="row">
-            <label class="col-md-3 col-form-label text-right">Merek</label>
-            <div class="col-md-7">
-              <div class="form-control-plaintext">{{ $product->brand_name ?? '' }}</div>
+          <div class="form-group row">
+            <label for="example-text-input" class="col-2 col-form-label">Kategori</label>
+            <div class="col-8">
+              <input class="form-control" type="text" value="{{ $product->category->name }}" id="example-text-input" readonly>
             </div>
           </div>
-          <div class="row">
-            <label class="col-md-3 col-form-label text-right">Kategori</label>
-            <div class="col-md-7">
-              <div class="form-control-plaintext">{{ $product->category->name ?? '' }}</div>
-            </div>
-          </div>
-          <div class="row">
-            <label class="col-md-3 col-form-label text-right">Gender</label>
-            <div class="col-md-7">
-              <div class="form-control-plaintext">{{ $product->gender ?? '' }}</div>
+          <div class="form-group row">
+            <label for="example-text-input" class="col-2 col-form-label">Gender</label>
+            <div class="col-8">
+              <input class="form-control" type="text" value="{{ $product->gender }}" id="example-text-input" readonly>
             </div>
           </div>
         </div>
-        <div class="col-6">
-          <div class="row">
-            <label class="col-md-3 col-form-label text-right">Alias</label>
-            <div class="col-md-7">
-              <div class="form-control-plaintext">{{ $product->alias ?? '-' }}</div>
+
+        <div class="col-4">
+          <div class="form-group row">
+            <label for="example-text-input" class="col-2 col-form-label">Alias</label>
+            <div class="col-8">
+              <input class="form-control" type="text" value="{{ $product->alias }}" id="example-text-input" readonly>
             </div>
           </div>
-          <div class="row">
-            <label class="col-md-3 col-form-label text-right">Ratio</label>
-            <div class="col-md-7">
-              <div class="form-control-plaintext">{{ $product->ratio ?? '-' }}</div>
+          <div class="form-group row">
+            <label for="example-text-input" class="col-2 col-form-label">Ratio</label>
+            <div class="col-8">
+              <input class="form-control" type="text" value="{{ $product->ratio }}" id="example-text-input" readonly> 
             </div>
           </div>
-          <div class="row">
-            <label class="col-md-3 col-form-label text-right">Harga Beli</label>
-            <div class="col-md-7">
-              <div class="form-control-plaintext">{{ '$' . number_format($product->buying_price, 2) }}</div>
+          <div class="form-group row">
+            <label for="example-text-input" class="col-2 col-form-label">Harga Beli</label>
+            <div class="col-8">
+              <input class="form-control" type="text" value="{{ '$' . number_format($product->buying_price, 2) }}" id="example-text-input" readonly>
             </div>
           </div>
-          <div class="row">
-            <label class="col-md-3 col-form-label text-right">Harga Jual</label>
-            <div class="col-md-7">
-              <div class="form-control-plaintext">{{ '$' . number_format($product->selling_price, 2) }}</div>
+          <div class="form-group row">
+            <label for="example-text-input" class="col-2 col-form-label">Harga Jual</label>
+            <div class="col-8">
+              <input class="form-control" type="text" value="{{ '$' . number_format($product->selling_price, 2) }}" id="example-text-input" readonly>
             </div>
           </div>
-          <div class="row">
-            <label class="col-md-3 col-form-label text-right">Note</label>
-            <div class="col-md-7">
-              <div class="form-control-plaintext">{{ $product->note ?? '-' }}</div>
+          <div class="form-group row">
+            <label for="example-text-input" class="col-2 col-form-label">Note</label>
+            <div class="col-8">
+              <input class="form-control" type="text" value="{{ $product->note ?? '-' }}" id="example-text-input" readonly>
             </div>
           </div>
-          <div class="row">
-            <label class="col-md-3 col-form-label text-right">Status</label>
-            <div class="col-md-7">
-              <div class="form-control-plaintext">{{ $product->status() }}</div>
+          <div class="form-group row">
+            <label for="example-text-input" class="col-2 col-form-label">Status</label>
+            <div class="col-8">
+              <input class="form-control" type="text" value="{{ $product->status() }}" id="example-text-input" readonly>
             </div>
           </div>
+          
         </div>
       </div>
     </section>
@@ -283,7 +324,12 @@
           }
       });
     });
-  
+
+    $('a[href^="#"]').on('click', function(event) {
+
+      var target = $( $(this).attr('href') );
+      target.fadeToggle(100);
+    });
   })
 </script>
 @endpush

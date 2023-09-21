@@ -53,14 +53,14 @@
                                 <div class="col">
                                   <div class="form-group row">
                                       <label for="factory" class="col-sm-2 col-form-label">Pabrik</span></label>
-                                    <div class="col-sm-10">
-                                      <select class="js-select2 form-control" id="factory" name="factory" style="width:100%;" required>
-                                        <option>Pilih Pabrik</option>
-                                        @foreach($factory as $factory)
-                                        <option value="{{ $factory->id }}">{{ $factory->name }}</option>
-                                        @endforeach
-                                      </select>
-                                    </div>
+                                      <div class="col-sm-10">
+                                        <select class="js-select2 form-control" id="factory" name="factory" style="width:100%;" required>
+                                          <option>Pilih Pabrik</option>
+                                          @foreach($factory as $factory)
+                                          <option value="{{ $factory->id }}">{{ $factory->name }}</option>
+                                          @endforeach
+                                        </select>
+                                      </div>
                                   </div>
                                 </div>
                               </div>
@@ -402,13 +402,6 @@
 
     var target = $( $(this).attr('href') );
     target.fadeToggle(100);
-    /*if( target.length ) {
-        event.preventDefault();
-        $('html, body').animate({
-            scrollTop: target.offset().top
-        }, 2000);
-    }*/
-
     });
   })
 </script>

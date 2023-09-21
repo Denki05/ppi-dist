@@ -45,8 +45,18 @@ class Vendor extends Model
         return $this->hasMany('App\Entities\Penjualan\PackingOrder','ekspedisi_id');
     }
 
-    public function product()
+    public function outwardProduct()
     {
-        return $this->belongsToMany('App\Entities\Master\Product', 'veendor_products', 'vendor_id', 'product_id')->withPivot('id');
+        return $this->hasMany('App\Entities\Master\Product', 'vendor_id');
+    }
+
+    public function inwardProduct()
+    {
+        return $this->hasMany('App\Entities\Master\Product', 'vendor_optional_id');
+    }
+
+    public function allProduct()
+    {
+        return $this->outwardProduct->concat($this->inwardProduct);
     }
 }

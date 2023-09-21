@@ -208,18 +208,14 @@ class ProductController extends Controller
                     $product->sub_brand_reference_id = $request->searah;
                     $product->category_id = $request->category;
                     $product->type_id = $request->type;
-                    if($request->factory){
-                        foreach($request->factory as $key){
-                            $vendorProduct = new VendorProduct;
-                            $vendorProduct->vendor_id = $key;
-                            $vendorProduct->product_id = $product->id;
-                            $vendorProduct->save();
-                        }
-                    }
+                    $product->vendor_id = $request->factory;
+                    $product->vendor_optional_id = $request->factory2;
 
                     $product->name = $request->name;
                     $product->material_code = $request->material_code;
                     $product->material_name = $request->material_name;
+                    $product->material_code_optional = $request->material_code_optional;
+                    $product->material_name_optional = $request->material_name_optional;
                     $product->alias = $request->alias;
                     $product->buying_price = $request->buying_price ?? 0;
                     $product->selling_price = $request->selling_price;

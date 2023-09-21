@@ -146,8 +146,18 @@ class Product extends Model
         }
     }
 
-    public function vendor()
+    public function sourceVendor()
     {
-        return $this->belongsToMany('App\Entities\Master\Vendor', 'vendor_products', 'product_id', 'vendor_id')->withPivot('id');
+        return $this->belongsTo('App\Entities\Master\Vendor', 'vendor_id', 'id');
+    }
+
+    public function destinationVendor()
+    {
+        return $this->belongsTo('App\Entities\Master\Vendor', 'vendor_optional_id', 'id');
+    }
+
+    public function vendors()
+    {
+        return collect([$this->sourceVendor, $this->destinationVendor]);
     }
 }
