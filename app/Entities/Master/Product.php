@@ -13,9 +13,9 @@ class Product extends Model
     protected $appends = ['image_url', 'image_hd_url'];
     protected $fillable = [
                         'packaging_id', 'category_id', 'type_id', 'brand_reference_id', 'sub_brand_reference_id', 'brand_name',
-                        'code', 'name', 'material_code', 'material_name', 'alias', 'description', 
+                        'code', 'name', 'material_code', 'material_name', 'material_code_optional', 'material_name_optional', 'alias', 'description', 
                         'default_quantity', 'default_unit_id', 'ratio', 'default_warehouse_id', 
-                        'vendor_id', 'buying_price', 'selling_price', 'image', 'image_hd', 'status', 'gender'
+                        'vendor_id', 'vendor_optional_id', 'buying_price', 'selling_price', 'image', 'image_hd', 'status', 'gender'
                     ];
 
     protected $table = 'master_products';

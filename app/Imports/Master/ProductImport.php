@@ -58,11 +58,11 @@ class ProductImport implements ToCollection, WithHeadingRow, WithStartRow, Skips
 
                 $type = ProductType::where('name', $row['type'])->first();
 
-                // $vendor = Vendor::where('name', $row['vendor'])->first();
-                // if($vendor == null) {
-                //     $collect_error[] = $row['vendor'] . '  "VENDOR" not found';
-                //     break;
-                // }
+                $vendor = Vendor::where('name', $row['vendor'])->first();
+                if($vendor == null) {
+                    $collect_error[] = $row['vendor'] . '  "VENDOR" not found';
+                    break;
+                }
 
                 if($row['merek'] == 'Senses' || $row['merek'] == 'SENSES'){
                     $id_product = explode(' ', $row['code']);
@@ -72,7 +72,7 @@ class ProductImport implements ToCollection, WithHeadingRow, WithStartRow, Skips
                     $product->sub_brand_reference_id = $searah->id;
                     $product->category_id = $kategori->id;
                     $product->type_id = $type->id ?? null;
-                    // $product->vendor_id = $vendor->id;
+                    $product->vendor_id = $vendor->id;
                     $product->brand_name = $row['merek'];
                     $product->code = $row['code'];
                     $product->name = $row['name'];

@@ -102,20 +102,16 @@
                             <div class="container">
                               <div class="row">
                                 <div class="col">
-                                  <div class="form-group row">
-                                    <label for="inputPassword" class="col-sm-2 col-form-label">Code <span class="text-danger">*</span></label>
-                                    <div class="col-sm-12">
-                                      <input type="text" id="code" name="code" placeholder="Product Code" class="form-control">
-                                    </div>
+                                  <div class="form-group">
+                                    <label for="code">Kode Produk <span class="text-danger">*</span></label>
+                                    <input type="text" class="form-control" id="code" name="code" required>
                                   </div>
                                 </div>
                                 <div class="col">
-                                  <div class="form-group row">
-                                    <label for="inputPassword" class="col-sm-2 col-form-label">Name <span class="text-danger">*</span></label>
-                                    <div class="col-sm-12">
-                                      <input type="text" id="name" name="name" placeholder="Product Name" class="form-control">
-                                    </div>
-                                  </div>  
+                                  <div class="form-group">
+                                    <label for="name">Nama Produk <span class="text-danger">*</span></label>
+                                    <input type="text" class="form-control" id="name" name="name" required>
+                                  </div>
                                 </div>
                               </div>
                             </div>
@@ -125,72 +121,59 @@
                             <div class="container">
                               <div class="row">
                                 <div class="col">
-                                    <div class="form-group row">
-                                      <label for="alias" class="col-sm-2 col-form-label">Alias <span class="text-danger">*</span></label>
-                                      <div class="col-sm-12">
-                                        <input type="text" id="alias" name="alias" placeholder="Alias Name" class="form-control">
-                                      </div>
-                                    </div>
+                                  <div class="form-group">
+                                    <label for="alias">Alias</label>
+                                    <input type="text" class="form-control" id="alias" name="alias">
                                   </div>
-                                  <div class="col">
-                                    <div class="form-group row">
-                                      <label for="ratio" class="col-sm-2 col-form-label">Ratio <span class="text-danger">*</span></label>
-                                      <div class="col-sm-12">
-                                        <input type="number" class="form-control" id="ratio" name="ratio" min="0" value="0" step="0.0001">
-                                      </div>
-                                    </div>
+                                </div>
+                                <div class="col">
+                                  <div class="form-group">
+                                    <label for="ratio">Ratio</label>
+                                    <input type="number" class="form-control" id="ratio" name="ratio" min="0" value="0" step="0.0001">
                                   </div>
+                                </div>
                               </div>
                             </div>
 
                             <div class="container">
                               <div class="row">
                                 <div class="col">
-                                    <div class="form-group row">
-                                      <label for="gender" class="col-sm-2 col-form-label">Gender</label>
-                                      <div class="col-sm-12">
-                                        <select class="js-select2 form-control" id="gender" name="gender" style="width:100%;" placeholder="Pilih Gender">
-                                          <option>Pilih Note</option>
-                                          @foreach($gender as $gender)
-                                          <option value="{{ $gender }}">{{ $gender }}</option>
-                                          @endforeach
-                                        </select>
-                                      </div>
+                                    <div class="form-group">
+                                      <label for="gender">Gender</label>
+                                      <select class="form-control js-select2" id="gender" name="gender">
+                                        <option value="">Pilih Gender</option>
+                                        @foreach($gender as $gender)
+                                        <option value="{{ $gender }}">{{ $gender }}</option>
+                                        @endforeach
+                                      </select>
                                     </div>
-                                  </div>
-                                  <div class="col">
-                                    <div class="form-group row">
-                                      <label for="selling_price" class="col-sm-2 col-form-label">Price List <span class="text-danger">*</span></label>
-                                      <div class="col-sm-12">
-                                        <input type="number" class="form-control" id="selling_price" name="selling_price" min="0" value="0">
-                                        <span class="text-danger">*Harga dalam USD</span>
-                                      </div>
-                                    </div>  
+                                </div>
+                                <div class="col">
+                                  <div class="form-group">
+                                    <label for="selling_price">Price List <span class="text-danger">*</span></label>
+                                    <input type="number" class="form-control" id="selling_price" name="selling_price" min="0" value="0" step="0.0001" required>
                                   </div>
                                 </div>
+                              </div>
                             </div>
 
                             <div class="container">
                               <div class="row">
                                 <div class="col">
-                                  <div class="form-group row">
-                                    <label for="inputPassword" class="col-sm-2 col-form-label">Note</label>
-                                    <div class="col-sm-12">
-                                      <select class="js-select2 form-control" id="note" name="note" style="width:100%;" placeholder="Pilih Note">
-                                        <option>Pilih Note</option>
-                                         @foreach($product_notes as $note)
-                                        <option value="{{ $note }}">{{ $note }}</option>
-                                         @endforeach
-                                      </select>
-                                    </div>
+                                  <div class="form-group">
+                                    <label for="note">Note</label>
+                                    <select class="js-select2 form-control" id="note" name="note" style="width:100%;" placeholder="Pilih Note">
+                                      <option>Pilih Note</option>
+                                      @foreach($product_notes as $note)
+                                      <option value="{{ $note }}">{{ $note }}</option>
+                                      @endforeach
+                                    </select>
                                   </div>
                                 </div>
                                   <div class="col">
-                                    <div class="form-group row">
-                                      <label for="inputPassword" class="col-sm-2 col-form-label">Description</label>
-                                      <div class="col-sm-12">
+                                    <div class="form-group">
+                                      <label for="description">Keterangan</label>
                                         <textarea class="form-control" name="description" placeholder="Keterangan" rows="1"></textarea>
-                                      </div>
                                     </div>
                                   </div>
                                 </div>
