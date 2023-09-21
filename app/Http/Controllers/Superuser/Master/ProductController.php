@@ -87,6 +87,7 @@ class ProductController extends Controller
         $data['gender'] = Product::GENDER;
         $data['fragrantica'] = Fragrantica::all();
         $data['factory'] = Vendor::where('type', 2)->get();
+        $data['factory_optional'] = Vendor::where('type', 2)->get();
         $data['type'] = ProductType::get();
         $data['pack'] = Packaging::get();
 
@@ -132,14 +133,7 @@ class ProductController extends Controller
                     $product->sub_brand_reference_id = $request->searah;
                     $product->category_id = $request->category;
                     $product->type_id = $request->type;
-                    if($request->factory){
-                        foreach($request->factory as $key){
-                            $vendorProduct = new VendorProduct;
-                            $vendorProduct->vendor_id = $key;
-                            $vendorProduct->product_id = $product->id;
-                            $vendorProduct->save();
-                        }
-                    }
+                    $product->vendor_id = $request->factory;
 
                     $product->name = $request->name;
                     $product->material_code = $request->material_code;

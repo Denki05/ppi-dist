@@ -14,8 +14,8 @@ class Product extends Model
     protected $fillable = [
                         'packaging_id', 'category_id', 'type_id', 'brand_reference_id', 'sub_brand_reference_id', 'brand_name',
                         'code', 'name', 'material_code', 'material_name', 'alias', 'description', 
-                        'default_quantity', 'default_unit_id', 'ratio', 'default_warehouse_id',
-                        'buying_price', 'selling_price', 'image', 'image_hd', 'status', 'gender'
+                        'default_quantity', 'default_unit_id', 'ratio', 'default_warehouse_id', 
+                        'vendor_id', 'buying_price', 'selling_price', 'image', 'image_hd', 'status', 'gender'
                     ];
 
     protected $table = 'master_products';
