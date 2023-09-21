@@ -55,7 +55,7 @@
               <div class="form-group row">
                 <label for="example-text-input" class="col-3 col-form-label">Kode Bahan Opsional</label>
                 <div class="col-8">
-                  <input class="form-control" type="text" value="{{ $product->material_code_optional }}" id="example-text-input" readonly>
+                  <input class="form-control" type="text" value="{{ $product->material_code_optional ?? '' }}" id="example-text-input" readonly>
                 </div>
               </div>
             </div>
@@ -63,7 +63,7 @@
               <div class="form-group row">
                 <label for="example-text-input" class="col-3 col-form-label">Nama Bahan Opsional</label>
                 <div class="col-8">
-                  <input class="form-control" type="text" value="{{ $product->material_name_optional }}" id="example-text-input" readonly>
+                  <input class="form-control" type="text" value="{{ $product->material_name_optional ?? '' }}" id="example-text-input" readonly>
                 </div>
               </div>
             </div>
@@ -71,7 +71,7 @@
               <div class="form-group row">
                 <label for="example-text-input" class="col-3 col-form-label">Pabrik Opsional</label>
                 <div class="col-8">
-                  <input class="form-control" type="text" value="{{ $product->destinationVendor->name }}" id="example-text-input" readonly>
+                  <input class="form-control" type="text" value="{{ $product->destinationVendor->name ?? '' }}" id="example-text-input" readonly>
                 </div>
               </div>
             </div>
