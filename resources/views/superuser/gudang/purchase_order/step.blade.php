@@ -56,6 +56,12 @@
       </div>
     </div>
     <div class="row">
+      <label class="col-md-3 col-form-label text-right">Note</label>
+      <div class="col-md-7">
+        <div class="form-control-plaintext">{{ $purchase_order->note }}</div>
+      </div>
+    </div>
+    <div class="row">
       <label class="col-md-3 col-form-label text-right">Status</label>
       <div class="col-md-7">
         <div class="form-control-plaintext">{{ $purchase_order->status() }}</div>
@@ -74,13 +80,15 @@
       </div>
       @if ($purchase_order->status == $purchase_order::STATUS['DRAFT'])
       <div class="col-md-6 text-right">
-      <a href="{{ route('superuser.gudang.purchase_order.edit', $purchase_order->id) }}">
+        <a href="{{ route('superuser.gudang.purchase_order.edit', $purchase_order->id) }}">
           <button type="button" class="btn bg-gd-sea border-0 text-white">
             Edit <i class="fa fa-pencil ml-10"></i>
           </button>
         </a>
-        <a href="{{ route('superuser.gudang.purchase_order.publish', $purchase_order->id) }}" class="btn bg-gd-leaf border-0 text-white" title="Publish">
-          Publish <i class="fa fa-check ml-10"></i>
+        <a href="javascript:saveConfirmation('{{ route('superuser.gudang.purchase_order.publish', $purchase_order->id) }}')">
+          <button type="button" class="btn bg-gd-leaf border-0 text-white">
+            Publish <i class="fa fa-check ml-10"></i>
+          </button>
         </a>
       </div>
       @else
@@ -93,12 +101,16 @@
         </a>
         @endif
         @if($purchase_order->edit_marker == 1)
-        <a href="{{ route('superuser.gudang.purchase_order.save_modify', [$purchase_order->id, 'save']) }}" class="btn bg-gd-corporate border-0 text-white" title="Save">
-          Save <i class="fa fa-check ml-10"></i>
+        <a href="javascript:saveConfirmation('{{ route('superuser.gudang.purchase_order.save_modify', [$purchase_order->id, 'save']) }}')">
+          <button type="button" class="btn bg-gd-corporate border-0 text-white">
+            Save <i class="fa fa-check ml-10"></i>
+          </button>
         </a>
         @endif
-        <a href="{{ route('superuser.gudang.purchase_order.save_modify', [$purchase_order->id, 'save-acc']) }}" class="btn bg-gd-leaf border-0 text-white" title="Acc">
-          ACC <i class="fa fa-check ml-10"></i>
+        <a href="javascript:saveConfirmation('{{ route('superuser.gudang.purchase_order.save_modify', [$purchase_order->id, 'save-acc']) }}')">
+          <button type="button" class="btn bg-gd-leaf border-0 text-white">
+            ACC <i class="fa fa-check ml-10"></i>
+          </button>
         </a>
       </div>
       @endif
@@ -137,7 +149,7 @@
             <td class="text-center">{{ $loop->iteration }}</td>
             <td class="text-center">{{ $row->product_pack->name }}</td>
             <td class="text-center">{{ $row->product_pack->code }}</td>
-            <td class="text-center">{{ $row->qty }}</td>
+            <td class="text-center">{{ $row->quantity }}</td>
             <td class="text-center">{{ $row->product_pack->kemasan()->pack_name }}</td>
             <td class="text-center">{{ $row->note_produksi ?? '-' }}</td>
             <td class="text-center">{{ $row->note_repack ?? '-' }}</td>

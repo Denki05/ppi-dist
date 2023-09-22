@@ -17,6 +17,9 @@
     </button>
 </div>
 @endif
+
+<div id="alert-block"></div>
+
 <div class="block">
   <div class="block-content">
       <!-- <div class="row mb-30">

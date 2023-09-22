@@ -471,7 +471,8 @@ class InvoicingController extends Controller
         //
     }
 
-    public function print($id){
+    public function print($id)
+    {
 
         // Access
         if(Auth::user()->is_superuser == 0){

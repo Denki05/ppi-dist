@@ -64,11 +64,12 @@ class PurchaseOrderTable extends Table
             $edit = route('superuser.gudang.purchase_order.step', $model);
             $destroy = route('superuser.gudang.purchase_order.destroy', $model);
             $acc = route('superuser.gudang.purchase_order.acc', $model);
+            $pdf = route('superuser.gudang.purchase_order.print_pdf', $model);
 
             switch ($model->status) {
                 case $model::STATUS['ACTIVE']:
                     return "
-                        <a href=\"javascript:saveConfirmation2('{$acc}')\">
+                        <a href=\"javascript:saveConfirmation('{$acc}')\">
                             <button type=\"button\" class=\"btn btn-sm btn-circle btn-alt-success\" title=\"ACC\">
                                 <i class=\"fa fa-check\"></i>
                             </button>
@@ -102,6 +103,12 @@ class PurchaseOrderTable extends Table
                         <a href=\"{$view}\">
                             <button type=\"button\" class=\"btn btn-sm btn-circle btn-alt-secondary\" title=\"View\">
                                 <i class=\"fa fa-eye\"></i>
+                            </button>
+                        </a>
+
+                        <a href=\"{$pdf}\">
+                            <button type=\"button\" class=\"btn btn-sm btn-circle btn-alt-secondary\" title=\"View\">
+                                <i class=\"fa fa-print\"></i>
                             </button>
                         </a>
                         
