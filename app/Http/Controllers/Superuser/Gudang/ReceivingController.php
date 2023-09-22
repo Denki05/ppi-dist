@@ -20,8 +20,9 @@ use App\Entities\Finance\SettingFinance;
 use App\Http\Controllers\Controller;
 use App\Repositories\MasterRepo;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Auth;
 use Illuminate\Validation\Rule;
+use App\Entities\Setting\UserMenu;
+use Auth;
 use Excel;
 use Carbon\Carbon;
 use DomPDF;
@@ -30,6 +31,24 @@ use DB;
 
 class ReceivingController extends Controller
 {
+    public function __construct(){
+        $this->view = "superuser.gudang.receiving.";
+        $this->route = "superuser.gudang.receiving";
+        $this->user_menu = new UserMenu;
+        $this->access = null;
+        $this->middleware(function ($request, $next) {
+            $user = Auth::user();
+            $access = $this->user_menu;
+            $access = $access->where('user_id',$user->id)
+                             ->whereHas('menu',function($query2){
+                                $query2->where('route_name',$this->route);
+                             })
+                             ->first();
+            $this->access = $access;
+            return $next($request);
+        });
+    }
+
     public function json(Request $request, ReceivingTable $datatable)
     {
         return $datatable->build();
@@ -37,24 +56,26 @@ class ReceivingController extends Controller
 
     public function index()
     {
-        if (!Auth::guard('superuser')->user()->can('receiving-manage')) {
-            return abort(403);
+        if(Auth::user()->is_superuser == 0){
+            if(empty($this->access) || empty($this->access->user) || $this->access->can_read == 0){
+                return redirect()->route('superuser.index')->with('error','Anda tidak punya akses untuk membuka menu terkait');
+            }
         }
 
-        return view('superuser.gudang.receiving.index');
+        return view($this->view."index");
     }
 
     public function create()
     {
-        if (!Auth::guard('superuser')->user()->can('receiving-create')) {
-            return abort(403);
+        if(Auth::user()->is_superuser == 0){
+            if(empty($this->access) || empty($this->access->user) || $this->access->can_create == 0){
+                return redirect()->route('superuser.index')->with('error','Anda tidak punya akses untuk membuka menu terkait');
+            }
         }
 
         $data['warehouses'] = Warehouse::get();
 
-        //$data['warehouses_disp'] = MasterRepo::warehouses_by_category(2);
-
-        return view('superuser.gudang.receiving.create', $data);
+        return view($this->view."create", $data);
     }
 
     public function store(Request $request)
@@ -103,13 +124,15 @@ class ReceivingController extends Controller
 
     public function edit($id)
     {
-        if (!Auth::guard('superuser')->user()->can('receiving-edit')) {
-            return abort(403);
+        if(Auth::user()->is_superuser == 0){
+            if(empty($this->access) || empty($this->access->user) || $this->access->can_update == 0){
+                return redirect()->route('superuser.index')->with('error','Anda tidak punya akses untuk membuka menu terkait');
+            }
         }
 
         $data['receiving'] = Receiving::find($id);
 
-        return view('superuser.purchasing.receiving.edit', $data);
+        return view($this->view."edit", $data);
     }
 
     public function update(Request $request, $id)
@@ -158,8 +181,10 @@ class ReceivingController extends Controller
 
     public function step($id)
     {
-        if (!Auth::guard('superuser')->user()->can('receiving-edit')) {
-            return abort(403);
+        if(Auth::user()->is_superuser == 0){
+            if(empty($this->access) || empty($this->access->user) || $this->access->can_update == 0){
+                return redirect()->route('superuser.index')->with('error','Anda tidak punya akses untuk membuka menu terkait');
+            }
         }
 
         $data['receiving'] = Receiving::findOrFail($id);
@@ -180,8 +205,10 @@ class ReceivingController extends Controller
     private function save_acc(Request $request, $id, $button_type)
     {
         if ($request->ajax()) {
-            if (!Auth::guard('superuser')->user()->can('receiving-acc')) {
-                return abort(403);
+            if(Auth::user()->is_superuser == 0){
+                if(empty($this->access) || empty($this->access->user) || $this->access->can_approve == 0){
+                    return redirect()->route('superuser.index')->with('error','Anda tidak punya akses untuk membuka menu terkait');
+                }
             }
 
             $receiving = Receiving::find($id);
@@ -327,8 +354,10 @@ class ReceivingController extends Controller
 
     public function show($id)
     {
-        if (!Auth::guard('superuser')->user()->can('receiving-show')) {
-            return abort(403);
+        if(Auth::user()->is_superuser == 0){
+            if(empty($this->access) || empty($this->access->user) || $this->access->can_read == 0){
+                return redirect()->route('superuser.index')->with('error','Anda tidak punya akses untuk membuka menu terkait');
+            }
         }
 
         $data['receiving'] = Receiving::findOrFail($id);
