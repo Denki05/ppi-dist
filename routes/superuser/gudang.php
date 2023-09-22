@@ -27,6 +27,7 @@ Route::group([
         Route::get('{id}/publish', 'PurchaseOrderController@publish')->name('publish');
         Route::get('{id}/save_modify/{save_type}', 'PurchaseOrderController@save_modify')->name('save_modify');
         Route::get('{id}/acc', 'PurchaseOrderController@acc')->name('acc');
+        Route::get('{id}/print_pdf', 'PurchaseOrderController@print_pdf')->name('print_pdf');
 
         Route::group(['as' => 'detail.'], function () {
             Route::get('{purchase_id}/detail/create', 'PurchaseOrderDetailController@create')->name('create');
