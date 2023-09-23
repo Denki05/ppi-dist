@@ -7,6 +7,7 @@ use App\Http\Controllers\Controller;
 use App\Entities\Gudang\PurchaseOrder;
 use App\Entities\Gudang\PurchaseOrderDetail;
 use App\Entities\Master\BrandLokal;
+use App\Entities\Master\Product;
 use Auth;
 use DB;
 use Validator;
@@ -54,12 +55,6 @@ class PurchaseOrderDetailController extends Controller
                     goto ResultData;
                 }
 
-                if(empty($post["category"])){
-                    $data_json["IsError"] = TRUE;
-                    $data_json["Message"] = "Product wajib dipilih";
-                    goto ResultData;
-                }
-
                 if(empty($post["product_packaging_id"])){
                     $data_json["IsError"] = TRUE;
                     $data_json["Message"] = "Product wajib dipilih";
@@ -78,7 +73,7 @@ class PurchaseOrderDetailController extends Controller
 
                         $po_detail = new PurchaseOrderDetail;
                         $po_detail->po_id = $purchase_id;
-                        $po_detail->brand_lokal_id =  trim(htmlentities($post["merek"]));
+                        $po_detail->brand_lokal_id =  BrandLokal::where('brand_name', $post["merek"])->pluck('id')->first();
                         $po_detail->product_packaging_id = trim(htmlentities(implode("-", [$post["product_packaging_id"][$i],$post["packaging_id"][$i]])));
                         $po_detail->quantity = trim(htmlentities($post["qty"][$i]));
                         $po_detail->packaging_id = trim(htmlentities($post["packaging_id"][$i]));
@@ -169,5 +164,60 @@ class PurchaseOrderDetailController extends Controller
                 return $this->response(200, $response);
             }
         }
+    }
+
+    public function get_product(Request $request){
+        $data_json = [];
+        $post = $request->all();
+        if($request->method() == "GET"){
+            $table = Product::where(function($query2) use($post){
+                        if(!empty($post["brand_name"])){
+                            $query2->where('brand_name',$post["brand_name"]);
+                        }
+                    })
+                    ->selectRaw(
+                        'master_products.id as id, 
+                        master_products.name as productName, 
+                        master_products.code as productCode'
+                    )
+                    ->get();
+            $data_json["IsError"] = FALSE;
+            $data_json["Data"] = $table;
+            goto ResultData;
+        }
+        else{
+            $data_json["IsError"] = TRUE;
+            $data_json["Message"] = "Invalid Method";
+            goto ResultData;
+        }
+        ResultData:
+        return response()->json($data_json,200);
+    }
+
+    public function get_packaging(Request $request){
+        $data_json = [];
+        $post = $request->all();
+        if($request->method() == "GET"){
+            $table = ProductPack::where(function($query2) use($post){
+                if(!empty($post["product_id"])){
+                    $query2->where('product_id', $post["product_id"]);
+                }
+            })
+            ->leftJoin('master_packaging', 'master_products_packaging.packaging_id', '=', 'master_packaging.id')
+            ->selectRaw(
+                'master_packaging.id, master_packaging.pack_name'
+            )
+            ->get();
+            $data_json["IsError"] = FALSE;
+            $data_json["Data"] = $table;
+            goto ResultData;
+        }
+        else{
+            $data_json["IsError"] = TRUE;
+            $data_json["Message"] = "Invalid Method";
+            goto ResultData;
+        }
+        ResultData:
+        return response()->json($data_json,200);
     }
 }

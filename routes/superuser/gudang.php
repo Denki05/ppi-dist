@@ -35,6 +35,8 @@ Route::group([
             Route::get('{id}/detail/{detail_id}/edit', 'PurchaseOrderDetailController@edit')->name('edit');
             Route::put('{id}/detail/{detail_id}', 'PurchaseOrderDetailController@update')->name('update');
             Route::delete('{id}/detail/{detail_id}', 'PurchaseOrderDetailController@destroy')->name('destroy');
+            Route::get('/get_product', 'PurchaseOrderDetailController@get_product')->name('get_product');
+            Route::get('/get_packaging', 'PurchaseOrderDetailController@get_packaging')->name('get_packaging');
         });
     });
     Route::resource('purchase_order', 'PurchaseOrderController');
