@@ -19,13 +19,13 @@
 <div class="block">
   <div class="block-content">
     <div class="form-group row">
-      <label class="col-md-1 col-form-label text-left" for="code">SKU</label>
+      <label class="col-md-1 col-form-label text-left" for="code">Product Code</label>
       <div class="col-md-3">
         <div class="form-control-plaintext">{{ $product->code }}</div>
       </div>
     </div>
     <div class="form-group row">
-      <label class="col-md-1 col-form-label text-left" for="name">Item</label>
+      <label class="col-md-1 col-form-label text-left" for="name">Product Name</label>
       <div class="col-md-4">
         <div class="form-control-plaintext">{{ $product->name }}</div>
       </div>
@@ -44,7 +44,6 @@
           <th class="text-center">In</th>
           <th class="text-center">Out</th>
           <th class="text-center">Balance</th>
-          <th class="text-center">HPP</th>
           <th class="text-center">Description</th>
         </tr>
       </thead>
@@ -56,7 +55,6 @@
               <td>{{ $item['in'] }}</td>
               <td>{{ $item['out'] }}</td>
               <td>{{ $item['balance'] }}</td>
-              <td>{{ $item['hpp'] }}</td>
               <td>{{ $item['description'] }}</td>
             </tr>
         @endforeach

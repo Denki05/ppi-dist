@@ -44,9 +44,9 @@ class StockController extends Controller
                     foreach ($detail->collys as $colly) {
                         if ($colly->status_qc == ReceivingDetailColly::STATUS_QC['USED'] && $colly->quantity_recondition > 0) {
                             if (!empty($collect[$colly->receiving_detail->product_id]['out'])) {
-                                $collect[$colly->receiving_detail->product_id]['out'] += $colly->quantity_recondition;
+                                $collect[$colly->receiving_detail->product_packaging_id]['out'] += $colly->quantity_recondition;
                             } else {
-                                $collect[$colly->receiving_detail->product_id]['out'] = $colly->quantity_recondition;
+                                $collect[$colly->receiving_detail->product_packaging_id]['out'] = $colly->quantity_recondition;
                             }
                         }
 
@@ -59,9 +59,9 @@ class StockController extends Controller
                                 if ($item && $item->mutation->status == Mutation::STATUS['ACC']) {
                                     if($colly->product_to == 0){
                                         if (!empty($collect[$colly->receiving_detail->product_id]['out'])) {
-                                            $collect[$colly->receiving_detail->product_id]['out'] += $colly->quantity_mutation;
+                                            $collect[$colly->receiving_detail->prodproduct_packaging_iduct_id]['out'] += $colly->quantity_mutation;
                                         } else {
-                                            $collect[$colly->receiving_detail->product_id]['out'] = $colly->quantity_mutation;
+                                            $collect[$colly->receiving_detail->product_packaging_id]['out'] = $colly->quantity_mutation;
                                         }
                                     } else {
                                         if (!empty($collect[$colly->product_to]['out'])) {
@@ -77,9 +77,9 @@ class StockController extends Controller
                                 if ($item && $item->mutation_gudang_utama->status == MutationGudangUtama::STATUS['ACC']) {
                                     if($colly->product_to == 0){
                                         if (!empty($collect[$colly->receiving_detail->product_id]['out'])) {
-                                            $collect[$colly->receiving_detail->product_id]['out'] += $colly->quantity_mutation;
+                                            $collect[$colly->receiving_detail->product_packaging_id]['out'] += $colly->quantity_mutation;
                                         } else {
-                                            $collect[$colly->receiving_detail->product_id]['out'] = $colly->quantity_mutation;
+                                            $collect[$colly->receiving_detail->product_packaging_id]['out'] = $colly->quantity_mutation;
                                         }
                                     } else {
                                         if (!empty($collect[$colly->product_to]['out'])) {
@@ -100,10 +100,10 @@ class StockController extends Controller
                 ->where('warehouse_reparation_id', $warehouse)
                 ->get();
             foreach ($receiving_detail_collys as $colly) {
-                if (!empty($collect[$colly->receiving_detail->product_id]['in'])) {
-                    $collect[$colly->receiving_detail->product_id]['in'] += $colly->quantity_recondition;
+                if (!empty($collect[$colly->receiving_detail->product_packaging_id]['in'])) {
+                    $collect[$colly->receiving_detail->product_packaging_id]['in'] += $colly->quantity_recondition;
                 } else {
-                    $collect[$colly->receiving_detail->product_id]['in'] = $colly->quantity_recondition;
+                    $collect[$colly->receiving_detail->product_packaging_id]['in'] = $colly->quantity_recondition;
                 }
             }
 
@@ -180,6 +180,13 @@ class StockController extends Controller
         return view('superuser.gudang.stock.index', $data); 
     }
 
+    public function date_compare($element1, $element2)
+    {
+        $datetime1 = strtotime($element1['created_at']);
+        $datetime2 = strtotime($element2['created_at']);
+        return $datetime1 - $datetime2;
+    }
+
     public function detail($warehouse, $product)
     {
         $decode_product = base64_decode($product);
@@ -189,6 +196,31 @@ class StockController extends Controller
         $data['collects'] = [];
 
         $collect = [];
+
+        $receivings = Receiving::where('warehouse_id', $warehouse)->where('status', Receiving::STATUS['ACC'])
+            ->whereHas('details', function ($query) use ($product) {
+                $query->where('product_packaging_id', $product);
+            })
+            ->get();
+        foreach ($receivings as $receiving) {
+            foreach ($receiving->details as $detail) {
+                if ($detail->product_packaging_id == $product) {
+                    foreach ($detail->collys as $colly) {
+                        if($colly->is_reject == 0){
+                            $collect[] = [
+                                'created_at' => $receiving->created_at,
+                                'second_date' => 0,
+                                'transaction' => $receiving->code,
+                                'in' => $colly->quantity_ri,
+                                'out' => '',
+                                'balance' => '',
+                                'description' => '',
+                            ];
+                        }
+                    }
+                }
+            }
+        }
 
         $sales_orders = SalesOrder::where('origin_warehouse_id', $warehouse)
             ->where('status', 4)
@@ -209,7 +241,6 @@ class StockController extends Controller
                             'in' => '',
                             'out' => $detail->qty,
                             'balance' => '',
-                            'hpp' => 0,
                             'description' => $detail->description ?? '',
                         ];
                     }
