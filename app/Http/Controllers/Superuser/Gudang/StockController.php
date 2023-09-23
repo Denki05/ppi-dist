@@ -13,6 +13,9 @@ use App\Entities\Penjualan\PackingOrderItem;
 use App\Entities\Penjualan\DeliveryOrderMutationItem;
 use App\Entities\Penjualan\SalesOrderItem;
 use App\Entities\Penjualan\CanvasingItem;
+use App\Entities\Gudang\Receiving;
+use App\Entities\Gudang\ReceivingDetail;
+use App\Entities\Gudang\ReceivingDetailColly;
 use App\Entities\Gudang\StockMove;
 use App\Entities\Penjualan\SalesOrder;
 use App\Entities\Setting\UserMenu;
@@ -28,12 +31,79 @@ class StockController extends Controller
 
         $collect = [];
         if($warehouse){
-            $stocks = ProductMinStock::where('warehouse_id', $warehouse)->get();
-            foreach ($stocks as $stock) {
-                if (!empty($collect[$stock->product_packaging_id]['in'])) {
-                    $collect[$stock->product_packaging_id]['in'] += $stock->quantity;
+
+            $receivings = Receiving::where('warehouse_id', $warehouse)->where('status', Receiving::STATUS['ACC'])->get();
+            foreach ($receivings as $receiving) {
+                foreach ($receiving->details as $detail) {
+                    if (!empty($collect[$detail->product_id]['in'])) {
+                        $collect[$detail->product_packaging_id]['in'] += $detail->total_quantity_ri;
+                    } else {
+                        $collect[$detail->product_packaging_id]['in'] = $detail->total_quantity_ri;
+                    }
+
+                    foreach ($detail->collys as $colly) {
+                        if ($colly->status_qc == ReceivingDetailColly::STATUS_QC['USED'] && $colly->quantity_recondition > 0) {
+                            if (!empty($collect[$colly->receiving_detail->product_id]['out'])) {
+                                $collect[$colly->receiving_detail->product_id]['out'] += $colly->quantity_recondition;
+                            } else {
+                                $collect[$colly->receiving_detail->product_id]['out'] = $colly->quantity_recondition;
+                            }
+                        }
+
+                        if ($colly->status_mutation == ReceivingDetailColly::STATUS_MUTATION['USED'] && $colly->quantity_mutation > 0) {
+                            $mutation_detail = MutationDetail::where('receiving_detail_colly_id', $colly->id)->groupBy('receiving_detail_colly_id')->get();
+
+                            $mutation_gudang_utama_detail = MutationGudangUtamaDetail::where('receiving_detail_colly_id', $colly->id)->groupBy('receiving_detail_colly_id')->get();
+
+                            foreach($mutation_detail as $item){
+                                if ($item && $item->mutation->status == Mutation::STATUS['ACC']) {
+                                    if($colly->product_to == 0){
+                                        if (!empty($collect[$colly->receiving_detail->product_id]['out'])) {
+                                            $collect[$colly->receiving_detail->product_id]['out'] += $colly->quantity_mutation;
+                                        } else {
+                                            $collect[$colly->receiving_detail->product_id]['out'] = $colly->quantity_mutation;
+                                        }
+                                    } else {
+                                        if (!empty($collect[$colly->product_to]['out'])) {
+                                            $collect[$colly->product_to]['out'] += $colly->quantity_mutation;
+                                        } else {
+                                            $collect[$colly->product_to]['out'] = $colly->quantity_mutation;
+                                        }
+                                    }
+                                }
+                            }
+
+                            foreach($mutation_gudang_utama_detail as $item){
+                                if ($item && $item->mutation_gudang_utama->status == MutationGudangUtama::STATUS['ACC']) {
+                                    if($colly->product_to == 0){
+                                        if (!empty($collect[$colly->receiving_detail->product_id]['out'])) {
+                                            $collect[$colly->receiving_detail->product_id]['out'] += $colly->quantity_mutation;
+                                        } else {
+                                            $collect[$colly->receiving_detail->product_id]['out'] = $colly->quantity_mutation;
+                                        }
+                                    } else {
+                                        if (!empty($collect[$colly->product_to]['out'])) {
+                                            $collect[$colly->product_to]['out'] += $colly->quantity_mutation;
+                                        } else {
+                                            $collect[$colly->product_to]['out'] = $colly->quantity_mutation;
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
+            $receiving_detail_collys = ReceivingDetailColly::where('status_qc', ReceivingDetailColly::STATUS_QC['USED'])
+                ->where('quantity_recondition', '>', 0)
+                ->where('warehouse_reparation_id', $warehouse)
+                ->get();
+            foreach ($receiving_detail_collys as $colly) {
+                if (!empty($collect[$colly->receiving_detail->product_id]['in'])) {
+                    $collect[$colly->receiving_detail->product_id]['in'] += $colly->quantity_recondition;
                 } else {
-                    $collect[$stock->product_packaging_id]['in'] = $stock->quantity;
+                    $collect[$colly->receiving_detail->product_id]['in'] = $colly->quantity_recondition;
                 }
             }
 
