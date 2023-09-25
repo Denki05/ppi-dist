@@ -180,7 +180,7 @@
                   <td>{{ number_format($row->stock) }}</td>
                   <td>
                     <button type="button" class="btn btn-sm btn-circle btn-alt-secondary upload_button" data-id="{{$row->id}}" title="Update price" data-bs-toggle="modal" data-bs-target="#myModal">
-                      <i class="fa fa-pencil"></i>
+                      <i class="fa fa-money"></i>
                     </button>
                   </td>
                 </tr>

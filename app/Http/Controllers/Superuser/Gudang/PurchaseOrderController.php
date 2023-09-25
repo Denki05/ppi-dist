@@ -385,7 +385,7 @@ class PurchaseOrderController extends Controller
         $my_pdf = 'C:\\xampp\\htdocs\\ppi-dist\\public\\cr\\purchase_order\\export\\'.$result->code.'.pdf';
 
         //- Variables - Server Information 
-        $my_server = "DEV-SERVER"; 
+        $my_server = "LOCAL"; 
         $my_user = "root"; 
         $my_password = ""; 
         $my_database = "ppi-dist";
