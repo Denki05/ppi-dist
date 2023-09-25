@@ -228,7 +228,7 @@ class PurchaseOrderController extends Controller
     public function step($id)
     {
         if(Auth::user()->is_superuser == 0){
-            if(empty($this->access) || empty($this->access->user) || $this->access->can_edit == 0){
+            if(empty($this->access) || empty($this->access->user) || $this->access->can_read == 0){
                 return redirect()->route('superuser.index')->with('error','Anda tidak punya akses untuk membuka menu terkait');
             }
         }
