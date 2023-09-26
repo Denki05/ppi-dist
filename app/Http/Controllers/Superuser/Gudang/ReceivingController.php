@@ -254,7 +254,7 @@ class ReceivingController extends Controller
                     
                     $sisa = $get_stock + $move_in - $move_out + $total_quantity;
                     $insert_stock_move = StockMove::create([
-                        'code_transaction' => $receiving->code,
+                        'code_transaction' => 'Receiving-'.$receiving->code,
                         'warehouse_id' => $receiving->warehouse_id,
                         'product_packaging_id' => $detail->product_packaging_id,
                         'stock_in' => $total_quantity,
