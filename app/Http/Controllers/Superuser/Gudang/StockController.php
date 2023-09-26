@@ -32,6 +32,15 @@ class StockController extends Controller
         $collect = [];
         if($warehouse){
 
+            // $stocks = ProductMinStock::where('warehouse_id', $warehouse)->get();
+            // foreach ($stocks as $stock) {
+            //     if (!empty($collect[$stock->product_packaging_id]['in'])) {
+            //         $collect[$stock->product_packaging_id]['in'] += $stock->quantity;
+            //     } else {
+            //         $collect[$stock->product_packaging_id]['in'] = $stock->quantity;
+            //     }
+            // }
+
             $receivings = Receiving::where('warehouse_id', $warehouse)->where('status', Receiving::STATUS['ACC'])->get();
             foreach ($receivings as $receiving) {
                 foreach ($receiving->details as $detail) {

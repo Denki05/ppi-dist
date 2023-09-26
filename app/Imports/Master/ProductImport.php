@@ -108,7 +108,7 @@ class ProductImport implements ToCollection, WithHeadingRow, WithStartRow, Skips
                                 $min_stock->product_packaging_id = $child_product->id;
                                 $min_stock->warehouse_id = $warehouse->id;
                                 $min_stock->unit_id = 1;
-                                $min_stock->quantity = 1000;
+                                $min_stock->quantity = 0;
                                 $min_stock->selling_price = $child_product->price;
                                 $min_stock->save();
                         }
@@ -157,7 +157,7 @@ class ProductImport implements ToCollection, WithHeadingRow, WithStartRow, Skips
                                 $min_stock->product_packaging_id = $child_product->id;
                                 $min_stock->warehouse_id = $warehouse->id;
                                 $min_stock->unit_id = 1;
-                                $min_stock->quantity = 1000;
+                                $min_stock->quantity = 0;
                                 $min_stock->selling_price = $child_product->price;
                                 $min_stock->save();                             
                         }

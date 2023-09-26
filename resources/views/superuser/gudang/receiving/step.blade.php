@@ -18,6 +18,19 @@
   </nav>
 @endif
 
+@if($errors->any())
+<div class="alert alert-danger alert-dismissable" role="alert">
+  <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+      <span aria-hidden="true">×</span>
+  </button>
+  <h3 class="alert-heading font-size-h4 font-w400">Error</h3>
+  @foreach ($errors->all() as $error)
+  <p class="mb-0">{{ $error }}</p>
+  @endforeach
+</div>
+@endif
+
+
 <div class="block">
   <div class="block-header block-header-default">
     <h3 class="block-title">New Receiving</h3>
@@ -76,7 +89,7 @@
             Delete <i class="fa fa-trash ml-10"></i>
           </button>
         </a>
-        <a href="javascript:saveConfirmation('{{ route('superuser.gudang.receiving.publish', $receiving->id) }}')">
+        <a href="javascript:saveConfirmation2('{{ route('superuser.gudang.receiving.publish', $receiving->id) }}')">
           <button type="button" class="btn bg-gd-leaf border-0 text-white">
             ACC <i class="fa fa-check ml-10"></i>
           </button>

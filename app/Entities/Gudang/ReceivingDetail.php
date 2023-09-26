@@ -22,7 +22,7 @@ class ReceivingDetail extends Model
 
     public function receiving()
     {
-        return $this->belongsTo('App\Entities\Gudang\Receiving');
+        return $this->belongsTo('App\Entities\Gudang\Receiving', 'receiving_id');
     }
 
     public function purchase_order()

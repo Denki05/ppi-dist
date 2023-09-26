@@ -16,6 +16,8 @@ use App\Exports\Gudang\ReceivingDetailImportTemplate;
 use App\Imports\Gudang\ReceivingDetailImport;
 use App\Entities\Gudang\PurchaseOrder;
 use App\Entities\Gudang\PurchaseOrderDetail;
+use App\Entities\Gudang\StockMove;
+use App\Entities\Master\ProductMinStock;
 use App\Entities\Finance\SettingFinance;
 use App\Http\Controllers\Controller;
 use App\Repositories\MasterRepo;
@@ -204,27 +206,64 @@ class ReceivingController extends Controller
 
     private function save_acc(Request $request, $id, $button_type)
     {
-        if ($request->ajax()) {
+        if($request->ajax()){
             if(Auth::user()->is_superuser == 0){
-                if(empty($this->access) || empty($this->access->user) || $this->access->can_approve == 0){
+                if(empty($this->access) || empty($this->access->user) || $this->access->can_approved == 0){
                     return redirect()->route('superuser.index')->with('error','Anda tidak punya akses untuk membuka menu terkait');
                 }
             }
 
-            $receiving = Receiving::find($id);
-
-            if ($receiving == null) {
-                abort(404);
-            }
+            $failed = "";
 
             DB::beginTransaction();
-            try {
+
+            try{
+
+                $receiving = Receiving::find($id);
+                $total_qty_ri = 0;
+                foreach($receiving->details as $detail){
+                    if($detail->total_quantity_ri == 0){
+                        $failed = "Item quantity belum di input!";
+                        break;
+                    }
+                }
+                
+                if ($failed) {
+                    $response['failed'] = $failed;
+                    DB::rollback();
+
+                    return $this->response(200, $response);
+                }
+
+                $total_quantity = 0;
+                $details = DB::table('receiving_detail')->where('receiving_id', $receiving->id)->get();
+                foreach($details as $detail){
+                    // Input stock
+                    $check_stock = ProductMinStock::where('product_packaging_id', $detail->product_packaging_id)->where('warehouse_id', $receiving->warehouse_id)->first();
+
+                    $total_quantity = $detail->total_quantity_ri;
+                    $get_stock = $check_stock->quantity;
+                    $check_stock->quantity = $get_stock + $total_quantity;
+                    $check_stock->save();
+
+                    // // Log record Stock Move
+                    // $move = StockMove::where('product_packging_id', $detail->product_packaging_id)
+                    //     ->where('warehouse_id', $receiving->warehouse_id)
+                    //     ->get();
+                    // $move_in = $move->sum('stock_in');
+                    // $move_out = $move->sum('stock_out');
+
+                    // $sisa = $get_stock + $move_in - $move_out - $value->qty;
+                }
+
                 $receiving->acc_by = Auth::id();
                 $receiving->acc_at = Carbon::now()->toDateTimeString();
                 $receiving->status = Receiving::STATUS['ACC'];
 
                 if ($receiving->save()) {
                     DB::commit();
+
+                    
 
                     if ($button_type == 'publish') {
                         $response['redirect_to'] = route('superuser.gudang.receiving.index');
@@ -234,12 +273,18 @@ class ReceivingController extends Controller
 
                     return $this->response(200, $response);
                 }
-            } catch (\Exception $e) {
-                DB::rollback();
-                // DD($e);
-                $response['failed'] = 'Internal Server Error!';
 
-                return $this->response(200, $response);
+            } catch (\Exception $e) {
+                dd($e);
+                DB::rollback();
+                $response['notification'] = [
+                    'alert' => 'block',
+                    'type' => 'alert-danger',
+                    'header' => 'Error',
+                    'content' => $failed,
+                ];
+
+                return $this->response(400, $response);
             }
         }
     }

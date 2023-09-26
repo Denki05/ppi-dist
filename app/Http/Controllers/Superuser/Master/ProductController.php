@@ -181,13 +181,13 @@ class ProductController extends Controller
                                 $child_product->status = ProductPack::STATUS['ACTIVE'];
                                 $child_product->save();
 
-                                $min_stock = new ProductMinStock;
-                                $min_stock->product_packaging_id = $child_product->id;
-                                $min_stock->warehouse_id = $warehouse->id;
-                                $min_stock->unit_id = 1;
-                                $min_stock->quantity = 1000;
-                                $min_stock->selling_price = $child_product->price;
-                                $min_stock->save();
+                                // $min_stock = new ProductMinStock;
+                                // $min_stock->product_packaging_id = $child_product->id;
+                                // $min_stock->warehouse_id = $warehouse->id;
+                                // $min_stock->unit_id = 1;
+                                // $min_stock->quantity = 1000;
+                                // $min_stock->selling_price = $child_product->price;
+                                // $min_stock->save();
                         }
 
                         $response['notification'] = [
@@ -257,13 +257,13 @@ class ProductController extends Controller
                                 $child_product->status = ProductPack::STATUS['ACTIVE'];
                                 $child_product->save();
 
-                                $min_stock = new ProductMinStock;
-                                $min_stock->product_packaging_id = $child_product->id;
-                                $min_stock->warehouse_id = $warehouse->id;
-                                $min_stock->unit_id = 1;
-                                $min_stock->quantity = 1000;
-                                $min_stock->selling_price = $child_product->price;
-                                $min_stock->save();
+                                // $min_stock = new ProductMinStock;
+                                // $min_stock->product_packaging_id = $child_product->id;
+                                // $min_stock->warehouse_id = $warehouse->id;
+                                // $min_stock->unit_id = 1;
+                                // $min_stock->quantity = 1000;
+                                // $min_stock->selling_price = $child_product->price;
+                                // $min_stock->save();
                         }
 
                         $response['notification'] = [

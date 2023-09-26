@@ -151,7 +151,6 @@ class ReceivingDetailController extends Controller
                 $receiving_detail->po_detail_id = $request->ppb_detail;
                 $receiving_detail->product_packaging_id = $request->product;
                 $receiving_detail->quantity = $request->quantity;
-                // $receiving_detail->delivery_cost = $request->delivery_cost ?? 0;
                 $receiving_detail->sj_po = $request->sj_po;
                 $receiving_detail->note = $request->description;
                 $receiving_detail->created_by = Auth::id();
