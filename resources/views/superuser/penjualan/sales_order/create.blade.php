@@ -98,7 +98,7 @@
                         <select class="form-control js-select2 select-brand" data-index="0">
                           <option value="">Pilih Merek</option>
                           @foreach($brand as $index => $row)
-                          <option value="{{$row->id}}">{{$row->brand_name}}</option>
+                          <option value="{{$row->brand_name}}">{{$row->brand_name}}</option>
                           @endforeach
                         </select>
                       </div>
@@ -120,7 +120,6 @@
             <div class="row">
               <div class="col-12 product-list">
                 <div class="row">
-                  <div class="col-2">Category</div>
                   <div class="col-3">Product</div>
                   <div class="col-3">Packaging</div>
                   <div class="col-1">Qty</div>
@@ -129,11 +128,6 @@
                 </div>
 
                 <div class="row mt-10 product-row">
-                  <div class="col-2">
-                    <select class="form-control js-select2 select-category" name="category[]" data-index="0">
-                      <option value="">Select Category</option>
-                    </select>
-                  </div>
                   <div class="col-3">
                     <select class="form-control js-select2 select-product" name="product_id[]" data-index="0">
                       <option value="">Select product</option>
@@ -244,8 +238,6 @@
 
     // add product
     $(document).on('click','#buttonAddProduct',function(){
-      const categoryId = $('.select-category[data-index=0]').val();
-      const categoryText = $('.select-category[data-index=0] option:selected').text();
       const productId = $('.select-product[data-index=0]').val();
       const productText = $('.select-product[data-index=0] option:selected').text();
       const qty = $('.input-qty[data-index=0]').val();
@@ -253,7 +245,7 @@
       const packagingText = $('.select-packaging[data-index=0] option:selected').text();
       const free = $('.input-free[data-index=0]').val();
 
-      if (categoryId === null || categoryId === '' || productId === null || productId === '' || qty === null || qty === '' || packagingId == null || packagingId === '' ) {
+      if (productId === null || productId === '' || qty === null || qty === '' || packagingId == null || packagingId === '' ) {
         Swal.fire(
           'Error!',
           'Please input all the data',
@@ -262,11 +254,7 @@
         return;
       }
 
-      let html = "<div class='row mt-10 product-row brand-" + categoryId + "'>";
-      html += "  <div class='col-2'>";
-      html += "    <input type='hidden' class='form-control' value='" + categoryId + "'>";
-      html += categoryText;
-      html += "  </div>";
+      let html = "<div class='row mt-10 product-row product-" + productId + "'>";
       html += "  <div class='col-3'>";
       html += "    <input type='hidden' name='product_id[]' class='form-control' value='" + productId + "'>";
       html += productText;
@@ -288,19 +276,18 @@
       html += "  </div>";
       html += "</div>";
       
-      if ($('.product-row.category-' + categoryId).length > 0) {
-        $('body').find('.product-row.category-' + categoryId + ':last').after(html);
+      if ($('.product-row.product-' + productId).length > 0) {
+        $('body').find('.product-row.product-' + productId + ':last').after(html);
       } else {
         $('body').find('.product-list').append(html);
       }
 
-      $('.select-category[data-index=0]').val('').change();
       $('.select-product[data-index=0]').val('').change();
       $('.input-qty[data-index=0]').val('');
       $('.select-packaging[data-index=0]').val('').change();
       $('.input-free[data-index=0]').val();
 
-      $('.select-category[data-index=0]').select2('focus');
+      $('.select-product[data-index=0]').select2('focus');
 
       productCount++;
     });
@@ -308,55 +295,19 @@
     $(document).on('click','#buttonDeleteProduct',function(){
       $(this).parents(".product-row").remove();
     });
-
-    // load Category
+    
+    // load product
     var param = [];
-    param["brand_lokal_id"] = "";
+    param["brand_name"] = "";
 
-    loadCategory({});
+    loadProduct({});
 
     $(document).on('change','.select-brand',function(){
       if ($(this).val() === '') return;
 
-      param["brand_lokal_id"] = $(this).val();
-      loadCategory({
-        brand_lokal_id:param["brand_lokal_id"],
-        index: $(this).data("index")
-      })
-    })
-
-    function loadCategory(param){
-      $.ajax({
-        url : '{{route('superuser.penjualan.sales_order.get_category')}}',
-        method : "GET",
-        data : param,
-        dataType : "JSON",
-        success : function(resp){
-          let option = "";
-          option = '<option value="">Select Category</option>';
-          $.each(resp.Data,function(i,e){
-            option += '<option value="'+e.catId+'">'+e.categoryName+'</option>';
-          })
-          $('.select-category[data-index=' + param.index + ']').html(option);
-        },
-        error : function(){
-          alert("Cek Koneksi Internet");
-        }
-      })
-    }
-    
-    // load product
-    var param = [];
-    param["category_id"] = "";
-
-    loadProduct({});
-
-    $(document).on('change','.select-category',function(){
-      if ($(this).val() === '') return;
-
-      param["category_id"] = $(this).val();
+      param["brand_name"] = $(this).val();
       loadProduct({
-        category_id:param["category_id"],
+        brand_name:param["brand_name"],
         index: $(this).data("index")
       })
     })
