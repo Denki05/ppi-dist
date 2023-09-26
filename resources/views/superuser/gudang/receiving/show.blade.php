@@ -52,7 +52,7 @@
 
     <div class="form-group row pt-30">
       <div class="col-md-6">
-        <a href="{{ route('superuser.purchasing.receiving.index') }}">
+        <a href="{{ route('superuser.gudang.receiving.index') }}">
           <button type="button" class="btn bg-gd-cherry border-0 text-white">
             <i class="fa fa-arrow-left mr-10"></i> Back
           </button>
@@ -67,18 +67,17 @@
     <h3 class="block-title">Detail ({{ $receiving->details->count() }})</h3>
   </div>
   <div class="block-content">
-    <table id="datatable" class="table table-striped table-vcenter table-responsive">
+    <table id="datatable" class="table table-striped">
       <thead>
         <tr>
-          <th class="text-center">#</th>
-          <th class="text-center">PPB Number</th>
-          <th class="text-center">SKU</th>
+        <th class="text-center">#</th>
+          <th class="text-center">PO Number</th>
           <th class="text-center">Product</th>
-          <th class="text-center">PPB Quantity</th>
+          
+          <th class="text-center">PO Quantity</th>
           <th class="text-center">RI Quantity</th>
           <th class="text-center">Colly Quantity</th>
-          <th class="text-center">Sea Freight</th>
-          <th class="text-center">No Container</th>
+          <th class="text-center">NO SJ</th>
           <th class="text-center">Note</th>
           <th class="text-center">Action</th>
         </tr>
@@ -88,16 +87,15 @@
         <tr>
           <td class="text-center">{{ $loop->iteration }}</td>
           <td class="text-center">{{ $detail->purchase_order->code }}</td>
-          <td class="text-center">{{ $detail->product->code }}</td>
-          <td class="text-center">{{ $detail->product->name }}</td>
+          <td class="text-center">{{ $detail->product_pack->code }} - <b>{{ $detail->product_pack->name }}</b></td>
+          
           <td class="text-center">{{ $receiving->price_format($detail->quantity) }}</td>
           <td class="text-center">{{ $receiving->price_format($detail->total_quantity_ri) }}{{ $detail->total_reject_ri($detail->id) ? ' [RE '.$receiving->price_format($detail->total_reject_ri($detail->id)).']' : '' }}</td>
           <td class="text-center">{{ $receiving->price_format($detail->total_quantity_colly) }}{{ $detail->total_reject_colly($detail->id) ? ' [RE '.$receiving->price_format($detail->total_reject_colly($detail->id)).']' : '' }}</td>
-          <td class="text-center">{{ $detail->delivery_cost }}</td>
-          <td class="text-center">{{ $detail->no_container }}</td>
+          <td class="text-center">{{ $detail->sj_po }}</td>
           <td class="text-center">{{ $detail->description }}</td>
           <td class="text-center">
-            <a href="{{ route('superuser.purchasing.receiving.detail.show', [$receiving->id, $detail->id]) }}">
+            <a href="{{ route('superuser.gudang.receiving.detail.show', [$receiving->id, $detail->id]) }}">
               <button type="button" class="btn btn-sm btn-circle btn-alt-secondary" title="View Detail">
                 <i class="fa fa-eye"></i>
               </button>

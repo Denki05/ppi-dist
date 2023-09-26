@@ -411,7 +411,7 @@ class ReceivingController extends Controller
 
         $data['receiving'] = Receiving::findOrFail($id);
 
-        return view('superuser.purchasing.receiving.show', $data);
+        return view('superuser.gudang.receiving.show', $data);
     }
 
     public function pdf($id = NULL, $protect = false, $generate = false)
