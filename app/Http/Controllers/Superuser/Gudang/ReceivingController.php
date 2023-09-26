@@ -231,7 +231,6 @@ class ReceivingController extends Controller
                 if ($failed) {
                     $response['failed'] = $failed;
                     DB::rollback();
-
                     return $this->response(200, $response);
                 }
 
@@ -246,14 +245,22 @@ class ReceivingController extends Controller
                     $check_stock->quantity = $get_stock + $total_quantity;
                     $check_stock->save();
 
-                    // // Log record Stock Move
-                    // $move = StockMove::where('product_packging_id', $detail->product_packaging_id)
-                    //     ->where('warehouse_id', $receiving->warehouse_id)
-                    //     ->get();
-                    // $move_in = $move->sum('stock_in');
-                    // $move_out = $move->sum('stock_out');
-
-                    // $sisa = $get_stock + $move_in - $move_out - $value->qty;
+                    // Record log stock
+                    $move = StockMove::where('product_packaging_id', $detail->product_packaging_id)
+                                ->where('warehouse_id', $receiving->warehuse_id)
+                                ->get();
+                    $move_in = $move->sum('stock_in');
+                    $move_out = $move->sum('stock_out');
+                    
+                    $sisa = $get_stock + $move_in - $move_out + $total_quantity;
+                    $insert_stock_move = StockMove::create([
+                        'code_transaction' => $receiving->code,
+                        'warehouse_id' => $receiving->warehouse_id,
+                        'product_packaging_id' => $detail->product_packaging_id,
+                        'stock_in' => $total_quantity,
+                        'stock_balance' => $sisa,
+                        'created_by' => Auth::id()
+                    ]);
                 }
 
                 $receiving->acc_by = Auth::id();
@@ -262,9 +269,6 @@ class ReceivingController extends Controller
 
                 if ($receiving->save()) {
                     DB::commit();
-
-                    
-
                     if ($button_type == 'publish') {
                         $response['redirect_to'] = route('superuser.gudang.receiving.index');
                     } else {

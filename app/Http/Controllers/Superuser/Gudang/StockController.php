@@ -32,19 +32,10 @@ class StockController extends Controller
         $collect = [];
         if($warehouse){
 
-            // $stocks = ProductMinStock::where('warehouse_id', $warehouse)->get();
-            // foreach ($stocks as $stock) {
-            //     if (!empty($collect[$stock->product_packaging_id]['in'])) {
-            //         $collect[$stock->product_packaging_id]['in'] += $stock->quantity;
-            //     } else {
-            //         $collect[$stock->product_packaging_id]['in'] = $stock->quantity;
-            //     }
-            // }
-
             $receivings = Receiving::where('warehouse_id', $warehouse)->where('status', Receiving::STATUS['ACC'])->get();
             foreach ($receivings as $receiving) {
                 foreach ($receiving->details as $detail) {
-                    if (!empty($collect[$detail->product_id]['in'])) {
+                    if (!empty($collect[$detail->product_packaging_id]['in'])) {
                         $collect[$detail->product_packaging_id]['in'] += $detail->total_quantity_ri;
                     } else {
                         $collect[$detail->product_packaging_id]['in'] = $detail->total_quantity_ri;
@@ -52,7 +43,7 @@ class StockController extends Controller
 
                     foreach ($detail->collys as $colly) {
                         if ($colly->status_qc == ReceivingDetailColly::STATUS_QC['USED'] && $colly->quantity_recondition > 0) {
-                            if (!empty($collect[$colly->receiving_detail->product_id]['out'])) {
+                            if (!empty($collect[$colly->receiving_detail->product_packaging_id]['out'])) {
                                 $collect[$colly->receiving_detail->product_packaging_id]['out'] += $colly->quantity_recondition;
                             } else {
                                 $collect[$colly->receiving_detail->product_packaging_id]['out'] = $colly->quantity_recondition;
@@ -67,8 +58,8 @@ class StockController extends Controller
                             foreach($mutation_detail as $item){
                                 if ($item && $item->mutation->status == Mutation::STATUS['ACC']) {
                                     if($colly->product_to == 0){
-                                        if (!empty($collect[$colly->receiving_detail->product_id]['out'])) {
-                                            $collect[$colly->receiving_detail->prodproduct_packaging_iduct_id]['out'] += $colly->quantity_mutation;
+                                        if (!empty($collect[$colly->receiving_detail->product_packaging_id]['out'])) {
+                                            $collect[$colly->receiving_detail->product_packaging_id]['out'] += $colly->quantity_mutation;
                                         } else {
                                             $collect[$colly->receiving_detail->product_packaging_id]['out'] = $colly->quantity_mutation;
                                         }
@@ -101,18 +92,6 @@ class StockController extends Controller
                             }
                         }
                     }
-                }
-            }
-
-            $receiving_detail_collys = ReceivingDetailColly::where('status_qc', ReceivingDetailColly::STATUS_QC['USED'])
-                ->where('quantity_recondition', '>', 0)
-                ->where('warehouse_reparation_id', $warehouse)
-                ->get();
-            foreach ($receiving_detail_collys as $colly) {
-                if (!empty($collect[$colly->receiving_detail->product_packaging_id]['in'])) {
-                    $collect[$colly->receiving_detail->product_packaging_id]['in'] += $colly->quantity_recondition;
-                } else {
-                    $collect[$colly->receiving_detail->product_packaging_id]['in'] = $colly->quantity_recondition;
                 }
             }
 
