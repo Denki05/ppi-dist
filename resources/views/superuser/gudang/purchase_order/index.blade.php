@@ -5,16 +5,16 @@
   <span class="breadcrumb-item">Gudang</span>
   <span class="breadcrumb-item active">Purchase Order (PO)</span>
 </nav>
-@if(session('error') || session('success'))
-<div class="alert alert-{{ session('error') ? 'danger' : 'success' }} alert-dismissible fade show" role="alert">
-    @if (session('error'))
-    <strong>Error!</strong> {!! session('error') !!}
-    @elseif (session('success'))
-    <strong>Berhasil!</strong> {!! session('success') !!}
-    @endif
-    <button type="button" class="close" data-dismiss="alert" aria-label="Close">
-        <span aria-hidden="true">&times;</span>
-    </button>
+
+@if($errors->any())
+<div class="alert alert-danger alert-dismissable" role="alert">
+  <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+      <span aria-hidden="true">×</span>
+  </button>
+  <h3 class="alert-heading font-size-h4 font-w400">Error</h3>
+  @foreach ($errors->all() as $error)
+  <p class="mb-0">{{ $error }}</p>
+  @endforeach
 </div>
 @endif
 
@@ -30,6 +30,7 @@
       <a href="{{route('superuser.gudang.purchase_order.create')}}">
         <button type="button" class="btn btn-outline-primary min-width-125">New</button>
       </a>
+
       <hr class="my-20">
 
       <div class="row mb-30">
@@ -41,7 +42,8 @@
               <th class="text-center">Created at</th>
               <th class="text-center">PO Code</th>
               <th class="text-center">Latest Update</th>
-              <th class="text-center">Edit Counter</th>
+              <!-- <th class="text-center">Edit Counter</th> -->
+              <th class="text-center">Note</th>
               <th class="text-center">Status</th>
               <th class="text-center">Action</th>
             </tr>
@@ -84,7 +86,8 @@
         },
         {data: 'code'},
         {data: 'updated_by'},
-        {data: 'edit_counter'},
+        // {data: 'edit_counter'},
+        {data: 'note'},
         {data: 'status'},
         {data: 'action', orderable: false, searcable: false}
       ],

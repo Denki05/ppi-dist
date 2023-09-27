@@ -10,10 +10,13 @@ use App\Entities\Gudang\PurchaseOrderDetail;
 use App\Entities\Master\BrandLokal;
 use App\Entities\Master\Product;
 use App\DataTables\Gudang\PurchaseOrderTable;
+use App\Exports\Gudang\PurchaseOrderDetailImportTemplate;
+use App\Imports\Gudang\PurchaseOrderDetailImport;
 use App\Entities\Master\Warehouse;
 use Auth;
 use COM;
 use DB;
+use Excel;
 use Validator;
 use Carbon\Carbon;
 
@@ -111,7 +114,6 @@ class PurchaseOrderController extends Controller
                 $purchase_order->warehouse_id = $request->warehouse;
                 $purchase_order->etd = $request->etd;
                 $purchase_order->note = $request->note;
-                $purchase_order->edit_marker = 0;
                 $purchase_order->created_by = Auth::id();
 
                 $purchase_order->status = PurchaseOrder::STATUS['DRAFT'];
@@ -208,7 +210,6 @@ class PurchaseOrderController extends Controller
                 $purchase_order->warehouse_id = $request->warehouse;
                 $purchase_order->etd = $request->etd;
                 $purchase_order->note = $request->note;
-                $purchase_order->edit_marker = 1;
 
                 if ($purchase_order->save()) {
                     $response['notification'] = [
@@ -272,32 +273,46 @@ class PurchaseOrderController extends Controller
     public function save_modify(Request $request, $id, $save_type)
     {
         if ($request->ajax()) {
+
             $purchase_order = PurchaseOrder::find($id);
 
             if ($purchase_order == null) {
                 abort(404);
             }
-            
-            if($save_type == 'save') {
-                $purchase_order->edit_counter += 1;
-                $purchase_order->edit_marker = 0;
-            } else {
-                $purchase_order->acc_by = Auth::id();
-                $purchase_order->acc_at = Carbon::now()->toDateTimeString();
-            }
-            
-            $purchase_order->status = $save_type == 'save' ? PurchaseOrder::STATUS['ACTIVE'] : PurchaseOrder::STATUS['ACC'];
 
-            if ($purchase_order->save()) {
+            DB::beginTransaction();
+            try{
+
+                if($save_type == 'save') {
+                    $purchase_order->edit_counter += 1;
+                } else {
+                    $purchase_order->acc_by = Auth::id();
+                    $purchase_order->acc_at = Carbon::now()->toDateTimeString();
+                }
+                
+                $purchase_order->status = $save_type == 'save' ? PurchaseOrder::STATUS['ACTIVE'] : PurchaseOrder::STATUS['ACC'];
+    
+                if ($purchase_order->save()) {
+                    $response['notification'] = [
+                        'alert' => 'notify',
+                        'type' => 'success',
+                        'content' => 'Success',
+                    ];
+    
+                    $response['redirect_to'] = route('superuser.gudang.purchase_order.index');
+    
+                    return $this->response(200, $response);
+                }
+            }catch (\Exception $e) {
+                DB::rollback();
                 $response['notification'] = [
-                    'alert' => 'notify',
-                    'type' => 'success',
-                    'content' => 'Success',
+                    'alert' => 'block',
+                    'type' => 'alert-danger',
+                    'header' => 'Error',
+                    'content' => $failed,
                 ];
 
-                $response['redirect_to'] = route('superuser.gudang.purchase_order.index');
-
-                return $this->response(200, $response);
+                return $this->response(400, $response);
             }
         }
     }
@@ -329,15 +344,13 @@ class PurchaseOrderController extends Controller
                     $response['redirect_to'] = route('superuser.gudang.purchase_order.index');
                     return $this->response(200, $response);
                 }
-
-
             }catch (\Exception $e) {
                 DB::rollback();
                 $response['notification'] = [
                     'alert' => 'block',
                     'type' => 'alert-danger',
                     'header' => 'Error',
-                    'content' => "Internal Server Error!",
+                    'content' => $failed,
                 ];
     
                 return $this->response(400, $response);
@@ -431,6 +444,30 @@ class PurchaseOrderController extends Controller
         readfile ($file);
         exit();
 
+    }
+
+    public function import_template()
+    {
+        $filename = 'purchase-order-detail-import-template.xlsx';
+        return Excel::download(new PurchaseOrderDetailImportTemplate, $filename);
+    }
+
+    public function import(Request $request, $id)
+    {
+        $validator = Validator::make($request->all(), [
+            'import_file' => 'required|file|mimes:xls,xlsx|max:2048',
+        ]);
+
+        if ($validator->fails()) {
+            return redirect()->back()->withErrors($validator->errors()->all());
+        }
+
+        if ($validator->passes()) {
+            $import = new PurchaseOrderDetailImport($id);
+            Excel::import($import, $request->import_file);
+        
+            return redirect()->back()->with(['collect_success' => $import->success, 'collect_error' => $import->error]);
+        }
     }
     
 }
