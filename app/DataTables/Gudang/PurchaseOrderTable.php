@@ -14,7 +14,7 @@ class PurchaseOrderTable extends Table
      */
     private function query()
     {
-        $model = PurchaseOrder::select('id', 'code', 'edit_counter', 'updated_by', 'status', 'created_at', 'updated_by');
+        $model = PurchaseOrder::select('id', 'code', 'edit_counter', 'updated_by', 'status', 'note', 'created_at', 'updated_by');
 
         return $model;
     }
