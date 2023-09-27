@@ -48,7 +48,13 @@ class PurchaseOrderDetailImport implements ToCollection, WithHeadingRow, WithSta
                 $collect_error = array('Something went wrong, please reload page!');
             } else {
                 foreach ($rows as $row) {
-                    $product = Product::where('name', $row['product'])->first();
+                    $brand = BrandLokal::where('brand_name', $row['brand'])->first();
+                    if($brand == null) {
+                        $collect_error = array('BRAND'.$row['brand'].' NOT FOUND : all import aborted!');
+                        break;
+                    }
+
+                    $product = Product::where('name', $row['product'])->where('brand_name', $row['brand'])->first();
                     if($product == null) {
                         $collect_error = array('PRODUCT'.$row['product'].' NOT FOUND : all import aborted!');
                         break;
@@ -57,12 +63,6 @@ class PurchaseOrderDetailImport implements ToCollection, WithHeadingRow, WithSta
                     $packaging = Packaging::where('pack_name', $row['packaging'])->first();
                     if($packaging == null) {
                         $collect_error = array('PACKAGING'.$row['packaging'].' NOT FOUND : all import aborted!');
-                        break;
-                    }
-    
-                    $brand = BrandLokal::where('brand_name', $row['brand'])->first();
-                    if($brand == null) {
-                        $collect_error = array('BRAND'.$row['brand'].' NOT FOUND : all import aborted!');
                         break;
                     }
     

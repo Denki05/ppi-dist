@@ -67,8 +67,8 @@
           <th class="text-center">Kode</th>
           <th class="text-center">Qty (KG)</th>
           <th class="text-center">Packaging</th>
-          <th class="text-center">Produksi</th>
-          <th class="text-center">Repack</th>
+          <th class="text-center">Notes</th>
+          <th class="text-center">Customer</th>
         </tr>
       </thead>
       <tbody>
