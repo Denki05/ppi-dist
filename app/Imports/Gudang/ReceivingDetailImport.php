@@ -144,11 +144,11 @@ class ReceivingDetailImport implements ToCollection, WithHeadingRow, WithStartRo
                                 }
                             }
                             $data[$row['PO CODE']]['product'][$row['variant']] = [
-                                'product_packaging_id' => $product->id,
-                                'quantity'      => $qty,
-                                'po_detail_id'  => $ppb_detail,
-                                'sj_po'         => $row['no sj'],
-                                'note'          => $row['note'],
+                                'product_packaging_id'  => $product->id,
+                                'quantity'              => $qty,
+                                'po_detail_id'          => $ppb_detail,
+                                'sj_po'                 => $row['no sj'],
+                                'note'                  => $row['note'],
                             ];
 
                             $data[$row['PO CODE']]['info'] = [
