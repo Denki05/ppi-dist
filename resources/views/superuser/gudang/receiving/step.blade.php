@@ -170,7 +170,7 @@
           <td class="text-center">{{ $receiving->price_format($detail->total_quantity_ri) }}{{ $detail->total_reject_ri($detail->id) ? ' [RE '.$receiving->price_format($detail->total_reject_ri($detail->id)).']' : '' }}</td>
           <td class="text-center">{{ $receiving->price_format($detail->total_quantity_colly) }}{{ $detail->total_reject_colly($detail->id) ? ' [RE '.$receiving->price_format($detail->total_reject_colly($detail->id)).']' : '' }}</td>
           <td class="text-center">{{ $detail->sj_po }}</td>
-          <td class="text-center">{{ $detail->description }}</td>
+          <td class="text-center">{{ $detail->note }}</td>
           <td class="text-center" style="white-space: nowrap;">
             <a href="{{ route('superuser.gudang.receiving.detail.edit', [$receiving->id, $detail->id]) }}">
               <button type="button" class="btn btn-sm btn-circle btn-alt-warning" title="Edit Note">

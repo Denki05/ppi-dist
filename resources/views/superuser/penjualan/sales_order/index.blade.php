@@ -87,23 +87,25 @@
                 @if($step == 1 )
                 <th>Code</th>
                 @endif
+
                 @if($step == 1)
                 <th>Customer</th>
                 @elseif($step == 9)
                 <th>Warehouse</th>
                 @endif
+
                 @if($step == 1)
                 <th>Sales</th>
                 @endif
+
                 @if($step == 1)
                 <th>Transaksi Type</th>
                 @endif
 
-                
-
                 @if($step == 1 )
                 <th>Tanggal Dibuat</th>
                 @endif
+                
                 <th>Action</th>
               </tr>
             </thead>
@@ -142,13 +144,6 @@
                     <?= date('d-m-Y h:i:s',strtotime($row->updated_at)); ?>
                   </td>
                   @endif
-
-                  <!-- @php
-                    $soQty = 0;
-                    foreach($row->so_detail as $index => $so_detail) {
-                      $soQty = $soQty + $so_detail->qty;
-                    }
-                  @endphp -->
 
                   @if(($step == 1 || $step == 2 || $step == 9) && ($row->so_for == 1))
                   <td>

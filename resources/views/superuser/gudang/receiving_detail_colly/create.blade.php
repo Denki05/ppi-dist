@@ -30,12 +30,12 @@
       <div class="form-group row">
         <label class="col-md-3 col-form-label text-right" for="ri">Qty</label>
         <div class="col-md-4">
-          <input type="number" class="form-control" id="ri" name="ri">
+          <input type="number" class="form-control" id="ri" name="ri" step="any">
         </div>
       </div>
       
       <hr>
-      {{--$_COOKIE<div class="form-group row">
+      {{--<div class="form-group row">
         <label class="col-md-3 col-form-label text-right" for="is_reject">Is Rejected?</label>
         <div class="col-md-7">
           <div class="form-check">

@@ -232,52 +232,51 @@ class ReceivingController extends Controller
                     $response['failed'] = $failed;
                     DB::rollback();
                     return $this->response(200, $response);
-                }
+                }else{
+                    $receiving->acc_by = Auth::id();
+                    $receiving->acc_at = Carbon::now()->toDateTimeString();
+                    $receiving->status = Receiving::STATUS['ACC'];
 
-                $total_quantity = 0;
-                $details = DB::table('receiving_detail')->where('receiving_id', $receiving->id)->get();
-                foreach($details as $detail){
-                    // Input stock
-                    $check_stock = ProductMinStock::where('product_packaging_id', $detail->product_packaging_id)->where('warehouse_id', $receiving->warehouse_id)->first();
+                    if ($receiving->save()) {
+                        // Input stock
+                        foreach($receiving->details as $detail){
+                            $check_stock = ProductMinStock::where('product_packaging_id', $detail->product_packaging_id)
+                                    ->where('warehouse_id', $detail->receiving->warehouse_id)
+                                    ->first();
+                            $total_quantity = $detail->total_quantity_ri;
+                            $get_stock = $check_stock->quantity;
+                            $check_stock->quantity = $get_stock + $total_quantity;
+                            $check_stock->save();
+                            
+                            // Record log stock
+                            $move = StockMove::where('product_packaging_id', $detail->product_packaging_id)
+                            ->where('warehouse_id', $receiving->warehuse_id)
+                            ->get();
+                            $move_in = $move->sum('stock_in');
+                            $move_out = $move->sum('stock_out');
+                            
+                            $sisa = $get_stock + $move_in - $move_out + $total_quantity;
+                            $insert_stock_move = StockMove::create([
+                                'code_transaction' => 'Receiving-'.$receiving->code,
+                                'warehouse_id' => $receiving->warehouse_id,
+                                'product_packaging_id' => $detail->product_packaging_id,
+                                'stock_in' => $total_quantity,
+                                'stock_balance' => $sisa,
+                                'created_by' => Auth::id()
+                            ]);
+                        }
+                        
 
-                    $total_quantity = $detail->total_quantity_ri;
-                    $get_stock = $check_stock->quantity;
-                    $check_stock->quantity = $get_stock + $total_quantity;
-                    $check_stock->save();
+                        DB::commit();
+                        if ($button_type == 'publish') {
+                            $response['redirect_to'] = route('superuser.gudang.receiving.index');
+                        } else {
+                            $response['redirect_to'] = '#datatable';
+                        }
 
-                    // Record log stock
-                    $move = StockMove::where('product_packaging_id', $detail->product_packaging_id)
-                                ->where('warehouse_id', $receiving->warehuse_id)
-                                ->get();
-                    $move_in = $move->sum('stock_in');
-                    $move_out = $move->sum('stock_out');
-                    
-                    $sisa = $get_stock + $move_in - $move_out + $total_quantity;
-                    $insert_stock_move = StockMove::create([
-                        'code_transaction' => 'Receiving-'.$receiving->code,
-                        'warehouse_id' => $receiving->warehouse_id,
-                        'product_packaging_id' => $detail->product_packaging_id,
-                        'stock_in' => $total_quantity,
-                        'stock_balance' => $sisa,
-                        'created_by' => Auth::id()
-                    ]);
-                }
-
-                $receiving->acc_by = Auth::id();
-                $receiving->acc_at = Carbon::now()->toDateTimeString();
-                $receiving->status = Receiving::STATUS['ACC'];
-
-                if ($receiving->save()) {
-                    DB::commit();
-                    if ($button_type == 'publish') {
-                        $response['redirect_to'] = route('superuser.gudang.receiving.index');
-                    } else {
-                        $response['redirect_to'] = '#datatable';
+                        return $this->response(200, $response);
                     }
-
-                    return $this->response(200, $response);
                 }
-
             } catch (\Exception $e) {
                 dd($e);
                 DB::rollback();

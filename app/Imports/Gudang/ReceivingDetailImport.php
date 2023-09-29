@@ -98,6 +98,7 @@ class ReceivingDetailImport implements ToCollection, WithHeadingRow, WithStartRo
                                 }
 
                                 $data[$row['PO CODE']]['product'][$row['variant']] = [
+                                    'product_packaging_id' => $product->id,
                                     'quantity'      => $qty,
                                     'po_detail_id'  => $ppb_detail,
                                     'sj_po'         => $row['no sj'],
@@ -143,10 +144,11 @@ class ReceivingDetailImport implements ToCollection, WithHeadingRow, WithStartRo
                                 }
                             }
                             $data[$row['PO CODE']]['product'][$row['variant']] = [
+                                'product_packaging_id' => $product->id,
                                 'quantity'      => $qty,
                                 'po_detail_id'  => $ppb_detail,
                                 'sj_po'         => $row['no sj'],
-                                'note'          => $row['note']
+                                'note'          => $row['note'],
                             ];
 
                             $data[$row['PO CODE']]['info'] = [
@@ -171,7 +173,7 @@ class ReceivingDetailImport implements ToCollection, WithHeadingRow, WithStartRo
                         if ($value['product']) {
                             $found_error_product = false;
                             foreach ($value['product'] as $key_product => $value_product) {
-                                $cek_product = ProductPack::where('name', $key_product)->first();
+                                $cek_product = ProductPack::where('id', $value_product['product_packaging_id'])->first();
                                 if ($cek_product == null) {
                                     $collect_error[] = $key . ' : VARIANT ' . $key_product . ' not found in database';
                                     $found_error_product = true;
@@ -187,7 +189,7 @@ class ReceivingDetailImport implements ToCollection, WithHeadingRow, WithStartRo
                         }
 
                         foreach ($value['product'] as $key_product => $value_product) {
-                            $cek_product = ProductPack::where('name', trim($key_product))->first();
+                            $cek_product = ProductPack::where('id', trim($value_product['product_packaging_id']))->first();
                             if($cek_product){
                                 $receiving_detail = new ReceivingDetail();
                                 $receiving_detail->receiving_id = $this->receiving_id;

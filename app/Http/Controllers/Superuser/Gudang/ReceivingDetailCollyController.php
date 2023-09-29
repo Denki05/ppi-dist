@@ -32,8 +32,8 @@ class ReceivingDetailCollyController extends Controller
         if ($request->ajax()) {
             $validator = Validator::make($request->all(), [
                 // 'code' => 'required|string|unique:receiving_detail_colly,code',
-                'colly' => 'required|numeric|min:1',
-                'ri' => 'required|numeric|min:1',
+                'colly' => 'required|numeric',
+                'ri' => 'required|numeric',
             ]);
 
             if ($validator->fails()) {
