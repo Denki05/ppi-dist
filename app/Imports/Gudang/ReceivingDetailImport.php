@@ -52,15 +52,13 @@ class ReceivingDetailImport implements ToCollection, WithHeadingRow, WithStartRo
                 // foreach($rowTmp as $row){
                 
                     $ppb = null;
-                    $packaging = Packaging::where('pack_name', $row['packaging'])->pluck('id');
+                    $packaging = Packaging::where('pack_name', $row['packaging'])->pluck('id')->first();
                     $product = ProductPack::where('name', $row['variant'])->where('packaging_id', $packaging)->first();
-                    // dd($product);
                     $qty = 0;
                     $ppb_detail = null;
-                    // DD($row['SKU']);
                     if($row['variant'] != ""){
                         if (array_key_exists($row['PO CODE'], $data)) {
-                            if (array_key_exists($row['SKU'], $data[$row['PO CODE']]['product'])) {
+                            if (array_key_exists($row['variant'], $data[$row['PO CODE']]['product'])) {
                                 $qty = $data[$row['PO CODE']]['product'][$row['variant']]['quantity'];
                                 // $data[$row['PPB Number']]['product'][$row['SKU']]['quantity'] = $qty + $row['quantity'];
                             } else {
