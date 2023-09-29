@@ -6,12 +6,12 @@
   <span class="breadcrumb-item">Receiving</span>
   <span class="breadcrumb-item">{{ $receiving->code }}</span>
   <span class="breadcrumb-item">{{ $receiving_detail->id }}</span>
-  <span class="breadcrumb-item active">Add Barcode</span>
+  <span class="breadcrumb-item active">Add Qty Colly</span>
 </nav>
 <div id="alert-block"></div>
 <div class="block">
   <div class="block-header block-header-default">
-    <h3 class="block-title">Add Barcode</h3>
+    <h3 class="block-title">Add Qty Colly</h3>
   </div>
   <div class="block-content">
     <form class="ajax" data-action="{{ route('superuser.gudang.receiving.detail.colly.store', [$receiving->id, $receiving_detail->id]) }}" data-type="POST" enctype="multipart/form-data">
@@ -35,14 +35,14 @@
       </div>
       
       <hr>
-      <div class="form-group row">
+      {{--$_COOKIE<div class="form-group row">
         <label class="col-md-3 col-form-label text-right" for="is_reject">Is Rejected?</label>
         <div class="col-md-7">
           <div class="form-check">
             <input class="form-check-input" style="margin-top: 10px" type="checkbox" id="is_reject" name="is_reject">
           </div>
         </div>
-      </div>
+      </div>--}}
       
       
       <div class="form-group row pt-30">

@@ -54,10 +54,10 @@
 
 <div class="block">
   <div class="block-header block-header-default">
-    <h3 class="block-title">Barcode ({{ $receiving_detail->collys->count() }})</h3>
+    <h3 class="block-title">Colly ({{ $receiving_detail->collys->count() }})</h3>
     @if ($receiving->status == $receiving::STATUS['ACTIVE'])
       <a href="{{ route('superuser.gudang.receiving.detail.colly.create', [$receiving->id, $receiving_detail->id]) }}">
-        <button type="button" class="btn btn-outline-primary min-width-125 pull-right">Add Barcode</button>
+        <button type="button" class="btn btn-outline-primary min-width-125 pull-right">Add Qty Colly</button>
       </a>
     @endif
   </div>
