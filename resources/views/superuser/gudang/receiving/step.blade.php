@@ -29,6 +29,40 @@
   @endforeach
 </div>
 @endif
+<div id="alert-block"></div>
+
+@if(session()->has('collect_success') || session()->has('collect_error'))
+<div class="container">
+  <div class="row">
+    <div class="col pl-0">
+      <div class="alert alert-success alert-dismissable" role="alert" style="max-height: 300px; overflow-y: auto;">
+        <h3 class="alert-heading font-size-h4 font-w400">Successful Import</h3>
+        @foreach (session()->get('collect_success') as $msg)
+        <p class="mb-0">{{ $msg }}</p>
+        @endforeach
+      </div>
+    </div>
+    <div class="col pr-0">
+      <div class="alert alert-danger alert-dismissable" role="alert" style="max-height: 300px; overflow-y: auto;">
+        <h3 class="alert-heading font-size-h4 font-w400">Failed Import</h3>
+        @foreach (session()->get('collect_error') as $msg)
+        <p class="mb-0">{{ $msg }}</p>
+        @endforeach
+      </div>
+    </div>
+  </div>
+</div>
+@endif
+
+@if(session()->has('message'))
+<div class="alert alert-success alert-dismissable" role="alert">
+  <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+      <span aria-hidden="true">×</span>
+  </button>
+  <h3 class="alert-heading font-size-h4 font-w400">Success</h3>
+  <p class="mb-0">{{ session()->get('message') }}</p>
+</div>
+@endif
 
 
 <div class="block">
@@ -103,7 +137,7 @@
   <div class="block-header block-header-default">
     <h3 class="block-title">Add Detail ({{ $receiving->details->count() }})</h3>
 
-    {{--<button type="button" class="btn btn-outline-info mr-10 min-width-125 pull-right" data-toggle="modal" data-target="#modal-manage">Import</button>--}}
+    <button type="button" class="btn btn-outline-info mr-10 min-width-125 pull-right" data-toggle="modal" data-target="#modal-manage">Import</button>
 
     <a href="{{ route('superuser.gudang.receiving.detail.create', [$receiving->id]) }}">
       <button type="button" class="btn btn-outline-primary min-width-125 pull-right">Create</button>
@@ -166,6 +200,14 @@
 @include('superuser.asset.plugin.datatables')
 @include('superuser.asset.plugin.magnific-popup')
 @include('superuser.asset.plugin.swal2')
+
+@section('modal')
+  @include('superuser.component.modal-manage-receiving-detail', [
+    'import_template_url' => route('superuser.gudang.receiving.import_template'),
+    'import_url' => route('superuser.gudang.receiving.import', $receiving->id),
+    // 'export_url' => route('superuser.gudang.receiving.export')
+  ])
+@endsection
 
 @push('scripts')
 <script src="{{ asset('utility/superuser/js/form.js') }}"></script>

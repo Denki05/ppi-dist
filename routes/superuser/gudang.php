@@ -44,11 +44,12 @@ Route::group([
     Route::resource('purchase_order', 'PurchaseOrderController');
 
     Route::group(['as' => 'receiving.', 'perfix' => '/receiving'], function (){
-        // Route::get('/json', 'ReceivingController@json')->name('json');
         Route::get('/step/{id}', 'ReceivingController@step')->name('step');
         Route::get('{id}/publish', 'ReceivingController@publish')->name('publish');
         Route::get('{id}/acc', 'ReceivingController@acc')->name('acc');
         Route::get('/cancel_approve/{id}', 'ReceivingController@cancel_approve')->name('cancel_approve');
+        Route::get('/import_template', 'ReceivingController@import_template')->name('import_template');
+        Route::post('/import/{id}', 'ReceivingController@import')->name('import');
 
         Route::group(['as' => 'detail.'], function () {
             Route::get('{id}/detail/{detail_id}/colly', 'ReceivingDetailController@show')->name('show');

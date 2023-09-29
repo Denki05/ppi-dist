@@ -532,15 +532,21 @@ class ReceivingController extends Controller
             return redirect()->back()->withErrors($validator->errors()->all());
         }
 
+        // if ($validator->passes()) {
+        //     $import = new ReceivingDetailImport($id);
+        //     Excel::import($import, $request->import_file);
+            
+        //     if($import->error) {
+        //         return redirect()->back()->withErrors($import->error);
+        //     }
+            
+        //     return redirect()->back()->with(['message' => 'Import success']);
+        // }
         if ($validator->passes()) {
             $import = new ReceivingDetailImport($id);
             Excel::import($import, $request->import_file);
-            
-            if($import->error) {
-                return redirect()->back()->withErrors($import->error);
-            }
-            
-            return redirect()->back()->with(['message' => 'Import success']);
+        
+            return redirect()->back()->with(['collect_success' => $import->success, 'collect_error' => $import->error]);
         }
     }
 }
