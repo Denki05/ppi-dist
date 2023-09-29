@@ -67,16 +67,16 @@ class ReceivingDetailImport implements ToCollection, WithHeadingRow, WithStartRo
                                 
                                 if($ppb){
                                     if($ppb->status == PurchaseOrder::STATUS['ACTIVE']){
-                                        $collect_error[] = 'PPB '. $row['PO CODE'] .' Not Approve, please approve';
+                                        $collect_error[] = 'PURCHASE ORDER '. $row['PO CODE'] .' Not Approve, please approve';
                                         continue;
                                     }
                                     
                                     if($ppb->status == PurchaseOrder::STATUS['DELETED']){
-                                        $collect_error[] = 'PPB '. $row['PO CODE'] .' has been deleted';
+                                        $collect_error[] = 'PURCHASE ORDER '. $row['PO CODE'] .' has been deleted';
                                         continue;
                                     }
                                 } else {
-                                    $collect_error[] = 'PPB '. $row['PO CODE'] .' Not Found';
+                                    $collect_error[] = 'PURCHASE ORDER '. $row['PO CODE'] .' Not Found';
                                     continue;
                                 }
                                 // DD($ppb);
@@ -98,10 +98,10 @@ class ReceivingDetailImport implements ToCollection, WithHeadingRow, WithStartRo
                                 }
 
                                 $data[$row['PO CODE']]['product'][$row['variant']] = [
-                                    'quantity'   => $qty,
+                                    'quantity'      => $qty,
                                     'po_detail_id'  => $ppb_detail,
-                                    'sj_po'      => $row['no sj'],
-                                    'note'        => $row['note']
+                                    'sj_po'         => $row['no sj'],
+                                    'note'          => $row['note']
                                 ];
                                 
                                 // DD($data);
@@ -112,16 +112,16 @@ class ReceivingDetailImport implements ToCollection, WithHeadingRow, WithStartRo
                             // DD($ppb);
                             if($ppb){
                                 if($ppb->status == PurchaseOrder::STATUS['ACTIVE']){
-                                    $collect_error[] = 'PPB '. $row['PO CODE'] .' Not Approve, please approve';
+                                    $collect_error[] = 'PURCHASE ORDER '. $row['PO CODE'] .' Not Approve, please approve';
                                     continue;
                                 }
                                 
                                 if($ppb->status == PurchaseOrder::STATUS['DELETED']){
-                                    $collect_error[] = 'PPB '. $row['PO CODE'] .' has been deleted';
+                                    $collect_error[] = 'PURCHASE ORDER '. $row['PO CODE'] .' has been deleted';
                                     continue;
                                 }
                             } else {
-                                $collect_error[] = 'PPB '. $row['PO CODE'] .' Not Found';
+                                $collect_error[] = 'PURCHASE ORDER '. $row['PO CODE'] .' Not Found';
                                 continue;
                             }
                             foreach($ppb->purchase_order_detail as $detail){
@@ -143,14 +143,14 @@ class ReceivingDetailImport implements ToCollection, WithHeadingRow, WithStartRo
                                 }
                             }
                             $data[$row['PO CODE']]['product'][$row['variant']] = [
-                                'quantity'   => $qty,
+                                'quantity'      => $qty,
                                 'po_detail_id'  => $ppb_detail,
-                                'sj_po'      => $row['no sj'],
-                                'note'        => $row['note']
+                                'sj_po'         => $row['no sj'],
+                                'note'          => $row['note']
                             ];
 
                             $data[$row['PO CODE']]['info'] = [
-                                'po_id'                       => $ppb->id,
+                                'po_id' => $ppb->id,
                                 
                             ];
                         }     
