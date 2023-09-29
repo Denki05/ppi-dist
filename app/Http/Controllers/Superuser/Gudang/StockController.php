@@ -140,7 +140,7 @@ class StockController extends Controller
                 $out = !empty($value['out']) ? $value['out'] : 0;
                 $sell = !empty($value['sell']) ? $value['sell'] : 0;
                 $stock = $in - $out;
-                $effective = $stock - $sell;
+                $effective = $stock;
                 $data['data'][] = ['<a href="' . route('superuser.gudang.stock.detail', [$warehouse, base64_encode($product->id)]) . '" target="_blank">' . $product->code.' - '.$product->name . '</a>', $product->kemasan()->pack_name , $in, $out, $stock, $sell, $effective];
             }
 
