@@ -1046,11 +1046,9 @@ class SalesOrderController extends Controller
                             if(empty($value["so_item_id"])){
                                 $errors[] = 'SO Item ID tidak boleh kosong';
                             }
+
                             if(empty($value["product_packaging_id"])){
                                 $errors[] = 'Product ID tidak boleh kosong';
-                            }
-                            if(empty($value["price"])){
-                                $errors[] = 'Harga tidak boleh kosong';
                             }
         
                             $qty_total = $do_qty + $rej_qty;
