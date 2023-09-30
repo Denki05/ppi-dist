@@ -1052,6 +1052,7 @@ class PackingOrderController extends Controller
             return redirect()->back()->with('error',$e->getMessage());
         }
     }
+    
     public function prepare(Request $request)
     {
         // Access

@@ -136,11 +136,11 @@ class StockController extends Controller
             // COLLECT
             foreach ($collect as $key => $value) {
                 $product = ProductPack::find($key);
-                $in = !empty($value['in']) ? $value['in'] : 0;
-                $out = !empty($value['out']) ? $value['out'] : 0;
-                $sell = !empty($value['sell']) ? $value['sell'] : 0;
+                $in = !empty($value['in']) ? number_format($value['in']) : 0;
+                $out = !empty($value['out']) ? number_format($value['out']) : 0;
+                $sell = !empty($value['sell']) ? number_format($value['sell']) : 0;
                 $stock = $in - $out;
-                $effective = $stock;
+                $effective = number_format($stock);
                 $data['data'][] = ['<a href="' . route('superuser.gudang.stock.detail', [$warehouse, base64_encode($product->id)]) . '" target="_blank">' . $product->code.' - '.$product->name . '</a>', $product->kemasan()->pack_name , $in, $out, $stock, $sell, $effective];
             }
 

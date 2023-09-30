@@ -91,6 +91,7 @@ Route::group([
         Route::get('/{id}/print_proforma', 'DeliveryOrderController@print_proforma')->name('print_proforma');
         Route::get('/{id}/print_manifest', 'DeliveryOrderController@print_manifest')->name('print_manifest');
         Route::get('/{id}/print_label', 'DeliveryOrderController@print_label')->name('print_label');
+        Route::get('/print_label_pengirim', 'DeliveryOrderController@print_label_pengirim')->name('print_label_pengirim');
         Route::post('/cancel_proses', 'DeliveryOrderController@cancel_proses')->name('cancel_proses');
         Route::post('/do_edit', 'DeliveryOrderController@do_edit')->name('do_edit');
         Route::post('/do_update', 'DeliveryOrderController@do_update')->name('do_update');
