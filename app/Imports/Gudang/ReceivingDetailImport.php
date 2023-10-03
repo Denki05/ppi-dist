@@ -101,7 +101,7 @@ class ReceivingDetailImport implements ToCollection, WithHeadingRow, WithStartRo
                                     'product_packaging_id' => $product->id,
                                     'quantity'      => $qty,
                                     'po_detail_id'  => $ppb_detail,
-                                    'sj_po'         => $row['no sj'],
+                                    'no_batch'         => $row['no batch'],
                                     'note'          => $row['note']
                                 ];
                                 
@@ -147,7 +147,7 @@ class ReceivingDetailImport implements ToCollection, WithHeadingRow, WithStartRo
                                 'product_packaging_id'  => $product->id,
                                 'quantity'              => $qty,
                                 'po_detail_id'          => $ppb_detail,
-                                'sj_po'                 => $row['no sj'],
+                                'no_batch'                 => $row['no batch'],
                                 'note'                  => $row['note'],
                             ];
 
@@ -197,7 +197,7 @@ class ReceivingDetailImport implements ToCollection, WithHeadingRow, WithStartRo
                                 $receiving_detail->po_detail_id = $value_product['po_detail_id'];
                                 $receiving_detail->product_packaging_id = $cek_product->id;
                                 $receiving_detail->quantity = $value_product['quantity'];
-                                $receiving_detail->sj_po = $value_product['sj_po'];
+                                $receiving_detail->no_batch = $value_product['no batch'];
                                 $receiving_detail->note =   $value_product['note'];
                                 $receiving_detail->created_by =  Auth::id();
                                 $receiving_detail->save();

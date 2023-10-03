@@ -213,6 +213,7 @@ class SalesOrderController extends Controller
         $sales = Sales::where('is_active', 1)->get();
         $product_category = ProductCategory::get();
         $type_transaction = SalesOrder::TYPE_TRANSACTION;
+        $rekenings = SalesOrder::REKENING;
 
         $data = [
             'customers' => $customers,
@@ -226,6 +227,7 @@ class SalesOrderController extends Controller
             'step' => $step,
             'step_txt' => SalesOrder::STEP[$step],
             'type_transaction' => $type_transaction,
+            'rekenings' => $rekenings
         ];
         
         
@@ -465,6 +467,7 @@ class SalesOrderController extends Controller
         $brand = BrandLokal::get();
         $ekspedisi = Vendor::where('type', 1)->get();
         $packaging = Packaging::get();
+        $rekenings = SalesOrder::REKENING;
 
         $data = [
             'customer' => $customer,
@@ -478,6 +481,7 @@ class SalesOrderController extends Controller
             'step' => $step,
             'step_txt' => SalesOrder::STEP[$step],
             'packaging' => $packaging,
+            'rekenings' => $rekenings,
         ];
         if ($step == 2) {
             $doList = $result->member->do;
@@ -964,6 +968,7 @@ class SalesOrderController extends Controller
                 if ($sales_order->count_rev == 0) {
                     $sales_order->origin_warehouse_id = $request->origin_warehouse_id;
                     $sales_order->ekspedisi_id = $request->ekspedisi;
+                    $sales_order->rekening = $request->rekening;
                     $sales_order->shipping_cost_buyer = $request->shipping_cost_buyer ?? 0;
                     $sales_order->status = 4;
                     $sales_order->count_rev = 0;
@@ -991,7 +996,7 @@ class SalesOrderController extends Controller
                         $packing_order->idr_rate = $request->idr_rate;
                         $packing_order->other_address = 0 ?? Null;
                         $packing_order->note = $company->note ?? null;
-                        $packing_order->vendor_id = $sales_order->ekspedisi_id;
+                        $packing_order->vendor_id = $sales_order->ekspedisi_id ?? null;
                         $packing_order->status = 2;
                         $packing_order->count_cancel = 0;
                         $packing_order->created_by = Auth::id();

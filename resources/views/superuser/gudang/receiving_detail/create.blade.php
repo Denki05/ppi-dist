@@ -26,15 +26,15 @@
         </div>
       </div>
       <div class="form-group row">
-        <label class="col-md-3 col-form-label text-right" for="ppb_detail">Select PRODUCT CODE <span class="text-danger">*</span></label>
+        <label class="col-md-3 col-form-label text-right" for="ppb_detail">Select Product <span class="text-danger">*</span></label>
         <div class="col-md-7">
-          <select class="js-select2 form-control" id="ppb_detail" name="ppb_detail" data-placeholder="Select SKU">
+          <select class="js-select2 form-control" id="ppb_detail" name="ppb_detail" data-placeholder="Select Product">
             <option></option>
           </select>
         </div>
       </div>
       <div class="form-group row">
-        <label class="col-md-3 col-form-label text-right" for="product_text">PRODUCT NAME</label>
+        <label class="col-md-3 col-form-label text-right" for="product_text">Packaging</label>
         <div class="col-md-4">
           <input type="text" class="form-control" id="product_text" name="product_text" readonly>
         </div>
@@ -53,9 +53,9 @@
         </div>
       </div>--}}
       <div class="form-group row">
-        <label class="col-md-3 col-form-label text-right" for="sj_po">NO SJ</label>
+        <label class="col-md-3 col-form-label text-right" for="no_batch">NO Batch</label>
         <div class="col-md-4">
-          <input type="text" class="form-control" id="sj_po" name="sj_po">
+          <input type="text" class="form-control" id="no_batch" name="no_batch">
         </div>
       </div>
       <div class="form-group row">
@@ -142,7 +142,7 @@
             $('#ppb_detail').append(ph).trigger('change');
 
             for (i = 0; i < Object.keys(json.data).length; i++) {
-              let newOption = new Option(json.data[i].product.code, json.data[i].po_detail_id, false, false);
+              let newOption = new Option(json.data[i].product.code+' - '+json.data[i].product.name ,json.data[i].po_detail_id, false, false);
               $('#ppb_detail').append(newOption).trigger('change');
             }
 
@@ -169,7 +169,7 @@
           $('#product_text, #quantity').val('');
           console.log(json);
           if (json.code == 200) {
-            $('#product_text').val(json.data.product.name);
+            $('#product_text').val(json.data.packaging.pack_name);
             $('#quantity').val(json.data.quantity);
             $('#product').val(json.data.purchase_order_detail.product_packaging_id);
           }

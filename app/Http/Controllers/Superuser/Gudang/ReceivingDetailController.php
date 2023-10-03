@@ -8,6 +8,7 @@ use App\Entities\Gudang\PurchaseOrder;
 use App\Entities\Gudang\PurchaseOrderDetail;
 use App\Entities\Gudang\ReceivingDetailColly;
 use App\Entities\Master\ProductPack;
+use App\Entities\Master\Packaging;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
@@ -56,6 +57,7 @@ class ReceivingDetailController extends Controller
 
                     $data = [
                         'product'               => ProductPack::findOrFail($purchase_order_detail->product_pack->id),
+                        'packaging'             => Packaging::findOrFail($purchase_order_detail->product_pack->kemasan()->id),
                         'purchase_order_detail' => $purchase_order_detail,
                         'quantity'              => $purchase_order_detail->quantity - $total_quantity_ri,
                     ];
@@ -151,7 +153,7 @@ class ReceivingDetailController extends Controller
                 $receiving_detail->po_detail_id = $request->ppb_detail;
                 $receiving_detail->product_packaging_id = $request->product;
                 $receiving_detail->quantity = $request->quantity;
-                $receiving_detail->sj_po = $request->sj_po;
+                $receiving_detail->no_batch = $request->no_batch;
                 $receiving_detail->note = $request->description;
                 $receiving_detail->created_by = Auth::id();
 

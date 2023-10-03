@@ -168,12 +168,12 @@
               @foreach ($result->so_detail as $detail)
                 <tr>
                   <td>{{ $loop->iteration }}</td>
-                  <td><select class="js-select2 form-control js-ajax" id="product_id[{{ $loop->iteration }}]" name="product_id[]" data-placeholder="Select SKU" style="width:100%" required><option value="{{ $detail->product_id }}">{{ $detail->product->code }}</option></select></td>
-                  <td><span class="name">{{ $detail->product->name }}</span><input type="hidden" class="form-control" name="edit[]" value="{{ $detail->id }}"></td>
-                  <td><span class="name">{{ $detail->product->selling_price }}</span><input type="hidden" class="form-control" name="edit[]" value="{{ $detail->id }}"></td>
+                  <td><select class="js-select2 form-control js-ajax" id="product_id[{{ $loop->iteration }}]" name="product_id[]" data-placeholder="Select SKU" style="width:100%" required><option value="{{ $detail->product_id }}">{{ $detail->product_pack->code }}</option></select></td>
+                  <td><span class="name">{{ $detail->product_pack->name }}</span><input type="hidden" class="form-control" name="edit[]" value="{{ $detail->id }}"></td>
+                  <td><span class="name">{{ $detail->product_pack->selling_price }}</span><input type="hidden" class="form-control" name="edit[]" value="{{ $detail->id }}"></td>
                   <td><input type="text" class="form-control" name="qty[]" value="{{ $detail->qty }}"></td>
-                  <td><input type="text" class="form-control" name="packaging[]" value="{{ $detail->product->category->packaging->pack_no }}" readonly></td>
-                  <td><span class="name">{{ $detail->product->category->packaging->pack_name }}</span></td>
+                  <td><input type="text" class="form-control" name="packaging[]" value="{{ $detail->product_pack->kemasan()->id }}" readonly></td>
+                  <td><span class="name">{{ $detail->product_pack->kemasan()->pack_name }}</span></td>
                   <td><a href="#" class="row-delete"><button type="button" class="btn btn-sm btn-circle btn-alt-danger" title="Delete"><i class="fa fa-trash"></i></button></a></td>
                 </tr>
               @endforeach

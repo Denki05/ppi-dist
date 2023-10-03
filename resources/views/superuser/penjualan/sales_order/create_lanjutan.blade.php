@@ -92,6 +92,21 @@
                     </div>
           </div>
         </div>
+
+        <div class="card mb-2 border-0">
+          <div class="card-body" >
+                    <div class="form-group row">
+                      <label class="col-md-3 col-form-label text-right">Rekening</label>
+                      <div class="col-md-6">
+                        <select class="form-control js-select2" name="rekening">
+                            <option value="">Pilih Rekening</option>
+                            <option value="0">4720 2369 88 - IRWAN LINAKSITA</option>
+                            <option value="1">7881 0374 95 - IDA ELISA</option>
+                        </select>
+                      </div>
+                    </div>
+          </div>
+        </div>
       </div>
 
       <div class="col-md-8">
@@ -129,7 +144,7 @@
                     <div class="form-group row">
                       <label style="font-size: 10pt;" class="col-md-4 col-form-label text-right">Disc Cash</label>
                         <div class="col-5">
-                          <select class="form-control js-select2 base_disc" id="base_id">
+                          <select class="form-control js-select2 base_disc" id="base_id" >
                               <option value="0">0</option>
                               <option value="2">$2</option>
                               <option value="4">$4</option>
@@ -286,7 +301,7 @@
                         <input type="number" name="repeater[{{$index}}][do_qty]" class="form-control count" data-index="{{$index}}" value="{{$detail->qty}}" step="any" min="0" max="{{$detail->qty}}">
                       </td>
                       <td>
-                        <input type="text" name="repeater[{{$index}}][price]" class="form-control price" readonly value="@if($detail->free_product == 1) 0 @else {{$detail->product_pack->price}} @endif">
+                        <input type="text" name="repeater[{{$index}}][price]" class="form-control price" value="@if($detail->free_product == 1) 0 @else {{$detail->product_pack->price}} @endif">
                       </td>
                       <td>
                         <input class="form-check-input free_product" type="checkbox" value="{{$detail->free_product}}" name="repeater[{{$index}}][free_product]" @if($detail->free_product == 1) checked=checked @endif disabled>
@@ -296,7 +311,7 @@
                         <input type="hidden" name="repeater[{{$index}}][packaging]" class="form-control" readonly value="{{$detail->product_pack->kemasan()->id ?? ''}}">
                       </td>
                       <td>
-                        <input type="text" name="repeater[{{$index}}][usd_disc]" class="form-control count count-disc" data-index="{{$index}}" step="any">
+                        <input type="text" name="repeater[{{$index}}][usd_disc]" class="form-control count count-disc" data-index="{{$index}}" step="any" />
                       </td>
                       
                       <td>
@@ -343,17 +358,19 @@
         ] 
     });
 
+    $('.base_disc').on('change', function () {
+        let val = $(this).val();
+        let free = $('input.free_product').val();
+        let flag = false;
+        
+        $('.count-disc').val(val);
+    })
+
     $(function(){
       let global_total = 0 ;
       $('button[type="submit"]').removeAttr('disabled');
 
       $('.js-select2').select2();
-
-      $(document).on('change', '.base_disc'  ,function () {
-        let val = $(this).val();
-        
-        $('.count-disc').val(val);
-      });
 
       $(document).on('keyup','.count',function(){
         let index = $(this).attr('data-index');
@@ -425,7 +442,6 @@
           }
           sub_total2();
       });
-
 
       // input disc kemasan
       $(document).on('input', "#disc_tambahan", function(e){

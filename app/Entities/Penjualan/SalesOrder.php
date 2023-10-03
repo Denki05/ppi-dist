@@ -21,6 +21,7 @@ class SalesOrder extends Model
         'vendor_id',
         'so_date',
     	'type_transaction',
+        'rekening',
         'type_so',
     	'idr_rate',
     	'tl',
@@ -100,6 +101,11 @@ class SalesOrder extends Model
     	1 => 'YES',
     ];
 
+    const REKENING = [
+        0 => '4720 2369 88 - IRWAN LINAKSITA',
+        1 => '7881 0374 95 - IDA ELISA',
+    ];
+
     public function customer(){
     	return $this->BelongsTo('App\Entities\Master\Customer','customer_id','id');
     }
@@ -160,6 +166,11 @@ class SalesOrder extends Model
     public function so_payment()
     {
         return (object) self::PAYMENT_STATUS[$this->payment_status];
+    }
+
+    public function so_rekening()
+    {
+        return (object) self::REKENING[$this->rekening];
     }
 
     public function so_revisi()

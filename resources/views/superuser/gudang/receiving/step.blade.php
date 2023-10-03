@@ -153,8 +153,9 @@
           
           <th class="text-center">PO Quantity</th>
           <th class="text-center">RI Quantity</th>
+          <th class="text-center">Sisa Quantity</th>
           <th class="text-center">Colly Quantity</th>
-          <th class="text-center">NO SJ</th>
+          <th class="text-center">NO BATCH</th>
           <th class="text-center">Note</th>
           <th class="text-center">Action</th>
         </tr>
@@ -168,8 +169,9 @@
           
           <td class="text-center">{{ $receiving->price_format($detail->quantity) }}</td>
           <td class="text-center">{{ $receiving->price_format($detail->total_quantity_ri) }}{{ $detail->total_reject_ri($detail->id) ? ' [RE '.$receiving->price_format($detail->total_reject_ri($detail->id)).']' : '' }}</td>
+          <td class="text-center">{{ $receiving->price_format($detail->quantity) - $receiving->price_format($detail->total_quantity_ri ?? 0) }}</td>
           <td class="text-center">{{ $receiving->price_format($detail->total_quantity_colly) }}{{ $detail->total_reject_colly($detail->id) ? ' [RE '.$receiving->price_format($detail->total_reject_colly($detail->id)).']' : '' }}</td>
-          <td class="text-center">{{ $detail->sj_po }}</td>
+          <td class="text-center">{{ $detail->no_batch ?? '-'}}</td>
           <td class="text-center">{{ $detail->note }}</td>
           <td class="text-center" style="white-space: nowrap;">
             <a href="{{ route('superuser.gudang.receiving.detail.edit', [$receiving->id, $detail->id]) }}">

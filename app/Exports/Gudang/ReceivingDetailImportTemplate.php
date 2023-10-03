@@ -14,7 +14,7 @@ class ReceivingDetailImportTemplate implements FromArray, ShouldAutoSize
                 'PO CODE',
                 'variant',
                 'packaging',
-                'no sj',
+                'no batch',
                 'note',
             ]
         ];
