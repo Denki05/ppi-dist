@@ -270,6 +270,32 @@ class PurchaseOrderController extends Controller
         }
     }
 
+    public function unpublish(Request $request, $id)
+    {
+        if ($request->ajax()) {
+            $purchase_order = PurchaseOrder::find($id);
+
+            if ($purchase_order == null) {
+                abort(404);
+            }
+
+            $purchase_order->updated_by = Auth::id();
+            $purchase_order->status = PurchaseOrder::STATUS['DRAFT'];
+
+            if ($purchase_order->save()) {
+                $response['notification'] = [
+                    'alert' => 'notify',
+                    'type' => 'success',
+                    'content' => 'Success',
+                ];
+
+                $response['redirect_to'] = route('superuser.gudang.purchase_order.index');
+
+                return $this->response(200, $response);
+            }
+        }
+    }
+
     public function save_modify(Request $request, $id, $save_type)
     {
         if ($request->ajax()) {

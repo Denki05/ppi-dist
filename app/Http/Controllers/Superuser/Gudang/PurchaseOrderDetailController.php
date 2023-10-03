@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Superuser\Gudang;
 
 use Illuminate\Http\Request;
 use App\Http\Controllers\Controller;
+use App\Entities\Setting\UserMenu;
 use App\Entities\Gudang\PurchaseOrder;
 use App\Entities\Gudang\PurchaseOrderDetail;
 use App\Entities\Master\BrandLokal;
@@ -14,6 +15,24 @@ use Validator;
 
 class PurchaseOrderDetailController extends Controller
 {
+    public function __construct(){
+        $this->view = "superuser.gudang.purchase_order_detail.";
+        $this->route = "superuser.gudang.purchase_order.detail";
+        $this->user_menu = new UserMenu;
+        $this->access = null;
+        $this->middleware(function ($request, $next) {
+            $user = Auth::user();
+            $access = $this->user_menu;
+            $access = $access->where('user_id',$user->id)
+                             ->whereHas('menu',function($query2){
+                                $query2->where('route_name',$this->route);
+                             })
+                             ->first();
+            $this->access = $access;
+            return $next($request);
+        });
+    }
+
     public function create($purchase_id)
     {
         if(Auth::user()->is_superuser == 0){
@@ -25,7 +44,8 @@ class PurchaseOrderDetailController extends Controller
         $data['purchase_order'] = PurchaseOrder::findOrFail($purchase_id);
         $data['merek'] = BrandLokal::get();
 
-        return view('superuser.gudang.purchase_order_detail.create', $data);
+        // return view('superuser.gudang.purchase_order_detail.create', $data);
+        return view($this->view."create", $data);
     }
 
     /**
@@ -36,12 +56,6 @@ class PurchaseOrderDetailController extends Controller
      */
     public function store(Request $request, $purchase_id)
     {
-        if(Auth::user()->is_superuser == 0){
-            if(empty($this->access) || empty($this->access->user) || $this->access->can_create == 0){
-                return redirect()->route('superuser.index')->with('error','Anda tidak punya akses untuk membuka menu terkait');
-            }
-        }
-
         $data_json = [];
         $post = $request->all();
         if($request->method() == "POST"){
@@ -132,7 +146,8 @@ class PurchaseOrderDetailController extends Controller
         $data['purchase_order_detail'] = PurchaseOrderDetail::findOrFail($detail);
         $data['merek'] = BrandLokal::get();
 
-        return view('superuser.gudang.purchase_order_detail.edit', $data);
+        // return view('superuser.gudang.purchase_order_detail.edit', $data);
+        return view($this->view."edit", $data);
     }
 
     

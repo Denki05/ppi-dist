@@ -144,7 +144,7 @@
                     <div class="form-group row">
                       <label style="font-size: 10pt;" class="col-md-4 col-form-label text-right">Disc Cash</label>
                         <div class="col-5">
-                          <select class="form-control js-select2 base_disc" id="base_id" >
+                          <select class="form-control js-select2 base_disc" id="base_id" onkeyup="countGetUsd()">
                               <option value="0">0</option>
                               <option value="2">$2</option>
                               <option value="4">$4</option>
@@ -255,7 +255,7 @@
                 </div>
                 <div class="col-4">
                   <button type="button" class="btn btn-danger button_cal" id="button_cal"><i class="fas fa-calculator pr-2" aria-hidden="true"></i>Calculate</button>
-                  <button type="submit" class="btn btn-primary"><i class="fa fa-save"></i> Save</button>
+                  <button type="submit" id="mySubmit" class="btn btn-primary"><i class="fa fa-save"></i> Save</button>
                 </div>
               </div>
             </div>
@@ -304,14 +304,14 @@
                         <input type="text" name="repeater[{{$index}}][price]" class="form-control price" value="@if($detail->free_product == 1) 0 @else {{$detail->product_pack->price}} @endif">
                       </td>
                       <td>
-                        <input class="form-check-input free_product" type="checkbox" value="{{$detail->free_product}}" name="repeater[{{$index}}][free_product]" @if($detail->free_product == 1) checked=checked @endif disabled>
+                        <input class="form-check-input free-count" type="checkbox" value="{{$detail->free_product}}" name="repeater[{{$index}}][free_product]" @if($detail->free_product == 1) checked=checked @endif disabled>
                       </td>
                       <td>
                         <input type="text" name="kemasan" class="form-control" readonly value="{{$detail->product_pack->kemasan()->pack_name ?? ''}}">
                         <input type="hidden" name="repeater[{{$index}}][packaging]" class="form-control" readonly value="{{$detail->product_pack->kemasan()->id ?? ''}}">
                       </td>
                       <td>
-                        <input type="text" name="repeater[{{$index}}][usd_disc]" class="form-control count count-disc" data-index="{{$index}}" step="any" />
+                        <input type="text" name="repeater[{{$index}}][usd_disc]" class="form-control count count-disc" data-index="{{$index}}" step="any" onchange="countGetUsd()" />
                       </td>
                       
                       <td>
@@ -359,17 +359,25 @@
     });
 
     $('.base_disc').on('change', function () {
-        let val = $(this).val();
-        let free = $('input.free_product').val();
-        let flag = false;
-        
-        $('.count-disc').val(val);
+      countGetUsd();
     })
 
-    $(function(){
-      let global_total = 0 ;
-      $('button[type="submit"]').removeAttr('disabled');
+    function countGetUsd(){
+        $('tbody tr').each(function(index,e){
+          
+          let baseDisc = $('.base_disc').val();
+          let freeProduct = $('tr.index'+index+'').find('input[name="repeater['+index+'][free_product]"]').val();
+          
+          if(freeProduct == 1){
+            $('tr.index'+index+'').find('input[name="repeater['+index+'][usd_disc]"]').val(0);
+          }else{
+            $('tr.index'+index+'').find('input[name="repeater['+index+'][usd_disc]"]').val(baseDisc);
+          }
+        }) ;
 
+      }
+
+    $(function(){
       $('.js-select2').select2();
 
       $(document).on('keyup','.count',function(){

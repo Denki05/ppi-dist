@@ -135,11 +135,18 @@
             Save <i class="fa fa-check ml-10"></i>
           </button>
         </a>
-        <a href="javascript:saveConfirmation2('{{ route('superuser.gudang.purchase_order.save_modify', [$purchase_order->id, 'save-acc']) }}')">
-          <button type="button" class="btn bg-gd-leaf border-0 text-white">
-            ACC <i class="fa fa-check ml-10"></i>
-          </button>
-        </a>
+        @role('Developer|SuperAdmin', 'superuser')
+          <a href="javascript:saveConfirmation('{{ route('superuser.gudang.purchase_order.unpublish', $purchase_order->id) }}')">
+            <button type="button" class="btn bg-gd-cherry border-0 text-white">
+              Unpublish   <i class="fa fa-times mr-10"></i>
+            </button>
+          </a>
+          <a href="javascript:saveConfirmation2('{{ route('superuser.gudang.purchase_order.save_modify', [$purchase_order->id, 'save-acc']) }}')">
+            <button type="button" class="btn bg-gd-leaf border-0 text-white">
+              ACC <i class="fa fa-check ml-10"></i>
+            </button>
+          </a>
+        @endrole
       </div>
       @endif
     </div>
@@ -149,12 +156,15 @@
 <div class="block">
   <div class="block-header block-header-default">
     <h3 class="block-title">{{ ( $purchase_order->status() == 'DRAFT' ? 'Add' : 'Edit' ) }} Product </h3>
+
+    @if($purchase_order->status == $purchase_order::STATUS['DRAFT'])
     
     <button type="button" class="btn btn-outline-info mr-10 min-width-125 pull-right" data-toggle="modal" data-target="#modal-manage">Import</button>
     
     <a href="{{ route('superuser.gudang.purchase_order.detail.create', [$purchase_order->id]) }}">
       <button type="button" class="btn btn-outline-primary min-width-125 pull-right">Create</button>
     </a>
+    @endif
    
   </div>
   <div class="block-content">
@@ -182,6 +192,7 @@
             <td class="text-center">{{ $row->note_produksi ?? '-' }}</td>
             <td class="text-center">{{ $row->note_repack ?? '-' }}</td>
             <td class="text-center">
+              @if($purchase_order->status == $purchase_order::STATUS['DRAFT'])
               <a href="{{ route('superuser.gudang.purchase_order.detail.edit', [$purchase_order->id, $row->id]) }}">
                 <button type="button" class="btn btn-sm btn-circle btn-alt-warning" title="Edit">
                   <i class="fa fa-pencil"></i>
@@ -192,6 +203,7 @@
                     <i class="fa fa-times"></i>
                 </button>
               </a>
+              @endif
             </td>
           </tr>
         @endforeach
