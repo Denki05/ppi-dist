@@ -100,7 +100,7 @@ class StockController extends Controller
                 ->where('origin_warehouse_id', $warehouse)
                 ->where('status', 4)
                 ->whereHas('do', function ($query) {
-                    $query->where('status', '>', '3');
+                    $query->where('status', '>', '2');
                 })
                 ->groupBy('penjualan_so_item.product_packaging_id')
                 ->get();
@@ -136,11 +136,11 @@ class StockController extends Controller
             // COLLECT
             foreach ($collect as $key => $value) {
                 $product = ProductPack::find($key);
-                $in = !empty($value['in']) ? number_format($value['in']) : 0;
-                $out = !empty($value['out']) ? number_format($value['out']) : 0;
-                $sell = !empty($value['sell']) ? number_format($value['sell']) : 0;
+                $in = !empty($value['in']) ? $value['in'] : 0;
+                $out = !empty($value['out']) ? $value['out'] : 0;
+                $sell = !empty($value['sell']) ? $value['sell'] : 0;
                 $stock = $in - $out;
-                $effective = number_format($stock);
+                $effective = $stock;
                 $data['data'][] = ['<a href="' . route('superuser.gudang.stock.detail', [$warehouse, base64_encode($product->id)]) . '" target="_blank">' . $product->code.' - '.$product->name . '</a>', $product->kemasan()->pack_name , $in, $out, $stock, $sell, $effective];
             }
 
