@@ -42,7 +42,7 @@
               <select class="form-control js-select2" name="customer_id">
                 <option value="">==All Customer==</option>
                 @foreach($customer as $index => $row)
-                <option value="{{$row->id}}">{{$row->name}}</option>
+                <option value="{{$row->id}}">{{$row->name}} {{$row->text_kota}}</option>
                 @endforeach
               </select>
             </div>          
