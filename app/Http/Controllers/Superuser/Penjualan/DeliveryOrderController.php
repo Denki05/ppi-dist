@@ -324,19 +324,19 @@ class DeliveryOrderController extends Controller
             return redirect()->route('superuser.penjualan.delivery_order.index')->with('success','DO berhasil diubah ke Siap Kirim!');
 
             // Create Invoice
-            if ($result->type_transaction == 'TEMPO'){
-                $data = [
-                    'code' => CodeRepo::generateInvoicing($result->do_code),
-                    'do_id' => $result->id,
-                    'customer_other_address_id' => $result->customer_other_address_id,
-                    'grand_total_idr' => $do_cost->grand_total_idr,
-                    'created_by' => Auth::id(),
-                ];
+            // if ($result->type_transaction == 'TEMPO'){
+            //     $data = [
+            //         'code' => CodeRepo::generateInvoicing($result->do_code),
+            //         'do_id' => $result->id,
+            //         'customer_other_address_id' => $result->customer_other_address_id,
+            //         'grand_total_idr' => $do_cost->grand_total_idr,
+            //         'created_by' => Auth::id(),
+            //     ];
                 
-                $insert = Invoicing::create($data);
-            }
+            //     $insert = Invoicing::create($data);
+            // }
         }catch(\Throwable $e){
-            // DD($e);
+            DD($e);
             DB::rollback();
             return redirect()->back()->with('error',$e->getMessage());
         }

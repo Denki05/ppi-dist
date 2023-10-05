@@ -1126,20 +1126,31 @@ class SalesOrderController extends Controller
                         }
 
                         // Cetak Invoice disini
-                        if($sales_order->type_transaction == 'CASH' || $packing_order->type_transaction == 'CASH'){
-                            if(empty($packing_order->invoicing))
-                            {
+                            if(empty($packing_order->invoicing)){
                                 $data = [
-                                    'code' => CodeRepo::generateInvoicing($packing_order->do_code),
+                                    'code' => $sales_order->code,
                                     'do_id' => $packing_order->id,
-                                    'customer_other_address_id' => $packing_order->customer_other_address_id,
+                                    'customer_other_address_id' => $sales_order->customer_other_address_id,
                                     'grand_total_idr' => $packing_order_detail->grand_total_idr,
-                                    'created_by' => Auth::id()
+                                    'created_by' => Auth::id(),
                                 ];
 
-                                $insertInv = Invoicing::create($data);
+                                $insert_invoice = Invoicing::create($data);
                             }
-                        }
+                        // if($sales_order->type_transaction == 'CASH' || $packing_order->type_transaction == 'CASH'){
+                        //     if(empty($packing_order->invoicing))
+                        //     {
+                        //         $data = [
+                        //             'code' => CodeRepo::generateInvoicing($packing_order->do_code),
+                        //             'do_id' => $packing_order->id,
+                        //             'customer_other_address_id' => $packing_order->customer_other_address_id,
+                        //             'grand_total_idr' => $packing_order_detail->grand_total_idr,
+                        //             'created_by' => Auth::id()
+                        //         ];
+
+                        //         $insertInv = Invoicing::create($data);
+                        //     }
+                        // }
                     // }
                     DB::commit();
                     if($errors) {
