@@ -86,7 +86,9 @@
           </a>
         </div>
         <div class="col-md-6 text-right">
-          <a href="{{route('superuser.penjualan.delivery_order.print_manifest', $result->id)}}" class="btn btn-info btn-sm btn-flat" data-id="{{$result->id}}" target="_blank"><i class="fas fa-clipboard-list"></i> Print Manifest</a>
+          <a href="{{route('superuser.penjualan.delivery_order.print_manifest', $result->id)}}" class="btn btn-info btn-sm btn-flat" data-id="{{$result->id}}" target="_blank">
+            <i class="fas fa-clipboard-list"></i> Print Manifest
+          </a>
         </div>
       </div>
       <hr >
@@ -118,7 +120,9 @@
         <div class="form-group row">
           <div class="col-6"></div>
           <div class="col-12 text-right">
+            @if($result->print_count > 0)
             <button type="button" class="btn btn-primary" onclick="konfirmasiBarang()">Save</button>
+            @endif
           </div>
         </div>
     </div>

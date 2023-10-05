@@ -661,8 +661,8 @@ class DeliveryOrderController extends Controller
         exit();
     }
 
-    public function print_manifest($id){
-        // Access
+    public function print_manifest(Request $request, $id)
+    {
         if(Auth::user()->is_superuser == 0){
             if(empty($this->access) || empty($this->access->user) || $this->access->can_print == 0){
                 return redirect()->route('superuser.index')->with('error','Anda tidak punya akses untuk membuka menu terkait');
@@ -670,51 +670,63 @@ class DeliveryOrderController extends Controller
         }
 
         $result = PackingOrder::find($id);
-        
-        $my_report = "C:\\xampp\\htdocs\\ppi-dist\public\\cr\\packing_plan\\packing_plan_rev.rpt"; 
-        $my_pdf = 'C:\\xampp\\htdocs\\ppi-dist\\public\\cr\\packing_plan\\export\\'.$result->code.'.pdf';
 
-        $my_server = "DEV-SERVER"; 
-        $my_user = "root"; 
-        $my_password = ""; 
-        $my_database = "ppi-dist";
-        $COM_Object = "CrystalDesignRunTime.Application";
+        if ($result === null){
+            abort(404);
+        }
+
+        $result->print_count = + 1;
+        $result->save();
+
+        DB::beginTransaction();
+        try{
+            $my_report = "C:\\xampp\\htdocs\\ppi-dist\public\\cr\\packing_plan\\packing_plan_rev.rpt"; 
+            $my_pdf = 'C:\\xampp\\htdocs\\ppi-dist\\public\\cr\\packing_plan\\export\\'.$result->code.'.pdf';
+
+            $my_server = "DEV-SERVER"; 
+            $my_user = "root"; 
+            $my_password = ""; 
+            $my_database = "ppi-dist";
+            $COM_Object = "CrystalDesignRunTime.Application";
+
+            //-Create new COM object-depends on your Crystal Report version
+            $crapp= New COM($COM_Object) or die("Unable to Create Object");
+            $creport = $crapp->OpenReport($my_report,1); // call rpt report
+
+            //- Set database logon info - must have
+            $creport->Database->Tables(1)->SetLogOnInfo($my_server, $my_database, $my_user, $my_password);
+
+            //- field prompt or else report will hang - to get through
+            $creport->EnableParameterPrompting = FALSE;
+            $creport->RecordSelectionFormula = "{penjualan_do.id}= $result->id";
 
 
-        //-Create new COM object-depends on your Crystal Report version
-        $crapp= New COM($COM_Object) or die("Unable to Create Object");
-        $creport = $crapp->OpenReport($my_report,1); // call rpt report
+            //export to PDF process
+            $creport->ExportOptions->DiskFileName=$my_pdf; //export to pdf
+            $creport->ExportOptions->PDFExportAllPages=true;
+            $creport->ExportOptions->DestinationType=1; // export to file
+            $creport->ExportOptions->FormatType=31; // PDF type
+            $creport->Export(false);
 
-        //- Set database logon info - must have
-        $creport->Database->Tables(1)->SetLogOnInfo($my_server, $my_database, $my_user, $my_password);
+            //------ Release the variables ------
+            $creport = null;
+            $crapp = null;
+            $ObjectFactory = null;
 
-        //- field prompt or else report will hang - to get through
-        $creport->EnableParameterPrompting = FALSE;
-        $creport->RecordSelectionFormula = "{penjualan_do.id}= $result->id";
+            $file = 'C:\\xampp\\htdocs\\ppi-dist\\public\\cr\\packing_plan\\export\\'.$result->code.'.pdf';
 
-
-        //export to PDF process
-        $creport->ExportOptions->DiskFileName=$my_pdf; //export to pdf
-        $creport->ExportOptions->PDFExportAllPages=true;
-        $creport->ExportOptions->DestinationType=1; // export to file
-        $creport->ExportOptions->FormatType=31; // PDF type
-        $creport->Export(false);
-
-        //------ Release the variables ------
-        $creport = null;
-        $crapp = null;
-        $ObjectFactory = null;
-
-        $file = 'C:\\xampp\\htdocs\\ppi-dist\\public\\cr\\packing_plan\\export\\'.$result->code.'.pdf';
-
-        header("Content-Description: File Transfer"); 
-        header("Content-Type: application/octet-stream"); 
-        header("Content-Transfer-Encoding: Binary"); 
-        header("Content-Disposition: attachment; filename=\"". basename($file) ."\""); 
-        ob_clean();
-        flush();
-        readfile ($file);
-        exit();
+            header("Content-Description: File Transfer"); 
+            header("Content-Type: application/octet-stream"); 
+            header("Content-Transfer-Encoding: Binary"); 
+            header("Content-Disposition: attachment; filename=\"". basename($file) ."\""); 
+            ob_clean();
+            flush();
+            readfile ($file);
+            exit();
+        }catch(\Throwable $e){
+            DB::rollback();
+            return redirect()->back()->with('error',$e->getMessage());
+        }
     }
 
     public function cancel_proses(Request $request)
