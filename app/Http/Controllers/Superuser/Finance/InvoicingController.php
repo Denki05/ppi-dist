@@ -29,6 +29,7 @@ class InvoicingController extends Controller
      */
     public function __construct(){
         $this->route = "superuser.finance.invoicing";
+        $this->view = "superuser.finance.invoicing.";
         $this->user_menu = new UserMenu;
         $this->access = null;
         $this->middleware(function ($request, $next) {
@@ -87,7 +88,8 @@ class InvoicingController extends Controller
             'table' => $table,
             'customer' => $customer
         ];
-        return view('superuser.finance.invoicing.index' ,$data);
+        // return view('superuser.finance.invoicing.index' ,$data);
+        return view($this->view."index",$data);
     }
 
     /**

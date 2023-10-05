@@ -564,11 +564,11 @@ class DeliveryOrderController extends Controller
         $my_report = "C:\\xampp\\htdocs\\ppi-dist\public\\cr\\do\\label_penerima.rpt"; 
         $my_pdf = 'C:\\xampp\\htdocs\\ppi-dist\\public\\cr\\do\\export\\LabelKirim-'.$result->member->name.'.pdf';
 
-        $my_server = "DEV-SERVER"; 
-        $my_user = "root"; 
-        $my_password = ""; 
-        $my_database = "ppi-dist";
-        $COM_Object = "CrystalDesignRunTime.Application";
+        $my_server      = "DEV-SERVER"; 
+        $my_user        = "root"; 
+        $my_password    = ""; 
+        $my_database    = "ppi-dist";
+        $COM_Object     = "CrystalDesignRunTime.Application";
 
 
         //-Create new COM object-depends on your Crystal Report version
