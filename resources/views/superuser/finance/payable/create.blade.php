@@ -35,7 +35,7 @@
         <select class="js-select2 form-control" name="member" id="member">
           <option value="all">Pilih Customer</option>
           @foreach($other_address as $key)
-          <option value="{{$key->id}}">{{$key->name}}</option>
+          <option value="{{$key->id}}">{{$key->name}} {{ $key->text_kota }}</option>
           @endforeach
         </select>
       </div>
@@ -104,9 +104,6 @@
           {data: 'invoice_code', name: 'finance_invoicing.code'},
           {
             data: 'invoice_total',
-            // name: 'finance_invoicing.grand_total_idr',
-            // render: $.fn.dataTable.render.number('.', ',', 2, 'Rp. '),
-            // searchable: false
             render: function (data, type, row, meta) {
               return '<input class="form-control grand_total_idr" id="grand_total_idr" name="grand_total_idr[]" type="text" value="'+ parseFloat(row.invoice_total) +'" readonly>';
             }
@@ -124,18 +121,6 @@
             }
           },
         ],
-        columnDefs: [ {
-          orderable: false,
-          searcable: false,
-          // data: null,
-          defaultContent: '',
-          className: 'select-checkbox',
-          targets:   0
-        }],
-        select: {
-            style: 'os',
-            selector: 'td:not(:last-child)',
-        },
         order: [
           [1, 'asc']
         ],

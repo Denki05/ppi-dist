@@ -157,7 +157,7 @@ class PayableController extends Controller
      */
     public function show($id)
     {
-        //
+        
     }
 
     /**
