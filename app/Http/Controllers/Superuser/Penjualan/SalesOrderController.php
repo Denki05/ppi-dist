@@ -1515,64 +1515,50 @@ class SalesOrderController extends Controller
         return response()->json($data_json,200);
     }
 
-    public function delete_lanjutan(Request $request, $id)
+    public function destroy_lanjutan(Request $request)
     {
-        if ($request->ajax()) {
-            if(Auth::user()->is_superuser == 0){
-                if(empty($this->access) || empty($this->access->user) || $this->access->can_approve == 0){
-                    return redirect()->route('superuser.index')->with('error','Anda tidak punya akses untuk membuka menu terkait');
+        // Access
+        if(Auth::user()->is_superuser == 0){
+            if(empty($this->access) || empty($this->access->user) || $this->access->can_delete == 0){
+                return redirect()->route('superuser.index')->with('error','Anda tidak punya akses untuk membuka menu terkait');
+            }
+        }
+
+        DB::beginTransaction();
+        try{
+
+            $request->validate([
+                'id' => 'required'
+            ]);
+            $post = $request->all();
+            // $update = SalesOrder::where('id',$post["id"])->update(['deleted_by' => Auth::id()]);
+            // $destroy = SalesOrder::where('id',$post["id"])->delete();
+            // $so_item = SalesOrderItem::where('so_id',$post["id"])->get();
+
+            // foreach ($so_item as $index => $value) {
+            //     $check_do_item = PackingOrderItem::where('so_item_id',$value->id)->first();
+            //     $check_do_mutation_item = DeliveryOrderMutationItem::where('so_item_id',$value->id)->first();
+            //     if($check_do_item || $check_do_mutation_item){
+            //         return redirect()->back()->with('error','Gagal menghapus Item . Item SO ini sudah digunakan di Packing Order / Delivery Order Mutation');
+            //     }
+            // }
+            // $destroy_item = SalesOrderItem::where('so_id',$post["id"])->delete();
+            $so = Salesorder::where('id', $post['id'])->first();
+
+            if($so){
+                if($so->count_rev){
+                    return redirect()->back()->with('error', "PO & Invoice sudah terbuat!");
                 }
             }
 
-            $failed = "";
-
-            DB::beginTransaction();
-
-            try{
-
-                $sales_order = SalesOrder::find($id);
-
-                if($sales_order){
-                    if($sales_order->count_rev){
-                        $failed = 'Invoice sudah terbuat!';
-                    }
-                }
-
-                $sales_order->deleted_by = Auth::id();
-                $sales_order->delete();
-                
-
-                foreach($sales_order->so_detail as $detail){
-                    $item = SalesOrderItem::where('id', $detail->id)->get();
-
-                    foreach($item as $data){
-                        SalesOrderItem::find($data->id)->delete();
-                    }
-                }
-
-                if ($failed) {
-                    $response['failed'] = $failed;
-
-                    return $this->response(200, $response);
-                }
-
-                if($sales_order->save()){
-                    DB::commit();
-                    $response['redirect_to'] = route('superuser.penjualan.sales_order.index_lanjutan');
-                    return $this->response(200, $response);
-                }
-            } catch (\Exception $e) {
-                DB::rollback();
-                // DD($e);
-                $response['notification'] = [
-                    'alert' => 'block',
-                    'type' => 'alert-danger',
-                    'header' => 'Error',
-                    'content' => "Internal Server Error",
-                ];
-
-                return $this->response(400, $response);
-            }
+            $update = SalesOrder::where('')
+            
+            DB::commit();
+            return redirect()->back()->with('success','SO berhasil dihapus');
+            
+        }catch(\Throwable $e){
+            DB::rollback();
+            return redirect()->back()->with('error',$e->getMessage());
         }
     }
 }

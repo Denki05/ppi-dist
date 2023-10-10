@@ -1,6 +1,7 @@
 @extends('superuser.app')
 
 @section('content')
+
 @if(session('error') || session('success'))
 <div class="alert alert-{{ session('error') ? 'danger' : 'success' }} alert-dismissible fade show" role="alert">
     @if (session('error'))
@@ -13,6 +14,8 @@
     </button>
 </div>
 @endif
+
+<div id="alert-block"></div>
 
 @if($step == 1)
 <div class="block">
@@ -233,7 +236,7 @@
                   @if ($step == 2 && $row->status === 2)
                     <a href="{{route('superuser.penjualan.sales_order.edit',['id'=>$row->id, 'step'=>2])}}" class="btn btn-success btn-sm btn-flat"><i class="fa fa-check"></i> Kerjakan</a>
                     <a href="#" class="btn btn-warning btn-sm btn-flat btn-kembali-ke-awal" data-id="{{$row->id}}"><i class="fa fa-times"></i> Kembali ke SO</a>
-                    <a href="javascript:saveConfirmation('{{ route('superuser.penjualan.sales_order.delete_lanjutan', ['id' => $row->id]) }}')" class="btn btn-danger btn-sm btn-flat btn-delete-lanjutan"><i class="fa fa-times"></i> Delete</a>
+                    <a href="#" class="btn btn-danger btn-sm btn-flat btn-destroy-lanjutan" data-id="{{$row->id}}"><i class="fa fa-times"></i> Hapus</a>
                   @endif
                   @if ($row->status === 4)
                     <a href="{{route('superuser.penjualan.sales_order.detail',$row->id)}}" class="btn btn-primary btn-sm btn-flat"><i class="fa fa-eye"></i> Detail</a>
@@ -425,6 +428,10 @@
     @csrf
     <input type="hidden" name="id">
 </form>
+<form method="post" action="{{route('superuser.penjualan.sales_order.destroy_lanjutan')}}" id="ffrmDeletejanlutan">
+    @csrf
+    <input type="hidden" name="id">
+</form>
 <form method="post" action="{{route('superuser.penjualan.packing_order.ready')}}" id="frmReady">
     @csrf
     <input type="hidden" name="id">
@@ -561,6 +568,14 @@
           let id = $(this).data('id');
           $('#frmKembali').find('input[name="id"]').val(id);
           $('#frmKembali').submit();
+        }
+      })
+
+      $(document).on('click','.btn-destroy-lanjutan',function(){
+        if(confirm("Apakah anda yakin ingin mengembalikan sales order ini?")){
+          let id = $(this).data('id');
+          $('#ffrmDeletejanlutan').find('input[name="id"]').val(id);
+          $('#ffrmDeletejanlutan').submit();
         }
       })
 
