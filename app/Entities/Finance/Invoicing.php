@@ -17,7 +17,7 @@ class Invoicing extends Model
         'image',
     	'updated_by',
     	'created_by',
-    	'deleted_by'
+    	'deleted_by', 
     ];
 
     public function do(){

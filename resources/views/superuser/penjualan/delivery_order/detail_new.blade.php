@@ -85,11 +85,11 @@
             </button>
           </a>
         </div>
-        <div class="col-md-6 text-right">
+        {{--<div class="col-md-6 text-right">
           <a href="{{route('superuser.penjualan.delivery_order.print_manifest', $result->id)}}" class="btn btn-info btn-sm btn-flat" data-id="{{$result->id}}" target="_blank">
             <i class="fas fa-clipboard-list"></i> Print Manifest
           </a>
-        </div>
+        </div>--}}
       </div>
       <hr >
         <table class="col-12 table table-striped table-bordered table-hover">
@@ -120,9 +120,7 @@
         <div class="form-group row">
           <div class="col-6"></div>
           <div class="col-12 text-right">
-            @if($result->print_count > 0)
-            <button type="button" class="btn btn-primary" onclick="konfirmasiBarang()">Save</button>
-            @endif
+            <button type="button" class="btn btn-primary check-button" style="display: none;" onclick="konfirmasiBarang()">Save</button>
           </div>
         </div>
     </div>
@@ -323,7 +321,7 @@
 
   function konfirmasiBarang() {
     if ($(".confirm-item").length === $(".confirm-item:checked").length) {
-      //changeStep(2);
+
       if(confirm("Apakah anda yakin ingin mengubah status orderan ini menjadi packed?")){
         $('#frmUpdateStatusPacked').submit();
       }
@@ -345,5 +343,14 @@
     
     $('.js-select2').select2();
   }
+
+  $(".confirm-item").change(function(){
+    var submitBtn=$(".check-button");
+    if ($(".confirm-item").length === $(".confirm-item:checked").length) {
+        submitBtn.show();
+    } else {
+        submitBtn.hide();
+    }
+});
 </script>
 @endpush

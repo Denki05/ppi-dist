@@ -332,6 +332,7 @@ class SalesOrderController extends Controller
                             $insertDetail->so_id = $insert->id;
                             $insertDetail->product_packaging_id = trim(htmlentities(implode("-", [$post["product_id"][$i],$post["packaging_id"][$i]])));
                             $insertDetail->qty = trim(htmlentities($post["qty"][$i]));
+                            $insertDetail->disc_usd = trim(htmlentities($post["usd"][$i]));
                             $insertDetail->packaging_id = trim(htmlentities($post["packaging_id"][$i]));
                             $insertDetail->free_product = trim(htmlentities($post["free_product"][$i]));
                             $insertDetail->created_by = Auth::id();
@@ -1512,5 +1513,66 @@ class SalesOrderController extends Controller
         }
         ResultData:
         return response()->json($data_json,200);
+    }
+
+    public function delete_lanjutan(Request $request, $id)
+    {
+        if ($request->ajax()) {
+            if(Auth::user()->is_superuser == 0){
+                if(empty($this->access) || empty($this->access->user) || $this->access->can_approve == 0){
+                    return redirect()->route('superuser.index')->with('error','Anda tidak punya akses untuk membuka menu terkait');
+                }
+            }
+
+            $failed = "";
+
+            DB::beginTransaction();
+
+            try{
+
+                $sales_order = SalesOrder::find($id);
+
+                if($sales_order){
+                    if($sales_order->count_rev){
+                        $failed = 'Invoice sudah terbuat!';
+                    }
+                }
+
+                $sales_order->deleted_by = Auth::id();
+                $sales_order->delete();
+                
+
+                foreach($sales_order->so_detail as $detail){
+                    $item = SalesOrderItem::where('id', $detail->id)->get();
+
+                    foreach($item as $data){
+                        SalesOrderItem::find($data->id)->delete();
+                    }
+                }
+
+                if ($failed) {
+                    $response['failed'] = $failed;
+
+                    return $this->response(200, $response);
+                }
+
+                if($sales_order->save()){
+                    DB::commit();
+                    $response['redirect_to'] = route('superuser.penjualan.sales_order.index_lanjutan');
+                    return $this->response(200, $response);
+                }
+            } catch (\Exception $e) {
+                DB::rollback();
+                // DD($e);
+                $response['notification'] = [
+                    'alert' => 'block',
+                    'type' => 'alert-danger',
+                    'header' => 'Error',
+                    'content' => "Internal Server Error",
+                ];
+
+                return $this->response(400, $response);
+            }
+        }
     }
 }
