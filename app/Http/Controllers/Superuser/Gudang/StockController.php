@@ -117,7 +117,7 @@ class StockController extends Controller
                 ->where('status', 4)
                 ->where(function ($query) {
                     $query->whereHas('do', function ($query) {
-                        $query->where('status', '>', '2');
+                        $query->where('status', '>', '1');
                     })->orDoesntHave('do');
                 })
                 ->select(\DB::raw('penjualan_so_item.product_packaging_id, SUM(penjualan_so_item.qty_worked) as totalquantity'))
@@ -190,6 +190,7 @@ class StockController extends Controller
                 $query->where('product_packaging_id', $product);
             })
             ->get();
+
         foreach ($receivings as $receiving) {
             foreach ($receiving->details as $detail) {
                 if ($detail->product_packaging_id == $product) {
@@ -251,10 +252,9 @@ class StockController extends Controller
                     'created_at' => $value['created_at'],
                     'second_date' => $value['second_date'],
                     'transaction' => $value['transaction'],
-                    'in' => ($value['in'] == '') ? '' : number_format($value['in']),
-                    'out' => ($value['out'] == '') ? '' : number_format($value['out']),
+                    'in' => ($value['in'] == '') ? '' : $value['in'],
+                    'out' => ($value['out'] == '') ? '' : $value['out'],
                     'balance' => $balance,
-                    'hpp' => ($value['hpp'] == '') ? '' : number_format($value['hpp'], 2, ',','.'),
                     'description' => $value['description'],
                 ];
             }

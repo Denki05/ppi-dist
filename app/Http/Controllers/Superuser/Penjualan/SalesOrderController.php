@@ -1531,18 +1531,7 @@ class SalesOrderController extends Controller
                 'id' => 'required'
             ]);
             $post = $request->all();
-            // $update = SalesOrder::where('id',$post["id"])->update(['deleted_by' => Auth::id()]);
-            // $destroy = SalesOrder::where('id',$post["id"])->delete();
-            // $so_item = SalesOrderItem::where('so_id',$post["id"])->get();
 
-            // foreach ($so_item as $index => $value) {
-            //     $check_do_item = PackingOrderItem::where('so_item_id',$value->id)->first();
-            //     $check_do_mutation_item = DeliveryOrderMutationItem::where('so_item_id',$value->id)->first();
-            //     if($check_do_item || $check_do_mutation_item){
-            //         return redirect()->back()->with('error','Gagal menghapus Item . Item SO ini sudah digunakan di Packing Order / Delivery Order Mutation');
-            //     }
-            // }
-            // $destroy_item = SalesOrderItem::where('so_id',$post["id"])->delete();
             $so = Salesorder::where('id', $post['id'])->first();
 
             if($so){
@@ -1551,10 +1540,12 @@ class SalesOrderController extends Controller
                 }
             }
 
-            $update = SalesOrder::where('')
+            $update = SalesOrder::where('id', $post['id'])->update(['deleted_by' => Auth::id()]);
+            $destroy = SalesOrder::where('id', $post['id'])->delete();
+            $so_item = SalesOrderItem::where('so_id', $post['id'])->delete();
             
             DB::commit();
-            return redirect()->back()->with('success','SO berhasil dihapus');
+            return redirect()->back()->with('success','SO berhasil dihapus!');
             
         }catch(\Throwable $e){
             DB::rollback();

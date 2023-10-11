@@ -71,13 +71,9 @@
 $(document).ready(function() {
 
   $('#datatable').DataTable({
-    // paging: false,
     searching: false,
     sorting: false,
     dom: '<"row"<"col-sm-2"l><"col-sm-10 text-left"B>> <"row"<"col-sm-12"rt>> <"row"<"col-sm-12 col-md-6"i><"col-sm-12 col-md-6"p>>',
-    // order: [
-    //   [0, 'desc']
-    // ],
   });
 });
 </script>
