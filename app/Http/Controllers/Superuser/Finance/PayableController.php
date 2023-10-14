@@ -60,27 +60,9 @@ class PayableController extends Controller
             }
         }
 
-        $other_address = CustomerOtherAddress::get();
-
-        $payable = Payable::where('finance_payable.status', Payable::STATUS['ACTIVE'])
-                        ->leftJoin('finance_payable_detail', 'finance_payable_detail.payable_id', '=', 'finance_payable.id')
-                        ->leftJoin('finance_invoicing', 'finance_invoicing.id', '=', 'finance_payable_detail.invoice_id')
-                        ->leftJoin('master_customer_other_addresses', 'master_customer_other_addresses.id', '=', 'finance_payable.customer_other_address_id')
-                        ->selectRaw('
-                            finance_payable.code as payableCode,
-                            finance_payable.status as status, 
-                            finance_payable_detail.total as totalPayable, 
-                            master_customer_other_addresses.name as customer, 
-                            finance_invoicing.code as invoiceCode
-                        ')
-                        ->get();
-
-        $data = [
-            'other_address' => $other_address,
-            'payable' => $payable,
-        ];
+        $data['customer'] = Customer::get();
         
-        return view($this->view."index",$data);
+        return view($this->view."index", $data);
     }
 
     /**
@@ -88,7 +70,7 @@ class PayableController extends Controller
      *
      * @return \Illuminate\Http\Response
      */
-    public function create(Request $request)
+    public function create(Request $request, $store_id)
     {
         // Access
         if(Auth::user()->is_superuser == 0){
@@ -97,23 +79,7 @@ class PayableController extends Controller
             }
         }
 
-        $other_address = CustomerOtherAddress::get();
-        $invoice = Invoicing::where('finance_invoicing.customer_other_address_id', $request->member)
-                        ->leftJoin('master_customer_other_addresses', 'master_customer_other_addresses.id', '=', 'finance_invoicing.customer_other_address_id')
-                        ->select(
-                            'finance_invoicing.id', 
-                            'finance_invoicing.code', 
-                            'finance_invoicing.grand_total_idr', 
-                            'finance_invoicing.customer_other_address_id',
-                            'master_customer_other_addresses.id as id_member', 
-                            'master_customer_other_addresses.name'
-                        )
-                        ->get();
-
-        $data = [
-            'other_address' => $other_address,
-            'invoice' => $invoice,
-        ];
+        $data['store'] = Customer::where('id', $store_id)->get();
 
         return view($this->view."create", $data);
     }

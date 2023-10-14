@@ -21,14 +21,14 @@ class InvoicingTable extends Table
             'finance_invoicing.code as invoice_code', 
             'finance_invoicing.customer_other_address_id as member_id', 
             'finance_invoicing.grand_total_idr as invoice_total',
-            'master_customer_other_addresses.id as id_customer',
-            'master_customer_other_addresses.name as customer_name'
+            'master_customers.id as id_customer',
+            'master_customers.name as customer_name'
         );
 
-        $model = $model->leftJoin('master_customer_other_addresses', 'master_customer_other_addresses.id', '=', 'finance_invoicing.customer_other_address_id');
+        $model = $model->leftJoin('master_customers', 'master_customers.id', '=', 'finance_invoicing.customer_id');
 
-        if($request->member != 'all') {
-            $model = $model->where('master_customer_other_addresses.id', $request->member);
+        if($request->store != 'all') {
+            $model = $model->where('master_customers.id', $request->store);
         }
 
         return $model;

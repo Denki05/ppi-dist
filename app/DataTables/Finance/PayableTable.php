@@ -22,15 +22,15 @@ class PayableTable extends Table
             'finance_payable.code as payableCode', 
             'finance_payable.status as status', 
             'finance_payable_detail.total as payableTotal', 
-            'master_customer_other_addresses.id as id',
-            'master_customer_other_addresses.name as customer',
-            'master_customer_other_addresses.text_kota as customerCity',
+            'master_customers.id as id',
+            'master_customers.name as customer',
+            'master_customers.text_kota as customerCity',
             'finance_invoicing.code as invoiceCode'
         );
 
         $model = $model->leftJoin('finance_payable_detail', 'finance_payable_detail.payable_id', '=', 'finance_payable.id');
         $model = $model->leftJoin('finance_invoicing', 'finance_invoicing.id', '=', 'finance_payable_detail.invoice_id');
-        $model = $model->leftJoin('master_customer_other_addresses', 'master_customer_other_addresses.id', '=', 'finance_payable.customer_other_address_id');
+        $model = $model->leftJoin('master_customers', 'master_customers.id', '=', 'finance_payable.customer_id');
 
 
         return $model;
