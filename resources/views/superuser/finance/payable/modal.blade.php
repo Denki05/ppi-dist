@@ -18,8 +18,6 @@
                 <option value="">Pilih Customer</option>
                 @foreach($customer as $index => $row)
                   <option value="{{$row->id}}">{{$row->name}} {{$row->text_kota}}</option>
-                @foreach($customer as $index )
-                  <option value="{{$index->id}}">{{$index->name}}</option>
                 @endforeach
               </select>
             </div>
