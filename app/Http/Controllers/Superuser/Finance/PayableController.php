@@ -60,9 +60,26 @@ class PayableController extends Controller
             }
         }
 
-        $data['customer'] = Customer::get();
-        
-        return view($this->view."index", $data);
+        $search = $request->input('search');
+        $customer_id = $request->input('customer_id');
+        $table = Payable::where(function($query2) use($search){
+                            if(!empty($search)){
+                                $query2->where('code','like','%'.$search.'%');
+                            }
+                        })
+                        ->where(function($query2) use($customer_id){
+                            if(!empty($customer_id)){
+                                $query2->where('customer_id',$customer_id);
+                            }
+                        })
+                        ->orderBy('id','DESC')
+                        ->paginate(10);
+        $customer = Customer::get();
+        $data = [
+            'customer' => $customer,
+            'table' => $table
+        ];
+        return view($this->view."index",$data);
     }
 
     /**
@@ -70,7 +87,7 @@ class PayableController extends Controller
      *
      * @return \Illuminate\Http\Response
      */
-    public function create(Request $request, $store_id)
+    public function create(Request $request)
     {
         // Access
         if(Auth::user()->is_superuser == 0){
@@ -79,9 +96,17 @@ class PayableController extends Controller
             }
         }
 
-        $data['store'] = Customer::where('id', $store_id)->get();
-
-        return view($this->view."create", $data);
+        if(empty($request->input('customer_id'))){
+            return redirect()->route('superuser.finance.payable.index')->with('error','Tidak ada customer yang dipilih');
+        }
+        $customer = Customer::where('id', $request->input('customer_id'))->first();
+        if(empty($customer)){
+            return redirect()->route('superuser.finance.payable.index')->with('error','Customer tidak ditemukan');
+        }
+        $data = [
+            'customer' => $customer
+        ];
+        return view($this->view."create",$data);
     }
 
     /**
@@ -92,7 +117,7 @@ class PayableController extends Controller
      */
     public function store(Request $request)
     {
-
+        
     }
 
     public function detail($id)

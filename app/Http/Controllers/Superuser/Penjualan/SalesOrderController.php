@@ -1131,6 +1131,7 @@ class SalesOrderController extends Controller
                                 $data = [
                                     'code' => $sales_order->code,
                                     'do_id' => $packing_order->id,
+                                    'customer_id' => $sales_order->customer_id,
                                     'customer_other_address_id' => $sales_order->customer_other_address_id,
                                     'grand_total_idr' => $packing_order_detail->grand_total_idr,
                                     'created_by' => Auth::id(),

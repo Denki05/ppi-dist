@@ -18,90 +18,244 @@
     </button>
 </div>
 @endif
-
 <div class="block">
   <div class="block-header block-header-default">
-    <h3 class="block-title">#Detail Invoice</h3>
+    <h3 class="block-title">#Pembayaran Nota</h3>
   </div>
   <div class="block-content block-content-full">
-    <div class="row">
-      <table class="table table-striped" id="datatables">
-        <thead>
-          <tr>
-            <th>#</th>
-            <th>Invoice</th>
-            <th>Total Nota</th>
-            <th>Total Terbayar</th>
-            <th>Sisa Bayar</th>
-          </tr>
-        </thead>
-        <tbody>
-          @foreach($store as $key)
-            @foreach($key->invoicing as $row => $index)
-              <?php
-                $total_invoicing = $index->grand_total_idr ?? 0;
-                $payable = $index->payable_detail->sum('total');
-                $sisa = $total_invoicing - $payable;
-              ?>
-              <tr class="repeater">
-                <input type="hidden" name="invoice_id[]" value="{{ $index->id }}">
-                <td>{{ $loop->iteration }}</td>
-                <td>
-                  <input type="text" class="form-control-plaintext text-center" name="invoice_code[]" value="{{ $index->code }}" readonly>
-                </td>
-                <td>
-                  <div class="col-xs-6 col-xs-offset-3">
-                    <input type="text" class="form-control text-center" name="total_invoice[]" value="{{number_format($total_invoicing,0,',','.')}}" readonly>
-                  </div>
-                </td>
-                <td>
-                  <div class="col-xs-6 col-xs-offset-3">
-                    <input type="text" class="form-control text-center" name="payment[]">
-                  </div>
-                </td>
-                <td>
-                  <div class="col-xs-6 col-xs-offset-3">
-                    <input class="form-control text-center" type="text" name="sisa[]" value="{{number_format($sisa,0,',','.')}}" readonly>
-                  </div>
-                </td>
-              </tr>
-            @endforeach
-          @endforeach
-        </tbody>
-      </table>
+  <div class="row">
+      <div class="col">
+        <div class="form-group">
+          <label>Account customer</label>
+          <input type="text" class="form-control" name="customer_id" value="{{ $customer->name }} {{ $customer->text_kota }}" readonly>
+        </div>
+      </div>
+
+      <div class="col">
+        <div class="form-group">
+          <label>Pay date</label>
+          <input type="date" class="form-control" name="pay_date">
+        </div>
+      </div>
+
+      <div class="col">
+        <div class="form-group">
+          <label>Catatan</label>
+          <input type="text" class="form-control" name="note">
+        </div>
+      </div>
     </div>
   </div>
 </div>
+
+<div class="block">
+  <hr class="my-20">
+  <div class="block-content block-content-full">
+    <form id="frmPayable" method="post">
+      @csrf
+      <input type="hidden" name="customer_id" value="{{$customer->id}}">
+      <div class="row">
+        <div class="col-12">
+          <div class="table-responsive">
+            <table class="table table-striped table-bordered" id="datatables">
+              <thead>
+                <th>Nota</th>
+                <th>Total Nota</th>
+                <th>Total Terbayar</th>
+                <th>Sisa Bayar</th>
+              </thead>
+              <tbody>
+                <?php
+                  $counter = 0;
+                ?>
+                @foreach($customer->do as $index => $row)
+                  @if($row->invoicing)
+                    <?php
+                      $total_invoicing = $row->invoicing->grand_total_idr ?? 0;
+                      $payable = $row->invoicing->payable_detail->sum('total');
+                      $sisa = $total_invoicing - $payable;
+                    ?>
+                    @if($sisa > 0)
+                    <tr class="repeater">
+                      <input type="hidden" name="repeater[{{$index}}][invoice_id]" value="{{$row->invoicing->id ?? ''}}">
+                      <td>{{$row->invoicing->code ?? ''}}</td>
+                      <td><input type="text" name="repeater[{{$index}}][total_nota]" class="form-control total_nota" value="{{number_format($sisa,0,',','.')}}" readonly></td>
+                      <td>
+                        <input type="text" name="repeater[{{$index}}][payable]" class="form-control formatRupiah count total_payment">
+                      </td>
+                      <td>
+                        <input type="text" name="repeater[{{$index}}][sisa]" class="form-control formatRupiah count_sisa" readonly>
+                      </td>
+                    </tr>
+                    <?php $counter++ ?>
+                    @endif
+                  @endif
+                @endforeach
+                @if($counter == 0)
+                  <tr>
+                    <td colspan="3" class="text-center">Data tidak ditemukan</td>
+                  </tr>
+                @endif
+              </tbody>
+              <tfoot>
+                <tr>
+                  <td colspan="2" class="text-center">
+                    <label class="col-md-8 col-form-label text-right">TOTAL</label>
+                  </td>
+                  <td class="text-center">
+                    <input type="text" class="form-control total" readonly>
+                  </td>
+                  <td class="text-center">
+                    <input type="text" class="form-control sisa_bayar" readonly>
+                  </td>
+                </tr>
+              </tfoot>
+            </table>
+          </div>
+        </div>
+      </div>
+      
+      <div class="row">
+        <div class="col-12">
+          <a href="{{route('superuser.finance.payable.index')}}" class="btn btn-warning"><i class="fa fa-arrow-left"></i> Back</a>
+          <button type="submit" class="btn btn-primary"><i class="fa fa-save"> Save </i></button>
+        </div>
+      </div>
+    </form>
+  </div>
+</div>
 @endsection
+
+<!-- Modal -->
+
 
 @include('superuser.asset.plugin.select2')
 @include('superuser.asset.plugin.datatables')
 @include('superuser.asset.plugin.swal2')
 
 @push('scripts')
-<script type="text/javascript">
-  $(document).ready(function() {
-    $('#datatables').DataTable( {
+
+  <script type="text/javascript">
+    $(function(){
+      $('#datatables').DataTable( {
         "paging":   false,
         "ordering": true,
         "info":     false,
-        "searching" : true,
+        "searching" : false,
         "columnDefs": [{
           "targets": 0,
           "orderable": false
         }]
+      });
+
+
+      $('.js-select2').select2();
+
+      $(document).on('keyup','.count',function(){
+        total();
+      })
+
+      $(document).on('keyup', '.total_payment', function(){
+        total_sisa();
+      })
+
+      $(document).on('keyup','.formatRupiah',function(){
+        let val = $(this).val();
+        $(this).val(formatRupiah(val));
+      })
+
+      $(document).on('submit','#frmPayable',function(e){
+        e.preventDefault();
+        if(confirm("Apakah anda yakin ingin melakukan pembayaran ini ?")){
+          let _form = $('#frmPayable');
+          $.ajax({
+            url : '{{route('superuser.finance.payable.store')}}',
+            method : "POST",
+            data : getFormData(_form),
+            dataType : "JSON",
+            beforeSend : function(){
+              $('button[type="submit"]').html('Loading...');
+            },
+            success : function(resp){
+              if(resp.IsError == true){
+                showToast('danger',resp.Message);
+              }
+              else{
+                Swal.fire(
+                  'Success!',
+                  resp.Message,
+                  'success'
+                ).then((result) => {
+                    window.location.href = '{{route('superuser.finance.payable.index')}}';
+                })
+              }
+            },
+            error : function(){
+              alert('Cek Koneksi Internet');
+            },
+            complete : function(){
+              $('button[type="submit"]').html('<i class="fa fa-save"> Save</i>');
+            }
+          })
+        }
+      })
     })
 
-    $('#datatables tbody').on( 'keyup', 'input[name="payment[]"]', function (e) {
-        let grand_total = $(this).parents('tr').find('input[name="total_invoice[]"]').val();
-        let total_bayar = parseFloat($(this).val());
+    function total(){
+      let total = 0 ;
+      $('#frmPayable tr.repeater').each(function(i,e){
+        let val = $('#frmPayable tr.repeater').eq(i).find('.count').val();
+        if(val != "" && val != undefined){
+          val = parseFloat(val.split('.').join(''));
+        }
+        else{
+          val = 0;
+        }
+        
+        if(isNaN(val)){
+          val = 0;
+        }
+        total += val;
+      })
 
-        grand_total = parseFloat(grand_total.split('.').join(''));
+      $('.total').val(formatRupiah(total));
+    }
 
-        sisa = grand_total - total_bayar;
+    function total_sisa(){
+      let total_sisa = 0 ;
+      $('#frmPayable tr.repeater').each(function(i,e){
+        let pay = $('#frmPayable tr.repeater').eq(i).find('.total_payment').val();
+        let nota = $('#frmPayable tr.repeater').eq(i).find('.total_nota').val();
+        
+        pay = parseFloat(pay.split('.').join(''));
+        nota = parseFloat(nota.split('.').join(''));
 
-        $(this).parents('tr').find('input[name="sisa[]"]').val(sisa);
-    });
-  })
-</script>
+        sisa = nota - pay;
+
+        $('#frmPayable tr.repeater').eq(i).find('.count_sisa').val(formatRupiah(sisa));
+        
+        total_sisa += sisa;
+      })
+
+      $('.sisa_bayar').val(formatRupiah(total_sisa));
+    }
+
+    function formatRupiah(angka, prefix){
+      angka = angka.toString();
+      var number_string = angka.replace(/[^,\d]/g, '').toString(),
+      split       = number_string.split(','),
+      sisa        = split[0].length % 3,
+      rupiah        = split[0].substr(0, sisa),
+      ribuan        = split[0].substr(sisa).match(/\d{3}/gi);
+     
+      // tambahkan titik jika yang di input sudah menjadi angka ribuan
+      if(ribuan){
+        separator = sisa ? '.' : '';
+        rupiah += separator + ribuan.join('.');
+      }
+     
+      rupiah = split[1] != undefined ? rupiah + ',' + split[1] : rupiah;
+      return prefix == undefined ? rupiah : (rupiah ? 'Rp. ' + rupiah : '');
+    }
+  </script>
 @endpush
