@@ -108,11 +108,7 @@ class Customer extends Model
    }
 
    public function has_tempo()
-   {
-    return array_search($this->has_tempo, self::HAS_TEMPO);
-   }
-
-   public function invoicing(){
-    return $this->hasMany('App\Entities\Finance\Invoicing','customer_id');
-}
+    {
+        return array_search($this->has_tempo, self::HAS_TEMPO);
+    }
 }

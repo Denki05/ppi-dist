@@ -675,6 +675,9 @@ class DeliveryOrderController extends Controller
             abort(404);
         }
 
+        $result->print_count = + 1;
+        $result->save();
+
         DB::beginTransaction();
         try{
             $my_report = "C:\\xampp\\htdocs\\ppi-dist\public\\cr\\packing_plan\\packing_plan_rev.rpt"; 

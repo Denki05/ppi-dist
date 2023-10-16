@@ -12,13 +12,12 @@ class Invoicing extends Model
     protected $fillable = [
     	'code',
     	'do_id',
-    	'customer_id',
         'customer_other_address_id',
     	'grand_total_idr',
         'image',
     	'updated_by',
     	'created_by',
-    	'deleted_by', 
+    	'deleted_by'
     ];
 
     public function do(){
@@ -34,9 +33,5 @@ class Invoicing extends Model
     public function sale_return()
     {
         return $this->hasOne('App\Entities\Penjualan\SaleReturn', 'invoice_id');
-    }
-
-    public function store(){
-    	return $this->BelongsTo('App\Entities\Master\Customer','customer_id','id');
     }
 }

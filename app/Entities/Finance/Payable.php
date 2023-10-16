@@ -11,7 +11,7 @@ class Payable extends Model
     protected $table = "finance_payable";
     protected $fillable = [
     	'code',
-    	'customer_id',
+    	'customer_other_address_id',
         'pay_date', 
     	'total',
         'status',

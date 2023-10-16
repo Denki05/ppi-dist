@@ -332,7 +332,6 @@ class SalesOrderController extends Controller
                             $insertDetail->so_id = $insert->id;
                             $insertDetail->product_packaging_id = trim(htmlentities(implode("-", [$post["product_id"][$i],$post["packaging_id"][$i]])));
                             $insertDetail->qty = trim(htmlentities($post["qty"][$i]));
-                            $insertDetail->disc_usd = trim(htmlentities($post["usd"][$i]));
                             $insertDetail->packaging_id = trim(htmlentities($post["packaging_id"][$i]));
                             $insertDetail->free_product = trim(htmlentities($post["free_product"][$i]));
                             $insertDetail->created_by = Auth::id();
@@ -1131,7 +1130,6 @@ class SalesOrderController extends Controller
                                 $data = [
                                     'code' => $sales_order->code,
                                     'do_id' => $packing_order->id,
-                                    'customer_id' => $sales_order->customer_id,
                                     'customer_other_address_id' => $sales_order->customer_other_address_id,
                                     'grand_total_idr' => $packing_order_detail->grand_total_idr,
                                     'created_by' => Auth::id(),
@@ -1139,6 +1137,21 @@ class SalesOrderController extends Controller
 
                                 $insert_invoice = Invoicing::create($data);
                             }
+                        // if($sales_order->type_transaction == 'CASH' || $packing_order->type_transaction == 'CASH'){
+                        //     if(empty($packing_order->invoicing))
+                        //     {
+                        //         $data = [
+                        //             'code' => CodeRepo::generateInvoicing($packing_order->do_code),
+                        //             'do_id' => $packing_order->id,
+                        //             'customer_other_address_id' => $packing_order->customer_other_address_id,
+                        //             'grand_total_idr' => $packing_order_detail->grand_total_idr,
+                        //             'created_by' => Auth::id()
+                        //         ];
+
+                        //         $insertInv = Invoicing::create($data);
+                        //     }
+                        // }
+                    // }
                     DB::commit();
                     if($errors) {
                         $response['notification'] = [
@@ -1514,43 +1527,5 @@ class SalesOrderController extends Controller
         }
         ResultData:
         return response()->json($data_json,200);
-    }
-
-    public function destroy_lanjutan(Request $request)
-    {
-        // Access
-        if(Auth::user()->is_superuser == 0){
-            if(empty($this->access) || empty($this->access->user) || $this->access->can_delete == 0){
-                return redirect()->route('superuser.index')->with('error','Anda tidak punya akses untuk membuka menu terkait');
-            }
-        }
-
-        DB::beginTransaction();
-        try{
-
-            $request->validate([
-                'id' => 'required'
-            ]);
-            $post = $request->all();
-
-            $so = Salesorder::where('id', $post['id'])->first();
-
-            if($so){
-                if($so->count_rev){
-                    return redirect()->back()->with('error', "PO & Invoice sudah terbuat!");
-                }
-            }
-
-            $update = SalesOrder::where('id', $post['id'])->update(['deleted_by' => Auth::id()]);
-            $destroy = SalesOrder::where('id', $post['id'])->delete();
-            $so_item = SalesOrderItem::where('so_id', $post['id'])->delete();
-            
-            DB::commit();
-            return redirect()->back()->with('success','SO berhasil dihapus!');
-            
-        }catch(\Throwable $e){
-            DB::rollback();
-            return redirect()->back()->with('error',$e->getMessage());
-        }
     }
 }
