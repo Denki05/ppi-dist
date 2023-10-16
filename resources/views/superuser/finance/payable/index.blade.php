@@ -65,7 +65,7 @@
                 <tr>
                   <td>{{$table->firstItem() + $index}}</td>
                   <td>{{$row->code}}</td>
-                  <td>{{$row->customer->name ?? ''}}</td>
+                  <td>{{$row->customer->name}} {{ $row->customer->text_kota }}</td>
                   <td>{{number_format($row->total,0,',','.')}}</td>
                   <td>
                     <?= date('d-m-Y h:i:s',strtotime($row->created_at)); ?>

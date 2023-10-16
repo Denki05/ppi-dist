@@ -18,112 +18,113 @@
     </button>
 </div>
 @endif
-<div class="block">
-  <div class="block-header block-header-default">
-    <h3 class="block-title">#Pembayaran Nota</h3>
-  </div>
-  <div class="block-content block-content-full">
-  <div class="row">
-      <div class="col">
-        <div class="form-group">
-          <label>Account customer</label>
-          <input type="text" class="form-control" name="customer_id" value="{{ $customer->name }} {{ $customer->text_kota }}" readonly>
+<form id="frmPayable" method="post">
+@csrf
+  <div class="block">
+    <div class="block-header block-header-default">
+      <h3 class="block-title">#Pembayaran Nota</h3>
+    </div>
+    <div class="block-content block-content-full">
+    <div class="row">
+        <div class="col">
+          <div class="form-group">
+            <label>Account customer</label>
+            <input type="text" class="form-control" name="customer_name" value="{{ $customer->name }} {{ $customer->text_kota }}" readonly>
+            <input type="hidden" value="{{$customer->id}}" name="customer_id">
+          </div>
         </div>
-      </div>
 
-      <div class="col">
-        <div class="form-group">
-          <label>Pay date</label>
-          <input type="date" class="form-control" name="pay_date">
+        <div class="col">
+          <div class="form-group">
+            <label>Pay date</label>
+            <input type="date" class="form-control" name="pay_date">
+          </div>
         </div>
-      </div>
 
-      <div class="col">
-        <div class="form-group">
-          <label>Catatan</label>
-          <input type="text" class="form-control" name="note">
+        <div class="col">
+          <div class="form-group">
+            <label>Catatan</label>
+            <input type="text" class="form-control" name="note">
+          </div>
         </div>
       </div>
     </div>
   </div>
-</div>
 
-<div class="block">
-  <hr class="my-20">
-  <div class="block-content block-content-full">
-    <form id="frmPayable" method="post">
-      @csrf
-      <input type="hidden" name="customer_id" value="{{$customer->id}}">
-      <div class="row">
-        <div class="col-12">
-          <div class="table-responsive">
-            <table class="table table-striped table-bordered" id="datatables">
-              <thead>
-                <th>Nota</th>
-                <th>Total Nota</th>
-                <th>Total Terbayar</th>
-                <th>Sisa Bayar</th>
-              </thead>
-              <tbody>
-                <?php
-                  $counter = 0;
-                ?>
-                @foreach($customer->do as $index => $row)
-                  @if($row->invoicing)
-                    <?php
-                      $total_invoicing = $row->invoicing->grand_total_idr ?? 0;
-                      $payable = $row->invoicing->payable_detail->sum('total');
-                      $sisa = $total_invoicing - $payable;
-                    ?>
-                    @if($sisa > 0)
-                    <tr class="repeater">
-                      <input type="hidden" name="repeater[{{$index}}][invoice_id]" value="{{$row->invoicing->id ?? ''}}">
-                      <td>{{$row->invoicing->code ?? ''}}</td>
-                      <td><input type="text" name="repeater[{{$index}}][total_nota]" class="form-control total_nota" value="{{number_format($sisa,0,',','.')}}" readonly></td>
-                      <td>
-                        <input type="text" name="repeater[{{$index}}][payable]" class="form-control formatRupiah count total_payment">
-                      </td>
-                      <td>
-                        <input type="text" name="repeater[{{$index}}][sisa]" class="form-control formatRupiah count_sisa" readonly>
-                      </td>
-                    </tr>
-                    <?php $counter++ ?>
+  <div class="block">
+    <hr class="my-20">
+    <div class="block-content block-content-full">
+      
+        <div class="row">
+          <div class="col-12">
+            <div class="table-responsive">
+              <table class="table table-striped table-bordered" id="datatables">
+                <thead>
+                  <th>Nota</th>
+                  <th>Total Nota</th>
+                  <th>Total Terbayar</th>
+                  <th>Sisa Bayar</th>
+                </thead>
+                <tbody>
+                  <?php
+                    $counter = 0;
+                  ?>
+                  @foreach($customer->do as $index => $row)
+                    @if($row->invoicing)
+                      <?php
+                        $total_invoicing = $row->invoicing->grand_total_idr ?? 0;
+                        $payable = $row->invoicing->payable_detail->sum('total');
+                        $sisa = $total_invoicing - $payable;
+                      ?>
+                      @if($sisa > 0)
+                      <tr class="repeater">
+                        <input type="hidden" name="repeater[{{$index}}][invoice_id]" value="{{$row->invoicing->id ?? ''}}">
+                        <td>{{$row->invoicing->code ?? ''}}</td>
+                        <td><input type="text" name="repeater[{{$index}}][total_nota]" class="form-control total_nota" value="{{number_format($sisa,0,',','.')}}" readonly></td>
+                        <td>
+                          <input type="text" name="repeater[{{$index}}][payable]" class="form-control formatRupiah count total_payment">
+                        </td>
+                        <td>
+                          <input type="text" name="repeater[{{$index}}][sisa]" class="form-control formatRupiah count_sisa" readonly>
+                        </td>
+                      </tr>
+                      <?php $counter++ ?>
+                      @endif
                     @endif
+                  @endforeach
+                  @if($counter == 0)
+                    <tr>
+                      <td colspan="4" class="text-center">Data tidak ditemukan</td>
+                    </tr>
                   @endif
-                @endforeach
-                @if($counter == 0)
+                </tbody>
+                <tfoot>
                   <tr>
-                    <td colspan="3" class="text-center">Data tidak ditemukan</td>
+                    <td colspan="2" class="text-center">
+                      <label class="col-md-8 col-form-label text-right">TOTAL</label>
+                    </td>
+                    <td class="text-center">
+                      <input type="text" class="form-control total" readonly>
+                    </td>
+                    <td class="text-center">
+                      <input type="text" class="form-control sisa_bayar" readonly>
+                    </td>
                   </tr>
-                @endif
-              </tbody>
-              <tfoot>
-                <tr>
-                  <td colspan="2" class="text-center">
-                    <label class="col-md-8 col-form-label text-right">TOTAL</label>
-                  </td>
-                  <td class="text-center">
-                    <input type="text" class="form-control total" readonly>
-                  </td>
-                  <td class="text-center">
-                    <input type="text" class="form-control sisa_bayar" readonly>
-                  </td>
-                </tr>
-              </tfoot>
-            </table>
+                </tfoot>
+              </table>
+            </div>
           </div>
         </div>
-      </div>
-      
-      <div class="row">
-        <div class="col-12">
-          <a href="{{route('superuser.finance.payable.index')}}" class="btn btn-warning"><i class="fa fa-arrow-left"></i> Back</a>
-          <button type="submit" class="btn btn-primary"><i class="fa fa-save"> Save </i></button>
+        
+        <div class="row">
+          <div class="col-12">
+            <a href="{{route('superuser.finance.payable.index')}}" class="btn btn-warning"><i class="fa fa-arrow-left"></i> Back</a>
+            <button type="submit" class="btn btn-primary"><i class="fa fa-save"> Save </i></button>
+          </div>
         </div>
-      </div>
-    </form>
+    </div>
   </div>
-</div>
+ </form>
 @endsection
 
 <!-- Modal -->
