@@ -15,14 +15,11 @@
             <div class="form-group">
               <label id="select_do">Select Customer<span class="text-danger">*</span></label>
               <select class="form-control js-select2" name="customer_id" id="select_customer" style="width: 100%;">
-<<<<<<< HEAD
                 <option value="">Pilih Customer</option>
                 @foreach($customer as $index => $row)
                   <option value="{{$row->id}}">{{$row->name}} {{$row->text_kota}}</option>
-=======
                 @foreach($customer as $index )
                   <option value="{{$index->id}}">{{$index->name}}</option>
->>>>>>> 379f32e21500a95814d1e1e8d9eb96e49f7b5489
                 @endforeach
               </select>
             </div>
