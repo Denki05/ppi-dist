@@ -57,6 +57,7 @@
                 <th>Store</th>
                 <th>Total</th>
                 <th>Created At</th>
+                <th>Status</th>
                 <th>Action</th>
               </tr>
             </thead>
@@ -71,8 +72,14 @@
                     <?= date('d-m-Y h:i:s',strtotime($row->created_at)); ?>
                   </td>
                   <td>
-                    <a href="{{route('superuser.finance.payable.detail',$row->id)}}" class="btn btn-primary btn-sm btn-flat"><i class="fa fa-eye"></i> Detail</a>
-                    <a href="{{route('superuser.finance.payable.print',$row->id)}}" class="btn btn-info btn-sm btn-flat" data-id="{{$row->id}}" target="_blank"><i class="fa fa-print"></i> Print</a>
+                    {{ $row->status() }}
+                  </td>
+                  <td>
+                    @if($row->status == 1)
+                      <a class="btn btn-warning" href="#" role="button" title="edit"><i class="fa fa-pencil" aria-hidden="true"></i></a>
+                      <a class="btn btn-success" href="" role="button" title="acc"><i class="fa fa-check" aria-hidden="true"></i></a>
+                      <a class="btn btn-danger" href="javascript:deleteConfirmation('{{ route('superuser.finance.payable.destroy', $row->id) }}')" role="button" title="delete"><i class="fa fa-trash" aria-hidden="true"></i></a>
+                    @endif
                   </td>
                 </tr>
               @endforeach
@@ -90,6 +97,8 @@
 </div>
 
 @include('superuser.finance.payable.modal')
+
+
 @endsection
 
 <!-- Modal -->
@@ -97,6 +106,7 @@
 
 @include('superuser.asset.plugin.select2')
 @include('superuser.asset.plugin.datatables')
+@include('superuser.asset.plugin.swal2')
 
 @push('scripts')
 

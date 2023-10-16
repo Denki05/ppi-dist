@@ -24,7 +24,7 @@ class Payable extends Model
     const STATUS = [
         'DELETED' => 0,
         'ACTIVE' => 1,
-        'APPROVE' => 2,
+        'ACC' => 2,
     ];
 
     const TYPE = [

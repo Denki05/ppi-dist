@@ -127,6 +127,13 @@ class PayableController extends Controller
                     $data_json["Message"] = "Customer ID tidak boleh kosong";
                     goto ResultData;
                 }
+
+                if(empty($post["pay_date"])){
+                    $data_json["IsError"] = TRUE;
+                    $data_json["Message"] = "Tanggal pembayaran tidak boleh kosong!";
+                    goto ResultData;
+                }
+
                 if(!isset($post["repeater"])){
                     $data_json["IsError"] = TRUE;
                     $data_json["Message"] = "Tidak ada invoice terkait";
@@ -143,6 +150,7 @@ class PayableController extends Controller
                     'customer_id' => trim(htmlentities($post["customer_id"])),
                     'pay_date' => date('Y-m-d', strtotime($post["pay_date"])),
                     'note' => trim(htmlentities($post["note"])),
+                    'status' => 1,
                     'created_by' => Auth::id(),
                     'total' => 0
                 ]);
@@ -174,6 +182,9 @@ class PayableController extends Controller
 
                         $insert_detail = PayableDetail::create($data);
                         $total_payable += $input_payable;
+
+                        // Update Sales Order
+                        
                     }
                 }
                 if($total_payable == 0){
@@ -413,16 +424,31 @@ class PayableController extends Controller
      * @param  int  $id
      * @return \Illuminate\Http\Response
      */
-    public function destroy($id)
+    public function destroy(Request $request, $id)
     {
-        // Access
-        if(Auth::user()->is_superuser == 0){
-            if(empty($this->access) || empty($this->access->user) || $this->access->can_delete == 0){
-                return redirect()->route('superuser.index')->with('error','Anda tidak punya akses untuk membuka menu terkait');
+        if ($request->ajax()) {
+            if(Auth::user()->is_superuser == 0){
+                if(empty($this->access) || empty($this->access->user) || $this->access->can_delete == 0){
+                    return redirect()->route('superuser.index')->with('error','Anda tidak punya akses untuk membuka menu terkait');
+                }
+             }
+
+            $result = Payable::find($id);
+
+            if ($result === null) {
+                abort(404);
+            }
+
+            $result->deleted_by = Auth::id();
+            $result->delete();
+
+            if ($result->save()) {
+                $result_item = PayableDetail::where('payable_id', $result->id)->delete();
+
+                $response['redirect_to'] = route('superuser.finance.payable.index');
+                return $this->response(200, $response);
             }
         }
-
-        
     }
 
     public function print($id){

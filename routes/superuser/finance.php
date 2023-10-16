@@ -37,4 +37,5 @@ Route::group([
         Route::post('/store', 'PayableController@store')->name('store');
         Route::get('/{id}/print', 'PayableController@print')->name('print');
     });
+    Route::resource('payable', 'PayableController');
 });
