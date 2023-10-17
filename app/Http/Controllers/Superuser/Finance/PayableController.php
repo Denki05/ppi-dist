@@ -95,7 +95,6 @@ class PayableController extends Controller
                 return redirect()->route('superuser.index')->with('error','Anda tidak punya akses untuk membuka menu terkait');
             }
         }
-
         if(empty($request->input('customer_id'))){
             return redirect()->route('superuser.finance.payable.index')->with('error','Tidak ada customer yang dipilih');
         }
@@ -117,6 +116,7 @@ class PayableController extends Controller
      */
     public function store(Request $request)
     {
+
         $data_json = [];
         $post = $request->all();
         if($request->method() == "POST"){
@@ -127,13 +127,6 @@ class PayableController extends Controller
                     $data_json["Message"] = "Customer ID tidak boleh kosong";
                     goto ResultData;
                 }
-
-                if(empty($post["pay_date"])){
-                    $data_json["IsError"] = TRUE;
-                    $data_json["Message"] = "Tanggal pembayaran tidak boleh kosong!";
-                    goto ResultData;
-                }
-
                 if(!isset($post["repeater"])){
                     $data_json["IsError"] = TRUE;
                     $data_json["Message"] = "Tidak ada invoice terkait";
@@ -150,7 +143,6 @@ class PayableController extends Controller
                     'customer_id' => trim(htmlentities($post["customer_id"])),
                     'pay_date' => date('Y-m-d', strtotime($post["pay_date"])),
                     'note' => trim(htmlentities($post["note"])),
-                    'status' => 1,
                     'created_by' => Auth::id(),
                     'total' => 0
                 ]);
@@ -166,7 +158,7 @@ class PayableController extends Controller
                         $get_invoice = Invoicing::where('id',$value["invoice_id"])->first();
                         $payable = $get_invoice->payable_detail->sum('total');
                         $sisa = $get_invoice->grand_total_idr - $payable;
-                        
+
                         if($payable >= $get_invoice->grand_total_idr){
                             $data_json["IsError"] = TRUE;
                             $data_json["Message"] = "Invoice ".$get_invoice->code. " sudah lunas";
@@ -182,9 +174,6 @@ class PayableController extends Controller
 
                         $insert_detail = PayableDetail::create($data);
                         $total_payable += $input_payable;
-
-                        // Update Sales Order
-                        
                     }
                 }
                 if($total_payable == 0){
