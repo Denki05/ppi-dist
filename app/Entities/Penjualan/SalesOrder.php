@@ -76,7 +76,7 @@ class SalesOrder extends Model
     const PAYMENT_STATUS = [
     	0 => 'NEW',
     	1 => 'PAID',
-        2 => 'PARTIALY',
+        2 => 'COPY',
     ];
 
     const TYPE_TRANSACTION = [

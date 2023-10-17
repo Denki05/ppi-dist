@@ -60,7 +60,7 @@
               <div class="col">
                 <div class="form-label-group in-border">
                   <label>Note</label>
-                  <input type="text" class="form-control" value="{{ $result->note }}" readonly>
+                  <textarea class="form-control" rows="1" readonly>{{ $result->note }}</textarea>
                 </div>
               </div>
               <div class="col">
@@ -311,7 +311,7 @@
                         <input type="hidden" name="repeater[{{$index}}][packaging]" class="form-control" readonly value="{{$detail->product_pack->kemasan()->id ?? ''}}">
                       </td>
                       <td>
-                        <input type="text" name="repeater[{{$index}}][usd_disc]" class="form-control count count-disc" data-index="{{$index}}" step="any" onchange="countGetUsd()" />
+                        <input type="text" name="repeater[{{$index}}][usd_disc]" class="form-control count count-disc" data-index="{{$index}}" step="any" onchange="countGetUsd()" placeholder="{{$detail->disc_usd}}" />
                       </td>
                       
                       <td>

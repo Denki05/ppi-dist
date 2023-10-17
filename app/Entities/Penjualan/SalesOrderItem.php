@@ -13,6 +13,7 @@ class SalesOrderItem extends Model
         	'so_id',
         	'product_packaging_id',
         	'qty',
+            'disc_usd',
         	'qty_worked',
             'packaging_id',
             'free_product',

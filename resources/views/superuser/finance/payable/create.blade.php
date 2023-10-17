@@ -41,7 +41,7 @@
       </div>
       <div class="col">
           <div class="form-group">
-            <label>Account customer</label>
+            <label>Keterangan</label>
             <input type="text" class="form-control" name="note">
           </div>
       </div>

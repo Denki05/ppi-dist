@@ -123,6 +123,7 @@
                   <div class="col-3">Product</div>
                   <div class="col-3">Packaging</div>
                   <div class="col-1">Qty</div>
+                  <div class="col-1">Disc Usd</div>
                   <div class="col-1">Free</div>
                   <div class="col">Action</div>
                 </div>
@@ -142,10 +143,13 @@
                     <input type="number" name="qty[]" class="form-control input-qty" data-index="0" step="any">
                   </div>
                   <div class="col-1">
+                    <input type="number" name="usd[]" class="form-control input-usd" data-index="0" step="any">
+                  </div>
+                  <div class="col-1">
                     <input type="checkbox" class="form-check-input input-gift" id="gift" name="gift">
                     <input class="form-control input-free" type="hidden" id="free_product" name="free_product[]" data-index="0" step="any">
                   </div>
-                  <div class="col"><button type="button" id="buttonAddProduct" class="btn btn-primary"><em class="fa fa-plus"></em></button></div>
+                  <div class="col-1"><button type="button" id="buttonAddProduct" class="btn btn-primary"><em class="fa fa-plus"></em></button></div>
                 </div>
                 <hr />
 
@@ -241,6 +245,7 @@
       const productId = $('.select-product[data-index=0]').val();
       const productText = $('.select-product[data-index=0] option:selected').text();
       const qty = $('.input-qty[data-index=0]').val();
+      const usd = $('.input-usd[data-index=0]').val();
       const packagingId = $('.select-packaging[data-index=0]').val();
       const packagingText = $('.select-packaging[data-index=0] option:selected').text();
       const free = $('.input-free[data-index=0]').val();
@@ -267,6 +272,10 @@
       html += "    <input type='hidden' name='qty[]' class='form-control' value='" + qty + "'>";
       html += qty;
       html += "  </div>";
+      html += "  <div class='col-1 text-right'>";
+      html += "    <input type='hidden' name='usd[]' class='form-control' value='" + usd + "'>";
+      html += '$'+usd;
+      html += "  </div>";
       html += "  <div class='col-1'>";
       html += "    <input type='hidden' name='free_product[]' class='form-control free' value='" + free + "'>";
       html += free;
@@ -284,6 +293,7 @@
 
       $('.select-product[data-index=0]').val('').change();
       $('.input-qty[data-index=0]').val('');
+      $('.input-usd[data-index=0]').val('');
       $('.select-packaging[data-index=0]').val('').change();
       $('.input-free[data-index=0]').val();
 

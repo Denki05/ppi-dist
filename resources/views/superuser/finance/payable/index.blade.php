@@ -77,7 +77,7 @@
                   <td>
                     @if($row->status == 1)
                       <a class="btn btn-warning" href="#" role="button" title="edit"><i class="fa fa-pencil" aria-hidden="true"></i></a>
-                      <a class="btn btn-success" href="" role="button" title="acc"><i class="fa fa-check" aria-hidden="true"></i></a>
+                      <a class="btn btn-success" href="javascript:saveConfirmation('{{ route('superuser.finance.payable.approve', $row->id) }}')" role="button" title="acc"><i class="fa fa-check" aria-hidden="true"></i></a>
                       <a class="btn btn-danger" href="javascript:deleteConfirmation('{{ route('superuser.finance.payable.destroy', $row->id) }}')" role="button" title="delete"><i class="fa fa-trash" aria-hidden="true"></i></a>
                     @endif
                   </td>

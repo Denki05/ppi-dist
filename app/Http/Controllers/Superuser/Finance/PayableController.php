@@ -143,6 +143,7 @@ class PayableController extends Controller
                     'customer_id' => trim(htmlentities($post["customer_id"])),
                     'pay_date' => date('Y-m-d', strtotime($post["pay_date"])),
                     'note' => trim(htmlentities($post["note"])),
+                    'status' => 1,
                     'created_by' => Auth::id(),
                     'total' => 0
                 ]);
@@ -375,7 +376,7 @@ class PayableController extends Controller
         DB::beginTransaction();
         try{
 
-            $payable->status = Payable::STATUS['APPROVE'];
+            $payable->status = Payable::STATUS['ACC'];
             $payable->updated_by = Auth::id();
         
             if ($payable->save()){
