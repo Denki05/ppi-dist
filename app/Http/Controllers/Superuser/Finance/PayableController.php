@@ -380,15 +380,21 @@ class PayableController extends Controller
             $payable->updated_by = Auth::id();
         
             if ($payable->save()){
-                $get_detail = PayableDetail::where('payable_id', $payable->id)->first();
-                $get_invoice = Invoicing::where('id', $get_detail->invoice_id)->first();
+                $detail = PayableDetail::where('payable_id', $payable->id)->get();
 
-                $so = SalesOrder::where('id', $get_invoice->do->so_id)->first();
+                foreach($detail as $row){
+                    $invoice = Invoicing::where('id', $row->invoice_id)->first();
 
-                if ($so->type_transaction == 'CASH'){
-                    $update_so_payment = SalesOrder::where('id', $so->id)->update(['payment_status' => 1]);
-                }elseif($so->type_transaction == 'TEMPO'){
-                    $update_so_payment = SalesOrder::where('id', $so->id)->update(['payment_status' => 2]);
+                    // Hitung sisa
+                    $total_tagihan = $invoice->grand_total_idr;
+                    $payment = $invoice->payable_detail->sum('total');
+                    $sisa = $total_tagihan - $payment;
+
+                    if( $sisa == '0' ){
+                        $update_so = SalesOrder::where('id', $invoice->do->so_id)->update(['payment_status' => 1]);
+                    }elseif ($sisa > '0') {
+                        $update_so = SalesOrder::where('id', $invoice->do->so_id)->update(['payment_status' => 2]);
+                    }
                 }
 
                 DB::commit();

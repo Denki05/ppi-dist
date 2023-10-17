@@ -72,18 +72,18 @@
                         $sisa = $total_invoicing - $payable;
                       ?>
                       @if($sisa > 0)
-                      <tr class="repeater">
-                        <input type="hidden" name="repeater[{{$index}}][invoice_id]" value="{{$row->invoicing->id ?? ''}}">
-                        <td>{{$row->invoicing->code ?? ''}}</td>
-                        <td><input type="text" name="repeater[{{$index}}][total_nota]" class="form-control total_nota" value="{{number_format($sisa,0,',','.')}}" readonly></td>
-                        <td>
-                          <input type="text" name="repeater[{{$index}}][payable]" class="form-control formatRupiah count total_payment">
-                        </td>
-                        <td>
-                          <input type="text" name="repeater[{{$index}}][sisa]" class="form-control formatRupiah count_sisa" readonly>
-                        </td>
-                      </tr>
-                      <?php $counter++ ?>
+                        <tr class="repeater">
+                          <input type="hidden" name="repeater[{{$index}}][invoice_id]" value="{{$row->invoicing->id ?? ''}}">
+                          <td>{{$row->invoicing->code ?? ''}}</td>
+                          <td><input type="text" name="repeater[{{$index}}][total_nota]" class="form-control total_nota" value="{{number_format($sisa,0,',','.')}}" readonly></td>
+                          <td>
+                            <input type="text" name="repeater[{{$index}}][payable]" class="form-control formatRupiah count total_payment">
+                          </td>
+                          <td>
+                            <input type="text" name="repeater[{{$index}}][sisa]" class="form-control formatRupiah count_sisa" readonly>
+                          </td>
+                        </tr>
+                        <?php $counter++ ?>
                       @endif
                     @endif
                   @endforeach
