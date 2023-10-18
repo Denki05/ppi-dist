@@ -160,6 +160,10 @@ class PayableController extends Controller
                         $payable = $get_invoice->payable_detail->sum('total');
                         $sisa = $get_invoice->grand_total_idr - $payable;
 
+                        // hitung sisa
+                        $remaining_pay = $sisa - $input_payable;
+
+
                         if($payable >= $get_invoice->grand_total_idr){
                             $data_json["IsError"] = TRUE;
                             $data_json["Message"] = "Invoice ".$get_invoice->code. " sudah lunas";
@@ -170,6 +174,7 @@ class PayableController extends Controller
                             'invoice_id' => $value["invoice_id"],
                             'total' => $input_payable,
                             'prev_account_receivable' => $get_invoice->grand_total_idr - $payable,
+                            'remaining_account_receivable' => $remaining_pay,
                             'created_by' => Auth::id(),
                         ];
 
@@ -398,7 +403,15 @@ class PayableController extends Controller
                 }
 
                 DB::commit();
-                return redirect()->back()->with('success','<a href="'.route('superuser.finance.payable.index').'">'.$payable->code.'</a> : Payment has been successfully processed!');
+                $response['notification'] = [
+                    'alert' => 'notify',
+                    'type' => 'success',
+                    'content' => 'Success',
+                ];
+
+                $response['redirect_to'] = route('superuser.finance.payable.index');
+
+                return $this->response(200, $response);
             }
         }catch (\Exception $e) {
             dd($e);
@@ -468,5 +481,132 @@ class PayableController extends Controller
 
         $pdf = PDF::loadview($this->view."print",$data)->setPaper('a4','potrait');
         return $pdf->stream($result->code ?? '');
+    }
+
+    public function cancel_approve(Request $request, $id)
+    {
+        if ($request->ajax()){
+            $failed = "";
+
+            DB::beginTransaction();
+
+            try{
+
+                $payable = Payable::find($id);
+
+                $payable->status = Payable::STATUS['REVISI'];
+                $payable->count_cancel = 1;
+                $payable->save();
+
+                DB::commit();
+                $response['notification'] = [
+                    'alert' => 'notify',
+                    'type' => 'success',
+                    'content' => 'Success',
+                ];
+
+                $response['redirect_to'] = route('superuser.finance.payable.index');
+
+                return $this->response(200, $response);
+
+            }catch (\Exception $e) {
+                DB::rollback();
+                // DD($e);
+                $response['notification'] = [
+                    'alert' => 'block',
+                    'type' => 'alert-danger',
+                    'header' => 'Error',
+                    'content' => "Internal Server Error",
+                ];
+
+                return $this->response(400, $response);
+            }
+        }
+    }
+
+    public function cancel_edit(Request $request, $id)
+    {
+        // Access
+        if(Auth::user()->is_superuser == 0){
+            if(empty($this->access) || empty($this->access->user) || $this->access->can_read == 0){
+                return redirect()->route('superuser.index')->with('error','Anda tidak punya akses untuk membuka menu terkait');
+            }
+        }
+
+        $data['result'] = Payable::findOrFail($id);
+
+        return view('superuser.finance.payable.cancel_edit', $data);
+    }
+
+    public function update_cancel(Request $request, $id)
+    {
+        $data_json = [];
+        $post = $request->all();
+        if($request->method() == "POST"){
+            DB::beginTransaction();
+            try{
+                if(empty($post["payable_header"])){
+                    $data_json["IsError"] = TRUE;
+                    $data_json["Message"] = "ID Payable tidak boleh kosong";
+                    goto ResultData;
+                }
+
+                // update Note payable
+                $update_payable = Payable::where('id', $post["payable_header"])->update([
+                    'note' => $post["note"], 
+                    'status' => Payable::STATUS['ACC']]);
+
+                // update detail Payable
+                $total_payment = 0;
+                foreach($post["repeater"] as $index => $key){
+                    if(!empty($key["payable"])){
+                        $input_payment = floatval(str_replace(".", "", $key["payable"]));
+                        $get_detail = PayableDetail::where('id', $key["payable_detail_id"])->first();
+                        
+                        $sisa = $get_detail->prev_account_receivable - $input_payment;
+
+                        $data = [
+                            'total' => $input_payment,
+                            'prev_account_receivable' => $get_detail->prev_account_receivable,
+                            'remaining_account_receivable' => $sisa,
+                            'updated_by' => Auth::id(),
+                        ];
+
+                        $update_detail = PayableDetail::where('id', $key["payable_detail_id"])->update($data);
+                        $total_payment += $input_payment;
+                    }
+                }
+
+                if($total_payment == 0){
+                    $data_json["IsError"] = TRUE;
+                    $data_json["Message"] = "Tidak bisa melakukan payable.Tidak ada payable yang diinput";
+                    goto ResultData;
+                }
+
+                $update = Payable::where('id', $post["payable_header"])->update([
+                    'total' => $total_payment
+                ]);
+
+                DB::commit();
+
+                $data_json["IsError"] = FALSE;
+                $data_json["Message"] = "Payable berhasil dibuat";
+                goto ResultData;
+
+            }catch(\Throwable $e){
+                dd($e);
+                DB::rollback();
+                $data_json["IsError"] = TRUE;
+                $data_json["Message"] = $e->getMessage();
+                goto ResultData;
+            }
+        }
+        else{
+            $data_json["IsError"] = TRUE;
+            $data_json["Message"] = "Invalid Method";
+            goto ResultData;
+        }
+        ResultData:
+        return response()->json($data_json,200);
     }
 }

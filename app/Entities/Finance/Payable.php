@@ -16,6 +16,7 @@ class Payable extends Model
     	'total',
         'status',
         'note',
+        'count_cancel', 
     	'updated_by',
     	'created_by',
     	'deleted_by'
@@ -25,6 +26,7 @@ class Payable extends Model
         'DELETED' => 0,
         'ACTIVE' => 1,
         'ACC' => 2,
+        'REVISI' => 3,
     ];
 
     const TYPE = [

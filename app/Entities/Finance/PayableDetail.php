@@ -13,6 +13,7 @@ class PayableDetail extends Model
     	'payable_id',
     	'invoice_id',
     	'prev_account_receivable',
+        'remaining_account_receivable', 
     	'total',
     	'updated_by',
     	'created_by',

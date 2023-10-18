@@ -3,7 +3,7 @@
 <nav class="breadcrumb bg-white push">
   <span class="breadcrumb-item">Finance</span>
   <span class="breadcrumb-item">Payable</span>
-  <span class="breadcrumb-item active">Create</span>
+  <span class="breadcrumb-item active">Revisi</span>
 </nav>
 @if(session('error') || session('success'))
 <div class="alert alert-{{ session('error') ? 'danger' : 'success' }} alert-dismissible fade show" role="alert">
@@ -20,29 +20,31 @@
 
 <form id="frmPayable" method="post">
 @csrf
+    <input type="hidden" name="payable_header" value="{{$result->id}}">
+
   <div class="block">
     <div class="block-header block-header-default">
-      <h3 class="block-title">#Pembayaran Nota</h3>
+      <h3 class="block-title">#Revisi Nota {{ $result->code }}</h3>
     </div>
     <div class="block-content block-content-full">
       <div class="row">
         <div class="col">
           <div class="form-group">
             <label>Account customer</label>
-            <input type="text" class="form-control" name="customer_name" value="{{ $customer->name }} {{ $customer->text_kota }}" readonly>
-            <input type="hidden" value="{{$customer->id}}" name="customer_id">
+            <input type="text" class="form-control" name="customer_name" value="{{ $result->customer->name }} {{ $result->customer->text_kota }}" readonly>
+            <input type="hidden" value="{{$result->customer->id}}" name="customer_id">
           </div>
       </div>
       <div class="col">
           <div class="form-group">
             <label>Tanggal Bayar</label>
-            <input type="date" class="form-control" name="pay_date">
+            <input type="date" class="form-control" id="pay_date" name="pay_date" required value="{{ date_format(date_create($result->pay_date), 'Y-m-d') }}" readonly>
           </div>
       </div>
       <div class="col">
           <div class="form-group">
             <label>Keterangan</label>
-            <input type="text" class="form-control" name="note">
+            <input type="text" class="form-control" name="note" value="{{ $result->note ?? '' }}">
           </div>
       </div>
     </div>
@@ -61,38 +63,21 @@
                   <th>Sisa Bayar</th>
                 </thead>
                 <tbody>
-                  <?php
-                    $counter = 0;
-                  ?>
-                  @foreach($customer->do as $index => $row)
-                    @if($row->invoicing)
-                      <?php
-                        $total_invoicing = $row->invoicing->grand_total_idr ?? 0;
-                        $payable = $row->invoicing->payable_detail->sum('total');
-                        $sisa = $total_invoicing - $payable;
-                      ?>
-                      @if($sisa > 0)
+                    @foreach($result->payable_detail as $index => $row)
                         <tr class="repeater">
-                          <input type="hidden" name="repeater[{{$index}}][invoice_id]" value="{{$row->invoicing->id ?? ''}}">
-                          <td>{{$row->invoicing->code ?? ''}}</td>
-                          <td><input type="text" name="repeater[{{$index}}][total_nota]" class="form-control total_nota" value="{{number_format($sisa,0,',','.')}}" readonly></td>
+                          <input type="hidden" name="repeater[{{$index}}][id_invoice]" value="{{$row->invoice->id}}">
+                          <input type="hidden" name="repeater[{{$index}}][payable_detail_id]" value="{{$row->id}}">
+                          <td>{{$row->invoice->code ?? ''}}</td>
+                          <td><input type="text" name="repeater[{{$index}}][total_nota]" class="form-control total_nota" value="{{number_format($row->invoice->grand_total_idr ,0,',','.')}}" readonly></td>
                           <td>
-                            <input type="text" name="repeater[{{$index}}][payable]" class="form-control formatRupiah count total_payment">
+                            <input type="text" name="repeater[{{$index}}][payable]" value="{{number_format($row->total ,0,',','.')}}" class="form-control formatRupiah count total_payment">
                           </td>
                           <td>
                             <input type="text" name="repeater[{{$index}}][sisa]" class="form-control formatRupiah count_sisa" readonly>
                           </td>
                         </tr>
-                        <?php $counter++ ?>
-                      @endif
-                    @endif
-                  @endforeach
-                  @if($counter == 0)
-                    <tr>
-                      <td colspan="4" class="text-center">Data tidak ditemukan</td>
-                    </tr>
-                  @endif
-                  </tbody>
+                    @endforeach
+                </tbody>
                 <tfoot>
                   <tr>
                     <td colspan="2" class="text-center">
@@ -159,7 +144,7 @@
         if(confirm("Apakah anda yakin ingin melakukan pembayaran ini ?")){
           let _form = $('#frmPayable');
           $.ajax({
-            url : '{{route('superuser.finance.payable.store')}}',
+            url : '{{route('superuser.finance.payable.update_cancel', $result->id)}}',
             method : "POST",
             data : getFormData(_form),
             dataType : "JSON",
@@ -217,10 +202,10 @@
         pay = parseFloat(pay.split('.').join(''));
         nota = parseFloat(nota.split('.').join(''));
         sisa = nota - pay;
+        
+        total_sisa += sisa;
 
         $('#frmPayable tr.repeater').eq(i).find('.count_sisa').val(formatRupiah(sisa));
-
-        total_sisa += sisa;
       })
 
       $('.sisa_bayar').val(formatRupiah(total_sisa));

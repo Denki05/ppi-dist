@@ -40,6 +40,9 @@ Route::group([
         Route::get('/approve/{id}', 'PayableController@approve')->name('approve');
         Route::get('/{id}/print', 'PayableController@print')->name('print');
         Route::get('/json', 'PayableController@json')->name('json');
+        Route::get('/{id}/cancel_approve', 'PayableController@cancel_approve')->name('cancel_approve');
+        Route::get('/{id}/cancel_edit', 'PayableController@cancel_edit')->name('cancel_edit');
+        Route::post('/{id}/update_cancel', 'PayableController@update_cancel')->name('update_cancel');
     });
     Route::resource('payable', 'PayableController');
 });
