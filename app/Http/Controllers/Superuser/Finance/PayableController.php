@@ -487,31 +487,35 @@ class PayableController extends Controller
     {
         if ($request->ajax()){
             $failed = "";
-
             DB::beginTransaction();
 
             try{
-
                 $payable = Payable::find($id);
+
+                if($payable){
+                    if($payable->count_cancel){
+                        $failed = 'Limit sudah mencapai batas!';
+                    }
+                }
 
                 $payable->status = Payable::STATUS['REVISI'];
                 $payable->count_cancel = 1;
-                $payable->save();
 
-                DB::commit();
-                $response['notification'] = [
-                    'alert' => 'notify',
-                    'type' => 'success',
-                    'content' => 'Success',
-                ];
+                if ($failed) {
+                    $response['failed'] = $failed;
 
-                $response['redirect_to'] = route('superuser.finance.payable.index');
+                    return $this->response(200, $response);
+                }
 
-                return $this->response(200, $response);
+                if($payable->save()){
+                    DB::commit();
+                    $response['redirect_to'] = route('superuser.finance.payable.index');
+                    return $this->response(200, $response);
+                }
 
             }catch (\Exception $e) {
+                DD($e);
                 DB::rollback();
-                // DD($e);
                 $response['notification'] = [
                     'alert' => 'block',
                     'type' => 'alert-danger',

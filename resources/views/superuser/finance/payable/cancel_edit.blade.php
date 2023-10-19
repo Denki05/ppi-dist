@@ -68,7 +68,7 @@
                           <input type="hidden" name="repeater[{{$index}}][id_invoice]" value="{{$row->invoice->id}}">
                           <input type="hidden" name="repeater[{{$index}}][payable_detail_id]" value="{{$row->id}}">
                           <td>{{$row->invoice->code ?? ''}}</td>
-                          <td><input type="text" name="repeater[{{$index}}][total_nota]" class="form-control total_nota" value="{{number_format($row->invoice->grand_total_idr ,0,',','.')}}" readonly></td>
+                          <td><input type="text" name="repeater[{{$index}}][total_nota]" class="form-control total_nota" value="{{number_format($row->prev_account_receivable ,0,',','.')}}" readonly></td>
                           <td>
                             <input type="text" name="repeater[{{$index}}][payable]" value="{{number_format($row->total ,0,',','.')}}" class="form-control formatRupiah count total_payment">
                           </td>

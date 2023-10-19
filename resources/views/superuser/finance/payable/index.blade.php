@@ -5,18 +5,30 @@
   <span class="breadcrumb-item">Finance</span>
   <span class="breadcrumb-item active">Payable</span>
 </nav>
-@if(session('error') || session('success'))
-<div class="alert alert-{{ session('error') ? 'danger' : 'success' }} alert-dismissible fade show" role="alert">
-    @if (session('error'))
-    <strong>Error!</strong> {!! session('error') !!}
-    @elseif (session('success'))
-    <strong>Berhasil!</strong> {!! session('success') !!}
-    @endif
-    <button type="button" class="close" data-dismiss="alert" aria-label="Close">
-        <span aria-hidden="true">&times;</span>
-    </button>
+@if($errors->any())
+<div class="alert alert-danger alert-dismissable" role="alert">
+  <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+      <span aria-hidden="true">×</span>
+  </button>
+  <h3 class="alert-heading font-size-h4 font-w400">Error</h3>
+  @foreach ($errors->all() as $error)
+  <p class="mb-0">{{ $error }}</p>
+  @endforeach
 </div>
 @endif
+
+<div id="alert-block"></div>
+
+@if(session()->has('message'))
+<div class="alert alert-success alert-dismissable" role="alert">
+  <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+      <span aria-hidden="true">×</span>
+  </button>
+  <h3 class="alert-heading font-size-h4 font-w400">Success</h3>
+  <p class="mb-0">{{ session()->get('message') }}</p>
+</div>
+@endif
+
 <div class="block">
   <hr class="my-20">
   <div class="block-content block-content-full">
@@ -82,7 +94,7 @@
                     @endif
                     @if($row->status == 2)
                       <a class="btn btn-info" href="{{ route('superuser.finance.payable.detail', $row->id) }}" role="button" title="view"><i class="fa fa-eye" aria-hidden="true"></i></a>
-                      <a class="btn btn-danger" href="javascript:saveConfirmation('{{ route('superuser.finance.payable.cancel_approve', $row->id) }}')" role="button" title="Cancel Acc"><i class="fa fa-times" aria-hidden="true"></i></a>
+                      <a class="btn btn-danger" href="javascript:saveConfirmation2('{{ route('superuser.finance.payable.cancel_approve', $row->id) }}')" role="button" title="Cancel Acc"><i class="fa fa-times" aria-hidden="true"></i></a>
                     @endif
                     @if($row->status == 3)
                       <a class="btn btn-warning" href="{{ route('superuser.finance.payable.cancel_edit', $row->id) }}" role="button" title="edit"><i class="fa fa-pencil" aria-hidden="true"></i></a>
