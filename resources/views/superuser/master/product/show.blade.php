@@ -254,7 +254,7 @@
     <!-- Modal content-->
     <div class="modal-content">
       <div class="modal-header">
-        <h4 class="modal-title">Update Cost Price</h4>
+        <h4 class="modal-title">Update Selling Price</h4>
         <button type="button" class="close" data-bs-dismiss="modal">&times;</button>
       </div>
       <form id="myForm" method="POST" role="form" enctype="multipart/form-data">

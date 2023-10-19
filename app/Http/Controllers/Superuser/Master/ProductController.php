@@ -123,160 +123,163 @@ class ProductController extends Controller
             if ($validator->passes()) {
                 DB::beginTransaction();
 
-                if($request->brand_name == "Senses"){
-                    $code = explode(" ", $request->code);
+                try{
 
-                    $product = new Product;
-                    $product->id = $code[1];
-                    $product->code = $request->code;
-                    $product->brand_name = $request->brand_name;
-                    $product->sub_brand_reference_id = $request->searah;
-                    $product->category_id = $request->category;
-                    $product->type_id = $request->type;
-                    $product->vendor_id = $request->factory;
-                    $product->vendor_optional_id = $request->factory2;
-
-                    $product->name = $request->name;
-                    $product->material_code = $request->material_code;
-                    $product->material_name = $request->material_name;
-                    $product->material_code_optional = $request->material_code_optional;
-                    $product->material_name_optional = $request->material_name_optional;
-                    $product->alias = $request->alias;
-                    $product->buying_price = $request->buying_price ?? 0;
-                    $product->selling_price = $request->selling_price;
-                    $product->description = $request->description;
-                    $product->note = $request->note;
-                    $product->gender = $request->gender;
-                    $product->ratio = $request->ratio;
-
-                    if (!empty($request->file('image'))) {
-                        $product->image = UploadMedia::image($request->file('image'), Product::$directory_image);
-                    }
-
-                    if (!empty($request->file('image_hd'))) {
-                        $product->image_hd = UploadMedia::image($request->file('image_hd'), Product::$directory_image);
-                    }
-
-                    $product->status = Product::STATUS['ACTIVE'];
-
-                    if ($product->save()) {
-                        DB::commit();
-
-                        $warehouse = Warehouse::where('name', 'Gudang Araya')->first();
-                        $kemasan = $request->packaging;
-                        foreach($kemasan as $value){
-                                $child_product = new ProductPack;
-                                $child_product->id = $product->id.'-'.$value;
-                                $child_product->product_id = $product->id;
-                                $child_product->warehouse_id = $warehouse->id;
-                                $child_product->packaging_id = $value;
-                                $child_product->material_code = $request->material_code;
-                                $child_product->material_name = $request->material_name;
-                                $child_product->code = $request->code;
-                                $child_product->name = $request->name;
-                                $child_product->price = $request->selling_price;
-                                $child_product->stock = 1000;
-                                $child_product->gender = $request->gender;
-                                $child_product->note = $request->note;
-                                $child_product->status = ProductPack::STATUS['ACTIVE'];
-                                $child_product->save();
-
-                                // $min_stock = new ProductMinStock;
-                                // $min_stock->product_packaging_id = $child_product->id;
-                                // $min_stock->warehouse_id = $warehouse->id;
-                                // $min_stock->unit_id = 1;
-                                // $min_stock->quantity = 1000;
-                                // $min_stock->selling_price = $child_product->price;
-                                // $min_stock->save();
+                    if($request->brand_name == "Senses"){
+                        $code = explode(" ", $request->code);
+    
+                        $product = new Product;
+                        $product->id = $code[1];
+                        $product->code = $request->code;
+                        $product->brand_name = $request->brand_name;
+                        $product->sub_brand_reference_id = $request->searah;
+                        $product->category_id = $request->category;
+                        $product->type_id = $request->type;
+                        $product->vendor_id = $request->factory;
+                        $product->vendor_optional_id = $request->optional_factory;
+    
+                        $product->name = $request->name;
+                        $product->material_code = $request->material_code;
+                        $product->material_name = $request->material_name;
+                        $product->material_code_optional = $request->material_code_optional;
+                        $product->material_name_optional = $request->material_name_optional;
+                        $product->alias = $request->alias;
+                        $product->buying_price = $request->buying_price ?? 0;
+                        $product->selling_price = $request->selling_price;
+                        $product->description = $request->description;
+                        $product->note = $request->note;
+                        $product->gender = $request->gender;
+                        $product->ratio = $request->ratio;
+    
+                        if (!empty($request->file('image'))) {
+                            $product->image = UploadMedia::image($request->file('image'), Product::$directory_image);
                         }
-
-                        $response['notification'] = [
-                            'alert' => 'notify',
-                            'type' => 'success',
-                            'content' => 'Success',
-                        ];
-
-                        $response['redirect_to'] = route('superuser.master.product.index');
-
-                        return $this->response(200, $response);
-                    }
-                }else{
-                    $product = new Product;
-                    $product->id = $request->code;
-                    $product->code = $request->code;
-                    $product->brand_name = $request->brand_name;
-                    $product->sub_brand_reference_id = $request->searah;
-                    $product->category_id = $request->category;
-                    $product->type_id = $request->type;
-                    $product->vendor_id = $request->factory;
-                    $product->vendor_optional_id = $request->factory2;
-
-                    $product->name = $request->name;
-                    $product->material_code = $request->material_code;
-                    $product->material_name = $request->material_name;
-                    $product->material_code_optional = $request->material_code_optional;
-                    $product->material_name_optional = $request->material_name_optional;
-                    $product->alias = $request->alias;
-                    $product->buying_price = $request->buying_price ?? 0;
-                    $product->selling_price = $request->selling_price;
-                    $product->description = $request->description;
-                    $product->note = $request->note;
-                    $product->gender = $request->gender;
-
-                    $product->ratio = $request->ratio;
-
-                    if (!empty($request->file('image'))) {
-                        $product->image = UploadMedia::image($request->file('image'), Product::$directory_image);
-                    }
-
-                    if (!empty($request->file('image_hd'))) {
-                        $product->image_hd = UploadMedia::image($request->file('image_hd'), Product::$directory_image);
-                    }
-
-                    $product->status = Product::STATUS['ACTIVE'];
-
-                    if ($product->save()) {
-                        DB::commit();
-
-                        $warehouse = Warehouse::where('name', 'Gudang Araya')->first();
-                        $kemasan = $request->packaging;
-                        foreach($kemasan as $value){
-                                $child_product = new ProductPack;
-                                $child_product->id = $product->id.'-'.$value;
-                                $child_product->product_id = $product->id;
-                                $child_product->warehouse_id = $warehouse->id;
-                                $child_product->packaging_id = $value;
-                                $child_product->material_code = $request->material_code;
-                                $child_product->material_name = $request->material_name;
-                                $child_product->code = $request->code;
-                                $child_product->name = $request->name;
-                                $child_product->price = $request->selling_price;
-                                $child_product->stock = 1000;
-                                $child_product->gender = $request->gender;
-                                $child_product->note = $request->note;
-                                $child_product->status = ProductPack::STATUS['ACTIVE'];
-                                $child_product->save();
-
-                                // $min_stock = new ProductMinStock;
-                                // $min_stock->product_packaging_id = $child_product->id;
-                                // $min_stock->warehouse_id = $warehouse->id;
-                                // $min_stock->unit_id = 1;
-                                // $min_stock->quantity = 1000;
-                                // $min_stock->selling_price = $child_product->price;
-                                // $min_stock->save();
+    
+                        if (!empty($request->file('image_hd'))) {
+                            $product->image_hd = UploadMedia::image($request->file('image_hd'), Product::$directory_image);
                         }
+    
+                        $product->status = Product::STATUS['ACTIVE'];
+    
+                        if ($product->save()) {
 
-                        $response['notification'] = [
-                            'alert' => 'notify',
-                            'type' => 'success',
-                            'content' => 'Success',
-                        ];
+                            $warehouse = Warehouse::where('name', 'Gudang Araya')->first();
+                            $packaging = Packaging::get();
 
-                        $response['redirect_to'] = route('superuser.master.product.index');
-
-                        return $this->response(200, $response);
+                            // dd($packaging);
+                            foreach($packaging as $value){
+                                    $child_product = new ProductPack;
+                                    $child_product->id = $product->id.'-'.$value->id;
+                                    $child_product->product_id = $product->id;
+                                    $child_product->warehouse_id = $warehouse->id;
+                                    $child_product->packaging_id = $value->id;
+                                    $child_product->material_code = $request->material_code;
+                                    $child_product->material_name = $request->material_name;
+                                    $child_product->code = $request->code;
+                                    $child_product->name = $request->name;
+                                    $child_product->price = 0;
+                                    $child_product->stock = 0;
+                                    $child_product->gender = $request->gender;
+                                    $child_product->note = $request->note;
+                                    $child_product->status = ProductPack::STATUS['ACTIVE'];
+                                    $child_product->save();
+                            }
+                        }
+                    }else{
+                        $product = new Product;
+                        $product->id = $request->code;
+                        $product->code = $request->code;
+                        $product->brand_name = $request->brand_name;
+                        $product->sub_brand_reference_id = $request->searah;
+                        $product->category_id = $request->category;
+                        $product->type_id = $request->type;
+                        $product->vendor_id = $request->factory;
+                        $product->vendor_optional_id = $request->factory2;
+    
+                        $product->name = $request->name;
+                        $product->material_code = $request->material_code;
+                        $product->material_name = $request->material_name;
+                        $product->material_code_optional = $request->material_code_optional;
+                        $product->material_name_optional = $request->material_name_optional;
+                        $product->alias = $request->alias;
+                        $product->buying_price = $request->buying_price ?? 0;
+                        $product->selling_price = $request->selling_price;
+                        $product->description = $request->description;
+                        $product->note = $request->note;
+                        $product->gender = $request->gender;
+    
+                        $product->ratio = $request->ratio;
+    
+                        if (!empty($request->file('image'))) {
+                            $product->image = UploadMedia::image($request->file('image'), Product::$directory_image);
+                        }
+    
+                        if (!empty($request->file('image_hd'))) {
+                            $product->image_hd = UploadMedia::image($request->file('image_hd'), Product::$directory_image);
+                        }
+    
+                        $product->status = Product::STATUS['ACTIVE'];
+    
+                        if ($product->save()) {
+    
+                            $warehouse = Warehouse::where('name', 'Gudang Araya')->first();
+                            $kemasan = $request->packaging;
+                            foreach($kemasan as $value){
+                                    $child_product = new ProductPack;
+                                    $child_product->id = $product->id.'-'.$value;
+                                    $child_product->product_id = $product->id;
+                                    $child_product->warehouse_id = $warehouse->id;
+                                    $child_product->packaging_id = $value;
+                                    $child_product->material_code = $request->material_code;
+                                    $child_product->material_name = $request->material_name;
+                                    $child_product->code = $request->code;
+                                    $child_product->name = $request->name;
+                                    $child_product->price = $request->selling_price;
+                                    $child_product->stock = 1000;
+                                    $child_product->gender = $request->gender;
+                                    $child_product->note = $request->note;
+                                    $child_product->status = ProductPack::STATUS['ACTIVE'];
+                                    $child_product->save();
+    
+                                    // $min_stock = new ProductMinStock;
+                                    // $min_stock->product_packaging_id = $child_product->id;
+                                    // $min_stock->warehouse_id = $warehouse->id;
+                                    // $min_stock->unit_id = 1;
+                                    // $min_stock->quantity = 1000;
+                                    // $min_stock->selling_price = $child_product->price;
+                                    // $min_stock->save();
+                            }
+    
+                            
+                        }
                     }
+
+                    DB::commit();
+
+                    $response['notification'] = [
+                        'alert' => 'notify',
+                        'type' => 'success',
+                        'content' => 'Success',
+                    ];
+
+                    $response['redirect_to'] = route('superuser.master.product.index');
+
+                    return $this->response(200, $response);
+
+                }catch (\Exception $e) {
+                    DD($e);
+                    DB::rollback();
+                    $response['notification'] = [
+                        'alert' => 'block',
+                        'type' => 'alert-danger',
+                        'header' => 'Error',
+                        'content' => "Internal Server Error",
+                    ];
+
+                    return $this->response(400, $response);
                 }
+
+                
             }
         }
     }

@@ -5,6 +5,7 @@
             <div class="block-conten" align="center">
                 <div class="col-md-10 col-md-offset-1">
                 	<form data-action="{{ route('superuser.master.product.store') }}" data-type="POST" enctype="multipart/form-data" class="f1 ajax">
+                    @csrf
                 		<div class="f1-steps">
                 			<div class="f1-progress">
                 			    <div class="f1-progress-line" data-now-value="25" data-number-of-steps="4"></div>
@@ -87,8 +88,8 @@
                                   <div class="form-group row">
                                     <label class="col-sm-2 col-form-label"></label>
                                     <div class="col-sm-10">
-                                      <select class="js-select2 form-control" id="factory2" name="factory2" style="width:100%;" placeholder="Pabrik Opsional" required>
-                                        <option>Pilih Pabrik Opsional</option>
+                                      <select class="js-select2 form-control" id="optional_factory" name="optional_factory" style="width:100%;" placeholder="Pabrik Opsional">
+                                        <option value="">Pilih Pabrik Opsional</option>
                                         @foreach($factory_optional as $factory2)
                                         <option value="{{ $factory2->id }}">{{ $factory2->name }}</option>
                                         @endforeach
@@ -246,17 +247,6 @@
                                     </div>
                                   </div>
                               </div> 
-                              <div class="row">
-                                <div class="form-group">
-                                  <label for="packaging">Packaging</label>
-                                  <select class="form-control js-select2" id="packaging[]" name="packaging[]" style="width:100%;" data-placeholder="Pilih Kemasan" multiple="multiple">
-                                    <option value="">Pilih Kemasan</option>  
-                                    @foreach($pack as $pack)
-                                    <option value="{{$pack->id}}">{{$pack->pack_name}}</option>
-                                    @endforeach
-                                  </select>
-                                </div>
-                              </div>
                               <div class="row">
                                 <div class="col">
                                   <div class="form-group">
