@@ -183,6 +183,14 @@ class ProductController extends Controller
                                     $child_product->note = $request->note;
                                     $child_product->status = ProductPack::STATUS['ACTIVE'];
                                     $child_product->save();
+
+                                    $min_stock = new ProductMinStock;
+                                    $min_stock->product_packaging_id = $child_product->id;
+                                    $min_stock->warehouse_id = $warehouse->id;
+                                    $min_stock->unit_id = 1;
+                                    $min_stock->quantity = 0;
+                                    $min_stock->selling_price = $child_product->price;
+                                    $min_stock->save();
                             }
                         }
                     }else{
@@ -234,20 +242,20 @@ class ProductController extends Controller
                                     $child_product->material_name = $request->material_name;
                                     $child_product->code = $request->code;
                                     $child_product->name = $request->name;
-                                    $child_product->price = $request->selling_price;
-                                    $child_product->stock = 1000;
+                                    $child_product->price = 0;
+                                    $child_product->stock = 0;
                                     $child_product->gender = $request->gender;
                                     $child_product->note = $request->note;
                                     $child_product->status = ProductPack::STATUS['ACTIVE'];
                                     $child_product->save();
     
-                                    // $min_stock = new ProductMinStock;
-                                    // $min_stock->product_packaging_id = $child_product->id;
-                                    // $min_stock->warehouse_id = $warehouse->id;
-                                    // $min_stock->unit_id = 1;
-                                    // $min_stock->quantity = 1000;
-                                    // $min_stock->selling_price = $child_product->price;
-                                    // $min_stock->save();
+                                    $min_stock = new ProductMinStock;
+                                    $min_stock->product_packaging_id = $child_product->id;
+                                    $min_stock->warehouse_id = $warehouse->id;
+                                    $min_stock->unit_id = 1;
+                                    $min_stock->quantity = 0;
+                                    $min_stock->selling_price = $child_product->price;
+                                    $min_stock->save();
                             }
     
                             
