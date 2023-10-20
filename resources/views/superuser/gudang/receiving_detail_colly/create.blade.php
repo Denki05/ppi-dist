@@ -15,12 +15,6 @@
   </div>
   <div class="block-content">
     <form class="ajax" data-action="{{ route('superuser.gudang.receiving.detail.colly.store', [$receiving->id, $receiving_detail->id]) }}" data-type="POST" enctype="multipart/form-data">
-      {{-- <div class="form-group row">
-        <label class="col-md-3 col-form-label text-right" for="code">Barcode</label>
-        <div class="col-md-4">
-          <input type="text" class="form-control" id="code" name="code" onkeyup="nospaces(this)" value="{{ App\Repositories\ReceivingDetailCollyRepo::generateCode() }}" readonly>
-        </div>
-      </div> --}}
       <div class="form-group row">
         <label class="col-md-3 col-form-label text-right" for="colly">Colly</label>
         <div class="col-md-4">

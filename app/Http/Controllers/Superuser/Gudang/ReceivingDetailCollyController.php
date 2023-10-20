@@ -31,8 +31,6 @@ class ReceivingDetailCollyController extends Controller
     {
         if ($request->ajax()) {
             $validator = Validator::make($request->all(), [
-                // 'code' => 'required|string|unique:receiving_detail_colly,code',
-                'colly' => 'required|numeric',
                 'ri' => 'required|numeric',
             ]);
 
@@ -105,7 +103,7 @@ class ReceivingDetailCollyController extends Controller
                         'content' => 'Success',
                     ];
 
-                    $response['redirect_to'] = route('superuser.gudang.receiving.detail.show', [$id, $detail_id]);
+                    $response['redirect_to'] = route('superuser.gudang.receiving.step', $id);
                 }
 
                 DB::commit();

@@ -179,11 +179,11 @@
                 <i class="fa fa-pencil"></i>
               </button>
             </a>
-            <a href="{{ route('superuser.gudang.receiving.detail.show', [$receiving->id, $detail->id]) }}">
-              <button type="button" class="btn btn-sm btn-circle btn-alt-info" title="Add Detail">
+            @if(is_null($detail->colly))
+              <button type="button" class="btn btn-sm btn-circle btn-alt-info addColly" data-id="{{$receiving->id}}" data-detail-id="{{ $detail->id }}" data-bs-toggle="modal" data-bs-target="#myModal">
                 <i class="fa fa-plus"></i>
               </button>
-            </a>
+            @endif
             <a href="javascript:deleteConfirmation('{{ route('superuser.gudang.receiving.detail.destroy', [$receiving->id, $detail->id]) }}')">
               <button type="button" class="btn btn-sm btn-circle btn-alt-danger" title="Delete">
                   <i class="fa fa-times"></i>
@@ -194,6 +194,44 @@
         @endforeach
       </tbody>
     </table>
+  </div>
+</div>
+
+<!-- Modal add colly -->
+<div id="myModal" class="modal fade" role="dialog">
+  <div class="modal-dialog">
+
+  <!-- Alert -->
+    <div class="alert alert-success alert-dismissible fade show" role="alert" style="display:none;">
+      <strong>Success!</strong> add quantity RI!.
+      <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+        <span aria-hidden="true">&times;</span>
+      </button>
+    </div>
+    <!-- Modal content-->
+    <div class="modal-content">
+      <div class="modal-header">
+        <h4 class="modal-title">Add Quantity RI</h4>
+        <button type="button" class="close" data-bs-dismiss="modal">&times;</button>
+      </div>
+      <form id="myForm" method="POST" role="form" enctype="multipart/form-data">
+      {{csrf_field()}}
+        <div class="modal-body">
+        <input type="hidden" class="form-control" id="colly" name="colly" value="1">
+        <div class="form-group row">
+          <label class="col-md-3 col-form-label text-right" for="ri">Quantity RI</label>
+          <div class="col-md-4">
+            <input type="number" class="form-control" id="ri" name="ri" step="any">
+          </div>
+        </div>
+        </div>
+        <div class="modal-footer">
+          <input type="hidden" id="searah_id" value="0">
+          <button type="submit" class="btn btn-info">Save</button>
+          <button type="button" class="btn btn-danger" data-bs-dismiss="modal">Close</button>
+        </div>
+      </form>
+    </div>
   </div>
 </div>
 
@@ -217,5 +255,34 @@
   $(document).ready(function() {
     $('#datatable').DataTable({})
   })
+
+  $('#myForm').on('submit', function (e) {
+      e.preventDefault(); // prevent the form submit
+      var id = $('.addColly').data('id');
+      var detail = $('.addColly').data('detail-id');
+      var url = '{{ route("superuser.gudang.receiving.detail.colly.store", [":id",":detail_id"]) }}';
+      url = url.replace(':id', id);
+      url = url.replace(':detail_id', detail);
+      var AlertMsg = $('div[role="alert"]');
+
+      var formData = new FormData(this); 
+      $.ajax({
+          url: url,
+          type: 'POST',
+          headers: {'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')},
+          data: formData,
+          contentType: false,
+          processData: false,
+          success: function (response) {
+            $(AlertMsg).show();
+            setTimeout(function () {
+                    $('#myModal').modal({ show: true });
+                    setTimeout(function () {
+                        window.location.reload(1);
+                    }, 800);
+            }, 800);
+          }
+      });
+    });
 </script>
 @endpush
