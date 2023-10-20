@@ -257,8 +257,6 @@ class ProductController extends Controller
                                     $min_stock->selling_price = $child_product->price;
                                     $min_stock->save();
                             }
-    
-                            
                         }
                     }
 

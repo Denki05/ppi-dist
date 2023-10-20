@@ -37,4 +37,8 @@ class SalesOrderItem extends Model
         public function doItem(){
             return $this->hasMany('App\Entities\Penjualan\PackingOrderItem', 'so_item_id');
         }
+
+        public function packaging(){
+            return $this->BelongsTo('App\Entities\Master\Packaging', 'packaging_id', 'id');
+        }
 }

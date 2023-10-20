@@ -446,7 +446,7 @@ class SalesOrderController extends Controller
      * @param  int  $id
      * @return \Illuminate\Http\Response
      */
-    public function edit($id, $step)
+    public function edit($id, $store, $step)
     {
         // Access
         if(Auth::user()->is_superuser == 0){
@@ -460,8 +460,7 @@ class SalesOrderController extends Controller
         if(empty($result)){
             abort(404);
         }
-        $customer = Customer::all();
-        $member = CustomerOtherAddress::get();
+        $customers = Customer::find($store);
         $warehouse = Warehouse::all();
         $sales = Sales::all();
         $product_category = ProductCategory::all();
@@ -471,8 +470,7 @@ class SalesOrderController extends Controller
         $rekenings = SalesOrder::REKENING;
 
         $data = [
-            'customer' => $customer,
-            'member' => $member,
+            'customers' => $customers,
             'warehouse' => $warehouse,
             'sales' => $sales,
             'product_category' => $product_category,
@@ -557,16 +555,6 @@ class SalesOrderController extends Controller
                 $data_json["Message"] = "Sales wajib dipilih";
                 goto ResultData;
             }
-            if(($step == 2) && empty($post["origin_warehouse_id"])){
-                $data_json["IsError"] = TRUE;
-                $data_json["Message"] = "Origin gudang wajib dipilih";
-                goto ResultData;
-            }
-            if(($step == 2) && empty($post["type_transaction"])){
-                $data_json["IsError"] = TRUE;
-                $data_json["Message"] = "Type transaction wajib dipilih";
-                goto ResultData;
-            }
 
             $customer = [];
             $gudang = [];
@@ -583,12 +571,11 @@ class SalesOrderController extends Controller
 
             DB::beginTransaction();
             try {
+                
                 if ($step == 1) {
                     $sales_order->sales_senior_id = trim(htmlentities($post["sales_senior_id"]));
                     $sales_order->sales_id = trim(htmlentities($post["sales_id"]));
-                    $sales_order->type_transaction = trim(htmlentities($post["type_transaction"]));
                     $sales_order->idr_rate = trim(htmlentities($post["idr_rate"]));
-                    $sales_order->customer_id = trim(htmlentities($post["customer_id"]));
                     $sales_order->note = trim(htmlentities($post["note"]));
                     $sales_order->updated_by = Auth::id();
                     $sales_order->status = $step;
@@ -606,17 +593,57 @@ class SalesOrderController extends Controller
                 $sales_order->save();
                 
                 SalesOrderItem::where('so_id', $post["id"])->delete();
+                // if (sizeof($post["product_id"]) > 0) {
+                //     for ($i = 0; $i < sizeof($post["product_id"]); $i++) {
+                //         if(empty($post["product_id"][$i])) continue;
+
+                //         $insertDetail = new SalesOrderItem;
+                //         $insertDetail->so_id = $sales_order->id;
+                //         $insertDetail->product_id = trim(htmlentities($post["product_id"][$i]));
+                //         $insertDetail->qty = trim(htmlentities($post["qty"][$i]));
+                //         $insertDetail->packaging = trim(htmlentities($post["packaging"][$i]));
+                //         $insertDetail->created_by = Auth::id();
+                //         $insertDetail->save();
+                //     }
+                // }
+
                 if (sizeof($post["product_id"]) > 0) {
                     for ($i = 0; $i < sizeof($post["product_id"]); $i++) {
                         if(empty($post["product_id"][$i])) continue;
 
-                        $insertDetail = new SalesOrderItem;
-                        $insertDetail->so_id = $sales_order->id;
-                        $insertDetail->product_id = trim(htmlentities($post["product_id"][$i]));
-                        $insertDetail->qty = trim(htmlentities($post["qty"][$i]));
-                        $insertDetail->packaging = trim(htmlentities($post["packaging"][$i]));
-                        $insertDetail->created_by = Auth::id();
-                        $insertDetail->save();
+                        $duplicate_product = [];
+                        $duplicate = false;
+                        $listItem[] = [
+                            'product_id' => $post["product_id"][$i],
+                            'free_product' => $post["free_product"][$i],
+                        ];
+
+                        foreach($listItem as $row => $value){
+                            if(in_array($value, $duplicate_product)) {
+                                $duplicate = true;
+                                break;
+                            } else {
+                                array_push($duplicate_product, $value);
+                            }
+
+                            // dd($value); 
+                        }
+
+                        if($duplicate){
+                            $data_json["IsError"] = TRUE;
+                            $data_json["Message"] = "Item sudah ada";
+                            goto ResultData;
+                        }else{
+                            $insertDetail = new SalesOrderItem;
+                            $insertDetail->so_id = $sales_order->id;
+                            $insertDetail->product_packaging_id =  trim(htmlentities($post["product_id"][$i]));
+                            $insertDetail->qty = trim(htmlentities($post["qty"][$i]));
+                            $insertDetail->disc_usd = trim(htmlentities($post["usd"][$i]));
+                            $insertDetail->packaging_id = trim(htmlentities($post["packaging_id"][$i]));
+                            $insertDetail->free_product = trim(htmlentities($post["free_product"][$i]));
+                            $insertDetail->created_by = Auth::id();
+                            $insertDetail->save();
+                        }
                     }
                 }
                     

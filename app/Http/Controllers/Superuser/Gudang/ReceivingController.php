@@ -243,6 +243,7 @@ class ReceivingController extends Controller
                             $check_stock = ProductMinStock::where('product_packaging_id', $detail->product_packaging_id)
                                     ->where('warehouse_id', $detail->receiving->warehouse_id)
                                     ->first();
+
                             $total_quantity = $detail->total_quantity_ri;
                             $get_stock = $check_stock->quantity;
                             $check_stock->quantity = $get_stock + $total_quantity;

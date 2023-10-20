@@ -379,12 +379,12 @@
     }
 
     $('.input-gift').click(function(){
-    if($(this).is(':checked')){
-        $('.input-free[data-index=0]').val(1);
-    } else {
-        $('.input-free[data-index=0]').val(0);
-    }
-});
+      if($(this).is(':checked')){
+          $('.input-free[data-index=0]').val(1);
+      } else {
+          $('.input-free[data-index=0]').val(0);
+      }
+    });
   })
 </script>
 @endpush
