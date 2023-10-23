@@ -180,9 +180,10 @@
               </button>
             </a>
             @if(is_null($detail->colly))
-              <button type="button" class="btn btn-sm btn-circle btn-alt-info addColly" data-id="{{$receiving->id}}" data-detail-id="{{ $detail->id }}" data-bs-toggle="modal" data-bs-target="#myModal">
+              <!-- <button type="button" class="btn btn-sm btn-circle btn-alt-info addColly" data-id="{{$receiving->id}}" data-detail-id="{{ $detail->id }}" data-bs-toggle="modal" data-bs-target="#myModal">
                 <i class="fa fa-plus"></i>
-              </button>
+              </button> -->
+              <a href="javascript:void(0)" type="button" class="btn btn-sm btn-circle btn-alt-info openModal" data-id="{{$receiving->id}}" data-detail-id="{{$detail->id}}"><i class="fa fa-plus"></i></a> 
             @endif
             <a href="javascript:deleteConfirmation('{{ route('superuser.gudang.receiving.detail.destroy', [$receiving->id, $detail->id]) }}')">
               <button type="button" class="btn btn-sm btn-circle btn-alt-danger" title="Delete">
@@ -197,42 +198,39 @@
   </div>
 </div>
 
-<!-- Modal add colly -->
-<div id="myModal" class="modal fade" role="dialog">
-  <div class="modal-dialog">
-
-  <!-- Alert -->
-    <div class="alert alert-success alert-dismissible fade show" role="alert" style="display:none;">
-      <strong>Success!</strong> add quantity RI!.
-      <button type="button" class="close" data-dismiss="alert" aria-label="Close">
-        <span aria-hidden="true">&times;</span>
-      </button>
-    </div>
-    <!-- Modal content-->
-    <div class="modal-content">
-      <div class="modal-header">
-        <h4 class="modal-title">Add Quantity RI</h4>
-        <button type="button" class="close" data-bs-dismiss="modal">&times;</button>
+<!-- Modal -->
+<div class="modal fade" id="appointmentModal" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+      <div class="alert alert-success alert-dismissible fade show" role="alert" style="display:none;">
+        <strong>Success!</strong> add quantity RI!.
+        <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
       </div>
-      <form id="myForm" method="POST" role="form" enctype="multipart/form-data">
-      {{csrf_field()}}
-        <div class="modal-body">
-        <input type="hidden" class="form-control" id="colly" name="colly" value="1">
-        <div class="form-group row">
-          <label class="col-md-3 col-form-label text-right" for="ri">Quantity RI</label>
-          <div class="col-md-4">
-            <input type="number" class="form-control" id="ri" name="ri" step="any">
-          </div>
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="exampleModalLabel">Add Quantity RI</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+
+            <div class="modal-body">
+                <form id="myForm" method="POST" role="form" enctype="multipart/form-data" novalidate>
+                  @csrf
+                    <input type="hidden" class="form-control" id="colly" name="colly" value="1">
+                    <div class="mb-3">
+                        <label>Quantity RI</label>
+                        <input type="number" class="form-control" id="ri" name="ri" step="any">
+                    </div>
+                    <input type="hidden" id="receivingID" />
+                    <input type="hidden" id="detailID" />
+                    <button type="submit" class="btn btn-info">Save</button>
+                    <button type="button" class="btn btn-danger" data-bs-dismiss="modal">Close</button>
+                </form>
+            </div>
         </div>
-        </div>
-        <div class="modal-footer">
-          <input type="hidden" id="searah_id" value="0">
-          <button type="submit" class="btn btn-info">Save</button>
-          <button type="button" class="btn btn-danger" data-bs-dismiss="modal">Close</button>
-        </div>
-      </form>
     </div>
-  </div>
 </div>
 
 @endsection
@@ -256,10 +254,18 @@
     $('#datatable').DataTable({})
   })
 
+  $(document).on('click', '.openModal', function () {
+    var id = $(this).data('id');
+    var detail = $(this).data('detail-id');
+    $('#receivingID').val(id);
+    $('#detailID').val(detail);
+    $('#appointmentModal').modal('show');
+  })
+
   $('#myForm').on('submit', function (e) {
       e.preventDefault(); // prevent the form submit
-      var id = $('.addColly').data('id');
-      var detail = $('.addColly').data('detail-id');
+      var id = $('#receivingID').val();
+      var detail = $('#detailID').val();
       var url = '{{ route("superuser.gudang.receiving.detail.colly.store", [":id",":detail_id"]) }}';
       url = url.replace(':id', id);
       url = url.replace(':detail_id', detail);
