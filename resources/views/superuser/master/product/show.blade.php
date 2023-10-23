@@ -169,19 +169,16 @@
             </thead>
             <tbody>
               @foreach($product->product_child as $row)
-              <?php
-                $pecahId = explode('-', $row->id);
-                $kemasan = DB::table('master_packaging')->where('id', $pecahId[1])->first();
-              ?>
                 <tr>
                   <td>{{$loop->iteration}}</td>
-                  <td><b>{{$kemasan->pack_name}}</b></td>
+                  <td><b>{{$row->kemasan()->pack_name}}</b></td>
                   <td>{{$row->price}}</td>
                   <td>{{ number_format($row->stock) }}</td>
                   <td>
-                    <button type="button" class="btn btn-sm btn-circle btn-alt-secondary upload_button" data-id="{{$row->id}}" title="Update price" data-bs-toggle="modal" data-bs-target="#myModal">
+                    <!-- <button type="button" class="btn btn-sm btn-circle btn-alt-secondary upload_button" data-id="{{$row->id}}" title="Update price" data-bs-toggle="modal" data-bs-target="#myModal">
                       <i class="fa fa-money"></i>
-                    </button>
+                    </button> -->
+                    <a href="javascript:void(0)" type="button" class="btn btn-sm btn-circle btn-alt-secondary openModal" data-id="{{$row->id}}" title="Update price"><i class="fa fa-money"></i></a> 
                   </td>
                 </tr>
               @endforeach
@@ -240,39 +237,39 @@
   </div>
 </div>
 
-<!-- Modal update cost -->
-<div id="myModal" class="modal fade" role="dialog">
-  <div class="modal-dialog">
-
-  <!-- Alert -->
-    <div class="alert alert-success alert-dismissible fade show" role="alert" style="display:none;">
-      <strong>Success!</strong> to change the selling price!.
-      <button type="button" class="close" data-dismiss="alert" aria-label="Close">
-        <span aria-hidden="true">&times;</span>
-      </button>
-    </div>
-    <!-- Modal content-->
-    <div class="modal-content">
-      <div class="modal-header">
-        <h4 class="modal-title">Update Selling Price</h4>
-        <button type="button" class="close" data-bs-dismiss="modal">&times;</button>
+<!-- Modal Update Price -->
+<!-- Modal -->
+<div class="modal fade" id="appointmentModal" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+      <div class="alert alert-success alert-dismissible fade show" role="alert" style="display:none;">
+        <strong>Success!</strong> Update price!.
+        <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
       </div>
-      <form id="myForm" method="POST" role="form" enctype="multipart/form-data">
-      {{csrf_field()}}
-        <div class="modal-body">
-          <div class="form-group">
-            <label for="image_botol">Price :</label>
-            <input type="text" class="form-control" name="price">
-          </div>
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="exampleModalLabel">Update Price</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+
+            <div class="modal-body">
+                <form id="myForm" method="POST" role="form" enctype="multipart/form-data" novalidate>
+                  @csrf
+                    <input type="hidden" class="form-control" id="colly" name="colly" value="1">
+                    <div class="mb-3">
+                        <label>Price</label>
+                        <input type="text" class="form-control" name="price">
+                    </div>
+                    <input type="hidden" id="productPackID" />
+                    <button type="submit" class="btn btn-info">Save</button>
+                    <button type="button" class="btn btn-danger" data-bs-dismiss="modal">Close</button>
+                </form>
+            </div>
         </div>
-        <div class="modal-footer">
-          <input type="hidden" id="searah_id" value="0">
-          <button type="submit" class="btn btn-info">Save</button>
-          <button type="button" class="btn btn-danger" data-bs-dismiss="modal">Close</button>
-        </div>
-      </form>
     </div>
-  </div>
 </div>
 
 @endsection
@@ -297,9 +294,15 @@
       closeOnContentClick: true,
     });
 
+    $(document).on('click', '.openModal', function () {
+      var id = $(this).data('id');
+      $('#productPackID').val(id);
+      $('#appointmentModal').modal('show');
+    })
+
     $('#myForm').on('submit', function (e) {
       e.preventDefault(); // prevent the form submit
-      var id = $('.upload_button').data('id');
+      var id = $('#productPackID').val();
       var url = "{{ route('superuser.master.product.update_cost', ":id") }}";
       url = url.replace(':id', id);
       var AlertMsg = $('div[role="alert"]');
