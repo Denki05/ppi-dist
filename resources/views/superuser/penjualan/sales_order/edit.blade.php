@@ -71,10 +71,10 @@
                     <div class="form-group row">
                       <label class="col-md-4 col-form-label text-right">Transaksi<span class="text-danger">*</span></label>
                       <div class="col-md-6">
-                        @if ($customers->has_tempo == 0)
+                        @if ($result->customer->has_tempo == 0)
                           <input type="text" class="form-control input-type-transaction" name="input-type-transaction" placeholder="CASH" readonly>
                           <input type="hidden" class="form-control type_transaction" name="type_transaction" id="type_transaction" value="CASH">
-                        @elseif($customers->has_tempo == 1)
+                        @elseif($result->customer->has_tempo == 1)
                           <input type="text" class="form-control input-type-transaction" name="input-type-transaction" placeholder="TEMPO" readonly>
                           <input type="hidden" class="form-control type_transaction" name="type_transaction" id="type_transaction" value="TEMPO">
                         @endif

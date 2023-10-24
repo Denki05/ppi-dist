@@ -446,7 +446,7 @@ class SalesOrderController extends Controller
      * @param  int  $id
      * @return \Illuminate\Http\Response
      */
-    public function edit($id, $store, $step)
+    public function edit($id, $step)
     {
         // Access
         if(Auth::user()->is_superuser == 0){
@@ -460,7 +460,7 @@ class SalesOrderController extends Controller
         if(empty($result)){
             abort(404);
         }
-        $customers = Customer::find($store);
+        $customers = Customer::get();
         $warehouse = Warehouse::all();
         $sales = Sales::all();
         $product_category = ProductCategory::all();

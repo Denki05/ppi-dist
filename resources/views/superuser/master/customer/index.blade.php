@@ -165,7 +165,7 @@
                                               {{ $index->text_kota }}
                                             </td>
                                             <td width="5%">
-                                              <iframe  style="height:100px; width: 200px;" src="https://maps.google.com/maps?q={{ $index->gps_latitude }},{{ $index->gps_longitude }}&hl=es;z=14&amp;output=embed" ?? ></iframe>
+                                              <iframe  style="height:100px; width: 200px;" src="https://maps.google.com/maps?q={{ $index->gps_latitude }},{{ $index->gps_longitude }}&hl=es;z=14&amp;output=embed"></iframe>
                                             </td>
                                             <td width="5%">
                                               @if($index->member_default == 0)

@@ -22,7 +22,7 @@ Route::group([
         Route::get('/so_lanjutan', 'SalesOrderController@index_lanjutan')->name('index_lanjutan');
         Route::get('/so_mutasi', 'SalesOrderController@index_mutasi')->name('index_mutasi');
         Route::get('/{store}/create/{step}/{member}', 'SalesOrderController@create')->name('create');
-        Route::get('/{id}/{store}/edit/{step}', 'SalesOrderController@edit')->name('edit');
+        Route::get('/{id}/edit/{step}', 'SalesOrderController@edit')->name('edit');
         Route::get('/{id}/detail', 'SalesOrderController@detail')->name('detail');
         Route::post('/{store}/{member}/store', 'SalesOrderController@store')->name('store');
         Route::post('/update', 'SalesOrderController@update')->name('update');
