@@ -908,72 +908,6 @@ class SalesOrderController extends Controller
         return response()->json($data_json,200);
     }
 
-    // public function tutup_so(Request $request) {
-    //     $data_json = [];
-    //     // $post = $request->all();
-    //     if($request->method() == "POST"){
-    //         $sales_order = SalesOrder::find($post["id"]);
-    //         if(empty($sales_order)){
-    //             abort(404);
-    //         }
-    
-    //         if(empty($post["origin_warehouse_id"])){
-    //             $data_json["IsError"] = TRUE;
-    //             $data_json["Message"] = "Origin gudang wajib dipilih";
-    //             goto ResultData;
-    //         }
-    //         if(empty($post["idr_rate"])){
-    //             $data_json["IsError"] = TRUE;
-    //             $data_json["Message"] = "IDR rate wajib dipilih";
-    //             goto ResultData;
-    //         }
-    //         if(count($post["repeater"]) == 0){
-    //             $data_json["IsError"] = TRUE;
-    //             $data_json["Message"] = "Not item sales order are ready";
-    //             goto ResultData;
-    //         }
-
-    //         DB::beginTransaction();
-    //         try {
-
-    //             $sales_order->origin_warehouse_id = $request->origin_warehouse_id;
-    //             $sales_order->status = 4;
-    //             $sales_order->updated_by = Auth::id();
-    //             if($sales_order->save()){
-    //                 $po = new PackingOrder;
-    //                 $po->code = CodeRepo::generatePO();
-    //                 $po->so_id = $sales_order->id;
-    //                 $po->warehouse_id = $sales_order->originwarehouse_id;
-    //                 $po->customer_id = $sales_order->customer_id;
-    //                 $po->customer_other_address_id  = $sales_order->customer_other_address_id;
-    //                 $po->type_transaction  = $sales_order->type_transaction;
-    //                 $po->idr_rate = trim(htmlentities($post["idr_rate"]));
-    //                 $po->other_address = 0 ?? Null;
-    //                 // $po->note = $company->note ?? null;
-    //                 $po->status = 2;
-    //                 $po->created_by = Auth::id();
-    //                 $po->save();
-    //             }
-
-    //         } catch (\Exception $e) {
-    //             DB::rollback();
-    
-    //             dd($e);
-    //             $data_json["IsError"] = TRUE;
-    //             $data_json["Message"] = "Sales Order Gagal Diubah, ".$e;
-    
-    //             return response()->json($data_json,400);
-    //         }
-    //     }
-    //     else{
-    //         $data_json["IsError"] = TRUE;
-    //         $data_json["Message"] = "Invalid Method";
-    //         return response()->json($data_json,400);
-    //     }
-    //     ResultData:
-    //     return response()->json($data_json,200);
-    // }
-
     public function tutup_so(Request $request)
     {
         if ($request->ajax()) {
@@ -982,18 +916,30 @@ class SalesOrderController extends Controller
                     return redirect()->route('superuser.index')->with('error','Anda tidak punya akses untuk membuka menu terkait');
                 }
             }
-            
+
+            $failed = "";
             DB::beginTransaction();
             try{
-                $errors = [];
-
+                
                 $sales_order = SalesOrder::find($request->id);
 
-                if ($sales_order === null) {
+                if($sales_order === null){
                     abort(404);
                 }
 
-                if ($sales_order->count_rev == 0) {
+                if($sales_order->count_rev == 0){
+                    if($request->origin_warehouse_id == null){
+                        $failed = 'Warehouse tidak boleh kosong!';
+                    }
+
+                    if($request->ekspedisi == null){
+                        $failed = 'Ekspedisi tidak boleh kosong!';
+                    }
+
+                    if($request->rekening == null){
+                        $failed = 'Rekening tidak boleh kosong!';
+                    }
+
                     $sales_order->origin_warehouse_id = $request->origin_warehouse_id;
                     $sales_order->ekspedisi_id = $request->ekspedisi;
                     $sales_order->rekening = $request->rekening;
@@ -1001,18 +947,7 @@ class SalesOrderController extends Controller
                     $sales_order->status = 4;
                     $sales_order->count_rev = 0;
                     $sales_order->updated_by = Auth::id();
-                    $sales_order->save();
-
-                    // dd($sales_order->shipping_cost_buyer);
-
-                    // DD($sales_order->save());
-
-                    // $categories = SalesOrderItem::select('master_product.category_id')
-                    //                         ->where('so_id', $request->id)
-                    //                         ->join('master_product', 'master_product.id', '=', 'penjualan_so_item.product_id')
-                    //                         ->groupBy('master_product.category_id')->get();
-                    
-                    // foreach($categories as $category) {
+                    if($sales_order->save()){
                         $packing_order = new PackingOrder;
                         $packing_order->code = CodeRepo::generatePO();
                         $packing_order->do_code = CodeRepo::generateDO();
@@ -1030,43 +965,50 @@ class SalesOrderController extends Controller
                         $packing_order->created_by = Auth::id();
                         $packing_order->save();
 
-                        // DD($packing_order->code);
+                        // definisi hasil penjumlahan di view
+                        $discount_agen_idr = $request->disc_agen_idr;
+                        $discount_kemasan_idr = $request->disc_kemasan_idr;
+                        $sub_total = $request->subtotal_2;
+                        $grand_total_idr = $request->grand_total_idr;
+
+                        // pecah format currency 
+                        $discount_agen_idr = str_replace('.', '', $discount_agen_idr);
+                        $discount_kemasan_idr = str_replace('.', '', $discount_kemasan_idr);
+                        $sub_total = str_replace('.', '', $sub_total);
+                        $grand_total_idr = str_replace('.', '', $grand_total_idr);
+                        
+                        // ubah decimal koma ke titik
+                        $discount_agen_idr = str_replace(',', '.', $discount_agen_idr);
+                        $discount_kemasan_idr = str_replace(',', '.', $discount_kemasan_idr);
+                        $sub_total = str_replace(',', '.', $sub_total);
+                        $grand_total_idr = str_replace(',', '.', $grand_total_idr);
 
                         $packing_order_detail = new PackingOrderDetail;
                         $packing_order_detail->do_id = $packing_order->id;
                         $packing_order_detail->discount_1 = $request->disc_agen_percent;
-                        $packing_order_detail->discount_1_idr = $request->disc_amount2_idr;
-                        $packing_order_detail->discount_2 = $request->disc_tambahan;
-                        $packing_order_detail->discount_2_idr = $request->disc_kemasan_idr;
-                        $packing_order_detail->discount_idr = $request->disc_idr;
+                        $packing_order_detail->discount_1_idr = $discount_agen_idr;
+                        $packing_order_detail->discount_2 = $request->disc_kemasan_percent;
+                        $packing_order_detail->discount_2_idr = $discount_kemasan_idr;
+                        $packing_order_detail->discount_idr = $request->disc_tambahan_idr;
                         $packing_order_detail->voucher_idr = $request->voucher_idr;
-                        $packing_order_detail->purchase_total_idr = $request->subtotal_2;
+                        $packing_order_detail->purchase_total_idr = $sub_total;
                         if($sales_order->shipping_cost_buyer == 0){
                             $packing_order_detail->delivery_cost_idr = $request->delivery_cost_idr;
                         }elseif($sales_order->shipping_cost_buyer == 1){
                             $packing_order_detail->delivery_cost_idr = 0;
                         }
-                        $packing_order_detail->other_cost_idr = $request->resi_ongkir;
-                        $packing_order_detail->grand_total_idr = $request->grand_total_final;
-                        $packing_order_detail->terbilang = CustomHelper::terbilang($request->grand_total_final);
+                        $packing_order_detail->other_cost_idr = 0;
+                        $packing_order_detail->grand_total_idr = $grand_total_idr;
+                        $packing_order_detail->terbilang = CustomHelper::terbilang($grand_total_idr);
                         $packing_order_detail->created_by = Auth::id();
                         $packing_order_detail->save();
 
                         $data = [];
                         $product = 0;
                         $out_of_stock = false;
-                        foreach ($request->repeater as $key => $value) {
-                            if (empty($value["so_qty"]) || (!empty($value["so_qty"]) && $value["so_qty"] <= 0)) {
-                                
-                            }
-        
+                        foreach($request->repeater as $key => $value){
                             $result = SalesOrderItem::where('id',$value["so_item_id"])->first();
-                            // if ($result->product->category->id !== $category->category_id) {
-                            //     continue;
-                            // }
-        
-                            // $jumlahitem = $jumlahitem + 1;
-        
+
                             $so_item_id = $value["so_item_id"];
                             $price = $value["price"];
                             $so_qty = $value["so_qty"];
@@ -1075,20 +1017,20 @@ class SalesOrderController extends Controller
                             $usd_disc = $value["usd_disc"];
                             $percent_disc = 0;
                             $total_discount = 0;
-                        
+
                             if(empty($value["so_item_id"])){
-                                $errors[] = 'SO Item ID tidak boleh kosong';
+                                $failed = 'SO Item ID tidak boleh kosong';
                             }
 
                             if(empty($value["product_packaging_id"])){
-                                $errors[] = 'Product ID tidak boleh kosong';
+                                $failed = 'Product ID tidak boleh kosong';
                             }
-        
+
                             $qty_total = $do_qty + $rej_qty;
                             $sisa = $so_qty - $do_qty;
-        
+
                             if($so_qty < $qty_total){
-                                $errors[] = 'Jumlah DO,REJ melebihi SO Qty';
+                                $failed = 'Jumlah DO,REJ melebihi SO Qty';
                             }
         
                             if($do_qty == 0 && $rej_qty == 0){
@@ -1096,7 +1038,7 @@ class SalesOrderController extends Controller
                                     'qty' => 0
                                 ]);
                             }
-                            
+
                             if($do_qty > 0){
                                 $total_disc = floatval(($usd_disc + (($price - $usd_disc) * ($percent_disc/100))) * $do_qty);
                                 $data[] = [
@@ -1140,12 +1082,12 @@ class SalesOrderController extends Controller
 
                         if (count($data) == 0) {
                             DB::rollback();
-                            $errors[] = 'Not item sales order are ready';
+                            $failed =  'Not item sales order are ready';
                         }
 
                         if($out_of_stock){
                             $product = ProductPack::find($product);
-                            $errors[] = 'Out Of Stock! <b>'.$product->name.'</b> Please contact Administrator';
+                            $failed = 'Out Of Stock! <b>'.$product->name.'</b> Please contact Administrator';
                             DB::rollback();
                         }else{
                             foreach ($data as $key => $value) {
@@ -1154,44 +1096,26 @@ class SalesOrderController extends Controller
                         }
 
                         // Cetak Invoice disini
-                            if(empty($packing_order->invoicing)){
-                                $data = [
-                                    'code' => $sales_order->code,
-                                    'do_id' => $packing_order->id,
-                                    'customer_id' => $sales_order->customer_id,
-                                    'customer_other_address_id' => $sales_order->customer_other_address_id,
-                                    'grand_total_idr' => $packing_order_detail->grand_total_idr,
-                                    'created_by' => Auth::id(),
-                                ];
+                        if(empty($packing_order->invoicing)){
+                            $data = [
+                                'code' => $sales_order->code,
+                                'do_id' => $packing_order->id,
+                                'customer_id' => $sales_order->customer_id,
+                                'customer_other_address_id' => $sales_order->customer_other_address_id,
+                                'grand_total_idr' => $packing_order_detail->grand_total_idr,
+                                'created_by' => Auth::id(),
+                            ];
 
-                                $insert_invoice = Invoicing::create($data);
-                            }
-                        // if($sales_order->type_transaction == 'CASH' || $packing_order->type_transaction == 'CASH'){
-                        //     if(empty($packing_order->invoicing))
-                        //     {
-                        //         $data = [
-                        //             'code' => CodeRepo::generateInvoicing($packing_order->do_code),
-                        //             'do_id' => $packing_order->id,
-                        //             'customer_other_address_id' => $packing_order->customer_other_address_id,
-                        //             'grand_total_idr' => $packing_order_detail->grand_total_idr,
-                        //             'created_by' => Auth::id()
-                        //         ];
+                            $insert_invoice = Invoicing::create($data);
+                        }
 
-                        //         $insertInv = Invoicing::create($data);
-                        //     }
-                        // }
-                    // }
-                    DB::commit();
-                    if($errors) {
-                        $response['notification'] = [
-                            'alert' => 'block',
-                            'type' => 'alert-danger',
-                            'header' => 'Error',
-                            'content' => $errors,
-                        ];
-    
-                        return $this->response(400, $response);
-                    } else {
+                        if ($failed) {
+                            $response['failed'] = $failed;
+        
+                            return $this->response(200, $response);
+                        }
+
+                        DB::commit();
                         $response['notification'] = [
                             'alert' => 'notify',
                             'type' => 'success',
@@ -1202,7 +1126,7 @@ class SalesOrderController extends Controller
                         return $this
                         ->response(200, $response);
                     }
-                } else {
+                }elseif($sales_order->count_rev == 1){
                     $sales_order->origin_warehouse_id = $request->origin_warehouse_id;
                     $sales_order->status = 4;
                     $sales_order->count_rev = 0;
@@ -1323,47 +1247,39 @@ class SalesOrderController extends Controller
                             }
                             
                         }
-                        DB::commit();
 
-                        if($errors) {
-                            $response['notification'] = [
-                                'alert' => 'block',
-                                'type' => 'alert-danger',
-                                'header' => 'Error',
-                                'content' => $errors,
-                            ];
+                        if ($failed) {
+                            $response['failed'] = $failed;
         
-                            return $this->response(400, $response);
-                        } else {
-                            $response['notification'] = [
-                                'alert' => 'notify',
-                                'type' => 'success',
-                                'content' => 'Success',
-                            ];
-                
-                            $response['redirect_to'] = route('superuser.penjualan.sales_order.index_lanjutan');
                             return $this->response(200, $response);
                         }
+
+                        DB::commit();
+
+                        $response['notification'] = [
+                            'alert' => 'notify',
+                            'type' => 'success',
+                            'content' => 'Success',
+                        ];
+            
+                        $response['redirect_to'] = route('superuser.penjualan.sales_order.index_lanjutan');
+                        return $this->response(200, $response);
                     }
                 }
-            } catch (\Exception $e) {
-                dd($e);
+
+            }catch (\Exception $e) {
                 DB::rollback();
                 $response['notification'] = [
                     'alert' => 'block',
                     'type' => 'alert-danger',
                     'header' => 'Error',
-                    'content' => "Internal Server Error",
+                    'content' => $failed,
                 ];
 
                 return $this->response(400, $response);
             }
         }
     }
-
-    
-
-    
 
     public function ajax_customer_detail(Request $request){
         $data_json = [];

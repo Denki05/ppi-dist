@@ -1,6 +1,7 @@
 @extends('superuser.app')
 
 @section('content')
+
 @if($errors->any())
 <div class="alert alert-danger alert-dismissable" role="alert">
   <button type="button" class="close" data-dismiss="alert" aria-label="Close">
@@ -14,6 +15,16 @@
 @endif
 
 <div id="alert-block"></div>
+
+@if(session()->has('message'))
+<div class="alert alert-success alert-dismissable" role="alert">
+  <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+      <span aria-hidden="true">×</span>
+  </button>
+  <h3 class="alert-heading font-size-h4 font-w400">Success</h3>
+  <p class="mb-0">{{ session()->get('message') }}</p>
+</div>
+@endif
 
 <form class="ajax" data-action="{{ route('superuser.penjualan.sales_order.tutup_so' ) }}" data-type="POST" enctype="multipart/form-data">
 @csrf
@@ -183,10 +194,11 @@
                               @endif
                               @if(count($result->so_detail) > 0)
                                 @foreach($result->so_detail as $index => $detail)
-                                  <input type="hidden" name="repeater[{{$index}}][product_packaging_id]" value="{{$detail->product_packaging_id}}">
-                                  <input type="hidden" name="repeater[{{$index}}][so_qty]" value="{{$detail->qty}}">
-                                  <input type="hidden" name="repeater[{{$index}}][so_item_id]" value="{{$detail->id}}">
                                   <tr class="index{{$index}}" data-index="{{$index}}">
+                                    <input type="hidden" name="repeater[{{$index}}][product_packaging_id]" value="{{$detail->product_packaging_id}}">
+                                    <input type="hidden" name="repeater[{{$index}}][so_qty]" value="{{$detail->qty}}">
+                                    <input type="hidden" name="repeater[{{$index}}][so_item_id]" value="{{$detail->id}}">
+
                                     <td>{{ $loop->iteration }}</td>
                                     <td>{{ $detail->product_pack->code }} - <b>{{ $detail->product_pack->name }}</td>
                                     <td>{{$detail->qty}}</td>
@@ -274,7 +286,7 @@
                         </div>
                       </div>
                       <button type="button" class="btn btn-danger" id="btn_call"><i class="fas fa-calculator pr-2" aria-hidden="true"></i>calculated</button>
-                      <button type="submit" class="btn btn-primary" id="save_form" disabled><i class="fa fa-save  pr-2" aria-hidden="true" ></i> Save</button>
+                      <button type="submit" class="btn btn-primary" id="save_form"><i class="fa fa-save  pr-2" aria-hidden="true" ></i> Save</button>
                     </div>
                 </div>
             </aside>
