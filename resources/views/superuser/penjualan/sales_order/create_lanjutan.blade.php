@@ -274,7 +274,7 @@
                         </div>
                       </div>
                       <button type="button" class="btn btn-danger" id="btn_call"><i class="fas fa-calculator pr-2" aria-hidden="true"></i>calculated</button>
-                      <button type="submit" class="btn btn-primary"><i class="fa fa-save  pr-2" aria-hidden="true"></i> Save</button>
+                      <button type="submit" class="btn btn-primary" id="save_form" disabled><i class="fa fa-save  pr-2" aria-hidden="true" ></i> Save</button>
                     </div>
                 </div>
             </aside>
@@ -476,7 +476,6 @@
         p => p.type != 'literal' && p.type != 'currency' ? p.value : ''
       ).join('');
     }
-
   })
 </script>
 @endpush
