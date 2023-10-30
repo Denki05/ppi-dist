@@ -6,13 +6,10 @@ Route::group([
     'prefix' => '/gudang',
     'namespace' => 'Gudang'
 ], function () {
-
     Route::group(['as' => 'stock.', 'prefix' => '/stock'], function () {
-        Route::get('/', 'StockController@index')->name('index');
-        Route::get('/json', 'StockController@json')->name('json');
-        // Route::get('/detail', 'StockController@detail')->name('detail');
         Route::get('{warehouse_id}/detail/{product_id}', 'StockController@detail')->name('detail');
     });
+    Route::resource('stock', 'StockController');
 
     Route::group(['as' => 'stock_adjustment.', 'prefix' => '/stock_adjustment'], function () {
         Route::get('/', 'StockAdjustmentController@index')->name('index');

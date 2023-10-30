@@ -2,8 +2,9 @@
 
 @section('content')
 <nav class="breadcrumb bg-white push">
-  <span class="breadcrumb-item">Inventory</span>
-  <span class="breadcrumb-item active">Stock</span>
+  <span class="breadcrumb-item">Gudang</span>
+  <span class="breadcrumb-item">Stock</span>
+  <span class="breadcrumb-item active">Detail</span>
 </nav>
 @if($errors->any())
 <div class="alert alert-danger alert-dismissable" role="alert">
@@ -75,9 +76,6 @@ $(document).ready(function() {
     searching: false,
     sorting: false,
     dom: '<"row"<"col-sm-2"l><"col-sm-10 text-left"B>> <"row"<"col-sm-12"rt>> <"row"<"col-sm-12 col-md-6"i><"col-sm-12 col-md-6"p>>',
-    // order: [
-    //   [0, 'desc']
-    // ],
   });
 });
 </script>
