@@ -42,7 +42,7 @@ class Receiving extends Model
 
     public function details()
     {
-        return $this->hasMany('App\Entities\Gudang\ReceivingDetail')->orderBy('created_at', 'DESC');
+        return $this->hasMany('App\Entities\Gudang\ReceivingDetail')->orderBy('created_at');
     }
     
     public function price_format($value)

@@ -186,13 +186,13 @@ class StockController extends Controller
         $collect = [];
 
         $receivings = Receiving::where('warehouse_id', $warehouse)->where('status', Receiving::STATUS['ACC'])
-            ->whereHas('details', function ($query) use ($product) {
-                $query->where('product_packaging_id', $product);
+            ->whereHas('details', function ($query) use ($decode_product) {
+                $query->where('product_packaging_id', $decode_product);
             })
             ->get();
         foreach ($receivings as $receiving) {
             foreach ($receiving->details as $detail) {
-                if ($detail->product_packaging_id == $product) {
+                if ($detail->product_packaging_id == $decode_product) {
                     foreach ($detail->collys as $colly) {
                         if($colly->is_reject == 0){
                             $collect[] = [
@@ -202,7 +202,7 @@ class StockController extends Controller
                                 'in' => $colly->quantity_ri,
                                 'out' => '',
                                 'balance' => '',
-                                'description' => '',
+                                'description' => $receiving->note,
                             ];
                         }
                     }
@@ -213,15 +213,15 @@ class StockController extends Controller
         $sales_orders = SalesOrder::where('origin_warehouse_id', $warehouse)
             ->where('status', 4)
             ->where('condition', '1')
-            ->whereHas('so_detail', function ($query) use ($product) {
-                $query->where('product_packaging_id', $product);
+            ->whereHas('so_detail', function ($query) use ($decode_product) {
+                $query->where('product_packaging_id', $decode_product);
             })
             ->get();
         foreach ($sales_orders as $sales_order) {
             $do = PackingOrder::where('so_id', $sales_order->id)->first();
             if ($do->status == 3) {
                 foreach ($sales_order->so_detail as $detail) {
-                    if ($detail->product_packaging_id == $product) {
+                    if ($detail->product_packaging_id == $decode_product) {
                         $collect[] = [
                             'created_at' => $detail->created_at,
                             'second_date' => 0,
@@ -251,10 +251,9 @@ class StockController extends Controller
                     'created_at' => $value['created_at'],
                     'second_date' => $value['second_date'],
                     'transaction' => $value['transaction'],
-                    'in' => ($value['in'] == '') ? '' : number_format($value['in']),
-                    'out' => ($value['out'] == '') ? '' : number_format($value['out']),
+                    'in' => ($value['in'] == '') ? '' : $value['in'],
+                    'out' => ($value['out'] == '') ? '' : $value['out'],
                     'balance' => $balance,
-                    'hpp' => ($value['hpp'] == '') ? '' : number_format($value['hpp'], 2, ',','.'),
                     'description' => $value['description'],
                 ];
             }
