@@ -1268,6 +1268,7 @@ class SalesOrderController extends Controller
                 }
 
             }catch (\Exception $e) {
+                DD($e);
                 DB::rollback();
                 $response['notification'] = [
                     'alert' => 'block',
