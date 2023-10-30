@@ -50,19 +50,18 @@ class SalesOrder extends Model
     	4 => 'LONGDA'
     ];
 
-    const TL = [
+    const SALES_SENIOR = [
         1 => 'Ivan',
         2 => 'Erwin',
         3 => 'Nia',
-        4 => 'Kantor'
+        4 => 'Super Administrator'
     ];
 
     const SALES = [
-        1 => 'Ganes',
-        2 => 'Lindy',
-        3 => 'Erwin',
-        4 => 'Ivan',
-        5 => 'Kantor',
+        1 => 'Lindy',
+        2 => 'Erwin',
+        3 => 'Ivan',
+        4 => 'Super Administrator',
     ];
     
     const STEP = [
