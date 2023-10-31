@@ -950,7 +950,7 @@ class SalesOrderController extends Controller
                     if($sales_order->save()){
                         $packing_order = new PackingOrder;
                         $packing_order->code = CodeRepo::generatePO();
-                        $packing_order->do_code = CodeRepo::generateDO();
+                        $packing_order->do_code = $sales_order->code;
                         $packing_order->so_id  = $sales_order->id;
                         $packing_order->customer_id  = $sales_order->customer_id;
                         $packing_order->customer_other_address_id  = $sales_order->customer_other_address_id;
