@@ -185,7 +185,7 @@ class SalesOrderController extends Controller
         $data = [
             'result' => $result,
             'step' => $step,
-            'step_txt' => SalesOrder::STEP[$step]
+            'step_txt' => SalesOrder::STEP[$step],
         ];
         return view($this->view."detail",$data);
     }
@@ -467,7 +467,7 @@ class SalesOrderController extends Controller
         $brand = BrandLokal::get();
         $ekspedisi = Vendor::where('type', 1)->get();
         $packaging = Packaging::get();
-        $rekenings = SalesOrder::REKENING;
+        $rekening = DB::table('rekening')->get();
 
         $data = [
             'customers' => $customers,
@@ -480,7 +480,7 @@ class SalesOrderController extends Controller
             'step' => $step,
             'step_txt' => SalesOrder::STEP[$step],
             'packaging' => $packaging,
-            'rekenings' => $rekenings,
+            'rekening' => $rekening,
         ];
         if ($step == 2) {
             $doList = $result->member->do;
@@ -1521,6 +1521,49 @@ class SalesOrderController extends Controller
                     return $this->response(200, $response);
                 }
             } catch (\Exception $e) {
+                DB::rollback();
+                // DD($e);
+                $response['notification'] = [
+                    'alert' => 'block',
+                    'type' => 'alert-danger',
+                    'header' => 'Error',
+                    'content' => "Internal Server Error",
+                ];
+
+                return $this->response(400, $response);
+            }
+        }
+    }
+
+    public function indent(Request $request, $id)
+    {
+        if ($request->ajax()) {
+            if(Auth::user()->is_superuser == 0){
+                if(empty($this->access) || empty($this->access->user) || $this->access->can_approve == 0){
+                    return redirect()->route('superuser.index')->with('error','Anda tidak punya akses untuk membuka menu terkait');
+                }
+            }
+
+            DB::beginTransaction();
+
+            try{
+
+                $result = SalesOrder::find($id);
+
+                if($result == null){
+                    abort(404);
+                }
+
+                $result->so_indent = 1;
+                $result->updated_by = Auth::id();
+
+                if($result->save()){
+                    DB::commit();
+                    $response['redirect_to'] = route('superuser.penjualan.sales_order.index_lanjutan');
+                    return $this->response(200, $response);
+                }
+
+            }catch (\Exception $e) {
                 DB::rollback();
                 // DD($e);
                 $response['notification'] = [

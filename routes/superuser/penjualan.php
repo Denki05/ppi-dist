@@ -33,6 +33,7 @@ Route::group([
         Route::post('/destroy', 'SalesOrderController@destroy')->name('destroy');
         Route::get('/{id}/print_proforma', 'SalesOrderController@print_proforma')->name('print_proforma');
         Route::get('/delete_lanjutan/{id}', 'SalesorderController@delete_lanjutan')->name('delete_lanjutan');
+        Route::get('/indent/{id}', 'SalesorderController@indent')->name('indent');
 
         Route::get('/{id}/edit_item', 'SalesOrderController@edit_item')->name('edit_item');
         Route::post('/store_item', 'SalesOrderController@store_item')->name('store_item');
@@ -151,4 +152,10 @@ Route::group([
         Route::post('/{id}/update', 'SalesOrderPpnController@update')->name('update');
     });
     Route::resource('sales_order_ppn', 'SalesOrderPpnController');
+
+    Route::group(['as' => 'sales_order_indent.', 'prefix' => '/sales_order_indent'], function () {
+        Route::get('/', 'SalesOrderIndentController@index')->name('index');
+        Route::get('/destroy/{id}', 'SalesOrderIndentController@destroy')->name('indestroydex');
+    });
+    Route::resource('sales_order_indent', 'SalesOrderIndentController');
 });

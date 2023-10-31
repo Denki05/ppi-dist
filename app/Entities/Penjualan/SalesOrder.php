@@ -21,7 +21,7 @@ class SalesOrder extends Model
         'vendor_id',
         'so_date',
     	'type_transaction',
-        'rekening',
+        'rekening_id',
         'type_so',
     	'idr_rate',
     	'tl',
@@ -175,6 +175,16 @@ class SalesOrder extends Model
     public function so_revisi()
     {
         return (object) self::COUNT_REV[$this->count_rev];
+    }
+
+    public function so_sales()
+    {
+        return (object) self::SALES[$this->sales_id];
+    }
+
+    public function so_sales_senior()
+    {
+        return (object) self::SALES_SENIOR[$this->sales_senior_id];
     }
 
     public function user_update(){

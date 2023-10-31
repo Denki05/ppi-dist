@@ -223,6 +223,7 @@
           </thead>
           <tbody>
             @foreach($table as $index => $row)
+              @if($row->so_indent == 0)
               <tr>
                 <td>{{ $loop->iteration }}</td>
                 <td>{{$row->code}}</td>
@@ -233,6 +234,7 @@
                   @if ($step == 2 && $row->status === 2)
                     <a href="{{route('superuser.penjualan.sales_order.edit',['id'=>$row->id, 'step'=>2])}}" class="btn btn-success btn-sm btn-flat"><i class="fa fa-check"></i> Kerjakan</a>
                     <a href="#" class="btn btn-warning btn-sm btn-flat btn-kembali-ke-awal" data-id="{{$row->id}}"><i class="fa fa-times"></i> Kembali ke SO</a>
+                    <a href="javascript:saveConfirmation2('{{ route('superuser.penjualan.sales_order.indent', ['id' => $row->id]) }}')" class="btn btn-info btn-sm btn-flat btn-indent"><i class="fa fa-clipboard"></i> Indent</a>
                     <a href="javascript:saveConfirmation('{{ route('superuser.penjualan.sales_order.delete_lanjutan', ['id' => $row->id]) }}')" class="btn btn-danger btn-sm btn-flat btn-delete-lanjutan"><i class="fa fa-times"></i> Delete</a>
                   @endif
                   @if ($row->status === 4)
@@ -241,6 +243,7 @@
                      
                 </td>
               </tr>
+              @endif
             @endforeach
           </tbody>
         </table>
@@ -289,6 +292,9 @@
                     <td>
                       @if($row->status == 2)
                         <a href="#" class="btn btn-success btn-sm btn-flat btn-ready" data-id="{{$row->id}}"><i class="fa fa-send"></i> Naik Ke DO</a>
+                        <a href="{{route('superuser.penjualan.delivery_order.print_manifest', $row->id)}}" class="btn btn-info btn-sm btn-flat" data-id="{{$row->id}}" target="_blank">
+                          <i class="fas fa-clipboard-list"></i> Print Manifest
+                        </a>
                       @if($row->type_transaction == 'TEMPO')
                         <a href="#" class="btn btn-danger btn-sm btn-flat btn-frmedit" data-id="{{$row->id}}"><i class="fa fa-edit"></i> Revisi</a>
                       @endif
