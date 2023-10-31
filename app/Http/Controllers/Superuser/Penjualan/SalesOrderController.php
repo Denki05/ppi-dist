@@ -971,6 +971,10 @@ class SalesOrderController extends Controller
                         $sub_total = $request->subtotal_2;
                         $grand_total_idr = $request->grand_total_idr;
 
+                        if($grand_total_idr == null){
+                            $failed = 'Grand Total tidak boleh kosong!';
+                        }
+
                         // pecah format currency 
                         $discount_agen_idr = str_replace('.', '', $discount_agen_idr);
                         $discount_kemasan_idr = str_replace('.', '', $discount_kemasan_idr);
@@ -1268,7 +1272,6 @@ class SalesOrderController extends Controller
                 }
 
             }catch (\Exception $e) {
-                DD($e);
                 DB::rollback();
                 $response['notification'] = [
                     'alert' => 'block',
