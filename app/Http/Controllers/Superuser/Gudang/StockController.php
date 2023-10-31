@@ -24,6 +24,24 @@ use Auth;
 
 class StockController extends Controller
 {
+    public function __construct(){
+        $this->view = "superuser.gudang.stock.";
+        $this->route = "superuser.gudang.stock";
+        $this->user_menu = new UserMenu;
+        $this->access = null;
+        $this->middleware(function ($request, $next) {
+            $user = Auth::user();
+            $access = $this->user_menu;
+            $access = $access->where('user_id',$user->id)
+                             ->whereHas('menu',function($query2){
+                                $query2->where('route_name',$this->route);
+                             })
+                             ->first();
+            $this->access = $access;
+            return $next($request);
+        });
+    }
+
     public function json(Request $request)
     {
         $data = [];
@@ -165,7 +183,7 @@ class StockController extends Controller
 
         $data['warehouses'] = Warehouse::get();
 
-        return view('superuser.gudang.stock.index', $data); 
+        return view($this->view."index",$data);
     }
 
     public function date_compare($element1, $element2)
@@ -177,6 +195,12 @@ class StockController extends Controller
 
     public function detail($warehouse, $product)
     {
+        if(Auth::user()->is_superuser == 0){
+            if(empty($this->access) || empty($this->access->user) || $this->access->can_read == 0){
+                return redirect()->route('superuser.index')->with('error','Anda tidak punya akses untuk membuka menu terkait');
+            }
+        }
+
         $decode_product = base64_decode($product);
 
         $data['product'] = ProductPack::findOrFail($decode_product);
@@ -262,6 +286,7 @@ class StockController extends Controller
             $data['collects'] = $sortedArr;
         }
 
-        return view('superuser.gudang.stock.detail', $data);
+        // return view('superuser.gudang.stock.detail', $data);
+        return view($this->view."detail",$data);
     }
 }
