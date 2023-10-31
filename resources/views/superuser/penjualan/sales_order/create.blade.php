@@ -19,13 +19,15 @@
                 <div class="col-10">
                   @if($step == 1 || $step == 2 || $step == 9)
                     <div class="form-group row">
-                    <label class="col-md-4 col-form-label text-right">Team Leader<span class="text-danger">*</span></label>
+                    <label class="col-md-4 col-form-label text-right">Sales Senior<span class="text-danger">*</span></label>
                     <div class="col-md-8">
                       <select class="form-control js-select2" name="sales_senior_id">
-                        <option value="">Pilih TL</option>
-                        @foreach($sales as $index => $row)
-                          <option value="{{$row->id}}">{{$row->name}}</option>
-                        @endforeach
+                        <option value="">Pilih Sales Senior</option>
+                        <option value="1">Ivan</option>
+                        <option value="2">Erwin</option>
+                        <option value="3">Nia</option>
+                        <option value="4">Super Administrator</option>
+
                       </select>
                     </div>
                   </div>
@@ -34,13 +36,15 @@
                 <div class="col-10">
                   @if($step == 1 || $step == 2 || $step == 9)
                     <div class="form-group row">
-                    <label class="col-md-4 col-form-label text-right">Salesman<span class="text-danger">*</span></label>
+                    <label class="col-md-4 col-form-label text-right">Sales<span class="text-danger">*</span></label>
                     <div class="col-md-8">
                       <select class="form-control js-select2" name="sales_id">
-                        <option value="">Pilih Salesman</option>
-                        @foreach($sales as $index => $row)
-                          <option value="{{$row->id}}">{{$row->name}}</option>
-                        @endforeach
+                        <option value="">Pilih Sales</option>
+                        <option value="1">Ivan</option>
+                        <option value="2">Erwin</option>
+                        <option value="3">Lindy</option>
+                        <option value="4">Super Administrator</option>
+
                       </select>
                     </div>
                   </div>

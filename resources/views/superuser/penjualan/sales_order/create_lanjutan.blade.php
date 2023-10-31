@@ -139,8 +139,9 @@
                   <label for="note">Rekening <span class="text-danger">*</span></label>
                   <select class="form-control js-select2" name="rekening">
                     <option value="">Pilih Rekening</option>
-                    <option value="0">4720 2369 88 - IRWAN LINAKSITA</option>
-                    <option value="1">7881 0374 95 - IDA ELISA</option>
+                    @foreach($rekening as $key)
+                    <option value="{{$key->id}}">{{$key->name}} - {{$key->number_card}}</option>
+                    @endforeach
                   </select>
                 </div>
                 @endif

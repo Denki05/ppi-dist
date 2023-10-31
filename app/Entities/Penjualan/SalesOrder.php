@@ -21,7 +21,7 @@ class SalesOrder extends Model
         'vendor_id',
         'so_date',
     	'type_transaction',
-        'rekening',
+        'rekening_id',
         'type_so',
     	'idr_rate',
     	'tl',
@@ -50,19 +50,18 @@ class SalesOrder extends Model
     	4 => 'LONGDA'
     ];
 
-    const TL = [
+    const SALES_SENIOR = [
         1 => 'Ivan',
         2 => 'Erwin',
         3 => 'Nia',
-        4 => 'Kantor'
+        4 => 'Super Administrator'
     ];
 
     const SALES = [
-        1 => 'Ganes',
-        2 => 'Lindy',
-        3 => 'Erwin',
-        4 => 'Ivan',
-        5 => 'Kantor',
+        1 => 'Lindy',
+        2 => 'Erwin',
+        3 => 'Ivan',
+        4 => 'Super Administrator',
     ];
     
     const STEP = [
@@ -176,6 +175,16 @@ class SalesOrder extends Model
     public function so_revisi()
     {
         return (object) self::COUNT_REV[$this->count_rev];
+    }
+
+    public function so_sales()
+    {
+        return (object) self::SALES[$this->sales_id];
+    }
+
+    public function so_sales_senior()
+    {
+        return (object) self::SALES_SENIOR[$this->sales_senior_id];
     }
 
     public function user_update(){

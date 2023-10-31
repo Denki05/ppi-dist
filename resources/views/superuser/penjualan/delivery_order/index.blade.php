@@ -53,7 +53,7 @@
               <td>{{ $loop->iteration }}</td>
               <td>{{ $row->do_code }}</td>
               <td>{{ $row->so->code }}</td>
-              <td>{{ $row->member->name }}</td>
+              <td>{{ $row->member->name }} {{$row->member->text_kota}}</td>
               <td>{{ $row->print_count }}</td>
               <td>
                 @if($row->status == 3)
