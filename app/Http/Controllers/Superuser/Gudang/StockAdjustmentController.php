@@ -58,7 +58,7 @@ class StockAdjustmentController extends Controller
                                         $query2->orWhere('update','like','%'.$search.'%');
                                     }
                                 })
-                                ->orWhereHas('product',function($query2) use($search){
+                                ->orWhereHas('product_pack',function($query2) use($search){
                                     if(!empty($search)){
                                         $query2->where('code','like','%'.$search.'%');
                                         $query2->where('name','like','%'.$search.'%');

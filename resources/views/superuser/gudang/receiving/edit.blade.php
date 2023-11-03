@@ -36,19 +36,7 @@
           </select>
         </div>
       </div>
-      <div class="form-group row">
-        <label class="col-md-3 col-form-label text-right" for="transaction_type">Transaction Type <span class="text-danger">*</span></label>
-        <div class="col-md-7 text-right">
-          <div class="col-md-3 form-check form-check-inline">
-            <input class="form-check-input" type="radio" name="transaction_type" id="transaction_type1" value="1" {{ $receiving->transaction_type == '1' ? 'checked' : '' }}>
-            <label class="form-check-label" for="transaction_type1">Tunai</label>
-          </div>
-          <div class="form-check form-check-inline">
-            <input class="form-check-input" type="radio" name="transaction_type" id="transaction_type0" value="0" {{ $receiving->transaction_type == '0' ? 'checked' : '' }}>
-            <label class="form-check-label" for="transaction_type0">Non Tunai</label>
-          </div>
-        </div>
-      </div>
+      
       <div class="form-group row">
         <label class="col-md-3 col-form-label text-right" for="pbm_date">PBM Date</span></label>
         <div class="col-md-7">
@@ -56,15 +44,9 @@
         </div>
       </div>
       <div class="form-group row">
-        <label class="col-md-3 col-form-label text-right" for="no_container">No Container</span></label>
-        <div class="col-md-7">
-          <textarea class="form-control" id="note" name="note">{{ $receiving->no_container }}</textarea>
-        </div>
-      </div>
-      <div class="form-group row">
         <label class="col-md-3 col-form-label text-right" for="note">Note</span></label>
         <div class="col-md-7">
-          <textarea class="form-control" id="note" name="note">{{ $receiving->description }}</textarea>
+          <textarea class="form-control" id="note" name="note">{{ $receiving->note }}</textarea>
         </div>
       </div>
       <div class="form-group row pt-30">

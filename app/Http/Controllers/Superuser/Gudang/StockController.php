@@ -17,6 +17,7 @@ use App\Entities\Gudang\Receiving;
 use App\Entities\Gudang\ReceivingDetail;
 use App\Entities\Gudang\ReceivingDetailColly;
 use App\Entities\Gudang\StockMove;
+use App\Entities\Gudang\StockAdjustment;
 use App\Entities\Penjualan\SalesOrder;
 use App\Entities\Setting\UserMenu;
 use DB;
@@ -24,6 +25,24 @@ use Auth;
 
 class StockController extends Controller
 {
+    public function __construct(){
+        $this->view = "superuser.gudang.stock.";
+        $this->route = "superuser.gudang.stock";
+        $this->user_menu = new UserMenu;
+        $this->access = null;
+        $this->middleware(function ($request, $next) {
+            $user = Auth::user();
+            $access = $this->user_menu;
+            $access = $access->where('user_id',$user->id)
+                             ->whereHas('menu',function($query2){
+                                $query2->where('route_name',$this->route);
+                             })
+                             ->first();
+            $this->access = $access;
+            return $next($request);
+        });
+    }
+
     public function json(Request $request)
     {
         $data = [];
@@ -133,6 +152,25 @@ class StockController extends Controller
                 }
             }
 
+            $stock_adjusments = StockAdjustment::where('warehouse_id', $warehouse)
+                ->get();
+
+            foreach ($stock_adjusments as $stock_adjusment){
+                if($stock_adjusment->min == '0'){
+                    if (!empty($collect[$detail->product_packaging_id]['in'])) {
+                        $collect[$stock_adjusment->product_packaging_id]['in'] += $stock_adjusment->plus;
+                    } else {
+                        $collect[$stock_adjusment->product_packaging_id]['in'] = $stock_adjusment->plus;
+                    }
+                }else {
+                    if (!empty($collect[$detail->product_packaging_id]['out'])) {
+                        $collect[$stock_adjusment->product_packaging_id]['out'] += $stock_adjusment->min;
+                    } else {
+                        $collect[$stock_adjusment->product_packaging_id]['out'] = $stock_adjusment->min;
+                    }
+                }
+            }
+
             // COLLECT
             foreach ($collect as $key => $value) {
                 $product = ProductPack::find($key);
@@ -141,7 +179,7 @@ class StockController extends Controller
                 $sell = !empty($value['sell']) ? $value['sell'] : 0;
                 $stock = $in - $out;
                 $effective = $stock;
-                $data['data'][] = ['<a href="' . route('superuser.gudang.stock.detail', [$warehouse, base64_encode($product->id)]) . '" target="_blank">' . $product->code.' - '.$product->name . '</a>', $product->kemasan()->pack_name , $in, $out, $stock, $sell, $effective];
+                $data['data'][] = ['<a href="' . route('superuser.gudang.stock.detail', [$warehouse, base64_encode($product->id)]) . '" target="_blank">' . $product->code. '</a>', $product->name, $product->product->brand_name, $product->kemasan()->pack_name , $in, $out, $stock, $sell, $effective];
             }
 
             if (empty($collect)) {
@@ -165,7 +203,7 @@ class StockController extends Controller
 
         $data['warehouses'] = Warehouse::get();
 
-        return view('superuser.gudang.stock.index', $data); 
+        return view($this->view."index",$data);
     }
 
     public function date_compare($element1, $element2)
@@ -177,6 +215,12 @@ class StockController extends Controller
 
     public function detail($warehouse, $product)
     {
+        if(Auth::user()->is_superuser == 0){
+            if(empty($this->access) || empty($this->access->user) || $this->access->can_read == 0){
+                return redirect()->route('superuser.index')->with('error','Anda tidak punya akses untuk membuka menu terkait');
+            }
+        }
+
         $decode_product = base64_decode($product);
 
         $data['product'] = ProductPack::findOrFail($decode_product);
@@ -236,6 +280,23 @@ class StockController extends Controller
             }
         }
 
+        $stock_adjusments = StockAdjustment::where('warehouse_id', $warehouse)
+            ->get();
+
+        foreach($stock_adjusments as $stock_adjusment){
+            if($stock_adjusment->product_packaging_id == $decode_product){
+                $collect[] = [
+                    'created_at' => $stock_adjusment->created_at,
+                    'second_date' => 0,
+                    'transaction' => $stock_adjusment->code,
+                    'in' => $stock_adjusment->plus,
+                    'out' => $stock_adjusment->min ?? '',
+                    'balance' => '',
+                    'description' => $stock_adjusment->note ?? '',
+                ];
+            }
+        }
+
         if ($collect) {
             $balance = 0;
             $newCollect = [];
@@ -262,6 +323,7 @@ class StockController extends Controller
             $data['collects'] = $sortedArr;
         }
 
-        return view('superuser.gudang.stock.detail', $data);
+        // return view('superuser.gudang.stock.detail', $data);
+        return view($this->view."detail",$data);
     }
 }

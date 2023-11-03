@@ -12,7 +12,7 @@ class StockAdjustment extends Model
     protected $fillable = [
     	'code',
     	'warehouse_id',
-    	'product_id',
+    	'product_packaging_id',
     	'prev',
     	'min',
     	'plus',
@@ -26,8 +26,8 @@ class StockAdjustment extends Model
     public function warehouse(){
     	return $this->BelongsTo('App\Entities\Master\Warehouse','warehouse_id','id');
     }
-    public function product(){
-    	return $this->BelongsTo('App\Entities\Master\Product','product_id','id');
+    public function product_pack(){
+    	return $this->BelongsTo('App\Entities\Master\ProductPack','product_packaging_id','id');
     }
     public function getPrevAttribute($value)
     {

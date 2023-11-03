@@ -97,7 +97,7 @@
     <div class="row">
       <label class="col-md-3 col-form-label text-right">Note</label>
       <div class="col-md-7">
-        <div class="form-control-plaintext">{{ $receiving->description }}</div>
+        <div class="form-control-plaintext">{{ $receiving->note }}</div>
       </div>
     </div>
     <div class="row">
@@ -180,9 +180,6 @@
               </button>
             </a>
             @if(is_null($detail->colly))
-              <!-- <button type="button" class="btn btn-sm btn-circle btn-alt-info addColly" data-id="{{$receiving->id}}" data-detail-id="{{ $detail->id }}" data-bs-toggle="modal" data-bs-target="#myModal">
-                <i class="fa fa-plus"></i>
-              </button> -->
               <a href="javascript:void(0)" type="button" class="btn btn-sm btn-circle btn-alt-info openModal" data-id="{{$receiving->id}}" data-detail-id="{{$detail->id}}"><i class="fa fa-plus"></i></a> 
             @endif
             <a href="javascript:deleteConfirmation('{{ route('superuser.gudang.receiving.detail.destroy', [$receiving->id, $detail->id]) }}')">
@@ -251,7 +248,9 @@
 <script src="{{ asset('utility/superuser/js/form.js') }}"></script>
 <script type="text/javascript">
   $(document).ready(function() {
-    $('#datatable').DataTable({})
+    $('#datatable').DataTable({
+      // "pageLength": 50,
+    })
   })
 
   $(document).on('click', '.openModal', function () {

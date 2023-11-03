@@ -35,8 +35,10 @@
     <table id="datatable" class="table table-striped">
       <thead>
         <tr>
-          <th class="text-center">Product</th>
-          <th class="text-center">Packaging</th>
+          <th class="text-center">kode</th>
+          <th class="text-center">Nama</th>
+          <th class="text-center">Merek</th>
+          <th class="text-center">Kemasan</th>
           <th class="text-center">In</th>
           <th class="text-center">Out</th>
           <th class="text-center">Stock</th>
@@ -95,7 +97,7 @@ $(document).ready(function() {
     //   {data: 'action', orderable: false, searcable: false}
     // ],
     order: [
-      [0, 'asc']
+      [1, 'asc']
     ],
     pageLength: 10,
     lengthMenu: [

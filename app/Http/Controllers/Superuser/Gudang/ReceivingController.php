@@ -164,7 +164,7 @@ class ReceivingController extends Controller
             if ($validator->passes()) {
                 $receiving->code = $request->code;
                 $receiving->pbm_date = $request->pbm_date;
-                $receiving->description = $request->note;
+                $receiving->note = $request->note;
 
                 if ($receiving->save()) {
                     $response['notification'] = [

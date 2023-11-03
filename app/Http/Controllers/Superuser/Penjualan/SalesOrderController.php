@@ -917,9 +917,9 @@ class SalesOrderController extends Controller
                 }
             }
 
-            $failed = "";
             DB::beginTransaction();
             try{
+                $errors = [];
                 
                 $sales_order = SalesOrder::find($request->id);
 
@@ -929,15 +929,11 @@ class SalesOrderController extends Controller
 
                 if($sales_order->count_rev == 0){
                     if($request->origin_warehouse_id == null){
-                        $failed = 'Warehouse tidak boleh kosong!';
-                    }
-
-                    if($request->ekspedisi == null){
-                        $failed = 'Ekspedisi tidak boleh kosong!';
+                        $errors[] = 'Warehouse tidak boleh kosong!';
                     }
 
                     if($request->rekening == null){
-                        $failed = 'Rekening tidak boleh kosong!';
+                        $errors[] = 'Rekening tidak boleh kosong!';
                     }
 
                     $sales_order->origin_warehouse_id = $request->origin_warehouse_id;
@@ -972,7 +968,7 @@ class SalesOrderController extends Controller
                         $grand_total_idr = $request->grand_total_idr;
 
                         if($grand_total_idr == null){
-                            $failed = 'Grand Total tidak boleh kosong!';
+                            $errors[] = 'Grand Total tidak boleh kosong!';
                         }
 
                         // pecah format currency 
@@ -1023,18 +1019,18 @@ class SalesOrderController extends Controller
                             $total_discount = 0;
 
                             if(empty($value["so_item_id"])){
-                                $failed = 'SO Item ID tidak boleh kosong';
+                                $errors[] = 'SO Item ID tidak boleh kosong';
                             }
 
                             if(empty($value["product_packaging_id"])){
-                                $failed = 'Product ID tidak boleh kosong';
+                                $errors[] = 'Product ID tidak boleh kosong';
                             }
 
                             $qty_total = $do_qty + $rej_qty;
                             $sisa = $so_qty - $do_qty;
 
                             if($so_qty < $qty_total){
-                                $failed = 'Jumlah DO,REJ melebihi SO Qty';
+                                $errors[] = 'Jumlah DO,REJ melebihi SO Qty';
                             }
         
                             if($do_qty == 0 && $rej_qty == 0){
@@ -1065,15 +1061,26 @@ class SalesOrderController extends Controller
                             }
 
                             // Check Stock
-                            foreach($sales_order->so_detail as $row){
-                                $stock = ProductMinStock::where('product_packaging_id', $row->product_packaging_id)->where('warehouse_id', $request->origin_warehouse_id)->first();
+                            foreach($sales_order->so_detail as $detail){
+                                $stock_order = ProductMinStock::where('product_packaging_id', $detail->product_packaging_id)->where('warehouse_id', $request->origin_warehouse_id)->first();
 
-                                if($stock){
-                                    if($stock->quantity < $do_qty){
+                                // if($stock_order){
+                                //     if($stock->quantity < $detail->qty){
+                                //         $out_of_stock = true;
+                                //         $product = $detail->product_packaging_id;
+                                //         break;
+                                //     }
+                                // }
+                                if($stock_order) {
+                                    if($stock_order->quantity < $detail->qty) {
                                         $out_of_stock = true;
-                                        $product = $row->product_packaging_id;
+                                        $product = $detail->product_packaging_id;
                                         break;
                                     }
+                                } else {
+                                    $out_of_stock = true;
+                                    $product = $detail->product_packaging_id;
+                                    break;
                                 }
                             }
         
@@ -1086,12 +1093,12 @@ class SalesOrderController extends Controller
 
                         if (count($data) == 0) {
                             DB::rollback();
-                            $failed =  'Not item sales order are ready';
+                            $errors[] =  'Not item sales order are ready';
                         }
 
                         if($out_of_stock){
                             $product = ProductPack::find($product);
-                            $failed = 'Out Of Stock! <b>'.$product->name.'</b> Please contact Administrator';
+                            $errors[] = 'Out Of Stock! <b>'.$product->name.'</b> Please contact Administrator';
                             DB::rollback();
                         }else{
                             foreach ($data as $key => $value) {
@@ -1113,22 +1120,28 @@ class SalesOrderController extends Controller
                             $insert_invoice = Invoicing::create($data);
                         }
 
-                        if ($failed) {
-                            $response['failed'] = $failed;
-        
-                            return $this->response(200, $response);
-                        }
+                        
 
                         DB::commit();
-                        $response['notification'] = [
-                            'alert' => 'notify',
-                            'type' => 'success',
-                            'content' => 'Success',
-                        ];
-            
-                        $response['redirect_to'] = route('superuser.penjualan.sales_order.index_lanjutan');
-                        return $this
-                        ->response(200, $response);
+                        if($errors) {
+                            $response['notification'] = [
+                                'alert' => 'block',
+                                'type' => 'alert-danger',
+                                'header' => 'Error',
+                                'content' => $errors,
+                            ];
+        
+                            return $this->response(400, $response);
+                        } else {
+                            $response['notification'] = [
+                                'alert' => 'notify',
+                                'type' => 'success',
+                                'content' => 'Success',
+                            ];
+                
+                            $response['redirect_to'] = route('superuser.penjualan.sales_order.index_lanjutan');
+                            return $this->response(200, $response);
+                        }
                     }
                 }elseif($sales_order->count_rev == 1){
                     $sales_order->origin_warehouse_id = $request->origin_warehouse_id;

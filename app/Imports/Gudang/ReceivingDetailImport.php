@@ -197,7 +197,7 @@ class ReceivingDetailImport implements ToCollection, WithHeadingRow, WithStartRo
                                 $receiving_detail->po_detail_id = $value_product['po_detail_id'];
                                 $receiving_detail->product_packaging_id = $cek_product->id;
                                 $receiving_detail->quantity = $value_product['quantity'];
-                                $receiving_detail->no_batch = $value_product['no batch'];
+                                $receiving_detail->no_batch = $value_product['no batch'] ?? 0;
                                 $receiving_detail->note =   $value_product['note'];
                                 $receiving_detail->created_by =  Auth::id();
                                 $receiving_detail->save();

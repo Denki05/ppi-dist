@@ -15,7 +15,7 @@ class ReceivingTable extends Table
      */
     private function query()
     {
-        $model = Receiving::select('receiving.id', 'receiving.code', 'receiving.status', 'master_warehouses.name as warehouse', 'receiving.created_at', 'receiving.pbm_date')
+        $model = Receiving::select('receiving.id', 'receiving.code', 'receiving.status', 'master_warehouses.name as warehouse', 'receiving.created_at', 'receiving.pbm_date', 'receiving.note')
             ->join('master_warehouses', 'master_warehouses.id', '=', 'receiving.warehouse_id');
 
         return $model;
