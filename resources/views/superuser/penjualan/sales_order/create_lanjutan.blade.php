@@ -51,11 +51,15 @@
           <div class="form-row">
             <div class="form-group col-md-6">
               <label for="type_transaction">Type Transaksi</label>
-              <input type="text" name="type_transaction" class="form-control" value="{{$result->type_transaction}}" readonly>
+              <select class="form-control js-select2" name="type_transaction">
+                <option value="">Pilih Transaksi Type </option>
+                <option value="CASH">CASH </option>
+                <option value="TEMPO">TEMPO </option>
+                <option value="MARKETPLACE">MARKETPLACE </option>
+              </select>
             </div>
             <div class="form-group col-md-6">
               <label for="note">Catatan</label>
-              <!-- <!-<textarea class="form-control" rows="1" readonly>{{ $result->note }}</textarea> -->
               <input type="text" class="form-control" value="{{ $result->note ?? '-' }}" readonly>
             </div>
           </div>

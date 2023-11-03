@@ -289,7 +289,7 @@ class SalesOrderController extends Controller
                 $insert->sales_senior_id = $request->sales_senior_id;
                 $insert->sales_id = $request->sales_id;
                 $insert->so_for = 1;
-                $insert->type_transaction = $request->type_transaction;
+                // $insert->type_transaction = $request->type_transaction;
                 $insert->so_date = Carbon\Carbon::now();
                 $insert->type_so = 'nonppn';
                 $insert->idr_rate = $request->idr_rate;
@@ -937,8 +937,9 @@ class SalesOrderController extends Controller
                     }
 
                     $sales_order->origin_warehouse_id = $request->origin_warehouse_id;
-                    $sales_order->ekspedisi_id = $request->ekspedisi;
+                    $sales_order->ekspedisi_id = $request->ekspedisi ?? null;
                     $sales_order->rekening = $request->rekening;
+                    $sales_order->type_transaction = $request->type_transaction;
                     $sales_order->shipping_cost_buyer = $request->shipping_cost_buyer ?? 0;
                     $sales_order->status = 4;
                     $sales_order->count_rev = 0;

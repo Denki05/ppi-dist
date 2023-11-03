@@ -58,7 +58,23 @@
           <div class="card">
             <div class="card-body">
               <div class="row">
-                <div class="col-md-6">
+              <div class="col-md-6">
+                  @if($step == 1)
+                    <div class="form-group row">
+                      <label class="col-md-4 col-form-label text-right">Brand</label>
+                      <div class="col-md-6">
+                        <select class="form-control js-select2 select-brand" data-index="0">
+                          <option value="">Pilih Merek</option>
+                          @foreach($brand as $index => $row)
+                          <option value="{{$row->brand_name}}">{{$row->brand_name}}</option>
+                          @endforeach
+                        </select>
+                      </div>
+                    </div>
+                    @endif
+                </div>
+                
+                {{--<div class="col-md-6">
                   @if($step == 1)
                     <div class="form-group row">
                       <label class="col-md-4 col-form-label text-right">Transaksi<span class="text-danger">*</span></label>
@@ -73,7 +89,7 @@
                       </div>
                     </div>
                     @endif
-                </div>
+                </div>--}}
                 <div class="col-md-6">
                   @if($step == 1)
                     <div class="form-group row">
@@ -94,21 +110,7 @@
                     </div>
                     @endif
                 </div>
-                <div class="col-md-6">
-                  @if($step == 1)
-                    <div class="form-group row">
-                      <label class="col-md-4 col-form-label text-right">Brand</label>
-                      <div class="col-md-6">
-                        <select class="form-control js-select2 select-brand" data-index="0">
-                          <option value="">Pilih Merek</option>
-                          @foreach($brand as $index => $row)
-                          <option value="{{$row->brand_name}}">{{$row->brand_name}}</option>
-                          @endforeach
-                        </select>
-                      </div>
-                    </div>
-                    @endif
-                </div>
+                
               </div>
             </div>
           </div>
