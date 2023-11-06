@@ -281,6 +281,11 @@ class SalesOrderController extends Controller
                 $insert->sales_senior_id = $request->sales_senior_id;
                 $insert->sales_id = $request->sales_id;
                 $insert->so_for = 1;
+<<<<<<< HEAD
+=======
+                // $insert->type_transaction = $request->type_transaction;
+                $insert->so_date = Carbon\Carbon::now();
+>>>>>>> 6fa2ff47f6bdc57c85ea080e3619df2937f2dd6e
                 $insert->type_so = 'nonppn';
                 $insert->idr_rate = $request->idr_rate;
                 $insert->note = $request->note;
@@ -927,7 +932,10 @@ class SalesOrderController extends Controller
 
                     $sales_order->origin_warehouse_id = $request->origin_warehouse_id;
                     $sales_order->ekspedisi_id = $request->ekspedisi ?? null;
+<<<<<<< HEAD
                     $sales_order->so_date = date("yyyy-mm-dd", strtotime($request->so_date));
+=======
+>>>>>>> 6fa2ff47f6bdc57c85ea080e3619df2937f2dd6e
                     $sales_order->rekening = $request->rekening;
                     $sales_order->type_transaction = $request->type_transaction;
                     $sales_order->shipping_cost_buyer = $request->shipping_cost_buyer ?? 0;
@@ -937,7 +945,7 @@ class SalesOrderController extends Controller
                     if($sales_order->save()){
                         $packing_order = new PackingOrder;
                         $packing_order->code = CodeRepo::generatePO();
-                        $packing_order->do_code = CodeRepo::generateDO();
+                        $packing_order->do_code = $sales_order->code;
                         $packing_order->so_id  = $sales_order->id;
                         $packing_order->customer_id  = $sales_order->customer_id;
                         $packing_order->customer_other_address_id  = $sales_order->customer_other_address_id;
