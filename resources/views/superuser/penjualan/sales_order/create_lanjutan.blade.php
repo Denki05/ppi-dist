@@ -1,7 +1,7 @@
 @extends('superuser.app')
 
 @section('content')
-
+@if($errors->any())
 <div class="alert alert-danger alert-dismissable" role="alert">
   <button type="button" class="close" data-dismiss="alert" aria-label="Close">
       <span aria-hidden="true">×</span>
@@ -39,8 +39,8 @@
         <div class="block-content">
           <div class="form-row">
             <div class="form-group col-md-6">
-              <label for="invoice_date">Tanggal Nota</label>
-              <input type="text" name="invoice_date" class="form-control" value="{{ date('d-m-Y',strtotime($result->created_at)) }}" readonly>
+              <label for="so_date">Tanggal Nota</label>
+              <input type="date" name="so_date" class="form-control">
             </div>
             <div class="form-group col-md-6">
               <label for="invoice_code">Nomer Nota</label>
@@ -51,11 +51,15 @@
           <div class="form-row">
             <div class="form-group col-md-6">
               <label for="type_transaction">Type Transaksi</label>
-              <input type="text" name="type_transaction" class="form-control" value="{{$result->type_transaction}}" readonly>
+              <select class="form-control js-select2" name="type_transaction">
+                <option value="">Pilih Transaksi Type </option>
+                <option value="CASH">CASH </option>
+                <option value="TEMPO">TEMPO </option>
+                <option value="MARKETPLACE">MARKETPLACE </option>
+              </select>
             </div>
             <div class="form-group col-md-6">
               <label for="note">Catatan</label>
-              <!-- <!-<textarea class="form-control" rows="1" readonly>{{ $result->note }}</textarea> -->
               <input type="text" class="form-control" value="{{ $result->note ?? '-' }}" readonly>
             </div>
           </div>

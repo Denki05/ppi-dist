@@ -48,7 +48,7 @@
           </thead>
           <tbody>
           @foreach($table as $index => $row)
-            @if($row->status == 3)
+            @if($row->status == 2 || $row->status == 3 )
             <tr>
               <td>{{ $loop->iteration }}</td>
               <td>{{ $row->do_code }}</td>
@@ -56,13 +56,20 @@
               <td>{{ $row->member->name }} {{$row->member->text_kota}}</td>
               <td>{{ $row->print_count }}</td>
               <td>
-                @if($row->status == 3)
+                @if($row->status == 2)
+                  <span class="badge badge-{{ $row->do_status()->class }}"><b>{{ $row->do_status()->msg }}</b></span>
+                @elseif($row->status == 3)
                 <span class="badge badge-{{ $row->do_status()->class }}"><b>{{ $row->do_status()->msg }}</b></span>
                 @elseif($row->status > 4)
                 <span class="badge badge-info"><b>Packed</b></span>
                 @endif
               </td>
               <td>
+                @if($row->status == 2)
+                  <a href="{{route('superuser.penjualan.delivery_order.print_manifest', $row->id)}}" class="btn btn-info btn-sm btn-flat" data-id="{{$row->id}}" target="_blank">
+                    <i class="fas fa-clipboard-list"></i> Print Manifest
+                  </a>
+                @endif
                 @if($row->status == 3)
                 <a href="{{route('superuser.penjualan.delivery_order.detail',$row->id)}}" class="btn btn-primary btn-sm btn-flat">
                   <i class="fas fa-box"></i> Kerjakan

@@ -10,6 +10,7 @@ class SalesOrder extends Model
 	use SoftDeletes;
     protected $table = "penjualan_so";
     protected $fillable =[
+    	'so_code',
     	'code',
     	'sales_id',
     	'sales_senior_id',
@@ -51,17 +52,17 @@ class SalesOrder extends Model
     ];
 
     const SALES_SENIOR = [
-        1 => 'Ivan',
-        2 => 'Erwin',
-        3 => 'Nia',
-        4 => 'Super Administrator'
+        'Ivan' => 1,
+        'Erwin' => 2,
+        'Nia' => 'Nia',
+        'Super Administrator' => 4,
     ];
 
     const SALES = [
-        1 => 'Lindy',
-        2 => 'Erwin',
-        3 => 'Ivan',
-        4 => 'Super Administrator',
+        'Lindy' => 1,
+        'Erwin' => 2,
+        'Nia' => 3,
+        'Super Administrator' => 4,
     ];
     
     const STEP = [
@@ -179,12 +180,12 @@ class SalesOrder extends Model
 
     public function so_sales()
     {
-        return (object) self::SALES[$this->sales_id];
+        return array_search($this->sales_id, self::SALES);
     }
 
     public function so_sales_senior()
     {
-        return (object) self::SALES_SENIOR[$this->sales_senior_id];
+        return array_search($this->sales_senior_id, self::SALES_SENIOR);
     }
 
     public function user_update(){

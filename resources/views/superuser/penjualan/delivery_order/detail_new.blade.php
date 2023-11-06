@@ -120,9 +120,9 @@
         <div class="form-group row">
           <div class="col-6"></div>
           <div class="col-12 text-right">
-            @if($result->print_count > 0)
+          @if($result->print_count > 0)
             <button type="button" class="btn btn-primary" onclick="konfirmasiBarang()">Save</button>
-            @endif
+          @endif
           </div>
         </div>
     </div>

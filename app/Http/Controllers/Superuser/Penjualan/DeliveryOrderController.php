@@ -122,7 +122,7 @@ class DeliveryOrderController extends Controller
                                     }
                                 }
                             })
-                            ->whereIn('status', [3, 4, 5, 6])
+                            ->whereIn('status', [2 ,3, 4, 5, 6])
                             ->orderBy('id','DESC')
                             ->paginate(10);
         /*$table = PackingOrder::where(function($query2) use($customer_id){

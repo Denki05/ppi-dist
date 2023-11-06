@@ -183,7 +183,7 @@
       </div>
     </div>
   </div>
-  {{--<div class="col-md-6">
+  <div class="col-md-6">
     <div class="block">
       <div class="block-header block-header-default">
         <h4 class="block-title">Statistik Brand</h4>
@@ -192,7 +192,7 @@
       <canvas id="mataChart2" class="chartjs" width="undefined" height="undefined"></canvas>
       </div>
     </div>
-  </div>--}}
+  </div>
 </div>
 
 @endsection

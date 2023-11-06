@@ -98,7 +98,8 @@
                     @endif
                     @if($row->status == 3)
                       <a class="btn btn-warning" href="{{ route('superuser.finance.payable.cancel_edit', $row->id) }}" role="button" title="edit"><i class="fa fa-pencil" aria-hidden="true"></i></a>
-                    @endif
+                      <a class="btn btn-danger" href="javascript:deleteConfirmation('{{ route('superuser.finance.payable.destroy', $row->id) }}')" role="button" title="delete"><i class="fa fa-trash" aria-hidden="true"></i></a>
+                      @endif
                   </td>
                 </tr>
               @endforeach

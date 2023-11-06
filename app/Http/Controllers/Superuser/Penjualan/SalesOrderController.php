@@ -274,23 +274,13 @@ class SalesOrderController extends Controller
                     goto ResultData;
                 }
 
-                if(empty($post["type_transaction"])){
-                    $data_json["IsError"] = TRUE;
-                    $data_json["Message"] = "Type transaction wajib dipilih";
-                    goto ResultData;
-                }
-
                 $insert = new SalesOrder;
-                $insert->code = CodeRepo::generateSO();
-                
-                
+                $insert->so_code = CodeRepo::generateSoAwal();
                 $insert->customer_id = $member;
                 $insert->customer_other_address_id = $store;
                 $insert->sales_senior_id = $request->sales_senior_id;
                 $insert->sales_id = $request->sales_id;
                 $insert->so_for = 1;
-                $insert->type_transaction = $request->type_transaction;
-                $insert->so_date = Carbon\Carbon::now();
                 $insert->type_so = 'nonppn';
                 $insert->idr_rate = $request->idr_rate;
                 $insert->note = $request->note;
@@ -748,15 +738,14 @@ class SalesOrderController extends Controller
 
         DB::beginTransaction();
         try{
-            $request->validate([
-                'id' => 'required'
-            ]);
-            $post = $request->all();
-            $update = SalesOrder::where('id',$post["id"])->update(['status' => 2]);
+            $sales_order = SalesOrder::find($request->id);
 
-            DB::commit();
-            return redirect()->back()->with('success','Sales Order berhasil diajukan untuk dilanjutkan');  
-            
+            $sales_order->code = CodeRepo::generateSO();
+            $sales_order->status = 2;
+            if($sales_order->save()){
+                DB::commit();
+                return redirect()->back()->with('success','Sales Order berhasil diajukan untuk dilanjutkan'); 
+            } 
         }catch(\Throwable $e){
             // dd($e);
             DB::rollback();
@@ -937,8 +926,10 @@ class SalesOrderController extends Controller
                     }
 
                     $sales_order->origin_warehouse_id = $request->origin_warehouse_id;
-                    $sales_order->ekspedisi_id = $request->ekspedisi;
+                    $sales_order->ekspedisi_id = $request->ekspedisi ?? null;
+                    $sales_order->so_date = date("yyyy-mm-dd", strtotime($request->so_date));
                     $sales_order->rekening = $request->rekening;
+                    $sales_order->type_transaction = $request->type_transaction;
                     $sales_order->shipping_cost_buyer = $request->shipping_cost_buyer ?? 0;
                     $sales_order->status = 4;
                     $sales_order->count_rev = 0;
@@ -1187,20 +1178,20 @@ class SalesOrderController extends Controller
                             // }
 
                             if($value["so_item_id"] == null){
-                                $errors = 'SO Item ID tidak boleh kosong';
+                                $errors[] = 'SO Item ID tidak boleh kosong';
                             }
-                            if($value["product_id"] == null){
-                                $errors = 'Product ID tidak boleh kosong';
+                            if($value["product_packaging_id"] == null){
+                                $errors[] = 'Product ID tidak boleh kosong';
                             }
                             if($value["price"] == null){
-                                $errors = 'Harga tidak boleh kosong';
+                                $errors[] = 'Harga tidak boleh kosong';
                             }
 
                             $qty_total = $do_qty + $rej_qty;
                             $sisa = $so_qty - $do_qty;
 
                             if($so_qty < $qty_total){
-                                $$errors[] = 'Jumlah DO,REJ melebihi SO Qty';
+                                $errors[] = 'Jumlah DO,REJ melebihi SO Qty';
                             }
 
                             if($do_qty == 0 && $rej_qty == 0){
@@ -1213,9 +1204,9 @@ class SalesOrderController extends Controller
                                 $total_disc = floatval(($usd_disc + (($price - $usd_disc) * ($percent_disc/100))) * $do_qty);
                                 $data[] = [
                                     'do_id' => $get_po->id,
-                                    'product_id' => $value["product_id"],
+                                    'product_packaging_id' => $value["product_packaging_id"],
                                     'so_item_id' => $value["so_item_id"],
-                                    'packaging' => $result->packaging,
+                                    'packaging_id' => $result->packaging_id,
                                     'qty' => $do_qty,
                                     'price' => $price,
                                     'usd_disc' => $usd_disc,
@@ -1240,16 +1231,35 @@ class SalesOrderController extends Controller
                         $updatePo = PackingOrder::where('id', $get_po->id)->update([
                             'status' => 2
                         ]);
+
+                        // definisi hasil penjumlahan di view
+                        $discount_agen_idr = $request->disc_agen_idr;
+                        $discount_kemasan_idr = $request->disc_kemasan_idr;
+                        $sub_total = $request->subtotal_2;
+                        $grand_total_idr = $request->grand_total_idr;
+
+                        // pecah format currency 
+                        $discount_agen_idr = str_replace('.', '', $discount_agen_idr);
+                        $discount_kemasan_idr = str_replace('.', '', $discount_kemasan_idr);
+                        $sub_total = str_replace('.', '', $sub_total);
+                        $grand_total_idr = str_replace('.', '', $grand_total_idr);
+                        
+                        // ubah decimal koma ke titik
+                        $discount_agen_idr = str_replace(',', '.', $discount_agen_idr);
+                        $discount_kemasan_idr = str_replace(',', '.', $discount_kemasan_idr);
+                        $sub_total = str_replace(',', '.', $sub_total);
+                        $grand_total_idr = str_replace(',', '.', $grand_total_idr);
     
                         $valuePoDetail[] = [
                             'discount_1' => $request->disc_agen_percent,
-                            'discount_2' => $request->disc_tambahan,
-                            'discount_idr' => $request->disc_idr,
+                            'discount_2' => $request->disc_kemasan_percent,
+                            'discount_1_idr' => $discount_agen_idr,
+                            'discount_2_idr' => $discount_kemasan_idr,
                             'voucher_idr' => $request->voucher_idr,
-                            'purchase_total_idr' => $request->subtotal_2,
+                            'purchase_total_idr' => $sub_total,
                             'delivery_cost_idr' => $request->delivery_cost_idr,
-                            'other_cost_idr' => $request->resi_ongkir,
-                            'grand_total_idr' => $request->grand_total_final,
+                            'other_cost_idr' => $request->resi_ongkir ?? 0,
+                            'grand_total_idr' => $grand_total_idr,
                             'updated_by' => Auth::id(),
                             'created_by' => Auth::id(),
                         ];
@@ -1265,11 +1275,11 @@ class SalesOrderController extends Controller
                             
                         }
 
-                        if ($failed) {
-                            $response['failed'] = $failed;
+                        // if ($failed) {
+                        //     $response['failed'] = $failed;
         
-                            return $this->response(200, $response);
-                        }
+                        //     return $this->response(200, $response);
+                        // }
 
                         DB::commit();
 
@@ -1285,6 +1295,7 @@ class SalesOrderController extends Controller
                 }
 
             }catch (\Exception $e) {
+                dd($e);
                 DB::rollback();
                 $response['notification'] = [
                     'alert' => 'block',

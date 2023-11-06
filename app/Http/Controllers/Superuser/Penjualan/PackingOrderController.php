@@ -1121,11 +1121,6 @@ class PackingOrderController extends Controller
                 //Delete packing order item
                 $del_po_item = PackingOrderItem::where('do_id', $result->id)->delete();
 
-                //Delete proforma
-                $get_pro = Soproforma::where('do_id', $request->id)->first();
-
-                $del_proforma_item = SoProformaDetail::where('so_proforma_id', $get_pro->id)->delete();
-
                 return redirect()->back()->with('success','SO Packed berhasil di kembalikan ke SO!');  
             }elseif($result->status == 5 OR $result->status == 6){
                 return redirect()->back()->with('error','Gagal di Kembalikan status saat ini DO dalam proses KIRIM!');

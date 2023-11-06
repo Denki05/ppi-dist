@@ -104,6 +104,26 @@ class CodeRepo
 
     }
 
+    // Generate So code awal
+    public static function generateSoAwal(){
+        $count = SalesOrder::withTrashed()
+                              ->where('status', '>', 0)
+                              ->whereYear('created_at',date('Y'))
+                              ->whereMonth('created_at',date('m'))
+                              ->get();
+                                   
+        if(count($count) > 0 ){
+            $count = count($count) + 1;
+
+            $code = 'SO-' .date('ym').sprintf('%03d', $count);
+        }
+        else{
+            $code = 'SO-' .date('ym').sprintf('%03d', 1);
+        }
+        return $code;
+
+    }
+
     // Generate CTG
     public static function generateCTG(){
         $count = Catalog::withTrashed()

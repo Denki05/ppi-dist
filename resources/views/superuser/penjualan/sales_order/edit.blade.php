@@ -31,12 +31,12 @@
                 <div class="col-10">
                   @if($step == 1 || $step == 2 || $step == 9)
                     <div class="form-group row">
-                    <label class="col-md-4 col-form-label text-right">Team Leader<span class="text-danger">*</span></label>
+                    <label class="col-md-4 col-form-label text-right">Sales Senior<span class="text-danger">*</span></label>
                     <div class="col-md-8">
                       <select class="form-control js-select2" name="sales_senior_id">
-                        <option value="">Pilih TL</option>
-                        @foreach($sales as $index => $row)
-                          <option value="{{$row->id}}" {{$result->sales_senior_id == $row->id  ? 'selected' : ''}}>{{$row->name}}</option>
+                        <option value="">Pilih Sales Senior</option>
+                        @foreach(\App\Entities\Penjualan\SalesOrder::SALES_SENIOR as $sales_senior => $sales_value)
+                          <option value="{{ $sales_value }}" {{ ($result->sales_senior_id == $sales_value) ? 'selected' : '' }}>{{ $sales_senior }}</option>
                         @endforeach
                       </select>
                     </div>
@@ -46,12 +46,12 @@
                 <div class="col-10">
                   @if($step == 1 || $step == 2 || $step == 9)
                     <div class="form-group row">
-                    <label class="col-md-4 col-form-label text-right">Salesman<span class="text-danger">*</span></label>
+                    <label class="col-md-4 col-form-label text-right">Sales<span class="text-danger">*</span></label>
                     <div class="col-md-8">
                       <select class="form-control js-select2" name="sales_id">
-                        <option value="">Pilih Salesman</option>
-                        @foreach($sales as $index => $row)
-                          <option value="{{$row->id}}" {{$result->sales_id == $row->id  ? 'selected' : ''}}>{{$row->name}}</option>
+                        <option value="">Pilih Sales</option>
+                        @foreach(\App\Entities\Penjualan\SalesOrder::SALES as $sales => $sales_value)
+                          <option value="{{ $sales_value }}" {{ ($result->sales_id == $sales_value) ? 'selected' : '' }}>{{ $sales }}</option>
                         @endforeach
                       </select>
                     </div>
@@ -66,7 +66,22 @@
           <div class="card">
             <div class="card-body">
               <div class="row">
-                <div class="col-md-6">
+              <div class="col-md-6">
+                  @if($step == 1)
+                    <div class="form-group row">
+                      <label class="col-md-4 col-form-label text-right">Brand</label>
+                      <div class="col-md-6">
+                        <select class="form-control js-select2 select-brand" data-index="0">
+                          <option value="">Pilih Merek</option>
+                          @foreach($brand as $index => $row)
+                          <option value="{{$row->brand_name}}">{{$row->brand_name}}</option>
+                          @endforeach
+                        </select>
+                      </div>
+                    </div>
+                    @endif
+                </div>
+                {{--<div class="col-md-6">
                   @if($step == 1)
                     <div class="form-group row">
                       <label class="col-md-4 col-form-label text-right">Transaksi<span class="text-danger">*</span></label>
@@ -81,7 +96,7 @@
                       </div>
                     </div>
                     @endif
-                </div>
+                </div>--}}
                 <div class="col-md-6">
                   @if($step == 1)
                     <div class="form-group row">
@@ -102,21 +117,7 @@
                     </div>
                     @endif
                 </div>
-                <div class="col-md-6">
-                  @if($step == 1)
-                    <div class="form-group row">
-                      <label class="col-md-4 col-form-label text-right">Brand</label>
-                      <div class="col-md-6">
-                        <select class="form-control js-select2 select-brand" data-index="0">
-                          <option value="">Pilih Merek</option>
-                          @foreach($brand as $index => $row)
-                          <option value="{{$row->brand_name}}">{{$row->brand_name}}</option>
-                          @endforeach
-                        </select>
-                      </div>
-                    </div>
-                    @endif
-                </div>
+                
               </div>
             </div>
           </div>

@@ -23,11 +23,9 @@
                     <div class="col-md-8">
                       <select class="form-control js-select2" name="sales_senior_id">
                         <option value="">Pilih Sales Senior</option>
-                        <option value="1">Ivan</option>
-                        <option value="2">Erwin</option>
-                        <option value="3">Nia</option>
-                        <option value="4">Super Administrator</option>
-
+                        @foreach(\App\Entities\Penjualan\SalesOrder::SALES_SENIOR as $sales_senior => $senior_value)
+                        <option value="{{ $senior_value }}">{{ $sales_senior }}</option>
+                        @endforeach
                       </select>
                     </div>
                   </div>
@@ -40,11 +38,9 @@
                     <div class="col-md-8">
                       <select class="form-control js-select2" name="sales_id">
                         <option value="">Pilih Sales</option>
-                        <option value="1">Ivan</option>
-                        <option value="2">Erwin</option>
-                        <option value="3">Lindy</option>
-                        <option value="4">Super Administrator</option>
-
+                        @foreach(\App\Entities\Penjualan\SalesOrder::SALES as $sales => $sales_value)
+                        <option value="{{ $sales_value }}">{{ $sales }}</option>
+                        @endforeach
                       </select>
                     </div>
                   </div>
@@ -58,7 +54,23 @@
           <div class="card">
             <div class="card-body">
               <div class="row">
-                <div class="col-md-6">
+              <div class="col-md-6">
+                  @if($step == 1)
+                    <div class="form-group row">
+                      <label class="col-md-4 col-form-label text-right">Brand</label>
+                      <div class="col-md-6">
+                        <select class="form-control js-select2 select-brand" data-index="0">
+                          <option value="">Pilih Merek</option>
+                          @foreach($brand as $index => $row)
+                          <option value="{{$row->brand_name}}">{{$row->brand_name}}</option>
+                          @endforeach
+                        </select>
+                      </div>
+                    </div>
+                    @endif
+                </div>
+                
+                {{--<div class="col-md-6">
                   @if($step == 1)
                     <div class="form-group row">
                       <label class="col-md-4 col-form-label text-right">Transaksi<span class="text-danger">*</span></label>
@@ -73,7 +85,7 @@
                       </div>
                     </div>
                     @endif
-                </div>
+                </div>--}}
                 <div class="col-md-6">
                   @if($step == 1)
                     <div class="form-group row">
@@ -94,21 +106,7 @@
                     </div>
                     @endif
                 </div>
-                <div class="col-md-6">
-                  @if($step == 1)
-                    <div class="form-group row">
-                      <label class="col-md-4 col-form-label text-right">Brand</label>
-                      <div class="col-md-6">
-                        <select class="form-control js-select2 select-brand" data-index="0">
-                          <option value="">Pilih Merek</option>
-                          @foreach($brand as $index => $row)
-                          <option value="{{$row->brand_name}}">{{$row->brand_name}}</option>
-                          @endforeach
-                        </select>
-                      </div>
-                    </div>
-                    @endif
-                </div>
+                
               </div>
             </div>
           </div>
@@ -151,7 +149,7 @@
                   </div>
                   <div class="col-1">
                     <input type="checkbox" class="form-check-input input-gift" id="gift" name="gift">
-                    <input class="form-control input-free" type="hidden" id="free_product" name="free_product[]" data-index="0" step="any">
+                    <input class="form-control input-free" type="hidden" id="free_product" value="0" name="free_product[]" data-index="0" step="any">
                   </div>
                   <div class="col-1"><button type="button" id="buttonAddProduct" class="btn btn-primary"><em class="fa fa-plus"></em></button></div>
                 </div>

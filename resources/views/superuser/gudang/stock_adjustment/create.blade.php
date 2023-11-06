@@ -206,9 +206,9 @@
       })
     }
     function total(){
-      let prev = parseInt($('input[name="prev"]').val());
-      let plus = parseInt($('input[name="plus"]').val());
-      let min = parseInt($('input[name="min"]').val());
+      let prev = parseFloat($('input[name="prev"]').val());
+      let plus = parseFloat($('input[name="plus"]').val());
+      let min = parseFloat($('input[name="min"]').val());
 
       if(isNaN(prev)){
         prev = 0;

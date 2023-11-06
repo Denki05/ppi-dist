@@ -98,10 +98,6 @@
                 <th>Sales</th>
                 @endif
 
-                @if($step == 1)
-                <th>Transaksi Type</th>
-                @endif
-
                 @if($step == 1 )
                 <th>Tanggal Dibuat</th>
                 @endif
@@ -126,13 +122,10 @@
 
                   @if($step == 1)
                   <td>
-                    {{$row->sales_senior->name ?? ''}} | {{ $row->sales->name ?? '' }} <br>
+                    {{$row->so_sales_senior() ?? ''}} | {{ $row->so_sales() ?? '' }} <br>
                   </td>
                   @endif
 
-                  @if($step == 1)
-                  <td>{{$row->type_transaction ?? ''}}</td>
-                  @endif
 
                   @if($step == 1 || $step == 9)
                   <td>
