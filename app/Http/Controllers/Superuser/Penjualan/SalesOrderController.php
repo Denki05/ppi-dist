@@ -116,7 +116,7 @@ class SalesOrderController extends Controller
                                 }
                                 if(!empty($step)){
                                     if ($step === 1) { // SO awal
-                                        $query2->whereIn('status', [1, 2, 3]);
+                                        $query2->whereIn('status', [1, 2, 3, 4]);
                                         $query2->where('so_for', 1);
                                     } else if ($step === 2) { // SO lanjutan
                                         $query2->whereIn('status', [2, 4]);

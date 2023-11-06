@@ -143,9 +143,9 @@
                     @if ($row->status === 4)
                     <a href="{{route('superuser.penjualan.sales_order.detail',$row->id)}}" class="btn btn-primary btn-sm btn-flat"><i class="fa fa-eye"></i> Detail</a>
                     @endif
-                    @if ($row->status === 4 && $soQty > 0)
+                    {{--@if ($row->status === 4 && $soQty > 0)
                     <a href="{{route('superuser.penjualan.sales_order.print_rejected_so',$row->id)}}" class="btn btn-info btn-sm btn-flat" target="_blank"><i class="fa fa-print"></i> Print Rejected Item</a>
-                    @endif
+                    @endif--}}
                     @if ($row->status === 1 || $row->status === 3)
                     <a href="{{route('superuser.penjualan.sales_order.edit',['id'=>$row->id, 'step'=>1])}}" class="btn btn-primary btn-sm btn-flat"><i class="fa fa-edit"></i> {{ $row->status === 1 ? 'Edit' : 'Revisi' }}</a>
                     @endif
@@ -449,6 +449,22 @@
         '?member_name=all';
 
   $(function(){
+    $('#so_awal').DataTable( {
+        paging   :   true,
+        info     :     false,
+        searching : false,
+        order: [
+          [1, 'desc']
+        ],
+        pageLength: 10,
+        lengthMenu: [
+          [10, 30, 100, -1],
+          [10, 30, 100, 'All']
+        ],
+        "dom": '<"row"<"col-sm-12 col-md-6"l><"col-sm-12 col-md-6"f>> <"row"<"col-sm-12 col-md-12"p>> <"row"<"col-sm-12"rt>> <"row"<"col-sm-12 col-md-6"i><"col-sm-12 col-md-6"p>>'
+
+    });
+
     $('#so_lanjutan').DataTable( {
         "paging":   false,
         "ordering": true,
