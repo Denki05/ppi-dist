@@ -29,13 +29,13 @@
           <div class="form-group row">
             <label class="col-md-2 col-form-label text-right" for="name">Sales Senior</label>
             <div class="col-md-8">
-              <input type="text" class="form-control" value="{{$result->so_sales_senior()->scalar ?? ''}}" readonly>
+              <input type="text" class="form-control" value="{{$result->so_sales_senior() ?? ''}}" readonly>
             </div>
           </div>
           <div class="form-group row">
             <label class="col-md-2 col-form-label text-right" for="name">Sales </label>
             <div class="col-md-8">
-              <input type="text" class="form-control" value="{{$result->so_sales()->scalar ?? ''}}" readonly>
+              <input type="text" class="form-control" value="{{$result->so_sales() ?? ''}}" readonly>
             </div>
           </div>
           <div class="form-group row">
@@ -94,7 +94,7 @@
           <div class="form-group row">
             <label class="col-md-2 col-form-label text-right">Ekspedisi</label>
             <div class="col-md-8">
-              <input type="text" class="form-control" value="{{$result->ekspedisi->name ?? ''}}" readonly>
+              <input type="text" class="form-control" value="{{$result->vendor->name ?? ''}}" readonly>
             </div>
           </div>
           <div class="form-group row">

@@ -141,7 +141,7 @@
                   @if(($step == 1 || $step == 2 || $step == 9) && ($row->so_for == 1))
                   <td>
                     @if ($row->status === 4)
-                    <a href="{{route('superuser.penjualan.sales_order.detail',$row->id)}}" class="btn btn-primary btn-sm btn-flat"><i class="fa fa-eye"></i> Detail</a>
+                    <a href="{{route('superuser.penjualan.sales_order.detail',$row->id)}}" class="btn btn-primary btn-sm btn-flat"><i class="fa fa-eye"></i> View</a>
                     @endif
                     {{--@if ($row->status === 4 && $soQty > 0)
                     <a href="{{route('superuser.penjualan.sales_order.print_rejected_so',$row->id)}}" class="btn btn-info btn-sm btn-flat" target="_blank"><i class="fa fa-print"></i> Print Rejected Item</a>
@@ -161,6 +161,9 @@
                     @endif
                     @if ($row->status === 1 || $row->status === 3)
                     <a href="#" class="btn btn-danger btn-sm btn-flat btn-delete" data-id="{{$row->id}}"><i class="fa fa-trash"></i> Delete</a>
+                    @endif
+                    @if( $row->status == 1 )
+                    <a href="javascript:saveConfirmation2('{{ route('superuser.penjualan.sales_order.indent', ['id' => $row->id]) }}')" class="btn btn-info btn-sm btn-flat btn-indent"><i class="fa fa-clipboard"></i> Indent</a>
                     @endif
                   </td>
                   @endif
@@ -227,7 +230,6 @@
                   @if ($step == 2 && $row->status === 2)
                     <a href="{{route('superuser.penjualan.sales_order.edit',['id'=>$row->id, 'step'=>2])}}" class="btn btn-success btn-sm btn-flat"><i class="fa fa-check"></i> Kerjakan</a>
                     <a href="#" class="btn btn-warning btn-sm btn-flat btn-kembali-ke-awal" data-id="{{$row->id}}"><i class="fa fa-times"></i> Kembali ke SO</a>
-                    <a href="javascript:saveConfirmation2('{{ route('superuser.penjualan.sales_order.indent', ['id' => $row->id]) }}')" class="btn btn-info btn-sm btn-flat btn-indent"><i class="fa fa-clipboard"></i> Indent</a>
                     <a href="javascript:saveConfirmation('{{ route('superuser.penjualan.sales_order.delete_lanjutan', ['id' => $row->id]) }}')" class="btn btn-danger btn-sm btn-flat btn-delete-lanjutan"><i class="fa fa-times"></i> Delete</a>
                   @endif
                   @if ($row->status === 4)
@@ -437,6 +439,9 @@
     @csrf
     <input type="hidden" name="id">
 </form>
+
+
+
 @endsection
 @include('superuser.asset.plugin.select2')
 @include('superuser.asset.plugin.swal2')
