@@ -366,6 +366,8 @@ class PurchaseOrderController extends Controller
                 $purchase_order->status = PurchaseOrder::STATUS['ACC'];
 
                 if ($purchase_order->save()) {
+
+                    
                     DB::commit();
                     $response['redirect_to'] = route('superuser.gudang.purchase_order.index');
                     return $this->response(200, $response);

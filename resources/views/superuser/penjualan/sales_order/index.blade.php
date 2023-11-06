@@ -141,7 +141,9 @@
                   @if(($step == 1 || $step == 2 || $step == 9) && ($row->so_for == 1))
                   <td>
                     @if ($row->status === 4)
-                    <a href="{{route('superuser.penjualan.sales_order.detail',$row->id)}}" class="btn btn-primary btn-sm btn-flat"><i class="fa fa-eye"></i> View</a>
+                    <button type="button" class="btn btn-primary btn-sm btn-flat" data-toggle="modal" data-target="#myModal{{$row->id}}"><i class="fa fa-eye"></i> View</button>
+                    <!-- <a href="javascript:void(0)" class="btn btn-primary btn-sm btn-flat openModal" ><i class="fa fa-eye"></i> View</a> -->
+                    <!-- <a href="javascript:void(0)" type="button" class="btn btn-primary btn-sm btn-flat openModal" data-id="{{$row->id}}"><i class="fa fa-eye"> View</i></a>  -->
                     @endif
                     {{--@if ($row->status === 4 && $soQty > 0)
                     <a href="{{route('superuser.penjualan.sales_order.print_rejected_so',$row->id)}}" class="btn btn-info btn-sm btn-flat" target="_blank"><i class="fa fa-print"></i> Print Rejected Item</a>
@@ -153,7 +155,9 @@
                     <a href="#" class="btn btn-success btn-sm btn-flat btn-lanjutan" data-id="{{$row->id}}"><i class="fa fa-check"></i> Lanjutan</a>
                     @endif
                     @if ($step == 1 && $row->status === 2)
-                    <a href="{{route('superuser.penjualan.sales_order.detail',$row->id)}}" class="btn btn-primary btn-sm btn-flat"><i class="fa fa-eye"></i> View</a>
+                    <button type="button" class="btn btn-primary btn-sm btn-flat" data-toggle="modal" data-target="#myModal{{$row->id}}"><i class="fa fa-eye"></i> View</button>
+                    <!-- <a href="javascript:void(0)" class="btn btn-primary btn-sm btn-flat openModal"><i class="fa fa-eye"></i> View</a> -->
+                    <!-- <a href="{{route('superuser.penjualan.sales_order.detail',$row->id)}}" class="btn btn-primary btn-sm btn-flat"><i class="fa fa-eye"></i> View</a> -->
                     @endif
                     @if ($step == 2 && $row->status === 2)
                     <a href="{{route('superuser.penjualan.sales_order.edit',['id'=>$row->id, 'step'=>2])}}" class="btn btn-success btn-sm btn-flat"><i class="fa fa-check"></i> Kerjakan</a>
@@ -440,7 +444,131 @@
     <input type="hidden" name="id">
 </form>
 
+<!-- Modal view & detail -->
+@foreach($table as $row)
+<div class="modal fade bd-example-modal-xl" id="myModal{{$row->id}}" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-xl" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="exampleModalLabel">View #{{$row->code}}</h5>
+            </div>
+            <div class="modal-body">
+              <div class="row">
+                  <div class="col">
+                    <div class="block">
+                      <div class="block-header block-header-default">
+                        <h3 class="block-title">#Detail Nota</h3>
+                      </div>
+                      <div class="block-content">
+                        <div class="form-row">
+                          <div class="form-group col-md-6">
+                            <label for="invoice_date">Tanggal Nota</label>
+                            <input type="text" name="invoice_date" class="form-control" value="{{ date('d-m-Y',strtotime($row->created_at)) }}" readonly>
+                          </div>
+                          <div class="form-group col-md-6">
+                            <label for="invoice_code">Code</label>
+                            <input type="text" class="form-control" id="invoice_code" value="{{$row->so_code}} || {{$row->code}}" readonly>
+                          </div>
+                        </div>
 
+                        <div class="form-row">
+                          <div class="form-group col-md-6">
+                            <label for="invoice_date">Sales Senior</label>
+                            <input type="text" name="sales_senior_id" class="form-control" value="{{ $row->so_sales_senior() }}"  readonly>
+                          </div>
+                          <div class="form-group col-md-6">
+                            <label for="invoice_code">Sales</label>
+                            <input type="text" class="form-control" id="sales_id"  value="{{ $row->so_sales() }}" readonly>
+                          </div>
+                        </div>
+
+                        <div class="form-row">
+                          <div class="form-group col-md-6">
+                            <label for="type_transaction">Type Transaksi</label>
+                            <input type="text" name="type_transaction" class="form-control" value="{{ $row->type_transaction }}"  readonly>
+                          </div>
+                          <div class="form-group col-md-6">
+                            <label for="note">Catatan</label>
+                            <input type="text" class="form-control" value="{{ $row->note }}"  readonly>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                  <div class="col">
+                    <div class="block">
+                      <div class="block-header block-header-default">
+                        <h3 class="block-title">#Customer</h3>
+                      </div>
+                      <div class="block-content">
+                        <div class="form-row">
+                          <div class="form-group col-md-6">
+                            <label for="type_transaction">Customer</label>
+                            <input type="text" name="customer_name" id="customer_name" class="form-control" value="{{ $row->member->name }} {{$row->member->text_kota}}"  readonly>
+                          </div>
+                          <div class="form-group col-md-6">
+                            <label for="note">Alamat Kirim</label>
+                            <textarea class="form-control" rows="1" readonly>{{$row->member->address}}</textarea>
+                          </div>
+                        </div>
+
+                        <div class="form-row">
+                          <div class="form-group col-md-6">
+                            <label for="customer_city">Kota</label>
+                            <input type="text" name="customer_city" class="form-control" value="{{$row->member->text_kota}}" readonly>
+                          </div>
+                          <div class="form-group col-md-6">
+                            <label for="customer_area">Provinsi</label>
+                            <input type="text" name="customer_area" class="form-control" value="{{$row->member->text_provinsi}}"  readonly>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+              </div>
+
+              <div class="row">
+                <div class="col">
+                  <table class="table">
+                    <thead>
+                      <tr>
+                        <th>#</th>
+                        <th>Product</th>
+                        <th>Kemasan</th>
+                        <th>Qty</th>
+                        <th>Harga</th>
+                        <th>Free</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      @foreach($row->so_detail as $value => $key)
+                        <tr>
+                          <td>{{ $loop->iteration }}</td>
+                          <td>{{ $key->product_pack->code }} - <b>{{$key->product_pack->name}}</b></td>
+                          <td>{{ $key->product_pack->kemasan()->pack_name }}</td>
+                          <td>{{ $key->qty }}</td>
+                          <td>{{ $key->product_pack->price }}</td>
+                          <td>
+                            @if($key->free_product == 1)
+                            YES
+                            @elseif($key->free_product == 0)
+                            NO
+                            @endif
+                        </td>
+                        </tr>
+                      @endforeach
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+            <div class="modal-footer">
+              <button type="button" class="btn btn-danger" data-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+@endforeach
 
 @endsection
 @include('superuser.asset.plugin.select2')
@@ -581,41 +709,40 @@
         }
       })
 
-    $(document).on('click','.btn-ready',function(){
-      if(confirm("Apakah anda yakin ingin mengubah status SO Validasi ke Ready?")){
-        let id = $(this).data('id');
-        $('#frmReady').find('input[name="id"]').val(id);
-        $('#frmReady').submit();
-      }
-    })
+      $(document).on('click','.btn-ready',function(){
+        if(confirm("Apakah anda yakin ingin mengubah status SO Validasi ke Ready?")){
+          let id = $(this).data('id');
+          $('#frmReady').find('input[name="id"]').val(id);
+          $('#frmReady').submit();
+        }
+      })
 
-    $(document).on('click','.btn-frmedit',function(){
-      if(confirm("Apakah anda yakin melakukan Edit?")){
-        let id = $(this).data('id');
-        $('#frmRevisi').find('input[name="id"]').val(id);
-        $('#frmRevisi').submit();
-      }
-    })
+      $(document).on('click','.btn-frmedit',function(){
+        if(confirm("Apakah anda yakin melakukan Edit?")){
+          let id = $(this).data('id');
+          $('#frmRevisi').find('input[name="id"]').val(id);
+          $('#frmRevisi').submit();
+        }
+      })
 
-    $(document).on('click','.btn-cancel',function(){
-      if(confirm("Apakah anda yakin melakukan Cancel DO?")){
-        let id = $(this).data('id');
-        $('#frmCancel').find('input[name="id"]').val(id);
-        $('#frmCancel').submit();
-      }
-    })
+      $(document).on('click','.btn-cancel',function(){
+        if(confirm("Apakah anda yakin melakukan Cancel DO?")){
+          let id = $(this).data('id');
+          $('#frmCancel').find('input[name="id"]').val(id);
+          $('#frmCancel').submit();
+        }
+      })
 
-    $(document).on('click','.btn-frmdoedit',function(){
-      if(confirm("Apakah anda yakin melakukan Update DO?")){
-        let id = $(this).data('id');
-        $('#frmDoEdit').find('input[name="id"]').val(id);
-        $('#frmDoEdit').submit();
-      }
-    })
+      $(document).on('click','.btn-frmdoedit',function(){
+        if(confirm("Apakah anda yakin melakukan Update DO?")){
+          let id = $(this).data('id');
+          $('#frmDoEdit').find('input[name="id"]').val(id);
+          $('#frmDoEdit').submit();
+        }
+      })
 
-    $("#filter").on("click", function(){
-      $("#member_list").toggle();
-    });
-  })
+      $("#filter").on("click", function(){
+        $("#member_list").toggle();
+      });
 </script>
 @endpush

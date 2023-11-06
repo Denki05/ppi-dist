@@ -128,7 +128,7 @@ class SalesOrderController extends Controller
                             })
                             ->where('type_so', 'nonppn')
                             ->orderBy('id','DESC')
-                            ->paginate(10);
+                            ->get();
 
         $customers = Customer::get();
         $other_address = CustomerOtherAddress::get();
