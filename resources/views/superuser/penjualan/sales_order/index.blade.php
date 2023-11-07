@@ -744,5 +744,7 @@
       $("#filter").on("click", function(){
         $("#member_list").toggle();
       });
+
+    });
 </script>
 @endpush
