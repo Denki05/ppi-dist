@@ -27,6 +27,11 @@ class PurchaseOrderDetail extends Model
         return $this->belongsTo('App\Entities\Master\ProductPack', 'product_packaging_id', 'id');
     }
 
+    public function packaging()
+    {
+        return $this->belongsTo('App\Entities\Master\Packaging', 'Packaging_id', 'id');
+    }
+
     public function purchase_order()
     {
         return $this->belongsTo('App\Entities\Gudang\PurchaseOrder', 'po_id');

@@ -28,6 +28,8 @@ Route::group([
         Route::get('{id}/print_pdf', 'PurchaseOrderController@print_pdf')->name('print_pdf');
         Route::get('/import_template', 'PurchaseOrderController@import_template')->name('import_template');
         Route::post('/import/{id}', 'PurchaseOrderController@import')->name('import');
+        Route::get('/search_sku', 'PurchaseOrderController@search_sku')->name('search_sku');
+        Route::get('/search_kemasan', 'PurchaseOrderController@search_kemasan')->name('search_kemasan');
 
         Route::group(['as' => 'detail.'], function () {
             Route::get('{purchase_id}/detail/create', 'PurchaseOrderDetailController@create')->name('create');

@@ -19,6 +19,11 @@ class Packaging extends Model
         return $this->hasMany('App\Entities\Master\Product', 'packaging_id');
     }
 
+    public function purchase_order_detail()
+    {
+        return $this->hasMany('App\Entities\Gudang\PurchaseOrderDetail', 'packaging_id');
+    }
+
     public function sales_order_item()
     {
         return $this->hasMany('App\Entities\Penjualan\SalesOrderItem', 'packaging_id');

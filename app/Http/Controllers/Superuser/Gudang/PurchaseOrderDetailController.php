@@ -151,9 +151,54 @@ class PurchaseOrderDetailController extends Controller
     }
 
     
-    public function update(Request $request, $id)
+    public function update(Request $request, $id, $detail)
     {
-        //
+        if ($request->ajax()) {
+            $validator = Validator::make($request->all(), [
+                'product_packaging_id' => 'required',
+                'packaging_id' => 'required|integer',
+                'quantity' => 'nullable|numeric',
+                
+            ]);
+
+            if ($validator->fails()) {
+                $response['notification'] = [
+                    'alert' => 'block',
+                    'type' => 'alert-danger',
+                    'header' => 'Error',
+                    'content' => $validator->errors()->all(),
+                ];
+  
+                return $this->response(400, $response);
+            }
+
+            if ($validator->passes()) {
+                $purchase_order = PurchaseOrder::find($id);
+                $purchase_order_detail = PurchaseOrderDetail::find($detail);
+
+                if ($purchase_order == null OR $purchase_order_detail == null) {
+                    abort(404);
+                }
+                
+                $purchase_order_detail->product_packaging_id = $request->product_packaging_id;
+                $purchase_order_detail->quantity = $request->quantity;
+                $purchase_order_detail->packaging_id = $request->packaging_id;
+                $purchase_order_detail->note_produksi = $request->note_produksi;
+                $purchase_order_detail->note_repack = $request->note_repack;
+
+                if ($purchase_order_detail->save()) {
+                    $response['notification'] = [
+                        'alert' => 'notify',
+                        'type' => 'success',
+                        'content' => 'Success',
+                    ];
+
+                    $response['redirect_to'] = route('superuser.gudang.purchase_order.step', $id);
+
+                    return $this->response(200, $response);
+                }
+            }
+        }
     }
 
     public function destroy(Request $request, $id, $detail_id)

@@ -8,7 +8,8 @@ use App\Entities\Setting\UserMenu;
 use App\Entities\Gudang\PurchaseOrder;
 use App\Entities\Gudang\PurchaseOrderDetail;
 use App\Entities\Master\BrandLokal;
-use App\Entities\Master\Product;
+use App\Entities\Master\ProductPack;
+use App\Entities\Master\Packaging;
 use App\DataTables\Gudang\PurchaseOrderTable;
 use App\Exports\Gudang\PurchaseOrderDetailImportTemplate;
 use App\Imports\Gudang\PurchaseOrderDetailImport;
@@ -43,6 +44,22 @@ class PurchaseOrderController extends Controller
     public function json(Request $request, PurchaseOrderTable $datatable)
     {
         return $datatable->build();
+    }
+
+    public function search_sku(Request $request)
+    {
+        $products = ProductPack::where('name', 'LIKE', '%'.$request->input('q', '').'%')
+            ->where('status', ProductPack::STATUS['ACTIVE'])
+            ->get(['id', 'code as text', 'name']);
+        return ['results' => $products];
+    }
+
+    public function search_kemasan(Request $request)
+    {
+        $packagings = Packaging::where('pack_name', 'LIKE', '%'.$request->input('q', '').'%')
+            ->where('status', Packaging::STATUS['ACTIVE'])
+            ->get(['id', 'pack_name as text']);
+        return ['results' => $packagings];
     }
 
     /**

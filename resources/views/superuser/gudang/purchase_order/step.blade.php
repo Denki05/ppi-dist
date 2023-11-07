@@ -172,8 +172,8 @@
       <thead>
         <tr>
           <th class="text-center">#</th>
-          <th class="text-center">Nama Varian</th>
           <th class="text-center">Kode</th>
+          <th class="text-center">Nama Varian</th>
           <th class="text-center">Qty (KG)</th>
           <th class="text-center">Packaging</th>
           <th class="text-center">Notes</th>
@@ -185,8 +185,8 @@
         @foreach($purchase_order->purchase_order_detail as $row)
           <tr>
             <td class="text-center">{{ $loop->iteration }}</td>
-            <td class="text-center">{{ $row->product_pack->name }}</td>
             <td class="text-center">{{ $row->product_pack->code }}</td>
+            <td class="text-center">{{ $row->product_pack->name }}</td>
             <td class="text-center">{{ $row->quantity }}</td>
             <td class="text-center">{{ $row->product_pack->kemasan()->pack_name }}</td>
             <td class="text-center">{{ $row->note_produksi ?? '-' }}</td>
