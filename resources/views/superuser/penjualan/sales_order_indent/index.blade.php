@@ -44,7 +44,8 @@
                 <td>{{ $key->member->name }} {{ $key->member->text_kota }}</td>
                 <td>{{ $key->type_transaction }}</td>
                 <td>
-                    <button type="button" class="btn btn-info" data-toggle="modal" data-target=".bd-example-modal-lg"><i class="fa fa-eye" aria-hidden="true"></i> show</button>
+                    <!-- <button type="button" class="btn btn-info" data-toggle="modal" data-target=".bd-example-modal-lg"><i class="fa fa-eye" aria-hidden="true"></i> show</button> -->
+                    <button type="button" class="btn btn-info" data-toggle="modal" data-target="#myModal{{$key->id}}"><i class="fa fa-eye" aria-hidden="true"></i> View</button>
                     <a class="btn btn-danger" href="javascript:deleteConfirmation('{{ route('superuser.penjualan.sales_order_indent.destroy', $key->id) }}')" role="button"><i class="fa fa-trash" aria-hidden="true"></i> Hapus</a>
                 </td>
             </tr>
@@ -55,7 +56,8 @@
 </div>
 
 <!-- modal show -->
-{{--<div class="modal fade bd-example-modal-lg" tabindex="-1" role="dialog" aria-labelledby="myLargeModalLabel" aria-hidden="true">
+@foreach($sales_order as $key)
+<div class="modal fade bd-example-modal-lg" id="myModal{{$key->id}}" tabindex="-1" role="dialog" aria-labelledby="myLargeModalLabel" aria-hidden="true">
   <div class="modal-dialog modal-xl">
     <div class="modal-content">
         <div class="modal-header">
@@ -75,22 +77,22 @@
                       <div class="form-row">
                         <div class="form-group col-md-6">
                           <label for="invoice_date">Tanggal Nota</label>
-                          <input type="text" name="invoice_date" class="form-control" value="{{ date('d-m-Y',strtotime($sales_order[0]->created_at)) }}" readonly>
+                          <input type="text" name="invoice_date" class="form-control" value="{{ date('d-m-Y',strtotime($key->created_at)) }}" readonly>
                         </div>
                         <div class="form-group col-md-6">
                           <label for="invoice_code">Nomer Nota</label>
-                          <input type="text" class="form-control" id="invoice_code" value="{{ $sales_order[0]->code }}" readonly>
+                          <input type="text" class="form-control" id="invoice_code" value="{{ $key->so_code }}" readonly>
                         </div>
                       </div>
 
                       <div class="form-row">
                         <div class="form-group col-md-6">
                           <label for="type_transaction">Type Transaksi</label>
-                          <input type="text" name="type_transaction" class="form-control" value="{{$sales_order[0]->type_transaction}}" readonly>
+                          <input type="text" name="type_transaction" class="form-control" value="{{$key->type_transaction}}" readonly>
                         </div>
                         <div class="form-group col-md-6">
                           <label for="note">Catatan</label>
-                          <input type="text" class="form-control" value="{{ $sales_order[0]->note ?? '-' }}" readonly>
+                          <input type="text" class="form-control" value="{{ $key->note ?? '-' }}" readonly>
                         </div>
                       </div>
                     </div>
@@ -105,22 +107,22 @@
                       <div class="form-row">
                         <div class="form-group col-md-6">
                           <label for="type_transaction">Customer</label>
-                          <input type="text" name="customer_name" class="form-control" value="{{ $sales_order[0]->member->name }} {{$sales_order[0]->member->text_kota}}" readonly>
+                          <input type="text" name="customer_name" class="form-control" value="{{ $key->member->name }} {{$key->member->text_kota}}" readonly>
                         </div>
                         <div class="form-group col-md-6">
                           <label for="note">Alamat Kirim</label>
-                          <textarea class="form-control" rows="1" readonly>{{ $sales_order[0]->member->address }}</textarea>
+                          <textarea class="form-control" rows="1" readonly>{{ $key->member->address }}</textarea>
                         </div>
                       </div>
 
                       <div class="form-row">
                         <div class="form-group col-md-6">
                           <label for="customer_city">Kota</label>
-                          <input type="text" name="customer_city" class="form-control" value="{{$sales_order[0]->member->text_kota}}" readonly>
+                          <input type="text" name="customer_city" class="form-control" value="{{$key->member->text_kota}}" readonly>
                         </div>
                         <div class="form-group col-md-6">
                           <label for="customer_area">Provinsi</label>
-                          <input type="text" name="customer_area" class="form-control" value="{{ $sales_order[0]->member->text_provinsi }} " readonly>
+                          <input type="text" name="customer_area" class="form-control" value="{{ $key->member->text_provinsi }} " readonly>
                         </div>
                       </div>
                     </div>
@@ -142,7 +144,7 @@
                     </tr>
                   </thead>
                   <tbody>
-                    @foreach($sales_order[0]->so_detail as $index => $detail)
+                    @foreach($key->so_detail as $index => $detail)
                       <tr>
                         <td>{{ $loop->iteration }}</td>
                         <td>{{ $detail->product_pack->code }} - {{ $detail->product_pack->name }}</td>
@@ -169,7 +171,8 @@
         </div>
     </div>
   </div>
-</div>--}}
+</div>
+@endforeach
 
 @endsection
 

@@ -88,6 +88,10 @@
                 <th>Code</th>
                 @endif
 
+                @if($step == 1 )
+                <th>Nota</th>
+                @endif
+
                 @if($step == 1)
                 <th>Customer</th>
                 @elseif($step == 9)
@@ -111,7 +115,13 @@
                   <td>{{$index+1}}</td>
 
                   @if($step == 1 )
-                  <td><a href="{{route('superuser.penjualan.sales_order.detail',$row->id)}}">{{$row->code}}</a></td>
+                  <td><a href="{{route('superuser.penjualan.sales_order.detail',$row->id)}}">{{$row->so_code}}</a></td>
+                  @endif
+
+                  @if($step == 1)
+                  <td>
+                    {{$row->code ?? '-'}}
+                  </td>
                   @endif
 
                   @if($step == 1)

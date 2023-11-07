@@ -1589,7 +1589,7 @@ class SalesOrderController extends Controller
 
                 if($result->save()){
                     DB::commit();
-                    $response['redirect_to'] = route('superuser.penjualan.sales_order.index_lanjutan');
+                    $response['redirect_to'] = route('superuser.penjualan.sales_order.index_awal');
                     return $this->response(200, $response);
                 }
 
