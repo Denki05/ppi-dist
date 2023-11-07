@@ -31,7 +31,7 @@
           <th class="text-center">Created at</th>
           <th class="text-center">Nota SO</th>
           <th class="text-center">Customer</th>
-          <th class="text-center">Type</th>
+          <th class="text-center">Transaction</th>
           <th class="text-center">Action</th>
         </tr>
       </thead>
@@ -40,9 +40,9 @@
             <tr>
                 <td>{{$loop->iteration}}</td>
                 <td>{{ $key->created_at }}</td>
-                <td>{{ $key->code }}</td>
+                <td>{{ $key->so_code }}</td>
                 <td>{{ $key->member->name }} {{ $key->member->text_kota }}</td>
-                <td>{{ $key->type_transaction }}</td>
+                <td>{{ $key->type_transaction ?? '-' }}</td>
                 <td>
                     <!-- <button type="button" class="btn btn-info" data-toggle="modal" data-target=".bd-example-modal-lg"><i class="fa fa-eye" aria-hidden="true"></i> show</button> -->
                     <button type="button" class="btn btn-info" data-toggle="modal" data-target="#myModal{{$key->id}}"><i class="fa fa-eye" aria-hidden="true"></i> View</button>
@@ -61,7 +61,7 @@
   <div class="modal-dialog modal-xl">
     <div class="modal-content">
         <div class="modal-header">
-            <h5 class="modal-title" id="exampleModalLabel">New message</h5>
+            <h5 class="modal-title" id="exampleModalLabel">View #{{$key->so_code}}</h5>
             <button type="button" class="close" data-dismiss="modal" aria-label="Close">
             <span aria-hidden="true">&times;</span>
             </button>
