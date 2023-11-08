@@ -275,7 +275,7 @@ class SalesOrderController extends Controller
                 }
 
                 $insert = new SalesOrder;
-                $sales_order->code = CodeRepo::generateSO();
+                $insert->code = CodeRepo::generateSO();
                 $insert->so_code = CodeRepo::generateSoAwal();
                 $insert->customer_id = $member;
                 $insert->customer_other_address_id = $store;

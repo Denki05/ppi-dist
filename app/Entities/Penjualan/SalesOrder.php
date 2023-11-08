@@ -110,6 +110,7 @@ class SalesOrder extends Model
     const INDENT_STATUS = [
         'full' => 1,
         'partly' => 2,
+        'completed' => 3,
     ];
 
     public function customer(){
