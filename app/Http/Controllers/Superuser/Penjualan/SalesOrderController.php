@@ -275,6 +275,7 @@ class SalesOrderController extends Controller
                 }
 
                 $insert = new SalesOrder;
+                $sales_order->code = CodeRepo::generateSO();
                 $insert->so_code = CodeRepo::generateSoAwal();
                 $insert->customer_id = $member;
                 $insert->customer_other_address_id = $store;
@@ -742,7 +743,6 @@ class SalesOrderController extends Controller
         try{
             $sales_order = SalesOrder::find($request->id);
 
-            $sales_order->code = CodeRepo::generateSO();
             $sales_order->status = 2;
             if($sales_order->save()){
                 DB::commit();
@@ -929,7 +929,7 @@ class SalesOrderController extends Controller
 
                     $sales_order->origin_warehouse_id = $request->origin_warehouse_id;
                     $sales_order->ekspedisi_id = $request->ekspedisi ?? null;
-                    $sales_order->so_date = date("yyyy-mm-dd", strtotime($request->so_date));
+                    $sales_order->so_date = date("y-m-d", strtotime($request->so_date));
                     $sales_order->rekening = $request->rekening;
                     $sales_order->type_transaction = $request->type_transaction;
                     $sales_order->shipping_cost_buyer = $request->shipping_cost_buyer ?? 0;

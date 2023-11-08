@@ -176,7 +176,7 @@
             <aside class="col-lg-9">
                 <div class="card border-0">
                     <div class="table-responsive">
-                        <table class="table table-borderless" id="datatables" style="white-space:nowrap;width:100%;">
+                        <table class="table table-hover" id="datatables" style="white-space:nowrap;width:100%;">
                             <thead class="text-muted">
                                 <tr class="small text-uppercase">
                                     <th class="block" style="width:auto">#</th>
@@ -289,11 +289,21 @@
                           <input type="hidden" class="form-control" name="subtotal_2" id="subtotal_2">
                         </div>
                       </div>
-                      <button type="button" class="btn btn-danger" id="btn_call"><i class="fas fa-calculator pr-2" aria-hidden="true"></i>calculated</button>
+                      <button type="button" class="btn btn-warning" id="btn_call"><i class="fas fa-calculator pr-2" aria-hidden="true"></i>calculated</button>
                       <button type="submit" class="btn btn-primary" id="save_form"><i class="fa fa-save  pr-2" aria-hidden="true" ></i> Save</button>
                     </div>
                 </div>
             </aside>
+        </div>
+
+        <div class="row pt-30 mb-15">
+          <div class="col-md-6">
+            <a href="{{ route('superuser.penjualan.sales_order.index_lanjutan') }}">
+              <button type="button" class="btn bg-gd-cherry border-0 text-white">
+                <i class="fa fa-arrow-left mr-10"></i> Back
+              </button>
+            </a>
+          </div>
         </div>
 </form>
 
