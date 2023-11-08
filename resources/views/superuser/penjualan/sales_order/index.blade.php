@@ -111,6 +111,7 @@
             </thead>
             <tbody>
               @foreach($table as $index => $row)
+                @if($row->so_indent == 0)
                 <tr>
                   <td>{{$index+1}}</td>
 
@@ -188,6 +189,7 @@
                   </td>
                   @endif
                 </tr>
+                @endif
               @endforeach
             </tbody>
           </table>

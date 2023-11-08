@@ -1586,6 +1586,7 @@ class SalesOrderController extends Controller
 
                 $result->so_indent = 1;
                 $result->code = null;
+                $result->indent_status = 1;
                 $result->updated_by = Auth::id();
 
                 if($result->save()){
