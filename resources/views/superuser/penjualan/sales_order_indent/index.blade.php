@@ -29,7 +29,7 @@
         <tr>
           <th class="text-center">#</th>
           <th class="text-center">Created at</th>
-          <th class="text-center">Nota SO</th>
+          <th class="text-center">Code</th>
           <th class="text-center">Customer</th>
           <th class="text-center">Transaction</th>
           <th class="text-center">Action</th>

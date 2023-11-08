@@ -34,6 +34,7 @@ class SalesOrder extends Model
         'keterangan_tidak_lanjut',
     	'so_for',
     	'so_indent',
+        'indent_status', 
         'count_rev',
     	'updated_by',
     	'created_by',
@@ -104,6 +105,11 @@ class SalesOrder extends Model
     const REKENING = [
         0 => '4720 2369 88 - IRWAN LINAKSITA',
         1 => '7881 0374 95 - IDA ELISA',
+    ];
+
+    const INDENT_STATUS = [
+        'full' => 1,
+        'partly' => 2,
     ];
 
     public function customer(){
@@ -186,6 +192,11 @@ class SalesOrder extends Model
     public function so_sales_senior()
     {
         return array_search($this->sales_senior_id, self::SALES_SENIOR);
+    }
+
+    public function so_indent_status()
+    {
+        return array_search($this->indent_status, self::INDENT_STATUS);
     }
 
     public function user_update(){
