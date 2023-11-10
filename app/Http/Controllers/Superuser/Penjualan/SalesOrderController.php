@@ -1097,23 +1097,22 @@ class SalesOrderController extends Controller
                             foreach ($data as $key => $value) {
                                 $insert = PackingOrderItem::create($data[$key]);
                             }
+
+                            // Cetak Invoice disini
+                            if(empty($packing_order->invoicing)){
+                                $data = [
+                                    'code' => $sales_order->code,
+                                    'do_id' => $packing_order->id,
+                                    'customer_id' => $sales_order->customer_id,
+                                    'customer_other_address_id' => $sales_order->customer_other_address_id,
+                                    'grand_total_idr' => $packing_order_detail->grand_total_idr,
+                                    'created_by' => Auth::id(),
+                                ];
+
+                                $insert_invoice = Invoicing::create($data);
+                            }
                         }
 
-                        // Cetak Invoice disini
-                        if(empty($packing_order->invoicing)){
-                            $data = [
-                                'code' => $sales_order->code,
-                                'do_id' => $packing_order->id,
-                                'customer_id' => $sales_order->customer_id,
-                                'customer_other_address_id' => $sales_order->customer_other_address_id,
-                                'grand_total_idr' => $packing_order_detail->grand_total_idr,
-                                'created_by' => Auth::id(),
-                            ];
-
-                            $insert_invoice = Invoicing::create($data);
-                        }
-
-                        
 
                         DB::commit();
                         if($errors) {
