@@ -557,7 +557,7 @@
                         <tr>
                           <td>{{ $loop->iteration }}</td>
                           <td>{{ $key->product_pack->code }} - <b>{{$key->product_pack->name}}</b></td>
-                          <td>{{ $key->product_pack->kemasan()->pack_name }}</td>
+                          <td>{{ $key->product_pack->packaging->pack_name }}</td>
                           <td>{{ $key->qty }}</td>
                           <td>{{ $key->product_pack->price }}</td>
                           <td>

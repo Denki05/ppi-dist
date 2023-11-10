@@ -136,7 +136,7 @@
                         {{$row->qty_worked ?? '0'}}
                       @endif
                     </td>
-                    <td>{{$row->product_pack->kemasan()->pack_name ?? ''}}</td>
+                    <td>{{$row->product_pack->packaging->pack_name ?? ''}}</td>
                   </tr>
                 @endforeach
               @else
