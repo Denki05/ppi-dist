@@ -325,7 +325,7 @@ class SalesOrderController extends Controller
                             $insertDetail->so_id = $insert->id;
                             $insertDetail->product_packaging_id = trim(htmlentities(implode("-", [$post["product_id"][$i],$post["packaging_id"][$i]])));
                             $insertDetail->qty = trim(htmlentities($post["qty"][$i]));
-                            $insertDetail->disc_usd = trim(htmlentities($post["usd"][$i]));
+                            $insertDetail->disc_usd = trim(htmlentities($post["usd"][$i]) ?? 0);
                             $insertDetail->packaging_id = trim(htmlentities($post["packaging_id"][$i]));
                             $insertDetail->free_product = trim(htmlentities($post["free_product"][$i]));
                             $insertDetail->created_by = Auth::id();
@@ -1609,4 +1609,51 @@ class SalesOrderController extends Controller
             }
         }
     }
+
+    // indent button from SO Lanjutan
+
+    // public function kembali_indent(Request $request)
+    // {
+    //     $data_json = [];
+    //     $post = $request->all();
+    //     if($request->method() == "POST"){
+    //         $sales_order = SalesOrder::find($post["id"]);
+    //         if(empty($sales_order)){
+    //             abort(404);
+    //         }
+
+    //         if(empty($post["indentProduct"])){
+    //             $data_json["IsError"] = TRUE;
+    //             $data_json["Message"] = "Centang product indent";
+    //             goto ResultData;
+    //         }
+
+    //         DB::beginTransaction();
+    //         try {
+                
+    //             $sales_order->status = 3;
+    //             $sales_order->
+                    
+    //             DB::commit();
+
+    //             $data_json["IsError"] = FALSE;
+    //             $data_json["Message"] = "Sales Order Berhasil Diubah";
+    //             goto ResultData;
+    //         } catch (\Exception $e) {
+    //             DB::rollback();
+
+    //             $data_json["IsError"] = TRUE;
+    //             $data_json["Message"] = "Sales Order Gagal Diubah, ".$e;
+    
+    //             return response()->json($data_json,400);
+    //         }
+    //     }
+    //     else{
+    //         $data_json["IsError"] = TRUE;
+    //         $data_json["Message"] = "Invalid Method";
+    //         return response()->json($data_json,400);
+    //     }
+    //     ResultData:
+    //     return response()->json($data_json,200);
+    // }
 }

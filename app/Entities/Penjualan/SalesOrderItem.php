@@ -17,6 +17,7 @@ class SalesOrderItem extends Model
         	'qty_worked',
             'packaging_id',
             'free_product',
+            'item_indent', 
         	'updated_by',
         	'created_by',
         	'deleted_by'

@@ -179,6 +179,7 @@
                         <table class="table table-hover" id="datatables" style="white-space:nowrap;width:100%;">
                             <thead class="text-muted">
                                 <tr class="small text-uppercase">
+                                    <th class="block" style="width:auto"></th>
                                     <th class="block" style="width:auto">#</th>
                                     <th class="block" style="width:10%">Product</th>
                                     <th class="block" style="width:auto">Qty</th>
@@ -203,6 +204,11 @@
                                     <input type="hidden" name="repeater[{{$index}}][so_qty]" value="{{$detail->qty}}">
                                     <input type="hidden" name="repeater[{{$index}}][so_item_id]" value="{{$detail->id}}">
 
+                                    <td>
+                                      <div class="form-check">
+                                          <input class="form-check-input position-static" type="checkbox" name="repeater[{{$index}}][indentProduct]" id="indentProduct" value="1" data-id="{{ $detail->id }}" data-product="{{ $detail->product_packaging_id }}">
+                                        </div>
+                                    </td>
                                     <td>{{ $loop->iteration }}</td>
                                     <td>{{ $detail->product_pack->code }} - <b>{{ $detail->product_pack->name }}</td>
                                     <td>{{$detail->qty}}</td>
@@ -307,9 +313,9 @@
         </div>
 </form>
 
-
-
 @endsection
+
+
 
 @include('superuser.asset.plugin.select2')
 @include('superuser.asset.plugin.swal2')
@@ -502,6 +508,12 @@
         p => p.type != 'literal' && p.type != 'currency' ? p.value : ''
       ).join('');
     }
+
+    // $(document).on('click', '#indentProduct', function() {
+    //   var so_detail_id = $(this).data('id');
+    //   var product_id = $(this).data('product');
+    //   var val = $(this).val();
+    // })
   })
 </script>
 @endpush
