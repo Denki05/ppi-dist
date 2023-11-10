@@ -59,6 +59,11 @@ class ProductPack extends Model
         return $this->belongsTo('App\Entities\Master\Warehouse', 'warehouse_id');
     }
 
+    public function packaging()
+    {
+        return $this->belongsTo('App\Entities\Master\Packaging', 'packaging_id');
+    }
+
     public function kemasan()
     {
         $id_product = $this->id;
@@ -67,9 +72,6 @@ class ProductPack extends Model
 
         $packaging = Packaging::find($pecah[1]);
 
-        // if($packaging){
-        //     return $packaging->pack_name;
-        // }
         return $packaging;
     }
 }

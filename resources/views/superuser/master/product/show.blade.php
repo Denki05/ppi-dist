@@ -171,7 +171,7 @@
               @foreach($product->product_child as $row)
                 <tr>
                   <td>{{$loop->iteration}}</td>
-                  <td><b>{{$row->kemasan()->pack_name}}</b></td>
+                  <td><b>{{$row->packaging->pack_name}}</b></td>
                   <td>{{$row->price}}</td>
                   <td>{{ number_format($row->stock) }}</td>
                   <td>
