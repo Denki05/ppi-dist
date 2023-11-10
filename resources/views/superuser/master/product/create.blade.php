@@ -105,13 +105,13 @@
                                 <div class="col">
                                   <div class="form-group">
                                     <label for="code">Kode Produk <span class="text-danger">*</span></label>
-                                    <input type="text" class="form-control" id="code" name="code" required>
+                                    <input type="text" class="form-control" id="code" name="code" >
                                   </div>
                                 </div>
                                 <div class="col">
                                   <div class="form-group">
                                     <label for="name">Nama Produk <span class="text-danger">*</span></label>
-                                    <input type="text" class="form-control" id="name" name="name" required>
+                                    <input type="text" class="form-control" id="name" name="name" >
                                   </div>
                                 </div>
                               </div>
