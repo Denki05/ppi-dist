@@ -253,7 +253,7 @@
       const free = $('.input-free[data-index=0]').val();
 
       let newProductID = 0;
-      if (productId.indexOf('/') > 0) {
+      if (productId.indexOf('/') > 5) {
         newProductID = productId.replace('/', '\\/');
       }
 
