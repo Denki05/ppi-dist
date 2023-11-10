@@ -160,4 +160,9 @@ class Product extends Model
     {
         return collect([$this->sourceVendor, $this->destinationVendor]);
     }
+
+    public function gender()
+    {
+        return array_search($this->gender, self::GENDER);
+    }
 }

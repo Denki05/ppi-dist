@@ -108,7 +108,7 @@
                                     <div class="form-group row">
                                       <label for="selling_price" class="col-sm-2 col-form-label">Price List <span class="text-danger">*</span></label>
                                       <div class="col-sm-6">
-                                        <input type="number" class="form-control" id="selling_price" name="selling_price" min="0" value="0" value="{{$product->selling_price}}">
+                                        <input type="number" class="form-control" id="selling_price" name="selling_price" min="0" value="{{$product->selling_price}}">
                                         <span class="text-danger">*Harga dalam USD</span>
                                       </div>
                                     </div>  
@@ -134,8 +134,8 @@
                                       <div class="col-sm-10">
                                         <select class="js-select2 form-control" id="gender" name="gender" style="width:100%;" placeholder="Pilih Gender">
                                           <option>Pilih Gender</option>
-                                          @foreach($gender as $gender)
-                                          <option value="{{ $gender }}" {{ ($gender == $product->gender ) ? 'selected' : '' }}>{{ $gender }}</option>
+                                          @foreach(\App\Entities\Master\Product::GENDER as $gender)
+                                          <option value="{{ $gender }}" {{ ($product->gender == $gender) ? 'selected' : '' }}>{{ $gender }}</option>
                                           @endforeach
                                         </select>
                                       </div>

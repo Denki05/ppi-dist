@@ -328,7 +328,6 @@ class ProductController extends Controller
         $data['units'] = MasterRepo::units();
         $data['warehouses'] = MasterRepo::warehouses();
         $data['product_notes'] = Product::NOTE;
-        $data['gender'] = Product::GENDER;
         $data['vendor'] = Vendor::where('type', 2)->get();
         $data['type'] = ProductType::get();
         $data['pack'] = Packaging::get();
@@ -396,6 +395,7 @@ class ProductController extends Controller
                 $product->buying_price = $request->buying_price ?? 0;
                 $product->selling_price = $request->selling_price;
                 $product->description = $request->description;
+                $product->gender = $request->gender;
                 $product->note = $request->note;
 
                 $product->default_quantity = $request->default_quantity ?? null;

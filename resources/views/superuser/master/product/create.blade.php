@@ -143,7 +143,7 @@
                                       <label for="gender">Gender</label>
                                       <select class="form-control js-select2" id="gender" name="gender">
                                         <option value="">Pilih Gender</option>
-                                        @foreach($gender as $gender)
+                                        @foreach(\App\Entities\Master\Product::GENDER as $gender)
                                         <option value="{{ $gender }}">{{ $gender }}</option>
                                         @endforeach
                                       </select>
