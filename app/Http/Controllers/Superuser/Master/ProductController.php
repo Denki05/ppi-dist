@@ -164,15 +164,13 @@ class ProductController extends Controller
                         if ($product->save()) {
 
                             $warehouse = Warehouse::where('name', 'Gudang Araya')->first();
-                            $packaging = Packaging::get();
 
-                            // dd($packaging);
-                            foreach($packaging as $value){
+                            foreach($request->packaging as $row => $val){
                                     $child_product = new ProductPack;
-                                    $child_product->id = $product->id.'-'.$value->id;
+                                    $child_product->id = $product->id.'-'.$val;
                                     $child_product->product_id = $product->id;
                                     $child_product->warehouse_id = $warehouse->id;
-                                    $child_product->packaging_id = $value->id;
+                                    $child_product->packaging_id = $val;
                                     $child_product->material_code = $request->material_code;
                                     $child_product->material_name = $request->material_name;
                                     $child_product->code = $request->code;
@@ -231,13 +229,13 @@ class ProductController extends Controller
                         if ($product->save()) {
     
                             $warehouse = Warehouse::where('name', 'Gudang Araya')->first();
-                            $kemasan = $request->packaging;
-                            foreach($kemasan as $value){
+
+                            foreach($request->packaging as $row => $val){
                                     $child_product = new ProductPack;
-                                    $child_product->id = $product->id.'-'.$value;
+                                    $child_product->id = $product->id.'-'.$val;
                                     $child_product->product_id = $product->id;
                                     $child_product->warehouse_id = $warehouse->id;
-                                    $child_product->packaging_id = $value;
+                                    $child_product->packaging_id = $val;
                                     $child_product->material_code = $request->material_code;
                                     $child_product->material_name = $request->material_name;
                                     $child_product->code = $request->code;

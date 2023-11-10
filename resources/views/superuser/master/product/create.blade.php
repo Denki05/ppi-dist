@@ -248,6 +248,17 @@
                                   </div>
                               </div> 
                               <div class="row">
+                                <div class="form-group">
+                                  <label for="packaging">Packaging</label>
+                                  <select class="form-control js-select2" id="packaging" name="packaging[]" style="width:100%;" data-placeholder="Pilih Kemasan" multiple="multiple">
+                                    <option value="">Pilih Kemasan</option>  
+                                    @foreach($pack as $pack)
+                                    <option value="{{$pack->id}}">{{$pack->pack_name}}</option>
+                                    @endforeach
+                                  </select>
+                                </div>
+                              </div>
+                              <div class="row">
                                 <div class="col">
                                   <div class="form-group">
                                         <label>Image
