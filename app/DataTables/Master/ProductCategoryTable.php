@@ -64,6 +64,7 @@ class ProductCategoryTable extends Table
         $table->addColumn('action', function (ProductCategory $model) {
             $view = route('superuser.master.product_category.show', $model);
             $destroy = route('superuser.master.product_category.destroy', $model);
+            $edit = route('superuser.master.product_category.edit', $model);
 
             if ($model->status == $model::STATUS['DELETED']) {
                 return "
@@ -79,6 +80,11 @@ class ProductCategoryTable extends Table
                 <a href=\"{$view}\">
                     <button type=\"button\" class=\"btn btn-sm btn-circle btn-alt-secondary\" title=\"View\">
                         <i class=\"fa fa-eye\"></i>
+                    </button>
+                </a>
+                <a href=\"{$edit}\">
+                    <button type=\"button\" class=\"btn btn-sm btn-circle btn-alt-secondary\" title=\"Edit\">
+                        <i class=\"fa fa-pencil\"></i>
                     </button>
                 </a>
                 <a href=\"javascript:deleteConfirmation('{$destroy}')\">

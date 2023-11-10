@@ -177,8 +177,6 @@ class ProductCategoryController extends Controller
             $validator = Validator::make($request->all(), [
                 // 'code' => 'required|string|unique:master_product_categories,code,' . $product_category->id,
                 'name' => 'required|string',
-                'type' => 'required|string',
-                'packaging' => 'required|string',
             ]);
 
             if ($validator->fails()) {
@@ -196,8 +194,6 @@ class ProductCategoryController extends Controller
                 DB::beginTransaction();
 
                 $product_category->name = $request->name;
-                $product_category->type = $request->type;
-                $product_category->packaging_id = $request->packaging;
 
                 if ($product_category->save()) {
                     DB::commit();

@@ -22,26 +22,15 @@
         </div>
       </div>
       <div class="form-group row">
+        <label class="col-md-3 col-form-label text-right" for="code">Merek <span class="text-danger">*</span></label>
+        <div class="col-md-7">
+          <input type="text" class="form-control" id="brand_name" name="brand_name" value="{{ $product_category->brand_lokal->brand_name }}" disabled>
+        </div>
+      </div>
+      <div class="form-group row">
         <label class="col-md-3 col-form-label text-right" for="name">Category <span class="text-danger">*</span></label>
         <div class="col-md-7">
           <input type="text" class="form-control" id="name" name="name" value="{{ $product_category->name }}">
-        </div>
-      </div>
-      <div class="form-group row">
-        <label class="col-md-3 col-form-label text-right" for="name">Type <span class="text-danger">*</span></label>
-        <div class="col-md-7">
-          <input type="text" class="form-control" id="type" name="type" value="{{ $product_category->type }}">
-        </div>
-      </div>
-      <div class="form-group row">
-        <label class="col-md-3 col-form-label text-right" for="packaging">Packaging <span class="text-danger">*</span></label>
-        <div class="col-md-7">
-          <select class="js-select2 form-control" id="packaging" name="packaging" data-placeholder="Select Packaging">
-            <option value="">==Select Packaging==</option>
-            @foreach($packaging as $key)
-            <option value="{{ $key->id }}">{{ $key->pack_name }}
-            @endforeach
-          </select>
         </div>
       </div>
       <div class="form-group row pt-30">

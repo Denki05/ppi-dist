@@ -1,10 +1,10 @@
 @extends('superuser.app')
 
 @section('content')
-<!-- <nav class="breadcrumb bg-white push">
+<nav class="breadcrumb bg-white push">
   <span class="breadcrumb-item">Master</span>
   <span class="breadcrumb-item active">Product Category</span>
-</nav> -->
+</nav>
 @if($errors->any())
 <div class="alert alert-danger alert-dismissable" role="alert">
   <button type="button" class="close" data-dismiss="alert" aria-label="Close">
