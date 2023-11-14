@@ -31,7 +31,7 @@
           <th class="text-center">Created at</th>
           <th class="text-center">Code</th>
           <th class="text-center">Customer</th>
-          <th class="text-center">Transaction</th>
+          <th class="text-center">Status Indent</th>
           <th class="text-center">Action</th>
         </tr>
       </thead>
@@ -42,7 +42,7 @@
                 <td>{{ $key->created_at }}</td>
                 <td>{{ $key->so_code }}</td>
                 <td>{{ $key->member->name }} {{ $key->member->text_kota }}</td>
-                <td>{{ $key->type_transaction ?? '-' }}</td>
+                <td>{{ $key->so_indent_status() ?? '-' }}</td>
                 <td>
                     <!-- <button type="button" class="btn btn-info" data-toggle="modal" data-target=".bd-example-modal-lg"><i class="fa fa-eye" aria-hidden="true"></i> show</button> -->
                     <button type="button" class="btn btn-info" data-toggle="modal" data-target="#myModal{{$key->id}}"><i class="fa fa-eye" aria-hidden="true"></i> View</button>

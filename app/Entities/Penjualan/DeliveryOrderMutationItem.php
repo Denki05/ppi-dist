@@ -12,9 +12,9 @@ class DeliveryOrderMutationItem extends Model
         protected $fillable =[
         	'do_id',
         	'do_mutation_id',
-        	'product_id',
+        	'product_packaging_id',
         	'so_item_id',
-            'packaging',
+            'packaging_id',
         	'qty',
         	'price',
         	'note',
@@ -23,36 +23,18 @@ class DeliveryOrderMutationItem extends Model
         	'deleted_by'
         ];
 
-        const PACKAGING = [
-            1 => '100gr (0.1)',
-            2 => '500gr (0.5)',
-            3 => 'Jerigen 5kg (5)',
-            4 => 'Alumunium 5kg (5)',
-            5 => 'Jerigen 25kg (25)',
-            6 => 'Drum 25kg (25)',
-            7 => 'Free'
-        ];
-
-        const PACKAGING_VALUE = [
-            1 => 0.1,
-            2 => 0.5,
-            3 => 5,
-            4 => 5,
-            5 => 25,
-            6 => 25,
-            7 => 'Free'
-        ];
-
        	public function do_mutation(){
        		return $this->BelongsTo('App\Entities\Penjualan\DeliveryOrderMutation','do_mutation_id','id');
        	}
-        public function product(){
-        	return $this->BelongsTo('App\Entities\Master\Product','product_id','id');
+        public function product_pack(){
+        	return $this->BelongsTo('App\Entities\Master\ProductPack','product_packaging_id','id');
         }
         public function so_item(){
         	return $this->BelongsTo('App\Entities\Penjualan\SalesOrderItem','so_item_id','id');
         }
-
+        public function packaging(){
+        	return $this->BelongsTo('App\Entities\Master\Packaging','packaging_id','id');
+        }
         public function getPriceAttribute($value)
         {
             return floatval($value);

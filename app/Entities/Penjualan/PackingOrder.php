@@ -27,6 +27,7 @@ class PackingOrder extends Model
 		'print_count',
         'date_sent',
     	'image',
+		'so_id',
     	'updated_by',
     	'created_by',
     	'deleted_by'

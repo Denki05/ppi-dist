@@ -238,7 +238,12 @@
       const packagingText = $('.select-packaging[data-index=0] option:selected').text();
       const free = $('.input-free[data-index=0]').val();
 
-      if (productId === null || productId === '' || qty === null || qty === '' || packagingId == null || packagingId === '' ) {
+      let newProductID = 0;
+      if (productId.indexOf('/') > 5) {
+        newProductID = productId.replace('/', '\\/');
+      }
+
+      if (newProductID === null || newProductID === '' || qty === null || qty === '' || packagingId == null || packagingId === '' ) {
         Swal.fire(
           'Error!',
           'Please input all the data',
@@ -247,7 +252,7 @@
         return;
       }
 
-      let html = "<div class='row mt-10 product-row product-" + productId + "'>";
+      let html = "<div class='row mt-10 product-row product-" + newProductID + "'>";
       html += "  <div class='col-3'>";
       html += "    <input type='hidden' name='product_id[]' class='form-control' value='" + productId + "'>";
       html += productText;
@@ -273,8 +278,8 @@
       html += "  </div>";
       html += "</div>";
       
-      if ($('.product-row.product-' + productId).length > 0) {
-        $('body').find('.product-row.product-' + productId + ':last').after(html);
+      if ($('.product-row.product-' + newProductID).length > 0) {
+        $('body').find('.product-row.product-' + newProductID + ':last').after(html);
       } else {
         $('body').find('.product-list').append(html);
       }

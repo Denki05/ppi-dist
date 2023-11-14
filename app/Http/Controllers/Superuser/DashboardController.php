@@ -48,6 +48,7 @@ class DashboardController extends Controller
 		$search = $request->input('search');
     	$customer_id = $request->input('customer_id');
     	$province = $request->input('province');
+
     	$invoice = Invoicing::where(function($query2) use($search){
     							if(!empty($search)){
     								$query2->where('code','like','%'.$search.'%');
@@ -70,7 +71,7 @@ class DashboardController extends Controller
     								$query2->where(function($query3) use($province){
     									$query3->whereHas('do',function($query4) use($province){
     										$query4->whereHas('customer',function($query5) use($province){
-    											$query5->where('province',$province);
+    											$query5->where('provinsi', $province);
     										});
     									});
     								});
@@ -79,6 +80,7 @@ class DashboardController extends Controller
     						->orderBy('id','ASC')
     						->get();
     	$customer = Customer::get();
+		$tabelProvinsi = DB::table('provinsi')->get();
 
     	$data =[
             'invoice' => $invoice,
@@ -87,6 +89,7 @@ class DashboardController extends Controller
 			'label' => $label,
 			'jumlah_so' => $jumlah_so,
 			'jumlah_pay' => $jumlah_pay,
+			'tabelProvinsi' => $tabelProvinsi,
         ];
         return view($this->view,$data);
     }

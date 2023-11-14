@@ -31,9 +31,8 @@ class SalesOrder extends Model
         'shipping_cost_buyer',
         'condition',
     	'payment_status',
-        'keterangan_tidak_lanjut',
+        'catatan',
     	'so_for',
-    	'so_indent',
         'indent_status', 
         'count_rev',
     	'updated_by',
@@ -71,6 +70,7 @@ class SalesOrder extends Model
     	2 => 'LANJUTAN',
         3 => 'AWAL PERLU REVISI',
         4 => 'TUTUP',
+        5 => 'HOLD',
     	9 => 'MUTASI',
     ];
 

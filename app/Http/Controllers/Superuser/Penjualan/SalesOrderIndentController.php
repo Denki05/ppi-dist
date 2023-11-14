@@ -42,7 +42,7 @@ class SalesOrderIndentController extends Controller
             }
         }
 
-        $sales_order = SalesOrder::where('so_indent', 1)->get();
+        $sales_order = SalesOrder::where('status', 5)->get();
 
         $data = [
             'sales_order' => $sales_order,

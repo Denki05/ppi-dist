@@ -10,6 +10,7 @@ use App\Entities\Master\ProductMinStock;
 use App\Entities\Penjualan\DeliveryOrderMutation;
 use App\Entities\Penjualan\DeliveryOrderMutationItem;
 use App\Entities\Penjualan\SalesOrderItem;
+use App\Entities\Penjualan\SalesOrder;
 use App\Entities\Gudang\StockMove;
 use App\Entities\Setting\UserMenu;
 use App\Entities\Master\Company;
@@ -195,7 +196,7 @@ class DeliveryOrderMutationController extends Controller
                             $data_json["Message"] = "SO Item ID tidak boleh kosong";
                             goto ResultData;
                         }
-                        if(empty($value["product_id"])){
+                        if(empty($value["product_packaging_id"])){
                             $data_json["IsError"] = TRUE;
                             $data_json["Message"] = "Product ID tidak boleh kosong";
                             goto ResultData;
@@ -227,9 +228,9 @@ class DeliveryOrderMutationController extends Controller
                         if($do_qty > 0){
                             $data[] = [
                                 'do_mutation_id' => $post["do_mutation_id"],
-                                'product_id' => $value["product_id"],
+                                'product_packaging_id' => $value["product_packaging_id"],
                                 'so_item_id' => $value["so_item_id"],
-                                'packaging' => $result->packaging,
+                                'packaging' => $result->packaging_id,
                                 'qty' => $do_qty,
                                 'price' => $price,
                                 'total' => floatval($do_qty * $price) ,
@@ -336,16 +337,16 @@ class DeliveryOrderMutationController extends Controller
         if(empty($detail_po)){
             abort(404);
         }
-        $result = SalesOrderItem::whereHas('so',function($query2) use($detail_po){
-                                    $query2->where('so_for',2);
-                                    $query2->where('destination_warehouse_id','!=',null);
-                                    $query2->where('destination_warehouse_id',$detail_po->destination_warehouse_id);
-                                    $query2->where('origin_warehouse_id',$detail_po->origin_warehouse_id);
+        $result = SalesOrderItem::whereHas('so', function($query2) use($detail_po){
+                                    $query2->where('so_for', 1);
+                                    $query2->where('status', 5);
+                                    $query2->where('indent_status', 2);
                                     $query2->where('qty','!=',0);
                                     $query2->orderBy('id','DESC');
 
                                 })
                                 ->get();
+
         $data = [
             'result' => $result,
             'detail_po' => $detail_po
@@ -474,19 +475,19 @@ class DeliveryOrderMutationController extends Controller
             $detail_item = DeliveryOrderMutationItem::where('do_mutation_id',$result->id)->get();
 
             foreach ($detail_item as $key => $value) {
-                $stock_product = ProductMinStock::where('product_id',$value->product_id)
+                $stock_product = ProductMinStock::where('product_packaging_id',$value->product_id)
                                                 ->where('warehouse_id',$result->origin_warehouse_id)
                                                 ->sum('quantity');
 
-                $stock_product_destination = ProductMinStock::where('product_id',$value->product_id)
+                $stock_product_destination = ProductMinStock::where('product_packaging_id',$value->product_id)
                                                 ->where('warehouse_id',$result->destination_warehouse_id)
                                                 ->sum('quantity');
 
 
-                $move = StockMove::where('product_id',$value->product_id)
+                $move = StockMove::where('product_packaging_id',$value->product_id)
                                     ->where('warehouse_id',$result->origin_warehouse_id)->get();
 
-                $move_destination = StockMove::where('product_id',$value->product_id)
+                $move_destination = StockMove::where('product_packaging_id',$value->product_id)
                                     ->where('warehouse_id',$result->destination_warehouse_id)->get();
 
                 $sisa = (int)$stock_product + $move->sum('stock_in') - $move->sum('stock_out') - $value->qty;
@@ -496,7 +497,7 @@ class DeliveryOrderMutationController extends Controller
                 $insert_stock_move = StockMove::create([
                     'code_transaction' => $result->code,
                     'warehouse_id' => $result->origin_warehouse_id,
-                    'product_id' => $value->product_id,
+                    'product_packaging_id' => $value->product_packaging_id,
                     'stock_out' => $value->qty,
                     'stock_balance' => $sisa,
                     'created_by' => Auth::id()
@@ -505,7 +506,7 @@ class DeliveryOrderMutationController extends Controller
                 $insert_stock_move_destination = StockMove::create([
                     'code_transaction' => $result->code,
                     'warehouse_id' => $result->destination_warehouse_id,
-                    'product_id' => $value->product_id,
+                    'product_packaging_id' => $value->product_packaging_id,
                     'stock_in' => $value->qty,
                     'stock_balance' => $increment,
                     'created_by' => Auth::id()

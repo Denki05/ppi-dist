@@ -888,43 +888,6 @@ class PackingOrderController extends Controller
             return redirect()->back()->with('error',$e->getMessage());
         }
     }
-    // public function ready(Request $request)
-    // {
-    //     // Access
-    //     if(Auth::user()->is_superuser == 0){
-    //         if(empty($this->access) || empty($this->access->user) || $this->access->can_approve == 0){
-    //             return redirect()->route('superuser.index')->with('error','Anda tidak punya akses untuk membuka menu terkait');
-    //         }
-    //     }
-
-    //     try{
-    //         $request->validate([
-    //             'id' => 'required'
-    //         ]);
-    //         $post = $request->all();
-
-    //         //Cek Pembayaran
-
-    //         $proforma = SoProforma::where('do_id', $post["id"])->first();
-
-    //         if($proforma->type_transaction == 1){
-    //             if($proforma->status == 3){
-    //                 $update = PackingOrder::where('id', $post["id"])->update(['status' => 3]);
-                    
-    //                 return redirect()->back()->with('success','SO packed berhasil di proses'); 
-    //             }else{
-    //                 return redirect()->back()->with('error','SO packed gagal di proses! Cek pembayaran');
-    //             }
-    //         }elseif($proforma->type_transaction == 2 && $proforma->type_transaction == 3){
-    //             $update = PackingOrder::where('id', $post["id"])->update(['status' => 3]);
-
-    //             return redirect()->back()->with('success','SO packed berhasil di proses');
-    //         }
-            
-    //     }catch(\Throwable $e){
-    //         return redirect()->back()->with('error',$e->getMessage());
-    //     }
-    // }
 
     public function ready(Request $request)
     {

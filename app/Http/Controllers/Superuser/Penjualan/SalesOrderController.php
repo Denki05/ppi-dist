@@ -70,53 +70,56 @@ class SalesOrderController extends Controller
             }
         }
 
-        $field = $request->input('field');
         $search = $request->input('search');
         $so_for = $request->input('so_for');
+        $customer_other_address_id = $request->input('customer_other_address_id');
+        $status_so = $request->input('status_so');
 
-        $table = SalesOrder::where(function($query2) use($field,$search,$so_for,$step){
-                                if(!empty($field) && !empty($search)) {
-                                    $fieldDb = '';
-                                    $ids = array();
-                                    if ($field == 'customer') {
-                                        $customerDb = Customer::where('name', 'like', '%'.$search.'%')->get();
-                                        for($c=0; $c<count($customerDb); $c++) $ids[$c] = $customerDb[$c]->id;
-                                        $fieldDb = 'customer_id';
-                                    } else if ($field == 'sales') {
-                                        $salesDb = Sales::where('name', 'like', '%'.$search.'%')->get();
-                                        for($c=0; $c<count($salesDb); $c++) $ids[$c] = $salesDb[$c]->id;
-                                        $fieldDb = 'sales_id';
-                                    } else if ($field == 'transaksi') {
-                                        if (str_contains('cash', strtolower($search))) {
-                                            $ids = [1];
-                                        } else if (str_contains('tempo', strtolower($search))) {
-                                            $ids = [2];
-                                        } else if (str_contains('marketplace', strtolower($search))) {
-                                            $ids = [3];
-                                        }
-                                        $fieldDb = 'type_transaction';
-                                    }
+        $table = SalesOrder::where(function($query2) use($search,$so_for,$step){
+                                // if(!empty($field) && !empty($search)) {
+                                //     $fieldDb = '';
+                                //     $ids = array();
+                                //     if ($field == 'customer') {
+                                //         $customerDb = Customer::where('name', 'like', '%'.$search.'%')->get();
+                                //         for($c=0; $c<count($customerDb); $c++) $ids[$c] = $customerDb[$c]->id;
+                                //         $fieldDb = 'customer_id';
+                                //     } else if ($field == 'sales') {
+                                //         $salesDb = Sales::where('name', 'like', '%'.$search.'%')->get();
+                                //         for($c=0; $c<count($salesDb); $c++) $ids[$c] = $salesDb[$c]->id;
+                                //         $fieldDb = 'sales_id';
+                                //     } else if ($field == 'transaksi') {
+                                //         if (str_contains('cash', strtolower($search))) {
+                                //             $ids = [1];
+                                //         } else if (str_contains('tempo', strtolower($search))) {
+                                //             $ids = [2];
+                                //         } else if (str_contains('marketplace', strtolower($search))) {
+                                //             $ids = [3];
+                                //         }
+                                //         $fieldDb = 'type_transaction';
+                                //     }
                                     
                                     
-                                    if ($fieldDb != '') {
-                                        $query2->where(function($query3)  use ($field, $fieldDb, $ids){
-                                            if ($field == 'sales') {
-                                                $query3->where('sales_senior_id',$ids);
-                                                $query3->orWhereIn('sales_id',$ids);
-                                            } else {
-                                                $query3->whereIn($fieldDb, $ids);
-                                            }
-                                        });
-                                    } else {
-                                        $query2->where($field, 'like', '%'.$search.'%');
-                                    }
-                                }
-                                if(!empty($so_for)){
-                                    $query2->where('so_for','=',$so_for);
-                                }
+                                //     if ($fieldDb != '') {
+                                //         $query2->where(function($query3)  use ($field, $fieldDb, $ids){
+                                //             if ($field == 'sales') {
+                                //                 $query3->where('sales_senior_id',$ids);
+                                //                 $query3->orWhereIn('sales_id',$ids);
+                                //             } else {
+                                //                 $query3->whereIn($fieldDb, $ids);
+                                //             }
+                                //         });
+                                //     } else {
+                                //         $query2->where($field, 'like', '%'.$search.'%');
+                                //     }
+                                // }
+                                
+                                // if(!empty($so_for)){
+                                //     $query2->where('so_for','=',$so_for);
+                                // }
+
                                 if(!empty($step)){
                                     if ($step === 1) { // SO awal
-                                        $query2->whereIn('status', [1, 2, 3, 4]);
+                                        $query2->whereIn('status', [1, 2, 3, 4, 5]);
                                         $query2->where('so_for', 1);
                                     } else if ($step === 2) { // SO lanjutan
                                         $query2->whereIn('status', [2, 4]);
@@ -126,6 +129,18 @@ class SalesOrderController extends Controller
                                     }
                                 }
                             })
+                            ->where(function($query2) use($customer_other_address_id, $status_so){
+    							if(!empty($customer_other_address_id)){
+    								$query2->whereHas('member', function($query3) use($customer_other_address_id){
+    									$query3->where('customer_other_address_id', $customer_other_address_id);
+    								});
+    							}
+    							if(!empty($status_so)){
+    								$query2->where(function($query3) use($status_so){
+                                        $query3->where('status', $status_so);
+    								});
+    							}
+    						})
                             ->where('type_so', 'nonppn')
                             ->orderBy('id','DESC')
                             ->get();
@@ -629,7 +644,7 @@ class SalesOrderController extends Controller
                         }else{
                             $insertDetail = new SalesOrderItem;
                             $insertDetail->so_id = $sales_order->id;
-                            $insertDetail->product_packaging_id =  trim(htmlentities($post["product_id"][$i]));
+                            $insertDetail->product_packaging_id =  trim(htmlentities(implode("-", [$post["product_id"][$i],$post["packaging_id"][$i]])));
                             $insertDetail->qty = trim(htmlentities($post["qty"][$i]));
                             $insertDetail->disc_usd = trim(htmlentities($post["usd"][$i]));
                             $insertDetail->packaging_id = trim(htmlentities($post["packaging_id"][$i]));
@@ -1000,7 +1015,7 @@ class SalesOrderController extends Controller
                         $product = 0;
                         $out_of_stock = false;
                         foreach($request->repeater as $key => $value){
-                            $result = SalesOrderItem::where('id',$value["so_item_id"])->first();
+                            $result = SalesOrderItem::where('id', $value["so_item_id"])->first();
 
                             $so_item_id = $value["so_item_id"];
                             $price = $value["price"];
@@ -1113,7 +1128,6 @@ class SalesOrderController extends Controller
                             }
                         }
 
-
                         DB::commit();
                         if($errors) {
                             $response['notification'] = [
@@ -1140,6 +1154,14 @@ class SalesOrderController extends Controller
                     $sales_order->status = 4;
                     $sales_order->count_rev = 0;
                     $sales_order->updated_by = Auth::id();
+
+                    if($request->origin_warehouse_id == null){
+                        $errors[] = 'Warehouse tidak boleh kosong!';
+                    }
+
+                    if($request->rekening == null){
+                        $errors[] = 'Rekening tidak boleh kosong!';
+                    }
 
                     $valuePoDetail = [];
                     if($sales_order->save()){
@@ -1168,15 +1190,6 @@ class SalesOrderController extends Controller
                             $percent_disc = 0;
                             $total_discount = 0;
 
-                            // if(empty($value["so_item_id"])){
-                            //     $errors[] = 'SO Item ID tidak boleh kosong';
-                            // }
-                            // if(empty($value["product_id"])){
-                            //     $errors[] = 'Product ID tidak boleh kosong';
-                            // }
-                            // if(empty($value["price"])){
-                            //     $errors[] = 'Harga tidak boleh kosong';
-                            // }
 
                             if($value["so_item_id"] == null){
                                 $errors[] = 'SO Item ID tidak boleh kosong';
@@ -1276,33 +1289,37 @@ class SalesOrderController extends Controller
                             
                         }
 
-                        // if ($failed) {
-                        //     $response['failed'] = $failed;
-        
-                        //     return $this->response(200, $response);
-                        // }
-
                         DB::commit();
-
-                        $response['notification'] = [
-                            'alert' => 'notify',
-                            'type' => 'success',
-                            'content' => 'Success',
-                        ];
-            
-                        $response['redirect_to'] = route('superuser.penjualan.sales_order.index_lanjutan');
-                        return $this->response(200, $response);
+                        if($errors) {
+                            $response['notification'] = [
+                                'alert' => 'block',
+                                'type' => 'alert-danger',
+                                'header' => 'Error',
+                                'content' => $errors,
+                            ];
+        
+                            return $this->response(400, $response);
+                        } else {
+                            $response['notification'] = [
+                                'alert' => 'notify',
+                                'type' => 'success',
+                                'content' => 'Success',
+                            ];
+                
+                            $response['redirect_to'] = route('superuser.penjualan.sales_order.index_lanjutan');
+                            return $this->response(200, $response);
+                        }
                     }
                 }
 
             }catch (\Exception $e) {
-                dd($e);
+                // dd($e);
                 DB::rollback();
                 $response['notification'] = [
                     'alert' => 'block',
                     'type' => 'alert-danger',
                     'header' => 'Error',
-                    'content' => $failed,
+                    'content' => $errors,
                 ];
 
                 return $this->response(400, $response);
@@ -1583,7 +1600,7 @@ class SalesOrderController extends Controller
                     abort(404);
                 }
 
-                $result->so_indent = 1;
+                $result->status = 5;
                 $result->code = null;
                 $result->indent_status = 1;
                 $result->updated_by = Auth::id();
@@ -1611,48 +1628,67 @@ class SalesOrderController extends Controller
 
     // indent button from SO Lanjutan
 
-    // public function kembali_indent(Request $request)
-    // {
-    //     $data_json = [];
-    //     $post = $request->all();
-    //     if($request->method() == "POST"){
-    //         $sales_order = SalesOrder::find($post["id"]);
-    //         if(empty($sales_order)){
-    //             abort(404);
-    //         }
+    public function kembali_hold(Request $request, $id)
+    {
+        if ($request->ajax()) {
+            if(Auth::user()->is_superuser == 0){
+                if(empty($this->access) || empty($this->access->user) || $this->access->can_approve == 0){
+                    return redirect()->route('superuser.index')->with('error','Anda tidak punya akses untuk membuka menu terkait');
+                }
+            }
 
-    //         if(empty($post["indentProduct"])){
-    //             $data_json["IsError"] = TRUE;
-    //             $data_json["Message"] = "Centang product indent";
-    //             goto ResultData;
-    //         }
+            DB::beginTransaction();
 
-    //         DB::beginTransaction();
-    //         try {
-                
-    //             $sales_order->status = 3;
-    //             $sales_order->
-                    
-    //             DB::commit();
+            try{
+                $errors = [];
 
-    //             $data_json["IsError"] = FALSE;
-    //             $data_json["Message"] = "Sales Order Berhasil Diubah";
-    //             goto ResultData;
-    //         } catch (\Exception $e) {
-    //             DB::rollback();
+                $sales_order = SalesOrder::find($id);
 
-    //             $data_json["IsError"] = TRUE;
-    //             $data_json["Message"] = "Sales Order Gagal Diubah, ".$e;
+                // check invoice apa sudah terbuat?
+                $do = PackingOrder::where('so_id', $sales_order->id)->first();
+
+                if(!empty($do->invoicing)){
+                    $errors[] = 'Invoice sudah terbuat, tidak bisa melakukan indent!';
+                }
+
+                $sales_order->status = 5;
+                $sales_order->indent_status = 2;
+                $sales_order->catatan = $request->catatan_kembali;
+                $sales_order->updated_by = Auth::id();
+                if($sales_order->save()){
+                    DB::commit();
+                    if($errors) {
+                        $response['notification'] = [
+                            'alert' => 'block',
+                            'type' => 'alert-danger',
+                            'header' => 'Error',
+                            'content' => $errors,
+                        ];
     
-    //             return response()->json($data_json,400);
-    //         }
-    //     }
-    //     else{
-    //         $data_json["IsError"] = TRUE;
-    //         $data_json["Message"] = "Invalid Method";
-    //         return response()->json($data_json,400);
-    //     }
-    //     ResultData:
-    //     return response()->json($data_json,200);
-    // }
+                        return $this->response(400, $response);
+                    } else {
+                        $response['notification'] = [
+                            'alert' => 'notify',
+                            'type' => 'success',
+                            'content' => 'Success',
+                        ];
+            
+                        $response['redirect_to'] = route('superuser.penjualan.sales_order.index_lanjutan');
+                        return $this->response(200, $response);
+                    }
+                }
+            }catch (\Exception $e) {
+                dd($e);
+                DB::rollback();
+                $response['notification'] = [
+                    'alert' => 'block',
+                    'type' => 'alert-danger',
+                    'header' => 'Error',
+                    'content' => $errors,
+                ];
+
+                return $this->response(400, $response);
+            }
+        }
+    }
 }
