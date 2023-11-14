@@ -76,47 +76,6 @@ class SalesOrderController extends Controller
         $status_so = $request->input('status_so');
 
         $table = SalesOrder::where(function($query2) use($search,$so_for,$step){
-                                // if(!empty($field) && !empty($search)) {
-                                //     $fieldDb = '';
-                                //     $ids = array();
-                                //     if ($field == 'customer') {
-                                //         $customerDb = Customer::where('name', 'like', '%'.$search.'%')->get();
-                                //         for($c=0; $c<count($customerDb); $c++) $ids[$c] = $customerDb[$c]->id;
-                                //         $fieldDb = 'customer_id';
-                                //     } else if ($field == 'sales') {
-                                //         $salesDb = Sales::where('name', 'like', '%'.$search.'%')->get();
-                                //         for($c=0; $c<count($salesDb); $c++) $ids[$c] = $salesDb[$c]->id;
-                                //         $fieldDb = 'sales_id';
-                                //     } else if ($field == 'transaksi') {
-                                //         if (str_contains('cash', strtolower($search))) {
-                                //             $ids = [1];
-                                //         } else if (str_contains('tempo', strtolower($search))) {
-                                //             $ids = [2];
-                                //         } else if (str_contains('marketplace', strtolower($search))) {
-                                //             $ids = [3];
-                                //         }
-                                //         $fieldDb = 'type_transaction';
-                                //     }
-                                    
-                                    
-                                //     if ($fieldDb != '') {
-                                //         $query2->where(function($query3)  use ($field, $fieldDb, $ids){
-                                //             if ($field == 'sales') {
-                                //                 $query3->where('sales_senior_id',$ids);
-                                //                 $query3->orWhereIn('sales_id',$ids);
-                                //             } else {
-                                //                 $query3->whereIn($fieldDb, $ids);
-                                //             }
-                                //         });
-                                //     } else {
-                                //         $query2->where($field, 'like', '%'.$search.'%');
-                                //     }
-                                // }
-                                
-                                // if(!empty($so_for)){
-                                //     $query2->where('so_for','=',$so_for);
-                                // }
-
                                 if(!empty($step)){
                                     if ($step === 1) { // SO awal
                                         $query2->whereIn('status', [1, 2, 3, 4, 5]);
