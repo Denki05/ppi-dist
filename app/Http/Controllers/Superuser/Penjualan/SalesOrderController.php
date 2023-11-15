@@ -78,7 +78,7 @@ class SalesOrderController extends Controller
         $table = SalesOrder::where(function($query2) use($search,$so_for,$step){
                                 if(!empty($step)){
                                     if ($step === 1) { // SO awal
-                                        $query2->whereIn('status', [1, 2, 3, 4, 5]);
+                                        $query2->whereIn('status', [1, 2, 3, 4, 5, 6]);
                                         $query2->where('so_for', 1);
                                     } else if ($step === 2) { // SO lanjutan
                                         $query2->whereIn('status', [2, 4]);
@@ -603,7 +603,7 @@ class SalesOrderController extends Controller
                         }else{
                             $insertDetail = new SalesOrderItem;
                             $insertDetail->so_id = $sales_order->id;
-                            $insertDetail->product_packaging_id =  trim(htmlentities(implode("-", [$post["product_id"][$i],$post["packaging_id"][$i]])));
+                            $insertDetail->product_packaging_id =  trim(htmlentities($post["product_id"][$i]));
                             $insertDetail->qty = trim(htmlentities($post["qty"][$i]));
                             $insertDetail->disc_usd = trim(htmlentities($post["usd"][$i]));
                             $insertDetail->packaging_id = trim(htmlentities($post["packaging_id"][$i]));
@@ -1559,7 +1559,7 @@ class SalesOrderController extends Controller
                     abort(404);
                 }
 
-                $result->status = 5;
+                $result->status = 6;
                 $result->code = null;
                 $result->indent_status = 1;
                 $result->updated_by = Auth::id();

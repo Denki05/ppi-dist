@@ -58,6 +58,7 @@
                       <option value="3">Revisi</option>
                       <option value="4">Tutup</option>
                       <option value="5">Hold</option>
+                      <option value="6">Indent</option>
                     </select>
                   </div>
                 </div>
@@ -136,6 +137,9 @@
                     @if($row->status == 5)
                     <button type="button" class="btn btn-primary btn-sm btn-flat" data-toggle="modal" data-target="#myModal{{$row->id}}"><i class="fa fa-eye"></i> View</button>
                     <a href="#" class="btn btn-success btn-sm btn-flat btn-lanjutan" data-id="{{$row->id}}"><i class="fa fa-check"></i> Lanjutan</a>
+                    @endif
+                    @if($row->status == 6)
+                    <button type="button" class="btn btn-primary btn-sm btn-flat" data-toggle="modal" data-target="#myModalIndent{{$row->id}}"><i class="fa fa-eye"></i> View</button>
                     @endif
                 </td>
               </tr>
@@ -405,13 +409,122 @@
     <input type="hidden" name="id">
 </form>
 
+<!-- modal indent show-->
+@foreach($table as $key)
+<div class="modal fade bd-example-modal-lg" id="myModalIndent{{$key->id}}" tabindex="-1" role="dialog" aria-labelledby="myLargeModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-xl">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h5 class="modal-title" id="exampleModalLabel">View Indent #{{$key->so_code}}</h5>
+            <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+            <span aria-hidden="true">&times;</span>
+            </button>
+        </div>
+        <div class="modal-body">
+            <div class="row">
+                <div class="col">
+                  <div class="block">
+                    <div class="block-header block-header-default">
+                      <h3 class="block-title">#Detail Nota Indent</h3>
+                    </div>
+                    <div class="block-content">
+                      <div class="form-row">
+                        <div class="form-group col-md-6">
+                          <label for="invoice_date">Tanggal Indent</label>
+                          <input type="text" name="invoice_date" class="form-control" value="{{ date('d-m-Y',strtotime($key->created_at)) }}" readonly>
+                        </div>
+                        <div class="form-group col-md-6">
+                          <label for="invoice_code">Nomer Indent</label>
+                          <input type="text" class="form-control" id="invoice_code" value="{{ $key->so_code }}" readonly>
+                        </div>
+                      </div>
+
+                      <div class="form-row">
+                        <!-- <div class="form-group col-md-6">
+                          <label for="type_transaction">Type Transaksi</label>
+                          <input type="text" name="type_transaction" class="form-control" value="{{$key->type_transaction}}" readonly>
+                        </div> -->
+                        <div class="form-group col-md-12">
+                          <label for="note">Catatan</label>
+                          <input type="text" class="form-control" value="{{ $key->note ?? '-' }}" readonly>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                <div class="col">
+                  <div class="block">
+                    <div class="block-header block-header-default">
+                      <h3 class="block-title">#Customer</h3>
+                    </div>
+                    <div class="block-content">
+                      <div class="form-row">
+                        <div class="form-group col-md-6">
+                          <label for="type_transaction">Customer</label>
+                          <input type="text" name="customer_name" class="form-control" value="{{ $key->member->name }} {{$key->member->text_kota}}" readonly>
+                        </div>
+                        <div class="form-group col-md-6">
+                          <label for="note">Alamat Kirim</label>
+                          <textarea class="form-control" rows="1" readonly>{{ $key->member->address }}</textarea>
+                        </div>
+                      </div>
+
+                      <div class="form-row">
+                        <div class="form-group col-md-6">
+                          <label for="customer_city">Kota</label>
+                          <input type="text" name="customer_city" class="form-control" value="{{$key->member->text_kota}}" readonly>
+                        </div>
+                        <div class="form-group col-md-6">
+                          <label for="customer_area">Provinsi</label>
+                          <input type="text" name="customer_area" class="form-control" value="{{ $key->member->text_provinsi }} " readonly>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+            </div>
+
+            <div class="row">
+              <div class="col">
+                <table class="table">
+                  <thead>
+                    <tr>
+                      <th>#</th>
+                      <th>Product</th>
+                      <th>Qty</th>
+                      <th>Kemasan</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    @foreach($key->so_detail as $index => $detail)
+                      <tr>
+                        <td>{{ $loop->iteration }}</td>
+                        <td>{{ $detail->product_pack->code }} - {{ $detail->product_pack->name }}</td>
+                        <td>{{ $detail->qty }}</td>
+                        <td>{{ $detail->product_pack->kemasan()->pack_name ?? '-' }}</td>
+                      </tr>
+                    @endforeach
+                  </tbody>
+                </table>
+              </div>
+            </div>
+        </div>
+        <div class="modal-footer">
+            <!-- <a class="btn btn-success" href="#" role="button"><i class="fa fa-check" aria-hidden="true"></i> Proses</a> -->
+            <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+        </div>
+    </div>
+  </div>
+</div>
+@endforeach
+
 <!-- Modal view & detail -->
 @foreach($table as $row)
 <div class="modal fade bd-example-modal-xl" id="myModal{{$row->id}}" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true">
     <div class="modal-dialog modal-xl" role="document">
         <div class="modal-content">
             <div class="modal-header">
-                <h5 class="modal-title" id="exampleModalLabel">View #{{$row->code}}</h5>
+                <h5 class="modal-title" id="exampleModalLabel">View SO #{{$row->code}}</h5>
             </div>
             <div class="modal-body">
               <div class="row">
@@ -513,8 +626,8 @@
                       @foreach($row->so_detail as $value => $key)
                         <tr>
                           <td>{{ $loop->iteration }}</td>
-                          <td>{{ $key->product_pack->code }} - <b>{{$key->product_pack->name}}</b></td>
-                          <td>{{ $key->product_pack->packaging->pack_name }}</td>
+                          <td>{{ $key->product_pack->code ?? '-' }} - <b>{{$key->product_pack->name ?? '-'}}</b></td>
+                          <td>{{ $key->product_pack->packaging->pack_name ?? '-' }}</td>
                           <td>{{ $key->qty }}</td>
                           <td>{{ $key->product_pack->price }}</td>
                           <td>

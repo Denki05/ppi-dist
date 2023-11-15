@@ -71,6 +71,7 @@ class SalesOrder extends Model
         3 => 'AWAL PERLU REVISI',
         4 => 'TUTUP',
         5 => 'HOLD',
+        6 => 'INDENT',
     	9 => 'MUTASI',
     ];
 
