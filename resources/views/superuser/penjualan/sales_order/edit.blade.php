@@ -159,7 +159,7 @@
             </div>
             <div class="col-1">
               <input type="checkbox" class="form-check-input input-gift" id="gift" name="gift">
-              <input class="form-control input-free" type="hidden" id="free_product" name="free_product[]" data-index="0" step="any">
+              <input class="form-control input-free" type="hidden" id="free_product" value="0" name="free_product[]" data-index="0" step="any">
             </div>
             <div class="col-1"><button type="button" id="buttonAddProduct" class="btn btn-primary"><em class="fa fa-plus"></em></button></div>
           </div>

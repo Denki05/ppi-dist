@@ -26,8 +26,6 @@
 @endif
 
 @if($step == 1)
-  
-
   <div class="row">
   <div class="col-12">
     <div class="block">
@@ -132,9 +130,9 @@
                     @if ($row->status === 1 || $row->status === 3)
                     <a href="#" class="btn btn-danger btn-sm btn-flat btn-delete" data-id="{{$row->id}}"><i class="fa fa-trash"></i> Delete</a>
                     @endif
-                    {{--@if( $row->status == 1 )
+                    @if( $row->status == 1 )
                     <a href="javascript:saveConfirmation2('{{ route('superuser.penjualan.sales_order.indent', ['id' => $row->id]) }}')" class="btn btn-info btn-sm btn-flat btn-indent"><i class="fa fa-clipboard"></i> Indent</a>
-                    @endif--}}
+                    @endif
                     @if($row->status == 5)
                     <button type="button" class="btn btn-primary btn-sm btn-flat" data-toggle="modal" data-target="#myModal{{$row->id}}"><i class="fa fa-eye"></i> View</button>
                     <a href="#" class="btn btn-success btn-sm btn-flat btn-lanjutan" data-id="{{$row->id}}"><i class="fa fa-check"></i> Lanjutan</a>
@@ -611,7 +609,7 @@
     $('#so_awal').DataTable( {
         paging   :   true,
         info     :     false,
-        searching : false,
+        searching : true,
         order: [
           [1, 'desc']
         ],

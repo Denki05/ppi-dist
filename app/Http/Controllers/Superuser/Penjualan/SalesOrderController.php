@@ -1572,7 +1572,7 @@ class SalesOrderController extends Controller
 
             }catch (\Exception $e) {
                 DB::rollback();
-                // DD($e);
+                DD($e);
                 $response['notification'] = [
                     'alert' => 'block',
                     'type' => 'alert-danger',

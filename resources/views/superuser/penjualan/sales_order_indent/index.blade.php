@@ -166,7 +166,7 @@
             </div>
         </div>
         <div class="modal-footer">
-            <a class="btn btn-success" href="#" role="button"><i class="fa fa-check" aria-hidden="true"></i> Proses</a>
+            <!-- <a class="btn btn-success" href="#" role="button"><i class="fa fa-check" aria-hidden="true"></i> Proses</a> -->
             <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
         </div>
     </div>
