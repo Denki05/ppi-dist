@@ -71,26 +71,26 @@
                 <div class="col">
                   <div class="block">
                     <div class="block-header block-header-default">
-                      <h3 class="block-title">#Detail Nota</h3>
+                      <h3 class="block-title">#Detail Nota Indent</h3>
                     </div>
                     <div class="block-content">
                       <div class="form-row">
                         <div class="form-group col-md-6">
-                          <label for="invoice_date">Tanggal Nota</label>
+                          <label for="invoice_date">Tanggal Indent</label>
                           <input type="text" name="invoice_date" class="form-control" value="{{ date('d-m-Y',strtotime($key->created_at)) }}" readonly>
                         </div>
                         <div class="form-group col-md-6">
-                          <label for="invoice_code">Nomer Nota</label>
+                          <label for="invoice_code">Nomer Indent</label>
                           <input type="text" class="form-control" id="invoice_code" value="{{ $key->so_code }}" readonly>
                         </div>
                       </div>
 
                       <div class="form-row">
-                        <div class="form-group col-md-6">
+                        <!-- <div class="form-group col-md-6">
                           <label for="type_transaction">Type Transaksi</label>
                           <input type="text" name="type_transaction" class="form-control" value="{{$key->type_transaction}}" readonly>
-                        </div>
-                        <div class="form-group col-md-6">
+                        </div> -->
+                        <div class="form-group col-md-12">
                           <label for="note">Catatan</label>
                           <input type="text" class="form-control" value="{{ $key->note ?? '-' }}" readonly>
                         </div>
@@ -138,8 +138,6 @@
                       <th>#</th>
                       <th>Product</th>
                       <th>Qty</th>
-                      <th>Harga</th>
-                      <th>Free</th>
                       <th>Kemasan</th>
                     </tr>
                   </thead>
@@ -149,14 +147,6 @@
                         <td>{{ $loop->iteration }}</td>
                         <td>{{ $detail->product_pack->code }} - {{ $detail->product_pack->name }}</td>
                         <td>{{ $detail->qty }}</td>
-                        <td>{{ $detail->product_pack->price }}</td>
-                        <td>
-                          @if($detail->free_product == 1)
-                          YES
-                          @elseif($detail->free_product == 0)
-                          NO
-                          @endif
-                        </td>
                         <td>{{ $detail->product_pack->kemasan()->pack_name }}</td>
                       </tr>
                     @endforeach
