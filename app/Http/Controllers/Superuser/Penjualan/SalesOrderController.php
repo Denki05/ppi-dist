@@ -264,7 +264,7 @@ class SalesOrderController extends Controller
                 if($post['so_indent'] == 1){
                     $insert->code = null;
                     $insert->status = 1;
-                    $insert->so_indent = SalesOder::INDENT['YES'];
+                    $insert->so_indent = SalesOrder::INDENT['YES'];
                     $insert->indent_status = 1;
                 } elseif($post['so_indent'] == 0){
                     $insert->code = CodeRepo::generateSO();
