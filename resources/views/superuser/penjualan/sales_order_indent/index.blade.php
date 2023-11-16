@@ -24,6 +24,9 @@
 
 <div class="block">
   <div class="block-content">
+    <button type="button" class="btn btn-outline-info ml-10" data-toggle="modal" data-target="#modal-manage">Manage</button>
+  </div>
+  <div class="block-content block-content-full">
     <table id="datatable" class="table table-striped">
       <thead>
         <tr>
@@ -163,6 +166,14 @@
 
 @include('superuser.asset.plugin.swal2')
 @include('superuser.asset.plugin.datatables')
+
+@section('modal')
+
+@include('superuser.component.modal-manage-indent', [
+  'export_url' => route('superuser.penjualan.sales_order_indent.export')
+])
+
+@endsection
 
 @push('scripts')
 <script type="text/javascript">

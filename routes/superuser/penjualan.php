@@ -156,6 +156,7 @@ Route::group([
 
     Route::group(['as' => 'sales_order_indent.', 'prefix' => '/sales_order_indent'], function () {
         Route::get('/', 'SalesOrderIndentController@index')->name('index');
+         Route::get('/export', 'SalesOrderIndentController@export')->name('export');
         Route::get('/destroy/{id}', 'SalesOrderIndentController@destroy')->name('indestroydex');
     });
     Route::resource('sales_order_indent', 'SalesOrderIndentController');

@@ -6,7 +6,9 @@ use Illuminate\Http\Request;
 use App\Http\Controllers\Controller;
 use App\Entities\Penjualan\SalesOrder;
 use App\Entities\Penjualan\SalesOrderItem;
+use App\Exports\Penjualan\SalesOrderIndentExport;
 use App\Entities\Setting\UserMenu;
+use Excel;
 use Auth;
 use DB;
 use PDF;
@@ -162,5 +164,11 @@ class SalesOrderIndentController extends Controller
                 return $this->response(400, $response);
             }
         }
+    }
+
+    public function export(Request $request)
+    {
+        $filename = 'Sales-Order-Indent-' . date('d-m-Y_H-i-s') . '.xlsx';
+        return Excel::download(new SalesOrderIndentExport, $filename);
     }
 }
