@@ -1,6 +1,7 @@
 @extends('superuser.app')
 
 @section('content')
+
 @if($errors->any())
 <div class="alert alert-danger alert-dismissable" role="alert">
   <button type="button" class="close" data-dismiss="alert" aria-label="Close">
@@ -14,6 +15,19 @@
 @endif
 
 <div id="alert-block"></div>
+
+@if(session('error') || session('success'))
+<div class="alert alert-{{ session('error') ? 'danger' : 'success' }} alert-dismissible fade show" role="alert">
+    @if (session('error'))
+    <strong>Error!</strong> {!! session('error') !!}
+    @elseif (session('success'))
+    <strong>Berhasil!</strong> {!! session('success') !!}
+    @endif
+    <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+        <span aria-hidden="true">&times;</span>
+    </button>
+</div>
+@endif
 
 @if(session()->has('message'))
 <div class="alert alert-success alert-dismissable" role="alert">
@@ -54,11 +68,10 @@
                   <div class="col-md-9">
                     <select class="form-control js-select2" name="status_so" data-placeholder="Cari Status">
                       <option value=""></option>
-                      <option value="1">Awal</option>
-                      <option value="3">Revisi</option>
-                      <option value="4">Tutup</option>
-                      <option value="5">Hold</option>
-                      <option value="6">Indent</option>
+                      <option value="1">AWAL</option>
+                      <option value="3">REVISI</option>
+                      <option value="4">TUTUP</option>
+                      <option value="5">HOLD</option>
                     </select>
                   </div>
                 </div>
@@ -67,7 +80,6 @@
                 <div class="form-group row">
                   <div class="col-md-9">
                     <div class="input-group mb-3">
-                        <!-- <input type="text" class="form-control" placeholder="Keyword" name="search"> -->
                         <div class="input-group-append">
                           <button type="submit" class="btn bg-gd-corporate border-0 text-white pl-50 pr-50"><i class="fa fa-search ml-10"></i></button>
                         </div>
@@ -99,47 +111,23 @@
             @foreach($table as $index => $row)
               <tr>
                 <td>{{ $loop->iteration }}</td>
-                <td>{{ $row->so_code }}</td>
-                <td>{{ $row->code }}</td>
+                <td><a href="{{route('superuser.penjualan.sales_order.detail',$row->id)}}">{{$row->so_code}}</a></td>
+                <td>{{ $row->code ?? '-' }}</td>
                 <td>{{ $row->member->name }} {{ $row->member->text_kota }}</td>
                 <td>{{ $row->so_sales() }} | {{ $row->so_sales_senior() }}</td>
                 <td><?= date('d-m-Y',strtotime($row->so_date)); ?></td>
                 <td>{{ $row->so_status()->scalar }}</td>
                 <td>
-                    @if ($row->status === 4)
-                    <button type="button" class="btn btn-primary btn-sm btn-flat" data-toggle="modal" data-target="#myModal{{$row->id}}"><i class="fa fa-eye"></i> View</button>
-                    <!-- <a href="javascript:void(0)" class="btn btn-primary btn-sm btn-flat openModal" ><i class="fa fa-eye"></i> View</a> -->
-                    <!-- <a href="javascript:void(0)" type="button" class="btn btn-primary btn-sm btn-flat openModal" data-id="{{$row->id}}"><i class="fa fa-eye"> View</i></a>  -->
+                    @if($row->status == 1 OR $row->status == 3)
+                      <a href="{{route('superuser.penjualan.sales_order.edit',['id'=>$row->id, 'step'=>1])}}" class="btn btn-primary btn-sm btn-flat"><i class="fa fa-edit"></i> {{ $row->status === 1 ? 'Edit' : 'Revisi' }}</a>
+                      <a href="#" class="btn btn-success btn-sm btn-flat btn-lanjutan" data-id="{{$row->id}}"><i class="fa fa-check"></i> Lanjutan</a>
+                      <a href="#" class="btn btn-danger btn-sm btn-flat btn-delete" data-id="{{$row->id}}"><i class="fa fa-trash"></i> Delete</a>
                     @endif
-                    {{--@if ($row->status === 4 && $soQty > 0)
-                    <a href="{{route('superuser.penjualan.sales_order.print_rejected_so',$row->id)}}" class="btn btn-info btn-sm btn-flat" target="_blank"><i class="fa fa-print"></i> Print Rejected Item</a>
-                    @endif--}}
-                    @if ($row->status === 1 || $row->status === 3)
-                    <a href="{{route('superuser.penjualan.sales_order.edit',['id'=>$row->id, 'step'=>1])}}" class="btn btn-primary btn-sm btn-flat"><i class="fa fa-edit"></i> {{ $row->status === 1 ? 'Edit' : 'Revisi' }}</a>
-                    @endif
-                    @if ($row->status === 1)
-                    <a href="#" class="btn btn-success btn-sm btn-flat btn-lanjutan" data-id="{{$row->id}}"><i class="fa fa-check"></i> Lanjutan</a>
-                    @endif
-                    @if ($step == 1 && $row->status === 2)
-                    <button type="button" class="btn btn-primary btn-sm btn-flat" data-toggle="modal" data-target="#myModal{{$row->id}}"><i class="fa fa-eye"></i> View</button>
-                    <!-- <a href="javascript:void(0)" class="btn btn-primary btn-sm btn-flat openModal"><i class="fa fa-eye"></i> View</a> -->
-                    <!-- <a href="{{route('superuser.penjualan.sales_order.detail',$row->id)}}" class="btn btn-primary btn-sm btn-flat"><i class="fa fa-eye"></i> View</a> -->
-                    @endif
-                    @if ($step == 2 && $row->status === 2)
-                    <a href="{{route('superuser.penjualan.sales_order.edit',['id'=>$row->id, 'step'=>2])}}" class="btn btn-success btn-sm btn-flat"><i class="fa fa-check"></i> Kerjakan</a>
-                    @endif
-                    @if ($row->status === 1 || $row->status === 3)
-                    <a href="#" class="btn btn-danger btn-sm btn-flat btn-delete" data-id="{{$row->id}}"><i class="fa fa-trash"></i> Delete</a>
-                    @endif
-                    @if( $row->status == 1 )
-                    <a href="javascript:saveConfirmation2('{{ route('superuser.penjualan.sales_order.indent', ['id' => $row->id]) }}')" class="btn btn-info btn-sm btn-flat btn-indent"><i class="fa fa-clipboard"></i> Indent</a>
+                    @if($row->status == 2 OR $row->status == 4)
+                      <button type="button" class="btn btn-primary btn-sm btn-flat" data-toggle="modal" data-target="#myModal{{$row->id}}"><i class="fa fa-eye"></i> View</button>
                     @endif
                     @if($row->status == 5)
-                    <button type="button" class="btn btn-primary btn-sm btn-flat" data-toggle="modal" data-target="#myModal{{$row->id}}"><i class="fa fa-eye"></i> View</button>
-                    <a href="#" class="btn btn-success btn-sm btn-flat btn-lanjutan" data-id="{{$row->id}}"><i class="fa fa-check"></i> Lanjutan</a>
-                    @endif
-                    @if($row->status == 6)
-                    <button type="button" class="btn btn-primary btn-sm btn-flat" data-toggle="modal" data-target="#myModalIndent{{$row->id}}"><i class="fa fa-eye"></i> View</button>
+                      <button type="button" class="btn btn-primary btn-sm btn-flat" data-toggle="modal" data-target="#myModal{{$row->id}}"><i class="fa fa-eye"></i> View</button>
                     @endif
                 </td>
               </tr>
@@ -645,7 +633,10 @@
               </div>
             </div>
             <div class="modal-footer">
-              <button type="button" class="btn btn-danger" data-dismiss="modal">Close</button>
+              @if($row->status == 5)
+                <a href="#" class="btn btn-success btn-sm btn-flat btn-lanjutan" data-id="{{$row->id}}"><i class="fa fa-check mr-10"></i>Lanjutan</a>
+              @endif
+              <button type="button" class="btn btn-danger btn-sm btn-flat" data-dismiss="modal"><i class="fa fa-close mr-10"></i>Close</button>
             </div>
         </div>
     </div>

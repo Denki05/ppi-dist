@@ -33,6 +33,7 @@ class SalesOrder extends Model
     	'payment_status',
         'catatan',
     	'so_for',
+    	'so_indent',
         'indent_status', 
         'count_rev',
     	'updated_by',
@@ -108,10 +109,16 @@ class SalesOrder extends Model
         1 => '7881 0374 95 - IDA ELISA',
     ];
 
+    const INDENT = [
+        'NO' => 0,
+        'YES' => 1,
+    ];
+
     const INDENT_STATUS = [
-        'full' => 1,
-        'partly' => 2,
-        'completed' => 3,
+        'INDENT' => 1,
+        'PARTLY' => 2,
+        'FULL' => 3,
+        'COMPLETED' => 4,
     ];
 
     public function customer(){
@@ -194,6 +201,11 @@ class SalesOrder extends Model
     public function so_sales_senior()
     {
         return array_search($this->sales_senior_id, self::SALES_SENIOR);
+    }
+    
+    public function so_indent()
+    {
+        return array_search($this->so_indent, self::INDENT);
     }
 
     public function so_indent_status()

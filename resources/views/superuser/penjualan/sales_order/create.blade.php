@@ -69,23 +69,7 @@
                     </div>
                     @endif
                 </div>
-                
-                {{--<div class="col-md-6">
-                  @if($step == 1)
-                    <div class="form-group row">
-                      <label class="col-md-4 col-form-label text-right">Transaksi<span class="text-danger">*</span></label>
-                      <div class="col-md-6">
-                        @if ($customers->has_tempo == 0)
-                          <input type="text" class="form-control input-type-transaction" name="input-type-transaction" placeholder="CASH" readonly>
-                          <input type="hidden" class="form-control type_transaction" name="type_transaction" id="type_transaction" value="CASH">
-                        @elseif($customers->has_tempo == 1)
-                          <input type="text" class="form-control input-type-transaction" name="input-type-transaction" placeholder="TEMPO" readonly>
-                          <input type="hidden" class="form-control type_transaction" name="type_transaction" id="type_transaction" value="TEMPO">
-                        @endif
-                      </div>
-                    </div>
-                    @endif
-                </div>--}}
+        
                 <div class="col-md-6">
                   @if($step == 1)
                     <div class="form-group row">
@@ -102,6 +86,20 @@
                       <label class="col-md-4 col-form-label text-right">Kurs</label>
                       <div class="col-md-6">
                         <input type="text" name="idr_rate" class="form-control" value="1">
+                      </div>
+                    </div>
+                    @endif
+                </div>
+                <div class="col-md-6">
+                  @if($step == 1)
+                    <div class="form-group row">
+                      <label class="col-md-4 col-form-label text-right">Indent</label>
+                      <div class="col-md-6">
+                        <select class="form-control js-select2" name="so_indent">
+                          <option value="">Pilih status indent</option>
+                          <option value="0">NO</option>
+                          <option value="1">YES</option>
+                        </select>
                       </div>
                     </div>
                     @endif

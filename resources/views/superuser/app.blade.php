@@ -29,7 +29,7 @@
             <p>This page took {{ round(microtime(true) - LARAVEL_START, 3) }} seconds to render</p>
           </div>
           <div class="float-right">
-            <a class="font-w600" href="https://willek.github.io" target="_blank">Copyright &copy; 2022 <b>Premium Parfume Indonesia</b>. All rights reserved.</span>
+            <a class="font-w600" href="#" target="_blank">Copyright &copy; 2022 <b>Premium Parfume Indonesia</b>. All rights reserved.</span>
           </div>
         </div>
       </footer>

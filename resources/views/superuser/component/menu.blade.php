@@ -89,10 +89,10 @@
                     <li class="dropdown">
                         <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-expanded="false">Sales Order <span class="caret"></span></a>
                         <ul class="dropdown-menu" role="menu">
-                            <li class="nav-item"><a href="{{ route('superuser.penjualan.sales_order.index_awal') }}" >Sales Order Awal (SOA)</a></li>
-                            <li class="nav-item"><a href="{{ route('superuser.penjualan.sales_order.index_lanjutan') }}" >Sales Order Lanjutan (SOL)</a></li>
-                            <li class="nav-item"><a href="{{ route('superuser.penjualan.sales_order_indent.index') }}" >Sales Order Indent</a></li>
-                            <li class="nav-item"><a href="{{ route('superuser.penjualan.sales_order_ppn.index') }}" >Sales Order PPN</a></li>
+                            <li class="nav-item"><a href="{{ route('superuser.penjualan.sales_order.index_awal') }}" >SO Awal</a></li>
+                            <li class="nav-item"><a href="{{ route('superuser.penjualan.sales_order.index_lanjutan') }}" >SO Lanjutan</a></li>
+                            <li class="nav-item"><a href="{{ route('superuser.penjualan.sales_order_indent.index') }}" >SO Indent</a></li>
+                            <!-- <li class="nav-item"><a href="{{ route('superuser.penjualan.sales_order_ppn.index') }}" >Sales Order PPN</a></li> -->
                             <!-- <li class="nav-item"><a href="{{ route('superuser.penjualan.sales_order.index_mutasi') }}" target="_blank">Sales Order Mutation (SOM)</a></li> -->
                             <!-- <li class="nav-item"><a href="{{ route('superuser.penjualan.canvasing.index') }}" target="_blank">Canvasing (Sales Mutation)</a></li> -->
                         </ul>

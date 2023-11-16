@@ -44,9 +44,8 @@
                 <td>{{ $key->member->name }} {{ $key->member->text_kota }}</td>
                 <td>{{ $key->so_indent_status() ?? '-' }}</td>
                 <td>
-                    <!-- <button type="button" class="btn btn-info" data-toggle="modal" data-target=".bd-example-modal-lg"><i class="fa fa-eye" aria-hidden="true"></i> show</button> -->
-                    <button type="button" class="btn btn-info" data-toggle="modal" data-target="#myModal{{$key->id}}"><i class="fa fa-eye" aria-hidden="true"></i> View</button>
-                    <a class="btn btn-danger" href="javascript:deleteConfirmation('{{ route('superuser.penjualan.sales_order_indent.destroy', $key->id) }}')" role="button"><i class="fa fa-trash" aria-hidden="true"></i> Hapus</a>
+                    <button type="button" class="btn btn-info" data-toggle="modal" data-target="#myModal{{$key->id}}"><i class="fa fa-eye mr-10" aria-hidden="true"></i> View</button>
+                    <a class="btn btn-danger" href="javascript:deleteConfirmation('{{ route('superuser.penjualan.sales_order_indent.destroy', $key->id) }}')" role="button"><i class="fa fa-trash mr-10" aria-hidden="true"></i> Hapus</a>
                 </td>
             </tr>
         @endforeach
@@ -86,10 +85,6 @@
                       </div>
 
                       <div class="form-row">
-                        <!-- <div class="form-group col-md-6">
-                          <label for="type_transaction">Type Transaksi</label>
-                          <input type="text" name="type_transaction" class="form-control" value="{{$key->type_transaction}}" readonly>
-                        </div> -->
                         <div class="form-group col-md-12">
                           <label for="note">Catatan</label>
                           <input type="text" class="form-control" value="{{ $key->note ?? '-' }}" readonly>

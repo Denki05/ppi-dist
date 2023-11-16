@@ -78,7 +78,7 @@ class SalesOrderController extends Controller
         $table = SalesOrder::where(function($query2) use($search,$so_for,$step){
                                 if(!empty($step)){
                                     if ($step === 1) { // SO awal
-                                        $query2->whereIn('status', [1, 2, 3, 4, 5, 6]);
+                                        $query2->whereIn('status', [1, 2, 3, 4, 5]);
                                         $query2->where('so_for', 1);
                                     } else if ($step === 2) { // SO lanjutan
                                         $query2->whereIn('status', [2, 4]);
@@ -101,6 +101,7 @@ class SalesOrderController extends Controller
     							}
     						})
                             ->where('type_so', 'nonppn')
+                            ->where('so_indent', SalesOrder::INDENT['NO'])
                             ->orderBy('id','DESC')
                             ->get();
 
@@ -249,20 +250,27 @@ class SalesOrderController extends Controller
                 }
 
                 $insert = new SalesOrder;
-                $insert->code = CodeRepo::generateSO();
                 $insert->so_code = CodeRepo::generateSoAwal();
                 $insert->customer_id = $member;
                 $insert->customer_other_address_id = $store;
                 $insert->sales_senior_id = $request->sales_senior_id;
                 $insert->sales_id = $request->sales_id;
                 $insert->so_for = 1;
-                // $insert->type_transaction = $request->type_transaction;
                 $insert->so_date = Carbon\Carbon::now();
                 $insert->type_so = 'nonppn';
                 $insert->idr_rate = $request->idr_rate;
                 $insert->note = $request->note;
                 $insert->created_by = Auth::id();
-                $insert->status = $post["ajukankelanjutan"] == 1 ? 2 : 1;
+                if($post['so_indent'] == 1){
+                    $insert->code = null;
+                    $insert->status = 1;
+                    $insert->so_indent = SalesOder::INDENT['YES'];
+                    $insert->indent_status = 1;
+                } elseif($post['so_indent'] == 0){
+                    $insert->code = CodeRepo::generateSO();
+                    $insert->status = $post["ajukankelanjutan"] == 1 ? 2 : 1;
+                    $insert->so_indent = SalesOrder::INDENT['NO'];
+                }
                 $insert->condition = 1;
                 $insert->payment_status = 0;
                 $insert->count_rev = 0;
@@ -744,7 +752,7 @@ class SalesOrderController extends Controller
                 'id' => 'required'
             ]);
             $post = $request->all();
-            $update = SalesOrder::where('id',$post["id"])->update(['status' => 1]);
+            $update = SalesOrder::where('id',$post["id"])->update(['status' => 3]);
 
             DB::commit();
             return redirect()->back()->with('success','Sales Order tidak di lanjutkan');  
@@ -1272,7 +1280,7 @@ class SalesOrderController extends Controller
                 }
 
             }catch (\Exception $e) {
-                // dd($e);
+                dd($e);
                 DB::rollback();
                 $response['notification'] = [
                     'alert' => 'block',
