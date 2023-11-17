@@ -55,7 +55,7 @@ class SalesOrder extends Model
     const SALES_SENIOR = [
         'Ivan' => 1,
         'Erwin' => 2,
-        'Nia' => 'Nia',
+        'Nia' => 3,
         'Super Administrator' => 4,
     ];
 
