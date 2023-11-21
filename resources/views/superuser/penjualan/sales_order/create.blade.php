@@ -59,8 +59,8 @@
                     <div class="form-group row">
                       <label class="col-md-4 col-form-label text-right">Brand</label>
                       <div class="col-md-6">
-                      <select class="js-select2 form-control js-select2-brand" id="brand_name" name="brand_name" data-placeholder="Plih Brand/Merek">
-                      </select>
+                        <select class="js-select2 form-control js-select2-brand" id="brand_name" name="brand_name" data-placeholder="Plih Brand/Merek">
+                        </select>
                       </div>
                     </div>
                     @endif
@@ -228,8 +228,6 @@
         cache: true
       },
     });
-
-
 
     var product_data = new Object();
 

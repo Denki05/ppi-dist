@@ -121,6 +121,7 @@
               <th>Produk</th>
               <th>Qty</th>
               <th>Packaging</th>
+              <th>Free</th>
             </thead>
             <tbody>
 
@@ -137,6 +138,13 @@
                       @endif
                     </td>
                     <td>{{$row->product_pack->packaging->pack_name ?? ''}}</td>
+                    <td>
+                      @if($row->free_product == 0)
+                        <span>NO</span>
+                      @else
+                        <span>YES</span>
+                      @endif
+                    </td>
                   </tr>
                 @endforeach
               @else
