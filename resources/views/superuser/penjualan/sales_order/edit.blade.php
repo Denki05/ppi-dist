@@ -225,7 +225,7 @@
           {name: 'free', orderable: false, searcable: false, width: "5%"},
           {name: 'action', orderable: false, searcable: false, width: "5%"}
         ],
-        'order' : [[0,'asc']]
+        'order' : [[0,'desc']]
     })
 
     var counter = {{ count($result->so_detail) + 1 }};
