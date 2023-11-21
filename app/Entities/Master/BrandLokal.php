@@ -21,4 +21,9 @@ class BrandLokal extends Model
     {
         return $this->hasMany('App\Entities\Master\ProductCategory', 'brand_lokal_id');
     }
+
+    public function status()
+    {
+        return array_search($this->status, self::STATUS);
+    }
 }

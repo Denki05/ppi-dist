@@ -82,7 +82,7 @@ class Product extends Model
         return $this->hasMany('App\Entities\Penjualan\SoProformaDetail');
     }
 
-    public function product_child()
+    public function product_pack()
     {
         return $this->hasMany('App\Entities\Master\ProductPack', 'product_id');
     }

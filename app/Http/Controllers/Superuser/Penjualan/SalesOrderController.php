@@ -274,44 +274,44 @@ class SalesOrderController extends Controller
                 $insert->condition = 1;
                 $insert->payment_status = 0;
                 $insert->count_rev = 0;
-                $insert->save();
+                if($insert->save()){
+                    if($post["sku"]){
+                        if (sizeof($post["sku"]) > 0) {
+                            for ($i = 0; $i < sizeof($post["sku"]); $i++) {
+                                $duplicate_product = [];
+                                $duplicate = false;
+                                $listItem[] = [
+                                    'sku' => $post["sku"][$i],
+                                    'free_product' => $post["free_product"][$i],
+                                ];
 
-                if (sizeof($post["product_id"]) > 0) {
-                    for ($i = 0; $i < sizeof($post["product_id"]); $i++) {
-                        if(empty($post["product_id"][$i])) continue;
+                                foreach($listItem as $row => $value){
+                                    if(in_array($value, $duplicate_product)) {
+                                        $duplicate = true;
+                                        break;
+                                    } else {
+                                        array_push($duplicate_product, $value);
+                                    }
+        
+                                    // dd($value); 
+                                }
 
-                        $duplicate_product = [];
-                        $duplicate = false;
-                        $listItem[] = [
-                            'product_id' => $post["product_id"][$i],
-                            'free_product' => $post["free_product"][$i],
-                        ];
-
-                        foreach($listItem as $row => $value){
-                            if(in_array($value, $duplicate_product)) {
-                                $duplicate = true;
-                                break;
-                            } else {
-                                array_push($duplicate_product, $value);
+                                if($duplicate){
+                                    $data_json["IsError"] = TRUE;
+                                    $data_json["Message"] = "Item sudah ada";
+                                    goto ResultData;
+                                }else{
+                                    $insertDetail = new SalesOrderItem;
+                                    $insertDetail->so_id = $insert->id;
+                                    $insertDetail->product_packaging_id = $post["sku"][$i];
+                                    $insertDetail->qty = $post["qty"][$i];
+                                    $insertDetail->disc_usd = $post["disc"][$i];
+                                    $insertDetail->packaging_id = $post["packaging"][$i];
+                                    $insertDetail->free_product = $post["free_product"][$i];
+                                    $insertDetail->created_by = Auth::id();
+                                    $insertDetail->save();
+                                }
                             }
-
-                            // dd($value); 
-                        }
-
-                        if($duplicate){
-                            $data_json["IsError"] = TRUE;
-                            $data_json["Message"] = "Item sudah ada";
-                            goto ResultData;
-                        }else{
-                            $insertDetail = new SalesOrderItem;
-                            $insertDetail->so_id = $insert->id;
-                            $insertDetail->product_packaging_id = trim(htmlentities(implode("-", [$post["product_id"][$i],$post["packaging_id"][$i]])));
-                            $insertDetail->qty = trim(htmlentities($post["qty"][$i]));
-                            $insertDetail->disc_usd = trim(htmlentities($post["usd"][$i]) ?? 0);
-                            $insertDetail->packaging_id = trim(htmlentities($post["packaging_id"][$i]));
-                            $insertDetail->free_product = trim(htmlentities($post["free_product"][$i]));
-                            $insertDetail->created_by = Auth::id();
-                            $insertDetail->save();
                         }
                     }
                 }
@@ -1656,6 +1656,59 @@ class SalesOrderController extends Controller
 
                 return $this->response(400, $response);
             }
+        }
+    }
+
+    public function get_brand(Request $request)
+    {
+        $brands = BrandLokal::where('status', BrandLokal::STATUS['ACTIVE'])
+            ->where(function ($query) use ($request) {
+                $query->where('brand_name', 'LIKE', $request->input('q', '') . '%');
+            })
+            ->get();
+
+        $results = [];
+
+        foreach ($brands as $item) {
+            $results[] = [
+                'id' => $item->brand_name,
+                'text' => $item->brand_name,
+            ];
+        }
+
+        return ['results' => $results];
+    }
+
+    public function get_product_pack(Request $request)
+    {
+        if ($request->ajax()) {
+                $data = [];
+                
+                $product = Product::where('master_products.brand_name', $request->id)
+                        ->where('master_products_packaging.status', 1)
+                        ->leftJoin('master_products_packaging', 'master_products.id', '=', 'master_products_packaging.product_id')
+                        ->leftJoin('master_packaging', 'master_products_packaging.packaging_id', '=', 'master_packaging.id')
+                        ->select('master_products_packaging.id as id' ,
+                                    'master_products_packaging.code as ProductCode', 
+                                    'master_products_packaging.name as productName', 
+                                    'master_products_packaging.price as productPrice', 
+                                    'master_packaging.id as  productPackagingID', 
+                                    'master_packaging.pack_name as productPackaging', 
+                        )
+                        ->get();
+
+                foreach($product as $key){
+                    $data[] = [
+                        'id' => $key->id,
+                        'code' => $key->ProductCode,
+                        'name' => $key->productName,
+                        'price' => $key->productPrice,
+                        'packName' => $key->productPackaging,
+                        'packID' => $key->productPackagingID,
+                    ];
+                }
+
+                return response()->json(['code' => 200, 'data' => $data]);
         }
     }
 }

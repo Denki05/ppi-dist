@@ -59,12 +59,8 @@
                     <div class="form-group row">
                       <label class="col-md-4 col-form-label text-right">Brand</label>
                       <div class="col-md-6">
-                        <select class="form-control js-select2 select-brand" data-index="0">
-                          <option value="">Pilih Merek</option>
-                          @foreach($brand as $index => $row)
-                          <option value="{{$row->brand_name}}">{{$row->brand_name}}</option>
-                          @endforeach
-                        </select>
+                      <select class="js-select2 form-control js-select2-brand" id="brand_name" name="brand_name" data-placeholder="Plih Brand/Merek">
+                      </select>
                       </div>
                     </div>
                     @endif
@@ -110,54 +106,34 @@
           </div>
         </div>
       </div>
-
       <hr />
-        <div class="block">
-          <div class="block-header block-header-default">
-            <h3 class="block-title">Add Product</h3>
-          </div>
-          <div class="block-content">
-            <div class="row">
-              <div class="col-12 product-list">
-                <div class="row">
-                  <div class="col-3">Product</div>
-                  <div class="col-3">Packaging</div>
-                  <div class="col-1">Qty</div>
-                  <div class="col-1">Disc Usd</div>
-                  <div class="col-1">Free</div>
-                  <div class="col">Action</div>
-                </div>
-
-                <div class="row mt-10 product-row">
-                  <div class="col-3">
-                    <select class="form-control js-select2 select-product" name="product_id[]" data-index="0">
-                      <option value="">Select product</option>
-                    </select>
-                  </div>
-                  <div class="col-3">
-                    <select name="packaging_id[]" class="form-control js-select2 select-packaging" data-index="0">
-                      <option value="">Select packaging</option>
-                    </select>
-                  </div>
-                  <div class="col-1">
-                    <input type="number" name="qty[]" class="form-control input-qty" data-index="0" step="any">
-                  </div>
-                  <div class="col-1">
-                    <input type="number" name="usd[]" class="form-control input-usd" data-index="0" step="any">
-                  </div>
-                  <div class="col-1">
-                    <input type="checkbox" class="form-check-input input-gift" id="gift" name="gift">
-                    <input class="form-control input-free" type="hidden" id="free_product" value="0" name="free_product[]" data-index="0" step="any">
-                  </div>
-                  <div class="col-1"><button type="button" id="buttonAddProduct" class="btn btn-primary"><em class="fa fa-plus"></em></button></div>
-                </div>
-                <hr />
-
-              </div>
-            </div>
-          </div>
+      <div class="block">
+        <div class="block-header">
+          <h3 class="block-title">Add Product</h3>
+          <a href="#" class="row-add">
+            <button type="button" class="btn bg-gd-sea border-0 text-white">
+              <i class="fa fa-plus mr-10"></i> Row
+            </button>
+          </a>
         </div>
-      <hr />
+        <div class="block-content">
+          <table id="datatables" class="table table-striped">
+            <thead>
+              <tr>
+                <th class="text-center">Counter</th>
+                <th class="text-center">Produk</th>
+                <th class="text-center">Price</th>
+                <th class="text-center">Qty</th>
+                <th class="text-center">Disc</th>
+                <th class="text-center">Free</th>
+                <th class="text-center">Action</th>
+              </tr>
+            </thead>
+            <tbody>
+            </tbody>
+          </table>
+        </div>
+      </div>
       
       <div class="row pt-30 mb-15">
         <div class="col-md-6">
@@ -186,9 +162,7 @@
 
 @push('scripts')
 <script>
-  var productCount = 1;
-
-  $(function(){
+  $(document).ready(function () {
     $('button[type="submit"]').removeAttr('disabled');
 
     $('.js-select2').select2();
@@ -240,155 +214,118 @@
       }
     })
 
-    // add product
-    $(document).on('click','#buttonAddProduct',function(){
-      const productId = $('.select-product[data-index=0]').val();
-      const productText = $('.select-product[data-index=0] option:selected').text();
-      const qty = $('.input-qty[data-index=0]').val();
-      const usd = $('.input-usd[data-index=0]').val();
-      const packagingId = $('.select-packaging[data-index=0]').val();
-      const packagingText = $('.select-packaging[data-index=0] option:selected').text();
-      const free = $('.input-free[data-index=0]').val();
+    $(".js-select2-brand").select2({
+      ajax: {
+        url: '{{ route('superuser.penjualan.sales_order.get_brand') }}',
+        dataType: 'json',
+        delay: 250,
+        data: function (params) {
+          return {
+            q: params.term,
+            _token: "{{csrf_token()}}"
+          };
+        },
+        cache: true
+      },
+    });
 
-      let newProductID = 0;
-      if (productId.indexOf('/') > 5) {
-        newProductID = productId.replace('/', '\\/');
+
+
+    var product_data = new Object();
+
+    var table = $('#datatables').DataTable({
+        paging: false,
+        bInfo : false,
+        searching: false,
+        columns: [
+          {name: 'counter', "visible": false},
+          {name: 'sku', orderable: false, width: "35%"},
+          {name: 'price', orderable: false, searcable: false, width: "10%"},
+          {name: 'qty', orderable: false, searcable: false, width: "10%"},
+          {name: 'disc', orderable: false, searcable: false, width: "10%"},
+          {name: 'free', orderable: false, searcable: false, width: "5%"},
+          {name: 'action', orderable: false, searcable: false, width: "5%"}
+        ],
+        'order' : [[0,'desc']]
+    })
+
+    var counter = 1;
+
+    $('a.row-add').on( 'click', function (e) {
+      e.preventDefault();
+      if($('#brand_name').val()) {
+        $('#submit-table').prop('disabled', false);
+        
+        makeselect = '<select class="js-select2 form-control js-ajax" id="sku['+counter+']" name="sku[]" data-placeholder="Select Product" style="width:100%" required><option></option>';
+        
+        $.map( product_data, function( val, i ) {
+          makeselect += '<option value="'+ val['id'] +'" data-name="'+ val['name'] +'" data-packname="'+ val['packName'] +'" data-price="'+ val['price'] +'" data-packid="'+ val['packID']+'">'+ val['code'] + ' - ' + val['name'] + ' - ' + val['packName'] +'</option>';
+        });
+
+        makeselect += '</select>';
+
+        table.row.add([
+                    counter,
+                    makeselect,
+                    '<span class="price"></span><input type="hidden" class="form-control packaging" name="packaging[]">',
+                    '<input type="number" class="form-control" name="qty[]" required>',
+                    '<input type="number" class="form-control" name="disc[]">',
+                    '<input type="checkbox" class="form-check-input input-gift" id="gift" name="gift"><input class="form-control input-free" type="hidden" id="free_product" value="0" name="free_product[]">',
+                    '<a href="#" class="row-delete"><button type="button" class="btn btn-sm btn-circle btn-alt-danger" title="Delete"><i class="fa fa-trash"></i></button></a>'
+                  ]).draw( false );
+                  
+                  initailizeSelect2();
+        counter++;
       }
-
-      if (newProductID === null || newProductID === '' || qty === null || qty === '' || packagingId == null || packagingId === '' ) {
-        Swal.fire(
-          'Error!',
-          'Please input all the data',
-          'error'
-        );
-        return;
-      }
-
-      let html = "<div class='row mt-10 product-row product-" + newProductID + "'>";
-      html += "  <div class='col-3'>";
-      html += "    <input type='hidden' name='product_id[]' class='form-control' value='" + productId + "'>";
-      html += productText;
-      html += "  </div>";
-      html += "  <div class='col-3'>";
-      html += "    <input type='hidden' name='packaging_id[]' class='form-control' value='" + packagingId + "'>";
-      html += packagingText;
-      html += "  </div>";
-      html += "  <div class='col-1 text-right'>";
-      html += "    <input type='hidden' name='qty[]' class='form-control' value='" + qty + "'>";
-      html += qty;
-      html += "  </div>";
-      html += "  <div class='col-1 text-right'>";
-      html += "    <input type='hidden' name='usd[]' class='form-control' value='" + usd + "'>";
-      html += '$'+usd;
-      html += "  </div>";
-      html += "  <div class='col-1'>";
-      html += "    <input type='hidden' name='free_product[]' class='form-control free' value='" + free + "'>";
-      html += free;
-      html += "  </div>";
-      html += "  <div class='col'>";
-      html += "    <button type='button' id='buttonDeleteProduct' class='btn btn-danger'><em class='fa fa-minus'></em></button>";
-      html += "  </div>";
-      html += "</div>";
       
-      if ($('.product-row.product-' + newProductID).length > 0) {
-        $('body').find('.product-row.product-' + newProductID + ':last').after(html);
-      } else {
-        $('body').find('.product-list').append(html);
+    });
+
+    function initailizeSelect2(){
+      $(".js-ajax").select2();
+
+      $('.js-ajax').on('select2:select', function (e) {
+        var price = $(this).find(':selected').data('price');
+        $(this).parents('tr').find('.price').text('$'+price);
+
+        var pack = $(this).find(':selected').data('packid');
+        $(this).parents('tr').find('input[name="packaging[]"]').val(pack);
+      });
+
+    };
+
+    $('#datatables tbody').on( 'click', '.row-delete', function (e) {
+      e.preventDefault();
+      table.row( $(this).parents('tr') ).remove().draw();
+
+      if(typeof $('input[name="id[]"]').val() == 'undefined') {
+        $('#submit-table').prop('disabled', true);
       }
-
-      $('.select-product[data-index=0]').val('').change();
-      $('.input-qty[data-index=0]').val('');
-      $('.input-usd[data-index=0]').val('');
-      $('.select-packaging[data-index=0]').val('').change();
-      $('.input-free[data-index=0]').val();
-
-      $('.select-product[data-index=0]').select2('focus');
-
-      productCount++;
     });
 
-    $(document).on('click','#buttonDeleteProduct',function(){
-      $(this).parents(".product-row").remove();
-    });
-    
-    // load product
-    var param = [];
-    param["brand_name"] = "";
-
-    loadProduct({});
-
-    $(document).on('change','.select-brand',function(){
-      if ($(this).val() === '') return;
-
-      param["brand_name"] = $(this).val();
-      loadProduct({
-        brand_name:param["brand_name"],
-        index: $(this).data("index")
-      })
-    })
-
-    function loadProduct(param){
-      $.ajax({
-        url : '{{route('superuser.penjualan.sales_order.get_product')}}',
-        method : "GET",
-        data : param,
-        dataType : "JSON",
-        success : function(resp){
-          let option = "";
-          option = '<option value="">Select Product</option>';
-          $.each(resp.Data,function(i,e){
-            option += '<option value="'+e.id+'">'+e.productCode+' - '+e.productName+'</option>';
-          })
-          $('.select-product[data-index=' + param.index + ']').html(option);
-        },
-        error : function(){
-          alert("Cek Koneksi Internet");
-        }
-      })
-    }
-
-    // load packaging
-    var param = [];
-    param["product_id"] = "";
-
-    loadPackaging({});
-
-    $(document).on('change','.select-product',function(){
-      if ($(this).val() === '') return;
-
-      param["product_id"] = $(this).val();
-      loadPackaging({
-        product_id:param["product_id"],
-        index: $(this).data("index")
-      })
-    })
-
-    function loadPackaging(param){
-      $.ajax({
-        url : '{{route('superuser.penjualan.sales_order.get_packaging')}}',
-        method : "GET",
-        data : param,
-        dataType : "JSON",
-        success : function(resp){
-          let option = "";
-          option = '<option value="">Select Packaging</option>';
-          $.each(resp.Data,function(i,e){
-            option += '<option value="'+e.id+'">'+e.pack_name+'</option>';
-          })
-          $('.select-packaging[data-index=' + param.index + ']').html(option);
-        },
-        error : function(){
-          alert("Cek Koneksi Internet");
-        }
-      })
-    }
-
-    $('.input-gift').click(function(){
+    $('#datatables tbody').on( 'click', '.input-gift', function (e) {
       if($(this).is(':checked')){
-          $('.input-free[data-index=0]').val(1);
-      } else {
-          $('.input-free[data-index=0]').val(0);
+        $(this).parents('tr').find('.input-free').val(1);
+      }else{
+        $(this).parents('tr').find('.input-free').val(0);
       }
+    });
+
+    $('#brand_name').on('select2:select', function (e) {
+      table.clear().draw();
+
+      $.ajax({
+        url: '{{ route('superuser.penjualan.sales_order.get_product_pack') }}',
+        data: {id:$(this).val() , _token: "{{csrf_token()}}"},
+        type: 'POST',
+        cache: false,
+        dataType: 'json',
+        success: function(json) {
+          if (json.code == 200) {
+            product_data = json.data;
+          }
+        }
+      });
+
     });
   })
 </script>

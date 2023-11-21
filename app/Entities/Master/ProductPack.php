@@ -64,6 +64,11 @@ class ProductPack extends Model
         return $this->belongsTo('App\Entities\Master\Packaging', 'packaging_id');
     }
 
+    public function status()
+    {
+        return array_search($this->status, self::STATUS);
+    }
+
     public function kemasan()
     {
         $id_product = $this->id;

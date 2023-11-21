@@ -48,6 +48,8 @@ Route::group([
         Route::get('/get_category', 'SalesOrderController@get_category')->name('get_category');
         Route::get('/get_product', 'SalesOrderController@get_product')->name('get_product');
         Route::get('/get_packaging', 'SalesOrderController@get_packaging')->name('get_packaging');
+        Route::get('/get_brand', 'SalesOrderController@get_brand')->name('get_brand');
+        Route::post('/get_product_pack', 'SalesOrderController@get_product_pack')->name('get_product_pack');
     });
 
     Route::group(['as' => 'packing_order.', 'prefix' => '/packing_order'], function () {
@@ -133,16 +135,6 @@ Route::group([
         Route::post('/update_item', 'CanvasingController@update_item')->name('update_item');
         Route::post('/destroy_item', 'CanvasingController@destroy_item')->name('destroy_item');
     });
-
-    Route::group(['as' => 'sale_return.', 'prefix' => '/sale_return'], function () {
-        Route::get('{id}/acc', 'SaleReturnController@acc')->name('acc');
-        Route::post('get_product', 'SaleReturnController@get_product')->name('get_product');
-        Route::get('/search_do', 'SaleReturnController@search_do')->name('search_do');
-        Route::get('/create/pdf/{data?}/{protect?}', 'SaleReturnController@pdf')->name('pdf');
-        Route::get('/getSalesOrder/{delivery_order_id}', 'SaleReturnController@getDataSalesorder')->name('updateCustom');
-        Route::get('/cancel_approve/{id}', 'SaleReturnController@cancel_approve')->name('cancel_approve');
-    });
-    Route::resource('sale_return', 'SaleReturnController');
 
     Route::group(['as' => 'sales_order_ppn.', 'prefix' => '/sales_order_ppn'], function () {
         Route::get('/', 'SalesOrderPpnController@index')->name('index');
