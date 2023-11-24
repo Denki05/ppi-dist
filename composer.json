@@ -33,6 +33,7 @@
         "recca0120/terminal": "^1.8",
         "spatie/laravel-activitylog": "^3.17",
         "spatie/laravel-permission": "^3.0",
+        "twilio/sdk": "^7.12",
         "yajra/laravel-datatables-oracle": "^9.0"
     },
     "require-dev": {

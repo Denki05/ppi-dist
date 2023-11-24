@@ -69,4 +69,9 @@ class CustomerOtherAddress extends Model
     {
         return $this->hasMany('App\Entities\Master\CustomerContact', 'customer_other_address_id');
     }
+
+    public function routeNotificationForWhatsApp()
+    {
+        return $this->phone;
+    }
 }
