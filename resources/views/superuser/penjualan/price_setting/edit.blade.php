@@ -13,26 +13,26 @@
       <div class="col-12">
         <div class="row">
           <div class="col-lg-1">
-            <strong>Type</strong>
-          </div>
-          <div class="col-lg-11">
-            : {{$result->type->name ?? ''}}
-          </div>
-        </div>
-        <div class="row">
-          <div class="col-lg-1">
-            <strong>Category</strong>
-          </div>
-          <div class="col-lg-11">
-            : {{$result->category->name ?? ''}}
-          </div>
-        </div>
-        <div class="row">
-          <div class="col-lg-1">
             <strong>Product</strong>
           </div>
           <div class="col-lg-11">
-            : {{$result->name}}
+            : {{$result->code }} - {{ $result->name }}
+          </div>
+        </div>
+        <div class="row">
+          <div class="col-lg-1">
+            <strong>Kemasan</strong>
+          </div>
+          <div class="col-lg-11">
+            : {{$result->packaging->pack_name}}
+          </div>
+        </div>
+        <div class="row">
+          <div class="col-lg-1">
+            <strong>Warehouse</strong>
+          </div>
+          <div class="col-lg-11">
+            : {{$result->warehouse->name ?? ''}}
           </div>
         </div>
       </div>
@@ -50,13 +50,7 @@
             </thead>
             <tbody>
               <tr>
-                <td>Buying Price : <strong>{{$result->buying_price}}</strong></td>
-                <td>
-                  <input type="text" name="buying_price" class="form-control" placeholder="Buying Price">
-                </td>
-              </tr>
-              <tr>
-                <td>Selling Price : <strong>{{$result->selling_price}}</strong></td>
+                <td>Selling Price : <strong>{{$result->price}}</strong></td>
                 <td>
                   <input type="text" name="selling_price" class="form-control" placeholder="Selling Price">
                 </td>

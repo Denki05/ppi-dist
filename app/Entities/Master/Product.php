@@ -86,11 +86,6 @@ class Product extends Model
     {
         return $this->hasMany('App\Entities\Master\ProductPack', 'product_id');
     }
-
-    public function setting_price_log()
-    {
-        return $this->hasMany('App\Entities\Penjualan\SettingPriceLog');
-    }
     
     public function getImageUrlAttribute()
     {
