@@ -14,6 +14,8 @@ Route::group([
         Route::post('/print/product', 'SettingPriceController@print_product')->name('print_product');
         Route::post('/print/product_price', 'SettingPriceController@print_product_price')->name('print_product_price');
         Route::get('/{id}/history', 'SettingPriceController@history')->name('history');
+        Route::get('/import_template', 'SettingPriceController@import_template')->name('import_template');
+        Route::post('/import', 'SettingPriceController@import')->name('import');
     });
 
     Route::group(['as' => 'sales_order.', 'prfix' => '/sales_order'], function () {

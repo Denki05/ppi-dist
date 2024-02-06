@@ -9,9 +9,13 @@ use App\Entities\Penjualan\SettingPriceLog;
 use App\Entities\Master\Product;
 use App\Entities\Master\ProductPack;
 use App\Entities\Master\Packaging;
+use App\Exports\Penjualan\SettingPriceImportTemplate;
+use App\Imports\Penjualan\SettingPriceImport;
 use App\Entities\Master\Company;
 use App\Entities\Master\BrandReference;
 use App\Entities\Setting\UserMenu;
+use Validator;
+use Excel;
 use PDF;
 use DB;
 use Auth;
@@ -337,4 +341,34 @@ class SettingPriceController extends Controller
         return $pdf->stream();
     }
 
+    public function import_template()
+    {
+        $filename = 'setting-price-import-template.xlsx';
+        return Excel::download(new SettingPriceImportTemplate, $filename);
+    }
+
+    public function import(Request $request)
+    {
+        // Access
+        if(Auth::user()->is_superuser == 0){
+            if(empty($this->access) || empty($this->access->user) || $this->access->can_create == 0){
+                return redirect()->route('superuser.index')->with('error','Anda tidak punya akses untuk membuka menu terkait');
+            }
+        }
+        
+        $validator = Validator::make($request->all(), [
+            'import_file' => 'required|file|mimes:xls,xlsx|max:2048',
+        ]);
+
+        if ($validator->fails()) {
+            return redirect()->back()->withErrors($validator->errors()->all());
+        }
+
+        if ($validator->passes()) {
+            $import = new SettingPriceImport();
+            Excel::import($import, $request->import_file);
+        
+            return redirect()->back()->with(['collect_success' => $import->success, 'collect_error' => $import->error]);
+        }
+    }
 }
