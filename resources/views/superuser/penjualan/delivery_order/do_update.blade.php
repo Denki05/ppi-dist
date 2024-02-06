@@ -1,6 +1,4 @@
-@foreach($result->do_detail as $index => $row)
-  @php $row->product->name @endphp
-@endforeach
+
 
 @extends('superuser.app')
 
@@ -21,7 +19,7 @@
 <form class="ajax" data-action="{{ route('superuser.penjualan.delivery_order.do_update') }}" data-type="POST" enctype="multipart/form-data">
   @csrf
   <input type="hidden" name="id" value="{{$result->id}}">
-  <input type="hidden" name="cost_id" value="{{$result->do_cost->id ?? 0}}">
+  <input type="hidden" name="cost_id" value="{{$result->do_detail_cost[0]->id}}">
 
   <div class="block">
         <div class="block-header block-header-default">
@@ -53,7 +51,7 @@
                                     <div class="form-group row">
                                         <label class="col-md-4 col-form-label text-right">Transaksi Type</label>
                                         <div class="col-md-6">
-                                            <div class="form-control-plaintext"><span class="badge badge-info">{{$result->do_type_transaction()->scalar ?? ''}}</span></div>
+                                            <div class="form-control-plaintext"><span class="badge badge-info">{{$result->do_type_transaction ?? ''}}</span></div>
                                         </div>
                                     </div>
                                 </div>
@@ -134,7 +132,7 @@
                     <div class="form-group row">
                         <label class="col-md-4 col-form-label text-right">Disc %</label>
                         <div class="col-md-3">
-                        <input type="text" name="disc_agen_percent" id="disc_agen_percent" class="form-control text-center disc_agen_percent" value="{{ $result->do_cost->discount_1 }}">
+                        <input type="text" name="disc_agen_percent" id="disc_agen_percent" class="form-control text-center disc_agen_percent" value="{{ $result->do_detail_cost[0]->discount_1 ?? 0 }}">
                         </div>
                         <div class="col-md-5">
                         <input type="text" name="disc_amount2_idr" id="disc_amount2_idr" class="form-control disc_amount2_idr text-center" readonly>
@@ -151,7 +149,7 @@
                     <div class="form-group row">
                         <label class="col-md-4 col-form-label text-right">Voucher</label>
                         <div class="col-md-6">
-                        <input type="text" name="voucher_idr" id="voucher_idr" class="form-control count voucher_idr" value="{{ $result->do_cost->voucher_idr }}">
+                        <input type="text" name="voucher_idr" id="voucher_idr" class="form-control count voucher_idr" value="{{ $result->do_detail_cost[0]->voucher_idr }}">
                         </div>
                     </div>
                     </div>
@@ -159,7 +157,7 @@
                     <div class="form-group row">
                                 <label style="font-size: 10pt;" class="col-md-4 col-form-label text-right">Disc Cash</label>
                                 <div class="col-3">
-                                <select class="form-control js-select2 base_disc" id="base_id">
+                                <select class="form-control js-select2 base_disc" id="base_id" name="base_id">
                                     <option value="0">0</option>
                                     <option value="2">$2</option>
                                     <option value="4">$4</option>
@@ -180,7 +178,7 @@
                         <div class="form-group row">
                         <label class="col-md-4 col-form-label text-right">Disc Kemasan</label>
                         <div class="col-md-3">
-                            <input type="text" name="disc_tambahan" id="disc_tambahan" class="form-control disc_tambahan text-center" value="{{ $result->do_cost->discount_2 }}" step="any">
+                            <input type="text" name="disc_tambahan" id="disc_tambahan" class="form-control disc_tambahan text-center" value="{{ $result->do_detail_cost[0]->discount_2 }}" step="any">
                         </div>
                         <div class="col-md-5">
                             <input type="text" name="disc_kemasan_idr" id="disc_kemasan_idr" class="form-control disc_kemasan_idr text-center" readonly>
@@ -191,7 +189,7 @@
                     <div class="form-group row">
                         <label class="col-md-4 col-form-label text-right">Ongkir</label>
                         <div class="col-md-6">
-                        <input type="text" name="delivery_cost_idr" id="delivery_cost_idr" class="form-control delivery_cost_idr" value="{{ $result->do_cost->delivery_cost_idr }}">
+                        <input type="text" name="delivery_cost_idr" id="delivery_cost_idr" class="form-control delivery_cost_idr" value="{{ $result->do_detail_cost[0]->delivery_cost_idr }}">
                         </div>
                     </div>
                     </div>
@@ -210,7 +208,7 @@
                     <div class="form-group row">
                         <label class="col-md-4 col-form-label text-right">Disc IDR</label>
                         <div class="col-md-6">
-                        <input type="text" name="disc_idr" id="disc_idr" class="form-control disc_idr " step="any" value="{{ $result->do_cost->discount_idr }}">
+                        <input type="text" name="disc_idr" id="disc_idr" class="form-control disc_idr " step="any" value="{{ $result->do_detail_cost[0]->discount_idr }}">
                         </div>
                     </div>
                     </div>
@@ -218,7 +216,7 @@
                     <div class="form-group row">
                         <label class="col-md-4 col-form-label text-right">Resi Ongkir</label>
                         <div class="col-md-6">
-                        <input type="number" name="resi_ongkir" id="resi_ongkir" value="0" class="form-control text-center " step="any" readonly value="{{ $result->do_cost->other_cost_idr }}">
+                        <input type="number" name="resi_ongkir" id="resi_ongkir" value="0" class="form-control text-center " step="any" readonly value="{{ $result->do_detail_cost[0]->other_cost_idr }}">
                         </div>
                     </div>
                     </div>
@@ -261,21 +259,21 @@
                         @endif
                         @if(count($result->do_detail) > 0)
                             @foreach($result->do_detail as $index => $detail)
-                            <input type="hidden" name="repeater[{{$index}}][product_id]" value="{{$detail->product_id}}">
+                            <input type="hidden" name="repeater[{{$index}}][product_packaging_id]" value="{{$detail->product_packaging_id}}">
                             <input type="hidden" name="repeater[{{$index}}][so_item_id]" value="{{$detail->id}}">
                             <input type="hidden" name="repeater[{{$index}}][id]" value="{{$detail->id}}">
                             <tr class="index{{$index}}" data-index="{{$index}}">
                                 <td width="5%">{{ $loop->iteration }}</td>
-                                <td width="20%">{{ $detail->product->code }} - <b>{{ $detail->product->name }}</td>
+                                <td width="20%">{{ $detail->product_pack->code }} - <b>{{ $detail->product_pack->name }}</td>
                                 <td width="5%">
                                     <input type="number" name="repeater[{{$index}}][do_qty]" class="form-control count" data-index="{{$index}}" value="{{$detail->qty}}" step="any" min="0" max="{{$detail->qty}}">
                                 </td>
                                 
                                 <td width="5%">
-                                    <input type="text" name="repeater[{{$index}}][price]" class="form-control" readonly value="{{$detail->product->selling_price ?? 0}}">
+                                    <input type="text" name="repeater[{{$index}}][price]" class="form-control" value="{{$detail->product_pack->price ?? 0}}">
                                 </td>
                                 <td width="15%">
-                                    <input type="text" name="repeater[{{$index}}][packaging]" class="form-control" readonly value="{{$detail->packaging_txt()->scalar ?? ''}}">
+                                    <input type="text" name="repeater[{{$index}}][packaging]" class="form-control" readonly value="{{$detail->product_pack->packaging->pack_name}}">
                                 </td>
                                 <td width="5%">
                                     <input type="text" name="repeater[{{$index}}][usd_disc]" class="form-control count count-disc" data-index="{{$index}}" step="any">
@@ -402,7 +400,7 @@
         let total = 0;
         $('tbody tr').each(function(index,e){
           let sub_total = $('tr.index'+index+'').find('input[name="repeater['+index+'][total]"]').val();
-          sub_total = parseFloat(sub_total.split('.').join(''));
+          sub_total = parseFloat(sub_total);
           // alert(kurs);
 
           sub_total = (isNaN(sub_total)) ? 0 : sub_total;

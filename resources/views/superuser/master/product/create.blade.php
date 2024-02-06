@@ -226,9 +226,9 @@
                                       <div class="col-sm-10">
                                         <select class="js-select2 form-control" id="category"  name="category" style="width:100%;" data-placeholder="Pilih Kategori">
                                             <option value="">==Select Category==</option>
-                                            @foreach($category as $cat)
+                                            <!-- @foreach($category as $cat)
                                             <option value="{{ $cat->id }}">{{ $cat->name }}</option>
-                                            @endforeach
+                                            @endforeach -->
                                         </select>
                                       </div>
                                     </div>
@@ -401,9 +401,27 @@
 
     $('a[href^="#"]').on('click', function(event) {
 
-    var target = $( $(this).attr('href') );
-    target.fadeToggle(100);
+      var target = $( $(this).attr('href') );
+      target.fadeToggle(100);
     });
+
+    $('#brand_name').on('change', function(){
+      let brand_lokal_id = $('#brand_name').val();
+
+      $.ajax({
+        type : 'POST',
+        url : '{{route('superuser.master.product.get_category')}}',
+        data : {brand_lokal_id:brand_lokal_id},
+        cache : false,
+
+        success: function(msg){
+          $('#category').html(msg);
+        },
+        error : function(data){
+          console.log('error:',data)
+        },
+      })
+    })
   })
 </script>
 @endpush

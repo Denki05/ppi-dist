@@ -13,7 +13,7 @@ class CustomerOtherAddress extends Model
         'gps_latitude', 'gps_longitude',
         'provinsi', 'kota', 'kecamatan', 'kelurahan',
         'text_provinsi', 'text_kota', 'text_kecamatan', 'text_kelurahan',
-        'zipcode', 'image_npwp', 'image_ktp', 'status'
+        'zipcode', 'free_shipping', 'zone', 'image_npwp', 'image_ktp', 'status'
     ];
     protected $table = 'master_customer_other_addresses';
     public $incrementing = false;

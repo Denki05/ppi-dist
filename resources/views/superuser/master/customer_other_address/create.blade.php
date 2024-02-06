@@ -9,7 +9,7 @@
 <div class="block">
   <div class="block-conten" align="center">
     <div class="col-md-10 col-md-offset-1">
-      <form data-action="{{ route('superuser.master.customer.other_address.store', $customer->id) }}" data-type="POST" enctype="multipart/form-data" class="f1 ajax">
+      <form data-action="{{ route('superuser.master.customer.other_address.store', $customer->id) }}" data-type="POST" enctype="multipart/form-data" class="f1 ajax" novalidate>
         <div class="f1-steps">
           <div class="f1-progress">
             <div class="f1-progress-line" data-now-value="25" data-number-of-steps="4" style="width: 25%;"></div>
@@ -78,6 +78,14 @@
                 <div class="form-group">
                   <label for="address" class="form-label">Alamat</label>
                   <textarea class="form-control" name="address" rows="2"></textarea>
+                </div>
+              </div>
+            </div>
+            <div class="row">
+              <div class="col">
+                <div class="form-group">
+                  <input type="checkbox" value="1" name="free_shipping"  />
+                  <span class="text-danger"><b>*Free Shipping</b></span></label><br>
                 </div>
               </div>
             </div>

@@ -1,51 +1,12 @@
 @extends('superuser.app')
 
 @section('content')
-{{--<div class="row gutters-tiny">
-  <div class="col-4">
-    <a class="block" href="javascript:void(0)">
-      <div class="block-content block-content-full">
-        <div class="row">
-          <div class="col-6">
-            <i class="fa fa-dollar fa-2x text-body-bg-dark"></i>
-          </div>
-          <div class="col-6 text-right">
-            <span class="text-muted">{{ Swap::latest('USD/IDR')->getDate()->format('d M Y H:i:s') }}</span>
-          </div>
-        </div>
-        <div class="row">
-          <div class="col-6 text-right border-r">
-            <div class="font-size-h3 font-w600">USD</div>
-            <div class="font-size-h4 font-w600"><i class="fa fa-dollar"></i>1</div>
-          </div>
-          <div class="col-6">
-            <div class="font-size-h3 font-w600">IDR</div>
-            <div class="font-size-h4 font-w600">{{ rupiah(Swap::latest('USD/IDR', ['cache_ttl' => \Carbon\Carbon::now()->secondsUntilEndOfDay()])->getValue()) }}</div>
-          </div>
-        </div>
-      </div>
-    </a>
-  </div>
-</div>--}}
-
-@if(session('error') || session('success'))
-<div class="alert alert-{{ session('error') ? 'danger' : 'success' }} alert-dismissible fade show" role="alert">
-    @if (session('error'))
-    <strong>Error!</strong> {!! session('error') !!}
-    @elseif (session('success'))
-    <strong>Berhasil!</strong> {!! session('success') !!}
-    @endif
-    <button type="button" class="close" data-dismiss="alert" aria-label="Close">
-        <span aria-hidden="true">&times;</span>
-    </button>
-</div>
-@endif
 
 <div class="row">
   <div class="col-12">
     <div class="block">
       <div class="block-content block-content-full">
-        @if($is_see == true)
+        @role('Developer', 'superuser')
           <form>
             <div class="row">
               <div class="col-lg-2 pt-2">
@@ -166,31 +127,9 @@
                         </tfoot>
                       </table>
                     </div>
-        @endif
+        @endrole
       </div>
       
-    </div>
-  </div>
-</div>
-<div class="row">
-  <div class="col-md-6">
-    <div class="block">
-      <div class="block-header block-header-default">
-        <h4 class="block-title">Statistik Sales Order</h4>
-      </div>
-      <div class="block-content block-content-full">
-      <canvas id="mataChart" class="chartjs" width="undefined" height="undefined"></canvas>
-      </div>
-    </div>
-  </div>
-  <div class="col-md-6">
-    <div class="block">
-      <div class="block-header block-header-default">
-        <h4 class="block-title">Statistik Brand</h4>
-      </div>
-      <div class="block-content block-content-full">
-      <canvas id="mataChart2" class="chartjs" width="undefined" height="undefined"></canvas>
-      </div>
     </div>
   </div>
 </div>
@@ -200,89 +139,25 @@
 @include('superuser.asset.plugin.select2')
 @include('superuser.asset.plugin.swal2')
 @include('superuser.asset.plugin.datatables')
-@include('superuser.asset.plugin.chart')
 
 @push('scripts')
-
 <script type="text/javascript">
-  $(function(){
+  $( document ).ready(function() {
     $('#datatables').dataTable( {
+      paging   :  true,
+      info     :  false,
+      searching : true,
+      order: [
+        [2, 'desc']
+      ],
+      pageLength: 10,
+      lengthMenu: [
+        [10, 30, 100, -1],
+        [10, 30, 100, 'All']
+      ],
     });
 
     $('.js-select2').select2();
-  })
-
-  var ctx = document.getElementById('mataChart').getContext('2d');
-  var myChart = new Chart(ctx, {
-    type: 'bar',
-    data: {
-        labels: <?php echo json_encode($label); ?>,
-        datasets: [{
-            label: 'Statistik Sales Order',
-            data: <?php echo json_encode($jumlah_so); ?>,
-            backgroundColor: [
-                'rgba(255, 99, 132, 0.2)',
-                'rgba(54, 162, 235, 0.2)',
-                'rgba(255, 206, 86, 0.2)',
-                'rgba(75, 192, 192, 0.2)',
-                'rgba(153, 102, 255, 0.2)',
-                'rgba(255, 159, 64, 0.2)'
-            ],
-            borderColor: [
-                'rgba(255, 99, 132, 1)',
-                'rgba(54, 162, 235, 1)',
-                'rgba(255, 206, 86, 1)',
-                'rgba(75, 192, 192, 1)',
-                'rgba(153, 102, 255, 1)',
-                'rgba(255, 159, 64, 1)'
-            ],
-        }
-      ]
-    },
-    options: {
-        scales: {
-            y: {
-                beginAtZero: true
-            }
-        }
-    }
-});
-
-  var ctx = document.getElementById('mataChart2').getContext('2d');
-  var myChart = new Chart(ctx, {
-    type: 'line',
-    data: {
-        labels: <?php echo json_encode($label); ?>,
-        datasets: [{
-            label: 'Statistik Brand Order',
-            data: <?php echo json_encode($jumlah_pay); ?>,
-            backgroundColor: [
-                'rgba(255, 99, 132, 0.2)',
-                'rgba(54, 162, 235, 0.2)',
-                'rgba(255, 206, 86, 0.2)',
-                'rgba(75, 192, 192, 0.2)',
-                'rgba(153, 102, 255, 0.2)',
-                'rgba(255, 159, 64, 0.2)'
-            ],
-            borderColor: [
-                'rgba(255, 99, 132, 1)',
-                'rgba(54, 162, 235, 1)',
-                'rgba(255, 206, 86, 1)',
-                'rgba(75, 192, 192, 1)',
-                'rgba(153, 102, 255, 1)',
-                'rgba(255, 159, 64, 1)'
-            ],
-        }]
-    },
-    options: {
-        scales: {
-            y: {
-                beginAtZero: true
-            }
-        }
-    }
-});
+  });
 </script>
-
-
 @endpush

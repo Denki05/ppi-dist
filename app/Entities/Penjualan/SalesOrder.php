@@ -4,6 +4,7 @@ namespace App\Entities\Penjualan;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use App\Entities\Account\Superuser as AccountSuperuser;
 
 class SalesOrder extends Model
 {
@@ -21,6 +22,7 @@ class SalesOrder extends Model
         'ekspedisi_id',
         'vendor_id',
         'so_date',
+        'brand_name',
     	'type_transaction',
         'rekening_id',
         'type_so',
@@ -54,16 +56,15 @@ class SalesOrder extends Model
 
     const SALES_SENIOR = [
         'Ivan' => 1,
-        'Erwin' => 2,
-        'Nia' => 3,
-        'Super Administrator' => 4,
+        'Nia' => 2,
+        'Lindy' => 3,
     ];
 
     const SALES = [
         'Lindy' => 1,
-        'Erwin' => 2,
-        'Nia' => 3,
-        'Super Administrator' => 4,
+        'Rita' => 2,
+        'Super Administrator' => 3,
+        'Santi' => 4,
     ];
     
     const STEP = [
@@ -86,6 +87,7 @@ class SalesOrder extends Model
     	1 => 'CASH',
         2 => 'TEMPO',
         3 => 'MARKETPLACE',
+        4 => 'COD',
     ];
 
     const CONDITION = [
@@ -220,5 +222,14 @@ class SalesOrder extends Model
     public function store()
     {
       return $this->belongsTo(Customer::class);
+    }
+
+    public function createdBySuperuser()
+    {
+        $superuser = AccountSuperuser::find($this->created_by);
+        
+        if ($superuser) {
+            return $superuser->name ?? $superuser->username;
+        }
     }
 }

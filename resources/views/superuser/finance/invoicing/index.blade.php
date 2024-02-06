@@ -18,45 +18,12 @@
 </div>
 @endif
 <div class="block">
-  <hr class="my-20">
   <div class="block-content block-content-full">
-      <div class="row mb-30">
+      {{--<div class="row mb-30">
         <div class="col-12">
           <a href="#" class="btn btn-primary btn-add"><i class="fa fa-plus"></i> Add Invoicing</a>
         </div>
-      </div>
-      <form method="get" action="{{ route('superuser.finance.invoicing.index') }}">
-        <div class="row">
-          <div class="col-lg-3">
-            <div class="form-group">
-              <select class="form-control js-select2" name="do_id">
-                <option value="">==All DO Code==</option>
-                @foreach($order as $index => $row)
-                <option value="{{$row->id}}">{{$row->do_code}} - {{$row->customer->name ?? ''}}</option>
-                @endforeach
-              </select>
-            </div>          
-          </div>
-          <div class="col-lg-3">
-            <div class="form-group">
-              <select class="form-control js-select2" name="customer_id">
-                <option value="">==All Customer==</option>
-                @foreach($customer as $index => $row)
-                <option value="{{$row->id}}">{{$row->name}} {{$row->text_kota}}</option>
-                @endforeach
-              </select>
-            </div>          
-          </div>
-          <div class="col-lg-6">
-            <div class="input-group mb-3">
-                <input type="text" class="form-control" placeholder="Keyword" name="search">
-                <div class="input-group-append">
-                  <button type="submit" class="btn btn-primary"><i class="fa fa-search"></i></button>
-                </div>
-              </div>
-          </div>
-        </div>
-      </form>
+      </div>--}}
       <div class="row mb-30">
         <div class="col-12">
           <table class="table table-striped" id="datatables">
@@ -74,8 +41,9 @@
             </thead>
             <tbody>
               @foreach($table as $index => $row)
+                @if($row->status != 3)
                 <tr>
-                  <td>{{$table->firstItem() + $index}}</td>
+                  <td>{{ $loop->iteration }}</td>
                   <td>
                     <a href="{{route('superuser.finance.invoicing.history_payable',$row->id)}}">{{$row->code}}</a>
                   </td>
@@ -89,18 +57,15 @@
                   <td>
                     <a href="{{route('superuser.finance.invoicing.detail',$row->do->id ?? 0)}}" class="btn btn-primary btn-sm btn-flat"><i class="fa fa-eye"></i> Detail</a>
                     <a href="{{route('superuser.finance.invoicing.print',$row->id)}}" class="btn btn-info btn-sm btn-flat" data-id="{{$row->id}}" target="_blank"><i class="fa fa-print"></i> Print</a>
-                    {{--<a href="{{route('superuser.finance.invoicing.print_proforma',$row->id)}}" class="btn btn-info btn-sm btn-flat" data-id="{{$row->id}}" target="_blank"><i class="fa fa-print"></i> Print Proforma</a>--}}
+                    @if($row->do->status <= 6 OR $row->do->type_transaction == "CASH" AND $row->do->so->shipping_cost_buyer == 1)
+                      <a href="{{route('superuser.finance.invoicing.print2',$row->id)}}" class="btn btn-info btn-sm btn-flat" data-id="{{$row->id}}" target="_blank"><i class="fa fa-print"></i> Print FULL</a>
+                    @endif
                   </td>
                 </tr>
+                @endif
               @endforeach
             </tbody>
           </table>
-        </div>
-      </div>
-      
-      <div class="row mb-30">
-        <div class="col-12">
-          {{$table->links()}}
         </div>
       </div>
   </div>
@@ -121,14 +86,17 @@
     $(function(){
       $(function(){
         $('#datatables').DataTable( {
-          "paging":   false,
-          "ordering": true,
-          "info":     false,
-          "searching" : false,
-          "columnDefs": [{
-            "targets": 0,
-            "orderable": false
-          }]
+          paging   :  true,
+          info     :  false,
+          searching : true,
+          order: [
+            [2, 'desc']
+          ],
+          pageLength: 10,
+          lengthMenu: [
+            [10, 30, 100, -1],
+            [10, 30, 100, 'All']
+          ],
         });
 
 

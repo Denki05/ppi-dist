@@ -72,6 +72,7 @@ class ReceivingDetailCollyController extends Controller
 
                         $receiving_detail->total_quantity_colly = ReceivingDetailColly::where('receiving_detail_id', $detail_id)->whereNull('is_reject')->sum('quantity_colly');
                         $receiving_detail->total_quantity_ri = ReceivingDetailColly::where('receiving_detail_id', $detail_id)->whereNull('is_reject')->sum('quantity_ri');
+                        $receiving_detail->no_batch = $request->batch;
                         $receiving_detail->save();
                         
                         // $receiving_detail_colly->hpp = ($receiving_detail->ppb_detail->total_price_idr / $receiving_detail->ppb_detail->quantity) +

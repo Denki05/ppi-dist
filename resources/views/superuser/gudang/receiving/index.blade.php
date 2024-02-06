@@ -26,7 +26,7 @@
   </div>
   <hr class="my-20">
   <div class="block-content block-content-full">
-    <table id="datatable" class="table table-striped">
+    <table id="datatable" class="table table-bordred table-striped" style="width:100%">
       <thead>
         <tr>
           <th class="text-center">#</th>
@@ -34,7 +34,6 @@
           <th class="text-center">Pbm date</th>
           <th class="text-center">Code</th>
           <th class="text-center">Warehouse</th>
-          <th class="text-center">Note</th>
           <th class="text-center">Action</th>
         </tr>
       </thead>
@@ -88,7 +87,6 @@ $(document).ready(function() {
       },
       {data: 'code'},
       {data: 'warehouse'},
-      {data: 'note'},
       {data: 'action', orderable: false, searcable: false}
     ],
     order: [

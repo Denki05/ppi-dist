@@ -20,8 +20,8 @@
                               </a>
                             </div>
                             <div class="thumbnail text-center"> 
-                              <img onclick="change_image(this)" src="{{ $sub_brand_reference->image_botol_url }}" width="70"> 
-                              <img onclick="change_image(this)" src="{{ $sub_brand_reference->image_botol_url }}" width="70"> 
+                              <img onclick="change_image(this)" src="{{ $sub_brand_reference->image_botol_url }}" width="70px"> 
+                              <img onclick="change_image(this)" src="{{ $sub_brand_reference->image_botol_url }}" width="70px"> 
                             </div>
                         </div>
                     </div>

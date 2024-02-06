@@ -52,7 +52,7 @@
               <select class="form-control js-select2 select-product" name="product_packaging_id">
                 <option value="">==Select Product==</option>
                 @foreach($product as $index => $row)
-                  <option value="{{$row->id}}">{{$row->code ?? ''}} - {{$row->name ?? ''}} - {{$row->kemasan()->pack_name}}</option>
+                  <option value="{{$row->id}}">{{$row->code ?? ''}} - {{$row->name ?? ''}} - {{$row->packaging->pack_name}}</option>
                 @endforeach
               </select>
             </div>
@@ -66,13 +66,13 @@
           <div class="form-group row">
             <label class="col-md-2 col-form-label text-right">Plus Stock</label>
             <div class="col-md-8">
-              <input type="number" name="plus" class="form-control count">
+              <input type="number" name="plus" class="form-control count" step="any">
             </div>
           </div>
           <div class="form-group row">
             <label class="col-md-2 col-form-label text-right">Min Stock</label>
             <div class="col-md-8">
-              <input type="number" name="min" class="form-control count">
+              <input type="number" name="min" class="form-control count" step="any">
             </div>
           </div>
           <div class="form-group row">

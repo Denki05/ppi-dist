@@ -29,8 +29,9 @@ use App\Entities\Setting\UserMenu;
 use Validator;
 use Auth;
 use PDF;
+use COM;
 use Illuminate\Support\Str;
-use Illuminate\Http\Response;
+use Illuminate\Support\Facades\Response;
 
 class ProductController extends Controller
 {
@@ -65,6 +66,7 @@ class ProductController extends Controller
         }
 
         $data['product'] = Product::get();
+        $data['brand_lokal'] = BrandLokal::get();
 
         return view('superuser.master.product.index', $data);
     }
@@ -98,6 +100,8 @@ class ProductController extends Controller
     public function store(Request $request)
     {
         if ($request->ajax()) {
+            $failed = "";
+
             $validator = Validator::make($request->all(), [
                 'brand_name' => 'required',
                 'searah' => 'required|integer',
@@ -175,7 +179,7 @@ class ProductController extends Controller
                                     $child_product->material_name = $request->material_name;
                                     $child_product->code = $request->code;
                                     $child_product->name = $request->name;
-                                    $child_product->price = 0;
+                                    $child_product->price = $request->selling_price;
                                     $child_product->stock = 0;
                                     $child_product->gender = $request->gender;
                                     $child_product->note = $request->note;
@@ -192,8 +196,31 @@ class ProductController extends Controller
                             }
                         }
                     }else{
+                        $get_product = Product::where('id', $request->code)->first();
+
                         $product = new Product;
-                        $product->id = $request->code;
+                        
+                        // if($get_product === null){
+                        //     $product->id = $request->code;
+                        // }else{
+                        //     if($get_product){
+                        //         if($get_product->id === $request->code){
+                        //             $product->id = $request->code.'/'.+1;
+                        //             // dd($product->id);
+                        //             // $response['failed'] = 'ID sudah terposting';
+                        //         }else{
+                        //             $product->id = $request->code;
+                        //             // $response['failed'] = 'ID belum terposting';
+                        //             // DD($response);
+                        //         }
+                        //     }
+                        // }
+                        if($get_product == $request->code){
+                            $product->id = $request->code.'/'.+1;
+                        }else{
+                            $product->id = $request->code;
+                        }
+
                         $product->code = $request->code;
                         $product->brand_name = $request->brand_name;
                         $product->sub_brand_reference_id = $request->searah;
@@ -240,7 +267,7 @@ class ProductController extends Controller
                                     $child_product->material_name = $request->material_name;
                                     $child_product->code = $request->code;
                                     $child_product->name = $request->name;
-                                    $child_product->price = 0;
+                                    $child_product->price = $request->selling_price;
                                     $child_product->stock = 0;
                                     $child_product->gender = $request->gender;
                                     $child_product->note = $request->note;
@@ -336,7 +363,9 @@ class ProductController extends Controller
     public function update(Request $request, $id)
     {
         if ($request->ajax()) {
-            $product = Product::find($id);
+            $decode = base64_decode($id);
+
+            $product = Product::find($decode);
 
             if ($product == null) {
                 abort(404);
@@ -514,48 +543,6 @@ class ProductController extends Controller
         }
         ResultData:
         return response()->json($data_json,200);
-    }
-
-    public function disable(Request $request, $id)
-    {
-        // Access
-        if(Auth::user()->is_superuser == 0){
-            if(empty($this->access) || empty($this->access->user) || $this->access->can_update == 0){
-                return redirect()->route('superuser.index')->with('error','Anda tidak punya akses untuk membuka menu terkait');
-            }
-        }
-        $product = Product::find($id);
-
-        if ($product === null) {
-            abort(404);
-        }
-
-        $product->status = Product::STATUS['INACTIVE'];
-
-        if ($product->save()) {
-            return redirect()->route('superuser.master.product.show', $product->id);
-        }
-    }
-
-    public function enable(Request $request, $id)
-    {
-        // Access
-        if(Auth::user()->is_superuser == 0){
-            if(empty($this->access) || empty($this->access->user) || $this->access->can_update == 0){
-                return redirect()->route('superuser.index')->with('error','Anda tidak punya akses untuk membuka menu terkait');
-            }
-        }
-        $product = Product::find($id);
-
-        if ($product === null) {
-            abort(404);
-        }
-
-        $product->status = Product::STATUS['ACTIVE'];
-
-        if ($product->save()) {
-            return redirect()->route('superuser.master.product.show', $product->id);
-        }
     }
 
     public function import_template()
@@ -811,5 +798,159 @@ class ProductController extends Controller
                 }
             }
         }
-    }   
+    }
+
+    Public function get_category(Request $request)
+    {
+        $brand_lokal_id = $request->brand_lokal_id;
+
+        $category = ProductCategory::where('brand_name', $brand_lokal_id)->get();
+
+        foreach($category as $cat)
+        {
+            echo "<option value='$cat->id'>$cat->name</option>";
+        }
+    }
+
+    public function print_product(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            'brand_name' => 'required',
+            'type_print' => 'required',
+        ]);
+
+        if ($validator->fails()) {
+            return redirect()->back()->withErrors($validator->errors()->all());
+        }
+
+        if ($validator->passes()) {
+            $get_brand = $request->brand_name;
+            $condition = 0;
+            $warehouse = Warehouse::where('id', 2)->first();
+            $type_print = $request->type_print;
+            $packaging = Packaging::where('pack_name', '0.5 kg Alu')->first();
+            $date_print = date("Ymd");
+
+            $filename = $get_brand."-".$type_print.$date_print.'.pdf';
+
+                if($type_print == 'price_list'){
+                    if($get_brand == 'Senses'){
+                        $my_report = "C:\\xampp\\htdocs\\ppi-dist\public\\cr\\price_list\\senses_pl.rpt";
+                    }elseif($get_brand == 'GCF'){
+                        $my_report = "C:\\xampp\\htdocs\\ppi-dist\public\\cr\\price_list\\gcf_pl.rpt";
+                    }
+
+                    $my_pdf = 'C:\\xampp\\htdocs\\ppi-dist\\public\\cr\\price_list\\export\\'.$filename;
+                }elseif($type_print == 'product_list'){
+                    if($get_brand == 'Senses'){
+                        $my_report = "C:\\xampp\\htdocs\\ppi-dist\public\\cr\\product_list\\pd_senses.rpt";
+                    }elseif($get_brand == 'GCF'){
+                        $my_report = "C:\\xampp\\htdocs\\ppi-dist\public\\cr\\product_list\\pd_gcf.rpt";
+                    }
+
+                    $my_pdf = 'C:\\xampp\\htdocs\\ppi-dist\\public\\cr\\product_list\\export\\'.$filename;
+                }
+
+                //- Variables - Server Information 
+                $my_server      = "LOCAL"; 
+                $my_user        = "root"; 
+                $my_password    = ""; 
+                $my_database    = "ppi-dist";
+                $COM_Object     = "CrystalDesignRunTime.Application";
+
+                //-Create new COM object-depends on your Crystal Report version
+                $crapp= New COM($COM_Object) or die("Unable to Create Object");
+                $creport = $crapp->OpenReport($my_report,1); // call rpt report
+
+                //- Set database logon info - must have
+                $creport->Database->Tables(1)->SetLogOnInfo($my_server, $my_database, $my_user, $my_password);
+
+                //- field prompt or else report will hang - to get through
+                $creport->EnableParameterPrompting = FALSE;
+                $creport->RecordSelectionFormula = "{master_brand_lokal.brand_name}='$get_brand'AND{master_packaging.pack_name}='$packaging->pack_name'AND{master_products_packaging.condition}=$condition.AND{master_products_packaging.warehouse_id}=$warehouse->id";
+
+                //export to PDF process
+                $creport->ExportOptions->DiskFileName=$my_pdf; //export to pdf
+                $creport->ExportOptions->PDFExportAllPages=true;
+                $creport->ExportOptions->DestinationType=1; // export to file
+                $creport->ExportOptions->FormatType=31; // PDF type
+                $creport->Export(false);
+
+                //------ Release the variables ------
+                $creport = null;
+                $crapp = null;
+                $ObjectFactory = null;
+        
+                // $attachment_location = 'C:\\xampp\\htdocs\\ppi-dist\\public\\cr\\price_list\\export\\'.$filename;
+                if($type_print == 'price_list'){
+                    $attachment_location = 'C:\\xampp\\htdocs\\ppi-dist\\public\\cr\\price_list\\export\\'.$filename;
+                }else{
+                    $attachment_location = 'C:\\xampp\\htdocs\\ppi-dist\\public\\cr\\product_list\\export\\'.$filename;
+                }
+
+                $headers = array('Content-Type: application/pdf',);
+                return Response::download($attachment_location, $filename, $headers);
+                // header("Content-Description: File Transfer");
+                // header("Content-Type: application/octet-stream"); 
+                // header("Content-Transfer-Encoding: Binary"); 
+                // header("Content-Disposition: attachment; filename=\"". basename($attachment_location) ."\""); 
+                // ob_clean();
+                // flush();
+                // readfile ($fattachment_locationile);
+                // exit();
+
+            return redirect()->back();
+        }
+    }
+
+    public function disable(Request $request, $id)
+    {
+        if ($request->ajax()) {
+            if(Auth::user()->is_superuser == 0){
+                if(empty($this->access) || empty($this->access->user) || $this->access->can_update == 0){
+                    return redirect()->route('superuser.index')->with('error','Anda tidak punya akses untuk membuka menu terkait');
+                }
+            }
+
+            // DD($id);
+            $decode = base64_decode($id);
+            $product_pack = ProductPack::find($decode);
+            // DD($product_pack);
+
+            if ($product_pack === null) {
+                abort(404);
+            }
+
+            $product_pack->condition = ProductPack::CONDITION['DISABLE'];
+
+            if ($product_pack->save()) {
+                $response['redirect_to'] = route('superuser.master.product.show', base64_encode($product_pack->product->id));
+                return $this->response(200, $response);
+            }
+        }
+    }
+
+    public function enable(Request $request, $id)
+    {
+        // Access
+        if(Auth::user()->is_superuser == 0){
+            if(empty($this->access) || empty($this->access->user) || $this->access->can_update == 0){
+                return redirect()->route('superuser.index')->with('error','Anda tidak punya akses untuk membuka menu terkait');
+            }
+        }
+
+        $decode = base64_decode($id);
+        $product_pack = ProductPack::find($decode);
+
+        if ($product_pack === null) {
+            abort(404);
+        }
+
+        $product_pack->condition = ProductPack::CONDITION['ENABLE'];
+
+        if ($product_pack->save()) {
+            $response['redirect_to'] = route('superuser.master.product.show', base64_encode($product_pack->product->id));
+            return $this->response(200, $response);
+        }
+    }
 }

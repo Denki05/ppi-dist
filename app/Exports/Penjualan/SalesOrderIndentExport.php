@@ -36,17 +36,13 @@ class SalesOrderIndentExport implements FromCollection, WithHeadings, WithMappin
                 DB::raw('(
                     CASE 
                         WHEN penjualan_so.sales_senior_id = 1 THEN "Ivan" 
-                        WHEN penjualan_so.sales_senior_id = 2 THEN "Erwin" 
-                        WHEN penjualan_so.sales_senior_id = 3 THEN "Nia" 
-                        WHEN penjualan_so.sales_senior_id = 4 THEN "Super Administrator" 
                         ELSE "Null" END) AS indentSalesSenior
                 '),
                 DB::raw('(
                     CASE 
                         WHEN penjualan_so.sales_id = 1 THEN "Lindy" 
-                        WHEN penjualan_so.sales_id = 2 THEN "Erwin" 
-                        WHEN penjualan_so.sales_id = 3 THEN "Nia" 
-                        WHEN penjualan_so.sales_id = 4 THEN "Super Administrator" 
+                        WHEN penjualan_so.sales_id = 2 THEN "Rita" 
+                        WHEN penjualan_so.sales_id = 3 THEN "Super Administrator" 
                         ELSE "Null" END) AS indentSalesman
                 '),
             )

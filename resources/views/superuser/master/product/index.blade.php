@@ -4,6 +4,10 @@
 <nav class="breadcrumb bg-white push">
   <a href="{{ route('superuser.master.product.create') }}" class="btn btn-primary btn-lg active" role="button" aria-pressed="true" style="margin-left: 10px !important;">Create</a>
   <button type="button" class="btn btn-outline-info ml-10" data-toggle="modal" data-target="#modal-manage">Manage</button>
+
+  <button type="button" class="btn btn-outline-warning ml-10" data-toggle="modal" data-target="#ModalLoginForm">
+    Print
+  </button>
 </nav>
 
 @if($errors->any())
@@ -63,6 +67,7 @@
           <th>Brand</th>
           <th>Category</th>
           <th>Name</th>
+          <th>Warehouse</th>
           <th>Status</th>
           <th>Action</th>
         </tr>
@@ -75,6 +80,7 @@
             <td>{{$row->brand_name}}</td>
             <td>{{$row->category->name}}</td>
             <td>{{$row->name}}</td>
+            <td>{{$row->default_warehouse->name ?? 'Gudang Araya'}}</td>
             <td>{{$row->status()}}</td>
             <td>
               @if($row->status == '1')
@@ -107,10 +113,54 @@
     </table>
   </div>
 </div>
+
+<!-- Modal HTML Markup -->
+<div id="ModalLoginForm" class="modal fade">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h1 class="modal-title">Print Product</h1>
+            </div>
+            <div class="modal-body">
+                <form role="form" method="get" action="{{ route('superuser.master.product.print_product') }}">
+                @csrf
+                    <div class="form-group">
+                        <label class="control-label">Merek</label>
+                        <div>
+                            <select class="form-control js-select2" name="brand_name" style="width:100%;">
+                              <option value="">Pilih Merek</option>
+                              @foreach($brand_lokal as $row)
+                              <option value="{{$row->brand_name}}">{{$row->brand_name}}</option>
+                              @endforeach
+                            </select>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label class="control-label">Type Print</label>
+                        <div>
+                            <select class="form-control js-select2" name="type_print" style="width:100%;">
+                              <option value="">Pilih Category</option>
+                              <option value="price_list">Price List</option>
+                              <option value="product_list">Product List</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <div>
+                          <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+                            <button type="submit" class="btn btn-success">Print</button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div><!-- /.modal-content -->
+    </div><!-- /.modal-dialog -->
+</div><!-- /.modal -->
 @endsection
 
 @include('superuser.asset.plugin.swal2')
 @include('superuser.asset.plugin.datatables')
+@include('superuser.asset.plugin.select2')
 
 @section('modal')
 
@@ -128,6 +178,8 @@ $(document).ready(function() {
   let datatableUrl = '{{ route('superuser.master.product.json') }}';
 
   var table = $('#datatables').DataTable({});
+
+  $('.js-select2').select2()
 });
 </script>
 @endpush

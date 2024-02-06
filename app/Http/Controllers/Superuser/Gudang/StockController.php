@@ -92,23 +92,23 @@ class StockController extends Controller
                                 }
                             }
 
-                            foreach($mutation_gudang_utama_detail as $item){
-                                if ($item && $item->mutation_gudang_utama->status == MutationGudangUtama::STATUS['ACC']) {
-                                    if($colly->product_to == 0){
-                                        if (!empty($collect[$colly->receiving_detail->product_id]['out'])) {
-                                            $collect[$colly->receiving_detail->product_packaging_id]['out'] += $colly->quantity_mutation;
-                                        } else {
-                                            $collect[$colly->receiving_detail->product_packaging_id]['out'] = $colly->quantity_mutation;
-                                        }
-                                    } else {
-                                        if (!empty($collect[$colly->product_to]['out'])) {
-                                            $collect[$colly->product_to]['out'] += $colly->quantity_mutation;
-                                        } else {
-                                            $collect[$colly->product_to]['out'] = $colly->quantity_mutation;
-                                        }
-                                    }
-                                }
-                            }
+                            // foreach($mutation_gudang_utama_detail as $item){
+                            //     if ($item && $item->mutation_gudang_utama->status == MutationGudangUtama::STATUS['ACC']) {
+                            //         if($colly->product_to == 0){
+                            //             if (!empty($collect[$colly->receiving_detail->product_id]['out'])) {
+                            //                 $collect[$colly->receiving_detail->product_packaging_id]['out'] += $colly->quantity_mutation;
+                            //             } else {
+                            //                 $collect[$colly->receiving_detail->product_packaging_id]['out'] = $colly->quantity_mutation;
+                            //             }
+                            //         } else {
+                            //             if (!empty($collect[$colly->product_to]['out'])) {
+                            //                 $collect[$colly->product_to]['out'] += $colly->quantity_mutation;
+                            //             } else {
+                            //                 $collect[$colly->product_to]['out'] = $colly->quantity_mutation;
+                            //             }
+                            //         }
+                            //     }
+                            // }
                         }
                     }
                 }
@@ -116,8 +116,8 @@ class StockController extends Controller
 
             $sales_orders = SalesOrder::select(\DB::raw('penjualan_so_item.product_packaging_id, SUM(penjualan_so_item.qty_worked) as totalquantity'))
                 ->leftJoin('penjualan_so_item', 'penjualan_so_item.so_id', '=', 'penjualan_so.id')
-                ->where('origin_warehouse_id', $warehouse)
-                ->where('status', 4)
+                ->where('penjualan_so.origin_warehouse_id', $warehouse)
+                ->where('penjualan_so.status', 4)
                 ->whereHas('do', function ($query) {
                     $query->where('status', '>', '2');
                 })
@@ -133,7 +133,7 @@ class StockController extends Controller
             }
 
             $sales_orders = SalesOrder::where('origin_warehouse_id', $warehouse)
-                ->where('status', 4)
+                ->where('penjualan_so.status', 4)
                 ->where(function ($query) {
                     $query->whereHas('do', function ($query) {
                         $query->where('status', '>', '2');
@@ -157,13 +157,13 @@ class StockController extends Controller
 
             foreach ($stock_adjusments as $stock_adjusment){
                 if($stock_adjusment->min == '0'){
-                    if (!empty($collect[$detail->product_packaging_id]['in'])) {
+                    if (!empty($collect[$stock_adjusment->product_packaging_id]['in'])) {
                         $collect[$stock_adjusment->product_packaging_id]['in'] += $stock_adjusment->plus;
                     } else {
                         $collect[$stock_adjusment->product_packaging_id]['in'] = $stock_adjusment->plus;
                     }
                 }else {
-                    if (!empty($collect[$detail->product_packaging_id]['out'])) {
+                    if (!empty($collect[$stock_adjusment->product_packaging_id]['out'])) {
                         $collect[$stock_adjusment->product_packaging_id]['out'] += $stock_adjusment->min;
                     } else {
                         $collect[$stock_adjusment->product_packaging_id]['out'] = $stock_adjusment->min;
@@ -173,13 +173,14 @@ class StockController extends Controller
 
             // COLLECT
             foreach ($collect as $key => $value) {
-                $product = ProductPack::find($key);
+                $product_pack = ProductPack::find($key);
+                // DD($product);
                 $in = !empty($value['in']) ? $value['in'] : 0;
                 $out = !empty($value['out']) ? $value['out'] : 0;
                 $sell = !empty($value['sell']) ? $value['sell'] : 0;
                 $stock = $in - $out;
                 $effective = $stock;
-                $data['data'][] = ['<a href="' . route('superuser.gudang.stock.detail', [$warehouse, base64_encode($product->id)]) . '" target="_blank">' . $product->code. '</a>', $product->name, $product->product->brand_name, $product->kemasan()->pack_name , $in, $out, $stock, $sell, $effective];
+                $data['data'][] = ['<a href="' . route('superuser.gudang.stock.detail', [$warehouse, base64_encode($product_pack->id)]) . '" target="_blank">' . $product_pack->code. '</a>', $product_pack->name, $product_pack->product->brand_name, $product_pack->packaging->pack_name , $in, $out, $stock, $sell, $effective];
             }
 
             if (empty($collect)) {
@@ -225,6 +226,7 @@ class StockController extends Controller
 
         $data['product'] = ProductPack::findOrFail($decode_product);
         $data['warehouse'] = Warehouse::findOrFail($warehouse);
+        // DD($product);
         $data['collects'] = [];
 
         $collect = [];
@@ -248,6 +250,8 @@ class StockController extends Controller
                                 'balance' => '',
                                 'description' => $receiving->note,
                             ];
+
+                            // DD($colly->quantity_ri);
                         }
                     }
                 }
@@ -262,8 +266,7 @@ class StockController extends Controller
             })
             ->get();
         foreach ($sales_orders as $sales_order) {
-            $do = PackingOrder::where('so_id', $sales_order->id)->first();
-            if ($do->status == 3) {
+            
                 foreach ($sales_order->so_detail as $detail) {
                     if ($detail->product_packaging_id == $decode_product) {
                         $collect[] = [
@@ -277,7 +280,7 @@ class StockController extends Controller
                         ];
                     }
                 }
-            }
+            
         }
 
         $stock_adjusments = StockAdjustment::where('warehouse_id', $warehouse)

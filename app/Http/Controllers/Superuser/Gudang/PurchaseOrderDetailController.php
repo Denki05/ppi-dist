@@ -137,7 +137,7 @@ class PurchaseOrderDetailController extends Controller
     public function edit($id, $detail)
     {
         if(Auth::user()->is_superuser == 0){
-            if(empty($this->access) || empty($this->access->user) || $this->access->can_update == 0){
+            if(empty($this->access) || empty($this->access->user) || $this->access->can_edit == 0){
                 return redirect()->route('superuser.index')->with('error','Anda tidak punya akses untuk membuka menu terkait');
             }
         }
@@ -235,10 +235,12 @@ class PurchaseOrderDetailController extends Controller
                             $query2->where('brand_name',$post["brand_name"]);
                         }
                     })
+                    ->leftJoin('master_warehouses', 'master_products.default_warehouse_id', '=', 'master_warehouses.id')
                     ->selectRaw(
                         'master_products.id as id, 
                         master_products.name as productName, 
-                        master_products.code as productCode'
+                        master_products.code as productCode, 
+                        master_warehouses.name as warehouseName'
                     )
                     ->get();
             $data_json["IsError"] = FALSE;

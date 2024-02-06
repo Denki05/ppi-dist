@@ -33,7 +33,7 @@
         <label class="col-md-3 col-form-label text-right" for="packaging_id">Kemasan</label>
         <div class="col-md-4">
           <select class="js-select2 form-control kemasan" id="packaging_id" name="packaging_id" data-placeholder="Pilih Kemasan"> 
-            <option value="{{ $purchase_order_detail->product_pack->kemasan()->id }}" selected>{{ $purchase_order_detail->product_pack->kemasan()->pack_name}}</option>
+            <option value="{{ $purchase_order_detail->product_pack->packaging->id }}" selected>{{ $purchase_order_detail->product_pack->packaging->pack_name}}</option>
           </select>
         </div>
       </div>

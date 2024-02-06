@@ -889,26 +889,19 @@ class PackingOrderController extends Controller
         }
     }
 
-    public function ready(Request $request)
+    public function ready(Request $request, $id)
     {
-        // Access
-        if(Auth::user()->is_superuser == 0){
-            if(empty($this->access) || empty($this->access->user) || $this->access->can_approve == 0){
-                return redirect()->route('superuser.index')->with('error','Anda tidak punya akses untuk membuka menu terkait');
+        if ($request->ajax()) {
+            if(Auth::user()->is_superuser == 0){
+                if(empty($this->access) || empty($this->access->user) || $this->access->can_approve == 0){
+                    return redirect()->route('superuser.index')->with('error','Anda tidak punya akses untuk membuka menu terkait');
+                }
             }
-        }
-        try{
-            $request->validate([
-                'id' => 'required'
-            ]);
-            $post = $request->all();
-            
-            $getDo = PackingOrder::where('id', $post["id"])->first();
 
-            if(empty($getDo->do_code)){
-                PackingOrder::where('id',$getDo->id)->update([
-                    'do_code' => CodeRepo::generateDO()
-                ]);
+            $getDo = PackingOrder::find($id);
+
+            if ($getDo === null) {
+                abort(404);
             }
 
             // Potong Stock
@@ -939,16 +932,28 @@ class PackingOrderController extends Controller
                 ]);
             }
 
-            $update = PackingOrder::where('id',$post["id"])->update(['status' => 3]);
+            $update = PackingOrder::where('id', $getDo->id)->update(['status' => 3]);
 
             if($update){
-                return redirect()->back()->with('success','SO berhasil berhasil diproses ke DO');    
+                $response['notification'] = [
+                    'alert' => 'notify',
+                    'type' => 'success',
+                    'content' => 'Success',
+                ];
+    
+                $response['redirect_to'] = route('superuser.penjualan.sales_order.index_lanjutan');
+                return $this->response(200, $response); 
             }
             else{
-                return redirect()->back()->with('error','SO gagal diproses ke DO');
+                $response['notification'] = [
+                    'alert' => 'notify',
+                    'type' => 'error',
+                    'content' => 'Error',
+                ];
+    
+                $response['redirect_to'] = route('superuser.penjualan.sales_order.index_lanjutan');
+                return $this->response(200, $response);
             }
-        }catch(\Throwable $e){
-            return redirect()->back()->with('error',$e->getMessage());
         }
     }
 
@@ -1077,9 +1082,11 @@ class PackingOrderController extends Controller
             //Kembalikan SO ke step lanjutan
 
             if($result->status == 2 OR $result->status == 3 OR $result->status == 4){
-                $update_so = SalesOrder::where('id', $result->so_id)->update(['status' => 2, 'count_rev' => 1]);
+                $update_so = SalesOrder::where('id', $result->so_id)->update(['status' => 2, 'count_rev' => 1, 'code' => null]);
 
                 $update_po = PackingOrder::where('id', $result->id)->update(['status' => 7]);
+
+                $update_invocing = Invoicing::where('do_id', $request->id)->update(['status' => 3, 'updated_by' => Auth::id()]);
 
                 //Delete packing order item
                 $del_po_item = PackingOrderItem::where('do_id', $result->id)->delete();

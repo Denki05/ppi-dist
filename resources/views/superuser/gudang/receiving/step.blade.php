@@ -165,11 +165,10 @@
         <tr>
           <td class="text-center">{{ $loop->iteration }}</td>
           <td class="text-center">{{ $detail->purchase_order->code }}</td>
-          <td class="text-center">{{ $detail->product_pack->code }} - <b>{{ $detail->product_pack->name }}</b></td>
-          
+          <td class="text-center">{{ $detail->product_pack->code }} - <b>{{ $detail->product_pack->name }}</b> - {{$detail->product_pack->packaging->pack_name}}</td>
           <td class="text-center">{{ $receiving->price_format($detail->quantity) }}</td>
           <td class="text-center">{{ $receiving->price_format($detail->total_quantity_ri) }}{{ $detail->total_reject_ri($detail->id) ? ' [RE '.$receiving->price_format($detail->total_reject_ri($detail->id)).']' : '' }}</td>
-          <td class="text-center">{{ $receiving->price_format($detail->quantity) - $receiving->price_format($detail->total_quantity_ri ?? 0) }}</td>
+          <td class="text-center">{{ $detail->quantity - $detail->total_quantity_ri }}</td>
           <td class="text-center">{{ $receiving->price_format($detail->total_quantity_colly) }}{{ $detail->total_reject_colly($detail->id) ? ' [RE '.$receiving->price_format($detail->total_reject_colly($detail->id)).']' : '' }}</td>
           <td class="text-center">{{ $detail->no_batch ?? '-'}}</td>
           <td class="text-center">{{ $detail->note }}</td>
@@ -219,6 +218,10 @@
                     <div class="mb-3">
                         <label>Quantity RI</label>
                         <input type="number" class="form-control" id="ri" name="ri" step="any">
+                    </div>
+                    <div class="mb-3">
+                        <label>No Batch</label>
+                        <input type="text" class="form-control" id="batch" name="batch" step="any">
                     </div>
                     <input type="hidden" id="receivingID" />
                     <input type="hidden" id="detailID" />

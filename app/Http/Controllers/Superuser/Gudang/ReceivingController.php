@@ -208,7 +208,7 @@ class ReceivingController extends Controller
     {
         if($request->ajax()){
             if(Auth::user()->is_superuser == 0){
-                if(empty($this->access) || empty($this->access->user) || $this->access->can_approved == 0){
+                if(empty($this->access) || empty($this->access->user) || $this->access->can_approve == 0){
                     return redirect()->route('superuser.index')->with('error','Anda tidak punya akses untuk membuka menu terkait');
                 }
             }
@@ -246,6 +246,7 @@ class ReceivingController extends Controller
 
                             $total_quantity = $detail->total_quantity_ri;
                             $get_stock = $check_stock->quantity;
+                            // DD($get_stock);
                             $check_stock->quantity = $get_stock + $total_quantity;
                             $check_stock->save();
                             

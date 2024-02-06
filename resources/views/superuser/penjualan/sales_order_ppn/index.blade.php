@@ -3,7 +3,7 @@
 @section('content')
 <nav class="breadcrumb bg-white push">
   <span class="breadcrumb-item">Sales</span>
-  <span class="breadcrumb-item active">Sale Order PPN</span>
+  <span class="breadcrumb-item active">SO Khusus</span>
 </nav>
 @if(session('error') || session('success'))
 <div class="alert alert-{{ session('error') ? 'danger' : 'success' }} alert-dismissible fade show" role="alert">
@@ -23,54 +23,88 @@
     <a href="{{ route('superuser.penjualan.sales_order_ppn.create') }}">
       <button type="button" class="btn btn-outline-primary min-width-125">Create</button>
     </a>
+    <hr>
   </div>
-  <hr class="my-20">
   <div class="block-content block-content-full">
-    <table id="datatables" class="table table-striped">
-      <thead>
-        <tr>
-          <th class="text-center">#</th>
-          <th class="text-center">Created at</th>
-          <th class="text-center">Code</th>
-          <th class="text-center">Customer</th>
-          <th class="text-center">Sales</th>
-          <th class="text-center">Action</th>
-        </tr>
-      </thead>
-      <tbody>
-        @foreach($so_ppn as $key)
-          <tr>
-            <td>{{$loop->iteration}}</td>
-            <td>{{$key->created_at}}</td>
-            <td>{{$key->code}}</td>
-            <td>{{$key->member->name}}</td>
-            <td>{{$key->sales->name}}</td>
-            <td>
-              @if($key->status == 1)
-                <a href="{{route('superuser.penjualan.sales_order_ppn.lanjutkan', $key->id)}}" class="btn btn-success btn-sm btn-flat"><i class="fa fa-check"></i> Lanjutan</a>
-              @endif
-              @if ($key->status == 4)
-                <a href="{{route('superuser.penjualan.sales_order_ppn.show', $key->id)}}" class="btn btn-primary btn-sm btn-flat"><i class="fa fa-eye"></i> Show</a>
-              @endif
-              @if ($key->status == 1)
-                <a href="{{route('superuser.penjualan.sales_order_ppn.edit', $key->id)}}" class="btn btn-warning btn-sm btn-flat"><i class="fa fa-pencil"></i> Edit</a>
-              @endif
-              @if ($key->status == 1)
-                <a href="#" class="btn btn-danger btn-sm btn-flat btn-delete" data-id="{{$key->id}}"><i class="fa fa-trash"></i> Delete</a>
-              @endif
-            </td>
-          </tr>
-        @endforeach
-      </tbody>
-    </table>
+    <input style="display: none;" id="tab1" type="radio" name="tabs" checked>
+    <label style="padding: 15px 25px;" for="tab1">SO Khusus</label>
+      
+    <input style="display: none;" id="tab2" type="radio" name="tabs">
+    <label style="padding: 15px 25px;" for="tab2">SO PPN</label>
+
+    <section id="content1">
+      <div class="row mb-30">
+        <div class="col-12">
+          <table class="table table-striped" id="khusus">
+            <thead>
+              <tr>
+                <th>#</th>
+                <th>Code</th>
+                <th>Tanggal</th>
+                <th>Customer</th>
+                <th>Sales</th>
+                <th>Action</th>
+              </tr>
+            </thead>
+            <tbody>
+              @foreach($so_khusus as $row => $key)
+                <tr>
+                  <td>{{ $loop->iteration }}</td>
+                  <td>{{ $key->code }}</td>
+                  <td>{{ $key->so_date }}</td>
+                  <td>{{ $key->member->name }}</td>
+                  <td>{{ $key->so_sales() }}</td>
+                  <td></td>
+                </tr>
+              @endforeach
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <section id="content2">
+      <div class="row mb-30">
+        <div class="col-12">
+          <table class="table table-striped" id="ppn">
+            <thead>
+              <tr>
+                <th>#</th>
+                <th>Code</th>
+                <th>Tanggal</th>
+                <th>Customer</th>
+                <th>Sales</th>
+                <th>Action</th>
+              </tr>
+            </thead>
+            <tbody>
+              @foreach($so_ppn as $row => $key)
+              
+                <tr>
+                  <td>{{ $loop->iteration }}</td>
+                  <td>{{ $key->code }}</td>
+                  <td>{{ $key->so_date }}</td>
+                  <td>{{ $key->member->name }}</td>
+                  <td>{{ $key->so_sales() }}</td>
+                  <td>
+                    <a class="btn btn-primary" href="{{ route('superuser.penjualan.sales_order_ppn.show', $key->id) }}" role="button">Show</a>
+                  </td>
+                </tr>
+                
+              @endforeach
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
   </div>
 </div>
 
 
-<form method="post" action="{{route('superuser.penjualan.sales_order_ppn.delete')}}" id="frmDestroyItem">
+<!-- <form method="post" action="{{route('superuser.penjualan.sales_order_ppn.delete')}}" id="frmDestroyItem">
     @csrf
     <input type="hidden" name="id">
-</form>
+</form> -->
 @endsection
 
 @include('superuser.asset.plugin.select2')
@@ -79,27 +113,32 @@
 @push('scripts')
 <script src="{{ asset('utility/superuser/js/form.js') }}"></script>
 <script type="text/javascript">
-  $(function(){
-    $('#datatables').DataTable( {
-        "paging":   false,
-        "ordering": true,
-        "info":     false,
-        "searching" : false,
-        "columnDefs": [{
-          "targets": 0,
-          "orderable": false
-        }]
-      });
+  // $(function(){
+  //   $('#datatables').DataTable( {
+  //       "paging":   false,
+  //       "ordering": true,
+  //       "info":     false,
+  //       "searching" : false,
+  //       "columnDefs": [{
+  //         "targets": 0,
+  //         "orderable": false
+  //       }]
+  //     });
 
-      $('.js-select2').select2();
+  //     $('.js-select2').select2();
+  // });
+  $(document).ready(function() {
+    $('#khusus').DataTable({
+      "ordering": true,
+      "info":     false,
+    })
 
-      $(document).on('click','.btn-delete',function(){
-        if(confirm("Apakah anda yakin ingin menghapus SO ini ? ")){
-          let id = $(this).data('id');
-          $('#frmDestroyItem').find('input[name="id"]').val(id);
-          $('#frmDestroyItem').submit();
-        }
-      })
+    $('#ppn').DataTable({
+      "ordering": true,
+      "info":     false,
+    })
+
+    $('.js-select2').select2();
   });
 </script>
 @endpush

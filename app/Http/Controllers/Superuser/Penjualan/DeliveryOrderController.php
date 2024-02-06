@@ -8,6 +8,7 @@ use App\Entities\Master\Customer;
 use App\Entities\Master\ProductMinStock;
 use App\Entities\Master\ProductPack;
 use App\Entities\Master\Company;
+use App\Entities\Master\CustomerOtherAddress;
 use App\Entities\Penjualan\PackingOrder;
 use App\Entities\Penjualan\PackingOrderCost;
 use App\Entities\Penjualan\PackingOrderDetail;
@@ -124,22 +125,9 @@ class DeliveryOrderController extends Controller
                             })
                             ->whereIn('status', [2 ,3, 4, 5, 6])
                             ->orderBy('id','DESC')
-                            ->paginate(10);
-        /*$table = PackingOrder::where(function($query2) use($customer_id){
-                                if(!empty($customer_id)){
-                                    $query2->where('customer_id',$customer_id);
-                                }
-                            })
-                            ->where(function($query2) use($search){
-                                if(!empty($search)){
-                                    $query2->where('code','like','%'.$search.'%');
-                                    $query2->orWhere('do_code','like','%'.$search.'%');
-                                }
-                            })
-                            ->whereIn('status', [3, 4, 5, 6])
-                            ->orderBy('id','DESC')
-                            ->paginate(10);*/
-        $table->withPath('delivery_order?field='.$field.'&search='.$search);
+                            ->get();
+
+        // $table->withPath('delivery_order?field='.$field.'&search='.$search);
         $customer = Customer::all();
         $packing = PackingOrder::first();
         $data = [
@@ -203,11 +191,14 @@ class DeliveryOrderController extends Controller
         }
 
         $result = PackingOrder::where('id',$id)->first();
+        $ekspedisi = Vendor::where('type', 1)->get();
+
         if(empty($result)){
             abort(404);
         }
         $data = [
-            'result' => $result
+            'result' => $result,
+            'ekspedisi' => $ekspedisi
         ];
         return view($this->view."detail_new",$data);
     }
@@ -247,7 +238,7 @@ class DeliveryOrderController extends Controller
         $my_report = "C:\\xampp\\htdocs\\ppi-dist\public\\cr\\do\\do.rpt"; 
         $my_pdf = 'C:\\xampp\\htdocs\\ppi-dist\\public\\cr\\do\\export\\'.$result->do_code.'.pdf';
 
-        $my_server = "DEV-SERVER"; 
+        $my_server = "LOCAL"; 
         $my_user = "root"; 
         $my_password = ""; 
         $my_database = "ppi-dist";
@@ -471,16 +462,27 @@ class DeliveryOrderController extends Controller
 
                 $result_cost = PackingOrderDetail::where('do_id',$post["do_id"])->first();
 
-                // $grand_total_idr = ceil($result_cost->grand_total_idr - $result_cost->delivery_cost_idr - $result_cost->other_cost_idr + $delivery_cost_idr + $other_cost_idr);
+                // check shipping cost buyyer & customer free shipping
+                $get_do = PackingOrder::where('id', $post["do_id"])->first();
+                $get_so = Salesorder::where('id', $get_do->so_id)->first();
+                $customer = CustomerOtherAddress::where('id', $result_cost->do_header->customer_other_address_id)->first();
 
-                $update_cost = PackingOrderDetail::where('do_id',$post["do_id"])->update([
-                    'delivery_cost_note' => trim(htmlentities($post["delivery_cost_note"])),
-                    // 'delivery_cost_idr' => $delivery_cost_idr,
-                    'other_cost_note' => trim(htmlentities($post["other_cost_note"])),
-                    'other_cost_idr' => $other_cost_idr,
-                    // 'grand_total_idr' => $grand_total_idr,
-                    'updated_by' => Auth::id(),
-                ]);
+                if($customer->free_shipping == null && $get_so->shipping_cost_buyer == 0){
+                    $update_cost = PackingOrderDetail::where('do_id',$post["do_id"])->update([
+                        'delivery_cost_note' => trim(htmlentities($post["delivery_cost_note"])),
+                        'other_cost_note' => trim(htmlentities($post["other_cost_note"])),
+                        'other_cost_idr' => $other_cost_idr,
+                        'updated_by' => Auth::id(),
+                    ]);
+                }elseif($customer->free_shipping == 1 && $get_so->shipping_cost_buyer == 1){
+                    $update_cost = PackingOrderDetail::where('do_id',$post["do_id"])->update([
+                        'delivery_cost_note' => trim(htmlentities($post["delivery_cost_note"])),
+                        'delivery_cost_idr' => $other_cost_idr,
+                        'other_cost_note' => trim(htmlentities($post["other_cost_note"])),
+                        'other_cost_idr' => $other_cost_idr,
+                        'updated_by' => Auth::id(),
+                    ]);
+                }
 
                 $detail_do = PackingOrder::where('id',$post["do_id"])->first();
                 $detail_item = PackingOrderItem::where('do_id',$post["do_id"])->get();
@@ -564,7 +566,7 @@ class DeliveryOrderController extends Controller
         $my_report = "C:\\xampp\\htdocs\\ppi-dist\public\\cr\\do\\label_penerima.rpt"; 
         $my_pdf = 'C:\\xampp\\htdocs\\ppi-dist\\public\\cr\\do\\export\\LabelKirim-'.$result->member->name.'.pdf';
 
-        $my_server      = "DEV-SERVER"; 
+        $my_server      = "LOCAL"; 
         $my_user        = "root"; 
         $my_password    = ""; 
         $my_database    = "ppi-dist";
@@ -618,7 +620,7 @@ class DeliveryOrderController extends Controller
         $my_report = "C:\\xampp\\htdocs\\ppi-dist\public\\cr\\do\\label_pengirim.rpt"; 
         $my_pdf = 'C:\\xampp\\htdocs\\ppi-dist\\public\\cr\\do\\export\\LabelPengirim-'.'.pdf';
 
-        $my_server = "DEV-SERVER"; 
+        $my_server = "LOCAL"; 
         $my_user = "root"; 
         $my_password = ""; 
         $my_database = "ppi-dist";
@@ -683,7 +685,7 @@ class DeliveryOrderController extends Controller
             $my_report = "C:\\xampp\\htdocs\\ppi-dist\public\\cr\\packing_plan\\packing_plan_rev.rpt"; 
             $my_pdf = 'C:\\xampp\\htdocs\\ppi-dist\\public\\cr\\packing_plan\\export\\'.$result->code.'.pdf';
 
-            $my_server = "DEV-SERVER"; 
+            $my_server = "LOCAL"; 
             $my_user = "root"; 
             $my_password = ""; 
             $my_database = "ppi-dist";
@@ -752,9 +754,7 @@ class DeliveryOrderController extends Controller
             if(count($result->do_detail) == 0){
                 return redirect()->route('superuser.penjualan.sales_order.index_lanjutan')->with('error','Tidak ada item sama sekali');
             }
-            if($result->do_cost->grand_total_idr == 0){
-                return redirect()->route('superuser.penjualan.sales_order.index_lanjutan')->with('error','Harga didalam packing list belum di set');
-            }
+            
             $update = PackingOrder::where('id',$post["id"])->update([
                 'status' => 7,
                 'count_cancel' => 1
@@ -812,6 +812,8 @@ class DeliveryOrderController extends Controller
 
                 $result = PackingOrder::where('id', $request->id)->first();
 
+                // DD($result);
+
                 if ($result === null) {
                     abort(404);
                 }
@@ -832,12 +834,13 @@ class DeliveryOrderController extends Controller
 
                     $result->warehouse_id = $request->warehouse_id;
                     $result->idr_rate = $request->idr_rate;
-                    $result->count_cancel = 2;
+                    // $result->count_cancel = 2;
                     $result->status = 4;
                     $result->updated_by = Auth::id();
 
                     // update do item
                     $check_cost = PackingOrderDetail::where('id', $request->cost_id)->first();
+                    // DD($request->cost_id);
                     $check_po_item = PackingOrderItem::where('do_id',$check_cost->do_id)->get();
 
                     if(count($check_po_item) <= 0){
@@ -850,11 +853,13 @@ class DeliveryOrderController extends Controller
                             continue;
                         }
 
+                        // DD($value['price']);
+
                         $packingOrderItem = PackingOrderItem::where('id', $value["id"])->first();
                         if (empty($packingOrderItem) || !isset($packingOrderItem)) continue;
 
                         if ($packingOrderItem->percent_disc > 0) {
-                            $total_disc = floatval(($value["usd_disc"] + (($packingOrderItem->price - $value["usd_disc"]) * ($packingOrderItem->percent_disc/100))) * $value["do_qty"]);
+                            $total_disc = floatval(($value["usd_disc"] + (($value['price'] - $value["usd_disc"]) * ($packingOrderItem->percent_disc/100))) * $value["do_qty"]);
                         } else {
                             $total_disc = floatval($value["usd_disc"] * $value["do_qty"]);
                         }
@@ -862,7 +867,8 @@ class DeliveryOrderController extends Controller
                             'usd_disc' => $value["usd_disc"],
                             'qty' => $value["do_qty"],
                             'total_disc' => $total_disc,
-                            'total' => ($packingOrderItem->price * $value["do_qty"]) - $total_disc,
+                            'total' => ($value['price'] * $value["do_qty"]) - $total_disc,
+                            'price' => $value['price'],
                         ];
 
                         // DD($value["do_qty"]);
@@ -875,7 +881,9 @@ class DeliveryOrderController extends Controller
 
                     $idr_total = 0;
                     foreach ($detail_po_item as $key => $row) {
+                        // DD($row->price);
                         $idr_total += ceil((($row->price * $detail_po->idr_rate) * $row->qty) - ($row->total_disc * $detail_po->idr_rate)); 
+                    //    DD($row->total_disc);
                     }
 
                     $discount_1 = $request->disc_agen_percent / 100;
@@ -889,6 +897,8 @@ class DeliveryOrderController extends Controller
                     
                     $purchase_total_idr = ceil($idr_total - $total_discount_idr - $voucher_idr);
                     $grand_total_idr = ceil($purchase_total_idr + $delivery_cost_idr + $other_cost_idr);
+
+                    // DD($grand_total_idr);
                     
                     if($total_discount_idr > $grand_total_idr){
                         $response['failed'] = 'Total Discount melebihi IDR total item pembelian';
@@ -909,28 +919,20 @@ class DeliveryOrderController extends Controller
                         'grand_total_idr' => $grand_total_idr,
                         'updated_by' => Auth::id()
                     ];
-                    $update = PackingOrderDetail::where('do_id', $request->id)->update($data);
 
-                    // update Proforma
-                    if($detail_po->proforma->grand_total_idr > 0){
+                    // DD($data);
+
+                    // DD($idr_total);
+                    $update = PackingOrderDetail::where('do_id', $request->id)->update($data);
+                    // DD($update);
+
+                    // update invoice
+                    if($detail_po->invoicing->grand_total_idr > 0){
                         $data = [
                             'grand_total_idr' => $grand_total_idr,
                         ];
 
-                        $updateProforma = SoProforma::where('do_id', $request->id)->update($data);
-
-                        // update proforma detail
-                        foreach($request->repeater as $key => $value ){
-
-                            $get = SoProforma::where('do_id', $request->id)->first();
-                            $getDetail = SoProformaDetail::where('so_proforma_id', $get->id)->get();
-
-                            $data = [
-                                'qty' => $value["do_qty"],
-                            ];
-
-                            $update = SoProformaDetail::where('so_proforma_id', $get->id)->update($data);
-                        }
+                        $updateInvoice = Invoicing::where('do_id', $request->id)->update($data);
                     }
                 }
 
@@ -953,7 +955,7 @@ class DeliveryOrderController extends Controller
                 }
             } catch (\Exception $e) {
                 DB::rollback();
-                // DD($e);
+                DD($e);
                 $response['notification'] = [
                     'alert' => 'block',
                     'type' => 'alert-danger',

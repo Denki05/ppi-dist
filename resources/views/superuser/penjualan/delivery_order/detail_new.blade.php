@@ -85,11 +85,11 @@
             </button>
           </a>
         </div>
-        {{--<div class="col-md-6 text-right">
+        <div class="col-md-6 text-right">
           <a href="{{route('superuser.penjualan.delivery_order.print_manifest', $result->id)}}" class="btn btn-info btn-sm btn-flat" data-id="{{$result->id}}" target="_blank">
             <i class="fas fa-clipboard-list"></i> Print Manifest
           </a>
-        </div>--}}
+        </div>
       </div>
       <hr >
         <table class="col-12 table table-striped table-bordered table-hover">
@@ -111,7 +111,7 @@
                 <td>{{$index+1}}</td>
                 <td>{{ $row->product_pack->code }} - {{$row->product_pack->name}}</td>
                 <td>{{$row->qty}}</td>
-                <td>{{$row->product_pack->kemasan()->pack_name}}</td>
+                <td>{{$row->product_pack->packaging->pack_name}}</td>
                 <td><input type="checkbox" class="confirm-item" value="{{$row->id}}" /></td>
               </tr>
             @endforeach
@@ -120,9 +120,7 @@
         <div class="form-group row">
           <div class="col-6"></div>
           <div class="col-12 text-right">
-          @if($result->print_count > 0)
             <button type="button" class="btn btn-primary" onclick="konfirmasiBarang()">Save</button>
-          @endif
           </div>
         </div>
     </div>
@@ -200,7 +198,7 @@
             <a href="{{route('superuser.penjualan.delivery_order.print_label_pengirim')}}" class="btn btn-warning btn-sm btn-flat" target="_blank"><i class="fas fa-tag"></i> Label Pengirim</a>
             <a href="{{route('superuser.penjualan.delivery_order.print', $result->id)}}" class="btn btn-info btn-sm btn-flat" data-id="{{$result->id}}" target="_blank"><i class="fa fa-file-o"></i> Print DO</a>
           @endif
-          @if($result->count_cancel == 2)
+          @if($result->count_cancel == 1)
             <a href="{{route('superuser.penjualan.delivery_order.print', $result->id)}}" class="btn btn-info btn-sm btn-flat" data-id="{{$result->id}}" target="_blank"><i class="fa fa-print"></i> Print DO Revisi</a>
           @endif
          
@@ -231,6 +229,16 @@
             @csrf
             <input type="hidden" name="do_id" value="{{$result->id}}">
 
+            <div class="form-group row">
+              <label class="col-md-2 col-form-label text-right" for="name">Customer</label>
+              <div class="col-md-4">
+                <input class="form-control" value="{{$result->member->name}}" readonly>
+              </div>
+              <div class="col-md-4">
+                <input class="form-control" value="{{$result->member->text_kota}}" readonly>
+              </div>
+            </div>
+
             @if($result->status == 5 && $result->image == null)
             <div class="form-group row">
               <div class="col-lg-12">
@@ -253,23 +261,29 @@
             @endif
 
             <div class="form-group row">
-              <label class="col-md-2 col-form-label text-right" for="name">Delivery Cost(IDR)</label>
+              <label class="col-md-2 col-form-label text-right" for="name">Ongkir (IDR)</label>
               <div class="col-md-4">
-                <input type="text" class="form-control" placeholder="Input Note" value="{{strlen($result->do_detail_cost->first()->delivery_cost_note) > 0 ? $result->do_detail_cost->delivery_cost_note : ($result->ekspedisi ? $result->ekspedisi->name : '')}}" name="delivery_cost_note" {{$result->status == 6 ? 'readonly' : ''}}>
+                <input type="text" class="form-control" placeholder="Input Note" value="{{ $result->vendor->name }}" name="delivery_cost_note" {{$result->status == 6 ? 'readonly' : ''}} readonly>
               </div>
               <div class="col-md-4">
-                <input type="number" class="form-control" value="{{$result->do_detail_cost->first()->delivery_cost_idr ?? 0}}" name="delivery_cost_idr" step="any" {{$result->status == 5  || $result->status == 6 ? 'readonly' : ''}}>
+                <input type="number" class="form-control" value="{{number_format($result->do_detail_cost[0]->delivery_cost_idr ?? 0,0,',','.')}}" name="delivery_cost_idr" step="any" {{$result->status == 5  || $result->status == 6 ? 'readonly' : ''}}>
               </div>
             </div>
             <div class="form-group row">
-              <label class="col-md-2 col-form-label text-right" for="name">Other Cost(IDR)</label>
+              <label class="col-md-2 col-form-label text-right" for="name">Resi (IDR)</label>
               <div class="col-md-4">
-                <input type="text" class="form-control" value="{{$result->do_detail_cost->first()->other_cost_note ?? ''}}" name="other_cost_note" placeholder="Input Note" {{$result->status == 6 ? 'readonly' : ''}}>
+                <select class="form-control js-select2" name="other_cost_note" id="other_cost_note">
+                  <option value="">Pilih Ekspedisi</option>
+                  @foreach($ekspedisi as $row)
+                   <option value="$row->name">{{ $row->name }}</option>
+                  @endforeach
+                </select>
               </div>
               <div class="col-md-4">
                 <input type="number" class="form-control" value="{{$result->do_detail_cost->first()->other_cost_idr ?? 0}}" name="other_cost_idr" step="any" {{$result->status == 6 ? 'readonly' : ''}}>
               </div>
             </div>
+            
 
             <div class="form-group row">
               <div class="col-6">
@@ -305,6 +319,8 @@
 
 @push('scripts')
 <script type="text/javascript">
+  $('.js-select2').select2();
+
   let idx = 0;
   $(function(){
     $(document).on('click','.btn-delivery',function(){
@@ -342,8 +358,6 @@
 
     $("#step" + stepNumber).addClass('active');
     $("#step" + stepNumber + "Container").addClass('active');
-    
-    $('.js-select2').select2();
   }
 </script>
 @endpush

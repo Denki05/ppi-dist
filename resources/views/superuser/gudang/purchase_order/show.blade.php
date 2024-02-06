@@ -78,7 +78,7 @@
             <td class="text-center">{{ $detail->product_pack->name }}</td>
             <td class="text-center">{{ $detail->product_pack->code }}</td>
             <td class="text-center">{{ $detail->quantity }}</td>
-            <td class="text-center">{{ $detail->product_pack->kemasan()->pack_name }}</td>
+            <td class="text-center">{{ $detail->product_pack->packaging->pack_name }}</td>
             <td class="text-center">{{ $detail->note_produksi ?? '-' }}</td>
             <td class="text-center">{{ $detail->note_repack ?? '-' }}</td>
         </tr>

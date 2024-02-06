@@ -14,9 +14,29 @@ use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
 use Illuminate\Support\Facades\Auth;
 use Validator;
+use App\Entities\Setting\UserMenu;
 
 class ReceivingDetailController extends Controller
 {
+    public function __construct(){
+        $this->view = "superuser.gudang.receiving.detail.";
+        $this->route = "superuser.gudang.receiving.detail";
+        $this->user_menu = new UserMenu;
+        $this->access = null;
+        $this->middleware(function ($request, $next) {
+            $user = Auth::user();
+            $access = $this->user_menu;
+            $access = $access->where('user_id',$user->id)
+                             ->whereHas('menu',function($query2){
+                                $query2->where('route_name',$this->route);
+                             })
+                             ->first();
+            $this->access = $access;
+            return $next($request);
+        });
+    }
+
+
     public function get_sku_json(Request $request)
     {
         if ($request->ajax()) {
@@ -37,7 +57,8 @@ class ReceivingDetailController extends Controller
                     foreach($purchase_order_details as $purchase_order_detail) {
                         $data[] = [
                             'po_detail_id' => $purchase_order_detail->id,
-                            'product'       => ProductPack::findOrFail($purchase_order_detail->product_pack->id),
+                            'product'      => ProductPack::findOrFail($purchase_order_detail->product_pack->id),
+                            'packaging'    => Packaging::findOrFail($purchase_order_detail->product_pack->packaging->id),
                         ];
                     }
 
@@ -57,7 +78,7 @@ class ReceivingDetailController extends Controller
 
                     $data = [
                         'product'               => ProductPack::findOrFail($purchase_order_detail->product_pack->id),
-                        'packaging'             => Packaging::findOrFail($purchase_order_detail->product_pack->kemasan()->id),
+                        'packaging'             => Packaging::findOrFail($purchase_order_detail->product_pack->packaging->id),
                         'purchase_order_detail' => $purchase_order_detail,
                         'quantity'              => $purchase_order_detail->quantity - $total_quantity_ri,
                     ];
@@ -73,8 +94,10 @@ class ReceivingDetailController extends Controller
 
     public function show($id, $detail_id)
     {
-        if(!Auth::guard('superuser')->user()->can('receiving-show')) {
-            return abort(403);
+        if(Auth::user()->is_superuser == 0){
+            if(empty($this->access) || empty($this->access->user) || $this->access->can_read == 0){
+                return redirect()->route('superuser.index')->with('error','Anda tidak punya akses untuk membuka menu terkait');
+            }
         }
 
         $data['receiving'] = Receiving::findOrFail($id);
@@ -85,8 +108,10 @@ class ReceivingDetailController extends Controller
     
     public function create($id)
     {
-        if(!Auth::guard('superuser')->user()->can('receiving-create')) {
-            return abort(403);
+        if(Auth::user()->is_superuser == 0){
+            if(empty($this->access) || empty($this->access->user) || $this->access->can_create == 0){
+                return redirect()->route('superuser.index')->with('error','Anda tidak punya akses untuk membuka menu terkait');
+            }
         }
 
         $data['receiving'] = Receiving::findOrFail($id);
@@ -153,7 +178,7 @@ class ReceivingDetailController extends Controller
                 $receiving_detail->po_detail_id = $request->ppb_detail;
                 $receiving_detail->product_packaging_id = $request->product;
                 $receiving_detail->quantity = $request->quantity;
-                $receiving_detail->no_batch = $request->no_batch;
+                // $receiving_detail->no_batch = $request->no_batch;
                 $receiving_detail->note = $request->description;
                 $receiving_detail->created_by = Auth::id();
 
@@ -176,8 +201,10 @@ class ReceivingDetailController extends Controller
 
     public function edit($id, $detail_id)
     {
-        if(!Auth::guard('superuser')->user()->can('receiving-edit')) {
-            return abort(403);
+        if(Auth::user()->is_superuser == 0){
+            if(empty($this->access) || empty($this->access->user) || $this->access->can_update == 0){
+                return redirect()->route('superuser.index')->with('error','Anda tidak punya akses untuk membuka menu terkait');
+            }
         }
 
         $data['receiving'] = Receiving::findOrFail($id);
@@ -212,8 +239,8 @@ class ReceivingDetailController extends Controller
             }
 
             if ($validator->passes()) {
-                $receiving_detail->description = $request->description;
-                $receiving_detail->delivery_cost = $request->delivery_cost ?? 0;
+                $receiving_detail->no_batch = $request->no_batch;
+                // $receiving_detail->delivery_cost = $request->delivery_cost ?? 0;
 
                 if ($receiving_detail->save()) {
                     $response['notification'] = [
@@ -233,8 +260,10 @@ class ReceivingDetailController extends Controller
     public function destroy(Request $request, $id, $detail_id)
     {
         if ($request->ajax()) {
-            if(!Auth::guard('superuser')->user()->can('receiving-delete')) {
-                return abort(403);
+            if(Auth::user()->is_superuser == 0){
+                if(empty($this->access) || empty($this->access->user) || $this->access->can_delete == 0){
+                    return redirect()->route('superuser.index')->with('error','Anda tidak punya akses untuk membuka menu terkait');
+                }
             }
 
             $receiving = Receiving::find($id);

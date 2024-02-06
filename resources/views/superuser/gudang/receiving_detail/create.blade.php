@@ -52,12 +52,12 @@
           <input type="number" class="form-control" id="delivery_cost" name="delivery_cost" min="0" value="0" step="any">
         </div>
       </div>--}}
-      <div class="form-group row">
+      {{--<div class="form-group row">
         <label class="col-md-3 col-form-label text-right" for="no_batch">NO Batch</label>
         <div class="col-md-4">
           <input type="text" class="form-control" id="no_batch" name="no_batch">
         </div>
-      </div>
+      </div>--}}
       <div class="form-group row">
         <label class="col-md-3 col-form-label text-right" for="description">Note</label>
         <div class="col-md-4">
@@ -142,7 +142,7 @@
             $('#ppb_detail').append(ph).trigger('change');
 
             for (i = 0; i < Object.keys(json.data).length; i++) {
-              let newOption = new Option(json.data[i].product.code+' - '+json.data[i].product.name ,json.data[i].po_detail_id, false, false);
+              let newOption = new Option(json.data[i].product.code+' - '+json.data[i].product.name+' - '+json.data[i].packaging.pack_name ,json.data[i].po_detail_id, false, false);
               $('#ppb_detail').append(newOption).trigger('change');
             }
 

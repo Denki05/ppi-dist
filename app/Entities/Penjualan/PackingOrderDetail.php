@@ -25,6 +25,7 @@ class PackingOrderDetail extends Model
         'delivery_cost_note',
     	'other_cost_idr',
         'other_cost_note',
+        'status_resi',
     	'grand_total_idr',
         'terbilang',
     	'updated_by',

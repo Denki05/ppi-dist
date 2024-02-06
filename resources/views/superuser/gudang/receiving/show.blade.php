@@ -89,7 +89,7 @@
           <td class="text-center">{{ $loop->iteration }}</td>
           <td class="text-center">{{ $detail->purchase_order->code }}</td>
           <td class="text-center">{{ $detail->product_pack->code }} - <b>{{ $detail->product_pack->name }}</b></td>
-          <td class="text-center">{{ $detail->product_pack->kemasan()->pack_name }}</b></td>
+          <td class="text-center">{{ $detail->product_pack->packaging->pack_name }}</b></td>
           <td class="text-center">{{ $receiving->price_format($detail->quantity) }}</td>
           <td class="text-center">{{ $receiving->price_format($detail->total_quantity_ri) }}{{ $detail->total_reject_ri($detail->id) ? ' [RE '.$receiving->price_format($detail->total_reject_ri($detail->id)).']' : '' }}</td>
           <td class="text-center">{{ $receiving->price_format($detail->total_quantity_colly) }}{{ $detail->total_reject_colly($detail->id) ? ' [RE '.$receiving->price_format($detail->total_reject_colly($detail->id)).']' : '' }}</td>

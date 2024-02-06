@@ -30,9 +30,11 @@ use App\Entities\Master\Vendor;
 use App\Entities\Setting\UserMenu;
 use App\Repositories\CodeRepo;
 use App\Helper\CustomHelper;
+use Spatie\PdfToImage\pdf;
+use Org_Heigl\Ghostscript\Ghostscript;
+use Imagick;
 use Auth;
 use DB;
-use PDF;
 use COM;
 use Carbon;
 
@@ -125,11 +127,23 @@ class SalesOrderController extends Controller
     
     public function index_awal(Request $request)
     {
+        if(Auth::user()->is_superuser == 0){
+            if(empty($this->access) || empty($this->access->user) || $this->access->can_read == 0){
+                return redirect()->route('superuser.index')->with('error','Anda tidak punya akses untuk membuka menu terkait');
+            }
+        }
+
         return $this->index($request, 1);
     }
     
     public function index_lanjutan(Request $request)
     {
+        if(Auth::user()->is_superuser == 0){
+            if(empty($this->access) || empty($this->access->user) || $this->access->can_read == 0){
+                return redirect()->route('superuser.index')->with('error','Anda tidak punya akses untuk membuka menu terkait');
+            }
+        }
+
         return $this->index($request, 2);
     }
     
@@ -243,22 +257,32 @@ class SalesOrderController extends Controller
                     $data_json["Message"] = "Sales wajib dipilih";
                     goto ResultData;
                 }
-                if(empty($post["idr_rate"])){
+                if(empty($post["brand_name"])){
                     $data_json["IsError"] = TRUE;
-                    $data_json["Message"] = "IDR Rate tidak boleh kosong";
+                    $data_json["Message"] = "Brand wajib dipilih";
                     goto ResultData;
                 }
+                if(empty($post["type_transaction"])){
+                    $data_json["IsError"] = TRUE;
+                    $data_json["Message"] = "Type Transaksi wajib dipilih";
+                    goto ResultData;
+                }
+                
 
                 $insert = new SalesOrder;
                 $insert->so_code = CodeRepo::generateSoAwal();
+                $insert->brand_name = $request->brand_name;
+                // DD($insert->brand_name);
                 $insert->customer_id = $member;
                 $insert->customer_other_address_id = $store;
                 $insert->sales_senior_id = $request->sales_senior_id;
+                $insert->type_transaction = $request->type_transaction;
                 $insert->sales_id = $request->sales_id;
                 $insert->so_for = 1;
                 $insert->so_date = Carbon\Carbon::now();
                 $insert->type_so = 'nonppn';
-                $insert->idr_rate = $request->idr_rate;
+                $insert->idr_rate = 1;
+                $insert->catatan = $request->catatan;
                 $insert->note = $request->note;
                 $insert->created_by = Auth::id();
                 if($post['so_indent'] == 1){
@@ -267,7 +291,8 @@ class SalesOrderController extends Controller
                     $insert->so_indent = SalesOrder::INDENT['YES'];
                     $insert->indent_status = 1;
                 } elseif($post['so_indent'] == 0){
-                    $insert->code = CodeRepo::generateSO();
+                    $insert->code = null;
+                    
                     $insert->status = $post["ajukankelanjutan"] == 1 ? 2 : 1;
                     $insert->so_indent = SalesOrder::INDENT['NO'];
                 }
@@ -309,6 +334,7 @@ class SalesOrderController extends Controller
                                     $insertDetail->packaging_id = $post["packaging"][$i];
                                     $insertDetail->free_product = $post["free_product"][$i];
                                     $insertDetail->created_by = Auth::id();
+                                    $insertDetail->status = 1;
                                     $insertDetail->save();
                                 }
                             }
@@ -550,7 +576,10 @@ class SalesOrderController extends Controller
                 if ($step == 1) {
                     $sales_order->sales_senior_id = trim(htmlentities($post["sales_senior_id"]));
                     $sales_order->sales_id = trim(htmlentities($post["sales_id"]));
-                    $sales_order->idr_rate = trim(htmlentities($post["idr_rate"]));
+                    $sales_order->type_transaction = trim(htmlentities($post["type_transaction"]));
+                    $sales_order->catatan = trim(htmlentities($post["catatan"]));
+                    $sales_order->brand_name = trim(htmlentities($post["brand_name"]));
+                    $sales_order->idr_rate = 1;
                     $sales_order->note = trim(htmlentities($post["note"]));
                     $sales_order->updated_by = Auth::id();
                     $sales_order->status = $step;
@@ -566,7 +595,8 @@ class SalesOrderController extends Controller
                     ];
                 }
                 if($sales_order->save()){
-                    SalesOrderItem::where('so_id', $post["id"])->delete();
+                    $update_item = SalesOrderItem::where('so_id', $post["id"])->update(['status' => 0]);
+                    $deleted_item = SalesOrderItem::where('so_id', $post["id"])->delete();
                     if (sizeof($post["sku"]) > 0) {
                         for ($i = 0; $i < sizeof($post["sku"]); $i++) {
                             // dd($post["sku"][$i]);
@@ -697,55 +727,141 @@ class SalesOrderController extends Controller
         return response()->json($data_json,200);
     }
 
-    public function lanjutkan(Request $request)
+    public function lanjutkan(Request $request, $id)
     {
-        // Access
-        if(Auth::user()->is_superuser == 0){
-            if(empty($this->access) || empty($this->access->user) || $this->access->can_approve == 0){
-                return redirect()->route('superuser.index')->with('error','Anda tidak punya akses untuk membuka menu terkait');
-            }
-        }
+        // // Access
+        
 
-        DB::beginTransaction();
-        try{
-            $sales_order = SalesOrder::find($request->id);
+        // DB::beginTransaction();
+        // try{
+        //     $sales_order = SalesOrder::find($id);
+
+        //     $sales_order->status = 2;
+        //     if($sales_order->save()){
+        //         DB::commit();
+        //         return redirect()->back()->with('success','Sales Order berhasil diajukan untuk dilanjutkan');
+        //     }
+           
+        // }catch(\Throwable $e){
+        //     // dd($e);
+        //     DB::rollback();
+        //     return redirect()->back()->with('error',$e->getMessage());
+        // }
+        if ($request->ajax()) {
+            if(Auth::user()->is_superuser == 0){
+                if(empty($this->access) || empty($this->access->user) || $this->access->can_approve == 0){
+                    return redirect()->route('superuser.index')->with('error','Anda tidak punya akses untuk membuka menu terkait');
+                }
+            }
+
+            $sales_order = SalesOrder::find($id);
+
+            if ($sales_order === null) {
+                abort(404);
+            }
 
             $sales_order->status = 2;
-            if($sales_order->save()){
-                DB::commit();
-                return redirect()->back()->with('success','Sales Order berhasil diajukan untuk dilanjutkan'); 
-            } 
-        }catch(\Throwable $e){
-            // dd($e);
-            DB::rollback();
-            return redirect()->back()->with('error',$e->getMessage());
+
+            if($sales_order->save()) {
+                // $response['redirect_to'] = route('superuser.penjualan.sales_order.index_awal');
+                
+                // return $this->response(200, $response);
+                $response['notification'] = [
+                    'alert' => 'notify',
+                    'type' => 'success',
+                    'content' => 'Success',
+                ];
+    
+                $response['redirect_to'] = route('superuser.penjualan.sales_order.index_awal');
+                return $this->response(200, $response);
+            }
+            
         }
     }
 
-    public function kembali(Request $request)
+    public function kembali(Request $request, $id)
     {
-        // Access
-        if(Auth::user()->is_superuser == 0){
-            if(empty($this->access) || empty($this->access->user) || $this->access->can_approve == 0){
-                return redirect()->route('superuser.index')->with('error','Anda tidak punya akses untuk membuka menu terkait');
+        if ($request->ajax()) {
+            if(Auth::user()->is_superuser == 0){
+                if(empty($this->access) || empty($this->access->user) || $this->access->can_approve == 0){
+                    return redirect()->route('superuser.index')->with('error','Anda tidak punya akses untuk membuka menu terkait');
+                }
+            }
+
+            DB::beginTransaction();
+
+            try{
+
+                $errors = [];
+                
+                $sales_order = SalesOrder::find($id);
+
+                if($sales_order == null){
+                    $errors[] = 'Sales Order , tidak ditemukan!';
+                }
+
+                $sales_order->status = 3;
+                $sales_order->updated_by = Auth::id();
+                if($sales_order->save()){
+                    if($errors) {
+                        $response['notification'] = [
+                            'alert' => 'block',
+                            'type' => 'alert-danger',
+                            'header' => 'Error',
+                            'content' => $errors,
+                        ];
+    
+                        return $this->response(400, $response);
+                    } else {
+                        DB::commit();
+                        $response['notification'] = [
+                            'alert' => 'notify',
+                            'type' => 'success',
+                            'content' => 'Success',
+                        ];
+            
+                        $response['redirect_to'] = route('superuser.penjualan.sales_order.index_lanjutan');
+                        return $this->response(200, $response);
+                    }
+                }
+
+
+            }catch (\Exception $e) {
+                dd($e);
+                DB::rollback();
+                $response['notification'] = [
+                    'alert' => 'block',
+                    'type' => 'alert-danger',
+                    'header' => 'Error',
+                    'content' => $errors,
+                ];
+
+                return $this->response(400, $response);
             }
         }
 
-        DB::beginTransaction();
-        try{
-            $request->validate([
-                'id' => 'required'
-            ]);
-            $post = $request->all();
-            $update = SalesOrder::where('id',$post["id"])->update(['status' => 3]);
+        // // Access
+        // if(Auth::user()->is_superuser == 0){
+        //     if(empty($this->access) || empty($this->access->user) || $this->access->can_approve == 0){
+        //         return redirect()->route('superuser.index')->with('error','Anda tidak punya akses untuk membuka menu terkait');
+        //     }
+        // }
 
-            DB::commit();
-            return redirect()->back()->with('success','Sales Order tidak di lanjutkan');  
+        // DB::beginTransaction();
+        // try{
+        //     $request->validate([
+        //         'id' => 'required'
+        //     ]);
+        //     $post = $request->all();
+        //     $update = SalesOrder::where('id',$post["id"])->update(['status' => 3]);
+
+        //     DB::commit();
+        //     return redirect()->back()->with('success','Sales Order tidak di lanjutkan');  
             
-        }catch(\Throwable $e){
-            DB::rollback();
-            return redirect()->back()->with('error',$e->getMessage());
-        }
+        // }catch(\Throwable $e){
+        //     DB::rollback();
+        //     return redirect()->back()->with('error',$e->getMessage());
+        // }
     }
 
     /**
@@ -870,7 +986,7 @@ class SalesOrderController extends Controller
     {
         if ($request->ajax()) {
             if(Auth::user()->is_superuser == 0){
-                if(empty($this->access) || empty($this->access->user) || $this->access->can_accses == 0){
+                if(empty($this->access) || empty($this->access->user) || $this->access->can_read == 0){
                     return redirect()->route('superuser.index')->with('error','Anda tidak punya akses untuk membuka menu terkait');
                 }
             }
@@ -893,12 +1009,13 @@ class SalesOrderController extends Controller
                     if($request->rekening == null){
                         $errors[] = 'Rekening tidak boleh kosong!';
                     }
-
+                    
+                    $sales_order->code = CodeRepo::generateSO();
                     $sales_order->origin_warehouse_id = $request->origin_warehouse_id;
                     $sales_order->ekspedisi_id = $request->ekspedisi ?? null;
                     $sales_order->so_date = date("y-m-d", strtotime($request->so_date));
                     $sales_order->rekening = $request->rekening;
-                    $sales_order->type_transaction = $request->type_transaction;
+                    // $sales_order->type_transaction = $request->type_transaction;
                     $sales_order->shipping_cost_buyer = $request->shipping_cost_buyer ?? 0;
                     $sales_order->status = 4;
                     $sales_order->count_rev = 0;
@@ -1024,12 +1141,24 @@ class SalesOrderController extends Controller
                             foreach($sales_order->so_detail as $detail){
                                 $stock_order = ProductMinStock::where('product_packaging_id', $detail->product_packaging_id)->where('warehouse_id', $request->origin_warehouse_id)->first();
 
+
                                 // if($stock_order){
-                                //     if($stock->quantity < $detail->qty){
+                                //     if($stock_order->quantity < $do_qty){
                                 //         $out_of_stock = true;
                                 //         $product = $detail->product_packaging_id;
                                 //         break;
                                 //     }
+                                // }
+                                // if($stock_order) {
+                                //     if($stock_order->quantity < $value["do_qty"]) {
+                                //         $out_of_stock = true;
+                                //         $product = $detail->product_packaging_id;
+                                //         break;
+                                //     }
+                                // } else {
+                                //     $out_of_stock = true;
+                                //     $product = $detail->product_packaging_id;
+                                //     break;
                                 // }
                                 if($stock_order) {
                                     if($stock_order->quantity < $detail->qty) {
@@ -1102,6 +1231,7 @@ class SalesOrderController extends Controller
                         }
                     }
                 }elseif($sales_order->count_rev == 1){
+                    $sales_order->code = CodeRepo::generateSO();
                     $sales_order->origin_warehouse_id = $request->origin_warehouse_id;
                     $sales_order->status = 4;
                     $sales_order->count_rev = 0;
@@ -1195,7 +1325,9 @@ class SalesOrderController extends Controller
                         }
     
                         $updatePo = PackingOrder::where('id', $get_po->id)->update([
-                            'status' => 2
+                            'status' => 2,
+                            'do_code' => $sales_order->code,
+                            'idr_rate' => $request->idr_rate,
                         ]);
 
                         // definisi hasil penjumlahan di view
@@ -1239,6 +1371,32 @@ class SalesOrderController extends Controller
                                 $insertItem = PackingOrderItem::create($data[$key]);
                             }
                             
+                        }
+
+                        if(empty($get_po->invoicing)){
+                            $data = [
+                                'code' => $sales_order->code,
+                                'do_id' => $get_po->id,
+                                'customer_id' => $sales_order->customer_id,
+                                'customer_other_address_id' => $sales_order->customer_other_address_id,
+                                'grand_total_idr' => $grand_total_idr,
+                                'status' => 1,
+                                'created_by' => Auth::id(),
+                            ];
+
+                            $insert_invoice = Invoicing::create($data);
+                        }else{
+                            $data = [
+                                'code' => $sales_order->code,
+                                'do_id' => $get_po->id,
+                                'customer_id' => $sales_order->customer_id,
+                                'customer_other_address_id' => $sales_order->customer_other_address_id,
+                                'grand_total_idr' => $grand_total_idr,
+                                'status' => 1,
+                                'created_by' => Auth::id(),
+                            ];
+
+                            $update_invoice = Invoicing::where('do_id', $get_po->id)->update($data);
                         }
 
                         DB::commit();
@@ -1673,12 +1831,14 @@ class SalesOrderController extends Controller
                         ->where('master_products_packaging.status', 1)
                         ->leftJoin('master_products_packaging', 'master_products.id', '=', 'master_products_packaging.product_id')
                         ->leftJoin('master_packaging', 'master_products_packaging.packaging_id', '=', 'master_packaging.id')
+                        ->leftJoin('master_warehouses', 'master_products_packaging.warehouse_id', '=', 'master_warehouses.id')
                         ->select('master_products_packaging.id as id' ,
                                     'master_products_packaging.code as ProductCode', 
                                     'master_products_packaging.name as productName', 
                                     'master_products_packaging.price as productPrice', 
                                     'master_packaging.id as  productPackagingID', 
                                     'master_packaging.pack_name as productPackaging', 
+                                    'master_warehouses.name as warehouseName',
                         )
                         ->get();
 
@@ -1690,10 +1850,85 @@ class SalesOrderController extends Controller
                         'price' => $key->productPrice,
                         'packName' => $key->productPackaging,
                         'packID' => $key->productPackagingID,
+                        'warehouseName' => $key->warehouseName,
                     ];
                 }
 
                 return response()->json(['code' => 200, 'data' => $data]);
         }
+    }
+
+    public function print_so($so_id)
+    {
+        if(Auth::user()->is_superuser == 0){
+            if(empty($this->access) || empty($this->access->user) || $this->access->can_print == 0){
+                return redirect()->route('superuser.index')->with('error','Anda tidak punya akses untuk membuka menu terkait');
+            }
+        }
+
+        $result = SalesOrder::where('id',$so_id)->first();
+
+        $my_report = "C:\\xampp\\htdocs\\ppi-dist\public\\cr\\so\\nota_penjualan.rpt"; 
+        $my_pdf = 'C:\\xampp\\htdocs\\ppi-dist\\public\\cr\\so\\export\\'.$result->so_code.'.pdf';
+       
+        //- Variables - Server Information 
+        $my_server = "LOCAL"; 
+        $my_user = "root"; 
+        $my_password = ""; 
+        $my_database = "ppi-dist";
+        $COM_Object = "CrystalDesignRunTime.Application";
+
+
+        //-Create new COM object-depends on your Crystal Report version
+        $crapp= New COM($COM_Object) or die("Unable to Create Object");
+        $creport = $crapp->OpenReport($my_report,1); // call rpt report
+
+        //- Set database logon info - must have
+        $creport->Database->Tables(1)->SetLogOnInfo($my_server, $my_database, $my_user, $my_password);
+
+        //- field prompt or else report will hang - to get through
+        $creport->EnableParameterPrompting = FALSE;
+        $creport->RecordSelectionFormula = "{penjualan_so.id}= $result->id";
+
+
+        //export to PDF process
+        $creport->ExportOptions->DiskFileName=$my_pdf; //export to pdf
+        $creport->ExportOptions->PDFExportAllPages=true;
+        $creport->ExportOptions->DestinationType=1; // export to file
+        $creport->ExportOptions->FormatType=31; // PDF type
+        $creport->Export(false);
+
+        //------ Release the variables ------
+        $creport = null;
+        $crapp = null;
+        $ObjectFactory = null;
+
+        $file = 'C:\\xampp\\htdocs\\ppi-dist\\public\\cr\\so\\export\\'.$result->so_code.'.pdf';
+
+        // if($get_do->type_transaction == 1 && $get_do->so->payment_status == 1){
+        //     $file->SetWatermarkText("PAID");
+        // }elseif($get_do->type_transaction == 2 && $get_do->so->payment_status == 2){
+        //     $file->SetWatermarkText("COPY");
+        // }
+
+        // header("Content-Description: File Transfer"); 
+        // header("Content-Type: application/octet-stream"); 
+        // header("Content-Transfer-Encoding: Binary"); 
+        // header("Content-Disposition: attachment; filename=\"". basename($file) ."\""); 
+        // ob_clean();
+        // flush();
+        // readfile ($file);
+        // exit();
+        
+        $imagick = new Imagick();
+        $imagick->setResolution(300, 300);
+        $imagick->readImage( $file);
+        $imagick->setImageFormat('jpeg');
+        $imagick->setImageCompression(imagick::COMPRESSION_JPEG); 
+        $imagick->setImageCompressionQuality(100);
+        $saveImagePath = public_path('\cr\\so\\export\\images\\'.$result->so_code.'.jpg');
+        $imagick->writeImages($saveImagePath, true);
+  
+        return response()->file($saveImagePath);
     }
 }

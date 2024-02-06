@@ -52,16 +52,12 @@
           <div class="form-row">
             <div class="form-group col-md-6">
               <label for="type_transaction">Type Transaksi</label>
-              <select class="form-control js-select2" name="type_transaction">
-                <option value="">Pilih Transaksi Type </option>
-                <option value="CASH">CASH </option>
-                <option value="TEMPO">TEMPO </option>
-                <option value="MARKETPLACE">MARKETPLACE </option>
-              </select>
+              <input type="text" name="type_transaction" class="form-control" value="{{ $result->type_transaction }}" readonly>
             </div>
             <div class="form-group col-md-6">
               <label for="note">Catatan</label>
-              <input type="text" class="form-control" value="{{ $result->note ?? '-' }}" readonly>
+              <!-- <input type="text" class="form-control" value="{{ $result->note ?? '-' }}" readonly> -->
+              <textarea class="form-control" name="note" rows="1" readonly>{{ $result->note }}</textarea>
             </div>
           </div>
 
@@ -211,7 +207,7 @@
                                         </div>
                                     </td>
                                     <td>{{ $loop->iteration }}</td>
-                                    <td>{{ $detail->product_pack->code }} - <b>{{ $detail->product_pack->name }}</td>
+                                    <td>{{ $detail->product_pack->code }} - <b>{{ $detail->product_pack->name }}</b> - {{$detail->product_pack->warehouse->name}}</td>
                                     <td>{{$detail->qty}}</td>
                                     <td>
                                       <input type="number" name="repeater[{{$index}}][do_qty]" class="form-control count" data-index="{{$index}}" value="{{$detail->qty}}" step="any" min="0" max="{{$detail->qty}}">
@@ -223,8 +219,8 @@
                                       <input class="form-check-input free-count" type="checkbox" value="{{$detail->free_product}}" name="repeater[{{$index}}][free_product]" @if($detail->free_product == 1) checked=checked @endif disabled>
                                     </td>
                                     <td>
-                                      <input type="text" name="kemasan" class="form-control text-center" readonly value="{{$detail->product_pack->kemasan()->pack_name ?? ''}}">
-                                      <input type="hidden" name="repeater[{{$index}}][packaging]" class="form-control" readonly value="{{$detail->product_pack->kemasan()->id ?? ''}}">
+                                      <input type="text" name="kemasan" class="form-control text-center" readonly value="{{$detail->product_pack->packaging->pack_name ?? ''}}">
+                                      <input type="hidden" name="repeater[{{$index}}][packaging]" class="form-control" readonly value="{{$detail->product_pack->packaging->id ?? ''}}">
                                     </td>
                                     <td>
                                       <input type="text" name="repeater[{{$index}}][usd_disc]" class="form-control count count-disc" data-index="{{$index}}" step="any" onchange="countGetUsd()" placeholder="{{$detail->disc_usd}}" />
@@ -256,7 +252,7 @@
                       <div class="form-group row">
                         <label class="col-sm-4 col-form-label">Disc %</label>
                         <div class="col-sm-3">
-                          <input type="text" class="form-control" id="disc_agen_percent" name="disc_agen_percent">
+                          <input type="text" class="form-control" id="disc_agen_percent" name="disc_agen_percent" placeholder="{{ $result->catatan }}">
                         </div>
                         <div class="col-sm-5">
                           <input type="text" readonly class="form-control" id="disc_agen_idr" name="disc_agen_idr">
@@ -311,11 +307,11 @@
               </button>
             </a>
           </div>
-          <div class="col-md-6 text-right">
+          {{--<div class="col-md-6 text-right">
             <button type="button" class="btn bg-gd-corporate border-0 text-white" data-toggle="modal" data-target="#exampleModal">
               <i class="fa fa-times mr-10"></i> Kembali SO awal
             </button>
-          </div>
+          </div>--}}
         </div>
 </form>
 
@@ -382,6 +378,8 @@
           }else{
             $('tr.index'+index+'').find('input[name="repeater['+index+'][usd_disc]"]').val(baseDisc);
           }
+
+          count_per_item(index);
         }) ;
     }
 

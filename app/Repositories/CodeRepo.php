@@ -23,6 +23,7 @@ use App\Entities\Gudang\StockAdjustment;
 use App\Entities\Gudang\Receiving;
 use App\Entities\Master\BrandLokal;
 use App\Entities\Gudang\PurchaseOrder;
+use DB;
 
 class CodeRepo
 {
@@ -201,13 +202,14 @@ class CodeRepo
     // Generate SO code
     public static function generateSO()
     {
-        $get_max = SalesOrder::max('code');
         $parts = explode('-', date("d-m-Y"));
         $p1 = substr($parts[2], (strlen($parts[2]) - 1) );
         $abjadMonth = array( '-', 'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L');
         $p2 = $abjadMonth[date('n')];
         $yearMonth = $p1.$p2;
         $latestNumber = "";
+
+        $get_max = DB::table('penjualan_so')->where('code', 'LIKE', '%'.$yearMonth.'%')->where('deleted_at', null)->max('code');
 
         if($get_max == 'false'){
             $latestNumber = $yearMonth . '001';
@@ -222,7 +224,7 @@ class CodeRepo
     // Generate PO code
     public static function generatePurchaseOrder()
     {
-        $get_max = Purchaseorder::max('code');
+        // $get_max = Purchaseorder::max('code');
         $parts = explode('-', date("d-m-Y"));
         $p1 = substr($parts[2], (strlen($parts[2]) - 2) );
         $abjadMonth = array( '-', 'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L');
@@ -231,6 +233,8 @@ class CodeRepo
         $yearMonth = $str_code.$p1.$p2;
         $latestNumber = "";
 
+        $get_max = DB::table('purchase_order')->where('code', 'LIKE', '%'.$yearMonth.'%')->where('deleted_at', null)->max('code');
+
         if($get_max == 'false'){
             $latestNumber = $yearMonth . '001';
         }else{
@@ -238,6 +242,56 @@ class CodeRepo
             $id = (int) substr($latestNumber, strlen($yearMonth)) + 1;
             $latestNumber = $yearMonth . str_pad($id, 3, 0, STR_PAD_LEFT);
         }
+        return $latestNumber;
+    }
+
+    // generate so ppn
+    public static function generateSOPPN()
+    {
+        $parts = explode('-', date("d-m-Y"));
+        $p1 = substr($parts[2], (strlen($parts[2]) - 1) );
+        $abjadMonth = array( '-', 'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L');
+        $p2 = $abjadMonth[date('n')];
+        $index_so = 'P';
+        $yearMonth = $index_so.$p1.$p2;
+        $latestNumber = "";
+        
+        $get_max = DB::table('penjualan_so')->where('code', 'LIKE', '%'.$yearMonth.'%')->where('deleted_at', null)->max('code');
+
+        if($get_max == 'false'){
+            $latestNumber = $yearMonth . '001';
+        }else{
+            $latestNumber = $get_max;
+            $id = (int) substr($latestNumber, strlen($yearMonth)) + 1;
+            $latestNumber = $yearMonth . str_pad($id, 3, 0, STR_PAD_LEFT);
+        }
+
+        // dd($latestNumber);
+        return $latestNumber;
+    }
+
+    // Generate invoice tax
+    public static function generateINVTAX()
+    {
+        $parts = explode('-', date("d-m-Y"));
+        $p1 = substr($parts[2], (strlen($parts[2]) - 1) );
+        $abjadMonth = array( '-', 'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L');
+        $p2 = $abjadMonth[date('n')];
+        $str_code = "T";
+        $yearMonth = $str_code.$p1.$p2;
+        $latestNumber = "";
+
+        $get_max = DB::table('finance_invoice_mitra')->where('no_invoice_tax', 'LIKE', '%'.$yearMonth.'%')->where('deleted_at', null)->max('no_invoice_tax');
+
+        if($get_max == 'false'){
+            $latestNumber = $yearMonth . '001';
+        }else{
+            $latestNumber = $get_max;
+            $id = (int) substr($latestNumber, strlen($yearMonth)) + 1;
+            $latestNumber = $yearMonth . str_pad($id, 3, 0, STR_PAD_LEFT);
+        }
+
+        // dd($latestNumber);
         return $latestNumber;
     }
 }

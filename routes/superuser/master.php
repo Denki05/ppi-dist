@@ -35,11 +35,13 @@ Route::group([
         Route::get('/export', 'ProductController@export')->name('export');
         Route::post('/getcategory', 'ProductController@getcategory')->name('getcategory');
         Route::post('/delete_multiple', 'ProductController@destroyMultiple')->name('delete_multiple');
-        Route::get('/{id}/disable', 'ProductController@disable')->name('disable');
-        Route::get('/{id}/enable', 'ProductController@enable')->name('enable');
         Route::get('/cetak', 'ProductController@cetak')->name('cetak');
         Route::post('/cetak/pdf', 'ProductController@cetakPdf')->name('pdf');
         Route::post('/update_cost/{child_id}', 'ProductController@update_cost')->name('update_cost');
+        Route::get('/print_product', 'ProductController@print_product')->name('print_product');
+        Route::post('/get_category', 'ProductController@get_category')->name('get_category');
+        Route::get('/{id}/disable', 'ProductController@disable')->name('disable');
+        Route::get('/{id}/enable', 'ProductController@enable')->name('enable');
         
         Route::group(['as' => 'min_stock.'], function () {
             Route::get('/{id}/min_stock/create', 'ProductMinStockController@create')->name('create');
@@ -230,10 +232,8 @@ Route::group([
     });
     Route::resource('brand_lokal', 'BrandLokalController');
 
-    Route::group(['as' => 'catalog.', 'prefix' => '/catalog'], function () {
-        // Route::get('/import_template', 'WarehouseController@import_template')->name('import_template');
-        // Route::post('/import', 'WarehouseController@import')->name('import');
-        // Route::get('/export', 'WarehouseController@export')->name('export');
+    Route::group(['as' => 'mitra.', 'prefix' => '/mitra'], function () {
+       
     });
-    Route::resource('catalog', 'CatalogController');
+    Route::resource('mitra', 'MitraController');
 });

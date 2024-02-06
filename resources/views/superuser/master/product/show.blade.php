@@ -124,7 +124,7 @@
               <input class="form-control" type="text" value="{{ $product->ratio }}" id="example-text-input" readonly> 
             </div>
           </div>
-          <div class="form-group row">
+          {{--<div class="form-group row">
             <label for="example-text-input" class="col-2 col-form-label">Harga Beli</label>
             <div class="col-8">
               <input class="form-control" type="text" value="{{ '$' . number_format($product->buying_price, 2) }}" id="example-text-input" readonly>
@@ -135,7 +135,7 @@
             <div class="col-8">
               <input class="form-control" type="text" value="{{ '$' . number_format($product->selling_price, 2) }}" id="example-text-input" readonly>
             </div>
-          </div>
+          </div>--}}
           <div class="form-group row">
             <label for="example-text-input" class="col-2 col-form-label">Note</label>
             <div class="col-8">
@@ -163,22 +163,22 @@
                 <th>#</th>
                 <th>Packaging</th>
                 <th>Price</th>
-                <th>Stock</th>
                 <th>Action</th>
               </tr>
             </thead>
             <tbody>
-              @foreach($product->product_child as $row)
+              @foreach($product->product_pack as $row)
                 <tr>
                   <td>{{$loop->iteration}}</td>
                   <td><b>{{$row->packaging->pack_name}}</b></td>
                   <td>{{$row->price}}</td>
-                  <td>{{ number_format($row->stock) }}</td>
                   <td>
-                    <!-- <button type="button" class="btn btn-sm btn-circle btn-alt-secondary upload_button" data-id="{{$row->id}}" title="Update price" data-bs-toggle="modal" data-bs-target="#myModal">
-                      <i class="fa fa-money"></i>
-                    </button> -->
                     <a href="javascript:void(0)" type="button" class="btn btn-sm btn-circle btn-alt-secondary openModal" data-id="{{$row->id}}" title="Update price"><i class="fa fa-money"></i></a> 
+                    @if($row->condition == 0)
+                      <a href="javascript:saveConfirmation('{{ route('superuser.master.product.disable', base64_encode($row->id)) }}')" type="button" class="btn btn-sm btn-circle btn-alt-warning" title="Disable PL / PD"><i class="fa fa-unlock" aria-hidden="true"> </i></a>
+                    @else
+                      <a href="javascript:saveConfirmation('{{ route('superuser.master.product.enable', base64_encode($row->id)) }}')" type="button" class="btn btn-sm btn-circle btn-alt-warning" title="Enable PL / PD"><i class="fa fa-lock" aria-hidden="true"> </i></a>
+                    @endif
                   </td>
                 </tr>
               @endforeach

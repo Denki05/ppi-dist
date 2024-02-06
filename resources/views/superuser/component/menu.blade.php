@@ -18,9 +18,9 @@
                     <li class="nav-item">
                       <a class="nav-link" href="{{ route('superuser.master.company.show') }}" >Company</a>
                     </li>
-                    <li class="nav-item">
+                    {{--<li class="nav-item">
                       <a class="nav-link" href="{{ route('superuser.master.branch_office.index') }}" >Branch Office</a>
-                    </li>
+                    </li>--}}
                     <li class="nav-item">
                       <a class="nav-link" href="{{ route('superuser.master.warehouse.index') }}" >Warehouse</a>
                     </li>
@@ -64,11 +64,11 @@
                         Vendor
                       </a>
                     </li>
-                    {{--<li class="nav-item">
-                      <a href="{{ route('superuser.master.ekspedisi.index') }}"  class="nav-link {{ is_active_route('superuser.master.ekspedisi.index') }}">
-                        Ekspedisi
+                    <li class="nav-item">
+                      <a href="{{ route('superuser.master.mitra.index') }}"  class="nav-link {{ is_active_route('superuser.master.mitra.index') }}">
+                        Mitra
                       </a>
-                    </li>--}}
+                    </li>
                   </ul>
                 </div>
               </li>
@@ -90,23 +90,21 @@
                         <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-expanded="false">Sales Order <span class="caret"></span></a>
                         <ul class="dropdown-menu" role="menu">
                             <li class="nav-item"><a href="{{ route('superuser.penjualan.sales_order.index_awal') }}" >SO Awal</a></li>
+                            @if($superuser->can('superuser-manage') OR $superuser->division == "Admin" OR $superuser->division == "Management")
                             <li class="nav-item"><a href="{{ route('superuser.penjualan.sales_order.index_lanjutan') }}" >SO Lanjutan</a></li>
+                            <li class="nav-item"><a href="{{ route('superuser.penjualan.sales_order_ppn.index') }}" >SO Khusus</a></li>
+                            @endif
                             <li class="nav-item"><a href="{{ route('superuser.penjualan.sales_order_indent.index') }}" >SO Indent</a></li>
-                            <!-- <li class="nav-item"><a href="{{ route('superuser.penjualan.sales_order_ppn.index') }}" >Sales Order PPN</a></li> -->
-                            <!-- <li class="nav-item"><a href="{{ route('superuser.penjualan.sales_order.index_mutasi') }}" target="_blank">Sales Order Mutation (SOM)</a></li> -->
-                            <!-- <li class="nav-item"><a href="{{ route('superuser.penjualan.canvasing.index') }}" target="_blank">Canvasing (Sales Mutation)</a></li> -->
                         </ul>
                     </li>
-                    <!-- <li class="nav-item">
-                      <a href="{{ route('superuser.penjualan.packing_order.index') }}" target="_blank" class="nav-link {{ is_active_route('superuser.master.ekspedisi.index') }}">
-                        Packing Order (PO)
-                      </a>
-                    </li> -->
+                    <li class="nav-item">
+                      <a class="nav-link" href="{{ route('superuser.finance.invoicing.index') }}" >Invoicing</a>
+                    </li>
                     <li class="dropdown">
                         <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-expanded="false">Delivery Order (DO) <span class="caret"></span></a>
                         <ul class="dropdown-menu" role="menu">
                             <li class="nav-item"><a href="{{ route('superuser.penjualan.delivery_order.index') }}" >Proses DO (DO)</a></li>
-                            <li class="nav-item"><a href="{{ route('superuser.penjualan.delivery_order_mutation.index') }}">Delivery Order Mutation (DOM)</a></li>
+                            <!-- <li class="nav-item"><a href="{{ route('superuser.penjualan.delivery_order_mutation.index') }}">Delivery Order Mutation (DOM)</a></li> -->
                         </ul>
                     </li>
                   </ul>
@@ -145,20 +143,24 @@
                 </a>
                 <div class="submenu">
                   <ul class="submenu-item">
-                    <!-- <li class="nav-item">
-                      <a class="nav-link" href="{{ route('superuser.finance.proforma.index') }}" target="_blank">Proforma</a>
-                    </li> -->
-                    <li class="nav-item">
-                      <a class="nav-link" href="{{ route('superuser.finance.invoicing.index') }}" >Invoicing</a>
-                    </li>
                     <li class="nav-item">
                       <a class="nav-link" href="{{ route('superuser.finance.payable.index') }}" >Payable</a>
+                    </li>
+                    <li class="nav-item">
+                      <a class="nav-link" href="#" >Araya</a>
+                    </li>
+                    <li class="dropdown">
+                        <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-expanded="false">Tax <span class="caret"></span></a>
+                        <ul class="dropdown-menu" role="menu">
+                          <li class="nav-item"><a href="{{ route('superuser.accounting.product_finance.index') }}" >Product Finance</a></li>
+                            <li class="nav-item"><a href="{{ route('superuser.accounting.invoice_tax.index') }}" >Invoice Tax</a></li>
+                        </ul>
                     </li>
                   </ul>
                 </div>
               </li>
 
-              <li class="nav-item {{ is_open_route('superuser/report') }}">
+              {{--<li class="nav-item {{ is_open_route('superuser/report') }}">
                 <a href="#" class="nav-link">
                   <i class="mdi mdi-chart-bar menu-icon"></i>
                   <span class="menu-title">Report</span>
@@ -177,7 +179,7 @@
                     </li>
                   </ul>
                 </div>
-              </li>
+              </li>--}}
 
               @if($superuser->canAny(['superuser-manage', 'salesperson-manage']))
               <li class="nav-item">

@@ -5,7 +5,7 @@
   <div class="block">
             <div class="block-conten" align="center">
                 <div class="col-md-10 col-md-offset-1">
-                	<form data-action="{{ route('superuser.master.product.update', [$product->id]) }}" data-type="POST" enctype="multipart/form-data" class="f1 ajax">
+                	<form data-action="{{ route('superuser.master.product.update', [$product->id]) }}" data-type="POST" enctype="multipart/form-data" class="f1 ajax" novalidate>
                   <input type="hidden" name="_method" value="PUT">
                 		<div class="f1-steps">
                 			<div class="f1-progress">
@@ -305,20 +305,7 @@
                         <fieldset>
                             <h4>#Product Cost</h4>
                             <div class="container">
-                              {{--<div class="row">
-                                <div class="col">
-                                  <div class="form-group">
-                                    <label for="buying_price">Harga Beli </label>
-                                    <input type="number" class="form-control" id="buying_price" name="buying_price" min="0" value="0" step="0.0001">
-                                  </div>
-                                </div>
-                                <div class="col">
-                                  <div class="form-group">
-                                    <label for="buying_price">Harga Jual </label>
-                                    <input type="number" class="form-control" id="selling_price" name="selling_price" min="0" value="0" step="0.0001">
-                                  </div>
-                                </div>
-                              </div>--}}
+                              
                             </div>
                             <span class="text-danger">*Harga dalam kurs USD</span>
                             <div class="f1-buttons">

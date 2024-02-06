@@ -146,8 +146,12 @@
       const repack = $('.note_repack[data-index=0]').val();
       const free = $('.input-free[data-index=0]').val();
      
+      let newProductID = 0;
+      if (productId.indexOf('/') > 5) {
+        newProductID = productId.replace('/', '\\/');
+      }
 
-      if (productId === null || productId === '' || qty === null || qty === '' || packagingId == null || packagingId === '' ) {
+      if (newProductID === null || newProductID === '' || qty === null || qty === '' || packagingId == null || packagingId === '' ) {
         Swal.fire(
           'Error!',
           'Please input all the data',
@@ -156,7 +160,7 @@
         return;
       }
 
-      let html = "<div class='row mt-10 product-row product-" + productId + "'>";
+      let html = "<div class='row mt-10 product-row product-" + newProductID + "'>";
       html += "  <div class='col-3'>";
       html += "    <input type='hidden' name='product_packaging_id[]' class='form-control' value='" + productId + "'>";
       html += productText;
@@ -182,8 +186,8 @@
       html += "  </div>";
       html += "</div>";
       
-      if ($('.product-row.product-' + productId).length > 0) {
-        $('body').find('.product-row.product-' + productId + ':last').after(html);
+      if ($('.product-row.product-' + newProductID).length > 0) {
+        $('body').find('.product-row.product-' + newProductID + ':last').after(html);
       } else {
         $('body').find('.product-list').append(html);
       }
@@ -229,7 +233,7 @@
           let option = "";
           option = '<option value="">Select Product</option>';
           $.each(resp.Data,function(i,e){
-            option += '<option value="'+e.id+'">'+e.productCode+' - '+e.productName+'</option>';
+            option += '<option value="'+e.id+'">'+e.productCode+' - '+e.productName+' - '+e.warehouseName+'</option>';
           })
           $('.select-product[data-index=' + param.index + ']').html(option);
         },

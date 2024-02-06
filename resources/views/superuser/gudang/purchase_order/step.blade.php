@@ -188,7 +188,7 @@
             <td class="text-center">{{ $row->product_pack->code }}</td>
             <td class="text-center">{{ $row->product_pack->name }}</td>
             <td class="text-center">{{ $row->quantity }}</td>
-            <td class="text-center">{{ $row->product_pack->kemasan()->pack_name }}</td>
+            <td class="text-center">{{ $row->product_pack->packaging->pack_name }}</td>
             <td class="text-center">{{ $row->note_produksi ?? '-' }}</td>
             <td class="text-center">{{ $row->note_repack ?? '-' }}</td>
             <td class="text-center">

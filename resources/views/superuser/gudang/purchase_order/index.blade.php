@@ -35,17 +35,15 @@
 
       <div class="row mb-30">
         <div class="col-12">
-        <table id="datatables" class="table table-striped">
+        <table id="datatables" class="table table-bordred table-striped" style="width:100%">
           <thead>
             <tr>
-              <th class="text-center">#</th>
-              <th class="text-center">Created at</th>
-              <th class="text-center">PO Code</th>
-              <th class="text-center">Latest Update</th>
-              <!-- <th class="text-center">Edit Counter</th> -->
-              <th class="text-center">Note</th>
-              <th class="text-center">Status</th>
-              <th class="text-center">Action</th>
+              <td class="text-center">#</td>
+              <td class="text-center">Created at</td>
+              <td class="text-center">PO Code</td>
+              <td class="text-center">Latest Update</td>
+              <td class="text-center">Status</td>
+              <td class="text-center">Action</td>
             </tr>
           </thead>
           
@@ -86,11 +84,12 @@
         },
         {data: 'code'},
         {data: 'updated_by'},
-        // {data: 'edit_counter'},
-        {data: 'note'},
         {data: 'status'},
         {data: 'action', orderable: false, searcable: false}
       ],
+      scrollCollapse: true,
+      scrollX: true,
+      scrollY: 300,
       order: [
         [1, 'desc']
       ],

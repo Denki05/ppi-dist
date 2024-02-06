@@ -118,7 +118,7 @@ class SalesOrderIndentController extends Controller
     {
         if ($request->ajax()) {
             if(Auth::user()->is_superuser == 0){
-                if(empty($this->access) || empty($this->access->user) || $this->access->can_approve == 0){
+                if(empty($this->access) || empty($this->access->user) || $this->access->can_delete == 0){
                     return redirect()->route('superuser.index')->with('error','Anda tidak punya akses untuk membuka menu terkait');
                 }
             }
@@ -170,5 +170,66 @@ class SalesOrderIndentController extends Controller
     {
         $filename = 'Sales-Order-Indent-' . date('d-m-Y_H-i-s') . '.xlsx';
         return Excel::download(new SalesOrderIndentExport, $filename);
+    }
+
+    public function print_out_indent(Request $request, $so_id)
+    {
+        if(Auth::user()->is_superuser == 0){
+            if(empty($this->access) || empty($this->access->user) || $this->access->can_print == 0){
+                return redirect()->route('superuser.index')->with('error','Anda tidak punya akses untuk membuka menu terkait');
+            }
+        }
+
+        $sales_order = SalesOrder::find($so_id);
+
+        $my_report = "C:\\xampp\\htdocs\\ppi-dist\public\\cr\\so\\so_indent.rpt"; 
+        $my_pdf = 'C:\\xampp\\htdocs\\ppi-dist\\public\\cr\\so\\export\\'.$sales_order->so_code.'-INDENT'.'.pdf';
+
+        //- Variables - Server Information 
+        $my_server = "LOCAL"; 
+        $my_user = "root"; 
+        $my_password = ""; 
+        $my_database = "ppi-dist";
+        $COM_Object = "CrystalDesignRunTime.Application";
+
+        //-Create new COM object-depends on your Crystal Report version
+        $crapp= New COM($COM_Object) or die("Unable to Create Object");
+        $creport = $crapp->OpenReport($my_report,1); // call rpt report
+
+        //- Set database logon info - must have
+        $creport->Database->Tables(1)->SetLogOnInfo($my_server, $my_database, $my_user, $my_password);
+
+        //- field prompt or else report will hang - to get through
+        $creport->EnableParameterPrompting = FALSE;
+        $creport->RecordSelectionFormula = "{penjualan_so.id}= $sales_order->id";
+
+        //export to PDF process
+        $creport->ExportOptions->DiskFileName=$my_pdf; //export to pdf
+        $creport->ExportOptions->PDFExportAllPages=true;
+        $creport->ExportOptions->DestinationType=1; // export to file
+        $creport->ExportOptions->FormatType=31; // PDF type
+        $creport->Export(false);
+
+        //------ Release the variables ------
+        $creport = null;
+        $crapp = null;
+        $ObjectFactory = null;
+
+        $file = 'C:\\xampp\\htdocs\\ppi-dist\\public\\cr\\so\\export\\'.$sales_order->so_code.'-INDENT'.'.pdf';
+
+        // if($get_do->type_transaction == 1 && $get_do->so->payment_status == 1){
+        //     $file->SetWatermarkText("PAID");
+        // }elseif($get_do->type_transaction == 2 && $get_do->so->payment_status == 2){
+        //     $file->SetWatermarkText("COPY");
+        // }
+
+        header("Content-Description: File Transfer"); 
+        header("Content-Type: application/octet-stream"); 
+        header("Content-Transfer-Encoding: Binary"); 
+        header("Content-Disposition: attachment; filename=\"". basename($file) ."\""); 
+        ob_clean();
+        flush();
+        readfile ($file);
+        exit();
     }
 }

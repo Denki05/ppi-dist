@@ -26,8 +26,8 @@ Route::group([
         Route::get('/{id}/detail', 'SalesOrderController@detail')->name('detail');
         Route::post('/{store}/{member}/store', 'SalesOrderController@store')->name('store');
         Route::post('/update', 'SalesOrderController@update')->name('update');
-        Route::post('/lanjutkan', 'SalesOrderController@lanjutkan')->name('lanjutkan');
-        Route::post('/kembali', 'SalesOrderController@kembali')->name('kembali');
+        Route::get('/lanjutkan/{id}', 'SalesOrderController@lanjutkan')->name('lanjutkan');
+        Route::get('/{id}/kembali', 'SalesOrderController@kembali')->name('kembali');
         Route::post('/tidak_lanjut_so', 'SalesOrderController@tidak_lanjut_so')->name('tidak_lanjut_so');
         Route::post('/tutup_so', 'SalesOrderController@tutup_so')->name('tutup_so');
         Route::post('/destroy', 'SalesOrderController@destroy')->name('destroy');
@@ -44,6 +44,7 @@ Route::group([
         Route::post('/ajax_warehouse_detail', 'SalesOrderController@ajax_warehouse_detail')->name('ajax_warehouse_detail');
         Route::post('/ajax_product_detail', 'SalesOrderController@ajax_product_detail')->name('ajax_product_detail');
         Route::get('/{id}/print_rejected_so', 'SalesOrderController@print_rejected_so')->name('print_rejected_so');
+        Route::get('/{so_id}/print_so', 'SalesOrderController@print_so')->name('print_so');
 
         Route::get('/get_category', 'SalesOrderController@get_category')->name('get_category');
         Route::get('/get_product', 'SalesOrderController@get_product')->name('get_product');
@@ -63,7 +64,7 @@ Route::group([
         Route::post('/destroy', 'PackingOrderController@destroy')->name('destroy');
         Route::post('/prepare', 'PackingOrderController@prepare')->name('prepare');
         Route::post('/order', 'PackingOrderController@order')->name('order');
-        Route::post('/ready', 'PackingOrderController@ready')->name('ready');
+        Route::get('/ready/{id}', 'PackingOrderController@ready')->name('ready');
         Route::post('/packed', 'PackingOrderController@packed')->name('packed');
         Route::post('/revisi', 'PackingOrderController@revisi')->name('revisi');
 
@@ -139,17 +140,20 @@ Route::group([
     Route::group(['as' => 'sales_order_ppn.', 'prefix' => '/sales_order_ppn'], function () {
         Route::get('/', 'SalesOrderPpnController@index')->name('index');
         Route::post('/ajax_customer_detail', 'SalesOrderPpnController@ajax_customer_detail')->name('ajax_customer_detail');
-        Route::get('/search_sku', 'SalesOrderPpnController@search_sku')->name('search_sku');
+        Route::post('/get_product_pack', 'SalesOrderPpnController@get_product_pack')->name('get_product_pack');
         Route::get('/{id}/lanjutkan', 'SalesOrderPpnController@lanjutkan')->name('lanjutkan');
         Route::post('/delete', 'SalesOrderPpnController@delete')->name('delete');
         Route::post('/{id}/update', 'SalesOrderPpnController@update')->name('update');
+        Route::post('/ajax_customer_detail', 'SalesOrderPpnController@ajax_customer_detail')->name('ajax_customer_detail');
+        Route::get('/get_brand', 'SalesOrderPpnController@get_brand')->name('get_brand');
     });
     Route::resource('sales_order_ppn', 'SalesOrderPpnController');
 
     Route::group(['as' => 'sales_order_indent.', 'prefix' => '/sales_order_indent'], function () {
         Route::get('/', 'SalesOrderIndentController@index')->name('index');
-         Route::get('/export', 'SalesOrderIndentController@export')->name('export');
-        Route::get('/destroy/{id}', 'SalesOrderIndentController@destroy')->name('indestroydex');
+        Route::get('/export', 'SalesOrderIndentController@export')->name('export');
+        Route::get('/destroy/{id}', 'SalesOrderIndentController@destroy')->name('destroy');
+        Route::get('/print_out_indent/{so_id}', 'SalesOrderIndentController@print_out_indent')->name('print_out_indent');
     });
     Route::resource('sales_order_indent', 'SalesOrderIndentController');
 });

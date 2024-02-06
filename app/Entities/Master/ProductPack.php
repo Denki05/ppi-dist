@@ -23,6 +23,7 @@ class ProductPack extends Model
                         'gender', 
                         'note', 
                         'status',
+                        'condition',
                         'updated_by',
                         'deleted_by',
                     ];
@@ -49,6 +50,11 @@ class ProductPack extends Model
         'ACTIVE' => 1
     ];
 
+    const CONDITION = [
+        'ENABLE' => 0, 
+        'DISABLE' => 1, 
+    ];
+
     public function product()
     {
         return $this->belongsTo('App\Entities\Master\Product', 'product_id');
@@ -67,6 +73,11 @@ class ProductPack extends Model
     public function status()
     {
         return array_search($this->status, self::STATUS);
+    }
+
+    public function condition()
+    {
+        return array_search($this->condition, self::CONDITION);
     }
 
     public function kemasan()

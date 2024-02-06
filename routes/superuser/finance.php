@@ -16,6 +16,7 @@ Route::group([
         Route::post('/update_cost', 'InvoicingController@update_cost')->name('update_cost');
         Route::post('/store_invoicing', 'InvoicingController@store_invoicing')->name('store_invoicing');
         Route::get('/{id}/print', 'InvoicingController@print')->name('print');
+        Route::get('/{id}/print2', 'InvoicingController@print2')->name('print2');
         Route::get('/{id}/print_portait', 'InvoicingController@print_portait')->name('print_portait');
         Route::get('/{id}/print_paid', 'InvoicingController@print_paid')->name('print_paid');
         Route::get('/{id}/print_proforma', 'InvoicingController@print_proforma')->name('print_proforma');

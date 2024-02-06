@@ -82,6 +82,14 @@
                 </div>
               </div>
             </div>
+            <div class="row">
+              <div class="col">
+                <div class="form-group">
+                  <input type="checkbox" value="1" name="free_shipping"  />
+                  <span class="text-danger"><b>*Free Shipping</b></span></label><br>
+                </div>
+              </div>
+            </div>
             <div class="f1-buttons">
               <a href="{{route('superuser.master.customer.index')}}" class="btn btn-warning  btn-md text-white"><i class="fa fa-arrow-left"></i> Back</a>
               <button type="button" class="btn btn-primary btn-next">Next <i class="fa fa-arrow-right"></i></button>
@@ -109,28 +117,29 @@
                   <div class="form-group col-md-2">
                     <label for="kota">Kota</label>
                     <select class="js-select2 form-control" id="kota" name="kota" style="width:100%;" placeholder="Pilih Kota">
-                      <option>Pilih Kota</option>
+                      <option value="{{ $other_address->kota }}">{{ $other_address->text_kota }}</option>
                     </select>           
                     <input type="hidden" name="text_kota">
                   </div>
                   <div class="form-group col-md-2">
                     <label for="kecamatan">Kecamatan</label>
                     <select class="js-select2 form-control" id="kecamatan" name="kecamatan" style="width:100%;" placeholder="Pilih Kecamatan">
-                      <option>Pilih Kecamatan</option>
+                      <option value="{{ $other_address->kecamatan }}">{{ $other_address->text_kecamatan }}</option>
                     </select>
                     <input type="hidden" name="text_kecamatan">
                   </div>          
                   <div class="form-group col-md-2">
                     <label for="kelurahan">Kelurahan</label>
                     <select class="js-select2 form-control" id="kelurahan" name="kelurahan" style="width:100%;" placeholder="Pilih Kelurahan">
-                      <option>Pilih Kelurahan</option>
+                    <option value="{{ $other_address->kelurahan }}">{{ $other_address->text_kelurahan }}</option>
+                      
                     </select>
                     <input type="hidden" name="text_kelurahan">
                   </div>
                   <div class="form-group col-md-2">
                     <label for="zipcode">Zipcode</label>
                     <select class="js-select2 form-control" id="zipcode" name="zipcode" style="width:100%;" placeholder="Pilih Kode Pos">
-                      <option>Pilih Kode Pos</option>
+                      <option value="{{ $other_address->zipcode }}">{{ $other_address->zipcode }}</option>
                     </select>
                     <input type="hidden" name="text_zipcode">
                   </div>

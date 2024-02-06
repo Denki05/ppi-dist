@@ -240,11 +240,14 @@
 @endsection
 
 @include('superuser.asset.plugin.fileinput')
+@include('superuser.asset.plugin.select2')
 
 @push('scripts')
 <script src="{{ asset('utility/superuser/js/form.js') }}"></script>
 <script>
 $(document).ready(function () {
+  $('.js-select2').select2()
+  
   $('#image').fileinput({
     theme: 'explorer-fa',
     browseOnZoneClick: true,
@@ -285,6 +288,22 @@ $(document).ready(function () {
 
   $('input.mass-check').on('change', function () {
     $(this).parents('td').siblings().children('label').children('input').attr('checked', this.checked)
+  })
+  
+  $('#btnCheckAll').click(function(){
+    $.each($('.mass-check'), function(){
+        if(!$(this).prop('checked')){
+            $(this).trigger('click');
+        }
+    });
+  })
+
+  $('#btnUncheckAll').click(function(){
+    $.each($('.mass-check'), function(){
+        if($(this).prop('checked')){
+            $(this).trigger('click');
+        }
+    });
   })
 })
 </script>

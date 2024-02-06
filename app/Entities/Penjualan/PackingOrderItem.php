@@ -3,11 +3,9 @@
 namespace App\Entities\Penjualan;
 
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\SoftDeletes;
 
 class PackingOrderItem extends Model
 {
-    	use SoftDeletes;
         protected $table = "penjualan_do_item";
         protected $fillable =[
         	'do_id',

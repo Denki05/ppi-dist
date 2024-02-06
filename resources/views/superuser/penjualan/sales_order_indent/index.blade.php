@@ -31,10 +31,11 @@
       <thead>
         <tr>
           <th class="text-center">#</th>
-          <th class="text-center">Created at</th>
+          <th class="text-center">Date</th>
           <th class="text-center">Code</th>
           <th class="text-center">Customer</th>
-          <th class="text-center">Status Indent</th>
+          <th class="text-center">Status</th>
+          <th class="text-center">Created By</th>
           <th class="text-center">Action</th>
         </tr>
       </thead>
@@ -46,8 +47,10 @@
                 <td>{{ $key->so_code }}</td>
                 <td>{{ $key->member->name }} {{ $key->member->text_kota }}</td>
                 <td>{{ $key->so_indent_status() ?? '-' }}</td>
+                <td>{{ $key->createdBySuperuser() ?? '-' }}</td>
                 <td>
                     <button type="button" class="btn btn-info" data-toggle="modal" data-target="#myModal{{$key->id}}"><i class="fa fa-eye mr-10" aria-hidden="true"></i> View</button>
+                    <a href="{{route('superuser.penjualan.sales_order_indent.print_out_indent',$key->id)}}" class="btn btn-primary btn-sm btn-flat" data-id="{{$key->id}}" target="_blank"><i class="fa fa-print"></i> Print</a>
                     <a class="btn btn-danger" href="javascript:deleteConfirmation('{{ route('superuser.penjualan.sales_order_indent.destroy', $key->id) }}')" role="button"><i class="fa fa-trash mr-10" aria-hidden="true"></i> Hapus</a>
                 </td>
             </tr>
@@ -154,7 +157,7 @@
             </div>
         </div>
         <div class="modal-footer">
-            <!-- <a class="btn btn-success" href="#" role="button"><i class="fa fa-check" aria-hidden="true"></i> Proses</a> -->
+        
             <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
         </div>
     </div>

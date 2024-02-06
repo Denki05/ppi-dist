@@ -9,7 +9,10 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 class PackingOrder extends Model
 {
     use SoftDeletes;
+
+	protected $appends = ['img_resi'];
     protected $table = "penjualan_do";
+	public static $directory_image = 'images/delivery_order/expedition_receipt/';
     protected $fillable = [
     	'code',
         'do_code',
@@ -67,8 +70,18 @@ class PackingOrder extends Model
     		'msg' => 'Revisi'
     	],
     ];
+
+	public function getImgResiAttribute()
+    {
+        if (!$this->image OR !file_exists(Self::$directory_image.$this->image)) {
+          return img_holder();
+        }
+
+        return asset(Self::$directory_image.$this->image);
+    }
+
     public function do_detail(){
-    	return $this->hasMany('App\Entities\Penjualan\PackingOrderItem','do_id');
+    	return $this->hasMany('App\Entities\Penjualan\PackingOrderItem','do_id', 'id');
     }
     public function customer(){
     	return $this->BelongsTo('App\Entities\Master\Customer','customer_id','id');
@@ -88,12 +101,17 @@ class PackingOrder extends Model
 	public function do_detail_cost(){
 		return $this->hasMany('App\Entities\Penjualan\PackingOrderDetail', 'do_id', 'id');
 	}
+
+	// public function do_detail(){
+	// 	return $this->hasMany('App\Entities\Penjualan\PackingOrderDetail', 'do_id', 'id');	
+	// }
+
     public function do_other_cost(){
         return $this->hasMany('App\Entities\Penjualan\PackingOrderCost','do_id');
 	}
-    public function do_type_transaction(){
-    	return (object) self::STATUS[$this->type_transaction];
-    }
+    // public function do_type_transaction(){
+    // 	return (object) self::STATUS[$this->type_transaction];
+    // }
     public function do_status(){
     	return (object) self::STATUS_PENGIRIMAN[$this->status];
     }

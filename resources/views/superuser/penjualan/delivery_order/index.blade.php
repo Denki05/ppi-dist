@@ -18,14 +18,20 @@
 <h4 style="font-weight: bold;">#DELIVERY ORDER</h4>
 <main style="background:#fff">
   
-  <input style="display: none;" id="tab1" type="radio" name="tabs" checked>
-  <label style="padding: 15px 25px;" for="tab1">DO Proses</label>
-    
-  <input style="display: none;" id="tab2" type="radio" name="tabs">
-  <label style="padding: 15px 25px;" for="tab2">DO Siap Kirim</label>
-    
-  <input style="display: none;" id="tab3" type="radio" name="tabs">
-  <label style="padding: 15px 25px;" for="tab3">DO Update Resi</label>
+  @if($superuser->division == 'Warehouse' OR $superuser->division == 'Developer' OR $superuser->division == 'Admin' OR $superuser->division = 'Management')
+    <input style="display: none;" id="tab1" type="radio" name="tabs" checked>
+    <label style="padding: 15px 25px;" for="tab1">DO Proses</label>
+      
+    <input style="display: none;" id="tab2" type="radio" name="tabs">
+    <label style="padding: 15px 25px;" for="tab2">DO Siap Kirim</label>
+      
+    <input style="display: none;" id="tab3" type="radio" name="tabs">
+    <label style="padding: 15px 25px;" for="tab3">DO Update Resi</label>
+  @else
+    <input style="display: none;" id="tab3" type="radio" name="tabs"checked>
+    <label style="padding: 15px 25px;" for="tab3">DO Update Resi</label>
+  @endif
+
     
   <!-- <input id="tab4" type="radio" name="tabs">
   <label for="tab4">Drupal</label> -->
@@ -48,7 +54,7 @@
           </thead>
           <tbody>
           @foreach($table as $index => $row)
-            @if($row->status == 2 || $row->status == 3 )
+            @if($row->status == 3 )
             <tr>
               <td>{{ $loop->iteration }}</td>
               <td>{{ $row->do_code }}</td>
@@ -65,16 +71,9 @@
                 @endif
               </td>
               <td>
-                @if($row->status == 2)
-                  <a href="{{route('superuser.penjualan.delivery_order.print_manifest', $row->id)}}" class="btn btn-info btn-sm btn-flat" data-id="{{$row->id}}" target="_blank">
-                    <i class="fas fa-clipboard-list"></i> Print Manifest
-                  </a>
-                @endif
-                @if($row->status == 3)
                 <a href="{{route('superuser.penjualan.delivery_order.detail',$row->id)}}" class="btn btn-primary btn-sm btn-flat">
                   <i class="fas fa-box"></i> Kerjakan
                 </a>
-                @endif
               </td>
             </tr>
             @endif
@@ -86,6 +85,7 @@
     </div>
   </section>
     
+
   <section id="content2">
     <div class="row mb-30">
       <div class="col-12">
@@ -125,6 +125,7 @@
       
     </div>
   </section>
+
     
   <section id="content3">
   <div class="row mb-30">
@@ -135,6 +136,7 @@
               <th>#</th>
               <th>DO Code</th>
               <th>Customer</th>
+              <th>Kota</th>
               <th>Status</th>
               <th>Action</th>
             </tr>
@@ -146,14 +148,24 @@
               <td>{{ $loop->iteration }}</td>
               <td>{{ $row->do_code }}</td>
               <td>{{ $row->member->name }}</td>
+              <td>{{ $row->member->text_kota }}</td>
               <td>
                 <span class="badge badge-{{ $row->do_status()->class }}"><b>{{ $row->do_status()->msg }}</b></span>
               </td>
               <td>
-                @if($row->status == 5)
-                <a href="{{route('superuser.penjualan.delivery_order.detail',$row->id)}}" class="btn btn-primary btn-sm btn-flat">
-                <i class="fa fa-money"></i> Update Resi
-                </a>
+                @if($superuser->division == 'Warehouse' OR $superuser->division == 'Developer' OR $superuser->division == 'Management' OR $superuser->division = 'Admin')
+                  @if($row->status == 5)
+                  <a href="{{route('superuser.penjualan.delivery_order.detail',$row->id)}}" class="btn btn-primary btn-sm btn-flat">
+                    <i class="fa fa-money"></i> Update Resi
+                  </a>
+                  @endif
+                  @if($row->status == 6)
+                  <a href="<?= asset($row->image) ?>" class="mb-5" target="_blank"><img src="<?= asset($row->image) ?>" style="max-width: 70px; max-height: 70px" /><br>
+                  @endif
+                @elseif($superuser->division == 'Admin')
+                  @if(!empty($row->image))
+                  <a href="<?= asset($row->image) ?>" class="mb-5" target="_blank"><img src="<?= asset($row->image) ?>" style="max-width: 70px; max-height: 70px" /><br>
+                  @endif
                 @endif
               </td>
             </tr>
@@ -178,42 +190,61 @@
 
 @endsection
 @include('superuser.asset.plugin.datatables')
+@include('superuser.asset.plugin.magnific-popup')
 
 @push('scripts')
 <script type="text/javascript">
+  setTimeout(function () { 
+      location.reload();
+    }, 60 * 1000);
+
   $(function(){
     $('#do_proses').DataTable( {
-          "paging":   false,
-          "ordering": true,
-          "info":     false,
-          "searching" : false,
-          "columnDefs": [{
-            "targets": 0,
-            "orderable": false
-          }]
+          paging   :  true,
+          info     :  false,
+          searching : true,
+          order: [
+            [1, 'desc']
+          ],
+          pageLength: 10,
+          lengthMenu: [
+            [10, 30, 100, -1],
+            [10, 30, 100, 'All']
+          ],
         });
 
         $('#do_kirim').DataTable( {
-          "paging":   false,
-          "ordering": true,
-          "info":     false,
-          "searching" : false,
-          "columnDefs": [{
-            "targets": 0,
-            "orderable": false
-          }]
+          paging   :  true,
+          info     :  false,
+          searching : true,
+          order: [
+            [1, 'desc']
+          ],
+          pageLength: 10,
+          lengthMenu: [
+            [10, 30, 100, -1],
+            [10, 30, 100, 'All']
+          ],
         });
 
         $('#update_resi').DataTable( {
-          "paging":   false,
-          "ordering": true,
-          "info":     false,
-          "searching" : false,
-          "columnDefs": [{
-            "targets": 0,
-            "orderable": false
-          }]
+          paging   :  true,
+          info     :  false,
+          searching : true,
+          order: [
+            [1, 'desc']
+          ],
+          pageLength: 10,
+          lengthMenu: [
+            [10, 30, 100, -1],
+            [10, 30, 100, 'All']
+          ],
         });
+
+        $('a.img-lightbox').magnificPopup({
+      type: 'image',
+      closeOnContentClick: true,
+    });
   })
 </script>
 @endpush

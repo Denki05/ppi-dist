@@ -39,18 +39,18 @@
           <input type="text" class="form-control" value="{{ $receiving_detail->quantity }}" readonly>
         </div>
       </div>
-      <div class="form-group row">
+      {{--<div class="form-group row">
         <label class="col-md-3 col-form-label text-right" for="delivery_cost">Delivery Cost</label>
         <div class="col-md-4">
           <input type="number" class="form-control" id="delivery_cost" name="delivery_cost" min="0" value="{{ $receiving_detail->delivery_cost }}" step="any">
         </div>
-      </div>
+      </div>--}}
       <div class="form-group row">
-        <label class="col-md-3 col-form-label text-right" for="no_container">No Container</label>
+        <label class="col-md-3 col-form-label text-right" for="no_batch">No Batch</label>
         <div class="col-md-4">
-        <input type="text" class="form-control" id="no_container" name="no_container" value="{{ $receiving_detail->no_container }}" step="any">
+        <input type="text" class="form-control" id="no_batch" name="no_batch" value="{{ $receiving_detail->no_batch }}" step="any">
         </div>
-      </div>
+      </div>-
       <div class="form-group row">
         <label class="col-md-3 col-form-label text-right" for="description">Note</label>
         <div class="col-md-4">

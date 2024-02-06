@@ -167,6 +167,7 @@ class CustomerOtherAddressController extends Controller
                 $other_address->ktp = implode("/", [$request->name_card_ktp,$request->ktp]);
                 $other_address->phone = $request->phone;
                 $other_address->address = $request->address;
+                $other_address->free_shipping = $request->free_shipping;
 
                 $other_address->gps_latitude = $request->gps_latitude;
                 $other_address->gps_longitude = $request->gps_longitude;
@@ -236,6 +237,10 @@ class CustomerOtherAddressController extends Controller
 
         $data['other_address'] = CustomerOtherAddress::findOrFail($address_id);
         $data['provinces'] = Province::all();
+        $data['kota'] = Regency::all();
+        $data['kecamatan'] = District::all();
+        $data['kelurahan'] = Village::all();
+        $data['zipcode'] = Zipcode::all();
 
         return view('superuser.master.customer_other_address.edit', $data);
     }
@@ -252,15 +257,15 @@ class CustomerOtherAddressController extends Controller
                 'address' => 'required|string',
                 'gps_latitude' => 'nullable|string',
                 'gps_longitude' => 'nullable|string',
-                'provinsi' => 'nullable|string',
-                'kota' => 'nullable|string',
-                'kecamatan' => 'nullable|string',
-                'kelurahan' => 'nullable|string',
-                'text_provinsi' => 'nullable|required_with:provinsi|string',
-                'text_kota' => 'nullable|required_with:kota|string',
-                'text_kecamatan' => 'nullable|required_with:kecamatan|string',
-                'text_kelurahan' => 'nullable|required_with:kelurahan|string',
-                'zipcode' => 'nullable|string'
+                // 'provinsi' => 'nullable|string',
+                // 'kota' => 'nullable|string',
+                // 'kecamatan' => 'nullable|string',
+                // 'kelurahan' => 'nullable|string',
+                // 'text_provinsi' => 'nullable|required_with:provinsi|string',
+                // 'text_kota' => 'nullable|required_with:kota|string',
+                // 'text_kecamatan' => 'nullable|required_with:kecamatan|string',
+                // 'text_kelurahan' => 'nullable|required_with:kelurahan|string',
+                // 'zipcode' => 'nullable|string'
             ]);
 
             if ($validator->fails()) {
@@ -289,6 +294,7 @@ class CustomerOtherAddressController extends Controller
                 $other_address->ktp = $request->ktp;
                 $other_address->phone = $request->phone;
                 $other_address->address = $request->address;
+                $other_address->free_shipping = $request->free_shipping;
 
                 $other_address->gps_latitude = $request->gps_latitude;
                 $other_address->gps_longitude = $request->gps_longitude;

@@ -94,6 +94,8 @@
           <i class="fa fa-plus mr-10"></i> Add SO
         </button>
 
+        <!-- <button type="button" class="btn btn-outline-info"><i class="fa fa-print"></i> GET SO</button> -->
+
         <br>
         <br>
         <table class="table table-striped" id="so_awal">
@@ -101,6 +103,7 @@
             <th>#</th>
             <th>Code</th>
             <th>Nota</th>
+            <th>Brand</th>
             <th>Customer</th>
             <th>Sales</th>
             <th>Tanggal Buat</th>
@@ -109,28 +112,32 @@
           </thead>
           <tbody>
             @foreach($table as $index => $row)
-              <tr>
-                <td>{{ $loop->iteration }}</td>
-                <td><a href="{{route('superuser.penjualan.sales_order.detail',$row->id)}}">{{$row->so_code}}</a></td>
-                <td>{{ $row->code ?? '-' }}</td>
-                <td>{{ $row->member->name }} {{ $row->member->text_kota }}</td>
-                <td>{{ $row->so_sales() }} | {{ $row->so_sales_senior() }}</td>
-                <td><?= date('d-m-Y',strtotime($row->so_date)); ?></td>
-                <td>{{ $row->so_status()->scalar }}</td>
-                <td>
-                    @if($row->status == 1 OR $row->status == 3)
-                      <a href="{{route('superuser.penjualan.sales_order.edit',['id'=>$row->id, 'step'=>1])}}" class="btn btn-primary btn-sm btn-flat"><i class="fa fa-edit"></i> {{ $row->status === 1 ? 'Edit' : 'Revisi' }}</a>
-                      <a href="#" class="btn btn-success btn-sm btn-flat btn-lanjutan" data-id="{{$row->id}}"><i class="fa fa-check"></i> Lanjutan</a>
-                      <a href="#" class="btn btn-danger btn-sm btn-flat btn-delete" data-id="{{$row->id}}"><i class="fa fa-trash"></i> Delete</a>
-                    @endif
-                    @if($row->status == 2 OR $row->status == 4)
-                      <button type="button" class="btn btn-primary btn-sm btn-flat" data-toggle="modal" data-target="#myModal{{$row->id}}"><i class="fa fa-eye"></i> View</button>
-                    @endif
-                    @if($row->status == 5)
-                      <button type="button" class="btn btn-primary btn-sm btn-flat" data-toggle="modal" data-target="#myModal{{$row->id}}"><i class="fa fa-eye"></i> View</button>
-                    @endif
-                </td>
-              </tr>
+              @if($row->created_by === Auth::id() OR $superuser->division == 'Management')
+                <tr>
+                  <td>{{ $loop->iteration }}</td>
+                  <td><a href="{{route('superuser.penjualan.sales_order.detail',$row->id)}}">{{$row->so_code}}</a></td>
+                  <td>{{ $row->code ?? '-' }}</td>
+                  <td>{{ $row->brand_name ?? '-' }}</td>
+                  <td>{{ $row->member->name }} {{ $row->member->text_kota }}</td>
+                  <td>{{ $row->so_sales() }} | {{ $row->so_sales_senior() }}</td>
+                  <td><?= date('d-m-Y',strtotime($row->so_date)); ?></td>
+                  <td>{{ $row->so_status()->scalar }}</td>
+                  <td>
+                      @if($row->status == 1 OR $row->status == 3)
+                        <a href="{{route('superuser.penjualan.sales_order.edit',['id'=>$row->id, 'step'=>1])}}" class="btn btn-primary btn-sm btn-flat"><i class="fa fa-edit"></i> {{ $row->status === 1 ? 'Edit' : 'Revisi' }}</a>
+                        <a href="javascript:saveConfirmation('{{ route('superuser.penjualan.sales_order.lanjutkan', $row->id) }}')" class="btn btn-success btn-sm btn-flat btn-lanjutan" data-id="{{$row->id}}"><i class="fa fa-check"></i> Lanjutan</a>
+                        <a href="#" class="btn btn-danger btn-sm btn-flat btn-delete" data-id="{{$row->id}}"><i class="fa fa-trash"></i> Delete</a>
+                      @endif
+                      @if($row->status == 2 OR $row->status == 4)
+                        <button type="button" class="btn btn-primary btn-sm btn-flat" data-toggle="modal" data-target="#myModal{{$row->id}}"><i class="fa fa-eye"></i> View</button>
+                      @endif
+                      @if($row->status == 5)
+                        <button type="button" class="btn btn-primary btn-sm btn-flat" data-toggle="modal" data-target="#myModal{{$row->id}}"><i class="fa fa-eye"></i> View</button>
+                      @endif
+                      <a href="{{route('superuser.penjualan.sales_order.print_so',$row->id)}}" class="btn btn-info btn-sm btn-flat" data-id="{{$row->id}}" target="_blank"><i class="fa fa-print"></i> Print SO</a>
+                  </td>
+                </tr>
+              @endif
             @endforeach
           </tbody>
         </table>
@@ -167,7 +174,9 @@
             <tr>
               <th>#</th>
               <th>Code</th>
+              <th>Nota</th>
               <th>Customer</th>
+              <th>Created By</th>
               <th>Transaksi Type</th>
               <th>Tanggal Buat</th>
               <th>Action</th>
@@ -178,15 +187,19 @@
               @if($row->so_indent == 0)
               <tr>
                 <td>{{ $loop->iteration }}</td>
+                <td>{{$row->so_code}}</td>
                 <td>{{$row->code}}</td>
                 <td>{{ $row->member->name }} {{ $row->member->text_kota }}</td>
+                <td>{{ $row->createdBySuperuser() }}</td>
                 <td>{{$row->type_transaction}}</td>
                 <td><?= date('d-m-Y h:i:s',strtotime($row->created_at)); ?></td>
                 <td>
                   @if ($step == 2 && $row->status === 2)
+                    <button type="button" class="btn btn-primary btn-sm btn-flat" data-toggle="modal" data-target="#myModal{{$row->id}}"><i class="fa fa-eye"></i> View</button>
                     <a href="{{route('superuser.penjualan.sales_order.edit',['id'=>$row->id, 'step'=>2])}}" class="btn btn-success btn-sm btn-flat"><i class="fa fa-check"></i> Kerjakan</a>
-                    <a href="#" class="btn btn-warning btn-sm btn-flat btn-kembali-ke-awal" data-id="{{$row->id}}"><i class="fa fa-times mr-10"></i> Revisi</a>
-                    <a href="javascript:saveConfirmation('{{ route('superuser.penjualan.sales_order.delete_lanjutan', ['id' => $row->id]) }}')" class="btn btn-danger btn-sm btn-flat btn-delete-lanjutan"><i class="fa fa-trash mr-10"></i> Delete</a>
+                    <!-- <a href="#" class="btn btn-warning btn-sm btn-flat btn-kembali-ke-awal" data-id="{{$row->id}}"><i class="fa fa-times mr-10"></i> Revisi</a> -->
+                    <a href="javascript:saveConfirmation('{{ route('superuser.penjualan.sales_order.kembali', $row->id) }}')" class="btn btn-warning btn-sm btn-flat"><i class="fa fa-times mr-10"></i> Revisi</a>
+                    <a href="javascript:saveConfirmation2('{{ route('superuser.penjualan.sales_order.delete_lanjutan', ['id' => $row->id]) }}')" class="btn btn-danger btn-sm btn-flat btn-delete-lanjutan"><i class="fa fa-trash mr-10"></i> Delete</a>
                   @endif
                   @if ($row->status === 4)
                     <a href="{{route('superuser.penjualan.sales_order.detail',$row->id)}}" class="btn btn-primary btn-sm btn-flat"><i class="fa fa-eye"></i> Detail</a>
@@ -226,7 +239,7 @@
             @foreach($packing_order as $index => $row)
               @if($row->status == 2)
                 <tr>
-                  @if($row->so->payment_status == 1 || $row->type_transaction == "TEMPO")
+                  @if($row->so->payment_status == 1 OR $row->type_transaction == "TEMPO" OR $row->type_transaction == "COD")
                     <td>{{ $index+1 }}</td>
                     <td>{{$row->code}}</td>
                     <td>{{ $row->member->name }} {{$row->member->text_kota}}</td>
@@ -243,11 +256,11 @@
                     </td>
                     <td>
                       @if($row->status == 2)
-                        <a href="#" class="btn btn-success btn-sm btn-flat btn-ready" data-id="{{$row->id}}"><i class="fa fa-send"></i> Naik Ke DO</a>
+                        <a href="javascript:saveConfirmation('{{ route('superuser.penjualan.packing_order.ready', $row->id) }}')" class="btn btn-success btn-sm btn-flat" data-id="{{$row->id}}"><i class="fa fa-send"></i> Naik Ke DO</a>
                         <a href="{{route('superuser.penjualan.delivery_order.print_manifest', $row->id)}}" class="btn btn-info btn-sm btn-flat" data-id="{{$row->id}}" target="_blank">
                           <i class="fas fa-clipboard-list"></i> Print Manifest
                         </a>
-                      @if($row->type_transaction == 'TEMPO')
+                      @if($row->type_transaction == 'TEMPO' OR $row->type_transaction == "COD")
                         <a href="#" class="btn btn-danger btn-sm btn-flat btn-frmedit" data-id="{{$row->id}}"><i class="fa fa-edit"></i> Revisi</a>
                       @endif
                     @endif
@@ -275,7 +288,7 @@
               <th>Tanggal Buat</th>
               <th>Transaction Type</th>
               <th>Status</th>
-              <th>Action</th>
+              <!-- <th>Action</th> -->
             </tr>
           </thead>
           <tbody>
@@ -287,30 +300,30 @@
                       <td><?= date('d-m-Y h:i:s',strtotime($row->created_at)); ?></td>
                       <td>{{$row->type_transaction}}</td>
                       <td>
-                      @if($row->status == 2)
-                          <span class="badge badge-secondary"><b>SO Lanjutan</b></span>
+                        @if($row->status == 2)
+                          <span class="badge badge-pill badge-info"><b>Submit DO</bb></span>
                         @endif
                         @if($row->status == 3)
-                          <span class="badge badge-success"><b>SUBMIT DO</b></span>
+                          <span class="badge badge-pill badge-primary"><b>Packing Proses</b></span>
                         @endif
                         @if($row->status == 4)
-                          <span class="badge badge-primary"><b>ON PROSES</b></span>
+                          <span class="badge badge-pill badge-primary"><b>Cetak SJ / DO</b></span>
                         @endif
                         @if($row->status == 5)
-                          <span class="badge badge-warning"><b>CETAK SJ</b></span>
+                          <span class="badge badge-pill badge-warning"><b>Delivering</b></span>
                         @endif
                         @if($row->status == 6)
-                          <span class="badge badge-info"><b>TERKIRIM</b></span>
+                          <span class="badge badge-pill badge-success"><b>Delivered</b></span>
                         @endif
                         @if($row->status == 7)
-                          <span class="badge badge-danger"><b>DO REVISI</b></span>
+                          <span class="badge badge-pill badge-danger"><b>Revisi</b></span>
                         @endif
                       </td>
-                      <td>
+                      <!-- <td>
                         @if($row->type_transaction == 2 && $row->status < 5)
                           <a href="#" class="btn btn-danger btn-sm btn-flat btn-frmedit" data-id="{{$row->id}}"><i class="fa fa-edit"></i> Revisi</a>
                         @endif
-                      </td>
+                      </td> -->
                   </tr>
                   @endforeach
           </tbody>
@@ -338,7 +351,7 @@
             </thead>
             <tbody>
             @foreach($packing_order as $index => $row)
-                      @if($row->status == 5 OR $row->status == 7)
+                      @if($row->status == 5 OR  $row->status == 7)
                         <tr>
                             <td>{{ $index+1 }}</td>
                             <td>{{$row->do_code}}</td>
@@ -349,9 +362,9 @@
                             
                             <td>
                               @if($row->status == 5)
-                                <a href="#" class="btn btn-danger btn-sm btn-flat btn-cancel" data-id="{{$row->id}}"><i class="fa fa-edit"></i> Cancel DO</a>
+                                <a href="#" class="btn btn-danger btn-sm btn-flat btn_cancel" data-id="{{$row->id}}"><i class="fa fa-edit"></i> Cancel DO</a>
                               @endif
-                              @if($row->status == 7)
+                              @if($row->status == 7 AND $row->count_cancel == 1)
                               <a href="#" class="btn btn-info btn-sm btn-flat btn-frmdoedit" data-id="{{$row->id}}"><i class="fa fa-edit"></i> Form Revisi</a>
                               @endif
                             </td>
@@ -372,18 +385,7 @@
     @csrf
     <input type="hidden" name="id">
 </form>
-<form method="post" action="{{route('superuser.penjualan.sales_order.lanjutkan')}}" id="frmLanjutkan">
-    @csrf
-    <input type="hidden" name="id">
-</form>
-<form method="post" action="{{route('superuser.penjualan.sales_order.kembali')}}" id="frmKembali">
-    @csrf
-    <input type="hidden" name="id">
-</form>
-<form method="post" action="{{route('superuser.penjualan.packing_order.ready')}}" id="frmReady">
-    @csrf
-    <input type="hidden" name="id">
-</form>
+
 <form method="post" action="{{route('superuser.penjualan.packing_order.revisi')}}" id="frmRevisi">
     @csrf
     <input type="hidden" name="id">
@@ -634,7 +636,7 @@
             </div>
             <div class="modal-footer">
               @if($row->status == 5)
-                <a href="#" class="btn btn-success btn-sm btn-flat btn-lanjutan" data-id="{{$row->id}}"><i class="fa fa-check mr-10"></i>Lanjutan</a>
+                <a href="" class="btn btn-success btn-sm btn-flat btn-lanjutan" data-id="{{$row->id}}"><i class="fa fa-check mr-10"></i>Lanjutan</a>
               @endif
               <button type="button" class="btn btn-danger btn-sm btn-flat" data-dismiss="modal"><i class="fa fa-close mr-10"></i>Close</button>
             </div>
@@ -704,6 +706,7 @@
 @include('superuser.asset.plugin.datatables')
 
 @push('scripts')
+<!-- <script src="{{ asset('utility/superuser/js/form.js') }}"></script> -->
 <script type="text/javascript">
   let datatableUrl = '{{ route('superuser.master.customer_other_address.json') }}';
   let firstDatatableUrl = datatableUrl +
@@ -711,37 +714,40 @@
 
   $(function(){
     $('#so_awal').DataTable( {
-        paging   :   true,
-        info     :     false,
+      paging:   true,
+        orderin: true,
+        info:     false,
         searching : true,
         order: [
-          [1, 'desc']
+          [1, 'asc'],
         ],
         pageLength: 10,
         lengthMenu: [
           [10, 30, 100, -1],
           [10, 30, 100, 'All']
-        ],
-        
-
+        ], 
     });
 
     $('#so_lanjutan').DataTable( {
-        "paging":   false,
-        "ordering": true,
-        "info":     false,
-        "searching" : false,
-        "columnDefs": [{
-          "targets": 0,
-          "orderable": false
-        }]
+        paging:   true,
+        orderin: true,
+        info:     false,
+        searching : true,
+        order: [
+          [2, 'asc'],
+        ],
+        pageLength: 10,
+        lengthMenu: [
+          [10, 30, 100, -1],
+          [10, 30, 100, 'All']
+        ], 
     });
 
     $('#packing_order').DataTable( {
-        "paging":   false,
+        "paging":   true,
         "ordering": true,
-        "info":     false,
-        "searching" : false,
+        "info":     true,
+        "searching" : true,
         "columnDefs": [{
           "targets": 0,
           "orderable": false
@@ -749,10 +755,13 @@
     });
 
     $('#so_progress').DataTable( {
-        "paging":   false,
+        "paging":   true,
         "ordering": true,
         "info":     false,
-        "searching" : false,
+        "searching" : true,
+        order: [
+          [1, 'desc']
+        ],
         "columnDefs": [{
           "targets": 0,
           "orderable": false
@@ -760,10 +769,10 @@
     });
        
     $('#do_cancel').DataTable( {
-        "paging":   false,
+        "paging":   true,
         "ordering": true,
         "info":     false,
-        "searching" : false,
+        "searching" : true,
         "columnDefs": [{
           "targets": 0,
           "orderable": false
@@ -821,13 +830,13 @@
         }
       })
 
-      $(document).on('click','.btn-lanjutan',function(){
-        if(confirm("Apakah anda yakin ingin mengajukan sales order ke Lanjutan?")){
-          let id = $(this).data('id');
-          $('#frmLanjutkan').find('input[name="id"]').val(id);
-          $('#frmLanjutkan').submit();
-        }
-      })
+      // $(document).on('click','.btn-lanjutan',function(){
+      //   if(confirm("Apakah anda yakin ingin mengajukan sales order ke Lanjutan?")){
+      //     let id = $(this).data('id');
+      //     $('#frmLanjutkan').find('input[name="id"]').val(id);
+      //     $('#frmLanjutkan').submit();
+      //   }
+      // })
 
       $(document).on('click','.btn-kembali-ke-awal',function(){
         if(confirm("Apakah anda yakin ingin mengembalikan sales order ini?")){
@@ -837,13 +846,15 @@
         }
       })
 
-      $(document).on('click','.btn-ready',function(){
-        if(confirm("Apakah anda yakin ingin mengubah status SO Validasi ke Ready?")){
-          let id = $(this).data('id');
-          $('#frmReady').find('input[name="id"]').val(id);
-          $('#frmReady').submit();
-        }
-      })
+      // $(document).on('click','.btn-ready',function(e){
+      //   e.preventDefault();
+      //   if(confirm("Apakah anda yakin ingin mengubah status SO ke DO Ready?")){
+      //     let id = $(this).data('id');
+      //     alert(id);
+      //     $('#frmReady').find('input[name="id"]').val(id);
+      //     $('#frmReady').submit();
+      //   }
+      // });
 
       $(document).on('click','.btn-frmedit',function(){
         if(confirm("Apakah anda yakin melakukan Edit?")){
@@ -853,7 +864,7 @@
         }
       })
 
-      $(document).on('click','.btn-cancel',function(){
+      $(document).on('click','.btn_cancel',function(){
         if(confirm("Apakah anda yakin melakukan Cancel DO?")){
           let id = $(this).data('id');
           $('#frmCancel').find('input[name="id"]').val(id);
@@ -862,17 +873,12 @@
       })
 
       $(document).on('click','.btn-frmdoedit',function(){
-        if(confirm("Apakah anda yakin melakukan Update DO?")){
+        if(confirm("Apakah anda yakin melakukan Edit DO?")){
           let id = $(this).data('id');
           $('#frmDoEdit').find('input[name="id"]').val(id);
           $('#frmDoEdit').submit();
         }
       })
-
-      // $("#filter").on("click", function(){
-      //   $("#member_list").toggle();
-      // });
-
     });
 </script>
 @endpush

@@ -70,7 +70,7 @@ class StockAdjustmentController extends Controller
                                     }
                                 })
                                 ->orderBy('id','DESC')
-                                ->paginate(10);
+                                ->paginate(200);
         $table->withPath('stock_adjustment?search='.$search."&warehouse_id=".$warehouse_id);
         $warehouse = Warehouse::get();
         $data = [
@@ -140,7 +140,9 @@ class StockAdjustmentController extends Controller
                 $plus_stock = (empty($post["plus"])) ? 0 : $post["plus"];
                 $min_stock = (empty($post["min"])) ? 0 : $post["min"];
                 $prev_stock = $product_warehouse->quantity;
-                $update_stock = (int)$prev_stock + $plus_stock - $min_stock;
+                $update_stock = $prev_stock + $plus_stock - $min_stock;
+
+                // DD($update_stock);
 
                 $data = [
                     'code' => CodeRepo::generateStockAdjustment(),

@@ -3,11 +3,10 @@
 namespace App\Entities\Penjualan;
 
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\SoftDeletes;
 
 class SalesOrderItem extends Model
 {
-    	use SoftDeletes;
+
         protected $table = "penjualan_so_item";
         protected $fillable =[
         	'so_id',
@@ -20,7 +19,13 @@ class SalesOrderItem extends Model
             'item_indent', 
         	'updated_by',
         	'created_by',
-        	'deleted_by'
+        	'deleted_by', 
+            'status'
+        ];
+
+        const STATUS = [
+            'DELETED' => 0,
+            'ACTIVE' => 1,
         ];
 
         public function so(){
@@ -42,4 +47,9 @@ class SalesOrderItem extends Model
         public function packaging(){
             return $this->BelongsTo('App\Entities\Master\Packaging', 'packaging_id', 'id');
         }
+
+        public function so_item_status()
+    {
+        return array_search($this->status, self::STATUS);
+    }
 }

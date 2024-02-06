@@ -327,6 +327,7 @@ class CustomerController extends Controller
                             $other_address->text_kecamatan = $customer->text_kecamatan;
                             $other_address->text_kelurahan = $customer->text_kelurahan;
             
+                            $other_address->zone = $customer->zone;
                             $other_address->zipcode = $customer->zipcode;
                             $other_address->status = CustomerOtherAddress::STATUS['ACTIVE'];
                             $other_address->save();

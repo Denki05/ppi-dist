@@ -15,7 +15,7 @@ class Product extends Model
                         'packaging_id', 'category_id', 'type_id', 'brand_reference_id', 'sub_brand_reference_id', 'brand_name',
                         'code', 'name', 'material_code', 'material_name', 'material_code_optional', 'material_name_optional', 'alias', 'description', 
                         'default_quantity', 'default_unit_id', 'ratio', 'default_warehouse_id', 
-                        'vendor_id', 'vendor_optional_id', 'buying_price', 'selling_price', 'image', 'image_hd', 'status', 'gender'
+                        'vendor_id', 'vendor_optional_id', 'buying_price', 'selling_price', 'image', 'image_hd', 'status', 'product_finance_tax', 'gender'
                     ];
 
     protected $table = 'master_products';
@@ -69,7 +69,7 @@ class Product extends Model
 
     public function default_warehouse()
     {
-        return $this->belongsTo('App\Entities\Master\Warehouse');
+        return $this->belongsTo('App\Entities\Master\Warehouse', 'default_warehouse_id', 'id');
     }
 
     public function min_stocks()

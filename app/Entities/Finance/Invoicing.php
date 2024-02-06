@@ -15,10 +15,17 @@ class Invoicing extends Model
         'customer_id',
         'customer_other_address_id',
     	'grand_total_idr',
+    	'status',
         'image',
     	'updated_by',
     	'created_by',
     	'deleted_by'
+    ];
+
+    const STATUS = [
+        'ACTIVE' => 1,
+        'DELETED' => 2,
+        'REVISI' => 3,
     ];
 
     public function do(){
@@ -34,5 +41,10 @@ class Invoicing extends Model
     public function sale_return()
     {
         return $this->hasOne('App\Entities\Penjualan\SaleReturn', 'invoice_id');
+    }
+
+    public function status()
+    {
+        return array_search($this->status, self::STATUS);
     }
 }
