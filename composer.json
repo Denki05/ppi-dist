@@ -34,7 +34,6 @@
         "recca0120/terminal": "^1.8",
         "spatie/laravel-activitylog": "^3.17",
         "spatie/laravel-permission": "^3.0",
-        "spatie/pdf-to-image": "^1.2",
         "yajra/laravel-datatables-oracle": "^9.0"
     },
     "require-dev": {

@@ -33,6 +33,7 @@ use App\Helper\CustomHelper;
 use Spatie\PdfToImage\pdf;
 use Org_Heigl\Ghostscript\Ghostscript;
 use Imagick;
+use Twilio\Rest\Client;
 use Auth;
 use DB;
 use COM;
@@ -339,9 +340,27 @@ class SalesOrderController extends Controller
                                 }
                             }
                         }
+
+                        $sku = ProductPack::where('id', $post["sku"])->first();
+                        $qty = $post["qty"];
+
+                        // Send WhatsApp Messages Notifications
+                        $member_phone = CustomerOtherAddress::where('id', $store)->first();
+
+                        $sid    = "AC5dd74d40eba4232d0cdf110d5765047f";
+                        $token  = "c46e0076e94dea5495dda517bfe6717d";
+                        $twilio = new Client($sid, $token);
+
+                        $message = $twilio->messages
+                        ->create("whatsapp:$member_phone->phone", // to
+                            array(
+                                "from" => "whatsapp:+14155238886",
+                                "body" => "Hello $member_phone->name, this trial message order code: $insert->code!",
+                            )
+                        );
                     }
                 }
-                
+
                 DB::commit();
                 
                 $data_json["IsError"] = FALSE;
@@ -361,6 +380,7 @@ class SalesOrderController extends Controller
             $data_json["Message"] = "Invalid Method";
             goto ResultData;
         }
+
         ResultData:
         return response()->json($data_json,200);
     }

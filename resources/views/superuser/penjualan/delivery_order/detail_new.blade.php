@@ -85,7 +85,7 @@
             </button>
           </a>
         </div>
-        <div class="col-md-6 text-right">
+        {{--<div class="col-md-6 text-right">
           <a href="{{route('superuser.penjualan.delivery_order.print_manifest', $result->id)}}" class="btn btn-info btn-sm btn-flat" data-id="{{$result->id}}" target="_blank">
             <i class="fas fa-clipboard-list"></i> Print Manifest
           </a>

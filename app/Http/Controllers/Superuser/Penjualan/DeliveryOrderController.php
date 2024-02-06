@@ -725,6 +725,9 @@ class DeliveryOrderController extends Controller
             flush();
             readfile ($file);
             exit();
+
+            DB::commit();
+            return redirect()->route('superuser.penjualan.delivery_order.detail', $result->id)->with('success','Berhasil Print Manifest!');
         }catch(\Throwable $e){
             DB::rollback();
             return redirect()->back()->with('error',$e->getMessage());

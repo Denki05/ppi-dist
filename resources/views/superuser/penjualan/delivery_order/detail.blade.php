@@ -146,7 +146,7 @@
                       <td>{{$row->qty ?? ''}}</td>
                       <td>
                         @if($row->packaging == 7)
-                        Free
+                          Free
                         @else
                         <?php
                           $total_packing = $row->qty / floatval($row->packaging_val()->scalar ?? 0);
