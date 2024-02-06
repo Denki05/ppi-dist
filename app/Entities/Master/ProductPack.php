@@ -70,6 +70,11 @@ class ProductPack extends Model
         return $this->belongsTo('App\Entities\Master\Packaging', 'packaging_id');
     }
 
+    public function setting_price_log()
+    {
+        return $this->hasMany('App\Entities\Penjualan\SettingPriceLog', 'product_packaging_id');
+    }
+
     public function status()
     {
         return array_search($this->status, self::STATUS);

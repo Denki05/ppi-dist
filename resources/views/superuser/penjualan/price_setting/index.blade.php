@@ -33,10 +33,10 @@
         </div>
         <div class="col-lg-3">
           <div class="form-group">
-            <select class="form-control js-select2" name="id_category">
+            <select class="form-control js-select2" name="id_packaging">
               <option value="">==All Category==</option>
-              @foreach($product_category as $index => $row)
-                <option value="{{$row->id}}">{{$row->name}}</option>
+              @foreach($packaging as $index => $row)
+                <option value="{{$row->id}}">{{$row->pack_name}}</option>
               @endforeach
             </select>
           </div>          
@@ -51,28 +51,26 @@
             <thead>
               <tr>
                 <th>
-                  <input type="checkbox" name="" class="select-all" style="width: 20px;height: 20px;">
+                  #
                 </th>
-                <th>Code</th>
                 <th>Product</th>
-                <th>Buying Price</th>
+                <th>Packaging</th>
+                <th>Warehouse</th>
                 <th>Selling Price</th>
                 <th>Action</th>
               </tr>
             </thead>
             <tbody>
-              @foreach($table as $index => $row)
+              @foreach($result as $row)
                 <tr>
+                  <td>{{ $loop->iteration }}</td>
+                  <td>{{ $row->code }} - {{ $row->name }}</td>
+                  <td>{{ $row->packaging->pack_name }}</td>
+                  <td>{{ $row->warehouse->name ?? '' }}</td>
+                  <td>{{ $row->price }}</td>
                   <td>
-                    <input type="checkbox" value="{{$row->id}}" style="width: 20px;height: 20px;">
-                  </td>
-                  <td>{{$row->code}}</td>
-                  <td>{{$row->name}}-{{$row->category->type}}</td>
-                  <td>{{$row->buying_price}}</td>
-                  <td>{{$row->selling_price}}</td>
-                  <td>
-                    <a href="{{route('superuser.penjualan.setting_price.edit',$row->id)}}" class="btn btn-primary btn-sm btn-flat"><i class="fa fa-edit"></i> Edit</a>
-                    <a href="{{route('superuser.penjualan.setting_price.history',$row->id)}}" class="btn btn-info btn-sm btn-flat"><i class="fa fa-history"></i> History</a>
+                    <a href="{{route('superuser.penjualan.setting_price.edit', base64_encode($row->id))}}" class="btn btn-primary btn-sm btn-flat"><i class="fa fa-edit"></i> Edit</a>
+                    <a href="{{route('superuser.penjualan.setting_price.history', base64_encode($row->id))}}" class="btn btn-info btn-sm btn-flat"><i class="fa fa-history"></i> History</a>
                   </td>
                 </tr>
               @endforeach
@@ -80,150 +78,32 @@
           </table>
         </div>
       </div>
-      
-      <div class="row mb-30">
-        <div class="col-lg-2">
-          <select class="form-control" name="limit">
-            <option value="10">10</option>
-            <option value="30">30</option>
-            <option value="50">50</option>
-            <option value="100">100</option>
-            <option value="1000">1000</option>
-          </select>
-        </div>
-        <div class="col-lg-10">
-          {{$table->links()}}
-        </div>
-      </div>
-      <div class="row mb-30">
-        <div class="col-12">
-          <button type="button" class="btn btn-warning btn-md btn-print-product"><i class="fa fa-print"></i> Print Product</button>
-          <button type="button" class="btn btn-warning btn-md btn-print-product-price"><i class="fa fa-print"></i> Print Product Price</button>
-        </div>
-      </div>
     </form>
   </div>
 </div>
-
-<form class="d-none" id="frmPrintProduct" method="post" action="{{route('superuser.penjualan.setting_price.print_product')}}" target="_blank">
-  @csrf
-  <input type="hidden" name="id_product">
-  <input type="hidden" name="id_category">
-  <input type="hidden" name="id_type">
-  <div class="area-checkbox">
-    
-  </div>
-</form>
-
-<form class="d-none" id="frmPrintProductPrice" method="post" action="{{route('superuser.penjualan.setting_price.print_product_price')}}" target="_blank">
-  @csrf
-  <input type="hidden" name="id_product">
-  <input type="hidden" name="id_category">
-  <input type="hidden" name="id_type">
-  <div class="area-checkbox">
-    
-  </div>
-</form>
 @endsection
 
 @include('superuser.asset.plugin.select2')
 @include('superuser.asset.plugin.datatables')
 
 @push('scripts')
-
   <script type="text/javascript">
-    
-    $(function(){
-      let param = [];
-      param["checkbox"] = [];
-      param["id_product"] = '<?= $_GET["id_product"] ?? null ?>';
-      param["id_category"] = '<?= $_GET["id_category"] ?? null ?>';
-      param["id_type"] = '<?= $_GET["id_type"] ?? null ?>';
-
-      $('#datatables').DataTable( {
-        "paging":   false,
-        "ordering": true,
-        "info":     false,
-        "searching" : false,
-        "columnDefs": [{
-          "targets": 0,
-          "orderable": false
-        }]
-      });
-
-      $('.js-select2').select2();
-
-      $(document).on('click','.select-all',function(){
-        if($(this).is(':checked')){
-          isSelected();
-        }
-        else{
-          removeSelected();
-        }
+    $(document).ready(function() {
+      $('#datatables').DataTable({
+          paging   :  true,
+          info     :  false,
+          searching : false,
+          order: [
+            [1, 'asc']
+          ],
+          pageLength: 10,
+          lengthMenu: [
+            [10, 30, 100, -1],
+            [10, 30, 100, 'All']
+          ],
       })
 
-
-      $(document).on('click','.btn-print-product',function(){
-        
-        param["checkbox"] = [];
-        $('tbody').find('input[type="checkbox"]').each(function(i,e){
-          if(this.checked){
-            param["checkbox"].push(this.value);
-          }
-        })
-
-        let push_checkbox = "";
-        $('#frmPrintProduct').find('input[name="id_category"]').val(param["id_category"]);
-        $('#frmPrintProduct').find('input[name="id_product"]').val(param["id_product"]);
-        $('#frmPrintProduct').find('input[name="id_type"]').val(param["id_type"]);
-
-
-        $.each(param["checkbox"],function(i,e){
-            push_checkbox += '<input name="checkbox[]" value="'+param['checkbox'][i]+'">';
-        })
-
-        if(param["checkbox"].length > 0){
-          $('#frmPrintProduct').find('.area-checkbox').html(push_checkbox);
-        }
-
-        $('#frmPrintProduct').submit();
-
-      })
-
-      $(document).on('click','.btn-print-product-price',function(){
-
-        param["checkbox"] = [];
-        $('tbody').find('input[type="checkbox"]').each(function(i,e){
-          if(this.checked){
-            param["checkbox"].push(this.value);
-          }
-        })
-
-        let push_checkbox = "";
-        $('#frmPrintProductPrice').find('input[name="id_category"]').val(param["id_category"]);
-        $('#frmPrintProductPrice').find('input[name="id_product"]').val(param["id_product"]);
-        $('#frmPrintProductPrice').find('input[name="id_type"]').val(param["id_type"]);
-
-
-        $.each(param["checkbox"],function(i,e){
-            push_checkbox += '<input name="checkbox[]" value="'+param['checkbox'][i]+'">';
-        })
-
-        if(param["checkbox"].length > 0){
-          $('#frmPrintProductPrice').find('.area-checkbox').html(push_checkbox);
-        }
-
-        $('#frmPrintProductPrice').submit();
-
-      })
-    })
-    function isSelected(){
-      $('tbody').find('input[type="checkbox"]').attr('checked','checked');
-      $('tbody').find('input[type="checkbox"]').prop('checked', true);
-    }
-    function removeSelected(){
-      $('tbody').find('input[type="checkbox"]').removeAttr('checked');
-     $('tbody').find('input[type="checkbox"]').prop('checked', false);
-    }
+    $('.js-select2').select2({})
+    });
   </script>
 @endpush

@@ -23,42 +23,26 @@
       <div class="col-12">
         <div class="row">
           <div class="col-lg-2">
-            <strong>Type</strong>
-          </div>
-          <div class="col-lg-10">
-            : {{$result->type->name ?? ''}}
-          </div>
-        </div>
-        <div class="row">
-          <div class="col-lg-2">
-            <strong>Category</strong>
-          </div>
-          <div class="col-lg-10">
-            : {{$result->category->name ?? ''}}
-          </div>
-        </div>
-        <div class="row">
-          <div class="col-lg-2">
-            <strong>Product Code</strong>
-          </div>
-          <div class="col-lg-10">
-            : {{$result->code}}
-          </div>
-        </div>
-        <div class="row">
-          <div class="col-lg-2">
             <strong>Product</strong>
           </div>
           <div class="col-lg-10">
-            : {{$result->name}}
+            : {{$result->code ?? ''}} - {{ $result->name ?? '' }}
           </div>
         </div>
         <div class="row">
           <div class="col-lg-2">
-            <strong>Buying Price Now</strong>
+            <strong>Kemasan</strong>
           </div>
           <div class="col-lg-10">
-            : {{$result->buying_price}}
+            : {{$result->packaging->pack_name ?? ''}}
+          </div>
+        </div>
+        <div class="row">
+          <div class="col-lg-2">
+            <strong>Warhouse</strong>
+          </div>
+          <div class="col-lg-10">
+            : {{$result->warehouse->name}}
           </div>
         </div>
         <div class="row">
@@ -66,7 +50,7 @@
             <strong>Selling Price Now</strong>
           </div>
           <div class="col-lg-10">
-            : {{$result->selling_price}}
+            : {{$result->price}}
           </div>
         </div>
       </div>
@@ -78,7 +62,6 @@
             <thead>
               <th>#</th>
               <th>Created at</th>
-              <th>Buying Price</th>
               <th>Selling Price</th>
             </thead>
             <tbody>
@@ -87,13 +70,12 @@
                   <tr>
                     <td>{{$index+1}}</td>
                     <td>{{$row->created_at}}</td>
-                    <td>{{$row->buying_price}}</td>
-                    <td>{{$row->selling_price}}</td>
+                    <td>{{$row->price}}</td>
                   </tr>
                 @endforeach
               @else
               <tr>
-                <td colspan="4" align="center">Data tidak ditemukan</td>
+                <td colspan="3" align="center">Data tidak ditemukan</td>
               </tr>
               @endif
             </tbody>

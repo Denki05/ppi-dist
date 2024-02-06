@@ -8,9 +8,8 @@ class SettingPriceLog extends Model
 {
     protected $table = "penjualan_setting_price_log";
     protected $fillable =[
-    	'product_id',
-    	'buying_price',
-    	'selling_price'
+    	'product_packaging_id',
+    	'price',
     ];
 
   
