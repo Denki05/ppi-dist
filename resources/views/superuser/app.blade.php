@@ -21,17 +21,7 @@
           @yield('content')
         </div>
       </main>
-      <footer id="page-footer" class="footer">
-        <div class="content font-size-xs clearfix">
-          <div class="float-left">
-            <p>This page took {{ round(microtime(true) - LARAVEL_START, 3) }} seconds to render</p>
-          </div>
-          <div class="float-right">
-            <a class="font-w600" href="#" target="_blank">Copyright &copy; 2022 <b>Premium Parfume Indonesia</b>. All rights reserved.</span>
-          </div>
-        </div>
-      </footer>
-      <!-- <footer id="page-footer" class="opacity-0">
+      <!-- <footer id="page-footer" class="footer">
         <div class="content font-size-xs clearfix">
           <div class="float-left">
             <p>This page took {{ round(microtime(true) - LARAVEL_START, 3) }} seconds to render</p>
@@ -41,6 +31,16 @@
           </div>
         </div>
       </footer> -->
+      <footer id="page-footer" class="opacity-1">
+        <div class="content font-size-xs clearfix">
+          <div class="float-left">
+            <p>This page took {{ round(microtime(true) - LARAVEL_START, 3) }} seconds to render</p>
+          </div>
+          <div class="float-right">
+            <a class="font-w600" href="#" target="_blank">Copyright &copy; 2022 <b>Premium Parfume Indonesia</b>. All rights reserved.</span>
+          </div>
+        </div>
+      </footer>
     </div>
     @yield('modal')
     <script>
