@@ -4,6 +4,7 @@ namespace App\Providers;
 
 use App\Providers\ResourceRegistrar;
 use Illuminate\Support\ServiceProvider;
+use Illuminate\Support\Facades\Schema;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -29,5 +30,7 @@ class AppServiceProvider extends ServiceProvider
         $this->app->bind('Illuminate\Routing\ResourceRegistrar', function () use ($registrar) {
             return $registrar;
         });
+
+        Schema::defaultStringLength(191);
     }
 }

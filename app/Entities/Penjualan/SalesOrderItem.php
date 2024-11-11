@@ -3,40 +3,39 @@
 namespace App\Entities\Penjualan;
 
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\SoftDeletes;
 
 class SalesOrderItem extends Model
 {
-    	use SoftDeletes;
+
         protected $table = "penjualan_so_item";
         protected $fillable =[
         	'so_id',
-        	'product_id',
+        	'product_packaging_id',
+            'price',
         	'qty',
+            'disc_usd',
         	'qty_worked',
             'packaging_id',
             'free_product',
+            'kontrak',
+            'kontrak_id', 
+            'item_indent', 
         	'updated_by',
         	'created_by',
-        	'deleted_by'
+        	'deleted_by', 
+            'status'
+        ];
+
+        const STATUS = [
+            'DELETED' => 0,
+            'ACTIVE' => 1,
         ];
 
         public function so(){
         	return $this->BelongsTo('App\Entities\Penjualan\SalesOrder','so_id','id');
         }
-        public function product(){
-        	return $this->BelongsTo('App\Entities\Master\Product','product_id','id');
-        }
-        
-        // public function packaging_txt(){
-        //     return (object) self::PACKAGING[$this->packaging];
-        // }
-        // public function packaging_val(){
-        //     return (object) self::PACKAGING_VALUE[$this->packaging];
-        // }
-
-        public function packaging(){
-            return $this->BelongsTo('App\Entities\Master\Packaging', 'packaging_id', 'id');
+        public function product_pack(){
+        	return $this->BelongsTo('App\Entities\Master\ProductPack','product_packaging_id','id');
         }
 
         public function getQtyAttribute($value)
@@ -47,4 +46,13 @@ class SalesOrderItem extends Model
         public function doItem(){
             return $this->hasMany('App\Entities\Penjualan\PackingOrderItem', 'so_item_id');
         }
+
+        public function packaging(){
+            return $this->BelongsTo('App\Entities\Master\Packaging', 'packaging_id', 'id');
+        }
+
+        public function so_item_status()
+    {
+        return array_search($this->status, self::STATUS);
+    }
 }

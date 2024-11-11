@@ -4,7 +4,14 @@ namespace App\Http\Controllers\Superuser\Utility;
 
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Artisan;
+use Spatie\Backup\Tasks\Backup\BackupJobFactory;
+use Spatie\Backup\BackupDestination\BackupDestinationFactory;
 use Validator;
+use DB;
+use Auth;
+use App;
+
 class SettingController extends Controller
 {
     public function index()
@@ -52,6 +59,77 @@ class SettingController extends Controller
 
                 return $this->response(200, $response);
             }
+        }
+    }
+
+    public function enableMaintenanceMode()
+    {
+        // Enable maintenance mode
+        Artisan::call('down', ['--message' => 'Situs sedang dalam pemeliharaan. Silakan coba lagi nanti!']);
+
+        // return response()->json(['message' => 'Maintenance mode enabled'], 200);
+        $response['notification'] = [
+            'alert' => 'notify',
+            'type' => 'success',
+            'content' => 'Maintenance mode enabled',
+        ];
+
+        $response['redirect_to'] = 'reload()';
+
+        return $this->response(200, $response);
+    }
+
+    public function disableMaintenanceMode()
+    {
+        // Disable maintenance mode
+        Artisan::call('up');
+
+        // return response()->json(['message' => 'Maintenance mode disabled'], 200);
+        $response['notification'] = [
+            'alert' => 'notify',
+            'type' => 'success',
+            'content' => 'Maintenance mode disabled',
+        ];
+
+        $response['redirect_to'] = 'reload()';
+
+        return $this->response(200, $response);
+    }
+
+    public function backupDatabase()
+    {
+        try {
+            // Create a backup job
+            $backupJob = BackupJobFactory::createFromArray(config('backup'));
+            
+            // Set the backup destination
+            $backupDestinations = BackupDestinationFactory::createFromArray(config('backup.destinations'));
+
+            foreach ($backupDestinations as $backupDestination) {
+                $backupJob->setBackupDestination($backupDestination);
+            }
+
+            // Start the backup process
+            $backupJob->run();
+
+            $response['notification'] = [
+                'alert' => 'notify',
+                'type' => 'success',
+                'content' => 'Backup DB Success',
+            ];
+    
+            $response['redirect_to'] = 'reload()';
+    
+            return $this->response(200, $response);
+        } catch (\Exception $e) {
+            $response['notification'] = [
+                'alert' => 'block',
+                'type' => 'alert-danger',
+                'header' => 'Error',
+                'content' => 'Backup DB Failed!',
+            ];
+
+            return $this->response(500, $response);
         }
     }
 }

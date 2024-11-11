@@ -3,7 +3,7 @@
 @section('content')
 <nav class="breadcrumb bg-white push">
   <span class="breadcrumb-item">Report</span>
-  <span class="breadcrumb-item active">Revenue</span>
+  <span class="breadcrumb-item active">Revenue Report</span>
 </nav>
 @if(session('error') || session('success'))
 <div class="alert alert-{{ session('error') ? 'danger' : 'success' }} alert-dismissible fade show" role="alert">
@@ -17,248 +17,307 @@
     </button>
 </div>
 @endif
-<div class="block">
-  <hr class="my-20">
-  <div class="block-content block-content-full">
-      <div class="row mb-30">
-        <div class="col-12">
-          <a href="#" class="btn btn-success btn-print" ><i class="fa fa-print"></i> Print</a>
-        </div>
-      </div>
-      <form>
-        <div class="row">
-          <div class="col-lg-3">
-            <div class="form-group">
-              <label>Set Period From</label>
-              <input type="date" name="period_from" class="form-control">
-            </div>   
-          </div>
-          <div class="col-lg-3">
-            <div class="form-group">
-              <label>Set Period To</label>
-              <input type="date" name="period_to" class="form-control">
-            </div>   
-          </div>
-        </div>
-        <div class="row">
-          <div class="col-lg-3">
-            <div class="form-group">
-              <label>Customer</label>
-              <select class="form-control js-select2" name="customer_id">
-                <option value="">==All Customer==</option>
-                @foreach($customer as $index => $row)
-                <option value="{{$row->id}}">{{$row->name}}</option>
-                @endforeach
-              </select>
-            </div>   
-          </div>
-          <div class="col-lg-3">
-            <div class="form-group">
-              <label>Sales Senior Name</label>
-              <select class="form-control js-select2" name="sales_senior_id">
-                <option value="">==All Sales Senior==</option>
-                @foreach($sales as $index => $row)
-                <option value="{{$row->id}}">{{$row->name}}</option>
-                @endforeach
-              </select>
-            </div>   
-          </div>
-          <div class="col-lg-3">
-            <div class="form-group">
-              <label>Sales</label>
-              <select class="form-control js-select2" name="sales_id">
-                <option value="">==All Sales==</option>
-                @foreach($sales as $index => $row)
-                <option value="{{$row->id}}">{{$row->name}}</option>
-                @endforeach
-              </select>
-            </div>   
-          </div>
-          <div class="col-lg-3">
-            <div class="form-group">
-              <button class="btn btn-primary " type="submit" style="margin-top: 25px;"><i class="fa fa-search"></i> Filter</button>
-            </div>   
-          </div>
-        </div>
-      </form>
-
-      <div class="row mt-10">
-        <div class="col-12">
-          <div class="row">
-            <div class="col-lg-6 text-left pt-20">
-              @if(!empty(request()->get('customer_id')))
-              {{$customer_filter->phone}} - {{$customer_filter->name}}<br>
-              @endif
-              @if(!empty(request()->get('sales_senior_id')))
-              {{$sales_senior_filter->name}}
-              @endif
-              @if(!empty(request()->get('sales_senior_id')) && !empty(request()->get('sales_id')))
-              -
-              @endif
-              @if(!empty(request()->get('sales_id')))
-              {{$sales_filter->name}}
-              @endif
-            </div>
-            <div class="col-lg-6 text-right">
-              <h3><b>Revenue Report</b></h3>
-              @if(!empty(request()->get('period_from')))
-              Period From {{request()->get('period_from')}}
-              @endif
-              @if(!empty(request()->get('period_from')) && !empty(request()->get('period_to')))
-              -
-              @endif
-              @if(!empty(request()->get('period_to')))
-              {{request()->get('period_to')}}
-              @endif
-            </div>
-          </div>
-        </div>
-      </div>
-      <div class="row mt-20">
-        <div class="col-12">
-          <div class="table-responsive">
-            <table class="table table-striped">
-              <thead>
-                <th>Date</th>
-                <th>DO Number</th>
-                <th>Invoice Number</th>
-                <th>Total</th>
-                <th>Payment</th>
-                <th>Due Date</th>
-                <th>Is Due Date</th>
-              </thead>
-              <tbody>
-                <?php 
-                  $total_invoice = 0;
-                  $total_paid = 0;
-
-                  $due_total_invoice = 0;
-                  $due_total_paid = 0;
-                ?>
-                @if(count($invoice) == 0)
-                <tr>
-                  <td colspan="8">Data tidak ditemukan</td>
-                </tr>
-                @endif
-                @foreach($invoice as $index => $row)
-                <tr>
-                  <td>
-                    <?= date('d-m-Y',strtotime($row['invoice']['created_at'])); ?>
-                  </td>
-                  <td>{{$row['do']['do_code']}}</td>
-                  <td>{{$row['invoice']['code']}}</td>
-                  <td>{{number_format($row['invoice']['grand_total_idr'],0,',','.')}}</td>
-                  <td>
-                    <?php
-                      $payable = 0;
-                    ?>
-                    @foreach($row['payable'] as $payment)
-                      <?php
-                        $payable += $payment["total"];
-                      ?>
-                    @endforeach
-                    {{number_format($payable,0,',','.')}}
-                  </td>
-                  <td>
-                    <?php
-                      $due_date = date('Y-m-d',strtotime($row['invoice']['created_at']."+ 30 days"));
-                      $due_date_60 = date('Y-m-d',strtotime($row['invoice']['created_at']."+ 60 days"));
-
-                      if($due_date <= date('Y-m-d') && $row['invoice']['grand_total_idr'] > $payable){
-                        $due_payment = $row["invoice"]["grand_total_idr"] - $payable;
-                        if($due_payment < 0){
-                          $due_payment = 0;
-                        }
-                        $due_total_invoice += $due_payment;
-                        foreach ($row["payable"] as $key => $value) {
-                          $due_total_paid += $value["total"];
-                        }
-                      }
-                    ?>
-                    {{$due_date}}
-                  </td>
-                  <td>
-                    @if($due_date <= date('Y-m-d') && $row['invoice']['grand_total_idr'] > $payable)
-                      <span class="badge badge-warning badge-xs">H+30</span>
-                    @elseif($due_date_60 <= date('Y-m-d') && $row['invoice']['grand_total_idr'] > $payable)
-                      <span class="badge badge-danger badge-xs">H+60</span>
-                    @endif
-                    @if($row['invoice']['grand_total_idr'] <= $payable)
-                      <span class="badge badge-success badge-xs">Paid Off</span>
-                    @endif
-                  </td>
-                  <?php
-                    $total_invoice += $row['invoice']['grand_total_idr'];
-                    foreach ($row["payable"] as $key => $value) {
-                      $total_paid += $value["total"];
-                    }
-                    
-                  ?>
-                </tr>
-                @endforeach
-              </tbody>
-            </table>
-          </div>
-        </div>
-      </div>
-      <div class="row mt-20">
-        <div class="col-12">
-          <div class="row">
-            <div class="col-12">
-              <div class="row">
-                <div class="col-lg-3">
-                  Total Due Date Revenue
-                </div>
-                <div class="col-lg-9">
-                  : {{number_format($due_total_invoice,0,',','.')}}
+<form id="form" target="_blank" action="{{ route('superuser.report.sales.export') }}"
+    enctype="multipart/form-data" method="POST">
+    @csrf
+    <input type="hidden" name="download_type" id="download_type" value="">
+    <div class="form-group row">
+      <div class="col-md-9">
+        <div class="block">
+          <div class="block-content">
+            <div class="form-group row">
+              <label class="col-md-2 col-form-label text-left" for="period">Period From :</label>
+              <div class="col-md-4">
+                <div class="input-group">
+                  <input type="date" class="form-control form-control" name="start_date" id="periode_from">
                 </div>
               </div>
-              <div class="row">
-                <div class="col-lg-3">
-                  Total Invoice
-                </div>
-                <div class="col-lg-9">
-                  : {{number_format($total_invoice,0,',','.')}}
+              <label class="col-md-2 col-form-label text-left" for="product">Period To :</label>
+              <div class="col-md-4">
+                <div class="input-group">
+                  <input type="date" class="form-control form-control" name="end_date" id="periode_to">
                 </div>
               </div>
-              <div class="row">
-                <div class="col-lg-3">
-                  Total Payment
-                </div>
-                <div class="col-lg-9">
-                  : {{number_format($total_paid,0,',','.')}}
-                </div>
+            </div>
+            <div class="form-group row">
+              <label class="col-md-2 col-form-label text-left" for="customer">Customer :</label>
+              <div class="col-md-4">
+                <select class="js-select2 form-control" id="customer" name="customer[]" data-placeholder="Select Customer" multiple="multiple">
+                  <option value="all">All</option>
+                  @foreach ($customer as $value)
+                    <option value="{{ $value->id }}">{{ $value->name }} {{ $value->text_kota }}</option>
+                  @endforeach
+                </select>
               </div>
             </div>
           </div>
         </div>
       </div>
+      <div class="col-md-3">
+        <div class="block">
+          <div class="block-content">
+            <div class="form-group row">
+              <div class="col-md-12 text-center">
+                <a href="#" id="btn-filter" class="btn bg-gd-corporate border-0 text-white pl-50 pr-50">
+                  Filter <i class="fa fa-search ml-10"></i>
+                </a>
+              </div>
+            </div>
+
+            {{--<div class="form-group row">
+              <div class="col-md-12 text-center">
+                <a href="#" id="btn-print" class="btn bg-gd-sea border-0 text-white pl-50 pr-50">
+                  Print <i class="fa fa-print ml-10"></i>
+                </a>
+              </div>
+            </div>--}}
+          </div>
+        </div>
+      </div>
+    </div>
+  </form>
+
+  <div class="block">
+    <div class="block-content block-content-full">
+      <table class="datatable table table-striped" id="datatable">
+          <thead>
+              <tr>
+                  <th>#</th>
+                  <th>Customer</th>
+                  <th>Total</th>
+              </tr>
+          </thead>
+          <tbody>
+          </tbody>
+          <tfoot>
+              <tr>
+                  <th colspan="2" style="text-align:right"></th>
+                  <th id="totalInvoiceCash" style="text-align: center;"></th>
+              </tr>
+          </tfoot>
+      </table>
+    </div>
   </div>
-</div>
 @endsection
 
 @include('superuser.asset.plugin.select2')
+@include('superuser.asset.plugin.swal2')
+@include('superuser.asset.plugin.datatables')
+@include('superuser.asset.plugin.daterangepicker')
+@include('superuser.asset.plugin.datatables-button')
 
 @push('scripts')
+<script type="text/javascript">
+ var start_date = $('#periode_from').val();
+  var end_date = $('#periode_to').val();
+  var print_date = "SR-{{ \Carbon\Carbon::now()->format('dmy') }}-{{ \Carbon\Carbon::now()->format('dmy') }}";
 
-  <script type="text/javascript">
-    
-    $(function(){
-      
+  $(document).ready(function() {
+    $('.js-select2').select2()
 
-      $('.js-select2').select2();
+    let datatableUrl = '{{ route('superuser.report.revenue.json') }}';
+    let firstDatatableUrl = datatableUrl + '?start_date=' + start_date + '&end_date=' + end_date +
+      '&marketplace=all';
 
-      $(document).on('click','.btn-print',function(){
-          let period_to = '<?= $_GET["period_to"] ?? null ?>';
-          let period_from = '<?= $_GET["period_from"] ?? null ?>';
-          let customer_id = '<?= $_GET["customer_id"] ?? null ?>';
-          let sales_senior_id = '<?= $_GET["sales_senior_id"] ?? null ?>';
-          let sales_id = '<?= $_GET["sales_id"] ?? null ?>';
+      var datatable = $('.datatable').DataTable({
+    language: {
+        processing: "<span class='fa-stack fa-lg'>\n\
+                          <i class='fa fa-spinner fa-spin fa-stack-2x fa-fw'></i>\n\
+                    </span>",
+    },
+    processing: true,
+    serverSide: true,
+    ajax: {
+        "url": firstDatatableUrl, // Set this to your actual URL
+        "dataType": "json",
+        "type": "GET",
+        "data": { _token: "{{csrf_token()}}" } // Token if needed for Laravel CSRF
+    },
+    columns: [
+        {
+            "class": "details-control",
+            "orderable": false,
+            "data": null,
+            "defaultContent": "<i class='fa fa-plus'></i>",
+            searchable: false
+        },
+        {data: 'combined_column'}, // Assuming your server returns this field
+        {data: 'total_purchase'},
+        {
+            data: 'detail', // The detail data will be hidden but used for expanding rows
+            "visible": false,
+            searchable: false
+        },
+    ],
+    order: [
+        [1, 'asc'] // Sorting by combined column
+    ],
+    pageLength: 10,
+    lengthMenu: [
+        [10, 30, 100, -1],
+        [10, 30, 100, 'All']
+    ],
+    dom: "<'row'<'col-sm-2'l><'col-sm-7 text-left'B><'col-sm-3'f>>" +
+      "<'row'<'col-sm-12'tr>>" +
+      "<'row'<'col-sm-5'i><'col-sm-7'p>>",
+    buttons: [
+      {
+        extend: 'excelHtml5',
+        text: '<i class="fa fa-file-excel-o"></i>',
+        titleAttr: 'Excel',
+        title: 'Report - Omset Penjualan',
+        footer: true,
+        exportOptions: {
+            columns: [1, 2], // Specify the column indices to include (exclude index 0)
+            format: {
+                body: function (data, row, column, node) {
+                    if (column === 3) { // Detail column
+                        return data;
+                    }
+                    return data;
+                }
+            }
+        },
+        customize: function (xlsx) {
+            var sheet = xlsx.xl.worksheets['sheet1.xml'];
+            var totalRow = '<row>';
+            totalRow += '<c r="A' + (datatable.data().count() + 2) + '" t="s"><v>Total</v></c>';
+            totalRow += '<c r="B' + (datatable.data().count() + 2) + '" t="n"><v>' + total + '</v></c>';
+            totalRow += '</row>';
+            $(sheet).find('row:last').after(totalRow); // Insert the total row
+        }
+      },
+      {
+        extend: 'pdfHtml5',
+        orientation: 'portrait',
+        pageSize: 'A4',
+        text: '<i class="fa fa-file-pdf-o"></i>',
+        titleAttr: 'PDF',
+        title: 'Report - Omset Penjualan',
+        footer: true,
+        exportOptions: {
+            columns: [1, 2], // Specify the column indices to include (exclude index 0)
+            format: {
+                body: function (data, row, column, node) {
+                    if (column === 3) { // Detail column
+                        return data;
+                    }
+                    return data;
+                }
+            }
+        },
+        // customize: function (doc) {
+        //     doc.content[1].table.body.push([{ text: 'Total', bold: true }, { text: total, bold: true }]);
+        // }
+      }
+    ],
+    footerCallback: function (row, data, start, end, display) {
+      var api = this.api();
 
-          window.open('{{route('superuser.report.revenue.print')}}'+'?period_from='+period_from+'&period_to='+period_to+'&customer_id='+customer_id+'&sales_senior_id='+sales_senior_id+'&sales_id='+sales_id,'_blank');
+      // Helper function to remove formatting and return a float value
+      var intVal = function (i) {
+          return typeof i === 'string' ? i.replace(/[\Rp.,]/g, '') * 1 : typeof i === 'number' ? i : 0;
+      };
+
+      // Calculate total for `total_purchase` column (index 2)
+      var totalInvoiceCash = api
+          .column(2)
+          .data()
+          .reduce(function (a, b) {
+              return intVal(a) + intVal(b);
+          }, 0);
+
+      // Format totals using toLocaleString
+      var formattedTotalCash = totalInvoiceCash.toLocaleString('id-ID', {
+          style: 'currency',
+          currency: 'IDR',
+          minimumFractionDigits: 0,
+          maximumFractionDigits: 0
+      });
+
+      // Update the footer
+      $(api.column(2).footer()).html('Total : ' + formattedTotalCash);
+
+      // Assign total value for export buttons
+      total = totalInvoiceCash;
+    }
+});
+
+
+      function format(data) {
+            // Customize this HTML to display the desired detail view
+            return '<table class="table table-dark" style="margin-top: -5px !important;margin-bottom: 0px;">' +
+                   '<tr>' +
+                       '<td>' + data.detail + '</td>' +
+                   '</tr>' +
+                   '</table>';
+        }
+
+        // Add event listener for opening and closing details
+        $('.datatable tbody').on('click', 'td.details-control', function() {
+            var tr = $(this).closest('tr');
+            var row = datatable.row(tr);
+            if (row.child.isShown()) {
+                // This row is already open - close it
+                row.child.hide();
+                tr.removeClass('shown');
+            } else {
+                // Open this row
+                row.child(format(row.data())).show();
+                tr.addClass('shown');
+            }
+        });
+
+      $('#btn-filter').on('click', function(e) {
+        e.preventDefault();
+        var customer = $('#customer').val();
+        let periode_from = $("#periode_from").val();
+        let periode_to = $("#periode_to").val();
+        // alert(periode_from);
+        let newDatatableUrl = datatableUrl + '?start_date=' + periode_from + '&end_date=' + periode_to +
+          '&customer=' + customer;
+        datatable.ajax.url(newDatatableUrl).load();
+      });
+
+      // $('.datatable tbody').on('click', 'td.details-control', function() {
+      //   var tr = $(this).closest('tr');
+      //   var row = datatable.row(tr);
+      //   if (row.child.isShown()) {
+      //     // This row is already open - close it
+      //     row.child.hide();
+      //     tr.removeClass('shown');
+      //   } else {
+      //     // Open this row
+      //     row.child(format(row.data())).show();
+      //     tr.addClass('shown');
+      //   }
+      // });
+
+      function toCommas(value) {
+        return value.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+      }
+
+      $('#btn-print').on('click', function(e) {
+        e.preventDefault();
+
+        let start_date = $('#periode_from').val();
+        let end_date = $('#periode_to').val();
+        let customer = $('#customer').val();
+
+        $.ajax({
+          type: 'POST',
+          url:"{{ route('superuser.report.sales.print_report') }}",
+          data: {
+            "_token": "{{ csrf_token() }}", 
+            "start": start_date, 
+            "end": end_date,
+            "customer": customer
+          },
+          success: function(response){
+            
+          }
+        });
       })
-
-    
-    });
-  </script>
+  })
+</script>
 @endpush

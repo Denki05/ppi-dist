@@ -8,11 +8,13 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 class PayableDetail extends Model
 {
     use SoftDeletes;
+    
     protected $table = "finance_payable_detail";
     protected $fillable = [
     	'payable_id',
     	'invoice_id',
     	'prev_account_receivable',
+        'remaining_account_receivable', 
     	'total',
     	'updated_by',
     	'created_by',
@@ -22,12 +24,11 @@ class PayableDetail extends Model
     public function payable(){
     	return $this->BelongsTo('App\Entities\Finance\Payable','payable_id','id');
     }
+    
     public function invoice(){
     	return $this->BelongsTo('App\Entities\Finance\Invoicing','invoice_id','id');
     }
-    public function proforma(){
-    	return $this->BelongsTo('App\Entities\Penjualan\SoProforma','so_proforma_id','id');
-    }
+
     public function getTotalAttribute($value)
     {
         return floatval($value);

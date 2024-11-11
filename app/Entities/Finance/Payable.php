@@ -8,13 +8,16 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 class Payable extends Model
 {
     use SoftDeletes;
+    
     protected $table = "finance_payable";
     protected $fillable = [
     	'code',
-    	'customer_other_address_id',
+    	'customer_id',
+        'pay_date', 
     	'total',
         'status',
         'note',
+        'count_cancel', 
     	'updated_by',
     	'created_by',
     	'deleted_by'
@@ -23,7 +26,8 @@ class Payable extends Model
     const STATUS = [
         'DELETED' => 0,
         'ACTIVE' => 1,
-        'APPROVE' => 2,
+        'ACC' => 2,
+        'REVISI' => 3,
     ];
 
     const TYPE = [

@@ -17,7 +17,8 @@ class PackingOrderDetail extends Model
         'discount_2_idr',
     	'discount_idr',
     	'total_discount_idr',
-    	'ppn',
+    	'ppn_percent',
+        'ppn_idr',
     	'voucher_idr',
     	'cashback_idr',
     	'purchase_total_idr',
@@ -25,6 +26,7 @@ class PackingOrderDetail extends Model
         'delivery_cost_note',
     	'other_cost_idr',
         'other_cost_note',
+        'status_resi',
     	'grand_total_idr',
         'terbilang',
     	'updated_by',
@@ -35,8 +37,8 @@ class PackingOrderDetail extends Model
     // public function do(){
     // 	return $this->BelongsTo('App\Entities\Penjualan\PackingOrder', 'do_id', 'id');
     // }
-    public function do_header(){
-        return $this->BelongsTo('App\Entities\Penjualan\PackingOrder', 'do_id', 'id');
+    public function do(){
+    	return $this->BelongsTo('App\Entities\Penjualan\PackingOrder', 'do_id', 'id');
     }
 
     public function getDiscount1Attribute($value)

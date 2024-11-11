@@ -16,6 +16,33 @@ var rajaapi_token = function() {
 }()
 
 $(document).ready(function () {
+  function addLoadSpiner(el) {
+    if (el.length > 0) {
+      if ($("#img_" + el[0].id).length > 0) {
+        $("#img_" + el[0].id).css('display', 'block');
+      }               
+      else {
+        var img = $('<img class="ddloading">');
+        img.attr('id', "img_" + el[0].id);
+        img.attr('src', 'http://ajaxloadingimages.net/gif/image?imageid=aero-spinner&forecolor=000000&backcolor=ffffff&transparent=true');
+        img.css({ 'display': 'inline-block', 'width': '25px', 'height': '25px', 'position': 'absolute', 'left': '50%', 'margin-top': '5px' });
+        img.prependTo(el[0].nextElementSibling);
+      }
+      el.prop("disabled", true);               
+    }
+  }
+
+  function hideLoadSpinner(el) {
+    if (el.length > 0) {
+      if ($("#img_" + el[0].id).length > 0) {
+        setTimeout(function () {
+          $("#img_" + el[0].id).css('display', 'none');
+          el.prop("disabled", false);
+        }, 500);                  
+      }
+    }
+  }
+
   $.ajax({
     url: 'https://x.rajaapi.com/MeP7c5ne' + window.rajaapi_token + '/m/wilayah/provinsi',
     type: 'GET',

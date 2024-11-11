@@ -1,405 +1,312 @@
 @extends('superuser.app')
 
 @section('content')
-<div class="content-wrapper">
-					
-					<div class="row mt-4">
-						<div class="col-lg-8 grid-margin stretch-card">
-							<div class="card">
-								<div class="card-body">
-									<div class="row">
-										<div class="col-lg-4">
-											<h4 class="card-title">Sales Difference</h4>
-											<canvas id="salesDifference"></canvas>
-											<p class="mt-3 mb-4 mb-lg-0">Lorem ipsum dolor sit amet,
-												consectetur adipisicing elit.
-											</p>
-										</div>
-										<div class="col-lg-5">
-											<h4 class="card-title">Best Sellers</h4>
-											<div class="row">
-												<div class="col-sm-4">
-													<ul class="graphl-legend-rectangle">
-														<li><span class="bg-danger"></span>Automotive</li>
-														<li><span class="bg-warning"></span>Books</li>
-														<li><span class="bg-info"></span>Software</li>
-														<li><span class="bg-success"></span>Video games</li>
-													</ul>
-												</div>
-												<div class="col-sm-8 grid-margin">
-													<canvas id="bestSellers"></canvas>
-												</div>
-											</div>
-											<p class="mt-3 mb-4 mb-lg-0">Lorem ipsum dolor sit amet,
-												consectetur adipisicing elit.
-											</p>
-										</div>
-										<div class="col-lg-3">
-											<h4 class="card-title">Social Media Statistics</h4>
-											<div class="row">
-												<div class="col-sm-12">
-													<div class="progress progress-lg grouped mb-2">
-														<div class="progress-bar  bg-danger" role="progressbar" style="width: 40%" aria-valuenow="25" aria-valuemin="0" aria-valuemax="100"></div>
-														<div class="progress-bar bg-info" role="progressbar" style="width: 10%" aria-valuenow="50" aria-valuemin="0" aria-valuemax="100"></div>
-														<div class="progress-bar bg-warning" role="progressbar" style="width: 20%" aria-valuenow="50" aria-valuemin="0" aria-valuemax="100"></div>
-														<div class="progress-bar bg-success" role="progressbar" style="width: 30%" aria-valuenow="50" aria-valuemin="0" aria-valuemax="100"></div>
-													</div>
-												</div>
-												<div class="col-sm-12">
-													<ul class="graphl-legend-rectangle">
-														<li><span class="bg-danger"></span>Instagram (15%)</li>
-														<li><span class="bg-warning"></span>Facebook (20%)</li>
-														<li><span class="bg-info"></span>Website (25%)</li>
-														<li><span class="bg-success"></span>Youtube (40%)</li>
-													</ul>
-												</div>
-											</div>
-											<p class="mb-0 mt-2">Lorem ipsum dolor sit amet,
-												consectetur adipisicing elit.
-											</p>
-										</div>
-									</div>
-								</div>
-							</div>
-						</div>
-						<div class="col-lg-4 mb-3 mb-lg-0">
-							<div class="card congratulation-bg text-center">
-								<div class="card-body pb-0">
-									<img src="images/dashboard/face29.png" alt="">  
-									<h2 class="mt-3 text-white mb-3 font-weight-bold">Congratulations
-										Johnson
-									</h2>
-									<p>You have done 57.6% more sales today. 
-										Check your new badge in your profile.
-									</p>
-								</div>
-							</div>
-						</div>
-					</div>
-					<div class="row">
-						{{--<div class="col-sm-8 flex-column d-flex stretch-card">
-							<div class="row">
-								<div class="col-lg-4 d-flex grid-margin stretch-card">
-									<div class="card bg-primary">
-										<div class="card-body text-white">
-											<h3 class="font-weight-bold mb-3">18,39 (75GB)</h3>
-											<div class="progress mb-3">
-												<div class="progress-bar  bg-warning" role="progressbar" style="width: 40%" aria-valuenow="25" aria-valuemin="0" aria-valuemax="100"></div>
-											</div>
-											<p class="pb-0 mb-0">Bandwidth usage</p>
-										</div>
-									</div>
-								</div>
-								<div class="col-lg-4 d-flex grid-margin stretch-card">
-									<div class="card sale-diffrence-border">
-										<div class="card-body">
-											<h2 class="text-dark mb-2 font-weight-bold">$6475</h2>
-											<h4 class="card-title mb-2">Sales Difference</h4>
-											<small class="text-muted">APRIL 2019</small>
-										</div>
-									</div>
-								</div>
-								<div class="col-lg-4 d-flex grid-margin stretch-card">
-									<div class="card sale-visit-statistics-border">
-										<div class="card-body">
-											<h2 class="text-dark mb-2 font-weight-bold">$3479</h2>
-											<h4 class="card-title mb-2">Visit Statistics</h4>
-											<small class="text-muted">APRIL 2019</small>
-										</div>
-									</div>
-								</div>
-							</div>
-							<div class="row">
-								<div class="col-sm-12 grid-margin d-flex stretch-card">
-									<div class="card">
-										<div class="card-body">
-											<div class="d-flex align-items-center justify-content-between">
-												<h4 class="card-title mb-2">Sales Difference</h4>
-												<div class="dropdown">
-													<a href="#" class="text-success btn btn-link  px-1"><i class="mdi mdi-refresh"></i></a>
-													<a href="#" class="text-success btn btn-link px-1 dropdown-toggle dropdown-arrow-none" data-bs-toggle="dropdown" id="settingsDropdownsales">
-														<i class="mdi mdi-dots-horizontal"></i></a>
-														<div class="dropdown-menu dropdown-menu-right navbar-dropdown" aria-labelledby="settingsDropdownsales">
-															<a class="dropdown-item">
-																<i class="mdi mdi-grease-pencil text-primary"></i>
-																Edit
-															</a>
-															<a class="dropdown-item">
-																<i class="mdi mdi-delete text-primary"></i>
-																Delete
-															</a>
-														</div>
-												</div>
-											</div>
-											<div>
-												<ul class="nav nav-tabs tab-no-active-fill" role="tablist">
-													<li class="nav-item">
-														<a class="nav-link active ps-2 pe-2" id="revenue-for-last-month-tab" data-bs-toggle="tab" href="#revenue-for-last-month" role="tab" aria-controls="revenue-for-last-month" aria-selected="true">Revenue for last month</a>
-													</li>
-													<li class="nav-item">
-														<a class="nav-link ps-2 pe-2" id="server-loading-tab" data-bs-toggle="tab" href="#server-loading" role="tab" aria-controls="server-loading" aria-selected="false">Server loading</a>
-													</li>
-													<li class="nav-item">
-														<a class="nav-link ps-2 pe-2" id="data-managed-tab" data-bs-toggle="tab" href="#data-managed" role="tab" aria-controls="data-managed" aria-selected="false">Data managed</a>
-													</li>
-													<li class="nav-item">
-														<a class="nav-link ps-2 pe-2" id="sales-by-traffic-tab" data-bs-toggle="tab" href="#sales-by-traffic" role="tab" aria-controls="sales-by-traffic" aria-selected="false">Sales by traffic</a>
-													</li>
-												</ul>
-												<div class="tab-content tab-no-active-fill-tab-content">
-													<div class="tab-pane fade show active" id="revenue-for-last-month" role="tabpanel" aria-labelledby="revenue-for-last-month-tab">
-														<div class="d-lg-flex justify-content-between">
-															<p class="mb-4">+5.2% vs last 7 days</p>
-															<div id="revenuechart-legend" class="revenuechart-legend">f</div>
-														</div>
-														<canvas id="revenue-for-last-month-chart"></canvas>
-													</div>
-													<div class="tab-pane fade" id="server-loading" role="tabpanel" aria-labelledby="server-loading-tab">
-														<div class="d-flex justify-content-between">
-															<p class="mb-4">+5.2% vs last 7 days</p>
-															<div id="serveLoading-legend" class="revenuechart-legend">f</div>
-														</div>
-														<canvas id="serveLoading"></canvas>
-													</div>
-													<div class="tab-pane fade" id="data-managed" role="tabpanel" aria-labelledby="data-managed-tab">
-														<div class="d-flex justify-content-between">
-															<p class="mb-4">+5.2% vs last 7 days</p>
-															<div id="dataManaged-legend" class="revenuechart-legend">f</div>
-														</div>
-														<canvas id="dataManaged"></canvas>
-													</div>
-													<div class="tab-pane fade" id="sales-by-traffic" role="tabpanel" aria-labelledby="sales-by-traffic-tab">
-														<div class="d-flex justify-content-between">
-															<p class="mb-4">+5.2% vs last 7 days</p>
-															<div id="salesTrafic-legend" class="revenuechart-legend">f</div>
-														</div>
-														<canvas id="salesTrafic"></canvas>
-													</div>
-												</div>
-											</div>
-										</div>
-									</div>
-								</div>
-							</div>
-						</div>--}}
-						{{--<div class="col-sm-4 flex-column d-flex stretch-card">
-							<div class="row flex-grow">
-								<div class="col-sm-12 grid-margin stretch-card">
-									<div class="card">
-										<div class="card-body">
-											<div class="row">
-												<div class="col-lg-8">
-													<h3 class="font-weight-bold text-dark">Canada,Ontario</h3>
-													<p class="text-dark">Monday 3.00 PM</p>
-													<div class="d-lg-flex align-items-baseline mb-3">
-														<h1 class="text-dark font-weight-bold">23<sup class="font-weight-light"><small>o</small><small class="font-weight-medium">c</small></sup></h1>
-														<p class="text-muted ms-3">Partly cloudy</p>
-													</div>
-												</div>
-												<div class="col-lg-4">
-													<div class="position-relative">
-														<img src="images/dashboard/live.png" class="w-100" alt="">
-														<div class="live-info badge badge-success">Live</div>
-													</div>
-												</div>
-											</div>
-											<div class="row">
-												<div class="col-sm-12 mt-4 mt-lg-0">
-													<div class="bg-primary text-white px-4 py-4 card">
-														<div class="row">
-															<div class="col-sm-6 pl-lg-5">
-																<h2>$1635</h2>
-																<p class="mb-0">Your Iincome</p>
-															</div>
-															<div class="col-sm-6 climate-info-border mt-lg-0 mt-2">
-																<h2>$2650</h2>
-																<p class="mb-0">Your Spending</p>
-															</div>
-														</div>
-													</div>
-												</div>
-											</div>
-											<div class="row pt-3 mt-md-1">
-												<div class="col">
-													<div class="d-flex purchase-detail-legend align-items-center">
-														<div id="circleProgress1" class="p-2"></div>
-														<div>
-															<p class="font-weight-medium text-dark text-small">Sessions</p>
-															<h3 class="font-weight-bold text-dark  mb-0">26.80%</h3>
-														</div>
-													</div>
-												</div>
-												<div class="col">
-													<div class="d-flex purchase-detail-legend align-items-center">
-														<div id="circleProgress2" class="p-2"></div>
-														<div>
-															<p class="font-weight-medium text-dark text-small">Users</p>
-															<h3 class="font-weight-bold text-dark  mb-0">56.80%</h3>
-														</div>
-													</div>
-												</div>
-											</div>
-										</div>
-									</div>
-								</div>
-								<div class="col-sm-12 grid-margin stretch-card">
-									<div class="card">
-										<div class="card-body">
-											<div class="row">
-												<div class="col-sm-12">
-													<div class="d-flex align-items-center justify-content-between">
-														<h4 class="card-title mb-0">Visits Today</h4>
-														<div class="dropdown">
-															<a href="#" class="text-success btn btn-link  px-1"><i class="mdi mdi-refresh"></i></a>
-															<a href="#" class="text-success btn btn-link px-1 dropdown-toggle dropdown-arrow-none" data-bs-toggle="dropdown" id="profileDropdownvisittoday"><i class="mdi mdi-dots-horizontal"></i></a>
-															<div class="dropdown-menu dropdown-menu-right navbar-dropdown" aria-labelledby="profileDropdownvisittoday">
-																<a class="dropdown-item">
-																	<i class="mdi mdi-grease-pencil text-primary"></i>
-																	Edit
-																</a>
-																<a class="dropdown-item">
-																	<i class="mdi mdi-delete text-primary"></i>
-																	Delete
-																</a>
-															</div>
-														</div>
-													</div>
-													<p class="mt-1">Calculated in last 30 days</p>
-													<div class="d-lg-flex align-items-center justify-content-between">
-														<h1 class="font-weight-bold text-dark">4332</h1>
-														<div class="mb-3">
-															<button type="button" class="btn btn-outline-light text-dark font-weight-normal">Day</button>
-															<button type="button" class="btn btn-outline-light text-dark font-weight-normal">Month</button>
-														</div>
-													</div>
-													<canvas id="visitorsToday"></canvas>
-												</div>
-											</div>
-										</div>
-									</div>
-								</div>
-							</div>
-						</div>--}}
-					</div>
-					<div class="row">
-						<div class="col-lg-2 grid-margin stretch-card">
-							<div class="card">
-								<div class="card-body pb-0">
-									<div class="d-flex align-items-center justify-content-between">
-										<h2 class="text-success font-weight-bold">{{count($customer)}}</h2>
-										<i class="mdi mdi-account-outline mdi-18px text-dark"></i>
-									</div>
-								</div>
-								<canvas id="newClient"></canvas>
-								<div class="line-chart-row-title">Customer</div>
-							</div>
-						</div>
-						<div class="col-lg-2 grid-margin stretch-card">
-							<div class="card">
-								<div class="card-body pb-0">
-									<div class="d-flex align-items-center justify-content-between">
-										<h2 class="text-danger font-weight-bold">{{ count($product) }}</h2>
-										<i class="mdi mdi-refresh mdi-18px text-dark"></i>
-									</div>
-								</div>
-								<canvas id="allProducts"></canvas>
-								<div class="line-chart-row-title">Products</div>
-							</div>
-						</div>
-						<div class="col-lg-2 grid-margin stretch-card">
-							<div class="card">
-								<div class="card-body pb-0">
-									<div class="d-flex align-items-center justify-content-between">
-										<h2 class="text-info font-weight-bold">{{count($invoice)}}</h2>
-										<i class="mdi mdi-file-document-outline mdi-18px text-dark"></i>
-									</div>
-								</div>
-								<canvas id="invoices"></canvas>
-								<div class="line-chart-row-title">NEW INVOICES</div>
-							</div>
-						</div>
-						<div class="col-lg-2 grid-margin stretch-card">
-							<div class="card">
-								<div class="card-body pb-0">
-									<div class="d-flex align-items-center justify-content-between">
-										<h2 class="text-warning font-weight-bold">3259</h2>
-										<i class="mdi mdi-folder-outline mdi-18px text-dark"></i>
-									</div>
-								</div>
-								<canvas id="projects"></canvas>
-								<div class="line-chart-row-title">All PROJECTS</div>
-							</div>
-						</div>
-						<div class="col-lg-2 grid-margin stretch-card">
-							<div class="card">
-								<div class="card-body pb-0">
-									<div class="d-flex align-items-center justify-content-between">
-										<h2 class="text-secondary font-weight-bold">586</h2>
-										<i class="mdi mdi-cart-outline mdi-18px text-dark"></i>
-									</div>
-								</div>
-								<canvas id="orderRecieved"></canvas>
-								<div class="line-chart-row-title">Orders Received</div>
-							</div>
-						</div>
-						<div class="col-lg-2 grid-margin stretch-card">
-							<div class="card">
-								<div class="card-body pb-0">
-									<div class="d-flex align-items-center justify-content-between">
-										<h2 class="text-dark font-weight-bold">7826</h2>
-										<i class="mdi mdi-cash text-dark mdi-18px"></i>
-									</div>
-								</div>
-								<canvas id="transactions"></canvas>
-								<div class="line-chart-row-title">TRANSACTIONS</div>
-							</div>
-						</div>
-					</div>
-					<div class="row">
-						<div class="col-sm-6 grid-margin grid-margin-md-0 stretch-card">
-							<div class="card">
-								<div class="card-body">
-									<div class="d-flex align-items-center justify-content-between">
-										<h4 class="card-title">Support Tracker</h4>
-										<h4 class="text-success font-weight-bold">Tickets<span class="text-dark ms-3">163</span></h4>
-									</div>
-									<div id="support-tracker-legend" class="support-tracker-legend"></div>
-									<canvas id="supportTracker"></canvas>
-								</div>
-							</div>
-						</div>
-						<div class="col-sm-6 grid-margin grid-margin-md-0 stretch-card">
-							<div class="card">
-								<div class="card-body">
-									<div class="d-lg-flex align-items-center justify-content-between mb-4">
-										<h4 class="card-title">Product Orders</h4>
-										<p class="text-dark">+5.2% vs last 7 days</p>
-									</div>
-									<div class="product-order-wrap padding-reduced">
-										<div id="productorder-gage" class="gauge productorder-gage"></div>
-									</div>
-								</div>
-							</div>
-						</div>
-					</div>
-				</div>
+<nav class="breadcrumb bg-white push">
+  <span class="breadcrumb-item">Pages</span>
+  <span class="breadcrumb-item active">Dashboard</span>
+</nav>
+
+@if($errors->any())
+<div class="alert alert-danger alert-dismissable" role="alert">
+    <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+        <span aria-hidden="true">×</span>
+    </button>
+    <h3 class="alert-heading font-size-h4 font-w400">Error</h3>
+    @foreach ($errors->all() as $error)
+    <p class="mb-0">{{ $error }}</p>
+    @endforeach
+</div>
+@endif
+
+<div id="alert-block"></div>
+
+@if(session('error') || session('success'))
+<div class="alert alert-{{ session('error') ? 'danger' : 'success' }} alert-dismissible fade show" role="alert">
+    @if (session('error'))
+    <strong>Error!</strong> {!! session('error') !!}
+    @elseif (session('success'))
+    <strong>Berhasil!</strong> {!! session('success') !!}
+    @endif
+    <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+        <span aria-hidden="true">&times;</span>
+    </button>
+</div>
+@endif
+
+@if(session()->has('message'))
+<div class="alert alert-success alert-dismissable" role="alert">
+    <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+        <span aria-hidden="true">×</span>
+    </button>
+    <h3 class="alert-heading font-size-h4 font-w400">Success</h3>
+    <p class="mb-0">{{ session()->get('message') }}</p>
+</div>
+@endif
+
+@if($is_see == true)
+<div class="block">
+    <div class="block-content">
+        <div class="row">
+            <div class="col">
+                <div class="card">
+                    <div class="card-header d-flex align-items-center justify-content-between">
+                        <h3>Top Sale Variant - {{ \Carbon\Carbon::create()->month($selectedMonth)->format('F') }}</h3>
+
+                        <select id="monthSelect" class="form-select" aria-label="Select month" style="width: 25%;">
+                            @foreach (range(1, 12) as $month)
+                                <option value="{{ $month }}" {{ $month == ($selectedMonth ?? now()->month) ? 'selected' : '' }}>
+                                    {{ \Carbon\Carbon::create()->month($month)->format('F') }}
+                                </option>
+                            @endforeach
+                        </select>
+                    </div>
+                    <div class="card-body">
+                        <table class="datatable table table-striped" id="datatables">
+                            <thead>
+                                <tr>
+                                    <td class="text-center">#</td>
+                                    <td class="text-center">Variant</td>
+                                    <td class="text-center">Quantity (KG)</td>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach($top_sell_variant AS $key)
+                                    <tr>
+                                        <th class="text-center">{{ $loop->iteration }}</th>
+                                        <th class="text-center">{{ $key->product }}</th>
+                                        <th class="text-center">{{ $key->total_qty }}</th>
+                                    </tr>
+                                @endforeach
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+    <br>
+</div>
+
+<div class="block">
+    <div class="block-content">
+        <div class="row">
+            <div class="col-6">
+                <div class="card">
+                    <div class="card-header">
+                        <h3>Total Sales Quantity</h3>
+                    </div>
+                    <div class="card-body">
+                        <canvas id="salesChart" style="max-height: 400px;"></canvas>
+                    </div>
+                </div>
+            </div>
+            <div class="col-6">
+                <div class="card">
+                    <div class="card-header">
+                        <h3>Total Sales Revenue</h3>
+                    </div>
+                    <div class="card-body">
+                        <canvas id="revenueChart" style="max-height: 400px;"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <br>
+</div>
+@endif
 @endsection
 
 @include('superuser.asset.plugin.select2')
 @include('superuser.asset.plugin.swal2')
 @include('superuser.asset.plugin.datatables')
-@include('superuser.asset.plugin.chart')
 
 @push('scripts')
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    document.addEventListener("DOMContentLoaded", function() {
+        const salesData = @json($sales);
 
-<script type="text/javascript">
-  $(function(){
-    $('#datatables').dataTable( {
+        // Create an object to hold data grouped by month and brand
+        const groupedData = {};
+
+        // Check the structure of salesData
+        console.log(salesData);
+
+        // Group data by month and brand
+        salesData.forEach(sale => {
+            if (!groupedData[sale.month_name]) {
+                groupedData[sale.month_name] = {};
+            }
+            if (!groupedData[sale.month_name][sale.brand]) {
+                groupedData[sale.month_name][sale.brand] = 0;
+            }
+            groupedData[sale.month_name][sale.brand] += sale.total_qty;
+        });
+
+        const labels = Object.keys(groupedData);  // Get unique months
+        const datasets = [];
+
+        // Map of brand names to their respective colors
+        const colorMap = {
+            'GCF': 'rgba(255, 236, 0, 0.8)',
+            'Nginden': 'rgba(0, 19, 255, 0.8)',
+            'PPI NON FF': 'rgba(112, 112, 112, 0.8)',
+            'PPI FF': 'rgba(0, 255, 77, 0.8)',
+            'PPI X': 'rgba(0, 0, 0, 0.8)',
+            'Senses': 'rgba(255, 0, 0, 0.8)',
+        };
+
+        // Map brands to datasets and assign data
+        const brandMap = new Map(); // Track datasets by brand
+        Object.keys(groupedData).forEach((month) => {
+            Object.keys(groupedData[month]).forEach((brand) => {
+                if (!brandMap.has(brand)) {
+                    brandMap.set(brand, {
+                        label: brand,
+                        data: Array(labels.length).fill(0),  // Initialize data array with zeros
+                        backgroundColor: colorMap[brand] || 'rgba(150, 150, 150, 1)', // Default color if brand not found
+                        borderColor: colorMap[brand] || 'rgba(150, 150, 150, 1)', // Default color if brand not found
+                        borderWidth: 1,
+                        fill: true,
+                    });
+                    datasets.push(brandMap.get(brand));  // Add new dataset for brand
+                }
+                const datasetIndex = datasets.findIndex(ds => ds.label === brand);
+                if (datasetIndex > -1) {
+                    const monthIndex = labels.indexOf(month);
+                    if (monthIndex > -1) {
+                        datasets[datasetIndex].data[monthIndex] = groupedData[month][brand];  // Set the correct total
+                    }
+                }
+            });
+        });
+
+        // Log datasets and labels to debug if necessary
+        console.log('Labels:', labels);
+        console.log('Datasets:', datasets);
+
+        // Rendering chart
+        const ctx = document.getElementById('salesChart').getContext('2d');
+        const salesChart = new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: labels,
+                datasets: datasets,
+            },
+            options: {
+                scales: {
+                    x: {
+                        beginAtZero: true,
+                        title: {
+                            display: true,
+                            text: 'Month',
+                        },
+                    },
+                    y: {
+                        beginAtZero: true,
+                        title: {
+                            display: true,
+                            text: 'Total Qty (KG)',
+                        },
+                    },
+                },
+                responsive: true,
+                plugins: {
+                    legend: {
+                        position: 'top',
+                    },
+                },
+            },
+        });
     });
 
-    $('.js-select2').select2();
-  })
+    document.addEventListener("DOMContentLoaded", function() {
+        const revenueData = @json($revenue);
+
+        // Create an object to hold data grouped by month
+        const groupedData = {};
+
+        // Check the structure of revenueData
+        console.log(revenueData);
+
+        // Group data by month
+        revenueData.forEach(revenue => {
+            if (!groupedData[revenue.month_name]) {
+                groupedData[revenue.month_name] = 0;
+            }
+            groupedData[revenue.month_name] += revenue.total_purchase;
+        });
+
+        const labels = Object.keys(groupedData);  // Get unique months
+        const data = Object.values(groupedData);  // Get total_purchase for each month
+
+        // Log labels and data to debug if necessary
+        console.log('Labels:', labels);
+        console.log('Data:', data);
+
+        // Rendering chart
+        const ctx = document.getElementById('revenueChart').getContext('2d');
+        const purchaseChart = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: labels, // Months
+                datasets: [{
+                    label: 'Total Purchase (IDR)',
+                    data: data, // Total Purchase data for each month
+                    backgroundColor: 'rgba(75, 192, 192, 0.2)', // Area under the line
+                    borderColor: 'rgba(75, 192, 192, 1)', // Line color
+                    borderWidth: 2,
+                    fill: true, // Fill under the line (optional)
+                    tension: 0.3, // Curve smoothness (set to 0 for straight lines)
+                    pointStyle: 'circle', // Shape of the data points
+                    pointRadius: 5, // Size of the data points
+                    pointBackgroundColor: 'rgba(255, 99, 132, 1)', // Color of points
+                    hoverRadius: 7, // Size of point on hover
+                    pointHoverBackgroundColor: 'rgba(255, 99, 132, 1)', // Point hover color
+                    pointHoverBorderWidth: 2, // Border size on hover
+                }]
+            },
+            options: {
+                responsive: true,
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        title: {
+                            display: true,
+                            text: 'Total Purchase (IDR)',
+                        },
+                    },
+                    x: {
+                        title: {
+                            display: true,
+                            text: 'Month',
+                        },
+                    },
+                },
+                plugins: {
+                    legend: {
+                        position: 'top',
+                    },
+                },
+            },
+        });
+    });
+
+    document.getElementById('monthSelect').addEventListener('change', function() {
+        // Reload the page with the selected month as a query parameter
+        window.location.href = '?month=' + this.value;
+    });
+
+    var datatable = $('#datatables').DataTable({
+        language: {
+            processing: "<span class='fa-stack fa-lg'>\n\
+                                    <i class='fa fa-spinner fa-spin fa-stack-2x fa-fw'></i>\n\
+                            </span>",
+        },
+        processing: true,
+        serverSide: false,
+    })
 </script>
-
-
 @endpush

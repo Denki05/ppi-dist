@@ -83,9 +83,9 @@
                 $sub_total += floatval($row->qty * $row->price) ?? 0; 
               ?>
               <tr>
-                <td>{{$row->product->code ?? ''}}</td>
-                <td>{{$row->product->name ?? ''}}</td>
-                <td>{{$row->packaging_txt()->scalar ?? ''}}</td>
+                <td>{{$row->product_pack->code ?? ''}}</td>
+                <td>{{$row->product_pack->name ?? ''}}</td>
+                <td>{{$row->packaging->pack_name ?? ''}}</td>
                 <td>{{$row->qty ?? ''}}</td>
                 <td>{{$row->price ?? ''}}</td>
                 <td>{{$sub_total}}</td>

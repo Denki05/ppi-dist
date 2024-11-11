@@ -3,9 +3,13 @@
 namespace App\Entities\Account;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Notifications\Notifiable;
+ 
 
 class User extends Model
 {
+    use Notifiable;
+
     protected $table = "superusers";
     protected $fillable = [
     	'name',
@@ -14,6 +18,7 @@ class User extends Model
     	'password',
     	'division',
     	'is_superuser',
+        'pass_code', 
     	'is_active',
     	'updated_by',
     	'created_by',
@@ -39,5 +44,10 @@ class User extends Model
     }
     public function is_active(){
         return (object) self::IS_ACTIVE[$this->is_active];
+    }
+
+    public function isPassCodeNull()
+    {
+        return $this->pass_code === null;
     }
 }

@@ -85,4 +85,5 @@ class AuthenticationController extends Controller
             return 'hello';
         }
     }
+
 }

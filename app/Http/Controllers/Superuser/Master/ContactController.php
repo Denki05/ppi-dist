@@ -62,16 +62,47 @@ class ContactController extends Controller
 
     public function get_member(Request $request)
     {
-        $member = CustomerOtherAddress::all()->pluck('name', 'id');
+        $member = CustomerOtherAddress::where('status', CustomerOtherAddress::STATUS['ACTIVE'])
+            ->where(function ($query) use ($request) {
+                $query->where('name', 'LIKE', $request->input('q', '') . '%');
+            })
+            ->get();
 
-        return response()->json($member);
+        $results = [];
+
+        foreach ($member as $item) {
+            $results[] = [
+                'id' => $item->id,
+                'text' => $item->name. ' '. $item->text_kota,
+            ];
+        }
+
+        return ['results' => $results];
+
     }
 
     public function get_vendor(Request $request)
     {
-       $vendor = Vendor::all()->pluck('name', 'id');
+    //    $vendor = Vendor::all()->pluck('name', 'id');
 
-       return response()->json($vendor);
+    //    return response()->json($vendor);
+
+        $vendor = Vendor::where('status', Vendor::STATUS['ACTIVE'])
+                ->where(function ($query) use ($request) {
+                    $query->where('name', 'LIKE', $request->input('q', '') . '%');
+                })
+                ->get();
+
+            $results = [];
+
+            foreach ($vendor as $item) {
+                $results[] = [
+                    'id' => $item->id,
+                    'text' => $item->name,
+                ];
+            }
+
+        return ['results' => $results];
     }
 
     public function create()
@@ -140,8 +171,8 @@ class ContactController extends Controller
                 $contact->email = $request->email;
                 $contact->position = $request->position;
                 $contact->dob = ($request->dob != null) ? date('Y-m-d', strtotime($request->dob)) : null;
-                $contact->npwp = implode("/", [$request->name, $request->npwp]);
-                $contact->ktp = implode("/", [$request->name, $request->ktp]);
+                $contact->npwp = $request->npwp;
+                $contact->ktp = $request->ktp;
                 if (!empty($request->file('image_ktp'))) {
                     $contact->image_ktp = UploadMedia::image($request->file('image_ktp'), Contact::$directory_image);
                 }
@@ -151,7 +182,7 @@ class ContactController extends Controller
                 }
                 $contact->is_for = $request->is_for;
                 $contact->manage_id = $request->manage_id;
-                DD($contact->manage_id);
+                // DD($contact->manage_id);
                 $contact->status = Contact::STATUS['ACTIVE'];
 
                 if ($contact->save()) {

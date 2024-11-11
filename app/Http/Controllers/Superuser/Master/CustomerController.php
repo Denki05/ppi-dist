@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Superuser\Master;
 
 use App\DataTables\Master\CustomerTable;
 use App\Entities\Master\Customer;
+use App\Entities\Master\Employee;
 use App\Entities\Master\CustomerSaldoLog;
 use App\Entities\Master\CustomerType;
 use App\Entities\Master\CustomerOtherAddress;
@@ -64,31 +65,9 @@ class CustomerController extends Controller
             }
         }
 
-        $search = $request->input('search');
         $province = $request->input('province');
         $category = $request->input('category');
-        $customer = Customer::where(function($query2) use($search){
-                                if(!empty($search)){
-                                    $query2->where('name','like','%'.$search.'%');
-                                }
-                            })
-                            ->where(function($query2) use($province){
-    							if(!empty($province)){
-    								$query2->where(function($query3) use($province){
-    									$query3->where('provinsi',$province);
-    								});
-    							}
-    						})
-                            ->where(function($query2) use($category){
-    							if(!empty($category)){
-    								$query2->where(function($query4) use($category){
-    									$query4->where('category_id',$category);
-    								});
-    							}
-    						})
-                            ->orderBy('name','ASC')
-                            ->paginate(25);
-
+        $customer = Customer::get();
         $other_address = CustomerOtherAddress::get();
         $prov = DB::table('provinsi')->get();
         $cat = CustomerCategory::get();
@@ -97,13 +76,11 @@ class CustomerController extends Controller
             'other_address' => $other_address,
             'customers' => $customer,
             'provinsi' => $prov,
-            'cat' => $cat
+            'cat' => $cat,
         ];
 
         return view('superuser.master.customer.index', $data);
     }
-
-    
 
     public function create()
     {
@@ -226,7 +203,7 @@ class CustomerController extends Controller
                     $category = null;
                     
                     $customer = DB::table('master_customers')
-                        ->selectRaw('id, name, kota, status')
+                        ->selectRaw('id, name, kota, category_id, status')
                         ->where('status', Customer::STATUS["ACTIVE"])
                         ->get();
 
@@ -256,6 +233,7 @@ class CustomerController extends Controller
                         $customer->category_id = $request->category;
                         $customer->count_member =  1;
                         $customer->zone = $request->zone;
+                        $customer->pic = $request->pic ?? null;
 
                         $customer->email = $request->email;
                         $customer->phone = implode(",", [$request->phone1, $request->phone2]);
@@ -314,6 +292,9 @@ class CustomerController extends Controller
                             $other_address->address = $customer->address;
                             $other_address->npwp = $customer->npwp;
                             $other_address->ktp = $customer->ktp;
+                            $other_address->officer = null;
+                            $other_address->account_representative = null;
+                            $other_address->setting_income_target = 0;
             
                             $other_address->gps_latitude = $customer->gps_latitude;
                             $other_address->gps_longitude = $customer->gps_longitude;
@@ -327,6 +308,7 @@ class CustomerController extends Controller
                             $other_address->text_kecamatan = $customer->text_kecamatan;
                             $other_address->text_kelurahan = $customer->text_kelurahan;
             
+                            $other_address->zone = $customer->zone;
                             $other_address->zipcode = $customer->zipcode;
                             $other_address->status = CustomerOtherAddress::STATUS['ACTIVE'];
                             $other_address->save();
@@ -525,13 +507,13 @@ class CustomerController extends Controller
 
     public function destroy(Request $request, $id)
     {
-        // Access
-        if(Auth::user()->is_superuser == 0){
-            if(empty($this->access) || empty($this->access->user) || $this->access->can_delete == 0){
-                abort(405);
-            }
-        }
         if ($request->ajax()) {
+            if(Auth::user()->is_superuser == 0){
+                if(empty($this->access) || empty($this->access->user) || $this->access->can_delete == 0){
+                    abort(405);
+                }
+            }
+
             $customer = Customer::find($id);
 
             if ($customer === null) {
@@ -650,5 +632,194 @@ class CustomerController extends Controller
     
             readfile ($file);
             exit();
+    }
+
+    public function update_pic(Request $request)
+    {
+        if ($request->ajax()) {
+            if(Auth::user()->is_superuser == 0){
+                if(empty($this->access) || empty($this->access->user) || $this->access->can_update == 0){
+                    abort(405);
+                }
+            }
+
+            $employee = Employee::get();
+
+            dd($employee);
+        }
+    }
+
+    public function changeStatusActive(Request $request, $id)
+    {
+        if ($request->ajax()) {
+            if(Auth::user()->is_superuser == 0){
+                if(empty($this->access) || empty($this->access->user) || $this->access->can_update == 0){
+                    abort(405);
+                }
+            }
+
+            DB::beginTransaction();
+            try{
+                $customer = Customer::findOrFail($id);
+
+                $customer->status = Customer::STATUS['ACTIVE'];
+                if($customer->save()){
+                    DB::commit();
+
+                    $response['notification'] = [
+                        'alert' => 'notify',
+                        'type' => 'success',
+                        'content' => 'Success',
+                    ];
+
+                    $response['redirect_to'] = route('superuser.master.customer.index');
+
+                    return $this->response(200, $response);
+                }
+            }catch (\Exception $e) {
+                DB::rollback();
+                dd($e);
+                $response['notification'] = [
+                    'alert' => 'block',
+                    'type' => 'alert-danger',
+                    'header' => 'Error',
+                    'content' => "Internal Server Error",
+                ];
+
+                return $this->response(400, $response);
+            }
+        }
+    }
+
+    public function changeStatusInactive(Request $request, $id)
+    {
+        if ($request->ajax()) {
+            if(Auth::user()->is_superuser == 0){
+                if(empty($this->access) || empty($this->access->user) || $this->access->can_update == 0){
+                    abort(405);
+                }
+            }
+
+            DB::beginTransaction();
+            try{
+                $customer = Customer::findOrFail($id);
+
+                $customer->status = Customer::STATUS['INACTIVE'];
+                if($customer->save()){
+                    DB::commit();
+
+                    $response['notification'] = [
+                        'alert' => 'notify',
+                        'type' => 'success',
+                        'content' => 'Success',
+                    ];
+
+                    $response['redirect_to'] = route('superuser.master.customer.index');
+
+                    return $this->response(200, $response);
+                }
+            }catch (\Exception $e) {
+                DB::rollback();
+                dd($e);
+                $response['notification'] = [
+                    'alert' => 'block',
+                    'type' => 'alert-danger',
+                    'header' => 'Error',
+                    'content' => "Internal Server Error",
+                ];
+
+                return $this->response(400, $response);
+            }
+        }
+    }
+
+    public function changeExistenceEnable(Request $request, $id)
+    {
+        if ($request->ajax()) {
+            if(Auth::user()->is_superuser == 0){
+                if(empty($this->access) || empty($this->access->user) || $this->access->can_update == 0){
+                    abort(405);
+                }
+            }
+
+            DB::beginTransaction();
+            try{
+                $customer = Customer::findOrFail($id);
+
+                $customer->existence = Customer::EXISTENCE['ENABLE'];
+                if($customer->save()){
+                    DB::commit();
+
+                    $response['notification'] = [
+                        'alert' => 'notify',
+                        'type' => 'success',
+                        'content' => 'Success',
+                    ];
+
+                    $response['redirect_to'] = route('superuser.master.customer.index');
+
+                    return $this->response(200, $response);
+                }
+            }catch (\Exception $e) {
+                DB::rollback();
+                dd($e);
+                $response['notification'] = [
+                    'alert' => 'block',
+                    'type' => 'alert-danger',
+                    'header' => 'Error',
+                    'content' => "Internal Server Error",
+                ];
+
+                return $this->response(400, $response);
+            }
+        }
+    }
+
+    public function changeExistenceDisabled(Request $request, $id)
+    {
+        if ($request->ajax()) {
+            if(Auth::user()->is_superuser == 0){
+                if(empty($this->access) || empty($this->access->user) || $this->access->can_update == 0){
+                    abort(405);
+                }
+            }
+
+            DB::beginTransaction();
+            try{
+                $customer = Customer::findOrFail($id);
+
+                $customer->existence = Customer::EXISTENCE['DISABLED'];
+                if($customer->save()){
+                    DB::commit();
+
+                    $response['notification'] = [
+                        'alert' => 'notify',
+                        'type' => 'success',
+                        'content' => 'Success',
+                    ];
+
+                    $response['redirect_to'] = route('superuser.master.customer.index');
+
+                    return $this->response(200, $response);
+                }
+            }catch (\Exception $e) {
+                DB::rollback();
+                dd($e);
+                $response['notification'] = [
+                    'alert' => 'block',
+                    'type' => 'alert-danger',
+                    'header' => 'Error',
+                    'content' => "Internal Server Error",
+                ];
+
+                return $this->response(400, $response);
+            }
+        }
+    }
+
+    public function getApiData()
+    {
+        $results = Customer::all(); // Fetch all customer records
+        return response()->json($results); // Return data as JSON
     }
 }

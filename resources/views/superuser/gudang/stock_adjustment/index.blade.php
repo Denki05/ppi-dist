@@ -56,6 +56,7 @@
                 <th>Code</th>
                 <th>Warehouse</th>
                 <th>Product</th>
+                <th>Kemasan</th>
                 <th>Prev Stock</th>
                 <th>Plus Stock</th>
                 <th>Min Stock</th>
@@ -70,7 +71,8 @@
                   <td>{{$table->firstItem() + $index}}</td>
                   <td>{{$row->code}}</td>
                   <td>{{$row->warehouse->name ?? ''}}</td>
-                  <td>{{$row->product->code ?? ''}} - {{$row->product->name ?? ''}}</td>
+                  <td>{{$row->product_pack->code ?? ''}} - {{$row->product_pack->name ?? ''}}</td>
+                  <td>{{$row->product_pack->packaging->pack_name}}</td>
                   <td>{{$row->prev}}</td>
                   <td>{{$row->plus}}</td>
                   <td>{{$row->min}}</td>
@@ -81,12 +83,6 @@
               @endforeach
             </tbody>
           </table>
-        </div>
-      </div>
-      
-      <div class="row mb-30">
-        <div class="col-12">
-          {{$table->links()}}
         </div>
       </div>
   </div>
@@ -101,15 +97,13 @@
 @include('superuser.asset.plugin.datatables')
 
 @push('scripts')
-
   <script type="text/javascript">
     $(function(){
-      $(function(){
         $('#datatables').DataTable( {
-          "paging":   false,
+          "paging":   true,
           "ordering": true,
           "info":     false,
-          "searching" : false,
+          "searching" : true,
           "columnDefs": [{
             "targets": 0,
             "orderable": false
@@ -124,6 +118,5 @@
         })
 
       });
-    })
   </script>
 @endpush

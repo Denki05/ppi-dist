@@ -9,6 +9,8 @@ use App\Entities\Master\Warehouse;
 use App\Entities\Master\Customer;
 use App\Entities\Master\Dokumen;
 use App\Entities\Master\Vendor;
+use App\Entities\Master\ProductMinStock;
+use App\Entities\Gudang\StockMove;
 use App\Repositories\MasterRepo;
 use App\Entities\Master\CustomerSaldoLog;
 use App\Entities\Master\CustomerOtherAddress;
@@ -20,7 +22,10 @@ use App\Entities\Penjualan\SalesOrder;
 use App\Entities\Penjualan\SalesOrderItem;
 use App\Entities\Penjualan\SoProforma;
 use App\Entities\Penjualan\SoProformaDetail;
+use App\DataTables\Penjualan\PackingOrderTable;
+use App\Notifications\DoNotification;
 use App\Entities\Setting\UserMenu;
+use App\Entities\Account\User;
 use App\Repositories\CodeRepo;
 use Auth;
 use DB;
@@ -50,6 +55,12 @@ class PackingOrderController extends Controller
             return $next($request);
         });
     }
+
+    public function json(Request $request, PackingOrderTable $datatable)
+    {
+        return $datatable->build();
+    }
+
     public function index(Request $request)
     {
         // Access
@@ -127,7 +138,6 @@ class PackingOrderController extends Controller
         $data = [
             'table' => $table,
             'customer' => $customer,
-            
         ];
         return view($this->view."index",$data);
     }
@@ -886,77 +896,79 @@ class PackingOrderController extends Controller
             return redirect()->back()->with('error',$e->getMessage());
         }
     }
-    // public function ready(Request $request)
-    // {
-    //     // Access
-    //     if(Auth::user()->is_superuser == 0){
-    //         if(empty($this->access) || empty($this->access->user) || $this->access->can_approve == 0){
-    //             return redirect()->route('superuser.index')->with('error','Anda tidak punya akses untuk membuka menu terkait');
-    //         }
-    //     }
 
-    //     try{
-    //         $request->validate([
-    //             'id' => 'required'
-    //         ]);
-    //         $post = $request->all();
-
-    //         //Cek Pembayaran
-
-    //         $proforma = SoProforma::where('do_id', $post["id"])->first();
-
-    //         if($proforma->type_transaction == 1){
-    //             if($proforma->status == 3){
-    //                 $update = PackingOrder::where('id', $post["id"])->update(['status' => 3]);
-                    
-    //                 return redirect()->back()->with('success','SO packed berhasil di proses'); 
-    //             }else{
-    //                 return redirect()->back()->with('error','SO packed gagal di proses! Cek pembayaran');
-    //             }
-    //         }elseif($proforma->type_transaction == 2 && $proforma->type_transaction == 3){
-    //             $update = PackingOrder::where('id', $post["id"])->update(['status' => 3]);
-
-    //             return redirect()->back()->with('success','SO packed berhasil di proses');
-    //         }
-            
-    //     }catch(\Throwable $e){
-    //         return redirect()->back()->with('error',$e->getMessage());
-    //     }
-    // }
-
-    public function ready(Request $request)
+    public function ready(Request $request, $id)
     {
-        // Access
-        if(Auth::user()->is_superuser == 0){
-            if(empty($this->access) || empty($this->access->user) || $this->access->can_approve == 0){
-                return redirect()->route('superuser.index')->with('error','Anda tidak punya akses untuk membuka menu terkait');
+        if ($request->ajax()) {
+            if(Auth::user()->is_superuser == 0){
+                if(empty($this->access) || empty($this->access->user) || $this->access->can_approve == 0){
+                    return redirect()->route('superuser.index')->with('error','Anda tidak punya akses untuk membuka menu terkait');
+                }
             }
-        }
-        try{
-            $request->validate([
-                'id' => 'required'
-            ]);
-            $post = $request->all();
-            
-            $getDo = PackingOrder::where('id', $post["id"])->first();
 
-            if(empty($getDo->do_code)){
-                PackingOrder::where('id',$getDo->id)->update([
-                    'do_code' => CodeRepo::generateDO()
+            $getDo = PackingOrder::find($id);
+
+            if ($getDo === null) {
+                abort(404);
+            }
+
+            // get so
+            $getSo = SalesOrder::where('id', $getDo->so_id)->first();
+
+            // Potong Stock
+            $get_stock = 0;
+            // if($getSo)
+            foreach($getDo->do_detail as $row => $value){
+                $stock = ProductMinStock::where('warehouse_id', $getDo->warehouse_id)->where('product_packaging_id', $value->product_packaging_id)->first();
+
+                $get_stock = $stock->quantity;
+                $stock->quantity = $get_stock - $value->qty;
+                $stock->save();
+
+                // log stock
+                $move = StockMove::where('product_packaging_id' , $value->product_id)
+                    ->where('warehouse_id', $getDo->warehouse_id)
+                    ->get();
+                $move_in = $move->sum('stock_in');
+                $move_out = $move->sum('stock_out');
+
+                $sisa = $get_stock + $move_in - $move_out - $value->qty;
+
+                $insert_stock_move = StockMove::create([
+                    'code_transaction' => $getDo->do_code,
+                    'warehouse_id' => $getDo->warehouse_id,
+                    'product_packaging_id' => $value->product_packaging_id,
+                    'stock_out' => $value->qty,
+                    'stock_balance' => $sisa,
+                    'created_by' => Auth::id()
                 ]);
             }
 
-            $update = PackingOrder::where('id',$post["id"])->update(['status' => 3]);
+            $update = PackingOrder::where('id', $getDo->id)->update(['status' => 3]);
+
+            $user = User::find(29);
+            $user->notify(new DoNotification($getDo));
 
             if($update){
-                return redirect()->back()->with('success','SO berhasil berhasil diproses ke DO');    
+                $response['notification'] = [
+                    'alert' => 'notify',
+                    'type' => 'success',
+                    'content' => 'Success',
+                ];
+    
+                $response['redirect_to'] = route('superuser.penjualan.sales_order.index_lanjutan');
+                return $this->response(200, $response); 
             }
             else{
-                return redirect()->back()->with('error','SO gagal diproses ke DO');
+                $response['notification'] = [
+                    'alert' => 'notify',
+                    'type' => 'error',
+                    'content' => 'Error',
+                ];
+    
+                $response['redirect_to'] = route('superuser.penjualan.sales_order.index_lanjutan');
+                return $this->response(200, $response);
             }
-            
-        }catch(\Throwable $e){
-            return redirect()->back()->with('error',$e->getMessage());
         }
     }
 
@@ -1023,6 +1035,7 @@ class PackingOrderController extends Controller
             return redirect()->back()->with('error',$e->getMessage());
         }
     }
+    
     public function prepare(Request $request)
     {
         // Access
@@ -1064,45 +1077,56 @@ class PackingOrderController extends Controller
         }
     }
 
-    public function revisi(Request $request)
+    public function revisi(Request $request, $id)
     {
-        // Access
-        if(Auth::user()->is_superuser == 0){
-            if(empty($this->access) || empty($this->access->user) || $this->access->can_approve == 0){
-                return redirect()->route('superuser.index')->with('error','Anda tidak punya akses untuk membuka menu terkait');
+        if ($request->ajax()) {
+            if(Auth::user()->is_superuser == 0){
+                if(empty($this->access) || empty($this->access->user) || $this->access->can_approve == 0){
+                    return redirect()->route('superuser.index')->with('error','Anda tidak punya akses untuk membuka menu terkait');
+                }
             }
-        }
 
-        try{
-            $request->validate([
-                'id' => 'required'
-            ]);
-            $post = $request->all();
+            $result = PackingOrder::find($id);
 
-            $result = PackingOrder::where('id', $post["id"])->first();
-
-            //Kembalikan SO ke step lanjutan
+            if ($result === null) {
+                abort(404);
+            }
 
             if($result->status == 2 OR $result->status == 3 OR $result->status == 4){
-                $update_so = SalesOrder::where('id', $result->so_id)->update(['status' => 2, 'count_rev' => 1]);
-
+                $update_so = SalesOrder::where('id', $result->so_id)->update(['status' => 2, 'count_rev' => 1, 'code' => null, 'keep_code' => $result->so->code]);
+        
                 $update_po = PackingOrder::where('id', $result->id)->update(['status' => 7]);
+        
+                $update_invocing = Invoicing::where('do_id', $request->id)->update(['status' => 3, 'updated_by' => Auth::id()]);
 
                 //Delete packing order item
                 $del_po_item = PackingOrderItem::where('do_id', $result->id)->delete();
-
-                //Delete proforma
-                $get_pro = Soproforma::where('do_id', $request->id)->first();
-
-                $del_proforma_item = SoProformaDetail::where('so_proforma_id', $get_pro->id)->delete();
-
+        
                 return redirect()->back()->with('success','SO Packed berhasil di kembalikan ke SO!');  
             }elseif($result->status == 5 OR $result->status == 6){
                 return redirect()->back()->with('error','Gagal di Kembalikan status saat ini DO dalam proses KIRIM!');
             }
-                        
-        }catch(\Throwable $e){
-            return redirect()->back()->with('error',$e->getMessage());
+
+            if($update_po){
+                $response['notification'] = [
+                    'alert' => 'notify',
+                    'type' => 'success',
+                    'content' => 'Success',
+                ];
+    
+                $response['redirect_to'] = route('superuser.penjualan.sales_order.index_lanjutan');
+                return $this->response(200, $response); 
+            }
+            else{
+                $response['notification'] = [
+                    'alert' => 'notify',
+                    'type' => 'error',
+                    'content' => 'Error',
+                ];
+    
+                $response['redirect_to'] = route('superuser.penjualan.sales_order.index_lanjutan');
+                return $this->response(200, $response);
+            }
         }
     }
 

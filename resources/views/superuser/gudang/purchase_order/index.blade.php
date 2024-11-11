@@ -5,41 +5,48 @@
   <span class="breadcrumb-item">Gudang</span>
   <span class="breadcrumb-item active">Purchase Order (PO)</span>
 </nav>
-@if(session('error') || session('success'))
-<div class="alert alert-{{ session('error') ? 'danger' : 'success' }} alert-dismissible fade show" role="alert">
-    @if (session('error'))
-    <strong>Error!</strong> {!! session('error') !!}
-    @elseif (session('success'))
-    <strong>Berhasil!</strong> {!! session('success') !!}
-    @endif
-    <button type="button" class="close" data-dismiss="alert" aria-label="Close">
-        <span aria-hidden="true">&times;</span>
-    </button>
+
+@if($errors->any())
+<div class="alert alert-danger alert-dismissable" role="alert">
+  <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+      <span aria-hidden="true">×</span>
+  </button>
+  <h3 class="alert-heading font-size-h4 font-w400">Error</h3>
+  @foreach ($errors->all() as $error)
+  <p class="mb-0">{{ $error }}</p>
+  @endforeach
 </div>
 @endif
+
+<div id="alert-block"></div>
+
 <div class="block">
-    <hr class="my-20">
-    <div class="block-content block-content-full">
-      <div class="row mb-30">
+  <div class="block-content">
+      <!-- <div class="row mb-30">
         <div class="col-12">
           <a href="{{route('superuser.gudang.purchase_order.create')}}" class="btn btn-primary btn-add"><i class="fa fa-plus"></i> Add PO</a>
         </div>
-      </div>
+      </div> -->
+      <a href="{{route('superuser.gudang.purchase_order.create')}}">
+        <button type="button" class="btn btn-outline-primary min-width-125">New</button>
+      </a>
+
+      <hr class="my-20">
 
       <div class="row mb-30">
         <div class="col-12">
-        <table id="datatables" class="table table-striped">
+        <table id="datatables" class="table table-bordred table-striped" style="width:100%">
           <thead>
             <tr>
-              <th class="text-center">#</th>
-              <th class="text-center">Created at</th>
-              <th class="text-center">PO Code</th>
-              <th class="text-center">Latest Update</th>
-              <th class="text-center">Edit Counter</th>
-              <th class="text-center">Status</th>
-              <th class="text-center">Action</th>
+              <td class="text-center">#</td>
+              <td class="text-center">Created at</td>
+              <td class="text-center">PO Code</td>
+              <td class="text-center">Latest Update</td>
+              <td class="text-center">Status</td>
+              <td class="text-center">Action</td>
             </tr>
           </thead>
+          
         </table>
         </div>
       </div>
@@ -50,6 +57,7 @@
 
 @include('superuser.asset.plugin.select2')
 @include('superuser.asset.plugin.datatables')
+@include('superuser.asset.plugin.swal2')
 
 @push('scripts')
 <script type="text/javascript">
@@ -76,10 +84,12 @@
         },
         {data: 'code'},
         {data: 'updated_by'},
-        {data: 'edit_counter'},
         {data: 'status'},
         {data: 'action', orderable: false, searcable: false}
       ],
+      scrollCollapse: true,
+      scrollX: true,
+      scrollY: 300,
       order: [
         [1, 'desc']
       ],

@@ -33,23 +33,30 @@ Route::group([
         Route::get('/import_template', 'ProductController@import_template')->name('import_template');
         Route::post('/import', 'ProductController@import')->name('import');
         Route::get('/export', 'ProductController@export')->name('export');
-        // Route::post('/addMorePost', 'ProductController@addMorePost')->name('addMorePost');
         Route::post('/getcategory', 'ProductController@getcategory')->name('getcategory');
-
         Route::post('/delete_multiple', 'ProductController@destroyMultiple')->name('delete_multiple');
-
-        Route::get('/{id}/disable', 'ProductController@disable')->name('disable');
-        Route::get('/{id}/enable', 'ProductController@enable')->name('enable');
-
         Route::get('/cetak', 'ProductController@cetak')->name('cetak');
         Route::post('/cetak/pdf', 'ProductController@cetakPdf')->name('pdf');
-        
+        Route::post('/update_cost/{child_id}', 'ProductController@update_cost')->name('update_cost');
+        Route::get('/print_product', 'ProductController@print_product')->name('print_product');
+        Route::post('/get_category', 'ProductController@get_category')->name('get_category');
+        Route::get('/update_category_type_pack', 'ProductController@update_category_type_pack')->name('update_category_type_pack');
+        Route::get('/inactiveStatus/{id}', 'ProductController@inactiveStatus')->name('inactiveStatus');
+        Route::get('/activeStatus/{id}', 'ProductController@activeStatus')->name('activeStatus');
+
         Route::group(['as' => 'min_stock.'], function () {
             Route::get('/{id}/min_stock/create', 'ProductMinStockController@create')->name('create');
             Route::post('/{id}/min_stock', 'ProductMinStockController@store')->name('store');
             Route::get('/{id}/min_stock/{min_stock_id}/edit', 'ProductMinStockController@edit')->name('edit');
             Route::put('/{id}/min_stock/{min_stock_id}', 'ProductMinStockController@update')->name('update');
             Route::delete('/{id}/min_stock/{min_stock_id}', 'ProductMinStockController@destroy')->name('destroy');
+        });
+
+        Route::group(['as' => 'product_pack.'], function () {
+            Route::get('/{id}/product_pack/create', 'ProductPackController@create')->name('create');
+            Route::post('/{id}/product_pack', 'ProductPackController@store')->name('store');
+            Route::get('/{id}/product_pack/{pack_id}/edit', 'ProductPackController@edit')->name('edit');
+            Route::put('/{id}/product_pack/{pack_id}', 'ProductPackController@update')->name('update');
         });
     });
     Route::resource('product', 'ProductController');
@@ -95,7 +102,12 @@ Route::group([
         Route::post('/getkelurahan', 'CustomerController@getkelurahan')->name('getkelurahan');
         Route::post('/getzipcode', 'CustomerController@getzipcode')->name('getzipcode');
         Route::post('/getcustomertype', 'CustomerController@getcustomertype')->name('getcustomertype');
-        // Route::get('/{id}/history', 'CustomerController@history')->name('history');
+        Route::get('/update_pic', 'CustomerController@update_pic')->name('update_pic');
+        Route::get('/changeStatusActive/{id}', 'CustomerController@changeStatusActive')->name('changeStatusActive');
+        Route::get('/changeStatusInactive/{id}', 'CustomerController@changeStatusInactive')->name('changeStatusInactive');
+        Route::get('/changeExistenceEnable/{id}', 'CustomerController@changeExistenceEnable')->name('changeExistenceEnable');
+        Route::get('/changeExistenceDisabled/{id}', 'CustomerController@changeExistenceDisabled')->name('changeExistenceDisabled');
+        Route::get('/getApiData', 'CustomerController@getApiData')->name('getApiData');
 
         Route::group(['as' => 'other_address.', 'prefix' => '/customer'], function () {
             Route::get('/{id}/other_address/create', 'CustomerOtherAddressController@create')->name('create');
@@ -215,6 +227,15 @@ Route::group([
         Route::post('/getkecamatan', 'CustomerOtherAddressController@getkecamatan')->name('getkecamatan');
         Route::post('/getkelurahan', 'CustomerOtherAddressController@getkelurahan')->name('getkelurahan');
         Route::post('/getzipcode', 'CustomerOtherAddressController@getzipcode')->name('getzipcode');
+        Route::get('/import_template', 'CustomerOtherAddressController@import_template')->name('import_template');
+        Route::post('/import', 'CustomerOtherAddressController@import')->name('import');
+        Route::get('/{id}/inactive_member', 'CustomerOtherAddressController@inactive_member')->name('inactive_member');
+        Route::get('/{id}/active_member', 'CustomerOtherAddressController@active_member')->name('active_member');
+        Route::get('/{id}/disabled_member', 'CustomerOtherAddressController@disabled_member')->name('disabled_member');
+        Route::get('/{id}/enabled_member', 'CustomerOtherAddressController@enabled_member')->name('enabled_member');
+        Route::get('/export', 'CustomerOtherAddressController@export')->name('export');
+        Route::get('/import_template2', 'CustomerOtherAddressController@import_template2')->name('import_template2');
+        Route::post('/import2', 'CustomerOtherAddressController@import2')->name('import2');
     });
     Route::resource('customer_other_address', 'CustomerOtherAddressController');
 
@@ -233,10 +254,8 @@ Route::group([
     });
     Route::resource('brand_lokal', 'BrandLokalController');
 
-    Route::group(['as' => 'catalog.', 'prefix' => '/catalog'], function () {
-        // Route::get('/import_template', 'WarehouseController@import_template')->name('import_template');
-        // Route::post('/import', 'WarehouseController@import')->name('import');
-        // Route::get('/export', 'WarehouseController@export')->name('export');
+    Route::group(['as' => 'mitra.', 'prefix' => '/mitra'], function () {
+       
     });
-    Route::resource('catalog', 'CatalogController');
+    Route::resource('mitra', 'MitraController');
 });

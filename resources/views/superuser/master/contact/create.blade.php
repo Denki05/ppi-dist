@@ -36,16 +36,16 @@
           <div class="col">
             <div class="form-group row">
               <label for="sync" class="col-sm-2 col-form-label">Is For <span class="text-danger">*</span></label>
-              <div class="col-sm-10">
+              <div class="col">
                 <div class="form-row">
-                  <div class="col">
+                  <div class="col-4">
                     <select class="form-control js-select2 manage_sync" id="is_for" name="is_for">
                       <option value="">Get Account</option>
                       <option value="1">Member</option>
                       <option value="2">Vendor</option>
                     </select>
                   </div>
-                  <div class="col">
+                  <div class="col-6">
                     <select class="form-control js-select2" name="manage_id" id="manage_id">
                       <option>Pilih Account</option>
                     </select>
@@ -155,53 +155,63 @@
         let sync = $(this).val();
         
         if(sync == "1"){
-          $.ajax({
-           type:"get",
-           url:"{{ route('superuser.master.contact.get_member') }}",
-           success:function(res)
-           {     
-                $("#manage_id").empty();
-                $("#manage_id").append('<option>Pilih Member</option>');
-                if(res)
-                {
-                    $.each(res,function(key,value){
-                        $('#manage_id').append($("<option/>", {
-                           value: key,
-                           text: value
-                        }));
-                    });
-                }
-           }
-
+          $("#manage_id").select2({
+            ajax: {
+              url: '{{ route('superuser.master.contact.get_member') }}',
+              dataType: 'json',
+              delay: 250,
+              data: function (params) {
+                return {
+                  q: params.term,
+                  _token: "{{csrf_token()}}"
+                };
+              },
+              cache: true
+            },
+          });
+        }else if( sync == "2"){
+          $("#manage_id").select2({
+            ajax: {
+              url: '{{ route('superuser.master.contact.get_vendor') }}',
+              dataType: 'json',
+              delay: 250,
+              data: function (params) {
+                return {
+                  q: params.term,
+                  _token: "{{csrf_token()}}"
+                };
+              },
+              cache: true
+            },
           });
         }
     });
 
-    $(document).on('change', '#is_for'  ,function () {
-        let sync = $(this).val();
+    // $(document).on('change', '#is_for'  ,function () {
+    //     let sync = $(this).val();
         
-        if(sync == "2"){
-          $.ajax({
-           type:"get",
-           url:"{{ route('superuser.master.contact.get_vendor') }}",
-           success:function(res)
-           {     
-                $("#manage_id").empty();
-                $("#manage_id").append('<option>Pilih Vendor</option>');
-                if(res)
-                {
-                    $.each(res,function(key,value){
-                        $('#manage_id').append($("<option/>", {
-                           value: key,
-                           text: value
-                        }));
-                    });
-                }
-           }
+    //     if(sync == "2"){
+    //       $.ajax({
+    //        type:"get",
+    //        url:"{{ route('superuser.master.contact.get_vendor') }}",
+    //        success:function(res)
+    //        {     
+    //             $("#manage_id").empty();
+    //             $("#manage_id").append('<option>Pilih Vendor</option>');
+    //             if(res)
+    //             {
+    //                 $.each(res,function(key,value){
+    //                     $('#manage_id').append($("<option/>", {
+    //                        value: key,
+    //                        text: value
+    //                     }));
+    //                 });
+    //             }
+    //        }
 
-          });
-        }
-    });
+    //       });
+    //     }
+    // });
   })
 </script>
 @endpush

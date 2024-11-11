@@ -3,15 +3,13 @@
 namespace App\Entities\Penjualan;
 
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\SoftDeletes;
 
 class PackingOrderItem extends Model
 {
-    	use SoftDeletes;
         protected $table = "penjualan_do_item";
         protected $fillable =[
         	'do_id',
-        	'product_id',
+        	'product_packaging_id',
         	'so_item_id',
         	'qty',
         	'price',
@@ -29,8 +27,8 @@ class PackingOrderItem extends Model
         public function do(){
         	return $this->BelongsTo('App\Entities\Penjualan\PackingOrder','do_id','id');
         }
-        public function product(){
-        	return $this->BelongsTo('App\Entities\Master\Product','product_id','id');
+        public function product_pack(){
+        	return $this->BelongsTo('App\Entities\Master\ProductPack','product_packaging_id','id');
         }
         public function so_item(){
             return $this->belongsTo('App\Entities\Penjualan\SalesOrderItem', 'so_item_id', 'id');

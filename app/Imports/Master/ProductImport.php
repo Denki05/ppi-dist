@@ -4,80 +4,190 @@ namespace App\Imports\Master;
 
 use App\Entities\Master\BrandReference;
 use App\Entities\Master\Product;
+use App\Entities\Master\ProductPack;
+use App\Entities\Master\ProductMinStock;
 use App\Entities\Master\ProductCategory;
 use App\Entities\Master\ProductType;
 use App\Entities\Master\SubBrandReference;
 use App\Entities\Master\Unit;
 use App\Entities\Master\Warehouse;
-use App\Traits\ImportValidateHeader;
-use Maatwebsite\Excel\Concerns\ToModel;
+use App\Entities\Master\Packaging;
+use App\Entities\Master\Vendor;
+use Maatwebsite\Excel\Concerns\ToCollection;
+use Maatwebsite\Excel\Concerns\SkipsOnFailure;
+use Maatwebsite\Excel\Concerns\SkipsFailures;
+use Maatwebsite\Excel\Concerns\SkipsOnError;
+use Maatwebsite\Excel\Concerns\SkipsErrors;
 use Maatwebsite\Excel\Concerns\WithHeadingRow;
 use Maatwebsite\Excel\Concerns\WithStartRow;
 use Maatwebsite\Excel\Concerns\WithValidation;
 use Illuminate\Validation\Rule;
+use Maatwebsite\Excel\Imports\HeadingRowFormatter;
+use Illuminate\Support\Collection;
+use Maatwebsite\Excel\Validators\Failure;
+use DB;
 
-class ProductImport implements ToModel, WithHeadingRow, WithStartRow, WithValidation
+class ProductImport implements ToCollection, WithHeadingRow, WithStartRow, SkipsOnFailure, SkipsOnError
 {
-    use ImportValidateHeader;
+    use SkipsFailures, SkipsErrors;
 
-    public function model(array $row)
+    public $error;
+    public $success;
+
+    public function collection(Collection $rows)
     {
-        $this->validateHeader([
-            'brand_reference_id',
-            'sub_brand_reference_id',
-            'category_id',
-            'type_id',
-            'code',
-            'name',
-            'material_code',
-            'material_name',
-            'description',
-            'default_quantity',
-            'default_unit_id',
-            'default_warehouse_id',
-            'buying_price',
-            'selling_price',
-        ], $row);
+        DB::beginTransaction();
 
-        return new Product([
-            'brand_reference_id' => $row['brand_reference_id'],
-            'sub_brand_reference_id' => $row['sub_brand_reference_id'],
-            'category_id' => $row['category_id'],
-            'type_id' => $row['type_id'],
-            'code' => $row['code'],
-            'name' => $row['name'],
-            'material_code' => $row['material_code'],
-            'material_name' => $row['material_name'],
-            'description' => $row['description'],
-            'default_quantity' => $row['default_quantity'],
-            'default_unit_id' => $row['default_unit_id'],
-            'default_warehouse_id' => $row['default_warehouse_id'],
-            'buying_price' => $row['buying_price'],
-            'selling_price' => $row['selling_price'],
-            'status' => Product::STATUS['ACTIVE']
-        ]);
+        try{
+            $collect_error = [];
+            $collect_success = [];
+
+            foreach ($rows as $row) 
+            {
+                $searah = SubBrandReference::where('name', $row['searah'])->first();
+                if($searah == null) {
+                    $collect_error[] = $row['searah'] . '  "SEARAH" not found';
+                    break;
+                }
+
+                $kategori = ProductCategory::where('name', $row['kategori'])->first();
+                if($kategori == null) {
+                    $collect_error[] = $row['kategori'] . '  "CATEGORY" not found';
+                    break;
+                }
+
+                $type = ProductType::where('name', $row['type'])->first();
+
+                $vendor = Vendor::where('name', $row['vendor'])->first();
+                if($vendor == null) {
+                    $collect_error[] = $row['vendor'] . '  "VENDOR" not found';
+                    break;
+                }
+
+                if($row['merek'] == 'Senses' || $row['merek'] == 'SENSES'){
+                    $id_product = explode(' ', $row['code']);
+                    
+                    $product = new Product;
+                    $product->id = $id_product[1];
+                    $product->sub_brand_reference_id = $searah->id;
+                    $product->category_id = $kategori->id;
+                    $product->type_id = $type->id ?? null;
+                    $product->vendor_id = $vendor->id;
+                    $product->brand_name = $row['merek'];
+                    $product->code = $row['code'];
+                    $product->name = $row['name'];
+                    $product->alias = $row['alias'] ?? null;
+                    $product->material_code = $row['material_code'];
+                    $product->material_name = $row['material_name'];
+                    $product->gender = $row['gender'];
+                    $product->description = $row['description'];
+                    $product->buying_price = $row['buying_price'];
+                    $product->selling_price = $row['selling_price'];
+                    $product->status = Product::STATUS['ACTIVE'];
+                    if($product->save()){
+                        $warehouse = Warehouse::where('name', 'Gudang Araya')->first();
+                        $pecah_kemasan = explode(',', $row['packaging']);
+
+                        foreach($pecah_kemasan as $value){
+                                $child_product = new ProductPack;
+                                $child_product->id = $product->id.'-'.Packaging::where('pack_name', $value)->pluck('id')->first();
+                                $child_product->product_id = $product->id;
+                                $child_product->warehouse_id = $warehouse->id;
+                                $child_product->packaging_id = Packaging::where('pack_name', $value)->pluck('id')->first();
+                                $child_product->material_code = $row['material_code'];
+                                $child_product->material_name = $row['material_name'];
+                                $child_product->code = $row['code'];
+                                $child_product->name = $row['name'];
+                                $child_product->price = $row['selling_price'];
+                                $child_product->gender = $row['gender'];
+                                $child_product->note = $row['description'];
+                                $child_product->status = ProductPack::STATUS['ACTIVE'];
+                                $child_product->save();
+
+                                $min_stock = new ProductMinStock;
+                                $min_stock->product_packaging_id = $child_product->id;
+                                $min_stock->warehouse_id = $warehouse->id;
+                                $min_stock->unit_id = 1;
+                                $min_stock->quantity = 0;
+                                $min_stock->selling_price = $child_product->price;
+                                $min_stock->save();
+                        }
+                    }
+                }else{
+                    $product = new Product;
+                    $product->id = $row['code'];
+                    $product->sub_brand_reference_id = $searah->id;
+                    $product->category_id = $kategori->id;
+                    $product->type_id = $type->id ?? null;
+                    $product->vendor_id = $vendor->id;
+                    $product->brand_name = $row['merek'];
+                    $product->code = $row['code'];
+                    $product->name = $row['name'];
+                    $product->material_code = $row['material_code'];
+                    $product->material_name = $row['material_name'];
+                    $product->gender = $row['gender'];
+                    $product->description = $row['description'];
+                    $product->buying_price = $row['buying_price'];
+                    $product->selling_price = $row['selling_price'];
+                    $product->status = Product::STATUS['ACTIVE'];
+                    // $product->save();
+                    if($product->save()){
+                        $warehouse = Warehouse::where('name', 'Gudang Araya')->first();
+                        $pecah_kemasan = explode(',', $row['packaging']);
+                        $kemasan = Packaging::where('pack_name', $pecah_kemasan)->get();
+
+
+                        foreach($pecah_kemasan as $value){
+                                $child_product = new ProductPack;
+                                $child_product->id = $product->id.'-'.Packaging::where('pack_name', $value)->pluck('id')->first();
+                                $child_product->product_id = $product->id;
+                                $child_product->warehouse_id = $warehouse->id;
+                                $child_product->packaging_id = Packaging::where('pack_name', $value)->pluck('id')->first();
+                                $child_product->material_code = $row['material_code'];
+                                $child_product->material_name = $row['material_name'];
+                                $child_product->code = $row['code'];
+                                $child_product->name = $row['name'];
+                                $child_product->price = $row['selling_price'];
+                                $child_product->gender = $row['gender'];
+                                $child_product->note = $row['description'];
+                                $child_product->status = ProductPack::STATUS['ACTIVE'];
+                                $child_product->save();
+
+                                $min_stock = new ProductMinStock;
+                                $min_stock->product_packaging_id = $child_product->id;
+                                $min_stock->warehouse_id = $warehouse->id;
+                                $min_stock->unit_id = 1;
+                                $min_stock->quantity = 0;
+                                $min_stock->selling_price = $child_product->price;
+                                $min_stock->save();                             
+                        }
+                    }
+                }
+
+                $collect_success[] = $product->code.'-'.$product->name;
+            }
+
+            if (!$collect_success) {
+                $collect_success[] = 'No successful import.';
+            }
+
+            if (!$collect_error) {
+                $collect_error[] = 'No failed import.';
+            }
+
+            $this->error = $collect_error;
+            $this->success = $collect_success;
+
+            DB::commit();
+        }catch (\Exception $e) {
+            dd($e);
+            $this->error = $e->getMessage();
+            DB::rollBack();
+        }
     }
 
     public function startRow(): int
     {
         return 2;
-    }
-
-    public function rules(): array {
-        return [
-            'brand_reference_id' => 'required|' . Rule::in(BrandReference::select('id')->pluck('id')->toArray()),
-            'sub_brand_reference_id' => 'required|' . Rule::in(SubBrandReference::select('id')->pluck('id')->toArray()),
-            'category_id' => 'required|' . Rule::in(ProductCategory::select('id')->pluck('id')->toArray()),
-            'type_id' => 'required|' . Rule::in(ProductType::select('id')->pluck('id')->toArray()),
-            'code' => 'required',
-            'name' => 'required',
-            'material_code' => 'required',
-            'material_name' => 'required',
-            'default_quantity' => 'required|numeric',
-            'default_unit_id' => 'required|integer|' . Rule::in(Unit::select('id')->pluck('id')->toArray()),
-            'default_warehouse_id' => 'required|integer|' . Rule::in(Warehouse::select('id')->pluck('id')->toArray()),
-            'buying_price' => 'required|numeric',
-            'selling_price' => 'required|numeric',
-        ];
     }
 }

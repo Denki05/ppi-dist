@@ -4,13 +4,18 @@ namespace App\Entities\Penjualan;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use App\Entities\Account\Superuser;
+use App\Entities\Account\Superuser as AccountSuperuser;
 
 class SalesOrder extends Model
 {
 	use SoftDeletes;
+
     protected $table = "penjualan_so";
     protected $fillable =[
+    	'so_code',
     	'code',
+        'keep_code', 
     	'sales_id',
     	'sales_senior_id',
     	'origin_warehouse_id',
@@ -19,28 +24,36 @@ class SalesOrder extends Model
         'customer_other_address_id',
         'ekspedisi_id',
         'vendor_id',
+        'so_date',
+        'brand_name',
     	'type_transaction',
+        'rekening_id',
         'type_so',
     	'idr_rate',
-    	'tl',
-    	'sales',
     	'status',
         'shipping_cost_buyer',
         'condition',
     	'payment_status',
-        'keterangan_tidak_lanjut',
+        'catatan',
+        'note',
+        'no_ducument_ppn',
     	'so_for',
     	'so_indent',
+        'indent_status', 
         'count_rev',
     	'updated_by',
     	'created_by',
-    	'deleted_by'
+    	'deleted_by',
+        'created_at', 
+        'updated_at',
     ];
+
     const STATUS = [
     	1 => 'CASH',
     	2 => 'TEMPO',
     	3 => 'MARKETING'
     ];
+    
     const BRAND_TYPE = [
     	1 => 'Senses',
     	2 => 'GCF',
@@ -48,19 +61,18 @@ class SalesOrder extends Model
     	4 => 'LONGDA'
     ];
 
-    const TL = [
-        1 => 'Ivan',
-        2 => 'Erwin',
-        3 => 'Nia',
-        4 => 'Kantor'
+    const SALES_SENIOR = [
+        'Ivan' => 1,
+        'Nia' => 2,
+        'Lindy' => 3,
     ];
 
     const SALES = [
-        1 => 'Ganes',
-        2 => 'Lindy',
-        3 => 'Erwin',
-        4 => 'Ivan',
-        5 => 'Kantor',
+        'Lindy' => 1,
+        'Rita' => 2,
+        'S.A' => 3,
+        'Santi' => 4,
+        'Rudy' => 5,
     ];
     
     const STEP = [
@@ -68,19 +80,22 @@ class SalesOrder extends Model
     	2 => 'LANJUTAN',
         3 => 'AWAL PERLU REVISI',
         4 => 'TUTUP',
+        5 => 'HOLD',
+        6 => 'INDENT',
     	9 => 'MUTASI',
     ];
 
     const PAYMENT_STATUS = [
     	0 => 'NEW',
     	1 => 'PAID',
-        2 => 'PARTIALY',
+        2 => 'COPY',
     ];
 
     const TYPE_TRANSACTION = [
     	1 => 'CASH',
         2 => 'TEMPO',
         3 => 'MARKETPLACE',
+        4 => 'COD',
     ];
 
     const CONDITION = [
@@ -99,6 +114,38 @@ class SalesOrder extends Model
     	1 => 'YES',
     ];
 
+    const REKENING = [
+        0 => '4720 2369 88 - IRWAN LINAKSITA',
+        1 => '7881 0374 95 - IDA ELISA',
+    ];
+
+    const INDENT = [
+        'NO' => 0,
+        'YES' => 1,
+    ];
+
+    const INDENT_STATUS = [
+        'INDENT' => 1,
+        'PARTLY' => 2,
+        'FULL' => 3,
+        'COMPLETED' => 4,
+    ];
+
+    public function sales_senior()
+    {
+        return array_search($this->sales_senior_id, self::SALES_SENIOR);
+    }
+
+    public function sales()
+    {
+        return array_search($this->sales_id, self::SALES);
+    }
+
+    public function so_status()
+    {
+        return array_search($this->status, self::STEP);
+    }
+
     public function customer(){
     	return $this->BelongsTo('App\Entities\Master\Customer','customer_id','id');
     }
@@ -107,12 +154,6 @@ class SalesOrder extends Model
     }
     public function customer_gudang(){
     	return $this->BelongsTo('App\Entities\Master\Warehouse','destination_warehouse_id','id');
-    }
-    public function sales_senior(){
-    	return $this->BelongsTo('App\Entities\Master\Sales','sales_senior_id','id');
-    }
-    public function sales(){
-    	return $this->BelongsTo('App\Entities\Master\Sales','sales_id','id');
     }
     public function origin_warehouse(){
         return $this->BelongsTo('App\Entities\Master\Warehouse','origin_warehouse_id','id');
@@ -141,10 +182,7 @@ class SalesOrder extends Model
             return null;
         }
     }
-    public function so_status()
-    {
-        return (object) self::STEP[$this->status];
-    }
+
 
     public function shipp_cost_buyer()
     {
@@ -161,9 +199,24 @@ class SalesOrder extends Model
         return (object) self::PAYMENT_STATUS[$this->payment_status];
     }
 
+    public function so_rekening()
+    {
+        return (object) self::REKENING[$this->rekening];
+    }
+
     public function so_revisi()
     {
         return (object) self::COUNT_REV[$this->count_rev];
+    }
+    
+    public function so_indent()
+    {
+        return array_search($this->so_indent, self::INDENT);
+    }
+
+    public function so_indent_status()
+    {
+        return array_search($this->indent_status, self::INDENT_STATUS);
     }
 
     public function user_update(){
@@ -173,5 +226,14 @@ class SalesOrder extends Model
     public function store()
     {
       return $this->belongsTo(Customer::class);
+    }
+
+    public function createdBySuperuser()
+    {
+        $superuser = Superuser::find($this->created_by);
+
+        if($superuser){
+            return $superuser->name ?? $superuser->username;
+        }
     }
 }

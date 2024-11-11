@@ -5,32 +5,47 @@ namespace App\Entities\Penjualan;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Notifications\Notifiable;
+
 
 class PackingOrder extends Model
 {
-    use SoftDeletes;
+    use SoftDeletes, Notifiable;
+
+	protected $appends = ['img_resi', 'img_resi2'];
     protected $table = "penjualan_do";
+	public static $directory_image = 'images/delivery_order/expedition_receipt/';
     protected $fillable = [
     	'code',
         'do_code',
     	'warehouse_id',
     	'customer_id',
     	'customer_other_address_id', 
-    	'other_address', 
+		'mitra_id',
         'ekspedisi_id',
         'vendor_id',
     	'idr_rate',
     	'status',
 		'count_cancel',
+		'status_mitra',
     	'type_transaction',
+		'tax_beli',
+		'tax_jual', 
+		'cashback_status',
         'note',
+        'pic',
+        'officer',
+        'account_representative',
 		'print_count',
         'date_sent',
     	'image',
+    	'image2',
+		'so_id',
     	'updated_by',
     	'created_by',
     	'deleted_by'
     ];
+
     const STATUS = [
     	1 => 'CASH',
     	2 => 'TEMPO',
@@ -66,14 +81,33 @@ class PackingOrder extends Model
     		'msg' => 'Revisi'
     	],
     ];
+
+	public function getImgResiAttribute()
+    {
+        if (!$this->image OR !file_exists(Self::$directory_image.$this->image)) {
+          return img_holder();
+        }
+
+        return asset(Self::$directory_image.$this->image);
+    }
+
+	public function getImgResi2Attribute()
+    {
+        if (!$this->image2 OR !file_exists(Self::$directory_image.$this->image2)) {
+          return img_holder();
+        }
+
+        return asset(Self::$directory_image.$this->image2);
+    }
+
     public function do_detail(){
-    	return $this->hasMany('App\Entities\Penjualan\PackingOrderItem','do_id');
+    	return $this->hasMany('App\Entities\Penjualan\PackingOrderItem','do_id', 'id');
     }
     public function customer(){
     	return $this->BelongsTo('App\Entities\Master\Customer','customer_id','id');
     }
     public function so(){
-    	return $this->BelongsTo('App\Entities\Penjualan\SalesOrder','so_id','id');
+    	return $this->BelongsTo('App\Entities\Penjualan\SalesOrder', 'so_id', 'id');
     }
     public function member(){
         return $this->BelongsTo('App\Entities\Master\CustomerOtherAddress', 'customer_other_address_id', 'id');
@@ -85,14 +119,19 @@ class PackingOrder extends Model
     // 	return $this->hasMany('App\Entities\Penjualan\PackingOrderDetail', 'do_id');
     // }
 	public function do_detail_cost(){
-		return $this->hasMany('App\Entities\Penjualan\PackingOrderDetail', 'do_id', 'id');
+        return $this->hasMany('App\Entities\Penjualan\PackingOrderDetail','do_id', 'id');
 	}
+
+	// public function do_detail(){
+	// 	return $this->hasMany('App\Entities\Penjualan\PackingOrderDetail', 'do_id', 'id');	
+	// }
+
     public function do_other_cost(){
         return $this->hasMany('App\Entities\Penjualan\PackingOrderCost','do_id');
 	}
-    public function do_type_transaction(){
-    	return (object) self::STATUS[$this->type_transaction];
-    }
+    // public function do_type_transaction(){
+    // 	return (object) self::STATUS[$this->type_transaction];
+    // }
     public function do_status(){
     	return (object) self::STATUS_PENGIRIMAN[$this->status];
     }
@@ -114,5 +153,9 @@ class PackingOrder extends Model
     }
 	public function vendor(){
         return $this->BelongsTo('App\Entities\Master\Vendor','vendor_id','id');
+    }
+
+	public function cashback(){
+    	return $this->BelongsTo('App\Entities\Finance\Cashback','do_id','id');
     }
 }

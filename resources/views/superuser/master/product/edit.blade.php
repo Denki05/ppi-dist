@@ -5,8 +5,9 @@
   <div class="block">
             <div class="block-conten" align="center">
                 <div class="col-md-10 col-md-offset-1">
-                	<form data-action="{{ route('superuser.master.product.update', [$product->id]) }}" data-type="POST" enctype="multipart/form-data" class="f1 ajax">
+                	<form data-action="{{ route('superuser.master.product.update', base64_encode($product->id)) }}" data-type="POST" enctype="multipart/form-data" class="f1 ajax" novalidate>
                   <input type="hidden" name="_method" value="PUT">
+                  
                 		<div class="f1-steps">
                 			<div class="f1-progress">
                 			    <div class="f1-progress-line" data-now-value="25" data-number-of-steps="4"></div>
@@ -74,7 +75,7 @@
                                     <div class="form-group row">
                                       <label for="alias" class="col-sm-2 col-form-label">Alias <span class="text-danger">*</span></label>
                                       <div class="col-sm-10">
-                                        <input type="text" id="alias" name="alias" placeholder="Alias Name" class="form-control" value="{{$product->alias}}">
+                                        <input type="text" id="alias" name="alias" placeholder="Alias Name" class="form-control" value="{{$product->alias ?? '-'}}">
                                       </div>
                                     </div>
                                   </div>
@@ -82,7 +83,7 @@
                                     <div class="form-group row">
                                       <label for="ratio" class="col-sm-2 col-form-label">Ratio <span class="text-danger">*</span></label>
                                       <div class="col-sm-10">
-                                        <input type="number" class="form-control" id="ratio" name="ratio" min="0" value="0" step="0.0001" value="{{$product->ratio}}">
+                                        <input type="number" class="form-control" id="ratio" name="ratio" min="0" value="0" step="0.0001" value="{{$product->ratio ?? '-'}}">
                                       </div>
                                     </div>
                                   </div>
@@ -108,7 +109,7 @@
                                     <div class="form-group row">
                                       <label for="selling_price" class="col-sm-2 col-form-label">Price List <span class="text-danger">*</span></label>
                                       <div class="col-sm-6">
-                                        <input type="number" class="form-control" id="selling_price" name="selling_price" min="0" value="0" value="{{$product->selling_price}}">
+                                        <input type="number" class="form-control" id="selling_price" name="selling_price" min="0" value="{{$product->selling_price}}">
                                         <span class="text-danger">*Harga dalam USD</span>
                                       </div>
                                     </div>  
@@ -121,7 +122,7 @@
                                       <div class="col-sm-10">
                                         <select class="js-select2 form-control" id="note" name="note" style="width:100%;" placeholder="Pilih Note">
                                           <option>Pilih Note</option>
-                                          @foreach($product_notes as $note)
+                                          @foreach(\App\Entities\Master\Product::NOTE as $note)
                                           <option value="{{ $note }}" {{ ($note == $product->note ) ? 'selected' : '' }}>{{ $note }}</option>
                                           @endforeach
                                         </select>
@@ -134,8 +135,8 @@
                                       <div class="col-sm-10">
                                         <select class="js-select2 form-control" id="gender" name="gender" style="width:100%;" placeholder="Pilih Gender">
                                           <option>Pilih Gender</option>
-                                          @foreach($gender as $gender)
-                                          <option value="{{ $gender }}" {{ ($gender == $product->gender ) ? 'selected' : '' }}>{{ $gender }}</option>
+                                          @foreach(\App\Entities\Master\Product::GENDER as $gender)
+                                          <option value="{{ $gender }}" {{ ($product->gender == $gender) ? 'selected' : '' }}>{{ $gender }}</option>
                                           @endforeach
                                         </select>
                                       </div>
@@ -146,21 +147,24 @@
                                   <div class="col">
                                     <div class="form-group row">
                                       <div class="col-sm-12">
-                                        <textarea class="form-control" name="description" placeholder="Keterangan" rows="1" value="{{$product->description}}"></textarea>
+                                        <textarea class="form-control" name="description" placeholder="Keterangan" rows="1">{{$product->description}}</textarea>
                                       </div>
                                     </div>
                                   </div>
                                 </div>
                               </div>
                               <div class="f1-buttons">
-                                  <button type="button" class="btn btn-primary btn-next">Next <i class="fa fa-arrow-right"></i></button>
+                                <a href="javascript:history.back()" class="btn btn-danger">Go Back <i class="fa fa-arrow-left"></i></a>
+                                <button type="button" class="btn btn-primary btn-next">Next <i class="fa fa-arrow-right"></i></button>
                               </div>
+
+                              <br>
                         </fieldset>
                         
                         <!-- Detail Brand -->
                         <fieldset>
                           <h4>#Product Brand's</h4>
-                            <div class="container">
+                          <div class="container">
                               <div class="row">
                                 <div class="col">
                                   <div class="form-group row">
@@ -177,33 +181,57 @@
                                   </div>
                                   <div class="col">
                                     <div class="form-group row">
+                                      <label for="searah" class="col-sm-2 col-form-label">Searah<span class="text-danger">*</span></label>
+                                      <div class="col-sm-10">
+                                        <select class="js-select2 form-control" id="searah"  name="searah" style="width:100%;" data-placeholder="Pilih Searah">
+                                          <option value="">Pilih Searah</option>
+                                          @foreach($sub_brand_references as $searah)
+                                          <option value="{{ $searah->id }}" {{ ($searah->id == $product->sub_brand_reference_id ) ? 'selected' : '' }}>{{$searah->brand_reference->name}} - {{ $searah->name }}</option>
+                                          @endforeach
+                                        </select>
+                                      </div>
+                                    </div>   
+                                </div>
+                              </div>
+                              <div class="row">
+                                  <div class="col">
+                                    <div class="form-group row">
                                       <label for="category" class="col-sm-2 col-form-label">Category<span class="text-danger">*</span></label>
                                       <div class="col-sm-10">
                                         <select class="js-select2 form-control" id="category"  name="category" style="width:100%;" data-placeholder="Pilih Kategori">
                                             <option value="">==Select Category==</option>
                                             @foreach($product_categories as $cat)
-                                            <option value="{{ $cat->id }}" {{ ($cat->id == $product->category_id ) ? 'selected' : '' }}>{{ $cat->name }} - {{ $cat->packaging->pack_name }}</option>
+                                            <option value="{{ $cat->id }}" {{ ($cat->id == $product->category_id ) ? 'selected' : '' }}>{{ $cat->name }}</option>
                                             @endforeach
                                         </select>
                                       </div>
                                     </div>
                                   </div>
-                              </div>
-                              <div class="row">
-                                <div class="col">
-                                  <div class="form-group row">
-                                    <label for="searah" class="col-sm-1 col-form-label">Searah<span class="text-danger">*</span></label>
-                                    <div class="col-sm-10">
-                                      <select class="js-select2 form-control" id="searah"  name="searah" style="width:100%;" data-placeholder="Pilih Searah">
-                                        <option value="">Pilih Searah</option>
-                                        @foreach($sub_brand_references as $searah)
-                                        <option value="{{ $searah->id }}" {{ ($searah->id == $product->sub_brand_reference_id ) ? 'selected' : '' }}>{{$searah->brand_reference->name}} - {{ $searah->name }}</option>
-                                        @endforeach
-                                      </select>
+                                  <div class="col">
+                                    <div class="form-group row">
+                                      <label for="category" class="col-sm-2 col-form-label">Type<span class="text-danger">*</span></label>
+                                      <div class="col-sm-10">
+                                        <select class="js-select2 form-control" id="type"  name="type" style="width:100%;" data-placeholder="Pilih Kategori">
+                                            <option value="">==Select Type==</option>
+                                            @foreach($type as $type)
+                                            <option value="{{ $type->id }}" {{ ($type->id == $product->type_id ) ? 'selected' : '' }}>{{ $type->name }}</option>
+                                            @endforeach
+                                        </select>
+                                      </div>
                                     </div>
-                                  </div>   
-                                </div>
+                                  </div>
                               </div> 
+                              <div class="row">
+                                <div class="form-group">
+                                  <label for="packaging">Packaging</label>
+                                  <select class="form-control js-select2" id="packaging" name="packaging[]" style="width:100%;" data-placeholder="Pilih Kemasan" multiple="multiple">
+                                    <option value="">Pilih Kemasan</option>  
+                                    @foreach($pack as $pack)
+                                    <option value="{{$pack->id}}" {{ ($pack->id == $product->packaging_id ) ? 'selected' : '' }}>{{$pack->pack_name}}</option>
+                                    @endforeach
+                                  </select>
+                                </div>
+                              </div>
                               <div class="row">
                                 <div class="col">
                                   <div class="form-group">
@@ -278,20 +306,7 @@
                         <fieldset>
                             <h4>#Product Cost</h4>
                             <div class="container">
-                              {{--<div class="row">
-                                <div class="col">
-                                  <div class="form-group">
-                                    <label for="buying_price">Harga Beli </label>
-                                    <input type="number" class="form-control" id="buying_price" name="buying_price" min="0" value="0" step="0.0001">
-                                  </div>
-                                </div>
-                                <div class="col">
-                                  <div class="form-group">
-                                    <label for="buying_price">Harga Jual </label>
-                                    <input type="number" class="form-control" id="selling_price" name="selling_price" min="0" value="0" step="0.0001">
-                                  </div>
-                                </div>
-                              </div>--}}
+                              
                             </div>
                             <span class="text-danger">*Harga dalam kurs USD</span>
                             <div class="f1-buttons">

@@ -16,7 +16,6 @@ class PurchaseOrder extends Model
         'etd', 
         'note', 
         'edit_counter', 
-        'edit_marker', 
         'status', 
         'created_by', 
         'updated_by',
@@ -34,7 +33,7 @@ class PurchaseOrder extends Model
     	return $this->BelongsTo('App\Entities\Master\Warehouse','warehouse_id','id');
     }
 
-    public function po_detail(){
+    public function purchase_order_detail(){
         return $this->hasMany('App\Entities\Gudang\PurchaseOrderDetail', 'po_id', 'id');
     }
     

@@ -1,5 +1,7 @@
 <?php
 
+use App\Http\Controllers\Superuser\Account\LockScreenController;
+
 Route::group([
     'middleware' => ['role:Developer|SuperAdmin|Admin', 'auth:superuser'],
     'as' => 'account.',
@@ -49,5 +51,8 @@ Route::group([
     });
     Route::resource('sales_person', 'Account\SalesPersonController');
 
-    
+    Route::group(['as' => 'log_activity.', 'prefix' => '/log_activity'], function () {
+       Route::get('/index', 'LogActivityController@index')->name('index');
+    });
+    Route::resource('log_activity', 'Account\LogActivityController');
 });

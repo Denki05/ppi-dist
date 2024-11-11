@@ -3,277 +3,336 @@
 @section('content')
 
 <div class="block">
-  
-  <div class="container py-5">
-  <div class="p-5 bg-white rounded shadow mb-5">
-    <!-- Rounded tabs -->
-    <ul id="myTab" role="tablist" class="nav nav-tabs nav-pills flex-column flex-sm-row text-center bg-light border-0 rounded-nav">
-      <li class="nav-item flex-sm-fill">
-        <a id="profile-tab" data-toggle="tab" href="#profile" role="tab" aria-controls="profile" aria-selected="true" class="nav-link border-0 text-uppercase font-weight-bold active">Data</a>
-      </li>
-      <li class="nav-item flex-sm-fill">
-        <a id="address-tab" data-toggle="tab" href="#address" role="tab" aria-controls="address" aria-selected="false" class="nav-link border-0 text-uppercase font-weight-bold">Warehouse</a>
-      </li>
-      <li class="nav-item flex-sm-fill">
-        <a id="document-tab" data-toggle="tab" href="#document" role="tab" aria-controls="document" aria-selected="false" class="nav-link border-0 text-uppercase font-weight-bold">Brand</a>
-      </li>
-      <li class="nav-item flex-sm-fill">
-        <a id="fragrant-tab" data-toggle="tab" href="#fragrant" role="tab" aria-controls="fragrant" aria-selected="false" class="nav-link border-0 text-uppercase font-weight-bold">Fragrantic</a>
-      </li>
-    </ul>
-    <div id="myTabContent" class="tab-content">
-      <div id="profile" role="tabpanel" aria-labelledby="profile-tab" class="tab-pane fade px-4 py-5 show active">
-        <div class="media align-items-center py-3 mb-3">
-          <img src="{{$product->image_url ?? img_holder() }}" class="d-block ui-w-100 rounded-circle" alt=""> 
-          <div class="media-body ml-4">
-            <h3 class="font-weight-bold mb-0">Name : {{ $product->name }}</h3>
-            <h5 class="font-weight-bold mb-0"><span class="text-muted font-weight-normal">Code : {{ $product->code }} </span></h5>
-            <div class="text-muted mb-2">ID: {{ $product->id }}</div>
-            <a href="{{ route('superuser.master.product.edit', $product->id) }}" class="btn btn-primary btn-sm" target="_blank">Edit</a>&nbsp;
-              <a href="javascript:deleteConfirmation('{{ route('superuser.master.product.destroy', $product->id) }}', true)" class="btn btn-danger btn-sm">Delete</a>&nbsp;
-          </div>
-        </div>
-
-        <div class="card mb-4">
-          <div class="card-body">
-            <table class="table user-view-table m-0" id="profile_table">
-              <tbody>
-                <tr>
-                  <td>Material Code</td>
-                  <td><b>:</b></td>
-                  <td>
-                    {{$product->material_code ?? '-'}}
-                  </td>
-                </tr>
-                <tr>
-                  <td>Material Name</td>
-                  <td><b>:</b></td>
-                  <td>
-                      {{$product->material_name ?? '-'}}
-                  </td>
-                </tr>
-                <tr>
-                  <td>Ratio</td>
-                  <td><b>:</b></td>
-                  <td>
-                      {{$product->ratio ?? '-'}}
-                  </td>
-                </tr>
-                <tr>
-                  <td>Alias</td>
-                  <td><b>:</b></td>
-                  <td>
-                      {{$product->alias ?? '-'}}
-                  </td>
-                </tr>
-                <tr>
-                  <td>Buying Price</td>
-                  <td><b>:</b></td>
-                  <td>{{number_format($product->buying_price) ?? '-'}}</span></td>
-                </tr>
-                <tr>
-                  <td>Selling Price</td>
-                  <td><b>:</b></td>
-                  <td>{{number_format($product->selling_price) ?? '-'}}</span></td>
-                </tr>
-                <tr>
-                  <td>Description</td>
-                  <td><b>:</b></td>
-                  <td><b>{{$customer->description ?? '-'}}</td>
-                </tr>
-                <tr>
-                  <td>Note</td>
-                  <td><b>:</b></td>
-                  <td>
-                    <span class="badge badge-info">{{$product->note}}</span>
-                  </td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
-        </div>
-      </div>
-
-      <div id="address" role="tabpanel" aria-labelledby="address-tab" class="tab-pane fade px-4 py-5">
-        <div class="card mb-4">
-          <div class="card-body">
-            <table class="table user-view-table m-0" id="address_table">
-              <tbody>
-                <tr>
-                  <td>Default Warehouse</td>
-                  <td><b>:</b></td>
-                  <td>
-                      {{ $product->default_warehouse->name  ?? '-'}}
-                  </td>
-                </tr>
-                <tr>
-                  <td>Default Quantity</td>
-                  <td><b>:</b></td>
-                  <td>{{$product->default_quantity}}</td>
-                </tr>
-                <tr>
-                  <td>Default Unit</td>
-                  <td><b>:</b></td>
-                  <td>
-                    {{ $product->default_unit->name ?? '-' }}
-                  </td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
-        </div>
-      </div>
-
-      <div id="document" role="tabpanel" aria-labelledby="document-tab" class="tab-pane fade px-4 py-5">
-        <div class="card mb-4">
-          <div class="card-body">
-            <table class="table user-view-table m-0" id="document_table">
-              <tbody>
-                <tr>
-                  <td>Fragrantica</td>
-                  <td><b>:</b></td>
-                  <td>
-                    
-                      {{ $product->sub_brand_reference->brand_reference->name }}
-                    
-                  </td>
-                </tr>
-                <tr>
-                  <td>Searah</td>
-                  <td><b>:</b></td>
-                  <td>
-                    <a href="{{ route('superuser.master.sub_brand_reference.show', $product->sub_brand_reference_id) }}">
-                      {{ $product->sub_brand_reference->name }}
-                    </a>
-                  </td>
-                </tr>
-                <tr>
-                  <td>Brand</td>
-                  <td><b>:</b></td>
-                  <td>
-                      {{ $product->category->brand_name }}
-                  </td>
-                </tr>
-                <tr>
-                  <td>Category</td>
-                  <td><b>:</b></td>
-                  <td>
-                      {{ $product->category->name }}
-                  </td>
-                </tr>
-                <tr>
-                  <td>Image</td>
-                  <td><b>:</b></td>
-                  <td>
-                    <a href="{{ $product->image_url ?? img_holder() }}" class="img-link img-link-zoom-in img-thumb img-lightbox">
-                      <img src="{{ $product->image_url ?? img_holder() }}" class="img-fluid img-show-small">
-                    </a>
-                  </td>
-                </tr>
-                <tr>
-                  <td>Image HD</td>
-                  <td><b>:</b></td>
-                  <td>
-                    <a href="{{ $product->image_hd_url ?? img_holder() }}" class="img-link img-link-zoom-in img-thumb img-lightbox">
-                      <img src="{{ $product->image_hd_url ?? img_holder() }}" class="img-fluid img-show-small">
-                    </a>
-                  </td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
-        </div>
-      </div>
-
-      <div id="fragrant" role="tabpanel" aria-labelledby="fragrant-tab" class="tab-pane fade px-4 py-5">
-        <div class="card mb-4">
+  <div class="block-header block-header-default">
+    <h3 class="block-title">#SHOW PRODUCT : {{$product->code}} - {{$product->name}}</h3>
+  </div>
+  <div class="block-content">
+    <input style="display: none;" id="tab1" type="radio" name="tabs" checked>
+    <label style="padding: 15px 25px;" for="tab1">DATA</label>
+      
+    <input style="display: none;" id="tab2" type="radio" name="tabs">
+    <label style="padding: 15px 25px;" for="tab2">PACKAGING</label>
+      
+    <input style="display: none;" id="tab3" type="radio" name="tabs">
+    <label style="padding: 15px 25px;" for="tab3">BRAND</label>
+      
+    <!-- Data -->
+    <section id="content1">
+      <div class="row mb-30">
+        <div class="col-8">
           <div class="row">
-            <div class="col-md-6">
-              <div class="block">
-                <div class="block-content block-content-full">
-                  <img src="{{ $product->sub_brand_reference->image_botol_url ?? img_holder() }}" class="img-fluid">
+            <div class="col">
+              <div class="form-group row">
+                <label for="example-text-input" class="col-3 col-form-label">Kode Bahan</label>
+                <div class="col-8">
+                  <input class="form-control" type="text" value="{{ $product->material_code }}" id="example-text-input" readonly>
+                  <br>
+                  <a href="#material_optional" class="link-primary"><i class="fa fa-plus-circle" aria-hidden="true"></i> Other Data</a>
                 </div>
               </div>
             </div>
-            <div class="col-md-6">
-              <div class="block">
-                <div class="block-content block-content-full">
-                  <h2>{{$product->name}} | {{ $product->code }}</h2>
-                  <a href="{{ $product->sub_brand_reference->link }}" target="_blank">
-                    <p>{{ $product->sub_brand_reference->name }}</p>
-                  </a>
-                  <div class="cell accord-box">main accords</div>
-                  <div class="block-content block-content-full">
-                    <img src="{{ $product->sub_brand_reference->image_table_botol_url ?? img_holder() }}" class="img-fluid">
-                  </div>
-                  <!-- <div class="cell accord-box">
-                    <?php $frag = DB::table('master_product_fragrantica')->where('product_id', $product->id)->orderby('scent_range', 'DESC')->get(); ?>
-                    @foreach($frag as $row)
-                    <div class="accord-bar" style="color: rgb(255, 255, 255); background: {{$row->color_scent}}; opacity: 1; width: {{$row->scent_range}}%; text-align: center; opacity: 1;">{{$row->parfume_scent}}</div>
-                    @endforeach
-                  </div> -->
-                  <br>
-                  <p>{{$product->sub_brand_reference->description ?? '-'}}</p>
-                  <!-- <p>Alpha by <b>HMNS</b> is a fragrance for women and men. This is a new fragrance. Alpha was launched in 2019. The nose behind this fragrance is Agil Usman. Top notes are Citruses and Grass; middle notes are Green Tea and Woodsy Notes; base notes are Cedar and Vetiver. </p> -->
+            <div class="col">
+              <div class="form-group row">
+                <label for="example-text-input" class="col-3 col-form-label">Nama Bahan</label>
+                <div class="col-8">
+                  <input class="form-control" type="text" value="{{ $product->material_name }}" id="example-text-input" readonly>
+                </div>
+              </div>
+            </div>
+            <div class="col">
+              <div class="form-group row">
+                <label for="example-text-input" class="col-3 col-form-label">Pabrik</label>
+                <div class="col-8">
+                  <input class="form-control" type="text" value="{{ $product->sourceVendor->name }}" id="example-text-input" readonly>
                 </div>
               </div>
             </div>
           </div>
+
+          <!-- Optional -->
+          <div class="row" id="material_optional" style="display: none;">
+            <div class="col">
+              <div class="form-group row">
+                <label for="example-text-input" class="col-3 col-form-label">Kode Bahan Opsional</label>
+                <div class="col-8">
+                  <input class="form-control" type="text" value="{{ $product->material_code_optional ?? '' }}" id="example-text-input" readonly>
+                </div>
+              </div>
+            </div>
+            <div class="col">
+              <div class="form-group row">
+                <label for="example-text-input" class="col-3 col-form-label">Nama Bahan Opsional</label>
+                <div class="col-8">
+                  <input class="form-control" type="text" value="{{ $product->material_name_optional ?? '' }}" id="example-text-input" readonly>
+                </div>
+              </div>
+            </div>
+            <div class="col">
+              <div class="form-group row">
+                <label for="example-text-input" class="col-3 col-form-label">Pabrik Opsional</label>
+                <div class="col-8">
+                  <input class="form-control" type="text" value="{{ $product->destinationVendor->name ?? '' }}" id="example-text-input" readonly>
+                </div>
+              </div>
+            </div>
+          </div>
+          
+          <hr>
+          
+          <div class="form-group row">
+            <label for="example-text-input" class="col-2 col-form-label">Kode produk</label>
+            <div class="col-8">
+              <input class="form-control" type="text" value="{{ $product->code }}" id="example-text-input" readonly>
+            </div>
+          </div>
+          <div class="form-group row">
+            <label for="example-text-input" class="col-2 col-form-label">Nama produk</label>
+            <div class="col-8">
+              <input class="form-control" type="text" value="{{ $product->name }}" id="example-text-input" readonly>
+            </div>
+          </div>
+          <div class="form-group row">
+            <label for="example-text-input" class="col-2 col-form-label">Merek</label>
+            <div class="col-8">
+              <input class="form-control" type="text" value="{{ $product->brand_name }}" id="example-text-input" readonly>
+            </div>
+          </div>
+          <div class="form-group row">
+            <label for="example-text-input" class="col-2 col-form-label">Kategori</label>
+            <div class="col-8">
+              <input class="form-control" type="text" value="{{ $product->category->name }}" id="example-text-input" readonly>
+            </div>
+          </div>
+          <div class="form-group row">
+            <label for="example-text-input" class="col-2 col-form-label">Gender</label>
+            <div class="col-8">
+              <input class="form-control" type="text" value="{{ $product->gender }}" id="example-text-input" readonly>
+            </div>
+          </div>
         </div>
-        <div class="row mb-30">
-          <div class="col-12">
-            <a href="{{route('superuser.master.product.index')}}" class="btn btn-warning  btn-md text-white"><i class="fa fa-arrow-left"></i> Back</a>
+
+        <div class="col-4">
+          <div class="form-group row">
+            <label for="example-text-input" class="col-2 col-form-label">Alias</label>
+            <div class="col-8">
+              <input class="form-control" type="text" value="{{ $product->alias }}" id="example-text-input" readonly>
+            </div>
+          </div>
+          <div class="form-group row">
+            <label for="example-text-input" class="col-2 col-form-label">Ratio</label>
+            <div class="col-8">
+              <input class="form-control" type="text" value="{{ $product->ratio }}" id="example-text-input" readonly> 
+            </div>
+          </div>
+          {{--<div class="form-group row">
+            <label for="example-text-input" class="col-2 col-form-label">Harga Beli</label>
+            <div class="col-8">
+              <input class="form-control" type="text" value="{{ '$' . number_format($product->buying_price, 2) }}" id="example-text-input" readonly>
+            </div>
+          </div>
+          <div class="form-group row">
+            <label for="example-text-input" class="col-2 col-form-label">Harga Jual</label>
+            <div class="col-8">
+              <input class="form-control" type="text" value="{{ '$' . number_format($product->selling_price, 2) }}" id="example-text-input" readonly>
+            </div>
+          </div>--}}
+          <div class="form-group row">
+            <label for="example-text-input" class="col-2 col-form-label">Note</label>
+            <div class="col-8">
+              <input class="form-control" type="text" value="{{ $product->note ?? '-' }}" id="example-text-input" readonly>
+            </div>
+          </div>
+          <div class="form-group row">
+            <label for="example-text-input" class="col-2 col-form-label">Status</label>
+            <div class="col-8">
+              <input class="form-control" type="text" value="{{ $product->status() }}" id="example-text-input" readonly>
+            </div>
+          </div>
+          
+        </div>
+      </div>
+    </section>
+      
+    <!-- Paackaging -->
+    <section id="content2">
+      <div class="row mb-30">
+        <a href="{{ route('superuser.master.product.product_pack.create', [$product->id]) }}">
+            <button type="button" class="btn btn-outline-primary min-width-125">Create Pack</button>
+          </a>
+        <div class="col-12">
+          <table id="packaging_list" class="table" style="width:100%">
+            <thead>
+              <tr>
+                <th>#</th>
+                <th>Packaging</th>
+                <th>type</th>
+                <th>Price</th>
+                <th>Action</th>
+              </tr>
+            </thead>
+            <tbody>
+              @foreach($product->product_pack as $row)
+                <tr>
+                  <td>{{$loop->iteration}}</td>
+                  <td><b>{{$row->packaging->pack_name}}</b></td>
+                  <td>{{ $row->type_product_pack->name ?? '-' }}</td>
+                  <td>{{$row->price}}</td>
+                  <td>
+                    <a href="javascript:void(0)" type="button" class="btn btn-sm btn-circle btn-alt-secondary openModal" data-id="{{$row->id}}" title="Update price"><i class="fa fa-money"></i></a> 
+                    <a href="{{ route('superuser.master.product.product_pack.edit', ['id' => base64_encode($product->id), 'pack_id' => base64_encode($row->id)]) }}" type="button" class="btn btn-sm btn-circle btn-alt-warning" title="Edit Packaging"><i class="fa fa-pencil" aria-hidden="true"> </i></a>
+                  </td>
+                </tr>
+              @endforeach
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+      
+    <!-- Brand -->
+    <section id="content3">
+    <div class="row mb-30">
+        <div class="col-6">
+          <div class="row">
+            <label class="col-md-3 col-form-label text-right">Brand</label>
+            <div class="col-md-7">
+              <div class="form-control-plaintext">{{ $product->sub_brand_reference->brand_reference->name }}</div>
+            </div>
+          </div>
+          <div class="row">
+            <label class="col-md-3 col-form-label text-right">Searah</label>
+            <div class="col-md-7">
+              <div class="form-control-plaintext">{{ $product->sub_brand_reference->name }}</div>
+            </div>
+          </div>
+          <div class="row">
+            <label class="col-md-3 col-form-label text-right">Link Web</label>
+            <div class="col-md-7">
+              <div class="form-control-plaintext">
+                <a href="{{ $product->sub_brand_reference->link }}" class="link-primary" target="_blank">{{ $product->sub_brand_reference->link }}</a>
+              </div>
+            </div>
+          </div>
+          
+        </div>
+        <div class="col-6">
+          <div class="row">
+            <label class="col-md-3 col-form-label text-right">Image</label>
+            <div class="col-md-7">
+              <a href="{{ $product->image_url ?? img_holder() }}" class="img-link img-link-zoom-in img-thumb img-lightbox">
+                <img src="{{ $product->image_url ?? img_holder() }}" class="img-fluid img-show-small">
+              </a>
+            </div>
+          </div>
+          <div class="row">
+            <label class="col-md-3 col-form-label text-right">Image HD</label>
+            <div class="col-md-7">
+              <a href="{{ $product->image_hd_url ?? img_holder() }}" class="img-link img-link-zoom-in img-thumb img-lightbox">
+                <img src="{{ $product->image_hd_url ?? img_holder() }}" class="img-fluid img-show-small">
+              </a>
+            </div>
           </div>
         </div>
       </div>
-    </div>
-    <!-- End rounded tabs -->
+    </section>
   </div>
 </div>
 
+<!-- Modal Update Price -->
+<!-- Modal -->
+<div class="modal fade" id="appointmentModal" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+      <div class="alert alert-success alert-dismissible fade show" role="alert" style="display:none;">
+        <strong>Success!</strong> Update price!.
+        <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="exampleModalLabel">Update Price</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
 
+            <div class="modal-body">
+                <form id="myForm" method="POST" role="form" enctype="multipart/form-data" novalidate>
+                  @csrf
+                    <input type="hidden" class="form-control" id="colly" name="colly" value="1">
+                    <div class="mb-3">
+                        <label>Price</label>
+                        <input type="text" class="form-control" name="price">
+                    </div>
+                    <input type="hidden" id="productPackID" />
+                    <button type="submit" class="btn btn-info">Save</button>
+                    <button type="button" class="btn btn-danger" data-bs-dismiss="modal">Close</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
 
 @endsection
-
+@include('superuser.asset.plugin.datatables')
 @include('superuser.asset.plugin.magnific-popup')
 @include('superuser.asset.plugin.swal2')
 
 @push('scripts')
+<script src="{{ asset('utility/superuser/js/form.js') }}"></script>
 <script type="text/javascript">
   $(document).ready(function() {
-    $('#profile_table').DataTable({
-      columnDefs: [
-        { orderable: false, targets: [2, 3] }
-      ]
-    })
 
-    $('#address_table').DataTable({
-      columnDefs: [
-        { orderable: false, targets: [3] }
-      ]
-    })
-
-    $('#document_table').DataTable({
-      columnDefs: [
-        { orderable: false, targets: [3] }
-      ]
-    })
-
-    $('a.img-lightbox').magnificPopup({
-    type: 'image',
-    closeOnContentClick: true,
+    var table = $('#packaging_list').DataTable({
+      info: false,
+      ordering: false,
+      paging: false,
+      searching: false,
     });
 
-    var prosesBar = $('.progress-bar');
-      var prosesAngka = 0;
+    $('a.img-lightbox').magnificPopup({
+      type: 'image',
+      closeOnContentClick: true,
+    });
 
-      setInterval(function(){
-        prosesAngka++;
-        prosesBar.css('width', prosesAngka + '%');
-        prosesBar.attr('aria-valuenow', prosesAngka);
-      }, 100);
+    $(document).on('click', '.openModal', function () {
+      var id = $(this).data('id');
+      $('#productPackID').val(id);
+      $('#appointmentModal').modal('show');
+    })
 
-    Codebase.helpers('table-tools')
+    $('#myForm').on('submit', function (e) {
+      e.preventDefault(); // prevent the form submit
+      var id = $('#productPackID').val();
+      var url = "{{ route('superuser.master.product.update_cost', ":id") }}";
+      url = url.replace(':id', id);
+      var AlertMsg = $('div[role="alert"]');
+
+      var formData = new FormData(this); 
+      // build the ajax call
+      $.ajax({
+          url: url,
+          type: 'POST',
+          headers: {'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')},
+          data: formData,
+          contentType: false,
+          processData: false,
+          success: function (response) {
+            $(AlertMsg).show();
+            setTimeout(function () {
+                    $('#myModal').modal({ show: true });
+                    setTimeout(function () {
+                        window.location.reload(1);
+                    }, 800);
+            }, 800);
+          }
+      });
+    });
+
+    $('a[href^="#"]').on('click', function(event) {
+      var target = $( $(this).attr('href') );
+      target.fadeToggle(100);
+    });
   })
 </script>
 @endpush

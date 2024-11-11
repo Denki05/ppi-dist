@@ -17,8 +17,8 @@ class ProductType extends Model
         'ACTIVE' => 1
     ];
 
-    public function products()
+    public function product_pack()
     {
-        return $this->hasMany('App\Entities\Master\Product', 'type_id');
+        return $this->hasMany('App\Entities\Master\ProductPack', 'type_id', 'id');
     }
 }

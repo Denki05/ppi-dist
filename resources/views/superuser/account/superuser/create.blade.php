@@ -12,6 +12,7 @@
     <h3 class="block-title">Create Superuser</h3>
   </div>
   <form class="ajax" data-action="{{ route('superuser.account.superuser.store') }}" data-type="POST" enctype="multipart/form-data">
+  @csrf
     <div class="block-content block-content-full">
       <div class="form-group row">
         <label class="col-lg-3 col-form-label text-right">Username <span class="text-danger">*</span></label>

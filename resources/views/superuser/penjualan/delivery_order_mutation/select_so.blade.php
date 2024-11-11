@@ -83,7 +83,7 @@
                 </tr>
               @endif
               @foreach($result as $index => $row)
-              <input type="hidden" name="repeater[{{$index}}][product_id]" value="{{$row->product_id}}">
+              <input type="hidden" name="repeater[{{$index}}][product_packaging_id]" value="{{$row->product_packaging_id}}">
               <input type="hidden" name="repeater[{{$index}}][so_qty]" value="{{$row->qty}}">
               <input type="hidden" name="repeater[{{$index}}][so_item_id]" value="{{$row->id}}">
               <tr class="index{{$index}}" data-index="{{$index}}">
@@ -91,8 +91,8 @@
                   <input type="checkbox" class="select_per_item" width="50" height="50" name="repeater[{{$index}}][checkbox]" data-index="{{$index}}">
                 </td>
                 <td>{{$row->so->code ?? ''}}</td>
-                <td>{{$row->product->name ?? ''}}</td>
-                <td>{{$row->packaging_txt()->scalar ?? ''}}</td>
+                <td>{{$row->product_pack->name ?? ''}}</td>
+                <td>{{$row->packaging->pack_name ?? ''}}</td>
                 <td>{{$row->qty}}</td>
                 
                 <td>
@@ -102,7 +102,7 @@
                   <input type="text" name="repeater[{{$index}}][rej_qty]" class="form-control" step="any">
                 </td>
                 <td>
-                  <input type="text" name="repeater[{{$index}}][price]" class="form-control" readonly value="{{$row->product->selling_price ?? 0}}">
+                  <input type="text" name="repeater[{{$index}}][price]" class="form-control" readonly value="{{$row->product_pack->price ?? 0}}">
                 </td>
                 <td>
                   <input type="text" name="repeater[{{$index}}][total]" class="form-control" readonly>

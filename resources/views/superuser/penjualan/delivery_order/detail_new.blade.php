@@ -57,7 +57,7 @@
             <label class="col-md-3 col-form-label text-right" for="customer">Customer</label>
             <div class="col-md-7">
               <!-- <div class="form-control-plaintext">{{$result->member->name ?? ''}}</div> -->
-              <input type="text" class="form-control" value="{{ $result->member->name}} | {{ $result->member->address }}" readonly>
+              <input type="text" class="form-control" value="{{ $result->member->name}} {{ $result->member->text_kota }}" readonly>
             </div>
           </div>
           <div class="form-group row">
@@ -86,7 +86,9 @@
           </a>
         </div>
         <div class="col-md-6 text-right">
-          <a href="{{route('superuser.penjualan.delivery_order.print_manifest', $result->id)}}" class="btn btn-info btn-sm btn-flat" data-id="{{$result->id}}" target="_blank"><i class="fas fa-clipboard-list"></i> Print Manifest</a>
+          <a href="{{route('superuser.penjualan.delivery_order.print_manifest', $result->id)}}" class="btn btn-info btn-sm btn-flat" data-id="{{$result->id}}" target="_blank">
+            <i class="fas fa-clipboard-list"></i> Print Manifest
+          </a>
         </div>
       </div>
       <hr >
@@ -107,9 +109,9 @@
             @foreach($result->do_detail as $index => $row)
               <tr>
                 <td>{{$index+1}}</td>
-                <td>{{ $row->product->code }} - {{$row->product->name}}</td>
+                <td>{{ $row->product_pack->code }} - {{$row->product_pack->name}}</td>
                 <td>{{$row->qty}}</td>
-                <td>{{$row->packaging->pack_name}}</td>
+                <td>{{$row->product_pack->packaging->pack_name}}</td>
                 <td><input type="checkbox" class="confirm-item" value="{{$row->id}}" /></td>
               </tr>
             @endforeach
@@ -192,17 +194,12 @@
         </div>
         <div class="col-md-6 text-right">
           @if($result->count_cancel == 0)
-            <a href="{{route('superuser.penjualan.delivery_order.print_label', $result->id)}}" class="btn btn-success btn-sm btn-flat" data-id="{{$result->id}}" target="_blank"><i class="fas fa-tag"></i> Print Label</a>
+            <a href="{{route('superuser.penjualan.delivery_order.print_label', $result->id)}}" class="btn btn-success btn-sm btn-flat" data-id="{{$result->id}}" target="_blank"><i class="fas fa-tag"></i> Label Penerima</a>
+            <a href="{{route('superuser.penjualan.delivery_order.print_label_pengirim')}}" class="btn btn-warning btn-sm btn-flat" target="_blank"><i class="fas fa-tag"></i> Label Pengirim</a>
             <a href="{{route('superuser.penjualan.delivery_order.print', $result->id)}}" class="btn btn-info btn-sm btn-flat" data-id="{{$result->id}}" target="_blank"><i class="fa fa-file-o"></i> Print DO</a>
-            @if($result->invoicing != null)
-            <a href="{{route('superuser.finance.invoicing.print',$result->invoicing->id)}}" class="btn btn-warning btn-sm btn-flat" data-id="{{$result->invoicing->id}}" target="_blank"><i class="fas fa-file-invoice" aria-hidden="true"></i> Print Invoice</a>
-            @endif
           @endif
-          @if($result->count_cancel == 2)
+          @if($result->count_cancel == 1)
             <a href="{{route('superuser.penjualan.delivery_order.print', $result->id)}}" class="btn btn-info btn-sm btn-flat" data-id="{{$result->id}}" target="_blank"><i class="fa fa-print"></i> Print DO Revisi</a>
-            @if($result->invoicing != null)
-            <a href="{{route('superuser.finance.invoicing.print',$result->invoicing->id)}}" class="btn btn-primary btn-sm btn-flat" data-id="{{$result->invoicing->id}}" target="_blank"><i class="fa fa-print"></i> Print Invoice Revisi</a>
-            @endif
           @endif
          
         </div>
@@ -232,15 +229,24 @@
             @csrf
             <input type="hidden" name="do_id" value="{{$result->id}}">
 
+            <div class="form-group row">
+              <label class="col-md-2 col-form-label text-right" for="name">Customer</label>
+              <div class="col-md-4">
+                <input class="form-control" value="{{$result->member->name}}" readonly>
+              </div>
+              <div class="col-md-4">
+                <input class="form-control" value="{{$result->member->text_kota}}" readonly>
+              </div>
+            </div>
+
             @if($result->status == 5 && $result->image == null)
             <div class="form-group row">
-              <div class="col-lg-12">
-                <div class="row">
-                  <label class="col-md-2 col-form-label text-right">Upload Image</label>
-                  <div class="col-md-8">
-                    <input type="file" name="image" class="form-control" accept="image/*">
-                  </div>
-                </div>
+              <label class="col-md-2 col-form-label text-right" for="name">Upload Image</label>
+              <div class="col-md-4">
+                <input type="file" id="image" name="image" data-max-file-size="2000" accept="image/png, image/jpeg">
+              </div>
+              <div class="col-md-4">
+                <input type="file" id="image2" name="image2" data-max-file-size="2000" accept="image/png, image/jpeg">
               </div>
             </div>
             @endif
@@ -254,23 +260,29 @@
             @endif
 
             <div class="form-group row">
-              <label class="col-md-2 col-form-label text-right" for="name">Delivery Cost(IDR)</label>
+              <label class="col-md-2 col-form-label text-right" for="name">Ongkir (IDR)</label>
               <div class="col-md-4">
-                <input type="text" class="form-control" placeholder="Input Note" value="{{strlen($result->do_detail_cost->first()->delivery_cost_note) > 0 ? $result->do_detail_cost->delivery_cost_note : ($result->ekspedisi ? $result->ekspedisi->name : '')}}" name="delivery_cost_note" {{$result->status == 6 ? 'readonly' : ''}}>
+                <input type="text" class="form-control" placeholder="Input Note" value="{{ $result->vendor->name }}" name="delivery_cost_note" {{$result->status == 6 ? 'readonly' : ''}} readonly>
               </div>
               <div class="col-md-4">
-                <input type="number" class="form-control" value="{{$result->do_detail_cost->first()->delivery_cost_idr ?? 0}}" name="delivery_cost_idr" step="any" {{$result->status == 5  || $result->status == 6 ? 'readonly' : ''}}>
+                <input type="number" class="form-control" value="{{number_format($result->do_detail_cost[0]->delivery_cost_idr ?? 0,0,',','.')}}" name="delivery_cost_idr" step="any" {{$result->status == 5  || $result->status == 6 ? 'readonly' : ''}}>
               </div>
             </div>
             <div class="form-group row">
-              <label class="col-md-2 col-form-label text-right" for="name">Other Cost(IDR)</label>
+              <label class="col-md-2 col-form-label text-right" for="name">Resi (IDR)</label>
               <div class="col-md-4">
-                <input type="text" class="form-control" value="{{$result->do_detail_cost->first()->other_cost_note ?? ''}}" name="other_cost_note" placeholder="Input Note" {{$result->status == 6 ? 'readonly' : ''}}>
+                <select class="form-control js-select2" name="other_cost_note" id="other_cost_note">
+                  <option value="">Pilih Ekspedisi</option>
+                  @foreach($ekspedisi as $row)
+                   <option value="{{$row->name}}">{{ $row->name }}</option>
+                  @endforeach
+                </select>
               </div>
               <div class="col-md-4">
                 <input type="number" class="form-control" value="{{$result->do_detail_cost->first()->other_cost_idr ?? 0}}" name="other_cost_idr" step="any" {{$result->status == 6 ? 'readonly' : ''}}>
               </div>
             </div>
+            
 
             <div class="form-group row">
               <div class="col-6">
@@ -303,9 +315,40 @@
 @include('superuser.asset.plugin.select2')
 @include('superuser.asset.plugin.datatables')
 @include('superuser.asset.plugin.swal2')
+@include('superuser.asset.plugin.fileinput')
 
 @push('scripts')
 <script type="text/javascript">
+  $('.js-select2').select2();
+
+    $('#image').fileinput({
+      theme: 'explorer-fa',
+      browseOnZoneClick: true,
+      showCancel: false,
+      showClose: false,
+      showUpload: false,
+      browseLabel: '',
+      removeLabel: '',
+      fileActionSettings: {
+        showDrag: false,
+        showRemove: false
+      },
+    });
+
+    $('#image2').fileinput({
+      theme: 'explorer-fa',
+      browseOnZoneClick: true,
+      showCancel: false,
+      showClose: false,
+      showUpload: false,
+      browseLabel: '',
+      removeLabel: '',
+      fileActionSettings: {
+        showDrag: false,
+        showRemove: false
+      },
+    });
+
   let idx = 0;
   $(function(){
     $(document).on('click','.btn-delivery',function(){
@@ -343,8 +386,26 @@
 
     $("#step" + stepNumber).addClass('active');
     $("#step" + stepNumber + "Container").addClass('active');
-    
-    $('.js-select2').select2();
   }
+
+  function previewImages(event) {
+    var preview = document.getElementById('imagePreview');
+    preview.innerHTML = ''; // Clear previous previews
+    
+    var files = event.target.files;
+    for (var i = 0; i < files.length; i++) {
+        var file = files[i];
+        var reader = new FileReader();
+        
+        reader.onload = function(e) {
+            var img = document.createElement('img');
+            img.src = e.target.result;
+            img.style.width = '150px'; // Adjust image size as needed
+            preview.appendChild(img);
+        }
+        
+        reader.readAsDataURL(file);
+    }
+}
 </script>
 @endpush

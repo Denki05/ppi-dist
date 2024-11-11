@@ -12,13 +12,14 @@ class Product extends Model
 
     protected $appends = ['image_url', 'image_hd_url'];
     protected $fillable = [
-                        'vendor_id', 'category_id', 'brand_reference_id', 'sub_brand_reference_id', 'brand_name',
-                        'code', 'name', 'material_code', 'material_name', 'alias', 'description', 
-                        'default_quantity', 'default_unit_id', 'ratio', 'default_warehouse_id',
-                        'buying_price', 'selling_price', 'image', 'image_hd', 'status', 'gender'
+                        'packaging_id', 'category_id', 'brand_reference_id', 'sub_brand_reference_id', 'brand_name', 'count_pack',
+                        'code', 'name', 'material_code', 'material_name', 'material_code_optional', 'material_name_optional', 'alias', 'description', 
+                        'default_quantity', 'default_unit_id', 'ratio', 'default_warehouse_id', 
+                        'vendor_id', 'vendor_optional_id', 'buying_price', 'selling_price', 'image', 'image_hd', 'status', 'product_finance_tax', 'gender'
                     ];
 
     protected $table = 'master_products';
+    public $incrementing = false;
     public static $directory_image = 'superuser_assets/media/master/product/';
     
     const NOTE = [
@@ -38,22 +39,29 @@ class Product extends Model
     const STATUS = [
         'DELETED' => 0,
         'ACTIVE' => 1,
-        'INACTIVE' => 2
+        'INACTIVE' => 2,
+        'ENABLE' => 3,
+        'DISABLE' => 4
     ];
 
     public function sub_brand_reference()
     {
-        return $this->BelongsTo('App\Entities\Master\SubBrandReference', 'sub_brand_reference_id');
+        return $this->belongsTo('App\Entities\Master\SubBrandReference', 'sub_brand_reference_id');
     }
 
     public function brand_ppi()
     {
-        return $this->BelongsTo('App\Entities\Master\BrandLokal', 'brand_lokal_id');
+        return $this->belongsTo('App\Entities\Master\BrandLokal', 'brand_lokal_id');
+    }
+
+    public function packaging()
+    {
+        return $this->belongsTo('App\Entities\Master\Packaging', 'packaging_id');
     }
 
     public function category()
     {
-        return $this->BelongsTo('App\Entities\Master\ProductCategory', 'category_id');
+        return $this->belongsTo('App\Entities\Master\ProductCategory', 'category_id');
     }
 
     public function default_unit()
@@ -63,7 +71,7 @@ class Product extends Model
 
     public function default_warehouse()
     {
-        return $this->belongsTo('App\Entities\Master\Warehouse');
+        return $this->belongsTo('App\Entities\Master\Warehouse', 'default_warehouse_id', 'id');
     }
 
     public function min_stocks()
@@ -76,9 +84,9 @@ class Product extends Model
         return $this->hasMany('App\Entities\Penjualan\SoProformaDetail');
     }
 
-    public function setting_price_log()
+    public function product_pack()
     {
-        return $this->hasMany('App\Entities\Penjualan\SettingPriceLog');
+        return $this->hasMany('App\Entities\Master\ProductPack', 'product_id');
     }
     
     public function getImageUrlAttribute()
@@ -133,5 +141,25 @@ class Product extends Model
         if ($superuser) {
             return $superuser->name ?? $superuser->username;
         }
+    }
+
+    public function sourceVendor()
+    {
+        return $this->belongsTo('App\Entities\Master\Vendor', 'vendor_id', 'id');
+    }
+
+    public function destinationVendor()
+    {
+        return $this->belongsTo('App\Entities\Master\Vendor', 'vendor_optional_id', 'id');
+    }
+
+    public function vendors()
+    {
+        return collect([$this->sourceVendor, $this->destinationVendor]);
+    }
+
+    public function gender()
+    {
+        return array_search($this->gender, self::GENDER);
     }
 }

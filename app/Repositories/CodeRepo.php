@@ -14,6 +14,8 @@ use App\Entities\Master\Unit;
 use App\Entities\Master\Vendor;
 use App\Entities\Master\Warehouse;
 use App\Entities\Penjualan\SalesOrder;
+use App\Entities\Penjualan\SalesOrderProforma;
+use App\Entities\Penjualan\SalesOrderKontrak;
 use App\Entities\Penjualan\PackingOrder;
 use App\Entities\Penjualan\DeliveryOrderMutation;
 use App\Entities\Penjualan\Canvasing;
@@ -22,6 +24,8 @@ use App\Entities\Finance\Payable;
 use App\Entities\Gudang\StockAdjustment;
 use App\Entities\Gudang\Receiving;
 use App\Entities\Master\BrandLokal;
+use App\Entities\Gudang\PurchaseOrder;
+use DB;
 
 class CodeRepo
 {
@@ -82,26 +86,6 @@ class CodeRepo
     {
         return self::generate('V', Vendor::class);
     }
-    
-    // Generate SO
-    public static function generateSO(){
-        $count = SalesOrder::withTrashed()
-                              ->where('condition', '>', 0)
-                              ->whereYear('created_at',date('Y'))
-                              ->whereMonth('created_at',date('m'))
-                              ->get();
-                                   
-        if(count($count) > 0 ){
-            $count = count($count) + 1;
-
-            $code = 'SO-' .date('my')."-".sprintf('%03d', $count);
-        }
-        else{
-            $code = 'SO-' .date('my')."-".sprintf('%03d', 1);
-        }
-        return $code;
-
-    }
 
     // So PPN
     public static function generatePPN(){
@@ -118,6 +102,47 @@ class CodeRepo
         }
         else{
             $code = 'SO-PPN/' .date('my')."-".sprintf('%03d', 1);
+        }
+        return $code;
+
+    }
+
+    // Generate So code awal
+    public static function generateSoAwal(){
+        $count = SalesOrder::withTrashed()
+                              ->where('status', '>', 0)
+                              ->whereYear('created_at',date('Y'))
+                              ->whereMonth('created_at',date('m'))
+                              ->get();
+                                   
+        if(count($count) > 0 ){
+            $count = count($count) + 1;
+
+            $code = 'SO-' .date('ym').sprintf('%03d', $count);
+        }
+        else{
+            $code = 'SO-' .date('ym').sprintf('%03d', 1);
+        }
+        return $code;
+
+    }
+
+    // Generate code so awal ppn
+    public static function generateSoAwalPpn(){
+        $count = SalesOrder::withTrashed()
+                              ->where('status', '>', 0)
+                              ->where('type_so', 'ppn')
+                              ->whereYear('created_at',date('Y'))
+                              ->whereMonth('created_at',date('m'))
+                              ->get();
+                                   
+        if(count($count) > 0 ){
+            $count = count($count) + 1;
+
+            $code = 'SO-PPN-' .date('ym').sprintf('%03d', $count);
+        }
+        else{
+            $code = 'SO-PPN-' .date('ym').sprintf('%03d', 1);
         }
         return $code;
 
@@ -156,10 +181,10 @@ class CodeRepo
         if(count($count) > 0 ){
             $count = count($count) + 1;
 
-            $code = 'DO-' .date('my')."-".sprintf('%05d', $count);
+            $code = 'DO' .date('my')."".sprintf('%05d', $count);
         }
         else{
-            $code = 'DO-' .date('my')."-".sprintf('%05d', 1);
+            $code = 'DO' .date('my')."".sprintf('%05d', 1);
         }
         return $code;
 
@@ -184,20 +209,7 @@ class CodeRepo
         }
         return $code;
     }
-    public static function generateProforma($code){
-        $split = explode("-", $code);
-
-        if(count($split) == 1){
-
-            $split = explode("SO", $code);
-            $so_code = 'PRF'.$split[1];    
-        }
-        else{
-            $split = explode("-", $code);
-            $so_code = 'PRF-' .$split[1]."-".$split[2];
-        }
-        return $so_code;
-    }
+   
     public static function generateStockAdjustment(){
         return self::generate('STADJ', StockAdjustment::class);   
     }
@@ -210,5 +222,141 @@ class CodeRepo
         return self::generate('RC', Receiving::class);
     }
 
+    // Generate SO code
+    public static function generateSO()
+    {
+        $parts = explode('-', date("d-m-Y"));
+        $p1 = substr($parts[2], (strlen($parts[2]) - 1) );
+        $abjadMonth = array( '-', 'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L');
+        $p2 = $abjadMonth[date('n')];
+        $yearMonth = $p1.$p2;
+        $latestNumber = "";
+
+        $get_max = DB::table('penjualan_so')->where('code', 'LIKE', '%'.$yearMonth.'%')->where('deleted_at', null)->max('code');
+
+        if($get_max == 'false'){
+            $latestNumber = $yearMonth . '001';
+        }else{
+            $latestNumber = $get_max;
+            $id = (int) substr($latestNumber, strlen($yearMonth)) + 1;
+            $latestNumber = $yearMonth . str_pad($id, 3, 0, STR_PAD_LEFT);
+        }
+        return $latestNumber;
+    }
+
+    // Generate PO code
+    public static function generatePurchaseOrder()
+    {
+        // $get_max = Purchaseorder::max('code');
+        $parts = explode('-', date("d-m-Y"));
+        $p1 = substr($parts[2], (strlen($parts[2]) - 2) );
+        $abjadMonth = array( '-', 'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L');
+        $p2 = $abjadMonth[date('n')];
+        $str_code = "B";
+        $yearMonth = $str_code.$p1.$p2;
+        $latestNumber = "";
+
+        $get_max = DB::table('purchase_order')->where('code', 'LIKE', '%'.$yearMonth.'%')->where('deleted_at', null)->max('code');
+
+        if($get_max == 'false'){
+            $latestNumber = $yearMonth . '001';
+        }else{
+            $latestNumber = $get_max;
+            $id = (int) substr($latestNumber, strlen($yearMonth)) + 1;
+            $latestNumber = $yearMonth . str_pad($id, 3, 0, STR_PAD_LEFT);
+        }
+        return $latestNumber;
+    }
+
+    // generate so ppn
+    public static function generateSOPPN()
+    {
+        $parts = explode('-', date("d-m-Y"));
+        $p1 = substr($parts[2], (strlen($parts[2]) - 1) );
+        $abjadMonth = array( '-', 'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L');
+        $p2 = $abjadMonth[date('n')];
+        $index_so = 'P';
+        $yearMonth = $index_so.$p1.$p2;
+        $latestNumber = "";
+        
+        $get_max = DB::table('penjualan_so')->where('code', 'LIKE', '%'.$yearMonth.'%')->where('deleted_at', null)->max('code');
+
+        if($get_max == 'false'){
+            $latestNumber = $yearMonth . '001';
+        }else{
+            $latestNumber = $get_max;
+            $id = (int) substr($latestNumber, strlen($yearMonth)) + 1;
+            $latestNumber = $yearMonth . str_pad($id, 3, 0, STR_PAD_LEFT);
+        }
+
+        // dd($latestNumber);
+        return $latestNumber;
+    }
+
+    // Generate invoice tax
+    public static function generateINVTAX()
+    {
+        $parts = explode('-', date("d-m-Y"));
+        $p1 = substr($parts[2], (strlen($parts[2]) - 1) );
+        $abjadMonth = array( '-', 'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L');
+        $p2 = $abjadMonth[date('n')];
+        $str_code = "T";
+        $yearMonth = $str_code.$p1.$p2;
+        $latestNumber = "";
+
+        $get_max = DB::table('finance_invoice_mitra')->where('code', 'LIKE', '%'.$yearMonth.'%')->where('deleted_at', null)->max('code');
+
+        if($get_max == 'false'){
+            $latestNumber = $yearMonth . '001';
+        }else{
+            $latestNumber = $get_max;
+            $id = (int) substr($latestNumber, strlen($yearMonth)) + 1;
+            $latestNumber = $yearMonth . str_pad($id, 3, 0, STR_PAD_LEFT);
+        }
+
+        // dd($latestNumber);
+        return $latestNumber;
+    }
+
+    public static function generateSoKontrak(){
+       $get_max_id = DB::table('penjualan_so_kontrak')->where('deleted_at', null)->max('id');
     
+       if($get_max_id == null){
+            $latestNumber = '001';
+       }else{
+            $parts1 = explode('_', $get_max_id);
+            $parts2 = explode('.', $parts1[5]);
+        
+            $get_code = $parts2[0];
+            $latestNumber = "";
+
+            if($get_code == false){
+                    $latestNumber = '001';
+            }else{
+                    $latestNumber = $get_code;
+                    $id = (int) $latestNumber + 1;
+                    $latestNumber = str_pad($id, 3, 0, STR_PAD_LEFT);
+            }
+       }
+
+       return $latestNumber;
+    }
+
+    public static function generateSoProforma(){
+        // Retrieve the count of proforma sales orders for the current year and month
+        $count = Salesorderproforma::withTrashed()
+                                    ->where('status', '>', 0)
+                                    ->whereYear('created_at', date('Y'))
+                                    ->whereMonth('created_at', date('m'))
+                                    ->count();
+    
+        // Increment the count if there are existing orders, otherwise initialize to 1
+        $count = ($count > 0) ? $count + 1 : 1;
+    
+        // Generate the proforma code
+        $code = 'SOPRO-' . date('ym') . sprintf('%03d', $count);
+    
+        // Return the generated code
+        return $code;
+    }
 }

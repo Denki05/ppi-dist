@@ -3,7 +3,7 @@
     <div class="modal-content">
       <div class="modal-header">
         <h5 class="modal-title" id="exampleModalLabel">Select Customer</h5>
-        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+        <button type="button" class="close btn-close-modal" data-dismiss="modal" aria-label="Close">
           <span aria-hidden="true">&times;</span>
         </button>
       </div>
@@ -15,8 +15,9 @@
             <div class="form-group">
               <label id="select_do">Select Customer<span class="text-danger">*</span></label>
               <select class="form-control js-select2" name="customer_id" id="select_customer" style="width: 100%;">
-                @foreach($customer as $index )
-                  <option value="{{$index->id}}">{{$index->name}}</option>
+                <option value="">Pilih Customer</option>
+                @foreach($customer as $index => $row)
+                  <option value="{{$row->id}}">{{$row->name}} {{$row->text_kota}}</option>
                 @endforeach
               </select>
             </div>
@@ -24,7 +25,7 @@
         </div>
       </div>
       <div class="modal-footer">
-        <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+        <button type="button" class="btn btn-danger btn-close-modal" data-dismiss="modal">Close</button>
         <button type="submit" class="btn btn-primary"><i class="fa fa-save"></i> Save</button>
       </div>
       </form>

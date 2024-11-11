@@ -23,6 +23,20 @@
   }
 }
 
+/* Custom styles for smaller screens */
+@media (max-width: 576px) {
+  .custom-class {
+    font-size: 12px;
+  }
+}
+
+/* Custom styles for larger screens */
+@media (min-width: 768px) {
+  .custom-class {
+    font-size: 16px;
+  }
+}
+
 .css-checkbox .css-control-input:checked~.css-control-indicator {
   border: none !important;
 }
@@ -219,4 +233,3 @@ body {
 .content {
   white-space: normal;
 }
-

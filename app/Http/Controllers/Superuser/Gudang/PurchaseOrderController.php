@@ -8,13 +8,18 @@ use App\Entities\Setting\UserMenu;
 use App\Entities\Gudang\PurchaseOrder;
 use App\Entities\Gudang\PurchaseOrderDetail;
 use App\Entities\Master\BrandLokal;
-use App\Entities\Master\Product;
+use App\Entities\Master\ProductPack;
 use App\Entities\Master\Packaging;
 use App\DataTables\Gudang\PurchaseOrderTable;
+use App\Exports\Gudang\PurchaseOrderDetailImportTemplate;
+use App\Imports\Gudang\PurchaseOrderDetailImport;
 use App\Entities\Master\Warehouse;
 use Auth;
+use COM;
 use DB;
+use Excel;
 use Validator;
+use Carbon\Carbon;
 
 class PurchaseOrderController extends Controller
 {
@@ -41,6 +46,22 @@ class PurchaseOrderController extends Controller
         return $datatable->build();
     }
 
+    public function search_sku(Request $request)
+    {
+        $products = ProductPack::where('name', 'LIKE', '%'.$request->input('q', '').'%')
+            ->where('status', ProductPack::STATUS['ACTIVE'])
+            ->get(['id', 'code as text', 'name']);
+        return ['results' => $products];
+    }
+
+    public function search_kemasan(Request $request)
+    {
+        $packagings = Packaging::where('pack_name', 'LIKE', '%'.$request->input('q', '').'%')
+            ->where('status', Packaging::STATUS['ACTIVE'])
+            ->get(['id', 'pack_name as text']);
+        return ['results' => $packagings];
+    }
+
     /**
      * Display a listing of the resource.
      *
@@ -54,7 +75,9 @@ class PurchaseOrderController extends Controller
             }
         }
 
-        return view($this->view."index");
+        $data['purchase_order'] = PurchaseOrder::get();
+
+        return view($this->view."index", $data);
     }
 
     /**
@@ -108,7 +131,6 @@ class PurchaseOrderController extends Controller
                 $purchase_order->warehouse_id = $request->warehouse;
                 $purchase_order->etd = $request->etd;
                 $purchase_order->note = $request->note;
-                $purchase_order->edit_marker = 0;
                 $purchase_order->created_by = Auth::id();
 
                 $purchase_order->status = PurchaseOrder::STATUS['DRAFT'];
@@ -126,11 +148,6 @@ class PurchaseOrderController extends Controller
                 }
             }
         }
-    }
-
-    public function store_item(Request $request, $id)
-    {
-
     }
 
     /**
@@ -210,7 +227,6 @@ class PurchaseOrderController extends Controller
                 $purchase_order->warehouse_id = $request->warehouse;
                 $purchase_order->etd = $request->etd;
                 $purchase_order->note = $request->note;
-                $purchase_order->edit_marker = 1;
 
                 if ($purchase_order->save()) {
                     $response['notification'] = [
@@ -230,14 +246,13 @@ class PurchaseOrderController extends Controller
     public function step($id)
     {
         if(Auth::user()->is_superuser == 0){
-            if(empty($this->access) || empty($this->access->user) || $this->access->can_edit == 0){
+            if(empty($this->access) || empty($this->access->user) || $this->access->can_read == 0){
                 return redirect()->route('superuser.index')->with('error','Anda tidak punya akses untuk membuka menu terkait');
             }
         }
 
         $data['purchase_order'] = PurchaseOrder::findOrFail($id);
         $data['merek'] = BrandLokal::get();
-        $data['packaging'] = Packaging::get();
 
         if($data['purchase_order']->status == PurchaseOrder::STATUS['ACC'] OR $data['purchase_order']->status == PurchaseOrder::STATUS['DELETED']) {
             return abort(404);
@@ -248,173 +263,282 @@ class PurchaseOrderController extends Controller
 
     public function publish(Request $request, $id)
     {
-        // Access
-        if(Auth::user()->is_superuser == 0){
-           if(empty($this->access) || empty($this->access->user) || $this->access->can_approve == 0){
-               return redirect()->route('superuser.index')->with('error','Anda tidak punya akses untuk membuka menu terkait');
-           }
-        }
+        if ($request->ajax()) {
+            $purchase_order = PurchaseOrder::find($id);
 
-        $purchase_order = PurchaseOrder::findOrFail($id);
-
-        if($purchase_order == null){
-            abort(404);
-        }
-
-        DB::beginTransaction();
-        try{
-
-            $purchase_order->status = PurchaseOrder::STATUS['ACTIVE'];
-            $purchase_order->updated_by = Auth::id();
-        
-            if ($purchase_order->save()){
-                DB::commit();
-                return redirect()->back()->with('success','<a href="'.route('superuser.gudang.purchase_order.index').'">'.$purchase_order->code.'</a> : PO berhasil diupdate ke Publish!');
+            if ($purchase_order == null) {
+                abort(404);
             }
-        }catch (\Exception $e) {
-            // dd($e);
-            DB::rollback();
-            $response['notification'] = [
-                'alert' => 'block',
-                'type' => 'alert-danger',
-                'header' => 'Error',
-                'content' => "Internal Server Error!",
-            ];
 
-            return $this->response(400, $response);
+            $purchase_order->updated_by = Auth::id();
+            $purchase_order->status = PurchaseOrder::STATUS['ACTIVE'];
+
+            if ($purchase_order->save()) {
+                $response['notification'] = [
+                    'alert' => 'notify',
+                    'type' => 'success',
+                    'content' => 'Success',
+                ];
+
+                $response['redirect_to'] = route('superuser.gudang.purchase_order.index');
+
+                return $this->response(200, $response);
+            }
+        }
+    }
+
+    public function unpublish(Request $request, $id)
+    {
+        if ($request->ajax()) {
+            $purchase_order = PurchaseOrder::find($id);
+
+            if ($purchase_order == null) {
+                abort(404);
+            }
+
+            $purchase_order->updated_by = Auth::id();
+            $purchase_order->status = PurchaseOrder::STATUS['DRAFT'];
+
+            if ($purchase_order->save()) {
+                $response['notification'] = [
+                    'alert' => 'notify',
+                    'type' => 'success',
+                    'content' => 'Success',
+                ];
+
+                $response['redirect_to'] = route('superuser.gudang.purchase_order.index');
+
+                return $this->response(200, $response);
+            }
         }
     }
 
     public function save_modify(Request $request, $id, $save_type)
     {
-        // Access
-        if(Auth::user()->is_superuser == 0){
-            if(empty($this->access) || empty($this->access->user) || $this->access->can_approve == 0){
-                return redirect()->route('superuser.index')->with('error','Anda tidak punya akses untuk membuka menu terkait');
+        if ($request->ajax()) {
+
+            $purchase_order = PurchaseOrder::find($id);
+
+            if ($purchase_order == null) {
+                abort(404);
+            }
+
+            DB::beginTransaction();
+            try{
+
+                if($save_type == 'save') {
+                    $purchase_order->edit_counter += 1;
+                } else {
+                    $purchase_order->acc_by = Auth::id();
+                    $purchase_order->acc_at = Carbon::now()->toDateTimeString();
+                }
+                
+                $purchase_order->status = $save_type == 'save' ? PurchaseOrder::STATUS['ACTIVE'] : PurchaseOrder::STATUS['ACC'];
+    
+                if ($purchase_order->save()) {
+                    $response['notification'] = [
+                        'alert' => 'notify',
+                        'type' => 'success',
+                        'content' => 'Success',
+                    ];
+    
+                    $response['redirect_to'] = route('superuser.gudang.purchase_order.index');
+    
+                    return $this->response(200, $response);
+                }
+            }catch (\Exception $e) {
+                DB::rollback();
+                $response['notification'] = [
+                    'alert' => 'block',
+                    'type' => 'alert-danger',
+                    'header' => 'Error',
+                    'content' => $failed,
+                ];
+
+                return $this->response(400, $response);
             }
         }
+    }
 
-        $purchase_order = PurchaseOrder::find($id);
-
-        if($purchase_order == null){
-            abort(404);
-        }
-
-        DB::beginTransaction();
-        try{
-            if($save_type == 'save'){
-                $purchase_order->edit_counter += 1;
-                $purchase_order->edit_marker = 0;
-            }elseif($save_type == 'save-acc'){
-                if(count($purchase_order->po_detail) == null){
-                    return redirect()->route('superuser.gudang.purchase_order.index')->with('error','<a href="'.route('superuser.gudang.purchase_order.show', $purchase_order->id).'">'.$purchase_order->code.'</a> : Tidak ada Item yang di input!');
-                }else{
-                    $purchase_order->acc_at = Carbon::now()->toDateTimeString();
-                    $purchase_order->acc_by = Auth::id();
+    public function acc(Request $request, $id)
+    {
+        if ($request->ajax()) {
+            if(Auth::user()->is_superuser == 0){
+                if(empty($this->access) || empty($this->access->user) || $this->access->can_approve == 0){
+                    return redirect()->route('superuser.index')->with('error','Anda tidak punya akses untuk membuka menu terkait');
                 }
             }
 
-            $purchase_order->status = $save_type == 'save' ? PurchaseOrder::STATUS['ACTIVE'] : PurchaseOrder::STATUS['ACC'];
+            $purchase_order = PurchaseOrder::find($id);
 
-            if ($purchase_order->save()){
-                DB::commit();
-                return redirect()->route('superuser.gudang.purchase_order.index')->with('success','<a href="'.route('superuser.gudang.purchase_order.index').'">'.$purchase_order->code.'</a> : PO berhasil di Update!');
+            if ($purchase_order === null) {
+                abort(404);
             }
-        }catch (\Exception $e){
-            DB::rollback();
 
-            $response['notification'] = [
-                'alert' => 'block',
-                'type' => 'alert-danger',
-                'header' => 'Error',
-                'content' => "Internal Server Error!",
-            ];
+            DB::beginTransaction();
+            try{
 
-            return $this->respone(400, $response);
+                $purchase_order->acc_by = Auth::id();
+                $purchase_order->acc_at = Carbon::now()->toDateTimeString();
+                $purchase_order->status = PurchaseOrder::STATUS['ACC'];
+
+                if ($purchase_order->save()) {
+
+                    
+                    DB::commit();
+                    $response['redirect_to'] = route('superuser.gudang.purchase_order.index');
+                    return $this->response(200, $response);
+                }
+            }catch (\Exception $e) {
+                DB::rollback();
+                $response['notification'] = [
+                    'alert' => 'block',
+                    'type' => 'alert-danger',
+                    'header' => 'Error',
+                    'content' => $failed,
+                ];
+    
+                return $this->response(400, $response);
+            }
         }
     }
 
-    public function acc($id)
+    public function destroy(Request $request, $id)
     {
+        // Access
         if(Auth::user()->is_superuser == 0){
-            if(empty($this->access) || empty($this->access->user) || $this->access->can_approve == 0){
+            if(empty($this->access) || empty($this->access->user) || $this->access->can_delete == 0){
+                abort(405);
+            }
+        }
+        
+        if ($request->ajax()) {
+            $purchase_order = PurchaseOrder::find($id);
+
+            if ($purchase_order === null) {
+                abort(404);
+            }
+
+            $purchase_order->status = PurchaseOrder::STATUS['DELETED'];
+
+            if ($purchase_order->save()) {
+                $response['redirect_to'] = route('superuser.gudang.purchase_order.index');
+                return $this->response(200, $response);
+            }
+        }
+    }
+
+    public function print_pdf($id)
+    {
+        // Access
+        if(Auth::user()->is_superuser == 0){
+            if(empty($this->access) || empty($this->access->user) || $this->access->can_print == 0){
                 return redirect()->route('superuser.index')->with('error','Anda tidak punya akses untuk membuka menu terkait');
             }
         }
 
-        $purchase_order = PurchaseOrder::findOrFail($id);
+        $result = PurchaseOrder::where('id', $id)->first();
 
-        if($purchase_order == null){
-            abort(404);
-        }
+        $my_report = "C:\\xampp\\htdocs\\ppi-dist\public\\cr\\purchase_order\\po.rpt"; 
+        $my_pdf = 'C:\\xampp\\htdocs\\ppi-dist\\public\\cr\\purchase_order\\export\\'.$result->code.'.pdf';
 
-        DB::beginTransaction();
-        try{
+        //- Variables - Server Information 
+        $my_server = "LOCAL"; 
+        $my_user = "root"; 
+        $my_password = ""; 
+        $my_database = "ppi-dist";
+        $COM_Object = "CrystalDesignRunTime.Application";
 
-            $purchase_order->acc_by = Auth::id();
-            $purchase_order->acc_at = Carbon::now()->toDateTimeString();
+         //-Create new COM object-depends on your Crystal Report version
+         $crapp= New COM($COM_Object) or die("Unable to Create Object");
+         $creport = $crapp->OpenReport($my_report,1); // call rpt report
 
-            $purchase_order->status = PurchaseOrder::STATUS['ACC'];
+        //- Set database logon info - must have
+        $creport->Database->Tables(1)->SetLogOnInfo($my_server, $my_database, $my_user, $my_password);
 
-            if($purchase_order->save()){
-                DB::commit();
-                return redirect()->route('superuser.gudang.purchase_order.index')->with('success','<a href="'.route('superuser.gudang.purchase_order.index').'">'.$purchase_order->code.'</a> : PO berhasil di Approve!');
-            }
-        }catch (\Exception $e) {
-            DB::rollback();
-            $response['notification'] = [
-                'alert' => 'block',
-                'type' => 'alert-danger',
-                'header' => 'Error',
-                'content' => "Internal Server Error!",
-            ];
+        //- field prompt or else report will hang - to get through
+        $creport->EnableParameterPrompting = FALSE;
+        $creport->RecordSelectionFormula = "{purchase_order.id}= $result->id";
 
-            return $this->response(400, $response);
-        }
+        //export to PDF process
+        $creport->ExportOptions->DiskFileName=$my_pdf; //export to pdf
+        $creport->ExportOptions->PDFExportAllPages=true;
+        $creport->ExportOptions->DestinationType=1; // export to file
+        $creport->ExportOptions->FormatType=31; // PDF type
+        $creport->Export(false);
+
+        //------ Release the variables ------
+        $creport = null;
+        $crapp = null;
+        $ObjectFactory = null;
+
+        $file = 'C:\\xampp\\htdocs\\ppi-dist\\public\\cr\\purchase_order\\export\\'.$result->code.'.pdf';
+
+        // if($get_do->type_transaction == 1 && $get_do->so->payment_status == 1){
+        //     $file->SetWatermarkText("PAID");
+        // }elseif($get_do->type_transaction == 2 && $get_do->so->payment_status == 2){
+        //     $file->SetWatermarkText("COPY");
+        // }
+
+        header("Content-Description: File Transfer"); 
+        header("Content-Type: application/octet-stream"); 
+        header("Content-Transfer-Encoding: Binary"); 
+        header("Content-Disposition: attachment; filename=\"". basename($file) ."\""); 
+        ob_clean();
+        flush();
+        readfile ($file);
+        exit();
+
     }
 
-    /**
-     * Remove the specified resource from storage.
-     *
-     * @param  int  $id
-     * @return \Illuminate\Http\Response
-     */
-    public function destroy($id)
+    public function import_template()
     {
-        //
+        $filename = 'purchase-order-detail-import-template.xlsx';
+        return Excel::download(new PurchaseOrderDetailImportTemplate, $filename);
     }
 
-    public function get_product(Request $request){
-        $data_json = [];
-        $post = $request->all();
-        if($request->method() == "GET"){
-            $table = Product::where(function($query2) use($post){
-                        if(!empty($post["brand_lokal_id"])){
-                            $query2->where('brand_lokal_id',$post["brand_lokal_id"]);
-                        }
-                    })
-                    ->where('master_products.status', 1)
-                    ->leftJoin('master_product_categories', 'master_products.category_id', '=', 'master_product_categories.id')
-                    ->leftJoin('master_packaging', 'master_product_categories.packaging_id', '=', 'master_packaging.id')
-                    ->select(
-                        'master_products.name as productName', 
-                        'master_products.id as id', 
-                        'master_products.status as status', 
-                        'master_products.code as productCode',
-                        'master_product_categories.brand_lokal_id', 
-                        'master_packaging.id as packId',
-                        'master_packaging.pack_name as packName',
-                    )->get();
-            $data_json["IsError"] = FALSE;
-            $data_json["Data"] = $table;
-            goto ResultData;
+    public function import(Request $request, $id)
+    {
+        $validator = Validator::make($request->all(), [
+            'import_file' => 'required|file|mimes:xls,xlsx|max:2048',
+        ]);
+
+        if ($validator->fails()) {
+            return redirect()->back()->withErrors($validator->errors()->all());
         }
-        else{
-            $data_json["IsError"] = TRUE;
-            $data_json["Message"] = "Invalid Method";
-            goto ResultData;
+
+        if ($validator->passes()) {
+            $import = new PurchaseOrderDetailImport($id);
+            Excel::import($import, $request->import_file);
+        
+            return redirect()->back()->with(['collect_success' => $import->success, 'collect_error' => $import->error]);
         }
-        ResultData:
-        return response()->json($data_json,200);
+    }
+    
+    public function cancel_acc(Request $request, $id)
+    {
+        if(Auth::user()->is_superuser == 0){
+            if(empty($this->access) || empty($this->access->user) || $this->access->can_approve == 0){
+                abort(405);
+            }
+        }
+        
+        if ($request->ajax()) {
+            $purchase_order = PurchaseOrder::find($id);
+
+            if ($purchase_order === null) {
+                abort(404);
+            }
+
+            $purchase_order->acc_at = null;
+            $purchase_order->acc_by = null;
+            $purchase_order->updated_by = Auth::id();
+            $purchase_order->status = PurchaseOrder::STATUS['DRAFT'];
+
+            if ($purchase_order->save()) {
+                $response['redirect_to'] = route('superuser.gudang.purchase_order.index');
+                return $this->response(200, $response);
+            }
+        }
     }
 }

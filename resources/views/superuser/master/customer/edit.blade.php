@@ -83,7 +83,7 @@
                                           <input type="text" class="form-control" name="phone1" min="0" value="{{$phone[0]}}" placeholder="Telephone 1">
                                         </div>
                                         <div class="col">
-                                          <input type="text" class="form-control" name="phone2" min="0" value="{{$phone[1]}}" placeholder="Telephone 2">
+                                          <input type="text" class="form-control" name="phone2" min="0" value="{{$phone[1] ?? '' }}" placeholder="Telephone 2">
                                         </div>
                                       </div>
                                     </div>
@@ -250,7 +250,7 @@
                                           <input type="text" class="form-control" name="name_card_ktp" placeholder="Name Card" value="{{$ktp[0]}}">
                                         </div>
                                         <div class="col">
-                                          <input type="number" class="form-control" name="ktp"  placeholder="Number Card" value="{{$ktp[1]}}">
+                                          <input type="number" class="form-control" name="ktp"  placeholder="Number Card" value="{{$ktp[1] ?? ''}}">
                                         </div>
                                       </div>
                                     </div>
@@ -268,7 +268,7 @@
                                           <input type="text" class="form-control" name="name_card_npwp" placeholder="Name Card" value="{{$npwp[0]}}">
                                         </div>
                                         <div class="col">
-                                          <input type="number" class="form-control" name="npwp" placeholder="Number Card" value="{{$npwp[1]}}">
+                                          <input type="number" class="form-control" name="npwp" placeholder="Number Card" value="{{$npwp[1] ?? ''}}">
                                         </div>
                                       </div>
                                     </div>

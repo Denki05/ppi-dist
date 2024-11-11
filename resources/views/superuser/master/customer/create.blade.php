@@ -129,46 +129,46 @@
                             <h5>Data Geo Tag</h5>
                             <div class="container">
                               <div class="row">
-                              <div class="form-row">
-                                <div class="form-group col-md-4">
-                                  <label for="provinsi">Provinsi</label>
-                                  <select class="js-select2 form-control" id="provinsi" name="provinsi" style="width:100%;" placeholder="Pilih Provinsi">
-                                    <option>Pilih provinsi</option>
-                                    @foreach ($provinces as $provinsi)
-                                    <option value="{{ $provinsi->prov_id }}">{{ $provinsi->prov_name }}</option>
-                                    @endforeach
-                                  </select>
-                                  <input type="hidden" name="text_provinsi">
+                                <div class="form-row">
+                                  <div class="form-group col-md-4">
+                                    <label for="provinsi">Provinsi</label>
+                                    <select class="js-select2 form-control" id="provinsi" name="provinsi" style="width:100%;" placeholder="Pilih Provinsi">
+                                      <option>Pilih provinsi</option>
+                                      @foreach ($provinces as $provinsi)
+                                      <option value="{{ $provinsi->prov_id }}">{{ $provinsi->prov_name }}</option>
+                                      @endforeach
+                                    </select>
+                                    <input type="hidden" name="text_provinsi">
+                                  </div>
+                                  <div class="form-group col-md-2">
+                                    <label for="kota">Kota</label>
+                                    <select class="js-select2 form-control" id="kota" name="kota" style="width:100%;" placeholder="Pilih Kota">
+                                      <option>Pilih Kota</option>
+                                    </select>
+                                    <input type="hidden" name="text_kota">
+                                  </div>
+                                  <div class="form-group col-md-2">
+                                    <label for="kecamatan">Kecamatan</label>
+                                    <select class="js-select2 form-control" id="kecamatan" name="kecamatan" style="width:100%;" placeholder="Pilih Kecamatan">
+                                      <option>Pilih Kecamatan</option>
+                                    </select>
+                                    <input type="hidden" name="text_kecamatan">
+                                  </div>
+                                  <div class="form-group col-md-2">
+                                    <label for="kelurahan">Kelurahan</label>
+                                    <select class="js-select2 form-control" id="kelurahan" name="kelurahan" style="width:100%;" placeholder="Pilih Kelurahan">
+                                      <option>Pilih Kelurahan</option>
+                                    </select>
+                                    <input type="hidden" name="text_kelurahan">
+                                  </div>
+                                  <div class="form-group col-md-2">
+                                    <label for="zipcode">Zipcode</label>
+                                    <select class="js-select2 form-control" id="zipcode" name="zipcode" style="width:100%;" placeholder="Pilih Kode Pos">
+                                      <option>Pilih Kode Pos</option>
+                                    </select>
+                                    <input type="hidden" name="text_zipcode">
+                                  </div>
                                 </div>
-                                <div class="form-group col-md-2">
-                                  <label for="kota">Kota</label>
-                                  <select class="js-select2 form-control" id="kota" name="kota" style="width:100%;" placeholder="Pilih Kota">
-                                    <option>Pilih Kota</option>
-                                  </select>
-                                  <input type="hidden" name="text_kota">
-                                </div>
-                                <div class="form-group col-md-2">
-                                  <label for="kecamatan">Kecamatan</label>
-                                  <select class="js-select2 form-control" id="kecamatan" name="kecamatan" style="width:100%;" placeholder="Pilih Kecamatan">
-                                    <option>Pilih Kecamatan</option>
-                                  </select>
-                                  <input type="hidden" name="text_kecamatan">
-                                </div>
-                                <div class="form-group col-md-2">
-                                  <label for="kelurahan">Kelurahan</label>
-                                  <select class="js-select2 form-control" id="kelurahan" name="kelurahan" style="width:100%;" placeholder="Pilih Kelurahan">
-                                    <option>Pilih Kelurahan</option>
-                                  </select>
-                                  <input type="hidden" name="text_kelurahan">
-                                </div>
-                                <div class="form-group col-md-2">
-                                  <label for="zipcode">Zipcode</label>
-                                  <select class="js-select2 form-control" id="zipcode" name="zipcode" style="width:100%;" placeholder="Pilih Kode Pos">
-                                    <option>Pilih Kode Pos</option>
-                                  </select>
-                                  <input type="hidden" name="text_zipcode">
-                                </div>
-                              </div>
                               <div class="row">
                                 <div class="col">
                                   <div class="form-group row">
@@ -194,8 +194,13 @@
                               </div>
                               <div class="row">
                                 <div class="mb-3">
-                                  <label for="image_store" class="form-label">Zoning</label>
-                                  <input type="text" name="zone" id="zone" placeholder="Zone Area" class="form-control">
+                                  <label for="image_store" class="form-label">Zone</label>
+                                  <select class="form-control js-select2" name="zone" style="width:100%;">
+                                    <option value="">Pilih Zona</option>
+                                    @foreach(\App\Entities\Master\CustomerOtherAddress::ZONING AS $zone => $zoning)
+                                    <option value="{{ $zoning }}">{{ $zoning }}</option>
+                                    @endforeach
+                                  </select>
                                 </div>
                               </div>
                               <div class="f1-buttons">
@@ -325,6 +330,7 @@
 @include('superuser.asset.plugin.select2')
 
 @push('scripts')
+<script src="https://maps.googleapis.com/maps/api/js?key={{ env('GOOGLE_MAPS_API_KEY') }}&callback=initMap&v=weekly&libraries=marker"></script>
 <script src="{{ asset('utility/superuser/js/form.js') }}"></script>
 <script>
   $(document).ready(function () {
@@ -366,20 +372,6 @@
             $('#tempo_limit').attr('disabled', true); //disable input
         }
     });
-
-    // $('#image_store').fileinput({
-    //   theme: 'explorer-fa',
-    //   browseOnZoneClick: true,
-    //   showCancel: false,
-    //   showClose: false,
-    //   showUpload: false,
-    //   browseLabel: '',
-    //   removeLabel: '',
-    //   fileActionSettings: {
-    //     showDrag: false,
-    //     showRemove: false
-    //   },
-    // });
 
     $('.js-select2').select2()
 
@@ -486,6 +478,16 @@
     })
   })
 </script>
+
+<script>
+        function initMap() {
+            var location = { lat: -7.302016, lng: 112.785213 };
+            var map = new google.maps.Map(document.getElementById('map'), {
+                zoom: 8,
+                center: location
+            });
+        }
+    </script>
 @endpush
 
 

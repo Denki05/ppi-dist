@@ -3,6 +3,7 @@
 namespace App\Entities\Gudang;
 
 use Illuminate\Database\Eloquent\Model;
+use App\Entities\Master\ProductPack;
 
 class PurchaseOrderDetail extends Model
 {
@@ -10,8 +11,9 @@ class PurchaseOrderDetail extends Model
 
     protected $fillable = [
         'po_id', 
-        'product_id', 
-        'qty', 
+        'brand_lokal_id', 
+        'product_packaging_id', 
+        'quantity', 
         'packaging_id', 
         'note_produksi',
         'note_repack', 
@@ -20,15 +22,18 @@ class PurchaseOrderDetail extends Model
         'updated_by',
     ];
 
-    public function product(){
-    	return $this->BelongsTo('App\Entities\Master\Product','product_id','id');
+    public function product_pack()
+    {
+        return $this->belongsTo('App\Entities\Master\ProductPack', 'product_packaging_id', 'id');
     }
 
-    public function packaging(){
-    	return $this->BelongsTo('App\Entities\Master\Packaging','packaging_id','id');
+    public function packaging()
+    {
+        return $this->belongsTo('App\Entities\Master\Packaging', 'Packaging_id', 'id');
     }
 
-    public function po(){
-    	return $this->BelongsTo('App\Entities\Master\PurchaseOrder','po_id','id');
+    public function purchase_order()
+    {
+        return $this->belongsTo('App\Entities\Gudang\PurchaseOrder', 'po_id');
     }
 }

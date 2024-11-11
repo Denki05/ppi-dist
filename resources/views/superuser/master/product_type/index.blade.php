@@ -19,11 +19,11 @@
 <div class="block">
   <div class="block-content">
     <a href="{{ route('superuser.master.product_type.create') }}">
-      <button type="button" class="btn btn-outline-primary" title="Create Type"><i class="mdi mdi-file-plus"></i></button>
+      <button type="button" class="btn btn-outline-primary" title="Create Type">Create</button>
     </a>
 
-    <button type="button" class="btn btn-outline-info ml-10" data-toggle="modal" data-target="#modal-manage"><i class="mdi mdi-cloud-upload"></i></button>
-    {{--<button type="button" class="btn btn-outline-danger ml-10" onclick="deleteMultiple()">Delete Checked</button>--}}
+    <!-- <button type="button" class="btn btn-outline-info ml-10" data-toggle="modal" data-target="#modal-manage"><i class="mdi mdi-cloud-upload"></i></button> -->
+    <!-- <button type="button" class="btn btn-outline-danger ml-10" onclick="deleteMultiple()">Delete Checked</button> -->
   </div>
   <hr class="my-20">
   <div class="block-content block-content-full">

@@ -123,6 +123,8 @@ return [
 
     'cipher' => 'AES-256-CBC',
 
+    'driver' => env('CACHE_DRIVER', 'file'),
+
     /*
     |--------------------------------------------------------------------------
     | Autoloaded Service Providers
@@ -161,6 +163,7 @@ return [
         Illuminate\Translation\TranslationServiceProvider::class,
         Illuminate\Validation\ValidationServiceProvider::class,
         Illuminate\View\ViewServiceProvider::class,
+        
 
         /*
          * Package Service Providers...
@@ -169,8 +172,8 @@ return [
         Spatie\Permission\PermissionServiceProvider::class,
         Swap\Laravel\SwapServiceProvider::class,
         Yajra\DataTables\DataTablesServiceProvider::class,
-        Barryvdh\DomPDF\ServiceProvider::class,
         Alfa6661\AutoNumber\AutoNumberServiceProvider::class,
+        Barryvdh\DomPDF\ServiceProvider::class,  // Add this line
         
         /*
          * Application Service Providers...
@@ -232,8 +235,9 @@ return [
         'URL' => Illuminate\Support\Facades\URL::class,
         'Validator' => Illuminate\Support\Facades\Validator::class,
         'View' => Illuminate\Support\Facades\View::class,
-        'PDF' => Barryvdh\DomPDF\Facade::class,
-        'CustomHelper' => App\Helper\CustomHelper::class
+        'CustomHelper' => App\Helper\CustomHelper::class,
+        'LogActivity' => App\Helper\LogActivity::class,
+        'PDF' => Barryvdh\DomPDF\Facade::class,  // Add this line
     ],
 
 ];

@@ -10,7 +10,7 @@ class StockMove extends Model
     protected $fillable = [
     	'code_transaction',
     	'warehouse_id',
-    	'product_id',
+    	'product_packaging_id',
     	'stock_in',
     	'stock_out',
     	'stock_balance',
@@ -22,8 +22,8 @@ class StockMove extends Model
     public function warehouse(){
     	return $this->BelongsTo('App\Entities\Master\Warehouse','warehouse_id','id');
     }
-    public function product(){
-    	return $this->BelongsTo('App\Entities\Master\Product','product_id','id');
+    public function product_pack(){
+    	return $this->BelongsTo('App\Entities\Master\Product','product_packaging_id','id');
     }
     public function getStockInAttribute($value)
     {

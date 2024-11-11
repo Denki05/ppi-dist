@@ -1,210 +1,193 @@
 @extends('superuser.app')
 
 @section('content')
-@if(session('error') || session('success'))
-<div class="alert alert-{{ session('error') ? 'danger' : 'success' }} alert-dismissible fade show" role="alert">
-    @if (session('error'))
-    <strong>Error!</strong> {!! session('error') !!}
-    @elseif (session('success'))
-    <strong>Berhasil!</strong> {!! session('success') !!}
-    @endif
-    <button type="button" class="close" data-dismiss="alert" aria-label="Close">
-        <span aria-hidden="true">&times;</span>
-    </button>
+<nav class="breadcrumb bg-white push">
+  <span class="breadcrumb-item">Sale</span>
+  <span class="breadcrumb-item active">Sales Order</span>
+</nav>
+@if($errors->any())
+<div class="alert alert-danger alert-dismissable" role="alert">
+  <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+      <span aria-hidden="true">×</span>
+  </button>
+  <h3 class="alert-heading font-size-h4 font-w400">Error</h3>
+  @foreach ($errors->all() as $error)
+  <p class="mb-0">{{ $error }}</p>
+  @endforeach
 </div>
 @endif
-<h4 style="font-weight: bold;">#DELIVERY ORDER</h4>
-<main style="background:#fff">
-  
-  <input style="display: none;" id="tab1" type="radio" name="tabs" checked>
-  <label style="padding: 15px 25px;" for="tab1">DO Proses</label>
-    
-  <input style="display: none;" id="tab2" type="radio" name="tabs">
-  <label style="padding: 15px 25px;" for="tab2">DO Siap Kirim</label>
-    
-  <input style="display: none;" id="tab3" type="radio" name="tabs">
-  <label style="padding: 15px 25px;" for="tab3">DO Update Resi</label>
-    
-  <!-- <input id="tab4" type="radio" name="tabs">
-  <label for="tab4">Drupal</label> -->
-    
-  <!-- DO Proses -->
-  <section id="content1">
-    <div class="row mb-30">
-      <div class="col-12">
-        <table class="table table-hover" id="do_proses">
-          <thead>
-            <tr>
-              <th>#</th>
-              <th>DO Code</th>
-              <th>Referensi SO</th>
-              <th>Customer</th>
-              <th>Print Count</th>
-              <th>Status</th>
-              <th>Action</th>
-            </tr>
-          </thead>
-          <tbody>
-          @foreach($table as $index => $row)
-            @if($row->status == 3)
-            <tr>
-              <td>{{ $loop->iteration }}</td>
-              <td>{{ $row->do_code }}</td>
-              <td>{{ $row->so->code }}</td>
-              <td>{{ $row->member->name }}</td>
-              <td>{{ $row->print_count }}</td>
-              <td>
-                @if($row->status == 3)
-                <span class="badge badge-{{ $row->do_status()->class }}"><b>{{ $row->do_status()->msg }}</b></span>
-                @elseif($row->status > 4)
-                <span class="badge badge-info"><b>Packed</b></span>
-                @endif
-              </td>
-              <td>
-                @if($row->status == 3)
-                <a href="{{route('superuser.penjualan.delivery_order.detail',$row->id)}}" class="btn btn-primary btn-sm btn-flat">
-                  <i class="fas fa-box"></i> Kerjakan
-                </a>
-                @endif
-              </td>
-            </tr>
-            @endif
-          @endforeach
-          </tbody>
-        </table>
-      </div>
-      
-    </div>
-  </section>
-    
-  <section id="content2">
-    <div class="row mb-30">
-      <div class="col-12">
-        <table class="table table-hover" id="do_kirim">
-          <thead>
-            <tr>
-              <th>#</th>
-              <th>DO Code</th>
-              <th>Customer</th>
-              <th>Status</th>
-              <th>Action</th>
-            </tr>
-          </thead>
-          <tbody>
-          @foreach($table as $index => $row)
-            @if($row->status == 4)
-            <tr>
-              <td>{{ $loop->iteration }}</td>
-              <td>{{ $row->do_code }}</td>
-              <td>{{ $row->member->name }}</td>
-              <td>
-                <span class="badge badge-{{ $row->do_status()->class }}"><b>{{ $row->do_status()->msg }}</b></span>
-              </td>
-              <td>
-                @if($row->status == 4)
-                <a href="{{route('superuser.penjualan.delivery_order.detail',$row->id)}}" class="btn btn-primary btn-sm btn-flat">
-                <i class="fas fa-shipping-timed"></i> Surat Jalan
-                </a>
-                @endif
-              </td>
-            </tr>
-            @endif
-          @endforeach
-          </tbody>
-        </table>
-      </div>
-      
-    </div>
-  </section>
-    
-  <section id="content3">
-  <div class="row mb-30">
-      <div class="col-12">
-        <table class="table table-hover" id="update_resi">
-          <thead>
-            <tr>
-              <th>#</th>
-              <th>DO Code</th>
-              <th>Customer</th>
-              <th>Status</th>
-              <th>Action</th>
-            </tr>
-          </thead>
-          <tbody>
-          @foreach($table as $index => $row)
-            @if($row->status == 5 OR $row->status == 6)
-            <tr>
-              <td>{{ $loop->iteration }}</td>
-              <td>{{ $row->do_code }}</td>
-              <td>{{ $row->member->name }}</td>
-              <td>
-                <span class="badge badge-{{ $row->do_status()->class }}"><b>{{ $row->do_status()->msg }}</b></span>
-              </td>
-              <td>
-                @if($row->status == 5)
-                <a href="{{route('superuser.penjualan.delivery_order.detail',$row->id)}}" class="btn btn-primary btn-sm btn-flat">
-                <i class="fa fa-money"></i> Update Resi
-                </a>
-                @endif
-              </td>
-            </tr>
-            @endif
-          @endforeach
-          </tbody>
-        </table>
-      </div>
-    </div>
-  </section>
-    
-  <!-- <section id="content4">
-    <p>
-      Bacon ipsum dolor sit amet landjaeger sausage brisket, jerky drumstick fatback boudin ball tip turducken. Pork belly meatball t-bone bresaola tail filet mignon kevin turkey ribeye shank flank doner cow kielbasa shankle. Pig swine chicken hamburger, tenderloin turkey rump ball tip sirloin frankfurter meatloaf boudin brisket ham hock. Hamburger venison brisket tri-tip andouille pork belly ball tip short ribs biltong meatball chuck. Pork chop ribeye tail short ribs, beef hamburger meatball kielbasa rump corned beef porchetta landjaeger flank. Doner rump frankfurter meatball meatloaf, cow kevin pork pork loin venison fatback spare ribs salami beef ribs.
-    </p>
-    <p>
-      Jerky jowl pork chop tongue, kielbasa shank venison. Capicola shank pig ribeye leberkas filet mignon brisket beef kevin tenderloin porchetta. Capicola fatback venison shank kielbasa, drumstick ribeye landjaeger beef kevin tail meatball pastrami prosciutto pancetta. Tail kevin spare ribs ground round ham ham hock brisket shoulder. Corned beef tri-tip leberkas flank sausage ham hock filet mignon beef ribs pancetta turkey.
-    </p>
-  </section> -->
-    
-</main>
 
+<div id="alert-block"></div>
+
+
+
+@if(session()->has('collect_success') || session()->has('collect_error'))
+<div class="container">
+  <div class="row">
+    <div class="col pl-0">
+      <div class="alert alert-success alert-dismissable" role="alert" style="max-height: 300px; overflow-y: auto;">
+        <h3 class="alert-heading font-size-h4 font-w400">Successful Import</h3>
+        @foreach (session()->get('collect_success') as $msg)
+        <p class="mb-0">{{ $msg }}</p>
+        @endforeach
+      </div>
+    </div>
+    <div class="col pr-0">
+      <div class="alert alert-danger alert-dismissable" role="alert" style="max-height: 300px; overflow-y: auto;">
+        <h3 class="alert-heading font-size-h4 font-w400">Failed Import</h3>
+        @foreach (session()->get('collect_error') as $msg)
+        <p class="mb-0">{{ $msg }}</p>
+        @endforeach
+      </div>
+    </div>
+  </div>
+</div>
+@endif
+
+@if(session()->has('message'))
+<div class="alert alert-success alert-dismissable" role="alert">
+  <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+      <span aria-hidden="true">×</span>
+  </button>
+  <h3 class="alert-heading font-size-h4 font-w400">Success</h3>
+  <p class="mb-0">{{ session()->get('message') }}</p>
+</div>
+@endif
+
+  <form id="form" target="_blank" action="#"
+    enctype="multipart/form-data" method="POST">
+    @csrf
+    <div class="block">
+      <div class="block-content">
+        <div class="form-group row">
+          <label class="col-md-1 col-form-label text-left" for="period">Period :</label>
+          <div class="col-md-3">
+            <div class="input-group">
+              <div class="input-group-prepend"><span class="input-group-text"><i class="fa fa-calendar"
+                    aria-hidden="true"></i></span></div><input type="text" class="form-control pull-right" id="datesearch"
+                name="datesearch" placeholder="Select period"
+                value="{{ \Carbon\Carbon::now()->format('d/m/Y') }} - {{ \Carbon\Carbon::now()->format('d/m/Y') }}">
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </form>
+
+<div class="block">
+  <div class="block-content">
+    @if($superuser->can('sales order-create'))
+    {{-- <a href="{{ route('superuser.sale.sales_order.create') }}">
+      <button type="button" class="btn btn-outline-primary min-width-125">Create</button>
+    </a> --}}
+    @endif
+    <div class="pull-right">
+      <label class="css-control css-control-primary css-radio">
+        <input type="radio" class="css-control-input" name="show-control" value="default" checked>
+        <span class="css-control-indicator"></span> Do Proses (Packing)
+      </label>
+      <label class="css-control css-control-success css-radio">
+        <input type="radio" class="css-control-input" name="show-control" value="acc">
+        <span class="css-control-indicator"></span> DO Siap Kirim
+      </label>
+      <label class="css-control css-control-warning css-radio">
+        <input type="radio" class="css-control-input" name="show-control" value="all">
+        <span class="css-control-indicator"></span> DO Resi
+      </label>
+    </div>
+  </div>
+  <br>
+  <hr class="my-20">
+  <div class="block-content block-content-full">
+    <table id="datatable" class="table table-striped">
+      <thead>
+        <tr>
+          <th class="text-center">#</th>
+          <th class="text-center">Created at</th>
+          <th class="text-center">DO Code</th>
+          <th class="text-center">Customer</th>
+          <th class="text-center">Status</th>
+          <th class="text-center">Action</th>
+        </tr>
+      </thead>
+    </table>
+  </div>
+</div>
 @endsection
+
+@include('superuser.asset.plugin.swal2')
 @include('superuser.asset.plugin.datatables')
 
+
+
 @push('scripts')
+<script src="{{ url('https://cdn.datatables.net/select/1.3.1/js/dataTables.select.min.js') }}"></script>
+<script src="{{ asset('utility/superuser/js/form.js') }}"></script>
+@include('superuser.asset.plugin.daterangepicker')
 <script type="text/javascript">
-  $(function(){
-    $('#do_proses').DataTable( {
-          "paging":   false,
-          "ordering": true,
-          "info":     false,
-          "searching" : false,
-          "columnDefs": [{
-            "targets": 0,
-            "orderable": false
-          }]
-        });
+$(document).ready(function() {
+  let datatableUrl = '{{ route('superuser.penjualan.delivery_order.json') }}';
+  
+  let showControl = $('input[type=radio][name=show-control]');
+  let valShow = "default";
+  showControl.change(function() {
+    let newDatatableUrl = datatableUrl+'?show='+this.value;
+    valShow = this.value;
+    $('#datatable').DataTable().ajax.url(newDatatableUrl).load();
+  });
 
-        $('#do_kirim').DataTable( {
-          "paging":   false,
-          "ordering": true,
-          "info":     false,
-          "searching" : false,
-          "columnDefs": [{
-            "targets": 0,
-            "orderable": false
-          }]
-        });
+  $('#datesearch').daterangepicker({
+    autoUpdateInput: false
+  });
 
-        $('#update_resi').DataTable( {
-          "paging":   false,
-          "ordering": true,
-          "info":     false,
-          "searching" : false,
-          "columnDefs": [{
-            "targets": 0,
-            "orderable": false
-          }]
-        });
-  })
+  $('#datesearch').data('daterangepicker').setStartDate('{{ \Carbon\Carbon::now()->format('m/d/Y') }}');
+  $('#datesearch').data('daterangepicker').setEndDate('{{ \Carbon\Carbon::now()->format('m/d/Y') }}');
+
+  $('#datesearch').on('apply.daterangepicker', function(ev, picker) {
+    $(this).val(picker.startDate.format('DD/MM/YYYY') + ' - ' + picker.endDate.format('DD/MM/YYYY'));
+    start_date = picker.startDate.format('YYYY-MM-DD');
+    end_date = picker.endDate.format('YYYY-MM-DD');
+
+    if (start_date && end_date) {
+      let newDatatableUrl = datatableUrl + '?from=' + start_date + '&to=' + end_date +'&show='+valShow;
+      $('#datatable').DataTable().ajax.url(newDatatableUrl).load();
+    // alert('aa')
+    }
+  });
+  
+  var table = $('#datatable').DataTable({
+    processing: true,
+    serverSide: true,
+    ajax: {
+      "url": datatableUrl,
+      "dataType": "json",
+      "type": "GET",
+      "data":{ _token: "{{csrf_token()}}"}
+    },
+    columns: [
+      {data: 'id', width: '3%'},
+      {
+        data: 'created_at',
+        render: {
+          _: 'display',
+          sort: 'timestamp'
+        }
+      },
+      {data: 'do_code'},
+      {data: 'customer_other_address_id'},
+      {data: 'status'},
+      {data: 'action', orderable: false, searcable: false}
+    ],
+    order: [
+      [1, 'desc']
+    ],
+    pageLength: 10,
+    lengthMenu: [
+      [10, 30, 100, -1],
+      [10, 30, 100, 'All']
+    ],
+    "dom": '<"row"<"col-sm-12 col-md-6"l><"col-sm-12 col-md-6"f>> <"row"<"col-sm-12 col-md-12"p>> <"row"<"col-sm-12"rt>> <"row"<"col-sm-12 col-md-6"i><"col-sm-12 col-md-6"p>>'
+  });
+});
 </script>
 @endpush

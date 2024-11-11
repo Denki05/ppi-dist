@@ -10,10 +10,13 @@ use App\Entities\Master\Company;
 use App\Entities\Finance\Invoicing;
 use App\Entities\Finance\Payable;
 use App\Entities\Finance\PayableDetail;
+use App\DataTables\Finance\PayableTable;
+use App\DataTables\Report\PaymentReportTable;
 use App\Entities\Penjualan\SalesOrder;
 use App\Entities\Setting\UserMenu;
 use App\Repositories\CodeRepo;
 use App\Entities\Penjualan\PackingOrder;
+use App\Helper\LogActivity;
 use DB;
 use Auth;
 use PDF;
@@ -44,6 +47,17 @@ class PayableController extends Controller
             return $next($request);
         });
     }
+
+    public function json(Request $request, PayableTable $datatable)
+    {
+        return $datatable->build($request);
+    }
+
+    public function json2(Request $request, PaymentReportTable $datatable)
+    {
+        return $datatable->build($request);
+    }
+
     public function index(Request $request)
     {
         // Access
@@ -54,21 +68,24 @@ class PayableController extends Controller
         }
 
         $search = $request->input('search');
-        $customer = Customer::where(function($query2) use($search){
-                                if(!empty($search)){
-                                    $query2->where('name','like','%'.$search.'%');
-                                }
-                            })
-                            ->orderBy('id','ASC')
-                            ->paginate(10);
-
-        $member = CustomerOtherAddress::get();
-        
-        $data =[
+        $customer_id = $request->input('customer_id');
+        $table = Payable::where(function($query2) use($search){
+                            if(!empty($search)){
+                                $query2->where('code','like','%'.$search.'%');
+                            }
+                        })
+                        ->where(function($query2) use($customer_id){
+                            if(!empty($customer_id)){
+                                $query2->where('customer_id',$customer_id);
+                            }
+                        })
+                        ->orderBy('id','DESC')
+                        ->paginate(10);
+        $customer = Customer::where('status', Customer::STATUS['ACTIVE'])->get();
+        $data = [
             'customer' => $customer,
-            'member' => $member,
+            'table' => $table
         ];
-
         return view($this->view."index",$data);
     }
 
@@ -77,7 +94,7 @@ class PayableController extends Controller
      *
      * @return \Illuminate\Http\Response
      */
-    public function create($id)
+    public function create(Request $request)
     {
         // Access
         if(Auth::user()->is_superuser == 0){
@@ -85,14 +102,17 @@ class PayableController extends Controller
                 return redirect()->route('superuser.index')->with('error','Anda tidak punya akses untuk membuka menu terkait');
             }
         }
-
-        $member = CustomerOtherAddress::findOrFail($id);
-
+        if(empty($request->input('customer_id'))){
+            return redirect()->route('superuser.finance.payable.index')->with('error','Tidak ada customer yang dipilih');
+        }
+        $customer = Customer::where('id', $request->input('customer_id'))->first();
+        if(empty($customer)){
+            return redirect()->route('superuser.finance.payable.index')->with('error','Customer tidak ditemukan');
+        }
         $data = [
-            'member' => $member,
+            'customer' => $customer
         ];
-
-        return view($this->view."create",$data);
+        return view($this->view."create", $data);
     }
 
     /**
@@ -101,37 +121,36 @@ class PayableController extends Controller
      * @param  \Illuminate\Http\Request  $request
      * @return \Illuminate\Http\Response
      */
-    public function store(Request $request, $id)
+    public function store(Request $request)
     {
+
         $data_json = [];
         $post = $request->all();
         if($request->method() == "POST"){
             DB::beginTransaction();
             try{
-                if(empty($post["customer_other_address_id"])){
+                if(empty($post["customer_id"])){
                     $data_json["IsError"] = TRUE;
                     $data_json["Message"] = "Customer ID tidak boleh kosong";
                     goto ResultData;
                 }
-
                 if(!isset($post["repeater"])){
                     $data_json["IsError"] = TRUE;
                     $data_json["Message"] = "Tidak ada invoice terkait";
                     goto ResultData;
                 }
-
                 if(count($post["repeater"]) == 0){
                     $data_json["IsError"] = TRUE;
                     $data_json["Message"] = "Tidak ada invoice terkait";
                     goto ResultData;
                 }
 
-                $customer = CustomerOtherAddress::find($id);
-
                 $insert = Payable::create([
                     'code' => CodeRepo::generatePayable(),
-                    'customer_other_address_id' => $customer->id,
-                    'status' => Payable::STATUS['ACTIVE'],
+                    'customer_id' => trim(htmlentities($post["customer_id"])),
+                    'pay_date' => date('Y-m-d', strtotime($post["pay_date"])),
+                    'note' => trim(htmlentities($post["note"])),
+                    'status' => 1,
                     'created_by' => Auth::id(),
                     'total' => 0
                 ]);
@@ -147,7 +166,11 @@ class PayableController extends Controller
                         $get_invoice = Invoicing::where('id',$value["invoice_id"])->first();
                         $payable = $get_invoice->payable_detail->sum('total');
                         $sisa = $get_invoice->grand_total_idr - $payable;
-                        
+
+                        // hitung sisa
+                        $remaining_pay = $sisa - $input_payable;
+
+
                         if($payable >= $get_invoice->grand_total_idr){
                             $data_json["IsError"] = TRUE;
                             $data_json["Message"] = "Invoice ".$get_invoice->code. " sudah lunas";
@@ -158,6 +181,7 @@ class PayableController extends Controller
                             'invoice_id' => $value["invoice_id"],
                             'total' => $input_payable,
                             'prev_account_receivable' => $get_invoice->grand_total_idr - $payable,
+                            'remaining_account_receivable' => $remaining_pay,
                             'created_by' => Auth::id(),
                         ];
 
@@ -204,13 +228,12 @@ class PayableController extends Controller
             }
         }
 
-        $member = CustomerOtherAddress::where('id', $id)->first();
-
-        $result = Payable::where('customer_other_address_id', $member->id)->whereRaw('Date(created_at) = CURDATE()')->get();
-        
+        $result = Payable::where('id',$id)->first();
+        if(empty($result)){
+            abort(404);
+        }
         $data = [
-            'result' => $result,
-            'member' => $member,
+            'result' => $result
         ];
         return view($this->view."detail",$data);
     }
@@ -223,7 +246,7 @@ class PayableController extends Controller
      */
     public function show($id)
     {
-        //
+        
     }
 
     /**
@@ -236,7 +259,7 @@ class PayableController extends Controller
     {
         // Access
         if(Auth::user()->is_superuser == 0){
-            if(empty($this->access) || empty($this->access->user) || $this->access->can_read == 0){
+            if(empty($this->access) || empty($this->access->user) || $this->access->can_update == 0){
                 return redirect()->route('superuser.index')->with('error','Anda tidak punya akses untuk membuka menu terkait');
             }
         }
@@ -320,6 +343,8 @@ class PayableController extends Controller
 
                         DB::commit();
 
+                        LogActivity::addToLog('Update Payable:' . $payment->code);
+
                         $response['notification'] = [
                             'alert' => 'notify',
                             'type' => 'success',
@@ -365,23 +390,43 @@ class PayableController extends Controller
         DB::beginTransaction();
         try{
 
-            $payable->status = Payable::STATUS['APPROVE'];
+            $payable->status = Payable::STATUS['ACC'];
             $payable->updated_by = Auth::id();
         
             if ($payable->save()){
-                $get_detail = PayableDetail::where('payable_id', $payable->id)->first();
-                $get_invoice = Invoicing::where('id', $get_detail->invoice_id)->first();
+                $detail = PayableDetail::where('payable_id', $payable->id)->get();
 
-                $so = SalesOrder::where('id', $get_invoice->do->so_id)->first();
+                foreach($detail as $row){
+                    $invoice = Invoicing::where('id', $row->invoice_id)->first();
 
-                if ($so->type_transaction == 'CASH'){
-                    $update_so_payment = SalesOrder::where('id', $so->id)->update(['payment_status' => 1]);
-                }elseif($so->type_transaction == 'TEMPO'){
-                    $update_so_payment = SalesOrder::where('id', $so->id)->update(['payment_status' => 2]);
+                    // Hitung sisa
+                    $total_tagihan = $invoice->grand_total_idr;
+                    $payment = $invoice->payable_detail->sum('total');
+                    $sisa = $total_tagihan - $payment;
+
+                    // DD($sisa);
+
+                    if( $sisa == '0' ){
+                        $update_so = SalesOrder::where('id', $invoice->do->so_id)->update(['payment_status' => 1]);
+                    }elseif ($sisa > '0') {
+                        $update_so = SalesOrder::where('id', $invoice->do->so_id)->update(['payment_status' => 2]);
+                    }elseif ($sisa >= '-1') {
+                        // kelebihan pembayaran
+                        $update_so = SalesOrder::where('id', $invoice->do->so_id)->update(['payment_status' => 1]);
+                    }
                 }
 
                 DB::commit();
-                return redirect()->back()->with('success','<a href="'.route('superuser.finance.payable.index').'">'.$payable->code.'</a> : Payment has been successfully processed!');
+                LogActivity::addToLog('Aproved Payable:' . $payable->code);
+                $response['notification'] = [
+                    'alert' => 'notify',
+                    'type' => 'success',
+                    'content' => 'Success',
+                ];
+
+                $response['redirect_to'] = route('superuser.finance.payable.index');
+
+                return $this->response(200, $response);
             }
         }catch (\Exception $e) {
             dd($e);
@@ -403,16 +448,37 @@ class PayableController extends Controller
      * @param  int  $id
      * @return \Illuminate\Http\Response
      */
-    public function destroy($id)
+    public function destroy(Request $request, $id)
     {
         // Access
         if(Auth::user()->is_superuser == 0){
             if(empty($this->access) || empty($this->access->user) || $this->access->can_delete == 0){
-                return redirect()->route('superuser.index')->with('error','Anda tidak punya akses untuk membuka menu terkait');
+                abort(405);
             }
         }
 
-        
+        if ($request->ajax()) {
+            $result = Payable::findOrFail($id);
+
+            DB::beginTransaction();
+
+            try {
+
+                $result->status = Payable::STATUS['DELETED'];
+
+                if ($result->save()) {
+                    DB::commit();
+                    LogActivity::addToLog('Destory Payable:' . $result->code);
+                    $response['redirect_to'] = route('superuser.finance.payable.index');
+                    return $this->response(200, $response);
+                }
+
+            } catch (\Exception $e) {
+                DB::rollBack();
+                Log::error("Failed to delete payable: " . $e->getMessage());
+                return redirect()->back()->with('error', 'Failed to delete payable. Please try again.');
+            }
+        }
     }
 
     public function print($id){
@@ -436,5 +502,152 @@ class PayableController extends Controller
 
         $pdf = PDF::loadview($this->view."print",$data)->setPaper('a4','potrait');
         return $pdf->stream($result->code ?? '');
+    }
+
+    public function cancel_approve(Request $request, $id)
+    {
+        if ($request->ajax()){
+            $failed = "";
+            DB::beginTransaction();
+
+            try{
+                $payable = Payable::find($id);
+
+                if($payable){
+                    if($payable->count_cancel){
+                        $failed = 'Limit sudah mencapai batas!';
+                    }
+                }
+
+                $payable->status = Payable::STATUS['REVISI'];
+                $payable->count_cancel = 1;
+
+                if ($failed) {
+                    $response['failed'] = $failed;
+
+                    return $this->response(200, $response);
+                }
+
+                if($payable->save()){
+                    DB::commit();
+                    LogActivity::addToLog('Cancel Aprroved Payable:' . $payable->code);
+                    $response['redirect_to'] = route('superuser.finance.payable.index');
+                    return $this->response(200, $response);
+                }
+
+            }catch (\Exception $e) {
+                DD($e);
+                DB::rollback();
+                $response['notification'] = [
+                    'alert' => 'block',
+                    'type' => 'alert-danger',
+                    'header' => 'Error',
+                    'content' => "Internal Server Error",
+                ];
+
+                return $this->response(400, $response);
+            }
+        }
+    }
+
+    public function cancel_edit(Request $request, $id)
+    {
+        // Access
+        if(Auth::user()->is_superuser == 0){
+            if(empty($this->access) || empty($this->access->user) || $this->access->can_read == 0){
+                return redirect()->route('superuser.index')->with('error','Anda tidak punya akses untuk membuka menu terkait');
+            }
+        }
+
+        $data['result'] = Payable::findOrFail($id);
+
+        return view('superuser.finance.payable.cancel_edit', $data);
+    }
+
+    public function update_cancel(Request $request, $id)
+    {
+        $data_json = [];
+        $post = $request->all();
+        if($request->method() == "POST"){
+            DB::beginTransaction();
+            try{
+                if(empty($post["payable_header"])){
+                    $data_json["IsError"] = TRUE;
+                    $data_json["Message"] = "ID Payable tidak boleh kosong";
+                    goto ResultData;
+                }
+
+                $get_payable = Payable::where('id', $post["payable_header"])->first();
+
+                // update Note payable
+                $update_payable = Payable::where('id', $post["payable_header"])->update([
+                    'note' => $post["note"], 
+                    'status' => Payable::STATUS['ACC']]);
+
+                // update detail Payable
+                $total_payment = 0;
+                foreach($post["repeater"] as $index => $key){
+                    if(!empty($key["payable"])){
+                        $input_payment = floatval(str_replace(".", "", $key["payable"]));
+                        $get_detail = PayableDetail::where('id', $key["payable_detail_id"])->first();
+                        
+                        $sisa = $get_detail->prev_account_receivable - $input_payment;
+
+                        $data = [
+                            'total' => $input_payment,
+                            'prev_account_receivable' => $get_detail->prev_account_receivable,
+                            'remaining_account_receivable' => $sisa,
+                            'updated_by' => Auth::id(),
+                        ];
+
+                        $update_detail = PayableDetail::where('id', $key["payable_detail_id"])->update($data);
+                        $total_payment += $input_payment;
+                    }
+                }
+
+                if($total_payment == 0){
+                    $data_json["IsError"] = TRUE;
+                    $data_json["Message"] = "Tidak bisa melakukan payable.Tidak ada payable yang diinput";
+                    goto ResultData;
+                }
+
+                $update = Payable::where('id', $post["payable_header"])->update([
+                    'total' => $total_payment
+                ]);
+
+                DB::commit();
+
+                LogActivity::addToLog('Update Cancel Payable:' . $get_payable->code);
+
+                $data_json["IsError"] = FALSE;
+                $data_json["Message"] = "Payable berhasil dibuat";
+                goto ResultData;
+
+            }catch(\Throwable $e){
+                dd($e);
+                DB::rollback();
+                $data_json["IsError"] = TRUE;
+                $data_json["Message"] = $e->getMessage();
+                goto ResultData;
+            }
+        }
+        else{
+            $data_json["IsError"] = TRUE;
+            $data_json["Message"] = "Invalid Method";
+            goto ResultData;
+        }
+        ResultData:
+        return response()->json($data_json,200);
+    }
+
+    public function pageReport(Request $request)
+    {
+        if(Auth::user()->is_superuser == 0){
+            if(empty($this->access) || empty($this->access->user) || $this->access->can_read == 0){
+                return redirect()->route('superuser.index')->with('error','Anda tidak punya akses untuk membuka menu terkait');
+            }
+        }
+
+        return view($this->view."report");
     }
 }

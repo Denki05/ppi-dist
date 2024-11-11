@@ -53,12 +53,12 @@
         <div class="form-control-plaintext">{{ $contact->ktp }}</div>
       </div>
     </div>
-    <div class="row">
+    <!-- <div class="row">
       <label class="col-md-3 col-form-label text-right">Address</label>
       <div class="col-md-7">
         <div class="form-control-plaintext">{{ $contact->address }}</div>
       </div>
-    </div>
+    </div> -->
     <div class="row">
       <label class="col-md-3 col-form-label text-right">Status</label>
       <div class="col-md-7">

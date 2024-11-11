@@ -5,6 +5,7 @@ namespace App\DataTables\Gudang;
 use App\DataTables\Table;
 use App\Entities\Gudang\PurchaseOrder;
 use Carbon\Carbon;
+use Illuminate\Support\Facades\Cache;
 
 class PurchaseOrderTable extends Table
 {
@@ -14,7 +15,14 @@ class PurchaseOrderTable extends Table
      */
     private function query()
     {
-        $model = PurchaseOrder::select('id', 'code', 'edit_counter', 'updated_by', 'status', 'created_at', 'updated_by');
+        // Gunakan cache untuk menyimpan hasil query
+        $cacheKey = 'purchase_orders_cache';
+        $cacheTime = now()->addMinutes(10);
+
+        // Periksa apakah hasil query sudah ada di cache
+        $model = Cache::remember($cacheKey, $cacheTime, function () {
+            return PurchaseOrder::select('id', 'code', 'edit_counter', 'updated_by', 'status', 'note', 'created_at', 'updated_by')->get();
+        });
 
         return $model;
     }
@@ -29,7 +37,6 @@ class PurchaseOrderTable extends Table
         $table->addIndexColumn();
 
         $table->setRowClass(function (PurchaseOrder $model) {
-
             switch ($model->status) {
                 case $model::STATUS['DELETED']:
                     return 'table-danger';
@@ -43,7 +50,7 @@ class PurchaseOrderTable extends Table
                     return '';
             }
         });
-        
+
         $table->editColumn('status', function (PurchaseOrder $model) {
             return $model->status();
         });
@@ -64,11 +71,13 @@ class PurchaseOrderTable extends Table
             $edit = route('superuser.gudang.purchase_order.step', $model);
             $destroy = route('superuser.gudang.purchase_order.destroy', $model);
             $acc = route('superuser.gudang.purchase_order.acc', $model);
+            $pdf = route('superuser.gudang.purchase_order.print_pdf', $model);
+            $cancel_acc = route('superuser.gudang.purchase_order.cancel_acc', $model);
 
             switch ($model->status) {
                 case $model::STATUS['ACTIVE']:
                     return "
-                        <a href=\"javascript:saveConfirmation2('{$acc}')\">
+                        <a href=\"javascript:saveConfirmation('{$acc}')\">
                             <button type=\"button\" class=\"btn btn-sm btn-circle btn-alt-success\" title=\"ACC\">
                                 <i class=\"fa fa-check\"></i>
                             </button>
@@ -104,6 +113,19 @@ class PurchaseOrderTable extends Table
                                 <i class=\"fa fa-eye\"></i>
                             </button>
                         </a>
+
+                        <a href=\"{$pdf}\">
+                            <button type=\"button\" class=\"btn btn-sm btn-circle btn-alt-secondary\" title=\"Print\">
+                                <i class=\"fa fa-print\"></i>
+                            </button>
+                        </a>
+
+                        <a href=\"javascript:saveConfirmation('{$cancel_acc}')\">
+                            <button type=\"button\" class=\"btn btn-sm btn-circle btn-alt-secondary\" title=\"Cancel Approve\">
+                                <i class=\"fa fa-refresh\"></i>
+                            </button>
+                        </a>
+                        
                     ";
                 default:
                     return "

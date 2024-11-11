@@ -4,7 +4,7 @@
 <nav class="breadcrumb bg-white push">
   <span class="breadcrumb-item">Master</span>
   <a class="breadcrumb-item" href="{{ route('superuser.master.customer.index') }}">Member</a>
-  <span class="breadcrumb-item active">Create</span>
+  <span class="breadcrumb-item active">Edit</span>
 </nav>
 <div class="block">
   <div class="block-conten" align="center">
@@ -51,7 +51,7 @@
                 <div class="form-group row">
                   <label for="name" class="col-sm-2 col-form-label">Category<span class="text-danger">*</span></label>
                   <div class="col-sm-10">
-                    <input type="text" id="category" name="category" placeholder="Category Member" class="form-control" value="{{$other_address->customer->category->name}}" readonly>
+                    <input type="text" id="category" name="category" placeholder="Category Member" class="form-control" value="{{$other_address->store->category->name}}" readonly>
                   </div>
                 </div>
               </div>
@@ -76,9 +76,45 @@
             </div>
             <div class="row">
               <div class="col">
+                <div class="form-group row">
+                  <label for="contact_person" class="col-sm-2 col-form-label">Officer <span class="text-danger">*</span></label>
+                  <div class="col-sm-10">
+                    <input type="text" id="officer" name="officer" placeholder="Officer" class="form-control" value="{{ $other_address->officer ?? '-' }}">
+                  </div>
+                </div>
+              </div>
+              <div class="col">
+                <div class="form-group row">
+                  <label for="name" class="col-sm-2 col-form-label">Alamat <span class="text-danger">*</span></label>
+                  <div class="col-sm-10">
+                    <textarea class="form-control" name="address" rows="2">{{$other_address->address}}</textarea>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div class="row">
+              <div class="col-6">
+                <div class="form-group row">
+                  <label for="ar" class="col-sm-2 col-form-label">AR <span class="text-danger">*</span></label>
+                  <div class="col-sm-10">
+                    <input type="text" id="ar" name="ar" placeholder="Account Representative" class="form-control" value="{{ $other_address->account_representative ?? '-' }}">
+                  </div>
+                </div>
+              </div>
+              <div class="col-6">
+                <div class="form-group row">
+                  <label for="target_income" class="col-sm-2 col-form-label">Target Incomes <span class="text-danger">*</span></label>
+                  <div class="col-sm-10">
+                    <input type="number" id="target_income" name="target_income" placeholder="Target Income's" class="form-control" value="{{ $other_address->setting_income_target ?? 0 }}">
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div class="row">
+              <div class="col">
                 <div class="form-group">
-                  <label for="address" class="form-label">Alamat</label>
-                  <textarea class="form-control" name="address" rows="2">{{$other_address->address}}</textarea>
+                  <input type="checkbox" value="1" name="free_shipping" <?php if ($other_address->free_shipping == 1) { ?> checked="checked" <?php } ?>  />
+                  <span class="text-danger"><b>*Free Shipping</b></span></label><br>
                 </div>
               </div>
             </div>
@@ -104,35 +140,36 @@
                       <option value="{{ $provinsi->prov_id }}" {{ ($provinsi->prov_id == $other_address->provinsi ) ? 'selected' : '' }}>{{ $provinsi->prov_name }}</option>
                       @endforeach
                     </select>
-                    <input type="hidden" name="text_provinsi">
+                    <input type="hidden" name="text_provinsi" value="{{ $other_address->text_provinsi }}">
                   </div>
                   <div class="form-group col-md-2">
                     <label for="kota">Kota</label>
                     <select class="js-select2 form-control" id="kota" name="kota" style="width:100%;" placeholder="Pilih Kota">
-                      <option>Pilih Kota</option>
+                      <option value="{{ $other_address->kota }}">{{ $other_address->text_kota }}</option>
                     </select>           
-                    <input type="hidden" name="text_kota">
+                    <input type="hidden" name="text_kota" value="{{ $other_address->text_kota }}">
                   </div>
                   <div class="form-group col-md-2">
                     <label for="kecamatan">Kecamatan</label>
                     <select class="js-select2 form-control" id="kecamatan" name="kecamatan" style="width:100%;" placeholder="Pilih Kecamatan">
-                      <option>Pilih Kecamatan</option>
+                      <option value="{{ $other_address->kecamatan }}">{{ $other_address->text_kecamatan }}</option>
                     </select>
-                    <input type="hidden" name="text_kecamatan">
+                    <input type="hidden" name="text_kecamatan" value="{{ $other_address->text_kecamatan }}">
                   </div>          
                   <div class="form-group col-md-2">
                     <label for="kelurahan">Kelurahan</label>
                     <select class="js-select2 form-control" id="kelurahan" name="kelurahan" style="width:100%;" placeholder="Pilih Kelurahan">
-                      <option>Pilih Kelurahan</option>
+                    <option value="{{ $other_address->kelurahan }}">{{ $other_address->text_kelurahan }}</option>
+                      
                     </select>
-                    <input type="hidden" name="text_kelurahan">
+                    <input type="hidden" name="text_kelurahan" value="{{ $other_address->text_kelurahan }}">
                   </div>
                   <div class="form-group col-md-2">
                     <label for="zipcode">Zipcode</label>
                     <select class="js-select2 form-control" id="zipcode" name="zipcode" style="width:100%;" placeholder="Pilih Kode Pos">
-                      <option>Pilih Kode Pos</option>
+                      <option value="{{ $other_address->zipcode }}">{{ $other_address->zipcode }}</option>
                     </select>
-                    <input type="hidden" name="text_zipcode">
+                    <input type="hidden" name="text_zipcode" value="{{ $other_address->zipcode }}">
                   </div>
                 </div>
               </div>
@@ -141,7 +178,7 @@
                   <div class="form-group row">
                     <label for="name" class="col-sm-2 col-form-label">GPS Latitude</label>
                     <div class="col-sm-10">
-                      <input type="text" name="gps_latitude" id="gps_latitude" placeholder="Latitude" class="form-control" value="{{$other_address->gps_latitude}}">
+                      <input type="text" name="gps_latitude" id="gps_latitude" placeholder="Latitude" class="form-control" value="{{$other_address->gps_latitude  ?? '-'}}">
                     </div>
                   </div>
                 </div>
@@ -149,9 +186,20 @@
                   <div class="form-group row">
                     <label for="name" class="col-sm-2 col-form-label">GPS Longitude</label>
                     <div class="col-sm-10">
-                      <input type="text" name="gps_longitude" id="gps_longitude" placeholder="Latitude" class="form-control" value="{{$other_address->gps_longitude}}">
+                      <input type="text" name="gps_longitude" id="gps_longitude" placeholder="Latitude" class="form-control" value="{{$other_address->gps_longitude ?? '-'}}">
                     </div>
                   </div>
+                </div>
+              </div>
+              <div class="row">
+                <div class="mb-3">
+                  <label for="image_store" class="form-label">Zone</label>
+                  <select class="form-control js-select2" name="zone" style="width:100%;">
+                    <option value="">Pilih Zona</option>
+                    @foreach(\App\Entities\Master\CustomerOtherAddress::ZONING AS $zone => $zoning)
+                    <option value="{{ $zoning }}" {{ ($zoning == $other_address->zone ) ? 'selected' : '' }}>{{ $zoning }}</option>
+                    @endforeach
+                  </select>
                 </div>
               </div>
               <div class="f1-buttons">
@@ -169,14 +217,17 @@
             <div class="row">
               <div class="col">
                 <div class="form-group row">
+                  <?php 
+                    $ktp = explode("/", $other_address->ktp);
+                  ?>
                   <label for="ktp" class="col-sm-2 col-form-label">KTP <span class="text-danger">*</span></label>
                   <div class="col-sm-10">
                     <div class="form-row">
                       <div class="col">
-                        <input type="text" class="form-control" name="name_card_ktp" placeholder="Name Card KTP">
+                        <input type="text" class="form-control" name="name_card_ktp" placeholder="Name Card KTP" value="{{ $ktp[0] ?? '' }}">
                       </div>
                       <div class="col">
-                        <input type="number" class="form-control" name="ktp" min="0" value="0" placeholder="Number Card">
+                        <input type="number" class="form-control" name="ktp" placeholder="Number Card" value="{{ $ktp[1] ?? '' }}">
                       </div>
                     </div>
                   </div>
@@ -184,14 +235,17 @@
               </div>
               <div class="col">
                 <div class="form-group row">
+                  <?php 
+                    $npwp = explode("/", $other_address->npwp);
+                  ?>
                   <label for="ktp" class="col-sm-2 col-form-label">NPWP <span class="text-danger">*</span></label>
                   <div class="col-sm-10">
                     <div class="form-row">
                       <div class="col">
-                        <input type="text" class="form-control" name="name_card_npwp" placeholder="Name Card NPWP">
+                        <input type="text" class="form-control" name="name_card_npwp" placeholder="Name Card NPWP" value="{{ $npwp[0] ?? '' }}">
                       </div>
                       <div class="col">
-                        <input type="number" class="form-control" name="npwp" min="0" value="0" placeholder="Number Card">
+                        <input type="number" class="form-control" name="npwp" placeholder="Number Card" value="{{ $npwp[1] ?? ''  }}">
                       </div>
                     </div>
                   </div>

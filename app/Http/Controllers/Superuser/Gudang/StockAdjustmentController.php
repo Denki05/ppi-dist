@@ -7,6 +7,7 @@ use Illuminate\Http\Request;
 use App\Entities\Master\Warehouse;
 use App\Entities\Master\ProductMinStock;
 use App\Entities\Master\Product;
+use App\Entities\Master\ProductPack;
 use App\Entities\Gudang\StockAdjustment;
 use App\Entities\Setting\UserMenu;
 use App\Repositories\CodeRepo;
@@ -57,7 +58,7 @@ class StockAdjustmentController extends Controller
                                         $query2->orWhere('update','like','%'.$search.'%');
                                     }
                                 })
-                                ->orWhereHas('product',function($query2) use($search){
+                                ->orWhereHas('product_pack',function($query2) use($search){
                                     if(!empty($search)){
                                         $query2->where('code','like','%'.$search.'%');
                                         $query2->where('name','like','%'.$search.'%');
@@ -69,7 +70,7 @@ class StockAdjustmentController extends Controller
                                     }
                                 })
                                 ->orderBy('id','DESC')
-                                ->paginate(10);
+                                ->paginate(200);
         $table->withPath('stock_adjustment?search='.$search."&warehouse_id=".$warehouse_id);
         $warehouse = Warehouse::get();
         $data = [
@@ -100,7 +101,7 @@ class StockAdjustmentController extends Controller
         if(empty($warehouse)){
             return redirect()->route('superuser.gudang.stock_adjustment.index')->with('error','Gudang tidak ditemukan');
         }
-        $product = Product::where('default_warehouse_id',$warehouse->id)->get();
+        $product = ProductPack::where('warehouse_id', $warehouse->id)->get();
         $data = [
             'warehouse' => $warehouse,
             'product' => $product
@@ -127,24 +128,26 @@ class StockAdjustmentController extends Controller
                     $data_json["Message"] = "Warehouse ID tidak boleh kosong";
                     goto ResultData;
                 }
-                if(empty($post["product_id"])){
+                if(empty($post["product_packaging_id"])){
                     $data_json["IsError"] = TRUE;
                     $data_json["Message"] = "Product wajib dipilih";
                     goto ResultData;
                 }
                 $product_warehouse = ProductMinStock::where('warehouse_id',$post["warehouse_id"])
-                                                    ->where('product_id',$post["product_id"])
+                                                    ->where('product_packaging_id',$post["product_packaging_id"])
                                                     ->first();
 
                 $plus_stock = (empty($post["plus"])) ? 0 : $post["plus"];
                 $min_stock = (empty($post["min"])) ? 0 : $post["min"];
                 $prev_stock = $product_warehouse->quantity;
-                $update_stock = (int)$prev_stock + $plus_stock - $min_stock;
+                $update_stock = $prev_stock + $plus_stock - $min_stock;
+
+                // DD($update_stock);
 
                 $data = [
                     'code' => CodeRepo::generateStockAdjustment(),
                     'warehouse_id' => trim(htmlentities($post["warehouse_id"])),
-                    'product_id' => trim(htmlentities($post["product_id"])),
+                    'product_packaging_id' => trim(htmlentities($post["product_packaging_id"])),
                     'plus' => trim(htmlentities($plus_stock)),
                     'min' => trim(htmlentities($min_stock)),
                     'prev' => trim(htmlentities($prev_stock)),
@@ -154,7 +157,7 @@ class StockAdjustmentController extends Controller
                 ];
 
                 $update_stock = ProductMinStock::where('warehouse_id',$post["warehouse_id"])
-                                                ->where('product_id',$post["product_id"])
+                                                ->where('product_packaging_id',$post["product_packaging_id"])
                                                 ->update([
                                                     'quantity' => $update_stock
                                                 ]);
@@ -236,14 +239,14 @@ class StockAdjustmentController extends Controller
                     $data_json["Message"] = "Warehouse ID tidak boleh kosong";
                     goto ResultData;
                 }
-                if(empty($post["product_id"])){
+                if(empty($post["product_packaging_id"])){
                     $data_json["IsError"] = TRUE;
                     $data_json["Message"] = "Product ID tidak boleh kosong";
                     goto ResultData;
                 }
 
                 $get = ProductMinStock::where('warehouse_id',$post["warehouse_id"])
-                                        ->where('product_id',$post["product_id"])
+                                        ->where('product_packaging_id',$post["product_packaging_id"])
                                         ->first();
 
                 $data_json["IsError"] = FALSE;

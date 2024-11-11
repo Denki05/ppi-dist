@@ -9,7 +9,7 @@
 <div class="block">
   <div class="block-conten" align="center">
     <div class="col-md-10 col-md-offset-1">
-      <form data-action="{{ route('superuser.master.customer.other_address.store', $customer->id) }}" data-type="POST" enctype="multipart/form-data" class="f1 ajax">
+      <form data-action="{{ route('superuser.master.customer.other_address.store', $customer->id) }}" data-type="POST" enctype="multipart/form-data" class="f1 ajax" novalidate>
         <div class="f1-steps">
           <div class="f1-progress">
             <div class="f1-progress-line" data-now-value="25" data-number-of-steps="4" style="width: 25%;"></div>
@@ -75,9 +75,53 @@
             </div>
             <div class="row">
               <div class="col">
+                <div class="form-group row">
+                  <label for="contact_person" class="col-sm-2 col-form-label">Officer <span class="text-danger">*</span></label>
+                  <div class="col-sm-10">
+                    <input type="text" id="officer" name="officer" placeholder="Officer" class="form-control">
+                  </div>
+                </div>
+              </div>
+              <div class="col">
+                <div class="form-group row">
+                  <label for="name" class="col-sm-2 col-form-label">Alamat <span class="text-danger">*</span></label>
+                  <div class="col-sm-10">
+                    <textarea class="form-control" name="address" rows="2"></textarea>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div class="row">
+              <div class="col-6">
+                <div class="form-group row">
+                  <label for="ar" class="col-sm-2 col-form-label">AR <span class="text-danger">*</span></label>
+                  <div class="col-sm-10">
+                    <input type="text" id="ar" name="ar" placeholder="Account Representative" class="form-control">
+                  </div>
+                </div>
+              </div>
+              <div class="col-6">
+                <div class="form-group row">
+                  <label for="target_income" class="col-sm-2 col-form-label">Target Incomes <span class="text-danger">*</span></label>
+                  <div class="col-sm-10">
+                    <input type="number" id="target_income" name="target_income" placeholder="Target Income's" class="form-control">
+                  </div>
+                </div>
+              </div>
+            </div>
+            <!-- <div class="row">
+              <div class="col">
                 <div class="form-group">
                   <label for="address" class="form-label">Alamat</label>
                   <textarea class="form-control" name="address" rows="2"></textarea>
+                </div>
+              </div>
+            </div> -->
+            <div class="row">
+              <div class="col">
+                <div class="form-group">
+                  <input type="checkbox" value="1" name="free_shipping"  />
+                  <span class="text-danger"><b>*Free Shipping</b></span></label><br>
                 </div>
               </div>
             </div>
@@ -151,6 +195,17 @@
                       <input type="text" name="gps_longitude" id="gps_longitude" placeholder="Latitude" class="form-control">
                     </div>
                   </div>
+                </div>
+              </div>
+              <div class="row">
+                <div class="mb-3">
+                  <label for="image_store" class="form-label">Zone</label>
+                  <select class="form-control js-select2" name="zone" style="width:100%;">
+                    <option value="">Pilih Zona</option>
+                    @foreach(\App\Entities\Master\CustomerOtherAddress::ZONING AS $zone => $zoning)
+                    <option value="{{ $zoning }}">{{ $zoning }}</option>
+                    @endforeach
+                  </select>
                 </div>
               </div>
               <div class="f1-buttons">

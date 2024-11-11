@@ -204,9 +204,3 @@ div.table-responsive > div.dataTables_wrapper > div.row > div[class^="col-"]:fir
 div.table-responsive > div.dataTables_wrapper > div.row > div[class^="col-"]:last-child {
   padding-right: 0;
 }
-/* td.details-control {
-  cursor: pointer;
-}
-tr.details td.details-control {
-  cursor: pointer;
-} */
