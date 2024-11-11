@@ -180,6 +180,14 @@ class InvoiceTaxController extends Controller
         return view($this->view."index_beli", $data);
     }
 
+    public function getLastCode()
+    {
+        // Ambil 5 kode terakhir dari database, urutkan dari yang terbaru
+        $lastCodes = InvoiceTax::orderBy('id', 'desc')->take(5)->pluck('code');
+
+        return response()->json(['lastCodes' => $lastCodes]);
+    }
+
     public function create(Request $request)
     {
         // Access check for superuser
@@ -201,7 +209,6 @@ class InvoiceTaxController extends Controller
         $mitra = Mitra::where('status', 1)->get();
         $invoice = PackingOrder::find($id);
         $type = $type;
-        $code = InvoiceTax::select('code')->get();
 
         // Fetch products associated with the packing order
         $products = [];
@@ -232,7 +239,6 @@ class InvoiceTaxController extends Controller
             'invoice' => $invoice,
             'type' => $type,
             'products' => $products,
-            'code' => $code,
         ];
         
         return view($this->view . "create", $data);
@@ -258,6 +264,8 @@ class InvoiceTaxController extends Controller
                 'ppn_idr' => 'required|numeric|min:0',
                 'grand_total' => 'required|numeric|min:0',
             ]);
+
+            // dd($validatedData['code']);
 
             // Proceed with business logic only if validation passes
             $invoiceTax = InvoiceTax::create([

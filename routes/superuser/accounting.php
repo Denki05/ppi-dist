@@ -29,6 +29,7 @@ Route::group([
         Route::post('/store', 'InvoiceTaxController@store')->name('store');
         Route::get('/print_invoice/{id}', 'InvoiceTaxController@print_invoice')->name('print_invoice');
         Route::post('/check_type', 'InvoiceTaxController@check_type')->name('check_type');
+        Route::get('/get-last-code', 'InvoiceTaxController@getLastCode')->name('getLastCode');
     });
     Route::resource('invoice_tax', 'InvoiceTaxController');
 });

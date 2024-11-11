@@ -17,9 +17,9 @@
       </div>
       <div class="block-content">
         <div class="form-row">
-        <div class="form-group col-md-6">
-          <label for="so_date">Code</label>
-          <input type="text" class="form-control" name="code" id="code">
+          <div class="form-group col-md-6">
+            <label for="code">Code</label>
+            <select id="kode-input" name="code" class="form-control" data-placeholder="Input / Pilih Kode"></select>
           </div>
           <div class="form-group col-md-6">
             <label for="type_transaction">Invoice REAL</label>
@@ -188,10 +188,6 @@
     });
 
     $('.js-select2').select2();
-    
-    $(".js-example-tags").select2({
-      tags: true
-    });
 
     function calculateTotals() {
         let totalSubtotal = 0;
@@ -260,7 +256,7 @@
         }
 
         // Gather other form data
-        let code = $('#code').val();
+        let code = $('#kode-input').val();
         let delivery = $('#delivery_order').val();
         let type = $('#type').val();
         let mitra = $('#mitra_id').val();
@@ -318,6 +314,39 @@
     $('#submit-table').on('click', function() {
         calculateTotals(); // Ensure calculations are done before saving
         storeProductData(); // Proceed with saving
+    });
+
+    $('#kode-input').select2({
+      tags: true,
+      placeholder: 'Input / Pilih Kode',
+      ajax: {
+          url: '{{ route('superuser.accounting.invoice_tax.getLastCode') }}',
+          processResults: function(data) {
+              const results = data.lastCodes.map(code => ({ id: code, text: code }));
+
+              // Menambahkan kode baru sebagai default jika dibutuhkan
+              let lastCode = data.lastCodes[0]; // Ambil kode terakhir dari hasil
+              let newCode;
+              if (lastCode) {
+                  const codeParts = lastCode.split('-');
+                  const codeBase = codeParts.slice(0, -1).join('-');
+                  const lastNumber = parseInt(codeParts[codeParts.length - 1]) || 0;
+                  newCode = `${codeBase}-${lastNumber + 1}`;
+              } else {
+                  newCode = 'TP-1';
+              }
+
+              // Tambahkan kode baru yang otomatis dihasilkan ke dalam daftar
+              results.unshift({ id: newCode, text: newCode });
+
+              return { results };
+          }
+      },
+      createTag: function(params) {
+          let term = $.trim(params.term);
+          if (term === '') return null;
+          return { id: term, text: term, newTag: true };
+      }
     });
 });
 </script>
