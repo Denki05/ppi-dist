@@ -136,7 +136,13 @@
                         @if($superuser->division == "Developer" OR $superuser->division == "Management")
                         <a class="dropdown-item dropdown-toggle" href="#"><i class="fa-solid fa-chart-simple"></i> Accounting</a>
                         <ul class="dropdown-menu">
-                            <li><a class="dropdown-item" href="{{ route('superuser.finance.cashback.pageReport') }}">Cashback</a></li>
+                            <li class="dropdown-submenu">
+                                <a class="dropdown-item dropdown-toggle" href="#"> UNIFRA Report</a>
+                                <ul class="dropdown-menu">
+                                    <li><a class="dropdown-item" href="{{ route('superuser.accounting.invoice_tax.pageReportBeli') }}">Beli</a></li>
+                                    <li><a class="dropdown-item" href="{{ route('superuser.accounting.invoice_tax.pageReportJual') }}">Jual</a></li>
+                                </ul>
+                            </li>
                             <li><a class="dropdown-item" href="{{ route('superuser.report.revenue.index') }}">Laporan Pendapatan</a></li>
                             
                         </ul>
@@ -144,6 +150,7 @@
                         @if($superuser->division == "Developer" OR $superuser->division == "Management" OR $superuser->division == "Finance")
                         <a class="dropdown-item dropdown-toggle" href="#"><i class="fa-solid fa-coins"></i> Finance</a>
                         <ul class="dropdown-menu">
+                            <li><a class="dropdown-item" href="{{ route('superuser.finance.cashback.pageReport') }}">Araya Report</a></li>
                             <li><a class="dropdown-item" href="{{ route('superuser.finance.payable.pageReport') }}">Laporan Pembayaran</a></li>
                             <li><a class="dropdown-item" href="{{ route('superuser.finance.invoicing.pageReport') }}">Piutang Faktur</a></li>
                             
@@ -155,7 +162,9 @@
                             <li class="dropdown-submenu">
                                 <a class="dropdown-item dropdown-toggle" href="#">Customer</a>
                                 <ul class="dropdown-menu">
-                                    <li><a class="dropdown-item" href="{{ route('superuser.report.customer_order_variant.index') }}">Customer - Produk</a></li>
+                                    
+                                    <li><a class="dropdown-item" href="{{ route('superuser.report.customer_order_variant.index') }}">Customer History</a></li>
+                                    <li><a class="dropdown-item" href="{{ route('superuser.report.customer_type_zone.index') }}">Customer - Zoning</a></li>
                                     <li><a class="dropdown-item" href="{{ route('superuser.report.sales.index') }}">Penjualan</a></li>
                                 </ul>
                             </li>
@@ -169,8 +178,8 @@
                             <li class="dropdown-submenu">
                                 <a class="dropdown-item dropdown-toggle" href="#">Sales</a>
                                 <ul class="dropdown-menu">
-                                    <li><a class="dropdown-item" href="#">Sales - Produk</a></li>
-                                    <li><a class="dropdown-item" href="#">Sales - Customer</a></li>
+                                    <!-- <li><a class="dropdown-item" href="#">Sales - Produk</a></li>
+                                    <li><a class="dropdown-item" href="#">Sales - Customer</a></li> -->
                                     <li><a class="dropdown-item" href="{{ route('superuser.report.employee_performance.index') }}">Penjualan Sales</a></li>
                                 </ul>
                             </li>
@@ -239,7 +248,7 @@
                     <span class="badge badge-danger">{{ $notifCount > 0 ? $notifCount : '0' }}</span> <!-- Example notification count -->
                 </a>
                 <div class="dropdown-menu dropdown-menu-right" aria-labelledby="notificationDropdown">
-                    <div class="card" style="width: 35rem;">
+                    <div class="card" style="width: 45rem;">
                         <div class="card-header">
                             <h3 class="card-title">Last updates</h3>
                         </div>
@@ -265,23 +274,24 @@
 </nav>
 
 @push('scripts')
-<script>
-$(document).ready(function () {
+<script type="text/javascript">
+$(document).ready(function() {
         $('.dropdown-menu a.dropdown-toggle').on('click', function(e) {
-                var $el = $(this);
-                var $parent = $el.offsetParent(".dropdown-menu");
-                if (!$el.next().hasClass('show')) {
-                    $el.parents('.dropdown-menu').first().find('.show').removeClass("show");
-                }
-                var $subMenu = $el.next(".dropdown-menu");
-                $subMenu.toggleClass('show');
-                $el.parent("li").toggleClass('show');
+            var $el = $(this);
+            var $subMenu = $el.next(".dropdown-menu");
 
-                $el.parents('li.nav-item.dropdown.show').on('hidden.bs.dropdown', function(e) {
-                    $('.dropdown-menu .show').removeClass("show");
-                });
+            // Always add the 'show' class to keep the submenu visible
+            $subMenu.addClass('show');
+            $el.parent("li").addClass('show');
 
-                return false;
+            // Prevent any parent dropdowns from hiding the submenu
+            $el.parents('li.nav-item.dropdown.show').on('hidden.bs.dropdown', function(e) {
+                e.preventDefault(); // Prevent hiding
+                e.stopPropagation(); // Stop the event from propagating
+                $subMenu.addClass('show');
+            });
+
+            return false; // Prevent the default action
         });
 
         function reloadNotifications() {
@@ -342,7 +352,7 @@ $(document).ready(function () {
                   console.error('An error occurred:', xhr.responseText);
               }
           });
-        }
+        };
 
         // Reload notifications every 5 seconds
         setInterval(reloadNotifications, 5000);

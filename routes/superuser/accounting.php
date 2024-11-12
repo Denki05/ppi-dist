@@ -30,6 +30,10 @@ Route::group([
         Route::get('/print_invoice/{id}', 'InvoiceTaxController@print_invoice')->name('print_invoice');
         Route::post('/check_type', 'InvoiceTaxController@check_type')->name('check_type');
         Route::get('/get-last-code', 'InvoiceTaxController@getLastCode')->name('getLastCode');
+        Route::get('/pageReportBeli', 'InvoiceTaxController@pageReportBeli')->name('pageReportBeli');
+        Route::get('/pageReportJual', 'InvoiceTaxController@pageReportJual')->name('pageReportJual');
+        Route::get('/json', 'InvoiceTaxController@json')->name('json');
+        Route::get('/json2', 'InvoiceTaxController@json2')->name('json2');
     });
     Route::resource('invoice_tax', 'InvoiceTaxController');
 });

@@ -11,6 +11,8 @@ use App\Entities\Accounting\InvoiceTaxDetail;
 use App\Entities\Master\Mitra;
 use App\Entities\Master\CustomerOtherAddress;
 use App\Entities\Master\ProductFinance;
+use App\DataTables\Report\InvoiceTaxReportTable;
+use App\DataTables\Report\InvoiceTaxJualReportTable;
 use App\Entities\Setting\UserMenu;
 use Illuminate\Validation\ValidationException;
 use Validator;
@@ -37,6 +39,16 @@ class InvoiceTaxController extends Controller
             $this->access = $access;
             return $next($request);
         });
+    }
+
+    public function json(Request $request, InvoiceTaxReportTable $datatable)
+    {
+        return $datatable->build($request);
+    }
+
+    public function json2(Request $request, InvoiceTaxJualReportTable $datatable)
+    {
+        return $datatable->build($request);
     }
 
     public function search_invreal_jual(Request $request)
@@ -412,5 +424,79 @@ class InvoiceTaxController extends Controller
         flush();
         readfile ($file);
         exit();
+    }
+
+    public function pageReportBeli(Request $request)
+    {
+        // Access
+        if(Auth::user()->is_superuser == 0){
+            if(empty($this->access) || empty($this->access->user) || $this->access->can_read == 0){
+                return redirect()->route('superuser.index')->with('error','Anda tidak punya akses untuk membuka menu terkait');
+            }
+        }
+
+        $customer = CustomerOtherAddress::get();
+        $bulan = [
+            1 => 'Januari',
+            2 => 'Februari',
+            3 => 'Maret',
+            4 => 'April',
+            5 => 'Mei',
+            6 => 'Juni',
+            7 => 'Juli',
+            8 => 'Agustus',
+            9 => 'September',
+            10 => 'Oktober',
+            11 => 'November',
+            12 => 'Desember',
+        ];
+
+        // Get the selected month, default to the current month
+        $selectedBulan = $request->bulan ?? now()->month;
+
+        $data = [
+            'customer' => $customer,
+            'bulan' => $bulan,
+            'selectedBulan' => $selectedBulan
+        ];
+        
+        return view($this->view."report_beli",$data);
+    }
+
+    public function pageReportJual(Request $request)
+    {
+        // Access
+        if(Auth::user()->is_superuser == 0){
+            if(empty($this->access) || empty($this->access->user) || $this->access->can_read == 0){
+                return redirect()->route('superuser.index')->with('error','Anda tidak punya akses untuk membuka menu terkait');
+            }
+        }
+
+        $customer = CustomerOtherAddress::get();
+        $bulan = [
+            1 => 'Januari',
+            2 => 'Februari',
+            3 => 'Maret',
+            4 => 'April',
+            5 => 'Mei',
+            6 => 'Juni',
+            7 => 'Juli',
+            8 => 'Agustus',
+            9 => 'September',
+            10 => 'Oktober',
+            11 => 'November',
+            12 => 'Desember',
+        ];
+
+        // Get the selected month, default to the current month
+        $selectedBulan = $request->bulan ?? now()->month;
+
+        $data = [
+            'customer' => $customer,
+            'bulan' => $bulan,
+            'selectedBulan' => $selectedBulan
+        ];
+        
+        return view($this->view."report_jual",$data);
     }
 }
