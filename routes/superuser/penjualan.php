@@ -175,6 +175,7 @@ Route::group([
         Route::get('/index_ppn_awal', 'SalesOrderIndentController@index_ppn_awal')->name('index_ppn_awal');
         Route::get('/export', 'SalesOrderIndentController@export')->name('export');
         Route::get('/destroy/{id}', 'SalesOrderIndentController@destroy')->name('destroy');
+        Route::post('/proses_ready', 'SalesOrderIndentController@proses_ready')->name('proses_ready');
         Route::get('/print_out_indent/{so_id}', 'SalesOrderIndentController@print_out_indent')->name('print_out_indent');
     });
     Route::resource('sales_order_indent', 'SalesOrderIndentController');
