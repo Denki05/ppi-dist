@@ -39,8 +39,6 @@ class ProductFinanceImport implements ToCollection, WithHeadingRow, WithStartRow
 
             foreach ($rows as $row) 
             {
-                // dd($row['id']);
-
                 // product pack
                 $product_pack = ProductPack::where('id', $row['id'])->first();
                 if($product_pack == null) {
@@ -48,7 +46,7 @@ class ProductFinanceImport implements ToCollection, WithHeadingRow, WithStartRow
                     break;
                 }
 
-                // seacrh master product
+                // search master product
                 $product = Product::where('id', $product_pack->product_id)->first();
 
                 //search kemasan 

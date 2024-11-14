@@ -121,7 +121,7 @@
 @else
 <div class="block">  
   <div class="block-header block-header-default">
-    <h2 class="block-title">#Mitra : {{ $mitra->name ?? '' }}</h2>
+    <h2 class="block-title">#Mitra : {{ $mitra->name ?? '' }} | <button type="button" class="btn btn-success" id="create_product">Create</button></h2>
     <input type="hidden" id="mitra_id" name="mitra_id" value="{{ $mitra->id }}"> 
   </div>
   <div class="block-content">      
@@ -174,7 +174,7 @@
             <div class="form-group row">
               <label for="example-text-input" class="col-2 col-form-label">Nama produk</label>
               <div class="col-8">
-                <input class="form-control" type="text" value="{{ $table_data->name_product ?? '' }}" id="example-text-input" readonly>
+                <input class="form-control" type="text" value="{{ $table_data->name_product ?? '' }} / {{ $table_data->packaging->pack_name }}" id="example-text-input" readonly>
               </div>
             </div>
             <div class="form-group row">
@@ -187,27 +187,15 @@
 
           <div class="col-4">
             <div class="form-group row">
-              <label for="example-text-input" class="col-6 col-form-label">Harga Beli Satuan(USD)</label>
+              <label for="example-text-input" class="col-6 col-form-label">Harga Beli Satuan(IDR)</label>
               <div class="col-6">
                 <input class="form-control" type="text" value="{{ $table_data->buying_price_usd_unit ?? '' }}" id="example-text-input" readonly> 
               </div>
             </div>
             <div class="form-group row">
-              <label for="example-text-input" class="col-6 col-form-label">Harga Beli Drum(USD)</label>
-              <div class="col-6">
-                <input class="form-control" type="text" value="{{ $table_data->buying_price_usd_drum ?? '' }}" id="example-text-input" readonly>
-              </div>
-            </div>
-            <div class="form-group row">
-              <label for="example-text-input" class="col-6 col-form-label">Harga Jual Satuan(USD)</label>
+              <label for="example-text-input" class="col-6 col-form-label">Harga Jual Satuan(IDR)</label>
               <div class="col-6">
                 <input class="form-control" type="text" value="{{ $table_data->selling_price_usd_unit ?? '' }}" id="example-text-input" readonly>
-              </div>
-            </div>
-            <div class="form-group row">
-              <label for="example-text-input" class="col-6 col-form-label">Harga Jual Drum(USD)</label>
-              <div class="col-6">
-                <input class="form-control" type="text" value="{{ $table_data->selling_price_usd_drum ?? '' }}" id="example-text-input" readonly>
               </div>
             </div>
             <div class="form-group row">
@@ -219,10 +207,10 @@
           </div>
           <div class="row pt-30 mb-15">
               <div class="col-md-6">
-                  <a href="{{ route('superuser.accounting.product_finance.index') }}">
-                  <button type="button" class="btn bg-gd-cherry border-0 text-white">
-                      <i class="fa fa-arrow-left mr-10"></i> Back
-                  </button>
+              <a href="{{ route('superuser.accounting.product_finance.index') }}">
+                    <button type="button" class="btn bg-gd-cherry border-0 text-white">
+                        <i class="fa fa-arrow-left mr-10"></i> Back
+                    </button>
                   </a>
               </div>
               
@@ -269,7 +257,7 @@
             <div class="col-md-6">
               <span class="font-size-h5">Export</span>
               <p>Ekspor data ini ke format seperti excel</p>
-              <a href="{{ $export_url ?? '' }}">
+              <a href="{{route('superuser.accounting.product_finance.export')}}">
                 <button type="button" class="btn btn-sm btn-noborder btn-info">
                   <i class="fa fa-file-excel-o mr-5"></i> Export
                 </button>
@@ -279,9 +267,9 @@
           <div class="row pt-30 mb-15">
               <div class="col-md-6">
                   <a href="{{ route('superuser.accounting.product_finance.index') }}">
-                  <button type="button" class="btn bg-gd-cherry border-0 text-white">
-                      <i class="fa fa-arrow-left mr-10"></i> Back
-                  </button>
+                    <button type="button" class="btn bg-gd-cherry border-0 text-white">
+                        <i class="fa fa-arrow-left mr-10"></i> Back
+                    </button>
                   </a>
               </div>
           </div>
@@ -454,7 +442,10 @@
       target.fadeToggle(100);
     });
 
-    
+    $('#create_product').on('click', function() {
+      let mitra_id = $('#mitra_id').val();
+      window.location.href = '{{ route('superuser.accounting.product_finance.create') }}' + '?mitra_id=' + mitra_id;
+    });
 
   })
 </script>

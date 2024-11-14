@@ -7,7 +7,10 @@ use App\Http\Controllers\Controller;
 use App\Entities\Master\ProductFinance;
 use App\Entities\Master\Mitra;
 use App\Entities\Accounting\PriceLogFinance;
+use App\Entities\Master\Product;
 use App\Entities\Master\ProductPack;
+use App\Entities\Master\Packaging;
+use App\Entities\Master\BrandLokal;
 use App\Entities\Setting\UserMenu;
 use App\Repositories\CodeRepo;
 use App\Entities\Penjualan\PackingOrder;
@@ -42,11 +45,7 @@ class ProductFinanceController extends Controller
         });
     }
 
-    /**
-     * Display a listing of the resource.
-     *
-     * @return \Illuminate\Http\Response
-     */
+    
     public function index()
     {
         // Access
@@ -59,33 +58,141 @@ class ProductFinanceController extends Controller
         return view($this->view."index");
     }
 
-    /**
-     * Show the form for creating a new resource.
-     *
-     * @return \Illuminate\Http\Response
-     */
-    public function create()
+    
+    public function create(Request $request)
     {
-        //
+        // Access control
+        if (Auth::user()->is_superuser == 0) {
+            if (empty($this->access) || empty($this->access->user) || $this->access->can_create == 0) {
+                return redirect()->route('superuser.index')->with('error', 'Anda tidak punya akses untuk membuka menu terkait');
+            }
+        }
+
+        // Get mitra id
+        $mitra_id = $request->query('mitra_id');
+
+        $mitra = Mitra::where('id', $mitra_id)->first();
+        $kemasan = Packaging::get();
+        $brand = BrandLokal::get();
+
+        
+        $data = [
+            'mitra' => $mitra,
+            'kemasan' => $kemasan,
+            'brand' => $brand,
+        ];
+
+        return view($this->view . "create", $data);
     }
 
-    /**
-     * Store a newly created resource in storage.
-     *
-     * @param  \Illuminate\Http\Request  $request
-     * @return \Illuminate\Http\Response
-     */
+   
     public function store(Request $request)
     {
-        //
-    }
+        // Check if the request is an AJAX request
+        if ($request->ajax()) {
 
-    /**
-     * Display the specified resource.
-     *
-     * @param  int  $id
-     * @return \Illuminate\Http\Response
-     */
+            DB::beginTransaction();
+
+            try {
+                // Validation
+                $validator = Validator::make($request->all(), [
+                    'brand' => 'required|string',
+                    'kode_produk' => 'required|string|max:50',
+                    'nama_produk' => 'required|string|max:100',
+                    'kemasan' => 'required|integer|exists:master_packaging,id',
+                    'mitra_id' => 'required|integer|exists:master_mitra,id',
+                    'harga_beli_satuan' => 'required|numeric',
+                    'harga_jual_satuan' => 'required|numeric',
+                ]);
+
+                // Check if validation fails
+                if ($validator->fails()) {
+                    return response()->json([
+                        'status' => 400,
+                        'errors' => $validator->errors()
+                    ], 400);
+                }
+
+                // Initialize $product_finance instance
+                $product_finance = new ProductFinance();
+
+                // Handle 'Senses' brand logic
+                if ($request->brand == "Senses") {
+                    $code = explode(" ", $request->kode_produk);
+                    $product_finance->id = $code[1] . '-' . $request->kemasan;
+                    $product_finance->code_product = $code[1];
+                } else {
+                    $product_finance->id = $request->kode_produk . '-' . $request->kemasan;
+                    $product_finance->code_product = $request->kode_produk; // This should be defined or clarified
+                }
+
+                // Set common product finance attributes
+                $product_finance->name_product = $request->nama_produk;
+                $product_finance->mitra_id = $request->mitra_id;
+
+                // Check if product exists in master product
+                $master_product = ProductPack::where('id', $product_finance->id)->first();
+                if ($master_product == null) {
+                    $response['notification'] = [
+                        'alert' => 'block',
+                        'type' => 'alert-danger',
+                        'header' => 'Error',
+                        'content' => "Master Product belum ada, Silahkan input dahulu!",
+                    ];
+
+                    return $this->response(400, $response);
+                }
+
+                // check existing product finance
+                $check_product_finance = ProductFinance::where('id', $product_finance->id)->first();
+                if ($check_product_finance !== null) {
+                    $response['notification'] = [
+                        'alert' => 'block',
+                        'type' => 'alert-danger',
+                        'header' => 'Error',
+                        'content' => "Product Sudah ada!",
+                    ];
+
+                    return $this->response(400, $response);
+                }
+
+                // Set remaining fields and save
+                $product_finance->product_id = $master_product->product_id;
+                $product_finance->packaging_id = $request->kemasan;
+                $product_finance->selling_price_usd_unit = $request->harga_jual_satuan;
+                $product_finance->buying_price_usd_unit = $request->harga_beli_satuan;
+                $product_finance->save();
+
+                // Commit transaction
+                DB::commit();
+
+                $response['notification'] = [
+                    'alert' => 'notify',
+                    'type' => 'success',
+                    'content' => 'Success',
+                ];
+
+                $response['redirect_to'] = route('superuser.accounting.product_finance.show', $request->mitra_id);
+
+                return $this->response(200, $response);
+
+            } catch (\Exception $e) {
+                dd($e);
+                // Rollback transaction on error
+                DB::rollback();
+
+                $response['notification'] = [
+                    'alert' => 'block',
+                    'type' => 'alert-danger',
+                    'header' => 'Error',
+                    'content' => "Internal Server Error",
+                ];
+
+                return $this->response(400, $response);
+            }
+        }
+    }
+    
     public function show(Request $request, $mitra_id)
     {
         if(Auth::user()->is_superuser == 0){

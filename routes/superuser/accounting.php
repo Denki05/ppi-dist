@@ -23,6 +23,7 @@ Route::group([
         Route::get('/index_jual', 'InvoiceTaxController@index_jual')->name('index_jual');
         Route::get('/index_beli', 'InvoiceTaxController@index_beli')->name('index_beli');
         Route::get('create', 'InvoiceTaxController@create')->name('create');
+        Route::post('store', 'InvoiceTaxController@store')->name('store');
         Route::get('/search_invreal_jual', 'InvoiceTaxController@search_invreal_jual')->name('search_invreal_jual');
         Route::get('/search_invreal_beli', 'InvoiceTaxController@search_invreal_beli')->name('search_invreal_beli');
         Route::post('/get_product', 'InvoiceTaxController@get_product')->name('get_product');
