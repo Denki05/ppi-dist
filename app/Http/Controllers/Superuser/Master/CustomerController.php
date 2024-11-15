@@ -64,31 +64,9 @@ class CustomerController extends Controller
             }
         }
 
-        $search = $request->input('search');
         $province = $request->input('province');
         $category = $request->input('category');
-        $customer = Customer::where(function($query2) use($search){
-                                if(!empty($search)){
-                                    $query2->where('name','like','%'.$search.'%');
-                                }
-                            })
-                            ->where(function($query2) use($province){
-    							if(!empty($province)){
-    								$query2->where(function($query3) use($province){
-    									$query3->where('provinsi',$province);
-    								});
-    							}
-    						})
-                            ->where(function($query2) use($category){
-    							if(!empty($category)){
-    								$query2->where(function($query4) use($category){
-    									$query4->where('category_id',$category);
-    								});
-    							}
-    						})
-                            ->orderBy('name','ASC')
-                            ->paginate(25);
-
+        $customer = Customer::get();
         $other_address = CustomerOtherAddress::get();
         $prov = DB::table('provinsi')->get();
         $cat = CustomerCategory::get();
@@ -97,7 +75,7 @@ class CustomerController extends Controller
             'other_address' => $other_address,
             'customers' => $customer,
             'provinsi' => $prov,
-            'cat' => $cat
+            'cat' => $cat,
         ];
 
         return view('superuser.master.customer.index', $data);
@@ -193,14 +171,12 @@ class CustomerController extends Controller
                 'category' => 'required|integer',
                 'phone' => 'nullable|string',
                 'npwp' => 'nullable|string',
-                // 'ktp' => 'nullable|string',
                 'address' => 'required|string',
                 'owner_name' => 'nullable|string',
                 'website' => 'nullable|string',
                 'plafon_piutang' => 'nullable|numeric',
                 'image_ktp' => 'nullable|image|mimes:jpeg,png,jpg|max:2048',
                 'image_npwp' => 'nullable|image|mimes:jpeg,png,jpg|max:2048',
-                // 'notification_email' => 'nullable'
             ]);
 
             if ($validator->fails()) {
@@ -256,6 +232,7 @@ class CustomerController extends Controller
                         $customer->category_id = $request->category;
                         $customer->count_member =  1;
                         $customer->zone = $request->zone;
+                        $customer->pic = null;
 
                         $customer->email = $request->email;
                         $customer->phone = implode(",", [$request->phone1, $request->phone2]);
@@ -410,7 +387,6 @@ class CustomerController extends Controller
                 // 'code' => 'required|string|unique:master_customers,code,' . $customer->id,
                 'name' => 'required|string',
                 'category' => 'required|integer',
-                'email' => 'nullable|email',
                 'phone' => 'nullable|string',
                 'npwp' => 'nullable|string',
                 'ktp' => 'nullable|string',
@@ -451,6 +427,7 @@ class CustomerController extends Controller
                 $customer->npwp = implode("/", [$request->name_card_npwp,$request->npwp]);
                 $customer->ktp = implode("/", [$request->name_card_ktp,$request->ktp]);
                 $customer->address = $request->address;
+                $customer->pic = $request->pic;
 
                 $customer->owner_name = $request->owner_name;
                 $customer->website = $request->website;
@@ -651,5 +628,173 @@ class CustomerController extends Controller
     
             readfile ($file);
             exit();
+    }
+
+    public function changeStatusActive(Request $request, $id)
+    {
+        if ($request->ajax()) {
+            if(Auth::user()->is_superuser == 0){
+                if(empty($this->access) || empty($this->access->user) || $this->access->can_update == 0){
+                    abort(405);
+                }
+            }
+
+            DB::beginTransaction();
+            try{
+                $customer = Customer::findOrFail($id);
+
+                $customer->status = Customer::STATUS['ACTIVE'];
+                if($customer->save()){
+                    DB::commit();
+
+                    $response['notification'] = [
+                        'alert' => 'notify',
+                        'type' => 'success',
+                        'content' => 'Success',
+                    ];
+
+                    $response['redirect_to'] = route('superuser.master.customer.index');
+
+                    return $this->response(200, $response);
+                }
+            }catch (\Exception $e) {
+                DB::rollback();
+                dd($e);
+                $response['notification'] = [
+                    'alert' => 'block',
+                    'type' => 'alert-danger',
+                    'header' => 'Error',
+                    'content' => "Internal Server Error",
+                ];
+
+                return $this->response(400, $response);
+            }
+        }
+    }
+
+    public function changeStatusInactive(Request $request, $id)
+    {
+        if ($request->ajax()) {
+            if(Auth::user()->is_superuser == 0){
+                if(empty($this->access) || empty($this->access->user) || $this->access->can_update == 0){
+                    abort(405);
+                }
+            }
+
+            DB::beginTransaction();
+            try{
+                $customer = Customer::findOrFail($id);
+
+                $customer->status = Customer::STATUS['INACTIVE'];
+                if($customer->save()){
+                    DB::commit();
+
+                    $response['notification'] = [
+                        'alert' => 'notify',
+                        'type' => 'success',
+                        'content' => 'Success',
+                    ];
+
+                    $response['redirect_to'] = route('superuser.master.customer.index');
+
+                    return $this->response(200, $response);
+                }
+            }catch (\Exception $e) {
+                DB::rollback();
+                dd($e);
+                $response['notification'] = [
+                    'alert' => 'block',
+                    'type' => 'alert-danger',
+                    'header' => 'Error',
+                    'content' => "Internal Server Error",
+                ];
+
+                return $this->response(400, $response);
+            }
+        }
+    }
+
+    public function changeExistenceEnable(Request $request, $id)
+    {
+        if ($request->ajax()) {
+            if(Auth::user()->is_superuser == 0){
+                if(empty($this->access) || empty($this->access->user) || $this->access->can_update == 0){
+                    abort(405);
+                }
+            }
+
+            DB::beginTransaction();
+            try{
+                $customer = Customer::findOrFail($id);
+
+                $customer->existence = Customer::EXISTENCE['ENABLE'];
+                if($customer->save()){
+                    DB::commit();
+
+                    $response['notification'] = [
+                        'alert' => 'notify',
+                        'type' => 'success',
+                        'content' => 'Success',
+                    ];
+
+                    $response['redirect_to'] = route('superuser.master.customer.index');
+
+                    return $this->response(200, $response);
+                }
+            }catch (\Exception $e) {
+                DB::rollback();
+                dd($e);
+                $response['notification'] = [
+                    'alert' => 'block',
+                    'type' => 'alert-danger',
+                    'header' => 'Error',
+                    'content' => "Internal Server Error",
+                ];
+
+                return $this->response(400, $response);
+            }
+        }
+    }
+
+    public function changeExistenceDisabled(Request $request, $id)
+    {
+        if ($request->ajax()) {
+            if(Auth::user()->is_superuser == 0){
+                if(empty($this->access) || empty($this->access->user) || $this->access->can_update == 0){
+                    abort(405);
+                }
+            }
+
+            DB::beginTransaction();
+            try{
+                $customer = Customer::findOrFail($id);
+
+                $customer->existence = Customer::EXISTENCE['DISABLED'];
+                if($customer->save()){
+                    DB::commit();
+
+                    $response['notification'] = [
+                        'alert' => 'notify',
+                        'type' => 'success',
+                        'content' => 'Success',
+                    ];
+
+                    $response['redirect_to'] = route('superuser.master.customer.index');
+
+                    return $this->response(200, $response);
+                }
+            }catch (\Exception $e) {
+                DB::rollback();
+                dd($e);
+                $response['notification'] = [
+                    'alert' => 'block',
+                    'type' => 'alert-danger',
+                    'header' => 'Error',
+                    'content' => "Internal Server Error",
+                ];
+
+                return $this->response(400, $response);
+            }
+        }
     }
 }

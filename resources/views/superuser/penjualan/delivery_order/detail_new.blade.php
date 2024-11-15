@@ -241,13 +241,12 @@
 
             @if($result->status == 5 && $result->image == null)
             <div class="form-group row">
-              <div class="col-lg-12">
-                <div class="row">
-                  <label class="col-md-2 col-form-label text-right">Upload Image</label>
-                  <div class="col-md-8">
-                    <input type="file" name="image" class="form-control" accept="image/*">
-                  </div>
-                </div>
+              <label class="col-md-2 col-form-label text-right" for="name">Upload Image</label>
+              <div class="col-md-4">
+                <input type="file" id="image" name="image" data-max-file-size="2000" accept="image/png, image/jpeg">
+              </div>
+              <div class="col-md-4">
+                <input type="file" id="image2" name="image2" data-max-file-size="2000" accept="image/png, image/jpeg">
               </div>
             </div>
             @endif
@@ -275,7 +274,7 @@
                 <select class="form-control js-select2" name="other_cost_note" id="other_cost_note">
                   <option value="">Pilih Ekspedisi</option>
                   @foreach($ekspedisi as $row)
-                   <option value="$row->name">{{ $row->name }}</option>
+                   <option value="{{$row->name}}">{{ $row->name }}</option>
                   @endforeach
                 </select>
               </div>
@@ -316,10 +315,39 @@
 @include('superuser.asset.plugin.select2')
 @include('superuser.asset.plugin.datatables')
 @include('superuser.asset.plugin.swal2')
+@include('superuser.asset.plugin.fileinput')
 
 @push('scripts')
 <script type="text/javascript">
   $('.js-select2').select2();
+
+  $('#image').fileinput({
+      theme: 'explorer-fa',
+      browseOnZoneClick: true,
+      showCancel: false,
+      showClose: false,
+      showUpload: false,
+      browseLabel: '',
+      removeLabel: '',
+      fileActionSettings: {
+        showDrag: false,
+        showRemove: false
+      },
+    });
+
+    $('#image2').fileinput({
+      theme: 'explorer-fa',
+      browseOnZoneClick: true,
+      showCancel: false,
+      showClose: false,
+      showUpload: false,
+      browseLabel: '',
+      removeLabel: '',
+      fileActionSettings: {
+        showDrag: false,
+        showRemove: false
+      },
+    });
 
   let idx = 0;
   $(function(){

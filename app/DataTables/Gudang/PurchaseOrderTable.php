@@ -65,6 +65,7 @@ class PurchaseOrderTable extends Table
             $destroy = route('superuser.gudang.purchase_order.destroy', $model);
             $acc = route('superuser.gudang.purchase_order.acc', $model);
             $pdf = route('superuser.gudang.purchase_order.print_pdf', $model);
+            $cancel_acc = route('superuser.gudang.purchase_order.cancel_acc', $model);
 
             switch ($model->status) {
                 case $model::STATUS['ACTIVE']:
@@ -107,8 +108,14 @@ class PurchaseOrderTable extends Table
                         </a>
 
                         <a href=\"{$pdf}\">
-                            <button type=\"button\" class=\"btn btn-sm btn-circle btn-alt-secondary\" title=\"View\">
+                            <button type=\"button\" class=\"btn btn-sm btn-circle btn-alt-secondary\" title=\"Print Out\">
                                 <i class=\"fa fa-print\"></i>
+                            </button>
+                        </a>
+
+                        <a href=\"javascript:saveConfirmation('{$cancel_acc}')\">
+                            <button type=\"button\" class=\"btn btn-sm btn-circle btn-alt-secondary\" title=\"Cancel Approve\">
+                                <i class=\"fa fa-refresh\"></i>
                             </button>
                         </a>
                         

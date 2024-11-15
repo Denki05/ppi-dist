@@ -10,23 +10,29 @@ class InvoiceTax extends Model
     use SoftDeletes;
     protected $table = "finance_invoice_mitra";
     protected $fillable = [
-    	'no_invoice_tax',
-    	'no_invoice_real',
-        'customer_other_address_id',
-        'mitra_id',
-    	'tot_hit_baru',
-        'kurs',
-        'invoice_tax_date',
-        'type', 
-        'note', 
-    	'updated_by',
-    	'created_by',
-    	'deleted_by'
+    	'code', 
+    	'do_id', 
+    	'mitra_id', 
+    	'type', 
+    	'date', 
+    	'note', 
+    	'ppn_percent', 
+    	'ppn_idr', 
+    	'sub_total', 
+    	'grand_total', 
+    	'created_by', 
+    	'updated_by', 
+        'status'
+    ];
+
+    const STATUS = [
+        'DELETED' => 0,
+        'ACTIVE' => 1,
     ];
 
     const TYPE = [
-        'INVOICE TAX JUAL' => 1,
-        'INVOICE TAX BELI' => 2,
+        'INVOICE JUAL UNIFRA' => 1,
+        'INVOICE BELI UNIFRA' => 2,
     ];
 
     // public function invoice_tax_detail(){
@@ -47,5 +53,14 @@ class InvoiceTax extends Model
     public function type()
     {
         return array_search($this->type, self::TYPE);
+    }
+
+    public function status()
+    {
+        return array_search($this->status, self::STATUS);
+    }
+
+    public function do(){
+        return $this->belongsTo('App\Entities\Penjualan\packingOrder', 'do_id', 'id');
     }
 }

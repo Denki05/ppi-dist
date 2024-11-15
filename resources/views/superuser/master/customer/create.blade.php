@@ -71,12 +71,6 @@
                                 </div>
                               </div>
                               <div class="col">
-                                <!-- <div class="form-group row">
-                                  <label for="phone" class="col-sm-2 col-form-label">Telp <span class="text-danger">*</span></label>
-                                  <div class="col-sm-10">
-                                    <input type="text" name="phone" placeholder="Phone" class="form-control">
-                                  </div>
-                                </div> -->
                                   <div class="form-group row">
                                     <label for="ktp" class="col-sm-2 col-form-label">Telepone <span class="text-danger">*</span></label>
                                     <div class="col-sm-10">
@@ -194,8 +188,13 @@
                               </div>
                               <div class="row">
                                 <div class="mb-3">
-                                  <label for="image_store" class="form-label">Zoning</label>
-                                  <input type="text" name="zone" id="zone" placeholder="Zone Area" class="form-control">
+                                  <label for="image_store" class="form-label">Zone</label>
+                                  <select class="form-control js-select2" name="zone" style="width:100%;">
+                                    <option value="">Pilih Zona</option>
+                                    @foreach(\App\Entities\Master\CustomerOtherAddress::ZONING AS $zone => $zoning)
+                                    <option value="{{ $zoning }}">{{ $zoning }}</option>
+                                    @endforeach
+                                  </select>
                                 </div>
                               </div>
                               <div class="f1-buttons">

@@ -10,12 +10,15 @@ class SalesOrderItem extends Model
         protected $table = "penjualan_so_item";
         protected $fillable =[
         	'so_id',
+            'price', 
         	'product_packaging_id',
         	'qty',
             'disc_usd',
         	'qty_worked',
             'packaging_id',
             'free_product',
+            'kontrak', 
+            'kontrak_id', 
             'item_indent', 
         	'updated_by',
         	'created_by',

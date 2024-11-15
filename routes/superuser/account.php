@@ -49,5 +49,8 @@ Route::group([
     });
     Route::resource('sales_person', 'Account\SalesPersonController');
 
-    
+    Route::group(['as' => 'log_activity.', 'prefix' => '/log_activity'], function () {
+        Route::get('/index', 'LogActivityController@index')->name('index');
+     });
+     Route::resource('log_activity', 'Account\LogActivityController');
 });

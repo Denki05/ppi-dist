@@ -6,7 +6,30 @@
   <a class="breadcrumb-item" href="{{ route('superuser.penjualan.sales_order.index_' . strtolower($step_txt)) }}">Sales Order {{ $step_txt }}</a>
   <span class="breadcrumb-item active">Create Sales Order</span>
 </nav>
+
+@if($errors->any())
+<div class="alert alert-danger alert-dismissable" role="alert">
+  <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+      <span aria-hidden="true">×</span>
+  </button>
+  <h3 class="alert-heading font-size-h4 font-w400">Error</h3>
+  @foreach ($errors->all() as $error)
+  <p class="mb-0">{{ $error }}</p>
+  @endforeach
+</div>
+@endif
+
 <div id="alert-block"></div>
+
+@if(session()->has('message'))
+<div class="alert alert-success alert-dismissable" role="alert">
+  <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+      <span aria-hidden="true">×</span>
+  </button>
+  <h3 class="alert-heading font-size-h4 font-w400">Success</h3>
+  <p class="mb-0">{{ session()->get('message') }}</p>
+</div>
+@endif
 
 @if($step == 1)
   <form id="frmCreate" action="#" data-type="POST" enctype="multipart/form-data">
@@ -17,85 +40,57 @@
         <div class="block">
           <div class="block-content">
             <div class="form-group row">
-              <span class="form-label"><b>Sales Senior</b> <span class="text-danger">*</span></span>
+              <span class="form-label"><b>Type Transaksi </b> <span class="text-danger">*</span></span>
               <div class="col-10">
-                <select class="form-control js-select2" name="sales_senior_id">
-                  <option value="">Pilih Sales Senior</option>
-                  @foreach(\App\Entities\Penjualan\SalesOrder::SALES_SENIOR as $sales_senior => $senior_value)
-                  <option value="{{ $senior_value }}">{{ $sales_senior }}</option>
-                  @endforeach
-                </select>
+                <input type="text" class="form-control" value="{{ $type_transaction }}" name="type_transaction" readonly>
               </div>
             </div>
             <div class="form-group row">
-              <span class="form-label"><b>Sales</b> <span class="text-danger">*</span></span>
+              <span class="form-label"><b>Indent</b> <span class="text-danger">*</span></span>
               <div class="col-10">
-                <select class="form-control js-select2" name="sales_id">
-                  <option value="">Pilih Sales</option>
-                  @foreach(\App\Entities\Penjualan\SalesOrder::SALES as $sales => $sales_value)
-                  <option value="{{ $sales_value }}">{{ $sales }}</option>
-                  @endforeach
-                </select>
+                <?php 
+                  $indent_type = $type_indent;
+                  if($indent_type == 0){
+                    $indent = "NO";
+                  }else{
+                    $indent = "YES";
+                  }
+                ?>
+                <input type="text" class="form-control" value="{{ $indent }}" id="so_indnet" name="so_indent" readonly>
               </div>
             </div>
           </div>
         </div>
       </div>
-
-      <div class="col-sm-8">
+      <div class="col-8">
         <div class="block">
           <div class="block-content">
-            <div class="row">
-              <div class="col">
-                <div class="form-group row">
-                  <span class="form-label"><b>Type Transaksi </b> <span class="text-danger">*</span></span>
-                  <div class="col-10">
-                    <select class="form-control js-select2" name="type_transaction">
-                      <option value="">Pilih Transaksi Type </option>
-                      @foreach(App\Entities\Penjualan\SalesOrder::TYPE_TRANSACTION as $row => $value)
-                      <option value="{{$value}}">{{$value}}</option>
-                      @endforeach
-                    </select>
-                  </div>
-                </div>
+            <div class="form-row">
+              <div class="form-group col-md-4">
+                <label for="brand_name">Brand</label>
+                <input type="text" class="form-control" value="{{ $merek->brand_name }}" id="brand_name" name="brand_name" readonly>
               </div>
-              <div class="col">
-                <div class="form-group row">
-                  <span class="form-label"><b>Indent</b> <span class="text-danger">*</span></span>
-                  <div class="col-10">
-                    <select class="form-control js-select2" name="so_indent">
-                      <option value="">Pilih status indent</option>
-                      <option value="0">NO</option>
-                      <option value="1">YES</option>
-                    </select>
-                  </div>
-                </div>
-              </div>
-              <div class="col">
-                <div class="form-group row">
-                  <span class="form-label"><b>Brand</b> <span class="text-danger">*</span></span>
-                  <div class="col-10">
-                    <select class="js-select2 form-control js-select2-brand" id="brand_name" name="brand_name" data-placeholder="Plih Brand/Merek">
-                    </select>
-                  </div>
-                </div>
+              <div class="form-group col-md-2">
+                <label for="catatan">Disc (%)</label>
+                <input class="form-control" type="number" name="catatan">
               </div>
             </div>
-            <div class="row">
-              <div class="col">
-                <div class="form-group row">
-                  <span class="form-label"><b>Disc (%)</b></span>
-                  <div class="col">
-                    <input class="form-control" type="number" name="catatan">
-                  </div>
-                </div>
+
+            <div class="form-row">
+              <div class="form-group col-md-2">
+                <label for="note">Note</label>
+                <br>
+                <button type="button" class="btn btn-primary" data-toggle="modal" data-target=".bd-example-modal-lg">
+                  <i class="fa fa-plus"></i> Note
+                </button>
               </div>
-              <div class="col-2">
-                <div class="form-group row">
-                  <span class="form-label"><b>Note</b></span>
-                  <button type="button" class="btn btn-primary" data-toggle="modal" data-target=".bd-example-modal-lg">
-                    <i class="fa fa-plus"></i> Note
-                  </button>
+
+              <div class="form-group col-md-2">
+                <label for="note">Kontrak</label>
+                <br>
+                <button type="button" class="btn btn-primary" data-toggle="modal" data-target="#addSoKontrak">
+                  <i class="fa fa-search" aria-hidden="true"></i> Kontrak
+                </button>
               </div>
             </div>
           </div>
@@ -104,11 +99,11 @@
     </div>
 
     <div class="row">
-      <div class="col-12">
+      <div class="col">
         <div class="block">
           <div class="block-header">
             <h2 class="block-title">#Add Product</h2>
-            <a href="#" class="row-add">
+            <a href="#" class="row-add" data-id="0">
               <button type="button" class="btn bg-gd-sea border-0 text-white">
                 <i class="fa fa-plus mr-10"></i> Row
               </button>
@@ -119,6 +114,7 @@
               <thead>
                 <tr>
                   <th class="text-center">Counter</th>
+                  <th class="text-center">#</th>
                   <th class="text-center">Produk</th>
                   <th class="text-center">Price</th>
                   <th class="text-center">Qty</th>
@@ -143,8 +139,9 @@
           </div>
           <div class="col-md-6 text-right">
             <button class="btn btn-primary btn-md btn-simpan" type="button"><i class="fa fa-save"></i> Simpan</button>
-            
+          @role('Developer')
             <button class="btn btn-primary btn-md btn-simpan-dan-ajukan-ke-lanjutan" type="button"><i class="fa fa-save"></i> Simpan dan ajukan ke Lanjutan</button>
+          @endrole
           </div>
         </div>
       </div>
@@ -166,6 +163,42 @@
           </div>
           <div class="modal-footer">
           
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="modal fade" id="addSoKontrak" aria-labelledby="exampleModalLabel" aria-hidden="true">
+      <div class="modal-dialog">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title" id="exampleModalLabel">Add So Kontrak</h5>
+            <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+              <span aria-hidden="true">&times;</span>
+            </button>
+          </div>
+          <div class="modal-body">
+            <form>
+              <div class="form-group row">
+                <label class="col-md-3 col-form-label text-right" for="so_kontrak">SO Kontrak <span class="text-danger">*</span></label>
+                <div class="col-md-7">
+                  <select class="js-select2 form-control js-select2-kontrak" id="so_kontrak" name="so_kontrak" data-placeholder="Search" style="width: 100%;">
+                  </select>
+                </div>
+              </div>
+            </form>
+          </div>
+          <div class="modal-footer">
+            <!-- <input type="hidden" name="customer_name" value="{{ $other_address->id }}"> -->
+            <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+            <!-- <button type="button" class="btn btn-primary" id="addKontrak">Add</button> -->
+            <a href="#" class="row-add" data-id="1">
+              <button type="button" class="btn bg-gd-sea border-0 text-white" id="addModalKontrak" data-dismiss="modal">
+                Add
+              </button>
+            </a>
+
+            <!-- <input type="hidden" class="form-control" id="valueKontrak" value="1"> -->
           </div>
         </div>
       </div>
@@ -202,7 +235,7 @@
       if(confirm("Apakah anda yakin ingin menambakan sales order ini ?")){
         let _form = $('#frmCreate');
         $.ajax({
-          url : '{{route('superuser.penjualan.sales_order.store', [$other_address->id, $customers->id])}}',
+          url : '{{route('superuser.penjualan.sales_order.store', [$other_address->id])}}',
           headers: {'X-CSRF-TOKEN': $('meta[name="csrf_token"]').attr('content'), '_method': 'patch'},
           method : "POST",
           data : $('#frmCreate').serializeArray(),
@@ -225,8 +258,16 @@
               
             }
           },
-          error : function(){
-            alert("Cek Koneksi Internet")
+          error: function (jqXHR) {
+            let errorMessage = "Cek Koneksi Internet";
+            if (jqXHR.responseJSON && jqXHR.responseJSON.Notification) {
+                errorMessage = jqXHR.responseJSON.Notification.content;
+            }
+            Swal.fire(
+                'Error!',
+                errorMessage,
+                'error'
+            );
           },
           complete : function(){
             $('button[type="submit"]').html('<i class="fa fa-save"> Save</i>');
@@ -235,9 +276,10 @@
       }
     })
 
-    $(".js-select2-brand").select2({
+    $(".js-select2-kontrak").select2({
+      
       ajax: {
-        url: '{{ route('superuser.penjualan.sales_order.get_brand') }}',
+        url: '{{ route('superuser.penjualan.sales_order.search_kontrak', [$other_address->id, $merek->brand_name]) }}',
         dataType: 'json',
         delay: 250,
         data: function (params) {
@@ -246,11 +288,27 @@
             _token: "{{csrf_token()}}"
           };
         },
-        cache: true
+        cache: true,
       },
     });
 
+    $('.js-select2-kontrak').on('select2:select', function (e) {
+      $.ajax({
+        url: '{{ route('superuser.penjualan.sales_order.get_product_kontrak') }}',
+        data: {so_kontrak:$(this).val() , _token: "{{csrf_token()}}"},
+        type: 'POST',
+        allowClear: true,
+        dataType: 'json',
+        success: function(json) {
+          if (json.code == 200) {
+            product_kontrak = json.data;
+          }
+        }
+      });
+    });
+
     var product_data = new Object();
+    var product_kontrak = new Object();
 
     var table = $('#datatables').DataTable({
         paging: false,
@@ -258,7 +316,8 @@
         searching: false,
         columns: [
           {name: 'counter', "visible": false},
-          {name: 'sku', orderable: false, width: "35%"},
+          {name: 'checkbox', orderable: false, width: "5%"},
+          {name: 'sku', orderable: false, width: "40%"},
           {name: 'price', orderable: false, searcable: false, width: "10%"},
           {name: 'qty', orderable: false, searcable: false, width: "10%"},
           {name: 'disc', orderable: false, searcable: false, width: "10%"},
@@ -270,31 +329,90 @@
 
     var counter = 1;
 
+    $.ajax({
+      url: '{{ route('superuser.penjualan.sales_order.get_product_pack') }}',
+        data: {id:$('#brand_name').val() , _token: "{{csrf_token()}}"},
+        type: 'POST',
+        cache: false,
+        dataType: 'json',
+        success: function(json) {
+          if (json.code == 200) {
+            product_data = json.data;
+
+            $.each( product_data, function( key, value ) {
+                var makeselect;
+                $.map( product_data, function( val, i ) {
+                  if(val['typeName'] === null){
+                    makeselect += '<option value="'+ val['id'] +'" data-name="'+ val['name'] +'" data-packname="'+ val['packName'] +'" data-price="'+ val['price'] +'" data-packid="'+ val['packID']+'">'+ val['code'] + ' - ' + val['name'] + ' - ' + val['packName'] + ' - '+ val['warehouseName'] +'</option>';
+                  } else {
+                    makeselect += '<option value="'+ val['id'] +'" data-name="'+ val['name'] +'" data-packname="'+ val['packName'] +'" data-price="'+ val['price'] +'" data-packid="'+ val['packID']+'">'+ val['code'] + ' - ' + val['name'] + ' - ' + val['packName'] + ' - '+ val['typeName'] +'</option>';
+                  }
+                });
+
+
+                $('.js-ajax').append(makeselect);
+                initailizeSelect2();
+            });
+          }
+        }
+      });
+
     $('a.row-add').on( 'click', function (e) {
       e.preventDefault();
+      var typeAdd = $(this).data('id');
       if($('#brand_name').val()) {
-        $('#submit-table').prop('disabled', false);
+        if(typeAdd == 0){
+          
+          makeselect = '<select class="js-select2 form-control js-ajax" id="sku['+counter+']" name="sku[]" data-placeholder="Select Product" style="width:100%" required><option></option>';
         
-        makeselect = '<select class="js-select2 form-control js-ajax" id="sku['+counter+']" name="sku[]" data-placeholder="Select Product" style="width:100%" required><option></option>';
-        
-        $.map( product_data, function( val, i ) {
-          makeselect += '<option value="'+ val['id'] +'" data-name="'+ val['name'] +'" data-packname="'+ val['packName'] +'" data-price="'+ val['price'] +'" data-packid="'+ val['packID']+'">'+ val['code'] + ' - ' + val['name'] + ' - ' + val['packName'] + ' - '+ val['warehouseName'] +'</option>';
-        });
+          $.map( product_data, function( val, i ) {
+            if(val['typeName'] === null){
+              makeselect += '<option value="'+ val['id'] +'" data-name="'+ val['name'] +'" data-packname="'+ val['packName'] +'" data-price="'+ val['price'] +'" data-packid="'+ val['packID']+'">'+ val['code'] + ' - ' + val['name'] + ' - ' + val['packName'] + ' - '+ val['warehouseName'] +'</option>';
+            } else {
+              makeselect += '<option value="'+ val['id'] +'" data-name="'+ val['name'] +'" data-packname="'+ val['packName'] +'" data-price="'+ val['price'] +'" data-packid="'+ val['packID']+'">'+ val['code'] + ' - ' + val['name'] + ' - ' + val['packName'] + ' - '+ val['typeName'] +'</option>';
+            }
+            
+          });
 
-        makeselect += '</select>';
+          makeselect += '</select>';
 
-        table.row.add([
+          table.row.add([
+                      counter,
+                      '<input class="form-check-input" type="checkbox" value="0" name="check_kontrak" id="check_kontrak" disabled><input type="hidden" class="form-control" value="0" name="value_kontrak[]">',
+                      makeselect,
+                      '<input type="number" class="form-control" name="price[]" style="text-align: center;"><input type="hidden" class="form-control packaging" name="packaging[]">',
+                      '<input type="number" class="form-control" name="qty[]" style="text-align: center;" required>',
+                      '<input type="number" class="form-control" name="disc[]" style="text-align: center;">',
+                      '<input type="checkbox" class="form-check-input input-gift" id="gift" name="gift"><input class="form-control input-free" type="hidden" id="free_product" value="0" name="free_product[]">',
+                      '<a href="#" class="row-delete"><button type="button" class="btn btn-sm btn-circle btn-alt-danger" title="Delete"><i class="fa fa-trash"></i></button></a>'
+                    ]).draw( false );
+                    
+                    initailizeSelect2();
+          counter++;
+
+        }else{
+          makeselect = '<select class="js-select2 form-control js-ajax-kontrak" id="sku['+counter+']" name="sku[]" data-placeholder="Select Product" style="width:100%" required><option></option>';
+
+          $.map( product_kontrak, function( val, i ) {
+            makeselect += '<option value="'+ val['product_id'] +'" data-kontrak="'+ val['kontrak_id'] +'" data-name="'+ val['product_name'] +'" data-code="'+ val['product_code'] +'" data-price="'+ val['product_price'] +'" data-packaging="'+ val['packaging_id'] +'" data-disc="'+ val['product_disc'] + '">'+ val['product_code'] + ' - ' + val['product_name'] + ' - ' + val['packaging_name']  +'</option>';
+          });
+
+          makeselect += '</select>';
+
+          table.row.add([
                     counter,
+                    '<input class="form-check-input" type="checkbox" value="1" name="check_kontrak" id="check_kontrak" disabled checked><input type="hidden" class="form-control" value="1" name="value_kontrak[]"><input type="hidden" class="form-control" name="kontrak_so_id[]">',
                     makeselect,
-                    '<span class="price"></span><input type="hidden" class="form-control packaging" name="packaging[]">',
-                    '<input type="number" class="form-control" name="qty[]" required>',
-                    '<input type="number" class="form-control" name="disc[]">',
-                    '<input type="checkbox" class="form-check-input input-gift" id="gift" name="gift"><input class="form-control input-free" type="hidden" id="free_product" value="0" name="free_product[]">',
+                    '<input type="number" class="form-control" name="price[]" style="text-align: center;" readonly><input type="hidden" class="form-control packaging" name="packaging[]">',
+                    '<input type="number" class="form-control noscroll" name="qty[]" style="text-align: center;" required>',
+                    '<input type="number" class="form-control noscroll usd_disc" style="text-align: center;" name="disc[]">',
+                    '<input type="checkbox" class="form-check-input input-gift" id="gift" name="gift" disabled><input class="form-control input-free" type="hidden" id="free_product" value="0" name="free_product[]">',
                     '<a href="#" class="row-delete"><button type="button" class="btn btn-sm btn-circle btn-alt-danger" title="Delete"><i class="fa fa-trash"></i></button></a>'
                   ]).draw( false );
                   
-                  initailizeSelect2();
-        counter++;
+                  initailizeSelectKontrak2();
+          counter++;
+        }
       }
       
     });
@@ -304,13 +422,31 @@
 
       $('.js-ajax').on('select2:select', function (e) {
         var price = $(this).find(':selected').data('price');
-        $(this).parents('tr').find('.price').text('$'+price);
+        $(this).parents('tr').find('input[name="price[]"]').val(price);
 
         var pack = $(this).find(':selected').data('packid');
         $(this).parents('tr').find('input[name="packaging[]"]').val(pack);
       });
 
     };
+
+    function initailizeSelectKontrak2(){
+      $(".js-ajax-kontrak").select2();
+
+      $('.js-ajax-kontrak').on('select2:select', function (e) {
+        var kontrak = $(this).find(':selected').data('kontrak');
+        $(this).parents('tr').find('input[name="kontrak_so_id[]"]').val(kontrak);
+
+        var price = $(this).find(':selected').data('price');
+        $(this).parents('tr').find('input[name="price[]"]').val(price);
+
+        var disc = $(this).find(':selected').data('disc');
+        $(this).parents('tr').find('.usd_disc').val(disc);
+
+        var pack = $(this).find(':selected').data('packaging');
+        $(this).parents('tr').find('input[name="packaging[]"]').val(pack);
+      });
+    }
 
     $('#datatables tbody').on( 'click', '.row-delete', function (e) {
       e.preventDefault();
@@ -329,23 +465,6 @@
       }
     });
 
-    $('#brand_name').on('select2:select', function (e) {
-      table.clear().draw();
-
-      $.ajax({
-        url: '{{ route('superuser.penjualan.sales_order.get_product_pack') }}',
-        data: {id:$(this).val() , _token: "{{csrf_token()}}"},
-        type: 'POST',
-        cache: false,
-        dataType: 'json',
-        success: function(json) {
-          if (json.code == 200) {
-            product_data = json.data;
-          }
-        }
-      });
-    });
-
     $("#test").on("click",function(e){
       e.preventDefault();
       addListItem();
@@ -361,11 +480,8 @@
         existingNums.push(num);
       }
       
-      
       existingNums.sort();
 
-      
-    
       var addListItemNum;
       if (existingNums.length > 0) {
        

@@ -5,10 +5,16 @@ namespace App\Http\Controllers\Superuser\Master;
 use App\Entities\Master\Customer;
 use App\Entities\Master\CustomerOtherAddress;
 use App\DataTables\Master\CustomerOtherAddressTable;
+use App\Exports\Master\CustomerOtherAddressImportTemplate;
+use App\Exports\Master\CustomerOtherAddressImportTemplate2;
+use App\Imports\Master\CustomerOtherAddressImport;
+use App\Imports\Master\CustomerOtherAddressImport2;
+use App\Exports\Master\CustomerOtherAddressExport;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use App\Entities\Setting\UserMenu;
 use Validator;
+use Excel;
 use Auth;
 use App\Models\Province;
 use App\Models\Regency;
@@ -16,6 +22,7 @@ use App\Models\District;
 use App\Models\Village;
 use App\Models\Zipcode;
 use App\Helper\UploadMedia;
+use App\Helper\LogActivity;
 use DB;
 
 class CustomerOtherAddressController extends Controller
@@ -107,6 +114,7 @@ class CustomerOtherAddressController extends Controller
             $validator = Validator::make($request->all(), [
                 'name' => 'required|string',
                 'contact_person' => 'nullable|string',
+                'pic' => 'required|string',
                 'npwp' => 'nullable|string',
                 'ktp' => 'nullable|string',
                 'phone' => 'nullable|string',
@@ -161,6 +169,8 @@ class CustomerOtherAddressController extends Controller
                 $other_address->customer_id = $customer->id;
                 $other_address->member_default = 0;
 
+                $other_address->officer = $request->officer;
+                $other_address->account_representative = $request->ar;
                 $other_address->name = $request->name;
                 $other_address->contact_person = $request->contact_person;
                 $other_address->npwp = implode("/", [$request->name_card_npwp,$request->npwp]);
@@ -181,6 +191,7 @@ class CustomerOtherAddressController extends Controller
                 $other_address->text_kecamatan = $request->text_kecamatan;
                 $other_address->text_kelurahan = $request->text_kelurahan;
                 $other_address->zipcode = $request->zipcode;
+                $other_address->zone = $request->zone;
 
                 if (!empty($request->file('image_ktp'))) {
                     $customer->image_ktp = UploadMedia::image($request->file('image_ktp'), Customer::$directory_image);
@@ -198,6 +209,8 @@ class CustomerOtherAddressController extends Controller
                     $updateCust = Customer::where('id', $customer->id)->update([
                         'count_member' => $kd
                     ]);
+
+                    LogActivity::addToLog('Created a new Member: ' . $other_address->name);
 
                     $response['notification'] = [
                         'alert' => 'notify',
@@ -257,15 +270,7 @@ class CustomerOtherAddressController extends Controller
                 'address' => 'required|string',
                 'gps_latitude' => 'nullable|string',
                 'gps_longitude' => 'nullable|string',
-                // 'provinsi' => 'nullable|string',
-                // 'kota' => 'nullable|string',
-                // 'kecamatan' => 'nullable|string',
-                // 'kelurahan' => 'nullable|string',
-                // 'text_provinsi' => 'nullable|required_with:provinsi|string',
-                // 'text_kota' => 'nullable|required_with:kota|string',
-                // 'text_kecamatan' => 'nullable|required_with:kecamatan|string',
-                // 'text_kelurahan' => 'nullable|required_with:kelurahan|string',
-                // 'zipcode' => 'nullable|string'
+
             ]);
 
             if ($validator->fails()) {
@@ -290,10 +295,13 @@ class CustomerOtherAddressController extends Controller
                 $other_address->name = $request->name;
                 $other_address->customer_id = $other_address->customer_id;
                 $other_address->contact_person = $request->contact_person;
-                $other_address->npwp = $request->npwp;
-                $other_address->ktp = $request->ktp;
+                $other_address->npwp = implode("/", [$request->name_card_npwp,$request->npwp]);
+                $other_address->ktp = implode("/", [$request->name_card_ktp,$request->ktp]);
                 $other_address->phone = $request->phone;
                 $other_address->address = $request->address;
+                $other_address->officer = $request->officer;
+                $other_address->account_representative = $request->ar;
+                $other_address->setting_income_target = $request->target_income;
                 $other_address->free_shipping = $request->free_shipping;
 
                 $other_address->gps_latitude = $request->gps_latitude;
@@ -307,6 +315,7 @@ class CustomerOtherAddressController extends Controller
                 $other_address->text_kota = $request->text_kota;
                 $other_address->text_kecamatan = $request->text_kecamatan;
                 $other_address->text_kelurahan = $request->text_kelurahan;
+                $other_address->zone = $request->zone;
 
                 $other_address->zipcode = $request->zipcode;
 
@@ -328,6 +337,7 @@ class CustomerOtherAddressController extends Controller
 
 
                 if ($other_address->save()) {
+                    LogActivity::addToLog('Update Member: ' . $other_address->name);
                     $response['notification'] = [
                         'alert' => 'notify',
                         'type' => 'success',
@@ -361,9 +371,174 @@ class CustomerOtherAddressController extends Controller
             $other_address->status = CustomerOtherAddress::STATUS['DELETED'];
 
             if ($other_address->save()) {
+                LogActivity::addToLog('Deleted Member: ' . $other_address->name);
                 $response['redirect_to'] = 'reload()';
                 return $this->response(200, $response);
             }
+        }
+    }
+
+    public function import_template()
+    {
+        $filename = 'master-customer-other-address-import-template.xlsx';
+        return Excel::download(new CustomerOtherAddressImportTemplate, $filename);
+    }
+
+    public function import(Request $request)
+    {
+        // Access
+        if(Auth::user()->is_superuser == 0){
+            if(empty($this->access) || empty($this->access->user) || $this->access->can_create == 0){
+                return redirect()->route('superuser.index')->with('error','Anda tidak punya akses untuk membuka menu terkait');
+            }
+        }
+        
+        $validator = Validator::make($request->all(), [
+            'import_file' => 'required|file|mimes:xls,xlsx|max:2048',
+        ]);
+
+        if ($validator->fails()) {
+            return redirect()->back()->withErrors($validator->errors()->all());
+        }
+
+        if ($validator->passes()) {
+            $import = new CustomerOtherAddressImport();
+            Excel::import($import, $request->import_file);
+        
+            return redirect()->back()->with(['collect_success' => $import->success, 'collect_error' => $import->error]);
+        }
+    }
+
+    public function inactive_member(Request $request, $id)
+    {
+        if(Auth::user()->is_superuser == 0){
+            if(empty($this->access) || empty($this->access->user) || $this->access->can_update == 0){
+                return redirect()->route('superuser.index')->with('error','Anda tidak punya akses untuk membuka menu terkait');
+            }
+        }
+
+        $member = CustomerOtherAddress::find($id);
+
+        if ($member === null) {
+            abort(404);
+        }
+
+        $member->situation = CustomerOtherAddress::SITUATION['INACTIVE'];
+
+        if ($member->save()) {
+            return redirect()->route('superuser.master.customer.index')->with('success', 'Member successfully Inactive.');
+        } else {
+            return redirect()->route('superuser.master.customer.index')->with('error', 'Failed to Inactive member.');
+        }
+    }
+
+    public function active_member(Request $request, $id)
+    {
+        if(Auth::user()->is_superuser == 0){
+            if(empty($this->access) || empty($this->access->user) || $this->access->can_update == 0){
+                return redirect()->route('superuser.index')->with('error','Anda tidak punya akses untuk membuka menu terkait');
+            }
+        }
+
+        $member = CustomerOtherAddress::find($id);
+
+        if ($member === null) {
+            abort(404);
+        }
+
+        $member->situation = CustomerOtherAddress::SITUATION['ACTIVE'];
+
+        if ($member->save()) {
+            return redirect()->route('superuser.master.customer.index')->with('success', 'Member successfully Active.');
+        } else {
+            return redirect()->route('superuser.master.customer.index')->with('error', 'Failed to Active member.');
+        }
+    }
+
+    public function disabled_member(Request $request, $id)
+    {
+        if(Auth::user()->is_superuser == 0){
+            if(empty($this->access) || empty($this->access->user) || $this->access->can_update == 0){
+                return redirect()->route('superuser.index')->with('error','Anda tidak punya akses untuk membuka menu terkait');
+            }
+        }
+
+        $member = CustomerOtherAddress::find($id);
+
+        if ($member === null) {
+            abort(404);
+        }
+
+        $member->status_key = CustomerOtherAddress::STATUS_KEY['DISABLED'];
+
+        if ($member->save()) {
+            return redirect()->route('superuser.master.customer.index')->with('success', 'Member successfully disabled.');
+        } else {
+            return redirect()->route('superuser.master.customer.index')->with('error', 'Failed to disable member.');
+        }
+    }
+
+    public function enabled_member(Request $request, $id)
+    {
+        if(Auth::user()->is_superuser == 0){
+            if(empty($this->access) || empty($this->access->user) || $this->access->can_update == 0){
+                return redirect()->route('superuser.index')->with('error','Anda tidak punya akses untuk membuka menu terkait');
+            }
+        }
+
+        $member = CustomerOtherAddress::find($id);
+
+        if ($member === null) {
+            abort(404);
+        }
+
+        $member->status_key = CustomerOtherAddress::STATUS_KEY['ENABLE'];
+
+        // dd()
+
+        if ($member->save()) {
+            return redirect()->route('superuser.master.customer.index')->with('success', 'Member successfully Enabled.');
+        } else {
+            return redirect()->route('superuser.master.customer.index')->with('error', 'Failed to Enabled member.');
+        }
+    }
+
+    public function export()
+    {
+        $status = '1';
+        $existence = '1';
+        $filename = 'master-member-' . date('d-m-Y_H-i-s') . '.xlsx';
+        return Excel::download(new CustomerOtherAddressExport($status, $existence), $filename);
+    }
+
+    public function import_template2()
+    {
+        $filename = 'master-customer-other-address-import-template-2.xlsx';
+        return Excel::download(new CustomerOtherAddressImportTemplate2, $filename);
+    }
+
+    public function import2(Request $request)
+    {
+        // Access
+        if(Auth::user()->is_superuser == 0){
+            if(empty($this->access) || empty($this->access->user) || $this->access->can_create == 0){
+                return redirect()->route('superuser.index')->with('error','Anda tidak punya akses untuk membuka menu terkait');
+            }
+        }
+        
+        $validator = Validator::make($request->all(), [
+            'import_file' => 'required|file|mimes:xls,xlsx|max:2048',
+        ]);
+
+        if ($validator->fails()) {
+            return redirect()->back()->withErrors($validator->errors()->all());
+        }
+
+        if ($validator->passes()) {
+            $import = new CustomerOtherAddressImport2();
+            Excel::import($import, $request->import_file);
+        
+            return redirect()->back()->with(['collect_success' => $import->success, 'collect_error' => $import->error]);
         }
     }
 }

@@ -5,6 +5,7 @@ namespace App\DataTables\Master;
 use App\DataTables\Table;
 use App\Entities\Master\Product;
 use Carbon\Carbon;
+use Illuminate\Http\Request;
 
 class ProductTable extends Table
 {
@@ -12,9 +13,45 @@ class ProductTable extends Table
      * Get query source of dataTable.
      *
      */
-    private function query()
+    private function query(Request $request)
     {
-        $model = Product::select('master_products.id', 'master_products.code', 'master_products.brand_name as brand_name', 'master_product_categories.name as category_name', 'master_products.name', 'master_products.status', 'master_products.created_at')
+        $model = Product::select(
+            'master_products.id', 
+            'master_products.code', 
+            'master_products.name', 
+            'master_products.brand_name as brand_name', 
+            'master_product_categories.name as category_name', 
+            'master_products.name', 'master_products.status', 
+            'master_products.created_at'
+        )
+        ->where(function ($query) use ($request) {
+            if ($request->product_name != 'all') {
+                $query->where('master_products.name', $request->product_name);
+            } else {
+                $query;
+            }
+        })
+        ->where(function ($query) use ($request) {
+            if ($request->brand_lokal != 'all') {
+                $query->where('master_products.brand_name', $request->brand_lokal);
+            } else {
+                $query;
+            }
+        })
+        ->where(function ($query) use ($request) {
+            if ($request->kategori != 'all') {
+                $query->where('master_product_categories.id', $request->kategori);
+            } else {
+                $query;
+            }
+        })
+        ->where(function ($query) use ($request) {
+            if ($request->status != 'all') {
+                $query->where('master_products.status', $request->status);
+            } else {
+                $query;
+            }
+        })
         ->join('master_product_categories', 'master_product_categories.id', '=', 'master_products.category_id')
         ->get();
 
@@ -24,13 +61,14 @@ class ProductTable extends Table
     /**
      * Build DataTable class.
      */
-    public function build()
+    public function build(Request $request)
     {
-        $table = Table::of($this->query());
-        $table->addIndexColumn();
+        $table = Table::of($this->query($request));
+
+        // $table->addIndexColumn();
 
         $table->setRowClass(function (Product $model) {
-            if ($model->status == $model::STATUS['DELETED']) {
+            if ($model->status == $model::STATUS['DELETED'] OR $model->status == $model::STATUS['DISABLE']) {
                 return 'table-danger';
             } else if ($model->status == $model::STATUS['INACTIVE']) {
                 return 'table-warning';
@@ -66,42 +104,67 @@ class ProductTable extends Table
         $table->addColumn('action', function (Product $model) {
 
             $view = route('superuser.master.product.show', base64_encode($model->id));
-
-            $view = route('superuser.master.product.show', $model->id);
-            $edit = route('superuser.master.product.edit', $model);
+            $edit = route('superuser.master.product.edit', base64_encode($model->id));
             $destroy = route('superuser.master.product.destroy', $model);
 
-            if ($model->status == $model::STATUS['ACTIVE']) {
+            if ($model->status == $model::STATUS['DELETED']) {
+                return "
+                        <a href=\"{$view}\">
+                        <button type=\"button\" class=\"btn btn-sm btn-circle btn-alt-warning\" title=\"View\">
+                            <i class=\"fa fa-eye\"></i>
+                        </button>
+                        </a>
+                ";
+            }
+
                 return "
                     <a href=\"{$view}\">
                         <button type=\"button\" class=\"btn btn-sm btn-circle btn-alt-secondary\" title=\"View\">
-                            <i class=\"mdi mdi-eye\"></i>
+                            <i class=\"fa fa-eye\"></i>
                         </button>
                     </a>
                     <a href=\"{$edit}\">
                         <button type=\"button\" class=\"btn btn-sm btn-circle btn-alt-secondary\" title=\"Edit\">
-                            <i class=\"mdi mdi-lead-pencil\"></i>
+                            <i class=\"fa fa-pencil\"></i>
                         </button>
                     </a>
                     
                     <a href=\"javascript:deleteConfirmation('{$destroy}')\">
-                    <button type=\"button\" class=\"btn btn-sm btn-circle btn-alt-danger\" title=\"Delete\">
-                        <i class=\"mdi mdi-delete\"></i>
-                    </button>
-                </a>
+                        <button type=\"button\" class=\"btn btn-sm btn-circle btn-alt-danger\" title=\"Delete\">
+                            <i class=\"fa fa-trash\"></i>
+                        </button>
+                    </a>
+                ";
+
+            
+        });
+
+        $table->addColumn('action2', function (Product $model) {
+            $inactive = route('superuser.master.product.inactiveStatus', base64_encode($model->id));
+            $active = route('superuser.master.product.activeStatus', base64_encode($model->id));
+
+            if ($model->status == $model::STATUS['ACTIVE']) {
+                return "
+                    <a href=\"javascript:saveConfirmation('{$inactive}')\">
+                        <button type=\"button\" class=\"btn btn-sm btn-circle btn-alt-secondary\" title=\"Inactive Status\">
+                            <i class=\"fa fa-unlock-alt\" aria-hidden=\"true\"></i>
+                        </button>
+                    </a>
                 ";
             }
 
-            return "
-                        <a href=\"{$view}\">
-                        <button type=\"button\" class=\"btn btn-sm btn-circle btn-alt-warning\" title=\"View\">
-                            <i class=\"mdi mdi-eye\"></i>
+            if ($model->status == $model::STATUS['INACTIVE']) {
+                return "
+                    <a href=\"javascript:saveConfirmation('{$active}')\">
+                        <button type=\"button\" class=\"btn btn-sm btn-circle btn-alt-secondary\" title=\"Active Status\">
+                            <i class=\"fa fa-lock\" aria-hidden=\"true\"></i>
                         </button>
-                        </a>
-            ";
+                    </a>
+                ";
+            }
         });
 
-        $table->rawColumns(['name', 'check', 'action']);
+        $table->rawColumns(['name', 'check', 'action', 'action2']);
 
         return $table->make(true);
     }

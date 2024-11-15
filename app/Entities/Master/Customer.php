@@ -4,6 +4,7 @@ namespace App\Entities\Master;
 
 use App\Entities\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use App\Entities\Master\CustomerOtherAddress;
 
 class Customer extends Model
 {
@@ -11,19 +12,31 @@ class Customer extends Model
     
     protected $appends = ['img_ktp', 'img_npwp', 'img_store'];
     protected $fillable = [
-        'category_id', 'count_member', 'code', 'name',
+        'category_id', 'count_member', 'pic', 'code', 'name',
         'email', 'phone', 'npwp', 'ktp', 'has_ppn', 'has_tempo', 'tempo_limit', 'address',
         'owner_name', 'plafon_piutang', 'saldo', 'gps_latitude', 'gps_longitude', 'zone',
         'provinsi', 'kota', 'kecamatan', 'kelurahan',
         'text_provinsi', 'text_kota', 'text_kecamatan', 'text_kelurahan',
-        'zipcode', 'image_npwp', 'image_ktp', 'image_store', 'notification_email', 'status'
+        'zipcode', 'image_npwp', 'image_ktp', 'image_store', 'notification_email', 'status', 'existence'
     ];
     protected $table = 'master_customers';
     public static $directory_image = 'superuser_assets/media/master/customer/';
 
     const STATUS = [
         'DELETED' => 0,
-        'ACTIVE' => 1
+        'ACTIVE' => 1,
+        'INACTIVE' => 2,
+    ];
+
+    const EXISTENCE = [
+        'DISABLED' => 0,
+        'ENABLE' => 1,
+    ];
+
+    const PIC = [
+        'KANTOR' => 1,
+        'IVAN' => 2,
+        'NIA' => 3,
     ];
 
     const HAS_TEMPO = [
@@ -110,5 +123,39 @@ class Customer extends Model
    public function has_tempo()
     {
         return array_search($this->has_tempo, self::HAS_TEMPO);
+    }
+
+    public function existence()
+    {
+        return array_search($this->existence, self::EXISTENCE);
+    }
+
+    public function member_count()
+    {
+        $data = [];
+
+        // dd($this->id);
+        $get_member = CustomerOtherAddress::where('customer_id', $this->id)->get();
+
+        foreach ($get_member as $item) {
+            // dd($item->name);
+            $data[] = [
+                'member_id' => $item->id,
+                'member_name' => $item->name,
+                'member_city' => $item->text_kota,
+                'member_default' => $item->default(),
+                'member_latitude' => $item->gps_latitude,
+                'member_longtitude' => $item->gps_longitude,
+                'member_condition' => $item->condition(),
+                'member_status_key' => $item->key_status(),
+            ];
+        }
+
+        return $data;
+    }
+
+    public function pic()
+    {
+        return array_search($this->pic, self::PIC);
     }
 }

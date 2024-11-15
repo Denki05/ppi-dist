@@ -15,6 +15,8 @@ class ProductPack extends Model
                         'product_id', 
                         'warehouse_id', 
                         'packaging_id', 
+                        'category_id', 
+                        'type_id', 
                         'material_code', 
                         'material_name', 
                         'code', 
@@ -22,6 +24,7 @@ class ProductPack extends Model
                         'price', 
                         'gender', 
                         'note', 
+                        'product_finance_tax', 
                         'status',
                         'condition',
                         'updated_by',
@@ -57,7 +60,22 @@ class ProductPack extends Model
 
     public function product()
     {
-        return $this->belongsTo('App\Entities\Master\Product', 'product_id');
+        return $this->belongsTo('App\Entities\Master\Product', 'product_id', 'id');
+    }
+
+    public function type_product_pack()
+    {
+        return $this->belongsTo('App\Entities\Master\ProductType', 'type_id', 'id');
+    }
+
+    public function category_product_pack()
+    {
+        return $this->belongsTo('App\Entities\Master\ProductCategory', 'category_id', 'id');
+    }
+
+    public function cashback()
+    {
+        return $this->hasMany('App\Entities\Master\ProductCategoryType', 'product_packaging_id');
     }
 
     public function warehouse()

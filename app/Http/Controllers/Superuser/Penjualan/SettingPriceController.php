@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use App\Entities\Penjualan\SettingPrice;
 use App\Entities\Penjualan\SettingPriceLog;
+use App\Entities\Penjualan\DraftNewPrice;
 use App\Entities\Master\Product;
 use App\Entities\Master\ProductPack;
 use App\Entities\Master\Packaging;
@@ -57,6 +58,7 @@ class SettingPriceController extends Controller
         $get_product = $request->input('id_product');
 
         $product = Product::get();
+        $draftPrice = DraftNewPrice::where('status', 1)->count();
         $packaging = Packaging::get();
         $result = ProductPack::where(function($query2) use($get_product, $get_packaging){
                                 if(!empty($get_product)){
@@ -76,6 +78,7 @@ class SettingPriceController extends Controller
             'product' => $product,
             'packaging' => $packaging,
             'result' => $result,
+            'draftPrice' => $draftPrice,
         ];
 
         return view($this->view."index",$data);
@@ -369,6 +372,92 @@ class SettingPriceController extends Controller
             Excel::import($import, $request->import_file);
         
             return redirect()->back()->with(['collect_success' => $import->success, 'collect_error' => $import->error]);
+        }
+    }
+
+    public function sync_price(Request $request)
+    {
+        if(Auth::user()->is_superuser == 0){
+            if(empty($this->access) || empty($this->access->user) || $this->access->can_approve == 0){
+                return redirect()->route('superuser.index')->with('error','Anda tidak punya akses untuk membuka menu terkait');
+            }
+        }
+
+        DB::beginTransaction();
+
+        try {
+            $errors = [];
+
+            $getProduct = ProductPack::where('status', 1)->get();
+            // dd($getProduct);
+
+            $getDraftPrice = DB::table('penjualan_setting_price_product')
+                ->whereIn('id', $getProduct->pluck('id'))
+                ->where('status', 1)
+                ->select('id', 'kode_produk', 'nama_produk', 'harga_baru', 'harga_lama', 'status')
+                ->get();
+
+            // dd($getDraftPrice);
+
+            if ($getDraftPrice->isEmpty()) {
+                // return Redirect::back()->withInput()->withErrors(['error' => 'Tidak ada data draft!']);
+                $errors[] = 'Tidak ada data draft!';
+            }
+
+            foreach ($getProduct as $product) {
+                $draftPrice = $getDraftPrice->firstWhere('id', $product->id);
+                // dd($getDraftPrice);
+
+                if ($draftPrice) {
+                    $product->price = $draftPrice->harga_baru;
+                    if ($product->save()) {
+                        // Update status draft
+                        DB::table('penjualan_setting_price_product')
+                            ->where('id', $draftPrice->id)
+                            ->update(['status' => 0]);
+
+                        // Update log price
+                        SettingPriceLog::create([
+                            'product_packaging_id' => $product->id,
+                            'price' => $draftPrice->harga_lama,
+                        ]);
+                    }
+                }
+            }
+
+            if($errors) {
+                $response['notification'] = [
+                    'alert' => 'block',
+                    'type' => 'alert-danger',
+                    'header' => 'Error',
+                    'content' => $errors,
+                ];
+
+                return $this->response(400, $response);
+            } else {
+                DB::commit();
+
+                $response['notification'] = [
+                    'alert' => 'notify',
+                    'type' => 'success',
+                    'content' => 'Success',
+                ];
+    
+                $response['redirect_to'] = route('superuser.penjualan.setting_price.index');
+                return $this->response(200, $response);
+            }
+        } catch (\Exception $e) {
+            // dd($e);
+            DB::rollback();
+            DD($e);
+                $response['notification'] = [
+                    'alert' => 'block',
+                    'type' => 'alert-danger',
+                    'header' => 'Error',
+                    'content' => "Internal Server Error",
+                ];
+
+                return $this->response(400, $response);
         }
     }
 }

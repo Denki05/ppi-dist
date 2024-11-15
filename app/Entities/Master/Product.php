@@ -12,7 +12,7 @@ class Product extends Model
 
     protected $appends = ['image_url', 'image_hd_url'];
     protected $fillable = [
-                        'packaging_id', 'category_id', 'type_id', 'brand_reference_id', 'sub_brand_reference_id', 'brand_name',
+                        'packaging_id', 'category_id', 'brand_reference_id', 'sub_brand_reference_id', 'brand_name', 'count_pack',
                         'code', 'name', 'material_code', 'material_name', 'material_code_optional', 'material_name_optional', 'alias', 'description', 
                         'default_quantity', 'default_unit_id', 'ratio', 'default_warehouse_id', 
                         'vendor_id', 'vendor_optional_id', 'buying_price', 'selling_price', 'image', 'image_hd', 'status', 'product_finance_tax', 'gender'
@@ -39,7 +39,9 @@ class Product extends Model
     const STATUS = [
         'DELETED' => 0,
         'ACTIVE' => 1,
-        'INACTIVE' => 2
+        'INACTIVE' => 2,
+        'ENABLE' => 3,
+        'DISABLE' => 4
     ];
 
     public function sub_brand_reference()

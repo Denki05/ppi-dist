@@ -11,10 +11,12 @@ use App\Entities\Finance\Invoicing;
 use App\Entities\Finance\Payable;
 use App\Entities\Finance\PayableDetail;
 use App\DataTables\Finance\PayableTable;
+use App\DataTables\Report\PaymentReportTable;
 use App\Entities\Penjualan\SalesOrder;
 use App\Entities\Setting\UserMenu;
 use App\Repositories\CodeRepo;
 use App\Entities\Penjualan\PackingOrder;
+use App\Helper\LogActivity;
 use DB;
 use Auth;
 use PDF;
@@ -51,6 +53,11 @@ class PayableController extends Controller
         return $datatable->build($request);
     }
 
+    public function json2(Request $request, PaymentReportTable $datatable)
+    {
+        return $datatable->build($request);
+    }
+
     public function index(Request $request)
     {
         // Access
@@ -74,7 +81,7 @@ class PayableController extends Controller
                         })
                         ->orderBy('id','DESC')
                         ->paginate(10);
-        $customer = Customer::get();
+        $customer = Customer::where('status', Customer::STATUS['ACTIVE'])->get();
         $data = [
             'customer' => $customer,
             'table' => $table
@@ -105,7 +112,7 @@ class PayableController extends Controller
         $data = [
             'customer' => $customer
         ];
-        return view($this->view."create",$data);
+        return view($this->view."create", $data);
     }
 
     /**
@@ -192,6 +199,8 @@ class PayableController extends Controller
                 ]);
                 DB::commit();
 
+                LogActivity::addToLog('Create Payable:' . $insert->code);
+
                 $data_json["IsError"] = FALSE;
                 $data_json["Message"] = "Payable berhasil dibuat";
                 goto ResultData;
@@ -252,7 +261,7 @@ class PayableController extends Controller
     {
         // Access
         if(Auth::user()->is_superuser == 0){
-            if(empty($this->access) || empty($this->access->user) || $this->access->can_read == 0){
+            if(empty($this->access) || empty($this->access->user) || $this->access->can_update == 0){
                 return redirect()->route('superuser.index')->with('error','Anda tidak punya akses untuk membuka menu terkait');
             }
         }
@@ -336,6 +345,8 @@ class PayableController extends Controller
 
                         DB::commit();
 
+                        LogActivity::addToLog('Update Payable:' . $payment->code);
+
                         $response['notification'] = [
                             'alert' => 'notify',
                             'type' => 'success',
@@ -395,14 +406,20 @@ class PayableController extends Controller
                     $payment = $invoice->payable_detail->sum('total');
                     $sisa = $total_tagihan - $payment;
 
+                    // DD($sisa);
+
                     if( $sisa == '0' ){
                         $update_so = SalesOrder::where('id', $invoice->do->so_id)->update(['payment_status' => 1]);
                     }elseif ($sisa > '0') {
                         $update_so = SalesOrder::where('id', $invoice->do->so_id)->update(['payment_status' => 2]);
+                    }elseif ($sisa >= '-1') {
+                        // kelebihan pembayaran
+                        $update_so = SalesOrder::where('id', $invoice->do->so_id)->update(['payment_status' => 1]);
                     }
                 }
 
                 DB::commit();
+                LogActivity::addToLog('Aproved Payable:' . $payable->code);
                 $response['notification'] = [
                     'alert' => 'notify',
                     'type' => 'success',
@@ -435,27 +452,33 @@ class PayableController extends Controller
      */
     public function destroy(Request $request, $id)
     {
-        if ($request->ajax()) {
-            if(Auth::user()->is_superuser == 0){
-                if(empty($this->access) || empty($this->access->user) || $this->access->can_delete == 0){
-                    return redirect()->route('superuser.index')->with('error','Anda tidak punya akses untuk membuka menu terkait');
-                }
-             }
-
-            $result = Payable::find($id);
-
-            if ($result === null) {
-                abort(404);
+        // Access
+        if(Auth::user()->is_superuser == 0){
+            if(empty($this->access) || empty($this->access->user) || $this->access->can_delete == 0){
+                abort(405);
             }
+        }
 
-            $result->deleted_by = Auth::id();
-            $result->delete();
+        if ($request->ajax()) {
+            $result = Payable::findOrFail($id);
 
-            if ($result->save()) {
-                $result_item = PayableDetail::where('payable_id', $result->id)->delete();
+            DB::beginTransaction();
 
-                $response['redirect_to'] = route('superuser.finance.payable.index');
-                return $this->response(200, $response);
+            try {
+
+                $result->status = Payable::STATUS['DELETED'];
+
+                if ($result->save()) {
+                    DB::commit();
+                    LogActivity::addToLog('Destory Payable:' . $result->code);
+                    $response['redirect_to'] = route('superuser.finance.payable.index');
+                    return $this->response(200, $response);
+                }
+
+            } catch (\Exception $e) {
+                DB::rollBack();
+                Log::error("Failed to delete payable: " . $e->getMessage());
+                return redirect()->back()->with('error', 'Failed to delete payable. Please try again.');
             }
         }
     }
@@ -509,6 +532,7 @@ class PayableController extends Controller
 
                 if($payable->save()){
                     DB::commit();
+                    LogActivity::addToLog('Cancel Aprroved Payable:' . $payable->code);
                     $response['redirect_to'] = route('superuser.finance.payable.index');
                     return $this->response(200, $response);
                 }
@@ -555,6 +579,8 @@ class PayableController extends Controller
                     goto ResultData;
                 }
 
+                $get_payable = Payable::where('id', $post["payable_header"])->first();
+
                 // update Note payable
                 $update_payable = Payable::where('id', $post["payable_header"])->update([
                     'note' => $post["note"], 
@@ -593,6 +619,8 @@ class PayableController extends Controller
 
                 DB::commit();
 
+                LogActivity::addToLog('Update Cancel Payable:' . $get_payable->code);
+
                 $data_json["IsError"] = FALSE;
                 $data_json["Message"] = "Payable berhasil dibuat";
                 goto ResultData;
@@ -612,5 +640,16 @@ class PayableController extends Controller
         }
         ResultData:
         return response()->json($data_json,200);
+    }
+
+    public function pageReport(Request $request)
+    {
+        if(Auth::user()->is_superuser == 0){
+            if(empty($this->access) || empty($this->access->user) || $this->access->can_read == 0){
+                return redirect()->route('superuser.index')->with('error','Anda tidak punya akses untuk membuka menu terkait');
+            }
+        }
+
+        return view($this->view."report");
     }
 }

@@ -3,7 +3,8 @@
 @section('content')
 <nav class="breadcrumb bg-white push">
   <span class="breadcrumb-item">Report</span>
-  <span class="breadcrumb-item active">Product Performance</span>
+  <span class="breadcrumb-item">Operasional</span>
+  <span class="breadcrumb-item active">Produk - Customer</span>
 </nav>
 @if(session('error') || session('success'))
 <div class="alert alert-{{ session('error') ? 'danger' : 'success' }} alert-dismissible fade show" role="alert">
@@ -17,217 +18,171 @@
     </button>
 </div>
 @endif
-<div class="block">
-  <hr class="my-20">
-  <div class="block-content block-content-full">
-      <div class="row mb-30">
-        <div class="col-12">
-          <a href="#" class="btn btn-success btn-print"><i class="fa fa-print"></i> Print</a>
-        </div>
-      </div>
-      <form>
-        <div class="row">
-          <div class="col-lg-3">
-            <div class="form-group">
-              <label>Set Period From</label>
-              <input type="date" name="period_from" class="form-control">
-            </div>   
-          </div>
-          <div class="col-lg-3">
-            <div class="form-group">
-              <label>Set Period To</label>
-              <input type="date" name="period_to" class="form-control">
-            </div>   
-          </div>
-          <div class="col-lg-3">
-            <div class="form-group">
-              <label>Customer</label>
-              <select class="form-control js-select2" name="customer_id">
-                <option value="">==All Customer==</option>
-                @foreach($customer as $index => $row)
-                <option value="{{$row->id}}">{{$row->name}}</option>
-                @endforeach
-              </select>
-            </div>   
-          </div>
-          <div class="col-lg-3">
-            <div class="form-group">
-              <label>Warehouse</label>
-              <select class="form-control js-select2" name="warehouse_id">
-                <option value="">==All warehouse==</option>
-                @foreach($warehouse as $index => $row)
-                <option value="{{$row->id}}">{{$row->name}}</option>
-                @endforeach
-              </select>
-            </div>   
-          </div>
-        </div>
-        <div class="row">
-          <div class="col-lg-3">
-            <div class="form-group">
-              <label>Brand Reference</label>
-              <select class="form-control js-select2" name="brand_reference_id">
-                <option value="">==All Brand Reference==</option>
-                @foreach($brand_reference as $index => $row)
-                <option value="{{$row->id}}">{{$row->name}}</option>
-                @endforeach
-              </select>
-            </div>   
-          </div>
-          <div class="col-lg-3">
-            <div class="form-group">
-              <label>Product</label>
-              <select class="form-control js-select2" name="product_id">
-                <option value="">==All Product==</option>
-                @foreach($product as $index => $row)
-                <option value="{{$row->id}}">{{$row->code}} - {{$row->name}}</option>
-                @endforeach
-              </select>
-            </div>   
-          </div>
-          <div class="col-lg-3">
-            <div class="form-group">
-              <label>Filter</label>
-              <select class="form-control js-select2" name="filter_by">
-                <option value="">==All==</option>
-                <option value="inventory">Inventory</option>
-                <option value="sales_order">Sales Order</option>
-                <option value="delivery_order">Delivery Order</option>
-              </select>
-            </div>   
-          </div>
-          <div class="col-lg-3">
-            <div class="form-group">
-              <button class="btn btn-primary " type="submit" style="margin-top: 25px;"><i class="fa fa-search"></i> Filter</button>
-            </div>   
-          </div>
-        </div>
-      </form>
 
-      <div class="row mt-10">
-        <div class="col-12">
-          <div class="row">
-            <div class="col-lg-6 text-left pt-20">
-              @if(!empty(request()->get('filter_by')))
-                @if(request()->get('filter_by') == "sales_order")
-                  Report By : Sales Order
-                @elseif(request()->get('filter_by') == "delivery_order")
-                  Report By : Delivery Order
-                @elseif(request()->get('filter_by') == "inventory")
-                  Report By : Inventory
-                @else
-                  Report By : All
-                @endif
-              @else
-              Report By : All
-              @endif
-              @if(!empty(request()->get('customer_id')))
-                <br>
-                @if(!empty($customer_detail))
-                    Customer : {{$customer_detail->name}}
-                @endif
-              @else
-                <br>
-                Customer : All Customer
-              @endif
-              @if(!empty(request()->get('warehouse_id')))
-                <br>
-                @if(!empty($warehouse_detail))
-                    Warehouse : {{$warehouse_detail->name}}
-                @endif
-              @else
-                <br>
-                Warehouse : All Warehouse
-              @endif
+<form action="{{ route('superuser.report.product_performance.print_report') }}" method="POST">
+  @csrf
+  <div class="form-group row">
+    <div class="col-md-9">
+      <div class="block">
+        <div class="block-content">
+          <div class="form-group row">
+            <label class="col-md-2 col-form-label text-left" for="periode_from">Period From :</label>
+            <div class="col-md-4">
+              <input type="date" class="form-control" name="periode_from" id="periode_from" required>
             </div>
-            <div class="col-lg-6 text-right">
-              <h3><b>Product Performance Report</b></h3>
-              @if(!empty(request()->get('period_from')))
-              Period From <?= date('d F Y',strtotime(request()->get('period_from'))) ?>
-              @endif
-              @if(!empty(request()->get('period_from')) && !empty(request()->get('period_to')))
-              -
-              @endif
-              @if(!empty(request()->get('period_to')))
-              <?= date('d F Y',strtotime(request()->get('period_to'))) ?>
-              @endif
+            <label class="col-md-2 col-form-label text-left" for="periode_to">Period To :</label>
+            <div class="col-md-4">
+              <input type="date" class="form-control" name="periode_to" id="periode_to" required>
+            </div>
+          </div>
+          <div class="form-group row">
+            <label class="col-md-2 col-form-label text-left" for="brand">Brand :</label>
+            <div class="col-md-4">
+              <select class="js-select2 form-control" id="brand" name="brand[]" data-placeholder="Pilih Brand" multiple required>
+                <option value="all">All</option>
+                @foreach ($brand as $value)
+                  <option value="{{ $value->brand_name }}">{{ $value->brand_name }}</option>
+                @endforeach
+              </select>
+            </div>
+
+            <label class="col-md-2 col-form-label text-left" for="product">Product :</label>
+            <div class="col-md-4">
+              <select class="js-select2 form-control" id="product" name="product[]" data-placeholder="Pilih Variant" multiple required>
+                <option value="all">All</option>
+                @foreach ($product as $value)
+                  <option value="{{ $value->id }}">{{ $value->code }} - {{ $value->name }} / {{ $value->packaging->pack_name }}</option>
+                @endforeach
+              </select>
             </div>
           </div>
         </div>
       </div>
+    </div>
+    <div class="col-md-3">
+      <div class="block">
+        <div class="block-content">
+          <div class="form-group row">
+            <div class="col-md-12 text-center">
+              <button type="submit" class="btn bg-gd-corporate border-0 text-white pl-50 pr-50">
+                Download <i class="fa fa-print ml-10"></i>
+              </button>
+            </div>
+          </div>
 
-      <div class="row mt-20">
-        <div class="col-12">
-          <div class="table-responsive">
-            <table class="table table-striped" id="datatables">
-              <thead>
-                <th>#</th>
-                <th>Product Code</th>
-                <th>Brand</th>
-                <th>Product Name</th>
-                <th>Stock Qty</th>
-                <th>So Qty</th>
-                <th>DO Qty</th>
-              </thead>
-              <tbody>
-                @foreach($table as $index => $row)
-                <tr>
-                  <td>{{$table->firstItem() + $index}}</td>
-                  <td>{{$row->code}}</td>
-                  <td>{{$row->category->brand_lokal->brand_name ?? ''}}</td>
-                  <td>{{$row->name}} - {{$row->category->type}}</td>
-                  <td>{{$row->stock}}</td>
-                  <td>{{$row->so}}</td>
-                  <td>{{$row->do}}</td>
-                </tr>
-                @endforeach
-              </tbody>
-            </table>
+          <div class="form-group row">
+            <div class="col-md-12 text-center">
+                <button type="button" id="btn-filter" class="btn bg-gd-sea border-0 text-white pl-50 pr-50">
+                  Preview <i class="fa fa-search ml-10"></i>
+                </button>
+            </div>
           </div>
         </div>
       </div>
-
-      <div class="row mb-30">
-        <div class="col-12">
-          {{$table->links()}}
-        </div>
-      </div>
+    </div>
   </div>
-</div>
+
+  <div class="form-group row">
+    <div class="block">
+      <div class="block-content">
+        <table class="datatable table" id="datatable">
+          <thead class="thead-dark">
+            <tr>
+              <th>Brand</th>
+              <th>Variant</th>
+              <th>Customer</th>
+              <th>Qty</th>
+            </tr>
+          </thead>
+          <tbody>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</form>
 @endsection
 
 @include('superuser.asset.plugin.select2')
+@include('superuser.asset.plugin.swal2')
 @include('superuser.asset.plugin.datatables')
+@include('superuser.asset.plugin.daterangepicker')
+@include('superuser.asset.plugin.datatables-button')
 
 @push('scripts')
+<script type="text/javascript">
+  var start_date = $('#periode_from').val();
+  var end_date = $('#periode_to').val();
 
-  <script type="text/javascript">
-    
-    $(function(){
-      
-      $('#datatables').DataTable( {
-        "paging":   false,
-        "ordering": true,
-        "info":     false,
-        "searching" : false,
-        "columnDefs": [{
-          "targets": 0,
-          "orderable": false
-        }]
-      });
-      $('.js-select2').select2();
+  $(document).ready(function() {
+    $('.js-select2').select2()
 
-      $(document).on('click','.btn-print',function(){
-        let period_to = '<?= $_GET["period_to"] ?? null ?>';
-        let period_from = '<?= $_GET["period_from"] ?? null ?>';
-        let customer_id = '<?= $_GET["customer_id"] ?? null ?>';
-        let warehouse_id = '<?= $_GET["warehouse_id"] ?? null ?>';
-        let product_id = '<?= $_GET["product_id"] ?? null ?>';
-        let brand_reference_id = '<?= $_GET["brand_reference_id"] ?? null ?>';
-        let filter_by = '<?= $_GET["filter_by"] ?? null ?>';
+    let datatableUrl = '{{ route('superuser.report.product_performance.json') }}';
+    let firstDatatableUrl = datatableUrl + '?start_date=' + start_date + '&end_date=' + end_date +
+      '&product=all&brand=all';
 
-        window.open('{{route('superuser.report.product_performance.print')}}' + '?period_to='+period_to+'&period_from='+period_from+'&customer_id='+customer_id+'&product_id='+product_id+'&brand_reference_id='+brand_reference_id+'&filter_by='+filter_by+'&warehouse_id='+warehouse_id,'_blank');
-      })
+    var datatable = $('#datatable').DataTable({
+      language: {
+              processing: "<span class='fa-stack fa-lg'>\n\
+                                    <i class='fa fa-spinner fa-spin fa-stack-2x fa-fw'></i>\n\
+                              </span>",
+      },
+      processing: true,
+      serverSide: false,
+      ajax: {
+        "url": firstDatatableUrl,
+        "dataType": "json",
+        "type": "GET",
+        "data":{ _token: "{{csrf_token()}}"}
+      },
+      columns: [
+        {data: 'brand'},
+        {data: 'product'},
+        {data: 'customer'},
+        {data: 'qty'},
+      ],
+      order: [
+        [0, 'asc']
+      ],
+      pageLength: 10,
+        lengthMenu: [
+          [10, 30, 100, -1],
+          [10, 30, 100, 'All']
+        ], 
+        dom: "<'row'<'col-sm-2'l><'col-sm-7 text-left'B><'col-sm-3'f>>" +
+          "<'row'<'col-sm-12'tr>>" +
+          "<'row'<'col-sm-5'i><'col-sm-7'p>>",
+        buttons: [
+          {
+            extend: 'excelHtml5',
+            text: '<i class="fa fa-file-excel-o"></i>',
+            titleAttr: 'Excel',
+            title: 'Product-Order Report',
+            footer: true,
+          },
+          {
+            extend: 'pdfHtml5',
+            orientation: 'landscape',
+            pageSize: 'A4',
+            text: '<i class="fa fa-file-pdf-o"></i>',
+            titleAttr: 'PDF',
+            title: 'Product-Order Report',
+            footer: true,
+          }
+        ],
     });
-  </script>
+
+    $('#btn-filter').on('click', function(e) {
+        e.preventDefault();
+        var brand = $('#brand').val();
+        var product = $('#product').val();
+        var start_date = $('#periode_from').val();
+        var end_date = $('#periode_to').val();
+        
+        let newDatatableUrl = datatableUrl + '?start_date=' + start_date + '&end_date=' + end_date +
+          '&brand=' + brand + '&product=' + product;
+        datatable.ajax.url(newDatatableUrl).load();
+    });
+  })
+</script>
 @endpush

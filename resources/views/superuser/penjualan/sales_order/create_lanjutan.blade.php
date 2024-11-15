@@ -44,20 +44,8 @@
               <input type="date" name="so_date" class="form-control">
             </div>
             <div class="form-group col-md-6">
-              <label for="invoice_code">Nomer Nota</label>
-              <input type="text" class="form-control" id="invoice_code" value="{{ $result->code }}" readonly>
-            </div>
-          </div>
-
-          <div class="form-row">
-            <div class="form-group col-md-6">
               <label for="type_transaction">Type Transaksi</label>
               <input type="text" name="type_transaction" class="form-control" value="{{ $result->type_transaction }}" readonly>
-            </div>
-            <div class="form-group col-md-6">
-              <label for="note">Catatan</label>
-              <!-- <input type="text" class="form-control" value="{{ $result->note ?? '-' }}" readonly> -->
-              <textarea class="form-control" name="note" rows="1" readonly>{{ $result->note }}</textarea>
             </div>
           </div>
 
@@ -82,15 +70,46 @@
             </div>
           </div>
 
-          <div class="form-row justify-content-end">
+          <div class="form-row">
+            <div class="form-group col-md-6">
+              <label for="sales_senior_id">Sales Senior <span class="text-danger">*</span></label>
+              <select class="form-control js-select2" name="sales_senior_id">
+                <option value="">Pilih Sales Senior</option>
+                @foreach(\App\Entities\Penjualan\SalesOrder::SALES_SENIOR as $sales_senior => $senior_value)
+                <option value="{{ $senior_value }}">{{ $sales_senior }}</option>
+                @endforeach
+              </select>
+            </div>
+            <div class="form-group col-md-6">
+              <label for="sales_id">Sales <span class="text-danger">*</span></label>
+              <select class="form-control js-select2" name="sales_id">
+                <option value="">Pilih Sales</option>
+                @foreach(\App\Entities\Penjualan\SalesOrder::SALES as $sales => $sales_value)
+                <option value="{{ $sales_value }}">{{ $sales }}</option>
+                @endforeach
+              </select>
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group col-md-6">
+              <label for="note">Catatan</label>
+              <!-- <input type="text" class="form-control" value="{{ $result->note ?? '-' }}" readonly> -->
+              <textarea class="form-control" name="note" rows="1" readonly>{{ $result->note }}</textarea>
+            </div>
             <div class="form-check-inline">
               <label class="form-check-label">
                 <input type="checkbox" class="form-check-input" value="1" id="shipping_cost_buyer" name="shipping_cost_buyer">Bayar ditempat
               </label>
             </div>
+            @if($result->count_rev == 1)
+              <div class="form-check-inline">
+                <label class="form-check-label">
+                  <input type="checkbox" class="form-check-input" value="1" id="keep_old_code" name="keep_old_code">Previous Code
+                </label>
+              </div>
+            @endif
           </div>
-          <br>
-          <br>
         </div>
       </div>
     </div>
@@ -210,10 +229,16 @@
                                     <td>{{ $detail->product_pack->code }} - <b>{{ $detail->product_pack->name }}</b> - {{$detail->product_pack->warehouse->name}}</td>
                                     <td>{{$detail->qty}}</td>
                                     <td>
-                                      <input type="number" name="repeater[{{$index}}][do_qty]" class="form-control count" data-index="{{$index}}" value="{{$detail->qty}}" step="any" min="0" max="{{$detail->qty}}">
+                                      <input type="number" name="repeater[{{$index}}][do_qty]" class="form-control count" data-index="{{$index}}" value="{{$detail->qty}}" step="any">
                                     </td>
                                     <td>
-                                      <input type="text" name="repeater[{{$index}}][price]" class="form-control price" value="@if($detail->free_product == 1) 0 @else {{$detail->product_pack->price}} @endif">
+                                      @if($detail->kontrak == 0)
+                                        <input type="text" name="repeater[{{$index}}][price]" class="form-control price" value="@if ($detail->free_product == 1) 0 @elseif ($detail->price == 0) {{ $detail->product_pack->price }} @else {{ $detail->price }} @endif">
+                                      @else
+                                        <input type="text" name="repeater[{{$index}}][price]" class="form-control price" value="@if ($detail->free_product == 1) 0 @elseif ($detail->price == 0) {{ $detail->product_pack->price }} @else {{ $detail->price }} @endif" readonly>
+                                      @endif
+                                    <!-- <input type="text" name="repeater[{{$index}}][price]" class="form-control price" value="@if($detail->free_product == 1) 0 @else {{$detail->product_pack->price}} @endif">   -->
+                                    
                                     </td>
                                     <td>
                                       <input class="form-check-input free-count" type="checkbox" value="{{$detail->free_product}}" name="repeater[{{$index}}][free_product]" @if($detail->free_product == 1) checked=checked @endif disabled>
@@ -494,6 +519,8 @@
 
       let sub_total_before = sub_total - disc_agen - dics_kemasan;
 
+      // alert(sub_total_before);
+
       $('#subtotal_2').val(formatRupiah(sub_total_before));
     };
 
@@ -525,7 +552,7 @@
       }
      
 
-      let grand_total_idr = subtotal_before - disc_tambahan - voucher_idr + ongkir;
+      let grand_total_idr = subtotal_before - disc_tambahan -  voucher_idr + ongkir;
 
       $('#grand_total_idr').val(formatRupiah(grand_total_idr));
     });

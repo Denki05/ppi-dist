@@ -66,7 +66,6 @@
           <thead>
             <tr>
               <th>Category</th>
-              <th>Type</th>
             </tr>
           </thead>
           <tbody>
@@ -139,8 +138,7 @@
         "data":{ _token: "{{csrf_token()}}"}
       },
       columns: [
-        {data: 'name'},
-        {data: 'type'}
+        {data: 'name'}
       ],
       order: [
         [1, 'desc']

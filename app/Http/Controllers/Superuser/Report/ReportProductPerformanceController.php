@@ -5,20 +5,25 @@ namespace App\Http\Controllers\Superuser\Report;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use App\Entities\Master\BrandReference;
+use App\Entities\Master\BrandLokal;
 use App\Entities\Master\Product;
+use App\Entities\Master\ProductPack;
 use App\Entities\Master\ProductMinStock;
 use App\Entities\Master\Customer;
 use App\Entities\Master\Company;
 use App\Entities\Master\Warehouse;
 use App\Entities\Penjualan\PackingOrderItem;
 use App\Entities\Penjualan\DeliveryOrderMutationItem;
+use App\DataTables\Report\ProductPerformanceTable;
 use App\Entities\Penjualan\CanvasingItem;
 use App\Entities\Penjualan\SalesOrderItem;
 use App\Entities\Gudang\StockMove;
 use App\Entities\Setting\UserMenu;
+use Carbon\Carbon;
 use DB;
 use Auth;
 use PDF;
+use COM;
 
 class ReportProductPerformanceController extends Controller
 {
@@ -44,6 +49,12 @@ class ReportProductPerformanceController extends Controller
             return $next($request);
         });
     }
+
+    public function json(Request $request, ProductPerformanceTable $datatable)
+    {
+        return $datatable->build($request);
+    }
+
     public function index(Request $request)
     {
         // Access
@@ -53,373 +64,112 @@ class ReportProductPerformanceController extends Controller
             }
         }
 
-        $brand_reference_id = $request->input('brand_reference_id');
-        $product_id = $request->input('product_id');
-        $period_from = $request->input('period_from');
-        $period_to = $request->input('period_to');
-        $filter_by = $request->input('filter_by');
-        $customer_id = $request->input('customer_id');
-        $warehouse_id = $request->input('warehouse_id');
-
-        $brand_reference = BrandReference::get();
-        $product = Product::get();
-        $customer = Customer::get();
-        $warehouse = Warehouse::get();
-
-        $table = Product::orderBy('id','DESC')
-                        ->where(function($query2) use($brand_reference_id){
-                            if(!empty($brand_reference_id)){
-                                $query2->where('brand_reference_id',$brand_reference_id);
-                            }
-                        })
-                        ->where(function($query2) use($product_id){
-                            if(!empty($product_id)){
-                                $query2->where('id',$product_id);
-                            }
-                        })
-                        ->where(function($query2) use($filter_by){
-                            if(!empty($filter_by) && $filter_by == "sales_order"){
-                                $query2->whereHas('so_item',function($query3){
-                                    $query3->where('qty','>',0);
-                                });
-                            }
-                            if(!empty($filter_by) && $filter_by == "delivery_order"){
-                                $query2->whereHas('do_item',function($query3){
-                                    $query3->where('qty','>',0);
-                                });
-                            }
-                        })
-                        ->where(function($query2) use($customer_id){
-                            if(!empty($customer_id)){
-                                $query2->whereHas('so_item',function($query3) use($customer_id){
-                                    $query3->whereHas('so',function($query4) use($customer_id){
-                                        $query4->where('customer_id',$customer_id);
-                                    });
-                                });
-                                $query2->whereHas('do_item',function($query3) use($customer_id){
-                                    $query3->whereHas('do',function($query4) use($customer_id){
-                                        $query4->where('customer_id',$customer_id);
-                                    });
-                                });
-                            }
-                        })
-                        ->paginate(10);
-
-        foreach ($table as $index => $row) {
-            $product_min_stock = ProductMinStock::select(DB::raw('SUM(master_product_min_stocks.quantity) as stock_in'),'master_product_min_stocks.product_id')
-                                ->groupBy('product_id')
-                                ->where('product_id',$row->id)
-                                ->where(function($query2) use($warehouse_id){
-                                    if(!empty($warehouse_id)){
-                                        $query2->where('warehouse_id',$warehouse_id);
-                                    }
-                                })
-                                ->first();
-            
-
-            $stock = 0;
-            $stock_in = 0;
-            $stock_out = 0;
-            $effective = 0;
-            $do = 0;
-            $so = 0;
-            $move_in = 0;
-
-            if(!empty($product_min_stock)){
-                $stock_in = floatval($product_min_stock->stock_in);    
-            }
-         
-            $so = SalesOrderItem::where('product_id',$row->id)
-                                ->where(function($query2) use($period_from,$period_to){
-                                    if($period_from){
-                                        $query2->where('created_at','>=',$period_from);
-                                    }
-                                    if($period_to){
-                                        $query2->where('created_at','<=',$period_to);
-                                    }
-                                })
-                                ->whereHas('so',function($query2) use($warehouse_id){
-                                    if(!empty($warehouse_id)){
-                                        $query2->where('origin_warehouse_id',$warehouse_id);
-                                    }
-                                })
-                                ->whereHas('so')->sum('qty');
-
-            $do = PackingOrderItem::where('product_id',$row->id)
-                                ->where(function($query2) use($period_from,$period_to){
-                                    if($period_from){
-                                        $query2->where('created_at','>=',$period_from);
-                                    }
-                                    if($period_to){
-                                        $query2->where('created_at','<=',$period_to);
-                                    }
-                                })
-                                ->whereHas('do',function($query2) use($warehouse_id){
-                                    if(!empty($warehouse_id)){
-                                        $query2->where('warehouse_id',$warehouse_id);
-                                    }
-                                })
-                                ->whereHas('do')->sum('qty');
-
-            $move = StockMove::where('product_id',$row->id)
-                                ->where(function($query2) use($period_from,$period_to){
-                                    if($period_from){
-                                        $query2->where('created_at','>=',$period_from);
-                                    }
-                                    if($period_to){
-                                        $query2->where('created_at','<=',$period_to);
-                                    }
-                                })
-                                ->where(function($query2) use($warehouse_id){
-                                    if(!empty($warehouse_id)){
-                                        $query2->where('warehouse_id',$warehouse_id);
-                                    }
-                                })
-                                ->get();
-
-            $move_in = $move->sum('stock_in');
-            $move_out = $move->sum('stock_out');
-
-            $stock_out = $move_out;
-            $stock  = floatval($stock_in + $move_in - $move_out);
-            $effective = $stock - $so;
-            
-
-            $row->stock = $stock;
-            $row->stock_in = $move_in;
-            $row->stock_out = $stock_out;
-            $row->so = floatval($so);
-            $row->do = floatval($do);
-            $row->effective = $effective;
-        }
-
-        if(!empty($filter_by)){
-            if($filter_by == "inventory"){
-                $table->setCollection(
-                    collect(
-                        collect($table->items())->sortByDesc('stock')
-                    )->values()
-                );
-            }
-            if($filter_by == "sales_order"){
-                $table->setCollection(
-                    collect(
-                        collect($table->items())->sortByDesc('so')
-                    )->values()
-                );
-            }
-            if($filter_by == "delivery_order"){
-                $table->setCollection(
-                    collect(
-                        collect($table->items())->sortByDesc('do')
-                    )->values()
-                );
-            }
-        }
-        
-
-        $customer_detail = Customer::where('id',$customer_id)->first();
-        $warehouse_detail = Warehouse::where('id',$warehouse_id)->first();
+        $product = ProductPack::get();
+        $brand = BrandLokal::get();
 
         $data = [
-            'brand_reference' => $brand_reference,
             'product' => $product,
-            'customer' => $customer,
-            'customer_detail' => $customer_detail,
-            'warehouse_detail' => $warehouse_detail,
-            'warehouse' => $warehouse,
-            'table' => $table
+            'brand' => $brand,
         ];
         return view($this->view."index",$data);
     }
 
-    public function print(Request $request)
+    public function print_report(Request $request)
     {
-        // Access
-        if(Auth::user()->is_superuser == 0){
-            if(empty($this->access) || empty($this->access->user) || $this->access->can_print == 0){
-                return redirect()->route('superuser.index')->with('error','Anda tidak punya akses untuk membuka menu terkait');
-            }
+        $request->validate([
+            'periode_from' => 'required|date',
+            'periode_to' => 'required|date',
+            'product' => 'required|array',
+            'brand' => 'required|array'
+        ]);
+
+        $start = $request->input('periode_from');
+        $end = $request->input('periode_to');
+        $products = $request->input('product');
+        $brands = $request->input('brand');
+        $date = Carbon::now()->format('Y-m');
+        $status_do = 6;
+
+        // Convert dates
+        $new_date_start = Carbon::parse($start)->format('d-m-Y');
+        $new_date_end = Carbon::parse($end)->format('d-m-Y');
+
+        // Check if 'all' is selected for brand or product
+        $brandSearch = '';
+        if (!in_array('all', $brands)) {
+            $brandSearch = collect($brands)->map(function($value) {
+                return "{master_products.brand_name}='$value'";
+            })->implode(' OR ');
         }
 
-        $brand_reference_id = $request->input('brand_reference_id');
-        $product_id = $request->input('product_id');
-        $period_from = $request->input('period_from');
-        $period_to = $request->input('period_to');
-        $filter_by = $request->input('filter_by');
-        $customer_id = $request->input('customer_id');
-        $warehouse_id = $request->input('warehouse_id');
-
-        $brand_reference = BrandReference::get();
-        $product = Product::get();
-        $customer = Customer::get();
-
-        $table = Product::orderBy('id','DESC')
-                        ->where(function($query2) use($brand_reference_id){
-                            if(!empty($brand_reference_id)){
-                                $query2->where('brand_reference_id',$brand_reference_id);
-                            }
-                        })
-                        ->where(function($query2) use($product_id){
-                            if(!empty($product_id)){
-                                $query2->where('id',$product_id);
-                            }
-                        })
-                        ->where(function($query2) use($filter_by){
-                            if(!empty($filter_by) && $filter_by == "sales_order"){
-                                $query2->whereHas('so_item',function($query3){
-                                    $query3->where('qty','>',0);
-                                });
-                            }
-                            if(!empty($filter_by) && $filter_by == "delivery_order"){
-                                $query2->whereHas('do_item',function($query3){
-                                    $query3->where('qty','>',0);
-                                });
-                            }
-                        })
-                        ->where(function($query2) use($customer_id){
-                            if(!empty($customer_id)){
-                                $query2->whereHas('so_item',function($query3) use($customer_id){
-                                    $query3->whereHas('so',function($query4) use($customer_id){
-                                        $query4->where('customer_id',$customer_id);
-                                    });
-                                });
-                                $query2->whereHas('do_item',function($query3) use($customer_id){
-                                    $query3->whereHas('do',function($query4) use($customer_id){
-                                        $query4->where('customer_id',$customer_id);
-                                    });
-                                });
-                            }
-                        })
-                        ->limit(10)
-                        ->get();
-
-        foreach ($table as $index => $row) {
-            $product_min_stock = ProductMinStock::select(DB::raw('SUM(master_product_min_stocks.quantity) as stock_in'),'master_product_min_stocks.product_id')
-                                ->groupBy('product_id')
-                                ->where('product_id',$row->id)
-                                ->where(function($query2) use($warehouse_id){
-                                    if(!empty($warehouse_id)){
-                                        $query2->where('warehouse_id',$warehouse_id);
-                                    }
-                                })
-                                ->first();
-            
-
-            $stock = 0;
-            $stock_in = 0;
-            $stock_out = 0;
-            $effective = 0;
-            $do = 0;
-            $so = 0;
-            $move_in = 0;
-
-            if(!empty($product_min_stock)){
-                $stock_in = floatval($product_min_stock->stock_in);    
-            }
-         
-            $so = SalesOrderItem::where('product_id',$row->id)
-                                ->where(function($query2) use($period_from,$period_to){
-                                    if($period_from){
-                                        $query2->where('created_at','>=',$period_from);
-                                    }
-                                    if($period_to){
-                                        $query2->where('created_at','<=',$period_to);
-                                    }
-                                })
-                                ->whereHas('so',function($query2) use($warehouse_id){
-                                    if(!empty($warehouse_id)){
-                                        $query2->where('origin_warehouse_id',$warehouse_id);
-                                    }
-                                })
-                                ->whereHas('so')->sum('qty');
-
-            $do = PackingOrderItem::where('product_id',$row->id)
-                                ->where(function($query2) use($period_from,$period_to){
-                                    if($period_from){
-                                        $query2->where('created_at','>=',$period_from);
-                                    }
-                                    if($period_to){
-                                        $query2->where('created_at','<=',$period_to);
-                                    }
-                                })
-                                ->whereHas('do',function($query2) use($warehouse_id){
-                                    if(!empty($warehouse_id)){
-                                        $query2->where('warehouse_id',$warehouse_id);
-                                    }
-                                })
-                                ->whereHas('do')->sum('qty');
-
-            $move = StockMove::where('product_id',$row->id)
-                                ->where(function($query2) use($period_from,$period_to){
-                                    if($period_from){
-                                        $query2->where('created_at','>=',$period_from);
-                                    }
-                                    if($period_to){
-                                        $query2->where('created_at','<=',$period_to);
-                                    }
-                                })
-                                ->where(function($query2) use($warehouse_id){
-                                    if(!empty($warehouse_id)){
-                                        $query2->where('warehouse_id',$warehouse_id);
-                                    }
-                                })
-                                ->get();
-
-            $move_in = $move->sum('stock_in');
-            $move_out = $move->sum('stock_out');
-
-            $stock_out = $move_out;
-            $stock  = floatval($stock_in + $move_in - $move_out);
-            $effective = $stock - $so;
-            
-
-            $row->stock = $stock;
-            $row->stock_in = $move_in;
-            $row->stock_out = $stock_out;
-            $row->so = floatval($so);
-            $row->do = floatval($do);
-            $row->effective = $effective;
+        $productSearch = '';
+        if (!in_array('all', $products)) {
+            $productSearch = collect($products)->map(function($value) {
+                return "{master_products_packaging.id}='$value'";
+            })->implode(' OR ');
         }
 
-        if(!empty($filter_by)){
-            if($filter_by == "inventory"){
-                $table = $table->sortByDesc('stock');
+        // Paths for the report and the exported PDF
+        $reportPath = public_path('cr/report/operasional/product_order/product_order.rpt');
+        $exportPath = public_path("cr/report/operasional/product_order/export/product-order-{$date}.pdf");
+
+        $server = env('DB_SERVER', 'LOCAL_3');
+        $user = env('DB_USERNAME', 'root');
+        $password = env('DB_PASSWORD', '');
+        $database = env('DB_DATABASE', 'ppi_araya');
+        $COM_Object = "CrystalDesignRunTime.Application";
+
+        try {
+            if (!class_exists('COM')) {
+                throw new \Exception("COM class is not available on this server.");
             }
-            if($filter_by == "delivery_order"){
-                $table = $table->sortByDesc('do');
+
+            $crapp = new COM($COM_Object) or die("Unable to create Crystal Reports Object");
+            $creport = $crapp->OpenReport($reportPath, 1);
+
+            $creport->Database->Tables(1)->SetLogOnInfo($server, $database, $user, $password);
+
+            $creport->EnableParameterPrompting = false;
+            $creport->ParameterFields(2)->SetCurrentValue($new_date_start);
+            $creport->ParameterFields(3)->SetCurrentValue($new_date_end);
+
+            // Build the RecordSelectionFormula
+            $recordSelectionFormula = [];
+            if ($productSearch) {
+                $recordSelectionFormula[] = "($productSearch)";
             }
-            if($filter_by == "sales_order"){
-                $table = $table->sortByDesc('so');
+            if ($brandSearch) {
+                $recordSelectionFormula[] = "($brandSearch)";
             }
+            $recordSelectionFormula[] = "{penjualan_so.so_date}>=#$start#";
+            $recordSelectionFormula[] = "{penjualan_so.so_date}<=#$end#";
+            $recordSelectionFormula[] = "{penjualan_do.status}=$status_do";
+
+            $creport->RecordSelectionFormula = implode(' AND ', $recordSelectionFormula);
+
+            $creport->ExportOptions->DiskFileName = $exportPath;
+            $creport->ExportOptions->PDFExportAllPages = true;
+            $creport->ExportOptions->DestinationType = 1;
+            $creport->ExportOptions->FormatType = 31;
+            $creport->Export(false);
+
+            $creport = null;
+            $crapp = null;
+        } catch (\Exception $e) {
+            return response()->json(['error' => 'Failed to generate report: ' . $e->getMessage()], 500);
         }
 
-        $customer_detail = Customer::where('id',$customer_id)->first();
-        $warehouse_detail = Warehouse::where('id',$warehouse_id)->first();
-        $product_detail = Product::where('id',$product_id)->first();
-        $brand_reference_detail = BrandReference::where('id',$brand_reference_id)->first();
-        $company = Company::first();
-
-        $data = [
-            'brand_reference' => $brand_reference,
-            'product' => $product,
-            'customer' => $customer,
-            'customer_detail' => $customer_detail,
-            'warehouse_detail' => $warehouse_detail,
-            'product_detail' => $product_detail,
-            'brand_reference_detail' => $brand_reference_detail,
-            'company' => $company,
-            'table' => $table
-        ];
-
-
-        $pdf = PDF::loadview($this->view."print",$data)->setPaper('a4','potrait');
-        return $pdf->stream('Report Product Performance');
-        
-
+        if (file_exists($exportPath)) {
+            return response()->file($exportPath, [
+                'Content-Type' => 'application/pdf',
+                'Content-Disposition' => 'attachment; filename="' . basename($exportPath) . '"'
+            ]);
+        } else {
+            return response()->json(['error' => 'Report file not found'], 404);
+        }
     }
-    
 
+    
     /**
      * Show the form for creating a new resource.
      *

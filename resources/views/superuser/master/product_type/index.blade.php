@@ -31,7 +31,6 @@
       <thead>
         <tr>
           <th></th>
-          <th><input type="checkbox" onclick="$('input.check-entity').prop('checked', this.checked);" /></th>
           <th>Created at</th>
           <th>Code</th>
           <th>Name</th>
@@ -64,7 +63,7 @@ $(document).ready(function() {
 
   $('#datatable').DataTable({
     processing: true,
-    serverSide: true,
+    serverSide: false,
     ajax: {
       "url": datatableUrl,
       "dataType": "json",
@@ -73,7 +72,6 @@ $(document).ready(function() {
     },
     columns: [
       {data: 'DT_RowIndex', name: 'id'},
-      {data: 'check', orderable: false, searcable: false},
       {
         data: 'created_at',
         render: {
@@ -96,53 +94,5 @@ $(document).ready(function() {
     ],
   });
 });
-
-  function deleteMultiple() {
-    Swal.fire({
-      title: 'Are you sure?',
-      type: 'warning',
-      showCancelButton: true,
-      allowOutsideClick: false,
-      allowEscapeKey: false,
-      allowEnterKey: false,
-      backdrop: false,
-    }).then(result => {
-      if (result.value) {
-        Swal.fire({
-          title: 'Deleting...',
-          allowOutsideClick: false,
-          allowEscapeKey: false,
-          allowEnterKey: false,
-          backdrop: false,
-          onOpen: () => {
-            Swal.showLoading()
-          }
-        })
-        const ids = [];
-        for (let i = 0; i < $('.check-entity:checked').length; i++) {
-          ids.push($('.check-entity:checked')[i].value);
-        }
-        //ajaxcsrfscript();
-        $.ajax({
-          url : '{{route('superuser.master.product_type.delete_multiple')}}',
-          method : "POST",
-          data : {ids:ids},
-          dataType : "JSON",
-        }).then( response => {
-          Swal.fire({
-            title: 'Deleted!',
-            text: 'Your data has been deleted.',
-            type: 'success',
-            backdrop: false,
-          }).then(() => {
-            redirect(response.redirect_to);
-          })
-        })
-        .catch(error => {
-          Swal.fire('Error!','Cek Koneksi Internet','error')
-        });
-      }
-    });
-  }
 </script>
 @endpush

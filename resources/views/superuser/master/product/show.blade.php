@@ -43,7 +43,7 @@
               <div class="form-group row">
                 <label for="example-text-input" class="col-3 col-form-label">Pabrik</label>
                 <div class="col-8">
-                  <input class="form-control" type="text" value="{{ $product->sourceVendor->name }}" id="example-text-input" readonly>
+                  <input class="form-control" type="text" value="{{ $product->sourceVendor->name ?? '-' }}" id="example-text-input" readonly>
                 </div>
               </div>
             </div>
@@ -156,12 +156,16 @@
     <!-- Paackaging -->
     <section id="content2">
       <div class="row mb-30">
+        <a href="{{ route('superuser.master.product.product_pack.create', [$product->id]) }}">
+            <button type="button" class="btn btn-outline-primary min-width-125">Create Pack</button>
+          </a>
         <div class="col-12">
           <table id="packaging_list" class="table" style="width:100%">
             <thead>
               <tr>
                 <th>#</th>
                 <th>Packaging</th>
+                <th>type</th>
                 <th>Price</th>
                 <th>Action</th>
               </tr>
@@ -171,14 +175,12 @@
                 <tr>
                   <td>{{$loop->iteration}}</td>
                   <td><b>{{$row->packaging->pack_name}}</b></td>
+                  <td>{{ $row->type_product_pack->name ?? '-' }}</td>
                   <td>{{$row->price}}</td>
                   <td>
                     <a href="javascript:void(0)" type="button" class="btn btn-sm btn-circle btn-alt-secondary openModal" data-id="{{$row->id}}" title="Update price"><i class="fa fa-money"></i></a> 
-                    @if($row->condition == 0)
-                      <a href="javascript:saveConfirmation('{{ route('superuser.master.product.disable', base64_encode($row->id)) }}')" type="button" class="btn btn-sm btn-circle btn-alt-warning" title="Disable PL / PD"><i class="fa fa-unlock" aria-hidden="true"> </i></a>
-                    @else
-                      <a href="javascript:saveConfirmation('{{ route('superuser.master.product.enable', base64_encode($row->id)) }}')" type="button" class="btn btn-sm btn-circle btn-alt-warning" title="Enable PL / PD"><i class="fa fa-lock" aria-hidden="true"> </i></a>
-                    @endif
+                    
+                    <a href="{{ route('superuser.master.product.product_pack.edit', ['id' => base64_encode($product->id), 'pack_id' => base64_encode($row->id)]) }}" type="button" class="btn btn-sm btn-circle btn-alt-warning" title="Edit Packaging"><i class="fa fa-pencil" aria-hidden="true"> </i></a>
                   </td>
                 </tr>
               @endforeach
@@ -234,6 +236,15 @@
         </div>
       </div>
     </section>
+  </div>
+</div>
+<div class="row pt-30 mb-15">
+  <div class="col-md-6">
+    <a href="{{ route('superuser.master.product.index') }}">
+      <button type="button" class="btn bg-gd-cherry border-0 text-white">
+        <i class="fa fa-arrow-left mr-10"></i> Back
+      </button>
+    </a>
   </div>
 </div>
 

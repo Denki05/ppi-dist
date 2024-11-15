@@ -55,7 +55,10 @@
 
 <div class="block">
   <div class="block-content">
-    <button type="button" class="btn btn-outline-info ml-10" data-toggle="modal" data-target="#modal-manage">Manage</button>
+  <button type="button" class="btn btn-outline-info ml-10" data-toggle="modal" data-target="#modal-manage">Manage</button>
+    @if($draftPrice > 0)
+      <a class="btn btn-primary ml-10" href="javascript:saveConfirmation('{{ route('superuser.penjualan.setting_price.sync_price') }}')" role="button">Update Harga</a>
+    @endif
   </div>
   <!-- <hr class="my-20"> -->
   <div class="block-content block-content-full">
@@ -125,6 +128,7 @@
 
 @include('superuser.asset.plugin.select2')
 @include('superuser.asset.plugin.datatables')
+@include('superuser.asset.plugin.swal2')
 
 @section('modal')
 

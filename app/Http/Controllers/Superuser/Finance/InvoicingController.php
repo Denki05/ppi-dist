@@ -4,17 +4,20 @@ namespace App\Http\Controllers\Superuser\Finance;
 
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
+use App\Entities\Master\CustomerOtherAddress;
 use App\Entities\Penjualan\PackingOrder;
 use App\Entities\Penjualan\PackingOrderCost;
 use App\Entities\Penjualan\PackingOrderDetail;
 use App\Entities\Penjualan\PackingOrderItem;
 use App\DataTables\Finance\InvoicingTable;
+use App\DataTables\Report\PiutangFakturTable;
 use App\Entities\Master\Customer;
 use App\Entities\Master\Company;
 use App\Entities\Master\Ekspedisi;
 use App\Entities\Finance\Invoicing;
 use App\Entities\Setting\UserMenu;
 use App\Repositories\CodeRepo;
+use Carbon\Carbon;
 use DB;
 use Auth;
 use PDF;
@@ -46,6 +49,11 @@ class InvoicingController extends Controller
     }
 
     public function json(Request $request, InvoicingTable $datatable)
+    {
+        return $datatable->build($request);
+    }
+
+    public function json2(Request $request, PiutangFakturTable $datatable)
     {
         return $datatable->build($request);
     }
@@ -82,7 +90,7 @@ class InvoicingController extends Controller
                             ->orderBy('id','DESC')
                             ->get();
         // $table->withPath('invoicing?search='.$search."&do_id=".$do_id."&customer_id=".$customer_id);
-        $customer = Customer::get();
+        $customer = CustomerOtherAddress::get();
         $data = [
             'order' => $order,
             'table' => $table,
@@ -134,6 +142,7 @@ class InvoicingController extends Controller
             }
         }
 
+        // dd($id);
         $result = PackingOrder::where('id',$id)->first();
         $data = [
             'result' => $result
@@ -403,6 +412,7 @@ class InvoicingController extends Controller
         ResultData:
         return response()->json($data_json,200);
     }
+    
     public function store_invoicing(Request $request){
         $post = $request->all();
         $request->validate([
@@ -475,70 +485,80 @@ class InvoicingController extends Controller
 
     public function print($id)
     {
-
-        // Access
-        if(Auth::user()->is_superuser == 0){
-            if(empty($this->access) || empty($this->access->user) || $this->access->can_print == 0){
-                return redirect()->route('superuser.index')->with('error','Anda tidak punya akses untuk membuka menu terkait');
+        // Access control
+        if (Auth::user()->is_superuser == 0) {
+            if (empty($this->access) || empty($this->access->user) || $this->access->can_print == 0) {
+                return redirect()->route('superuser.index')->with('error', 'Anda tidak punya akses untuk membuka menu terkait');
             }
         }
 
-        $result = Invoicing::where('id',$id)->first();
+        $result = Invoicing::where('id', $id)->first();
 
-        // GET DO & ITEM
+        if (!$result) {
+            return redirect()->route('superuser.index')->with('error', 'Invoice not found.');
+        }
+
+        // Get Packing Order
         $get_do = PackingOrder::where('id', $result->do_id)->first();
 
-        $my_report = "C:\\xampp\\htdocs\\ppi-dist\public\\cr\\invoice\\invoice_rev_2.rpt"; 
-        $my_pdf = 'C:\\xampp\\htdocs\\ppi-dist\\public\\cr\\invoice\\export\\'.$result->code.'.pdf';
-       
-        //- Variables - Server Information 
-        $my_server = "LOCAL"; 
-        $my_user = "root"; 
-        $my_password = ""; 
+        if (!$get_do) {
+            return redirect()->route('superuser.index')->with('error', 'Packing Order not found.');
+        }
+
+        $my_report = "C:\\xampp\\htdocs\\ppi-dist\\public\\cr\\invoice\\invoice_rev_2.rpt"; 
+        $my_pdf = 'C:\\xampp\\htdocs\\ppi-dist\\public\\cr\\invoice\\export\\' . $result->code . '.pdf';
+
+        // Variables for server information
+        $my_server = "LOCAL";
+        $my_user = "root";
+        $my_password = "";
         $my_database = "ppi-dist";
         $COM_Object = "CrystalDesignRunTime.Application";
 
+        // Create new COM object - depends on your Crystal Report version
+        $crapp = new COM($COM_Object) or die("Unable to create COM object");
+        $creport = $crapp->OpenReport($my_report, 1); // call rpt report
 
-        //-Create new COM object-depends on your Crystal Report version
-        $crapp= New COM($COM_Object) or die("Unable to Create Object");
-        $creport = $crapp->OpenReport($my_report,1); // call rpt report
-
-        //- Set database logon info - must have
+        // Set database logon info
         $creport->Database->Tables(1)->SetLogOnInfo($my_server, $my_database, $my_user, $my_password);
 
-        //- field prompt or else report will hang - to get through
-        $creport->EnableParameterPrompting = FALSE;
-        $creport->RecordSelectionFormula = "{penjualan_do.id}= $get_do->id";
+        // Prevent field prompt and set record selection
+        $creport->EnableParameterPrompting = false;
+        $creport->RecordSelectionFormula = "{penjualan_do.id} = " . $get_do->id;
 
-
-        //export to PDF process
-        $creport->ExportOptions->DiskFileName=$my_pdf; //export to pdf
-        $creport->ExportOptions->PDFExportAllPages=true;
-        $creport->ExportOptions->DestinationType=1; // export to file
-        $creport->ExportOptions->FormatType=31; // PDF type
+        // Export to PDF process
+        $creport->ExportOptions->DiskFileName = $my_pdf; // Export to PDF
+        $creport->ExportOptions->PDFExportAllPages = true;
+        $creport->ExportOptions->DestinationType = 1; // Export to file
+        $creport->ExportOptions->FormatType = 31; // PDF type
         $creport->Export(false);
 
-        //------ Release the variables ------
+        // Release the COM objects
         $creport = null;
         $crapp = null;
-        $ObjectFactory = null;
 
-        $file = 'C:\\xampp\\htdocs\\ppi-dist\\public\\cr\\invoice\\export\\'.$result->code.'.pdf';
+        // File download
+        $file = 'C:\\xampp\\htdocs\\ppi-dist\\public\\cr\\invoice\\export\\' . $result->code . '.pdf';
 
-        // if($get_do->type_transaction == 1 && $get_do->so->payment_status == 1){
-        //     $file->SetWatermarkText("PAID");
-        // }elseif($get_do->type_transaction == 2 && $get_do->so->payment_status == 2){
-        //     $file->SetWatermarkText("COPY");
-        // }
+        if (file_exists($file)) {
+            // Set headers for file download
+            header("Content-Description: File Transfer");
+            header("Content-Type: application/pdf");
+            header("Content-Disposition: attachment; filename=\"" . basename($file) . "\"");
+            header("Content-Transfer-Encoding: binary");
+            header("Expires: 0");
+            header("Cache-Control: must-revalidate");
+            header("Pragma: public");
+            header("Content-Length: " . filesize($file));
 
-        header("Content-Description: File Transfer"); 
-        header("Content-Type: application/octet-stream"); 
-        header("Content-Transfer-Encoding: Binary"); 
-        header("Content-Disposition: attachment; filename=\"". basename($file) ."\""); 
-        ob_clean();
-        flush();
-        readfile ($file);
-        exit();
+            // Clear the output buffer and read the file
+            ob_clean();
+            flush();
+            readfile($file);
+            exit();
+        } else {
+            return redirect()->route('superuser.index')->with('error', 'File not found.');
+        }
     }
 
     public function print2($id)
@@ -593,20 +613,25 @@ class InvoicingController extends Controller
 
         $file = 'C:\\xampp\\htdocs\\ppi-dist\\public\\cr\\invoice\\export\\'.$result->code.'-FULL'.'.pdf';
 
-        // if($get_do->type_transaction == 1 && $get_do->so->payment_status == 1){
-        //     $file->SetWatermarkText("PAID");
-        // }elseif($get_do->type_transaction == 2 && $get_do->so->payment_status == 2){
-        //     $file->SetWatermarkText("COPY");
-        // }
+        if (file_exists($file)) {
+            // Set headers for file download
+            header("Content-Description: File Transfer");
+            header("Content-Type: application/pdf");
+            header("Content-Disposition: attachment; filename=\"" . basename($file) . "\"");
+            header("Content-Transfer-Encoding: binary");
+            header("Expires: 0");
+            header("Cache-Control: must-revalidate");
+            header("Pragma: public");
+            header("Content-Length: " . filesize($file));
 
-        header("Content-Description: File Transfer"); 
-        header("Content-Type: application/octet-stream"); 
-        header("Content-Transfer-Encoding: Binary"); 
-        header("Content-Disposition: attachment; filename=\"". basename($file) ."\""); 
-        ob_clean();
-        flush();
-        readfile ($file);
-        exit();
+            // Clear the output buffer and read the file
+            ob_clean();
+            flush();
+            readfile($file);
+            exit();
+        } else {
+            return redirect()->route('superuser.index')->with('error', 'File not found.');
+        }
     }
 
     // public function print_paid($id, $type = null){
@@ -720,6 +745,7 @@ class InvoicingController extends Controller
         $update = PackingOrderDetail::where('do_id',$do_id)->update($data);
         return true;        
     }
+
     private function reset_cost($id){
       $data = [
           'discount_1' => 0,
@@ -738,5 +764,181 @@ class InvoicingController extends Controller
 
       $update = PackingOrderDetail::where('do_id',$id)->update($data);
       return true;
+    }
+
+    public function updateInvoice(Request $request)
+    {
+        $result = PackingOrder::where('status', 6)
+        ->select(
+            'penjualan_do.id AS doID', 
+            'penjualan_do.do_code AS do_code', 
+            'penjualan_do.pic AS do_pic', 
+            'penjualan_do.officer AS do_officer', 
+            'penjualan_do.account_representative AS do_ar', 
+            'penjualan_do.customer_id AS customer_id', 
+            'penjualan_do.customer_other_address_id AS customer_other_address_id'
+        )
+        ->where(function ($query) {
+            $query->orWhereNull('penjualan_do.pic')
+                  ->orWhereNull('penjualan_do.officer')
+                  ->orWhereNull('penjualan_do.account_representative');
+        })
+        ->get();
+
+        foreach($result AS $row){
+            $customer = DB::table('master_customers')
+                ->select(
+                    'master_customers.pic AS pic', 
+                    'master_customer_other_addresses.officer AS officer', 
+                    'master_customer_other_addresses.account_representative AS ar'
+                )
+                ->leftJoin('master_customer_other_addresses', 'master_customers.id', '=', 'master_customer_other_addresses.customer_id')
+                ->where('master_customers.id', $row->customer_id)
+                ->where('master_customer_other_addresses.id', $row->customer_other_address_id)
+                ->first();
+
+            if($customer){
+                $data = PackingOrder::find($row->doID);
+
+                if (is_null($data->pic) && $data->officer && $data->account_representative || $data->status == 6) {
+                    $data->pic = $customer->pic;
+                    $data->officer = $customer->officer;
+                    $data->account_representative = $customer->ar;
+                    $data->save();
+                }
+            }
+        }
+
+        return redirect()->back()->with('message', 'Berhasil Update!');
+    }
+
+    public function pageReport(Request $request)
+    {
+        // Access
+        if(Auth::user()->is_superuser == 0){
+            if(empty($this->access) || empty($this->access->user) || $this->access->can_read == 0){
+                return redirect()->route('superuser.index')->with('error','Anda tidak punya akses untuk membuka menu terkait');
+            }
+        }
+
+        // $currentDate = Carbon::now();
+        $customer = CustomerOtherAddress::get();
+
+        $data = [
+            'customer' => $customer
+        ];
+        // return view('superuser.finance.invoicing.index' ,$data);
+        return view($this->view."report",$data);
+    }
+
+    public function printReportPage(Request $request)
+    {
+        $start = $request->input('start');
+        $end = $request->input('end');
+        $customer = $request->input('customer');
+        $status = $request->input('status');
+        $date = date("Y-m");
+
+        // Convert dates
+        $new_date_start = date('d-m-Y', strtotime($start));
+        $new_date_end = date('d-m-Y', strtotime($end));
+
+        // Construct SQL-style filter for customers
+        $sqlStyle = $this->buildCustomerFilter($customer);
+
+        $my_report = public_path('cr/report/operasional/payment_invoicing/payment_check_list.rpt');
+        $my_pdf = public_path("cr/report/operasional/payment_invoicing/export/Invoicing-Check-$date.pdf");
+
+        $creport = $this->generateCrystalReport($my_report, $sqlStyle, $new_date_start, $new_date_end, $start, $end, $status);
+        
+        // Export and prepare for download
+        $creport->ExportOptions->DiskFileName = $my_pdf;
+        $this->exportReportToPDF($creport);
+
+        // Clean up
+        $this->cleanupCrystalObjects($creport);
+
+        // File download response
+        return $this->downloadFile($my_pdf);
+    }
+
+    // Helper method to build the customer filter
+    private function buildCustomerFilter($customer)
+    {
+        $sqlStyle = "";
+        $i = 1;
+        foreach ($customer as $key => $value) {
+            if ($i > 1) {
+                $sqlStyle .= " OR ";
+            }
+
+            if (is_array($value)) {
+                $sqlStyle .= "(" . implode(' AND ', array_map(function($second_level) {
+                    return "{master_customer_other_addresses.id}='$second_level'";
+                }, $value)) . ")";
+            } else {
+                $sqlStyle .= "{master_customer_other_addresses.id}='$value'";
+            }
+            $i++;
+        }
+        return $sqlStyle;
+    }
+
+    // Helper to initialize and set parameters for the Crystal Report
+    private function generateCrystalReport($reportPath, $sqlString, $new_date_start, $new_date_end, $start, $end, $status)
+    {
+        $crapp = new COM("CrystalDesignRunTime.Application") or die("Unable to Create Object");
+        $creport = $crapp->OpenReport($reportPath, 1);
+
+        // // Database connection
+        // $creport->Database->Tables(1)->SetLogOnInfo("LOCAL", "ppi-araya", "root", "");
+        $my_server = "LOCAL_3";
+        $my_user = "root";
+        $my_password = "";
+        $my_database = "ppi-dist";
+        $COM_Object = "CrystalDesignRunTime.Application";
+
+        $creport->Database->Tables(1)->SetLogOnInfo($my_server, $my_database, $my_user, $my_password);
+
+        // Set parameters
+        $creport->EnableParameterPrompting = false;
+        $creport->ParameterFields(5)->SetCurrentValue($new_date_start);
+        $creport->ParameterFields(6)->SetCurrentValue($new_date_end);
+
+        // Set record selection formula
+        $creport->RecordSelectionFormula = "($sqlString)AND{penjualan_so.so_date}>=#$start#AND{penjualan_so.so_date}<=#$end#AND{@status_faktur}='{$status}'";
+
+        return $creport;
+    }
+
+// Export report to PDF
+    private function exportReportToPDF($creport)
+    {
+        $creport->ExportOptions->PDFExportAllPages = true;
+        $creport->ExportOptions->DestinationType = 1; // export to file
+        $creport->ExportOptions->FormatType = 31; // PDF type
+        $creport->Export(false);
+    }
+
+    // Clean up Crystal Report objects
+    private function cleanupCrystalObjects(&$creport)
+    {
+        $creport = null;
+    }
+
+    // Handle file download
+    private function downloadFile($filePath)
+    {
+        if (file_exists($filePath)) {
+            // Optionally, you can provide a file name if you want to customize the download name
+            $fileName = basename($filePath);
+            
+            return response()->download($filePath, $fileName);
+        } else {
+            // Optionally log the error for tracking
+            \Log::error("File not found: " . $filePath);
+
+            abort(404, "File not found.");
+        }
     }
 }

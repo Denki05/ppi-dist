@@ -42,10 +42,6 @@ class SoProforma extends Model
     	return $this->BelongsTo('App\Entities\Penjualan\PackingOrder','do_id','id');
     }
 
-	public function payable_detail(){
-    	return $this->hasMany('App\Entities\Finance\PayableDetail','so_proforma_id');
-    }
-
 	public function so_type_transaction()
     {
         if (isset($this->type_transaction)) {

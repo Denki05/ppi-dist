@@ -24,6 +24,8 @@ use App\Entities\Penjualan\SoProforma;
 use App\Entities\Penjualan\SoProformaDetail;
 use App\Entities\Setting\UserMenu;
 use App\Repositories\CodeRepo;
+use App\Notifications\DoNotification;
+use App\Entities\Account\User;
 use Auth;
 use DB;
 use PDF;
@@ -910,6 +912,7 @@ class PackingOrderController extends Controller
                 $stock = ProductMinStock::where('warehouse_id', $getDo->warehouse_id)->where('product_packaging_id', $value->product_packaging_id)->first();
 
                 $get_stock = $stock->quantity;
+                // DD($stock);
                 $stock->quantity = $get_stock - $value->qty;
                 $stock->save();
 
@@ -933,6 +936,9 @@ class PackingOrderController extends Controller
             }
 
             $update = PackingOrder::where('id', $getDo->id)->update(['status' => 3]);
+
+            $user = User::find(29);
+            $user->notify(new DoNotification($getDo));
 
             if($update){
                 $response['notification'] = [
@@ -1062,42 +1068,85 @@ class PackingOrderController extends Controller
         }
     }
 
-    public function revisi(Request $request)
+    public function revisi(Request $request, $id)
     {
         // Access
-        if(Auth::user()->is_superuser == 0){
-            if(empty($this->access) || empty($this->access->user) || $this->access->can_approve == 0){
-                return redirect()->route('superuser.index')->with('error','Anda tidak punya akses untuk membuka menu terkait');
+        // try{
+        //     $request->validate([
+        //         'id' => 'required'
+        //     ]);
+        //     $post = $request->all();
+
+        //     $result = PackingOrder::where('id', $post["id"])->first();
+
+        //     //Kembalikan SO ke step lanjutan
+
+        //     if($result->status == 2 OR $result->status == 3 OR $result->status == 4){
+        //         $update_so = SalesOrder::where('id', $result->so_id)->update(['status' => 2, 'count_rev' => 1, 'code' => null]);
+
+        //         $update_po = PackingOrder::where('id', $result->id)->update(['status' => 7]);
+
+        //         $update_invocing = Invoicing::where('do_id', $request->id)->update(['status' => 3, 'updated_by' => Auth::id()]);
+
+        //         //Delete packing order item
+        //         $del_po_item = PackingOrderItem::where('do_id', $result->id)->delete();
+
+        //         return redirect()->back()->with('success','SO Packed berhasil di kembalikan ke SO!');  
+        //     }elseif($result->status == 5 OR $result->status == 6){
+        //         return redirect()->back()->with('error','Gagal di Kembalikan status saat ini DO dalam proses KIRIM!');
+        //     }
+                        
+        // }catch(\Throwable $e){
+        //     return redirect()->back()->with('error',$e->getMessage());
+        // }
+        if ($request->ajax()) {
+            if(Auth::user()->is_superuser == 0){
+                if(empty($this->access) || empty($this->access->user) || $this->access->can_approve == 0){
+                    return redirect()->route('superuser.index')->with('error','Anda tidak punya akses untuk membuka menu terkait');
+                }
             }
-        }
 
-        try{
-            $request->validate([
-                'id' => 'required'
-            ]);
-            $post = $request->all();
+            $result = PackingOrder::find($id);
 
-            $result = PackingOrder::where('id', $post["id"])->first();
-
-            //Kembalikan SO ke step lanjutan
+            if ($result === null) {
+                abort(404);
+            }
 
             if($result->status == 2 OR $result->status == 3 OR $result->status == 4){
-                $update_so = SalesOrder::where('id', $result->so_id)->update(['status' => 2, 'count_rev' => 1, 'code' => null]);
-
+                $update_so = SalesOrder::where('id', $result->so_id)->update(['status' => 2, 'count_rev' => 1, 'code' => null, 'keep_code' => $result->so->code]);
+        
                 $update_po = PackingOrder::where('id', $result->id)->update(['status' => 7]);
-
+        
                 $update_invocing = Invoicing::where('do_id', $request->id)->update(['status' => 3, 'updated_by' => Auth::id()]);
-
+        
                 //Delete packing order item
                 $del_po_item = PackingOrderItem::where('do_id', $result->id)->delete();
-
+        
                 return redirect()->back()->with('success','SO Packed berhasil di kembalikan ke SO!');  
             }elseif($result->status == 5 OR $result->status == 6){
                 return redirect()->back()->with('error','Gagal di Kembalikan status saat ini DO dalam proses KIRIM!');
             }
-                        
-        }catch(\Throwable $e){
-            return redirect()->back()->with('error',$e->getMessage());
+
+            if($update_po){
+                $response['notification'] = [
+                    'alert' => 'notify',
+                    'type' => 'success',
+                    'content' => 'Success',
+                ];
+    
+                $response['redirect_to'] = route('superuser.penjualan.sales_order.index_lanjutan');
+                return $this->response(200, $response); 
+            }
+            else{
+                $response['notification'] = [
+                    'alert' => 'notify',
+                    'type' => 'error',
+                    'content' => 'Error',
+                ];
+    
+                $response['redirect_to'] = route('superuser.penjualan.sales_order.index_lanjutan');
+                return $this->response(200, $response);
+            }
         }
     }
 

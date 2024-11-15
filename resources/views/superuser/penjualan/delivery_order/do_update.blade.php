@@ -1,8 +1,13 @@
 
-
 @extends('superuser.app')
 
 @section('content')
+<nav class="breadcrumb bg-white push">
+  <span class="breadcrumb-item">Penjualan</span>
+  <a class="breadcrumb-item" href="#">Sales Order</a>
+  <span class="breadcrumb-item active">Cancel DO {{ $result->do_code }}</span>
+</nav>
+<div id="alert-block"></div>
 @if(session('error') || session('success'))
 <div class="alert alert-{{ session('error') ? 'danger' : 'success' }} alert-dismissible fade show" role="alert">
     @if (session('error'))
@@ -21,298 +26,285 @@
   <input type="hidden" name="id" value="{{$result->id}}">
   <input type="hidden" name="cost_id" value="{{$result->do_detail_cost[0]->id}}">
 
-  <div class="block">
+  <div class="row">
+    <div class="col-6">
+      <div class="block">
         <div class="block-header block-header-default">
-            <h2 class="block-title">#UPDATE <span class="badge badge-warning">{{ $result->do_code }}</span></h2>
+          <h3 class="block-title">#Detail Nota</h3>
         </div>
         <div class="block-content">
-            <div class="row">
-                <div class="col-6">
-                    <div class="card">
-                        <div class="card-body">
-                            <div class="row">
-                                <div class="col-md-6">
-                                    <div class="form-group row">
-                                        <label class="col-md-4 col-form-label text-right">DO Code</label>
-                                        <div class="col-md-6">
-                                            <div class="form-control-plaintext">{{ $result->do_code }}</div>
-                                        </div>
-                                    </div>
-                                </div>
-                                <div class="col-md-6">
-                                    <div class="form-group row">
-                                        <label class="col-md-4 col-form-label text-right">SO Code</label>
-                                        <div class="col-md-6">
-                                            <div class="form-control-plaintext">{{ $result->so->code }}</div>
-                                        </div>
-                                    </div>
-                                </div>
-                                <div class="col-md-6">
-                                    <div class="form-group row">
-                                        <label class="col-md-4 col-form-label text-right">Transaksi Type</label>
-                                        <div class="col-md-6">
-                                            <div class="form-control-plaintext"><span class="badge badge-info">{{$result->do_type_transaction ?? ''}}</span></div>
-                                        </div>
-                                    </div>
-                                </div>
-                                <div class="col-md-6">
-                                    <div class="form-group row">
-                                    <label class="col-md-4 col-form-label text-right">Tanggal Buat</label>
-                                        <div class="col-md-6">
-                                            <div class="form-control-plaintext">{{ date_format($result->created_at, 'Y-m-d ') }}</div>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                <div class="col-6">
-                    <div class="card">
-                        <div class="card-body">
-                            <div class="row">
-                                <div class="col-md-6">
-                                    <div class="form-group row">
-                                        <label class="col-md-4 col-form-label text-right">Customer</label>
-                                        <div class="col-md-6">
-                                            <div class="form-control-plaintext">{{ $result->member->name }}
-                                                <input type="hidden" name="customer_other_address_id" value="{{ $result->member->id }}">
-                                            </div>
-                                        </div>
-                                    </div>
-                                    <div class="form-group row">
-                                        <label class="col-md-4 col-form-label text-right">Phone</label>
-                                        <div class="col-md-6">
-                                            <div class="form-control-plaintext">{{ $result->member->phone }}</div>
-                                        </div>
-                                    </div>
-                                </div>
-                                
-                                <div class="col-md-6">
-                                    <div class="form-group row">
-                                        <label class="col-md-4 col-form-label text-right">Alamat</label>
-                                        <div class="col-md-6">
-                                            <div class="form-control-plaintext">{{ $result->member->address }}</div>
-                                        </div>
-                                    </div>
-                                </div>
-                                
-                            </div>
-                        </div>
-                    </div>
-                </div>
+          <div class="form-row">
+            <div class="form-group col-md-6">
+              <label for="so_date">Tanggal Nota</label>
+              <input class="form-control" name="so_date" type="date" name="date" value="{{ old('date', $result->created_at->format('Y-m-d')) }}" readonly>
             </div>
+            <div class="form-group col-md-6">
+              <label for="type_transaction">Type Transaksi</label>
+              <input type="text" name="type_transaction" class="form-control" value="{{ $result->type_transaction }}" readonly>
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group col-md-6">
+              <label for="warehouse_id">Gudang <span class="text-danger">*</span></label>
+              <select class="form-control js-select2" style="font-size: 9pt;" name="warehouse_id" disabled>
+                <option value="">Pilih Gudang</option>
+                @foreach($warehouse as $index => $row)
+                <option style="font-size: 10pt;" value="{{$row->id}}" @if($result->warehouse_id == $row->id) selected @endif>{{$row->name}}</option>
+                @endforeach
+              </select>
+            </div>
+            <div class="form-group col-md-6">
+              <label for="type_transaction">Eksepdisi <span class="text-danger">*</span></label>
+              <select class="form-control js-select2" name="ekspedisi">
+                <option value="">Pilih Ekspedisi</option>
+                @foreach($ekspedisi as $index)
+                <option value="{{ $index->id }}" @if($result->so->ekspedisi_id == $index->id) selected @endif>{{ $index->name }}</option>
+                @endforeach
+              </select>
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group col-md-6">
+              <label for="sales_senior_id">Sales Senior <span class="text-danger">*</span></label>
+              <select class="form-control js-select2" name="sales_senior_id" disabled>
+                <option value="">Pilih Sales Senior</option>
+                @foreach(\App\Entities\Penjualan\SalesOrder::SALES_SENIOR as $sales_senior => $senior_value)
+                <!-- <option value="{{ $senior_value }}">{{ $sales_senior }}</option> -->
+                <option value="{{ $senior_value }}" @if($result->so->sales_senior_id == $senior_value) selected @endif>{{ $sales_senior }} </option>
+                @endforeach
+              </select>
+            </div>
+            <div class="form-group col-md-6">
+              <label for="sales_id">Sales <span class="text-danger">*</span></label>
+              <select class="form-control js-select2" name="sales_id" disabled>
+                <option value="">Pilih Sales</option>
+                @foreach(\App\Entities\Penjualan\SalesOrder::SALES as $sales => $sales_value)
+                <!-- <option value="{{ $sales_value }}">{{ $sales }}</option> -->
+                <option value="{{ $sales_value }}" @if($result->so->sales_id == $sales_value) selected @endif>{{ $sales }} </option>
+                @endforeach
+              </select>
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group col-md-6">
+              <label for="note">Catatan</label>
+              <!-- <input type="text" class="form-control" value="{{ $result->note ?? '-' }}" readonly> -->
+              <textarea class="form-control" name="note" rows="1" readonly>{{ $result->so->note }}</textarea>
+            </div>
+          </div>
         </div>
-        <br>
+      </div>
     </div>
 
-    <hr>
-
-    <div class="block">
-        <div class="block-header block-header-default">
-            <h2 class="block-title">#DISCOUNT</h2>
-        </div>
-        <div class="block-content">
-            <div class="row">
-            <div class="card mb-2 border-0">
-                <div class="card-body">
-                <div class="row">
-                    <div class="col">
-                    <div class="form-group row">
-                                <label style="font-size: 10pt;" class="col-md-4 col-form-label text-right">Gudang<span class="text-danger">*</span></label>
-                                <div class="col-8">
-                                <select class="form-control js-select2" style="font-size: 9pt;" name="warehouse_id">
-                                    <option value="">Pilih Gudang</option>
-                                    @foreach($warehouse as $index => $row)
-                                    <option value="{{ $row->id }}" @if($result->warehouse_id == $row->id) selected @endif>{{ $row->name }}</option>
-                                    @endforeach
-                                </select>
-                                </div>
-                            </div>
-                    <div class="form-group row">
-                        <label class="col-md-4 col-form-label text-right">Disc %</label>
-                        <div class="col-md-3">
-                        <input type="text" name="disc_agen_percent" id="disc_agen_percent" class="form-control text-center disc_agen_percent" value="{{ $result->do_detail_cost[0]->discount_1 ?? 0 }}">
-                        </div>
-                        <div class="col-md-5">
-                        <input type="text" name="disc_amount2_idr" id="disc_amount2_idr" class="form-control disc_amount2_idr text-center" readonly>
-                        </div>
-                    </div>
-                    </div>
-                    <div class="col">
-                    <div class="form-group row">
-                                <label class="col-md-4 col-form-label text-right" style="font-size: 10pt;">Kurs<span class="text-danger">*</span></label>
-                                <div class="col-4">
-                                    <input type="text" name="idr_rate" id="idr_rate"  class="form-control" value="{{ $result->idr_rate }}">
-                                </div>
-                            </div>
-                    <div class="form-group row">
-                        <label class="col-md-4 col-form-label text-right">Voucher</label>
-                        <div class="col-md-6">
-                        <input type="text" name="voucher_idr" id="voucher_idr" class="form-control count voucher_idr" value="{{ $result->do_detail_cost[0]->voucher_idr }}">
-                        </div>
-                    </div>
-                    </div>
-                    <div class="col">
-                    <div class="form-group row">
-                                <label style="font-size: 10pt;" class="col-md-4 col-form-label text-right">Disc Cash</label>
-                                <div class="col-3">
-                                <select class="form-control js-select2 base_disc" id="base_id" name="base_id">
-                                    <option value="0">0</option>
-                                    <option value="2">$2</option>
-                                    <option value="4">$4</option>
-                                </select>
-                                </div>
-                            </div>
-                    <div class="form-group row">
-                        <label class="col-md-4 col-form-label text-right">Subtotal</label>
-                        <div class="col-md-6">
-                        <input type="text" id="subtotal_2" name="subtotal_2" class="form-control text-center subtotal_2" step="any" readonly>
-                        </div>
-                    </div>
-                    </div>
-                </div>
-
-                <div class="row">
-                    <div class="col">
-                        <div class="form-group row">
-                        <label class="col-md-4 col-form-label text-right">Disc Kemasan</label>
-                        <div class="col-md-3">
-                            <input type="text" name="disc_tambahan" id="disc_tambahan" class="form-control disc_tambahan text-center" value="{{ $result->do_detail_cost[0]->discount_2 }}" step="any">
-                        </div>
-                        <div class="col-md-5">
-                            <input type="text" name="disc_kemasan_idr" id="disc_kemasan_idr" class="form-control disc_kemasan_idr text-center" readonly>
-                        </div>
-                        </div>
-                    </div>
-                    <div class="col">
-                    <div class="form-group row">
-                        <label class="col-md-4 col-form-label text-right">Ongkir</label>
-                        <div class="col-md-6">
-                        <input type="text" name="delivery_cost_idr" id="delivery_cost_idr" class="form-control delivery_cost_idr" value="{{ $result->do_detail_cost[0]->delivery_cost_idr }}">
-                        </div>
-                    </div>
-                    </div>
-                    <div class="col">
-                    <div class="form-group row">
-                        <label class="col-md-4 col-form-label text-right">Grand Total</label>
-                        <div class="col-md-6">
-                        <input type="text" name="grand_total_final"  id="grand_total_final" class="form-control text-center grand_total_final" step="any" readonly>
-                        </div>
-                    </div>
-                    </div>
-                </div>
-
-                <div class="row">
-                    <div class="col-4">
-                    <div class="form-group row">
-                        <label class="col-md-4 col-form-label text-right">Disc IDR</label>
-                        <div class="col-md-6">
-                        <input type="text" name="disc_idr" id="disc_idr" class="form-control disc_idr " step="any" value="{{ $result->do_detail_cost[0]->discount_idr }}">
-                        </div>
-                    </div>
-                    </div>
-                    <div class="col-4">
-                    <div class="form-group row">
-                        <label class="col-md-4 col-form-label text-right">Resi Ongkir</label>
-                        <div class="col-md-6">
-                        <input type="number" name="resi_ongkir" id="resi_ongkir" value="0" class="form-control text-center " step="any" readonly value="{{ $result->do_detail_cost[0]->other_cost_idr }}">
-                        </div>
-                    </div>
-                    </div>
-                    <div class="col-4">
-                    <button type="button" class="btn btn-danger button_cal" id="button_cal"><i class="fas fa-calculator pr-2" aria-hidden="true"></i>Calculate</button>
-                    <button type="submit" class="btn btn-primary"><i class="fa fa-save"></i> Save</button>
-                    </div>
-                </div>
-                </div>
+    <div class="col-6">
+      <div class="row">
+        <div class="col">
+          <div class="block">
+            <div class="block-header block-header-default">
+              <h3 class="block-title">#Customer Info</h3>
             </div>
+            <div class="block-content">
+              <div class="form-row">
+                <div class="form-group col-md-6">
+                  <label for="type_transaction">Customer</label>
+                  <input type="text" name="customer_name" class="form-control" value="{{ $result->member->name }} {{$result->member->text_kota}}" readonly>
+                </div>
+                <div class="form-group col-md-6">
+                  <label for="note">Alamat Kirim</label>
+                  <textarea class="form-control" rows="1" readonly>{{ $result->member->address }}</textarea>
+                </div>
+              </div>
+
+              <div class="form-row">
+                <div class="form-group col-md-6">
+                  <label for="customer_city">Kota</label>
+                  <input type="text" name="customer_city" class="form-control" value="{{$result->member->text_kota}}" readonly>
+                </div>
+                <div class="form-group col-md-6">
+                  <label for="customer_area">Provinsi</label>
+                  <input type="text" name="customer_area" class="form-control" value="{{ $result->member->text_provinsi }} " readonly>
+                </div>
+              </div>
             </div>
+          </div>
         </div>
+      </div>
+
+      <div class="row">
+        <div class="col">
+          <div class="block">
+            <div class="block-content">
+              <div class="form-row">
+                
+                <div class="form-group col-md-4">
+                  <label for="note">Rekening <span class="text-danger">*</span></label>
+                  <select class="form-control js-select2" name="rekening">
+                    <option value="">Pilih Rekening</option>
+                    @foreach($rekening as $key)
+                    <option value="{{$key->id}}" @if($result->so->rekening == $key->id) selected @endif>{{$key->name}} - {{$key->number_card}}</option>
+                    @endforeach
+                  </select>
+                </div>
+               
+                <div class="form-group col-md-4">
+                  <label for="customer_area">Kurs <span class="text-danger">*</span></label>
+                  <input type="text" name="idr_rate" id="idr_rate"  class="form-control" value="{{ $result->idr_rate }}">
+                </div>
+                
+                <div class="form-group col-md-4">
+                  <label for="customer_area">Disc Cash <span class="text-danger">*</span></label>
+                  <select class="form-control js-select2 base_disc" id="base_id" onkeyup="countGetUsd()">
+                    <option value="0">0</option>
+                    <option value="2">$2</option>
+                    <option value="4">$4</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
+  </div>
 
-    <div class="block">
-        <div class="block-header block-header-default">
-            <h2 class="block-title">#DO ITEM</h2>
-        </div>
-        <div class="block-content">
-            <div class="row">
-                <div class="col-12">
-                <div class="card mb-2 border-0">
+  <div class="row">
+            <aside class="col-lg-9">
+                <div class="card border-0">
+                    <div class="table-responsive">
+                        <table class="table table-hover" id="datatables" style="white-space:nowrap;width:100%;">
+                            <thead class="text-muted">
+                                <tr class="small text-uppercase">
+                                    <th class="block" style="width:auto"></th>
+                                    <th class="block" style="width:auto">#</th>
+                                    <th class="block" style="width:10%">Product</th>
+                                    <th class="block" style="width:auto">Qty</th>
+                                    <th class="block" style="width:5%">In Stock</th>
+                                    <th class="block" style="width:15%">Harga</th>
+                                    <th class="block" style="width:auto">Free</th>
+                                    <th class="block" style="width:20%">Kemasan</th>
+                                    <th class="block" style="width:2%">Disc (USD)</th>
+                                    <th class="block" style="width:30%">Total</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                              @if(count($result->do_detail) <= 0)
+                                <tr>
+                                  <td colspan="13" align="center">Data tidak ditemukan</td>
+                                </tr>
+                              @endif
+                              @if(count($result->do_detail) > 0)
+                                @foreach($result->do_detail as $index => $detail)
+                                  <tr class="index{{$index}}" data-index="{{$index}}">
+                                    <input type="hidden" name="repeater[{{$index}}][product_packaging_id]" value="{{$detail->product_packaging_id}}">
+                                    <input type="hidden" name="repeater[{{$index}}][so_qty]" value="{{$detail->qty}}">
+                                    <input type="hidden" name="repeater[{{$index}}][do_item_id]" value="{{$detail->id}}">
+
+                                    <td>
+                                      <div class="form-check">
+                                          <input class="form-check-input position-static" type="checkbox" name="repeater[{{$index}}][indentProduct]" id="indentProduct" value="1" data-id="{{ $detail->id }}" data-product="{{ $detail->product_packaging_id }}">
+                                        </div>
+                                    </td>
+                                    <td>{{ $loop->iteration }}</td>
+                                    <td>{{ $detail->product_pack->code }} - <b>{{ $detail->product_pack->name }}</b> - {{$detail->product_pack->warehouse->name}}</td>
+                                    <td>{{$detail->qty}}</td>
+                                    <td>
+                                      <input type="number" name="repeater[{{$index}}][do_qty]" class="form-control count" data-index="{{$index}}" value="{{$detail->qty}}" step="any">
+                                    </td>
+                                    <td>
+                                      <input type="text" name="repeater[{{$index}}][price]" class="form-control price" value="@if( $detail->free_product == 1) 0 @elseif( $detail->price == 0 ) {{ $detail->price}} @else {{ $detail->price }} @endif">
+                                    </td>
+                                    <td>
+                                      <input class="form-check-input free-count" type="checkbox" value="{{$detail->free_product}}" name="repeater[{{$index}}][free_product]" @if($detail->so_item->free_product == 1) checked=checked @endif disabled>
+                                    </td>
+                                    <td>
+                                      <input type="text" name="kemasan" class="form-control text-center" readonly value="{{$detail->product_pack->packaging->pack_name ?? ''}}">
+                                      <input type="hidden" name="repeater[{{$index}}][packaging]" class="form-control" readonly value="{{$detail->product_pack->packaging->id ?? ''}}">
+                                    </td>
+                                    <td>
+                                      <input type="text" name="repeater[{{$index}}][usd_disc]" class="form-control count count-disc" data-index="{{$index}}" step="any" onchange="countGetUsd()" placeholder="{{$detail->usd_disc }}" />
+                                    </td>
+                                    <td>
+                                      <input type="text" name="repeater[{{$index}}][total]" class="form-control " readonly>
+                                    </td>
+                                  </tr>
+                                @endforeach
+                              @endif
+                            </tbody>
+                            <tfoot>
+                              <tr class="row-footer-subtotal">
+                                <td colspan="9" class="text-right">
+                                  <b>Subtotal</b>
+                                </td>
+                                <td class="text-right">
+                                  <input type="text" name="sub_total_item" id="sub_total_item" class="form-control " readonly step="any">
+                                </td>
+                              </tr>
+                            </tfoot>
+                        </table>
+                    </div>
+                </div>
+            </aside>
+            <aside class="col-lg-3">
+                <div class="card border-0">
                     <div class="card-body">
-                    <table class="table table-striped">
-                        <thead>
-                        <th>#</th>
-                        <th>Product</th>
-                        <th>Qty</th>
-                        <th>Price</th>
-                        <th>Packaging</th>
-                        <th>Disc (USD)</th>
-                        <th>Total</th>
-                        <th>Action</th>
-                        </thead>
-                        <tbody>
-                        @if(count($result->do_detail) <= 0)
-                            <tr>
-                            <td colspan="13" align="center">Data tidak ditemukan</td>
-                            </tr>
-                        @endif
-                        @if(count($result->do_detail) > 0)
-                            @foreach($result->do_detail as $index => $detail)
-                            <input type="hidden" name="repeater[{{$index}}][product_packaging_id]" value="{{$detail->product_packaging_id}}">
-                            <input type="hidden" name="repeater[{{$index}}][so_item_id]" value="{{$detail->id}}">
-                            <input type="hidden" name="repeater[{{$index}}][id]" value="{{$detail->id}}">
-                            <tr class="index{{$index}}" data-index="{{$index}}">
-                                <td width="5%">{{ $loop->iteration }}</td>
-                                <td width="20%">{{ $detail->product_pack->code }} - <b>{{ $detail->product_pack->name }}</td>
-                                <td width="5%">
-                                    <input type="number" name="repeater[{{$index}}][do_qty]" class="form-control count" data-index="{{$index}}" value="{{$detail->qty}}" step="any" min="0" max="{{$detail->qty}}">
-                                </td>
-                                
-                                <td width="5%">
-                                    <input type="text" name="repeater[{{$index}}][price]" class="form-control" value="{{$detail->product_pack->price ?? 0}}">
-                                </td>
-                                <td width="15%">
-                                    <input type="text" name="repeater[{{$index}}][packaging]" class="form-control" readonly value="{{$detail->product_pack->packaging->pack_name}}">
-                                </td>
-                                <td width="5%">
-                                    <input type="text" name="repeater[{{$index}}][usd_disc]" class="form-control count count-disc" data-index="{{$index}}" step="any">
-                                </td>
-                                
-                                <td width="20%">
-                                    <input type="text" name="repeater[{{$index}}][total]" class="form-control" readonly>
-                                </td>
-                                <td width="5%">
-                                    <button class="btn btn-danger btn-sm btn-flat btn-delete" data-id="{{$detail->id}}"><i class="fa fa-trash"></i></button>
-                                </td>
-                            </tr>
-                            @endforeach
-                        @endif
-                        </tbody>
-                        <tfoot>
-                            <tr class="row-footer-subtotal">
-                            <td colspan="6" class="text-right">
-                                <b>Total Item</b>
-                                <br><span class="text-danger">*Subtotal After Disc(USD)</span>
-                            </td>
-                            <td class="text-right">
-                                <input type="text" name="sub_total_item" id="sub_total_item" class="form-control" readonly>
-                            </td>
-                            </tr>
-                        </tfoot>
-                    </table>
+                      <div class="form-group row">
+                        <label class="col-sm-4 col-form-label">Disc %</label>
+                        <div class="col-sm-3">
+                          <input type="text" class="form-control" id="disc_agen_percent" name="disc_agen_percent" placeholder="{{ $result->so->catatan }}">
+                        </div>
+                        <div class="col-sm-5">
+                          <input type="text" readonly class="form-control" id="disc_agen_idr" name="disc_agen_idr">
+                        </div>
+                      </div>
+                      <div class="form-group row">
+                        <label class="col-sm-4 col-form-label">Disc Kemasan</label>
+                        <div class="col-sm-3">
+                          <input type="text" class="form-control" id="disc_kemasan_percent" name="disc_kemasan_percent">
+                        </div>
+                        <div class="col-sm-5">
+                          <input type="text" readonly class="form-control" id="disc_kemasan_idr" name="disc_kemasan_idr">
+                        </div>
+                      </div>
+                      <div class="form-group row">
+                        <label class="col-sm-4 col-form-label">Disc IDR</label>
+                        <div class="col-sm-8">
+                          <input type="text" class="form-control" id="disc_tambahan_idr" name="disc_tambahan_idr">
+                        </div>
+                      </div>
+                      <div class="form-group row">
+                        <label class="col-sm-4 col-form-label">Voucher</label>
+                        <div class="col-sm-8">
+                          <input type="text" class="form-control" id="voucher_idr" name="voucher_idr">
+                        </div>
+                      </div>
+                      <div class="form-group row">
+                        <label class="col-sm-4 col-form-label">Ongkir</label>
+                        <div class="col-sm-8">
+                          <input type="text" class="form-control" id="delivery_cost_idr" name="delivery_cost_idr">
+                        </div>
+                      </div>
+                      <div class="form-group row">
+                        <label class="col-sm-4 col-form-label">Grand Total</label>
+                        <div class="col-sm-8">
+                          <input type="text" class="form-control" id="grand_total_idr" name="grand_total_idr" readonly>
+                          <input type="hidden" class="form-control" name="subtotal_2" id="subtotal_2">
+                        </div>
+                      </div>
+                      <button type="button" class="btn btn-warning" id="btn_call"><i class="fas fa-calculator pr-2" aria-hidden="true"></i>calculated</button>
+                      <button type="submit" class="btn btn-primary" id="save_form"><i class="fa fa-save  pr-2" aria-hidden="true" ></i> Save</button>
                     </div>
                 </div>
-                </div>
-            </div>
+            </aside>
         </div>
-    </div>
 </form>
 
-<form id="frmDestroyItem" action="{{route('superuser.penjualan.packing_order.destroy_item')}}" method="POST">
+<!-- <form id="frmDestroyItem" action="{{route('superuser.penjualan.packing_order.destroy_item')}}" method="POST">
   @csrf
   <input type="hidden" name="id">
-</form>
+</form> -->
 @endsection
 
 @include('superuser.asset.plugin.select2')
@@ -323,177 +315,199 @@
 <script src="{{ asset('utility/superuser/js/form.js') }}"></script>
 <script type="text/javascript">
   $(document).ready(function () {
-    $('#tableDetailPesanan').DataTable({
-        scrollY: '430px',
-        scrollCollapse: true,
-        paging: false,
-        bFilter: false,
-        "aoColumnDefs": [
-             { "bSortable": false, "aTargets": [ 1, 4, 5, 6, 7, 8, 9, 10, 11 ] }
-        ] 
+    $('.js-select2').select2();
+
+    $('#datatables').DataTable({
+      paging: false,
+      searching: false,
+      info: false,
+      scrollY: '430px',
+      scrollCollapse: true,
     });
 
-    $(function(){
-      let global_total = 0 ;
-      $('button[type="submit"]').removeAttr('disabled');
+    $('.base_disc').on('change', function () {
+      countGetUsd();
+    })
 
-      $('.js-select2').select2();
+    function countGetUsd(){
+        $('tbody tr').each(function(index,e){
+          
+          let baseDisc = $('.base_disc').val();
+          let freeProduct = $('tr.index'+index+'').find('input[name="repeater['+index+'][free_product]"]').val();
+          
+          if(freeProduct == 1){
+            $('tr.index'+index+'').find('input[name="repeater['+index+'][usd_disc]"]').val(0);
+          }else{
+            $('tr.index'+index+'').find('input[name="repeater['+index+'][usd_disc]"]').val(baseDisc);
+          }
 
-      $(document).on('click','.btn-delete',function(){
-        let id = $(this).data('id');
-        $('#frmDestroyItem').find('input[name="id"]').val(id);
-        if(confirm("Apakah anda yakin ingin menghapus item ini ?")){
-            $('#frmDestroyItem').submit();
-        }
-      })
+          count_per_item(index);
+        }) ;
+    }
 
-      $(document).on('change', '.base_disc'  ,function () {
-        let val = $(this).val();
-        // alert(val);
-        $('.count-disc').val(val);
+    $(document).on('keyup','.count',function(){
+      let index = $(this).attr('data-index');
+      count_per_item(index);
+    });
+
+    function count_per_item(indx){
+      let index = indx;
+      let price = parseFloat($('tr.index'+index+'').find('input[name="repeater['+index+'][price]"]').val()); 
+      let do_qty = parseFloat($('tr.index'+index+'').find('input[name="repeater['+index+'][do_qty]"]').val()); 
+      let so_qty = parseFloat($('tr.index'+index+'').find('input[name="repeater['+index+'][so_qty]"]').val()); 
+      let val_usd_disc = parseFloat($('tr.index'+index+'').find('input[name="repeater['+index+'][usd_disc]"]').val());
+      let val_percent_disc = parseFloat($('tr.index'+index+'').find('input[name="repeater['+index+'][percent_disc]"]').val());
+      let kurs = $('#idr_rate').val();
+
+      if(isNaN(val_usd_disc)){
+        val_usd_disc = 0;
+      }
+      
+      if(isNaN(val_percent_disc)){
+        val_percent_disc = 0;
+      }
+
+      let total_disc = (val_usd_disc + ((price - val_usd_disc) * (val_percent_disc/100))) * do_qty;
+        
+      let sub_total  = parseFloat((do_qty * price) - total_disc) * kurs;
+
+      if(isNaN(total_disc)){
+        total_disc = 0;
+      }
+
+      if(isNaN(sub_total)){
+        sub_total = 0;
+      }
+
+      $('tr.index'+index+'').find('input[name="repeater['+index+'][total_disc]"]').val(total_disc);
+      $('tr.index'+index+'').find('input[name="repeater['+index+'][total]"]').val(formatRupiah(sub_total));
+      
+      sub_total_item();
+    }
+
+    function sub_total_item(){
+      let total = 0;
+      $('tbody tr').each(function(index,e){
+        let sub_total = $('tr.index'+index+'').find('input[name="repeater['+index+'][total]"]').val();
+        sub_total = parseFloat(sub_total.split('.').join(''));
+
+
+        sub_total = (isNaN(sub_total)) ? 0 : sub_total;
+        total += sub_total;
+          
       });
 
-      $(document).on('keyup','.count',function(){
-        let index = $(this).attr('data-index');
-        count_per_item(index);
+      $('input[name="sub_total_item"]').val(formatRupiah(total));
+    }
 
-      })
+    $('#disc_agen_percent').on('keyup', function(e) {
+      if($(this).val() != ''){
+        let sub_total_item = $('input[name="sub_total_item"]').val();
 
-      function count_per_item(indx){
-        let index = indx;
-        let price = parseFloat($('tr.index'+index+'').find('input[name="repeater['+index+'][price]"]').val()); 
-        let do_qty = parseFloat($('tr.index'+index+'').find('input[name="repeater['+index+'][do_qty]"]').val()); 
-        let so_qty = parseFloat($('tr.index'+index+'').find('input[name="repeater['+index+'][so_qty]"]').val()); 
-        let val_usd_disc = parseFloat($('tr.index'+index+'').find('input[name="repeater['+index+'][usd_disc]"]').val());
-        let val_percent_disc = parseFloat($('tr.index'+index+'').find('input[name="repeater['+index+'][percent_disc]"]').val());
-        let kurs = $('#idr_rate').val();
+        sub_total_item = parseFloat(sub_total_item.split('.').join(''));
 
-        // kurs = parseFloat(kurs.split('.').join(''));
+        let amount = sub_total_item * $(this).val() / 100;
 
-        if(isNaN(val_usd_disc)){
-          val_usd_disc = 0;
-        }
-        if(isNaN(val_percent_disc)){
-          val_percent_disc = 0;
-        }
-
-        let total_disc = (val_usd_disc + ((price - val_usd_disc) * (val_percent_disc/100))) * do_qty;
-        
-        let sub_total  = parseFloat((do_qty * price) - total_disc) * kurs;
-
-        if(isNaN(total_disc)){
-          total_disc = 0;
-        }
-
-        if(isNaN(sub_total)){
-          sub_total = 0;
-        }
-
-        $('tr.index'+index+'').find('input[name="repeater['+index+'][total_disc]"]').val(total_disc);
-        $('tr.index'+index+'').find('input[name="repeater['+index+'][total]"]').val(sub_total);
-        
-        sub_total1();
+        $('input[name="disc_agen_idr"]').val(formatRupiah(amount));
+      }else{
+        $('input[name="disc_agen_idr').val(0);
       }
+      subtotal();
+    })
 
-      // total item list
-      function sub_total1(){
-        let total = 0;
-        $('tbody tr').each(function(index,e){
-          let sub_total = $('tr.index'+index+'').find('input[name="repeater['+index+'][total]"]').val();
-          sub_total = parseFloat(sub_total);
-          // alert(kurs);
-
-          sub_total = (isNaN(sub_total)) ? 0 : sub_total;
-          Math.ceil(total += sub_total);
-          
-        }) ;
-
-        $('input[name="sub_total_item"]').val(total);
-      }
-
-      // input disc % (agen)
-      $(document).on('input', "#disc_agen_percent", function(e){
+    $('#disc_kemasan_percent').on('input', function(e){
           if($(this).val() != ''){
               let sub_total_item = $('input[name="sub_total_item"]').val();
+              let disc_percent = $('input[name="disc_agen_idr"]').val();
 
               sub_total_item = parseFloat(sub_total_item.split('.').join(''));
-              let amount = parseFloat(sub_total_item) * parseFloat($(this).val()) / 100;
-              $('input[name="disc_amount2_idr"]').val(amount);
-          }else{
-              $('input[name="disc_amount2_idr').val(0);
-          }
-          sub_total2();
-      });
+              disc_percent = parseFloat(disc_percent.split('.').join(''));
 
+              let subAfterDiscPercent = sub_total_item - disc_percent;
 
-      // input disc kemasan
-      $(document).on('input', "#disc_tambahan", function(e){
-          if($(this).val() != ''){
-              let sub_total_item = $('input[name="sub_total_item"]').val();
-              let disc_percent = $('input[name="disc_amount2_idr"]').val();
-
-              // sub_total_item = parseFloat(sub_total_item.split('.').join(''));
-              // disc_percent = parseFloat(disc_percent.split('.').join(''));
-
-              let subAfterDiscPercent = Math.ceil(sub_total_item - disc_percent);
-
-              var amount = parseFloat(subAfterDiscPercent) * parseFloat($(this).val()) / 100;
-              $('#disc_kemasan_idr').val(amount);
+              var amount = subAfterDiscPercent * $(this).val() / 100;
+              $('#disc_kemasan_idr').val(formatRupiah(amount));
           }else{
               $('#disc_kemasan_idr').val(0);
           }
-          sub_total2();
-      });
+          subtotal();
+    });
 
-      // $('#disc_amount2_idr').on('input', function(){
-      //   sub_total2();
-      // })
+    function subtotal(){
+      let sub_total = $('#sub_total_item').val();
+      let disc_agen = $('#disc_agen_idr').val();
+      let dics_kemasan = $('#disc_kemasan_idr').val();
 
-      // $('#disc_kemasan_idr').on('input', function(){
-      //   sub_total2();
-      // })
+      sub_total = parseFloat(sub_total.split('.').join(''));
+      disc_agen = parseFloat(disc_agen.split('.').join(''));
+      dics_kemasan = parseFloat(dics_kemasan.split('.').join(''));
 
-      // sub total disc agen & kemasan
-      function sub_total2(){
-        let sub_total_item = $('input[name="sub_total_item"]').val();
-        let disc_agen = $('input[name="disc_amount2_idr"]').val();
-        let disc_kemasan = $('input[name="disc_kemasan_idr"]').val();
-
-        sub_total_item = (isNaN(sub_total_item)) ? 0 : sub_total_item;
-        disc_agen = (isNaN(disc_agen)) ? 0 : disc_agen;
-        disc_kemasan = (isNaN(disc_kemasan)) ? 0 : disc_kemasan;
-        
-        let subtotal_2 = Math.ceil((sub_total_item - disc_agen) - disc_kemasan);
-
-        $('input[name="subtotal_2"]').val(subtotal_2);
+      if(isNaN(sub_total)){
+        sub_total = 0;
       }
 
-      // calculated button after input voucher - disc idr
-      $(document).on('click', '#button_cal', function(e) {
-        e.preventDefault();
+      if(isNaN(disc_agen)){
+        disc_agen = 0;
+      }
 
-        let subtotal = $('input[name="subtotal_2"]').val();
-        let disc_idr = $('input[name="disc_idr"]').val();
-        let voucher_idr = $('input[name="voucher_idr"]').val();
-        let ongkir = $('input[name="delivery_cost_idr"]').val();
-        let resi = $('input[name="resi_ongkir"]').val();
-        // alert(resi_ongkir);
+      if(isNaN(dics_kemasan)){
+        dics_kemasan = 0;
+      }
 
-        subtotal = parseFloat(subtotal.split('.').join(''));
-        disc_idr = parseFloat(disc_idr.split('.').join(''));
-        voucher_idr = parseFloat(voucher_idr.split('.').join(''));
-        ongkir = parseFloat(ongkir.split('.').join(''));
-        resi = parseFloat(resi.split('.').join(''));
+      let sub_total_before = sub_total - disc_agen - dics_kemasan;
 
-        disc_idr = (isNaN(disc_idr)) ? 0 : disc_idr;
-        voucher_idr = (isNaN(voucher_idr)) ? 0 : voucher_idr;
-        ongkir = (isNaN(ongkir)) ? 0 : ongkir;
-        resi = (isNaN(resi)) ? 0 : resi;
+      // alert(sub_total_before);
 
-        subFinal = Math.ceil(((subtotal - disc_idr) - voucher_idr) + ongkir);
-        $('input[name="grand_total_final"]').val(subFinal);
-      });
+      $('#subtotal_2').val(formatRupiah(sub_total_before));
+    };
+
+    $('#shipping_cost_buyer').change(function(){
+        $('input[name="delivery_cost_idr"]').val(($(this).is(':checked')) ? "0" : "");
     });
+
+    $(document).on('click', '#btn_call', function(e) {
+      let subtotal_before = $('#subtotal_2').val();
+      let disc_tambahan = $('#disc_tambahan_idr').val();
+      let voucher_idr = $('#voucher_idr').val();
+      let ongkir = $('#delivery_cost_idr').val();
+
+      subtotal_before = parseFloat(subtotal_before.split('.').join(''));
+      disc_tambahan = parseFloat(disc_tambahan);
+      voucher_idr = parseFloat(voucher_idr);
+      ongkir = parseFloat(ongkir);
+
+      if(isNaN(disc_tambahan)){
+        disc_tambahan = 0;
+      }
+
+      if(isNaN(voucher_idr)){
+        voucher_idr = 0;
+      }
+
+      if(isNaN(ongkir)){
+        ongkir = 0;
+      }
+     
+
+      let grand_total_idr = subtotal_before - disc_tambahan -  voucher_idr + ongkir;
+
+      $('#grand_total_idr').val(formatRupiah(grand_total_idr));
+    });
+    
+
+    function formatRupiah(money) {
+      return new Intl.NumberFormat('id-ID',
+        { style: 'currency', currency: 'IDR' }
+      ).formatToParts(money).map(
+        p => p.type != 'literal' && p.type != 'currency' ? p.value : ''
+      ).join('');
+    }
+
+    // $(document).on('click', '#indentProduct', function() {
+    //   var so_detail_id = $(this).data('id');
+    //   var product_id = $(this).data('product');
+    //   var val = $(this).val();
+    // })
   })
 </script>
 @endpush

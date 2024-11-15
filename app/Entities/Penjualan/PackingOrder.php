@@ -10,7 +10,7 @@ class PackingOrder extends Model
 {
     use SoftDeletes;
 
-	protected $appends = ['img_resi'];
+	protected $appends = ['img_resi', 'img_resi2'];
     protected $table = "penjualan_do";
 	public static $directory_image = 'images/delivery_order/expedition_receipt/';
     protected $fillable = [
@@ -26,10 +26,17 @@ class PackingOrder extends Model
     	'status',
 		'count_cancel',
     	'type_transaction',
+		'tax_beli',
+		'tax_jual',
+		'cashback_status',
         'note',
+		'pic',
+        'officer',
+        'account_representative',
 		'print_count',
         'date_sent',
     	'image',
+    	'image2',
 		'so_id',
     	'updated_by',
     	'created_by',
@@ -80,6 +87,15 @@ class PackingOrder extends Model
         return asset(Self::$directory_image.$this->image);
     }
 
+	public function getImgResi2Attribute()
+    {
+        if (!$this->image2 OR !file_exists(Self::$directory_image.$this->image2)) {
+          return img_holder();
+        }
+
+        return asset(Self::$directory_image.$this->image2);
+    }
+
     public function do_detail(){
     	return $this->hasMany('App\Entities\Penjualan\PackingOrderItem','do_id', 'id');
     }
@@ -99,7 +115,7 @@ class PackingOrder extends Model
     // 	return $this->hasMany('App\Entities\Penjualan\PackingOrderDetail', 'do_id');
     // }
 	public function do_detail_cost(){
-		return $this->hasMany('App\Entities\Penjualan\PackingOrderDetail', 'do_id', 'id');
+        return $this->hasMany('App\Entities\Penjualan\PackingOrderDetail','do_id');
 	}
 
 	// public function do_detail(){

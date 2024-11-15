@@ -12,8 +12,10 @@ use App\Entities\Master\ProductPack;
 use App\Entities\Master\Packaging;
 use App\DataTables\Gudang\PurchaseOrderTable;
 use App\Exports\Gudang\PurchaseOrderDetailImportTemplate;
+use App\Exports\Gudang\PurchaseOrderExport;
 use App\Imports\Gudang\PurchaseOrderDetailImport;
 use App\Entities\Master\Warehouse;
+use App\Helper\LogActivity;
 use Auth;
 use COM;
 use DB;
@@ -136,6 +138,7 @@ class PurchaseOrderController extends Controller
                 $purchase_order->status = PurchaseOrder::STATUS['DRAFT'];
 
                 if ($purchase_order->save()) {
+                    LogActivity::addToLog('Created a new PO: ' . $purchase_order->code);
                     $response['notification'] = [
                         'alert' => 'notify',
                         'type' => 'success',
@@ -178,7 +181,7 @@ class PurchaseOrderController extends Controller
     public function edit($id)
     {
         if(Auth::user()->is_superuser == 0){
-            if(empty($this->access) || empty($this->access->user) || $this->access->can_edit == 0){
+            if(empty($this->access) || empty($this->access->user) || $this->access->can_update == 0){
                 return redirect()->route('superuser.index')->with('error','Anda tidak punya akses untuk membuka menu terkait');
             }
         }
@@ -229,6 +232,7 @@ class PurchaseOrderController extends Controller
                 $purchase_order->note = $request->note;
 
                 if ($purchase_order->save()) {
+                    LogActivity::addToLog('Updated PO: ' . $purchase_order->code);
                     $response['notification'] = [
                         'alert' => 'notify',
                         'type' => 'success',
@@ -383,9 +387,8 @@ class PurchaseOrderController extends Controller
                 $purchase_order->status = PurchaseOrder::STATUS['ACC'];
 
                 if ($purchase_order->save()) {
-
-                    
                     DB::commit();
+                    LogActivity::addToLog('ACC PO: ' . $purchase_order->code);
                     $response['redirect_to'] = route('superuser.gudang.purchase_order.index');
                     return $this->response(200, $response);
                 }
@@ -422,6 +425,7 @@ class PurchaseOrderController extends Controller
             $purchase_order->status = PurchaseOrder::STATUS['DELETED'];
 
             if ($purchase_order->save()) {
+                LogActivity::addToLog('Deleted PO: ' . $purchase_order->code);
                 $response['redirect_to'] = route('superuser.gudang.purchase_order.index');
                 return $this->response(200, $response);
             }
@@ -439,11 +443,11 @@ class PurchaseOrderController extends Controller
 
         $result = PurchaseOrder::where('id', $id)->first();
 
-        $my_report = "C:\\xampp\\htdocs\\ppi-dist\public\\cr\\purchase_order\\po.rpt"; 
+        $my_report = "C:\\xampp\\htdocs\\ppi-dist\public\\cr\\purchase_order\\po_rev.rpt"; 
         $my_pdf = 'C:\\xampp\\htdocs\\ppi-dist\\public\\cr\\purchase_order\\export\\'.$result->code.'.pdf';
 
         //- Variables - Server Information 
-        $my_server = "LOCAL"; 
+        $my_server = "LOCAL_3"; 
         $my_user = "root"; 
         $my_password = ""; 
         $my_database = "ppi-dist";
@@ -515,4 +519,36 @@ class PurchaseOrderController extends Controller
         }
     }
     
+    public function cancel_acc(Request $request, $id)
+    {
+        if(Auth::user()->is_superuser == 0){
+            if(empty($this->access) || empty($this->access->user) || $this->access->can_approve == 0){
+                abort(405);
+            }
+        }
+        
+        if ($request->ajax()) {
+            $purchase_order = PurchaseOrder::find($id);
+
+            if ($purchase_order === null) {
+                abort(404);
+            }
+
+            $purchase_order->acc_at = null;
+            $purchase_order->acc_by = null;
+            $purchase_order->updated_by = Auth::id();
+            $purchase_order->status = PurchaseOrder::STATUS['DRAFT'];
+
+            if ($purchase_order->save()) {
+                $response['redirect_to'] = route('superuser.gudang.purchase_order.index');
+                return $this->response(200, $response);
+            }
+        }
+    }
+
+    public function export(Request $request)
+    {
+        $filename = 'Purchase-Order-' . date('d-m-Y_H-i-s') . '.xlsx';
+        return Excel::download(new PurchaseOrderExport, $filename);
+    }
 }

@@ -11,9 +11,15 @@ use App\Entities\Accounting\InvoiceTaxDetail;
 use App\Entities\Master\Mitra;
 use App\Entities\Master\CustomerOtherAddress;
 use App\Entities\Master\ProductFinance;
+use App\DataTables\Report\InvoiceTaxReportTable;
+use App\DataTables\Report\InvoiceTaxJualReportTable;
 use App\Entities\Setting\UserMenu;
+use Illuminate\Validation\ValidationException;
+use Illuminate\Support\Facades\Cache;
 use Validator;
+use Carbon\Carbon;
 use Auth;
+use COM;
 use DB;
 
 class InvoiceTaxController extends Controller
@@ -36,27 +42,49 @@ class InvoiceTaxController extends Controller
         });
     }
 
-    public function search_invreal(Request $request)
+    public function json(Request $request, InvoiceTaxReportTable $datatable)
     {
-        $inv_real = PackingOrder::where('penjualan_do_details.status_resi', 1)
-                                ->leftJoin('penjualan_do_details', 'penjualan_do.id', '=', 'penjualan_do_details.do_id')
-                                ->leftJoin('master_customer_other_addresses', 'penjualan_do.customer_other_address_id', '=', 'master_customer_other_addresses.id')
-                                ->select(
-                                    'penjualan_do.id as id', 
-                                    'penjualan_do.tax_beli as taxBeli', 
-                                    'penjualan_do.tax_jual as taxJual', 
-                                    'penjualan_do.do_code as invoiceReal', 
-                                    'master_customer_other_addresses.name as customerName',
-                                    'master_customer_other_addresses.text_kota as customerCity',
-                                    'penjualan_do.idr_rate as kursRate',
-                                )
-                                ->get();
+        return $datatable->build($request);
+    }
 
-        // DD(DB::getQueryLog());
+    public function json2(Request $request, InvoiceTaxJualReportTable $datatable)
+    {
+        return $datatable->build($request);
+    }
+
+    public function search_invreal_jual(Request $request)
+    {
+        $monthInvoice = $request->input('month_invoice'); // Get the month_invoice value
+
+        $invoice = PackingOrder::leftJoin('master_customer_other_addresses', 'master_customer_other_addresses.id', '=', 'penjualan_do.customer_other_address_id')
+            ->where(function ($query) use ($monthInvoice) {
+                // Add a nested condition for customer filtering
+                $query->whereNull('penjualan_do.customer_other_address_id');
+
+                if ($monthInvoice) {
+                    $query->orWhereMonth('penjualan_do.created_at', $monthInvoice);
+                }
+            })
+            ->where('penjualan_do.status', 6)
+            // ->where('penjualan_do.cashback_status', 1)
+            ->where('penjualan_do.tax_jual', 0)
+            ->where('penjualan_do.tax_beli', 1)
+            ->where('penjualan_do.do_code', 'LIKE', $request->input('q', '') . '%')
+            ->select(
+                'penjualan_do.id AS id',
+                'penjualan_do.do_code AS invoiceReal',
+                'penjualan_do.tax_jual AS taxJual',
+                'penjualan_do.tax_beli AS taxBeli',
+                'penjualan_do.cashback_status AS cashbackStatus',
+                'master_customer_other_addresses.name AS customerName',
+                'master_customer_other_addresses.text_kota AS customerCity'
+            )
+            ->get();
+
         $results = [];
 
-        foreach ($inv_real as $item) {
-            if($item->taxBeli == 0 OR $item->taxJual == 0 ){
+        foreach ($invoice as $item) {
+            if($item->taxJual == 0){
                 $results[] = [
                     'id' => $item->id,
                     'text' => $item->invoiceReal . ' - ' . $item->customerName . '  '. $item->customerCity,
@@ -65,38 +93,78 @@ class InvoiceTaxController extends Controller
         }
 
         return ['results' => $results];
-    }
+    } 
 
-    public function get_product(Request $request)
+    public function search_invreal_beli(Request $request)
     {
-        if ($request->ajax()) {
-            $data = [];
+        $monthInvoice = $request->input('month_invoice'); // Get the month_invoice value
 
-            $packing_order = PackingOrder::find($request->id);
-            $mpfinance = ProductFinance::get();
+        $invoice = PackingOrder::leftJoin('master_customer_other_addresses', 'master_customer_other_addresses.id', '=', 'penjualan_do.customer_other_address_id')
+            ->where(function ($query) use ($monthInvoice) {
+                // Add a nested condition for customer filtering
+                $query->whereNull('penjualan_do.customer_other_address_id');
 
-            foreach($packing_order->do_items as $row => $value){
-                foreach($mpfinance as $item){
-                    if($item->id === $value->product_pack->product_id){
-                        $data[] = [
-                            'id' => $item->id,
-                            'name' => $item->name_product,
-                            'code' => $item->code_product,
-                            'kurs' => $value->do->idr_rate,
-                            'qty' => $value->qty,
-                            'selling_price_usd_drum' => $item->selling_price_usd_drum,
-                            'buying_price_usd_drum' => $item->buying_price_usd_drum,
-                            'selling_price_usd_unit' => $item->selling_price_usd_unit,
-                            'buying_price_usd_unit' => $item->buying_price_usd_unit,
-                        ];
-                    }
+                if ($monthInvoice) {
+                    $query->orWhereMonth('penjualan_do.created_at', $monthInvoice);
                 }
+            })
+            ->where('penjualan_do.status', 6)
+            ->where('penjualan_do.cashback_status', 1)
+            ->where('penjualan_do.tax_beli', 0)
+            ->where('penjualan_do.do_code', 'LIKE', $request->input('q', '') . '%')
+            ->select(
+                'penjualan_do.id AS id',
+                'penjualan_do.do_code AS invoiceReal',
+                'penjualan_do.cashback_status AS cashbackStatus',
+                'master_customer_other_addresses.name AS customerName',
+                'master_customer_other_addresses.text_kota AS customerCity'
+            )
+            ->get();
+
+        $results = [];
+
+        foreach ($invoice as $item) {
+            if($item->cashbackStatus == 1){
+                $results[] = [
+                    'id' => $item->id,
+                    'text' => $item->invoiceReal . ' - ' . $item->customerName . '  '. $item->customerCity,
+                ];
             }
-            return response()->json(['code' => 200, 'data' => $data]);
         }
+
+        return ['results' => $results];
+    } 
+
+    public function index_jual(Request $request)
+    {
+        // Access
+        if (Auth::user()->is_superuser == 0) {
+            if (empty($this->access) || empty($this->access->user) || $this->access->can_read == 0) {
+                return redirect()->route('superuser.index')->with('error', 'Anda tidak punya akses untuk membuka menu terkait');
+            }
+        }
+
+        $start = Carbon::now()->startOfYear();
+        $end = Carbon::now()->endOfYear();
+        $invoice_tax = InvoiceTax::get();
+
+        $months = [];
+        for ($date = $start; $date <= $end; $date->addMonth()) {
+            $months[] = [
+                'id' => $date->format('n'),
+                'monthName' => $date->format('F'),
+            ];
+        }
+
+        $data = [
+            'invoice_tax' => $invoice_tax,
+            'months' => $months,
+        ];
+
+        return view($this->view . "index_jual", $data);
     }
 
-    public function index(Request $request)
+    public function index_beli(Request $request)
     {
         // Access
         if(Auth::user()->is_superuser == 0){
@@ -105,148 +173,341 @@ class InvoiceTaxController extends Controller
             }
         }
 
-        $data['invoice_tax'] = InvoiceTax::get();
+        $start = Carbon::now()->startOfYear();
+        $end = Carbon::now()->endOfYear();
+        $invoice_tax = InvoiceTax::get();
 
-        return view($this->view."index", $data);
+        $months = [];
+        for ($date = $start; $date <= $end; $date->addMonth()) {
+            $months[] = [
+                'id' => $date->format('n'),
+                'monthName' => $date->format('F'),
+            ];
+        }
+
+        $data = [
+            'invoice_tax' => $invoice_tax,
+            'months' => $months,
+        ];
+
+        return view($this->view."index_beli", $data);
+    }
+
+    public function getLastCode()
+    {
+        // Ambil 5 kode terakhir dari database, urutkan dari yang terbaru
+        $lastCodes = InvoiceTax::orderBy('id', 'desc')->take(5)->pluck('code');
+
+        return response()->json(['lastCodes' => $lastCodes]);
     }
 
     public function create(Request $request)
     {
-        // Access
-        if(Auth::user()->is_superuser == 0){
-            if(empty($this->access) || empty($this->access->user) || $this->access->can_create == 0){
-                return redirect()->route('superuser.index')->with('error','Anda tidak punya akses untuk membuka menu terkait');
+        // Access check for superuser
+        if (Auth::user()->is_superuser == 0) {
+            if (empty($this->access) || empty($this->access->user) || $this->access->can_create == 0) {
+                return redirect()->route('superuser.index')->with('error', 'Anda tidak punya akses untuk membuka menu terkait');
             }
         }
 
-        $data['mitra'] = Mitra::get();
+        // Retrieve the selected invoice ID from the request
+        $id = $request->input('addInvoice');
+        $type = $request->input('type_invoice');
 
-        return view($this->view."create", $data);
+        // Optional: Check if the invoice ID is not empty
+        if (empty($id)) {
+            return redirect()->back()->with('error', 'Invoice ID is required');
+        }
+
+        $mitra = Mitra::where('status', 1)->get();
+        $invoice = PackingOrder::find($id);
+        $type = $type;
+
+        // Fetch products associated with the packing order
+        $products = [];
+        if ($invoice) {
+            $mpfinance = ProductFinance::get();
+            foreach ($invoice->do_detail as $value) {
+                foreach ($mpfinance as $item) {
+                    if ($item->id === $value->product_packaging_id) {
+                        $products[] = [
+                            'id' => $item->id,
+                            'name' => $item->name_product,
+                            'code' => $item->code_product,
+                            'kemasan' => $item->packaging->pack_name,
+                            'qty' => $value->qty,
+                            'selling_price_usd_drum' => $item->selling_price_usd_drum,
+                            'buying_price_usd_drum' => $item->buying_price_usd_drum,
+                            'selling_price_usd_unit' => $item->selling_price_usd_unit,
+                            'buying_price_usd_unit' => $item->buying_price_usd_unit,
+                            'free' => $value->so_item->free_product,
+                        ];
+                    }
+                }
+            }
+        }
+
+        $data = [
+            'mitra' => $mitra,
+            'invoice' => $invoice,
+            'type' => $type,
+            'products' => $products,
+        ];
+        
+        return view($this->view . "create", $data);
+    }
+
+
+    /**
+     * Fungsi untuk membuat kode baru berdasarkan kode terakhir
+     */
+    private function generateNewCode($lastCode)
+    {
+        $prefix = 'TP'; // Sesuaikan dengan prefix
+        preg_match('/-(\d+)$/', $lastCode, $matches);
+        $suffix = isset($matches[1]) ? (int)$matches[1] + 1 : 1;
+
+        return $prefix . '-' . $suffix;
     }
 
     public function store(Request $request)
     {
-        if ($request->ajax()) {
-            DB::beginTransaction();
-            $errors = [];
+        try {
+            $validatedData = $request->validate([
+                'products' => 'required|array',
+                'products.*.id' => 'required',
+                'products.*.qty' => 'required',
+                'products.*.price' => 'required|numeric|min:0.01', // Ensures price is greater than 0
+                'products.*.total' => 'required|numeric|min:0',
+                'code' => 'required',
+                'delivery' => 'required|integer',
+                'type' => 'required|integer',
+                'mitra' => 'required|integer',
+                'date' => 'required|date',
+                'subtotal' => 'required|numeric|min:0',
+                'ppn_percent' => 'required|numeric|min:0',
+                'ppn_idr' => 'required|numeric|min:0',
+                'grand_total' => 'required|numeric|min:0',
+            ]);
 
-            $get_nota = PackingOrder::where('id', $request->delivery_order)->first();
+            // Proceed with business logic only if validation passes
+            $invoiceTax = InvoiceTax::create([
+                'code' => $validatedData['code'],
+                'do_id' => $validatedData['delivery'],
+                'mitra_id' => $validatedData['mitra'],
+                'type' => $validatedData['type'] == 0 ? 1 : 2, // Remove the extra semicolon here
+                'date' => $validatedData['date'],
+                // 'note' => $validatedData['note'],
+                'ppn_percent' => $validatedData['ppn_percent'],
+                'ppn_idr' => $validatedData['ppn_idr'],
+                'sub_total' => $validatedData['subtotal'],
+                'grand_total' => $validatedData['grand_total'],
+                'created_by' => Auth::id(),
+                'status' => 1,
+            ]);
 
-            try{
+            foreach ($validatedData['products'] as $productData) {
+                InvoiceTaxDetail::create([
+                    'invoice_tax_id' => $invoiceTax->id,
+                    'product_finance_id' => $productData['id'],
+                    'qty' => $productData['qty'],
+                    'price' => $productData['price'],
+                    'sub_total' => $productData['total'],
+                ]);
+            }
 
-                if($request->delivery_order == null){
-                    $errors[] = 'INVOICE REAL, harus dipilih!';
+            if ($validatedData['type'] == 0) {
+                PackingOrder::where('id', $validatedData['delivery'])->update(['tax_jual' => 1]);
+            } elseif ($validatedData['type'] == 1) {
+                PackingOrder::where('id', $validatedData['delivery'])->update(['tax_beli' => 1]);
+            }
+
+            // Respon After Save
+            if ($validatedData['type'] == 0) {
+                return response()->json([
+                    'success' => true,
+                    'redirect_url' => route('superuser.accounting.invoice_tax.index_jual')
+                ]);
+            } elseif ($validatedData['type'] == 1) {
+                return response()->json([
+                    'success' => true,
+                    'redirect_url' => route('superuser.accounting.invoice_tax.index_beli')
+                ]);
+            }
+        } catch (ValidationException $e) {
+            return response()->json([
+                'success' => false,
+                'errors' => $e->errors(),
+            ], 422);
+        }
+    }
+
+
+    public function destroy($id)
+    {
+        $invoiceTax = InvoiceTax::findOrFail($id);
+
+        try {
+            // Update status to 'deleted'
+            $invoiceTax->status = InvoiceTax::STATUS['DELETED'];
+
+            if ($invoiceTax->save()) {
+                // Soft delete the invoice tax record
+                $invoiceTax->delete();
+
+                // Update related PackingOrder based on the type
+                if ($invoiceTax->type == 1) {
+                    PackingOrder::where('id', $invoiceTax->do_id)->update(['tax_jual' => 0]);
+                } elseif($invoiceTax->type == 2) {
+                    PackingOrder::where('id', $invoiceTax->do_id)->update(['tax_beli' => 0]);
                 }
+            }
 
-                if($request->idr_rate == null){
-                    $errors[] = 'IDR RATE, harus diisi!';
-                }
+            if($invoiceTax->type == 1){
+                return redirect()->route('superuser.accounting.invoice_tax.index_jual')->with('success', 'Invoice deleted successfully.');
+            }elseif ($invoiceTax->type == 2){
+                return redirect()->route('superuser.accounting.invoice_tax.index_beli')->with('success', 'Invoice deleted successfully.');
+            }
+        } catch (\Exception $e) {
+            return redirect()->route('superuser.accounting.invoice_tax.index_jual')->with('error', 'Failed to delete Invoice.');
+        }
+    }
 
-                if($request->mitra_id == null){
-                    $errors[] = 'MITRA, HArus dipilih!';
-                }
-
-                if($request->type == null){
-                    $errors[] = 'TYPE, harus diisi!';
-                }
-
-                if($request->invoice_tax_date == null){
-                    $errors[] = 'TANGGAl, harus diisi!';
-                }
-
-                if($request->type == 1 AND $get_nota->tax_jual == 1){
-                    $errors[] = 'INVOICE TAX JUAL, sudah terbuat!';
-                }
-
-                if($request->type == 2 AND $get_nota->tax_beli == 1){
-                    $errors[] = 'INVOICE TAX BELI, sudah terbuat!';
-                }
-
-                $invoice_tax = new InvoiceTax;
-
-                $invoice_tax->no_invoice_tax = $request->code;
-                $invoice_tax->no_invoice_real = $request->delivery_order;
-                $invoice_tax->customer_other_address_id =  $get_nota->customer_other_address_id;
-                $invoice_tax->mitra_id = $request->mitra_id;
-                $invoice_tax->tot_hit_baru = $request->sub_total_item;
-                $invoice_tax->kurs = $request->idr_rate;
-                $invoice_tax->invoice_tax_date = $request->invoice_tax_date;
-                $invoice_tax->type = $request->type;
-                $invoice_tax->note = $request->note;
-                $invoice_tax->created_by = Auth::id();
-                if ($invoice_tax->save()) {
-                    if ($request->sku) {
-                        foreach ($request->sku as $key => $value) {
-                            if ($request->sku[$key] && $request->quantity[$key]) {
-                                // check price
-                                $productName = ProductFinance::where('id', $request->sku[$key])->first();
-
-                                if($request->price_satuan[$key] == 0){
-                                    $errors[] = 'Harga <b>'.$productName->name_product.'</b> , kosong silahkan setting dahulu di Setting Price!';
-                                }
-
-                                $invoice_tax_detail = new InvoiceTaxDetail;
-                                $invoice_tax_detail->invoice_tax_id = $invoice_tax->id;
-                                $invoice_tax_detail->product_tax_id = $request->sku[$key];
-                                $invoice_tax_detail->qty = $request->quantity[$key];
-                                if($request->type == 1){
-                                    $invoice_tax_detail->selling_price_tax = $request->price_satuan[$key];
-                                    $invoice_tax_detail->buying_price_tax = 0;
-                                }elseif($request->type == 2){
-                                    $invoice_tax_detail->selling_price_tax = 0;
-                                    $invoice_tax_detail->buying_price_tax = $request->price_satuan[$key];
-                                }
-                                $invoice_tax_detail->kurs = $invoice_tax->kurs;
-                                $invoice_tax_detail->subtotal = $request->subtotal[$key];
-                                $invoice_tax_detail->created_by = Auth::id();
-                                $invoice_tax_detail->save();
-                            }
-                        }
-                    }
-
-                    // update do/nota
-                    $get_nota->mitra_id = $request->mitra_id;
-                    $get_nota->status_mitra = 1;
-                    if($request->type == 1){
-                        $get_nota->tax_jual = 1;
-                    }else{
-                        $get_nota->tax_beli = 1;
-                    }
-                    $get_nota->save();
-
-                    if($errors) {
-                        $response['notification'] = [
-                            'alert' => 'block',
-                            'type' => 'alert-danger',
-                            'header' => 'Error',
-                            'content' => $errors,
-                        ];
-    
-                        return $this->response(400, $response);
-                    } else {
-                        DB::commit();
-                        $response['notification'] = [
-                            'alert' => 'notify',
-                            'type' => 'success',
-                            'content' => 'Success',
-                        ];
-            
-                        $response['redirect_to'] = route('superuser.accounting.invoice_tax.index');
-                        return $this->response(200, $response);
-                    }
-                }
-            }catch (\Exception $e) {
-                dd($e);
-                DB::rollback();
-                $response['notification'] = [
-                    'alert' => 'block',
-                    'type' => 'alert-danger',
-                    'header' => 'Error',
-                    'content' => $errors,
-                ];
-
-                return $this->response(400, $response);
+    public function print_invoice($id)
+    {
+        // Access
+        if(Auth::user()->is_superuser == 0){
+            if(empty($this->access) || empty($this->access->user) || $this->access->can_print == 0){
+                return redirect()->route('superuser.index')->with('error','Anda tidak punya akses untuk membuka menu terkait');
             }
         }
+
+        $result = InvoiceTax::where('id',$id)->first();
+
+        $my_report = "C:\\xampp\\htdocs\\ppi-dist\public\\cr\\invoice\\invoice_tax.rpt"; 
+        $my_pdf = 'C:\\xampp\\htdocs\\ppi-dist\\public\\cr\\invoice\\export\\'.$result->code.'-UNIFRA'.'.pdf';
+       
+        //- Variables - Server Information 
+        $my_server = "LOCAL"; 
+        $my_user = "root"; 
+        $my_password = ""; 
+        $my_database = "ppi_araya";
+        $COM_Object = "CrystalDesignRunTime.Application";
+
+
+        //-Create new COM object-depends on your Crystal Report version
+        $crapp= New COM($COM_Object) or die("Unable to Create Object");
+        $creport = $crapp->OpenReport($my_report,1); // call rpt report
+
+        //- Set database logon info - must have
+        $creport->Database->Tables(1)->SetLogOnInfo($my_server, $my_database, $my_user, $my_password);
+
+        //- field prompt or else report will hang - to get through
+        $creport->EnableParameterPrompting = FALSE;
+        $creport->RecordSelectionFormula = "{finance_invoice_mitra.id}= $result->id";
+
+
+        //export to PDF process
+        $creport->ExportOptions->DiskFileName=$my_pdf; //export to pdf
+        $creport->ExportOptions->PDFExportAllPages=true;
+        $creport->ExportOptions->DestinationType=1; // export to file
+        $creport->ExportOptions->FormatType=31; // PDF type
+        $creport->Export(false);
+
+        //------ Release the variables ------
+        $creport = null;
+        $crapp = null;
+        $ObjectFactory = null;
+
+        $file = 'C:\\xampp\\htdocs\\ppi-dist\\public\\cr\\invoice\\export\\'.$result->code.'-UNIFRA'.'.pdf';
+
+        // if($get_do->type_transaction == 1 && $get_do->so->payment_status == 1){
+        //     $file->SetWatermarkText("PAID");
+        // }elseif($get_do->type_transaction == 2 && $get_do->so->payment_status == 2){
+        //     $file->SetWatermarkText("COPY");
+        // }
+
+        header("Content-Description: File Transfer"); 
+        header("Content-Type: application/octet-stream"); 
+        header("Content-Transfer-Encoding: Binary"); 
+        header("Content-Disposition: attachment; filename=\"". basename($file) ."\""); 
+        ob_clean();
+        flush();
+        readfile ($file);
+        exit();
+    }
+
+    public function pageReportBeli(Request $request)
+    {
+        // Access
+        if(Auth::user()->is_superuser == 0){
+            if(empty($this->access) || empty($this->access->user) || $this->access->can_read == 0){
+                return redirect()->route('superuser.index')->with('error','Anda tidak punya akses untuk membuka menu terkait');
+            }
+        }
+
+        $customer = CustomerOtherAddress::get();
+        $bulan = [
+            1 => 'Januari',
+            2 => 'Februari',
+            3 => 'Maret',
+            4 => 'April',
+            5 => 'Mei',
+            6 => 'Juni',
+            7 => 'Juli',
+            8 => 'Agustus',
+            9 => 'September',
+            10 => 'Oktober',
+            11 => 'November',
+            12 => 'Desember',
+        ];
+
+        // Get the selected month, default to the current month
+        $selectedBulan = $request->bulan ?? now()->month;
+
+        $data = [
+            'customer' => $customer,
+            'bulan' => $bulan,
+            'selectedBulan' => $selectedBulan
+        ];
+        
+        return view($this->view."report_beli",$data);
+    }
+
+    public function pageReportJual(Request $request)
+    {
+        // Access
+        if(Auth::user()->is_superuser == 0){
+            if(empty($this->access) || empty($this->access->user) || $this->access->can_read == 0){
+                return redirect()->route('superuser.index')->with('error','Anda tidak punya akses untuk membuka menu terkait');
+            }
+        }
+
+        $customer = CustomerOtherAddress::get();
+        $bulan = [
+            1 => 'Januari',
+            2 => 'Februari',
+            3 => 'Maret',
+            4 => 'April',
+            5 => 'Mei',
+            6 => 'Juni',
+            7 => 'Juli',
+            8 => 'Agustus',
+            9 => 'September',
+            10 => 'Oktober',
+            11 => 'November',
+            12 => 'Desember',
+        ];
+
+        // Get the selected month, default to the current month
+        $selectedBulan = $request->bulan ?? now()->month;
+
+        $data = [
+            'customer' => $customer,
+            'bulan' => $bulan,
+            'selectedBulan' => $selectedBulan
+        ];
+        
+        return view($this->view."report_jual",$data);
     }
 }

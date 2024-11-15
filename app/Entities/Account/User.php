@@ -3,9 +3,12 @@
 namespace App\Entities\Account;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Notifications\Notifiable;
 
 class User extends Model
 {
+    use Notifiable;
+
     protected $table = "superusers";
     protected $fillable = [
     	'name',

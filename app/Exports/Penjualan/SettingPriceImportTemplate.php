@@ -11,10 +11,17 @@ class SettingPriceImportTemplate implements FromArray, ShouldAutoSize
     {
         return [
             [
-                'brand',
-                'name',
-                'kemasan',
-                'price',
+                // 'kode_bahan',
+                // 'nama_bahan',
+                'kode_produk',
+                'nama_produk',
+                'kemasan', 
+                'brand_name', 
+                'kategori', 
+                // 'brand_refrence', 
+                // 'searah', 
+                'harga_lama', 
+                'harga_baru'
             ]
         ];
     }

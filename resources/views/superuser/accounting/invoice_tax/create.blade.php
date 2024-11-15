@@ -2,123 +2,178 @@
 
 @section('content')
 <nav class="breadcrumb bg-white push">
-  <span class="breadcrumb-item">Sale</span>
-  <a class="breadcrumb-item" href="{{ route('superuser.accounting.invoice_tax.index') }}">Invoice TAX</a>
+  <span class="breadcrumb-item">FAT</span>
+  <a class="breadcrumb-item" href="{{ route('superuser.accounting.invoice_tax.index') }}">Invoice Unifra</a>
   <span class="breadcrumb-item active">Create</span>
 </nav>
+
 <div id="alert-block"></div>
 
-<form class="ajax" data-action="{{ route('superuser.accounting.invoice_tax.store') }}" data-type="POST" enctype="multipart/form-data">
-  <div class="block">
-    <div class="block-header block-header-default">
-      <h3 class="block-title">Create Invoice TAX</h3>
-    </div>
-    <div class="block-content">
-      <div class="form-group row">
-        <label class="col-md-3 col-form-label text-right" for="code">Code <span class="text-danger">*</span></label>
-        <div class="col-md-7">
-          <input type="text" class="form-control" id="code" name="code" onkeyup="nospaces(this)" value="{{ App\Repositories\CodeRepo::generateINVTAX() }}">
-        </div>
+<div class="row">
+  <div class="col-6">
+    <div class="block">
+      <div class="block-header block-header-default">
+        <h3 class="block-title">#Detail Invoice</h3>
       </div>
-      <div class="form-group row">
-        <label class="col-md-3 col-form-label text-right" for="delivery_order">Invoice REAL <span class="text-danger">*</span></label>
-        <div class="col-md-7">
-          <select class="js-select2 form-control js-select2-do" id="delivery_order" name="delivery_order" data-placeholder="Select Invoice">
-          </select>
+      <div class="block-content">
+        <div class="form-row">
+          <div class="form-group col-md-6">
+            <label for="so_date">Code</label>
+            <select id="kode-input" name="code" class="form-control" data-placeholder="Input / Pilih Kode"></select>
+          </div>
+          <div class="form-group col-md-6">
+            <label for="type_transaction">Invoice REAL</label>
+            <input type="text" class="form-control" value="{{ $invoice->do_code }}" readonly>
+            <input type="hidden" value="{{ $invoice->id }}" id="delivery_order" name="delivery_order">
+          </div>
         </div>
-      </div>
-      <div class="form-group row">
-        <label class="col-md-3 col-form-label text-right" for="idr_rate">Kurs <span class="text-danger">*</span></label>
-        <div class="col-md-4">
-          <input type="text" class="form-control" name="idr_rate" id="idr_rate" readonly>
+
+        <div class="form-row">
+          <div class="form-group col-md-6">
+            <label for="mitra_id">Mitra</label>
+            <select class="js-select2 form-control" id="mitra_id" name="mitra_id" data-placeholder="Select Mitra">
+              <option></option>
+              @foreach($mitra as $row)
+              <option value="{{ $row->id }}">{{ $row->name }}</option>
+              @endforeach
+            </select>
+          </div>
+          <div class="form-group col-md-6">
+            <label for="type">Type</label>
+            <input type="hidden" name="type" id="type" value="{{ $type }}">
+            <input type="text" class="form-control" name="type_name" id="type_name" 
+              value="{{ $type == 0 ? 'INVOICE UNIFRA JUAL' : 'INVOICE UNIFRA BELI' }}" readonly>
+          </div>
         </div>
-      </div>
-      <div class="form-group row">
-        <label class="col-md-3 col-form-label text-right" for="mitra_id">Mitra <span class="text-danger">*</span></label>
-        <div class="col-md-4">
-          <select class="js-select2 form-control" id="mitra_id" name="mitra_id" data-placeholder="Select Mitra">
-            <option></option>
-            @foreach($mitra as $row)
-            <option value="{{ $row->id }}">{{ $row->name }}</option>
-            @endforeach
-          </select>
-        </div>
-      </div>
-      <div class="form-group row">
-        <label class="col-md-3 col-form-label text-right" for="type">Type <span class="text-danger">*</span></label>
-        <div class="col-md-4">
-          <select class="js-select2 form-control" id="type" name="type" data-placeholder="Select Type">
-            <option></option>
-            <option value="1">INVOICE TAX JUAL</option>
-            <option value="2">INVOICE TAX BELI</option>
-          </select>
-        </div>
-      </div>
-      <div class="form-group row">
-        <label class="col-md-3 col-form-label text-right" for="invoice_tax_date">Tanggal</label>
-        <div class="col-md-4">
-          <input type="date" class="form-control" id="invoice_tax_date" name="invoice_tax_date">
-        </div>
-      </div>
-      <div class="form-group row">
-        <label class="col-md-3 col-form-label text-right" for="invoice_tax_date">Note</label>
-        <div class="col-md-4">
-          <input type="text" class="form-control" id="note" name="note">
-        </div>
-      </div>
-      <div class="form-group row pt-30">
-        <div class="col-md-6">
-          <a href="javascript:history.back()">
-            <button type="button" class="btn bg-gd-cherry border-0 text-white">
-              <i class="fa fa-arrow-left mr-10"></i> Back
-            </button>
-          </a>
-        </div>
-        <div class="col-md-6 text-right">
-          <button type="submit" class="btn bg-gd-corporate border-0 text-white" id="submit-table" disabled>
-            Submit <i class="fa fa-arrow-right ml-10"></i>
-          </button>
+
+        <div class="form-row">
+          <div class="form-group col-md-6">
+            <label for="invoice_tax_date">Tanggal</label>
+            <input type="date" class="form-control" id="invoice_tax_date" name="invoice_tax_date">
+          </div>
+          <div class="form-group col-md-6">
+            <label for="note">Note</label>
+            <input type="text" class="form-control" id="note" name="note">
+          </div>
         </div>
       </div>
     </div>
   </div>
-  <div class="block">
-    <div class="block-header">
-      <h3 class="block-title">Add Product TAX</h3>
-      <a href="#" class="row-add">
-        <button type="button" class="btn bg-gd-sea border-0 text-white">
-          <i class="fa fa-plus mr-10"></i> Row
-        </button>
-      </a>
+
+  <div class="col-6">
+    <div class="block">
+      <div class="block-header block-header-default">
+        <h3 class="block-title">#Detail Customer</h3>
+      </div>
+      <div class="block-content">
+        <div class="form-row">
+          <div class="form-group col-md-6">
+            <label for="so_date">Customer</label>
+            <input type="text" class="form-control" value="{{ $invoice->member->name }} {{ $invoice->member->text_kota }}" readonly>
+          </div>
+          <div class="form-group col-md-6">
+            <label for="type_transaction">Alamat</label>
+            <input type="text" class="form-control" value="{{ $invoice->member->address }}" readonly>
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group col-md-6">
+            <label for="so_date">Kota</label>
+            <input type="text" class="form-control" value="{{ $invoice->member->text_kota }}" readonly>
+          </div>
+          <div class="form-group col-md-6">
+            <label for="type_transaction">Provinsi</label>
+            <input type="text" class="form-control" value="{{ $invoice->member->text_provinsi }}" readonly>
+          </div>
+        </div>
+      </div>
     </div>
+  </div>
+</div>
+
+
+  <div class="block">
     <div class="block-content">
       <table id="datatable" class="table table-striped">
-        <thead>
-          <tr>
-            <th class="text-center">Counter</th>
-            <th class="text-center">Select SKU</th>
-            <th class="text-center">Quantity</th>
-            <th class="text-center">Price(USD)</th>
-            <th class="text-center">Subtotal</th>
-            <th class="text-center">Action</th>
-          </tr>
-        </thead>
-        <tbody>
-        </tbody>
-        <tfoot>
-          <tr class="row-footer-subtotal">
-            <td colspan="4" class="text-right">
-              <b>Subtotal</b>
-            </td>
-            <td class="text-right">
-              <input type="text" name="sub_total_item" id="sub_total_item" class="form-control " readonly step="any">
-            </td>
-          </tr>
-        </tfoot>
-      </table>
+          <thead>
+            <tr>
+              <th class="text-center">#</th>
+              <th class="text-center">Product</th>
+              <th class="text-center">Quantity</th>
+              <th class="text-center">Price</th>
+              <th class="text-center">Subtotal</th>
+            </tr>
+          </thead>
+          <tbody>
+            @foreach($products as $product)
+              <tr>
+                <input type="hidden" value="{{ $product['id'] }}" id="product_id" name="product_id">
+                <td>{{ $loop->iteration }}</td>
+                <td>{{ $product['code'] }} - {{ $product['name'] }} / {{ $product['kemasan'] }}</td>
+                <td><input type="text" class="form-control text-center" value="{{ $product['qty'] }}" id="qty_item" readonly></td>
+                <td>
+                    <input type="text" class="form-control text-center" 
+                          value="{{ $type == 0 ? $product['selling_price_usd_unit'] : $product['buying_price_usd_unit'] }}" 
+                          id="price_selling" readonly>
+                </td>
+                <td><input type="text" class="form-control text-center" name="subtotal_item" id="subtotal_item" readonly></td>
+              </tr>
+            @endforeach
+          </tbody>
+          <tfoot>
+            <tr class="row-footer-subtotal">
+              <td colspan="4" class="text-right">
+                <b>Subtotal</b>
+              </td>
+              <td class="text-center" style="width: 20%;">
+                <input type="text" name="sub_total_item" id="sub_total_item" class="form-control text-right" readonly step="any">
+              </td>
+            </tr>
+            <tr class="row-footer-subtotal">
+              <td colspan="4" class="text-right">
+                <b>PPN</b>
+              </td>
+              <td class="text-center">
+                <div class="row">
+                  <div class="col">
+                    <input type="text" name="ppn_percent" id="ppn_percent" class="form-control text-right" step="any">
+                  </div>
+
+                  <div class="col">
+                    <input type="text" name="ppn_idr" id="ppn_idr" class="form-control text-right" readonly step="any">
+                  </div>
+                </div>
+              </td>
+            </tr>
+            <tr class="row-footer-subtotal">
+              <td colspan="4" class="text-right">
+                <b>Grand Total Invoice</b>
+              </td>
+              <td class="text-center">
+                <input type="text" name="grand_total" id="grand_total" class="form-control text-right" readonly step="any">
+              </td>
+            </tr>
+          </tfoot>
+        </table>
+        <div class="form-group row pt-30">
+          <div class="col-md-6">
+            <a href="javascript:history.back()">
+              <button type="button" class="btn bg-gd-cherry border-0 text-white">
+                <i class="fa fa-arrow-left mr-10"></i> Back
+              </button>
+            </a>
+          </div>
+          <div class="col-md-6 text-right">
+            <!-- <button type="button" class="btn btn-warning" id="calculate-btn"><i class="fa-solid fa-calculator"></i> Calculated</button> -->
+            <button type="submit" class="btn bg-gd-corporate border-0 text-white" id="submit-table">
+              Submit <i class="fa fa-arrow-right ml-10"></i>
+            </button>
+          </div>
+        </div>
     </div>
   </div>
-</form>
+
 @endsection
 
 @include('superuser.asset.plugin.datatables')
@@ -128,189 +183,175 @@
 <script src="{{ asset('utility/superuser/js/form.js') }}"></script>
 <script type="text/javascript">
   $(document).ready(function () {
-    $('.js-select2').select2()
-
-    $(".js-select2-do").select2({
-      ajax: {
-        url: '{{ route('superuser.accounting.invoice_tax.search_invreal') }}',
-        dataType: 'json',
-        delay: 250,
-        data: function (params) {
-          return {
-            q: params.term,
-            _token: "{{csrf_token()}}"
-          };
-        },
-        cache: true
-      },
-    });
-
-    var product_data = new Object();
-
     var table = $('#datatable').DataTable({
-        paging: false,
-        bInfo : false,
-        searching: false,
-        columns: [
-          {name: 'counter', "visible": false},
-          {name: 'sku', orderable: false, width: "25%"},
-          {name: 'quantity', orderable: false, searcable: false, width: "5%"},
-          {name: 'price_satuan', orderable: false, searcable: false,  width: "10%"},
-          {name: 'subtotal', orderable: false, searcable: false,  width: "20%"},
-          {name: 'action', orderable: false, searcable: false, width: "5%"}
-        ],
-        'order' : [[0,'desc']]
-    })
-
-    var counter = 1;
-
-    $('a.row-add').on( 'click', function (e) {
-      e.preventDefault();
-      if($('#delivery_order').val()) {
-        if($('#type').val() == 1) {
-          $('#submit-table').prop('disabled', false);
-          
-          makeselect = '<select class="js-select2 form-control js-ajax" id="sku['+counter+']" name="sku[]" data-placeholder="Select SKU" style="width:100%" required><option></option>';
-          
-          $.map( product_data, function( val, i ) {
-            makeselect += '<option value="'+ val['id'] +'" data-name="'+ val['name'] +'" data-code="'+ val['code'] +'" data-pricejualsatuan="'+ val['selling_price_usd_unit'] +'" data-quantity="'+ val['qty'] +'" data-kurs="'+ val['kurs'] +'">'+ val['code'] + ' - '+ val['name'] +'</option>';
-          });
-
-          makeselect += '</select>';
-
-          table.row.add([
-                      counter,
-                      makeselect,
-                      '<input type="number" class="form-control" name="quantity[]" min="1" required>',
-                      '<input type="number" class="form-control" name="price_satuan[]">',
-                      '<input type="number" class="form-control" name="subtotal[]" readonly>',
-                      '<a href="#" class="row-delete"><button type="button" class="btn btn-sm btn-circle btn-alt-danger" title="Delete"><i class="fa fa-trash"></i></button></a>'
-                    ]).draw( false );
-                    
-                    initailizeSelect2();
-          counter++;
-        } else if ($('#type').val() == 2){
-            $('#submit-table').prop('disabled', false);
-            
-            makeselect = '<select class="js-select2 form-control js-ajax" id="sku['+counter+']" name="sku[]" data-placeholder="Select SKU" style="width:100%" required><option></option>';
-            
-            $.map( product_data, function( val, i ) {
-              makeselect += '<option value="'+ val['id'] +'" data-name="'+ val['name'] +'" data-code="'+ val['code'] +'" data-pricebelisatuan="'+ val['buying_price_usd_unit'] +'" data-quantity="'+ val['qty'] +'" data-kurs="'+ val['kurs'] +'">'+ val['code'] + ' - '+ val['name'] +'</option>';
-            });
-
-            makeselect += '</select>';
-
-            table.row.add([
-                        counter,
-                        makeselect,
-                        '<input type="number" class="form-control" name="quantity[]" step="any" required>',
-                        '<input type="number" class="form-control" name="price_satuan[]" step="any">',
-                        '<input type="number" class="form-control" name="subtotal[]" readonly step="any">',
-                        '<a href="#" class="row-delete"><button type="button" class="btn btn-sm btn-circle btn-alt-danger" title="Delete"><i class="fa fa-trash"></i></button></a>'
-                      ]).draw( false );
-                      
-                      initailizeSelect2();
-            counter++;
-
-        }
-      }
-      
+        // DataTable options here
     });
 
-    function initailizeSelect2(){
-      $(".js-ajax").select2();
+    $('.js-select2').select2();
 
-      $('.js-ajax').on('select2:select', function (e) {
-        var name = $(this).find(':selected').data('code');
-        $(this).parents('tr').find('.name').text(name);
-
-        var kurs = $(this).find(':selected').data('kurs');
-        $("#idr_rate").val(kurs);
-
-        
-
-        var quantity = $(this).find(':selected').data('quantity');
-        $(this).parents('tr').find('input[name="quantity[]"]').val(quantity);
-
-        if($('#type').val() == 1){
-
-          var harga_jual_tax_drum = $(this).find(':selected').data('pricejualdrum');
-          $(this).parents('tr').find('input[name="price_drum[]"]').val(harga_jual_tax_drum);
-
-          var harga_jual_tax_satuan = $(this).find(':selected').data('pricejualsatuan');
-          $(this).parents('tr').find('input[name="price_satuan[]"]').val(harga_jual_tax_satuan);
-
-        } else if ($('#type').val() == 2){
-
-          var harga_beli_tax_drum = $(this).find(':selected').data('pricebelidrum');
-          $(this).parents('tr').find('input[name="price_drum[]"]').val(harga_beli_tax_drum);
-
-          var harga_beli_tax_satuan = $(this).find(':selected').data('pricebelisatuan');
-          $(this).parents('tr').find('input[name="price_satuan[]"]').val(harga_beli_tax_satuan);
-        }
-      });
-    };
-
-
-    $('#datatable tbody').on( 'click', '.row-delete', function (e) {
-      e.preventDefault();
-      table.row( $(this).parents('tr') ).remove().draw();
-
-      if(typeof $('input[name="id[]"]').val() == 'undefined') {
-        $('#submit-table').prop('disabled', true);
-      }
+    $(".js-example-tags").select2({
+      tags: true
     });
 
-    $('#delivery_order').on('select2:select', function (e) {
-      table.clear().draw();
+    function calculateTotals() {
+        let totalSubtotal = 0;
+        let ppnPercent = parseFloat($('#ppn_percent').val()) || 0;
+        let ppnAmount = 0;
+        let grandTotal = 0;
 
-      $.ajax({
-        url: '{{ route('superuser.accounting.invoice_tax.get_product') }}',
-        data: {id:$(this).val() , _token: "{{csrf_token()}}"},
-        type: 'POST',
-        cache: false,
-        dataType: 'json',
-        success: function(json) {
-          if (json.code == 200) {
-            product_data = json.data;
+        // Iterate through each row in the table body
+        $('#datatable tbody tr').each(function() {
+            // Get quantity and price for the current row
+            let qty = parseFloat($(this).find('#qty_item').val()) || 0;
+            let price = parseFloat($(this).find('#price_selling').val()) || 0;
+
+            // Calculate the subtotal for the current row
+            let subtotal = qty * price;
+            totalSubtotal += subtotal;
+
+            // Update the subtotal input for the current row
+            $(this).find('#subtotal_item').val(subtotal.toFixed(2));
+        });
+
+        // Update subtotal in the footer
+        $('#sub_total_item').val(totalSubtotal.toFixed(2));
+
+        // Calculate PPN amount
+        ppnAmount = (totalSubtotal * ppnPercent) / 100;
+        $('#ppn_idr').val(ppnAmount.toFixed(2));
+
+        // Calculate grand total
+        grandTotal = totalSubtotal + ppnAmount;
+        $('#grand_total').val(grandTotal.toFixed(2));
+    }
+
+    // Calculate totals when the PPN percentage changes
+    $('#ppn_percent').on('input', function() {
+        calculateTotals();
+    });
+
+    // Initial calculation when the page loads
+    calculateTotals();
+
+    // Function to store product data
+    function storeProductData() {
+        let products = [];
+        // Gather product data from the table
+        $('#datatable tbody tr').each(function() {
+            let qty = parseFloat($(this).find('#qty_item').val()) || 0;
+            let price = parseFloat($(this).find('#price_selling').val()) || 0;
+            let subtotal = parseFloat($(this).find('#subtotal_item').val()) || 0;
+            let id = $(this).find('#product_id').val(); // Assuming ID is in the first cell
+
+            if (price > 0) { // Ensure price is greater than 0 before adding to the products array
+                products.push({
+                    id: id,
+                    qty: qty,
+                    price: price,
+                    total: subtotal
+                });
+            }
+        });
+
+        // Check if products array is empty
+        if (products.length === 0) {
+            alert('Harga belum di setting, Silahkan input data terlebih dahulu!!');
+            return;
+        }
+
+        // Gather other form data
+        let code = $('#kode-input').val();
+        let delivery = $('#delivery_order').val();
+        let type = $('#type').val();
+        let mitra = $('#mitra_id').val();
+        let date = $('#invoice_tax_date').val();
+        let note = $('#note').val();
+        let subtotal = $('#sub_total_item').val();
+        let ppn_idr = $('#ppn_idr').val();
+        let ppn_percent = $('#ppn_percent').val();
+        let grandTotal = $('#grand_total').val();
+
+        // Send data using AJAX
+        $.ajax({
+            url: '{{ route('superuser.accounting.invoice_tax.store') }}',
+            type: 'POST',
+            data: {
+                products: products,
+                code: code,
+                delivery: delivery,
+                type: type,
+                mitra: mitra,
+                date: date,
+                note: note,
+                subtotal: subtotal,
+                ppn_idr: ppn_idr,
+                ppn_percent: ppn_percent,
+                grand_total: grandTotal,
+                _token: "{{ csrf_token() }}"
+            },
+            success: function(response) {
+                if (response.success) {
+                    alert('Invoice data has been successfully saved!');
+                    window.location.href = response.redirect_url;
+                } else {
+                    alert('Failed to save invoice data.');
+                }
+            },
+            error: function(xhr, status, error) {
+                if (xhr.status === 422) {
+                    var errors = xhr.responseJSON.errors;
+                    var errorMessages = '';
+
+                    $.each(errors, function(key, value) {
+                        errorMessages += value[0] + '\n';
+                    });
+
+                    alert('Validation failed:\n' + errorMessages);
+                } else {
+                    alert('Error occurred while saving invoice data: ' + error);
+                }
+            }
+        });
+    }
+
+    // Trigger store product data when the "Submit" button is clicked
+    $('#submit-table').on('click', function() {
+        calculateTotals(); // Ensure calculations are done before saving
+        storeProductData(); // Proceed with saving
+    });
+
+    $('#kode-input').select2({
+      tags: true,
+      placeholder: 'Input / Pilih Kode',
+      ajax: {
+          url: '{{ route('superuser.accounting.invoice_tax.getLastCode') }}',
+          processResults: function(data) {
+              const results = data.lastCodes.map(code => ({ id: code, text: code }));
+
+              // Menambahkan kode baru sebagai default jika dibutuhkan
+              let lastCode = data.lastCodes[0]; // Ambil kode terakhir dari hasil
+              let newCode;
+              if (lastCode) {
+                  const codeParts = lastCode.split('-');
+                  const codeBase = codeParts.slice(0, -1).join('-');
+                  const lastNumber = parseInt(codeParts[codeParts.length - 1]) || 0;
+                  newCode = `${codeBase}-${lastNumber + 1}`;
+              } else {
+                  newCode = 'TP-1';
+              }
+
+              // Tambahkan kode baru yang otomatis dihasilkan ke dalam daftar
+              results.unshift({ id: newCode, text: newCode });
+
+              return { results };
           }
-        }
-      });
+      },
+      createTag: function(params) {
+          let term = $.trim(params.term);
+          if (term === '') return null;
+          return { id: term, text: term, newTag: true };
+      }
     });
-
-    $('#type').on('select2:select', function (e) {
-      table.clear().draw();
-    });
-
-    $('#datatable tbody').on( 'keyup', 'input[name="quantity[]"]', function (e) {
-      var price_satuan = $(this).parents('tr').find('input[name="price_satuan[]"]').val();
-      var kurs = $('#idr_rate').val();
-
-      var total = ($(this).val() * price_satuan) * kurs;
-
-      $(this).parents('tr').find('input[name="subtotal[]"]').val(total);
-      $(this).parents('tr').find('input[name="subtotal[]"]').change();
-
-    });
-
-    $('#datatable tbody').on( 'keyup', 'input[name="price_satuan[]"]', function (e) {
-      var qty = $(this).parents('tr').find('input[name="quantity[]"]').val();
-      var kurs = $('#idr_rate').val();
-
-      var total = (qty * $(this).val()) * kurs;
-
-      $(this).parents('tr').find('input[name="subtotal[]"]').val(total);
-      $(this).parents('tr').find('input[name="subtotal[]"]').change();
-
-    });
-
-    $('#datatable tbody').on( 'change', 'input[name="subtotal[]"]', function (e) {
-      var subtotal = 0;
-      $('input[name="subtotal[]"]').each(function(){
-        subtotal += Number($(this).val());
-      });
-      $('#sub_total_item').val(subtotal);
-    });
-  })
+});
 </script>
 @endpush

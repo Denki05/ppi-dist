@@ -109,6 +109,21 @@
                               </div>
                             </div>
                             <div class="row">
+                              <div class="col-6">
+                                <div class="form-group row">
+                                  <label for="pic" class="col-sm-2 col-form-label">PIC</label>
+                                  <div class="col-sm-10">
+                                    <select class="form-control js-select2" name="pic" style="width:100%;">
+                                      <option value="">Pilih PIC</option>
+                                      @foreach(\App\Entities\Master\Customer::PIC AS $pic => $item)
+                                      <option value="{{ $pic }}">{{ $pic }}</option>
+                                      @endforeach
+                                  </select>
+                                  </div>
+                                </div>
+                              </div>
+                            </div>
+                            <div class="row">
                               <div class="mb-3">
                                 <label for="image_store" class="form-label">Image Store</label>
                                 <input class="form-control form-control-lg" id="image_store" name="image_store" type="file">

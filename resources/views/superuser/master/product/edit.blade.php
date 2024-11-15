@@ -5,7 +5,7 @@
   <div class="block">
             <div class="block-conten" align="center">
                 <div class="col-md-10 col-md-offset-1">
-                	<form data-action="{{ route('superuser.master.product.update', [$product->id]) }}" data-type="POST" enctype="multipart/form-data" class="f1 ajax" novalidate>
+                <form data-action="{{ route('superuser.master.product.update', base64_encode($product->id)) }}" data-type="POST" enctype="multipart/form-data" class="f1 ajax" novalidate>
                   <input type="hidden" name="_method" value="PUT">
                 		<div class="f1-steps">
                 			<div class="f1-progress">
@@ -121,7 +121,7 @@
                                       <div class="col-sm-10">
                                         <select class="js-select2 form-control" id="note" name="note" style="width:100%;" placeholder="Pilih Note">
                                           <option>Pilih Note</option>
-                                          @foreach($product_notes as $note)
+                                          @foreach(\App\Entities\Master\Product::NOTE as $note)
                                           <option value="{{ $note }}" {{ ($note == $product->note ) ? 'selected' : '' }}>{{ $note }}</option>
                                           @endforeach
                                         </select>
@@ -146,7 +146,7 @@
                                   <div class="col">
                                     <div class="form-group row">
                                       <div class="col-sm-12">
-                                        <textarea class="form-control" name="description" placeholder="Keterangan" rows="1" value="{{$product->description}}"></textarea>
+                                        <textarea class="form-control" name="description" placeholder="Keterangan" rows="1">{{$product->description}}</textarea>
                                       </div>
                                     </div>
                                   </div>
@@ -223,7 +223,7 @@
                               <div class="row">
                                 <div class="form-group">
                                   <label for="packaging">Packaging</label>
-                                  <select class="form-control js-select2" id="packaging" name="packaging" style="width:100%;" data-placeholder="Pilih Kemasan">
+                                  <select class="form-control js-select2" id="packaging" name="packaging[]" style="width:100%;" data-placeholder="Pilih Kemasan" multiple="multiple">
                                     <option value="">Pilih Kemasan</option>  
                                     @foreach($pack as $pack)
                                     <option value="{{$pack->id}}" {{ ($pack->id == $product->packaging_id ) ? 'selected' : '' }}>{{$pack->pack_name}}</option>

@@ -26,7 +26,7 @@
       <div class="form-group row">
         <label class="col-md-3 col-form-label text-right" for="quantity">Qty</label>
         <div class="col-md-4">
-          <input type="number" class="form-control" id="quantity" name="quantity" min="0" value="{{ $purchase_order_detail->quantity }}" step="1">
+          <input type="number" class="form-control" id="quantity" name="quantity" step="any" value="{{ $purchase_order_detail->quantity }}" step="1">
         </div>
       </div>
       <div class="form-group row">

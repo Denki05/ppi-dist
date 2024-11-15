@@ -10,10 +10,12 @@ class ProductFinance extends Model
     use SoftDeletes;
 
     protected $fillable = [
+        'brand_name',
         'code_product', 
         'name_product', 
         'mitra_id', 
         'product_id', 
+        'packaging_id', 
         'selling_price_usd_drum', 
         'buying_price_usd_drum', 
         'selling_price_usd_unit', 
@@ -53,6 +55,11 @@ class ProductFinance extends Model
     public function log_price()
     {
         return $this->hasMany('App\Entities\Accounting\PriceLogFinance', 'product_finance_id');
+    }
+
+    public function packaging()
+    {
+        return $this->belongsTo('App\Entities\Master\Packaging', 'packaging_id');
     }
 
     public function status()

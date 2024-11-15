@@ -30,6 +30,8 @@ Route::group([
         Route::post('/import/{id}', 'PurchaseOrderController@import')->name('import');
         Route::get('/search_sku', 'PurchaseOrderController@search_sku')->name('search_sku');
         Route::get('/search_kemasan', 'PurchaseOrderController@search_kemasan')->name('search_kemasan');
+        Route::get('/{id}/cancel_acc', 'PurchaseOrderController@cancel_acc')->name('cancel_acc');
+        Route::get('/export', 'PurchaseOrderController@export')->name('export');
 
         Route::group(['as' => 'detail.'], function () {
             Route::get('{purchase_id}/detail/create', 'PurchaseOrderDetailController@create')->name('create');

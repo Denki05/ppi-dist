@@ -33,84 +33,74 @@
   <hr class="my-20">
   <div class="block-content block-content-full">
       <div class="row mb-30">
-        <div class="col-12">
-          <a href="#" class="btn btn-primary btn-add"><i class="fa fa-plus"></i> Add Payable</a>
+        <div class="col">
+          <a href="#" class="btn btn-outline-primary ml-10 btn-add"><i class="fa fa-plus"></i> Add Payable</a>
+
+          @if(auth()->user()->is_superuser)
+          <button type="button" class="btn btn-outline-info ml-10" data-toggle="modal" data-target="#modal-manage">Manage</button>
+          @endif
         </div>
       </div>
-      <form method="get" action="{{ route('superuser.finance.payable.index') }}">
-        <div class="row">
-          <div class="col-lg-3">
-            <div class="form-group">
-              <select class="form-control js-select2" name="customer_id">
-                <option value="">==All Customer==</option>
-                @foreach($customer as $index => $row)
-                  <option value="{{$row->id}}">{{$row->name}} {{$row->text_kota}}</option>
-                @endforeach
-              </select>
-            </div>          
-          </div>
-          <div class="col-lg-6">
-            <div class="input-group mb-3">
-                <input type="text" class="form-control" placeholder="Keyword" name="search">
-                <div class="input-group-append">
-                  <button type="submit" class="btn btn-primary"><i class="fa fa-search"></i></button>
+      <div class="row mb-30">
+        <div class="form-group row">
+          <div class="col-md-9">
+            <div class="block">
+              <div class="block-content">
+                <div class="form-group row">
+                  <label class="col-md-2 col-form-label text-left" for="customer_name">Customer :</label>
+                  <div class="col-md-4">
+                    <select class="form-control js-select2" name="customer_name" id="customer_name">
+                      <option value="all">All</option>
+                      @foreach($customer AS $row)
+                      <option value="{{ $row->id }}">{{ $row->name }} {{ $row->text_kota }}</option>
+                      @endforeach
+                    </select>
+                  </div>
+                  <label class="col-md-2 col-form-label text-left" for="status">Name :</label>
+                  <div class="col-md-4">
+                    <select class="form-control js-select2" name="status" id="status">
+                      <option value="all">All</option>
+                      <option value="0">DELETED</option>
+                      <option value="1">ACTIVE</option>
+                      <option value="2">ACC</option>
+                      <option value="3">REVISI</option>
+                    </select>
+                  </div>
                 </div>
               </div>
+            </div>
+          </div>
+          <div class="col-md-3">
+            <div class="block">
+              <div class="block-content">
+                <div class="form-group row">
+                  <div class="col-md-12 text-center">
+                    <a href="#" id="btn-filter" class="btn bg-gd-corporate border-0 text-white pl-50 pr-50">
+                      Filter <i class="fa fa-search ml-10"></i>
+                    </a>
+                  </div>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
-      </form>
-      <div class="row mb-30">
         <div class="col-12">
-          <table class="table table-striped" id="datatables">
+        <table class="datatable table table-striped" id="datatable">
             <thead>
-              <tr>
-                <th>#</th>
-                <th>Payable Code</th>
-                <th>Store</th>
-                <th>Total</th>
-                <th>Created At</th>
-                <th>Status</th>
-                <th>Action</th>
-              </tr>
+                <tr>
+                    <th>#</th>
+                    <th>Payable Code</th>
+                    <th>Store</th>
+                    <th>Total</th>
+                    <th>Payable Date</th>
+                    <th>Status</th>
+                    <th>Action</th>
+                </tr>
             </thead>
             <tbody>
-              @foreach($table as $index => $row)
-                <tr>
-                  <td>{{$table->firstItem() + $index}}</td>
-                  <td>{{$row->code}}</td>
-                  <td>{{$row->customer->name}} {{ $row->customer->text_kota }}</td>
-                  <td>{{number_format($row->total,0,',','.')}}</td>
-                  <td>
-                    <?= date('d-m-Y h:i:s',strtotime($row->created_at)); ?>
-                  </td>
-                  <td>
-                    {{ $row->status() }}
-                  </td>
-                  <td>
-                    @if($row->status == 1)
-                      <a class="btn btn-warning" href="#" role="button" title="edit"><i class="fa fa-pencil" aria-hidden="true"></i></a>
-                      <a class="btn btn-success" href="javascript:saveConfirmation('{{ route('superuser.finance.payable.approve', $row->id) }}')" role="button" title="acc"><i class="fa fa-check" aria-hidden="true"></i></a>
-                      <a class="btn btn-danger" href="javascript:deleteConfirmation('{{ route('superuser.finance.payable.destroy', $row->id) }}')" role="button" title="delete"><i class="fa fa-trash" aria-hidden="true"></i></a>
-                    @endif
-                    @if($row->status == 2)
-                      <a class="btn btn-info" href="{{ route('superuser.finance.payable.detail', $row->id) }}" role="button" title="view"><i class="fa fa-eye" aria-hidden="true"></i></a>
-                      <a class="btn btn-danger" href="javascript:saveConfirmation2('{{ route('superuser.finance.payable.cancel_approve', $row->id) }}')" role="button" title="Cancel Acc"><i class="fa fa-times" aria-hidden="true"></i></a>
-                    @endif
-                    @if($row->status == 3)
-                      <a class="btn btn-warning" href="{{ route('superuser.finance.payable.cancel_edit', $row->id) }}" role="button" title="edit"><i class="fa fa-pencil" aria-hidden="true"></i></a>
-                      <a class="btn btn-danger" href="javascript:deleteConfirmation('{{ route('superuser.finance.payable.destroy', $row->id) }}')" role="button" title="delete"><i class="fa fa-trash" aria-hidden="true"></i></a>
-                      @endif
-                  </td>
-                </tr>
-              @endforeach
             </tbody>
-          </table>
-        </div>
-      </div>
-      
-      <div class="row mb-30">
-        <div class="col-12">
-          {{$table->links()}}
+        </table>
+
         </div>
       </div>
   </div>
@@ -118,11 +108,7 @@
 
 @include('superuser.finance.payable.modal')
 
-
 @endsection
-
-<!-- Modal -->
-
 
 @include('superuser.asset.plugin.select2')
 @include('superuser.asset.plugin.datatables')
@@ -130,32 +116,98 @@
 
 @push('scripts')
 
-  <script type="text/javascript">
-    $(function(){
-      $(function(){
-        $('#datatables').DataTable( {
-          "paging":   false,
-          "ordering": true,
-          "info":     false,
-          "searching" : false,
-          "columnDefs": [{
-            "targets": 0,
-            "orderable": false
-          }]
-        });
+<script type="text/javascript">
+    $(document).ready(function () {
+      $('.js-select2').select2({});
 
-
-        $('.js-select2').select2();
-
-        $(document).on('click','.btn-add',function(){
-          $('#modalSelectCustomer').modal('show');
-        })
-
-        $("#select_customer").select2({
-            dropdownParent: $('#modalSelectCustomer .modal-content')
-        });
-
+      let datatableUrl = '{{ route('superuser.finance.payable.json') }}';
+      let firstDatatableUrl = datatableUrl + '?customer_name=all&status=all';
+      var datatable = $('#datatable').DataTable({
+        language: {
+          processing: "<span class='fa-stack fa-lg'>\n\
+                                <i class='fa fa-spinner fa-spin fa-stack-2x fa-fw'></i>\n\
+                           </span>",
+          },
+          processing: true,
+          serverSide: false,
+          ajax: {
+            "url": firstDatatableUrl,
+            "dataType": "json",
+            "type": "GET",
+            "data": {
+              _token: "{{ csrf_token() }}"
+            }
+          },
+          columns: [
+            {data: 'DT_RowIndex', name: 'id'},
+            {data: 'code', name: 'code'},
+            {data: 'customer', name: 'customer'},
+            {
+              data: 'total_pay',
+              render: function(data, type, row) {
+                  return formatRupiah(data);
+              }
+            },
+            {
+              data: 'created_at',
+              render: {
+                _: 'display',
+                sort: 'timestamp'
+              }
+            },
+            {data: 'status'},
+            {data: 'action', orderable: false, searcable: false}
+          ],
+          order: [
+            [1, 'desc']
+          ],
+          pageLength: 10,
+            lengthMenu: [
+              [10, 15, 20, 50, 100],
+              [10, 15, 20, 50, 100]
+          ],
+          dom: "<'row'<'col-sm-2'l><'col-sm-7 text-left'B><'col-sm-3'f>>" +
+          "<'row'<'col-sm-12'tr>>" +
+          "<'row'<'col-sm-5'i><'col-sm-7'p>>",
       });
-    })
-  </script>
+
+      $('#btn-filter').on('click', function(e) {
+        e.preventDefault();
+        var customer_search = $('#customer_name').val();
+        var status_search = $('#status').val();
+        let newDatatableUrl = datatableUrl + '?customer_name=' + customer_search + '&status=' + status_search;
+        datatable.ajax.url(newDatatableUrl).load();
+      });
+
+      function formatRupiah(amount) {
+          var number_string = amount.toString().replace(/[^,\d]/g, ''),
+              split = number_string.split(','),
+              remainder = split[0].length % 3,
+              rupiah = split[0].substr(0, remainder),
+              thousands = split[0].substr(remainder).match(/\d{3}/gi);
+
+          if (thousands) {
+              separator = remainder ? '.' : '';
+              rupiah += separator + thousands.join('.');
+          }
+
+          return 'Rp ' + rupiah + (split[1] ? ',' + split[1] : '');
+      }
+
+      $(document).on('click', '.btn-add', function () {
+        $('#modalSelectCustomer').modal('show');
+      });
+
+      $(document).on('click', '.btn-close-modal', function () {
+        $('#modalSelectCustomer').modal('hide');
+      });
+
+      // Initialize Select2 after the modal is shown
+      $('#modalSelectCustomer').on('shown.bs.modal', function () {
+          $("#select_customer").select2({
+              dropdownParent: $('#modalSelectCustomer .modal-content')
+          });
+      });
+    });
+</script>
 @endpush

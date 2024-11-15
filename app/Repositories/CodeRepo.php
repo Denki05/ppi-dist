@@ -14,6 +14,7 @@ use App\Entities\Master\Unit;
 use App\Entities\Master\Vendor;
 use App\Entities\Master\Warehouse;
 use App\Entities\Penjualan\SalesOrder;
+use App\Entities\Penjualan\SalesOrderKontrak;
 use App\Entities\Penjualan\PackingOrder;
 use App\Entities\Penjualan\DeliveryOrderMutation;
 use App\Entities\Penjualan\Canvasing;
@@ -23,6 +24,7 @@ use App\Entities\Gudang\StockAdjustment;
 use App\Entities\Gudang\Receiving;
 use App\Entities\Master\BrandLokal;
 use App\Entities\Gudang\PurchaseOrder;
+use App\Entities\Penjualan\SalesOrderProforma;
 use DB;
 
 class CodeRepo
@@ -209,7 +211,8 @@ class CodeRepo
         $yearMonth = $p1.$p2;
         $latestNumber = "";
 
-        $get_max = DB::table('penjualan_so')->where('code', 'LIKE', '%'.$yearMonth.'%')->where('deleted_at', null)->max('code');
+        $get_max = DB::table('penjualan_so')->where('code', 'LIKE', '%'.$yearMonth.'%')->where('deleted_at', null)->where('type_so', 'nonppn')->max('code');
+        // dd($get_max);
 
         if($get_max == 'false'){
             $latestNumber = $yearMonth . '001';
@@ -281,7 +284,7 @@ class CodeRepo
         $yearMonth = $str_code.$p1.$p2;
         $latestNumber = "";
 
-        $get_max = DB::table('finance_invoice_mitra')->where('no_invoice_tax', 'LIKE', '%'.$yearMonth.'%')->where('deleted_at', null)->max('no_invoice_tax');
+        $get_max = DB::table('finance_invoice_mitra')->where('code', 'LIKE', '%'.$yearMonth.'%')->where('deleted_at', null)->max('code');
 
         if($get_max == 'false'){
             $latestNumber = $yearMonth . '001';
@@ -293,5 +296,88 @@ class CodeRepo
 
         // dd($latestNumber);
         return $latestNumber;
+    }
+
+    // Generate code so awal ppn
+    public static function generateSoAwalPpn(){
+        $count = SalesOrder::withTrashed()
+                              ->where('status', '>', 0)
+                              ->where('type_so', 'ppn')
+                              ->whereYear('created_at',date('Y'))
+                              ->whereMonth('created_at',date('m'))
+                              ->get();
+                                   
+        if(count($count) > 0 ){
+            $count = count($count) + 1;
+
+            $code = 'SO-PPN-' .date('ym').sprintf('%03d', $count);
+        }
+        else{
+            $code = 'SO-PPN-' .date('ym').sprintf('%03d', 1);
+        }
+        return $code;
+
+    }
+
+    public static function generateSoKontrak(){
+        $get_max_id = DB::table('penjualan_so_kontrak')->where('deleted_at', null)->max('id');
+     
+        if($get_max_id == null){
+             $latestNumber = '001';
+        }else{
+             $parts1 = explode('_', $get_max_id);
+             $parts2 = explode('.', $parts1[5]);
+            
+         
+             $get_code = $parts2[0];
+             $latestNumber = "";
+ 
+             if($get_code == false){
+                     $latestNumber = '001';
+             }else{
+                     $latestNumber = $get_code;
+                     $id = (int) $latestNumber + 1;
+                     $latestNumber = str_pad($id, 3, 0, STR_PAD_LEFT);
+             }
+        }
+ 
+        return $latestNumber;
+    }
+
+    public static function generateSokontrakCode(){
+        $count = SalesOrderKontrak::withTrashed()
+                              ->where('status', '>', 0)
+                              ->whereYear('created_at',date('Y'))
+                              ->whereMonth('created_at',date('m'))
+                              ->get();
+                                   
+        if(count($count) > 0 ){
+            $count = count($count) + 1;
+
+            $code = 'SO-KONTRAK-' .date('ym').sprintf('%03d', $count);
+        }
+        else{
+            $code = 'SO-KONTRAK-' .date('ym').sprintf('%03d', 1);
+        }
+        return $code;
+
+    }
+
+    public static function generateSoProforma(){
+        // Retrieve the count of proforma sales orders for the current year and month
+        $count = Salesorderproforma::withTrashed()
+                                    ->where('status', '>', 0)
+                                    ->whereYear('created_at', date('Y'))
+                                    ->whereMonth('created_at', date('m'))
+                                    ->count();
+    
+        // Increment the count if there are existing orders, otherwise initialize to 1
+        $count = ($count > 0) ? $count + 1 : 1;
+    
+        // Generate the proforma code
+        $code = 'SOPRO-' . date('ym') . sprintf('%03d', $count);
+    
+        // Return the generated code
+        return $code;
     }
 }

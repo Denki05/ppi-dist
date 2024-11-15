@@ -123,6 +123,8 @@ return [
 
     'cipher' => 'AES-256-CBC',
 
+    'driver' => env('CACHE_DRIVER', 'file'),
+
     /*
     |--------------------------------------------------------------------------
     | Autoloaded Service Providers
@@ -234,7 +236,8 @@ return [
         'Validator' => Illuminate\Support\Facades\Validator::class,
         'View' => Illuminate\Support\Facades\View::class,
         'PDF' => Barryvdh\DomPDF\Facade::class,
-        'CustomHelper' => App\Helper\CustomHelper::class
+        'CustomHelper' => App\Helper\CustomHelper::class,
+        'LogActivity' => App\Helper\LogActivity::class,
     ],
 
 ];

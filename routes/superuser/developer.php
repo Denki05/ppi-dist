@@ -18,6 +18,12 @@ Route::group(['middleware' => ['role:Developer', 'auth:superuser']], function ()
         });
     });
 
+    Route::group(['middleware' => ['permission:backup-manage']], function () {
+        Route::get('/backup/createBackup', 'BackupController@createBackup')->name('backup.createBackup');
+        Route::get('/backup/download/{fileName}', 'BackupController@download')->name('backup.download');
+        Route::resource('backup', 'BackupController');
+    });
+
     Route::group(['middleware' => ['permission:terminal-manage']], function () {
         Route::get('/terminal', 'Utility\TerminalController')->name('terminal');
     });

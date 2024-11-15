@@ -24,7 +24,6 @@ class ProductCategoryTable extends Table
                 'master_brand_lokal.brand_name AS brandName', 
                 'master_brand_lokal.id AS brand_id', 
                 'master_product_categories.name AS name', 
-                'master_product_categories.type AS type',
                 'master_product_categories.status AS status', 
                 'master_product_categories.created_at AS category_date'
         );

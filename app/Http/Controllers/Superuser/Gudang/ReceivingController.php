@@ -18,12 +18,14 @@ use App\Entities\Gudang\PurchaseOrder;
 use App\Entities\Gudang\PurchaseOrderDetail;
 use App\Entities\Gudang\StockMove;
 use App\Entities\Master\ProductMinStock;
+use App\Entities\Master\ProductPack;
 use App\Entities\Finance\SettingFinance;
 use App\Http\Controllers\Controller;
 use App\Repositories\MasterRepo;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
 use App\Entities\Setting\UserMenu;
+use App\Helper\LogActivity;
 use Auth;
 use Excel;
 use Carbon\Carbon;
@@ -110,6 +112,7 @@ class ReceivingController extends Controller
                 $receiving->status = Receiving::STATUS['ACTIVE'];
 
                 if ($receiving->save()) {
+                    LogActivity::addToLog('Created a new Receiving: ' . $receiving->code);
                     $response['notification'] = [
                         'alert' => 'notify',
                         'type' => 'success',
@@ -167,6 +170,7 @@ class ReceivingController extends Controller
                 $receiving->note = $request->note;
 
                 if ($receiving->save()) {
+                    LogActivity::addToLog('Update Receiving: ' . $receiving->code);
                     $response['notification'] = [
                         'alert' => 'notify',
                         'type' => 'success',
@@ -244,43 +248,59 @@ class ReceivingController extends Controller
                                     ->where('warehouse_id', $detail->receiving->warehouse_id)
                                     ->first();
 
-                            $total_quantity = $detail->total_quantity_ri;
-                            $get_stock = $check_stock->quantity;
-                            // DD($get_stock);
-                            $check_stock->quantity = $get_stock + $total_quantity;
-                            $check_stock->save();
-                            
-                            // Record log stock
-                            $move = StockMove::where('product_packaging_id', $detail->product_packaging_id)
-                            ->where('warehouse_id', $receiving->warehuse_id)
-                            ->get();
-                            $move_in = $move->sum('stock_in');
-                            $move_out = $move->sum('stock_out');
-                            
-                            $sisa = $get_stock + $move_in - $move_out + $total_quantity;
-                            $insert_stock_move = StockMove::create([
-                                'code_transaction' => 'Receiving-'.$receiving->code,
-                                'warehouse_id' => $receiving->warehouse_id,
-                                'product_packaging_id' => $detail->product_packaging_id,
-                                'stock_in' => $total_quantity,
-                                'stock_balance' => $sisa,
-                                'created_by' => Auth::id()
-                            ]);
+                                    // DD($check_stock);
+
+                                    if (empty($check_stock)) {
+                                        $product_check = ProductPack::find($detail->product_packaging_id);
+                                        // $failed = "Product stock belum ada, Silahkan hubungi Admin!";
+                                        $failed = 'Variant : <b>'. $product_check->code .' - '. $product_check->name . '</b> Stock belum ada, silahkan hubungi Administrator!';
+                                        break;
+                                    }else {
+                                        $total_quantity = $detail->total_quantity_ri;
+                                        $get_stock = $check_stock->quantity;
+                                        // DD($get_stock);
+                                        $check_stock->quantity = $get_stock + $total_quantity;
+                                        $check_stock->save();
+                                        
+                                        // Record log stock
+                                        $move = StockMove::where('product_packaging_id', $detail->product_packaging_id)
+                                        ->where('warehouse_id', $receiving->warehuse_id)
+                                        ->get();
+                                        $move_in = $move->sum('stock_in');
+                                        $move_out = $move->sum('stock_out');
+                                        
+                                        $sisa = $get_stock + $move_in - $move_out + $total_quantity;
+                                        $insert_stock_move = StockMove::create([
+                                            'code_transaction' => 'Receiving-'.$receiving->code,
+                                            'warehouse_id' => $receiving->warehouse_id,
+                                            'product_packaging_id' => $detail->product_packaging_id,
+                                            'stock_in' => $total_quantity,
+                                            'stock_balance' => $sisa,
+                                            'created_by' => Auth::id()
+                                        ]);
+                                    }
                         }
                         
 
-                        DB::commit();
-                        if ($button_type == 'publish') {
-                            $response['redirect_to'] = route('superuser.gudang.receiving.index');
+                        if ($failed) {
+                            $response['failed'] = $failed;
+                            DB::rollback();
+        
+                            return $this->response(200, $response);
                         } else {
-                            $response['redirect_to'] = '#datatable';
+                            DB::commit();
+                            if ($button_type == 'publish') {
+                                $response['redirect_to'] = route('superuser.gudang.receiving.index');
+                            } else {
+                                $response['redirect_to'] = '#datatable';
+                            }
+    
+                            return $this->response(200, $response);
                         }
-
-                        return $this->response(200, $response);
                     }
                 }
             } catch (\Exception $e) {
-                dd($e);
+                // dd($e);
                 DB::rollback();
                 $response['notification'] = [
                     'alert' => 'block',
@@ -510,7 +530,7 @@ class ReceivingController extends Controller
             $receiving->status = Receiving::STATUS['DELETED'];
 
             if ($receiving->save()) {
-
+                LogActivity::addToLog('Deleted Receiving: ' . $receiving->code);
                 $response['redirect_to'] = route('superuser.gudang.receiving.index');
                 return $this->response(200, $response);
             }

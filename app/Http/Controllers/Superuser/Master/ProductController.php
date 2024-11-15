@@ -3,10 +3,12 @@
 namespace App\Http\Controllers\Superuser\Master;
 
 use App\DataTables\Master\ProductTable;
+use App\DataTables\Master\ProductMaterialTable;
 use App\Entities\Master\Product;
 use App\Entities\Master\ProductPack;
 use App\Entities\Master\ProductCategory;
 use App\Entities\Master\ProductType;
+use App\Entities\Master\ProductCategoryType;
 use App\Entities\Master\ProductMinStock;
 use App\Entities\Master\SubBrandReference;
 use App\Entities\Master\BrandLokal;
@@ -51,9 +53,15 @@ class ProductController extends Controller
             return $next($request);
         });
     }
+
     public function json(Request $request, ProductTable $datatable)
     {
-        return $datatable->build();
+        return $datatable->build($request);
+    }
+
+    public function json2(Request $request, ProductMaterialTable $datatable)
+    {
+        return $datatable->build($request);
     }
 
     public function index()
@@ -65,8 +73,9 @@ class ProductController extends Controller
             }
         }
 
-        $data['product'] = Product::get();
+        $data['product'] = Product::distinct()->get(['code', 'name']);
         $data['brand_lokal'] = BrandLokal::get();
+        $data['kategori'] = ProductCategory::get();
 
         return view('superuser.master.product.index', $data);
     }
@@ -138,7 +147,7 @@ class ProductController extends Controller
                         $product->brand_name = $request->brand_name;
                         $product->sub_brand_reference_id = $request->searah;
                         $product->category_id = $request->category;
-                        $product->type_id = $request->type;
+                        // $product->type_id = $request->type;
                         $product->vendor_id = $request->factory;
                         $product->vendor_optional_id = $request->optional_factory;
     
@@ -196,36 +205,24 @@ class ProductController extends Controller
                             }
                         }
                     }else{
-                        $get_product = Product::where('id', $request->code)->first();
+                        // $get_product = Product::where('id', $request->code)->first();
+                        $idExists = Product::where('id', $request->code)->exists();
 
                         $product = new Product;
-                        
-                        // if($get_product === null){
-                        //     $product->id = $request->code;
-                        // }else{
-                        //     if($get_product){
-                        //         if($get_product->id === $request->code){
-                        //             $product->id = $request->code.'/'.+1;
-                        //             // dd($product->id);
-                        //             // $response['failed'] = 'ID sudah terposting';
-                        //         }else{
-                        //             $product->id = $request->code;
-                        //             // $response['failed'] = 'ID belum terposting';
-                        //             // DD($response);
-                        //         }
-                        //     }
-                        // }
-                        if($get_product == $request->code){
-                            $product->id = $request->code.'/'.+1;
-                        }else{
-                            $product->id = $request->code;
+
+                        // check existing ID product
+                        if ($idExists) {
+                            $newId = $request->code . '/' . (Product::where('id', 'like', $request->code . '%')->count() + 1);
+                        } else {
+                            $newId = $request->code;
                         }
 
+                        $product->id = $newId;
                         $product->code = $request->code;
                         $product->brand_name = $request->brand_name;
                         $product->sub_brand_reference_id = $request->searah;
                         $product->category_id = $request->category;
-                        $product->type_id = $request->type;
+                        // $product->type_id = $request->type;
                         $product->vendor_id = $request->factory;
                         $product->vendor_optional_id = $request->factory2;
     
@@ -412,7 +409,6 @@ class ProductController extends Controller
                 $product->brand_name = $request->brand_name;
                 $product->sub_brand_reference_id = $request->searah;
                 $product->category_id = $request->category;
-                $product->type_id = $request->type;
 
                 $product->code = $request->code;
                 $product->name = $request->name;
@@ -903,54 +899,240 @@ class ProductController extends Controller
         }
     }
 
-    public function disable(Request $request, $id)
+    public function inactiveStatus(Request $request, $id)
     {
         if ($request->ajax()) {
-            if(Auth::user()->is_superuser == 0){
-                if(empty($this->access) || empty($this->access->user) || $this->access->can_update == 0){
-                    return redirect()->route('superuser.index')->with('error','Anda tidak punya akses untuk membuka menu terkait');
-                }
-            }
-
-            // DD($id);
             $decode = base64_decode($id);
-            $product_pack = ProductPack::find($decode);
-            // DD($product_pack);
 
-            if ($product_pack === null) {
-                abort(404);
-            }
+            $product = Product::where('id', $decode)->first();
+            
+            DB::beginTransaction();
 
-            $product_pack->condition = ProductPack::CONDITION['DISABLE'];
+            try {
+                
+                $product->status = Product::STATUS['INACTIVE'];
+                if($product->save()){
+                    DB::commit();
 
-            if ($product_pack->save()) {
-                $response['redirect_to'] = route('superuser.master.product.show', base64_encode($product_pack->product->id));
-                return $this->response(200, $response);
+                    $response['notification'] = [
+                        'alert' => 'notify',
+                        'type' => 'success',
+                        'content' => 'Success',
+                    ];
+
+                    $response['redirect_to'] = route('superuser.master.product.index');
+
+                    return $this->response(200, $response);
+                }
+            } catch (\Throwable $e) {
+                dd($e);
+                DB::rollback();
+                $response['notification'] = [
+                    'alert' => 'block',
+                    'type' => 'alert-danger',
+                    'header' => 'Error',
+                    'content' => "Internal Server Error",
+                ];
+
+                return $this->response(400, $response);
             }
         }
     }
 
-    public function enable(Request $request, $id)
+    public function activeStatus(Request $request, $id)
+    {
+        if ($request->ajax()) {
+            $decode = base64_decode($id);
+
+            $product = Product::where('id', $decode)->first();
+            
+            DB::beginTransaction();
+
+            try {
+                
+                $product->status = Product::STATUS['ACTIVE'];
+                if($product->save()){
+                    DB::commit();
+
+                    $response['notification'] = [
+                        'alert' => 'notify',
+                        'type' => 'success',
+                        'content' => 'Success',
+                    ];
+
+                    $response['redirect_to'] = route('superuser.master.product.index');
+
+                    return $this->response(200, $response);
+                }
+            } catch (\Throwable $e) {
+                dd($e);
+                DB::rollback();
+                $response['notification'] = [
+                    'alert' => 'block',
+                    'type' => 'alert-danger',
+                    'header' => 'Error',
+                    'content' => "Internal Server Error",
+                ];
+
+                return $this->response(400, $response);
+            }
+        }
+    }
+
+    public function update_category_type_pack(Request $request)
+    {
+        // Authorization check
+        if (Auth::user()->is_superuser == 0) {
+            if (empty($this->access) || empty($this->access->user) || $this->access->can_update == 0) {
+                abort(405);
+            }
+        }
+
+        // Fetch all active product packs
+        $product_packs = ProductPack::where('status', 1)->get();
+
+        // Loop through each product pack to calculate fee_cashback and create ProductCategoryType
+        foreach ($product_packs as $product_pack) {
+            $fee_cashback = $this->calculateFeeCashback($product_pack);
+
+            // Create a new ProductCategoryType record
+            ProductCategoryType::create([
+                'product_packaging_id' => $product_pack->id,
+                'category_id' => $product_pack->category_id,
+                'type_id' => $product_pack->type_id ?? 0,
+                'fee' => $fee_cashback,
+            ]);
+        }
+    }
+
+    private function calculateFeeCashback($product_pack)
+    {
+        $fee_cashback = 0; // Default value
+
+        // Ensure the related product exists
+        $product = $product_pack->product;
+
+        if (!$product) {
+            return $fee_cashback; // Return the default value if no product is found
+        }
+
+        // Calculate fee_cashback based on product's brand_name
+        switch ($product->brand_name) {
+            case 'Senses':
+                if ($product_pack->category_product_pack && $product_pack->packaging) {
+                    if ($product_pack->category_product_pack->name === "100" && $product_pack->packaging->pack_name === "0.1 kg Alu") {
+                        $fee_cashback = 1;
+                    } elseif ($product_pack->category_product_pack->name === "Regular" && $product_pack->type_product_pack->name !== "R") {
+                        $fee_cashback = 2.5;
+                    } elseif ($product_pack->category_product_pack->name === "5000") {
+                        $fee_cashback = 2.5;
+                    } else {
+                        $fee_cashback = 2;
+                    }
+                }
+                break;
+
+            case 'GCF':
+                if ($product_pack->category_product_pack && in_array($product_pack->category_product_pack->name, ["Premium", "Lifestyle"])) {
+                    $fee_cashback = 3;
+                }
+                break;
+
+            case 'PPI NON FF':
+            case 'PPI FF':
+                $fee_cashback = 2;
+                break;
+
+            case 'Nginden':
+                if ($product_pack->category_product_pack && $product_pack->category_product_pack->name === "Seluz") {
+                    $fee_cashback = 3;
+                }
+                break;
+
+            case 'PPI X':
+                if ($product_pack->category_product_pack && $product_pack->category_product_pack->name === "NON FF - Ori") {
+                    $fee_cashback = 3;
+                }
+                break;
+
+            default:
+                $fee_cashback = 0;
+                break;
+        }
+
+        return $fee_cashback;
+    }
+
+    public function pageReport()
     {
         // Access
         if(Auth::user()->is_superuser == 0){
-            if(empty($this->access) || empty($this->access->user) || $this->access->can_update == 0){
+            if(empty($this->access) || empty($this->access->user) || $this->access->can_read == 0){
                 return redirect()->route('superuser.index')->with('error','Anda tidak punya akses untuk membuka menu terkait');
             }
         }
 
-        $decode = base64_decode($id);
-        $product_pack = ProductPack::find($decode);
+        $data['vendor'] = Vendor::where('type', 2)->get();
 
-        if ($product_pack === null) {
-            abort(404);
+        // return view('superuser.finance.invoicing.index' ,$data);
+        return view('superuser.master.product.report', $data);
+    }
+
+    public function print_product_material()
+    {
+        if(Auth::user()->is_superuser == 0){
+            if(empty($this->access) || empty($this->access->user) || $this->access->can_print == 0){
+                return redirect()->route('superuser.index')->with('error','Anda tidak punya akses untuk membuka menu terkait');
+            }
         }
 
-        $product_pack->condition = ProductPack::CONDITION['ENABLE'];
+        $my_report = "C:\\xampp\\htdocs\\ppi-dist\public\\cr\\report\\operasional\\product_material\\list_matrial_product.rpt"; 
+        $my_pdf = 'C:\\xampp\\htdocs\\ppi-dist\\public\\cr\\report\\operasional\\product_material\\export\\product_material.pdf';
 
-        if ($product_pack->save()) {
-            $response['redirect_to'] = route('superuser.master.product.show', base64_encode($product_pack->product->id));
-            return $this->response(200, $response);
-        }
+        //- Variables - Server Information 
+        $my_server = "LOCAL_3"; 
+        $my_user = "root"; 
+        $my_password = ""; 
+        $my_database = "ppi_araya";
+        $COM_Object = "CrystalDesignRunTime.Application";
+
+        //-Create new COM object-depends on your Crystal Report version
+        $crapp= New COM($COM_Object) or die("Unable to Create Object");
+        $creport = $crapp->OpenReport($my_report,1); // call rpt report
+
+        //- Set database logon info - must have
+        $creport->Database->Tables(1)->SetLogOnInfo($my_server, $my_database, $my_user, $my_password);
+
+        //- field prompt or else report will hang - to get through
+        $creport->EnableParameterPrompting = FALSE;
+
+        //export to PDF process
+        $creport->ExportOptions->DiskFileName=$my_pdf; //export to pdf
+        $creport->ExportOptions->PDFExportAllPages=true;
+        $creport->ExportOptions->DestinationType=1; // export to file
+        $creport->ExportOptions->FormatType=31; // PDF type
+        $creport->Export(false);
+
+        //------ Release the variables ------
+        $creport = null;
+        $crapp = null;
+        $ObjectFactory = null;
+
+        $file = 'C:\\xampp\\htdocs\\ppi-dist\\public\\cr\\report\\operasional\\product_material\\export\\product_material.pdf';
+
+        // if($get_do->type_transaction == 1 && $get_do->so->payment_status == 1){
+        //     $file->SetWatermarkText("PAID");
+        // }elseif($get_do->type_transaction == 2 && $get_do->so->payment_status == 2){
+        //     $file->SetWatermarkText("COPY");
+        // }
+
+        header("Content-Description: File Transfer"); 
+        header("Content-Type: application/octet-stream"); 
+        header("Content-Transfer-Encoding: Binary"); 
+        header("Content-Disposition: attachment; filename=\"". basename($file) ."\""); 
+        ob_clean();
+        flush();
+        readfile ($file);
+        exit();
     }
 }

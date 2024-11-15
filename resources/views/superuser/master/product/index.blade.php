@@ -8,6 +8,10 @@
   <button type="button" class="btn btn-outline-warning ml-10" data-toggle="modal" data-target="#ModalLoginForm">
     Print
   </button>
+
+  @role('Developer')
+    <a class="btn btn-outline-success ml-10" href="javascript:saveConfirmation('{{ route('superuser.master.product.update_category_type_pack') }}')" role="button">Fee</a>
+  @endrole
 </nav>
 
 @if($errors->any())
@@ -23,6 +27,69 @@
 @endif
 
 <div id="alert-block"></div>
+
+<div class="form-group row">
+      <div class="col-md-9">
+        <div class="block">
+          <div class="block-content">
+            <div class="form-group row">
+              <label class="col-md-2 col-form-label text-left" for="product_name">Product :</label>
+              <div class="col-md-4">
+                <select class="js-select2 form-control" id="product_name" name="product_name" data-placeholder="Select Product">
+                  <option value="all">All</option>
+                  @foreach ($product as $value)
+                    <option value="{{ $value->name }}">{{ $value->code }} - {{ $value->name }}</option>
+                  @endforeach
+                </select>
+              </div>
+              <label class="col-md-2 col-form-label text-left" for="brand_lokal">Brand :</label>
+              <div class="col-md-4">
+                <select class="js-select2 form-control" id="brand_lokal" name="brand_lokal" data-placeholder="Select Brand">
+                  <option value="all">All</option>
+                  @foreach ($brand_lokal as $value)
+                    <option value="{{ $value->brand_name }}">{{ $value->brand_name }}</option>
+                  @endforeach
+                </select>
+              </div>
+            </div>
+            <div class="form-group row">
+              <label class="col-md-2 col-form-label text-left" for="kategori">Kategori :</label>
+              <div class="col-md-4">
+                <select class="js-select2 form-control" id="kategori" name="kategori" data-placeholder="Select Kategori">
+                  <option value="all">All</option>
+                  @foreach ($kategori as $value)
+                    <option value="{{ $value->id }}">{{ $value->name }}</option>
+                  @endforeach
+                </select>
+              </div>
+
+              <label class="col-md-2 col-form-label text-left" for="status">Status :</label>
+              <div class="col-md-4">
+                <select class="js-select2 form-control" id="status" name="status" data-placeholder="Select Status">
+                  <option value="all">All</option>
+                  @foreach(App\Entities\Master\Product::STATUS as $row => $value)
+                    <option value="{{$value}}">{{ $row }}</option>
+                  @endforeach
+                </select>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="col-md-3">
+        <div class="block">
+          <div class="block-content">
+            <div class="form-group row">
+              <div class="col-md-12 text-center">
+                <a href="#" id="btn-filter" class="btn bg-gd-corporate border-0 text-white pl-50 pr-50">
+                  Filter <i class="fa fa-search ml-10"></i>
+                </a>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
 
 @if(session()->has('collect_success') || session()->has('collect_error'))
 <div class="container">
@@ -62,53 +129,17 @@
   <table class="table table-striped" id="datatables">
       <thead>
         <tr>
-          <th>#</th>
           <th>Code</th>
           <th>Brand</th>
           <th>Category</th>
           <th>Name</th>
-          <th>Warehouse</th>
           <th>Status</th>
           <th>Action</th>
+          <th>Action 2</th>
         </tr>
       </thead>
       <tbody>
-        @foreach($product as $row)
-          <tr>
-            <td>{{$loop->iteration}}</td>
-            <td>{{$row->code}}</td>
-            <td>{{$row->brand_name}}</td>
-            <td>{{$row->category->name}}</td>
-            <td>{{$row->name}}</td>
-            <td>{{$row->default_warehouse->name ?? 'Gudang Araya'}}</td>
-            <td>{{$row->status()}}</td>
-            <td>
-              @if($row->status == '1')
-                <a href="{{ route('superuser.master.product.show', base64_encode($row->id))}}">
-                  <button type="button" class="btn btn-sm btn-circle btn-alt-secondary" title="Show">
-                    <i class="mdi mdi-eye"></i>
-                  </button>
-                </a>
-                <a href="{{ route('superuser.master.product.edit', base64_encode($row->id)) }}">
-                  <button type="button" class="btn btn-sm btn-circle btn-alt-secondary" title="Edit">
-                    <i class="mdi mdi-pencil"></i>
-                  </button>
-                </a>
-                <a href="javascript:deleteConfirmation('{{ route('superuser.master.product.destroy', $row->id) }}')">
-                  <button type="button" class="btn btn-sm btn-circle btn-alt-secondary" title="Delete">
-                    <i class="mdi mdi-delete"></i>
-                  </button>
-                </a>
-              @elseif($row->status == '0')
-                <a href="">
-                  <button type="button" class="btn btn-sm btn-circle btn-alt-secondary" title="Show">
-                    <i class="mdi mdi-eye"></i>
-                  </button>
-                </a>
-              @endif
-            </td>
-          </tr>
-        @endforeach
+        
       </tbody>
     </table>
   </div>
@@ -176,8 +207,45 @@
 <script type="text/javascript">
 $(document).ready(function() {
   let datatableUrl = '{{ route('superuser.master.product.json') }}';
+  let firstDatatableUrl = datatableUrl + '?product_name=all' + '&brand_lokal=all' + '&kategori=all';
 
-  var table = $('#datatables').DataTable({});
+  var datatable = $('#datatables').DataTable({
+    language: {
+      processing: "<span class='fa-stack fa-lg'>\n\
+                    <i class='fa fa-spinner fa-spin fa-stack-2x fa-fw'></i>\n\
+                  </span>",
+    },
+    processing: true,
+    serverSide: false,
+    ajax: {
+      "url": datatableUrl,
+      "dataType": "json",
+      "type": "GET",
+      "data":{ _token: "{{csrf_token()}}"}
+    },
+    columns: [
+      {data: 'code', name: 'master_products.code', width: "100px"},
+      {data: 'brand_name', name: 'master_products.brand_name', width: "150px"},
+      {data: 'category_name', name: 'master_product_categories.category_name', width: "200px"},
+      {data: 'name', name: 'master_products.name', width: "250px"},
+      {data: 'status', width: "150px"},
+      {data: 'action', width: "100px"},
+      {data: 'action2', width: "100px"},
+    ],
+    autoWidth: false
+  })
+
+  $('#btn-filter').on('click', function(e) {
+    e.preventDefault();
+
+    var kategori_name = $('#kategori').val();
+    var product = $('#product_name').val();
+    var brand = $('#brand_lokal').val();
+    var status = $('#status').val();
+
+    let newDatatableUrl = datatableUrl + '?product_name=' + product + '&brand_lokal=' + brand + '&kategori=' + kategori_name + '&status=' + status;
+    datatable.ajax.url(newDatatableUrl).load();
+  });
 
   $('.js-select2').select2()
 });

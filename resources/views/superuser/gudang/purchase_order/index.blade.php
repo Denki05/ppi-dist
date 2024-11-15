@@ -22,13 +22,12 @@
 
 <div class="block">
   <div class="block-content">
-      <!-- <div class="row mb-30">
-        <div class="col-12">
-          <a href="{{route('superuser.gudang.purchase_order.create')}}" class="btn btn-primary btn-add"><i class="fa fa-plus"></i> Add PO</a>
-        </div>
-      </div> -->
       <a href="{{route('superuser.gudang.purchase_order.create')}}">
-        <button type="button" class="btn btn-outline-primary min-width-125">New</button>
+        <button type="button" class="btn btn-outline-success min-width-125">Create</button>
+      </a>
+
+      <a href="{{route('superuser.gudang.purchase_order.export')}}">
+        <button type="button" class="btn btn-outline-primary min-width-125">Export</button>
       </a>
 
       <hr class="my-20">
@@ -87,9 +86,9 @@
         {data: 'status'},
         {data: 'action', orderable: false, searcable: false}
       ],
-      scrollCollapse: true,
-      scrollX: true,
-      scrollY: 300,
+      // scrollCollapse: false,
+      // scrollX: false,
+      // scrollY: 300,
       order: [
         [1, 'desc']
       ],

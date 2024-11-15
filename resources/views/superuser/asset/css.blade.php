@@ -1,6 +1,4 @@
 <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Muli:300,400,400i,600,700">
-
-<link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.7.2/css/all.css">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.0-beta1/dist/css/bootstrap.min.css">
 <link rel="stylesheet" id="css-main" href="{{ asset('superuser_assets/css/codebase.min.css') }}">
 @if(setting('website.color_themes') != 'default')
@@ -37,3 +35,8 @@
 
 <!-- tab DO -->
 <link rel="stylesheet" href="{{ asset('superuser_assets/css/tab.do.css') }}">
+
+<!-- Icon -->
+<link rel="stylesheet" href="{{ asset('superuser_assets/fontawesome6/css/fontawesome.css') }}" rel="stylesheet" />
+<link rel="stylesheet" href="{{ asset('superuser_assets/fontawesome6/css/brands.css') }}" rel="stylesheet" />
+<link rel="stylesheet" href="{{ asset('superuser_assets/fontawesome6/css/solid.css') }}" rel="stylesheet" />

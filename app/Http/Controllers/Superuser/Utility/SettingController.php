@@ -17,8 +17,8 @@ class SettingController extends Controller
         if ($request->ajax()) {
             $validator = Validator::make($request->all(), [
                 'name' => 'nullable|string',
-                'maintenance' => 'nullable',
-                'maintenance_message' => 'nullable|string'
+                // 'maintenance' => 'nullable',
+                // 'maintenance_message' => 'nullable|string'
             ]);
   
             if ($validator->fails()) {
@@ -35,8 +35,8 @@ class SettingController extends Controller
             if ($validator->passes()) {
                 setting([
                     'website.name' => $request->name,
-                    'website.maintenance' => isset($request->maintenance),
-                    'website.maintenance_message' => $request->maintenance_message,
+                    // 'website.maintenance' => isset($request->maintenance),
+                    // 'website.maintenance_message' => $request->maintenance_message,
                     'website.color_themes' => $request->color_themes
                 ]);
 
@@ -53,5 +53,39 @@ class SettingController extends Controller
                 return $this->response(200, $response);
             }
         }
+    }
+
+    public function enableMaintenanceMode()
+    {
+        // Enable maintenance mode
+        Artisan::call('down', ['--message' => 'Situs sedang dalam pemeliharaan. Silakan coba lagi nanti!']);
+
+        // return response()->json(['message' => 'Maintenance mode enabled'], 200);
+        $response['notification'] = [
+            'alert' => 'notify',
+            'type' => 'success',
+            'content' => 'Maintenance mode enabled',
+        ];
+
+        $response['redirect_to'] = 'reload()';
+
+        return $this->response(200, $response);
+    }
+
+    public function disableMaintenanceMode()
+    {
+        // Disable maintenance mode
+        Artisan::call('up');
+
+        // return response()->json(['message' => 'Maintenance mode disabled'], 200);
+        $response['notification'] = [
+            'alert' => 'notify',
+            'type' => 'success',
+            'content' => 'Maintenance mode disabled',
+        ];
+
+        $response['redirect_to'] = 'reload()';
+
+        return $this->response(200, $response);
     }
 }

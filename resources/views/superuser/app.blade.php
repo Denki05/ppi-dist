@@ -4,7 +4,14 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, shrink-to-fit=no">
     <meta name="csrf-token" content="{{ csrf_token() }}">
-    <title>{{ setting('website.name') }}</title>
+    @php
+      $user = Auth::id();
+      $notifCount = DB::table('notifications')
+        ->where('notifiable_id', $user)
+        ->where('read_at', null)
+        ->count();
+     @endphp
+    <title>{{ !empty($notifCount) ? $notifCount : ' ' }} {{ setting('website.name') }}</title>
     <meta name="robots" content="noindex, nofollow">
     <link rel="shortcut icon" href="{{ asset('superuser_assets/media/logo_ppi.png') }}">
     @stack('plugin-styles')
@@ -21,23 +28,13 @@
           @yield('content')
         </div>
       </main>
-      <!-- <footer id="page-footer" class="footer">
-        <div class="content font-size-xs clearfix">
-          <div class="float-left">
-            <p>This page took {{ round(microtime(true) - LARAVEL_START, 3) }} seconds to render</p>
-          </div>
-          <div class="float-right">
-            <a class="font-w600" href="#" target="_blank">Copyright &copy; 2022 <b>Premium Parfume Indonesia</b>. All rights reserved.</span>
-          </div>
-        </div>
-      </footer> -->
       <footer id="page-footer" class="opacity-1">
         <div class="content font-size-xs clearfix">
           <div class="float-left">
             <p>This page took {{ round(microtime(true) - LARAVEL_START, 3) }} seconds to render</p>
           </div>
           <div class="float-right">
-            <a class="font-w600" href="#" target="_blank">Copyright &copy; 2022 <b>Premium Parfume Indonesia</b>. All rights reserved.</span>
+            <a class="font-w600" href="#" target="_blank">Copyright &copy; <?php echo date("Y"); ?> <b>Premium Parfume Indonesia</b>. All rights reserved.</span>
           </div>
         </div>
       </footer>

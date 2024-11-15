@@ -93,11 +93,8 @@ class ContactController extends Controller
         if ($request->ajax()) {
             $validator = Validator::make($request->all(), [
                 'name' => 'required|string',
-                'phone' => 'required|string',
-                'position' => 'nullable',
-                'dob' => 'nullable|date|date_format:d-m-Y',
-                'npwp' => 'nullable',
-                'ktp' => 'nullable',
+                // 'phone' => 'required|string',
+                // 'position' => 'nullable',
                
             ]);
 
@@ -151,7 +148,7 @@ class ContactController extends Controller
                 }
                 $contact->is_for = $request->is_for;
                 $contact->manage_id = $request->manage_id;
-                DD($contact->manage_id);
+                // DD($contact->manage_id);
                 $contact->status = Contact::STATUS['ACTIVE'];
 
                 if ($contact->save()) {

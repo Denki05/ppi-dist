@@ -11,15 +11,10 @@ class InvoiceTaxDetail extends Model
     protected $table = "finance_invoice_mitra_detail";
     protected $fillable = [
     	'invoice_tax_id',
-    	'product_tax_id',
-        'selling_price_tax',
-        'buying_price_tax',
-    	'kurs',
+    	'product_finance_id',
+        'price',
         'qty',
-        'subtotal',
-    	'updated_by',
-    	'created_by',
-    	'deleted_by'
+        'sub_total',
     ];
 
     public function invoice_tax(){
@@ -27,6 +22,6 @@ class InvoiceTaxDetail extends Model
     }
 
     public function product_tax(){
-    	return $this->belongsTo('App\Entities\Master\ProductFinance', 'product_tax_id', 'id');
+    	return $this->belongsTo('App\Entities\Master\ProductFinance', 'product_finance_id', 'id');
     }
 }

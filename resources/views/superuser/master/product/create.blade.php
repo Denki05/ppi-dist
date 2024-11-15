@@ -422,6 +422,10 @@
         },
       })
     })
+
+    $('#searah').select2({
+      sorter: data => data.sort((a, b) => a.text.localeCompare(b.text)),
+    });
   })
 </script>
 @endpush

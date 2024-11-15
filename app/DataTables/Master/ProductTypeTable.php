@@ -42,16 +42,6 @@ class ProductTypeTable extends Table
             ];
         });
 
-        $table->addColumn('check', function (ProductType $model) {
-            if ($model->status == $model::STATUS['DELETED']) {
-                return "";
-            } else {
-                return "
-                    <input type='checkbox' class='check-entity' value='" . $model->id . "' />
-                ";
-            }
-        });
-
         $table->addColumn('action', function (ProductType $model) {
             $view = route('superuser.master.product_type.show', $model);
             $edit = route('superuser.master.product_type.edit', $model);

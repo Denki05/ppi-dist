@@ -3,6 +3,7 @@
 namespace App\Exports\Master;
 
 use App\Entities\Master\Product;
+use App\Entities\Master\ProductPack;
 use Maatwebsite\Excel\Concerns\FromQuery;
 use Maatwebsite\Excel\Concerns\ShouldAutoSize;
 use Maatwebsite\Excel\Concerns\WithHeadings;
@@ -11,46 +12,31 @@ use Maatwebsite\Excel\Concerns\WithMapping;
 class ProductExport implements FromQuery, WithHeadings, WithMapping, ShouldAutoSize
 {
     private $column = [
-        'id',
-        'brand_reference_id',
-        'sub_brand_reference_id',
-        'category_id',
-        'type_id',
-        'code',
-        'name',
-        'material_code',
-        'material_name',
-        'description',
-        'default_quantity',
-        'default_unit_id',
-        'default_warehouse_id',
-        'buying_price',
-        'selling_price',
-        'status',
+        'master_products_packaging.id',
+        'master_products.brand_name',
+        'master_products_packaging.code',
+        'master_products_packaging.name',
+        'master_packaging.pack_name',
+        'master_products.status',
     ];
 
     private $headings = [
-        'id',
-        'brand_reference',
-        'sub_brand_reference',
-        'category',
-        'type',
-        'code',
-        'name',
-        'material_code',
-        'material_name',
-        'description',
-        'default_quantity',
-        'default_unit',
-        'default_warehouse',
-        'buying_price',
-        'selling_price',
-        'status',
+        'ID',
+        'Brand Name',
+        'Code',
+        'Name',
+        'Kemasan',
+        'Status',
     ];
 
     public function query()
     {
-        return Product::query()->select($this->column);
+        // return Product::query()->select($this->column);
+        return Product::query()
+            ->join('master_products_packaging', 'master_products.id', '=', 'master_products_packaging.product_id')
+            ->join('master_packaging', 'master_products_packaging.packaging_id', '=', 'master_packaging.id')
+            ->where('master_products.status', 1)
+            ->select($this->column);
     }
 
     public function headings(): array
@@ -62,20 +48,10 @@ class ProductExport implements FromQuery, WithHeadings, WithMapping, ShouldAutoS
     {
         return [
             $row->id,
-            $row->brand_reference->name,
-            $row->sub_brand_reference->name,
-            $row->category->name,
-            $row->type->name,
+            $row->brand_name,
             $row->code,
             $row->name,
-            $row->material_code,
-            $row->material_name,
-            $row->description,
-            $row->default_quantity,
-            $row->default_unit->name,
-            $row->default_warehouse->name,
-            $row->buying_price,
-            $row->selling_price,
+            $row->pack_name,
             $row->status()
         ];
     }

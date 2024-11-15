@@ -30,7 +30,7 @@
           <div class="form-group">
             <label>Account customer</label>
             <input type="text" class="form-control" name="customer_name" value="{{ $customer->name }} {{ $customer->text_kota }}" readonly>
-            <input type="hidden" value="{{$customer->id}}" name="customer_id">
+            <input type="hidden" value="{{$customer->id}}" name="customer_id" id="customer_id">
           </div>
       </div>
       <div class="col">
@@ -158,6 +158,7 @@
         e.preventDefault();
         if(confirm("Apakah anda yakin ingin melakukan pembayaran ini ?")){
           let _form = $('#frmPayable');
+          var customerId = $('#customer_id').val();
           $.ajax({
             url : '{{route('superuser.finance.payable.store')}}',
             method : "POST",
@@ -176,7 +177,7 @@
                   resp.Message,
                   'success'
                 ).then((result) => {
-                    window.location.href = '{{route('superuser.finance.payable.index')}}';
+                  window.location.href = '{{ route('superuser.finance.payable.create') }}' + '?customer_id=' + customerId;
                 })
               }
             },

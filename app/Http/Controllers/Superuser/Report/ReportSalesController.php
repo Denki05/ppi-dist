@@ -10,11 +10,17 @@ use App\Entities\Penjualan\SalesOrderItem;
 use App\Entities\Penjualan\PackingOrderItem;
 use App\Entities\Penjualan\PackingOrder;
 use App\Entities\Master\Sales;
-use App\Entities\Master\Customer;
+use App\Entities\Master\CustomerOtherAddress;
 use App\Entities\Master\Company;
+use App\DataTables\Report\SalesReportTable;
 use App\Entities\Setting\UserMenu;
+use Rap2hpoutre\FastExcel\FastExcel;
+use Box\Spout\Writer\Common\Creator\Style\StyleBuilder;
+use \Carbon\Carbon;
 use Auth;
+use COM;
 use PDF;
+use Validator;
 
 class ReportSalesController extends Controller
 {
@@ -40,6 +46,12 @@ class ReportSalesController extends Controller
             return $next($request);
          });  
     }
+
+    public function json(Request $request, SalesReportTable $datatable)
+    {
+        return $datatable->build($request);
+    }
+
     public function index(Request $request)
     {
         // Access
@@ -49,328 +61,196 @@ class ReportSalesController extends Controller
             }
         }
 
-        $customer_id = $request->input('customer_id');
-        $sales_senior_id = $request->input('sales_senior_id');
-        $sales_id = $request->input('sales_id');
-        $period_from = $request->input('period_from');
-        $period_to = $request->input('period_to');
-
-        $sales = Sales::get();
-        $customer = Customer::get();
-
-        $order = PackingOrder::whereHas('invoicing',function($query2) use($period_from,$period_to){
-                                if($period_from){
-                                    $query2->whereDate('created_at','>=',$period_from);
-                                }
-                                if($period_to){
-                                    $query2->whereDate('created_at','<=',$period_to);
-                                }
-                            })
-                            ->where(function($query2) use($customer_id){
-                                if(!empty($customer_id)){
-                                    $query2->where('customer_id',$customer_id);
-                                }
-                            })
-                            ->get();       
-        
-        $final_array = [];
-        foreach ($order as $key => $value) {
-            $order_item = PackingOrderItem::where('do_id',$value->id)->get();
-            foreach ($order_item as $k => $v) {
-                $sales_order_item = SalesOrderItem::where('id',$v->so_item_id)->first();
-                $sales_order = SalesOrder::where('id',$sales_order_item->so_id)->first();
-
-                if(isset($final_array[$v->do_id])){
-                    foreach ($final_array[$v->do_id]["sales_senior"] as $x => $y) {
-                        if($y["id"] != $sales_order->sales_senior_id){
-                            $final_array[$v->do_id]["sales_senior"][] = $sales_order->sales_senior->toArray() ?? null;
-                        }
-                    }
-
-                    foreach ($final_array[$v->do_id]["sales"] as $x => $y) {
-                        if($y["id"] != $sales_order->sales_id){
-                            $final_array[$v->do_id]["sales"][] = $sales_order->sales->toArray() ?? null;
-                        }
-                    }
-                }
-                else{
-                    $final_array[$v->do_id]["sales_senior"][] = $sales_order->sales_senior->toArray() ?? null;
-                    $final_array[$v->do_id]["sales"][] = $sales_order->sales->toArray() ?? null;
-                    $final_array[$v->do_id]["do"] = $order[$key]->toArray();
-                    $final_array[$v->do_id]["invoice"] = $value->invoicing->toArray() ?? null;
-                    $final_array[$v->do_id]["payable"] = $value->invoicing->payable_detail()->get()->toArray() ?? null;    
-                }
-
-                
-            }
-        }
-
-
-        $final_array_backup = $final_array;
-
-        $final_array_sementara_senior = [];
-        if(!empty($sales_senior_id)){
-            foreach ($final_array as $key => $value) {
-                foreach ($value["sales_senior"] as $k => $v) {
-                    if($v["id"] == $sales_senior_id){
-                        $final_array_sementara_senior[] = $final_array[$key];
-                    }
-                }
-            }
-            $final_array = $final_array_sementara_senior;
-        }
-
-        $final_array_sementara = [];
-        if(!empty($sales_id)){
-            foreach ($final_array as $key => $value) {
-                foreach ($value["sales"] as $k => $v) {
-                    if($v["id"] == $sales_id){
-                        $final_array_sementara[] = $final_array[$key];
-                    }
-                }
-            }
-            $final_array = $final_array_sementara;
-        }
-
-
-        $final_array_sementara_final = [];
-        if(!empty($sales_senior_id) && !empty($sales_id)){
-            foreach ($final_array_backup as $key => $value) {
-                $filter_do_id_sales_senior = "";
-                foreach ($value["sales_senior"] as $k => $v) {
-                    if($v["id"] == $sales_senior_id){
-                        $filter_do_id_sales_senior = $value["do"]["id"];
-                    }
-                     
-                }
-                $filter_do_id_sales = "";
-                foreach ($value["sales"] as $k => $v) {
-                    if($v["id"] == $sales_id){
-                        $filter_do_id_sales = $value["do"]["id"];
-                    }
-                }
-
-                if($filter_do_id_sales == $filter_do_id_sales_senior){
-                    $final_array_sementara_final[] = $final_array_backup[$key];
-                }
-            }
-            $final_array = $final_array_sementara_final;
-        }
-
-        $customer_filter = Customer::where('id',$customer_id)->first();
-        $sales_filter = Sales::where('id',$sales_id)->first();
-        $sales_senior_filter = Sales::where('id',$sales_senior_id)->first();
+        $customer = CustomerOtherAddress::where('situation', 1)->get();
 
         $data = [
-            'sales' => $sales,
             'customer' => $customer,
-            'invoice' => $final_array,
-            'customer_filter' => $customer_filter,
-            'sales_filter' => $sales_filter,
-            'sales_senior_filter' => $sales_senior_filter
         ];
 
-        return view($this->view."index",$data);
+        return view($this->view."index", $data);
     }
-    public function print(Request $request)
+    
+    private function reportsGenerator($model)
     {
-        // Access
-        if(Auth::user()->is_superuser == 0){
-            if(empty($this->access) || empty($this->access->user) || $this->access->can_print == 0){
-                return redirect()->route('superuser.index')->with('error','Anda tidak punya akses untuk membuka menu terkait');
-            }
+        $datas = $model->cursor();
+        foreach ($datas as $data) {
+            yield [
+                'SO Date' => Carbon::parse($data->so_date)->format('d/m/Y H:i'),
+                'SO Number' => $data->so_code,
+                'Invoice Number' => $data->invoice_number,
+                'Total' => $data->total,
+                'Payment' => $data->payment,
+                'Sales Senior' => $data->sales_senior(),
+                'Sales' => $data->sales(),
+            ];
         }
 
-        $customer_id = $request->input('customer_id');
-        $sales_senior_id = $request->input('sales_senior_id');
-        $sales_id = $request->input('sales_id');
-        $period_from = $request->input('period_from');
-        $period_to = $request->input('period_to');
-
-        $sales = Sales::get();
-        $customer = Customer::get();
-
-        $order = PackingOrder::whereHas('invoicing',function($query2) use($period_from,$period_to){
-                                if($period_from){
-                                    $query2->whereDate('created_at','>=',$period_from);
-                                }
-                                if($period_to){
-                                    $query2->whereDate('created_at','<=',$period_to);
-                                }
-                            })
-                            ->where(function($query2) use($customer_id){
-                                if(!empty($customer_id)){
-                                    $query2->where('customer_id',$customer_id);
-                                }
-                            })
-                            ->get();       
-        
-        $final_array = [];
-        foreach ($order as $key => $value) {
-            $order_item = PackingOrderItem::where('do_id',$value->id)->get();
-            foreach ($order_item as $k => $v) {
-                $sales_order_item = SalesOrderItem::where('id',$v->so_item_id)->first();
-                $sales_order = SalesOrder::where('id',$sales_order_item->so_id)->first();
-
-                if(isset($final_array[$v->do_id])){
-                    foreach ($final_array[$v->do_id]["sales_senior"] as $x => $y) {
-                        if($y["id"] != $sales_order->sales_senior_id){
-                            $final_array[$v->do_id]["sales_senior"][] = $sales_order->sales_senior->toArray() ?? null;
-                        }
-                    }
-
-                    foreach ($final_array[$v->do_id]["sales"] as $x => $y) {
-                        if($y["id"] != $sales_order->sales_id){
-                            $final_array[$v->do_id]["sales"][] = $sales_order->sales->toArray() ?? null;
-                        }
-                    }
-                }
-                else{
-                    $final_array[$v->do_id]["sales_senior"][] = $sales_order->sales_senior->toArray() ?? null;
-                    $final_array[$v->do_id]["sales"][] = $sales_order->sales->toArray();
-                    $final_array[$v->do_id]["do"] = $order[$key]->toArray();
-                    $final_array[$v->do_id]["invoice"] = $value->invoicing->toArray() ?? null;
-                    $final_array[$v->do_id]["payable"] = $value->invoicing->payable_detail()->get()->toArray() ?? null;    
-                }
-
-                
-            }
-        }
-
-
-        $final_array_backup = $final_array;
-
-        $final_array_sementara_senior = [];
-        if(!empty($sales_senior_id)){
-            foreach ($final_array as $key => $value) {
-                foreach ($value["sales_senior"] as $k => $v) {
-                    if($v["id"] == $sales_senior_id){
-                        $final_array_sementara_senior[] = $final_array[$key];
-                    }
-                }
-            }
-            $final_array = $final_array_sementara_senior;
-        }
-
-        $final_array_sementara = [];
-        if(!empty($sales_id)){
-            foreach ($final_array as $key => $value) {
-                foreach ($value["sales"] as $k => $v) {
-                    if($v["id"] == $sales_id){
-                        $final_array_sementara[] = $final_array[$key];
-                    }
-                }
-            }
-            $final_array = $final_array_sementara;
-        }
-
-
-        $final_array_sementara_final = [];
-        if(!empty($sales_senior_id) && !empty($sales_id)){
-            foreach ($final_array_backup as $key => $value) {
-                $filter_do_id_sales_senior = "";
-                foreach ($value["sales_senior"] as $k => $v) {
-                    if($v["id"] == $sales_senior_id){
-                        $filter_do_id_sales_senior = $value["do"]["id"];
-                    }
-                     
-                }
-                $filter_do_id_sales = "";
-                foreach ($value["sales"] as $k => $v) {
-                    if($v["id"] == $sales_id){
-                        $filter_do_id_sales = $value["do"]["id"];
-                    }
-                }
-
-                if($filter_do_id_sales == $filter_do_id_sales_senior){
-                    $final_array_sementara_final[] = $final_array_backup[$key];
-                }
-            }
-            $final_array = $final_array_sementara_final;
-        }
-
-        $customer_filter = Customer::where('id',$customer_id)->first();
-        $sales_filter = Sales::where('id',$sales_id)->first();
-        $sales_senior_filter = Sales::where('id',$sales_senior_id)->first();
-        $company = Company::first();
-
-        $data = [
-            'sales' => $sales,
-            'customer' => $customer,
-            'invoice' => $final_array,
-            'customer_filter' => $customer_filter,
-            'sales_filter' => $sales_filter,
-            'sales_senior_filter' => $sales_senior_filter,
-            'company' => $company
+        yield [
+            'SO Date' => '',
+            'SO Number' => '',
+            'Invoice Number' => '',
+            'Total' => 'Total',
+            'Sales Senior' => '',
+            'Sales' => '',
         ];
-
-        $pdf = PDF::loadview($this->view."print",$data)->setPaper('a4','potrait');
-        return $pdf->stream('Sales Report');
     }
 
-    /**
-     * Show the form for creating a new resource.
-     *
-     * @return \Illuminate\Http\Response
-     */
-    public function create()
+    private function excel(Request $request)
     {
-        //
+        $datatable = new SalesReportTable();
+        $model = $datatable->query($request);
+
+        // $list = \DB::select($model->toSql(), $model->getBindings());
+
+        $filename = 'SR-' . Carbon::parse($request->start_date)->format('dmy') . '-' . Carbon::parse($request->end_date)->format('dmy') . '.xlsx';
+        $header_style = (new StyleBuilder())->setFontSize(11)->setFontBold()->build();
+
+        $rows_style = (new StyleBuilder())
+            ->setFontSize(11)
+            ->build();
+
+        return (new FastExcel($this->reportsGenerator($model)))->headerStyle($header_style)
+            ->rowsStyle($rows_style)->download($filename);
     }
 
-    /**
-     * Store a newly created resource in storage.
-     *
-     * @param  \Illuminate\Http\Request  $request
-     * @return \Illuminate\Http\Response
-     */
-    public function store(Request $request)
+    public function export(Request $request)
     {
-        //
+        $validator = Validator::make($request->all(), [
+            'customer' => 'required',
+            'datesearch' => 'required',
+            'download_type' => 'required',
+        ]);
+
+        if ($validator->fails()) {
+            abort(404);
+        }
+
+        $split = explode('-', str_replace(' ', '', $request->datesearch));
+        $from_date = Carbon::createFromFormat('d/m/Y', $split[0])->format('Y-m-d');
+        $to_date = Carbon::createFromFormat('d/m/Y', $split[1])->format('Y-m-d');
+
+        // ADD request date to use in datatable query
+        $request->request->add(['start_date' => $from_date, 'end_date' => $to_date]);
+        if ($request->download_type == 'excel') {
+            return $this->excel($request);
+        }
+
+        if ($request->download_type == 'pdf') {
+            return $this->pdf($request);
+        }
     }
 
-    /**
-     * Display the specified resource.
-     *
-     * @param  int  $id
-     * @return \Illuminate\Http\Response
-     */
-    public function show($id)
+    public function print_report(Request $request)
     {
-        //
+        try {
+            // Validate and sanitize inputs
+            $start = $request->input('start');
+            $end = $request->input('end');
+            $customer = $request->input('customer');
+            // if (!$start || !$end || !is_array($customer)) {
+            //     throw new Exception('Invalid input.');
+            // }
+
+            $date = date("Y-m");
+
+            // Convert date to the desired format
+            $new_date_start = date('d-m-Y', strtotime($start));
+            $new_date_end = date('d-m-Y', strtotime($end));
+
+            // Build SQL-style condition for customers
+            $sqlStyle = $this->buildSqlStyleCondition($customer);
+
+            $my_report = "C:\\xampp\\htdocs\\ppi-dist\\public\\cr\\report\\operasional\\omset_penjualan\\omset_penjualan.rpt";
+            $my_pdf = "C:\\xampp\\htdocs\\ppi-dist\\public\\cr\\report\\operasional\\omset_penjualan\\export\\Omset-Penjualan-$date.pdf";
+
+            $my_server = "LOCAL";
+            $my_user = "root";
+            $my_password = "";
+            $my_database = "ppi_araya";
+            $COM_Object = "CrystalDesignRunTime.Application";
+
+            // Create COM object for Crystal Reports
+            $crapp = new COM($COM_Object);
+            $creport = $crapp->OpenReport($my_report, 1);
+
+            // Set database connection info
+            $creport->Database->Tables(1)->SetLogOnInfo($my_server, $my_database, $my_user, $my_password);
+
+            // Disable parameter prompting
+            $creport->EnableParameterPrompting = false;
+            $creport->ParameterFields(2)->SetCurrentValue($new_date_start); // <-- param 1
+            $creport->ParameterFields(3)->SetCurrentValue($new_date_end);   // <-- param 2
+
+            // Set record selection formula based on customer selection
+            if ($sqlStyle == "{master_customer_other_addresses.id}='all'") {
+                $creport->RecordSelectionFormula = "{penjualan_so.so_date}>=#$start#AND{penjualan_so.so_date}<=#$end#AND{penjualan_so.status}=4";
+            } else {
+                $creport->RecordSelectionFormula = "($sqlStyle)AND{penjualan_so.so_date}>=#$start#AND{penjualan_so.so_date}<=#$end#AND{penjualan_so.status}=4";
+            }
+
+            // Export to PDF
+            $creport->ExportOptions->DiskFileName = $my_pdf;
+            $creport->ExportOptions->PDFExportAllPages = true;
+            $creport->ExportOptions->DestinationType = 1; // Export to file
+            $creport->ExportOptions->FormatType = 31; // PDF type
+            $creport->Export(false);
+
+            // Release COM objects
+            $creport = null;
+            $crapp = null;
+
+            // Download the generated PDF
+            $this->downloadFile($my_pdf);
+
+        } catch (Exception $e) {
+            // Handle exceptions gracefully
+            die("Error: " . $e->getMessage());
+        }
     }
 
-    /**
-     * Show the form for editing the specified resource.
-     *
-     * @param  int  $id
-     * @return \Illuminate\Http\Response
-     */
-    public function edit($id)
+    private function validateDate($date)
     {
-        //
+        $d = DateTime::createFromFormat('Y-m-d', $date);
+        return $d && $d->format('Y-m-d') === $date ? $date : false;
     }
 
-    /**
-     * Update the specified resource in storage.
-     *
-     * @param  \Illuminate\Http\Request  $request
-     * @param  int  $id
-     * @return \Illuminate\Http\Response
-     */
-    public function update(Request $request, $id)
+    private function buildSqlStyleCondition($customer)
     {
-        //
+        $sqlStyle = "";
+        $i = 1;
+        foreach ($customer as $key => $value) {
+            if ($i > 1) {
+                $sqlStyle .= " OR ";
+            }
+
+            if (is_array($value)) {
+                $sec = array();
+                foreach ($value as $second_level) {
+                    $sec[] = "{master_customer_other_addresses.id}='" . addslashes($second_level) . "'";
+                }
+                $sqlStyle .= "(" . implode(' AND ', $sec) . ")";
+            } else {
+                $sqlStyle .= "{master_customer_other_addresses.id}='" . addslashes($value) . "'";
+            }
+            $i++;
+        }
+        return $sqlStyle;
     }
 
-    /**
-     * Remove the specified resource from storage.
-     *
-     * @param  int  $id
-     * @return \Illuminate\Http\Response
-     */
-    public function destroy($id)
+    private function downloadFile($file)
     {
-        //
+        if (file_exists($file)) {
+            header("Content-Description: File Transfer");
+            header("Content-Type: application/octet-stream");
+            header("Content-Transfer-Encoding: Binary");
+            header("Content-Disposition: attachment; filename=\"" . basename($file) . "\"");
+            ob_clean();
+            flush();
+            readfile($file);
+            exit();
+        } else {
+            throw new Exception("File not found.");
+        }
     }
+
 }

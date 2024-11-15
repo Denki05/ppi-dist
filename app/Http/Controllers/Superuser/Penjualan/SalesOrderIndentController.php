@@ -8,6 +8,7 @@ use App\Entities\Penjualan\SalesOrder;
 use App\Entities\Penjualan\SalesOrderItem;
 use App\Exports\Penjualan\SalesOrderIndentExport;
 use App\Entities\Setting\UserMenu;
+use App\Helper\LogActivity;
 use Excel;
 use Auth;
 use DB;
@@ -182,14 +183,14 @@ class SalesOrderIndentController extends Controller
 
         $sales_order = SalesOrder::find($so_id);
 
-        $my_report = "C:\\xampp\\htdocs\\ppi-dist\public\\cr\\so\\so_indent.rpt"; 
+        $my_report = "C:\\xampp\\htdocs\\ppi-dist\public\\cr\\so\\so_indent2.rpt"; 
         $my_pdf = 'C:\\xampp\\htdocs\\ppi-dist\\public\\cr\\so\\export\\'.$sales_order->so_code.'-INDENT'.'.pdf';
 
         //- Variables - Server Information 
-        $my_server = "LOCAL"; 
+        $my_server = "LOCAL_3"; 
         $my_user = "root"; 
         $my_password = ""; 
-        $my_database = "ppi-dist";
+        $my_database = "ppi_araya";
         $COM_Object = "CrystalDesignRunTime.Application";
 
         //-Create new COM object-depends on your Crystal Report version
@@ -231,5 +232,88 @@ class SalesOrderIndentController extends Controller
         flush();
         readfile ($file);
         exit();
+    }
+
+    public function proses_ready(Request $request)
+    {
+        DB::beginTransaction();
+
+        try {
+            // Validate input directly
+            $validated = $request->validate([
+                'so_item_id.*' => 'required|exists:penjualan_so_item,id',
+                'qty.*' => 'required|integer|min:0',
+            ]);
+
+            $so_item_ids = $validated['so_item_id'];
+            $qtys = $validated['qty'];
+
+            // Retrieve all sales order items in a single query to improve performance
+            $salesOrderItems = SalesOrderItem::whereIn('id', $so_item_ids)
+                                            ->pluck('qty', 'id')
+                                            ->toArray();  // Efficient query to get 'id' => 'qty' pairs
+
+            foreach ($so_item_ids as $id) {
+                $qty = $qtys[$id] ?? null;
+
+                // Check if quantity is valid (already validated by the request)
+                if ($qty === null || $qty < 0) {
+                    session()->flash('notification', [
+                        'alert' => 'notify',
+                        'type' => 'error',
+                        'content' => 'Jumlah tidak valid untuk item yang dipilih!',
+                    ]);
+
+                    return $this->response(400, $response);
+                }
+
+                // Get the previous qty and calculate qty_worked
+                $qty_before = $salesOrderItems[$id] ?? 0;  // Default to 0 if not found
+
+                // Debug: Check if the qty_before and qty are correct
+                \Log::info('Item ID: ' . $id . ' - qty_before: ' . $qty_before . ' - qty: ' . $qty);
+
+                $qty_worked = $qty_before - $qty;  // Calculate worked quantity
+
+                // Debug: Log the value of qty_worked
+                \Log::info('qty_worked for item ID ' . $id . ': ' . $qty_worked);
+
+                // Update the sales order item with both qty and qty_worked
+                $updateResult = SalesOrderItem::where('id', $id)
+                                            ->update([
+                                                'qty' => $qty,
+                                                'qty_worked' => $qty_worked,
+                                            ]);
+
+                // Check if the update was successful
+                if ($updateResult === 0) {
+                    \Log::error('Failed to update SalesOrderItem for item ID ' . $id);
+                }
+            }
+
+            DB::commit();
+
+            // Set success notification in session and redirect
+            session()->flash('notification', [
+                'alert' => 'notify',
+                'type' => 'success',
+                'content' => 'Success',
+            ]);
+
+            return redirect()->route('superuser.penjualan.sales_order_indent.index');
+        } catch (\Exception $e) {
+            // Rollback transaction on error
+            DB::rollback();
+
+            // Error response
+            session()->flash('notification', [
+                'alert' => 'block',
+                'type' => 'alert-danger',
+                'header' => 'Error',
+                'content' => 'An error occurred: ' . $e->getMessage(),
+            ]);
+
+            return redirect()->route('superuser.penjualan.sales_order_indent.index');
+        }
     }
 }

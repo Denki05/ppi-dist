@@ -39224,5 +39224,11 @@ dl {
     left: 0;
     right: 0; } }
 
+.dropdown-menu .dropdown-toggle + .dropdown-menu {
+  display: block !important;
+  visibility: visible !important;
+  opacity: 1 !important;
+}
+
 /*# sourceMappingURL=style.css.map */
 

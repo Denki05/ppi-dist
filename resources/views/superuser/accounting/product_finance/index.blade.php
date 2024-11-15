@@ -5,6 +5,7 @@
   <span class="breadcrumb-item">Accounting</span>
   <span class="breadcrumb-item active">Product Tax</span>
 </nav>
+
 @if($errors->any())
 <div class="alert alert-danger alert-dismissable" role="alert">
   <button type="button" class="close" data-dismiss="alert" aria-label="Close">
@@ -87,7 +88,8 @@
 
 @include('superuser.component.modal-manage', [
   'import_template_url' => route('superuser.accounting.product_finance.import_template'),
-  'import_url' => route('superuser.accounting.product_finance.import')
+  'import_url' => route('superuser.accounting.product_finance.import'),
+  'export_url' => route('superuser.accounting.product_finance.export'),
 ])
 
 @endsection

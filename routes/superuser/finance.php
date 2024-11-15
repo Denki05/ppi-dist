@@ -22,6 +22,10 @@ Route::group([
         Route::get('/{id}/print_proforma', 'InvoicingController@print_proforma')->name('print_proforma');
         Route::get('/{id}/history_payable', 'InvoicingController@history_payable')->name('history_payable');
         Route::get('/json', 'InvoicingController@json')->name('json');
+        Route::get('/json2', 'InvoicingController@json2')->name('json2');
+        Route::get('/updateInvoice', 'InvoicingController@updateInvoice')->name('updateInvoice');
+        Route::get('/pageReport', 'InvoicingController@pageReport')->name('pageReport');
+        Route::post('/printReportPage', 'InvoicingController@printReportPage')->name('printReportPage');
     });
 
     Route::group(['as' => 'proforma.', 'prefix' => '/proforma'], function () {
@@ -44,6 +48,19 @@ Route::group([
         Route::get('/{id}/cancel_approve', 'PayableController@cancel_approve')->name('cancel_approve');
         Route::get('/{id}/cancel_edit', 'PayableController@cancel_edit')->name('cancel_edit');
         Route::post('/{id}/update_cancel', 'PayableController@update_cancel')->name('update_cancel');
+        Route::get('/json2', 'PayableController@json2')->name('json2');
+        Route::get('/pageReport', 'PayableController@pageReport')->name('pageReport');
     });
     Route::resource('payable', 'PayableController');
+
+    Route::group(['as' => 'cashback.', 'prefix' => '/cashback'], function () {
+        Route::get('/get_invoice', 'CashbackController@get_invoice')->name('get_invoice');
+        Route::get('/create/{id}', 'CashbackController@create')->name('create');
+        Route::delete('/destroy/{id}', 'CashbackController@destroy')->name('destroy');
+        Route::get('/print_invoice_beli/{id}', 'CashbackController@print_invoice_beli')->name('print_invoice_beli');
+        Route::get('/print_invoice_jual/{id}', 'CashbackController@print_invoice_jual')->name('print_invoice_jual');
+        Route::get('/pageReport', 'CashbackController@pageReport')->name('pageReport');
+        Route::get('/json2', 'CashbackController@json2')->name('json2');
+    });
+    Route::resource('cashback', 'CashbackController')->except(['create']);
 });

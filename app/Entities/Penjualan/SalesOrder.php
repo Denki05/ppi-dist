@@ -13,6 +13,7 @@ class SalesOrder extends Model
     protected $fillable =[
     	'so_code',
     	'code',
+        'keep_code', 
     	'sales_id',
     	'sales_senior_id',
     	'origin_warehouse_id',
@@ -34,6 +35,8 @@ class SalesOrder extends Model
         'condition',
     	'payment_status',
         'catatan',
+        'note', 
+        'no_ducument_ppn', 
     	'so_for',
     	'so_indent',
         'indent_status', 
@@ -62,8 +65,16 @@ class SalesOrder extends Model
 
     const SALES = [
         'Lindy' => 1,
-        'Rita' => 2,
-        'Super Administrator' => 3,
+        'Alivi' => 2,
+        'S.A' => 3,
+        'Santi' => 4,
+        'Eric' => 5,
+    ];
+
+    const SALES_REPORT = [
+        'S.A' => 3,
+        'Lindy' => 1,
+        'Eric' => 5,
         'Santi' => 4,
     ];
     
@@ -109,6 +120,7 @@ class SalesOrder extends Model
     const REKENING = [
         0 => '4720 2369 88 - IRWAN LINAKSITA',
         1 => '7881 0374 95 - IDA ELISA',
+        2 => '4720 266 968 - PT. Premium Parfum Indonesia',
     ];
 
     const INDENT = [
