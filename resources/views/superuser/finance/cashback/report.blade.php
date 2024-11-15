@@ -112,7 +112,7 @@
                             </span>",
           },
           processing: true,
-          serverSide: true,
+          serverSide: false,
           ajax: {
               "url": firstDatatableUrl,
               "dataType": "json",
@@ -148,7 +148,7 @@
           buttons: [
               {
                   extend: 'excel',
-                  text: 'Export Excel',
+                  text: '<i class="fa fa-file-excel-o"></i>',
                   title: 'Cashback-Report',
                   exportOptions: {
                       modifier: {
@@ -157,16 +157,29 @@
                   }
               },
               {
-                  extend: 'pdf',
-                  text: 'Export PDF',
-                  title: 'Cashback-Report',
-                  exportOptions: {
-                      modifier: {
-                          page: 'all' // Export all data, not just the visible page
-                      }
-                  }
+                extend: 'pdf',
+                text: '<i class="fa fa-file-pdf-o"></i>',
+                title: 'Cashback-Report',
+                orientation: 'landscape',  // Set orientation to landscape
+                exportOptions: {
+                    modifier: {
+                        page: 'all' // Export all data, not just the visible page
+                    }
+                },
+                customize: function (doc) {
+                    // Adjust column widths
+                    doc.content[1].table.widths = ['10%', '20%', '20%', '20%', '30%']; // Adjust as needed
+                    
+                    // Customize fonts and alignment
+                    doc.styles.tableHeader.fontSize = 12;
+                    doc.styles.tableBodyEven.alignment = 'center';
+                    doc.styles.tableBodyOdd.alignment = 'center';
+
+                    // Adjust margins if necessary
+                    doc.pageMargins = [20, 40, 20, 40];
+                }
               }
-          ]
+            ]
         })
 
         $('#btn-filter').on('click', function(e) {

@@ -2,8 +2,8 @@
 
 @section('content')
 <nav class="breadcrumb bg-white push">
-  <span class="breadcrumb-item">Sale</span>
-  <span class="breadcrumb-item active">Sales Order</span>
+  <span class="breadcrumb-item">Gudang</span>
+  <span class="breadcrumb-item active">Delivery Order (DO)</span>
 </nav>
 @if($errors->any())
 <div class="alert alert-danger alert-dismissable" role="alert">
