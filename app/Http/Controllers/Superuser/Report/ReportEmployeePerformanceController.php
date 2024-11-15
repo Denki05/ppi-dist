@@ -63,8 +63,13 @@ class ReportEmployeePerformanceController extends Controller
         // Set report paths dynamically (consider moving paths to a config file)
         $basePath = "C:\\xampp\\htdocs\\ppi-dist\\public\\cr\\report\\management\\report_employee_performance\\";
         if ($type == 1) {
-            $my_report = "{$basePath}pic_report_non_nominal.rpt";
-            $my_pdf = "{$basePath}export\\pic_report_non_nominal{$date}.pdf";
+            if ($nominal == 1) {
+                $my_report = "{$basePath}pic_report_nominal.rpt";
+                $my_pdf = "{$basePath}export\\pic_report_nominal{$date}.pdf";
+            } else {
+                $my_report = "{$basePath}pic_report_non_nominal.rpt";
+                $my_pdf = "{$basePath}export\\pic_report_non_nominal{$date}.pdf";
+            }
         } elseif ($type == 2) {
             if ($nominal == 1) {
                 $my_report = "{$basePath}officer_report_nominal.rpt";
