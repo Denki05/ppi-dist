@@ -2,8 +2,9 @@
 
 @section('content')
 <nav class="breadcrumb bg-white push">
-  <span class="breadcrumb-item">Report</span>
-  <span class="breadcrumb-item active">Cashback Report</span>
+  <span class="breadcrumb-item">Laporan</span>
+  <span class="breadcrumb-item">Finance</span>
+  <span class="breadcrumb-item active">Araya Report</span>
 </nav>
 @if(session('error') || session('success'))
 <div class="alert alert-{{ session('error') ? 'danger' : 'success' }} alert-dismissible fade show" role="alert">
@@ -149,7 +150,7 @@
               {
                   extend: 'excel',
                   text: '<i class="fa fa-file-excel-o"></i>',
-                  title: 'Cashback-Report',
+                  title: 'Araya-Report',
                   exportOptions: {
                       modifier: {
                           page: 'all' // Export all data, not just the visible page
@@ -159,7 +160,7 @@
               {
                 extend: 'pdf',
                 text: '<i class="fa fa-file-pdf-o"></i>',
-                title: 'Cashback-Report',
+                title: 'Araya-Report',
                 orientation: 'landscape',  // Set orientation to landscape
                 exportOptions: {
                     modifier: {

@@ -2,7 +2,8 @@
 
 @section('content')
 <nav class="breadcrumb bg-white push">
-  <span class="breadcrumb-item">Report</span>
+  <span class="breadcrumb-item">Laporan</span>
+  <span class="breadcrumb-item">Finance</span>
   <span class="breadcrumb-item active">Piutang Faktur</span>
 </nav>
 @if(session('error') || session('success'))
@@ -159,7 +160,6 @@
             rowGroup: {
                 dataSrc: 'account_customer',
                 startRender: function(rows, group) {
-                    // Safely calculate totals for each group
                     var totalNilaiFaktur = rows
                         .data()
                         .pluck('nilai_faktur')
@@ -174,37 +174,90 @@
                             return a + (parseFloat(b) || 0); 
                         }, 0);
 
-                    // Create the group header row with totals
                     return $('<tr/>')
-                    .append('<td style="font-weight:bold; background-color: #bfbfbf;">' + group + '</td>') // Group header in `account_customer` column
-                        .append('<td colspan="2" style="background-color: #bfbfbf;"></td>') // Empty cells for the remaining columns
-                        .append('<td style="font-weight:bold; background-color: #bfbfbf;">' + totalNilaiFaktur.toFixed(2) + '</td>') // Total for `nilai_faktur`
-                        .append('<td style="font-weight:bold; background-color: #bfbfbf;">' + totalHutangAsing.toFixed(2) + '</td>') // Total for `hutang_asing`
-                        .append('<td colspan="3" style="background-color: #bfbfbf;"></td>'); // Empty cells for the remaining columns
+                    .append('<td style="font-weight:bold; background-color: #bfbfbf;">' + group + '</td>')
+                        .append('<td colspan="2" style="background-color: #bfbfbf;"></td>')
+                        .append('<td style="font-weight:bold; background-color: #bfbfbf;">' + totalNilaiFaktur.toFixed(2) + '</td>')
+                        .append('<td style="font-weight:bold; background-color: #bfbfbf;">' + totalHutangAsing.toFixed(2) + '</td>')
+                        .append('<td colspan="3" style="background-color: #bfbfbf;"></td>');
                 }
             },
             columnDefs: [
                 {
-                    targets: 0, // The `account_customer` column (index 0)
-                    visible: false // Hide the column
+                    targets: 0,
+                    visible: false
+                }
+            ],
+            dom: "<'row'<'col-sm-2'l><'col-sm-7 text-left'B><'col-sm-3'f>>" +
+                "<'row'<'col-sm-12'tr>>" +
+                "<'row'<'col-sm-5'i><'col-sm-7'p>>",
+            buttons: [
+                {
+                    extend: 'excel',
+                    text: '<i class="fa fa-file-excel-o"></i>',
+                    title: 'Piutang Faktur',
+                    exportOptions: {
+                        modifier: {
+                            page: 'all' // Export all data
+                        }
+                    }
+                },
+                {
+                    extend: 'pdf',
+                    text: '<i class="fa fa-file-pdf-o"></i>',
+                    orientation: 'landscape',  // Set landscape orientation
+                    title: 'Piutang Faktur',
+                    exportOptions: {
+                        modifier: {
+                            page: 'all' // Export all data
+                        }
+                    },
+                    customize: function(doc) {
+                        // Set table header style
+                        doc.content[1].table.widths = [
+                            '15%', '20%', '15%', '15%', '15%', '15%', '10%', '10%'
+                        ];
+
+                        doc.pageMargins = [20, 20, 20, 20]; // Set margins [left, top, right, bottom]
+
+                        doc.styles.tableHeader = {
+                            bold: true,
+                            fontSize: 12,
+                            color: 'white',
+                            fillColor: 'black',
+                            alignment: 'center'
+                        };
+
+                        // Center-align the body rows
+                        var tableBody = doc.content[1].table.body;
+                        for (var i = 1; i < tableBody.length; i++) {
+                            for (var j = 0; j < tableBody[i].length; j++) {
+                                tableBody[i][j].alignment = 'center';
+                            }
+                        }
+
+                        doc.styles.tableBody = {
+                            fontSize: 10,
+                            alignment: 'center'
+                        };
+
+                        // Make the first row the header
+                        doc.content[1].table.headerRows = 1;
+                    }
                 }
             ]
         });
 
-
         $('#btn-filter').on('click', function(e) {
           e.preventDefault();
 
-          // Update startDate and endDate values
           startDate = $('#periode_from').val();
           endDate = $('#periode_to').val();
           var customer = $('#customer').val();
 
-          // Update the DataTable URL with new filter values
           let newDatatableUrl = datatableUrl + '?startDate=' + startDate + '&endDate=' + endDate +
             '&customer=' + customer;
 
-          // Reload the DataTable with the new URL
           datatable.ajax.url(newDatatableUrl).load();
         });
     })

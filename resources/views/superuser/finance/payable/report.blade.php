@@ -2,8 +2,9 @@
 
 @section('content')
 <nav class="breadcrumb bg-white push">
-  <span class="breadcrumb-item">Report</span>
-  <span class="breadcrumb-item active">Payment Report</span>
+  <span class="breadcrumb-item">Laporan</span>
+  <span class="breadcrumb-item">Finance</span>
+  <span class="breadcrumb-item active">Laporan Pembayaran</span>
 </nav>
 @if(session('error') || session('success'))
 <div class="alert alert-{{ session('error') ? 'danger' : 'success' }} alert-dismissible fade show" role="alert">
@@ -97,77 +98,125 @@
         let firstDatatableUrl = datatableUrl + '?startDate=' + startDate + '&endDate=' + endDate;
 
         let datatable = $('#datatables').DataTable({
-          "language": {
-              "processing": "<span class='fa-stack fa-lg'>\n\
-                                <i class='fa fa-spinner fa-spin fa-stack-2x fa-fw'></i>\n\
-                            </span>",
-          },
-          processing: true,
-          serverSide: false,
-          ajax: {
-              "url": firstDatatableUrl,
-              "dataType": "json",
-              "type": "GET",
-              "data": {
-                  _token: "{{ csrf_token() }}"
-              }
-          },
-          columns: [
-            {data: 'DT_RowIndex', name: 'id'},
-            {
-              data: 'payable_date',
-              render: {
+    "language": {
+        "processing": "<span class='fa-stack fa-lg'>\n\
+                        <i class='fa fa-spinner fa-spin fa-stack-2x fa-fw'></i>\n\
+                    </span>",
+    },
+    processing: true,
+    serverSide: false,
+    ajax: {
+        "url": firstDatatableUrl,
+        "dataType": "json",
+        "type": "GET",
+        "data": {
+            _token: "{{ csrf_token() }}"
+        }
+    },
+    columns: [
+        {data: 'DT_RowIndex', name: 'id'},
+        {
+            data: 'payable_date',
+            render: {
                 _: 'display',
-              sort: 'timestamp'
-              }
+                sort: 'timestamp'
+            }
+        },
+        { data: 'payable_code' },
+        { 
+            data: 'payable_total',
+            render: $.fn.dataTable.render.number('.', ',', 2, 'Rp. '),
+            searchable: false
+        },
+        { data: 'invoice_code' },
+        { data: 'account_customer' },
+        { 
+            data: 'invoice_total',
+            render: $.fn.dataTable.render.number('.', ',', 2, 'Rp. '),
+            searchable: false
+        },
+    ],
+    order: [
+        [1, 'asc']
+    ],
+    lengthMenu: [
+        [10, 20, 50],
+        [10, 20, 50]
+    ],
+    dom: "<'row'<'col-sm-2'l><'col-sm-7 text-left'B><'col-sm-3'f>>" +
+        "<'row'<'col-sm-12'tr>>" +
+        "<'row'<'col-sm-5'i><'col-sm-7'p>>",
+    buttons: [
+        {
+            extend: 'excel',
+            text: '<i class="fa fa-file-excel-o"></i>',
+            title: 'Laporan Pembayaran',
+            exportOptions: {
+                modifier: {
+                    page: 'all' // Export all data, not just the visible page
+                }
+            }
+        },
+        {
+            extend: 'pdf',
+            text: '<i class="fa fa-file-pdf-o"></i>',
+            orientation: 'landscape',  // Set orientation to landscape
+            title: 'Laporan Pembayaran',
+            exportOptions: {
+                modifier: {
+                    page: 'all' // Export all data, not just the visible page
+                }
             },
-            { data: 'payable_code' },
-            { 
-              data: 'payable_total',
-              render: $.fn.dataTable.render.number('.', ',', 2, 'Rp. '),
-              searchable: false
-            },
-            { data: 'invoice_code' },
-            { data: 'account_customer' },
-            { 
-              data: 'invoice_total',
-              render: $.fn.dataTable.render.number('.', ',', 2, 'Rp. '),
-              searchable: false
-            },
-          ],
-          order: [
-            [1, 'asc']
-          ],
-          lengthMenu: [
-            [10, 20, 50],
-            [10, 20, 50]
-          ],
-          dom: "<'row'<'col-sm-2'l><'col-sm-7 text-left'B><'col-sm-3'f>>" +
-            "<'row'<'col-sm-12'tr>>" +
-            "<'row'<'col-sm-5'i><'col-sm-7'p>>",
-          buttons: [
-              {
-                  extend: 'excel',
-                  text: 'Export Excel',
-                  title: 'Payment-Report',
-                  exportOptions: {
-                      modifier: {
-                          page: 'all' // Export all data, not just the visible page
-                      }
-                  }
-              },
-              {
-                  extend: 'pdf',
-                  text: 'Export PDF',
-                  title: 'Payment-Report',
-                  exportOptions: {
-                      modifier: {
-                          page: 'all' // Export all data, not just the visible page
-                      }
-                  }
-              }
-          ]
-        })
+            customize: function(doc) {
+                // Adjust table layout for landscape orientation
+                doc.content[1].table.widths = [
+                    '5%',   // Set the first column width to 5%
+                    '*',    // Automatically adjust next columns based on content
+                    '*', 
+                    '*',
+                    '*',
+                    '*',
+                    '*'
+                ];
+
+                doc.pageMargins = [20, 20, 20, 20]; // Set margins [left, top, right, bottom]
+
+                // Set table header styling: black background, white text
+                doc.styles.tableHeader = {
+                    bold: true,
+                    fontSize: 12,
+                    color: 'white',  // Text color: white
+                    fillColor: 'black',  // Background color: black
+                    alignment: 'center' // Center-align headers
+                };
+
+                // Center-align all table body rows
+                var tableBody = doc.content[1].table.body;
+                for (var i = 1; i < tableBody.length; i++) { // Skip the header row (index 0)
+                    for (var j = 0; j < tableBody[i].length; j++) {
+                        tableBody[i][j].alignment = 'center'; // Apply center alignment to data
+                    }
+                }
+
+                // Optional: Adjust the font size for the content
+                doc.styles.tableBody = {
+                    fontSize: 10,
+                    alignment: 'center' // Center-align body rows
+                };
+
+                // Optional: Modify table header row style further
+                doc.content[1].table.headerRows = 1; // Make the first row the header
+            }
+        }
+    ],
+    columnDefs: [
+        {
+            targets: '_all', // Apply to all columns
+            className: 'text-center' // Center-align text for table body
+        }
+    ]
+});
+
 
         $('#btn-filter').on('click', function(e) {
           e.preventDefault();

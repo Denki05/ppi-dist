@@ -2,8 +2,9 @@
 
 @section('content')
 <nav class="breadcrumb bg-white push">
-  <span class="breadcrumb-item">Report</span>
-  <span class="breadcrumb-item active">Revenue Report</span>
+  <span class="breadcrumb-item">Laporan</span>
+  <span class="breadcrumb-item">Accounting</span>
+  <span class="breadcrumb-item active">Laporan Pendapatan</span>
 </nav>
 @if(session('error') || session('success'))
 <div class="alert alert-{{ session('error') ? 'danger' : 'success' }} alert-dismissible fade show" role="alert">
@@ -119,129 +120,148 @@
     let firstDatatableUrl = datatableUrl + '?start_date=' + start_date + '&end_date=' + end_date +
       '&marketplace=all';
 
-      var datatable = $('.datatable').DataTable({
-    language: {
-        processing: "<span class='fa-stack fa-lg'>\n\
-                          <i class='fa fa-spinner fa-spin fa-stack-2x fa-fw'></i>\n\
-                    </span>",
-    },
-    processing: true,
-    serverSide: true,
-    ajax: {
-        "url": firstDatatableUrl, // Set this to your actual URL
-        "dataType": "json",
-        "type": "GET",
-        "data": { _token: "{{csrf_token()}}" } // Token if needed for Laravel CSRF
-    },
-    columns: [
-        {
-            "class": "details-control",
-            "orderable": false,
-            "data": null,
-            "defaultContent": "<i class='fa fa-plus'></i>",
-            searchable: false
-        },
-        {data: 'combined_column'}, // Assuming your server returns this field
-        {data: 'total_purchase'},
-        {
-            data: 'detail', // The detail data will be hidden but used for expanding rows
-            "visible": false,
-            searchable: false
-        },
-    ],
-    order: [
-        [1, 'asc'] // Sorting by combined column
-    ],
-    pageLength: 10,
-    lengthMenu: [
-        [10, 30, 100, -1],
-        [10, 30, 100, 'All']
-    ],
-    dom: "<'row'<'col-sm-2'l><'col-sm-7 text-left'B><'col-sm-3'f>>" +
-      "<'row'<'col-sm-12'tr>>" +
-      "<'row'<'col-sm-5'i><'col-sm-7'p>>",
-    buttons: [
-      {
-        extend: 'excelHtml5',
-        text: '<i class="fa fa-file-excel-o"></i>',
-        titleAttr: 'Excel',
-        title: 'Report - Omset Penjualan',
-        footer: true,
-        exportOptions: {
-            columns: [1, 2], // Specify the column indices to include (exclude index 0)
-            format: {
-                body: function (data, row, column, node) {
-                    if (column === 3) { // Detail column
-                        return data;
-                    }
-                    return data;
-                }
-            }
-        },
-        customize: function (xlsx) {
-            var sheet = xlsx.xl.worksheets['sheet1.xml'];
-            var totalRow = '<row>';
-            totalRow += '<c r="A' + (datatable.data().count() + 2) + '" t="s"><v>Total</v></c>';
-            totalRow += '<c r="B' + (datatable.data().count() + 2) + '" t="n"><v>' + total + '</v></c>';
-            totalRow += '</row>';
-            $(sheet).find('row:last').after(totalRow); // Insert the total row
-        }
+    var datatable = $('.datatable').DataTable({
+      language: {
+          processing: "<span class='fa-stack fa-lg'>\n\
+                            <i class='fa fa-spinner fa-spin fa-stack-2x fa-fw'></i>\n\
+                      </span>",
       },
-      {
-        extend: 'pdfHtml5',
-        orientation: 'portrait',
-        pageSize: 'A4',
-        text: '<i class="fa fa-file-pdf-o"></i>',
-        titleAttr: 'PDF',
-        title: 'Report - Omset Penjualan',
-        footer: true,
-        exportOptions: {
-            columns: [1, 2], // Specify the column indices to include (exclude index 0)
-            format: {
-                body: function (data, row, column, node) {
-                    if (column === 3) { // Detail column
-                        return data;
-                    }
-                    return data;
-                }
-            }
+      processing: true,
+      serverSide: false,
+      ajax: {
+          "url": firstDatatableUrl, // Set this to your actual URL
+          "dataType": "json",
+          "type": "GET",
+          "data": { _token: "{{csrf_token()}}" } // Token if needed for Laravel CSRF
+      },
+      columns: [
+          {
+              "class": "details-control",
+              "orderable": false,
+              "data": null,
+              "defaultContent": "<i class='fa fa-plus'></i>",
+              searchable: false
+          },
+          {data: 'combined_column'}, // Assuming your server returns this field
+          {data: 'total_purchase'},
+          {
+              data: 'detail', // The detail data will be hidden but used for expanding rows
+              "visible": false,
+              searchable: false
+          },
+      ],
+      order: [
+          [1, 'asc'] // Sorting by combined column
+      ],
+      pageLength: 10,
+      lengthMenu: [
+          [10, 30, 100, -1],
+          [10, 30, 100, 'All']
+      ],
+      dom: "<'row'<'col-sm-2'l><'col-sm-7 text-left'B><'col-sm-3'f>>" +
+        "<'row'<'col-sm-12'tr>>" +
+        "<'row'<'col-sm-5'i><'col-sm-7'p>>",
+      buttons: [
+        {
+          extend: 'excelHtml5',
+          text: '<i class="fa fa-file-excel-o"></i>',
+          titleAttr: 'Excel',
+          title: 'Report - Laporan Pendapatan',
+          footer: true,
+          exportOptions: {
+              columns: [1, 2], // Specify the column indices to include (exclude index 0)
+              format: {
+                  body: function (data, row, column, node) {
+                      if (column === 3) { // Detail column
+                          return data;
+                      }
+                      return data;
+                  }
+              }
+          },
+          customize: function (xlsx) {
+              var sheet = xlsx.xl.worksheets['sheet1.xml'];
+              var totalRow = '<row>';
+              totalRow += '<c r="A' + (datatable.data().count() + 2) + '" t="s"><v>Total</v></c>';
+              totalRow += '<c r="B' + (datatable.data().count() + 2) + '" t="n"><v>' + total + '</v></c>';
+              totalRow += '</row>';
+              $(sheet).find('row:last').after(totalRow); // Insert the total row
+          }
         },
-        // customize: function (doc) {
-        //     doc.content[1].table.body.push([{ text: 'Total', bold: true }, { text: total, bold: true }]);
-        // }
+        {
+          extend: 'pdfHtml5',
+          orientation: 'landscape', // Set to landscape
+          pageSize: 'A4',
+          text: '<i class="fa fa-file-pdf-o"></i>',
+          titleAttr: 'PDF',
+          title: 'Report - Laporan Pendapatan',
+          footer: true,
+          exportOptions: {
+              columns: [1, 2], // Specify the column indices to include (exclude index 0)
+              format: {
+                  body: function (data, row, column) {
+                      // Process the data before exporting
+                      if (column === 2) { // Example: Assume column 2 is numeric
+                          return data.replace(/[Rp.,]/g, ''); // Strip formatting
+                      }
+                      return data; // Return unaltered for other columns
+                  }
+              }
+          },
+          customize: function (doc) {
+              // Adjust table layout for landscape orientation
+              doc.content[1].table.widths = Array(doc.content[1].table.body[0].length).fill('*'); // Auto-fit columns
+              doc.pageMargins = [20, 20, 20, 20]; // Set margins [left, top, right, bottom]
+
+              // Set table header styling
+              doc.styles.tableHeader = {
+                  bold: true,
+                  fontSize: 12,
+                  color: 'black',
+                  alignment: 'center' // Center-align headers
+              };
+
+              // Center-align all table body rows
+              var tableBody = doc.content[1].table.body;
+              for (var i = 1; i < tableBody.length; i++) { // Skip the header row (index 0)
+                  for (var j = 0; j < tableBody[i].length; j++) {
+                      tableBody[i][j].alignment = 'center'; // Apply center alignment
+                  }
+              }
+          }
+        }
+      ],
+      footerCallback: function (row, data, start, end, display) {
+        var api = this.api();
+
+        // Helper function to remove formatting and return a float value
+        var intVal = function (i) {
+            return typeof i === 'string' ? i.replace(/[\Rp.,]/g, '') * 1 : typeof i === 'number' ? i : 0;
+        };
+
+        // Calculate total for `total_purchase` column (index 2)
+        var totalInvoiceCash = api
+            .column(2)
+            .data()
+            .reduce(function (a, b) {
+                return intVal(a) + intVal(b);
+            }, 0);
+
+        // Format totals using toLocaleString
+        var formattedTotalCash = totalInvoiceCash.toLocaleString('id-ID', {
+            style: 'currency',
+            currency: 'IDR',
+            minimumFractionDigits: 0,
+            maximumFractionDigits: 0
+        });
+
+        // Update the footer
+        $(api.column(2).footer()).html('Total : ' + formattedTotalCash);
+
+        // Assign total value for export buttons
+        total = totalInvoiceCash;
       }
-    ],
-    footerCallback: function (row, data, start, end, display) {
-      var api = this.api();
-
-      // Helper function to remove formatting and return a float value
-      var intVal = function (i) {
-          return typeof i === 'string' ? i.replace(/[\Rp.,]/g, '') * 1 : typeof i === 'number' ? i : 0;
-      };
-
-      // Calculate total for `total_purchase` column (index 2)
-      var totalInvoiceCash = api
-          .column(2)
-          .data()
-          .reduce(function (a, b) {
-              return intVal(a) + intVal(b);
-          }, 0);
-
-      // Format totals using toLocaleString
-      var formattedTotalCash = totalInvoiceCash.toLocaleString('id-ID', {
-          style: 'currency',
-          currency: 'IDR',
-          minimumFractionDigits: 0,
-          maximumFractionDigits: 0
-      });
-
-      // Update the footer
-      $(api.column(2).footer()).html('Total : ' + formattedTotalCash);
-
-      // Assign total value for export buttons
-      total = totalInvoiceCash;
-    }
-});
+    });
 
 
       function format(data) {
