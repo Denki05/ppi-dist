@@ -40,3 +40,4 @@
 <link rel="stylesheet" href="{{ asset('superuser_assets/fontawesome6/css/fontawesome.css') }}" rel="stylesheet" />
 <link rel="stylesheet" href="{{ asset('superuser_assets/fontawesome6/css/brands.css') }}" rel="stylesheet" />
 <link rel="stylesheet" href="{{ asset('superuser_assets/fontawesome6/css/solid.css') }}" rel="stylesheet" />
+<link href="https://cdn.jsdelivr.net/npm/bootstrap-icons/font/bootstrap-icons.css" rel="stylesheet">

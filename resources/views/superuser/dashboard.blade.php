@@ -50,7 +50,7 @@
             <div class="col">
                 <div class="card">
                     <div class="card-header d-flex align-items-center justify-content-between">
-                        <h3>Top Sale Variant - {{ \Carbon\Carbon::create()->month($selectedMonth)->format('F') }}</h3>
+                        <h3>Penjualan Variant Tertinggi - {{ \Carbon\Carbon::create()->month($selectedMonth)->format('F') }}</h3>
 
                         <select id="monthSelect" class="form-select" aria-label="Select month" style="width: 25%;">
                             @foreach (range(1, 12) as $month)
@@ -94,7 +94,7 @@
             <div class="col-6">
                 <div class="card">
                     <div class="card-header">
-                        <h3>Total Sales Quantity</h3>
+                        <h3>Jumlah Penjualan Total</h3>
                     </div>
                     <div class="card-body">
                         <canvas id="salesChart" style="max-height: 400px;"></canvas>
@@ -104,7 +104,7 @@
             <div class="col-6">
                 <div class="card">
                     <div class="card-header">
-                        <h3>Total Sales Revenue</h3>
+                        <h3>Total Pendapatan Penjualan</h3>
                     </div>
                     <div class="card-body">
                         <canvas id="revenueChart" style="max-height: 400px;"></canvas>

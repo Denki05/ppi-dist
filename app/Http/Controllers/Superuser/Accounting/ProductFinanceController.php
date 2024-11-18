@@ -346,6 +346,7 @@ class ProductFinanceController extends Controller
             if ($validator->passes()) {
                 DB::beginTransaction();
 
+
                 $productFinance->selling_price_usd_drum = $request->selling_price_usd_drum;
                 $productFinance->buying_price_usd_drum = $request->buying_price_usd_drum;
                 $productFinance->selling_price_usd_unit = $request->selling_price_usd_unit;

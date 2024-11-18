@@ -407,32 +407,35 @@
     })
 
     $('#myForm').on('submit', function (e) {
-      e.preventDefault(); // prevent the form submit
+      e.preventDefault(); 
+
       var id = $('#productPackID').val();
-      var url = "{{ route('superuser.accounting.product_finance.update_cost', ":id") }}";
-      url = url.replace(':id', id);
-      var AlertMsg = $('div[role="alert"]');
+      var mitra_id = $('#mitra_id').val();
+      if (!id) {
+          alert('No Product ID selected');
+          return;
+      }
 
-      // alert(id);
-    
+      var url = "{{ route('superuser.accounting.product_finance.update_cost', ":id") }}".replace(':id', id);
+      var formData = new FormData(this);
 
-      var formData = new FormData(this); 
-      // build the ajax call
       $.ajax({
           url: url,
           type: 'POST',
-          headers: {'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')},
+          headers: { 'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content') },
           data: formData,
           contentType: false,
           processData: false,
           success: function (response) {
-            $(AlertMsg).show();
-            setTimeout(function () {
-                    $('#myModal').modal({ show: true });
-                    setTimeout(function () {
-                        window.location.reload(1);
-                    }, 800);
-            }, 800);
+              if (response.notification.type === 'success') {
+                  alert(response.notification.content);
+                  window.location.href = response.redirect_to;
+              } else {
+                  alert('Failed to update. Please try again.');
+              }
+          },
+          error: function (xhr) {
+              alert('Error: ' + (xhr.responseJSON.error || 'Unexpected error occurred'));
           }
       });
     });
