@@ -103,54 +103,54 @@ class PackingOrder extends Model
     public function do_detail(){
     	return $this->hasMany('App\Entities\Penjualan\PackingOrderItem','do_id', 'id');
     }
+
     public function customer(){
     	return $this->BelongsTo('App\Entities\Master\Customer','customer_id','id');
     }
+
     public function so(){
     	return $this->BelongsTo('App\Entities\Penjualan\SalesOrder', 'so_id', 'id');
     }
+
     public function member(){
         return $this->BelongsTo('App\Entities\Master\CustomerOtherAddress', 'customer_other_address_id', 'id');
     }
+
     public function warehouse(){
     	return $this->BelongsTo('App\Entities\Master\Warehouse','warehouse_id','id');
     }
-    // public function do_cost(){
-    // 	return $this->hasMany('App\Entities\Penjualan\PackingOrderDetail', 'do_id');
-    // }
+
+   
 	public function do_detail_cost(){
         return $this->hasMany('App\Entities\Penjualan\PackingOrderDetail','do_id', 'id');
 	}
 
-	// public function do_detail(){
-	// 	return $this->hasMany('App\Entities\Penjualan\PackingOrderDetail', 'do_id', 'id');	
-	// }
-
+	
     public function do_other_cost(){
         return $this->hasMany('App\Entities\Penjualan\PackingOrderCost','do_id');
 	}
-    // public function do_type_transaction(){
-    // 	return (object) self::STATUS[$this->type_transaction];
-    // }
+    
     public function do_status(){
     	return (object) self::STATUS_PENGIRIMAN[$this->status];
     }
+
     public function log_print(){
     	return $this->hasMany('App\Entities\Penjualan\PackingOrderLogPrint','do_id');
     }
+	
     public function invoicing(){
         return $this->BelongsTo('App\Entities\Finance\Invoicing','id','do_id');
     }
-	public function proforma(){
-        return $this->BelongsTo('App\Entities\Penjualan\SoProforma','id','do_id');
-    }
+
     public function getIdrRateAttribute($value)
     {
         return floatval($value);
     }
+
     public function ekspedisi(){
         return $this->BelongsTo('App\Entities\Master\Ekspedisi','ekspedisi_id','id');
     }
+
 	public function vendor(){
         return $this->BelongsTo('App\Entities\Master\Vendor','vendor_id','id');
     }

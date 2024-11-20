@@ -143,7 +143,7 @@
                         <i class="fa-solid fa-basket-shopping"></i> Penjualan
                     </a>
                     <ul class="dropdown-menu">
-                        <li><a class="dropdown-item" href="{{ route('superuser.master.warehouse.index') }}"><i class="fa-solid fa-warehouse"></i> Invoice</a></li>
+                        <li><a class="dropdown-item" href="{{ route('superuser.finance.invoicing.index') }}"><i class="fa-solid fa-warehouse"></i> Invoice</a></li>
                         @if($superuser->can('superuser-manage') OR $superuser->division == "Admin" OR $superuser->division == "Management")
                         <li><a class="dropdown-item" href="{{ route('superuser.master.contact.index') }}"><i class="fa-solid fa-address-book"></i> Pengaturan Harga</a></li>
                         @endif

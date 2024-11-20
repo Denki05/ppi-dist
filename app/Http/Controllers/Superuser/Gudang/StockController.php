@@ -157,11 +157,25 @@ class StockController extends Controller
                 }
             }
 
-            // DD($collect);
+            foreach ($collect as $key => $value) {
+                $product_pack = ProductPack::find($key);
+            
+                if ($product_pack) {
+                    // Extract the base product and packaging ID (remove any suffix like "_1")
+                    $base_key = preg_replace('/_\d+$/', '', $key);
+            
+                    // Skip processing if it's a duplicate variant (_1, _2, etc.)
+                    if ($base_key !== $key) {
+                        unset($collect[$key]); // Remove the duplicate variant from the collection
+                        continue;
+                    }
+                }
+            }
 
             // COLLECT
             foreach ($collect as $key => $value) {
                 $product_pack = ProductPack::find($key);
+
                 $in = !empty($value['in']) ? $value['in'] : 0;
                 $out = !empty($value['out']) ? $value['out'] : 0;
                 $sell = !empty($value['sell']) ? $value['sell'] : 0;

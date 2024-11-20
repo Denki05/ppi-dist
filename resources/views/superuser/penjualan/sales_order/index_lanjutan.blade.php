@@ -196,7 +196,7 @@
           @foreach($packing_order as $index => $row)
                   <tr>
                       <td>{{ $index+1 }}</td>
-                      <td>{{$row->so->code}}</td>
+                      <td>{{$row->so->code ?? '-'}}</td>
                       <td>{{$row->do_code}}</td>
                       <td><?= date('d-m-Y h:i:s',strtotime($row->created_at)); ?></td>
                       <td>{{$row->type_transaction}}</td>
@@ -249,27 +249,29 @@
               </tr>
             </thead>
             <tbody>
-            @foreach($packing_order as $index => $row)
-                      @if($row->status == 5 OR $row->status == 6 OR $row->status == 7)
-                        <tr>
-                            <td>{{ $index+1 }}</td>
-                            <td>{{$row->do_code}}</td>
-                            <td>{{$row->so->code}}</td>
-                            <td>{{$row->member->name}}</td>
-                            <td><?= date('d-m-Y h:i:s',strtotime($row->created_at)); ?></td>
-                            <td>{{$row->so->type_transaction}}</td>
-                            
-                            <td>
-                              @if(in_array($row->status, [5, 6]) OR $superuser->division == "Management" AND $superuser->division == "Developer")
-                                <a href="javascript:void(0)" type="button" class="btn btn-danger opneModalDoCancel" data-id="{{$row->id}}">Cancel DO</a> 
+              @foreach($packing_order as $index => $row)
+                  @if(in_array($row->status, [5, 6, 7]))
+                      <tr>
+                          <td>{{ $loop->iteration }}</td>
+                          <td>{{ $row->do_code }}</td>
+                          <td>{{ $row->so->code ?? '-' }}</td>
+                          <td>{{ $row->member->name ?? '-' }}</td>
+                          <td>{{ $row->created_at->format('d-m-Y h:i:s') }}</td>
+                          <td>{{ $row->so->type_transaction ?? '-' }}</td>
+                          
+                          <td>
+                              @if(in_array($row->status, [5, 6]) || ($superuser->division == "Management" || $superuser->division == "Developer"))
+                                  <a href="javascript:void(0)" type="button" class="btn btn-danger opneModalDoCancel" data-id="{{ $row->id }}">Cancel DO</a> 
                               @endif
                               @if($row->status == 7 && $row->count_cancel == 1)
-                                <a href="#" class="btn btn-info btn-sm btn-flat btn-frmdoedit" data-id="{{$row->id}}"><i class="fa fa-edit"></i> Form Revisi</a>
+                                  <a href="#" class="btn btn-info btn-sm btn-flat btn-frmdoedit" data-id="{{ $row->id }}">
+                                      <i class="fa fa-edit"></i> Form Revisi
+                                  </a>
                               @endif
-                            </td>
-                        </tr>
-                      @endif
-                    @endforeach
+                          </td>
+                      </tr>
+                  @endif
+              @endforeach
             </tbody>
           </table>
         </div>

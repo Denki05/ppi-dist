@@ -917,31 +917,46 @@ class PackingOrderController extends Controller
 
             // Potong Stock
             $get_stock = 0;
-            // if($getSo)
+
+            // Loop through each product in the DO details
             foreach($getDo->do_detail as $row => $value){
-                $stock = ProductMinStock::where('warehouse_id', $getDo->warehouse_id)->where('product_packaging_id', $value->product_packaging_id)->first();
+                // Strip suffix (_1, _2, etc.) from product_packaging_id to get the base product packaging ID
+                $base_product_packaging_id = preg_replace('/_\d+$/', '', $value->product_packaging_id);
 
-                $get_stock = $stock->quantity;
-                $stock->quantity = $get_stock - $value->qty;
-                $stock->save();
+                // Get stock for the base product packaging ID
+                $stock = ProductMinStock::where('warehouse_id', $getDo->warehouse_id)
+                                        ->where('product_packaging_id', $base_product_packaging_id) // Base ID
+                                        ->first();
 
-                // log stock
-                $move = StockMove::where('product_packaging_id' , $value->product_id)
-                    ->where('warehouse_id', $getDo->warehouse_id)
-                    ->get();
-                $move_in = $move->sum('stock_in');
-                $move_out = $move->sum('stock_out');
+                // Check if stock is available
+                if ($stock) {
+                    $get_stock = $stock->quantity;
 
-                $sisa = $get_stock + $move_in - $move_out - $value->qty;
+                    // Update stock quantity after reducing the sold quantity
+                    $stock->quantity = $get_stock - $value->qty;
+                    $stock->save();
 
-                $insert_stock_move = StockMove::create([
-                    'code_transaction' => $getDo->do_code,
-                    'warehouse_id' => $getDo->warehouse_id,
-                    'product_packaging_id' => $value->product_packaging_id,
-                    'stock_out' => $value->qty,
-                    'stock_balance' => $sisa,
-                    'created_by' => Auth::id()
-                ]);
+                    // Log the stock movement
+                    $move = StockMove::where('product_packaging_id', $base_product_packaging_id) // Base ID
+                                    ->where('warehouse_id', $getDo->warehouse_id)
+                                    ->get();
+
+                    $move_in = $move->sum('stock_in');
+                    $move_out = $move->sum('stock_out');
+
+                    // Calculate remaining stock balance after transaction
+                    $sisa = $get_stock + $move_in - $move_out - $value->qty;
+
+                    // Insert stock movement record
+                    StockMove::create([
+                        'code_transaction' => $getDo->do_code,
+                        'warehouse_id' => $getDo->warehouse_id,
+                        'product_packaging_id' => $base_product_packaging_id, // Use base ID for the movement
+                        'stock_out' => $value->qty,
+                        'stock_balance' => $sisa,
+                        'created_by' => Auth::id()
+                    ]);
+                }
             }
 
             $update = PackingOrder::where('id', $getDo->id)->update(['status' => 3]);

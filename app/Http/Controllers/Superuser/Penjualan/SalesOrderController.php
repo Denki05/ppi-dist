@@ -9,7 +9,6 @@ use App\Entities\Penjualan\SalesOrderItem;
 use App\Entities\Penjualan\SalesOrderKontrak;
 use App\Entities\Penjualan\SalesOrderKontrakItem;
 use App\Entities\Penjualan\SalesOrderKontrakPivot;
-use App\Entities\Penjualan\SalesOrderKontraLog;
 use App\Entities\Penjualan\PackingOrder;
 use App\Entities\Penjualan\PackingOrderItem;
 use App\Entities\Penjualan\PackingOrderDetail;
@@ -51,13 +50,6 @@ use DB;
 use COM;
 use Carbon;
 use Excel;
-use Endroid\QrCode\QrCode;
-use Endroid\QrCode\Writer\PngWriter;
-use Endroid\QrCode\ErrorCorrectionLevel;
-use Endroid\QrCode\Color\Color;
-use Illuminate\Support\Facades\Crypt;
-use Illuminate\Support\Facades\Storage;
-use Exception;
 
 class SalesOrderController extends Controller
 {
@@ -345,15 +337,15 @@ class SalesOrderController extends Controller
                     'header' => 'Error',
                     'content' => $validator->errors()->all(),
                 ];
-
+  
                 return $this->response(400, $response);
             }
-
+            
             $get_store = CustomerOtherAddress::where('id', $member)->first();
 
             if ($validator->passes()) {
                 try {
-                    DB::beginTransaction(); // Start the transaction
+                    DB::beginTransaction();
 
                     $insert = new SalesOrder;
                     $insert->so_code = CodeRepo::generateSoAwal();
@@ -382,10 +374,9 @@ class SalesOrderController extends Controller
                     $insert->condition = 1;
                     $insert->payment_status = 0;
                     $insert->count_rev = 0;
-
-                    if ($insert->save()) {
-                        if ($request->sku) {
-                            foreach ($request->sku as $key => $item) {
+                    if($insert->save()){
+                        if($request->sku) {
+                            foreach($request->sku as $key => $item){
                                 $duplicate_product = [];
                                 $duplicate = false;
                                 $listItem[] = [
@@ -393,8 +384,8 @@ class SalesOrderController extends Controller
                                     'free_product' => $request->free_product[$key],
                                 ];
 
-                                foreach ($listItem as $row => $value) {
-                                    if (in_array($value, $duplicate_product)) {
+                                foreach($listItem as $row => $value){
+                                    if(in_array($value, $duplicate_product)) {
                                         $duplicate = true;
                                         break;
                                     } else {
@@ -402,17 +393,16 @@ class SalesOrderController extends Controller
                                     }
                                 }
 
-                                if ($duplicate) {
-                                    DB::rollBack(); // Rollback if duplicate found
+                                if($duplicate){
                                     $response['notification'] = [
                                         'alert' => 'block',
                                         'type' => 'alert-danger',
                                         'header' => 'Error',
                                         'content' => 'Item sudah ada!',
                                     ];
-                                    
+                    
                                     return $this->response(400, $response);
-                                } else {
+                                }else{
                                     $insertDetail = new SalesOrderItem;
                                     $insertDetail->so_id = $insert->id;
                                     $insertDetail->kontrak = $request->value_kontrak[$key];
@@ -424,14 +414,15 @@ class SalesOrderController extends Controller
                                     $insertDetail->free_product = $request->free_product[$key];
                                     $insertDetail->created_by = Auth::id();
                                     $insertDetail->status = 1;
-                                    if (isset($request->value_kontrak[$key]) == 1) {
-                                        $insertDetail->kontrak_id = $request->kontrak_so_id[$key] ?? null;
+                                    if($request->value_kontrak[$key] == 1){
+                                        $insertDetail->kontrak_id = $request->kontrak_so_id[$key];
                                     }
                                     $insertDetail->save();
 
-                                    if (isset($request->value_kontrak[$key]) == 1) {
+                                    if($request->value_kontrak[$key] == 1){
                                         $search_kontrak = SalesOrderkontrak::where('id', $request->kontrak_so_id[$key])->first();
                                         $item_kontrak = SalesOrderkontrakItem::where('so_kontrak_id', $search_kontrak->id)->first();
+
 
                                         if ($search_kontrak) {
                                             $log_kontrak = DB::table('penjualan_so_kontrak_log')
@@ -467,9 +458,13 @@ class SalesOrderController extends Controller
                             }
                         }
 
+                        DB::commit();
 
-
-                        DB::commit(); // Commit the transaction
+                        // if($request->so_indent == "YES"){
+                        //     LogActivity::addToLog('Created a new SO-Indent: ' . $insert->so_code);
+                        // } elseif ($request->so_indent == "NO") {
+                        //     LogActivity::addToLog('Created a new SO: ' . $insert->so_code);
+                        // }
 
                         $response['notification'] = [
                             'alert' => 'notify',
@@ -480,7 +475,7 @@ class SalesOrderController extends Controller
                         $response['redirect_to'] = route('superuser.penjualan.sales_order.index_awal');
                         return $this->response(200, $response);
                     }
-                } catch (\Exception $e) {
+                }catch (\Exception $e) {
                     dd($e);
                     DB::rollBack(); // Rollback in case of any exception
                     $response['notification'] = [
@@ -489,7 +484,7 @@ class SalesOrderController extends Controller
                         'header' => 'Error',
                         'content' => 'An error occurred while processing your request. Please try again later.',
                     ];
-
+    
                     return $this->response(500, $response);
                 }
             }
@@ -614,6 +609,7 @@ class SalesOrderController extends Controller
             'packaging' => $packaging,
             'rekening' => $rekening,
         ];
+        
         if ($step == 2) {
             $doList = $result->member->do;
             $invoiceList = [];
@@ -713,13 +709,8 @@ class SalesOrderController extends Controller
                         'ekspedisi_id' => (empty($post["ekspedisi_id"])) ? null : $post["ekspedisi_id"],
                     ];
                 }
-
                 if($sales_order->save()){
                     $search_so_items = SalesOrderItem::where('so_id', $post["id"])->get();  // Use get() to retrieve all items
-
-                    // Array to store kontrak_id values
-                    $kontrakIds = [];
-
                     if ($search_so_items->isNotEmpty()) {  // Check if any items were found
                         foreach ($search_so_items as $search_so_item) {
                             // Get all related SalesOrderKontrakPivot records for each found SalesOrderItem
@@ -740,7 +731,7 @@ class SalesOrderController extends Controller
                     $deleted_item = SalesOrderItem::where('so_id', $post["id"])->delete();
                     if (sizeof($post["sku"]) > 0) {
                         for ($i = 0; $i < sizeof($post["sku"]); $i++) {
-                            // dd($post["so_kontrak_value"][$i]);
+                            // dd($post["so_kontrak"][$i]);
 
                             $duplicate_product = [];
                             $duplicate = false;
@@ -773,31 +764,34 @@ class SalesOrderController extends Controller
                                 $insertDetail->disc_usd = $post["disc"][$i];
                                 $insertDetail->packaging_id = $post["packaging"][$i];
                                 $insertDetail->kontrak = $post["so_kontrak_value"][$i];
-                                // Retrieve previously saved kontrak_id if available
-                                if ($post["so_kontrak_value"][$i] == 0) {
-                                    // If so_kontrak_value is 0, set kontrak_id to null
-                                    $insertDetail->kontrak_id = null;
-                                } elseif ($post["so_kontrak_value"][$i] == 1) {
-                                    // If so_kontrak_value is 1, check kontrak_new
-                                    if ($post["kontrak_new"][$i] == 0) {
-                                        // If kontrak_new is 0, update or keep the old kontrak_id
-                                        if (isset($kontrakIds[$i])) {
-                                            $insertDetail->kontrak_id = $kontrakIds[$i]; // Use old kontrak_id if it exists
-                                        } else {
-                                            $insertDetail->kontrak_id = null; // Handle cases where the old kontrak_id isn't available
-                                        }
-                                    } elseif ($post["kontrak_new"][$i] == 1) {
-                                        // If kontrak_new is 1, use the new kontrak_id from the POST data
-                                        $insertDetail->kontrak_id = $post["kontrak_id"][$i] ?? null; // Add null fallback in case index is missing
-                                    }
-                                }
                                 $insertDetail->free_product = $post["free_product"][$i];
                                 $insertDetail->created_by = Auth::id();
                                 $insertDetail->save();
+                                
+                                // if ($post["so_kontrak_value"][$i] == 1) {
+                                //     if ($post["kontrak_new"][$i] == 0) {
+                                //         // If kontrak_new value is 0, find and associate with a specific kontrak item
+                                //         $search_kontrak = SalesOrderkontrak::where('id', $request->so_kontrak)->first();
+                                //         $item_kontrak = SalesOrderkontrakItem::where('so_kontrak_id', $search_kontrak->id)->first();
+                                    
+                                //         $pivot_kontrak = new SalesOrderKontrakPivot;
+                                //         $pivot_kontrak->so_item_id = $insertDetail->id;
+                                //         $pivot_kontrak->so_kontrak_item_id = $item_kontrak->id;
+                                //         $pivot_kontrak->save();
+                                //     }else{
+                                //         // If kontrak value is 1, associate with a specific kontrak item
+                                //         $pivot_kontrak = new SalesOrderKontrakPivot;
+                                //         $pivot_kontrak->so_item_id = $insertDetail->id;
+                                //         $pivot_kontrak->so_kontrak_item_id = $get_pivot_kontrak->so_kontrak_item_id;
+                                //         $pivot_kontrak->save();
+                                //     }
+                                // }else {
+                                //     continue;
+                                // }
+                                
+                                
                             }
                         }
-
-                        // dd($request->$post["so_kontrak_value"][$i]);
                     }
                 }   
                 DB::commit();
@@ -806,6 +800,7 @@ class SalesOrderController extends Controller
                 $data_json["Message"] = "Sales Order Berhasil Diubah";
                 goto ResultData;
             } catch (\Exception $e) {
+
                 dd($e);
                 DB::rollback();
 
@@ -1307,21 +1302,33 @@ class SalesOrderController extends Controller
                             }
 
                             // Check Stock
-                            $stock = DB::table('master_product_min_stocks')
-                                        ->where('warehouse_id', $request->origin_warehouse_id)
-                                        ->where('product_packaging_id', $value["product_packaging_id"])
-                                        ->first();
-                            
-                            // if($stock){
-                            //     if($stock->quantity < $do_qty){
+                            // $stock = DB::table('master_product_min_stocks')
+                            //             ->where('warehouse_id', $request->origin_warehouse_id)
+                            //             ->where('product_packaging_id', $value["product_packaging_id"])
+                            //             ->first();
+
+                            // if ($stock) {
+                            //     if ($do_qty > 0 && $stock->quantity < $do_qty) {
                             //         $out_of_stock = true;
                             //         $product = $value["product_packaging_id"];
                             //         break;
                             //     }
                             // }
 
+                            // Extract the base product-packaging ID (remove suffix like "_1", "_2")
+                            $base_product_packaging_id = preg_replace('/_\d+$/', '', $value["product_packaging_id"]);
+                            // dd($base_product_packaging_id);
+
+                            // Check stock only for the primary variant (no suffix)
+                            $stock = DB::table('master_product_min_stocks')
+                                        ->where('warehouse_id', $request->origin_warehouse_id)
+                                        ->where('product_packaging_id', $base_product_packaging_id) // Only the base ID
+                                        ->first();
+
+                            // dd($stock);
+
                             if ($stock) {
-                                // Only check stock if do_qty is greater than 0
+                                // Check stock if do_qty is greater than 0
                                 if ($do_qty > 0 && $stock->quantity < $do_qty) {
                                     $out_of_stock = true;
                                     $product = $value["product_packaging_id"];
@@ -1360,35 +1367,6 @@ class SalesOrderController extends Controller
                                     'grand_total_idr' => $packing_order_detail->grand_total_idr,
                                     'created_by' => Auth::id(),
                                 ];
-
-                                // Convert the array to a JSON string
-                                $jsonData = json_encode($data);
-
-                                // Encrypt the data
-                                $encryptedData = Crypt::encryptString($jsonData);
-
-                                // Generate the QR code
-                                $qrCode = new QrCode($encryptedData);
-                                $qrCode->setSize(300);
-                                $qrCode->setMargin(10);
-
-                                // Use Color class to set foreground and background colors
-                                $foregroundColor = new Color(0, 0, 0);  // Light gray color
-                                $backgroundColor = new Color(255, 255, 255);  // White background
-
-                                // Set colors using Color objects
-                                $qrCode->setForegroundColor($foregroundColor);
-                                $qrCode->setBackgroundColor($backgroundColor);
-
-                                // Specify the writer to save the QR code as PNG
-                                $writer = new PngWriter();
-
-                                // Define the file path
-                                $filePath = public_path('qr_codes/' . $data['code'] . '.png');
-
-                                // Save the QR code image
-                                $result = $writer->write($qrCode);
-                                $result->saveToFile($filePath);
 
                                 $insert_invoice = Invoicing::create($data);
                             }
@@ -1602,6 +1580,8 @@ class SalesOrderController extends Controller
                         }
 
                         DB::commit();
+
+                        LogActivity::addToLog('Closed SO: ' . $sales_order->so_code);
 
                         if($errors) {
                             $response['notification'] = [
@@ -2232,7 +2212,6 @@ class SalesOrderController extends Controller
                             ->leftJoin('master_products_packaging', 'penjualan_so_kontrak_item.product_packaging_id', '=', 'master_products_packaging.id')
                             ->leftJoin('master_packaging', 'master_products_packaging.packaging_id', '=', 'master_packaging.id')
                             ->leftJoin('penjualan_so_kontrak', 'penjualan_so_kontrak_item.so_kontrak_id', '=', 'penjualan_so_kontrak.id')
-                            // ->leftJoin('penjualan_so_kontrak_log', 'penjualan_so_kontrak.id', '=', 'penjualan_so_kontrak_log.so_kontrak_id')
                             ->select(
                                 'master_products_packaging.name AS product_name', 
                                 'master_products_packaging.code AS product_code', 

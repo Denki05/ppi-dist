@@ -22,6 +22,8 @@ use App\Entities\Penjualan\SalesOrderKontrakLog;
 use App\Entities\Penjualan\SalesOrderKontrakPivot;
 use App\DataTables\Penjualan\DeliveryOrdersTable;
 use App\Entities\Finance\Invoicing;
+use App\Entities\Finance\Payable;
+use App\Entities\Finance\PayableDetail;
 use App\Entities\Master\Vendor;
 use App\Entities\Master\Warehouse;
 use App\Entities\Gudang\StockMove;
@@ -778,40 +780,56 @@ class DeliveryOrderController extends Controller
     public function cancel_proses(Request $request, $id)
     {
         if ($request->ajax()) {
-            // $failed = "";
-
-            if(Auth::user()->is_superuser == 0){
-                if(empty($this->access) || empty($this->access->user) || $this->access->can_approve == 0){
-                    return redirect()->route('superuser.penjualan.sales_order.index_lanjutan')->with('error','Anda tidak mempunyai akses untuk melakukan proses ini!');
+            // Check access rights
+            if (Auth::user()->is_superuser == 0) {
+                if (empty($this->access) || empty($this->access->user) || $this->access->can_approve == 0) {
+                    return response()->json(['message' => 'Anda tidak mempunyai akses untuk melakukan proses ini!'], 403);
                 }
             }
 
             DB::beginTransaction();
 
-            try{
+            try {
                 $do = PackingOrder::find($id);
-                $secretCode = $request->secretCode;
+                if (!$do) {
+                    throw new \Exception('Delivery Order not found!', 404);
+                }
 
-                if ($secretCode === env('ABORT_PROCESS_CODE')) {
-                    DB::commit();
-                    $do->status = 7;
-                    $do->count_cancel = 1;
-                    $do->save();
+                $secretCode = $request->input('secretCode');
+                $invoice = Invoicing::where('do_id', $do->id)->first();
+                $payable_detail = $invoice ? PayableDetail::where('invoice_id', $invoice->id)->first() : null;
 
-                    // $response['message'] = 'Proses berhasil dibatalkan.';
-                    // return $this->response(200, $response); // 200 OK
-                    throw new \Exception('Proses berhasil dibatalkan!', 200);
-                } else {
-                    // $response['message'] = 'Token tidak sah!';
-                    // return $this->response(401, $response); // 401 Unauthorized
+                if (!$invoice || !$payable_detail || !$payable_detail->payable) {
+                    throw new \Exception('Payment information is incomplete or missing!', 404);
+                }
+
+                // Check if the payment is approved
+                if ($payable_detail->payable->status === 'ACC') {
+                    throw new \Exception('Cannot cancel because the payment has already been made!', 403);
+                }
+
+                // Verify secret code
+                if ($secretCode !== env('ABORT_PROCESS_CODE')) {
                     throw new \Exception('Token tidak sah!', 401);
                 }
 
-            }catch (\Exception $e) {
+                // Perform cancellation
+                $do->status = 7;
+                $do->count_cancel = 1;
+                $do->save();
+
+                DB::commit();
+                return response()->json(['message' => 'Proses berhasil dibatalkan!'], 200);
+
+            } catch (\Exception $e) {
+                DB::rollBack();
                 return response()->json(['message' => $e->getMessage()], $e->getCode());
             }
         }
+
+        return response()->json(['message' => 'Invalid request!'], 400);
     }
+
 
     public function do_edit(Request $request)
     {

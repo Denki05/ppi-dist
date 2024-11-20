@@ -10,13 +10,14 @@ use App\Entities\Master\Company;
 use App\Entities\Finance\Invoicing;
 use App\Entities\Finance\Payable;
 use App\Entities\Finance\PayableDetail;
+use App\Entities\Finance\PayableHistory;
 use App\DataTables\Finance\PayableTable;
 use App\DataTables\Report\PaymentReportTable;
 use App\Entities\Penjualan\SalesOrder;
 use App\Entities\Setting\UserMenu;
 use App\Repositories\CodeRepo;
 use App\Entities\Penjualan\PackingOrder;
-use App\Helper\LogActivity;
+use Illuminate\Support\Facades\Log;
 use DB;
 use Auth;
 use PDF;
@@ -115,108 +116,101 @@ class PayableController extends Controller
         return view($this->view."create", $data);
     }
 
-    /**
-     * Store a newly created resource in storage.
-     *
-     * @param  \Illuminate\Http\Request  $request
-     * @return \Illuminate\Http\Response
-     */
     public function store(Request $request)
     {
-
         $data_json = [];
         $post = $request->all();
-        if($request->method() == "POST"){
+
+        if ($request->isMethod('post')) {
             DB::beginTransaction();
-            try{
-                if(empty($post["customer_id"])){
-                    $data_json["IsError"] = TRUE;
-                    $data_json["Message"] = "Customer ID tidak boleh kosong";
-                    goto ResultData;
-                }
-                if(!isset($post["repeater"])){
-                    $data_json["IsError"] = TRUE;
-                    $data_json["Message"] = "Tidak ada invoice terkait";
-                    goto ResultData;
-                }
-                if(count($post["repeater"]) == 0){
-                    $data_json["IsError"] = TRUE;
-                    $data_json["Message"] = "Tidak ada invoice terkait";
-                    goto ResultData;
+            try {
+                // Validasi input
+                $validator = Validator::make($request->all(), [
+                    'customer_id' => 'required|exists:master_customers,id',
+                    'pay_date' => 'required|date',
+                    'repeater' => 'required|array',
+                    'repeater.*.invoice_id' => 'required|exists:finance_invoicing,id',
+                    'repeater.*.payable' => 'nullable|string',
+                ]);
+
+                if ($validator->fails()) {
+                    return response()->json([
+                        'IsError' => true,
+                        'Message' => $validator->errors()->first()
+                    ], 400);
                 }
 
                 $insert = Payable::create([
                     'code' => CodeRepo::generatePayable(),
-                    'customer_id' => trim(htmlentities($post["customer_id"])),
+                    'customer_id' => trim($post["customer_id"]),
                     'pay_date' => date('Y-m-d', strtotime($post["pay_date"])),
-                    'note' => trim(htmlentities($post["note"])),
+                    'note' => trim($post["note"]),
                     'status' => 1,
                     'created_by' => Auth::id(),
                     'total' => 0
                 ]);
+
                 $total_payable = 0;
-                foreach ($post["repeater"] as $index => $value) {
-                    if(empty($value["invoice_id"])){
-                        $data_json["IsError"] = TRUE;
-                        $data_json["Message"] = "Invoice ID tidak boleh kosong";
-                        goto ResultData;
-                    }
-                    if(!empty($value["payable"])){
+
+                foreach ($post["repeater"] as $value) {
+                    if (!empty($value["payable"])) {
                         $input_payable = floatval(str_replace(".", "", $value["payable"]));
-                        $get_invoice = Invoicing::where('id',$value["invoice_id"])->first();
-                        $payable = $get_invoice->payable_detail->sum('total');
-                        $sisa = $get_invoice->grand_total_idr - $payable;
+                        $get_invoice = Invoicing::find($value["invoice_id"]);
 
-                        // hitung sisa
-                        $remaining_pay = $sisa - $input_payable;
+                        if ($get_invoice) {
+                            $payable = $get_invoice->payable_detail->sum('total');
+                            $sisa = $get_invoice->grand_total_idr - $payable;
 
+                            if ($payable >= $get_invoice->grand_total_idr) {
+                                throw new Exception("Invoice {$get_invoice->code} sudah lunas");
+                            }
 
-                        if($payable >= $get_invoice->grand_total_idr){
-                            $data_json["IsError"] = TRUE;
-                            $data_json["Message"] = "Invoice ".$get_invoice->code. " sudah lunas";
-                            goto ResultData;
+                            $remaining_pay = $sisa - $input_payable;
+
+                            $data = [
+                                'payable_id' => $insert->id,
+                                'invoice_id' => $value["invoice_id"],
+                                'total' => $input_payable,
+                                'prev_account_receivable' => $get_invoice->grand_total_idr - $payable,
+                                'remaining_account_receivable' => $remaining_pay,
+                                'created_by' => Auth::id(),
+                            ];
+
+                            PayableDetail::create($data);
+                            $total_payable += $input_payable;
+                        } else {
+                            throw new Exception("Invoice ID {$value['invoice_id']} tidak ditemukan");
                         }
-                        $data = [
-                            'payable_id' => $insert->id,
-                            'invoice_id' => $value["invoice_id"],
-                            'total' => $input_payable,
-                            'prev_account_receivable' => $get_invoice->grand_total_idr - $payable,
-                            'remaining_account_receivable' => $remaining_pay,
-                            'created_by' => Auth::id(),
-                        ];
-
-                        $insert_detail = PayableDetail::create($data);
-                        $total_payable += $input_payable;
                     }
                 }
-                if($total_payable == 0){
-                    $data_json["IsError"] = TRUE;
-                    $data_json["Message"] = "Tidak bisa melakukan payable.Tidak ada payable yang diinput";
-                    goto ResultData;
+
+                if ($total_payable == 0) {
+                    throw new Exception("Tidak bisa melakukan payable. Tidak ada payable yang diinput");
                 }
-                $update = Payable::where('id',$insert->id)->update([
-                    'total' => $total_payable
-                ]);
+
+                $insert->update(['total' => $total_payable]);
                 DB::commit();
 
-                $data_json["IsError"] = FALSE;
-                $data_json["Message"] = "Payable berhasil dibuat";
-                goto ResultData;
+                return response()->json([
+                    'IsError' => false,
+                    'Message' => "Payable berhasil dibuat"
+                ], 200);
 
-            }catch(\Throwable $e){
+            } catch (\Throwable $e) {
+                dd($e);
                 DB::rollback();
-                $data_json["IsError"] = TRUE;
-                $data_json["Message"] = $e->getMessage();
-                goto ResultData;
+                Log::error($e->getMessage()); // Log the error for debugging
+                return response()->json([
+                    'IsError' => true,
+                    'Message' => $e->getMessage()
+                ], 500);
             }
+        } else {
+            return response()->json([
+                'IsError' => true,
+                'Message' => "Invalid Method"
+            ], 405);
         }
-        else{
-            $data_json["IsError"] = TRUE;
-            $data_json["Message"] = "Invalid Method";
-            goto ResultData;
-        }
-        ResultData:
-        return response()->json($data_json,200);
     }
 
     public function detail($id)
@@ -305,7 +299,7 @@ class PayableController extends Controller
                     'alert' => 'block',
                     'type' => 'alert-danger',
                     'header' => 'Error',
-                    'content' => 'Payment harus status aktiv',
+                    'content' => 'Payment harus status aktif',
                 ];
                 return $this->response(400, $response);
             }
@@ -374,74 +368,116 @@ class PayableController extends Controller
 
     public function approve($id)
     {
-        // Access
-        if(Auth::user()->is_superuser == 0){
-           if(empty($this->access) || empty($this->access->user) || $this->access->can_approve == 0){
-               return redirect()->route('superuser.index')->with('error','Anda tidak punya akses untuk membuka menu terkait');
-           }
+        // Validasi Hak Akses
+        if (Auth::user()->is_superuser == 0) {
+            if (empty($this->access) || empty($this->access->user) || $this->access->can_approve == 0) {
+                return redirect()->route('superuser.index')->with('error', 'Anda tidak punya akses untuk membuka menu terkait');
+            }
         }
 
-        $payable = Payable::findOrFail($id);
+        // Cari Payable dengan lock untuk menghindari race condition
+        $payable = Payable::lockForUpdate()->find($id);
 
-        if($payable == null){
-            abort(404);
+        if (!$payable) {
+            return abort(404, 'Payable tidak ditemukan');
         }
 
         DB::beginTransaction();
-        try{
-
+        try {
+            // Update status payable
             $payable->status = Payable::STATUS['ACC'];
             $payable->updated_by = Auth::id();
-        
-            if ($payable->save()){
-                $detail = PayableDetail::where('payable_id', $payable->id)->get();
 
-                foreach($detail as $row){
-                    $invoice = Invoicing::where('id', $row->invoice_id)->first();
+            if (!$payable->save()) {
+                throw new \Exception("Gagal menyimpan perubahan pada Payable.");
+            }
 
-                    // Hitung sisa
-                    $total_tagihan = $invoice->grand_total_idr;
-                    $payment = $invoice->payable_detail->sum('total');
-                    $sisa = $total_tagihan - $payment;
+            // Ambil detail payable
+            $details = PayableDetail::where('payable_id', $payable->id)->get();
 
-                    // DD($sisa);
+            foreach ($details as $detail) {
+                $invoice = Invoicing::where('id', $detail->invoice_id)->first();
 
-                    if( $sisa == '0' ){
-                        $update_so = SalesOrder::where('id', $invoice->do->so_id)->update(['payment_status' => 1]);
-                    }elseif ($sisa > '0') {
-                        $update_so = SalesOrder::where('id', $invoice->do->so_id)->update(['payment_status' => 2]);
-                    }elseif ($sisa >= '-1') {
-                        // kelebihan pembayaran
-                        $update_so = SalesOrder::where('id', $invoice->do->so_id)->update(['payment_status' => 1]);
-                    }
+                if (!$invoice || !$invoice->do || !$invoice->do->so_id) {
+                    throw new \Exception("Data invoice atau relasi tidak valid");
                 }
 
-                DB::commit();
-                LogActivity::addToLog('Aproved Payable:' . $payable->code);
-                $response['notification'] = [
-                    'alert' => 'notify',
-                    'type' => 'success',
-                    'content' => 'Success',
-                ];
+                // Hitung sisa pembayaran
+                $total_tagihan = $invoice->grand_total_idr;
+                $payment = $invoice->payable_detail->sum('total');
+                $sisa = $total_tagihan - $payment;
 
-                $response['redirect_to'] = route('superuser.finance.payable.index');
+                // Update status payment pada SalesOrder
+                if ($sisa == 0) {
+                    $payment_status = 1; // Lunas
+                } elseif ($sisa > 0) {
+                    $payment_status = 2; // Belum lunas
+                } elseif ($sisa >= -1) {
+                    $payment_status = 1; // Kelebihan bayar
+                } else {
+                    throw new \Exception("Perhitungan pembayaran menghasilkan nilai tidak valid");
+                }
 
-                return $this->response(200, $response);
+                $update_so = SalesOrder::where('id', $invoice->do->so_id)->update(['payment_status' => $payment_status]);
+
+                if (!$update_so) {
+                    throw new \Exception("Gagal memperbarui status pembayaran pada SalesOrder");
+                }
             }
-        }catch (\Exception $e) {
+
+            // Insert history
+            $get_invoice = Invoicing::where('id', $payable->payable_detail[0]->invoice_id)->first();
+
+            $history_pay = new PayableHistory([
+                'payable_id' => $payable->id,
+                'do_id' => $get_invoice->do_id,
+                'invoice_id' => $get_invoice->id,
+                'invoice_code' => $get_invoice->code,
+                'payable_code' => $payable->code,
+                'customer_other_address_id' => $get_invoice->customer_other_address_id,
+                'acc_by' => Auth::id(),
+                'created_by' => $payable->created_by,
+            ]);
+
+            if (!$history_pay->save()) {
+                throw new \Exception("Gagal menyimpan riwayat pembayaran.");
+            }
+
+            // Commit transaksi
+            DB::commit();
+
+            // Logging
+            // LogActivity::addToLog('Approved Payable: ' . $payable->code);
+
+            // Response sukses
+            $response['notification'] = [
+                'alert' => 'notify',
+                'type' => 'success',
+                'content' => 'Success',
+            ];
+            $response['redirect_to'] = route('superuser.finance.payable.index');
+
+            return $this->response(200, $response);
+        } catch (\Exception $e) {
             dd($e);
+            // Rollback jika terjadi error
             DB::rollback();
+
+            // Logging error
+            Log::error('Error approving payable: ' . $e->getMessage());
+
+            // Response error
             $response['notification'] = [
                 'alert' => 'block',
                 'type' => 'alert-danger',
                 'header' => 'Error',
-                'content' => "Internal Server Error!",
+                'content' => "Internal Server Error: " . $e->getMessage(),
             ];
 
             return $this->response(400, $response);
         }
     }
-
+    
     /**
      * Remove the specified resource from storage.
      *
@@ -530,7 +566,6 @@ class PayableController extends Controller
 
                 if($payable->save()){
                     DB::commit();
-                    LogActivity::addToLog('Cancel Aprroved Payable:' . $payable->code);
                     $response['redirect_to'] = route('superuser.finance.payable.index');
                     return $this->response(200, $response);
                 }
@@ -616,8 +651,6 @@ class PayableController extends Controller
                 ]);
 
                 DB::commit();
-
-                LogActivity::addToLog('Update Cancel Payable:' . $get_payable->code);
 
                 $data_json["IsError"] = FALSE;
                 $data_json["Message"] = "Payable berhasil dibuat";

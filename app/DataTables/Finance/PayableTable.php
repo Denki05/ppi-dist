@@ -152,15 +152,15 @@ class PayableTable extends Table
                 ";
         
                 // Show Destroy button if the user is a superuser
-                if (auth()->user()->is_superuser) {
-                    $buttons .= "
-                        <a href=\"javascript:deleteConfirmation('{$destroy}')\">
-                            <button type=\"button\" class=\"btn btn-sm btn-circle btn-alt-secondary\" title=\"Destroy\">
-                                <i class=\"fa fa-trash\"></i>
-                            </button>
-                        </a>
-                    ";
-                }
+                // if (auth()->user()->is_superuser) {
+                //     $buttons .= "
+                //         <a href=\"javascript:deleteConfirmation('{$destroy}')\">
+                //             <button type=\"button\" class=\"btn btn-sm btn-circle btn-alt-secondary\" title=\"Destroy\">
+                //                 <i class=\"fa fa-trash\"></i>
+                //             </button>
+                //         </a>
+                //     ";
+                // }
         
                 return $buttons;
             }

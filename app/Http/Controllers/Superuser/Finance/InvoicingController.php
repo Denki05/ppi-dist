@@ -513,12 +513,6 @@ class InvoicingController extends Controller
 
         $file = 'C:\\xampp\\htdocs\\ppi-dist\\public\\cr\\invoice\\export\\'.$result->code.'.pdf';
 
-        // if($get_do->type_transaction == 1 && $get_do->so->payment_status == 1){
-        //     $file->SetWatermarkText("PAID");
-        // }elseif($get_do->type_transaction == 2 && $get_do->so->payment_status == 2){
-        //     $file->SetWatermarkText("COPY");
-        // }
-
         header("Content-Description: File Transfer"); 
         header("Content-Type: application/octet-stream"); 
         header("Content-Transfer-Encoding: Binary"); 
@@ -595,15 +589,6 @@ class InvoicingController extends Controller
         readfile ($file);
         exit();
     }
-
-    // public function print_paid($id, $type = null){
-    //     return $this->print($id, true, $type);
-    // }
-
-    // public function print_portait($id){
-
-    //     return $this->print($id, true, 2);
-    // }
 
     public function print_proforma($id)
     {
