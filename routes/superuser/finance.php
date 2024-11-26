@@ -40,7 +40,7 @@ Route::group([
         Route::get('/create', 'PayableController@create')->name('create');
         Route::get('/{id}/detail', 'PayableController@detail')->name('detail');
         Route::get('/{id}/edit', 'PayableController@edit')->name('edit');
-        Route::post('/{id}/update', 'PayableController@update')->name('update');
+        Route::put('/{id}/update', 'PayableController@update')->name('update');
         Route::post('/{id}/store', 'PayableController@store')->name('store');
         Route::get('/approve/{id}', 'PayableController@approve')->name('approve');
         Route::get('/{id}/print', 'PayableController@print')->name('print');

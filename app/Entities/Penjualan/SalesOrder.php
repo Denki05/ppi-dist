@@ -92,6 +92,7 @@ class SalesOrder extends Model
     	0 => 'NEW',
     	1 => 'PAID',
         2 => 'COPY',
+        3 => 'OVERPAID',
     ];
 
     const TYPE_TRANSACTION = [

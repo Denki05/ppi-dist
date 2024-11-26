@@ -2,7 +2,7 @@
 
 @section('content')
 <nav class="breadcrumb bg-white push">
-  <span class="breadcrumb-item">Report</span>
+  <span class="breadcrumb-item">Laporan</span>
   <span class="breadcrumb-item">Management</span>
   <span class="breadcrumb-item active">Register Customer</span>
 </nav>
@@ -61,6 +61,9 @@
                             <i class="fa fa-trash"></i> Remove Data
                         </a>
                     </div>
+                    <div class="btn-group mr-2" role="group" aria-label="Third group">
+                        <button type="submit" class="btn btn-success"><i class="fa fa-print"></i> Print</button>
+                    </div>
                 </div>
             </div>
             <br>
@@ -68,7 +71,7 @@
                 <div class="col-3 col-form-label required"><h5>Type Report:</h5></div>
                 <div class="col">
                     <label class="form-check form-check-inline">
-                        <input class="form-check-input" type="radio" name="type" id="type_customer" value="1">
+                        <input class="form-check-input" type="radio" name="type" id="type_customer" value="1" checked>
                         <h6>Customer Type Brand</h6>
                     </label>
                     <label class="form-check form-check-inline">
@@ -81,7 +84,7 @@
                 <div class="col-3 col-form-label required"><h5>Tampilkan Nominal:</h5></div>
                 <div class="col">
                     <label class="form-check form-check-inline">
-                        <input class="form-check-input" type="radio" name="nominal" id="nominal_yes" value="1">
+                        <input class="form-check-input" type="radio" name="nominal" id="nominal_yes" value="1" checked>
                         <h6>Yes</h6>
                     </label>
                     <label class="form-check form-check-inline">
@@ -94,22 +97,29 @@
                 <div class="col-lg-3">
                     <div class="form-group">
                         <label>Set Period From</label>
-                        <input type="date" name="start" id="period_from" class="form-control">
+                        <input type="date" name="start" id="period_from" class="form-control" value="{{ date('Y-m-01') }}">
                     </div>
                 </div>
                 <div class="col-lg-3">
                     <div class="form-group">
                         <label>Set Period To</label>
-                        <input type="date" name="end" id="period_to" class="form-control">
-                    </div>
-                </div>
-                <div class="col-lg-3">
-                    <div class="form-group">
-                        <br>
-                        <button type="submit" class="btn btn-success"><i class="fa fa-print"></i> Print</button>
+                        <input type="date" name="end" id="period_to" class="form-control" value="{{ date('Y-m-d') }}">
                     </div>
                 </div>
             </div>
+            {{--<div class="row">
+                <div class="col-lg-3">
+                    <div class="form-group">
+                        <label>Set Month</label>
+                        <select name="month" id="month_select" class="form-control js-select2">
+                            <option value="">Select a Month</option>
+                            @foreach($monthOptions as $month)
+                                <option value="{{ $month['value'] }}">{{ $month['label'] }}</option>
+                            @endforeach
+                        </select>
+                    </div>
+                </div>
+            </div>--}}
         </div>
     </div>
 </form>
@@ -140,6 +150,18 @@
       //      }
       //   });
       // })
+
+        $(function() {
+            // Set Period From to the first day of the current month
+            var firstDayOfMonth = new Date();
+            firstDayOfMonth.setDate(1); // Set the date to the 1st day of the current month
+            var periodFrom = firstDayOfMonth.toISOString().split('T')[0]; // Convert to YYYY-MM-DD format
+            $('#period_from').val(periodFrom); // Set the value of the Period From input field
+
+            // Set Period To to today's date
+            var today = new Date().toISOString().split('T')[0]; // Get today's date in YYYY-MM-DD format
+            $('#period_to').val(today); // Set the value of the Period To input field
+        });
     });
   </script>
 @endpush

@@ -22,6 +22,31 @@
   </div>
   <hr class="my-20">
   <div class="block-content block-content-full">
+    <div class="form-group row">
+      <label class="col-md-2 col-form-label text-left" for="period">Bulan :</label>
+      <div class="col-md-4">
+        <div class="input-group">
+          <select id="bulan" name="bulan" class="form-control js-select2">
+            @foreach ($bulan as $key => $month)
+              <option value="{{ $key }}" {{ $key == $selectedBulan ? 'selected' : '' }}>
+                {{ $month }}
+              </option>
+            @endforeach
+          </select>
+        </div>
+      </div>
+      <div class="col-md-4">
+        <div class="input-group">
+          <select id="tahun" name="tahun" class="form-control js-select2" style="width: 30%;">
+              @for ($year = now()->year; $year >= 2024; $year--) <!-- Replace 2000 with your desired start year -->
+                  <option value="{{ $year }}" {{ $year == $selectedTahun ? 'selected' : '' }}>
+                      {{ $year }}
+                  </option>
+              @endfor
+          </select>
+        </div>
+      </div>
+    </div>
     <table id="datatable" class="table table-striped">
       <thead>
         <tr>
@@ -99,38 +124,42 @@ $(document).ready(function() {
 
     let datatableUrl = '{{ route('superuser.finance.cashback.json') }}';
 
-    $('#datatable').DataTable({
+    let cashbackTable = $('#datatable').DataTable({
         processing: true,
         serverSide: false,
         ajax: {
-        "url": datatableUrl,
-        "dataType": "json",
-        "type": "GET",
-        "data":{ _token: "{{csrf_token()}}"}
+            url: datatableUrl,
+            dataType: "json",
+            type: "GET",
+            data: function (d) {
+                d.bulan = $('#bulan').val(); // Send selected month
+                d.tahun = $('#tahun').val(); // Send selected year
+                d._token = "{{csrf_token()}}";
+            },
         },
         columns: [
-        {
-            data: 'tanggal_buat',
-        },
-        {data: 'code'},
-        {data: 'code_invoice'},
-        {data: 'account_customer'},
-        { 
-          data: 'selisih_cashback',
-          render: $.fn.dataTable.render.number('.', ',', 2, 'Rp. '),
-          searchable: false
-        },
-        {data: 'status'},
-        {data: 'action'},
+            {
+                data: 'tanggal_buat'
+            },
+            { data: 'code' },
+            { data: 'code_invoice' },
+            { data: 'customer_name' },
+            { 
+              data: 'selisih_cashback',
+              render: $.fn.dataTable.render.number('.', ',', 2, 'Rp. '),
+              searchable: false
+            },
+            { data: 'status' },
+            { data: 'action' },
         ],
-        order: [
-          [1, 'desc']
-        ],
+        order: [[1, 'desc']],
         pageLength: 5,
-        lengthMenu: [
-        [5, 15, 20],
-        [5, 15, 20]
-        ],
+        lengthMenu: [[5, 15, 20], [5, 15, 20]],
+    });
+
+    // Handle month dropdown change
+    $('#bulan, #tahun').change(function () {
+      cashbackTable.ajax.reload();
     });
 
     $(".js-select2-kontrak").select2({

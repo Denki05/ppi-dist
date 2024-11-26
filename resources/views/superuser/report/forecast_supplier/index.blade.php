@@ -2,8 +2,9 @@
 
 @section('content')
 <nav class="breadcrumb bg-white push">
-  <span class="breadcrumb-item">Report</span>
-  <span class="breadcrumb-item active">Forecast Supplier</span>
+  <span class="breadcrumb-item">Laporan</span>
+  <span class="breadcrumb-item">Management</span>
+  <span class="breadcrumb-item active">Forecast Principal</span>
 </nav>
 
 @if($errors->any())
@@ -55,7 +56,7 @@
               <label>Vendor</label>
               <!-- <input type="date" name="period_from" id="period_from" class="form-control"> -->
               <select class="form-control js-select2" name="vendor_name" id="vendor_name">
-                <option value="">Select Vendor</option>
+                <option value="all">All</option>
                 @foreach($vendor AS $row)
                 <option value="{{$row->name}}">{{$row->name}}</option>
                 @endforeach
@@ -68,13 +69,13 @@
           <div class="col-lg-3">
             <div class="form-group">
               <label>Set Period From</label>
-              <input type="date" name="period_from" id="period_from" class="form-control">
+              <input type="date" name="period_from" id="period_from" class="form-control" value="{{ date('Y-m-01') }}">
             </div>   
           </div>
           <div class="col-lg-3">
             <div class="form-group">
               <label>Set Period To</label>
-              <input type="date" name="period_to" id="period_to" class="form-control">
+              <input type="date" name="period_to" id="period_to" class="form-control" value="{{ date('Y-m-d') }}">
             </div>   
           </div>
           <div class="col-lg-3">
@@ -102,26 +103,6 @@
 
       $('.js-select2').select2();
 
-      // $('#printReport').on('click', function(e) {
-      //   e.preventDefault(); // prevent the form submit
-      //   let start = $('#period_from').val();
-      //   let end = $('#period_to').val();
-      //   let vendorName = $('#vendor_name').val();
-        
-      //   $.ajax({
-      //      type:'POST',
-      //      url:"{{ route('superuser.report.forecast_supplier.printReport') }}",
-      //      data:{"_token": "{{ csrf_token() }}", "start":start, "end":end, "vendor":vendorName},
-      //      success:function(response){
-      //       // console.log(response);
-      //      },
-      //      error: function(xhr, status, error) {
-      //       var errorMessage = xhr.responseJSON.error; // Extracting the error message from JSON response
-      //       showAlert(errorMessage, 'error');
-      //     }
-      //   });
-      // })
-
       function showAlert(message, type) {
           var alertClass = 'alert-info'; // Default alert class
           if (type === 'error') {
@@ -135,6 +116,8 @@
                           '</div>';
           $('#alert-container').html(alertHTML);
       }
+
+      $("#vendor_name").val("all").change();
     });
   </script>
 @endpush

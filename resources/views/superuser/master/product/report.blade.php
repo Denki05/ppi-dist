@@ -183,6 +183,8 @@
           // Reload the DataTable with the new URL
           datatable.ajax.url(newDatatableUrl).load();
         });
+
+        $("#vendor").val("all").change();
     })
 </script>
 @endpush

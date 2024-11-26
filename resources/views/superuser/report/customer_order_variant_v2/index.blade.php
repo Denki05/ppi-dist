@@ -55,7 +55,7 @@
               <select class="js-select2 form-control" id="product" name="product[]" data-placeholder="Select Product" multiple>
                 <option value="all">All</option>
                 @foreach($product as $row)
-                  <option value="{{ $row->id }}">{{ $row->code }} - {{ $row->name }} / {{ $row->packaging->pack_name }}</option>
+                  <option value="{{ $row->id }}">{{ $row->code }} - {{ $row->name }}</option>
                 @endforeach
               </select>
             </div>
@@ -64,12 +64,12 @@
           <div class="form-group row">
             <label class="col-md-2 col-form-label text-left" for="start">Periode From:</label>
             <div class="col-md-4">
-              <input type="date" class="form-control" id="start_date" name="start" required>
+              <input type="date" class="form-control" id="start_date" name="start" required value="{{ date('Y-m-01') }}">
             </div>
 
             <label class="col-md-2 col-form-label text-left" for="end">Periode To:</label>
             <div class="col-md-4">
-              <input type="date" class="form-control" id="end_date" name="end" required>
+              <input type="date" class="form-control" id="end_date" name="end" required value="{{ date('Y-m-d') }}">
             </div>
           </div>
         </div>
@@ -211,6 +211,10 @@
       function toCommas(value) {
         return value.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
       }
+
+      $("#customer").val("all").change();
+      $("#brand_name").val("all").change();
+      $("#product").val("all").change();
   })
 </script>
 @endpush

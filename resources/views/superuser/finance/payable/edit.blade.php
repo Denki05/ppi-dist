@@ -2,7 +2,9 @@
 
 @section('content')
 <div id="alert-block"></div>
-<form class="ajax" data-action="{{ route('superuser.finance.payable.update', $result->id) }}" data-type="POST" enctype="multipart/form-data">
+<form class="ajax" data-action="{{ route('superuser.finance.payable.update', $result->id) }}" enctype="multipart/form-data">
+    @csrf
+    @method('PUT')
   <div class="block">
     <div class="block-header block-header-default">
       <h3 class="block-title">#Edit Payment</h3>
@@ -39,7 +41,7 @@
           <div class="form-group row">
             <label class="col-md-3 col-form-label text-right" for="select_date">Tanggal Bayar</label>
             <div class="col-md-4">
-              <input type="date" class="form-control" id="created_at" name="created_at" value="{{ $result->created_at ? date('Y-m-d', strtotime($result->created_at)) : '' }}" readonly>
+              <input type="date" class="form-control" id="pay_date" name="pay_date" value="{{ $result->created_at ? date('Y-m-d', strtotime($result->created_at)) : '' }}">
             </div>
           </div>
         </div>
@@ -138,6 +140,32 @@
             "targets": 0,
             "orderable": false
           }]
+    });
+
+    $('form.ajax').on('submit', function(e) {
+        e.preventDefault();
+
+        const form = $(this);
+        const action = form.data('action');
+        const method = form.data('type') || 'POST';
+        const formData = new FormData(this);
+
+        $.ajax({
+            url: action,
+            type: method,
+            data: formData,
+            processData: false,
+            contentType: false,
+            success: function(response) {
+                alert('Success: ' + response.notification.content);
+                if (response.redirect_to) {
+                    window.location.href = response.redirect_to;
+                }
+            },
+            error: function(response) {
+                alert('Error: ' + response.responseJSON.notification.content);
+            }
+        });
     });
     
   })

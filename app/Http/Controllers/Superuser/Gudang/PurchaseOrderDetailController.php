@@ -266,8 +266,9 @@ class PurchaseOrderDetailController extends Controller
                 }
             })
             ->leftJoin('master_packaging', 'master_products_packaging.packaging_id', '=', 'master_packaging.id')
+            ->leftJoin('master_product_types', 'master_products_packaging.type_id', '=', 'master_product_types.id')
             ->selectRaw(
-                'master_packaging.id, master_packaging.pack_name'
+                'master_packaging.id, master_packaging.pack_name, master_product_types.name'
             )
             ->get();
             $data_json["IsError"] = FALSE;

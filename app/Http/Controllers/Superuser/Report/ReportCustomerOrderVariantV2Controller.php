@@ -52,7 +52,7 @@ class ReportCustomerOrderVariantV2Controller extends Controller
         }
 
         $data['customer'] = CustomerOtherAddress::where('situation', 1)->orWhere('status_key', 1)->get();
-        $data['product'] = ProductPack::get();
+        $data['product'] = Product::get();
         $data['brand'] = BrandLokal::get();
 
         return view($this->view."index", $data);
@@ -87,6 +87,17 @@ class ReportCustomerOrderVariantV2Controller extends Controller
         $new_date_end = date('d-m-Y', strtotime($end));
 
         // Build customer search string with "All" handling
+        $customerSearch = collect($customers)->map(function($value) {
+            if (is_array($value)) {
+                return '(' . collect($value)->map(function($second_level) {
+                    return "{master_customer_other_addresses.id}='$second_level'";
+                })->implode(' AND ') . ')';
+            } else {
+                return "{master_customer_other_addresses.id}='$value'";
+            }
+        })->implode(' OR ');
+
+        // Build brand search string
         $customerSearch = empty($customers) || in_array('all', $customers)
             ? '1=1' // Select all customers
             : collect($customers)->map(function($value) {
@@ -104,7 +115,7 @@ class ReportCustomerOrderVariantV2Controller extends Controller
         $productSearch = empty($product) || in_array('all', $product)
             ? '1=1' // Select all products
             : collect($product)->map(function($value) {
-                return "{master_products_packaging.id}='$value'";
+                return "{master_products.id}='$value'";
             })->implode(' OR ');
 
         // File paths

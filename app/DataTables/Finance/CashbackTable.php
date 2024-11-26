@@ -12,6 +12,9 @@ class CashbackTable extends Table
 {
     private function query(Request $request)
     {
+        $month = $request->input('bulan', now()->month);
+        $year = $request->input('tahun', now()->year);
+
         $model = Cashback::where('finance_cashback.status', 1)
             ->leftJoin('finance_cashback_detail', 'finance_cashback.id', '=', 'finance_cashback_detail.cashback_id')
             ->leftJoin('penjualan_do', 'penjualan_do.id', '=', 'finance_cashback.do_id')
@@ -27,6 +30,8 @@ class CashbackTable extends Table
                 DB::raw('IFNULL(SUM(finance_cashback_detail.subtotal_item_idr), 0) AS total_jual'), 
                 DB::raw('IFNULL(SUM(finance_cashback_detail.amount_cashback), 0) AS total_beli'), 
             )
+            ->whereMonth('finance_cashback.created_at', $month)
+            ->whereYear('finance_cashback.created_at', $year) // Add year filter
             ->groupBy('finance_cashback.code')
             ->get();
 
@@ -38,13 +43,6 @@ class CashbackTable extends Table
         $table = Table::of($this->query($request));
 
         $table->addIndexColumn();
-
-        // $table->editColumn('tanggal_buat', function (Cashback $model) {
-        //     return [
-        //     'display' => Carbon::parse($model->created_at)->format('d-m-Y'),
-        //     'timestamp' => $model->created_at
-        //     ];
-        // });
 
         $table->addColumn('account_customer', function (Cashback $model) {
             return $model->customer_name . ' ' . $model->customer_city;

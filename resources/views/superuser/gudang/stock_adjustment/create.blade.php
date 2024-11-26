@@ -52,7 +52,7 @@
               <select class="form-control js-select2 select-product" name="product_packaging_id">
                 <option value="">==Select Product==</option>
                 @foreach($product as $index => $row)
-                  <option value="{{$row->id}}">{{$row->code ?? ''}} - {{$row->name ?? ''}} - {{$row->packaging->pack_name}}</option>
+                  <option value="{{$row->id}}">{{$row->code ?? ''}} - {{$row->name ?? ''}} / {{$row->packaging->pack_name}} {{ $row->type_product_pack->name ?? 'N/A' }}</option>
                 @endforeach
               </select>
             </div>

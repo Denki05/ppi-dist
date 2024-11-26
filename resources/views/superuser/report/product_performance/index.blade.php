@@ -2,8 +2,9 @@
 
 @section('content')
 <nav class="breadcrumb bg-white push">
-  <span class="breadcrumb-item">Report</span>
+  <span class="breadcrumb-item">Laporan</span>
   <span class="breadcrumb-item">Operasional</span>
+  <span class="breadcrumb-item">Produk</span>
   <span class="breadcrumb-item active">Produk - Customer</span>
 </nav>
 @if(session('error') || session('success'))
@@ -28,11 +29,11 @@
           <div class="form-group row">
             <label class="col-md-2 col-form-label text-left" for="periode_from">Period From :</label>
             <div class="col-md-4">
-              <input type="date" class="form-control" name="periode_from" id="periode_from" required>
+              <input type="date" class="form-control" name="periode_from" id="periode_from" required value="{{ date('Y-m-01') }}">
             </div>
             <label class="col-md-2 col-form-label text-left" for="periode_to">Period To :</label>
             <div class="col-md-4">
-              <input type="date" class="form-control" name="periode_to" id="periode_to" required>
+              <input type="date" class="form-control" name="periode_to" id="periode_to" required value="{{ date('Y-m-d') }}">
             </div>
           </div>
           <div class="form-group row">
@@ -91,6 +92,7 @@
               <th>Brand</th>
               <th>Variant</th>
               <th>Customer</th>
+              <th>Kota</th>
               <th>Qty</th>
             </tr>
           </thead>
@@ -130,7 +132,7 @@
       processing: true,
       serverSide: false,
       ajax: {
-        "url": firstDatatableUrl,
+        "url": datatableUrl,
         "dataType": "json",
         "type": "GET",
         "data":{ _token: "{{csrf_token()}}"}
@@ -138,7 +140,8 @@
       columns: [
         {data: 'brand'},
         {data: 'product'},
-        {data: 'customer'},
+        {data: 'customer_name'},
+        {data: 'customer_city'},
         {data: 'qty'},
       ],
       order: [
@@ -183,6 +186,9 @@
           '&brand=' + brand + '&product=' + product;
         datatable.ajax.url(newDatatableUrl).load();
     });
+
+    $("#brand").val("all").change();
+    $("#product").val("all").change();
   })
 </script>
 @endpush

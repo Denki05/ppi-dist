@@ -225,6 +225,8 @@
         // Reload the DataTable with the updated URL
         datatable.ajax.url(newDatatableUrl).load();
         });
+
+        $("#customer").val("all").change();
     })
 </script>
 @endpush

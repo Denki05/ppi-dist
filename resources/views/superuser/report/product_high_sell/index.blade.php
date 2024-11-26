@@ -2,9 +2,10 @@
 
 @section('content')
 <nav class="breadcrumb bg-white push">
-  <span class="breadcrumb-item">Report</span>
+  <span class="breadcrumb-item">Laporan</span>
   <span class="breadcrumb-item">Operasional</span>
-  <span class="breadcrumb-item active">Product High Sell</span>
+  <span class="breadcrumb-item">Produk</span>
+  <span class="breadcrumb-item active">Produk Penjualan Tertinggi</span>
 </nav>
 
 @if(session('error') || session('success'))
@@ -29,11 +30,11 @@
           <div class="form-group row">
             <label class="col-md-2 col-form-label text-left" for="periode_from">Period From :</label>
             <div class="col-md-4">
-              <input type="date" class="form-control" name="periode_from" id="periode_from" required>
+              <input type="date" class="form-control" name="periode_from" id="periode_from" required value="{{ date('Y-m-01') }}">
             </div>
             <label class="col-md-2 col-form-label text-left" for="periode_to">Period To :</label>
             <div class="col-md-4">
-              <input type="date" class="form-control" name="periode_to" id="periode_to" required>
+              <input type="date" class="form-control" name="periode_to" id="periode_to" required value="{{ date('Y-m-d') }}">
             </div>
           </div>
           <div class="form-group row">
@@ -119,23 +120,6 @@
 
         $('.js-select2').select2();
 
-        // $('#btn-print').on('click', function(e) {
-        //     e.preventDefault();
-        //     var brand = $('#brand_name').val();
-        //     var start_date = $('#periode_from').val();
-        //     var end_date = $('#periode_to').val();
-        //     let typeReport = $("input:radio[name=radios-inline]:checked").val();
-
-        //     $.ajax({
-        //     type:'POST',
-        //     url:"{{ route('superuser.report.product_high_sell.print_report') }}",
-        //     data:{"_token": "{{ csrf_token() }}", "start":start_date, "end":end_date, "brand":brand, "type":typeReport},
-        //     success:function(response){
-        //         // console.log(response);
-        //     }
-        //     });
-        // });
-
         let datatableUrl = '{{ route('superuser.report.product_high_sell.json') }}';
         let firstDatatableUrl = datatableUrl + '?start_date=' + start_date + '&end_date=' + end_date +
         '&brand=all';
@@ -149,7 +133,7 @@
           processing: true,
           serverSide: false,
           ajax: {
-            "url": firstDatatableUrl,
+            "url": datatableUrl,
             "dataType": "json",
             "type": "GET",
             "data": {
@@ -207,6 +191,8 @@
             '&brand=' + brand;
           datatable.ajax.url(newDatatableUrl).load();
         })
+
+        $("#brand_name").val("all").change();
     })
 </script>
 @endpush

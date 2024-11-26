@@ -60,6 +60,10 @@ class CashbackController extends Controller
             }
         }
 
+        // Define the range of years for filtering
+        $currentYear = now()->year;
+        $years = range($currentYear, $currentYear - 10); // Generate a range of 10 years back
+
         $start = Carbon::now()->startOfYear();
         $end = Carbon::now()->endOfYear();
         $customer = CustomerOtherAddress::leftJoin('master_customers', 'master_customer_other_addresses.customer_id', '=', 'master_customers.id')
@@ -79,9 +83,31 @@ class CashbackController extends Controller
                 ];
             }
 
+            $bulan = [
+                1 => 'Januari',
+                2 => 'Februari',
+                3 => 'Maret',
+                4 => 'April',
+                5 => 'Mei',
+                6 => 'Juni',
+                7 => 'Juli',
+                8 => 'Agustus',
+                9 => 'September',
+                10 => 'Oktober',
+                11 => 'November',
+                12 => 'Desember',
+            ];
+        
+                // Get the selected month, default to the current month
+            $selectedBulan = $request->bulan ?? now()->month;
+            $selectedTahun = $request->tahun ?? $currentYear;
+
         $data = [
             'months' => $months,
             'customer' => $customer,
+            'bulan' => $bulan,
+            'selectedBulan' => $selectedBulan,
+            'selectedTahun' => $selectedTahun,
         ];
 
 

@@ -29,13 +29,13 @@
               <label class="col-md-2 col-form-label text-left" for="period">Period From :</label>
               <div class="col-md-4">
                 <div class="input-group">
-                  <input type="date" class="form-control form-control" name="start_date" id="periode_from">
+                  <input type="date" class="form-control form-control" name="start_date" id="periode_from" value="{{ date('Y-m-01') }}">
                 </div>
               </div>
               <label class="col-md-2 col-form-label text-left" for="product">Period To :</label>
               <div class="col-md-4">
                 <div class="input-group">
-                  <input type="date" class="form-control form-control" name="end_date" id="periode_to">
+                  <input type="date" class="form-control form-control" name="end_date" id="periode_to" value="{{ date('Y-m-d') }}">
                 </div>
               </div>
             </div>
@@ -347,6 +347,8 @@
           }
         });
       })
+
+      $("#customer").val("all").change();
   })
 </script>
 @endpush

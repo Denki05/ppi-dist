@@ -7,6 +7,7 @@ use Illuminate\Http\Request;
 use App\Entities\Reports\CustomerTypeBrandReports;
 Use App\Entities\Penjualan\SalesOrder;
 use App\Entities\Setting\UserMenu;
+use Carbon\Carbon;
 use Auth;
 use COM;
 use DB;
@@ -34,16 +35,41 @@ class ReportCustomerTypeBrandController extends Controller
 
     public function index(Request $request)
     {
-        if(Auth::user()->is_superuser == 0){
-            if(empty($this->access)){
-                return redirect()->route('superuser.index')->with('error','Anda tidak punya akses untuk membuka menu terkait');
+        // Check if the user is a superuser and has access
+        if (Auth::user()->is_superuser == 0) {
+            if (empty($this->access)) {
+                return redirect()->route('superuser.index')->with('error', 'Anda tidak punya akses untuk membuka menu terkait');
             }
         }
 
+        // Retrieve the data
         $data['data'] = CustomerTypeBrandReports::first();
 
-        return view($this->view."index", $data);
+        // Get the current year
+        $currentYear = Carbon::now()->year;
+
+        // Array with month names
+        $months = [
+            'January', 'February', 'March', 'April', 'May', 'June',
+            'July', 'August', 'September', 'October', 'November', 'December'
+        ];
+
+        // Prepare month options array
+        $monthOptions = [];
+        foreach ($months as $index => $month) {
+            $monthOptions[] = [
+                'value' => $index + 1, // month index (1 to 12)
+                'label' => $month // Month name with year
+            ];
+        }
+
+        // Pass month options to the view along with other data
+        $data['monthOptions'] = $monthOptions;
+
+        // Return the view with the data
+        return view($this->view . "index", $data);
     }
+
 
     public function postData(Request $request)
     {

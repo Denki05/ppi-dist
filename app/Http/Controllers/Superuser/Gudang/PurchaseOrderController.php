@@ -478,12 +478,6 @@ class PurchaseOrderController extends Controller
 
         $file = 'C:\\xampp\\htdocs\\ppi-dist\\public\\cr\\purchase_order\\export\\'.$result->code.'.pdf';
 
-        // if($get_do->type_transaction == 1 && $get_do->so->payment_status == 1){
-        //     $file->SetWatermarkText("PAID");
-        // }elseif($get_do->type_transaction == 2 && $get_do->so->payment_status == 2){
-        //     $file->SetWatermarkText("COPY");
-        // }
-
         header("Content-Description: File Transfer"); 
         header("Content-Type: application/octet-stream"); 
         header("Content-Transfer-Encoding: Binary"); 
@@ -491,6 +485,11 @@ class PurchaseOrderController extends Controller
         ob_clean();
         flush();
         readfile ($file);
+
+        if (file_exists($file)) {
+            unlink($file);
+        }
+
         exit();
 
     }

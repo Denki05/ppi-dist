@@ -403,10 +403,30 @@ class SalesOrderController extends Controller
                     
                                     return $this->response(400, $response);
                                 }else{
+                                     // Find the base product packaging ID if the current product is a clone
+                                     $baseProductPackagingId = null;
+                                     $product = ProductPack::where('id', $request->sku[$key])->first();
+ 
+                                     // dd($product);
+                                     if ($product) {
+                                         // Check if it's a clone product and get the base product's packaging ID
+                                         if (strpos($product->id, '_1') !== false) { 
+                                             $baseProduct = ProductPack::where('id', str_replace('_1', '', $product->id))->first();
+ 
+                                             // dd($baseProduct->id);
+                                             if ($baseProduct) {
+                                                 $baseProductPackagingId = $baseProduct->id;
+                                             }
+                                         } else {
+                                             // It's a base product, use its packaging ID
+                                             $baseProductPackagingId = $product->id;
+                                         }
+                                     }
+
                                     $insertDetail = new SalesOrderItem;
                                     $insertDetail->so_id = $insert->id;
                                     $insertDetail->kontrak = $request->value_kontrak[$key];
-                                    $insertDetail->product_packaging_id = $request->sku[$key];
+                                    $insertDetail->product_packaging_id = $baseProductPackagingId;
                                     $insertDetail->price = $request->price[$key];
                                     $insertDetail->qty = $request->qty[$key];
                                     $insertDetail->disc_usd = $request->disc[$key];
@@ -609,6 +629,7 @@ class SalesOrderController extends Controller
             'packaging' => $packaging,
             'rekening' => $rekening,
         ];
+        
         if ($step == 2) {
             $doList = $result->member->do;
             $invoiceList = [];
@@ -1301,10 +1322,10 @@ class SalesOrderController extends Controller
                             }
 
                             // Check Stock
-                            $stock = DB::table('master_product_min_stocks')
-                                        ->where('warehouse_id', $request->origin_warehouse_id)
-                                        ->where('product_packaging_id', $value["product_packaging_id"])
-                                        ->first();
+                            // $stock = DB::table('master_product_min_stocks')
+                            //             ->where('warehouse_id', $request->origin_warehouse_id)
+                            //             ->where('product_packaging_id', $value["product_packaging_id"])
+                            //             ->first();
                             
                             // if($stock){
                             //     if($stock->quantity < $do_qty){
@@ -1313,6 +1334,17 @@ class SalesOrderController extends Controller
                             //         break;
                             //     }
                             // }
+
+                             // Extract the base product-packaging ID (remove suffix like "_1", "_2")
+                             $base_product_packaging_id = preg_replace('/_\d+$/', '', $value["product_packaging_id"]);
+                             // dd($base_product_packaging_id);
+                             // dd($base_product_packaging_id);
+ 
+                             // Check stock only for the primary variant (no suffix)
+                             $stock = DB::table('master_product_min_stocks')
+                                         ->where('warehouse_id', $request->origin_warehouse_id)
+                                         ->where('product_packaging_id', $base_product_packaging_id) // Only the base ID
+                                         ->first();
 
                             if ($stock) {
                                 // Only check stock if do_qty is greater than 0
@@ -1783,8 +1815,9 @@ class SalesOrderController extends Controller
                 }
             })
             ->leftJoin('master_packaging', 'master_products_packaging.packaging_id', '=', 'master_packaging.id')
+            ->leftJoin('master_product_types', 'master_products_packaging.type_id', '=', 'master_product_types.id')
             ->selectRaw(
-                'master_packaging.id, master_packaging.pack_name'
+                'master_packaging.id, master_packaging.pack_name, master_product_types.name as type'
             )
             ->get();
             $data_json["IsError"] = FALSE;

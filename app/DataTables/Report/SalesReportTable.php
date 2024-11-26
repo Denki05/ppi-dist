@@ -34,7 +34,7 @@ class SalesReportTable extends Table
                 ) AS invoice_cash'),
                 DB::raw('SUM(
                     CASE
-                        WHEN penjualan_do.type_transaction IN ("TEMPO", "COD") 
+                        WHEN penjualan_do.type_transaction IN ("TEMPO", "COD", "MARKETPLACE") 
                         THEN IFNULL(penjualan_do_details.purchase_total_idr - penjualan_do_details.discount_idr, 0)
                     END
                 ) AS invoice_tempo')

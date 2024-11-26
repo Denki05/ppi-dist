@@ -33,6 +33,18 @@
                         </div>
                     </div>
                 </div>
+                <div class="row">
+                    <label class="col-md-3 col-form-label text-right">Free Shipping</label>
+                    <div class="col-md-7">
+                        <div class="form-control-plaintext">
+                          @if($other_address->free_shipping == 0)
+                            <span class="badge badge-pill badge-info">NO</span>
+                          @else
+                            <span class="badge badge-pill badge-info">YES</span>
+                          @endif
+                        </div>
+                    </div>
+                </div>
                 {{--<div class="row">
                     <label class="col-md-3 col-form-label text-right">Plafon Piutang</label>
                     <div class="col-md-7">

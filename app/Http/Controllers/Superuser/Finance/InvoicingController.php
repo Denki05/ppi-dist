@@ -537,7 +537,7 @@ class InvoicingController extends Controller
         $creport = null;
         $crapp = null;
 
-        // File download
+        // File path
         $file = 'C:\\xampp\\htdocs\\ppi-dist\\public\\cr\\invoice\\export\\' . $result->code . '.pdf';
 
         if (file_exists($file)) {
@@ -555,6 +555,10 @@ class InvoicingController extends Controller
             ob_clean();
             flush();
             readfile($file);
+
+            // Delete the file after download
+            unlink($file);
+
             exit();
         } else {
             return redirect()->route('superuser.index')->with('error', 'File not found.');
@@ -563,55 +567,61 @@ class InvoicingController extends Controller
 
     public function print2($id)
     {
-
-        // Access
-        if(Auth::user()->is_superuser == 0){
-            if(empty($this->access) || empty($this->access->user) || $this->access->can_print == 0){
-                return redirect()->route('superuser.index')->with('error','Anda tidak punya akses untuk membuka menu terkait');
+        // Access control
+        if (Auth::user()->is_superuser == 0) {
+            if (empty($this->access) || empty($this->access->user) || $this->access->can_print == 0) {
+                return redirect()->route('superuser.index')->with('error', 'Anda tidak punya akses untuk membuka menu terkait');
             }
         }
 
-        $result = Invoicing::where('id',$id)->first();
+        $result = Invoicing::where('id', $id)->first();
 
-        // GET DO & ITEM
+        if (!$result) {
+            return redirect()->route('superuser.index')->with('error', 'Invoice not found.');
+        }
+
+        // Get Packing Order
         $get_do = PackingOrder::where('id', $result->do_id)->first();
 
-        $my_report = "C:\\xampp\\htdocs\\ppi-dist\public\\cr\\invoice\\full.rpt"; 
-        $my_pdf = 'C:\\xampp\\htdocs\\ppi-dist\\public\\cr\\invoice\\export\\'.$result->code.'-FULL'.'.pdf';
-       
-        //- Variables - Server Information 
-        $my_server = "LOCAL"; 
-        $my_user = "root"; 
-        $my_password = ""; 
+        if (!$get_do) {
+            return redirect()->route('superuser.index')->with('error', 'Packing Order not found.');
+        }
+
+        $my_report = "C:\\xampp\\htdocs\\ppi-dist\\public\\cr\\invoice\\full.rpt"; 
+        $my_pdf = 'C:\\xampp\\htdocs\\ppi-dist\\public\\cr\\invoice\\export\\' . $result->code . '-FULL' . '.pdf';
+
+        // Variables for server information
+        $my_server = "LOCAL";
+        $my_user = "root";
+        $my_password = "";
         $my_database = "ppi-dist";
         $COM_Object = "CrystalDesignRunTime.Application";
 
+        // Create new COM object - depends on your Crystal Report version
+        $crapp = new COM($COM_Object) or die("Unable to create COM object");
+        $creport = $crapp->OpenReport($my_report, 1); // call rpt report
 
-        //-Create new COM object-depends on your Crystal Report version
-        $crapp= New COM($COM_Object) or die("Unable to Create Object");
-        $creport = $crapp->OpenReport($my_report,1); // call rpt report
-
-        //- Set database logon info - must have
+        // Set database logon info
         $creport->Database->Tables(1)->SetLogOnInfo($my_server, $my_database, $my_user, $my_password);
 
-        //- field prompt or else report will hang - to get through
-        $creport->EnableParameterPrompting = FALSE;
-        $creport->RecordSelectionFormula = "{penjualan_do.id}= $get_do->id";
+        // Prevent field prompt and set record selection
+        $creport->EnableParameterPrompting = false;
+        $creport->RecordSelectionFormula = "{penjualan_do.id} = " . $get_do->id;
 
-
-        //export to PDF process
-        $creport->ExportOptions->DiskFileName=$my_pdf; //export to pdf
-        $creport->ExportOptions->PDFExportAllPages=true;
-        $creport->ExportOptions->DestinationType=1; // export to file
-        $creport->ExportOptions->FormatType=31; // PDF type
+        // Export to PDF process
+        $creport->ExportOptions->DiskFileName = $my_pdf; // Export to PDF
+        $creport->ExportOptions->PDFExportAllPages = true;
+        $creport->ExportOptions->DestinationType = 1; // Export to file
+        $creport->ExportOptions->FormatType = 31; // PDF type
         $creport->Export(false);
 
-        //------ Release the variables ------
+        // Release the COM objects
         $creport = null;
         $crapp = null;
         $ObjectFactory = null;
 
-        $file = 'C:\\xampp\\htdocs\\ppi-dist\\public\\cr\\invoice\\export\\'.$result->code.'-FULL'.'.pdf';
+        // File path
+        $file = 'C:\\xampp\\htdocs\\ppi-dist\\public\\cr\\invoice\\export\\' . $result->code . '-FULL' . '.pdf';
 
         if (file_exists($file)) {
             // Set headers for file download
@@ -628,6 +638,10 @@ class InvoicingController extends Controller
             ob_clean();
             flush();
             readfile($file);
+
+            // Delete the file after download
+            unlink($file); // Delete the file
+
             exit();
         } else {
             return redirect()->route('superuser.index')->with('error', 'File not found.');

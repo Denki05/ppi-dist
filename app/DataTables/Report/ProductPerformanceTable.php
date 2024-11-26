@@ -52,9 +52,9 @@ class ProductPerformanceTable extends Table
 
         $table->addIndexColumn();
 
-        $table->addColumn('customer', function (SalesOrder $model) {
-            return $model->customer_name . ' ' . $model->customer_city;
-        });
+        // $table->addColumn('customer', function (SalesOrder $model) {
+        //     return $model->customer_name . ' ' . $model->customer_city;
+        // });
 
         $table->addColumn('product', function (SalesOrder $model) {
             return $model->product_code . ' - ' . $model->product_name . ' / ' . $model->packaging;

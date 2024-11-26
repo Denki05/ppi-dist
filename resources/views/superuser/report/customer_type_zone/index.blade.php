@@ -65,13 +65,13 @@
           <div class="col-lg-3">
             <div class="form-group">
               <label>Set Period From</label>
-              <input type="date" name="period_from" id="period_from" class="form-control">
+              <input type="date" name="period_from" id="period_from" class="form-control" value="{{ date('Y-m-01') }}">
             </div>   
           </div>
           <div class="col-lg-3">
             <div class="form-group">
               <label>Set Period To</label>
-              <input type="date" name="period_to" id="period_to" class="form-control">
+              <input type="date" name="period_to" id="period_to" class="form-control" value="{{ date('Y-m-d') }}">
             </div>   
           </div>
           <div class="col-lg-3">

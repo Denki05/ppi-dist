@@ -29,6 +29,7 @@
             <label class="col-md-2 col-form-label text-left" for="customer[]">Customer:</label>
             <div class="col-md-4">
               <select class="js-select2 form-control" id="customer" name="customer[]" data-placeholder="Select Customer" multiple required>
+                <option value="all">All</option>
                 @foreach($customer as $row)
                   <option value="{{ $row->id }}">{{ $row->name }} {{ $row->text_kota }}</option>
                 @endforeach
@@ -49,6 +50,7 @@
             <label class="col-md-2 col-form-label text-left" for="brand_name">Brand:</label>
             <div class="col-md-4">
               <select class="js-select2 form-control js-select2-brand" id="brand_name" name="brand_name[]" data-placeholder="Select Brand/Merek" multiple>
+                <option value="all">All</option>
                 @foreach($brand as $row)
                   <option value="{{ $row->brand_name }}">{{ $row->brand_name }}</option>
                 @endforeach
@@ -58,6 +60,7 @@
             <label class="col-md-2 col-form-label text-left" for="product">Product:</label>
             <div class="col-md-4">
               <select class="js-select2 form-control" id="product" name="product[]" data-placeholder="Select Product" multiple>
+                <option value="all">All</option>
                 @foreach($product as $row)
                   <option value="{{ $row->id }}">{{ $row->code }} - {{ $row->name }} / {{ $row->packaging->pack_name }}</option>
                 @endforeach
@@ -68,12 +71,12 @@
           <div class="form-group row">
             <label class="col-md-2 col-form-label text-left" for="start">Periode From:</label>
             <div class="col-md-4">
-              <input type="date" class="form-control" id="start_date" name="start" required>
+              <input type="date" class="form-control" id="start_date" name="start" required value="{{ date('Y-m-01') }}">
             </div>
 
             <label class="col-md-2 col-form-label text-left" for="end">Periode To:</label>
             <div class="col-md-4">
-              <input type="date" class="form-control" id="end_date" name="end" required>
+              <input type="date" class="form-control" id="end_date" name="end" required value="{{ date('Y-m-d') }}">
             </div>
           </div>
         </div>
@@ -219,6 +222,10 @@
       function toCommas(value) {
         return value.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
       }
+
+      $("#customer").val("all").change();
+      $("#brand_name").val("all").change();
+      $("#product").val("all").change();
   })
 </script>
 @endpush

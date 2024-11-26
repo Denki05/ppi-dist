@@ -909,7 +909,11 @@ class PackingOrderController extends Controller
             // Potong Stock
             $get_stock = 0;
             foreach($getDo->do_detail as $row => $value){
-                $stock = ProductMinStock::where('warehouse_id', $getDo->warehouse_id)->where('product_packaging_id', $value->product_packaging_id)->first();
+                $base_product_packaging_id = preg_replace('/_\d+$/', '', $value->product_packaging_id);
+
+                $stock = ProductMinStock::where('warehouse_id', $getDo->warehouse_id)
+                                        ->where('product_packaging_id', $base_product_packaging_id) // Base ID
+                                        ->first();
 
                 $get_stock = $stock->quantity;
                 // DD($stock);

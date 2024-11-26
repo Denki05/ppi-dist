@@ -26,8 +26,11 @@ class PayableTable extends Table
             'finance_payable.total AS total_pay',
             'finance_payable.pay_date AS tanggal_buat',
             'finance_payable.status AS status',
+            // 'finance_invoicing.code AS invoice_code'
             )
             ->leftJoin('master_customers', 'master_customers.id', '=', 'finance_payable.customer_id')
+            // ->leftJoin('finance_payable_detail', 'finance_payable.id', '=', 'finance_payable_detail.payable_id')
+            // ->leftJoin('finance_invoicing', 'finance_payable_detail.invoice_id', '=', 'finance_invoicing.id')
             ->where(function ($query) use ($request) {
                 if ($request->customer_name != 'all') {
                     $query->where('customer_id', $request->customer_name);

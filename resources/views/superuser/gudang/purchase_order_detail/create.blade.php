@@ -269,7 +269,7 @@
           let option = "";
           option = '<option value="">Select Packaging</option>';
           $.each(resp.Data,function(i,e){
-            option += '<option value="'+e.id+'">'+e.pack_name+'</option>';
+            option += '<option value="'+e.id+'">'+e.pack_name+ ' - ' + e.type +  '</option>';
           })
           $('.select-packaging[data-index=' + param.index + ']').html(option);
         },

@@ -86,44 +86,32 @@ class ReportCustmerOrderVariantController extends Controller
         $new_date_start = date('d-m-Y', strtotime($start));
         $new_date_end = date('d-m-Y', strtotime($end));
 
-        // Build customer search string
-        $customerSearch = collect($customers)->map(function($value) {
-            if (is_array($value)) {
-                return '(' . collect($value)->map(function($second_level) {
-                    return "{master_customer_other_addresses.id}='$second_level'";
-                })->implode(' AND ') . ')';
-            } else {
+        // Build customer search string with "All" handling
+        $customerSearch = empty($customers) || in_array('all', $customers)
+            ? '1=1' // Select all customers
+            : collect($customers)->map(function($value) {
                 return "{master_customer_other_addresses.id}='$value'";
-            }
-        })->implode(' OR ');
+            })->implode(' OR ');
 
-        // Build brand search string
-        $brandSearch = collect($brands)->map(function($value) {
-            if (is_array($value)) {
-                return '(' . collect($value)->map(function($second_level) {
-                    return "{penjualan_so.brand_name}='$second_level'";
-                })->implode(' AND ') . ')';
-            } else {
+        // Build brand search string with "All" handling
+        $brandSearch = empty($brands) || in_array('all', $brands)
+            ? '1=1' // Select all brands
+            : collect($brands)->map(function($value) {
                 return "{penjualan_so.brand_name}='$value'";
-            }
-        })->implode(' OR ');
+            })->implode(' OR ');
 
-        // Build product search string
-        $productSearch = collect($product)->map(function($value) {
-            if (is_array($value)) {
-                return '(' . collect($value)->map(function($second_level) {
-                    return "{master_products_packaging.id}='$second_level'";
-                })->implode(' AND ') . ')';
-            } else {
+        // Build product search string with "All" handling
+        $productSearch = empty($product) || in_array('all', $product)
+            ? '1=1' // Select all products
+            : collect($product)->map(function($value) {
                 return "{master_products_packaging.id}='$value'";
-            }
-        })->implode(' OR ');
+            })->implode(' OR ');
 
         // File paths
-        $basePath = "C:\\xampp\\htdocs\\ppi-dist\\public\\cr\\report\\operasional\\customer_order_variant\\";
+        $basePath = "C:\\xampp\\htdocs\\ppi-dist\\public\\cr\\report\\operasional\\customer_order_variant_v2\\";
         $my_report = $nominal == 1 
-                    ? $basePath . "customer_order_variant_nominal.rpt"
-                    : $basePath . "customer_order_variant.rpt";
+                    ? $basePath . "customer_order_variant_nominal_v2.rpt"
+                    : $basePath . "customer_order_variant_v2.rpt";
 
         $my_pdf = $basePath . "export\\customer-order-variant-" . ($nominal == 1 ? "nominal-" : "") . $date . ".pdf";
         
@@ -142,11 +130,9 @@ class ReportCustmerOrderVariantController extends Controller
             $creport->ParameterFields(3)->SetCurrentValue($new_date_start);
             $creport->ParameterFields(4)->SetCurrentValue($new_date_end);
 
-            $sqlString1 = $customerSearch;
-            $sqlString2 = $brandSearch;
-            $sqlString3 = !empty($productSearch) ? "AND($productSearch)" : "";
-
-            $creport->RecordSelectionFormula = "($sqlString1)AND{penjualan_so.so_date}>=#$start#AND{penjualan_so.so_date}<=#$end#AND($sqlString2)$sqlString3";
+            // Combine the search strings into the record selection formula
+            $creport->RecordSelectionFormula = "($customerSearch) AND {penjualan_so.so_date}>=#$start# AND {penjualan_so.so_date}<=#$end# AND ($brandSearch)" 
+                                            . (!empty($productSearch) && $productSearch !== '1=1' ? " AND ($productSearch)" : "");
 
             $creport->ExportOptions->DiskFileName = $my_pdf; // export to pdf
             $creport->ExportOptions->PDFExportAllPages = true;
@@ -157,17 +143,15 @@ class ReportCustmerOrderVariantController extends Controller
             // Release the variables
             $creport = null;
             $crapp = null;
-            $ObjectFactory = null;
 
             $file = $my_pdf;
 
             return response()->download($file);
 
         } catch (Exception $e) {
-            dd($e);
-            // Detailed error logging can be added here
-            return response()->json(['error' => $e->getMessage()], 500);
+            // Log the error for debugging
+            Log::error('Failed to generate report: ' . $e->getMessage());
+            return response()->json(['error' => 'Failed to generate report. Please try again later.'], 500);
         }
     }
-
 }
