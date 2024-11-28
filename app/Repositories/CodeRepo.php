@@ -150,6 +150,7 @@ class CodeRepo
     public static function generatePO(){
         return self::generate('PRE', PackingOrder::class);   
     }
+    
     public static function generateDO(){
         $count = PackingOrder::withTrashed()
                               ->where('status','>',1)
@@ -192,8 +193,25 @@ class CodeRepo
     public static function generateStockAdjustment(){
         return self::generate('STADJ', StockAdjustment::class);   
     }
-    public static function generatePayable(){
-        return self::generate('PY', Payable::class);   
+    
+    public static function generatePayable(){ 
+        $count = Payable::withTrashed()
+                              ->where('status','>', 0)
+                              ->whereYear('created_at', date('Y'))
+                              ->whereMonth('created_at', date('m'))
+                              ->get();
+                                   
+        if(count($count) > 0 ){
+            $count = count($count) + 1;
+
+            $code = 'PY' .date('my')."".sprintf('%03d', $count);
+        }
+        else{
+            $code = 'PY' .date('my')."".sprintf('%03d', 1);
+        }
+
+        // dd($code);
+        return $code;
     }
 
     public static function generateReceiving()
