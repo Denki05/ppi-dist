@@ -356,20 +356,29 @@ class CashbackController extends Controller
 
         $file = 'C:\\xampp\\htdocs\\ppi-dist\\public\\cr\\invoice\\export\\'.$result->code.'-BELI'.'.pdf';
 
-        // if($get_do->type_transaction == 1 && $get_do->so->payment_status == 1){
-        //     $file->SetWatermarkText("PAID");
-        // }elseif($get_do->type_transaction == 2 && $get_do->so->payment_status == 2){
-        //     $file->SetWatermarkText("COPY");
-        // }
+        if (file_exists($file)) {
+            // Set headers for file download
+            header("Content-Description: File Transfer");
+            header("Content-Type: application/pdf");
+            header("Content-Disposition: attachment; filename=\"" . basename($file) . "\"");
+            header("Content-Transfer-Encoding: binary");
+            header("Expires: 0");
+            header("Cache-Control: must-revalidate");
+            header("Pragma: public");
+            header("Content-Length: " . filesize($file));
 
-        header("Content-Description: File Transfer"); 
-        header("Content-Type: application/octet-stream"); 
-        header("Content-Transfer-Encoding: Binary"); 
-        header("Content-Disposition: attachment; filename=\"". basename($file) ."\""); 
-        ob_clean();
-        flush();
-        readfile ($file);
-        exit();
+            // Clear the output buffer and read the file
+            ob_clean();
+            flush();
+            readfile($file);
+
+            // Delete the file after download
+            unlink($file);
+
+            exit();
+        } else {
+            return redirect()->route('superuser.index')->with('error', 'File not found.');
+        }
     }
 
     public function print_invoice_jual($id)
@@ -420,20 +429,29 @@ class CashbackController extends Controller
 
         $file = 'C:\\xampp\\htdocs\\ppi-dist\\public\\cr\\invoice\\export\\'.$result->code.'-JUAL'.'.pdf';
 
-        // if($get_do->type_transaction == 1 && $get_do->so->payment_status == 1){
-        //     $file->SetWatermarkText("PAID");
-        // }elseif($get_do->type_transaction == 2 && $get_do->so->payment_status == 2){
-        //     $file->SetWatermarkText("COPY");
-        // }
+        if (file_exists($file)) {
+            // Set headers for file download
+            header("Content-Description: File Transfer");
+            header("Content-Type: application/pdf");
+            header("Content-Disposition: attachment; filename=\"" . basename($file) . "\"");
+            header("Content-Transfer-Encoding: binary");
+            header("Expires: 0");
+            header("Cache-Control: must-revalidate");
+            header("Pragma: public");
+            header("Content-Length: " . filesize($file));
 
-        header("Content-Description: File Transfer"); 
-        header("Content-Type: application/octet-stream"); 
-        header("Content-Transfer-Encoding: Binary"); 
-        header("Content-Disposition: attachment; filename=\"". basename($file) ."\""); 
-        ob_clean();
-        flush();
-        readfile ($file);
-        exit();
+            // Clear the output buffer and read the file
+            ob_clean();
+            flush();
+            readfile($file);
+
+            // Delete the file after download
+            unlink($file);
+
+            exit();
+        } else {
+            return redirect()->route('superuser.index')->with('error', 'File not found.');
+        }
     }
 
     public function pageReport(Request $request)
