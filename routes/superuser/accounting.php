@@ -36,4 +36,13 @@ Route::group([
         Route::get('/json2', 'InvoiceTaxController@json2')->name('json2');
     });
     Route::resource('invoice_tax', 'InvoiceTaxController');
+
+    Route::group(['as' => 'finance_simulation.', 'prefix' => '/finance_simulation'], function () {
+        Route::get('/index', 'FinanceSimulationPriceController@index')->name('index');
+        Route::get('/getInvoice', 'FinanceSimulationPriceController@getInvoice')->name('getInvoice');
+        Route::get('/create', 'FinanceSimulationPriceController@create')->name('create');
+        Route::post('/store', 'FinanceSimulationPriceController@store')->name('store');
+        Route::get('/removeData', 'FinanceSimulationPriceController@removeData')->name('removeData');
+    });
+    Route::resource('finance_simulation', 'FinanceSimulationPriceController');
 });

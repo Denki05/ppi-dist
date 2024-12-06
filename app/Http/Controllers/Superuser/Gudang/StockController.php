@@ -18,8 +18,12 @@ use App\Entities\Gudang\ReceivingDetail;
 use App\Entities\Gudang\ReceivingDetailColly;
 use App\Entities\Gudang\StockMove;
 use App\Entities\Gudang\StockAdjustment;
+use App\Entities\Gudang\MonthEndBalance;
 use App\Entities\Penjualan\SalesOrder;
+use Maatwebsite\Excel\Facades\Excel;
+use App\Exports\Gudang\StockTransactionExport;
 use App\Entities\Setting\UserMenu;
+use Carbon\Carbon;
 use DB;
 use Auth;
 
@@ -352,4 +356,175 @@ class StockController extends Controller
         // return view('superuser.gudang.stock.detail', $data);
         return view($this->view."detail",$data);
     }
+
+    public function exportTransactions($warehouse, $startDate, $endDate)
+    {
+        $warehouse = Warehouse::findOrFail($warehouse);
+
+        // Validate date range
+        if ($startDate && $endDate && $startDate > $endDate) {
+            return back()->withErrors(['error' => 'Start Date tidak boleh lebih besar dari End Date']);
+        }
+
+        // Fetch all products associated with the warehouse
+        $products = ProductPack::with(['receiving_detail.collys', 'so_detail', 'stock_adjustments'])
+            ->orderBy('name', 'asc')
+            ->get();
+
+        $collects = [];
+
+        foreach ($products as $product) {
+            // Filter Receivings
+            $receivings = Receiving::where('warehouse_id', $warehouse->id)
+                ->where('status', Receiving::STATUS['ACC'])
+                ->whereHas('details', function ($query) use ($product) {
+                    $query->where('product_packaging_id', $product->id);
+                });
+
+            if ($startDate && $endDate) {
+                $receivings->whereBetween('created_at', [$startDate, $endDate]);
+            }
+
+            $receivings = $receivings->get();
+
+            foreach ($receivings as $receiving) {
+                foreach ($receiving->details as $detail) {
+                    if ($detail->product_packaging_id == $product->id) {
+                        foreach ($detail->collys as $colly) {
+                            if ($colly->is_reject == 0) {
+                                $collects[] = [
+                                    'product_id' => $product->id,
+                                    'product_code' => $product->code,
+                                    'product_name' => $product->name,
+                                    'product_pack' => $product->packaging->pack_name,
+                                    'brand' => $product->product->brand_name,
+                                    'created_at' => $receiving->created_at,
+                                    'second_date' => 0,
+                                    'transaction' => 'Receiving- ' . $receiving->code,
+                                    'in' => $colly->quantity_ri,
+                                    'out' => 0,
+                                    'description' => $receiving->note,
+                                ];
+                            }
+                        }
+                    }
+                }
+            }
+
+            // Filter Sales Orders
+            $sales_orders = SalesOrder::where('origin_warehouse_id', $warehouse->id)
+                ->where('status', 4)
+                ->whereHas('so_detail', function ($query) use ($product) {
+                    $query->where('product_packaging_id', $product->id);
+                });
+
+            if ($startDate && $endDate) {
+                $sales_orders->whereBetween('created_at', [$startDate, $endDate]);
+            }
+
+            $sales_orders = $sales_orders->get();
+
+            foreach ($sales_orders as $sales_order) {
+                foreach ($sales_order->so_detail as $detail) {
+                    if ($detail->product_packaging_id == $product->id) {
+                        $collects[] = [
+                            'product_id' => $product->id,
+                            'product_code' => $product->code,
+                            'product_name' => $product->name,
+                            'product_pack' => $product->packaging->pack_name,
+                            'brand' => $product->product->brand_name,
+                            'created_at' => $detail->created_at,
+                            'second_date' => 0,
+                            'transaction' => 'Sales Order- ' . $sales_order->code,
+                            'in' => 0,
+                            'out' => $detail->qty_worked,
+                            'description' => $detail->description ?? '',
+                        ];
+                    }
+                }
+            }
+
+            // Filter Stock Adjustments
+            $stock_adjustments = StockAdjustment::where('warehouse_id', $warehouse->id)
+                ->where('product_packaging_id', $product->id);
+
+            if ($startDate && $endDate) {
+                $stock_adjustments->whereBetween('created_at', [$startDate, $endDate]);
+            }
+
+            $stock_adjustments = $stock_adjustments->get();
+
+            foreach ($stock_adjustments as $stock_adjustment) {
+                $collects[] = [
+                    'product_id' => $product->id,
+                    'product_code' => $product->code,
+                    'product_name' => $product->name,
+                    'product_pack' => $product->packaging->pack_name,
+                    'brand' => $product->product->brand_name,
+                    'created_at' => $stock_adjustment->created_at,
+                    'second_date' => 0,
+                    'transaction' => 'Stock Adjustment- ' . $stock_adjustment->code,
+                    'in' => $stock_adjustment->plus,
+                    'out' => $stock_adjustment->min,
+                    'description' => $stock_adjustment->note ?? '',
+                ];
+            }
+        }
+
+        if ($collects) {
+            // Fetch Initial Balances (Cutoff at the end of the previous month)
+            $initialBalances = MonthEndBalance::where('warehouse_id', $warehouse->id)
+                ->whereIn('product_packaging_id', $products->pluck('id'))
+                ->where('month', '<=', Carbon::parse($startDate)->subMonth()->endOfMonth())
+                ->get()
+                ->keyBy('product_packaging_id');
+
+            $grouped = collect($collects)
+                ->groupBy('product_id')
+                ->map(function ($transactions) {
+                    return $transactions->sortBy('created_at');
+                });
+
+            $newCollect = [];
+
+            foreach ($grouped as $productId => $productGroup) {
+                $balance = 0;
+
+                // Set initial balance if available
+                if ($initialBalances->has($productId)) {
+                    $balance = $initialBalances->get($productId)->balance;
+
+                    $newCollect[] = [
+                        'product_id' => $productId,
+                        'product_code' => $products->firstWhere('id', $productId)->code,
+                        'product_name' => $products->firstWhere('id', $productId)->name,
+                        'product_pack' => $products->firstWhere('id', $productId)->packaging->pack_name,
+                        'brand' => $products->firstWhere('id', $productId)->product->brand_name,
+                        'created_at' => Carbon::parse($startDate)->startOfDay(),
+                        'transaction' => 'Saldo Awal',
+                        'in' => 0,
+                        'out' => 0,
+                        'balance' => $balance,
+                        'description' => 'Saldo Awal Bulan',
+                    ];
+                }
+
+                // Process transactions for the product
+                foreach ($productGroup as $transaction) {
+                    $transaction['in'] = $transaction['in'] ?? 0;
+                    $transaction['out'] = $transaction['out'] ?? 0;
+
+                    $balance += $transaction['in'];
+                    $balance -= $transaction['out'];
+
+                    $newCollect[] = array_merge($transaction, ['balance' => $balance]);
+                }
+            }
+
+            $data['collects'] = $newCollect;
+        }
+
+        return Excel::download(new StockTransactionExport($data), $warehouse->name . '-transactions-' . now()->format('YmdHis') . '.xlsx');
+    }
+
 }

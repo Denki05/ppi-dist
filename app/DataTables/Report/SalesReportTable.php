@@ -40,6 +40,7 @@ class SalesReportTable extends Table
                 ) AS invoice_tempo')
             )
             ->where('penjualan_so.status', 4)
+            ->where('penjualan_so.status', '!=', 7)  // Menambahkan kondisi untuk status tidak sama dengan 7
             ->whereBetween('penjualan_so.so_date', [$startDate, $endDate])
             ->groupBy('penjualan_do.id', 'master_customer_other_addresses.name', 'penjualan_do.do_code');
 

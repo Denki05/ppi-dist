@@ -27,7 +27,7 @@ class StockAdjustment extends Model
     	return $this->BelongsTo('App\Entities\Master\Warehouse','warehouse_id','id');
     }
     public function product_pack(){
-    	return $this->BelongsTo('App\Entities\Master\ProductPack','product_packaging_id','id');
+    	return $this->BelongsTo('App\Entities\Master\ProductPack', 'product_packaging_id', 'id');
     }
     public function getPrevAttribute($value)
     {

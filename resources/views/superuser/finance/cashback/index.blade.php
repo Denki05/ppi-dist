@@ -139,7 +139,7 @@ $(document).ready(function() {
         },
         columns: [
             {
-                data: 'tanggal_buat'
+                data: 'tanggal_invoice'
             },
             { data: 'code' },
             { data: 'code_invoice' },

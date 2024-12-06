@@ -108,10 +108,10 @@ class ReportCustmerOrderVariantController extends Controller
             })->implode(' OR ');
 
         // File paths
-        $basePath = "C:\\xampp\\htdocs\\ppi-dist\\public\\cr\\report\\operasional\\customer_order_variant_v2\\";
+        $basePath = "C:\\xampp\\htdocs\\ppi-dist\\public\\cr\\report\\operasional\\customer_order_variant\\";
         $my_report = $nominal == 1 
-                    ? $basePath . "customer_order_variant_nominal_v2.rpt"
-                    : $basePath . "customer_order_variant_v2.rpt";
+                    ? $basePath . "customer_order_variant_nominal.rpt"
+                    : $basePath . "customer_order_variant.rpt";
 
         $my_pdf = $basePath . "export\\customer-order-variant-" . ($nominal == 1 ? "nominal-" : "") . $date . ".pdf";
         

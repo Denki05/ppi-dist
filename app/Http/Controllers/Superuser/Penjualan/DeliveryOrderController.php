@@ -924,10 +924,12 @@ class DeliveryOrderController extends Controller
                 // pecah format currency 
                 $discount_agen_idr = str_replace('.', '', $discount_agen_idr);
                 $discount_kemasan_idr = str_replace('.', '', $discount_kemasan_idr);
+                $ongkir = str_replace('.', '', $delivery_cost_idr);
         
                 // ubah decimal koma ke titik
                 $discount_agen_idr = str_replace(',', '.', $discount_agen_idr);
                 $discount_kemasan_idr = str_replace(',', '.', $discount_kemasan_idr);
+                $ongkir = str_replace(',', '.', $delivery_cost_idr);
 
                 $data = [
                     'discount_1' => $request->disc_agen_percent,
@@ -938,7 +940,7 @@ class DeliveryOrderController extends Controller
                     'total_discount_idr' => $total_discount_idr,
                     'voucher_idr' => $voucher_idr,
                     'purchase_total_idr' => $purchase_total_idr,
-                    'delivery_cost_idr' => $delivery_cost_idr,
+                    'delivery_cost_idr' => $ongkir,
                     'other_cost_idr' => $other_cost_idr,
                     'grand_total_idr' => $grand_total_idr,
                     'updated_by' => Auth::id()

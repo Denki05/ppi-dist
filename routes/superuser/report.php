@@ -87,4 +87,10 @@ Route::group([
         Route::post('/print_report', 'ReportEmployeePerformanceController@print_report')->name('print_report');
     });
     Route::resource('employee_performance', 'ReportEmployeePerformanceController');
+
+    Route::group(['as' => 'summary_customer_product.', 'prefix' => '/summary_customer_product'], function () {
+        Route::get('/', 'ReportSummaryCustomerProductController@index')->name('index');
+        Route::post('/print_report', 'ReportSummaryCustomerProductController@print_report')->name('print_report');
+    });
+    Route::resource('summary_customer_product', 'ReportSummaryCustomerProductController');
 });

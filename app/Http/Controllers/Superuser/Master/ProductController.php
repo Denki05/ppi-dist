@@ -914,6 +914,8 @@ class ProductController extends Controller
                 if($product->save()){
                     DB::commit();
 
+                    LogActivity::addToLog('Product Inactive: ' . $product->code . ' - ' . $product->name);
+
                     $response['notification'] = [
                         'alert' => 'notify',
                         'type' => 'success',
@@ -953,6 +955,8 @@ class ProductController extends Controller
                 $product->status = Product::STATUS['ACTIVE'];
                 if($product->save()){
                     DB::commit();
+
+                    LogActivity::addToLog('Product Active: ' . $product->code . ' - ' . $product->name);
 
                     $response['notification'] = [
                         'alert' => 'notify',

@@ -8,6 +8,7 @@ Route::group([
 ], function () {
     Route::group(['as' => 'stock.', 'prefix' => '/stock'], function () {
         Route::get('{warehouse_id}/detail/{product_id}', 'StockController@detail')->name('detail');
+        Route::get('{warehouse}/{startDate}/{endDate}/exportTransactions', 'StockController@exportTransactions')->name('exportTransactions');
     });
     Route::resource('stock', 'StockController');
 

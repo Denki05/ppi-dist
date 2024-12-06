@@ -80,6 +80,12 @@
                   </thead>
                   <tbody>
                   </tbody>
+                  <tfoot>
+                    <tr>
+                      <th colspan="4" class="text-right">Total:</th>
+                      <th id="totalCashback" class="text-center"></th>
+                    </tr>
+                  </tfoot>
                 </table>
               </div>
             </div>
@@ -180,7 +186,29 @@
                     doc.pageMargins = [20, 40, 20, 40];
                 }
               }
-            ]
+            ],
+            footerCallback: function (row, data, start, end, display) {
+    var api = this.api();
+
+    // Helper function to parse data and avoid NaN issues
+    var parseValue = function (value) {
+        return typeof value === 'string' ? parseFloat(value.replace(/[^0-9.-]+/g, '')) : value;
+    };
+
+    // Calculate the total for all rows in the data source
+    var total = api
+        .column(4, { search: 'applied' }) // Adjust column index (4 for Amount Cashback)
+        .data()
+        .reduce(function (a, b) {
+            return parseValue(a) + parseValue(b);
+        }, 0);
+
+    // Update the footer with the calculated total
+    $(api.column(4).footer()).html(
+        $.fn.dataTable.render.number('.', ',', 2, 'Rp. ').display(total)
+    );
+}
+
         })
 
         $('#btn-filter').on('click', function(e) {

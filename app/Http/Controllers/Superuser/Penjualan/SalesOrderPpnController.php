@@ -916,7 +916,7 @@ class SalesOrderPpnController extends Controller
             ->where(function ($query) use ($request) {
                 $query->where('brand_name', 'LIKE', $request->input('q', '') . '%');
             })
-            ->whereIn('id', [3, 4, 5])
+            ->whereIn('id', [3, 4, 5, 6])
             ->get();
 
         $results = [];

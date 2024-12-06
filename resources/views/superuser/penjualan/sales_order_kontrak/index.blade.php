@@ -72,15 +72,15 @@
     </a>
 
     <a href="{{ route('superuser.penjualan.sales_order_kontrak.print_log') }}">
-      <button type="button" class="btn btn-outline-secondary min-width-125">Export</button>
+      <button type="button" class="btn btn-outline-secondary min-width-125">Export Log</button>
     </a>
     @role('Developer')
-    <a href="{{ route('superuser.penjualan.sales_order_kontrak.update_pivot') }}">
+    <!-- <a href="{{ route('superuser.penjualan.sales_order_kontrak.update_pivot') }}">
       <button type="button" class="btn btn-outline-danger min-width-125">update</button>
-    </a>
+    </a> -->
 
     <a href="{{ route('superuser.penjualan.sales_order_kontrak.update_log') }}">
-      <button type="button" class="btn btn-outline-warning min-width-125">Log</button>
+      <button type="button" class="btn btn-outline-warning min-width-125">Kontrak Log</button>
     </a>
     @endrole
   </div>

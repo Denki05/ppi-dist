@@ -19,6 +19,7 @@ class CashbackTable extends Table
             ->leftJoin('finance_cashback_detail', 'finance_cashback.id', '=', 'finance_cashback_detail.cashback_id')
             ->leftJoin('penjualan_do', 'penjualan_do.id', '=', 'finance_cashback.do_id')
             ->leftJoin('master_customer_other_addresses', 'master_customer_other_addresses.id', '=', 'finance_cashback.customer_other_address_id')
+            ->leftJoin('penjualan_so', 'penjualan_do.so_id', '=', 'penjualan_so.id')
             ->select(
                 'finance_cashback.id AS id', 
                 'finance_cashback.code AS code', 
@@ -26,7 +27,8 @@ class CashbackTable extends Table
                 'master_customer_other_addresses.text_kota AS customer_city', 
                 'finance_cashback.status AS status', 
                 'penjualan_do.do_code AS code_invoice',  
-                'finance_cashback.created_at AS tanggal_buat', 
+                'finance_cashback.created_at AS tanggal_buat',
+                'penjualan_so.so_date AS tanggal_invoice', 
                 DB::raw('IFNULL(SUM(finance_cashback_detail.subtotal_item_idr), 0) AS total_jual'), 
                 DB::raw('IFNULL(SUM(finance_cashback_detail.amount_cashback), 0) AS total_beli'), 
             )

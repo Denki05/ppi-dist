@@ -230,6 +230,9 @@
                                     </ul>
                                 </li>
                                 <li><a class="dropdown-item" href="{{ route('superuser.accounting.product_finance.index') }}"><i class="fa-solid fa-copyright"></i> Product PPN</a></li>
+                                @if($superuser->can('superuser-manage') OR $superuser->division == "Management")
+                                <li><a class="dropdown-item" href="{{ route('superuser.accounting.finance_simulation.index') }}"><i class="fa-solid fa-repeat"></i> Simulation Price Tax</a></li>
+                                @endif
                             </ul>
                         </li>
                         <li class="submenu submenu-md dropend">
@@ -297,6 +300,7 @@
                                         <li><a class="dropdown-item" href="{{ route('superuser.report.customer_order_variant_v2.index') }}">Customer - Produk</a></li>
                                         <li><a class="dropdown-item" href="{{ route('superuser.report.customer_order_variant.index') }}">Customer History</a></li>
                                         <li><a class="dropdown-item" href="{{ route('superuser.report.customer_type_zone.index') }}">Customer - Zoning</a></li>
+                                        <li><a class="dropdown-item" href="{{ route('superuser.report.summary_customer_product.index') }}">Summary Customer - Produk</a></li>
                                         <li><a class="dropdown-item" href="{{ route('superuser.report.sales.index') }}">Penjualan</a></li>
                                     </ul>
                                 </li>
@@ -366,7 +370,7 @@
                                 <i class="fa-solid fa-bars"></i> Menu
                             </a>
                             <ul class="dropdown-menu">
-                                <li><a class="dropdown-item" href="{{ route('superuser.account.log_activity.index') }}">Halaman</a></li>
+                                <li><a class="dropdown-item" href="{{ route('superuser.setting.menu.index') }}">Halaman</a></li>
                                 <li><a class="dropdown-item" href="{{ route('superuser.account.superuser.index') }}">Kegunaan</a></li>
                                 <li><a class="dropdown-item" href="{{ route('superuser.account.user.index') }}">Wilayah indonesia</a></li>
                             </ul>

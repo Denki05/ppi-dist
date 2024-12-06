@@ -37,7 +37,7 @@ class ReceivingDetail extends Model
 
     public function product_pack()
     {
-        return $this->belongsTo('App\Entities\Master\ProductPack', 'product_packaging_id');
+        return $this->belongsTo('App\Entities\Master\ProductPack', 'product_packaging_id', 'id');
     }
 
     public function collys()

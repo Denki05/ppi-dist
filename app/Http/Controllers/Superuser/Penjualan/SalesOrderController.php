@@ -2007,7 +2007,6 @@ class SalesOrderController extends Controller
                 
                 $product = Product::where('master_products.brand_name', $request->id)
                         ->where('master_products.status', 1)
-                        ->where('master_products_packaging.condition', 0)
                         ->leftJoin('master_products_packaging', 'master_products.id', '=', 'master_products_packaging.product_id')
                         ->leftJoin('master_packaging', 'master_products_packaging.packaging_id', '=', 'master_packaging.id')
                         ->leftJoin('master_product_types', 'master_products_packaging.type_id', '=', 'master_product_types.id')
@@ -2169,6 +2168,8 @@ class SalesOrderController extends Controller
         }
     
         try {
+
+            $excludedCustomerId = 118.1;
             // Perform the query to search for contracts, excluding fulfilled items
             $sales_kontrak = SalesOrderKontrak::where('penjualan_so_kontrak.status', 2)
                 ->where('penjualan_so_kontrak.customer_other_address_id', $id)
