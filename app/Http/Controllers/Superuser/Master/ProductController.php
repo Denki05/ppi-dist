@@ -821,7 +821,7 @@ class ProductController extends Controller
 
         if ($validator->passes()) {
             $get_brand = $request->brand_name;
-            $condition = 0;
+            // $condition = Product::where('status', 1)->first;
             $warehouse = Warehouse::where('id', 2)->first();
             $type_print = $request->type_print;
             $packaging = Packaging::where('pack_name', '0.5 kg Alu')->first();
@@ -851,7 +851,7 @@ class ProductController extends Controller
                 $my_server      = "LOCAL"; 
                 $my_user        = "root"; 
                 $my_password    = ""; 
-                $my_database    = "ppi-dist";
+                $my_database    = "ppi_araya";
                 $COM_Object     = "CrystalDesignRunTime.Application";
 
                 //-Create new COM object-depends on your Crystal Report version
@@ -863,7 +863,7 @@ class ProductController extends Controller
 
                 //- field prompt or else report will hang - to get through
                 $creport->EnableParameterPrompting = FALSE;
-                $creport->RecordSelectionFormula = "{master_brand_lokal.brand_name}='$get_brand'AND{master_packaging.pack_name}='$packaging->pack_name'AND{master_products_packaging.condition}=$condition.AND{master_products_packaging.warehouse_id}=$warehouse->id";
+                // $creport->RecordSelectionFormula = "{master_brand_lokal.brand_name}='$get_brand'AND{master_packaging.pack_name}='$packaging->pack_name'AND{master_products_packaging.warehouse_id}=$warehouse->id";
 
                 //export to PDF process
                 $creport->ExportOptions->DiskFileName=$my_pdf; //export to pdf

@@ -889,10 +889,7 @@ class SalesOrderKontrakController extends Controller
 
     public function update_log()
     {
-        // Initialize an empty array to store the logs for bulk insert
         $logs = [];
-
-        // Process the sales orders in chunks to avoid memory overload
         SalesOrder::leftJoin('penjualan_so_item', 'penjualan_so.id', '=', 'penjualan_so_item.so_id')
             ->where('penjualan_so_item.kontrak', 1)
             ->where('penjualan_so.status', 4)
@@ -907,25 +904,29 @@ class SalesOrderKontrakController extends Controller
             ->chunk(100, function ($soChunk) use (&$logs) {
                 foreach ($soChunk as $item) {
                     try {
-                        // Fetch the corresponding SalesOrderKontrakItem record
+                       
                         $so_kontrak_item = SalesOrderKontrakItem::where('so_kontrak_id', $item->kontrakID)->first();
 
-                        // Check if SalesOrderKontrakItem exists and qty_worked is numeric
                         if ($so_kontrak_item && is_numeric($item->qty_worked)) {
-                            // Calculate the remaining quantity (outstanding_qty)
                             $peng_kontrak_qty = $so_kontrak_item->qty - $item->qty_worked;
 
-                            // Prepare log entry for bulk insert
-                            $logs[] = [
-                                'code' => $item->so_code,
-                                'customer_other_address_id' => $item->customerID,
-                                'so_kontrak_id' => $item->kontrakID,
-                                'so_id' => $item->soID,
-                                'qty_worked' => $item->qty_worked,
-                                'outstanding_qty' => $peng_kontrak_qty,
-                                'created_at' => now(),
-                                'updated_at' => now(),
-                            ];
+                            // Cek duplikasi berdasarkan kombinasi unik (misal, so_code dan so_kontrak_id)
+                            $exists = SalesOrderKontrakLog::where('code', $item->so_code)
+                                ->where('so_kontrak_id', $item->kontrakID)
+                                ->exists();
+
+                            if(!exists){
+                                $logs[] = [
+                                    'code' => $item->so_code,
+                                    'customer_other_address_id' => $item->customerID,
+                                    'so_kontrak_id' => $item->kontrakID,
+                                    'so_id' => $item->soID,
+                                    'qty_worked' => $item->qty_worked,
+                                    'outstanding_qty' => $peng_kontrak_qty,
+                                    'created_at' => now(),
+                                    'updated_at' => now(),
+                                ];
+                            }
                         }
                     } catch (\Exception $e) {
                         // Log the exception

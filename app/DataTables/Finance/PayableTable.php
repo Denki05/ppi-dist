@@ -17,37 +17,37 @@ class PayableTable extends Table
      *
      */
     private function query(Request $request)
-    {
-        $model = Payable::select(
-            'finance_payable.id AS id', 
-            'finance_payable.code AS code', 
-            'master_customers.name AS customer_name', 
-            'master_customers.text_kota AS customer_kota', 
-            'finance_payable.total AS total_pay',
-            'finance_payable.pay_date AS tanggal_buat',
-            'finance_payable.status AS status',
-            // 'finance_invoicing.code AS invoice_code'
-            )
-            ->leftJoin('master_customers', 'master_customers.id', '=', 'finance_payable.customer_id')
-            // ->leftJoin('finance_payable_detail', 'finance_payable.id', '=', 'finance_payable_detail.payable_id')
-            // ->leftJoin('finance_invoicing', 'finance_payable_detail.invoice_id', '=', 'finance_invoicing.id')
-            ->where(function ($query) use ($request) {
-                if ($request->customer_name != 'all') {
-                    $query->where('customer_id', $request->customer_name);
-                } else {
-                    $query;
-                }
-            })
-            ->where(function ($query) use ($request) {
-                if ($request->status != 'all') {
-                    $query->where('finance_payable.status', $request->status);
-                } else {
-                    $query;
-                }
-            });
+{
+    $model = Payable::select(
+        'finance_payable.id AS id', 
+        'finance_payable.code AS code', 
+        'master_customers.id AS customer_id', 
+        'master_customers.name AS customer_name', 
+        'master_customers.text_kota AS customer_kota', 
+        'finance_payable.total AS total_pay',
+        'finance_payable.pay_date AS tanggal_buat',
+        'finance_payable.status AS status',
+        'finance_invoicing.id AS invoice_id',
+        'finance_invoicing.code AS invoice_code',
+        'finance_payable_detail.total AS total_payable_item',
+    )
+    ->leftJoin('master_customers', 'master_customers.id', '=', 'finance_payable.customer_id')
+    ->leftJoin('finance_payable_detail', 'finance_payable.id', '=', 'finance_payable_detail.payable_id')
+    ->leftJoin('finance_invoicing', 'finance_payable_detail.invoice_id', '=', 'finance_invoicing.id')
+    ->where(function ($query) use ($request) {
+        if ($request->customer_name != 'all') {
+            $query->where('finance_payable.customer_id', $request->customer_name);
+        }
+    })
+    ->where(function ($query) use ($request) {
+        if ($request->status != 'all') {
+            $query->where('finance_payable.status', $request->status);
+        }
+    });
 
-        return $model;
-    }
+    return $model;
+}
+
 
     /**
      * Build DataTable class.
@@ -60,6 +60,10 @@ class PayableTable extends Table
 
         $table->setRowClass(function (Payable $model) {
             return $model->status == $model::STATUS['DELETED'] ? 'table-danger' : '';
+        });
+
+        $table->editColumn('invoice_code', function (Payable $model) {
+            return "<a href=\"#\" class=\"view-invoice-code\" data-id=\"$model->invoice_id\" data-toggle=\"modal\" data-target=\"#modalInvoiceCode\">$model->invoice_code</a>";
         });
 
         $table->editColumn('status', function (Payable $model) {
@@ -79,6 +83,10 @@ class PayableTable extends Table
 
         $table->editColumn('total_pay', function ($model) {
             return 'Rp ' . number_format($model->total_pay, 0, ',', '.');
+        });
+
+        $table->editColumn('total_payable_item', function ($model) {
+            return 'Rp ' . number_format($model->total_payable_item, 0, ',', '.');
         });
 
         $table->addColumn('action', function (Payable $model) {
@@ -167,6 +175,8 @@ class PayableTable extends Table
                 return $buttons;
             }
         });        
+
+        $table->rawColumns(['invoice_code', 'action']);
         
         return $table->make(true);
     }

@@ -52,6 +52,7 @@ Route::group([
         Route::post('/{id}/update_cancel', 'PayableController@update_cancel')->name('update_cancel');
         Route::get('/json2', 'PayableController@json2')->name('json2');
         Route::get('/pageReport', 'PayableController@pageReport')->name('pageReport');
+        Route::get('/getDetailInvoice/{id}', 'PayableController@getDetailInvoice')->name('getDetailInvoice');
     });
     Route::resource('payable', 'PayableController');
 

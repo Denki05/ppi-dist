@@ -687,4 +687,16 @@ class PayableController extends Controller
 
         return view($this->view."report");
     }
+
+    public function getDetailInvoice($id)
+    {
+        $invoice = Invoicing::find($id);
+
+        if (!$invoice) {
+            return response()->json(['error' => 'Invoice not found'], 404);
+        }
+
+        // Example of returned HTML content
+        return view('superuser.finance.payable.invoice_details', compact('invoice'))->render();
+    }
 }

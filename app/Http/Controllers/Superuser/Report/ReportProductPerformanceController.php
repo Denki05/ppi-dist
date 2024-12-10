@@ -68,10 +68,28 @@ class ReportProductPerformanceController extends Controller
         $brand = BrandLokal::get();
 
         $data = [
-            'product' => $product,
+            // 'product' => $product,
             'brand' => $brand,
         ];
         return view($this->view."index",$data);
+    }
+
+    public function getProductsByBrand(Request $request)
+    {
+        if ($request->ajax()) {
+            $products = ProductPack::leftJoin('master_products', 'master_products_packaging.product_id', '=', 'master_products.id')
+                ->leftJoin('master_packaging', 'master_products_packaging.packaging_id', '=', 'master_packaging.id')
+                ->select(
+                    'master_products_packaging.id as product_id', 
+                    'master_products_packaging.code as product_code', 
+                    'master_products_packaging.name as product_name', 
+                    'master_packaging.pack_name as product_kemasan'
+                )
+                ->where('master_products.brand_name', $request->brand_id)
+                ->get();
+            
+            return response()->json($products);
+        }
     }
 
     public function print_report(Request $request)

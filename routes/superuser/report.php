@@ -23,6 +23,7 @@ Route::group([
     Route::group(['as' => 'product_performance.', 'prefix' => '/product_performance'], function () {
         Route::get('/', 'ReportProductPerformanceController@index')->name('index');
         Route::get('/json', 'ReportProductPerformanceController@json')->name('json');
+        Route::get('/getProductsByBrand', 'ReportProductPerformanceController@getProductsByBrand')->name('getProductsByBrand');
         Route::post('/print_report', 'ReportProductPerformanceController@print_report')->name('print_report');
     });
 
@@ -63,6 +64,7 @@ Route::group([
     Route::group(['as' => 'customer_order_variant.', 'prefix' => '/customer_order_variant'], function () {
         Route::get('/', 'ReportCustmerOrderVariantController@index')->name('index');
         Route::post('/print_report', 'ReportCustmerOrderVariantController@print_report')->name('print_report');
+        Route::get('/getProductsByBrand', 'ReportCustmerOrderVariantController@getProductsByBrand')->name('getProductsByBrand');
         Route::get('/get_brand', 'ReportCustmerOrderVariantController@get_brand')->name('get_brand');
         Route::post('/get_product', 'ReportCustmerOrderVariantController@get_product')->name('get_product');
     });
@@ -71,8 +73,9 @@ Route::group([
     Route::group(['as' => 'customer_order_variant_v2.', 'prefix' => '/customer_order_variant_v2'], function () {
         Route::get('/', 'ReportCustomerOrderVariantV2Controller@index')->name('index');
         Route::post('/print_report', 'ReportCustomerOrderVariantV2Controller@print_report')->name('print_report');
-        Route::get('/get_brand', 'ReportCustomerOrderVariantV2Controller@get_brand')->name('get_brand');
-        Route::post('/get_product', 'ReportCustomerOrderVariantV2Controller@get_product')->name('get_product');
+        Route::get('/getProductsByBrand', 'ReportCustomerOrderVariantV2Controller@getProductsByBrand')->name('getProductsByBrand');
+        // Route::post('/get_product', 'ReportCustomerOrderVariantV2Controller@get_product')->name('get_product');
+        // Route::post('/get_product', 'ReportCustomerOrderVariantV2Controller@get_product')->name('get_product');
     });
     Route::resource('customer_order_variant_v2', 'ReportCustomerOrderVariantV2Controller');
 
@@ -90,6 +93,7 @@ Route::group([
 
     Route::group(['as' => 'summary_customer_product.', 'prefix' => '/summary_customer_product'], function () {
         Route::get('/', 'ReportSummaryCustomerProductController@index')->name('index');
+        Route::get('/getProductsByBrand', 'ReportSummaryCustomerProductController@getProductsByBrand')->name('getProductsByBrand');
         Route::post('/print_report', 'ReportSummaryCustomerProductController@print_report')->name('print_report');
     });
     Route::resource('summary_customer_product', 'ReportSummaryCustomerProductController');

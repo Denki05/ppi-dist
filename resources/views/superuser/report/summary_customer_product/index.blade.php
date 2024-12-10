@@ -61,9 +61,6 @@
                 <div class="col-md-4">
                     <select class="js-select2 form-control" id="product" name="product[]" data-placeholder="Select Product" multiple>
                         <option value="all">All</option>
-                        @foreach($product as $row)
-                        <option value="{{ $row->id }}">{{ $row->code }} - {{ $row->name }} / {{ $row->packaging->pack_name }}</option>
-                        @endforeach
                     </select>
                 </div>
             </div>
@@ -118,9 +115,38 @@
         $("#product").val("all").change();
         $("#brand").val("all").change();
 
-        document.getElementById('non_bulan').addEventListener('change', function() {
+        $("#non_bulan").on('change', function () {
           this.value = this.checked ? 1 : 0;
-        });
+        })
+
+        $('#brand').on('change', function () {
+          let brand = $(this).val();
+
+          // Kosongkan dropdown produk jika tidak ada brand yang dipilih
+          if (brand.length === 0) {
+              $('#product').html('<option value="">Pilih Produk</option>');
+              return;
+          }
+
+          // Panggil endpoint untuk mendapatkan produk berdasarkan brand
+          $.ajax({
+              url: "{{ route('superuser.report.summary_customer_product.getProductsByBrand') }}", // Pastikan route sesuai
+              type: "GET",
+              data: { brand: brand },
+              success: function (data) {
+                  let productOptions = '<option value="">Pilih Produk</option>';
+                  data.forEach(function (product) {
+                      productOptions += `<option value="${product.product_id}">
+                          ${product.product_code} - ${product.product_name} (${product.product_kemasan})
+                      </option>`;
+                  });
+                  $('#product').html(productOptions);
+              },
+              error: function () {
+                  alert('Gagal memuat data produk.');
+              }
+          });
+      });
     })
 </script>
 @endpush

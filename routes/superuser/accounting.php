@@ -34,6 +34,7 @@ Route::group([
         Route::get('/pageReportJual', 'InvoiceTaxController@pageReportJual')->name('pageReportJual');
         Route::get('/json', 'InvoiceTaxController@json')->name('json');
         Route::get('/json2', 'InvoiceTaxController@json2')->name('json2');
+        Route::get('/json3', 'InvoiceTaxController@json3')->name('json3');
     });
     Route::resource('invoice_tax', 'InvoiceTaxController');
 

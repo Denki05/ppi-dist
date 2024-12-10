@@ -44,11 +44,31 @@ class ReportSummaryCustomerProductController extends Controller
         }
 
         $data['customers'] = CustomerOtherAddress::get();
-        $data['product'] = ProductPack::get();
+        // $data['product'] = ProductPack::get();
         $data['brand'] = BrandLokal::get();
 
         // return view($this->view."index",$data);
         return view('superuser.report.summary_customer_product.index', $data);
+    }
+
+    public function getProductsByBrand(Request $request)
+    {
+        if ($request->ajax()) {
+            $products = ProductPack::leftJoin('master_products', 'master_products_packaging.product_id', '=', 'master_products.id')
+                ->leftJoin('master_packaging', 'master_products_packaging.packaging_id', '=', 'master_packaging.id')
+                ->select(
+                    'master_products_packaging.id as product_id', 
+                    'master_products_packaging.code as product_code', 
+                    'master_products_packaging.name as product_name', 
+                    'master_packaging.pack_name as product_kemasan'
+                )
+                ->whereIn('master_products.brand_name', $request->brand) // Pastikan sesuai format (array jika multiple)
+                ->get();
+
+            return response()->json($products);
+        }
+
+        return response()->json(['error' => 'Invalid Request'], 400);
     }
 
     public function print_report(Request $request)

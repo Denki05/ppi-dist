@@ -43,6 +43,12 @@
               <a href="#" id="export-link" class="btn btn-success">
                   <i class="fa fa-file-excel"></i> Export All
               </a>
+
+              @role('Developer')
+              <button id="backfillBalancesButton" class="btn btn-primary">
+                Balances
+              </button>
+              @endrole
           </div>
       </div>
     </div>
@@ -225,6 +231,25 @@ $(document).ready(function() {
 
     $('#export-link').attr('href', url);
   }
+
+  document.getElementById('backfillBalancesButton').addEventListener('click', function () {
+        if (confirm('Are you sure you want to recalculate month-end balances?')) {
+            fetch('{{ route("superuser.gudang.stock.backfillMonthEndBalances") }}', {
+                method: 'GET',
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    alert(data.message);
+                } else {
+                    alert('Failed to initiate month-end balance calculation.');
+                }
+            })
+            .catch(error => {
+                alert('An error occurred: ' + error.message);
+            });
+        }
+    });
 });
 </script>
 @endpush

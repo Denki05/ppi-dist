@@ -56,7 +56,7 @@
                       @endforeach
                     </select>
                   </div>
-                  <label class="col-md-2 col-form-label text-left" for="status">Name :</label>
+                  <label class="col-md-2 col-form-label text-left" for="status">Status :</label>
                   <div class="col-md-4">
                     <select class="form-control js-select2" name="status" id="status">
                       <option value="all">All</option>
@@ -90,6 +90,7 @@
                 <tr>
                     <th>#</th>
                     <th>Payable Code</th>
+                    <th>Invoice Code</th>
                     <th>Store</th>
                     <th>Total</th>
                     <th>Payable Date</th>
@@ -105,6 +106,25 @@
       </div>
   </div>
 </div>
+
+<!-- modal_invoice_code.blade.php -->
+<div class="modal fade" id="modalInvoiceCode" tabindex="-1" role="dialog" aria-labelledby="modalInvoiceCodeLabel" aria-hidden="true">
+    <div class="modal-dialog modal-xl" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="modalInvoiceCodeLabel">Invoice Details</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body" id="modal-invoice-content">
+                <!-- Dynamic content will be loaded here -->
+            </div>
+        </div>
+    </div>
+</div>
+
+
 
 @include('superuser.finance.payable.modal')
 
@@ -141,9 +161,10 @@
           columns: [
             {data: 'DT_RowIndex', name: 'id'},
             {data: 'code', name: 'code'},
+            { data: 'invoice_code', name: 'finance_invoicing.code' },
             {data: 'customer', name: 'customer'},
             {
-              data: 'total_pay',
+              data: 'total_payable_item',
               render: function(data, type, row) {
                   return formatRupiah(data);
               }
@@ -207,6 +228,27 @@
           $("#select_customer").select2({
               dropdownParent: $('#modalSelectCustomer .modal-content')
           });
+      });
+
+      $(document).on('click', '.view-invoice-code', function () {
+        var invoiceId = $(this).data('id');
+        var modalContent = $('#modal-invoice-content');
+        
+        // Show a loading indicator
+        modalContent.html('<p>Loading...</p>');
+        
+        // Fetch invoice details using AJAX
+        $.ajax({
+            url: '{{ route('superuser.finance.payable.getDetailInvoice', ':id') }}'.replace(':id', invoiceId),
+            method: 'GET',
+            success: function (response) {
+                // Replace modal content with the response
+                modalContent.html(response);
+            },
+            error: function () {
+                modalContent.html('<p>Failed to load invoice details. Please try again.</p>');
+            }
+        });
       });
     });
 </script>

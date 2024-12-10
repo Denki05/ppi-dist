@@ -30,21 +30,22 @@ class ProductPerformanceTable extends Table
                 'master_products_packaging.code AS product_code', 
                 'master_packaging.pack_name AS packaging', 
                 'penjualan_so_item.qty_worked AS qty'
-            )
-            ->get();
+            );
 
-            if ($request->brand != 'all') {
-                $multiple_brand = explode(',', $request->brand);
-                $model->whereIn('master_products.brand_name', $multiple_brand);
-            }
+        // Filter brand
+        if ($request->brand != 'all') {
+            $model->where('master_products.brand_name', $request->brand);
+        }
 
-            if ($request->product != 'all') {
-                $multiple_product = explode(',', $request->product);
-                $model->whereIn('master_products_packaging.id', $multiple_product);
-            }
+        // Filter produk jika diperlukan
+        if ($request->product != 'all') {
+            $multiple_product = explode(',', $request->product);
+            $model->whereIn('master_products_packaging.id', $multiple_product);
+        }
 
-        return $model;
+        return $model->get();
     }
+
 
     public function build(Request $request)
     {

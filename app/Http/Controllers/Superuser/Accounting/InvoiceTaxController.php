@@ -13,6 +13,7 @@ use App\Entities\Master\CustomerOtherAddress;
 use App\Entities\Master\ProductFinance;
 use App\DataTables\Report\InvoiceTaxReportTable;
 use App\DataTables\Report\InvoiceTaxJualReportTable;
+use App\DataTables\Accoutning\InvoiceTaxBeliTable;
 use App\Entities\Setting\UserMenu;
 use Illuminate\Validation\ValidationException;
 use Illuminate\Support\Facades\Cache;
@@ -48,6 +49,11 @@ class InvoiceTaxController extends Controller
     }
 
     public function json2(Request $request, InvoiceTaxJualReportTable $datatable)
+    {
+        return $datatable->build($request);
+    }
+
+    public function json3(Request $request, InvoiceTaxBeliTable $datatable)
     {
         return $datatable->build($request);
     }

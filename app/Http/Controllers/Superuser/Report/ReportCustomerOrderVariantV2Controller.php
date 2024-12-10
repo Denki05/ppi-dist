@@ -52,10 +52,26 @@ class ReportCustomerOrderVariantV2Controller extends Controller
         }
 
         $data['customer'] = CustomerOtherAddress::where('situation', 1)->orWhere('status_key', 1)->get();
-        $data['product'] = Product::get();
+        // $data['product'] = Product::get();
         $data['brand'] = BrandLokal::get();
 
         return view($this->view."index", $data);
+    }
+
+    public function getProductsByBrand(Request $request)
+    {
+        if ($request->ajax()) {
+            $products = Product::leftJoin('master_brand_lokal', 'master_products.brand_name', '=', 'master_brand_lokal.brand_name')
+                ->select(
+                    'master_products.id as product_id', 
+                    'master_products.code as product_code', 
+                    'master_products.name as product_name', 
+                )
+                ->where('master_products.brand_name', $request->brand_name)
+                ->get();
+            
+            return response()->json($products);
+        }
     }
 
     public function print_report(Request $request)

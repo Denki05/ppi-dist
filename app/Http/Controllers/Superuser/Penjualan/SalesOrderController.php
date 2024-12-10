@@ -1348,7 +1348,7 @@ class SalesOrderController extends Controller
 
                             if ($stock) {
                                 // Only check stock if do_qty is greater than 0
-                                if ($do_qty > 0 && $stock->quantity < $do_qty) {
+                                if ($do_qty > 0 && ($stock->quantity < $do_qty || $stock->quantity < 0)) {
                                     $out_of_stock = true;
                                     $product = $value["product_packaging_id"];
                                     break;

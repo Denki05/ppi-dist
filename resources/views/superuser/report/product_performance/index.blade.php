@@ -51,9 +51,6 @@
             <div class="col-md-4">
               <select class="js-select2 form-control" id="product" name="product[]" data-placeholder="Pilih Variant" multiple required>
                 <option value="all">All</option>
-                @foreach ($product as $value)
-                  <option value="{{ $value->id }}">{{ $value->code }} - {{ $value->name }} / {{ $value->packaging->pack_name }}</option>
-                @endforeach
               </select>
             </div>
           </div>
@@ -189,6 +186,36 @@
 
     $("#brand").val("all").change();
     $("#product").val("all").change();
+
+    $('#brand').on('change', function () {
+            let brandId = $(this).val();
+
+            // Kosongkan dropdown produk jika tidak ada brand yang dipilih
+            if (brandId === '') {
+                $('#product').html('<option value="">Pilih Produk</option>');
+                return;
+            }
+
+            // Panggil endpoint untuk mendapatkan produk berdasarkan brand
+            $.ajax({
+                url: "{{ route('superuser.report.product_performance.getProductsByBrand') }}", // Ganti dengan route yang sesuai
+                type: "GET",
+                data: { brand_id: brandId },
+                success: function (data) {
+                    let productOptions = '<option value="">Pilih Produk</option>';
+                    data.forEach(function (product) {
+                        // Gunakan detail data yang dikembalikan
+                        productOptions += `<option value="${product.product_id}">
+                            ${product.product_code} - ${product.product_name} (${product.product_kemasan})
+                        </option>`;
+                    });
+                    $('#product').html(productOptions);
+                },
+                error: function () {
+                    alert('Gagal memuat data produk.');
+                }
+            });
+        });
   })
 </script>
 @endpush
