@@ -25,6 +25,31 @@
   </div>
   <!-- <hr class="my-20"> -->
   <div class="block-content block-content-full">
+    <div class="form-group row">
+      <label class="col-md-2 col-form-label text-left" for="period">Bulan :</label>
+      <div class="col-md-4">
+        <div class="input-group">
+          <select id="bulan" name="bulan" class="form-control js-select2">
+            @foreach ($bulan as $key => $month)
+              <option value="{{ $key }}" {{ $key == $selectedBulan ? 'selected' : '' }}>
+                {{ $month }}
+              </option>
+            @endforeach
+          </select>
+        </div>
+      </div>
+      <div class="col-md-4">
+        <div class="input-group">
+          <select id="tahun" name="tahun" class="form-control js-select2" style="width: 30%;">
+              @for ($year = now()->year; $year >= 2024; $year--) <!-- Replace 2000 with your desired start year -->
+                  <option value="{{ $year }}" {{ $year == $selectedTahun ? 'selected' : '' }}>
+                      {{ $year }}
+                  </option>
+              @endfor
+          </select>
+        </div>
+      </div>
+    </div>
       <div class="row mb-30">
         <div class="col-12">
           <table class="table table-striped" id="invoice_tax">
@@ -33,42 +58,16 @@
                 <th>Tanggal</th>
                 <th>Invoice Tax</th>
                 <th>Mitra</th>
-                <th>Type</th>
+                <!-- <th>Type</th> -->
                 <th>Status</th>
                 <th>Action</th>
               </tr>
             </thead>
             <tbody>
-              @foreach($invoice_tax as $row)
-              @if($row->type == 2)
-                <tr>
-                    <td>{{ $row->date ?? '' }}</td>
-                    <td>{{ $row->code ?? '' }}</td>
-                    <td>{{ $row->mitra->name ?? '' }}</td>
-                    <td>{{ $row->type() ?? '' }}</td>
-                    <td>{{ $row->status() ?? '' }}</td>
-                    <td>
-                      @if($row->status == 1)
-                      <button type="button" class="btn btn-primary btn-sm btn-flat" data-toggle="modal" data-target="#myModal{{$row->id}}"><i class="fa fa-eye"></i> View</button>
-                      <a  class="btn btn-success btn-sm btn-flat" href="{{ route('superuser.accounting.invoice_tax.print_invoice', $row->id) }}" role="button"><i class="fa fa-print"></i> Print</a>
-                      <form action="{{ route('superuser.accounting.invoice_tax.destroy', $row->id) }}" method="POST" onsubmit="return confirm('Are you sure you want to delete this?');">
-                        @csrf
-                        @method('DELETE')
-                        <button type="submit" class="btn btn-danger btn-sm btn-flat"><i class="fa fa-trash"></i>Delete</button>
-                      </form>
-                      @else
-                      <button type="button" class="btn btn-primary btn-sm btn-flat" data-toggle="modal" data-target="#myModal{{$row->id}}"><i class="fa fa-eye"></i> View</button>
-                      @endif
-                    </td>
-                </tr>
-                @endif
-              @endforeach
             </tbody>
           </table>
         </div>
       </div>
-      
-      
   </div>
 </div>
 
@@ -220,24 +219,48 @@
 
 @include('superuser.asset.plugin.select2')
 @include('superuser.asset.plugin.datatables')
+@include('superuser.asset.plugin.swal2')
 
 @push('scripts')
 <script type="text/javascript">
 $(document).ready(function() {
   $('.js-select2').select2();
 
-  $('#invoice_tax').DataTable({
-    processing: true,
-    serverSide: false,
-    order: [
-      [1, 'desc']
-    ],
-    pageLength: 10,
-    lengthMenu: [
-      [20, 50, 100],
-      [20, 50, 100]
-    ],
-  });
+  let datatableUrl = '{{ route('superuser.accounting.invoice_tax.json3') }}';
+
+  let cashbackTable = $('#invoice_tax').DataTable({
+        processing: true,
+        serverSide: false,
+        ajax: {
+            url: datatableUrl,
+            dataType: "json",
+            type: "GET",
+            data: function (d) {
+                d.bulan = $('#bulan').val(); // Send selected month
+                d.tahun = $('#tahun').val(); // Send selected year
+                d._token = "{{csrf_token()}}";
+            },
+        },
+        columns: [
+            {
+                data: 'tanggal'
+            },
+            { data: 'code' },
+            { data: 'mitra' },
+            // { data: 'type' },
+            { data: 'status' },
+            { data: 'action', orderable: false, searchable: false },
+        ],
+        order: [[1, 'desc']],
+        pageLength: 5,
+        lengthMenu: [[5, 15, 20], [5, 15, 20]],
+    });
+
+    // Handle month dropdown change
+    $('#bulan, #tahun').change(function () {
+      cashbackTable.ajax.reload();
+    });
+
 
   $(".js-select2-unifra_beli").select2({
       ajax: {

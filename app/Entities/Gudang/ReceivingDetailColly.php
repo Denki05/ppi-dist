@@ -35,17 +35,12 @@ class ReceivingDetailColly extends Model
 
     public function receiving_detail()
     {
-        return $this->belongsTo('App\Entities\Gudang\ReceivingDetail');
-    }
-    
-    public function product_conversion()
-    {
-        return $this->has_many('App\Entities\Inventory\ProductConversionDetail', 'id', 'receiving_detail_colly_id');
+        return $this->belongsTo('App\Entities\Gudang\ReceivingDetail', 'receiving_detail_id');
     }
 
     public function product()
     {
-        return $this->belongsTo('App\Entities\Master\Product', 'product_to', 'id');
+        return $this->belongsTo('App\Entities\Master\ProductPack', 'product_to', 'id');
     }
     
 }

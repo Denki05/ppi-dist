@@ -11,7 +11,12 @@ class CashbackTable extends Table
 {
     private function query(Request $request)
     {
+        $month = $request->input('bulan', now()->month);
+        $year = $request->input('tahun', now()->year);
+
         $model = Cashback::where('finance_cashback.status', 1)
+            ->whereMonth('finance_cashback.created_at', $month)
+            ->whereYear('finance_cashback.created_at', $year) // Add year filter
             ->leftJoin('penjualan_do', 'penjualan_do.id', '=', 'finance_cashback.do_id')
             ->leftJoin('master_customer_other_addresses', 'master_customer_other_addresses.id', '=', 'finance_cashback.customer_other_address_id')
             ->select(

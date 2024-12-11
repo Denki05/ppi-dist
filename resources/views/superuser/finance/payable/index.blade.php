@@ -90,9 +90,10 @@
                 <tr>
                     <th>#</th>
                     <th>Payable Code</th>
+                    <th>Invoice Code</th>
                     <th>Store</th>
                     <th>Total</th>
-                    <th>Created At</th>
+                    <th>Payable Date</th>
                     <th>Status</th>
                     <th>Action</th>
                 </tr>
@@ -114,12 +115,6 @@
 @include('superuser.asset.plugin.datatables')
 @include('superuser.asset.plugin.swal2')
 
-@section('modal')
-
-@include('superuser.component.modal-manage')
-
-@endsection
-
 @push('scripts')
 
 <script type="text/javascript">
@@ -135,7 +130,7 @@
                            </span>",
           },
           processing: true,
-          serverSide: true,
+          serverSide: false,
           ajax: {
             "url": firstDatatableUrl,
             "dataType": "json",
@@ -147,6 +142,7 @@
           columns: [
             {data: 'DT_RowIndex', name: 'id'},
             {data: 'code', name: 'code'},
+            {data: 'invoice_code', name: 'invoice_code'},
             {data: 'customer', name: 'customer'},
             {
               data: 'total_pay',

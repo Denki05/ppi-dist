@@ -13,6 +13,8 @@ use App\Entities\Master\CustomerOtherAddress;
 use App\Entities\Master\ProductFinance;
 use App\DataTables\Report\InvoiceTaxReportTable;
 use App\DataTables\Report\InvoiceTaxJualReportTable;
+use App\DataTables\Accounting\InvoiceTaxBeliTable;
+use App\DataTables\Accounting\InvoiceTaxJualTable;
 use App\Entities\Setting\UserMenu;
 use Illuminate\Validation\ValidationException;
 use Validator;
@@ -47,6 +49,16 @@ class InvoiceTaxController extends Controller
     }
 
     public function json2(Request $request, InvoiceTaxJualReportTable $datatable)
+    {
+        return $datatable->build($request);
+    }
+
+    public function json3(Request $request, InvoiceTaxBeliTable $datatable)
+    {
+        return $datatable->build($request);
+    }
+
+    public function json4(Request $request, InvoiceTaxJualTable $datatable)
     {
         return $datatable->build($request);
     }
@@ -143,6 +155,10 @@ class InvoiceTaxController extends Controller
             }
         }
 
+        // Define the range of years for filtering
+        $currentYear = now()->year;
+        $years = range($currentYear, $currentYear - 10); // Generate a range of 10 years back
+
         $start = Carbon::now()->startOfYear();
         $end = Carbon::now()->endOfYear();
         $invoice_tax = InvoiceTax::get();
@@ -155,9 +171,31 @@ class InvoiceTaxController extends Controller
             ];
         }
 
+        $bulan = [
+            1 => 'Januari',
+            2 => 'Februari',
+            3 => 'Maret',
+            4 => 'April',
+            5 => 'Mei',
+            6 => 'Juni',
+            7 => 'Juli',
+            8 => 'Agustus',
+            9 => 'September',
+            10 => 'Oktober',
+            11 => 'November',
+            12 => 'Desember',
+        ];
+
+        // Get the selected month, default to the current month
+        $selectedBulan = $request->bulan ?? now()->month;
+        $selectedTahun = $request->tahun ?? $currentYear;
+
         $data = [
             'invoice_tax' => $invoice_tax,
             'months' => $months,
+            'bulan' => $bulan,
+            'selectedBulan' => $selectedBulan,
+            'selectedTahun' => $selectedTahun,
         ];
 
         return view($this->view . "index_jual", $data);
@@ -172,6 +210,10 @@ class InvoiceTaxController extends Controller
             }
         }
 
+        // Define the range of years for filtering
+        $currentYear = now()->year;
+        $years = range($currentYear, $currentYear - 10); // Generate a range of 10 years back
+
         $start = Carbon::now()->startOfYear();
         $end = Carbon::now()->endOfYear();
         $invoice_tax = InvoiceTax::get();
@@ -184,9 +226,31 @@ class InvoiceTaxController extends Controller
             ];
         }
 
+        $bulan = [
+            1 => 'Januari',
+            2 => 'Februari',
+            3 => 'Maret',
+            4 => 'April',
+            5 => 'Mei',
+            6 => 'Juni',
+            7 => 'Juli',
+            8 => 'Agustus',
+            9 => 'September',
+            10 => 'Oktober',
+            11 => 'November',
+            12 => 'Desember',
+        ];
+
+        // Get the selected month, default to the current month
+        $selectedBulan = $request->bulan ?? now()->month;
+        $selectedTahun = $request->tahun ?? $currentYear;
+
         $data = [
             'invoice_tax' => $invoice_tax,
             'months' => $months,
+            'bulan' => $bulan,
+            'selectedBulan' => $selectedBulan,
+            'selectedTahun' => $selectedTahun,
         ];
 
         return view($this->view."index_beli", $data);
@@ -331,8 +395,12 @@ class InvoiceTaxController extends Controller
         }
     }
 
-
     public function destroy($id)
+    {
+
+    }
+
+    public function destroy_beli($id)
     {
         $invoiceTax = InvoiceTax::findOrFail($id);
 
@@ -343,21 +411,33 @@ class InvoiceTaxController extends Controller
             if ($invoiceTax->save()) {
                 // Soft delete the invoice tax record
                 $invoiceTax->delete();
-
-                // Update related PackingOrder based on the type
-                if ($invoiceTax->type == 1) {
-                    PackingOrder::where('id', $invoiceTax->do_id)->update(['tax_jual' => 0]);
-                } elseif($invoiceTax->type == 2) {
-                    PackingOrder::where('id', $invoiceTax->do_id)->update(['tax_beli' => 0]);
-                }
+                PackingOrder::where('id', $invoiceTax->do_id)->update(['tax_beli' => 0]);
             }
 
-            if($invoiceTax->type == 1){
-                return redirect()->route('superuser.accounting.invoice_tax.index_jual')->with('success', 'Invoice deleted successfully.');
-            }elseif ($invoiceTax->type == 2){
-                return redirect()->route('superuser.accounting.invoice_tax.index_beli')->with('success', 'Invoice deleted successfully.');
-            }
+            return redirect()->route('superuser.accounting.invoice_tax.index_beli')->with('success', 'Invoice deleted successfully.');
         } catch (\Exception $e) {
+            \Log::error('Delete Error: ' . $e->getMessage());
+            return redirect()->route('superuser.accounting.invoice_tax.index_beli')->with('error', 'Failed to delete Invoice.');
+        }
+    }
+
+    public function destroy_jual($id)
+    {
+        $invoiceTax = InvoiceTax::findOrFail($id);
+
+        try {
+            // Update status to 'deleted'
+            $invoiceTax->status = InvoiceTax::STATUS['DELETED'];
+
+            if ($invoiceTax->save()) {
+                // Soft delete the invoice tax record
+                $invoiceTax->delete();
+                PackingOrder::where('id', $invoiceTax->do_id)->update(['tax_jual' => 0]);
+            }
+
+            return redirect()->route('superuser.accounting.invoice_tax.index_jual')->with('success', 'Invoice deleted successfully.');
+        } catch (\Exception $e) {
+            \Log::error('Delete Error: ' . $e->getMessage());
             return redirect()->route('superuser.accounting.invoice_tax.index_jual')->with('error', 'Failed to delete Invoice.');
         }
     }

@@ -37,12 +37,12 @@ class ReceivingDetail extends Model
 
     public function product_pack()
     {
-        return $this->belongsTo('App\Entities\Master\ProductPack', 'product_packaging_id');
+        return $this->belongsTo('App\Entities\Master\ProductPack', 'product_packaging_id', 'id');
     }
 
     public function collys()
     {
-        return $this->hasMany('App\Entities\Gudang\ReceivingDetailColly');
+        return $this->hasMany('App\Entities\Gudang\ReceivingDetailColly', 'receiving_detail_id', 'id');
     }
 
     public function total_reject_ri($detail_id) {

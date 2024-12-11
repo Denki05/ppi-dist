@@ -28,7 +28,7 @@ class InvoiceTax extends Model
 
     const STATUS = [
         'DELETED' => 0,
-        'ACTICVE' => 1,
+        'ACTIVE' => 1,
     ];
 
     const TYPE = [

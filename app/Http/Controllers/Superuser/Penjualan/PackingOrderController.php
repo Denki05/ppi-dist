@@ -917,6 +917,7 @@ class PackingOrderController extends Controller
 
             // Potong Stock
             $get_stock = 0;
+            $out_of_stock = false;
 
             // Loop through each product in the DO details
             foreach($getDo->do_detail as $row => $value){
@@ -931,6 +932,18 @@ class PackingOrderController extends Controller
                 // Check if stock is available
                 if ($stock) {
                     $get_stock = $stock->quantity;
+
+                    if($get_stock <= $value->qty){
+                        $out_of_stock = true;
+                        $response['notification'] = [
+                            'alert' => 'notify',
+                            'type' => 'error',
+                            'content' => 'Stock, tidak mencukupi',
+                        ];
+            
+                        $response['redirect_to'] = route('superuser.penjualan.sales_order.index_lanjutan');
+                        return $this->response(500, $response);
+                    }
 
                     // Update stock quantity after reducing the sold quantity
                     $stock->quantity = $get_stock - $value->qty;

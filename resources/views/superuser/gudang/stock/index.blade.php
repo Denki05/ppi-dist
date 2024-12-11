@@ -18,17 +18,39 @@
 @endif
 <div class="block">
   <div class="block-content">
-    <div class="form-group row">
-      <label class="col-md-2 col-form-label text-left" for="warehouse">Warehouse <span class="text-danger">*</span></label>
-      <div class="col-md-3">
-        <select class="js-select2 form-control" id="warehouse" name="warehouse" data-placeholder="Select Warehouse">
-          <option></option>
-          @foreach($warehouses as $warehouse)
-          <option value="{{ $warehouse->id }}">{{ $warehouse->name }}</option>
-          @endforeach
-        </select>
+    <div class="form-group row align-items-center">
+      <label class="col-md-2 col-form-label" for="warehouse">Warehouse <span class="text-danger">*</span></label>
+      <div class="col-md-4">
+          <select class="js-select2 form-control" id="warehouse" name="warehouse" data-placeholder="Select Warehouse">
+              <option></option>
+              @foreach($warehouses as $warehouse)
+              <option value="{{ $warehouse->id }}">{{ $warehouse->name }}</option>
+              @endforeach
+          </select>
       </div>
     </div>
+
+    <div class="form-group row align-items-center" id="export-container" style="display: none;">
+      <label class="col-md-2 col-form-label" for="date-range">Pilih rentan waktu</label>
+      <div class="col-md-4">
+          <input type="date" id="start_date" class="form-control">
+      </div>
+      <div class="col-md-4">
+          <input type="date" id="end_date" class="form-control">
+      </div>
+      <div class="col-md-2 text-right">
+          <div>
+              <a href="#" id="export-link" class="btn btn-success">
+                  <i class="fa fa-file-excel"></i> Export All
+              </a>
+
+              <button id="backfillBalancesButton" class="btn btn-primary">
+                Balances
+              </button>
+          </div>
+      </div>
+    </div>
+</div>
   </div>
   <hr class="my-20">
   <div class="block-content block-content-full">
@@ -79,6 +101,8 @@ $(document).ready(function() {
 
   $('#warehouse').on('select2:select', function (e) {
     var data = e.params.data;
+
+    // alert(data.id);
     
     let newDatatableUrl = datatableUrl+'?warehouse_id='+data.id;
     $('#datatable').DataTable().ajax.url(newDatatableUrl).load();
@@ -160,6 +184,70 @@ $(document).ready(function() {
       $(api.column(7).footer()).html(totalSell.toFixed(2));
     }
   });
+
+  $('#warehouse').on('select2:select', function(e) {
+    var warehouseId = e.params.data.id;
+
+    if (warehouseId) {
+      $('#export-container').show();
+
+      // Update export link saat warehouse dipilih
+      updateExportLink(warehouseId);
+    } else {
+      $('#export-container').hide();
+    }
+  });
+
+  // Event listener untuk perubahan date range
+  $('#start_date, #end_date').on('change', function() {
+      var warehouseId = $('#warehouse').val();
+      if (warehouseId) {
+        updateExportLink(warehouseId);
+      }
+  });
+
+  function updateExportLink(warehouseId) {
+    var startDate = $('#start_date').val();
+    var endDate = $('#end_date').val();
+
+    if (startDate && endDate && startDate > endDate) {
+        alert('Start Date tidak boleh lebih besar dari End Date!');
+        return;
+    }
+
+    // Pastikan warehouseId ada dan bukan null atau kosong
+    if (!warehouseId) {
+        alert('Warehouse belum dipilih!');
+        return;
+    }
+
+    // Gantikan :warehouse, :startDate, :endDate dengan nilai yang sesuai
+    var url = '{{ route("superuser.gudang.stock.exportTransactions", [":warehouse", ":startDate", ":endDate"]) }}';
+    url = url.replace(':warehouse', warehouseId);
+    url = url.replace(':startDate', startDate);
+    url = url.replace(':endDate', endDate);
+
+    $('#export-link').attr('href', url);
+  }
+
+    document.getElementById('backfillBalancesButton').addEventListener('click', function () {
+        if (confirm('Are you sure you want to recalculate month-end balances?')) {
+            fetch('{{ route("superuser.gudang.stock.backfillMonthEndBalances") }}', {
+                method: 'GET',
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    alert(data.message);
+                } else {
+                    alert('Failed to initiate month-end balance calculation.');
+                }
+            })
+            .catch(error => {
+                alert('An error occurred: ' + error.message);
+            });
+        }
+    });
 });
 </script>
 @endpush

@@ -1,5 +1,7 @@
 <?php
 
+use App\Htpp\Controllers\Superuser\Finance\PayableController;
+
 Route::group([
     'middleware' => ['auth:superuser'],
     'as' => 'finance.',
@@ -40,8 +42,11 @@ Route::group([
         Route::get('/', 'PayableController@index')->name('index');
         Route::get('/create', 'PayableController@create')->name('create');
         Route::get('/{id}/detail', 'PayableController@detail')->name('detail');
-        Route::get('/{id}/edit', 'PayableController@edit')->name('edit');
-        Route::post('/{id}/update', 'PayableController@update')->name('update');
+        // Route::get('/{id}/edit', 'PayableController@edit')->name('edit');
+        // Route::put('/{id}/update', 'PayableController@update')->name('update');
+
+        Route::put('/finance/payable/{id}', [PayableController::class, 'update'])->name('superuser.finance.payable.update');
+        Route::get('/finance/payable/{id}/edit', [PayableController::class, 'edit'])->name('superuser.finance.payable.edit');
         Route::post('/{id}/store', 'PayableController@store')->name('store');
         Route::get('/approve/{id}', 'PayableController@approve')->name('approve');
         Route::get('/{id}/print', 'PayableController@print')->name('print');
@@ -61,6 +66,8 @@ Route::group([
         Route::get('/print_invoice_beli/{id}', 'CashbackController@print_invoice_beli')->name('print_invoice_beli');
         Route::get('/print_invoice_jual/{id}', 'CashbackController@print_invoice_jual')->name('print_invoice_jual');
         Route::get('/pageReport', 'CashbackController@pageReport')->name('pageReport');
+        Route::get('/pageReportBeli', 'CashbackController@pageReportBeli')->name('pageReportBeli');
+        Route::get('/pageReportJual', 'CashbackController@pageReportJual')->name('pageReportJual');
         Route::get('/json2', 'CashbackController@json2')->name('json2');
 
     });

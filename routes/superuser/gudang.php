@@ -7,16 +7,18 @@ Route::group([
     'namespace' => 'Gudang'
 ], function () {
     Route::group(['as' => 'stock.', 'prefix' => '/stock'], function () {
+        Route::get('/', 'StockController@index')->name('index');
+        Route::get('/json', 'StockController@json')->name('json');
         Route::get('{warehouse_id}/detail/{product_id}', 'StockController@detail')->name('detail');
+        Route::get('{warehouse}/{startDate}/{endDate}/exportTransactions', 'StockController@exportTransactions')->name('exportTransactions');
+        Route::get('/backfillMonthEndBalances', 'StockController@backfillMonthEndBalances')->name('backfillMonthEndBalances');
     });
-    Route::resource('stock', 'StockController');
 
     Route::group(['as' => 'stock_adjustment.', 'prefix' => '/stock_adjustment'], function () {
         Route::get('/', 'StockAdjustmentController@index')->name('index');
         Route::get('/create', 'StockAdjustmentController@create')->name('create');
         Route::post('/check_product_warehouse', 'StockAdjustmentController@check_product_warehouse')->name('check_product_warehouse');
         Route::post('/store', 'StockAdjustmentController@store')->name('store');
-        
     });
 
     Route::group(['as' => 'purchase_order.', 'prefix' => '/purchase_order'], function () {

@@ -883,6 +883,32 @@ class SalesOrderPpnController extends Controller
         }
     }
 
+    public function detail($id)
+    {
+        // Access
+        if(Auth::user()->is_superuser == 0){
+            if(empty($this->access) || empty($this->access->user) || $this->access->can_read == 0){
+                return redirect()->route('superuser.index')->with('error','Anda tidak punya akses untuk membuka menu terkait');
+            }
+        }
+        $result = SalesOrder::where('id',$id)->first();
+        if(empty($result)){
+            abort(404);
+        }
+
+        $step = 2;
+        if ($result->status === 1 || $result->status === 3) {
+            $step = 1;
+        }
+
+        $data = [
+            'result' => $result,
+            'step' => $step,
+            'step_txt' => SalesOrder::STEP[$step],
+        ];
+        return view($this->view."show",$data);
+    }
+
     public function ajax_customer_detail(Request $request){
         $data_json = [];
         $post = $request->all();

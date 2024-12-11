@@ -796,17 +796,17 @@ class DeliveryOrderController extends Controller
                 }
 
                 $secretCode = $request->input('secretCode');
-                $invoice = Invoicing::where('do_id', $do->id)->first();
-                $payable_detail = $invoice ? PayableDetail::where('invoice_id', $invoice->id)->first() : null;
+                // $invoice = Invoicing::where('do_id', $do->id)->first();
+                // $payable_detail = $invoice ? PayableDetail::where('invoice_id', $invoice->id)->first() : null;
 
-                if (!$invoice || !$payable_detail || !$payable_detail->payable) {
-                    throw new \Exception('Payment information is incomplete or missing!', 404);
-                }
+                // if (!$invoice || !$payable_detail || !$payable_detail->payable) {
+                //     throw new \Exception('Payment information is incomplete or missing!', 404);
+                // }
 
-                // Check if the payment is approved
-                if ($payable_detail->payable->status === 'ACC') {
-                    throw new \Exception('Cannot cancel because the payment has already been made!', 403);
-                }
+                // // Check if the payment is approved
+                // if ($payable_detail->payable->status === 'ACC') {
+                //     throw new \Exception('Cannot cancel because the payment has already been made!', 403);
+                // }
 
                 // Verify secret code
                 if ($secretCode !== env('ABORT_PROCESS_CODE')) {

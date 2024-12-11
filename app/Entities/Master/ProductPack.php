@@ -93,6 +93,21 @@ class ProductPack extends Model
         return $this->hasMany('App\Entities\Penjualan\SettingPriceLog', 'product_packaging_id');
     }
 
+    public function receiving_detail()
+    {
+        return $this->hasMany('App\Entities\Gudang\ReceivingDetail', 'product_packaging_id', 'id');
+    }
+
+    public function so_detail()
+    {
+        return $this->hasMany('App\Entities\Penjualan\SalesOrderItem', 'product_packaging_id');
+    }
+
+    public function stock_adjustments()
+    {
+        return $this->hasMany('App\Entities\Gudang\StockAdjustment', 'product_packaging_id');
+    }
+
     public function status()
     {
         return array_search($this->status, self::STATUS);

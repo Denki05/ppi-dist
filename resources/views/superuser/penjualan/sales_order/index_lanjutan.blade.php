@@ -189,7 +189,6 @@
               <th>Tanggal Buat</th>
               <th>Transaction Type</th>
               <th>Status</th>
-              <!-- <th>Action</th> -->
             </tr>
           </thead>
           <tbody>
@@ -220,11 +219,6 @@
                           <span class="badge badge-pill badge-danger"><b>Revisi</b></span>
                         @endif
                       </td>
-                      <!-- <td>
-                        @if($row->type_transaction == 2 && $row->status < 5)
-                          <a href="#" class="btn btn-danger btn-sm btn-flat btn-frmedit" data-id="{{$row->id}}"><i class="fa fa-edit"></i> Revisi</a>
-                        @endif
-                      </td> -->
                   </tr>
                   @endforeach
           </tbody>

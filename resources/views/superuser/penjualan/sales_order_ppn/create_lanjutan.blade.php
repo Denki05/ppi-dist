@@ -65,24 +65,8 @@
               <label for="warehouse_id">Catatan <span class="text-danger">*</span></label>
               <textarea class="form-control" name="note" rows="1" readonly>{{ $result->note }}</textarea>
             </div>
-            <!-- <div class="form-group col-md-6">
-              <label for="type_transaction">Eksepdisi <span class="text-danger">*</span></label>
-              <select class="form-control js-select2" name="ekspedisi">
-                <option value="">Pilih Ekspedisi</option>
-                @foreach($ekspedisi as $index)
-                <option value="{{ $index->id }}">{{ $index->name }}</option>
-                @endforeach
-              </select>
-            </div> -->
           </div>
-
-          <!-- <div class="form-row justify-content-end">
-            <div class="form-check-inline">
-              <label class="form-check-label">
-                <input type="checkbox" class="form-check-input" value="1" id="shipping_cost_buyer" name="shipping_cost_buyer">Bayar ditempat
-              </label>
-            </div>
-          </div> -->
+          
           <br>
           <br>
         </div>

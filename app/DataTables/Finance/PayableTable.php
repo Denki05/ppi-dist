@@ -21,14 +21,16 @@ class PayableTable extends Table
         $model = Payable::select(
             'finance_payable.id AS id', 
             'finance_payable.code AS code', 
-            'master_customers.id AS customer_id', 
             'master_customers.name AS customer_name', 
             'master_customers.text_kota AS customer_kota', 
             'finance_payable.total AS total_pay',
-            'finance_payable.created_at AS tanggal_buat',
+            'finance_payable.pay_date AS tanggal_buat',
             'finance_payable.status AS status',
+            'finance_invoicing.code AS invoice_code'
             )
             ->leftJoin('master_customers', 'master_customers.id', '=', 'finance_payable.customer_id')
+            ->leftJoin('finance_payable_detail', 'finance_payable.id', '=', 'finance_payable_detail.payable_id')
+            ->leftJoin('finance_invoicing', 'finance_payable_detail.invoice_id', '=', 'finance_invoicing.id')
             ->where(function ($query) use ($request) {
                 if ($request->customer_name != 'all') {
                     $query->where('customer_id', $request->customer_name);
@@ -66,8 +68,8 @@ class PayableTable extends Table
 
         $table->editColumn('created_at', function (Payable $model) {
             return [
-              'display' => Carbon::parse($model->created_at)->format('j F Y H:i:s'),
-              'timestamp' => $model->created_at
+                'display' => Carbon::parse($model->tanggal_buat)->format('d-m-Y'),
+                'timestamp' => $model->tanggal_buat
             ];
         });
 
@@ -118,7 +120,7 @@ class PayableTable extends Table
                     </a>
                 ";
             }
-
+        
             if ($model->status == $model::STATUS['ACC']) {
                 $buttons = "
                     <a href=\"{$view}\">
@@ -152,15 +154,15 @@ class PayableTable extends Table
                 ";
         
                 // Show Destroy button if the user is a superuser
-                // if (auth()->user()->is_superuser) {
-                //     $buttons .= "
-                //         <a href=\"javascript:deleteConfirmation('{$destroy}')\">
-                //             <button type=\"button\" class=\"btn btn-sm btn-circle btn-alt-secondary\" title=\"Destroy\">
-                //                 <i class=\"fa fa-trash\"></i>
-                //             </button>
-                //         </a>
-                //     ";
-                // }
+                if (auth()->user()->is_superuser) {
+                    $buttons .= "
+                        <a href=\"javascript:deleteConfirmation('{$destroy}')\">
+                            <button type=\"button\" class=\"btn btn-sm btn-circle btn-alt-secondary\" title=\"Destroy\">
+                                <i class=\"fa fa-trash\"></i>
+                            </button>
+                        </a>
+                    ";
+                }
         
                 return $buttons;
             }

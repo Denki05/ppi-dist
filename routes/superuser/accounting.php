@@ -35,6 +35,19 @@ Route::group([
         Route::get('/pageReportJual', 'InvoiceTaxController@pageReportJual')->name('pageReportJual');
         Route::get('/json', 'InvoiceTaxController@json')->name('json');
         Route::get('/json2', 'InvoiceTaxController@json2')->name('json2');
+        Route::get('/json3', 'InvoiceTaxController@json3')->name('json3');
+        Route::get('/json4', 'InvoiceTaxController@json4')->name('json4');
+        Route::delete('/destroy_beli/{id}', 'InvoiceTaxController@destroy_beli')->name('destroy_beli');
+        Route::delete('/destroy_jual/{id}', 'InvoiceTaxController@destroy_jual')->name('destroy_jual');
     });
     Route::resource('invoice_tax', 'InvoiceTaxController');
+
+    Route::group(['as' => 'finance_simulation.', 'prefix' => '/finance_simulation'], function () {
+        Route::get('/index', 'FinanceSimulationPriceController@index')->name('index');
+        Route::get('/getInvoice', 'FinanceSimulationPriceController@getInvoice')->name('getInvoice');
+        Route::get('/create', 'FinanceSimulationPriceController@create')->name('create');
+        Route::post('/store', 'FinanceSimulationPriceController@store')->name('store');
+        Route::get('/removeData', 'FinanceSimulationPriceController@removeData')->name('removeData');
+    });
+    Route::resource('finance_simulation', 'FinanceSimulationPriceController');   
 });

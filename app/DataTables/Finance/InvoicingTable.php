@@ -53,6 +53,7 @@ class InvoicingTable extends Table
 
         return $query;
     }
+    
 
     /**
      * Build DataTable class.
@@ -83,7 +84,6 @@ class InvoicingTable extends Table
             $view = route('superuser.finance.invoicing.detail', $model->do_id);
             $print = route('superuser.finance.invoicing.print', $model);
             $print_full = route('superuser.finance.invoicing.print2', $model);
-            $download = route('superuser.finance.invoicing.download_invoice', $model);
 
             switch ($model->status) {
                 case $model::STATUS['ACTIVE']:
@@ -100,12 +100,6 @@ class InvoicingTable extends Table
                         </a>
                         <a href=\"{$print_full}\">
                             <button type=\"button\" class=\"btn btn-outline-success btn-sm btn-flat\" title=\"Print Full\">
-                                <i class=\"fa fa-print\"></i>
-                            </button>
-                        </a>
-
-                        <a href=\"{$download}\">
-                            <button type=\"button\" class=\"btn btn-outline-danger btn-sm btn-flat\" title=\"Print Full\">
                                 <i class=\"fa fa-print\"></i>
                             </button>
                         </a>

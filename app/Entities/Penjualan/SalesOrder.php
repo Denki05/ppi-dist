@@ -4,6 +4,7 @@ namespace App\Entities\Penjualan;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use App\Entities\Penjualan\SalesOrderItem;
 use App\Entities\Account\Superuser;
 use App\Entities\Account\Superuser as AccountSuperuser;
 
@@ -89,6 +90,7 @@ class SalesOrder extends Model
     	0 => 'NEW',
     	1 => 'PAID',
         2 => 'COPY',
+        3 => 'OVERPAID',
     ];
 
     const TYPE_TRANSACTION = [
@@ -164,9 +166,12 @@ class SalesOrder extends Model
     public function vendor(){
         return $this->BelongsTo('App\Entities\Master\Vendor','vendor_id','id');
     }
-    public function so_detail(){
-    	return $this->hasMany('App\Entities\Penjualan\SalesOrderItem','so_id');
+
+    public function so_detail()
+    {
+        return $this->hasMany('App\Entities\Penjualan\SalesOrderItem', 'so_id');
     }
+
     public function do(){
         return $this->hasMany('App\Entities\Penjualan\PackingOrder', 'so_id', 'id');
     }
