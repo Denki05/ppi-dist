@@ -63,6 +63,8 @@ Route::group([
         Route::get('/print_invoice_beli/{id}', 'CashbackController@print_invoice_beli')->name('print_invoice_beli');
         Route::get('/print_invoice_jual/{id}', 'CashbackController@print_invoice_jual')->name('print_invoice_jual');
         Route::get('/pageReport', 'CashbackController@pageReport')->name('pageReport');
+        Route::get('/pageReportBeli', 'CashbackController@pageReportBeli')->name('pageReportBeli');
+        Route::get('/pageReportJual', 'CashbackController@pageReportJual')->name('pageReportJual');
         Route::get('/json2', 'CashbackController@json2')->name('json2');
     });
     Route::resource('cashback', 'CashbackController')->except(['create']);

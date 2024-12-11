@@ -8,7 +8,7 @@ use Carbon\Carbon;
 use Illuminate\Http\Request;
 use DB;
 
-class InvoiceTaxBeliTable extends Table
+class InvoiceTaxJualTable extends Table
 {
     private function query(Request $request)
     {
@@ -30,7 +30,7 @@ class InvoiceTaxBeliTable extends Table
                 '),
                 'finance_invoice_mitra.status as status',
             )
-            ->where('finance_invoice_mitra.type', 2)
+            ->where('finance_invoice_mitra.type', 1)
             // ->where('finance_invoice_mitra.status',1)
             ->whereMonth('finance_invoice_mitra.date', $month)
             ->whereYear('finance_invoice_mitra.date', $year) 
@@ -54,7 +54,7 @@ class InvoiceTaxBeliTable extends Table
         $table->addColumn('action', function (InvoiceTax $model) {
             if ($model->status == $model::STATUS['ACTIVE']) {
                 $print = route('superuser.accounting.invoice_tax.print_invoice', $model->id);
-                $destroy = route('superuser.accounting.invoice_tax.destroy_beli', $model->id);
+                $destroy = route('superuser.accounting.invoice_tax.destroy_jual', $model->id);
                 
                 return "
                     <a href=\"{$print}\">

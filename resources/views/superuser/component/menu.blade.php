@@ -280,7 +280,16 @@
                                 <i class="fa-solid fa-coins"></i> Finance
                             </a>
                             <ul class="dropdown-menu">
-                                <li><a class="dropdown-item" href="{{ route('superuser.finance.cashback.pageReport') }}">Araya Report</a></li>
+                                <!-- <li><a class="dropdown-item" href="{{ route('superuser.finance.cashback.pageReport') }}">Araya Report</a></li> -->
+                                <li class="submenu submenu-md dropend">
+                                    <a class="dropdown-item dropdown-toggle" role="button"
+                                        data-bs-toggle="dropdown" aria-expanded="false"><i class="fa-solid fa-code-branch"></i> Araya Report</a>
+                                    <ul class="dropdown-menu">
+                                        <li><a class="dropdown-item" href="{{ route('superuser.finance.cashback.pageReport') }}">Cashback</a></li>
+                                        <li><a class="dropdown-item" href="{{ route('superuser.finance.cashback.pageReportBeli') }}">Beli</a></li>
+                                        <li><a class="dropdown-item" href="{{ route('superuser.finance.cashback.pageReportJual') }}">Jual</a></li>
+                                    </ul>
+                                </li>
                                 <li><a class="dropdown-item" href="{{ route('superuser.finance.payable.pageReport') }}">Laporan Pembayaran</a></li>
                                 <li><a class="dropdown-item" href="{{ route('superuser.finance.invoicing.pageReport') }}">Piutang Faktur</a></li>
                             </ul>

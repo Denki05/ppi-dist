@@ -472,4 +472,89 @@ class CashbackController extends Controller
         // return view('superuser.finance.invoicing.index' ,$data);
         return view($this->view."report",$data);
     }
+
+    public function pageReportBeli(Request $request)
+    {
+        // Access control
+        if (Auth::user()->is_superuser == 0) {
+            if (empty($this->access) || empty($this->access->user) || $this->access->can_read == 0) {
+                return redirect()->route('superuser.index')->with('error', 'Anda tidak punya akses untuk membuka menu terkait');
+            }
+        }
+
+        // Default to current month and year if no filters are provided
+        $month = $request->get('month', date('m')); // Default to current month
+        $year = $request->get('year', date('Y'));   // Default to current year
+
+        // Query the cashback data
+        $query = DB::table('finance_cashback AS fc')
+            ->leftJoin('master_customer_other_addresses AS mcoa', 'fc.customer_other_address_id', '=', 'mcoa.id')
+            ->leftJoin('penjualan_do AS pdo', 'fc.do_id', '=', 'pdo.id')
+            ->leftJoin('penjualan_so AS pso', 'pdo.so_id', '=', 'pso.id')
+            ->leftJoin('finance_cashback_detail AS fcd', 'fc.id', '=', 'fcd.cashback_id')
+            ->select(
+                'pso.so_date AS date', 
+                'fc.code AS code', 
+                'mcoa.name AS customer_name', 
+                'mcoa.text_kota AS customer_kota', 
+                DB::raw('SUM(fcd.amount_cashback) AS total')
+            )
+            ->groupBy('fc.id', 'fc.code', 'pso.so_date', 'mcoa.name', 'mcoa.text_kota');
+
+        // Apply filters BEFORE calling get()
+        if ($month) {
+            $query->whereMonth('pso.so_date', $month);
+        }
+        if ($year) {
+            $query->whereYear('pso.so_date', $year);
+        }
+
+        // Execute the query
+        $data['cashback'] = $query->get();
+
+        return view($this->view . "beli", $data);
+    }
+
+    public function pageReportJual(Request $request)
+    {
+        // Access control
+        if (Auth::user()->is_superuser == 0) {
+            if (empty($this->access) || empty($this->access->user) || $this->access->can_read == 0) {
+                return redirect()->route('superuser.index')->with('error', 'Anda tidak punya akses untuk membuka menu terkait');
+            }
+        }
+
+        // Default to current month and year if no filters are provided
+        $month = $request->get('month', date('m')); // Default to current month
+        $year = $request->get('year', date('Y'));   // Default to current year
+
+        // Query the cashback data
+        $query = DB::table('finance_cashback AS fc')
+            ->leftJoin('master_customer_other_addresses AS mcoa', 'fc.customer_other_address_id', '=', 'mcoa.id')
+            ->leftJoin('penjualan_do AS pdo', 'fc.do_id', '=', 'pdo.id')
+            ->leftJoin('penjualan_so AS pso', 'pdo.so_id', '=', 'pso.id')
+            ->leftJoin('finance_cashback_detail AS fcd', 'fc.id', '=', 'fcd.cashback_id')
+            ->select(
+                'pso.so_date AS date', 
+                'fc.code AS code', 
+                'mcoa.name AS customer_name', 
+                'mcoa.text_kota AS customer_kota', 
+                DB::raw('SUM(fcd.subtotal_item_idr) AS total')
+            )
+            ->groupBy('fc.id', 'fc.code', 'pso.so_date', 'mcoa.name', 'mcoa.text_kota');
+
+        // Apply filters BEFORE calling get()
+        if ($month) {
+            $query->whereMonth('pso.so_date', $month);
+        }
+        if ($year) {
+            $query->whereYear('pso.so_date', $year);
+        }
+
+        // Execute the query
+        $data['cashback'] = $query->get();
+
+        return view($this->view . "jual", $data);
+        
+    }
 }
