@@ -19,7 +19,7 @@ use App\Entities\Gudang\PurchaseOrderDetail;
 use App\Entities\Gudang\StockMove;
 use App\Entities\Master\ProductMinStock;
 use App\Entities\Master\ProductPack;
-use App\Entities\Finance\SettingFinance;
+use App\Notifications\ReceivingNotification;
 use App\Http\Controllers\Controller;
 use App\Repositories\MasterRepo;
 use Illuminate\Http\Request;
@@ -298,6 +298,10 @@ class ReceivingController extends Controller
                             return $this->response(200, $response);
                         }
                     }
+
+                    // add notif
+                    $user = User::find(32);
+                    $user->notify(new ReceivingNotification($receiving));
                 }
             } catch (\Exception $e) {
                 // dd($e);

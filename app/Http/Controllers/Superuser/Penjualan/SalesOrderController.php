@@ -42,6 +42,7 @@ use Illuminate\Support\Facades\Response;
 use Org_Heigl\Ghostscript\Ghostscript;
 use App\Helper\LogActivity;
 use App\Notifications\SoNotification;
+use Illuminate\Support\Facades\Log;
 use Imagick;
 use Validator;
 // use Twilio\Rest\Client;
@@ -498,6 +499,7 @@ class SalesOrderController extends Controller
                 }catch (\Exception $e) {
                     dd($e);
                     DB::rollBack(); // Rollback in case of any exception
+                    Log::error('Sales Order creation failed: ' . $e->getMessage());
                     $response['notification'] = [
                         'alert' => 'block',
                         'type' => 'alert-danger',

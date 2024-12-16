@@ -1022,9 +1022,9 @@ class SalesOrderPpnController extends Controller
                 abort(404);
             }
 
-            if ($sales_order->count_rev > 0) {
-                return $this->response(400, ['failed' => 'Invoice sudah terbuat!']);
-            }
+            // if ($sales_order->count_rev > 0) {
+            //     return $this->response(400, ['failed' => 'Invoice sudah terbuat!']);
+            // }
 
             $sales_order->deleted_by = Auth::id();
             $sales_order->delete();

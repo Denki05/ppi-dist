@@ -18,6 +18,8 @@ use App\Entities\Setting\UserMenu;
 use App\Repositories\CodeRepo;
 use App\Entities\Penjualan\PackingOrder;
 use App\Helper\LogActivity;
+use App\Notifications\PayableNotification;
+use App\Entities\Account\User;
 use Illuminate\Support\Facades\Log;
 use DB;
 use Auth;
@@ -214,6 +216,10 @@ class PayableController extends Controller
 
             // Logging
             Log::info("Payable {$payable->code} Created by user " . Auth::id());
+
+            // add notif
+            $user = User::find(36);
+            $user->notify(new PayableNotification($payable));
 
             return response()->json([
                 'IsError' => false,
@@ -450,6 +456,14 @@ class PayableController extends Controller
 
             // Logging
             Log::info("Payable {$payable->code} approved by user " . Auth::id());
+
+            // add notif
+            $userIds = [32, 33];
+            $users = User::whereIn('id', $userIds)->get();
+
+            foreach ($users as $user) {
+                $user->notify(new PayableNotification($payable));
+            }
 
             // Response sukses
             $response['notification'] = [

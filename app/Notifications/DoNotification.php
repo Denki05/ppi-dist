@@ -46,6 +46,7 @@ class DoNotification extends Notification
         'customer' => $this->do->member->name,
         'customer_kota' => $this->do->member->text_kota,
         'created_at' => $this->do->created_at,
+        'status' => $this->do->status, // Added status field
     ];
 }
 }

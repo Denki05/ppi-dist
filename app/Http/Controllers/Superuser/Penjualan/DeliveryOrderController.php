@@ -27,6 +27,7 @@ use App\Entities\Master\Warehouse;
 use App\Entities\Gudang\StockMove;
 use App\Entities\Setting\UserMenu;
 use App\Entities\Account\User;
+use App\Notifications\DoNotification;
 use App\Repositories\CodeRepo;
 use Illuminate\Support\Collection;
 use Validator;
@@ -533,6 +534,16 @@ class DeliveryOrderController extends Controller
 
             // Commit transaction
             DB::commit();
+
+            // add notif
+            // $user = User::find(32);
+            // $user->notify(new DoNotification($get_do));
+            $userIds = [32, 36];
+            $users = User::whereIn('id', $userIds)->get();
+
+            foreach ($users as $user) {
+                $user->notify(new DoNotification($detail_do));
+            }
 
             LogActivity::addToLog('Update Resi DO: ' . $detail_do->do_code);
             return redirect()->route('superuser.penjualan.delivery_order.index')->with('success','DO berhasil update resi!');
