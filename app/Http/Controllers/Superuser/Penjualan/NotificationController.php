@@ -122,14 +122,17 @@ class NotificationController extends Controller
 
     public function unread_all_notif(Request $request)
     {
-        $user = Auth::id(); // Get the currently authenticated user ID
+        $user = Auth::id();
 
-        // Update all notifications for the user, marking them as read
-        DB::table('notifications')
-            ->where('notifiable_id', $user)
-            ->whereNull('read_at')
-            ->update(['read_at' => now()]);
+        try {
+            DB::table('notifications')
+                ->where('notifiable_id', $user)
+                ->whereNull('read_at')
+                ->update(['read_at' => now()]);
 
-        return back()->with('success', 'Semua notifikasi telah ditandai sebagai telah dibaca.');
+            return response()->json(['success' => true, 'message' => 'Semua notifikasi telah ditandai sebagai telah dibaca.']);
+        } catch (\Exception $e) {
+            return response()->json(['success' => false, 'message' => 'Gagal menandai semua notifikasi.', 'error' => $e->getMessage()]);
+        }
     }
 }

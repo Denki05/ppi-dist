@@ -575,18 +575,19 @@
 
         // Submit the form to mark all notifications as read
         $.ajax({
-            uurl: '{{ route('superuser.penjualan.notification.unread_all_notif') }}',
+            url: '{{ route('superuser.penjualan.notification.unread_all_notif') }}', // URL diperbaiki
             type: 'POST',
             data: {
                 _token: '{{ csrf_token() }}'
             },
             success: function(response) {
-                // Reload the page after success
-                location.reload();
+                // Reload notifications after success
+                alert('Semua notifikasi telah ditandai sebagai telah dibaca.');
+                reloadNotifications(); // Panggil fungsi reload untuk memperbarui daftar notifikasi
             },
             error: function(xhr) {
                 console.error('An error occurred:', xhr.responseText);
-                alert('Failed to mark all notifications as read.');
+                alert('Gagal menandai semua notifikasi sebagai telah dibaca.');
             }
         });
     });

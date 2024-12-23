@@ -41,7 +41,7 @@
           <div class="form-row">
             <div class="form-group col-md-6">
               <label for="so_date">Tanggal Nota</label>
-              <input type="date" name="so_date" class="form-control">
+              <input type="date" name="so_date" class="form-control" required>
             </div>
             <div class="form-group col-md-6">
               <label for="type_transaction">Type Transaksi</label>

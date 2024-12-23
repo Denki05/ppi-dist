@@ -1197,7 +1197,7 @@ class SalesOrderController extends Controller
                     $sales_order->sales_id = $request->sales_id;
                     
                     $sales_order->ekspedisi_id = $request->ekspedisi ?? null;
-                    $sales_order->so_date = date("y-m-d", strtotime($request->so_date));
+                    $sales_order->so_date = date("Y-m-d", strtotime($request->so_date));
                     $sales_order->rekening = $request->rekening;
                     $sales_order->shipping_cost_buyer = $request->shipping_cost_buyer ?? 0;
                     $sales_order->status = 4;
