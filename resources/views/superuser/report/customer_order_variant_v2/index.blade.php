@@ -35,8 +35,14 @@
                 @endforeach
               </select>
             </div>
-
-           
+            @if($superuser->division == "Management" OR $superuser->division == "Developer")
+              <div class="col-md-2 align-self-center">
+                <div class="form-check">
+                  <input type="checkbox" class="form-check-input" name="nominal" value="1" id="nominal_show" onclick="handleClick(this);">
+                  <label class="form-check-label" for="nominal_show">Show Nominal</label>
+                </div>
+              </div>
+            @endif
           </div>
 
           <div class="form-group row">

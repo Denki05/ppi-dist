@@ -131,7 +131,7 @@ class ReportCustmerOrderVariantController extends Controller
                     ? $basePath . "customer_order_variant_nominal.rpt"
                     : $basePath . "customer_order_variant.rpt";
 
-        $my_pdf = $basePath . "export\\customer-order-variant-" . ($nominal == 1 ? "nominal-" : "") . $date . ".pdf";
+        $my_pdf = $basePath . "export\\customer-order-history-" . ($nominal == 1 ? "nominal-" : "") . $date . ".pdf";
         
         $my_server = "LOCAL_3";
         $my_user = "root";

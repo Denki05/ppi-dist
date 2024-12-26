@@ -52,7 +52,7 @@ class SalesOrderAwalTable extends Table
                 DB::raw('
                     CASE 
                         WHEN penjualan_so.created_by = 26 THEN "Lindy"
-                        WHEN penjualan_so.created_by = 27 THEN "Alivi"
+                        WHEN penjualan_so.created_by = 38 THEN "Alivi"
                         WHEN penjualan_so.created_by = 32 THEN "Nia"
                         WHEN penjualan_so.created_by = 33 THEN "Putri"
                         WHEN penjualan_so.created_by = 34 THEN "Santi"

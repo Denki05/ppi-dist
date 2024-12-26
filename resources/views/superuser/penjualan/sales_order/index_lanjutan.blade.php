@@ -158,9 +158,13 @@
                           <i class="fas fa-clipboard-list"></i> Print Manifest
                         </a>
                       @if($row->type_transaction == 'TEMPO' OR $row->type_transaction == "COD" OR $row->type_transaction == "MARKETPLACE")
-                        <!-- <a href="#" class="btn btn-danger btn-sm btn-flat btn-frmedit" data-id="{{$row->id}}"><i class="fa fa-edit"></i> Revisi</a> -->
                         <a href="javascript:saveConfirmation('{{ route('superuser.penjualan.packing_order.revisi', $row->id) }}')" class="btn btn-danger btn-sm btn-flat" data-id="{{$row->id}}"><i class="fa fa-edit"></i> Revisi</a>
                       @endif
+                      @role('Developer')
+                        @if($row->type_transaction == 'CASH')
+                          <a href="javascript:saveConfirmation('{{ route('superuser.penjualan.packing_order.revisi', $row->id) }}')" class="btn btn-dark btn-sm btn-flat" data-id="{{$row->id}}"><i class="fa fa-edit"></i> Revisi</a>
+                        @endif
+                      @endrole
                     @endif
                       </td>
                   @endif
