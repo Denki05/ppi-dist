@@ -61,7 +61,7 @@ class CashbackController extends Controller
         }
 
         // Define the range of years for filtering
-        $currentYear = now()->year;
+        $currentYear = date('Y');
         $years = range($currentYear, $currentYear - 10); // Generate a range of 10 years back
 
         $start = Carbon::now()->startOfYear();
@@ -83,27 +83,28 @@ class CashbackController extends Controller
                 ];
             }
 
-        $bulan = [
-            1 => 'Januari',
-            2 => 'Februari',
-            3 => 'Maret',
-            4 => 'April',
-            5 => 'Mei',
-            6 => 'Juni',
-            7 => 'Juli',
-            8 => 'Agustus',
-            9 => 'September',
-            10 => 'Oktober',
-            11 => 'November',
-            12 => 'Desember',
-        ];
-
-        // Get the selected month, default to the current month
-        $selectedBulan = $request->bulan ?? now()->month;
-        $selectedTahun = $request->tahun ?? $currentYear;
+            $bulan = [
+                1 => 'Januari',
+                2 => 'Februari',
+                3 => 'Maret',
+                4 => 'April',
+                5 => 'Mei',
+                6 => 'Juni',
+                7 => 'Juli',
+                8 => 'Agustus',
+                9 => 'September',
+                10 => 'Oktober',
+                11 => 'November',
+                12 => 'Desember',
+            ];
+        
+                // Get the selected month, default to the current month
+            $selectedBulan = $request->bulan ?? now()->month;
+            $selectedTahun = $request->tahun ?? $currentYear;
 
         $data = [
             'months' => $months,
+            'years' => $years,
             'customer' => $customer,
             'bulan' => $bulan,
             'selectedBulan' => $selectedBulan,
@@ -129,11 +130,13 @@ class CashbackController extends Controller
 
         $invoice = PackingOrder::find($id);
 
+        // dd($invoice);
+
         $data = [
             'invoice' => $invoice
         ];
 
-        return view($this->view . "create", $data);
+        return view($this->view ."create", $data);
     }
 
     /**
@@ -248,6 +251,7 @@ class CashbackController extends Controller
 
         if ($cashback->delete()) {
             $updateDo = PackingOrder::where('id', $cashback->do_id)->update(['cashback_status' => 0]);
+            $updateCashback = Cashback::where('id', $cashback->id)->update(['status' => 0]);
             return response()->json(['message' => 'Cashback deleted successfully.']);
         } else {
             return response()->json(['message' => 'Failed to delete cashback.'], 500);
@@ -256,45 +260,60 @@ class CashbackController extends Controller
 
     public function get_invoice(Request $request)
     {
-        $monthInvoice = $request->input('month_invoice');
-        $customerName = $request->input('customer_name');
+        $yearInvoice = $request->input('year_invoice');
+        $monthInvoice = $request->input('month_invoice'); // Get the month_invoice value
+        $customerName = $request->input('customer_name'); // Get the customer_name value
 
         $invoice = DB::table('penjualan_do')
             ->leftJoin('master_customer_other_addresses', 'master_customer_other_addresses.id', '=', 'penjualan_do.customer_other_address_id')
-            ->leftJoin('penjualan_so', 'penjualan_so.id', '=', 'penjualan_do.so_id')
-            ->where('penjualan_do.status', 6)
-            ->where('penjualan_do.cashback_status', 0)
-            ->where('penjualan_so.payment_status', 1)
-            ->where(function($query) use ($monthInvoice, $customerName, $request) {
-                $query->whereNull('penjualan_do.customer_other_address_id');
+            // Only include status 6 globally
+            ->where(function($query) use ($request, $yearInvoice, $monthInvoice, $customerName) {
+                $query->whereNull('penjualan_do.customer_other_address_id')
+                    ->where('penjualan_do.cashback_status', 0)
+                    ->where('penjualan_do.status', 6);
+
+                if ($yearInvoice) {
+                    $query->orWhere(function($subQuery) use ($yearInvoice) {
+                        $subQuery->whereYear('penjualan_do.created_at', $yearInvoice)
+                            ->where('penjualan_do.cashback_status', 0)
+                            ->where('penjualan_do.status', 6);
+                    });
+                }
 
                 if ($monthInvoice) {
-                    $query->orWhereMonth('penjualan_do.created_at', $monthInvoice);
-                }
-
-                if ($customerName) {
-                    $query->orWhere('master_customer_other_addresses.id', $customerName);
+                    $query->orWhere(function($subQuery) use ($monthInvoice) {
+                        $subQuery->whereMonth('penjualan_do.created_at', $monthInvoice)
+                                ->where('penjualan_do.cashback_status', 0)
+                                ->where('penjualan_do.status', 6);
+                    });
                 }
             })
-            ->where(function($query) use ($request) {
+            ->orWhere(function($query) use ($request, $customerName) {
+                if ($customerName) {
+                    $query->where('master_customer_other_addresses.id', $customerName)
+                        ->where('penjualan_do.cashback_status', 0)
+                        ->where('penjualan_do.status', 6);
+                }
+            })
+            ->where(function($query) use ($request){
                 $query->where('penjualan_do.do_code', 'LIKE', $request->input('q', '') . '%');
-                // Uncomment if you want to include the customer name in the search
-                // ->orWhere('master_customer_other_addresses.name', 'LIKE', $request->input('q', '') . '%');
             })
             ->select(
-                'penjualan_do.id AS id',
-                'penjualan_do.do_code AS code',
-                'master_customer_other_addresses.name AS store',
+                'penjualan_do.id AS id', 
+                'penjualan_do.do_code AS code', 
+                'master_customer_other_addresses.name AS store', 
                 'master_customer_other_addresses.text_kota AS city'
             )
             ->get();
 
-        $results = $invoice->map(function($row) {
-            return [
+        $results = [];
+
+        foreach($invoice as $row) {
+            $results[] = [
                 'id' => $row->id,
                 'text' => $row->code,
             ];
-        });
+        }
 
         return ['results' => $results];
     }
@@ -317,7 +336,7 @@ class CashbackController extends Controller
         $my_server = "LOCAL"; 
         $my_user = "root"; 
         $my_password = ""; 
-        $my_database = "ppi-dist";
+        $my_database = "ppi_araya";
         $COM_Object = "CrystalDesignRunTime.Application";
 
 
@@ -347,20 +366,29 @@ class CashbackController extends Controller
 
         $file = 'C:\\xampp\\htdocs\\ppi-dist\\public\\cr\\invoice\\export\\'.$result->code.'-BELI'.'.pdf';
 
-        // if($get_do->type_transaction == 1 && $get_do->so->payment_status == 1){
-        //     $file->SetWatermarkText("PAID");
-        // }elseif($get_do->type_transaction == 2 && $get_do->so->payment_status == 2){
-        //     $file->SetWatermarkText("COPY");
-        // }
+        if (file_exists($file)) {
+            // Set headers for file download
+            header("Content-Description: File Transfer");
+            header("Content-Type: application/pdf");
+            header("Content-Disposition: attachment; filename=\"" . basename($file) . "\"");
+            header("Content-Transfer-Encoding: binary");
+            header("Expires: 0");
+            header("Cache-Control: must-revalidate");
+            header("Pragma: public");
+            header("Content-Length: " . filesize($file));
 
-        header("Content-Description: File Transfer"); 
-        header("Content-Type: application/octet-stream"); 
-        header("Content-Transfer-Encoding: Binary"); 
-        header("Content-Disposition: attachment; filename=\"". basename($file) ."\""); 
-        ob_clean();
-        flush();
-        readfile ($file);
-        exit();
+            // Clear the output buffer and read the file
+            ob_clean();
+            flush();
+            readfile($file);
+
+            // Delete the file after download
+            unlink($file);
+
+            exit();
+        } else {
+            return redirect()->route('superuser.index')->with('error', 'File not found.');
+        }
     }
 
     public function print_invoice_jual($id)
@@ -381,7 +409,7 @@ class CashbackController extends Controller
         $my_server = "LOCAL"; 
         $my_user = "root"; 
         $my_password = ""; 
-        $my_database = "ppi-dist";
+        $my_database = "ppi_araya";
         $COM_Object = "CrystalDesignRunTime.Application";
 
 
@@ -411,20 +439,29 @@ class CashbackController extends Controller
 
         $file = 'C:\\xampp\\htdocs\\ppi-dist\\public\\cr\\invoice\\export\\'.$result->code.'-JUAL'.'.pdf';
 
-        // if($get_do->type_transaction == 1 && $get_do->so->payment_status == 1){
-        //     $file->SetWatermarkText("PAID");
-        // }elseif($get_do->type_transaction == 2 && $get_do->so->payment_status == 2){
-        //     $file->SetWatermarkText("COPY");
-        // }
+        if (file_exists($file)) {
+            // Set headers for file download
+            header("Content-Description: File Transfer");
+            header("Content-Type: application/pdf");
+            header("Content-Disposition: attachment; filename=\"" . basename($file) . "\"");
+            header("Content-Transfer-Encoding: binary");
+            header("Expires: 0");
+            header("Cache-Control: must-revalidate");
+            header("Pragma: public");
+            header("Content-Length: " . filesize($file));
 
-        header("Content-Description: File Transfer"); 
-        header("Content-Type: application/octet-stream"); 
-        header("Content-Transfer-Encoding: Binary"); 
-        header("Content-Disposition: attachment; filename=\"". basename($file) ."\""); 
-        ob_clean();
-        flush();
-        readfile ($file);
-        exit();
+            // Clear the output buffer and read the file
+            ob_clean();
+            flush();
+            readfile($file);
+
+            // Delete the file after download
+            unlink($file);
+
+            exit();
+        } else {
+            return redirect()->route('superuser.index')->with('error', 'File not found.');
+        }
     }
 
     public function pageReport(Request $request)

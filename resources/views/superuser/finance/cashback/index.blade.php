@@ -75,6 +75,18 @@
         <form>
           @csrf
           <div class="form-group row">
+            <!-- Year -->
+            <label class="col-md-3 col-form-label text-right" for="month_invoice">Tahun <span class="text-danger">*</span></label>
+            <div class="col-md-7">
+              <select class="js-select2 form-control" id="year_invoice" name="year_invoice" data-placeholder="Search" style="width: 100%;">
+                <option>Pilih Tahun</option>
+                @foreach($years AS $key)
+                  <option value="{{ $key }}">{{ $key }}</option>
+                @endforeach
+              </select>
+            </div>
+
+            <!-- Month -->
             <label class="col-md-3 col-form-label text-right" for="month_invoice">Bulan <span class="text-danger">*</span></label>
             <div class="col-md-7">
               <select class="js-select2 form-control" id="month_invoice" name="month_invoice" data-placeholder="Search" style="width: 100%;">
