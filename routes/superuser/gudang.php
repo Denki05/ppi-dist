@@ -12,6 +12,9 @@ Route::group([
         Route::get('{warehouse_id}/detail/{product_id}', 'StockController@detail')->name('detail');
         Route::get('{warehouse}/{startDate}/{endDate}/exportTransactions', 'StockController@exportTransactions')->name('exportTransactions');
         Route::get('/backfillMonthEndBalances', 'StockController@backfillMonthEndBalances')->name('backfillMonthEndBalances');
+        Route::get('/export_stock_db', 'StockController@export_stock_db')->name('export_stock_db');
+        Route::get('/import_template', 'StockController@import_template')->name('import_template');
+        Route::post('/import', 'StockController@import')->name('import');
     });
 
     Route::group(['as' => 'stock_adjustment.', 'prefix' => '/stock_adjustment'], function () {

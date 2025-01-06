@@ -15,9 +15,11 @@ use App\DataTables\Finance\PayableTable;
 use App\DataTables\Report\PaymentReportTable;
 use App\Entities\Penjualan\SalesOrder;
 use App\Entities\Setting\UserMenu;
+use App\Entities\Account\User;
 use App\Repositories\CodeRepo;
 use App\Entities\Penjualan\PackingOrder;
 use App\Helper\LogActivity;
+use App\Notifications\PayableNotification;
 use Illuminate\Support\Facades\Log;
 use DB;
 use Auth;
@@ -210,10 +212,12 @@ class PayableController extends Controller
             // Commit transaction
             DB::commit();
 
-            // LogActivity::addToLog('Create Payable:' . $payable->code);
-
             // Logging
             Log::info("Payable {$payable->code} Created by user " . Auth::id());
+
+            // add notif
+            $user = User::find(36);
+            $user->notify(new PayableNotification($payable));
 
             return response()->json([
                 'IsError' => false,
@@ -221,6 +225,7 @@ class PayableController extends Controller
             ], 200);
 
         } catch (\Throwable $e) {
+            // dd($e);
             // Rollback transaction and log error
             DB::rollback();
             Log::error('Payable creation failed: ' . $e->getMessage());
@@ -457,6 +462,10 @@ class PayableController extends Controller
 
             // Logging
             Log::info("Payable {$payable->code} approved by user " . Auth::id());
+
+            // add notif
+            $user = User::find(32);
+            $user->notify(new PayableNotification($payable));
 
             // Response sukses
             $response['notification'] = [

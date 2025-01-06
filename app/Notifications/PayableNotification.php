@@ -7,18 +7,21 @@ use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Notification;
 
-class DoNotification extends Notification
+class PayableNotification extends Notification
 {
     use Queueable;
+
+    protected $payable;
 
     /**
      * Create a new notification instance.
      *
+     * @param  object  $payable
      * @return void
      */
-    public function __construct($do)
+    public function __construct($payable)
     {
-        $this->do = $do;
+        $this->payable = $payable;
     }
 
     /**
@@ -41,12 +44,12 @@ class DoNotification extends Notification
     public function toArray($notifiable)
     {
         return [
-            'id' => $this->do->id,
-            'code' => $this->do->do_code,
-            'customer' => $this->do->member->name,
-            'customer_kota' => $this->do->member->text_kota,
-            'created_at' => $this->do->created_at,
-            'status' => $this->do->status, // Added status field
+            'id' => $this->payable->id,
+            'code' => $this->payable->code,
+            'customer' => $this->payable->customer->name,
+            'customer_kota' => $this->payable->customer->text_kota,
+            'created_at' => $this->payable->created_at,
+            'status' => $this->payable->status, // Added status field
         ];
     }
 }

@@ -404,7 +404,7 @@
         <!-- Notification Dropdown -->
         <li class="nav-item dropdown">
           <a class="nav-link dropdown-toggle" href="#" id="notificationDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
-            <i class="bi bi-bell"></i> Notifications <span class="badge badge-danger">{{ $notifCount > 0 ? $notifCount : '0' }}</span>
+            <i class="bi bi-bell"></i> <span class="badge badge-danger">{{ $notifCount > 0 ? $notifCount : '0' }}</span>
           </a>
           <div class="dropdown-menu dropdown-menu-right" aria-labelledby="notificationDropdown">
                     <div class="card" style="width: 45rem;">
@@ -468,69 +468,92 @@
     });
 
     function reloadNotifications() {
-          $.ajax({
-              url: '{{ route('superuser.penjualan.notification.getNotifData') }}',
-              type: 'GET',
-              success: function(response) {
-                  // Update notification count
-                  $('#notifCount').text(response.notifCount > 0 ? response.notifCount : '0');
+        $.ajax({
+            url: '{{ route('superuser.penjualan.notification.getNotifData') }}',
+            type: 'GET',
+            success: function(response) {
+                // Update notification count
+                $('#notifCount').text(response.notifCount > 0 ? response.notifCount : '0');
 
-                  // Update notification list
-                  var notifications = response.notifications;
-                  var notifHtml = '';
-                  if (notifications.length > 0) {
-                      notifications.forEach(function(notification) {
-                          var notifData = JSON.parse(notification.data);
-                          var pecah = (notifData.code || 'No code').split(',');
-                          var alertType = notification.type === 'App\\Notifications\\DoNotification' ? 'alert-success' : 'alert-info';
-                          var notifType = notification.type === 'App\\Notifications\\DoNotification' ? 'New DO:' : 'New SO:';
-                          var actionUrl = notification.type === 'App\\Notifications\\DoNotification' 
-                              ? `/superuser/penjualan/notification/unread_notif_do/${notification.id}/${notifData.id}`
-                              : `/superuser/penjualan/notification/unread_notif_so/${notification.id}/${notifData.id}`;
+                // Update notification list
+                var notifications = response.notifications;
+                var notifHtml = '';
 
-                          pecah.forEach(function(item) {
-                              notifHtml += `
-                                  <div class="list-group-item">
-                                      <div class="row align-items-center">
-                                          <div class="col-auto">
-                                              <span class="status-dot status-dot-animated bg-red d-block"></span>
-                                          </div>
-                                          <div class="col text-truncate">
-                                              <div class="alert ${alertType}" role="alert">
-                                                  [${new Date(notifData.created_at).toLocaleDateString()}] Customer ${notifData.customer} (${notifData.customer_kota}) ${notifType} <b>${item}</b>
-                                                  <form action="${actionUrl}" method="POST">
-                                                      <input type="hidden" name="_token" value="{{ csrf_token() }}">
-                                                      <button type="submit" class="btn btn-link">Process</button>
-                                                  </form>
-                                              </div>
-                                          </div>
-                                      </div>
-                                  </div>`;
-                          });
-                      });
-                  } else {
-                      notifHtml = `
-                          <div class="list-group-item">
-                              <div class="row align-items-center">
-                                  <div class="col text-truncate">
-                                      <span class="text-body d-block">No notifications</span>
-                                  </div>
-                              </div>
-                          </div>`;
-                  }
+                if (notifications.length > 0) {
+                    notifications.forEach(function(notification) {
+                        var notifData = JSON.parse(notification.data);
+                        var items = (notifData.code || 'No code').split(',');
+                        var alertType;
+                        var notifType;
+                        var actionUrl;
 
-                  $('#notifList').html(notifHtml);
-              },
-              error: function(xhr) {
-                  console.error('An error occurred:', xhr.responseText);
-              }
-          });
-        };
+                        if (notification.type === 'App\\Notifications\\DoNotification') {
+                            alertType = 'alert-success';
+                            if (notifData.status === 2) {
+                                notifType = 'New DO:';
+                                actionUrl = `/superuser/penjualan/notification/mark_as_read_do/${notification.id}/${notifData.id}`;
+                            } else if (notifData.status === 6) {
+                                notifType = 'DO Update Resi:';
+                                actionUrl = `/superuser/penjualan/notification/mark_as_read_only/${notification.id}`;
+                            }
+                        } else if (notification.type === 'App\\Notifications\\SoNotification') {
+                            alertType = 'alert-info';
+                            notifType = 'New SO:';
+                            actionUrl = `/superuser/penjualan/notification/mark_as_read_so/${notification.id}/${notifData.id}`;
+                        } else if (notification.type === 'App\\Notifications\\PayableNotification') {
+                            if (notifData.status === 2) {
+                                alertType = 'alert-success';
+                                notifType = 'Approved Payable:';
+                            } else {
+                                alertType = 'alert-warning';
+                                notifType = 'New Payable:';
+                            }
+                            actionUrl = `/superuser/penjualan/notification/mark_as_read_payable/${notification.id}`;
+                        }
 
-        // Reload notifications every 5 seconds
-        setInterval(reloadNotifications, 5000);
+                        items.forEach(function(item) {
+                            notifHtml += `
+                                <div class="list-group-item">
+                                    <div class="row align-items-center">
+                                        <div class="col-auto">
+                                            <span class="status-dot status-dot-animated bg-red d-block"></span>
+                                        </div>
+                                        <div class="col text-truncate">
+                                            <div class="alert ${alertType}" role="alert">
+                                                [${new Date(notifData.created_at).toLocaleDateString()}] Customer ${notifData.customer} (${notifData.customer_kota}) ${notifType} <b>${item}</b>
+                                                <form action="${actionUrl}" method="POST">
+                                                    <input type="hidden" name="_token" value="{{ csrf_token() }}">
+                                                    <button type="submit" class="btn btn-link">Process</button>
+                                                </form>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>`;
+                        });
+                    });
+                } else {
+                    notifHtml = `
+                        <div class="list-group-item">
+                            <div class="row align-items-center">
+                                <div class="col text-truncate">
+                                    <span class="text-body d-block">No notifications</span>
+                                </div>
+                            </div>
+                        </div>`;
+                }
 
-        // Initial load
-        reloadNotifications();
+                $('#notifList').html(notifHtml);
+            },
+            error: function(xhr) {
+                console.error('An error occurred:', xhr.responseText);
+            }
+        });
+    }
+    
+    // Reload notifications every 5 seconds
+    setInterval(reloadNotifications, 5000);
+
+    // Initial load
+    reloadNotifications();
 </script>
 @endpush

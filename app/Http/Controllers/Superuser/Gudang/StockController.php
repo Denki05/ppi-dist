@@ -22,8 +22,12 @@ use App\Entities\Gudang\MonthEndBalance;
 use App\Entities\Penjualan\SalesOrder;
 use Maatwebsite\Excel\Facades\Excel;
 use App\Exports\Gudang\StockTransactionExport;
+use App\Exports\Gudang\StockExport;
+use App\Exports\Gudang\StockImportTemplate;
+use App\Imports\Gudang\StockImport;
 use Illuminate\Support\Facades\Artisan;
 use App\Entities\Setting\UserMenu;
+use Validator;
 use Carbon\Carbon;
 use DB;
 use Auth;
@@ -108,9 +112,9 @@ class StockController extends Controller
             $sales_orders = SalesOrder::select(\DB::raw('penjualan_so_item.product_packaging_id, SUM(penjualan_so_item.qty_worked) as totalquantity'))
                 ->leftJoin('penjualan_so_item', 'penjualan_so_item.so_id', '=', 'penjualan_so.id')
                 ->where('penjualan_so.origin_warehouse_id', $warehouse)
-                ->where('penjualan_so.status', 4)
+                ->where('penjualan_so.status', '4')
                 ->whereHas('do', function ($query) {
-                    $query->where('status', '>', '2');
+                    $query->where('status_validate', '1');
                 })
                 ->groupBy('penjualan_so_item.product_packaging_id')
                 ->get();
@@ -123,11 +127,11 @@ class StockController extends Controller
                 }
             }
 
-            $sales_orders = SalesOrder::where('origin_warehouse_id', $warehouse)
-                ->where('penjualan_so.status', 4)
+            $sales_orders = SalesOrder::where('penjualan_so.origin_warehouse_id', $warehouse)
+                ->where('penjualan_so.status', '4')
                 ->where(function ($query) {
                     $query->whereHas('do', function ($query) {
-                        $query->where('status', '>', '2');
+                        $query->where('status_validate', '0');
                     })->orDoesntHave('do');
                 })
                 ->select(\DB::raw('penjualan_so_item.product_packaging_id, SUM(penjualan_so_item.qty_worked) as totalquantity'))
@@ -146,14 +150,14 @@ class StockController extends Controller
             $stock_adjusments = StockAdjustment::where('warehouse_id', $warehouse)
                 ->get();
 
-            foreach ($stock_adjusments as $stock_adjusment){
-                if($stock_adjusment->min == '0'){
+            foreach ($stock_adjusments as $stock_adjusment) {
+                if ($stock_adjusment->min == '0') {
                     if (!empty($collect[$stock_adjusment->product_packaging_id]['in'])) {
                         $collect[$stock_adjusment->product_packaging_id]['in'] += $stock_adjusment->plus;
                     } else {
                         $collect[$stock_adjusment->product_packaging_id]['in'] = $stock_adjusment->plus;
                     }
-                }else {
+                } else {
                     if (!empty($collect[$stock_adjusment->product_packaging_id]['out'])) {
                         $collect[$stock_adjusment->product_packaging_id]['out'] += $stock_adjusment->min;
                     } else {
@@ -300,7 +304,7 @@ class StockController extends Controller
                             'second_date' => 0,
                             'transaction' => $sales_order->code,
                             'in' => '',
-                            'out' => $detail->qty,
+                            'out' => $detail->qty_worked,
                             'balance' => '',
                             'description' => $detail->description ?? '',
                         ];
@@ -312,16 +316,16 @@ class StockController extends Controller
         $stock_adjusments = StockAdjustment::where('warehouse_id', $warehouse)
             ->get();
 
-        foreach($stock_adjusments as $stock_adjusment){
-            if($stock_adjusment->product_packaging_id == $decode_product){
+        foreach ($stock_adjusments as $stock_adjusment) {
+            if ($stock_adjusment->product_packaging_id == $decode_product) {
                 $collect[] = [
                     'created_at' => $stock_adjusment->created_at,
                     'second_date' => 0,
                     'transaction' => $stock_adjusment->code,
                     'in' => $stock_adjusment->plus,
-                    'out' => $stock_adjusment->min ?? '',
+                    'out' => $stock_adjusment->min,
                     'balance' => '',
-                    'description' => $stock_adjusment->note ?? '',
+                    'description' => $detail->note,
                 ];
             }
         }
@@ -534,5 +538,42 @@ class StockController extends Controller
             'success' => true,
             'message' => 'Month-end balances calculation initiated.',
         ]);
+    }
+
+    public function export_stock_db(Request $request)
+    {
+        $filename = 'Stock-Quantity-' . date('d-m-Y_H-i-s') . '.xlsx';
+        return Excel::download(new StockExport, $filename);
+    }
+
+    public function import_template(Request $request)
+    {
+        $filename = 'stock-import-template.xlsx';
+        return Excel::download(new StockImportTemplate, $filename);
+    }
+
+    public function import(Request $request)
+    {
+        // Access
+        if(Auth::user()->is_superuser == 0){
+            if(empty($this->access) || empty($this->access->user) || $this->access->can_create == 0){
+                return redirect()->route('superuser.index')->with('error','Anda tidak punya akses untuk membuka menu terkait');
+            }
+        }
+
+        $validator = Validator::make($request->all(), [
+            'import_file' => 'required|file|mimes:xls,xlsx|max:2048',
+        ]);
+
+        if ($validator->fails()) {
+            return redirect()->back()->withErrors($validator->errors()->all());
+        }
+
+        if ($validator->passes()) {
+            $import = new StockImport();
+            Excel::import($import, $request->import_file);
+
+            return redirect()->back()->with(['collect_success' => $import->success, 'collect_error' => $import->error]);
+        }
     }
 }

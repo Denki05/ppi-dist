@@ -5,6 +5,7 @@
   <span class="breadcrumb-item">Inventory</span>
   <span class="breadcrumb-item active">Stock</span>
 </nav>
+
 @if($errors->any())
 <div class="alert alert-danger alert-dismissable" role="alert">
   <button type="button" class="close" data-dismiss="alert" aria-label="Close">
@@ -16,8 +17,38 @@
   @endforeach
 </div>
 @endif
+
+@if(session()->has('collect_success') || session()->has('collect_error'))
+<div class="container">
+  <div class="row">
+    <div class="col pl-0">
+      <div class="alert alert-success alert-dismissable" role="alert" style="max-height: 300px; overflow-y: auto;">
+        <h3 class="alert-heading font-size-h4 font-w400">Successful Import</h3>
+        @foreach (session()->get('collect_success') as $msg)
+        <p class="mb-0">{{ $msg }}</p>
+        @endforeach
+      </div>
+    </div>
+    <div class="col pr-0">
+      <div class="alert alert-danger alert-dismissable" role="alert" style="max-height: 300px; overflow-y: auto;">
+        <h3 class="alert-heading font-size-h4 font-w400">Failed Import</h3>
+        @foreach (session()->get('collect_error') as $msg)
+        <p class="mb-0">{{ $msg }}</p>
+        @endforeach
+      </div>
+    </div>
+  </div>
+</div>
+@endif
+
 <div class="block">
+  @role('Developer')
   <div class="block-content">
+    <button type="button" class="btn btn-outline-info ml-10" data-toggle="modal" data-target="#modal-manage">Manage</button>
+  </div>
+  <hr class="my-20">
+  @endrole
+  <div class="block-content block-content-full">
     <div class="form-group row align-items-center">
       <label class="col-md-2 col-form-label" for="warehouse">Warehouse <span class="text-danger">*</span></label>
       <div class="col-md-4">
@@ -44,15 +75,14 @@
                   <i class="fa fa-file-excel"></i> Export All
               </a>
 
-              <button id="backfillBalancesButton" class="btn btn-primary">
+              <!-- <button id="backfillBalancesButton" class="btn btn-primary">
                 Balances
-              </button>
+              </button> -->
           </div>
       </div>
     </div>
 </div>
   </div>
-  <hr class="my-20">
   <div class="block-content block-content-full">
     <table id="datatable" class="table table-striped">
       <thead>
@@ -90,6 +120,12 @@
 @include('superuser.asset.plugin.select2')
 
 @section('modal')
+
+@include('superuser.component.modal-manage', [
+  'import_template_url' => route('superuser.gudang.stock.import_template'),
+  'import_url' => route('superuser.gudang.stock.import'),
+  'export_url' => route('superuser.gudang.stock.export_stock_db')
+])
 
 @endsection
 
