@@ -891,6 +891,7 @@ class SalesOrderPpnController extends Controller
                 return redirect()->route('superuser.index')->with('error','Anda tidak punya akses untuk membuka menu terkait');
             }
         }
+        
         $result = SalesOrder::where('id',$id)->first();
         if(empty($result)){
             abort(404);

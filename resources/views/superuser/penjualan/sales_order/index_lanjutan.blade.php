@@ -181,7 +181,7 @@
   <section id="content3">
     <div class="row mb-30">
       <div class="col-12">
-        <table class="table table-hover" id="so_progress">
+        <table class="table table-hover" id="sales_order_progress">
           <thead>
             <tr>
               <th>#</th>
@@ -555,31 +555,49 @@
             });
 
             $('#packing_order').DataTable( {
-                "paging":   true,
-                "ordering": true,
-                "info":     true,
-                "searching" : true,
-                "columnDefs": [{
-                "targets": 0,
-                "orderable": false
-                }]
+              paging:   true,
+                orderin: true,
+                info:     false,
+                searching : true,
+                order: [
+                  [2, 'asc'],
+                ],
+                pageLength: 10,
+                lengthMenu: [
+                  [10, 30, 100, -1],
+                  [10, 30, 100, 'All']
+                ], 
             });
 
-            $('#so_progress').DataTable( {
-                "paging":   true,
-                "ordering": true,
-                "info":     false,
-                "searching" : true,
+            $('#sales_order_progress').DataTable( {
+              paging:   true,
+                orderin: true,
+                info:     false,
+                searching : true,
                 order: [
-                [2, 'desc']
+                  [2, 'asc'],
                 ],
-                "columnDefs": [{
-                "targets": 0,
-                "orderable": false
-                }]
+                pageLength: 10,
+                lengthMenu: [
+                  [10, 30, 100, -1],
+                  [10, 30, 100, 'All']
+                ], 
             });
             
-            $('#do_cancel').DataTable( {});
+            $('#do_cancel').DataTable( {
+              paging:   true,
+                orderin: true,
+                info:     false,
+                searching : true,
+                order: [
+                  [2, 'asc'],
+                ],
+                pageLength: 10,
+                lengthMenu: [
+                  [10, 30, 100, -1],
+                  [10, 30, 100, 'All']
+                ], 
+            });
 
             $(document).on('click','.btn-delete',function(){
                 if(confirm("Apakah anda yakin ingin menghapus SO ini ? ")){
