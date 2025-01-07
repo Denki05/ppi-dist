@@ -40,46 +40,46 @@ $subtotal = 0;
     <div class="col-6">
       <div class="block">
         <div class="block-header block-header-default">
-          <h3 class="block-title">#Detail Nota</h3>
+          <h3 class="block-title">#Detail Nota {{ $result->code }}</h3>
         </div>
         <div class="block-content">
           <div class="form-row">
             <div class="form-group col-md-6">
               <label for="so_date">Tanggal Nota</label>
-              <input type="date" name="so_date" class="form-control" value="{{ $so_khusus->so_date }}" readonly>
+              <input type="date" name="so_date" class="form-control" value="{{ $result->so_date }}" readonly>
             </div>
             <div class="form-group col-md-6">
               <label for="type_transaction">Type Transaksi</label>
-              <input type="text" name="type_transaction" class="form-control" value="{{ $so_khusus->type_transaction }}" readonly>
+              <input type="text" name="type_transaction" class="form-control" value="{{ $result->type_transaction }}" readonly>
             </div>
           </div>
 
           <div class="form-row">
             <div class="form-group col-md-6">
               <label for="so_date">Sales Senior</label>
-              <input type="text" name="type_transaction" class="form-control" value="{{ $so_khusus->so_sales_senior() }}" readonly>
+              <input type="text" name="type_transaction" class="form-control" value="{{ $result->sales_senior() }}" readonly>
             </div>
             <div class="form-group col-md-6">
               <label for="type_transaction">Sales</label>
-              <input type="text" name="type_transaction" class="form-control" value="{{ $so_khusus->so_sales() }}" readonly>
+              <input type="text" name="type_transaction" class="form-control" value="{{ $result->sales() }}" readonly>
             </div>
           </div>
 
           <div class="form-row">
             <div class="form-group col-md-6">
               <label for="warehouse_id">Gudang <span class="text-danger">*</span></label>
-              <input type="text" name="type_transaction" class="form-control" value="{{ $so_khusus->origin_warehouse->name ?? '' }}" readonly>
+              <input type="text" name="type_transaction" class="form-control" value="{{ $result->origin_warehouse->name ?? '-' }}" readonly>
             </div>
             <div class="form-group col-md-6">
               <label for="type_transaction">Eksepdisi <span class="text-danger">*</span></label>
-              <input type="text" name="type_transaction" class="form-control" value="{{ $so_khusus->vendor->name ?? '' }}" readonly>
+              <input type="text" name="type_transaction" class="form-control" value="{{ $result->vendor->name ?? '-' }}" readonly>
             </div>
           </div>
 
           <div class="form-row">
             <div class="form-group col-md-6">
               <label for="type_transaction">Nota Type <span class="text-danger">*</span></label>
-              <input type="text" name="nota_type" class="form-control" value="{{ $so_khusus->type_so ?? '' }}" readonly>
+              <input type="text" name="nota_type" class="form-control" value="{{ $result->type_so ?? '' }}" readonly>
             </div>
           </div>
           <br>
@@ -99,23 +99,23 @@ $subtotal = 0;
               <div class="form-row">
                 <div class="form-group col-md-6">
                   <label for="type_transaction">Customer</label>
-                  <input type="text" class="form-control" name="customer_name" id="customer_name" value="{{ $so_khusus->member->name }}" readonly>
+                  <input type="text" class="form-control" name="customer_name" id="customer_name" value="{{ $result->member->name }}" readonly>
                 </div>
                 <div class="form-group col-md-6">
                   <label for="note">Alamat Kirim</label>
                   <!-- <textarea class="form-control" rows="1" readonly></textarea> -->
-                  <input type="text" class="form-control" name="customer_address" id="customer_address" value="{{ $so_khusus->member->address }}" readonly>
+                  <input type="text" class="form-control" name="customer_address" id="customer_address" value="{{ $result->member->address }}" readonly>
                 </div>
               </div>
 
               <div class="form-row">
                 <div class="form-group col-md-6">
                   <label for="customer_city">Kota</label>
-                  <input type="text" name="customer_city" id="customer_city" class="form-control" value="{{ $so_khusus->member->text_kota }}" readonly>
+                  <input type="text" name="customer_city" id="customer_city" class="form-control" value="{{ $result->member->text_kota }}" readonly>
                 </div>
                 <div class="form-group col-md-6">
                   <label for="customer_area">Provinsi</label>
-                  <input type="text" name="customer_area" id="customer_area" class="form-control" value="{{ $so_khusus->member->text_provinsi }}" readonly>
+                  <input type="text" name="customer_area" id="customer_area" class="form-control" value="{{ $result->member->text_provinsi }}" readonly>
                 </div>
               </div>
             </div>
@@ -130,15 +130,15 @@ $subtotal = 0;
               <div class="form-row">
                 <div class="form-group col-md-4">
                   <label for="customer_area">No. Dokumen <span class="text-danger">*</span></label>
-                  <input type="text" name="no_document" id="no_document"  class="form-control" value="{{ $so_khusus->catatan }}" readonly>
+                  <input type="text" name="no_document" id="no_document"  class="form-control" value="{{ $result->no_ducument_ppn }}" readonly>
                 </div>
                 <div class="form-group col-md-4">
                   <label for="note">Rekening <span class="text-danger">*</span></label>
-                  <input type="text" name="type_transaction" class="form-control" value="{{ $so_khusus->rekening ?? '' }}" readonly>
+                  <input type="text" name="type_transaction" class="form-control" value="{{ $result->rekening ?? '-' }}" readonly>
                 </div>
                 <div class="form-group col-md-4">
                   <label for="customer_area">Kurs <span class="text-danger">*</span></label>
-                  <input type="text" name="idr_rate" id="idr_rate"  class="form-control" value="{{ $so_khusus->idr_rate }}" readonly>
+                  <input type="text" name="idr_rate" id="idr_rate"  class="form-control" value="{{ $result->idr_rate }}" readonly>
                 </div>
               </div>
             </div>
@@ -168,8 +168,8 @@ $subtotal = 0;
                 </tr>
               </thead>
               <tbody>
-                @foreach($so_khusus->do as $row)
-                  @foreach($row->do_items as $key => $value)
+                @foreach($result->do as $row)
+                  @foreach($row->do_detail as $key => $value)
                   <tr>
                     <td>{{ $loop->iteration }}</td>
                     <td>{{ $value->product_pack->code }} - <b>{{ $value->product_pack->name }}</b></td>
@@ -184,8 +184,8 @@ $subtotal = 0;
               </tbody>
               <tfoot>
                 <?php
-                  foreach($so_khusus->do as $row){
-                    foreach($row->do_items as $key => $value){
+                  foreach($result->do as $row){
+                    foreach($row->do_detail as $key => $value){
                       $subtotal_item = $row->idr_rate * $value->total;
 
                       $subtotal += $subtotal_item;
@@ -212,7 +212,7 @@ $subtotal = 0;
         <div class="card border-0">
           <div class="card-body">
             <?php 
-              foreach($so_khusus->do as $row){
+              foreach($result->do as $row){
                 foreach($row->do_detail_cost as $key => $value){
                   $discount_percent = $value->discount_1;
                   $discount_percent_idr = $value->discount_1_idr;
@@ -220,7 +220,7 @@ $subtotal = 0;
                   $discount_kemasan_idr = $value->discount_2_idr;
                   $discount_idr = $value->discount_idr;
                   $voucher_idr = $value->voucher_idr;
-                  $ppn_percent = $value->ppn;
+                  $ppn_percent = $value->ppn_percent;
                   $ppn_idr = $value->ppn_idr;
                   $ongkir = $value->delivery_cost_idr;
                   $grand_total = $value->grand_total_idr;
@@ -286,7 +286,7 @@ $subtotal = 0;
 
   <div class="row pt-30 mb-15">
     <div class="col-md-6">
-      <a href="{{ route('superuser.penjualan.sales_order_ppn.index') }}">
+      <a href="{{ route('superuser.penjualan.sales_order_ppn.index_ppn_lanjutan') }}">
         <button type="button" class="btn bg-gd-cherry border-0 text-white">
           <i class="fa fa-arrow-left mr-10"></i> Back
         </button>
@@ -306,9 +306,7 @@ $subtotal = 0;
   $(document).ready(function () {
     $('.js-select2').select2();
 
-    $('#datatables').DataTable({
-      
-    })
+    
   })
 </script>
 @endpush

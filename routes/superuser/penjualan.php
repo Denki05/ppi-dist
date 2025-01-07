@@ -155,6 +155,7 @@ Route::group([
         Route::get('/index_ppn_lanjutan', 'SalesOrderPpnController@index_ppn_lanjutan')->name('index_ppn_lanjutan');
         Route::get('/create', 'SalesOrderPpnController@create')->name('create');
         Route::post('/store', 'SalesOrderPpnController@store')->name('store');
+        Route::get('/{id}/detail', 'SalesOrderPpnController@detail')->name('detail');
         Route::post('/{id}/update_awal_ppn', 'SalesOrderPpnController@update_awal_ppn')->name('update_awal_ppn');
         Route::get('/{id}/lanjutkan', 'SalesOrderPpnController@lanjutkan')->name('lanjutkan');
         Route::get('/{id}/{step}/edit_ppn', 'SalesOrderPpnController@edit_ppn')->name('edit_ppn');

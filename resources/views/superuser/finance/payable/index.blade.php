@@ -94,6 +94,7 @@
                     <th>Store</th>
                     <th>Total</th>
                     <th>Payable Date</th>
+                    <th>Created At</th>
                     <th>Status</th>
                     <th>Action</th>
                 </tr>
@@ -170,6 +171,13 @@
               }
             },
             {
+              data: 'payable_date',
+              render: {
+                _: 'display',
+                sort: 'timestamp'
+              }
+            },
+            {
               data: 'created_at',
               render: {
                 _: 'display',
@@ -180,7 +188,7 @@
             {data: 'action', orderable: false, searcable: false}
           ],
           order: [
-            [1, 'desc']
+            [6, 'desc']
           ],
           pageLength: 10,
             lengthMenu: [

@@ -11,6 +11,7 @@ use App\Entities\Master\CustomerOtherAddress;
 use App\Entities\Master\ProductPack;
 use App\Entities\Setting\UserMenu;
 use Illuminate\Support\Facades\Session;
+use Illuminate\Support\Carbon;
 use Auth;
 use DB;
 
@@ -42,6 +43,9 @@ class DashboardController extends Controller
                 $is_see = false;
             }
         }
+
+        $currentMonth = Carbon::now()->month;
+        $currentYear = Carbon::now()->year;
     
         $sales = SalesOrder::leftJoin('penjualan_so_item', 'penjualan_so.id', '=', 'penjualan_so_item.so_id')
                     ->leftJoin('master_products_packaging', 'penjualan_so_item.product_packaging_id', '=', 'master_products_packaging.id')
@@ -52,7 +56,7 @@ class DashboardController extends Controller
                         DATE_FORMAT(penjualan_so.so_date, "%Y") as year,
                         SUM(penjualan_so_item.qty_worked) as total_qty
                     ')
-                    ->whereYear('penjualan_so.so_date', date('Y'))
+                    ->whereYear('penjualan_so.so_date', $currentYear)
                     ->where('penjualan_so.status', 4)
                     ->groupBy('brand', 'month_name', 'year') // Grouping by brand, month, and year
                     ->orderByRaw('MONTH(penjualan_so.so_date)')
@@ -64,12 +68,12 @@ class DashboardController extends Controller
                         DATE_FORMAT(invoice_date, "%Y") as year,
                         SUM(invoice_purchase) as total_purchase
                     ')
-                    ->whereYear('invoice_date', date('Y'))
+                    ->whereYear('invoice_date', $currentYear)
                     ->groupBy('month_name', 'year') // Grouping by month and year
                     ->orderByRaw('MONTH(invoice_date)')
                     ->get();
 
-        $selectedMonth = request('month', now()->month); // Default to current month if no month is selected
+        $selectedMonth = request('month', $currentMonth); // Default to current month if no month is selected
 
         $top_sell_variant = ProductPack::leftJoin('master_packaging', 'master_products_packaging.packaging_id', '=', 'master_packaging.id')
                                     ->leftJoin('penjualan_do_item', 'master_products_packaging.id', '=', 'penjualan_do_item.product_packaging_id')
@@ -83,7 +87,7 @@ class DashboardController extends Controller
                                     ')
                                     ->where('penjualan_do.status', 6)
                                     ->whereMonth('penjualan_do.created_at', $selectedMonth) // Use selected month
-                                    ->whereYear('penjualan_do.created_at', now()->year)
+                                    ->whereYear('penjualan_do.created_at', $currentYear)
                                     ->groupBy('master_products_packaging.name')
                                     ->orderBy('total_qty', 'DESC')
                                     ->get();

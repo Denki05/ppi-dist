@@ -25,7 +25,8 @@ class PayableTable extends Table
         'master_customers.name AS customer_name', 
         'master_customers.text_kota AS customer_kota', 
         'finance_payable.total AS total_pay',
-        'finance_payable.pay_date AS tanggal_buat',
+        'finance_payable.pay_date AS payable_date',
+        'finance_payable.created_at AS created_at',
         'finance_payable.status AS status',
         'finance_invoicing.id AS invoice_id',
         'finance_invoicing.code AS invoice_code',
@@ -70,10 +71,17 @@ class PayableTable extends Table
             return $model->status();
         });
 
+        $table->editColumn('payable_date', function (Payable $model) {
+            return [
+                'display' => Carbon::parse($model->payable_date)->format('d-m-Y'),
+                'timestamp' => $model->payable_date
+            ];
+        });
+
         $table->editColumn('created_at', function (Payable $model) {
             return [
-                'display' => Carbon::parse($model->tanggal_buat)->format('d-m-Y'),
-                'timestamp' => $model->tanggal_buat
+                'display' => Carbon::parse($model->created_at)->format('d-m-Y'),
+                'timestamp' => $model->created_at
             ];
         });
 

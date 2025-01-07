@@ -319,7 +319,7 @@ class PayableController extends Controller
 
                     $payment->code = $request->code;
                     $payment->pay_date = $request->pay_date;
-                    $payment->pay_date = $request->note;
+                    $payment->note = $request->note;
 
                     // Prepare payable details update
                     $payableDetails = PayableDetail::whereIn('id', $request->payable_detail)->get();

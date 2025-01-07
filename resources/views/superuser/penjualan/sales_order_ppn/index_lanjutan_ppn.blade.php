@@ -80,7 +80,7 @@
                       <a href="javascript:saveConfirmation2('{{ route('superuser.penjualan.sales_order.destroy_lanjutan', ['id' => $row->id]) }}')" class="btn btn-danger btn-sm btn-flat btn-delete-lanjutan"><i class="fa fa-trash mr-10"></i> Delete</a>
                       @endif
                       @if ($row->status === 4)
-                        <a href="{{route('superuser.penjualan.sales_order.detail',$row->id)}}" class="btn btn-primary btn-sm btn-flat"><i class="fa fa-eye"></i> Detail</a>
+                      <a href="{{route('superuser.penjualan.sales_order_ppn.detail' ,$row->id)}}" class="btn btn-primary btn-sm btn-flat"><i class="fa fa-eye"></i> Detail</a>
                         <a href="javascript:saveConfirmation('{{ route('superuser.penjualan.sales_order_ppn.cancel_approve', ['id' => $row->id]) }}')" class="btn btn-danger btn-sm btn-flat"><i class="fa fa-times-circle" aria-hidden="true"></i> Cancel</a>
                       @endif
                     </td>

@@ -61,7 +61,7 @@ class CashbackController extends Controller
         }
 
         // Define the range of years for filtering
-        $currentYear = now()->year;
+        $currentYear = date('Y');
         $years = range($currentYear, $currentYear - 10); // Generate a range of 10 years back
 
         $start = Carbon::now()->startOfYear();
@@ -104,6 +104,7 @@ class CashbackController extends Controller
 
         $data = [
             'months' => $months,
+            'years' => $years,
             'customer' => $customer,
             'bulan' => $bulan,
             'selectedBulan' => $selectedBulan,
@@ -259,16 +260,25 @@ class CashbackController extends Controller
 
     public function get_invoice(Request $request)
     {
+        $yearInvoice = $request->input('year_invoice');
         $monthInvoice = $request->input('month_invoice'); // Get the month_invoice value
         $customerName = $request->input('customer_name'); // Get the customer_name value
 
         $invoice = DB::table('penjualan_do')
             ->leftJoin('master_customer_other_addresses', 'master_customer_other_addresses.id', '=', 'penjualan_do.customer_other_address_id')
             // Only include status 6 globally
-            ->where(function($query) use ($request, $monthInvoice, $customerName) {
+            ->where(function($query) use ($request, $yearInvoice, $monthInvoice, $customerName) {
                 $query->whereNull('penjualan_do.customer_other_address_id')
                     ->where('penjualan_do.cashback_status', 0)
                     ->where('penjualan_do.status', 6);
+
+                if ($yearInvoice) {
+                    $query->orWhere(function($subQuery) use ($yearInvoice) {
+                        $subQuery->whereYear('penjualan_do.created_at', $yearInvoice)
+                            ->where('penjualan_do.cashback_status', 0)
+                            ->where('penjualan_do.status', 6);
+                    });
+                }
 
                 if ($monthInvoice) {
                     $query->orWhere(function($subQuery) use ($monthInvoice) {

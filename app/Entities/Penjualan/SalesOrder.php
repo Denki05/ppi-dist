@@ -145,12 +145,17 @@ class SalesOrder extends Model
     public function customer_gudang(){
     	return $this->BelongsTo('App\Entities\Master\Warehouse','destination_warehouse_id','id');
     }
-    public function sales_senior(){
-    	return $this->BelongsTo('App\Entities\Master\Sales','sales_senior_id','id');
+    
+    public function sales_senior()
+    {
+        return array_search($this->sales_senior_id, self::SALES_SENIOR);
     }
-    public function sales(){
-    	return $this->BelongsTo('App\Entities\Master\Sales','sales_id','id');
+
+    public function sales()
+    {
+        return array_search($this->sales_id, self::SALES);
     }
+
     public function origin_warehouse(){
         return $this->BelongsTo('App\Entities\Master\Warehouse','origin_warehouse_id','id');
     }
