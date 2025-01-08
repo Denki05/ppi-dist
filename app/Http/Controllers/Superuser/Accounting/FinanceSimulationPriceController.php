@@ -10,6 +10,7 @@ use App\Entities\Penjualan\PackingOrder;
 use App\Entities\Penjualan\PackingOrderDetail;
 use App\Entities\Penjualan\PackingOrderItem;
 use App\Entities\Master\ProductFinance;
+use App\Entities\Master\CustomerOtherAddress;
 use App\Entities\Setting\UserMenu;
 use Validator;
 use Carbon\Carbon;
@@ -58,7 +59,7 @@ class FinanceSimulationPriceController extends Controller
         return response()->json($invoices);
     }
 
-    public function index() 
+    public function index(Request $request)
     {
         if (Auth::user()->is_superuser == 0) {
             if (empty($this->access) || empty($this->access->user) || $this->access->can_read == 0) {
@@ -74,11 +75,29 @@ class FinanceSimulationPriceController extends Controller
             ];
         });
 
-        $simulations = FinanceSimulationPrice::get();
-    
+        $customers = CustomerOtherAddress::get();
+
+        // Filter data berdasarkan parameter pencarian
+        $simulations = FinanceSimulationPrice::query();
+
+        if ($request->filled('customer')) {
+            $simulations->whereHas('simulation_detail', function ($query) use ($request) {
+                $query->where('customer_id', $request->customer);
+            });
+        }
+
+        if ($request->filled('month')) {
+            $simulations->whereMonth('created_at', $request->month);
+        }
+
+        if ($request->filled('year')) {
+            $simulations->whereYear('created_at', $request->year);
+        }
+
         $data = [
             'months' => $months,
-            'simulations' => $simulations,
+            'simulations' => $simulations->get(),
+            'customers' => $customers,
         ];
 
         return view($this->view . "index", $data);
@@ -92,6 +111,7 @@ class FinanceSimulationPriceController extends Controller
 
         $validator = Validator::make($request->all(), [
             'month' => 'required',
+            'year' => 'required',
         ]);
 
         if ($validator->fails()) {
@@ -110,17 +130,30 @@ class FinanceSimulationPriceController extends Controller
 
             // Fetch packing orders for the specified month
             $packingOrders = PackingOrder::leftJoin('penjualan_so', 'penjualan_do.so_id', '=', 'penjualan_so.id')
-                ->where('penjualan_do.status', 6)
-                ->whereMonth('penjualan_so.so_date', $request->month)
-                ->select(
-                    'penjualan_do.id as id', 
-                    'penjualan_do.do_code as invoice_code',
-                    'penjualan_so.so_date as invoice_date',
-                )
-                ->get();
+            ->where('penjualan_do.status', 6)
+            ->whereMonth('penjualan_so.so_date', $request->month)
+            ->whereYear('penjualan_so.so_date', $request->year);
+
+            if ($request->filled('customer')) {
+                $packingOrders->where('penjualan_do.customer_other_address_id', $request->customer);
+            }
+
+            $packingOrders = $packingOrders->select(
+                'penjualan_do.id as id', 
+                'penjualan_do.do_code as invoice_code',
+                'penjualan_so.so_date as invoice_date',
+            )->get();
 
             if ($packingOrders->isEmpty()) {
-                return $this->response(200, ['message' => 'No data found for the specified month']);
+                // return $this->response(200, ['message' => 'No data found for the specified month']);
+                return $this->response(200, [
+                    'notification' => [
+                        'alert' => 'block',
+                        'type' => 'alert-danger',
+                        'header' => 'Error',
+                        'content' => ['Data Invoice tidak ditemukan untuk bulan dan tahun yang dipilih.'],
+                    ],
+                ]);
             }
 
             // Check for duplicate invoice codes
