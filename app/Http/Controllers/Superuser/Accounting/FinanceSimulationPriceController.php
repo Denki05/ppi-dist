@@ -314,15 +314,15 @@ class FinanceSimulationPriceController extends Controller
             '12' => 'Desember',
         ];
     
-        // Filter data berdasarkan bulan dan tahun yang dipilih
         $query = FinanceSimulationPrice::query()
             ->where('status', FinanceSimulationPrice::STATUS['ACTIVE']);
-    
-        if ($selectedBulan) {
-            $query->whereMonth('created_at', $selectedBulan);
-        }
-        if ($selectedTahun) {
-            $query->whereYear('created_at', $selectedTahun);
+
+        if ($selectedBulan && $selectedTahun) {
+            $query->whereMonth('created_at', $selectedBulan)
+                ->whereYear('created_at', $selectedTahun);
+            $simulation = $query->get();
+        } else {
+            $simulation = collect(); // Mengembalikan koleksi kosong jika bulan/tahun tidak dipilih
         }
     
         $simulation = $query->get();
