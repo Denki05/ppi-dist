@@ -77,7 +77,7 @@
                                         </tbody>
                                         <tfoot>
                                                 <tr>
-                                                        <th colspan="7" class="text-center">Total:</th>
+                                                        <th colspan="8" class="text-center">Total:</th>
                                                         <th id="totalBeli" class="text-center">0</th>
                                                         <th id="totalJual" class="text-center">0</th>
                                                 </tr>
@@ -234,7 +234,7 @@
 
                                 // Calculate the total for "Total Beli"
                                 var totalBeli = api
-                                        .column(7, { search: 'applied' }) // Column index for "Total Beli"
+                                        .column(8, { search: 'applied' }) // Column index for "Total Beli"
                                         .data()
                                         .reduce(function (a, b) {
                                                 return parseValue(a) + parseValue(b);
@@ -242,17 +242,17 @@
 
                                 // Calculate the total for "Total Jual"
                                 var totalJual = api
-                                        .column(8, { search: 'applied' }) // Column index for "Total Jual"
+                                        .column(9, { search: 'applied' }) // Column index for "Total Jual"
                                         .data()
                                         .reduce(function (a, b) {
                                                 return parseValue(a) + parseValue(b);
                                         }, 0);
 
                                 // Update footer cells
-                                $(api.column(7).footer()).html(
+                                $(api.column(8).footer()).html(
                                         $.fn.dataTable.render.number('.', ',', 2, '').display(totalBeli)
                                 );
-                                $(api.column(8).footer()).html(
+                                $(api.column(9).footer()).html(
                                         $.fn.dataTable.render.number('.', ',', 2, '').display(totalJual)
                                 );
                         }
