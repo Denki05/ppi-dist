@@ -113,7 +113,7 @@
                     </div>
                     <div class="form-row">
                         <div class="form-group col-md-12">
-                            <label for="month" class="mr-2">Month</label>
+                            <label for="month" class="mr-2">Bulan</label>
                             <select id="month" name="month" class="form-control js-select2" style="width: 100%;">
                                 <option value="" selected>All</option>
                                 @foreach($months as $month)
@@ -124,7 +124,7 @@
                     </div>
                     <div class="form-row">
                         <div class="form-group col-md-12">
-                            <label for="year" class="mr-2">Year</label>
+                            <label for="year" class="mr-2">Tahun</label>
                             <select id="year" name="year" class="form-control js-select2" style="width: 100%;">
                                 <option value="" selected>All</option>
                                 @for($i = date('Y'); $i >= date('Y') - 10; $i--)
