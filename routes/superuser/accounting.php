@@ -48,6 +48,7 @@ Route::group([
         Route::get('/create', 'FinanceSimulationPriceController@create')->name('create');
         Route::post('/store', 'FinanceSimulationPriceController@store')->name('store');
         Route::get('/removeData', 'FinanceSimulationPriceController@removeData')->name('removeData');
+        Route::get('/page_report', 'FinanceSimulationPriceController@page_report')->name('page_report');
     });
     Route::resource('finance_simulation', 'FinanceSimulationPriceController');   
 });

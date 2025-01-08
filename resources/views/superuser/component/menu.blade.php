@@ -270,6 +270,7 @@
                                     </ul>
                                 </li>
                                 <li><a class="dropdown-item" href="{{ route('superuser.report.revenue.index') }}"> Laporan Pendapatan</a></li>
+                                <li><a class="dropdown-item" href="{{ route('superuser.accounting.finance_simulation.page_report') }}"> Finance Simulation UV Report</a></li>
                             </ul>
                         </li>
                         <li class="submenu submenu-md dropend">

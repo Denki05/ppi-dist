@@ -158,4 +158,8 @@ class PackingOrder extends Model
 	public function cashback(){
     	return $this->BelongsTo('App\Entities\Finance\Cashback','do_id','id');
     }
+
+	public function uv(){
+		return $this->hasMany('App\Entities\Accounting\FinanceSimulationPrice','do_id');
+	}
 }
