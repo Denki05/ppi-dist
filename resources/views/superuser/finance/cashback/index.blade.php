@@ -185,6 +185,7 @@ $(document).ready(function() {
             q: params.term,
             _token: "{{csrf_token()}}",
             month_invoice: $("#month_invoice").val(), // Pass the month_invoice value here
+            year_invoice: $("#year_invoice").val(), // Pass the month_invoice value here
             customer_name: $("#customer_name").val()  // Pass the customer_name value here
           };
         },

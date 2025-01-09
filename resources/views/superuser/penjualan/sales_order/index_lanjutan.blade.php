@@ -209,16 +209,16 @@
                           <span class="badge badge-pill badge-info"><b>Submit DO</bb></span>
                         @endif
                         @if($row->status == 3)
-                          <span class="badge badge-pill badge-primary"><b>Packing Proses</b></span>
+                          <span class="badge badge-pill badge-primary"><b>Dikemas</b></span>
                         @endif
                         @if($row->status == 4)
                           <span class="badge badge-pill badge-primary"><b>Cetak SJ / DO</b></span>
                         @endif
                         @if($row->status == 5)
-                          <span class="badge badge-pill badge-warning"><b>Delivering</b></span>
+                          <span class="badge badge-pill badge-warning"><b>Dikirim</b></span>
                         @endif
                         @if($row->status == 6)
-                          <span class="badge badge-pill badge-success"><b>Delivered</b></span>
+                          <span class="badge badge-pill badge-success"><b>Terkirim</b></span>
                         @endif
                         @if($row->status == 7)
                           <span class="badge badge-pill badge-danger"><b>Revisi</b></span>
@@ -255,7 +255,7 @@
                     <td>{{ $index + 1 }}</td>
                     <td>{{ $row->do_code }}</td>
                     <td>{{ $row->so->code ?? '-' }}</td>
-                    <td>{{ $row->member->name ?? '-' }}</td>
+                    <td>{{ $row->member->name ?? '-' }} {{ $row->member->text_kota }}</td>
                     <td>{{ \Carbon\Carbon::parse($row->created_at)->format('d-m-Y h:i:s') }}</td>
                     <td>{{ $row->so->type_transaction ?? '-' }}</td>
                     <td>
@@ -560,7 +560,7 @@
                 info:     false,
                 searching : true,
                 order: [
-                  [2, 'asc'],
+                  [1, 'asc'],
                 ],
                 pageLength: 10,
                 lengthMenu: [

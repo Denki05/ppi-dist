@@ -10,6 +10,7 @@ use App\Entities\Penjualan\PackingOrder;
 use App\Entities\Penjualan\PackingOrderDetail;
 use App\Entities\Penjualan\PackingOrderItem;
 use App\Entities\Master\ProductFinance;
+use App\Entities\Master\CustomerOtherAddress;
 use App\Entities\Setting\UserMenu;
 use Validator;
 use Carbon\Carbon;
@@ -58,7 +59,7 @@ class FinanceSimulationPriceController extends Controller
         return response()->json($invoices);
     }
 
-    public function index() 
+    public function index(Request $request)
     {
         if (Auth::user()->is_superuser == 0) {
             if (empty($this->access) || empty($this->access->user) || $this->access->can_read == 0) {
@@ -74,11 +75,29 @@ class FinanceSimulationPriceController extends Controller
             ];
         });
 
-        $simulations = FinanceSimulationPrice::get();
-    
+        $customers = CustomerOtherAddress::get();
+
+        // Filter data berdasarkan parameter pencarian
+        $simulations = FinanceSimulationPrice::query();
+
+        if ($request->filled('customer')) {
+            $simulations->whereHas('simulation_detail', function ($query) use ($request) {
+                $query->where('customer_id', $request->customer);
+            });
+        }
+
+        if ($request->filled('month')) {
+            $simulations->whereMonth('created_at', $request->month);
+        }
+
+        if ($request->filled('year')) {
+            $simulations->whereYear('created_at', $request->year);
+        }
+
         $data = [
             'months' => $months,
-            'simulations' => $simulations,
+            'simulations' => $simulations->get(),
+            'customers' => $customers,
         ];
 
         return view($this->view . "index", $data);
@@ -92,6 +111,7 @@ class FinanceSimulationPriceController extends Controller
 
         $validator = Validator::make($request->all(), [
             'month' => 'required',
+            'year' => 'required',
         ]);
 
         if ($validator->fails()) {
@@ -110,17 +130,34 @@ class FinanceSimulationPriceController extends Controller
 
             // Fetch packing orders for the specified month
             $packingOrders = PackingOrder::leftJoin('penjualan_so', 'penjualan_do.so_id', '=', 'penjualan_so.id')
-                ->where('penjualan_do.status', 6)
-                ->whereMonth('penjualan_so.so_date', $request->month)
-                ->select('penjualan_do.id as id', 'penjualan_do.do_code as invoice_code')
-                ->get();
+            ->where('penjualan_do.status', 6)
+            ->whereMonth('penjualan_so.so_date', $request->month)
+            ->whereYear('penjualan_so.so_date', $request->year);
+
+            if ($request->filled('customer')) {
+                $packingOrders->where('penjualan_do.customer_other_address_id', $request->customer);
+            }
+
+            $packingOrders = $packingOrders->select(
+                'penjualan_do.id as id', 
+                'penjualan_do.do_code as invoice_code',
+                'penjualan_so.so_date as invoice_date',
+            )->get();
 
             if ($packingOrders->isEmpty()) {
-                return $this->response(200, ['message' => 'No data found for the specified month']);
+                // return $this->response(200, ['message' => 'No data found for the specified month']);
+                return $this->response(200, [
+                    'notification' => [
+                        'alert' => 'block',
+                        'type' => 'alert-danger',
+                        'header' => 'Error',
+                        'content' => ['Data Invoice tidak ditemukan untuk bulan dan tahun yang dipilih.'],
+                    ],
+                ]);
             }
 
             // Check for duplicate invoice codes
-            $existingInvoices = FinanceSimulationPrice::whereIn('code', $packingOrders->pluck('invoice_code'))->pluck('code')->toArray();
+            $existingInvoices = FinanceSimulationPrice::whereIn('do_id', $packingOrders->pluck('id'))->pluck('code')->toArray();
 
             if (!empty($existingInvoices)) {
                 return $this->response(400, [
@@ -144,8 +181,9 @@ class FinanceSimulationPriceController extends Controller
                 // Create simulation entry
                 $simulations[] = [
                     'code' => $order->invoice_code,
+                    'do_id' => $order->id,
                     'status' => FinanceSimulationPrice::STATUS['ACTIVE'],
-                    'created_at' => $timestamp,
+                    'created_at' => $order->invoice_date,
                     'updated_at' => $timestamp,
                 ];
 
@@ -238,5 +276,65 @@ class FinanceSimulationPriceController extends Controller
 
             return redirect()->back()->with('error', 'Gagal menghapus data! Error: ' . $e->getMessage());
         }
+    }
+
+    public function page_report(Request $request)
+    {
+        // Authorization check
+        if (Auth::user()->is_superuser == 0) {
+            if (empty($this->access) || empty($this->access->user) || $this->access->can_read == 0) {
+                return redirect()->route('superuser.index')->with('error', 'Anda tidak punya akses untuk membuka menu terkait');
+            }
+        }
+    
+        // Filter bulan dan tahun dari request
+        $selectedBulan = $request->get('bulan', null);
+        $selectedTahun = $request->get('tahun', null);
+    
+        // Ambil semua bulan dan tahun yang tersedia di database
+        $availableMonths = FinanceSimulationPrice::query()
+            ->selectRaw('MONTH(created_at) as bulan, YEAR(created_at) as tahun')
+            ->groupBy('bulan', 'tahun')
+            ->orderBy('tahun', 'desc')
+            ->orderBy('bulan', 'asc')
+            ->get();
+    
+        $bulan = [
+            '01' => 'Januari',
+            '02' => 'Februari',
+            '03' => 'Maret',
+            '04' => 'April',
+            '05' => 'Mei',
+            '06' => 'Juni',
+            '07' => 'Juli',
+            '08' => 'Agustus',
+            '09' => 'September',
+            '10' => 'Oktober',
+            '11' => 'November',
+            '12' => 'Desember',
+        ];
+    
+        $query = FinanceSimulationPrice::query()
+            ->where('status', FinanceSimulationPrice::STATUS['ACTIVE']);
+
+        if ($selectedBulan && $selectedTahun) {
+            $query->whereMonth('created_at', $selectedBulan)
+                ->whereYear('created_at', $selectedTahun);
+            $simulation = $query->get();
+        } else {
+            $simulation = collect(); // Mengembalikan koleksi kosong jika bulan/tahun tidak dipilih
+        }
+    
+        $simulation = $query->get();
+    
+        $data = [
+            'simulation' => $simulation,
+            'availableMonths' => $availableMonths,
+            'bulan' => $bulan,
+            'selectedBulan' => $selectedBulan,
+            'selectedTahun' => $selectedTahun,
+        ];
+    
+        return view($this->view . "report", $data);
     }
 }

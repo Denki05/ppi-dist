@@ -50,27 +50,27 @@ class PackingOrder extends Model
     const STATUS_PENGIRIMAN = [
     	1 => [
     		'class' => 'secondary',
-    		'msg' => 'Created'
+    		'msg' => 'Dibuat'
     	],
     	2 => [
     		'class' => 'warning',
-    		'msg' => 'Billed'
+    		'msg' => 'Ditagih'
     	],
     	3 => [
     		'class' => 'info',
-    		'msg' => 'Ready'
+    		'msg' => 'Siap'
     	],
     	4 => [
     		'class' => 'primary',
-    		'msg' => 'Packed'
+    		'msg' => 'Dikemas'
     	],
     	5 => [
     		'class' => 'danger',
-    		'msg' => 'Delivering'
+    		'msg' => 'Mengirimkan'
     	],
     	6 => [
     		'class' => 'success',
-    		'msg' => 'Delivered'
+    		'msg' => 'Terkirim'
     	],
 		7 => [
     		'class' => 'warning',

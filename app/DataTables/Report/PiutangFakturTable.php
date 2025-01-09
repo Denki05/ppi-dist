@@ -22,12 +22,14 @@ class PiutangFakturTable extends Table
             ->leftJoin('master_customer_other_addresses', 'finance_invoicing.customer_other_address_id', '=', 'master_customer_other_addresses.id')
             ->leftJoin('penjualan_do', 'finance_invoicing.do_id', '=', 'penjualan_do.id')
             ->leftJoin('penjualan_so', 'penjualan_do.so_id', '=', 'penjualan_so.id')
+            ->leftJoin('penjualan_do_details', 'penjualan_do.id', '=', 'penjualan_do_details.do_id')
             ->leftJoin('master_customers', 'master_customer_other_addresses.customer_id', '=', 'master_customers.id')
             ->select(
                 'master_customer_other_addresses.name AS customer_name', 
                 'master_customer_other_addresses.text_kota AS customer_kota', 
                 'finance_invoicing.code AS no_faktur',
                 'finance_invoicing.grand_total_idr AS nilai_faktur',
+                'penjualan_do_details.delivery_cost_idr AS ongkos_kirim',
                 'penjualan_so.so_date AS tanggal_faktur', 
                 'master_customers.tempo_limit AS tempo_limit', 
                 DB::raw('IFNULL(SUM(finance_payable_detail.total), 0) AS pembayaran'),
@@ -88,8 +90,12 @@ class PiutangFakturTable extends Table
             }
         });
 
+        $table->addColumn('nilai_faktur', function (Invoicing $model) {
+            return $model->nilai_faktur + $model->ongkos_kirim;
+        });
+
         $table->addColumn('hutang_asing', function (Invoicing $model) {
-            return $model->nilai_faktur - $model->pembayaran;
+            return $model->nilai_faktur - $model->pembayaran + $model->ongkos_kirim;
         });
 
         $table->addColumn('diff_days', function (Invoicing $model) use ($request) {

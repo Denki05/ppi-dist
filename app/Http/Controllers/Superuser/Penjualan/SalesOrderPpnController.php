@@ -558,6 +558,7 @@ class SalesOrderPpnController extends Controller
                         $packing_order_detail->ppn_idr = $ppn_idr;
                         $packing_order_detail->voucher_idr = $request->voucher_idr;
                         $packing_order_detail->purchase_total_idr = $sub_total;
+                        $packing_order_detail->delivery_cost_idr = $request->delivery_cost_idr;
                         $packing_order_detail->other_cost_idr = 0;
                         $packing_order_detail->grand_total_idr = $grand_total_idr;
                         $packing_order_detail->terbilang = CustomHelper::terbilang($grand_total_idr);

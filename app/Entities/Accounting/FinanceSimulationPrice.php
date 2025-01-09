@@ -12,6 +12,7 @@ class FinanceSimulationPrice extends Model
     protected $table = "finance_simulation_price";
     protected $fillable = [
     	'code',
+        'do_id',
         'status',
     ];
 
@@ -22,5 +23,9 @@ class FinanceSimulationPrice extends Model
 
     public function simulation_detail(){
     	return $this->hasMany('App\Entities\Accounting\FinanceSimulationPriceDetail', 'finance_simulation_id');
+    }
+
+    public function do(){
+    	return $this->belongsTo('App\Entities\Penjualan\PackingOrder', 'do_id');
     }
 }

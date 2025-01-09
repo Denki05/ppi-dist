@@ -62,7 +62,7 @@ class CashbackController extends Controller
 
         // Define the range of years for filtering
         $currentYear = date('Y');
-        $years = range($currentYear, $currentYear - 10); // Generate a range of 10 years back
+        $years = range($currentYear, $currentYear - 2); // Generate a range of 10 years back
 
         $start = Carbon::now()->startOfYear();
         $end = Carbon::now()->endOfYear();
@@ -266,36 +266,26 @@ class CashbackController extends Controller
 
         $invoice = DB::table('penjualan_do')
             ->leftJoin('master_customer_other_addresses', 'master_customer_other_addresses.id', '=', 'penjualan_do.customer_other_address_id')
-            // Only include status 6 globally
-            ->where(function($query) use ($request, $yearInvoice, $monthInvoice, $customerName) {
-                $query->whereNull('penjualan_do.customer_other_address_id')
-                    ->where('penjualan_do.cashback_status', 0)
-                    ->where('penjualan_do.status', 6);
-
-                if ($yearInvoice) {
-                    $query->orWhere(function($subQuery) use ($yearInvoice) {
-                        $subQuery->whereYear('penjualan_do.created_at', $yearInvoice)
-                            ->where('penjualan_do.cashback_status', 0)
-                            ->where('penjualan_do.status', 6);
-                    });
+            ->where(function($query) use ($yearInvoice, $monthInvoice, $customerName, $request) {
+                // Filter by year and month
+                if ($yearInvoice && $monthInvoice) {
+                    $query->whereYear('penjualan_do.created_at', $yearInvoice)
+                        ->whereMonth('penjualan_do.created_at', $monthInvoice)
+                        ->where('penjualan_do.cashback_status', 0)
+                        ->where('penjualan_do.status', 6);
                 }
 
-                if ($monthInvoice) {
-                    $query->orWhere(function($subQuery) use ($monthInvoice) {
-                        $subQuery->whereMonth('penjualan_do.created_at', $monthInvoice)
+                // Filter by customer
+                if ($customerName) {
+                    $query->orWhere(function($subQuery) use ($customerName) {
+                        $subQuery->where('master_customer_other_addresses.id', $customerName)
                                 ->where('penjualan_do.cashback_status', 0)
                                 ->where('penjualan_do.status', 6);
                     });
                 }
             })
-            ->orWhere(function($query) use ($request, $customerName) {
-                if ($customerName) {
-                    $query->where('master_customer_other_addresses.id', $customerName)
-                        ->where('penjualan_do.cashback_status', 0)
-                        ->where('penjualan_do.status', 6);
-                }
-            })
-            ->where(function($query) use ($request){
+            ->where(function($query) use ($request) {
+                // Search by DO code
                 $query->where('penjualan_do.do_code', 'LIKE', $request->input('q', '') . '%');
             })
             ->select(
@@ -308,7 +298,7 @@ class CashbackController extends Controller
 
         $results = [];
 
-        foreach($invoice as $row) {
+        foreach ($invoice as $row) {
             $results[] = [
                 'id' => $row->id,
                 'text' => $row->code,
@@ -317,6 +307,7 @@ class CashbackController extends Controller
 
         return ['results' => $results];
     }
+
 
     public function print_invoice_beli($id)
     {
