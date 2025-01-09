@@ -955,4 +955,33 @@ class InvoicingController extends Controller
             abort(404, "File not found.");
         }
     }
+
+    public function download_invoice($id)
+    {
+        if (empty($id) || !is_numeric($id)) {
+            abort(404, 'Invoice ID tidak valid.');
+        }
+
+        $result = Invoicing::find($id);
+        if (!$result) {
+            abort(404, 'Invoice tidak ditemukan.');
+        }
+
+        $data = [
+            'result' => $result,
+            'company' => Company::first(), // Pastikan data perusahaan diambil.
+            'watermark' => 'Paid' // Atur sesuai kebutuhan, atau tambahkan logika dinamis.
+        ];
+
+        $pdf = PDF::loadView('superuser.finance.invoicing.print_new', $data)
+                ->setPaper('a5', 'landscape');
+
+        $generate = false; // Ubah sesuai logika bisnis.
+
+        if ($generate) {
+            return $pdf->download("invoice_{$id}.pdf");
+        }
+
+        return $pdf->stream("invoice_{$id}.pdf");
+    }
 }

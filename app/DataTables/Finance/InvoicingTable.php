@@ -84,6 +84,7 @@ class InvoicingTable extends Table
             $view = route('superuser.finance.invoicing.detail', $model->do_id);
             $print = route('superuser.finance.invoicing.print', $model);
             $print_full = route('superuser.finance.invoicing.print2', $model);
+            // $print_pdf = route('superuser.finance.invoicing.download_invoice', $model);
 
             switch ($model->status) {
                 case $model::STATUS['ACTIVE']:

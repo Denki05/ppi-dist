@@ -1,0 +1,20 @@
+
+**** Log file opened at 2025-01-09 09:34:07.681374 UTC+07:00 (SE Asia Standard Time), Encoding UTF-8
+NW RFC Library: SDK variant, Release 750 Patch Level 12
+Compilation date          : Jul  7 2023 22:54:54
+CPIC library              : 753.2023.07.06 version 3
+NI library                : 40
+Kernel Release            : 753 Patch Level 1216
+Current working directory : C:\xampp\htdocs\ppi-dist\public\cr\do
+Program                   : crw64
+Process ID                : 07296
+User                      : USER
+Hardware                  : PC with Windows NT 8x AMD64 Level 6 (Mod 142 Step 10)
+Operating_system          : Windows NT 10.0
+Hostname                  : DESKTOP-VL9LQ9P
+IP address                : 192.168.56.1
+IPv6 address              : fe80::1674:f881:8ec6:3f7f
+Global trace level        : 0
+
+2025-01-09 09:34:07.653195 [04092] >> Info entry
+	Did not find config file C:\xampp\htdocs\ppi-dist\public\cr\do\sapnwrfc.ini.
