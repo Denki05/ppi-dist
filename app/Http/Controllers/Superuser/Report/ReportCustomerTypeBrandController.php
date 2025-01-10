@@ -8,6 +8,7 @@ use App\Entities\Reports\CustomerTypeBrandReports;
 Use App\Entities\Penjualan\SalesOrder;
 use App\Entities\Setting\UserMenu;
 use Carbon\Carbon;
+use Exception;
 use Auth;
 use COM;
 use DB;
@@ -223,5 +224,71 @@ class ReportCustomerTypeBrandController extends Controller
         DB::table('report_customer_type_brand')->truncate();
 
         return redirect()->back()->with('message', 'Berhasil remove data!');
+    }
+
+    public function exportReport(Request $request)
+    {
+        $validatedData = $request->validate([
+            'start' => 'required|date',
+            'end' => 'required|date|after_or_equal:start',
+            'type' => 'required|integer|in:1,2',
+            'nominal' => 'required|integer|in:1,2',
+            'action' => 'required|string|in:print,excel',
+        ]);
+
+        $start = $validatedData['start'];
+        $end = $validatedData['end'];
+        $type = $validatedData['type'];
+        $nominal = $validatedData['nominal'];
+        $action = $validatedData['action'];
+
+        $reportPath = "C:\\xampp\\htdocs\\ppi-dist\\public\\cr\\report\\management\\report_customer_register\\";
+        $exportPath = $reportPath . "export\\";
+
+        if ($type == 1) {
+            $reportName = $nominal == 1 ? "customer_type_brand.rpt" : "customer_type_brand_non_nominal.rpt";
+            $fileName = $nominal == 1 ? "customer-type-brand-" : "customer-type-brand-non-nominal-";
+        } else {
+            $reportName = $nominal == 1 ? "report_zone_customer.rpt" : "report_zone_customer_non_nominal.rpt";
+            $fileName = $nominal == 1 ? "customer-zone-" : "customer-zone-non-nominal-";
+        }
+
+        $my_report = $reportPath . $reportName;
+        $outputFile = $exportPath . $fileName . date("Y-m") . ($action === 'print' ? ".pdf" : ".xls");
+
+        try {
+            if (!file_exists($my_report)) {
+                return response()->json(['error' => 'Report file not found'], 404);
+            }
+
+            $crapp = new COM("CrystalDesignRunTime.Application");
+            $creport = $crapp->OpenReport($my_report, 1);
+
+            $creport->Database->Tables(1)->SetLogOnInfo("LOCAL", "ppi_araya", "root", "");
+            $creport->EnableParameterPrompting = false;
+            $creport->ParameterFields(2)->SetCurrentValue(date('d-m-Y', strtotime($start)));
+            $creport->ParameterFields(3)->SetCurrentValue(date('d-m-Y', strtotime($end)));
+            $creport->RecordSelectionFormula = "{report_customer_type_brand.invoice_date}>=#$start# AND {report_customer_type_brand.invoice_date}<=#$end#";
+
+            $creport->ExportOptions->DiskFileName = $outputFile;
+            $creport->ExportOptions->PDFExportAllPages = true;
+            $creport->ExportOptions->DestinationType = 1;
+            $creport->ExportOptions->FormatType = $action === 'print' ? 31 : 29; // 31 untuk PDF, 29 untuk Excel
+
+            $creport->Export(false);
+            $creport = null;
+            $crapp = null;
+
+            if (file_exists($outputFile)) {
+                \Log::info('File generated successfully: ' . $outputFile);
+                return response()->download($outputFile, basename($outputFile))->deleteFileAfterSend(true);
+            } else {
+                \Log::error('File not generated: ' . $outputFile);
+                return response()->json(['error' => 'File not generated'], 500);
+            }
+        } catch (\Exception $e) {
+            \Log::error('Report generation failed: ' . $e->getMessage());
+            return response()->json(['error' => 'An error occurred while generating the report'], 500);
+        }
     }
 }

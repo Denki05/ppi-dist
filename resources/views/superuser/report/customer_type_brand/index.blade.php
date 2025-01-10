@@ -8,7 +8,7 @@
 </nav>
 
 @if($errors->any())
-<div class="alert alert-danger alert-dismissable" role="alert">
+<div class="alert alert-danger alert-dismissible" role="alert">
   <button type="button" class="close" data-dismiss="alert" aria-label="Close">
       <span aria-hidden="true">×</span>
   </button>
@@ -23,47 +23,39 @@
 
 @if(session('error') || session('success'))
 <div class="alert alert-{{ session('error') ? 'danger' : 'success' }} alert-dismissible fade show" role="alert">
-    @if (session('error'))
-    <strong>Error!</strong> {!! session('error') !!}
-    @elseif (session('success'))
-    <strong>Berhasil!</strong> {!! session('success') !!}
-    @endif
+    <strong>{{ session('error') ? 'Error!' : 'Berhasil!' }}</strong> {!! session('error') ?? session('success') !!}
     <button type="button" class="close" data-dismiss="alert" aria-label="Close">
         <span aria-hidden="true">&times;</span>
     </button>
 </div>
 @endif
 
-@if(session()->has('message'))
-<div class="alert alert-success alert-dismissable" role="alert">
-  <button type="button" class="close" data-dismiss="alert" aria-label="Close">
-      <span aria-hidden="true">×</span>
-  </button>
-  <h3 class="alert-heading font-size-h4 font-w400">Success</h3>
-  <p class="mb-0">{{ session()->get('message') }}</p>
-</div>
-@endif
-
-<form action="{{ route('superuser.report.customer_type_brand.print_report') }}" method="POST">
+<form id="reportForm" action="{{ route('superuser.report.customer_type_brand.exportReport') }}" method="POST">
     @csrf
+    <input type="hidden" name="action" id="action" value="print">
     <div class="block">
         <hr class="my-20">
         <div class="block-content block-content-full">
-            <div class="row">
-                <div class="btn-toolbar" role="toolbar" aria-label="Toolbar with button groups">
-                    <div class="btn-group mr-2" role="group" aria-label="First group">
-                        <a class="btn btn-primary" href="{{ route('superuser.report.customer_type_brand.postData') }}" role="button">
-                            <i class="fa fa-sync"></i> Sync Data
-                        </a>
-                    </div>
-                    <div class="btn-group mr-2" role="group" aria-label="Second group">
-                        <a class="btn btn-danger" href="javascript:saveConfirmation('{{ route('superuser.report.customer_type_brand.removeDt') }}')" role="button">
-                            <i class="fa fa-trash"></i> Remove Data
-                        </a>
-                    </div>
-                    <div class="btn-group mr-2" role="group" aria-label="Third group">
-                        <button type="submit" class="btn btn-success"><i class="fa fa-print"></i> Print</button>
-                    </div>
+            <div class="btn-toolbar" role="toolbar">
+                <div class="btn-group mr-2">
+                    <a class="btn btn-primary" href="{{ route('superuser.report.customer_type_brand.postData') }}">
+                        <i class="fa fa-sync"></i> Sync Data
+                    </a>
+                </div>
+                <div class="btn-group mr-2">
+                    <button type="button" class="btn btn-danger" onclick="saveConfirmation('{{ route('superuser.report.customer_type_brand.removeDt') }}')">
+                        <i class="fa fa-trash"></i> Remove Data
+                    </button>
+                </div>
+                <div class="btn-group mr-2">
+                    <button type="button" class="btn btn-success" onclick="submitForm('print')">
+                        <i class="fa fa-file-pdf-o" aria-hidden="true"></i> Export PDF
+                    </button>
+                </div>
+                <div class="btn-group mr-2">
+                    <button type="button" class="btn btn-info" onclick="submitForm('excel')">
+                        <i class="fa fa-file-excel"></i> Export Excel
+                    </button>
                 </div>
             </div>
             <br>
@@ -97,29 +89,16 @@
                 <div class="col-lg-3">
                     <div class="form-group">
                         <label>Set Period From</label>
-                        <input type="date" name="start" id="period_from" class="form-control" value="{{ date('Y-m-01') }}">
+                        <input type="date" name="start" id="period_from" class="form-control" value="{{ old('start', date('Y-m-01')) }}">
                     </div>
                 </div>
                 <div class="col-lg-3">
                     <div class="form-group">
                         <label>Set Period To</label>
-                        <input type="date" name="end" id="period_to" class="form-control" value="{{ date('Y-m-d') }}">
+                        <input type="date" name="end" id="period_to" class="form-control" value="{{ old('end', date('Y-m-d')) }}">
                     </div>
                 </div>
             </div>
-            {{--<div class="row">
-                <div class="col-lg-3">
-                    <div class="form-group">
-                        <label>Set Month</label>
-                        <select name="month" id="month_select" class="form-control js-select2">
-                            <option value="">Select a Month</option>
-                            @foreach($monthOptions as $month)
-                                <option value="{{ $month['value'] }}">{{ $month['label'] }}</option>
-                            @endforeach
-                        </select>
-                    </div>
-                </div>
-            </div>--}}
         </div>
     </div>
 </form>
@@ -129,39 +108,28 @@
 @include('superuser.asset.plugin.swal2')
 
 @push('scripts')
-  <script type="text/javascript">
-    
-    $(function(){
-      $('.js-select2').select2();
+<script>
+  $(function(){
+    $('.js-select2').select2();
+  });
 
-      // $('#printReport').on('click', function(e) {
-      //   e.preventDefault(); // prevent the form submit
-      //   let start = $('#period_from').val();
-      //   let end = $('#period_to').val();
-      //   let typeReport = $("input:radio[name=radios-inline]:checked").val();
-      //   let showNominal = $("input:radio[name=radios-inline-nominal]:checked").val();
-        
-      //   $.ajax({
-      //      type:'POST',
-      //      url:"{{ route('superuser.report.customer_type_brand.print_report') }}",
-      //      data:{"_token": "{{ csrf_token() }}", "start":start, "end":end, "type":typeReport, "nominal":showNominal},
-      //      success:function(response){
-      //       // console.log(response);
-      //      }
-      //   });
-      // })
+  function submitForm(actionType) {
+      $('#action').val(actionType);
+      $('#reportForm').submit();
+  }
 
-        $(function() {
-            // Set Period From to the first day of the current month
-            var firstDayOfMonth = new Date();
-            firstDayOfMonth.setDate(1); // Set the date to the 1st day of the current month
-            var periodFrom = firstDayOfMonth.toISOString().split('T')[0]; // Convert to YYYY-MM-DD format
-            $('#period_from').val(periodFrom); // Set the value of the Period From input field
-
-            // Set Period To to today's date
-            var today = new Date().toISOString().split('T')[0]; // Get today's date in YYYY-MM-DD format
-            $('#period_to').val(today); // Set the value of the Period To input field
-        });
-    });
-  </script>
+  function saveConfirmation(url) {
+      Swal.fire({
+          title: 'Are you sure?',
+          text: 'This action cannot be undone.',
+          icon: 'warning',
+          showCancelButton: true,
+          confirmButtonText: 'Yes, delete it!',
+      }).then((result) => {
+          if (result.isConfirmed) {
+              window.location.href = url;
+          }
+      });
+  }
+</script>
 @endpush
