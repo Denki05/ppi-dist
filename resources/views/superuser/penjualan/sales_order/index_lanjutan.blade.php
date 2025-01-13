@@ -406,6 +406,7 @@
                           <thead>
                               <tr>
                                   <th>#</th>
+                                  <th>Kode</th>
                                   <th>Product</th>
                                   <th>Kemasan</th>
                                   <th>Qty</th>
@@ -536,6 +537,7 @@
                       response.products.forEach(function(product, index) {
                           productDetails += '<tr>';
                           productDetails += '<td>' + (index + 1) + '</td>';
+                          productDetails += '<td>' + product.code + '</td>';
                           productDetails += '<td>' + product.name + '</td>';
                           productDetails += '<td>' + product.kemasan + '</td>';
                           productDetails += '<td>' + product.qty + '</td>';

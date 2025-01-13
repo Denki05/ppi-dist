@@ -265,6 +265,7 @@ class SalesOrderController extends Controller
         ->leftJoin('master_packaging', 'master_products_packaging.packaging_id', '=', 'master_packaging.id')
         ->select(
             'penjualan_so_item.*',
+            'master_products_packaging.code AS code',
             'master_products_packaging.name AS name',
             'master_packaging.pack_name AS kemasan'
         )
