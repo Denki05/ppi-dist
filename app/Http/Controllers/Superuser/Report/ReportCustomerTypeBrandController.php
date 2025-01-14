@@ -7,9 +7,11 @@ use Illuminate\Http\Request;
 use App\Entities\Reports\CustomerTypeBrandReports;
 Use App\Entities\Penjualan\SalesOrder;
 use App\Entities\Setting\UserMenu;
-use Illuminate\Support\Facades\DB;
+use Carbon\Carbon;
+use Exception;
 use Auth;
 use COM;
+use DB;
 
 
 class ReportCustomerTypeBrandController extends Controller
@@ -34,16 +36,41 @@ class ReportCustomerTypeBrandController extends Controller
 
     public function index(Request $request)
     {
-        if(Auth::user()->is_superuser == 0){
-            if(empty($this->access)){
-                return redirect()->route('superuser.index')->with('error','Anda tidak punya akses untuk membuka menu terkait');
+        // Check if the user is a superuser and has access
+        if (Auth::user()->is_superuser == 0) {
+            if (empty($this->access)) {
+                return redirect()->route('superuser.index')->with('error', 'Anda tidak punya akses untuk membuka menu terkait');
             }
         }
 
+        // Retrieve the data
         $data['data'] = CustomerTypeBrandReports::first();
 
-        return view($this->view."index", $data);
+        // Get the current year
+        $currentYear = Carbon::now()->year;
+
+        // Array with month names
+        $months = [
+            'January', 'February', 'March', 'April', 'May', 'June',
+            'July', 'August', 'September', 'October', 'November', 'December'
+        ];
+
+        // Prepare month options array
+        $monthOptions = [];
+        foreach ($months as $index => $month) {
+            $monthOptions[] = [
+                'value' => $index + 1, // month index (1 to 12)
+                'label' => $month // Month name with year
+            ];
+        }
+
+        // Pass month options to the view along with other data
+        $data['monthOptions'] = $monthOptions;
+
+        // Return the view with the data
+        return view($this->view . "index", $data);
     }
+
 
     public function postData(Request $request)
     {
@@ -90,6 +117,8 @@ class ReportCustomerTypeBrandController extends Controller
 
                         // Define the values to be set or updated
                         $values = [
+                            'customer_id' => $row->customerID,
+                            'other_address_id' => $row->otherAddressID,
                             'customer_name' => $row->customer_name,
                             'customer_type' => $row->customer_type,
                             'customer_kota' => $row->customer_kota,
@@ -99,7 +128,7 @@ class ReportCustomerTypeBrandController extends Controller
                             'invoice_brand' => $row->invoice_brand,
                             'invoice_type' => $row->invoice_type,
                             'invoice_qty' => $row->invoice_qty ?? 0,
-                            'invoice_purchase' => ($row->invoice_purchase ?? 0),
+                            'invoice_purchase' => ($row->invoice_purchase - $row->discount_idr ?? 0),
                             'invoice_delivery_order_cost' => $row->invoice_delivery_order_cost ?? 0,
                             'created_at' => now(),
                             'updated_at' => now()
@@ -125,107 +154,68 @@ class ReportCustomerTypeBrandController extends Controller
 
     public function print_report(Request $request)
     {
-        $start = $request->input('start');
-        $end = $request->input('end');
-        $type = $request->input('type');
-        $date = date("Y-m");
-        $so_type = "nonppn";
+        $validatedData = $request->validate([
+            'start' => 'required|date',
+            'end' => 'required|date|after_or_equal:start',
+            'type' => 'required|integer|in:1,2',
+            'nominal' => 'required|integer|in:1,2',
+        ]);
 
-        // Convert date
+        $start = $validatedData['start'];
+        $end = $validatedData['end'];
+        $type = $validatedData['type'];
+        $nominal = $validatedData['nominal'];
         $new_date_start = date('d-m-Y', strtotime($start));
         $new_date_end = date('d-m-Y', strtotime($end));
 
+        $reportPath = "C:\\xampp\\htdocs\\ppi-dist\\public\\cr\\report\\management\\report_customer_register\\";
+        $exportPath = $reportPath . "export\\";
+        
+        // Select report based on type and nominal
         if ($type == 1) {
-            $my_report = "C:\\xampp\\htdocs\\ppi-dist\\public\\cr\\report\\management\\report_customer_register\\customer_type_brand.rpt";
-            $my_excel = 'C:\\xampp\\htdocs\\ppi-dist\\public\\cr\\report\\management\\report_customer_register\\export\\customer-type-brand-'.$date.'.xlsx';
-
-            // Server Information
-            $my_server = "LOCAL";
-            $my_user = "root";
-            $my_password = "";
-            $my_database = "ppi-dist";
-            $COM_Object = "CrystalDesignRunTime.Application";
-
-            $crapp = new COM($COM_Object) or die("Unable to Create Object");
-            $creport = $crapp->OpenReport($my_report, 1);
-
-            // Set database logon info
-            $creport->Database->Tables(1)->SetLogOnInfo($my_server, $my_database, $my_user, $my_password);
-
-            // Disable parameter prompting
-            $creport->EnableParameterPrompting = FALSE;
-
-            // Set parameters
-            $creport->ParameterFields(2)->SetCurrentValue($new_date_start);
-            $creport->ParameterFields(3)->SetCurrentValue($new_date_end);
-
-            // Record selection formula
-            $creport->RecordSelectionFormula = "{report_customer_type_brand.invoice_date} >= #$start# AND {report_customer_type_brand.invoice_date} <= #$end#";
-
-            // Export to Excel process
-            $creport->ExportOptions->DiskFileName = $my_excel; // Export to Excel
-            $creport->ExportOptions->ExcelUseConstantColumnWidth = true;
-            $creport->ExportOptions->DestinationType = 1; // Export to file
-            $creport->ExportOptions->FormatType = 36; // Excel format (36 for Excel 97-2003, 51 for Excel 2007+)
-            $creport->Export(false);
-
-            // Release the variables
-            $creport = null;
-            $crapp = null;
-            $ObjectFactory = null;
-
-            $file = $my_excel;
-
-            header("Content-Description: File Transfer");
-            header("Content-Type: application/vnd.ms-excel");
-            header("Content-Transfer-Encoding: Binary");
-            header("Content-Disposition: attachment; filename=\"" . basename($file) . "\"");
-            ob_clean();
-            flush();
-            readfile($file);
-            exit();
+            $reportName = $nominal == 1 ? "customer_type_brand.rpt" : "customer_type_brand_non_nominal.rpt";
+            $pdfName = $nominal == 1 ? "customer-type-brand-" : "customer-type-brand-non-nominal-";
         } elseif ($type == 2) {
-            $my_report = "C:\\xampp\\htdocs\\ppi-dist\\public\\cr\\report\\management\\report_customer_register\\report_zone_customer.rpt";
-            $my_excel = 'C:\\xampp\\htdocs\\ppi-dist\\public\\cr\\report\\management\\report_customer_register\\export\\customer-zone-'.$date.'.xlsx';
+            $reportName = $nominal == 1 ? "report_zone_customer.rpt" : "report_zone_customer_non_nominal.rpt";
+            $pdfName = $nominal == 1 ? "customer-zone-" : "customer-zone-non-nominal-";
+        }
 
-            $my_server = "LOCAL";
-            $my_user = "root";
-            $my_password = "";
-            $my_database = "ppi-dist";
-            $COM_Object = "CrystalDesignRunTime.Application";
+        $my_report = $reportPath . $reportName;
+        $my_pdf = $exportPath . $pdfName . date("Y-m") . ".pdf";
 
-            $crapp = new COM($COM_Object) or die("Unable to Create Object");
+        try {
+            if (!file_exists($my_report)) {
+                return response()->json(['error' => 'Report file not found'], 404);
+            }
+
+            $crapp = new COM("CrystalDesignRunTime.Application");
             $creport = $crapp->OpenReport($my_report, 1);
+            $creport->Database->Tables(1)->SetLogOnInfo("LOCAL", "ppi_araya", "root", "");
 
-            $creport->Database->Tables(1)->SetLogOnInfo($my_server, $my_database, $my_user, $my_password);
-
-            $creport->EnableParameterPrompting = FALSE;
-
+            $creport->EnableParameterPrompting = false;
             $creport->ParameterFields(2)->SetCurrentValue($new_date_start);
             $creport->ParameterFields(3)->SetCurrentValue($new_date_end);
+            $creport->RecordSelectionFormula = "{report_customer_type_brand.invoice_date}>=#$start# AND {report_customer_type_brand.invoice_date}<=#$end#";
 
-            $creport->RecordSelectionFormula = "{report_customer_type_brand.invoice_type} = '$so_type' AND {report_customer_type_brand.invoice_date} >= #$start# AND {report_customer_type_brand.invoice_date} <= #$end#";
-
-            $creport->ExportOptions->DiskFileName = $my_excel;
-            $creport->ExportOptions->ExcelUseConstantColumnWidth = true;
+            $creport->ExportOptions->DiskFileName = $my_pdf;
+            $creport->ExportOptions->PDFExportAllPages = true;
             $creport->ExportOptions->DestinationType = 1;
-            $creport->ExportOptions->FormatType = 36; // Excel format
+            $creport->ExportOptions->FormatType = 31;
+            // $creport->ExportOptions->FormatType = 36; // Change to 36 for Excel (97-2003)
+            // $creport->ExportOptions->FormatType = 33; //Excel (data only)
             $creport->Export(false);
 
             $creport = null;
             $crapp = null;
-            $ObjectFactory = null;
 
-            $file = $my_excel;
-
-            header("Content-Description: File Transfer");
-            header("Content-Type: application/vnd.ms-excel");
-            header("Content-Transfer-Encoding: Binary");
-            header("Content-Disposition: attachment; filename=\"" . basename($file) . "\"");
-            ob_clean();
-            flush();
-            readfile($file);
-            exit();
+            if (file_exists($my_pdf)) {
+                return response()->download($my_pdf, basename($my_pdf));
+            } else {
+                return response()->json(['error' => 'PDF not generated'], 500);
+            }
+        } catch (\Exception $e) {
+            \Log::error('Report generation failed: ' . $e->getMessage());
+            return response()->json(['error' => 'An error occurred while generating the report'], 500);
         }
     }
 
@@ -234,5 +224,71 @@ class ReportCustomerTypeBrandController extends Controller
         DB::table('report_customer_type_brand')->truncate();
 
         return redirect()->back()->with('message', 'Berhasil remove data!');
+    }
+
+    public function exportReport(Request $request)
+    {
+        $validatedData = $request->validate([
+            'start' => 'required|date',
+            'end' => 'required|date|after_or_equal:start',
+            'type' => 'required|integer|in:1,2',
+            'nominal' => 'required|integer|in:1,2',
+            'action' => 'required|string|in:print,excel',
+        ]);
+
+        $start = $validatedData['start'];
+        $end = $validatedData['end'];
+        $type = $validatedData['type'];
+        $nominal = $validatedData['nominal'];
+        $action = $validatedData['action'];
+
+        $reportPath = "C:\\xampp\\htdocs\\ppi-dist\\public\\cr\\report\\management\\report_customer_register\\";
+        $exportPath = $reportPath . "export\\";
+
+        if ($type == 1) {
+            $reportName = $nominal == 1 ? "customer_type_brand.rpt" : "customer_type_brand_non_nominal.rpt";
+            $fileName = $nominal == 1 ? "customer-type-brand-" : "customer-type-brand-non-nominal-";
+        } else {
+            $reportName = $nominal == 1 ? "report_zone_customer.rpt" : "report_zone_customer_non_nominal.rpt";
+            $fileName = $nominal == 1 ? "customer-zone-" : "customer-zone-non-nominal-";
+        }
+
+        $my_report = $reportPath . $reportName;
+        $outputFile = $exportPath . $fileName . date("Y-m") . ($action === 'print' ? ".pdf" : ".xls");
+
+        try {
+            if (!file_exists($my_report)) {
+                return response()->json(['error' => 'Report file not found'], 404);
+            }
+
+            $crapp = new COM("CrystalDesignRunTime.Application");
+            $creport = $crapp->OpenReport($my_report, 1);
+
+            $creport->Database->Tables(1)->SetLogOnInfo("LOCAL", "ppi_araya", "root", "");
+            $creport->EnableParameterPrompting = false;
+            $creport->ParameterFields(2)->SetCurrentValue(date('d-m-Y', strtotime($start)));
+            $creport->ParameterFields(3)->SetCurrentValue(date('d-m-Y', strtotime($end)));
+            $creport->RecordSelectionFormula = "{report_customer_type_brand.invoice_date}>=#$start# AND {report_customer_type_brand.invoice_date}<=#$end#";
+
+            $creport->ExportOptions->DiskFileName = $outputFile;
+            $creport->ExportOptions->PDFExportAllPages = true;
+            $creport->ExportOptions->DestinationType = 1;
+            $creport->ExportOptions->FormatType = $action === 'print' ? 31 : 29;
+
+            $creport->Export(false);
+            $creport = null;
+            $crapp = null;
+
+            if (file_exists($outputFile)) {
+                \Log::info('File generated successfully: ' . $outputFile);
+                return response()->download($outputFile, basename($outputFile))->deleteFileAfterSend(true);
+            } else {
+                \Log::error('File not generated: ' . $outputFile);
+                return response()->json(['error' => 'File not generated'], 500);
+            }
+        } catch (\Exception $e) {
+            \Log::error('Report generation failed: ' . $e->getMessage());
+            return response()->json(['error' => 'An error occurred while generating the report'], 500);
+        }
     }
 }
