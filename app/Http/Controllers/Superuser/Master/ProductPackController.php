@@ -109,7 +109,6 @@ class ProductPackController extends Controller
                         'count_pack' => $kd
                     ]);
 
-                    LogActivity::addToLog('Create a new Product Pack: ' . $new_pack->code.' - '.$new_pack->name);
 
                     $response['notification'] = [
                         'alert' => 'notify',

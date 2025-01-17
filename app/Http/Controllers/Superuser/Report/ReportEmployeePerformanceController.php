@@ -72,7 +72,7 @@ class ReportEmployeePerformanceController extends Controller
             }
         } elseif ($type == 2) {
             if ($nominal == 1) {
-                $my_report = "{$basePath}officer_report_nominal.rpt";
+                $my_report = "{$basePath}officer_report_nominal_3.rpt";
                 $my_pdf = "{$basePath}export\\officer_report_nominal-{$date}.pdf";
             } else {
                 $my_report = "{$basePath}officer_report_non_nominal.rpt";
@@ -111,7 +111,7 @@ class ReportEmployeePerformanceController extends Controller
             if($type == 1){
                 $creport->RecordSelectionFormula = "{report_customer_type_brand.invoice_date}>=#$start#AND{report_customer_type_brand.invoice_date}<=#$end#";
             } else {
-                $creport->RecordSelectionFormula = "{penjualan_so.so_date}>=#$start#AND{penjualan_so.so_date}<=#$end#";
+                $creport->RecordSelectionFormula = "{Command.invoice_date}>=#$start#AND{Command.invoice_date}<=#$end#AND{Command.status}=6";
             }
         
             // Export to PDF

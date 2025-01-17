@@ -407,37 +407,56 @@
     })
 
     $('#myForm').on('submit', function (e) {
-      e.preventDefault(); 
+        e.preventDefault(); // Prevent default form submission
 
-      var id = $('#productPackID').val();
-      var mitra_id = $('#mitra_id').val();
-      if (!id) {
-          alert('No Product ID selected');
-          return;
-      }
+        // Get form data
+        var id = $('#productPackID').val();
+        var mitra_id = $('#mitra_id').val();
 
-      var url = "{{ route('superuser.accounting.product_finance.update_cost', ":id") }}".replace(':id', id);
-      var formData = new FormData(this);
+        // Validate required fields
+        if (!id) {
+            alert('No Product ID selected');
+            return;
+        }
 
-      $.ajax({
-          url: url,
-          type: 'POST',
-          headers: { 'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content') },
-          data: formData,
-          contentType: false,
-          processData: false,
-          success: function (response) {
-              if (response.notification.type === 'success') {
-                  alert(response.notification.content);
-                  window.location.href = response.redirect_to;
-              } else {
-                  alert('Failed to update. Please try again.');
-              }
-          },
-          error: function (xhr) {
-              alert('Error: ' + (xhr.responseJSON.error || 'Unexpected error occurred'));
-          }
-      });
+        // Construct the URL
+        var url = "{{ route('superuser.accounting.product_finance.update_cost', ':id') }}".replace(':id', id);
+        var formData = new FormData(this);
+
+        // Send AJAX request
+        $.ajax({
+            url: url,
+            type: 'POST',
+            headers: { 
+                'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content') 
+            },
+            data: formData,
+            contentType: false,
+            processData: false,
+            success: function (response) {
+                // Check if response.notification exists and is valid
+                if (response.notification && response.notification.type) {
+                    if (response.notification.type === 'success') {
+                        alert(response.notification.content); // Success message
+                        window.location.href = response.redirect_to; // Redirect to the specified URL
+                    } else {
+                        alert(response.notification.content || 'Failed to update. Please try again.');
+                    }
+                } else {
+                    // Handle unexpected response structure
+                    alert('Unexpected response from the server. Please contact support.');
+                }
+            },
+            error: function (xhr) {
+                console.error('Error:', xhr.responseJSON); // Log the error for debugging
+
+                // Handle errors gracefully
+                var errorMessage = xhr.responseJSON && xhr.responseJSON.error 
+                    ? xhr.responseJSON.error 
+                    : 'An unexpected error occurred. Please try again.';
+                alert('Error: ' + errorMessage);
+            }
+        });
     });
 
     $('a[href^="#"]').on('click', function(event) {

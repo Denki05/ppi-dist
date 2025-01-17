@@ -59,7 +59,9 @@ class ProductFinanceController extends Controller
             }
         }
 
-        return view($this->view."index");
+        $data['mitra'] = Mitra::get();
+
+        return view($this->view."index", $data);
     }
 
     /**
@@ -219,6 +221,8 @@ class ProductFinanceController extends Controller
                 return redirect()->route('superuser.index')->with('error','Anda tidak punya akses untuk membuka menu terkait');
             }
         }
+
+        // dd($mitra_id);
         
         $search_product = $request->input('product');
         // DD($search_product);
@@ -332,8 +336,6 @@ class ProductFinanceController extends Controller
             // DD($productFinance->id);
 
             $validator = Validator::make($request->all(), [
-                'buying_price_usd_drum' => 'required',
-                'selling_price_usd_drum' => 'required',
                 'buying_price_usd_unit' => 'required',
                 'selling_price_usd_unit' => 'required',
                 
