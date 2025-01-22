@@ -956,7 +956,7 @@ class InvoicingController extends Controller
         }
     }
 
-    public function download_invoice($id)
+    public function download_invoice_full($id)
     {
         if (empty($id) || !is_numeric($id)) {
             abort(404, 'Invoice ID tidak valid.');
@@ -970,7 +970,7 @@ class InvoicingController extends Controller
         $data = [
             'result' => $result,
             'company' => Company::first(), // Pastikan data perusahaan diambil.
-            'watermark' => 'Paid' // Atur sesuai kebutuhan, atau tambahkan logika dinamis.
+            'watermark' => $result->do->so->payment_status == '1' ? 'PAID' : 'COPY' // Atur sesuai kebutuhan, atau tambahkan logika dinamis.
         ];
 
         $pdf = PDF::loadView('superuser.finance.invoicing.print_new', $data)
@@ -979,9 +979,38 @@ class InvoicingController extends Controller
         $generate = false; // Ubah sesuai logika bisnis.
 
         if ($generate) {
-            return $pdf->download("invoice_{$id}.pdf");
+            return $pdf->download("{$result->code}-FULL.pdf");
         }
 
-        return $pdf->stream("invoice_{$id}.pdf");
+        return $pdf->stream("{$result->code}-FULL.pdf");
+    }
+
+    public function download_invoice_proforma($id)
+    {
+        if (empty($id) || !is_numeric($id)) {
+            abort(404, 'Invoice ID tidak valid.');
+        }
+
+        $result = Invoicing::find($id);
+        if (!$result) {
+            abort(404, 'Invoice tidak ditemukan.');
+        }
+
+        $data = [
+            'result' => $result,
+            'company' => Company::first(), // Pastikan data perusahaan diambil.
+            'watermark' => $result->do->so->payment_status == '1' ? 'PAID' : 'COPY' // Atur sesuai kebutuhan, atau tambahkan logika dinamis.
+        ];
+
+        $pdf = PDF::loadView('superuser.finance.invoicing.print_new_2', $data)
+                ->setPaper('a5', 'landscape');
+
+        $generate = false; // Ubah sesuai logika bisnis.
+
+        if ($generate) {
+            return $pdf->download("{$result->code}.pdf");
+        }
+
+        return $pdf->stream("{$result->code}.pdf");
     }
 }

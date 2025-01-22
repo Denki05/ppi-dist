@@ -28,7 +28,8 @@ Route::group([
         Route::get('/updateInvoice', 'InvoicingController@updateInvoice')->name('updateInvoice');
         Route::get('/pageReport', 'InvoicingController@pageReport')->name('pageReport');
         Route::post('/printReportPage', 'InvoicingController@printReportPage')->name('printReportPage');
-        Route::get('/download_invoice/{id}', 'InvoicingController@download_invoice')->name('download_invoice');
+        Route::get('/download_invoice_full/{id}', 'InvoicingController@download_invoice_full')->name('download_invoice_full');
+        Route::get('/download_invoice_proforma/{id}', 'InvoicingController@download_invoice_proforma')->name('download_invoice_proforma');
     });
 
     Route::group(['as' => 'proforma.', 'prefix' => '/proforma'], function () {

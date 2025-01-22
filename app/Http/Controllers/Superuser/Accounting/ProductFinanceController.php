@@ -17,6 +17,7 @@ use App\Entities\Penjualan\PackingOrder;
 use App\Exports\Finance\ProductFinanceExport;
 use App\Imports\Accounting\ProductFinanceImport;
 use App\Exports\Accounting\ProductFinanceImportTemplate;
+use App\DataTables\Accounting\ProductFinanceTable;
 use DB;
 use Auth;
 use PDF;
@@ -45,9 +46,17 @@ class ProductFinanceController extends Controller
         });
     }
 
-    
-    public function index()
+    public function json(Request $request, ProductFinanceTable $datatable)
     {
+        return $datatable->build($request);
+    }
+
+    
+    public function index(Request $request)
+    {
+
+        // return view("superuser.coming-soon");
+        
         // Access
         if(Auth::user()->is_superuser == 0){
             if(empty($this->access) || empty($this->access->user) || $this->access->can_read == 0){
@@ -55,7 +64,9 @@ class ProductFinanceController extends Controller
             }
         }
 
-        return view($this->view."index");
+        $data['mitra'] = Mitra::where('status', Mitra::STATUS['ACTIVE'])->get();
+
+        return view($this->view."index", $data);
     }
 
     
@@ -172,7 +183,7 @@ class ProductFinanceController extends Controller
                     'content' => 'Success',
                 ];
 
-                $response['redirect_to'] = route('superuser.accounting.product_finance.show', $request->mitra_id);
+                $response['redirect_to'] = route('superuser.accounting.product_finance.index');
 
                 return $this->response(200, $response);
 
@@ -193,34 +204,22 @@ class ProductFinanceController extends Controller
         }
     }
     
-    public function show(Request $request, $mitra_id)
+    public function show($product_finance)
     {
-        if(Auth::user()->is_superuser == 0){
-            if(empty($this->access) || empty($this->access->user) || $this->access->can_read == 0){
-                return redirect()->route('superuser.index')->with('error','Anda tidak punya akses untuk membuka menu terkait');
-            }
-        }
+        $decode = base64_decode($product_finance);
         
-        $search_product = $request->input('product');
-        // DD($search_product);
+        if (!$decode || !is_numeric($decode)) {
+            return response()->json(['errors' => ['Invalid product finance ID']], 400);
+        }
 
-        $mitra = Mitra::find($mitra_id);
-        $product = ProductFinance::where('mitra_id', $mitra_id)->get();
+        $productFinance = ProductFinance::find($decode);
+        if (!$productFinance) {
+            return response()->json(['errors' => ['Product finance not found']], 404);
+        }
 
-        $table_data = ProductFinance::where(function($query2) use($search_product) {
-                                            if(!empty($search_product)){
-                                                $query2->where('id', $search_product);
-                                            }
-                                        })
-                                        ->first();
-                                
-        $data = [
-            'mitra' => $mitra,
-            'product' => $product,
-            'table_data' => $table_data,
-        ];
-
-        return view($this->view."show",$data);
+        return response()->json([
+            'product' => $productFinance
+        ]);
     }
 
     /**
@@ -296,70 +295,76 @@ class ProductFinanceController extends Controller
         }
     }
 
-    public function update_cost(Request $request , $product_finance)
+    public function update_cost(Request $request, $product_finance)
     {
         if ($request->ajax()) {
-
+            // Decode and validate the product ID
             $decode = base64_decode($product_finance);
-            $productFinance = ProductFinance::find($decode);
 
-            // get old price
-            $old_price = ProductFinance::where('id', $decode)->first();
-
-            if ($productFinance == null) {
-                abort(404);
+            if (!$decode || !is_numeric($decode)) {
+                return response()->json(['errors' => ['Invalid product finance ID']], 400);
             }
 
-            // DD($productFinance->id);
+            // Fetch the ProductFinance model
+            $productFinance = ProductFinance::find($decode);
+            if (!$productFinance) {
+                return response()->json(['errors' => ['Product finance not found']], 404);
+            }
 
+            // Validate request data
             $validator = Validator::make($request->all(), [
-                'buying_price_usd_drum' => 'required',
-                'selling_price_usd_drum' => 'required',
-                'buying_price_usd_unit' => 'required',
-                'selling_price_usd_unit' => 'required',
-                
+                'buying_price_usd_drum' => 'required|numeric',
+                'selling_price_usd_drum' => 'required|numeric',
+                'buying_price_usd_unit' => 'required|numeric',
+                'selling_price_usd_unit' => 'required|numeric',
             ]);
 
             if ($validator->fails()) {
-                return response()->json(['errors' => $validator->errors()->all()]);
+                return response()->json(['errors' => $validator->errors()->all()], 422);
             }
 
-            if ($validator->passes()) {
+            // Begin database transaction
+            try {
                 DB::beginTransaction();
 
+                // Log old prices for comparison
+                $old_price = $productFinance->replicate();
+
+                // Update the record
                 $productFinance->selling_price_usd_drum = $request->selling_price_usd_drum;
                 $productFinance->buying_price_usd_drum = $request->buying_price_usd_drum;
                 $productFinance->selling_price_usd_unit = $request->selling_price_usd_unit;
                 $productFinance->buying_price_usd_unit = $request->buying_price_usd_unit;
                 $productFinance->updated_by = Auth::id();
+                $productFinance->save();
 
-                if ($productFinance->save()) {
-                    // Insert log
-                    $price_log = new PriceLogFinance;
+                // Insert into price log
+                PriceLogFinance::create([
+                    'product_finance_id' => $productFinance->id,
+                    'selling_price_usd_drum' => $old_price->selling_price_usd_drum,
+                    'buying_price_usd_drum' => $old_price->buying_price_usd_drum,
+                    'selling_price_usd_unit' => $old_price->selling_price_usd_unit,
+                    'buying_price_usd_unit' => $old_price->buying_price_usd_unit,
+                    'created_by' => Auth::id(),
+                ]);
 
-                    $price_log->product_finance_id = $productFinance->id;
-                    $price_log->selling_price_usd_drum = $old_price->selling_price_usd_drum;
-                    $price_log->buying_price_usd_drum = $old_price->buying_price_usd_drum;
-                    $price_log->selling_price_usd_unit = $old_price->selling_price_usd_unit;
-                    $price_log->buying_price_usd_unit = $old_price->buying_price_usd_unit;
-                    $price_log->created_by = Auth::id();
+                DB::commit();
 
-                    $price_log->save();
-
-                    DB::commit();
-
-                    $response['notification'] = [
+                return response()->json([
+                    'notification' => [
                         'alert' => 'notify',
                         'type' => 'success',
-                        'content' => 'Success',
-                    ];
-
-                    $response['redirect_to'] = route('superuser.accounting.product_finance.index');
-
-                    return $this->response(200, $response);
-                }
+                        'content' => 'Price updated successfully!',
+                    ],
+                    'redirect_to' => route('superuser.accounting.product_finance.index'),
+                ], 200);
+            } catch (\Exception $e) {
+                DB::rollBack();
+                return response()->json(['errors' => ['Failed to update price.']], 500);
             }
         }
+
+        return response()->json(['errors' => ['Invalid request']], 400);
     }
 
     public function search_mitra(Request $request)

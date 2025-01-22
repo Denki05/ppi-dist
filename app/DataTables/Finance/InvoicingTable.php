@@ -82,9 +82,8 @@ class InvoicingTable extends Table
 
         $table->addColumn('action', function (Invoicing $model) {
             $view = route('superuser.finance.invoicing.detail', $model->do_id);
-            $print = route('superuser.finance.invoicing.print', $model);
-            $print_full = route('superuser.finance.invoicing.print2', $model);
-            // $print_pdf = route('superuser.finance.invoicing.download_invoice', $model);
+            $print_new_full = route('superuser.finance.invoicing.download_invoice_full', $model);
+            $print_new_proforma = route('superuser.finance.invoicing.download_invoice_proforma', $model);
 
             switch ($model->status) {
                 case $model::STATUS['ACTIVE']:
@@ -94,12 +93,12 @@ class InvoicingTable extends Table
                                 <i class=\"fa fa-eye\"></i>
                             </button>
                         </a>
-                        <a href=\"{$print}\">
-                            <button type=\"button\" class=\"btn btn-outline-primary btn-sm btn-flat\" title=\"Print\">
+                        <a href=\"{$print_new_proforma}\" target=\"_blank\">
+                            <button type=\"button\" class=\"btn btn-outline-primary btn-sm btn-flat\" title=\"Print Full\">
                                 <i class=\"fa fa-print\"></i>
                             </button>
                         </a>
-                        <a href=\"{$print_full}\">
+                        <a href=\"{$print_new_full}\" target=\"_blank\">
                             <button type=\"button\" class=\"btn btn-outline-success btn-sm btn-flat\" title=\"Print Full\">
                                 <i class=\"fa fa-print\"></i>
                             </button>
