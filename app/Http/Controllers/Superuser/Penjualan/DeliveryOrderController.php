@@ -239,59 +239,31 @@ class DeliveryOrderController extends Controller
     {
         //
     }
+    
     public function print($id){
-        // Access
-        if(Auth::user()->is_superuser == 0){
-            if(empty($this->access) || empty($this->access->user) || $this->access->can_print == 0){
-                return redirect()->route('superuser.index')->with('error','Anda tidak punya akses untuk membuka menu terkait');
-            }
+        if (empty($id) || !is_numeric($id)) {
+            abort(404, 'DO ID tidak valid.');
         }
 
-        $result = PackingOrder::where('id',$id)->first();
-        
-        $my_report = "C:\\xampp\\htdocs\\ppi-dist\public\\cr\\do\\do.rpt"; 
-        $my_pdf = 'C:\\xampp\\htdocs\\ppi-dist\\public\\cr\\do\\export\\'.$result->do_code.'.pdf';
+        $result = PackingOrder::find($id);
+        if (!$result) {
+            abort(404, 'DO tidak ditemukan.');
+        }
 
-        $my_server = "LOCAL"; 
-        $my_user = "root"; 
-        $my_password = ""; 
-        $my_database = "ppi-dist";
-        $COM_Object = "CrystalDesignRunTime.Application";
+        $data = [
+            'result' => $result,
+        ];
 
-        //-Create new COM object-depends on your Crystal Report version
-        $crapp= New COM($COM_Object) or die("Unable to Create Object");
-        $creport = $crapp->OpenReport($my_report,1); // call rpt report
+        $pdf = PDF::loadView('superuser.penjualan.delivery_order.print_new', $data)
+                ->setPaper('a5', 'landscape');
 
-        //- Set database logon info - must have
-        $creport->Database->Tables(1)->SetLogOnInfo($my_server, $my_database, $my_user, $my_password);
+        $generate = false; // Ubah sesuai logika bisnis.
 
-        //- field prompt or else report will hang - to get through
-        $creport->EnableParameterPrompting = FALSE;
-        $creport->RecordSelectionFormula = "{penjualan_do.id}= $result->id";
+        if ($generate) {
+            return $pdf->download("{$result->code}-DO.pdf");
+        }
 
-
-        //export to PDF process
-        $creport->ExportOptions->DiskFileName=$my_pdf; //export to pdf
-        $creport->ExportOptions->PDFExportAllPages=true;
-        $creport->ExportOptions->DestinationType=1; // export to file
-        $creport->ExportOptions->FormatType=31; // PDF type
-        $creport->Export(false);
-
-        //------ Release the variables ------
-        $creport = null;
-        $crapp = null;
-        $ObjectFactory = null;
-
-        $file = 'C:\\xampp\\htdocs\\ppi-dist\\public\\cr\\do\\export\\'.$result->do_code.'.pdf';
-
-        header("Content-Description: File Transfer"); 
-        header("Content-Type: application/octet-stream"); 
-        header("Content-Transfer-Encoding: Binary"); 
-        header("Content-Disposition: attachment; filename=\"". basename($file) ."\""); 
-        ob_clean();
-        flush();
-        readfile ($file);
-        exit();
+        return $pdf->stream("{$result->code}-DO.pdf");
     }
 
     public function packed(Request $request)
