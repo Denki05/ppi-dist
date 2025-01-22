@@ -42,21 +42,21 @@ class SalesOrderAwalTable extends Table
                 DB::raw('
                     CASE 
                         WHEN penjualan_so.sales_id = 1 THEN "Lindy"
-                        WHEN penjualan_so.sales_id = 2 THEN "Rita"
+                        WHEN penjualan_so.sales_id = 2 THEN "Alivi"
                         WHEN penjualan_so.sales_id = 3 THEN "S.A"
                         WHEN penjualan_so.sales_id = 4 THEN "Santi"
-                        WHEN penjualan_so.sales_id = 5 THEN "Rudi"
+                        WHEN penjualan_so.sales_id = 5 THEN "Eric"
                         ELSE "-"
                     END AS sales
                 '),
                 DB::raw('
                     CASE 
                         WHEN penjualan_so.created_by = 26 THEN "Lindy"
-                        WHEN penjualan_so.created_by = 27 THEN "Rita"
+                        WHEN penjualan_so.created_by = 38 THEN "Alivi"
                         WHEN penjualan_so.created_by = 32 THEN "Nia"
                         WHEN penjualan_so.created_by = 33 THEN "Putri"
                         WHEN penjualan_so.created_by = 34 THEN "Santi"
-                        WHEN penjualan_so.created_by = 35 THEN "Rudi"
+                        WHEN penjualan_so.created_by = 35 THEN "Eric"
                         WHEN penjualan_so.created_by = 1 THEN "Dev"
                         ELSE "-"
                     END AS so_created_by
@@ -114,6 +114,7 @@ class SalesOrderAwalTable extends Table
             $lanjutkan = route('superuser.penjualan.sales_order.lanjutkan', $model->id);
             $delete = route('superuser.penjualan.sales_order.destroy', $model->id);
             $print_so = route('superuser.penjualan.sales_order.print_so', $model->id);
+            $print_so_new = route('superuser.penjualan.sales_order.print_so_new', $model->id);
 
             switch ($model->status_so) {
                 case $model->status_so == "AWAL" OR $model->status_so == "REVISI":
@@ -136,7 +137,7 @@ class SalesOrderAwalTable extends Table
                             </button>
                         </a>
 
-                        <a href=\"{$print_so}\">
+                        <a href=\"{$print_so_new}\" target=\"_blank\">
                             <button type=\"button\" class=\"btn btn-sm btn-circle btn-alt-info\" title=\"Print SO\">
                                 <i class=\"fa fa-print\"></i>
                             </button>
@@ -145,7 +146,7 @@ class SalesOrderAwalTable extends Table
 
                 case $model->status_so == "TUTUP" OR $model->status_so == "LANJUTAN":
                     return "
-                        <a href=\"{$print_so}\">
+                        <a href=\"{$print_so_new}\" target=\"_blank\">
                             <button type=\"button\" class=\"btn btn-sm btn-circle btn-alt-info\" title=\"Print SO\">
                                 <i class=\"fa fa-print\"></i>
                             </button>

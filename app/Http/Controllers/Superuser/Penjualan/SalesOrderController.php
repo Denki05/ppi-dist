@@ -35,7 +35,6 @@ use App\Entities\Setting\UserMenu;
 use App\Entities\Account\User;
 use App\Repositories\CodeRepo;
 use App\Helper\CustomHelper;
-use Spatie\PdfToImage\pdf;
 use App\DataTables\Penjualan\SalesOrderAwalTable;
 use App\DataTables\Penjualan\SalesOrderLanjutanTable;
 use Illuminate\Support\Facades\Response;
@@ -48,6 +47,7 @@ use Validator;
 use Auth;
 use DB;
 use COM;
+use PDF;
 use Carbon;
 use Excel;
 
@@ -2039,6 +2039,33 @@ class SalesOrderController extends Controller
 
                 return response()->json(['code' => 200, 'data' => $data]);
         }
+    }
+
+    public function print_so_new($so_id)
+    {
+        if (empty($so_id) || !is_numeric($so_id)) {
+            abort(404, 'SO ID tidak valid.');
+        }
+
+        $result = SalesOrder::find($so_id);
+        if (!$result) {
+            abort(404, 'SO tidak ditemukan.');
+        }
+
+        $data = [
+            'result' => $result,
+        ];
+
+        $pdf = PDF::loadView('superuser.penjualan.sales_order.print_pdf', $data)
+                ->setPaper('a5', 'landscape');
+
+        $generate = false; // Ubah sesuai logika bisnis.
+
+        if ($generate) {
+            return $pdf->download("{$result->code}-SO.pdf");
+        }
+
+        return $pdf->stream("{$result->code}-FULL.pdf");
     }
 
     public function print_so($so_id)

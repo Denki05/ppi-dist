@@ -49,6 +49,7 @@ Route::group([
         Route::post('/ajax_product_detail', 'SalesOrderController@ajax_product_detail')->name('ajax_product_detail');
         Route::get('/{id}/print_rejected_so', 'SalesOrderController@print_rejected_so')->name('print_rejected_so');
         Route::get('/{so_id}/print_so', 'SalesOrderController@print_so')->name('print_so');
+        Route::get('/{so_id}/print_so_new', 'SalesOrderController@print_so_new')->name('print_so_new');
         Route::get('/create/pdf/{data?}/{protect?}', 'SalesOrderController@pdf')->name('pdf');
 
         Route::get('/get_category', 'SalesOrderController@get_category')->name('get_category');

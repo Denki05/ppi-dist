@@ -1,152 +1,229 @@
-<html>
-<head>
-    <style>
-    body {
-        font-family: sans-serif;
-        font-size: 10pt;
-    }
+<?php
+  $idr_total = 0; 
+  $code = $result->code;
+?>
+<style type="text/css">
+  body {
+    color: #333;
+    font-family: Arial, sans-serif;
+    font-size: 12px;
+  }
+  table.borderless {
+    border-collapse: collapse;
+    border-spacing: 0;
+  }
+  .borderless td, .borderless th {
+    border: none;
+  }
+  .info td, .info th {
+    padding: 2px;
+    margin: 2px;
+    box-sizing: border-box;
+  }
+  .column-float {
+    float: left;
+    width: 50%;
+  }
+  .row-float {
+    position: relative;
+  }
+  .row-float:after {
+    content: "";
+    display: block;
+    clear: both;
+  }
+  table.table-data {
+    width: 100%;
+    border-collapse: collapse;
+    color: #333;
+  }
+  table.table-data th {
+    font-size: 12px;
+    background-color: #d3d3d3;
+  }
+  table.table-data td {
+    border: none;
+  }
+  table.table-data tbody {
+    text-align: center;
+    font-size: 12px;
+  }
+  @page {
+    margin-top: 0px;
+  }
+  .text-right {
+    text-align: right;
+  }
+  .text-left {
+    text-align: left;
+  }
+  .header {
+    width: 100%;
+    position: fixed;
+    z-index: 99999;
+    letter-spacing: 10px;
+    font-size: 150px;
+    font-weight: 800;
+    opacity: 0.3;
+    color: #404040;
+    text-transform: uppercase;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%) rotate(-20deg);
+    text-align: center;
+  }
+  .page-break {
+    page-break-after: always;
+  }
 
-    p {
-        margin: 0pt;
-    }
+  .clearfix::after {
+    content: "";
+    display: table;
+    clear: both;
+  }
+</style>
 
-    table.items {
-        border: 0.1mm solid #e7e7e7;
-    }
+@php
+  $limit = 12; // Limit items per page
+  $doDetails = $result->so_detail;
+  $doDetails = $doDetails->sortBy(function($row) {
+      return $row->product_pack->name ?? '';
+  });
+  $totalItems = $doDetails->count();
+  $totalPages = ceil($totalItems / $limit);
+@endphp
 
-    td {
-        vertical-align: top;
-    }
+@php
+  $offset = 0; // Untuk menyimpan indeks awal di setiap halaman
+@endphp
 
-    .items td {
-        border-left: 0.1mm solid #e7e7e7;
-        border-right: 0.1mm solid #e7e7e7;
-    }
-
-    table thead td {
-        text-align: center;
-        border: 0.1mm solid #e7e7e7;
-    }
-
-    .items td.blanktotal {
-        background-color: #EEEEEE;
-        border: 0.1mm solid #e7e7e7;
-        background-color: #FFFFFF;
-        border: 0mm none #e7e7e7;
-        border-top: 0.1mm solid #e7e7e7;
-        border-right: 0.1mm solid #e7e7e7;
-    }
-
-    .items td.totals {
-        text-align: right;
-        border: 0.1mm solid #e7e7e7;
-    }
-
-    .items td.cost {
-        text-align: "."center;
-    }
-    </style>
-</head>
-
-<body>
-    <table width="100%" style="font-family: sans-serif;" cellpadding="10">
-        <tr>
-            <td width="100%" style="text-align: center; font-size: 20px; font-weight: bold; padding: 0px;">
-              INVOICE
-            </td>
-        </tr>
-        <tr>
-          <td height="10" style="font-size: 0px; line-height: 10px; height: 10px; padding: 0px;">&nbsp;</td>
-        </tr>
-    </table>
-    <table width="100%" style="font-family: sans-serif;" cellpadding="10">
-        <tr>
-            <td width="49%" style="border: 0.1mm solid #eee;">Name<br>Company Name<br>Area<br>Area 2<br>Kent<br>0123 6NN</td>
-            <td width="2%">&nbsp;</td>
-            <td width="49%" style="border: 0.1mm solid #eee; text-align: right;"><strong>Company Name Ltd</strong><br>00-00 ABC Aare<br>Country Name<br>123 456<br><br><strong>Telephone:</strong> +00 000 000 0000<br><a href="#" target="_blank" style="color: #000; text-decoration: none;">companyname.com</a><br><a href="#" target="_blank" style="color: #000; text-decoration: none;">companyname.com</a><br><a href="#" target="_blank" style="color: #000; text-decoration: none;">companyname.com</a><br><a href="#" target="_blank" style="color: #000; text-decoration: none;">companyname.com</a><br></td>
-        </tr>
-    </table>
-    <br>
-    <table class="items" width="100%" style="font-size: 14px; border-collapse: collapse;" cellpadding="8">
-        <thead>
+@for ($page = 0; $page < $totalPages; $page++)
+<div>
+  <h2 style="text-align: center; margin: 0; padding: 0; margin-bottom: 5px;"><u>SALES ORDER</u></h2>
+  
+  <div style="margin-bottom: 15px; font-size: 11px;">
+    <div class="row-float">
+      <div class="column-float" style="width: 40%; margin-top: 4px;">
+        <table class="table borderless info" style="width: 100%;">
+          <tbody>
             <tr>
-                <td width="15%" style="text-align: left;"><strong>PAX</strong></td>
-                <td width="45%" style="text-align: left;"><strong>Description</strong></td>
-                <td width="20%" style="text-align: left;"><strong>Amount</strong></td>
-                <td width="20%" style="text-align: left;"><strong>Total Trip Cost</strong></td>
+                <td style="width: 35%;">Sales</td>
+                <td style="width: 2%;">:</td>
+                <td style="width: 63%;">{{ $result->sales() }}</td>
             </tr>
+            <tr>
+                <td style="width: 35%;">Customer</td>
+                <td style="width: 2%;">:</td>
+                <td style="width: 63%;">{{ $result->member->name }}  {{ $result->member->text_kota }}</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="column-float" style="width: 60%;">
+          <table class="table borderless info" style="width: 100%;">
+            <tbody>
+              <tr>
+                <td style="width: 35%;"><b>No. Nota</b></td>
+                <td style="width: 2%;">:</td>
+                <td style="width: 63%;"><b>{{ $result->so_code }}</b></td>
+              </tr>
+              <tr>
+                <td style="width: 35%;">Tanggal</td>
+                <td style="width: 2%;">:</td>
+                <td style="width: 63%;">{{ \Carbon\Carbon::parse($result->so_date)->format('d-m-Y') }}</td>
+              </tr>
+              <tr>
+                <td style="width: 35%;">Pembayaran</td>
+                <td style="width: 2%;">:</td>
+                <td style="width: 63%;">{{ $result->type_transaction }}</td>
+              </tr>
+              <tr>
+                <td style="width: 35%;">Disc (%)</td>
+                <td style="width: 2%;">:</td>
+                <td style="width: 63%;">{{ $result->catatan }}</td>
+              </tr>
+            </tbody>
+          </table>
+      </div>
+    </div>
+  </div>
+  
+    <table class="table-data" style="border: 1px solid black;">
+        <thead>
+        <tr>
+            <th style="border: 1px solid black;">No</th>
+            <th style="border: 1px solid black;">Product</th>
+            <th style="border: 1px solid black;">Qty (KG)</th>
+            <th style="border: 1px solid black;">Kemasan</th>
+            <th class="text-right" style="border: 1px solid black;">Harga ($)</th>
+            <th class="text-right" style="border: 1px solid black;">Disc</th>
+        </tr>
         </thead>
         <tbody>
-            <!-- ITEMS HERE -->
-            <tr>
-                <td style="padding: 0px 7px; line-height: 20px;"></td>
-                <td style="padding: 0px 7px; line-height: 20px;">Split to Dubrovnik Luxury Cruise on Mama Marija</td>
-                <td style="padding: 0px 7px; line-height: 20px;"></td>
-                <td></td>
-            </tr>
-            <tr>
-                <td style="padding: 0px 7px; line-height: 20px;">
-                    <br>
-                </td>
-                <td style="padding: 0px 7px; line-height: 20px;">
-                    <br>
-                </td>
-                <td style="padding: 0px 7px; line-height: 20px;">
-                    <br>
-                </td>
-                <td style="padding: 0px 7px; line-height: 20px;">
-                    <br>
-                </td>
-            </tr>
-            <tr>
-                <td style="padding: 0px 7px; line-height: 20px;">2</td>
-                <td style="padding: 0px 7px; line-height: 20px;">VIP cabin with Private Balcony</td>
-                <td style="padding: 0px 7px; line-height: 20px;">£1,295.00</td>
-                <td style="padding: 0px 7px; line-height: 20px;">£2,590.00</td>
-            </tr>
-            <tr>
-                <td style="padding: 0px 7px; line-height: 20px;">2</td>
-                <td style="padding: 0px 7px; line-height: 20px;">Lower deck cabin</td>
-                <td style="padding: 0px 7px; line-height: 20px;">£000.00</td>
-                <td style="padding: 0px 7px; line-height: 20px;">£000.00</td>
-            </tr>
-            <tr>
-                <td style="padding: 0px 7px; line-height: 20px;">2</td>
-                <td style="padding: 0px 7px; line-height: 20px;">EasyJet extra legroom seats</td>
-                <td style="padding: 0px 7px; line-height: 20px;">£000.00</td>
-                <td style="padding: 0px 7px; line-height: 20px;">£000.00</td>
-            </tr>
+        @foreach ($doDetails->slice($page * $limit, $limit)->values() as $index => $row)
+        @php
+            // Nomor urut dihitung berdasarkan offset + index
+            $nomor_urut = $offset + $index + 1;
+        @endphp
+        <tr>
+            <td style="border: 1px solid black;">{{ $nomor_urut }}</td>
+            <td style="border: 1px solid black;">{{ $row->product_pack->code }} - {{ $row->product_pack->name }}</td>
+            <td style="border: 1px solid black;">{{ $row->qty }}</td>
+            <td style="border: 1px solid black;">{{ $row->product_pack->packaging->pack_name }}</td>
+            <td class="text-right" style="border: 1px solid black;">{{ number_format($row->price, 0, ',', '.') }}</td>
+            <td class="text-right" style="border: 1px solid black;">{{ number_format($row->disc_usd, 0, ',', '.') }}</td>
+        </tr>
+        @endforeach
         </tbody>
     </table>
-    <br>
-    <table width="100%" style="font-family: sans-serif; font-size: 14px;" >
-        <tr>
-            <td>
-                <table width="60%" align="left" style="font-family: sans-serif; font-size: 14px;" >
-                    <tr>
-                        <td style="padding: 0px; line-height: 20px;">&nbsp;</td>
-                    </tr>
-                </table>
-                <table width="40%" align="right" style="font-family: sans-serif; font-size: 14px;" >
-                    <tr>
-                        <td style="border: 1px #eee solid; padding: 0px 8px; line-height: 20px;"><strong>Total Amount</strong></td>
-                        <td style="border: 1px #eee solid; padding: 0px 8px; line-height: 20px;">£000.00</td>
-                    </tr>
-                    <tr>
-                        <td style="border: 1px #eee solid; padding: 0px 8px; line-height: 20px;"><strong>Deposit</strong></td>
-                        <td style="border: 1px #eee solid; padding: 0px 8px; line-height: 20px;">£000.00</td>
-                    </tr>
-                    <tr>
-                        <td style="border: 1px #eee solid; padding: 0px 8px; line-height: 20px;"><strong>Commission</strong></td>
-                        <td style="border: 1px #eee solid; padding: 0px 8px; line-height: 20px;">£000.00</td>
-                    </tr>
-                    <tr>
-                        <td style="border: 1px #eee solid; padding: 0px 8px; line-height: 20px;"><strong>Remaining Balance</strong></td>
-                        <td style="border: 1px #eee solid; padding: 0px 8px; line-height: 20px;">Remaining Balance</td>
-                    </tr>
-                </table>
-            </td>
-        </tr>
-    </table>
-</body>
-</html>
+    <div class="column-float" style="width: 60%;">
+        <b>Note: </b> <br>
+        {{ $result->note }}
+    </div>
+</div>
+
+@php
+  // Tambahkan jumlah item yang dirender di halaman ini ke offset
+  $offset += $doDetails->slice($page * $limit, $limit)->count();
+@endphp
+
+@if ($page < $totalPages - 1)
+<div class="page-break"></div>
+@endif
+@endfor
+
+<div>
+  <div style="font-size: 12px; position: absolute; bottom: 10px; width: 100%; margin-top: 30px;">
+    <div class="row-float clearfix" style="display: flex; justify-content: space-between;">
+
+      <div class="row-float" style="display: flex; justify-content: space-between; align-items: flex-start;">
+        
+        <!-- Payment Notes Column -->
+        <div class="column-float" style="width: 60%; font-size: 9px; font-weight: bold;">
+            - Barang yang sudah dibeli tidak dapat ditukarkan / dikembalikan <br>
+            - Pembayaran dengan cheque / wesel / BG diangap sah apabila telah diuangkan <br>
+            - Barang telah diperiksa dan diterima dengan baik <br>
+        </div>
+        
+        <!-- Bank Logo Column -->
+        <div class="column-float" style="width: 20%; text-align: center;">
+            Marketing
+            <br><br><br><br>
+            .......................
+        </div>
+        
+        <!-- Signature Column -->
+        <div class="column-float" style="width: 20%; text-align: center;">
+            Menyetujui (ACC)
+            <br><br><br><br>
+            .......................
+        </div>
+
+      </div>
+    </div>
+    
+
+    <div id="footer">
+      <div class="page-number"></div>
+    </div>
+</div>
