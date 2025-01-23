@@ -5,7 +5,9 @@ namespace App\Http\Controllers\Superuser\Report;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use App\Entities\Reports\CustomerTypeBrandReports;
+use App\Exports\Reports\CustomerTypeBrandReportExport;
 Use App\Entities\Penjualan\SalesOrder;
+use Maatwebsite\Excel\Facades\Excel;
 use App\Entities\Setting\UserMenu;
 use Carbon\Carbon;
 use Exception;
@@ -228,67 +230,59 @@ class ReportCustomerTypeBrandController extends Controller
 
     public function exportReport(Request $request)
     {
-        $validatedData = $request->validate([
-            'start' => 'required|date',
-            'end' => 'required|date|after_or_equal:start',
-            'type' => 'required|integer|in:1,2',
-            'nominal' => 'required|integer|in:1,2',
-            'action' => 'required|string|in:print,excel',
-        ]);
+        $startDate = $request->start;
+        $endDate = $request->end;
 
-        $start = $validatedData['start'];
-        $end = $validatedData['end'];
-        $type = $validatedData['type'];
-        $nominal = $validatedData['nominal'];
-        $action = $validatedData['action'];
+        // Ambil daftar unik brand
+        $brands = DB::table('report_customer_type_brand')
+            ->distinct()
+            ->pluck('invoice_brand')
+            ->toArray();
 
-        $reportPath = "C:\\xampp\\htdocs\\ppi-dist\\public\\cr\\report\\management\\report_customer_register\\";
-        $exportPath = $reportPath . "export\\";
+        // Ambil data grouping berdasarkan kategori dan customer
+        $data = DB::table('report_customer_type_brand')
+            ->select(
+                'customer_type', // Category
+                'customer_name',
+                'customer_kota',
+                'invoice_brand',
+                DB::raw('SUM(invoice_qty) as total_qty'),
+                DB::raw('SUM(invoice_purchase) as total_purchase') // Menambahkan total_purchase
+            )
+            ->whereBetween('invoice_date', [$startDate, $endDate])
+            ->groupBy('customer_type', 'customer_name', 'invoice_brand')
+            ->get();
 
-        if ($type == 1) {
-            $reportName = $nominal == 1 ? "customer_type_brand.rpt" : "customer_type_brand_non_nominal.rpt";
-            $fileName = $nominal == 1 ? "customer-type-brand-" : "customer-type-brand-non-nominal-";
-        } else {
-            $reportName = $nominal == 1 ? "report_zone_customer.rpt" : "report_zone_customer_non_nominal.rpt";
-            $fileName = $nominal == 1 ? "customer-zone-" : "customer-zone-non-nominal-";
-        }
+        // Grouping data berdasarkan kategori dan customer
+        $groupedData = [];
+        foreach ($data as $row) {
+            $category = $row->customer_type;
+            $customerName = $row->customer_name;
+            $customerKota = $row->customer_kota;
+            $brand = $row->invoice_brand;
+            $totalQty = $row->total_qty;
+            $totalPurchase = $row->total_purchase; // Mengambil total_purchase
 
-        $my_report = $reportPath . $reportName;
-        $outputFile = $exportPath . $fileName . date("Y-m") . ($action === 'print' ? ".pdf" : ".xls");
-
-        try {
-            if (!file_exists($my_report)) {
-                return response()->json(['error' => 'Report file not found'], 404);
+            if (!isset($groupedData[$category])) {
+                $groupedData[$category] = [];
             }
 
-            $crapp = new COM("CrystalDesignRunTime.Application");
-            $creport = $crapp->OpenReport($my_report, 1);
-
-            $creport->Database->Tables(1)->SetLogOnInfo("LOCAL", "ppi_araya", "root", "");
-            $creport->EnableParameterPrompting = false;
-            $creport->ParameterFields(2)->SetCurrentValue(date('d-m-Y', strtotime($start)));
-            $creport->ParameterFields(3)->SetCurrentValue(date('d-m-Y', strtotime($end)));
-            $creport->RecordSelectionFormula = "{report_customer_type_brand.invoice_date}>=#$start# AND {report_customer_type_brand.invoice_date}<=#$end#";
-
-            $creport->ExportOptions->DiskFileName = $outputFile;
-            $creport->ExportOptions->PDFExportAllPages = true;
-            $creport->ExportOptions->DestinationType = 1;
-            $creport->ExportOptions->FormatType = $action === 'print' ? 31 : 29;
-
-            $creport->Export(false);
-            $creport = null;
-            $crapp = null;
-
-            if (file_exists($outputFile)) {
-                \Log::info('File generated successfully: ' . $outputFile);
-                return response()->download($outputFile, basename($outputFile))->deleteFileAfterSend(true);
-            } else {
-                \Log::error('File not generated: ' . $outputFile);
-                return response()->json(['error' => 'File not generated'], 500);
+            if (!isset($groupedData[$category][$customerName])) {
+                $groupedData[$category][$customerName] = [
+                    'name' => $customerName,
+                    'kota' => $customerKota,
+                    'brand_data' => array_fill_keys($brands, ['qty' => 0, 'purchase' => 0]), // Inisialisasi qty dan purchase semua brand ke 0
+                ];
             }
-        } catch (\Exception $e) {
-            \Log::error('Report generation failed: ' . $e->getMessage());
-            return response()->json(['error' => 'An error occurred while generating the report'], 500);
+
+            // Masukkan qty dan purchase ke dalam brand yang sesuai
+            $groupedData[$category][$customerName]['brand_data'][$brand] = [
+                'qty' => $totalQty,
+                'purchase' => $totalPurchase
+            ];
         }
+
+        // Ekspor data ke Excel
+        return Excel::download(new CustomerTypeBrandReportExport($groupedData, $brands), 'register_customer_type_brand.xlsx');   
     }
 }

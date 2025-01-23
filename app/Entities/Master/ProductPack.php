@@ -60,7 +60,7 @@ class ProductPack extends Model
 
     public function product()
     {
-        return $this->belongsTo('App\Entities\Master\Product', 'product_id');
+        return $this->belongsTo('App\Entities\Master\Product', 'product_id', 'id');
     }
 
     public function type_product_pack()

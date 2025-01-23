@@ -83,7 +83,7 @@
                                     <div class="form-group row">
                                       <label for="ratio" class="col-sm-2 col-form-label">Ratio <span class="text-danger">*</span></label>
                                       <div class="col-sm-10">
-                                        <input type="number" class="form-control" id="ratio" name="ratio" min="0" value="0" step="0.0001" value="{{$product->ratio ?? '-'}}">
+                                        <input type="text" class="form-control" id="ratio" name="ratio">
                                       </div>
                                     </div>
                                   </div>

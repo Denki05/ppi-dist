@@ -86,7 +86,7 @@ class Product extends Model
 
     public function product_pack()
     {
-        return $this->hasMany('App\Entities\Master\ProductPack', 'product_id');
+        return $this->hasMany('App\Entities\Master\ProductPack', 'product_id', 'id');
     }
     
     public function getImageUrlAttribute()

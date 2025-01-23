@@ -47,13 +47,13 @@
                         <i class="fa fa-trash"></i> Remove Data
                     </button>
                 </div>
-                <div class="btn-group mr-2">
+                {{--<div class="btn-group mr-2">
                     <button type="button" class="btn btn-success" onclick="submitForm('print')">
                         <i class="fa fa-file-pdf-o" aria-hidden="true"></i> Export PDF
                     </button>
-                </div>
+                </div>--}}
                 <div class="btn-group mr-2">
-                    <button type="button" class="btn btn-info" onclick="submitForm('excel')">
+                    <button type="submit" class="btn btn-info">
                         <i class="fa fa-file-excel"></i> Export Excel
                     </button>
                 </div>
