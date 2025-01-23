@@ -360,7 +360,7 @@ class SalesOrderController extends Controller
                     $insert->customer_other_address_id = $member;
                     $insert->type_transaction = $request->type_transaction;
                     $insert->so_for = 1;
-                    $insert->so_date = Carbon\Carbon::now();
+                    $insert->so_date = null;
                     $insert->type_so = 'nonppn';
                     $insert->idr_rate = 1;
                     $insert->catatan = $request->catatan;
@@ -1202,7 +1202,7 @@ class SalesOrderController extends Controller
                     $sales_order->sales_id = $request->sales_id;
                     
                     $sales_order->ekspedisi_id = $request->ekspedisi ?? null;
-                    $sales_order->so_date = date("Y-m-d", strtotime($request->so_date));
+                    $sales_order->so_date = $request->so_date;
                     $sales_order->rekening = $request->rekening;
                     $sales_order->shipping_cost_buyer = $request->shipping_cost_buyer ?? 0;
                     $sales_order->status = 4;
