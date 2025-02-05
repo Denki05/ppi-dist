@@ -20,6 +20,7 @@ class ProductFinance extends Model
         'buying_price_usd_drum', 
         'selling_price_usd_unit', 
         'buying_price_usd_unit',
+        'year',
         'status', 
         'created_by', 
         'updated_by', 
