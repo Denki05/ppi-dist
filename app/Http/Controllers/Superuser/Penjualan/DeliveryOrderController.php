@@ -782,7 +782,13 @@ class DeliveryOrderController extends Controller
 
         try {
             $do = PackingOrder::findOrFail($id); // Find the record or fail
-            
+
+            // Jika cashback_status == 1, tidak bisa dibatalkan
+            if ($do->cashback_status == 1) {
+                return response()->json(['message' => 'Pesanan dengan cashback tidak dapat dibatalkan!'], 403);
+            }
+
+            // Jika password benar, lanjutkan pembatalan
             if ($pass_code == 1122) {
                 $do->status = 7; // Assuming 7 means canceled
                 $do->count_cancel += 1; // Increment the cancellation count
@@ -796,12 +802,10 @@ class DeliveryOrderController extends Controller
             }
 
         } catch (\Exception $e) {
-            dd($e);
             DB::rollBack(); // Rollback transaction on error
             return response()->json(['message' => $e->getMessage()], $e->getCode() ?: 500);
         }
     }
-
 
     public function do_edit(Request $request)
     {

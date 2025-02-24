@@ -54,7 +54,6 @@
 <div class="block">  
   <div class="block-header block-header-default">
     <h2 class="block-title">#Mitra : {{ $mitra->name ?? '' }}</h2>
-    <input type="hidden" id="mitra_id" name="mitra_id" value="{{ $mitra->id }}"> 
   </div>
   <div class="block-content">
     <div class="alert alert-warning alert-dismissible fade show">
@@ -238,7 +237,7 @@
                 {!! $import_custom_message !!}
               </div>
               @endif
-              <a href="{{route('superuser.accounting.product_finance.import_template')}}">
+              <a href="{{ route('superuser.accounting.product_finance.import_template') }}">
                 <button type="button" class="btn btn-sm btn-noborder btn-info">
                   <i class="fa fa-download mr-5"></i> Template
                 </button>
@@ -257,7 +256,7 @@
             <div class="col-md-6">
               <span class="font-size-h5">Export</span>
               <p>Ekspor data ini ke format seperti excel</p>
-              <a href="{{route('superuser.accounting.product_finance.export')}}">
+              <a href="{{ route('superuser.accounting.product_finance.export') }}">
                 <button type="button" class="btn btn-sm btn-noborder btn-info">
                   <i class="fa fa-file-excel-o mr-5"></i> Export
                 </button>

@@ -178,7 +178,7 @@
                   <td>{{ $row->type_product_pack->name ?? '-' }}</td>
                   <td>{{$row->price}}</td>
                   <td>
-                    <a href="javascript:void(0)" type="button" class="btn btn-sm btn-circle btn-alt-secondary openModal" data-id="{{$row->id}}" title="Update price"><i class="fa fa-money"></i></a> 
+                    <a href="javascript:void(0)" type="button" class="btn btn-sm btn-circle btn-alt-secondary openModal" data-id="{{base64_encode($row->id)}}" title="Update price"><i class="fa fa-money"></i></a> 
                     
                     <a href="{{ route('superuser.master.product.product_pack.edit', ['id' => base64_encode($product->id), 'pack_id' => base64_encode($row->id)]) }}" type="button" class="btn btn-sm btn-circle btn-alt-warning" title="Edit Packaging"><i class="fa fa-pencil" aria-hidden="true"> </i></a>
                   </td>
@@ -307,6 +307,7 @@
 
     $(document).on('click', '.openModal', function () {
       var id = $(this).data('id');
+      // alert(id);
       $('#productPackID').val(id);
       $('#appointmentModal').modal('show');
     })

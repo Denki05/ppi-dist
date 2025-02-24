@@ -169,7 +169,7 @@
                     <div class="form-row">
                        
                         <div class="form-group col-md-6">
-                          <label for="note">Sales Senior <span class="text-danger">*</span></label>
+                          <label for="note">PIC <span class="text-danger">*</span></label>
                           <select class="form-control js-select2" name="sales_senior_id">
                             <option value="">Pilih Sales Senior</option>
                             @foreach(\App\Entities\Penjualan\SalesOrder::SALES_SENIOR as $sales_senior => $senior_value)
@@ -178,7 +178,7 @@
                           </select>
                         </div>
                         <div class="form-group col-md-6">
-                          <label for="note">Sales <span class="text-danger">*</span></label>
+                          <label for="note">Officer <span class="text-danger">*</span></label>
                           <select class="form-control js-select2" name="sales_id">
                             <option value="">Pilih Sales</option>
                             @foreach(\App\Entities\Penjualan\SalesOrder::SALES as $sales => $sales_value)

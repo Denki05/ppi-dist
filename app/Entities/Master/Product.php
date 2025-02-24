@@ -23,17 +23,17 @@ class Product extends Model
     public static $directory_image = 'superuser_assets/media/master/product/';
     
     const NOTE = [
-        'BEST SELLER',
-        'NEW',
-        'RECOMMENDATION',
-        'REGULER',
-        'SAMPLE',
+        'BEST SELLER' => 'BEST SELLER',
+        'NEW' => 'NEW',
+        'RECOMMENDATION' => 'RECOMMENDATION',
+        'REGULER' => 'REGULER',
+        'SAMPLE' => 'SAMPLE',
     ];
 
     const GENDER = [
-        'MALE',
-        'FEMALE',
-        'UNISEX',
+        'MALE' => 'M',
+        'FEMALE' => 'F',
+        'UNISEX' => 'UNISEX',
     ];
 
     const STATUS = [

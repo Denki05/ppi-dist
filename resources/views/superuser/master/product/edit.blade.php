@@ -74,7 +74,7 @@
                                     <div class="form-group row">
                                       <label for="alias" class="col-sm-2 col-form-label">Alias <span class="text-danger">*</span></label>
                                       <div class="col-sm-10">
-                                        <input type="text" id="alias" name="alias" placeholder="Alias Name" class="form-control" value="{{$product->alias}}">
+                                        <input type="text" id="alias" name="alias" placeholder="Alias Name" class="form-control" value="{{$product->alias ?? '-'}}">
                                       </div>
                                     </div>
                                   </div>
@@ -82,7 +82,7 @@
                                     <div class="form-group row">
                                       <label for="ratio" class="col-sm-2 col-form-label">Ratio <span class="text-danger">*</span></label>
                                       <div class="col-sm-10">
-                                        <input type="number" class="form-control" id="ratio" name="ratio" min="0" value="0" step="0.0001" value="{{$product->ratio}}">
+                                        <input type="text" class="form-control" id="ratio" name="ratio">
                                       </div>
                                     </div>
                                   </div>
@@ -133,13 +133,15 @@
                                       <label for="gender" class="col-sm-2 col-form-label">Gender</label>
                                       <div class="col-sm-10">
                                         <select class="js-select2 form-control" id="gender" name="gender" style="width:100%;" placeholder="Pilih Gender">
-                                          <option>Pilih Gender</option>
-                                          @foreach(\App\Entities\Master\Product::GENDER as $gender)
-                                          <option value="{{ $gender }}" {{ ($product->gender == $gender) ? 'selected' : '' }}>{{ $gender }}</option>
-                                          @endforeach
-                                        </select>
-                                      </div>
-                                    </div>
+                                              <option value="">Pilih Gender</option>
+                                              @foreach(\App\Entities\Master\Product::GENDER as $key => $gender)
+                                                  <option value="{{ $gender }}" {{ ($product->gender == $gender) ? 'selected' : '' }}>
+                                                      {{ ucfirst(strtolower($key)) }} <!-- Tampilkan label dengan format yang lebih rapi -->
+                                                  </option>
+                                              @endforeach
+                                          </select>
+                                          </div>
+                                        </div>
                                   </div>
                                 </div>
                                 <div class="row">
@@ -208,9 +210,9 @@
                                   </div>
                                   <div class="col">
                                     <div class="form-group row">
-                                      <label for="category" class="col-sm-2 col-form-label">Type<span class="text-danger">*</span></label>
+                                      <label for="category" class="col-sm-2 col-form-label">Tipe<span class="text-danger">*</span></label>
                                       <div class="col-sm-10">
-                                        <select class="js-select2 form-control" id="type"  name="type" style="width:100%;" data-placeholder="Pilih Kategori">
+                                        <select class="js-select2 form-control" id="type"  name="type" style="width:100%;" data-placeholder="Pilih Tipe">
                                             <option value="">==Select Type==</option>
                                             @foreach($type as $type)
                                             <option value="{{ $type->id }}" {{ ($type->id == $product->type_id ) ? 'selected' : '' }}>{{ $type->name }}</option>

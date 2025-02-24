@@ -213,6 +213,7 @@
                                 </span>",
             },
             processing: true,
+            responsive: true,
             serverSide: false,
             searching: true,
             paging: true,

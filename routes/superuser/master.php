@@ -46,6 +46,9 @@ Route::group([
         Route::get('/pageReport', 'ProductController@pageReport')->name('pageReport');
         Route::get('/json2', 'ProductController@json2')->name('json2');
         Route::get('/print_product_material', 'ProductController@print_product_material')->name('print_product_material');
+
+        Route::post('/update_ratio', 'ProductController@update_ratio')->name('update_ratio');
+        Route::get('/update_ratio_template', 'ProductController@update_ratio_template')->name('update_ratio_template');
         
         Route::group(['as' => 'product_pack.'], function () {
             Route::get('/{id}/product_pack/create', 'ProductPackController@create')->name('create');

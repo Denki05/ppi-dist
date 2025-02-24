@@ -4,6 +4,7 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, shrink-to-fit=no">
     <meta name="csrf-token" content="{{ csrf_token() }}">
+    <meta name="theme-color" content="#ffffff">
     @php
       $user = Auth::id();
       $notifCount = DB::table('notifications')
@@ -29,12 +30,12 @@
         </div>
       </main>
       <footer id="page-footer" class="opacity-1">
-        <div class="content font-size-xs clearfix">
-          <div class="float-left">
+        <div class="content font-size-xs d-flex justify-content-between flex-wrap">
+          <div>
             <p>This page took {{ round(microtime(true) - LARAVEL_START, 3) }} seconds to render</p>
           </div>
-          <div class="float-right">
-            <a class="font-w600" href="#" target="_blank">Copyright &copy; <?php echo date("Y"); ?> <b>Premium Parfume Indonesia</b>. All rights reserved.</span>
+          <div>
+            <a class="font-w600" href="#" target="_blank">Copyright &copy; <?php echo date("Y"); ?> <b>Premium Parfume Indonesia</b>. All rights reserved.</a>
           </div>
         </div>
       </footer>

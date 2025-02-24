@@ -500,6 +500,7 @@ class CashbackController extends Controller
                 'mcoa.text_kota AS customer_kota', 
                 DB::raw('SUM(fcd.amount_cashback) AS total')
             )
+            ->where('fc.status', 1)
             ->groupBy('fc.id', 'fc.code', 'pso.so_date', 'mcoa.name', 'mcoa.text_kota');
 
         // Apply filters BEFORE calling get()
@@ -542,6 +543,7 @@ class CashbackController extends Controller
                 'mcoa.text_kota AS customer_kota', 
                 DB::raw('SUM(fcd.subtotal_item_idr) AS total')
             )
+            ->where('fc.status', 1)
             ->groupBy('fc.id', 'fc.code', 'pso.so_date', 'mcoa.name', 'mcoa.text_kota');
 
         // Apply filters BEFORE calling get()

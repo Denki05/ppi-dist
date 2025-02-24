@@ -227,6 +227,7 @@ class PayableController extends Controller
             ], 200);
 
         } catch (\Throwable $e) {
+            // dd($e);
             // Rollback transaction and log error
             DB::rollback();
             Log::error('Payable creation failed: ' . $e->getMessage());
@@ -475,6 +476,7 @@ class PayableController extends Controller
 
             return $this->response(200, $response);
         } catch (\Exception $e) {
+            dd($e);
             // Rollback jika terjadi error
             DB::rollback();
 

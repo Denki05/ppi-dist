@@ -130,7 +130,7 @@
                                 <div class="col">
                                   <div class="form-group">
                                     <label for="ratio">Ratio</label>
-                                    <input type="number" class="form-control" id="ratio" name="ratio" min="0" value="0" step="0.0001">
+                                    <input type="text" class="form-control" id="ratio" name="ratio">
                                   </div>
                                 </div>
                               </div>
