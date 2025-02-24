@@ -54,6 +54,7 @@
 <div class="block">  
   <div class="block-header block-header-default">
     <h2 class="block-title">#Mitra : {{ $mitra->name ?? '' }}</h2>
+    <input type="hidden" id="mitra_id" name="mitra_id" value="{{ $mitra->id }}"> 
   </div>
   <div class="block-content">
     <div class="alert alert-warning alert-dismissible fade show">
@@ -237,7 +238,7 @@
                 {!! $import_custom_message !!}
               </div>
               @endif
-              <a href="{{ route('superuser.accounting.product_finance.import_template') }}">
+              <a href="{{route('superuser.accounting.product_finance.import_template')}}">
                 <button type="button" class="btn btn-sm btn-noborder btn-info">
                   <i class="fa fa-download mr-5"></i> Template
                 </button>
@@ -256,7 +257,7 @@
             <div class="col-md-6">
               <span class="font-size-h5">Export</span>
               <p>Ekspor data ini ke format seperti excel</p>
-              <a href="{{ route('superuser.accounting.product_finance.export') }}">
+              <a href="{{route('superuser.accounting.product_finance.export')}}">
                 <button type="button" class="btn btn-sm btn-noborder btn-info">
                   <i class="fa fa-file-excel-o mr-5"></i> Export
                 </button>
@@ -406,56 +407,34 @@
     })
 
     $('#myForm').on('submit', function (e) {
-        e.preventDefault(); // Prevent default form submission
+      e.preventDefault(); // prevent the form submit
+      var id = $('#productPackID').val();
+      var url = "{{ route('superuser.accounting.product_finance.update_cost', ":id") }}";
+      url = url.replace(':id', id);
+      var AlertMsg = $('div[role="alert"]');
 
-        // Get form data
-        var id = $('#productPackID').val();
-        var mitra_id = $('#mitra_id').val();
+      // alert(id);
+    
 
-        // Validate required fields
-        if (!id) {
-            alert('No Product ID selected');
-            return;
-        }
-
-        // Construct the URL
-        var url = "{{ route('superuser.accounting.product_finance.update_cost', ':id') }}".replace(':id', id);
-        var formData = new FormData(this);
-
-        // Send AJAX request
-        $.ajax({
-            url: url,
-            type: 'POST',
-            headers: { 
-                'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content') 
-            },
-            data: formData,
-            contentType: false,
-            processData: false,
-            success: function (response) {
-                // Check if response.notification exists and is valid
-                if (response.notification && response.notification.type) {
-                    if (response.notification.type === 'success') {
-                        alert(response.notification.content); // Success message
-                        window.location.href = response.redirect_to; // Redirect to the specified URL
-                    } else {
-                        alert(response.notification.content || 'Failed to update. Please try again.');
-                    }
-                } else {
-                    // Handle unexpected response structure
-                    alert('Unexpected response from the server. Please contact support.');
-                }
-            },
-            error: function (xhr) {
-                console.error('Error:', xhr.responseJSON); // Log the error for debugging
-
-                // Handle errors gracefully
-                var errorMessage = xhr.responseJSON && xhr.responseJSON.error 
-                    ? xhr.responseJSON.error 
-                    : 'An unexpected error occurred. Please try again.';
-                alert('Error: ' + errorMessage);
-            }
-        });
+      var formData = new FormData(this); 
+      // build the ajax call
+      $.ajax({
+          url: url,
+          type: 'POST',
+          headers: {'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')},
+          data: formData,
+          contentType: false,
+          processData: false,
+          success: function (response) {
+            $(AlertMsg).show();
+            setTimeout(function () {
+                    $('#myModal').modal({ show: true });
+                    setTimeout(function () {
+                        window.location.reload(1);
+                    }, 800);
+            }, 800);
+          }
+      });
     });
 
     $('a[href^="#"]').on('click', function(event) {

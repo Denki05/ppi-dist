@@ -10,12 +10,9 @@ Route::group([
     Route::group(['as' => 'product_finance.', 'prefix' => '/product_finance'], function () {
         Route::get('/import_template', 'ProductFinanceController@import_template')->name('import_template');
         Route::post('/import', 'ProductFinanceController@import')->name('import');
-        Route::post('/export', 'ProductFinanceController@export')->name('export');
-        Route::post('/update_cost/{product_finance}', 'ProductFinanceController@update_cost')->name('update_cost');
-        Route::get('/search_mitra', 'ProductFinanceController@search_mitra')->name('search_mitra');
-        Route::get('/show/{mitra_id}', 'ProductFinanceController@show')->name('show');
-        Route::get('get_product', 'ProductFinanceController@get_product')->name('get_product');
-        
+        Route::get('/export', 'ProductFinanceController@export')->name('export');
+        Route::get('/get_product', 'ProductFinanceController@get_product')->name('get_product');
+        Route::post('/updatePrice', 'ProductFinanceController@updatePrice')->name('updatePrice');
     });
     Route::resource('product_finance', 'ProductFinanceController');
 
