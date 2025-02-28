@@ -316,4 +316,34 @@ class SalesOrderIndentController extends Controller
             return redirect()->route('superuser.penjualan.sales_order_indent.index');
         }
     }
+
+    public function deleteItems(Request $request)
+    {
+        DB::beginTransaction();
+
+        try {
+            // Validasi input
+            $validated = $request->validate([
+                'so_item_ids' => 'required|array',
+                'so_item_ids.*' => 'exists:penjualan_so_item,id',
+            ]);
+
+            // Hapus item berdasarkan ID
+            SalesOrderItem::whereIn('id', $validated['so_item_ids'])->delete();
+
+            DB::commit();
+
+            return response()->json([
+                'status' => 'success',
+                'message' => 'Item berhasil dihapus!',
+            ]);
+        } catch (\Exception $e) {
+            DB::rollBack();
+
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Terjadi kesalahan: ' . $e->getMessage(),
+            ], 500);
+        }
+    }
 }

@@ -29,7 +29,7 @@ class SalesReportTable extends Table
                 DB::raw('SUM(
                     CASE
                         WHEN penjualan_do.type_transaction = "CASH" 
-                        THEN IFNULL(penjualan_do_details.purchase_total_idr - penjualan_do_details.discount_idr, 0)
+                        THEN IFNULL(penjualan_do_details.purchase_total_idr - penjualan_do_details.discount_1_idr - penjualan_do_details.discount_2_idr - penjualan_do_details.discount_idr, 0)
                     END
                 ) AS invoice_cash'),
                 DB::raw('SUM(

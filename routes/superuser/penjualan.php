@@ -174,6 +174,7 @@ Route::group([
         Route::get('/export', 'SalesOrderIndentController@export')->name('export');
         Route::get('/destroy/{id}', 'SalesOrderIndentController@destroy')->name('destroy');
         Route::post('/proses_ready', 'SalesOrderIndentController@proses_ready')->name('proses_ready');
+        Route::post('/deleteItems', 'SalesOrderIndentController@deleteItems')->name('deleteItems');
         Route::get('/print_out_indent/{so_id}', 'SalesOrderIndentController@print_out_indent')->name('print_out_indent');
     });
     Route::resource('sales_order_indent', 'SalesOrderIndentController');

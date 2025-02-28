@@ -208,8 +208,9 @@
           </div>
 
           <div class="modal-footer">
-            <button type="submit" class="btn btn-info">Edit</button>
-            <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+            <button type="submit" class="btn btn-info mt-2">Edit Qty</button>
+            <button type="button" class="btn btn-danger mt-2 delete-selected" data-id="{{ $key->id }}">Hapus Item Terpilih</button>
+            <button type="button" class="btn btn-secondary mt-2" data-dismiss="modal">Close</button>
           </div>
         </form>
       </div>
@@ -236,17 +237,56 @@
   $(document).ready(function () {
     var table = $('#datatable').DataTable();
 
-    // Toggle read-only state for Qty input based on checkbox
+    // Event listener untuk checkbox
     $('.edit-checkbox').on('change', function () {
-      var index = $(this).data('index');
       var qtyInput = $(this).closest('tr').find('.qty-input');
-
       if (this.checked) {
         qtyInput.removeAttr('readonly');
       } else {
         qtyInput.attr('readonly', 'readonly');
       }
     });
+
+    // Event listener untuk tombol hapus
+    $('.delete-selected').on('click', function () {
+      var selectedItems = [];
+      var salesOrderId = $(this).data('id'); // Ambil ID sales order dari tombol
+      var modalId = '#myModal' + salesOrderId;
+
+      $(modalId).find('.edit-checkbox:checked').each(function () {
+        selectedItems.push($(this).val());
+      });
+
+      if (selectedItems.length === 0) {
+        alert('Silakan pilih item yang ingin dihapus.');
+        return;
+      }
+
+      if (!confirm('Apakah Anda yakin ingin menghapus item yang dipilih?')) {
+        return;
+      }
+
+      $.ajax({
+        url: '{{ route("superuser.penjualan.sales_order_indent.deleteItems") }}',
+        type: 'POST',
+        data: {
+          _token: '{{ csrf_token() }}',
+          so_item_ids: selectedItems
+        },
+        success: function (response) {
+          if (response.status === 'success') {
+            alert(response.message);
+            location.reload(); // Refresh halaman setelah sukses
+          } else {
+            alert('Terjadi kesalahan: ' + response.message);
+          }
+        },
+        error: function (xhr) {
+          alert('Terjadi kesalahan, silakan coba lagi.');
+        }
+      });
+    });
   });
 </script>
+
 @endpush
