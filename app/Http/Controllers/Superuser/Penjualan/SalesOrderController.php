@@ -1437,6 +1437,7 @@ class SalesOrderController extends Controller
                     $sales_order->sales_senior_id = $request->sales_senior_id;
                     $sales_order->sales_id = $request->sales_id;
                     $sales_order->rekening = $request->rekening;
+                    $sales_order->so_date = $request->so_date;
                     $sales_order->status = 4;
                     $sales_order->count_rev = 0;
                     $sales_order->updated_by = Auth::id();

@@ -52,11 +52,11 @@
                         <i class="fa fa-file-pdf-o" aria-hidden="true"></i> Export PDF
                     </button>
                 </div>
-                <div class="btn-group mr-2">
+                {{--<div class="btn-group mr-2">
                     <button type="button" class="btn btn-info" onclick="submitForm('excel')">
                         <i class="fa fa-file-excel"></i> Export Excel
                     </button>
-                </div>
+                </div>--}}
             </div>
             <br>
             <div class="mb-3 row">

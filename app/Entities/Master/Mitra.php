@@ -38,4 +38,14 @@ class Mitra extends Model
     {
         return array_search($this->status, self::STATUS);
     }
+
+    public function mitra_detail()
+    {
+        return $this->hasMany('App\Entities\Master\MitraDetail', 'mitra_id');
+    }
+
+    public function mitra_setting()
+    {
+        return $this->hasMany('App\Entities\Master\MitraSetting', 'mitra_id', 'id');
+    }
 }

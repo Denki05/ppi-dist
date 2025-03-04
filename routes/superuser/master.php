@@ -251,7 +251,12 @@ Route::group([
     Route::resource('brand_lokal', 'BrandLokalController');
 
     Route::group(['as' => 'mitra.', 'prefix' => '/mitra'], function () {
-       
+        Route::get('/add_customer/{id}', 'MitraController@add_customer')->name('add_customer');
+        Route::post('/store_customer', 'MitraController@store_customer')->name('store_customer');
+        Route::get('/getCustomers/{id}', 'MitraController@getCustomers')->name('getCustomers');
+        Route::get('/template_setting_mitra', 'MitraController@template_setting_mitra')->name('template_setting_mitra');
+        Route::post('/setting_saldo_import', 'MitraController@setting_saldo_import')->name('setting_saldo_import');
+        Route::get('/show/{id}', 'MitraController@show')->name('show');
     });
     Route::resource('mitra', 'MitraController');
 });

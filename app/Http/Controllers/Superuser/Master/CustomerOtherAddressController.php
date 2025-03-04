@@ -114,7 +114,7 @@ class CustomerOtherAddressController extends Controller
             $validator = Validator::make($request->all(), [
                 'name' => 'required|string',
                 'contact_person' => 'nullable|string',
-                'pic' => 'required|string',
+                'pic' => 'nullable|string',
                 'npwp' => 'nullable|string',
                 'ktp' => 'nullable|string',
                 'phone' => 'nullable|string',
