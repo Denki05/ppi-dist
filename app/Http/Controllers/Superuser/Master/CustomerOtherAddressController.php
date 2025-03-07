@@ -318,6 +318,7 @@ class CustomerOtherAddressController extends Controller
                 $other_address->zone = $request->zone;
 
                 $other_address->zipcode = $request->zipcode;
+                $other_address->updated_by = Auth::id();
 
                 if (!empty($request->file('image_npwp'))) {
                     if (is_file_exists(CustomerOtherAddress::$directory_image.$other_address->image_npwp)) {
