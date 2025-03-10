@@ -2,8 +2,7 @@
 
 @section('content')
 <nav class="breadcrumb bg-white push">
-  <span class="breadcrumb-item">Laporan</span>
-  <span class="breadcrumb-item">Accounting</span>
+  <span class="breadcrumb-item">Report</span>
   <span class="breadcrumb-item">Unifra Report</span>
   <span class="breadcrumb-item active">Beli</span>
 </nav>
@@ -225,8 +224,6 @@
         // Reload the DataTable with the updated URL
         datatable.ajax.url(newDatatableUrl).load();
         });
-
-        $("#customer").val("all").change();
     })
 </script>
 @endpush

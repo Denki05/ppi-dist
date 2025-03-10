@@ -211,6 +211,48 @@
     </div>
 </div>
 
+<!-- Modal HTML Markup -->
+<div id="ModalLoginForm" class="modal fade">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h1 class="modal-title">Print Product</h1>
+            </div>
+            <div class="modal-body">
+                <form role="form" method="get" action="{{ route('superuser.master.product.print_product') }}">
+                @csrf
+                    <div class="form-group">
+                        <label class="control-label">Merek</label>
+                        <div>
+                            <select class="form-control js-select2" name="brand_name" style="width:100%;">
+                              <option value="">Pilih Merek</option>
+                              @foreach($brand_lokal as $row)
+                              <option value="{{$row->brand_name}}">{{$row->brand_name}}</option>
+                              @endforeach
+                            </select>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label class="control-label">Type Print</label>
+                        <div>
+                            <select class="form-control js-select2" name="type_print" style="width:100%;">
+                              <option value="">Pilih Category</option>
+                              <option value="price_list">Price List</option>
+                              <option value="product_list">Product List</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <div>
+                          <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+                            <button type="submit" class="btn btn-success">Print</button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div><!-- /.modal-content -->
+    </div><!-- /.modal-dialog -->
+</div><!-- /.modal -->
 @endsection
 
 @include('superuser.asset.plugin.swal2')

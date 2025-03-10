@@ -56,9 +56,10 @@
     </div>
       <div class="row mb-30">
         <div class="col-12">
-          <table class="table table-striped" id="invoice_tax">
+          <table class="table table-striped" id="datatables">
             <thead>
               <tr>
+                <th>#</th>
                 <th>Tanggal</th>
                 <th>Code</th>
                 <th>Mitra</th>
@@ -229,7 +230,7 @@
 $('.js-select2').select2();
 
 $(document).ready(function() {
-  let datatableUrl = '{{ route('superuser.accounting.invoice_tax.json4') }}';
+  let datatableUrl = '{{ route('superuser.accounting.invoice_tax.json') }}';
 
   let cashbackTable = $('#invoice_tax').DataTable({
         processing: true,

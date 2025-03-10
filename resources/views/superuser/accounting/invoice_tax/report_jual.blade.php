@@ -2,8 +2,7 @@
 
 @section('content')
 <nav class="breadcrumb bg-white push">
-  <span class="breadcrumb-item">Laporan</span>
-  <span class="breadcrumb-item">Accounting</span>
+  <span class="breadcrumb-item">Report</span>
   <span class="breadcrumb-item">Unifra Report</span>
   <span class="breadcrumb-item active">Jual</span>
 </nav>
@@ -149,7 +148,7 @@
               {
                   extend: 'excel',
                   text: '<i class="fa fa-file-excel-o"></i>',
-                  title: 'UNIFRA-Report-Jual',
+                  title: 'UNIFRA-Report-Beli',
                   exportOptions: {
                       modifier: {
                           page: 'all'
@@ -159,7 +158,7 @@
               {
                   extend: 'pdf',
                   text: '<i class="fa fa-file-pdf-o"></i>',
-                  title: 'UNIFRA-Report-Jual',
+                  title: 'UNIFRA-Report-Beli',
                   orientation: 'landscape',
                   pageSize: 'A4',
                   exportOptions: {
@@ -225,8 +224,6 @@
         // Reload the DataTable with the updated URL
         datatable.ajax.url(newDatatableUrl).load();
         });
-
-        $("#customer").val("all").change();
     })
 </script>
 @endpush

@@ -18,7 +18,7 @@
       <div class="block-content">
         <div class="form-row">
           <div class="form-group col-md-6">
-            <label for="so_date">Code</label>
+            <label for="code">Code</label>
             <select id="kode-input" name="code" class="form-control" data-placeholder="Input / Pilih Kode"></select>
           </div>
           <div class="form-group col-md-6">
@@ -188,10 +188,6 @@
     });
 
     $('.js-select2').select2();
-
-    $(".js-example-tags").select2({
-      tags: true
-    });
 
     function calculateTotals() {
         let totalSubtotal = 0;

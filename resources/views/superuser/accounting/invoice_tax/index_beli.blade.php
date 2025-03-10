@@ -6,6 +6,7 @@
   <span class="breadcrumb-item">Unifra</span>
   <span class="breadcrumb-item active">Beli</span>
 </nav>
+
 @if(session('error') || session('success'))
 <div class="alert alert-{{ session('error') ? 'danger' : 'success' }} alert-dismissible fade show" role="alert">
     @if (session('error'))
@@ -18,6 +19,7 @@
     </button>
 </div>
 @endif
+
 <div class="block">
     <div class="block-content">
       <button type="button" class="btn btn-outline-primary min-width-125" data-toggle="modal" data-target="#unifraBeli">Create</button>

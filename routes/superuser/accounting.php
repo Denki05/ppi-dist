@@ -39,12 +39,31 @@ Route::group([
     Route::resource('invoice_tax', 'InvoiceTaxController');
 
     Route::group(['as' => 'finance_simulation.', 'prefix' => '/finance_simulation'], function () {
-        Route::get('/index', 'FinanceSimulationPriceController@index')->name('index');
-        Route::get('/getInvoice', 'FinanceSimulationPriceController@getInvoice')->name('getInvoice');
-        Route::get('/create', 'FinanceSimulationPriceController@create')->name('create');
-        Route::post('/store', 'FinanceSimulationPriceController@store')->name('store');
-        Route::get('/removeData', 'FinanceSimulationPriceController@removeData')->name('removeData');
+        // Araya
+        Route::get('/index_araya', 'FinanceSimulationPriceController@index_araya')->name('index_araya');
+        Route::get('/get_invoices', 'FinanceSimulationPriceController@getInvoices')->name('get_invoices');
+        Route::get('/create_araya/{id}', 'FinanceSimulationPriceController@create_araya')->name('create_araya');
+        Route::post('/store_araya', 'FinanceSimulationPriceController@store_araya')->name('store_araya');
+        Route::get('/show_araya/{id}', 'FinanceSimulationPriceController@show_araya')->name('show_araya');
+        Route::delete('/destroy_araya/{id}', 'FinanceSimulationPriceController@destroy_araya')->name('destroy_araya');
+        Route::get('/print_jual/{id}', 'FinanceSimulationPriceController@print_jual')->name('print_jual');
+        Route::get('/print_beli/{id}', 'FinanceSimulationPriceController@print_beli')->name('print_beli');
+        Route::get('/generate_last_year', 'FinanceSimulationPriceController@generate_last_year')->name('generate_last_year');
+        Route::get('/delete_data', 'FinanceSimulationPriceController@delete_data')->name('delete_data');
+
+        // Mitra
+        Route::get('/index_mitra', 'FinanceSimulationPriceController@index_mitra')->name('index_mitra');
+        Route::get('/create_mitra/{id}/{mitra}', 'FinanceSimulationPriceController@create_mitra')->name('create_mitra');
+        Route::post('/store_mitra', 'FinanceSimulationPriceController@store_mitra')->name('store_mitra');
+        Route::get('/get_data_mitra', 'FinanceSimulationPriceController@get_data_mitra')->name('get_data_mitra');
+        Route::get('/print_jual_mitra/{id}', 'FinanceSimulationPriceController@print_jual_mitra')->name('print_jual_mitra');
+        Route::get('/print_beli_mitra/{id}', 'FinanceSimulationPriceController@print_beli_mitra')->name('print_beli_mitra');
+
+        // non mitra
+        Route::get('/create_non_mitra/{id}', 'FinanceSimulationPriceController@create_non_mitra')->name('create_non_mitra');
+        Route::post('/store_non_mitra', 'FinanceSimulationPriceController@store_non_mitra')->name('store_non_mitra');
+
         Route::get('/page_report', 'FinanceSimulationPriceController@page_report')->name('page_report');
     });
-    Route::resource('finance_simulation', 'FinanceSimulationPriceController'); 
+    Route::resource('finance_simulation', 'FinanceSimulationPriceController');   
 });

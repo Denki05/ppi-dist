@@ -208,14 +208,16 @@
                 </li>
 
                 <!-- FAT -->
-                @if($superuser->can('superuser-manage') OR $superuser->division == "Management" OR $superuser->division == "Finance")
+                @if($superuser->can('superuser-manage') OR $superuser->division == "Admin" OR $superuser->division == "Management" OR $superuser->division == "Finance")
                 <li class="nav-item dropdown">
                     <a class="nav-link dropdown-toggle" role="button" data-bs-toggle="dropdown"
                         aria-expanded="false">
                         <i class="fa-solid fa-chart-line"></i> FAT
                     </a>
                     <ul class="dropdown-menu">
-                        <li class="submenu submenu-md dropend">
+                        <li><a class="dropdown-item" href="{{ route('superuser.finance.payable.index') }}"><i class="fa-solid fa-credit-card"></i> Payment</a></li>
+                        <li><a class="dropdown-item" href="{{ route('superuser.finance.cashback.index') }}"><i class="fa-solid fa-code-branch"></i> Araya</a></li>
+                        <!-- <li class="submenu submenu-md dropend">
                             <a class="dropdown-item dropdown-toggle" role="button" data-bs-toggle="dropdown"
                                 aria-expanded="false">
                                 <i class="fa-solid fa-chart-simple"></i> Accounting
@@ -229,20 +231,35 @@
                                         <li><a class="dropdown-item" href="{{ route('superuser.accounting.invoice_tax.index_beli') }}">Beli</a></li>
                                     </ul>
                                 </li>
-                                <li><a class="dropdown-item" href="{{ route('superuser.accounting.product_finance.index') }}"><i class="fa-solid fa-copyright"></i> Product PPN</a></li>
-                                @if($superuser->can('superuser-manage') OR $superuser->division == "Management")
-                                <li><a class="dropdown-item" href="{{ route('superuser.accounting.finance_simulation.index') }}"><i class="fa-solid fa-repeat"></i> Simulation Price Tax</a></li>
-                                @endif
+                                
                             </ul>
-                        </li>
+                        </li> -->
                         <li class="submenu submenu-md dropend">
                             <a class="dropdown-item dropdown-toggle" role="button" data-bs-toggle="dropdown"
                                 aria-expanded="false">
-                                <i class="fa-solid fa-coins"></i> Finance
+                                <i class="fa-solid fa-repeat"></i> CV
                             </a>
                             <ul class="dropdown-menu">
-                                <li><a class="dropdown-item" href="{{ route('superuser.finance.cashback.index') }}"><i class="fa-solid fa-code-branch"></i> Araya</a></li>
-                                <li><a class="dropdown-item" href="{{ route('superuser.finance.payable.index') }}"><i class="fa-solid fa-credit-card"></i> Pembayaran</a></li>
+                                <li><a class="dropdown-item" href="{{ route('superuser.accounting.product_finance.index') }}"><i class="fa-solid fa-copyright"></i> Product UV</a></li>
+                                <li class="submenu submenu-md dropend">
+                                    <a class="dropdown-item dropdown-toggle" role="button"
+                                        data-bs-toggle="dropdown" aria-expanded="false"> Araya</a>
+                                    <ul class="dropdown-menu">
+                                        <li><a class="dropdown-item" href="{{ route('superuser.accounting.finance_simulation.index_araya') }}">Invoice</a></li>
+                                        <li><a class="dropdown-item" href="">Payment</a></li>
+                                        <li><a class="dropdown-item" href="">Report</a></li>
+                                    </ul>
+                                </li>
+                                <li class="submenu submenu-md dropend">
+                                    <a class="dropdown-item dropdown-toggle" role="button"
+                                        data-bs-toggle="dropdown" aria-expanded="false"> Unifra</a>
+                                    <ul class="dropdown-menu">
+                                        <!-- <li><a class="dropdown-item" href="">Set Mitra</a></li> -->
+                                        <li><a class="dropdown-item" href="{{ route('superuser.accounting.finance_simulation.index_mitra') }}">Invoice</a></li>
+                                        <li><a class="dropdown-item" href="">Payment</a></li>
+                                        <li><a class="dropdown-item" href="">Report</a></li>
+                                    </ul>
+                                </li>
                             </ul>
                         </li>
                     </ul>
@@ -272,7 +289,7 @@
                                     </ul>
                                 </li>
                                 <li><a class="dropdown-item" href="{{ route('superuser.report.revenue.index') }}"> Laporan Pendapatan</a></li>
-                                <li><a class="dropdown-item" href="{{ route('superuser.accounting.finance_simulation.page_report') }}"> Finance Simulation UV Report</a></li>
+                                <!-- <li><a class="dropdown-item" href="{{ route('superuser.accounting.finance_simulation.page_report') }}"> Finance Simulation UV Report</a></li> -->
                             </ul>
                         </li>
                         <li class="submenu submenu-md dropend">

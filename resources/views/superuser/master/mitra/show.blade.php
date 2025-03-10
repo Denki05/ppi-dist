@@ -46,7 +46,7 @@
                     </div>
                 </div>
                 <div class="form-group row">
-                    <label class="col-lg-3 col-form-label text-right">Batas Atas</label>
+                    <label class="col-lg-3 col-form-label text-right">Saldo</label>
                     <div class="col-lg-8">
                         <input type="text" class="form-control" value="{{ number_format($saldo) }}" readonly>
                     </div>
@@ -59,26 +59,31 @@
         <div class="block">
             <div class="block-header block-header-default">
                 <h3 class="block-title">List Customer</h3>
+                <a class="btn btn-secondary btn-sm" data-toggle="collapse" href="#detailCustomer" role="button" aria-expanded="false" aria-controls="detailCustomer" id="toggleDetailCustomer">
+                    <i class="fas fa-chevron-down"></i> <!-- Ikon awal -->
+                </a>
             </div>
-            <div class="block-content">
-                <table class="table table-striped table-hover" id="customer_mitra">
-                    <thead>
-                        <tr>
-                            <th>#</th>
-                            <th>Nama</th>
-                            <th>Kota</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        @foreach ($mitra->mitra_detail as $detail)
-                        <tr>
-                            <td>{{ $loop->iteration }}</td>
-                            <td>{{ $detail->customers->name }}</td>
-                            <td>{{ $detail->customers->text_kota }}</td>
-                        </tr>
-                        @endforeach
-                    </tbody>
-                </table>
+            <div class="collapse" id="detailCustomer">
+                <div class="block-content">
+                    <table class="table table-striped table-hover" id="customer_mitra">
+                        <thead>
+                            <tr>
+                                <th>#</th>
+                                <th>Nama</th>
+                                <th>Kota</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach ($mitra->mitra_detail as $detail)
+                            <tr>
+                                <td>{{ $loop->iteration }}</td>
+                                <td>{{ $detail->customers->name }}</td>
+                                <td>{{ $detail->customers->text_kota }}</td>
+                            </tr>
+                            @endforeach
+                        </tbody>
+                    </table>
+                </div>
             </div>
         </div>
     </div>
@@ -109,6 +114,18 @@ $(document).ready(function () {
         "info": false,
         "searching": false,
         "order": [[0, 'asc']],
+        "responsive": true,
+    });
+
+    $('#toggleDetailCustomer').on('click', function() {
+        var $this = $(this);
+        var icon = $this.find('i');
+
+        if ($this.attr('aria-expanded') === 'true') {
+            icon.removeClass('fa-chevron-up').addClass('fa-chevron-down'); // Ganti ikon ke panah bawah
+        } else {
+            icon.removeClass('fa-chevron-down').addClass('fa-chevron-up'); // Ganti ikon ke panah atas
+        }
     });
   })
 </script>

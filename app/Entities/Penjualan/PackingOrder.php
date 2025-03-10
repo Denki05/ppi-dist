@@ -29,6 +29,8 @@ class PackingOrder extends Model
 		'tax_beli',
 		'tax_jual',
 		'cashback_status',
+		'uv_araya',
+		'uv_unifra',
         'note',
 		'pic',
         'officer',
