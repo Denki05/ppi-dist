@@ -27,21 +27,6 @@
               <input type="text" class="form-control" name="name" placeholder="Website Name" value="{{ setting('website.name') }}">
             </div>
           </div>
-          {{--<div class="form-group row">
-            <label class="col-lg-4 col-form-label">Maintenance</label>
-            <div class="col-lg-7">
-              <label class="css-control css-control-sm css-control-danger css-switch">
-                <input type="checkbox" class="css-control-input" name="maintenance" {{ setting('website.maintenance') ? 'checked' : '' }}>
-                <span class="css-control-indicator"></span>
-              </label>
-            </div>
-          </div>
-          <div class="form-group row">
-            <label class="col-lg-4 col-form-label">Maintenance Message</label>
-            <div class="col-lg-7">
-              <textarea class="form-control" name="maintenance_message" rows="4">{{ setting('website.maintenance_message') }}</textarea>
-            </div>
-          </div>--}}
           <div class="form-group row">
             <label class="col-lg-4 col-form-label">Color Themes</label>
             <input type="hidden" name="color_themes" value="{{ setting('website.color_themes') }}">
@@ -81,27 +66,20 @@
         </div>
         <div class="block-content">
           <div class="form-group row">
-            <label class="col-lg-4 col-form-label">Maintenance :</label>
-            <div class="col-lg-7">
-              @if (!app()->isDownForMaintenance())
-              <a class="btn btn-danger" href="javascript:saveConfirmation('{{ route('superuser.utility.settings.enableMaintenanceMode') }}')" role="button">Enable</a>
-              @else
-              <a class="btn btn-warning" href="javascript:saveConfirmation('{{ route('superuser.utility.settings.disableMaintenanceMode') }}')" role="button">Disable</a>
-              @endif
-            </div>
+              <label class="col-lg-4 col-form-label">Maintenance :</label>
+              <div class="col-lg-7">
+                  <a class="btn {{ app()->isDownForMaintenance() ? 'btn-warning' : 'btn-danger' }}" 
+                    href="javascript:saveConfirmation('{{ route('superuser.utility.settings.toggleMaintenanceMode') }}')">
+                      {{ app()->isDownForMaintenance() ? 'Disable' : 'Enable' }}
+                  </a>
+              </div>
           </div>
           <div class="form-group row">
             <label class="col-lg-4 col-form-label">Status :</label>
             <div class="col-lg-3">
-              @if (!app()->isDownForMaintenance())
-                <div class="alert alert-success" role="alert">
-                  UP TIME
+                <div class="alert {{ app()->isDownForMaintenance() ? 'alert-danger' : 'alert-success' }}" role="alert">
+                    {{ app()->isDownForMaintenance() ? 'DOWN TIME' : 'UP TIME' }}
                 </div>
-              @else
-              <div class="alert alert-danger" role="alert">
-                  DOWN TIME
-                </div>
-              @endif
             </div>
           </div>
           <div class="form-group row">

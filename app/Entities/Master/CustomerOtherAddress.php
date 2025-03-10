@@ -114,6 +114,11 @@ class CustomerOtherAddress extends Model
         return $this->hasMany('App\Entities\Master\CustomerContact', 'customer_other_address_id');
     }
 
+    public function cashbackUv()
+    {
+        return $this->hasMany('App\Entities\Finance\CashbackUv', 'customer_other_address_id', 'id');
+    }
+
     public function routeNotificationForWhatsApp()
     {
         return $this->phone;

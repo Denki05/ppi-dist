@@ -1,0 +1,190 @@
+<?php
+  $idr_total = 0; 
+  $code = $result->code;
+?>
+<style type="text/css">
+  body {
+    color: #333;
+    font-family: Arial, sans-serif;
+    font-size: 12px;
+  }
+  table.borderless {
+    border-collapse: collapse;
+    border-spacing: 0;
+  }
+  .borderless td, .borderless th {
+    border: none;
+  }
+  .info td, .info th {
+    padding: 2px;
+    margin: 2px;
+    box-sizing: border-box;
+  }
+  .column-float {
+    float: left;
+    width: 50%;
+  }
+  .row-float {
+    position: relative;
+  }
+  .row-float:after {
+    content: "";
+    display: block;
+    clear: both;
+  }
+  table.table-data {
+    width: 100%;
+    border-collapse: collapse;
+    color: #333;
+  }
+  table.table-data th {
+    font-size: 12px;
+    background-color: #d3d3d3;
+  }
+  table.table-data td {
+    border: none;
+  }
+  table.table-data tbody {
+    text-align: center;
+    font-size: 12px;
+  }
+  @page {
+    margin-top: 0px;
+  }
+  .text-right {
+    text-align: right;
+  }
+  .text-left {
+    text-align: left;
+  }
+  .page-break {
+    page-break-after: always;
+  }
+  .clearfix::after {
+    content: "";
+    display: table;
+    clear: both;
+  }
+  .signature-container {
+    position: absolute;
+    right: 0;
+    bottom: 0;
+    text-align: center;
+    width: 20%;
+  }
+</style>
+
+@php
+  $limit = 12; // Limit items per page
+  $doDetails = $result->invoice_tax_detail;
+  $doDetails = $doDetails->sortBy(function($row) {
+      return $row->product->name ?? '';
+  });
+  $totalItems = $doDetails->count();
+  $totalPages = ceil($totalItems / $limit);
+  $offset = 0;
+@endphp
+
+@for ($page = 0; $page < $totalPages; $page++)
+<div>
+<h2 style="text-align: center; margin: 0; padding: 15; margin-bottom: 5px;"><u>INVOICE JUAL UV UNIFRA</u></h2>
+  
+  <div style="margin-bottom: 15px; font-size: 11px;">
+    <div class="row-float">
+      <div class="column-float" style="width: 60%;">
+        <table class="table borderless info" style="width: 100%;">
+          <tbody>
+            <tr>
+              <td style="width: 35% !important;">Toko</td>
+              <td style="width: 2% !important;">:</td>
+              <td style="width: 63% !important;">{{ $result->do_uv->customer_other_address->name }} {{ $result->do_uv->customer_other_address->text_kota }}</td>
+            </tr>
+            <tr>
+              <td>Alamat</td>
+              <td>:</td>
+              <td>{{$result->do_uv->customer_other_address->address}}, {{ $result->do_uv->customer_other_address->text_kelurahan }}, {{ $result->do_uv->customer_other_address->text_kecamatan }}, {{ $result->do_uv->customer_other_address->text_kota }}, {{ $result->do_uv->customer_other_address->text_provinsi }}</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="column-float" style="width: 40%;">
+        <table class="table borderless info" style="width: 100%;">
+          <tbody>
+            <tr>
+              <td style="width: 35%;">Code</td>
+              <td style="width: 2%;">:</td>
+              <td style="width: 63%;"><b>{{ $code }}</b> / Page {{ $page + 1 }} of {{ $totalPages }}</td>
+            </tr>
+            <tr>
+              <td>Tanggal</td>
+              <td>:</td>
+              <td>{{ date('d-m-Y', strtotime($result->created_at)) }}</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+  
+<table class="table-data">
+    <thead>
+        <tr>
+            <th>No</th>
+            <th>Product</th>
+            <th>Qty</th>
+            <th class="text-right">Price</th>
+            <th class="text-right">Jumlah</th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach ($doDetails->slice($page * $limit, $limit)->values() as $index => $row)
+        <tr>
+            <td>{{ $offset + $index + 1 }}</td>
+            <td>{{ $row->product_tax->code_product }} - {{ $row->product_tax->name_product }}</td>
+            <td>{{ $row->qty }}</td>
+            <td class="text-right">{{ number_format($row->price, 2) }}</td>
+            <td class="text-right">{{ number_format($row->sub_total, 2) }}</td>
+        </tr>
+        @endforeach
+    </tbody>
+    <tfoot>
+        <tr>
+            <td></td>
+            <td></td>
+            <td></td>
+            <td></td>
+            <td class="text-right" style="font-size: 14px; border-bottom: 1px solid black;"></td>
+        </tr>
+        <tr>
+            <td colspan="4" class="text-right" style="font-size: 14px;"><strong>Subtotal :</strong></td>
+            <td class="text-right" style="font-size: 14px; "><strong>{{ number_format($doDetails->slice($page * $limit, $limit)->sum('sub_total'), 2) }}</strong></td>
+        </tr>
+        <tr>
+            <td colspan="4" class="text-right" style="font-size: 14px;"><strong>PPN :</strong></td>
+            <td class="text-right" style="font-size: 14px; border-bottom: 1px solid black;" ><strong>{{ number_format($result->ppn_idr, 2) }}</strong></td>
+        </tr>
+        <tr>
+            <td colspan="4" class="text-right" style="font-size: 14px;"><strong>Total :</strong></td>
+            <td class="text-right" style="font-size: 14px; "><strong>{{ number_format($result->grand_total, 2) }}</strong></td>
+        </tr>
+    </tfoot>
+</table>
+</div>
+@php
+  $offset += $doDetails->slice($page * $limit, $limit)->count();
+@endphp
+@if ($page < $totalPages - 1)
+<div class="page-break"></div>
+@endif
+@endfor
+
+<div style="font-size : 14px;">
+  <div style="position: relative; height: 100px; margin-top: 30px;">
+    <div class="signature-container">
+      <br><br><br><br>
+      .......................
+      <br>
+      Mengetahui,
+    </div>
+  </div>
+</div>

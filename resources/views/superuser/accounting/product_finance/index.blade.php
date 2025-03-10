@@ -54,9 +54,16 @@
 @endif
 
 <div class="block">  
-  <div class="block-header block-header-default">
-  </div>
   <div class="block-content">
+    <a href="{{ route('superuser.accounting.product_finance.create') }}">
+      <button type="button" class="btn btn-outline-primary min-width-125">Create</button>
+    </a>
+
+    <button type="button" class="btn btn-outline-primary min-width-125" data-toggle="modal" data-target="#modal-import-export-ratio">
+      Manage
+    </button>
+  </div>
+  <div class="block-content block-content-full">
     <div class="form-group row">
       <label class="col-md-2 col-form-label text-left" for="period">Mitra :</label>
       <div class="col-md-4">
@@ -98,38 +105,74 @@
   </div>
 </div>
 
-<!-- Modal Update Cost -->
-<div class="modal fade" id="updateCost" tabindex="-1" role="dialog" aria-labelledby="updateCostLabel" aria-hidden="true">
+<div id="modal-import-export-ratio" class="modal fade" tabindex="-1" role="dialog">
     <div class="modal-dialog" role="document">
         <div class="modal-content">
             <div class="modal-header">
-                <h5 class="modal-title" id="updateCostLabel">Update Harga</h5>
+                <h5 class="modal-title">Import / Export Product Finance</h5>
+                <button type="button" class="close" data-dismiss="modal">
+                    <span>&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+              <!-- Import Form -->
+              <form action="{{ route('superuser.accounting.product_finance.import') }}" method="POST" enctype="multipart/form-data">
+                @csrf
+                <div class="form-group">
+                  <label>Import Product Ratio (Excel File)</label>
+                  <input type="file" name="import_file" class="form-control" required>
+                </div>
+                <button type="submit" class="btn btn-primary">Import</button>
+              </form>
+
+              <hr>
+
+              <!-- Export Forms -->
+              <div class="d-flex justify-content-between">
+                <form action="{{ route('superuser.accounting.product_finance.import_template') }}" method="GET">
+                  <button type="submit" class="btn btn-success">Export Template</button>
+                </form>
+                <form action="{{ route('superuser.accounting.product_finance.export') }}" method="GET">
+                  <button type="submit" class="btn btn-info">Export</button>
+                </form>
+              </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Update Harga -->
+<div class="modal fade" id="editPriceModal" tabindex="-1" aria-labelledby="editPriceModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="editPriceModalLabel">Edit Harga Produk</h5>
                 <button type="button" class="close" data-dismiss="modal" aria-label="Close">
                     <span aria-hidden="true">&times;</span>
                 </button>
             </div>
-            <form id="updateCostForm" method="POST">
+            <form id="updatePriceForm">
                 <div class="modal-body">
+                    <input type="hidden" id="product_id">
+                    
                     <div class="form-group">
-                        <label for="buying_price_usd_drum">Harga Beli Drum (USD)</label>
-                        <input type="text" class="form-control" id="buying_price_usd_drum" name="buying_price_usd_drum" required>
+                        <label>Nama Produk</label>
+                        <input type="text" class="form-control" id="product_name" readonly>
                     </div>
+
                     <div class="form-group">
-                        <label for="selling_price_usd_drum">Harga Jual Drum (USD)</label>
-                        <input type="text" class="form-control" id="selling_price_usd_drum" name="selling_price_usd_drum" required>
+                        <label>Harga Beli (USD)</label>
+                        <input type="number" class="form-control" id="buying_price" step="0.01" required>
                     </div>
+
                     <div class="form-group">
-                        <label for="buying_price_usd_unit">Harga Beli Unit (USD)</label>
-                        <input type="text" class="form-control" id="buying_price_usd_unit" name="buying_price_usd_unit" required>
-                    </div>
-                    <div class="form-group">
-                        <label for="selling_price_usd_unit">Harga Jual Unit (USD)</label>
-                        <input type="text" class="form-control" id="selling_price_usd_unit" name="selling_price_usd_unit" required>
+                        <label>Harga Jual (USD)</label>
+                        <input type="number" class="form-control" id="selling_price" step="0.01" required>
                     </div>
                 </div>
                 <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
-                    <button type="submit" class="btn btn-primary">Update Harga</button>
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Tutup</button>
+                    <button type="submit" class="btn btn-primary">Simpan Perubahan</button>
                 </div>
             </form>
         </div>
@@ -156,11 +199,11 @@
               dataType: "json",
               type: "GET",
               data: function (d) {
-                  d.mitra = $('#mitra').val(); // Send selected month
+                  d.mitra = $('#mitra').val();
               },
           },
           columns: [
-              {data: 'DT_RowIndex', name: 'id'},
+              { data: 'DT_RowIndex', name: 'id' },
               { data: 'kode' },
               { data: 'name' },
               { data: 'brand' },
@@ -169,7 +212,7 @@
               { data: 'uv_beli' },
               { data: 'uv_jual' },
               { data: 'status' },
-              { data: 'action', orderable: false, searchable: false },
+              { data: 'action', orderable: false, searchable: false } // Tambahkan kolom aksi
           ],
           order: [[2, 'asc']],
           pageLength: 10,
@@ -181,44 +224,66 @@
         productFinanceTable.ajax.reload();
       });
 
-      $('body').on('click', '.openModalUpdateCost', function () {
-          var id = $(this).data('id'); // Ambil ID produk yang dikodekan
-          var url = '{{ route('superuser.accounting.product_finance.update_cost', '') }}/' + id; // URL ke controller update_cost
+      $(document).on('click', '.edit-price', function () {
+        let id = $(this).data('id');
+        let buy = $(this).data('buy');
+        let sell = $(this).data('sell');
+        let name = $(this).data('name');
 
-          // Kirim request untuk mendapatkan data harga produk
-          $.get(url, function (data) {
-              if (data.product) {
-                  $('#buying_price_usd_drum').val(data.product.buying_price_usd_drum);
-                  $('#selling_price_usd_drum').val(data.product.selling_price_usd_drum);
-                  $('#buying_price_usd_unit').val(data.product.buying_price_usd_unit);
-                  $('#selling_price_usd_unit').val(data.product.selling_price_usd_unit);
-                  $('#updateCostForm').attr('action', '{{ route('superuser.accounting.product_finance.update_cost', '') }}/' + id);
-              }
-          });
+        // Isi form modal dengan data produk
+        $('#product_id').val(id);
+        $('#product_name').val(name);
+        $('#buying_price').val(buy);
+        $('#selling_price').val(sell);
+
+        // Tampilkan modal
+        $('#editPriceModal').modal('show');
       });
 
-      // Handle form submit
-      $('#updateCostForm').submit(function (e) {
-          e.preventDefault();
+      $('#updatePriceForm').submit(function (e) {
+        e.preventDefault();
+        let productId = $('#product_id').val();
+        let buyingPrice = $('#buying_price').val();
+        let sellingPrice = $('#selling_price').val();
 
-          var formData = $(this).serialize(); // Ambil data form
-          var actionUrl = $(this).attr('action');
+        $.ajax({
+            url: "{{ route('superuser.accounting.product_finance.updatePrice') }}",
+            type: "POST",
+            data: {
+                _token: "{{ csrf_token() }}",
+                id: productId,
+                buying_price: buyingPrice,
+                selling_price: sellingPrice
+            },
+            beforeSend: function () {
+                $('.btn-primary').prop('disabled', true);
+            },
+            success: function (response) {
+                if (response.status === 200) {
+                    Swal.fire({
+                        icon: 'success',
+                        title: 'Berhasil!',
+                        text: 'Harga berhasil diperbarui!',
+                        showConfirmButton: false,
+                        timer: 2000
+                    });
 
-          // Kirim data update ke controller menggunakan AJAX
-          $.ajax({
-              url: actionUrl,
-              method: 'POST',
-              data: formData,
-              success: function (response) {
-                  alert(response.notification.content); // Menampilkan notifikasi
-                  $('#updateCost').modal('hide'); // Tutup modal
-                  location.reload(); // Reload halaman
-              },
-              error: function (xhr, status, error) {
-                  var errorMsg = xhr.responseJSON.errors ? xhr.responseJSON.errors.join(", ") : 'Terjadi kesalahan';
-                  alert(errorMsg);
-              }
-          });
+                    // Tutup modal dan refresh tabel
+                    $('#editPriceModal').modal('hide');
+                    productFinanceTable.ajax.reload();
+                }
+            },
+            error: function () {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Gagal!',
+                    text: 'Terjadi kesalahan, coba lagi!',
+                });
+            },
+            complete: function () {
+                $('.btn-primary').prop('disabled', false);
+            }
+        });
       });
     })
 </script>

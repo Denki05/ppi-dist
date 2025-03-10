@@ -63,6 +63,11 @@ class ProductFinance extends Model
         return $this->belongsTo('App\Entities\Master\Packaging', 'packaging_id');
     }
 
+    public function child_product()
+    {
+        return $this->belongsTo('App\Entities\Master\ProductPack', 'id');
+    }
+
     public function status()
     {
         return array_search($this->status, self::STATUS);

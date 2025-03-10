@@ -30,9 +30,9 @@
 </div>
 @endif
 
-<form id="reportForm" action="{{ route('superuser.report.customer_type_brand.exportReport') }}" method="POST">
+<form id="reportForm" method="POST">
     @csrf
-    <input type="hidden" name="action" id="action" value="print">
+    <input type="hidden" name="action" id="action" value="export">
     <div class="block">
         <hr class="my-20">
         <div class="block-content block-content-full">
@@ -47,13 +47,13 @@
                         <i class="fa fa-trash"></i> Remove Data
                     </button>
                 </div>
-                {{--<div class="btn-group mr-2">
-                    <button type="button" class="btn btn-success" onclick="submitForm('print')">
+                <div class="btn-group mr-2">
+                    <button type="button" class="btn btn-success" onclick="submitForm('print')" targe="_blank">
                         <i class="fa fa-file-pdf-o" aria-hidden="true"></i> Export PDF
                     </button>
-                </div>--}}
+                </div>
                 <div class="btn-group mr-2">
-                    <button type="submit" class="btn btn-info">
+                    <button type="button" class="btn btn-info" onclick="submitForm('export')">
                         <i class="fa fa-file-excel"></i> Export Excel
                     </button>
                 </div>
@@ -114,8 +114,13 @@
   });
 
   function submitForm(actionType) {
-      $('#action').val(actionType);
-      $('#reportForm').submit();
+      let form = $('#reportForm');
+      if (actionType === 'print') {
+          form.attr('action', "{{ route('superuser.report.customer_type_brand.print_report') }}");
+      } else {
+          form.attr('action', "{{ route('superuser.report.customer_type_brand.exportReport') }}");
+      }
+      form.submit();
   }
 
   function saveConfirmation(url) {

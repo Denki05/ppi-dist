@@ -11,6 +11,7 @@ use Maatwebsite\Excel\Facades\Excel;
 use App\Entities\Setting\UserMenu;
 use Carbon\Carbon;
 use Exception;
+use PDF;
 use Auth;
 use COM;
 use DB;
@@ -156,69 +157,75 @@ class ReportCustomerTypeBrandController extends Controller
 
     public function print_report(Request $request)
     {
-        $validatedData = $request->validate([
+        // Validasi input
+        $validated = $request->validate([
             'start' => 'required|date',
             'end' => 'required|date|after_or_equal:start',
-            'type' => 'required|integer|in:1,2',
-            'nominal' => 'required|integer|in:1,2',
         ]);
 
-        $start = $validatedData['start'];
-        $end = $validatedData['end'];
-        $type = $validatedData['type'];
-        $nominal = $validatedData['nominal'];
-        $new_date_start = date('d-m-Y', strtotime($start));
-        $new_date_end = date('d-m-Y', strtotime($end));
+        // Parsing tanggal dengan format yang lebih aman
+        $startDate = Carbon::createFromFormat('Y-m-d', $validated['start'])->format('Y-m-d');
+        $endDate = Carbon::createFromFormat('Y-m-d', $validated['end'])->format('Y-m-d');
 
-        $reportPath = "C:\\xampp\\htdocs\\ppi-dist\\public\\cr\\report\\management\\report_customer_register\\";
-        $exportPath = $reportPath . "export\\";
-        
-        // Select report based on type and nominal
-        if ($type == 1) {
-            $reportName = $nominal == 1 ? "customer_type_brand.rpt" : "customer_type_brand_non_nominal.rpt";
-            $pdfName = $nominal == 1 ? "customer-type-brand-" : "customer-type-brand-non-nominal-";
-        } elseif ($type == 2) {
-            $reportName = $nominal == 1 ? "report_zone_customer.rpt" : "report_zone_customer_non_nominal.rpt";
-            $pdfName = $nominal == 1 ? "customer-zone-" : "customer-zone-non-nominal-";
-        }
+        // Query data dari database
+        $query = CustomerTypeBrandReports::selectRaw('
+                customer_type, 
+                customer_name, 
+                customer_kota, 
+                invoice_brand, 
+                SUM(invoice_qty) as total_qty, 
+                SUM(invoice_purchase) as total_purchase
+            ')
+            ->whereBetween('invoice_date', [$startDate, $endDate])
+            ->groupBy('customer_type', 'customer_name', 'customer_kota', 'invoice_brand')
+            ->orderBy('customer_type')
+            ->orderBy('customer_name');
 
-        $my_report = $reportPath . $reportName;
-        $my_pdf = $exportPath . $pdfName . date("Y-m") . ".pdf";
+        // Eksekusi query utama
+        $data = $query->get();
 
-        try {
-            if (!file_exists($my_report)) {
-                return response()->json(['error' => 'Report file not found'], 404);
+        // List brand yang digunakan untuk menghindari duplikasi kode
+        $brands = ['GCF', 'Senses', 'PPI FF', 'PPI NON FF', 'PPI X'];
+
+        // Group data berdasarkan customer_type
+        $groupedData = $data->groupBy('customer_type')->map(function ($items) use ($brands) {
+            $totals = [];
+
+            // Hitung total per kategori
+            foreach ($brands as $brand) {
+                $totals["total_{$brand}_qty"] = $items->where('invoice_brand', $brand)->sum('total_qty') ?: 0;
+                $totals["total_{$brand}_purchase"] = $items->where('invoice_brand', $brand)->sum('total_purchase') ?: 0;
             }
 
-            $crapp = new COM("CrystalDesignRunTime.Application");
-            $creport = $crapp->OpenReport($my_report, 1);
-            $creport->Database->Tables(1)->SetLogOnInfo("LOCAL", "ppi_araya", "root", "");
+            $totals['total_customer_qty'] = $items->sum('total_qty') ?: 0;
+            $totals['total_customer_purchase'] = $items->sum('total_purchase') ?: 0;
 
-            $creport->EnableParameterPrompting = false;
-            $creport->ParameterFields(2)->SetCurrentValue($new_date_start);
-            $creport->ParameterFields(3)->SetCurrentValue($new_date_end);
-            $creport->RecordSelectionFormula = "{report_customer_type_brand.invoice_date}>=#$start# AND {report_customer_type_brand.invoice_date}<=#$end#";
+            return ['items' => $items, 'totals' => $totals];
+        });
 
-            $creport->ExportOptions->DiskFileName = $my_pdf;
-            $creport->ExportOptions->PDFExportAllPages = true;
-            $creport->ExportOptions->DestinationType = 1;
-            $creport->ExportOptions->FormatType = 31;
-            // $creport->ExportOptions->FormatType = 36; // Change to 36 for Excel (97-2003)
-            // $creport->ExportOptions->FormatType = 33; //Excel (data only)
-            $creport->Export(false);
-
-            $creport = null;
-            $crapp = null;
-
-            if (file_exists($my_pdf)) {
-                return response()->download($my_pdf, basename($my_pdf));
-            } else {
-                return response()->json(['error' => 'PDF not generated'], 500);
-            }
-        } catch (\Exception $e) {
-            \Log::error('Report generation failed: ' . $e->getMessage());
-            return response()->json(['error' => 'An error occurred while generating the report'], 500);
+        // Hitung total global dengan query yang sudah dikloning
+        $globalTotals = [];
+        foreach ($brands as $brand) {
+            $globalTotals["total_{$brand}_qty"] = $data->where('invoice_brand', $brand)->sum('total_qty') ?: 0;
+            $globalTotals["total_{$brand}_purchase"] = $data->where('invoice_brand', $brand)->sum('total_purchase') ?: 0;
         }
+
+        $globalTotals['total_customer_qty'] = $data->sum('total_qty') ?: 0;
+        $globalTotals['total_customer_purchase'] = $data->sum('total_purchase') ?: 0;
+
+        // Data untuk dikirim ke PDF
+        $pdfData = compact('groupedData', 'globalTotals', 'startDate', 'endDate');
+
+        // Generate PDF
+        $pdf = PDF::loadView('superuser.report.customer_type_brand.pdf_export', $pdfData)
+                ->setPaper('a3', 'landscape');
+
+        // Jika ingin di-download
+        if ($request->has('download')) {
+            return $pdf->download("Laporan-Customer-Type-Brand.pdf");
+        }
+
+        return $pdf->stream("Laporan-Customer-Type-Brand.pdf");
     }
 
     public function removeDt(Request $request)

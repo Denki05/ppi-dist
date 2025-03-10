@@ -45,7 +45,7 @@
                             <div class="form-row">
                                 <div class="form-group col-md-6">
                                     <label for="so_date">Invoice</label>
-                                    <input type="text" name="so_date" class="form-control" value="{{ $invoice->do_code }}" readonly>
+                                    <inpu`t type="text" name="so_date" class="form-control" value="{{ $invoice->do_code }}" readonly>
                                 </div>
                                 <div class="form-group col-md-6">
                                     <label for="type_transaction">Type Transaksi</label>
@@ -164,7 +164,7 @@
                                             <input class="form-control text-center" type="number" name="item_purchase_total[]" id="item_purchase_total" readonly>
                                         </td>
                                         <td style="width:15%">
-                                            <input class="form-control text-center" type="number" name="item_price_cashback[]" id="item_purchase_total" readonly>
+                                            <input class="form-control text-center" type="number" name="item_price_cashback[]" id="item_price_cashback" readonly>
                                         </td>
                                         <td style="width:15%">
                                             <input class="form-control text-center" type="number" name="item_grand_total[]" id="item_grand_total" readonly>

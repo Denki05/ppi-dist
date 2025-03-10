@@ -20,9 +20,11 @@ use App\Entities\Master\Warehouse;
 use App\Entities\Master\Fragrantica;
 use App\Exports\Master\ProductExport;
 use App\Exports\Master\ProductImportTemplate;
+use App\Exports\Master\ProductUpdateImportTemplate;
 use App\Helper\UploadMedia;
 use App\Http\Controllers\Controller;
 use App\Imports\Master\ProductImport;
+use App\Imports\Master\ProductUpdateImport;
 use App\Repositories\MasterRepo;
 use DB;
 use Excel;
@@ -1076,5 +1078,36 @@ class ProductController extends Controller
                 return $this->response(400, $response);
             }
         }
+    }
+
+    public function update_ratio(Request $request)
+    {
+        // Access
+        if(Auth::user()->is_superuser == 0){
+            if(empty($this->access) || empty($this->access->user) || $this->access->can_create == 0){
+                return redirect()->route('superuser.index')->with('error','Anda tidak punya akses untuk membuka menu terkait');
+            }
+        }
+        
+        $validator = Validator::make($request->all(), [
+            'import_file' => 'required|file|mimes:xls,xlsx|max:2048',
+        ]);
+
+        if ($validator->fails()) {
+            return redirect()->back()->withErrors($validator->errors()->all());
+        }
+
+        if ($validator->passes()) {
+            $import = new ProductUpdateImport();
+            Excel::import($import, $request->import_file);
+        
+            return redirect()->back()->with(['collect_success' => $import->success, 'collect_error' => $import->error]);
+        }
+    }
+
+    public function update_ratio_template()
+    {
+        $filename = 'master-product-update-import-template.xlsx';
+        return Excel::download(new ProductUpdateImportTemplate, $filename);
     }
 }

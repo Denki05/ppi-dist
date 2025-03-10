@@ -15,25 +15,28 @@
 			<th>Subject</th>
 			<th>URL</th>
 			<th>Method</th>
-			<th>Ip</th>
+			<th>IP</th>
 			<th>User Agent</th>
 			<th>User Id</th>
+			<th>Created At</th>
         </tr>
       </thead>
 	  <tbody>
 		@if($logs->count())
 			@foreach($logs as $key => $log)
-			<tr>
-				<td>{{ ++$key }}</td>
-				<td>{{ $log->subject }}</td>
-				<td>{{ $log->url }}</td>
-				<td>{{ $log->method }}</td>
-				<td >{{ $log->ip }}</td>
-				<td>
-                    <textarea class="form-control" rows="5" readonly>{{ $log->agent }}</textarea>
-				</td>
-				<td>{{ $log->created_by->username }}</td>
-			</tr>
+				
+				<tr>
+					<td>{{ ++$key }}</td>
+					<td>{{ $log->subject }}</td>
+					<td><textarea class="form-control" rows="3" readonly>{{ $log->url }}</textarea></td>
+					<td>{{ $log->method }}</td>
+					<td >{{ $log->ip }}</td>
+					<td>
+						<textarea class="form-control" rows="3" readonly>{{ $log->agent }}</textarea>
+					</td>
+					<td>{{ $log->created_by->username }}</td>
+					<td>{{ \Carbon\Carbon::parse($log->created_at)->format('Y-m-d H:i:s') }}</td>
+				</tr>
 			@endforeach
 		@endif
 	  </tbody>

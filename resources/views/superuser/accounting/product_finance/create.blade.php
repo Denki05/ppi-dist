@@ -39,7 +39,7 @@
             <div class="form-group row">
               <label for="example-text-input" class="col-2 col-form-label">Brand</label>
               <div class="col-8">
-                <select class="form-control js-select2" name="brand">
+                <select class="form-control js-select2" id="brand" name="brand">
                     <option value="">Pilih Brand</option>
                     @foreach($brand AS $item)
                     <option value="{{ $item->brand_name }}">{{ $item->brand_name }}</option>
@@ -47,27 +47,15 @@
                 </select>
               </div>
             </div>
+
             <div class="form-group row">
-              <label for="example-text-input" class="col-2 col-form-label">Kode produk</label>
+              <label class="col-2 col-form-label">Nama Produk</label>
               <div class="col-8">
-                <input class="form-control" type="text"  name="kode_produk">
-              </div>
-            </div>
-            <div class="form-group row">
-              <label for="example-text-input" class="col-2 col-form-label">Nama produk</label>
-              <div class="col-8">
-                <input class="form-control" type="text" name="nama_produk">
-              </div>
-            </div>
-            <div class="form-group row">
-              <label for="example-text-input" class="col-2 col-form-label">Kemasan</label>
-              <div class="col-8">
-                <select class="form-control js-select2" name="kemasan">
-                    <option value="">Pilih Kemasan</option>
-                    @foreach($kemasan AS $item)
-                    <option value="{{ $item->id }}">{{ $item->pack_name }}</option>
-                    @endforeach
+                <select class="form-control js-select2" id="product" name="product">
+                  <option value="">Pilih Produk</option>
                 </select>
+
+                <input type="hidden" id="packaging_code" name="packaging_code" readonly>
               </div>
             </div>
           </div>
@@ -76,8 +64,12 @@
             <div class="form-group row">
               <label for="example-text-input" class="col-6 col-form-label">Mitra</label>
               <div class="col-6">
-                <input class="form-control" type="text" value="{{ $mitra->name }}" readonly>
-                <input type="hidden" value="{{ $mitra->id }}" name="mitra_id">
+                <select class="form-control js-select2" name="mitra_id">
+                    <option value="">Pilih Mitra</option>
+                    @foreach($mitra AS $item)
+                    <option value="{{ $item->id }}">{{ $item->name }}</option>
+                    @endforeach
+                </select>
               </div>
             </div>
             <div class="form-group row">
@@ -95,7 +87,7 @@
           </div>
           <div class="row pt-30 mb-15">
               <div class="col-md-6">
-              <a href="{{ route('superuser.accounting.product_finance.show', $mitra->id) }}">
+              <a href="{{ route('superuser.accounting.product_finance.index') }}">
                     <button type="button" class="btn bg-gd-cherry border-0 text-white">
                         <i class="fa fa-arrow-left mr-10"></i> Back
                     </button>
@@ -115,12 +107,106 @@
 @endsection
 
 @include('superuser.asset.plugin.select2')
+@include('superuser.asset.plugin.swal2')
 
 @push('scripts')
 <script src="{{ asset('utility/superuser/js/form.js') }}"></script>
 <script type="text/javascript">
   $(document).ready(function () {
     $('.js-select2').select2();
-  });
+
+    // Saat brand dipilih
+    $('#brand').change(function () {
+        let brandName = $(this).val();
+        $('#product').empty().append('<option value="">Pilih Produk</option>'); // Reset produk
+        $('#packaging_code').val(''); // Reset kode kemasan
+
+        if (brandName) {
+            $.ajax({
+                url: "{{ route('superuser.accounting.product_finance.get_product') }}",
+                type: "GET",
+                data: { brand_name: brandName },
+                dataType: "json",
+                success: function (response) {
+                    if (response.length > 0) {
+                        response.forEach(function (product) {
+                            $('#product').append(
+                                `<option value="${product.id}" data-packaging="${product.packaging_id}">
+                                    ${product.code} - ${product.name} /  ${product.packaging_name}
+                                </option>`
+                            );
+                        });
+                    }
+                }
+            });
+        }
+    });
+
+    // Saat produk dipilih, isi kode kemasan
+    $('#product').change(function () {
+        let packagingCode = $(this).find(':selected').data('packaging');
+        $('#packaging_code').val(packagingCode || '');
+    });
+
+    $('form.ajax').submit(function (e) {
+        e.preventDefault();
+        let form = $(this);
+        let url = form.data('action');
+        let formData = new FormData(this);
+
+        $.ajax({
+            url: url,
+            type: form.data('type'),
+            data: formData,
+            processData: false,
+            contentType: false,
+            beforeSend: function () {
+                form.find('button[type=submit]').prop('disabled', true);
+            },
+            success: function (response) {
+                if (response.status === 200) {
+                    // Tampilkan Notifikasi Sukses
+                    Swal.fire({
+                        icon: 'success',
+                        title: 'Berhasil!',
+                        text: response.notification.content,
+                        showConfirmButton: false,
+                        timer: 2000
+                    });
+
+                    // Redirect setelah sukses
+                    setTimeout(function () {
+                        window.location.href = response.redirect_to;
+                    }, 2000);
+                }
+            },
+            error: function (xhr) {
+                let response = xhr.responseJSON;
+                let errors = response.errors;
+                
+                if (xhr.status === 400 && errors) {
+                    let errorMessages = Object.values(errors).map(msg => msg.join('<br>')).join('<br>');
+
+                    // Tampilkan Notifikasi Error
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Error!',
+                        html: errorMessages
+                    });
+                } else {
+                    // Error lainnya (500, dll)
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Error!',
+                        text: 'Terjadi kesalahan, silakan coba lagi!'
+                    });
+                }
+            },
+            complete: function () {
+                form.find('button[type=submit]').prop('disabled', false);
+            }
+        });
+    });
+});
 </script>
 @endpush

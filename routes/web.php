@@ -1,5 +1,10 @@
 <?php
 
+use Illuminate\Support\Facades\Route;
+use Illuminate\Support\Facades\Mail;
+use App\Mail\WelcomeMail;
+use App\Http\Controllers\MailController;
+
 Route::group(['as' => 'website.'], function () {
     Route::get('/', function () {
         return redirect('auth/superuser');

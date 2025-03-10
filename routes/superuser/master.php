@@ -43,6 +43,8 @@ Route::group([
         Route::get('/update_category_type_pack', 'ProductController@update_category_type_pack')->name('update_category_type_pack');
         Route::get('/inactiveStatus/{id}', 'ProductController@inactiveStatus')->name('inactiveStatus');
         Route::get('/activeStatus/{id}', 'ProductController@activeStatus')->name('activeStatus');
+        Route::post('/update_ratio', 'ProductController@update_ratio')->name('update_ratio');
+        Route::get('/update_ratio_template', 'ProductController@update_ratio_template')->name('update_ratio_template');
 
         Route::group(['as' => 'min_stock.'], function () {
             Route::get('/{id}/min_stock/create', 'ProductMinStockController@create')->name('create');
@@ -255,7 +257,12 @@ Route::group([
     Route::resource('brand_lokal', 'BrandLokalController');
 
     Route::group(['as' => 'mitra.', 'prefix' => '/mitra'], function () {
-       
+        Route::get('/add_customer/{id}', 'MitraController@add_customer')->name('add_customer');
+        Route::post('/store_customer', 'MitraController@store_customer')->name('store_customer');
+        Route::get('/getCustomers/{id}', 'MitraController@getCustomers')->name('getCustomers');
+        Route::get('/template_setting_mitra', 'MitraController@template_setting_mitra')->name('template_setting_mitra');
+        Route::post('/setting_saldo_import', 'MitraController@setting_saldo_import')->name('setting_saldo_import');
+        Route::get('/show/{id}', 'MitraController@show')->name('show');
     });
     Route::resource('mitra', 'MitraController');
 });

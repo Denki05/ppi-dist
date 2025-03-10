@@ -8,6 +8,7 @@ use App\Entities\Master\ProductPack;
 use App\Entities\Master\Packaging;
 use App\Entities\Master\ProductFinance;
 use App\Entities\Master\Mitra;
+use App\Entities\Accounting\PriceLogFinance;
 use Maatwebsite\Excel\Concerns\ToCollection;
 use Maatwebsite\Excel\Concerns\SkipsOnFailure;
 use Maatwebsite\Excel\Concerns\SkipsFailures;
@@ -15,11 +16,7 @@ use Maatwebsite\Excel\Concerns\SkipsOnError;
 use Maatwebsite\Excel\Concerns\SkipsErrors;
 use Maatwebsite\Excel\Concerns\WithHeadingRow;
 use Maatwebsite\Excel\Concerns\WithStartRow;
-use Maatwebsite\Excel\Concerns\WithValidation;
-use Illuminate\Validation\Rule;
-use Maatwebsite\Excel\Imports\HeadingRowFormatter;
 use Illuminate\Support\Collection;
-use Maatwebsite\Excel\Validators\Failure;
 use DB;
 
 class ProductFinanceImport implements ToCollection, WithHeadingRow, WithStartRow, SkipsOnFailure, SkipsOnError
@@ -33,83 +30,89 @@ class ProductFinanceImport implements ToCollection, WithHeadingRow, WithStartRow
     {
         DB::beginTransaction();
 
-        try{
+        try {
             $collect_error = [];
             $collect_success = [];
 
             foreach ($rows as $row) 
             {
-                // product pack
-                $product_pack = ProductPack::where('id', $row['id'])->first();
-                if($product_pack == null) {
-                    $collect_error[] = $row['id'] . '  "PRODUCT" not found';
-                    break;
+                // Cek apakah produk finance sudah ada
+                $product_pack = ProductFinance::where('id', $row['id'])->first();
+
+                if (!$product_pack) {
+                    $collect_error[] = "Product ID {$row['id']} not found!";
+                    continue;
                 }
 
-                // search master product
-                $product = Product::where('id', $product_pack->product_id)->first();
+                // Ambil nilai setelah "-"
+                $pack = explode("-", $product_pack->id);
+                $packaging_name = end($pack);
 
-                //search kemasan 
-                $kemasan = Packaging::where('pack_name', $row['kemasan'])->first();
+                // Cek apakah Packaging ada
+                $packaging = Packaging::where('pack_name', $packaging_name)->first();
+                
+                // Buat finance baru jika tidak ada
+                if (!$product_pack) {
+                    ProductFinance::create([
+                        'id' => $row['id'],
+                        'brand_name' => $row['brand'],
+                        'code_product' => $row['code'],
+                        'name_product' => $row['name'],
+                        'mitra_id' => optional(Mitra::where('name', $row['mitra'])->first())->id,
+                        'product_id' => $row['id'],
+                        'packaging_id' => optional($packaging)->id,
+                        'buying_price_usd_unit' => $row['harga_beli'],
+                        'selling_price_usd_unit' => $row['harga_jual'],
+                        'status' => ProductFinance::STATUS['ACTIVE'],
+                        'year' => 2025,
+                    ]);
 
-                $brand = BrandLokal::where('brand_name', $row['brand'])->first();
-                if($brand == null) {
-                    $collect_error[] = $row['brand'] . '  "BRAND" not found';
-                    break;
+                    $collect_success[] = "{$row['code']} - {$row['name']} added successfully.";
+                    continue;
                 }
 
-                $mitra = Mitra::where('name', $row['mitra'])->first();
-                if($mitra == null) {
-                    $collect_error[] = $row['mitra'] . '  "MITRA" not found';
-                    break;
+                // Jika produk sudah ada, cari finance record
+                $product_finance = ProductFinance::where('id', $product_pack->id)->first();
+
+                if (!$product_finance) {
+                    $collect_error[] = "Finance data for {$product_pack->code} - {$product_pack->name} not found!";
+                    continue;
                 }
 
-                if($product_pack->product_finance_tax == 0){
-                    $product_finance = new ProductFinance;
+                // Cek apakah harga berubah
+                if ($product_finance->buying_price_usd_unit != $row['harga_beli'] || 
+                    $product_finance->selling_price_usd_unit != $row['harga_jual']) {
 
-                    $product_finance->id = $row['id'];
-                    $product_finance->brand_name = $brand->brand_name;
-                    $product_finance->code_product = $product->code;
-                    $product_finance->name_product = $product->name;
-                    $product_finance->mitra_id = $mitra->id;
-                    $product_finance->product_id = $product->id;
-                    $product_finance->packaging_id = $kemasan->id;
-                    $product_finance->buying_price_usd_unit = $row['harga_beli'];
-                    $product_finance->selling_price_usd_unit = $row['harga_jual'];
-                    $product_finance->status = ProductFinance::STATUS['ACTIVE'];
-                    if($product_finance->save()){
-                        // Update data product pack
-                        $get_product = ProductPack::where('id', $product_finance->id)->get();
+                    // Simpan harga lama ke log price
+                    DB::table('product_price_logs')->insert([
+                        'product_finance_id' => $product_finance->id,
+                        'buying_price_usd_unit' => $product_finance->buying_price_usd_unit,
+                        'selling_price_usd_unit' => $product_finance->selling_price_usd_unit,
+                        'year' => 2024,
+                        'created_at' => now(),
+                        'updated_at' => now(),
+                    ]);
 
-                        foreach($get_product as $val){
-                            $val->product_finance_tax = 1;
-                            $val->save();
-                        }
-                    }
+                    // Update harga baru
+                    $product_finance->update([
+                        'buying_price_usd_unit' => $row['harga_beli'],
+                        'selling_price_usd_unit' => $row['harga_jual'],
+                        'updated_year' => 2025,
+                    ]);
 
-                    $collect_success[] = $product_pack->code.' - '.$product_pack->name. ' / ' .$kemasan->pack_name;
-
-                }elseif($product_pack->product_finance_tax == 1){
-                    $collect_error[] =  $product_pack->code.' - '.$product_pack->name. ' / ' .$kemasan->pack_name .' '.'found in Database!';
+                    $collect_success[] = "{$product_pack->code} - {$product_pack->name} updated successfully.";
+                } else {
+                    $collect_error[] = "{$product_pack->code} - {$product_pack->name} has no price change.";
                 }
             }
 
-            if (!$collect_success) {
-                $collect_success[] = 'No successful import.';
-            }
-
-            if (!$collect_error) {
-                $collect_error[] = 'No failed import.';
-            }
-
-            $this->error = $collect_error;
-            $this->success = $collect_success;
+            $this->error = !empty($collect_error) ? $collect_error : ['No failed import.'];
+            $this->success = !empty($collect_success) ? $collect_success : ['No successful import.'];
 
             DB::commit();
-        }catch (\Exception $e) {
-            dd($e);
-            $this->error = $e->getMessage();
+        } catch (\Exception $e) {
             DB::rollBack();
+            $this->error = [$e->getMessage()];
         }
     }
 

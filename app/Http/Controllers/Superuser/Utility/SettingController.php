@@ -62,33 +62,25 @@ class SettingController extends Controller
         }
     }
 
-    public function enableMaintenanceMode()
+    public function toggleMaintenanceMode()
     {
-        // Enable maintenance mode
-        Artisan::call('down', ['--message' => 'Situs sedang dalam pemeliharaan. Silakan coba lagi nanti!']);
+        if (app()->isDownForMaintenance()) {
+            // Jika dalam mode maintenance, maka matikan
+            Artisan::call('up');
+            $message = 'Maintenance mode disabled';
+        } else {
+            // Jika tidak dalam mode maintenance, maka aktifkan dengan tampilan khusus
+            Artisan::call('down', [
+                '--render' => 'errors.503', // Menampilkan tampilan custom
+                '--message' => 'Kami sedang dalam perbaikan. Coba lagi nanti!',
+            ]);
+            $message = 'Maintenance mode enabled';
+        }
 
-        // return response()->json(['message' => 'Maintenance mode enabled'], 200);
         $response['notification'] = [
             'alert' => 'notify',
             'type' => 'success',
-            'content' => 'Maintenance mode enabled',
-        ];
-
-        $response['redirect_to'] = 'reload()';
-
-        return $this->response(200, $response);
-    }
-
-    public function disableMaintenanceMode()
-    {
-        // Disable maintenance mode
-        Artisan::call('up');
-
-        // return response()->json(['message' => 'Maintenance mode disabled'], 200);
-        $response['notification'] = [
-            'alert' => 'notify',
-            'type' => 'success',
-            'content' => 'Maintenance mode disabled',
+            'content' => $message,
         ];
 
         $response['redirect_to'] = 'reload()';

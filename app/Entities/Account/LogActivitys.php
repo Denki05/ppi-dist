@@ -4,7 +4,7 @@ namespace App\Entities\Account;
 
 use Illuminate\Database\Eloquent\Model;
 
-class LogActivity extends Model
+class LogActivitys extends Model
 {
     /**
      * The table associated with the model.
@@ -22,11 +22,7 @@ class LogActivity extends Model
         'subject', 'url', 'method', 'ip', 'agent', 'user_id'
     ];
 
-    /**
-     * Get the user who created this log activity.
-     */
-    public function createdBy()
-    {
+    public function created_by(){
         return $this->belongsTo('App\Entities\Account\Superuser', 'user_id', 'id');
     }
 }

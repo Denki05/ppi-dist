@@ -12,7 +12,6 @@ Route::group([
         Route::post('/export', 'ReportSalesController@export')->name('export');
         Route::post('/print_report', 'ReportSalesController@print_report')->name('print_report');
     });
-
     Route::resource('sales', 'ReportSalesController');
 
     Route::group(['as' => 'revenue.', 'prefix' => '/revenue'], function () {

@@ -13,6 +13,7 @@ class PriceLogFinance extends Model
     	'buying_price_usd_drum',
     	'selling_price_usd_unit',
     	'buying_price_usd_unit',
+		'year',
     ];
 
 	public function product_finance(){

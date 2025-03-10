@@ -53,15 +53,14 @@ class ProductFinanceTable extends Table
             return number_format($model->uv_beli, 2);
         });
 
-        $table->addColumn('action', function (ProductFinance $model) {
-            if ($model->status == ProductFinance::STATUS['ACTIVE']) {
-                return '<button type="button" class="btn bg-gd-leaf border-0 text-black openModalUpdateCost" 
-                            data-toggle="modal" 
-                            data-target="#updateCost" 
-                            data-id="' . base64_encode($model->id) . '">
-                            <i class="fa fa-money ml-10"></i>
-                        </button>';
-            }
+        $table->addColumn('action', function ($model) {
+            return '<button class="btn btn-warning btn-sm edit-price" 
+                            data-id="'.htmlspecialchars($model->id, ENT_QUOTES, 'UTF-8').'" 
+                            data-buy="'.$model->uv_beli.'" 
+                            data-sell="'.$model->uv_jual.'" 
+                            data-name="'.htmlspecialchars($model->name, ENT_QUOTES, 'UTF-8').'">
+                        <i class="fa fa-edit"></i>
+                    </button>';
         });
         
         // Mark the column as raw to allow HTML rendering

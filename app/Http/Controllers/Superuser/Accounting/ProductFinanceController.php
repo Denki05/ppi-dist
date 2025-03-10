@@ -53,10 +53,7 @@ class ProductFinanceController extends Controller
 
     
     public function index(Request $request)
-    {
-
-        // return view("superuser.coming-soon");
-        
+    {   
         // Access
         if(Auth::user()->is_superuser == 0){
             if(empty($this->access) || empty($this->access->user) || $this->access->can_read == 0){
@@ -79,10 +76,7 @@ class ProductFinanceController extends Controller
             }
         }
 
-        // Get mitra id
-        $mitra_id = $request->query('mitra_id');
-
-        $mitra = Mitra::where('id', $mitra_id)->first();
+        $mitra = Mitra::where('status', Mitra::STATUS['ACTIVE'])->get();
         $kemasan = Packaging::get();
         $brand = BrandLokal::get();
 
@@ -99,82 +93,80 @@ class ProductFinanceController extends Controller
    
     public function store(Request $request)
     {
-        // Check if the request is an AJAX request
+        // dd($request->product);
         if ($request->ajax()) {
-
             DB::beginTransaction();
 
             try {
-                // Validation
+                // Validasi Input
                 $validator = Validator::make($request->all(), [
                     'brand' => 'required|string',
-                    'kode_produk' => 'required|string|max:50',
-                    'nama_produk' => 'required|string|max:100',
-                    'kemasan' => 'required|integer|exists:master_packaging,id',
+                    'product' => 'required|string|exists:master_products_packaging,id',
+                    'packaging_code' => 'required|string',
                     'mitra_id' => 'required|integer|exists:master_mitra,id',
                     'harga_beli_satuan' => 'required|numeric',
                     'harga_jual_satuan' => 'required|numeric',
                 ]);
 
-                // Check if validation fails
+                // Jika validasi gagal, kirimkan response error
                 if ($validator->fails()) {
+                    $response['notification'] = [
+                        'alert' => 'block',
+                        'type' => 'alert-danger',
+                        'header' => 'Error',
+                        'content' => $validator->errors()->all(),
+                    ];
+      
+                    return $this->response(400, $response);
+                }
+
+                // Ambil data produk berdasarkan ID yang dipilih dari dropdown
+                $product_pack = ProductPack::where('id', $request->product)->first();
+                if (!$product_pack) {
+                    $response['notification'] = [
+                        'alert' => 'block',
+                        'type' => 'alert-danger',
+                        'header' => 'Error',
+                        'content' => $validator->errors()->all(),
+                    ];
+      
+                    return $this->response(400, $response);
+                }
+
+
+                // Cek apakah master_product ada
+                $master_product = ProductPack::where('id', $product_pack->id)->first();
+                if (!$master_product) {
                     return response()->json([
                         'status' => 400,
-                        'errors' => $validator->errors()
+                        'errors' => 'Master Product belum ada, silahkan input dahulu!'
                     ], 400);
                 }
 
-                // Initialize $product_finance instance
+                // Cek apakah produk finance sudah ada
+                $existing_product_finance = ProductFinance::where('id', $request->product)->first();
+                if ($existing_product_finance) {
+                    return response()->json([
+                        'status' => 400,
+                        'errors' => 'Product Finance sudah ada!'
+                    ], 400);
+                }
+
+                // Simpan ke tabel ProductFinance
                 $product_finance = new ProductFinance();
-
-                // Handle 'Senses' brand logic
-                if ($request->brand == "Senses") {
-                    $code = explode(" ", $request->kode_produk);
-                    $product_finance->id = $code[1] . '-' . $request->kemasan;
-                    $product_finance->code_product = $code[1];
-                } else {
-                    $product_finance->id = $request->kode_produk . '-' . $request->kemasan;
-                    $product_finance->code_product = $request->kode_produk; // This should be defined or clarified
-                }
-
-                // Set common product finance attributes
-                $product_finance->name_product = $request->nama_produk;
-                $product_finance->mitra_id = $request->mitra_id;
-
-                // Check if product exists in master product
-                $master_product = ProductPack::where('id', $product_finance->id)->first();
-                if ($master_product == null) {
-                    $response['notification'] = [
-                        'alert' => 'block',
-                        'type' => 'alert-danger',
-                        'header' => 'Error',
-                        'content' => "Master Product belum ada, Silahkan input dahulu!",
-                    ];
-
-                    return $this->response(400, $response);
-                }
-
-                // check existing product finance
-                $check_product_finance = ProductFinance::where('id', $product_finance->id)->first();
-                if ($check_product_finance !== null) {
-                    $response['notification'] = [
-                        'alert' => 'block',
-                        'type' => 'alert-danger',
-                        'header' => 'Error',
-                        'content' => "Product Sudah ada!",
-                    ];
-
-                    return $this->response(400, $response);
-                }
-
-                // Set remaining fields and save
+                $product_finance->id = $request->product;
+                $product_finance->brand_name = $request->brand;
+                $product_finance->code_product = $product_pack->code;
+                $product_finance->name_product = $product_pack->name;
                 $product_finance->product_id = $master_product->product_id;
-                $product_finance->packaging_id = $request->kemasan;
+                $product_finance->packaging_id = $request->packaging_code;
+                $product_finance->mitra_id = $request->mitra_id;
                 $product_finance->selling_price_usd_unit = $request->harga_jual_satuan;
                 $product_finance->buying_price_usd_unit = $request->harga_beli_satuan;
+                $product_finance->status = 1;
                 $product_finance->save();
 
-                // Commit transaction
+                // Commit transaksi
                 DB::commit();
 
                 $response['notification'] = [
@@ -188,8 +180,6 @@ class ProductFinanceController extends Controller
                 return $this->response(200, $response);
 
             } catch (\Exception $e) {
-                dd($e);
-                // Rollback transaction on error
                 DB::rollback();
 
                 $response['notification'] = [
@@ -203,23 +193,10 @@ class ProductFinanceController extends Controller
             }
         }
     }
-    
-    public function show($product_finance)
+
+    public function show(Request $request)
     {
-        $decode = base64_decode($product_finance);
-        
-        if (!$decode || !is_numeric($decode)) {
-            return response()->json(['errors' => ['Invalid product finance ID']], 400);
-        }
 
-        $productFinance = ProductFinance::find($decode);
-        if (!$productFinance) {
-            return response()->json(['errors' => ['Product finance not found']], 404);
-        }
-
-        return response()->json([
-            'product' => $productFinance
-        ]);
     }
 
     /**
@@ -258,7 +235,7 @@ class ProductFinanceController extends Controller
 
     public function export()
     {
-        $filename = 'product-tax-' . date('d-m-Y_H-i-s') . '.xlsx';
+        $filename = 'master-product-finance' . date('d-m-Y_H-i-s') . '.xlsx';
         return Excel::download(new ProductFinanceExport, $filename);
     }
 
@@ -276,8 +253,6 @@ class ProductFinanceController extends Controller
                 return redirect()->route('superuser.index')->with('error','Anda tidak punya akses untuk membuka menu terkait');
             }
         }
-
-        // DD($request->mitra_id);
         
         $validator = Validator::make($request->all(), [
             'import_file' => 'required|file|mimes:xls,xlsx|max:2048',
@@ -295,92 +270,77 @@ class ProductFinanceController extends Controller
         }
     }
 
-    public function update_cost(Request $request, $product_finance)
+    public function get_product(Request $request)
     {
-        if ($request->ajax()) {
-            // Decode and validate the product ID
-            $decode = base64_decode($product_finance);
+        $products = ProductPack::leftJoin('master_products', 'master_products.id', '=', 'master_products_packaging.product_id')
+            ->leftJoin('master_packaging', 'master_packaging.id', '=', 'master_products_packaging.packaging_id')
+            ->select(
+                'master_products_packaging.id', 
+                'master_products_packaging.code', 
+                'master_products_packaging.name', 
+                'master_packaging.id as packaging_id',
+                'master_packaging.pack_name as packaging_name'
+            )
+            ->where('master_products.brand_name', $request->brand_name)
+            ->get(); 
 
-            if (!$decode || !is_numeric($decode)) {
-                return response()->json(['errors' => ['Invalid product finance ID']], 400);
-            }
-
-            // Fetch the ProductFinance model
-            $productFinance = ProductFinance::find($decode);
-            if (!$productFinance) {
-                return response()->json(['errors' => ['Product finance not found']], 404);
-            }
-
-            // Validate request data
-            $validator = Validator::make($request->all(), [
-                'buying_price_usd_drum' => 'required|numeric',
-                'selling_price_usd_drum' => 'required|numeric',
-                'buying_price_usd_unit' => 'required|numeric',
-                'selling_price_usd_unit' => 'required|numeric',
-            ]);
-
-            if ($validator->fails()) {
-                return response()->json(['errors' => $validator->errors()->all()], 422);
-            }
-
-            // Begin database transaction
-            try {
-                DB::beginTransaction();
-
-                // Log old prices for comparison
-                $old_price = $productFinance->replicate();
-
-                // Update the record
-                $productFinance->selling_price_usd_drum = $request->selling_price_usd_drum;
-                $productFinance->buying_price_usd_drum = $request->buying_price_usd_drum;
-                $productFinance->selling_price_usd_unit = $request->selling_price_usd_unit;
-                $productFinance->buying_price_usd_unit = $request->buying_price_usd_unit;
-                $productFinance->updated_by = Auth::id();
-                $productFinance->save();
-
-                // Insert into price log
-                PriceLogFinance::create([
-                    'product_finance_id' => $productFinance->id,
-                    'selling_price_usd_drum' => $old_price->selling_price_usd_drum,
-                    'buying_price_usd_drum' => $old_price->buying_price_usd_drum,
-                    'selling_price_usd_unit' => $old_price->selling_price_usd_unit,
-                    'buying_price_usd_unit' => $old_price->buying_price_usd_unit,
-                    'created_by' => Auth::id(),
-                ]);
-
-                DB::commit();
-
-                return response()->json([
-                    'notification' => [
-                        'alert' => 'notify',
-                        'type' => 'success',
-                        'content' => 'Price updated successfully!',
-                    ],
-                    'redirect_to' => route('superuser.accounting.product_finance.index'),
-                ], 200);
-            } catch (\Exception $e) {
-                DB::rollBack();
-                return response()->json(['errors' => ['Failed to update price.']], 500);
-            }
+        // Debugging
+        if ($products->isEmpty()) {
+            return response()->json(['message' => 'No products found for this brand'], 404);
         }
 
-        return response()->json(['errors' => ['Invalid request']], 400);
+        return response()->json($products);
     }
 
-    public function search_mitra(Request $request)
+    public function updatePrice(Request $request)
     {
-        $mitra = Mitra::where('status', Mitra::STATUS['ACTIVE'])
-                        ->get();
+        $request->validate([
+            'id' => 'required|exists:master_product_finance,id',
+            'buying_price' => 'required|numeric|min:0',
+            'selling_price' => 'required|numeric|min:0',
+        ]);
 
-        $results = [];
+        DB::beginTransaction(); // Mulai transaksi
 
-        foreach ($mitra as $item) {
-            $results[] = [
-                'id' => $item->id,
-                'text' => $item->name,
-                ];
+        try {
+            // Ambil data harga lama sebelum perubahan
+            $old_price = ProductFinance::find($request->id);
+
+            if (!$old_price) {
+                return response()->json([
+                    'status' => 404,
+                    'message' => 'Produk tidak ditemukan!'
+                ], 404);
+            }
+
+            // Perbarui harga produk
+            $product = ProductFinance::findOrFail($request->id);
+            $product->buying_price_usd_unit = $request->buying_price;
+            $product->selling_price_usd_unit = $request->selling_price;
+            $product->save(); // Simpan perubahan harga
+
+            // Simpan log harga sebelum perubahan
+            $price_log = new PriceLogFinance;
+            $price_log->product_finance_id = $product->id;
+            $price_log->selling_price_usd_unit = $old_price->selling_price_usd_unit;
+            $price_log->buying_price_usd_unit = $old_price->buying_price_usd_unit;
+            $price_log->created_by = Auth::id();
+            $price_log->save();
+
+            DB::commit(); // Commit transaksi jika semua berhasil
+
+            return response()->json([
+                'status' => 200,
+                'message' => 'Harga berhasil diperbarui!'
+            ]);
+        } catch (\Exception $e) {
+            DB::rollback(); // Rollback transaksi jika ada error
+
+            return response()->json([
+                'status' => 500,
+                'message' => 'Terjadi kesalahan saat memperbarui harga!',
+                'error' => $e->getMessage()
+            ], 500);
         }
-                
-        return ['results' => $results];
     }
 }

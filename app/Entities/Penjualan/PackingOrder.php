@@ -32,6 +32,8 @@ class PackingOrder extends Model
 		'tax_beli',
 		'tax_jual', 
 		'cashback_status',
+		'uv_araya',
+		'uv_unifra',
         'note',
         'pic',
         'officer',
@@ -157,7 +159,8 @@ class PackingOrder extends Model
     	return $this->BelongsTo('App\Entities\Finance\Cashback','do_id','id');
     }
 
-	public function uv(){
-		return $this->hasMany('App\Entities\Accounting\FinanceSimulationPrice','do_id');
-	}
+	public function uv()
+    {
+        return $this->hasMany('App\Entities\Accounting\PackingOrderUv', 'do_id', 'id');
+    }
 }

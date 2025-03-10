@@ -127,28 +127,22 @@
 <script>
     document.addEventListener("DOMContentLoaded", function() {
         const salesData = @json($sales);
+        const revenueData = @json($revenue);
 
-        // Create an object to hold data grouped by month and brand
-        const groupedData = {};
-
-        // Check the structure of salesData
-        console.log(salesData);
-
-        // Group data by month and brand
+        // Group sales data by month and brand
+        const salesGrouped = {};
         salesData.forEach(sale => {
-            if (!groupedData[sale.month_name]) {
-                groupedData[sale.month_name] = {};
+            if (!salesGrouped[sale.month_name]) {
+                salesGrouped[sale.month_name] = {};
             }
-            if (!groupedData[sale.month_name][sale.brand]) {
-                groupedData[sale.month_name][sale.brand] = 0;
+            if (!salesGrouped[sale.month_name][sale.brand]) {
+                salesGrouped[sale.month_name][sale.brand] = 0;
             }
-            groupedData[sale.month_name][sale.brand] += sale.total_qty;
+            salesGrouped[sale.month_name][sale.brand] += sale.total_qty;
         });
 
-        const labels = Object.keys(groupedData);  // Get unique months
-        const datasets = [];
-
-        // Map of brand names to their respective colors
+        const labels = Object.keys(salesGrouped); // Get unique months
+        const salesDatasets = [];
         const colorMap = {
             'GCF': 'rgba(255, 236, 0, 0.8)',
             'Nginden': 'rgba(0, 19, 255, 0.8)',
@@ -158,114 +152,87 @@
             'Senses': 'rgba(255, 0, 0, 0.8)',
         };
 
-        // Map brands to datasets and assign data
         const brandMap = new Map(); // Track datasets by brand
-        Object.keys(groupedData).forEach((month) => {
-            Object.keys(groupedData[month]).forEach((brand) => {
+        Object.keys(salesGrouped).forEach((month) => {
+            Object.keys(salesGrouped[month]).forEach((brand) => {
                 if (!brandMap.has(brand)) {
                     brandMap.set(brand, {
                         label: brand,
-                        data: Array(labels.length).fill(0),  // Initialize data array with zeros
-                        backgroundColor: colorMap[brand] || 'rgba(150, 150, 150, 1)', // Default color if brand not found
-                        borderColor: colorMap[brand] || 'rgba(150, 150, 150, 1)', // Default color if brand not found
+                        data: Array(labels.length).fill(0),
+                        backgroundColor: colorMap[brand] || 'rgba(150, 150, 150, 1)',
+                        borderColor: colorMap[brand] || 'rgba(150, 150, 150, 1)',
                         borderWidth: 1,
                         fill: true,
                     });
-                    datasets.push(brandMap.get(brand));  // Add new dataset for brand
+                    salesDatasets.push(brandMap.get(brand));
                 }
-                const datasetIndex = datasets.findIndex(ds => ds.label === brand);
+                const datasetIndex = salesDatasets.findIndex(ds => ds.label === brand);
                 if (datasetIndex > -1) {
                     const monthIndex = labels.indexOf(month);
                     if (monthIndex > -1) {
-                        datasets[datasetIndex].data[monthIndex] = groupedData[month][brand];  // Set the correct total
+                        salesDatasets[datasetIndex].data[monthIndex] = salesGrouped[month][brand];
                     }
                 }
             });
         });
 
-        // Log datasets and labels to debug if necessary
-        console.log('Labels:', labels);
-        console.log('Datasets:', datasets);
-
-        // Rendering chart
-        const ctx = document.getElementById('salesChart').getContext('2d');
-        const salesChart = new Chart(ctx, {
+        // Create the sales chart
+        const salesCtx = document.getElementById('salesChart').getContext('2d');
+        const salesChart = new Chart(salesCtx, {
             type: 'bar',
             data: {
                 labels: labels,
-                datasets: datasets,
+                datasets: salesDatasets,
             },
             options: {
                 scales: {
                     x: {
-                        beginAtZero: true,
-                        title: {
-                            display: true,
-                            text: 'Month',
-                        },
+                        title: { display: true, text: 'Month' },
                     },
                     y: {
                         beginAtZero: true,
-                        title: {
-                            display: true,
-                            text: 'Total Qty (KG)',
-                        },
+                        title: { display: true, text: 'Total Qty (KG)' },
                     },
                 },
                 responsive: true,
                 plugins: {
-                    legend: {
-                        position: 'top',
-                    },
+                    legend: { position: 'top' },
                 },
             },
         });
-    });
 
-    document.addEventListener("DOMContentLoaded", function() {
-        const revenueData = @json($revenue);
-
-        // Create an object to hold data grouped by month
-        const groupedData = {};
-
-        // Check the structure of revenueData
-        console.log(revenueData);
-
-        // Group data by month
+        // Group revenue data by month
+        const revenueGrouped = {};
         revenueData.forEach(revenue => {
-            if (!groupedData[revenue.month_name]) {
-                groupedData[revenue.month_name] = 0;
+            if (!revenueGrouped[revenue.month_name]) {
+                revenueGrouped[revenue.month_name] = 0;
             }
-            groupedData[revenue.month_name] += revenue.total_purchase;
+            revenueGrouped[revenue.month_name] += revenue.total_purchase;
         });
 
-        const labels = Object.keys(groupedData);  // Get unique months
-        const data = Object.values(groupedData);  // Get total_purchase for each month
+        const revenueLabels = Object.keys(revenueGrouped);
+        const revenueDataPoints = Object.values(revenueGrouped);
 
-        // Log labels and data to debug if necessary
-        console.log('Labels:', labels);
-        console.log('Data:', data);
-
-        // Rendering chart
-        const ctx = document.getElementById('revenueChart').getContext('2d');
-        const purchaseChart = new Chart(ctx, {
+        // Create the revenue chart
+        const revenueCtx = document.getElementById('revenueChart').getContext('2d');
+        const revenueChart = new Chart(revenueCtx, {
             type: 'line',
             data: {
-                labels: labels, // Months
+                labels: revenueLabels,
                 datasets: [{
                     label: 'Total Purchase (IDR)',
-                    data: data, // Total Purchase data for each month
-                    backgroundColor: 'rgba(75, 192, 192, 0.2)', // Area under the line
-                    borderColor: 'rgba(75, 192, 192, 1)', // Line color
+                    data: revenueDataPoints,
+                    backgroundColor: 'rgba(75, 192, 192, 0.2)',
+                    borderColor: 'rgba(75, 192, 192, 1)',
                     borderWidth: 2,
-                    fill: true, // Fill under the line (optional)
-                    tension: 0.3, // Curve smoothness (set to 0 for straight lines)
-                    pointStyle: 'circle', // Shape of the data points
-                    pointRadius: 5, // Size of the data points
-                    pointBackgroundColor: 'rgba(255, 99, 132, 1)', // Color of points
-                    hoverRadius: 7, // Size of point on hover
-                    pointHoverBackgroundColor: 'rgba(255, 99, 132, 1)', // Point hover color
-                    pointHoverBorderWidth: 2, // Border size on hover
+                    fill: true,
+                    tension: 0.3,
+                    pointStyle: 'circle',
+                    pointRadius: 5,
+                    pointBackgroundColor: 'rgba(255, 99, 132, 1)',
+                    hoverRadius: 7,
+                    pointHoverBackgroundColor: 'rgba(255, 99, 132, 1)',
+                    pointHoverBorderWidth: 2,
                 }]
             },
             options: {
@@ -273,40 +240,33 @@
                 scales: {
                     y: {
                         beginAtZero: true,
-                        title: {
-                            display: true,
-                            text: 'Total Purchase (IDR)',
-                        },
+                        title: { display: true, text: 'Total Purchase (IDR)' },
                     },
                     x: {
-                        title: {
-                            display: true,
-                            text: 'Month',
-                        },
+                        title: { display: true, text: 'Month' },
                     },
                 },
                 plugins: {
-                    legend: {
-                        position: 'top',
-                    },
+                    legend: { position: 'top' },
                 },
             },
         });
-    });
 
-    document.getElementById('monthSelect').addEventListener('change', function() {
-        // Reload the page with the selected month as a query parameter
-        window.location.href = '?month=' + this.value;
-    });
+        // Change month and reload page
+        document.getElementById('monthSelect').addEventListener('change', function() {
+            window.location.href = '?month=' + this.value;
+        });
 
-    var datatable = $('#datatables').DataTable({
-        language: {
-            processing: "<span class='fa-stack fa-lg'>\n\
-                                    <i class='fa fa-spinner fa-spin fa-stack-2x fa-fw'></i>\n\
+        // Initialize DataTable
+        var datatable = $('#datatables').DataTable({
+            language: {
+                processing: "<span class='fa-stack fa-lg'>\n\
+                                <i class='fa fa-spinner fa-spin fa-stack-2x fa-fw'></i>\n\
                             </span>",
-        },
-        processing: true,
-        serverSide: false,
-    })
+            },
+            processing: true,
+            serverSide: false,
+        });
+    });
 </script>
 @endpush

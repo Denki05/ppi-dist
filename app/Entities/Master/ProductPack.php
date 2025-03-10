@@ -128,4 +128,9 @@ class ProductPack extends Model
 
         return $packaging;
     }
+
+    public function latest_price_uv()
+    {
+        return $this->hasMany('App\Entities\Master\ProductFinance', 'id')->latest()->first();
+    }
 }
