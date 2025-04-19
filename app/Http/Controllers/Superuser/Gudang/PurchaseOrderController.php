@@ -50,9 +50,15 @@ class PurchaseOrderController extends Controller
 
     public function search_sku(Request $request)
     {
-        $products = ProductPack::where('name', 'LIKE', '%'.$request->input('q', '').'%')
-            ->where('status', ProductPack::STATUS['ACTIVE'])
-            ->get(['id', 'code as text', 'name']);
+        $products = ProductPack::where('master_products_packaging.name', 'LIKE', '%'.$request->input('q', '').'%')
+            ->leftJoin('master_packaging', 'master_products_packaging.packaging_id', '=', 'master_packaging.id')
+            ->where('master_products_packaging.status', ProductPack::STATUS['ACTIVE'])
+            ->select(
+                'master_products_packaging.id',
+                DB::raw("CONCAT(master_products_packaging.code, ' - ', master_products_packaging.name, ' / ', master_packaging.pack_name) as text")
+            )
+            ->get();
+
         return ['results' => $products];
     }
 

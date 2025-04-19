@@ -11,7 +11,6 @@ use App\Entities\Master\CustomerOtherAddress;
 use App\Entities\Master\ProductPack;
 use App\Entities\Setting\UserMenu;
 use Illuminate\Support\Facades\Session;
-use Illuminate\Support\Carbon;
 use Auth;
 use DB;
 
@@ -43,9 +42,6 @@ class DashboardController extends Controller
                 $is_see = false;
             }
         }
-
-        $currentMonth = Carbon::now()->month;
-        $currentYear = Carbon::now()->year;
     
         $sales = SalesOrder::leftJoin('penjualan_so_item', 'penjualan_so.id', '=', 'penjualan_so_item.so_id')
                     ->leftJoin('master_products_packaging', 'penjualan_so_item.product_packaging_id', '=', 'master_products_packaging.id')
@@ -56,7 +52,7 @@ class DashboardController extends Controller
                         DATE_FORMAT(penjualan_so.so_date, "%Y") as year,
                         SUM(penjualan_so_item.qty_worked) as total_qty
                     ')
-                    ->whereYear('penjualan_so.so_date', $currentYear)
+                    ->whereYear('penjualan_so.so_date', date('Y'))
                     ->where('penjualan_so.status', 4)
                     ->groupBy('brand', 'month_name', 'year') // Grouping by brand, month, and year
                     ->orderByRaw('MONTH(penjualan_so.so_date)')
@@ -68,36 +64,50 @@ class DashboardController extends Controller
                         DATE_FORMAT(invoice_date, "%Y") as year,
                         SUM(invoice_purchase) as total_purchase
                     ')
-                    ->whereYear('invoice_date', $currentYear)
+                    ->whereYear('invoice_date', date('Y'))
                     ->groupBy('month_name', 'year') // Grouping by month and year
                     ->orderByRaw('MONTH(invoice_date)')
                     ->get();
 
-        $selectedMonth = request('month', $currentMonth); // Default to current month if no month is selected
+        $selectedMonth = request('month', now()->month); // Default to current month if no month is selected
 
-        $top_sell_variant = ProductPack::leftJoin('master_packaging', 'master_products_packaging.packaging_id', '=', 'master_packaging.id')
-                                    ->leftJoin('penjualan_do_item', 'master_products_packaging.id', '=', 'penjualan_do_item.product_packaging_id')
-                                    ->leftJoin('penjualan_do', 'penjualan_do_item.do_id', '=', 'penjualan_do.id')
-                                    ->selectRaw('
-                                        master_products_packaging.id,
-                                        CONCAT(master_products_packaging.`code`, " - ", master_products_packaging.`name`) AS product,
-                                        master_packaging.pack_name AS kemasan,
-                                        SUM(penjualan_do_item.qty) AS total_qty,
-                                        penjualan_do.created_at AS tanggal_buat
-                                    ')
-                                    ->where('penjualan_do.status', 6)
-                                    ->whereMonth('penjualan_do.created_at', $selectedMonth) // Use selected month
-                                    ->whereYear('penjualan_do.created_at', $currentYear)
-                                    ->groupBy('master_products_packaging.name')
-                                    ->orderBy('total_qty', 'DESC')
-                                    ->get();
+        $top_sell_variant = ProductPack::leftJoin('penjualan_do_item', 'master_products_packaging.id', '=', 'penjualan_do_item.product_packaging_id')
+                        ->leftJoin('penjualan_do', 'penjualan_do_item.do_id', '=', 'penjualan_do.id')
+                        ->selectRaw('
+                            master_products_packaging.id,
+                            CONCAT(master_products_packaging.`code`, " - ", master_products_packaging.`name`) AS product,
+                            SUM(penjualan_do_item.qty) AS total_qty,
+                            penjualan_do.created_at AS tanggal_buat
+                        ')
+                        ->where('penjualan_do.status', 6)
+                        ->whereMonth('penjualan_do.created_at', $selectedMonth) // Use selected month
+                        ->whereYear('penjualan_do.created_at', now()->year)
+                        ->groupBy('master_products_packaging.name')
+                        ->orderBy('total_qty', 'DESC')
+                        ->get();
+
+        // Approval Sales Order Needs
+        $approval_so = SalesOrder::leftJoin('master_customer_other_addresses', 'penjualan_so.customer_other_address_id', '=', 'master_customer_other_addresses.id')
+                        ->selectRaw('
+                            penjualan_so.id as id,
+                            penjualan_so.so_code as so_code,
+                            penjualan_so.so_date as so_date,
+                            penjualan_so.brand_name as brand_name,
+                            penjualan_so.approval_mou as approval_mou,
+                            penjualan_so.approval_mou_status as approval_mou_status,
+                            master_customer_other_addresses.name as customer_name,
+                            master_customer_other_addresses.text_kota as customer_city
+                        ')
+                        ->whereIn('penjualan_so.status', [1, 2, 3, 4])
+                        ->get();
 
         $data = [
             'sales' => $sales,
             'revenue' => $revenue,
             'top_sell_variant' => $top_sell_variant,
-			'is_see' => $is_see,
-            'selectedMonth' => $selectedMonth
+            'is_see' => $is_see,
+            'selectedMonth' => $selectedMonth,
+            'approval_so' => $approval_so,
         ];
 
     

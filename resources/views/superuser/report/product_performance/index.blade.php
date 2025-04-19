@@ -54,6 +54,21 @@
               </select>
             </div>
           </div>
+
+          <div class="form-group row">
+            <div class="col-3 col-form-label required"><h5>Type Report:</h5></div>
+
+            <div class="col">
+              <label class="form-check form-check-inline">
+                <input class="form-check-input" type="radio" name="type" id="type_customer" value="1" checked>
+                <h6>Detail</h6>
+              </label>
+              <label class="form-check form-check-inline">
+                <input class="form-check-input" type="radio" name="type" id="zone_customer" value="2">
+                <h6>Summary</h6>
+              </label>
+            </div>
+          </div>
         </div>
       </div>
     </div>

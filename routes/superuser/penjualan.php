@@ -24,7 +24,7 @@ Route::group([
         Route::get('/so_awal', 'SalesOrderController@index_awal')->name('index_awal');
         Route::get('/so_lanjutan', 'SalesOrderController@index_lanjutan')->name('index_lanjutan');
         Route::get('/so_mutasi', 'SalesOrderController@index_mutasi')->name('index_mutasi');
-        Route::get('/create/{step}/{member}/{brand}/{type}/{indent}', 'SalesOrderController@create')->name('create');
+        Route::get('/create/{step}/{member}/{brand}/{type}/{indent}/{approval}/{note}/{kurs}/{disc_percent}', 'SalesOrderController@create')->name('create');
         Route::get('/{id}/edit/{step}', 'SalesOrderController@edit')->name('edit');
         Route::get('/{id}/detail', 'SalesOrderController@detail')->name('detail');
         Route::post('/{member}/store', 'SalesOrderController@store')->name('store');
@@ -61,6 +61,7 @@ Route::group([
         Route::get('/json_awal', 'SalesOrderController@json_awal')->name('json_awal');
         Route::get('/json_lanjutan', 'SalesOrderController@json_lanjutan')->name('json_lanjutan');
         Route::get('/data_so/{id}', 'SalesOrderController@data_so')->name('data_so');
+        Route::post('/approvalMouSo/{id}', 'SalesOrderController@approvalMouSo')->name('approvalMouSo');
     });
 
     Route::group(['as' => 'packing_order.', 'prefix' => '/packing_order'], function () {

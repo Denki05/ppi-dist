@@ -36,6 +36,14 @@ Route::group([
     });
     Route::resource('customer_type_brand', 'ReportCustomerTypeBrandController');
 
+    Route::group(['as' => 'customer_type_brand_uv.', 'prefix' => '/customer_type_brand_uv'], function () {
+        Route::get('/', 'ReportCustomerTypeBrandUVController@index')->name('index');
+        Route::get('/removeDt', 'ReportCustomerTypeBrandUVController@removeDt')->name('removeDt');
+        Route::post('/print_report', 'ReportCustomerTypeBrandUVController@print_report')->name('print_report');
+        Route::post('/exportReport', 'ReportCustomerTypeBrandUVController@exportReport')->name('exportReport');
+    });
+    Route::resource('customer_type_brand_uv', 'ReportCustomerTypeBrandUVController');
+
     Route::group(['as' => 'customer_type_zone.', 'prefix' => '/customer_type_zone'], function () {
         Route::get('/', 'ReportCustomerTypeZoneController@index')->name('index');
         Route::get('/postData', 'ReportCustomerTypeZoneController@postData')->name('postData');

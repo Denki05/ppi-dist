@@ -173,16 +173,28 @@
                                         @endif
                                     </ul>
                                 </li>
-                                @if($superuser->can('superuser-manage') OR $superuser->division == "Admin" OR $superuser->division == "Management")
-                                <li class="submenu submenu-md dropend">
-                                    <a class="dropdown-item dropdown-toggle" role="button"
-                                        data-bs-toggle="dropdown" aria-expanded="false"><i class="fa-solid fa-file-invoice"></i> PPN</a>
-                                    <ul class="dropdown-menu">
-                                        <li><a class="dropdown-item" href="{{ route('superuser.penjualan.sales_order_ppn.index_ppn_awal') }}"><i class="fa-solid fa-arrow-up-wide-short"></i> Awal</a></li>
-                                        <li><a class="dropdown-item" href="{{ route('superuser.penjualan.sales_order_ppn.index_ppn_lanjutan') }}"><i class="fa-solid fa-arrow-down-wide-short"></i> Lanjutan</a></li>
-                                    </ul>
-                                </li>
+                                @if(
+                                    $superuser->can('superuser-manage') || 
+                                    $superuser->division == "Admin" || 
+                                    $superuser->division == "Management" || 
+                                    $superuser->id == 38
+                                )
+                                    <li class="submenu submenu-md dropend">
+                                        <a class="dropdown-item dropdown-toggle" role="button"
+                                            data-bs-toggle="dropdown" aria-expanded="false"><i class="fa-solid fa-file-invoice"></i> PPN</a>
+                                        <ul class="dropdown-menu">
+                                            <li><a class="dropdown-item" href="{{ route('superuser.penjualan.sales_order_ppn.index_ppn_awal') }}"><i class="fa-solid fa-arrow-up-wide-short"></i> Awal</a></li>
+                                            @if(
+                                                $superuser->can('superuser-manage') || 
+                                                $superuser->division == "Admin" || 
+                                                $superuser->division == "Management"
+                                            )
+                                            <li><a class="dropdown-item" href="{{ route('superuser.penjualan.sales_order_ppn.index_ppn_lanjutan') }}"><i class="fa-solid fa-arrow-down-wide-short"></i> Lanjutan</a></li>
+                                            @endif
+                                        </ul>
+                                    </li>
                                 @endif
+
                             </ul>
                         </li>
                     </ul>
@@ -362,6 +374,9 @@
                             <ul class="dropdown-menu">
                                 <li><a class="dropdown-item" href="{{ route('superuser.report.forecast_supplier.index') }}">Forcasting Principal</a></li>
                                 <li><a class="dropdown-item" href="{{ route('superuser.report.customer_type_brand.index') }}">Register Customer</a></li>
+                               
+                                <li><a class="dropdown-item" href="{{ route('superuser.report.customer_type_brand_uv.index') }}">UV</a></li>
+                                
                             </ul>
                         </li>
                         @endif

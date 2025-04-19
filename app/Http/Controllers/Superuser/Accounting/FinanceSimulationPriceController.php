@@ -918,14 +918,13 @@ class FinanceSimulationPriceController extends Controller
 
     public function generate_last_year(Request $request)
     {
-        if ($request->ajax()) {
             DB::beginTransaction();
             try {
                 // Ambil data invoice real
                 $invoice_real = DB::table('penjualan_do')
-                    // ->where('penjualan_do.do_code', '4A115')
                     ->where('penjualan_do.status', 6)
                     ->whereYear('penjualan_so.so_date', 2024)
+                    ->where('penjualan_so.type_so', 'nonppn')
                     ->leftJoin('penjualan_do_details', 'penjualan_do.id', '=', 'penjualan_do_details.do_id')
                     ->leftJoin('penjualan_do_item', 'penjualan_do.id', '=', 'penjualan_do_item.do_id')
                     ->leftJoin('penjualan_so', 'penjualan_do.so_id', '=', 'penjualan_so.id')
@@ -944,6 +943,7 @@ class FinanceSimulationPriceController extends Controller
                         'penjualan_so.type_so as invoice_type',
                         'penjualan_do_details.discount_1 as invoice_disc_1',
                         'penjualan_do_details.discount_2 as invoice_disc_2',
+                        'penjualan_do_details.ppn_idr as invoice_ppn_idr',
                         'penjualan_do_details.discount_idr as invoice_disc_idr',
                         'penjualan_do_details.voucher_idr as invoice_voucher_idr',
                         'penjualan_do_details.delivery_cost_idr as invoice_delivery_cost_idr',
@@ -959,6 +959,8 @@ class FinanceSimulationPriceController extends Controller
                         'master_customer_other_addresses.zone as member_zone'
                     )
                     ->get();
+
+                // dd($invoice_real);
 
                 // Kelompokkan data berdasarkan invoice_code
                 $groupedInvoices = $invoice_real->groupBy('code_invoice_real');
@@ -1035,7 +1037,7 @@ class FinanceSimulationPriceController extends Controller
                             continue 2; // Skip invoice ini jika ada produk dengan harga 0
                         }
                         
-                        $subtotal_item_idr = ($get_data->selling_price_usd_unit - ($row->invoice_kurs * ($row->invoice_usd_disc_item ?? 0))) * $row->invoice_qty;
+                        $subtotal_item_idr = ($get_data->selling_price_usd_unit - (15500 * ($row->invoice_usd_disc_item ?? 0))) * $row->invoice_qty;
                         $total_qty += $row->invoice_qty;
                         $total_item_idr += $subtotal_item_idr;
 
@@ -1055,7 +1057,7 @@ class FinanceSimulationPriceController extends Controller
                     // Lakukan perhitungan diskon dan total
                     $disc_1 = $total_item_idr * (($invoice_items->first()->invoice_disc_1 ?? 0) / 100);
                     $disc_2 = ($total_item_idr - $disc_1) * (($invoice_items->first()->invoice_disc_2 ?? 0) / 100);
-                    $purchas_total = $total_item_idr - $disc_1 - $disc_2 - ($invoice_items->first()->invoice_disc_idr ?? 0) - ($invoice_items->first()->invoice_voucher_idr ?? 0);
+                    $purchas_total = $total_item_idr - $disc_1 - $disc_2 - ($invoice_items->first()->invoice_disc_idr ?? 0) - ($invoice_items->first()->invoice_voucher_idr ?? 0) - ($invoice_items->first()->invoice_ppn_idr ?? 0);
                     $grand_total = $purchas_total + ($invoice_items->first()->invoice_delivery_cost_idr ?? 0);
 
                     // input do detils uv
@@ -1068,7 +1070,7 @@ class FinanceSimulationPriceController extends Controller
                     $do_detail_uv->disc_idr = $invoice_items->first()->invoice_disc_idr ?? 0;
                     $do_detail_uv->voucher_idr = $invoice_items->first()->invoice_disc_idr ?? 0;
                     $do_detail_uv->ppn_percent = 0;
-                    $do_detail_uv->ppn_idr = 0;
+                    $do_detail_uv->ppn_idr = $invoice_items->first()->ppn_idr ?? 0;
                     $do_detail_uv->delivery_cost_idr = $invoice_items->first()->invoice_delivery_cost_idr ?? 0;
                     $do_detail_uv->grand_total_idr = $grand_total;
                     $do_detail_uv->created_by = Auth::id();
@@ -1117,10 +1119,10 @@ class FinanceSimulationPriceController extends Controller
                     'content' => 'Data Berhasil Terbuat!',
                 ];
 
-                $response['redirect_to'] = route('superuser.accounting.finance_simulation.index_araya');
-                return $this->response(200, $response);
+                // $response['redirect_to'] = route('superuser.accounting.finance_simulation.index_araya');
+                return redirect()->back()->with('success', 'Data Berhasil Terbuat!');
             } catch (\Exception $e) {
-                dd($e);
+                // dd($e);
                 DB::rollback();
                 $response['notification'] = [
                     'alert' => 'block',
@@ -1131,7 +1133,7 @@ class FinanceSimulationPriceController extends Controller
 
                 return $this->response(400, $response);
             }
-        }
+        
     }
 
     public function delete_data(Request $request)

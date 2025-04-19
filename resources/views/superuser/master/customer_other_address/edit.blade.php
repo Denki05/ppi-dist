@@ -113,7 +113,8 @@
             <div class="row">
               <div class="col">
                 <div class="form-group">
-                  <input type="checkbox" value="1" name="free_shipping" <?php if ($other_address->free_shipping == 1) { ?> checked="checked" <?php } ?>  />
+                  <input type="hidden" name="free_shipping" value="0">
+                  <input type="checkbox" value="1" name="free_shipping" <?php if ($other_address->free_shipping == 1) { ?> checked="checked" <?php } ?> />
                   <span class="text-danger"><b>*Free Shipping</b></span></label><br>
                 </div>
               </div>

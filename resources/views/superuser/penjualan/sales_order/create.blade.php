@@ -36,18 +36,17 @@
   @csrf
     <input type="hidden" name="ajukankelanjutan" value="0">
     <div class="row">
-      <div class="col-4">
+    <div class="col-4">
         <div class="block">
           <div class="block-content">
-            <div class="form-group row">
-              <span class="form-label"><b>Type Transaksi </b> <span class="text-danger">*</span></span>
-              <div class="col-10">
+            <div class="form-row">
+              <div class="form-group col-md-4">
+                <label for="note">Type Transaksi</label>
                 <input type="text" class="form-control" value="{{ $type_transaction }}" name="type_transaction" readonly>
               </div>
-            </div>
-            <div class="form-group row">
-              <span class="form-label"><b>Indent</b> <span class="text-danger">*</span></span>
-              <div class="col-10">
+
+              <div class="form-group col-md-4">
+                <label for="note">Indent</label>
                 <?php 
                   $indent_type = $type_indent;
                   if($indent_type == 0){
@@ -59,40 +58,61 @@
                 <input type="text" class="form-control" value="{{ $indent }}" id="so_indnet" name="so_indent" readonly>
               </div>
             </div>
-          </div>
-        </div>
-      </div>
-      <div class="col-8">
-        <div class="block">
-          <div class="block-content">
+
             <div class="form-row">
               <div class="form-group col-md-4">
-                <label for="brand_name">Brand</label>
-                <input type="text" class="form-control" value="{{ $merek->brand_name }}" id="brand_name" name="brand_name" readonly>
+                <label for="note">Brand</label>
+                <input type="text" class="form-control" value="{{ $merek->brand_name }}" name="brand_name" id="brand_name" readonly>
               </div>
-              <div class="form-group col-md-2">
-                <label for="catatan">Disc (%)</label>
-                <input class="form-control" type="number" name="catatan">
-              </div>
-            </div>
-
-            <div class="form-row">
-              <div class="form-group col-md-2">
-                <label for="note">Note</label>
-                <br>
-                <button type="button" class="btn btn-primary" data-toggle="modal" data-target=".bd-example-modal-lg">
-                  <i class="fa fa-plus"></i> Note
-                </button>
-              </div>
-
-              <div class="form-group col-md-2">
+              <div class="form-group col-md-4">
                 <label for="note">Kontrak</label>
-                <br>
                 <button type="button" class="btn btn-primary" data-toggle="modal" data-target="#addSoKontrak">
                   <i class="fa fa-search" aria-hidden="true"></i> Kontrak
                 </button>
               </div>
             </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="col-8">
+        <div class="block">
+          <div class="block-content">
+            <div class="row">
+              <div class="col col-md-5">
+                <div class="form-row">
+                  <div class="form-group col-md-4">
+                    <span class="form-label"><b>Kurs </b>
+                    <input class="form-control" type="text" name="kurs" id="kurs" value="{{ $idr_rate }}" readonly>
+                  </div>
+
+                  <div class="form-group col-md-4">
+                    <span class="form-label"><b>Approval </b> 
+                    <?php 
+                      if($approval_mou == 0){
+                        $approval = "NO";
+                      }else{
+                        $approval = "YES";
+                      }
+                    ?>
+                    <input class="form-control" type="text" name="approvalText" id="approvalText" value="{{ $approval }}" readonly>
+                    <input type="hidden" name="approval" id="approval" value="{{ $approval_mou }}">
+                  </div>
+                </div>
+                <div class="form-row">
+                  <div class="form-group col-md-4">
+                    <span class="form-label"><b>Disc % </b>
+                    <input class="form-control" type="text" name="disc_percent" id="disc_percent" value="{{ $disc }}" readonly>
+                  </div>
+                </div>
+              </div>
+              <div class="col col-md-6">
+                <div class="form-group">
+                  <span class="form-label"><b>Note </b> <span class="text-danger">*</span></span>
+                  <textarea class="form-control" name="note_so" id="editor" rows="4" col="10" readonly>{{ $note_so }}</textarea>
+                </div>
+              </div>
+           </div>
           </div>
         </div>
       </div>
@@ -147,7 +167,7 @@
       </div>
     </div>
 
-    <div class="modal fade bd-example-modal-lg" id="exampleModal" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true">
+    <!-- <div class="modal fade bd-example-modal-lg" id="exampleModal" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true">
       <div class="modal-dialog" role="document">
         <div class="modal-content">
           <div class="modal-header">
@@ -166,7 +186,7 @@
           </div>
         </div>
       </div>
-    </div>
+    </div> -->
 
     <div class="modal fade" id="addSoKontrak" aria-labelledby="exampleModalLabel" aria-hidden="true">
       <div class="modal-dialog">

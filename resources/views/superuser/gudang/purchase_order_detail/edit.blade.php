@@ -19,7 +19,7 @@
         <label class="col-md-3 col-form-label text-right">Product <span class="text-danger">*</span></label>
         <div class="col-md-7">
           <select class="js-select2 form-control product_pack" id="product_packaging_id" name="product_packaging_id" data-placeholder="Select SKU">
-            <option value="{{ $purchase_order_detail->product_packaging_id }}" selected>{{ $purchase_order_detail->product_pack->code }} - {{$purchase_order_detail->product_pack->name}}</option>
+            <option value="{{ $purchase_order_detail->product_packaging_id }}" selected>{{ $purchase_order_detail->product_pack->code }} - {{$purchase_order_detail->product_pack->name}} / {{ $purchase_order_detail->product_pack->packaging->pack_name }}</option>
           </select>
         </div>
       </div>
@@ -27,14 +27,6 @@
         <label class="col-md-3 col-form-label text-right" for="quantity">Qty</label>
         <div class="col-md-4">
           <input type="number" class="form-control" id="quantity" name="quantity" step="any" value="{{ $purchase_order_detail->quantity }}" step="1">
-        </div>
-      </div>
-      <div class="form-group row">
-        <label class="col-md-3 col-form-label text-right" for="packaging_id">Kemasan</label>
-        <div class="col-md-4">
-          <select class="js-select2 form-control kemasan" id="packaging_id" name="packaging_id" data-placeholder="Pilih Kemasan"> 
-            <option value="{{ $purchase_order_detail->product_pack->packaging->id }}" selected>{{ $purchase_order_detail->product_pack->packaging->pack_name}}</option>
-          </select>
         </div>
       </div>
       <div class="form-group row">
@@ -93,7 +85,6 @@
         },
         cache: true
       },
-      minimumInputLength: 3
     });
 
     $(".kemasan").select2({
@@ -109,7 +100,6 @@
         },
         cache: true
       },
-      minimumInputLength: 3
     });
 
   })

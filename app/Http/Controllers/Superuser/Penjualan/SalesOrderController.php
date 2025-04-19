@@ -283,7 +283,7 @@ class SalesOrderController extends Controller
      *
      * @return \Illuminate\Http\Response
      */
-    public function create(Request $request, $step, $member, $brand, $type, $indent)
+    public function create(Request $request, $step, $member, $brand, $type, $indent, $approval, $note, $kurs, $disc_percent)
     {
         // Access
         if(Auth::user()->is_superuser == 0){
@@ -302,6 +302,10 @@ class SalesOrderController extends Controller
         $type_transaction = $type;
         $type_indent = $indent;
         $rekenings = SalesOrder::REKENING;
+        $approval_mou = $approval;
+        $note_so = $note;
+        $idr_rate = is_numeric($kurs) ? $kurs : 0;
+        $disc = is_numeric($disc_percent) ? $disc_percent : 0;
 
         $data = [
             'other_address' => $other_address,
@@ -315,7 +319,11 @@ class SalesOrderController extends Controller
             'step_txt' => SalesOrder::STEP[$step],
             'type_transaction' => $type_transaction,
             'type_indent' => $type_indent,
-            'rekenings' => $rekenings
+            'rekenings' => $rekenings,
+            'approval_mou' => $approval_mou,
+            'note_so' => $note_so,
+            'idr_rate' => $idr_rate,
+            'disc' => $disc,
         ];
         
         
@@ -362,9 +370,10 @@ class SalesOrderController extends Controller
                     $insert->so_for = 1;
                     $insert->so_date = null;
                     $insert->type_so = 'nonppn';
-                    $insert->idr_rate = 1;
-                    $insert->catatan = $request->catatan;
-                    $insert->note = $request->note;
+                    $insert->approval_mou = $request->approval;
+                    $insert->idr_rate = $request->kurs;
+                    $insert->catatan = $request->disc_percent;
+                    $insert->note = $request->note_so;
                     $insert->created_by = Auth::id();
 
                     if($request->so_indent == "YES"){
@@ -2267,5 +2276,55 @@ class SalesOrderController extends Controller
         }
 
         return response()->json(['code' => 200, 'data' => $data]);
+    }
+
+    public function approvalMouSo(Request $request, $id)
+    {
+        if ($request->ajax()) {
+            if(Auth::user()->is_superuser == 0){
+                if(empty($this->access) || empty($this->access->user) || $this->access->can_approve == 0){
+                    return redirect()->route('superuser.index')->with('error','Anda tidak punya akses untuk membuka menu terkait');
+                }
+            }
+
+            DB::beginTransaction();
+
+            try{
+                $errors = [];
+
+                $sales_order = SalesOrder::find($id);
+
+                if($sales_order == null){
+                    abort(404);
+                }
+
+                $sales_order->approval_mou_status = 1;
+                $sales_order->approval_mou_date = date('Y-m-d H:i:s');
+                $sales_order->approval_mou_by = Auth::id();
+
+                if($sales_order->save()){
+                    DB::commit();
+                    $response['notification'] = [
+                        'alert' => 'notify',
+                        'type' => 'success',
+                        'content' => 'Approval MOU berhasil disimpan.',
+                    ];
+                    $response['redirect_to'] = url()->previous();
+                    return response()->json($response, 200);
+                }
+
+            }catch (\Exception $e) {
+                dd($e);
+                DB::rollback();
+                $response['notification'] = [
+                    'alert' => 'block',
+                    'type' => 'alert-danger',
+                    'header' => 'Error',
+                    'content' => $errors,
+                ];
+
+                return $this->response(400, $response);
+            }
+        }
     }
 }

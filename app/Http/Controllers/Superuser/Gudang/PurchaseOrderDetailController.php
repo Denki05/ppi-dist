@@ -9,6 +9,7 @@ use App\Entities\Gudang\PurchaseOrder;
 use App\Entities\Gudang\PurchaseOrderDetail;
 use App\Entities\Master\BrandLokal;
 use App\Entities\Master\Product;
+use App\Entities\Master\ProductPack;
 use Auth;
 use DB;
 use Validator;
@@ -156,7 +157,6 @@ class PurchaseOrderDetailController extends Controller
         if ($request->ajax()) {
             $validator = Validator::make($request->all(), [
                 'product_packaging_id' => 'required',
-                'packaging_id' => 'required|integer',
                 'quantity' => 'nullable|numeric',
                 
             ]);
@@ -179,10 +179,12 @@ class PurchaseOrderDetailController extends Controller
                 if ($purchase_order == null OR $purchase_order_detail == null) {
                     abort(404);
                 }
+
+                $get_packaging = ProductPack::where('id', $request->product_packaging_id)->first();
                 
                 $purchase_order_detail->product_packaging_id = $request->product_packaging_id;
                 $purchase_order_detail->quantity = $request->quantity;
-                $purchase_order_detail->packaging_id = $request->packaging_id;
+                $purchase_order_detail->packaging_id = $get_packaging->packaging_id;
                 $purchase_order_detail->note_produksi = $request->note_produksi;
                 $purchase_order_detail->note_repack = $request->note_repack;
 

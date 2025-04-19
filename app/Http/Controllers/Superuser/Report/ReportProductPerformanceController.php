@@ -98,37 +98,42 @@ class ReportProductPerformanceController extends Controller
             'periode_from' => 'required|date',
             'periode_to' => 'required|date',
             'product' => 'required|array',
-            'brand' => 'required|array'
+            'brand' => 'required|array',
+            'type' => 'required|in:1,2', // Validasi tambahan untuk type
         ]);
 
         $start = $request->input('periode_from');
         $end = $request->input('periode_to');
         $products = $request->input('product');
         $brands = $request->input('brand');
+        $type = $request->input('type'); // Ambil nilai dari form
         $date = Carbon::now()->format('Y-m');
         $status_do = 6;
 
-        // Convert dates
         $new_date_start = Carbon::parse($start)->format('d-m-Y');
         $new_date_end = Carbon::parse($end)->format('d-m-Y');
 
-        // Check if 'all' is selected for brand or product
         $brandSearch = '';
         if (!in_array('all', $brands)) {
-            $brandSearch = collect($brands)->map(function($value) {
+            $brandSearch = collect($brands)->map(function ($value) {
                 return "{master_products.brand_name}='$value'";
             })->implode(' OR ');
         }
 
         $productSearch = '';
         if (!in_array('all', $products)) {
-            $productSearch = collect($products)->map(function($value) {
+            $productSearch = collect($products)->map(function ($value) {
                 return "{master_products_packaging.id}='$value'";
             })->implode(' OR ');
         }
 
-        // Paths for the report and the exported PDF
-        $reportPath = public_path('cr/report/operasional/product_order/product_order.rpt');
+        // 📝 Tentukan reportPath sesuai type
+        if ($type == 1) {
+            $reportPath = public_path('cr/report/operasional/product_order/product_order.rpt'); // Detail
+        } else {
+            $reportPath = public_path('cr/report/operasional/product_order/product_order_summary.rpt'); // Summary
+        }
+
         $exportPath = public_path("cr/report/operasional/product_order/export/product-order-{$date}.pdf");
 
         $server = env('DB_SERVER', 'LOCAL_3');
@@ -151,7 +156,6 @@ class ReportProductPerformanceController extends Controller
             $creport->ParameterFields(2)->SetCurrentValue($new_date_start);
             $creport->ParameterFields(3)->SetCurrentValue($new_date_end);
 
-            // Build the RecordSelectionFormula
             $recordSelectionFormula = [];
             if ($productSearch) {
                 $recordSelectionFormula[] = "($productSearch)";
@@ -187,7 +191,6 @@ class ReportProductPerformanceController extends Controller
         }
     }
 
-    
     /**
      * Show the form for creating a new resource.
      *

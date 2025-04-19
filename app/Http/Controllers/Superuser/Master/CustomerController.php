@@ -479,12 +479,6 @@ class CustomerController extends Controller
 
                 if ($customer->save()) {
 
-                    // $log_saldo = new CustomerSaldoLog;
-                    // $log_saldo->customer_id = $customer->id;
-                    // $log_saldo->saldo_log = $request->plafon_piutang;
-                    // $log_saldo->note = CustomerSaldoLog::NOTE['SALDO UPDATE'];
-                    // $log_saldo->save();
-
                     DB::commit();
 
                     $response['notification'] = [

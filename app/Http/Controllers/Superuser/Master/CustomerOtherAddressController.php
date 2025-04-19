@@ -302,7 +302,7 @@ class CustomerOtherAddressController extends Controller
                 $other_address->officer = $request->officer;
                 $other_address->account_representative = $request->ar;
                 $other_address->setting_income_target = $request->target_income;
-                $other_address->free_shipping = $request->free_shipping;
+                $other_address->free_shipping = $request->has('free_shipping') ? $request->free_shipping : 0;
 
                 $other_address->gps_latitude = $request->gps_latitude;
                 $other_address->gps_longitude = $request->gps_longitude;
