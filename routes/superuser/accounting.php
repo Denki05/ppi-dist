@@ -63,6 +63,8 @@ Route::group([
         // non mitra
         Route::get('/create_non_mitra/{id}', 'FinanceSimulationPriceController@create_non_mitra')->name('create_non_mitra');
         Route::post('/store_non_mitra', 'FinanceSimulationPriceController@store_non_mitra')->name('store_non_mitra');
+    
+        Route::get('/generate_last_year', 'FinanceSimulationPriceController@generate_last_year')->name('generate_last_year');
     });
     Route::resource('finance_simulation', 'FinanceSimulationPriceController');   
 });

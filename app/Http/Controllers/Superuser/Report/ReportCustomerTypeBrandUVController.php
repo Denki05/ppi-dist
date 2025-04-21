@@ -5,7 +5,8 @@ namespace App\Http\Controllers\Superuser\Report;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use App\Entities\Reports\CustomerTypeBrandReports;
-use App\Exports\Reports\CustomerTypeBrandReportExport;
+use App\Entities\Reports\CustomerTypeBrandReportsLog;
+use App\Exports\Reports\CustomerTypeBrandReportUvExport;
 Use App\Entities\Penjualan\SalesOrder;
 use Maatwebsite\Excel\Facades\Excel;
 use App\Entities\Setting\UserMenu;
@@ -17,11 +18,11 @@ use COM;
 use DB;
 
 
-class ReportCustomerTypeBrandController extends Controller
+class ReportCustomerTypeBrandUVController extends Controller
 {
     public function __construct(){
-        $this->view = "superuser.report.customer_type_brand.";
-        $this->route = "superuser.report.customer_type_brand";
+        $this->view = "superuser.report.customer_type_brand_uv.";
+        $this->route = "superuser.report.customer_type_brand_uv";
         $this->user_menu = new UserMenu;
         $this->access = null;
         $this->middleware(function ($request, $next) {
@@ -74,88 +75,72 @@ class ReportCustomerTypeBrandController extends Controller
         return view($this->view . "index", $data);
     }
 
-
-    public function postData(Request $request)
+    public function print_report(Request $request)
     {
+        $validatedData = $request->validate([
+            'start' => 'required|date',
+            'end' => 'required|date|after_or_equal:start',
+            'type' => 'required|integer|in:1,2',
+            'nominal' => 'required|integer|in:1,2',
+        ]);
+
+        $start = $validatedData['start'];
+        $end = $validatedData['end'];
+        $type = $validatedData['type'];
+        $nominal = $validatedData['nominal'];
+        $new_date_start = date('d-m-Y', strtotime($start));
+        $new_date_end = date('d-m-Y', strtotime($end));
+
+        $reportPath = "C:\\xampp\\htdocs\\ppi-dist\\public\\cr\\report\\management\\uv\\";
+        $exportPath = $reportPath . "export\\";
+        
+        // Select report based on type and nominal
+        if ($type == 1) {
+            $reportName = $nominal == 1 ? "customer_type_brand_uv.rpt" : "customer_type_brand_uv.rpt";
+            $pdfName = $nominal == 1 ? "customer-type-brand-uv" : "customer-type-brand-uv";
+        } elseif ($type == 2) {
+            $reportName = $nominal == 1 ? "register_by_zone_uv.rpt" : "register_by_zone_uv.rpt";
+            $pdfName = $nominal == 1 ? "customer-zone-uv-" : "customer-zone-uv-";
+        }
+
+        $my_report = $reportPath . $reportName;
+        $my_pdf = $exportPath . $pdfName . date("Y-m") . ".pdf";
+
         try {
-            DB::table('penjualan_do')
-                ->leftJoin('penjualan_do_details', 'penjualan_do_details.do_id', '=', 'penjualan_do.id')
-                ->leftJoin('penjualan_do_item', 'penjualan_do_item.do_id', '=', 'penjualan_do.id')
-                ->leftJoin('penjualan_so', 'penjualan_do.so_id', '=', 'penjualan_so.id')
-                ->leftJoin('master_customer_other_addresses', 'penjualan_do.customer_other_address_id', '=', 'master_customer_other_addresses.id')
-                ->leftJoin('master_customers', 'master_customer_other_addresses.customer_id', '=', 'master_customers.id')
-                ->leftJoin('master_customer_categories', 'master_customers.category_id', '=', 'master_customer_categories.id')
-                ->select(
-                    DB::raw('SUM(penjualan_do_item.qty) AS invoice_qty'),
-                    'master_customers.id AS customerID',
-                    'master_customer_other_addresses.id AS otherAddressID',
-                    'master_customer_other_addresses.name AS customer_name',
-                    'master_customer_categories.name AS customer_type',
-                    'master_customer_other_addresses.text_kota AS customer_kota',
-                    'master_customer_other_addresses.text_provinsi AS customer_provinsi',
-                    'master_customer_other_addresses.zone AS customer_zone',
-                    'penjualan_do.do_code AS invoice_code',
-                    'penjualan_so.so_date AS invoice_date',
-                    'penjualan_so.brand_name AS invoice_brand',
-                    'penjualan_so.type_so AS invoice_type',
-                    'penjualan_do_details.purchase_total_idr AS invoice_purchase',
-                    'penjualan_do_details.delivery_cost_idr AS invoice_delivery_order_cost',
-                    'penjualan_do_details.discount_idr AS discount_idr'
-                )
-                ->where('penjualan_do.status', 6)
-                ->where(function ($query) {
-                    $query->where('master_customers.status', 1)
-                        ->orWhere('master_customers.existence', 1);
-                })
-                ->groupBy('penjualan_do.do_code')
-                ->orderBy('penjualan_do.do_code')
-                ->chunk(100, function ($results) {
-                    foreach ($results as $row) {
-                        // Define the attributes to find or create
-                        $attributes = [
-                            // 'customer_id' => $row->customerID,
-                            // 'other_address_id' => $row->otherAddressID,
-                            'invoice_code' => $row->invoice_code,
-                        ];
+            if (!file_exists($my_report)) {
+                return response()->json(['error' => 'Report file not found'], 404);
+            }
 
-                        // Define the values to be set or updated
-                        $values = [
-                            'customer_id' => $row->customerID,
-                            'other_address_id' => $row->otherAddressID,
-                            'customer_name' => $row->customer_name,
-                            'customer_type' => $row->customer_type,
-                            'customer_kota' => $row->customer_kota,
-                            'customer_provinsi' => $row->customer_provinsi,
-                            'customer_zone' => $row->customer_zone,
-                            'invoice_date' => $row->invoice_date,
-                            'invoice_brand' => $row->invoice_brand,
-                            'invoice_type' => $row->invoice_type,
-                            'invoice_qty' => $row->invoice_qty ?? 0,
-                            'invoice_purchase' => ($row->invoice_purchase - $row->discount_idr ?? 0),
-                            'invoice_delivery_order_cost' => $row->invoice_delivery_order_cost ?? 0,
-                            'created_at' => now(),
-                            'updated_at' => now()
-                        ];
+            $crapp = new COM("CrystalDesignRunTime.Application");
+            $creport = $crapp->OpenReport($my_report, 1);
+            $creport->Database->Tables(1)->SetLogOnInfo("LOCAL", "ppi_araya", "root", "");
 
-                        // Find the record or create a new one
-                        $report = CustomerTypeBrandReports::firstOrNew($attributes);
+            $creport->EnableParameterPrompting = false;
+            $creport->ParameterFields(2)->SetCurrentValue($new_date_start);
+            $creport->ParameterFields(3)->SetCurrentValue($new_date_end);
+            $creport->RecordSelectionFormula = "{report_customer_type_brand_history1.invoice_date}>=#$start# AND {report_customer_type_brand_history1.invoice_date}<=#$end#";
 
-                        // Set or update the additional values
-                        $report->fill($values);
+            $creport->ExportOptions->DiskFileName = $my_pdf;
+            $creport->ExportOptions->PDFExportAllPages = true;
+            $creport->ExportOptions->DestinationType = 1;
+            $creport->ExportOptions->FormatType = 31;
+            $creport->Export(false);
 
-                        // Save the record to the database
-                        $report->save();
-                    }
-                });
+            $creport = null;
+            $crapp = null;
 
-            return redirect()->back()->with('message', 'Berhasil Sync data!');
+            if (file_exists($my_pdf)) {
+                return response()->download($my_pdf, basename($my_pdf));
+            } else {
+                return response()->json(['error' => 'PDF not generated'], 500);
+            }
         } catch (\Exception $e) {
-            Log::error('Sync data failed: ' . $e->getMessage());
-            return redirect()->back()->with('error', 'Error: ' . $e->getMessage());
+            \Log::error('Report generation failed: ' . $e->getMessage());
+            return response()->json(['error' => 'An error occurred while generating the report'], 500);
         }
     }
 
-    public function print_report(Request $request)
+    public function print_report_2(Request $request)
     {
         // Validasi input
         $validated = $request->validate([
@@ -168,7 +153,7 @@ class ReportCustomerTypeBrandController extends Controller
         $endDate = Carbon::createFromFormat('Y-m-d', $validated['end'])->format('Y-m-d');
 
         // Query data dari database
-        $query = CustomerTypeBrandReports::selectRaw('
+        $query = CustomerTypeBrandReportsLog::selectRaw('
                 customer_type, 
                 customer_name, 
                 customer_kota, 
@@ -217,20 +202,21 @@ class ReportCustomerTypeBrandController extends Controller
         $pdfData = compact('groupedData', 'globalTotals', 'startDate', 'endDate');
 
         // Generate PDF
-        $pdf = PDF::loadView('superuser.report.customer_type_brand.pdf_export', $pdfData)
+        $pdf = PDF::loadView('superuser.report.customer_type_brand_uv.pdf_export_uv', $pdfData)
                 ->setPaper('a3', 'landscape');
 
         // Jika ingin di-download
         if ($request->has('download')) {
-            return $pdf->download("Laporan-Customer-Type-Brand.pdf");
+            return $pdf->download("Laporan-Customer-Type-Brand-UV.pdf");
         }
 
-        return $pdf->stream("Laporan-Customer-Type-Brand.pdf");
+        return $pdf->stream("Laporan-Customer-Type-Brand-UV.pdf");
     }
 
     public function removeDt(Request $request)
     {
-        DB::table('report_customer_type_brand')->truncate();
+        DB::table('report_customer_type_brand_history')->truncate();
+        DB::table('failed_invoices_log')->truncate();
 
         return redirect()->back()->with('message', 'Berhasil remove data!');
     }
@@ -241,13 +227,13 @@ class ReportCustomerTypeBrandController extends Controller
         $endDate = $request->end;
 
         // Ambil daftar brand unik
-        $brands = DB::table('report_customer_type_brand')
+        $brands = DB::table('report_customer_type_brand_history')
             ->distinct()
             ->pluck('invoice_brand')
             ->toArray();
 
         // Ambil data utama
-        $data = DB::table('report_customer_type_brand')
+        $data = DB::table('report_customer_type_brand_history')
             ->select(
                 'customer_type',
                 'customer_name',
@@ -309,7 +295,7 @@ class ReportCustomerTypeBrandController extends Controller
         }
 
         return Excel::download(
-            new CustomerTypeBrandReportExport($groupedData, $globalTotals, $brands),
+            new CustomerTypeBrandReportUvExport($groupedData, $globalTotals, $brands),
             'laporan_customer_type_brand.xlsx'
         );
     }

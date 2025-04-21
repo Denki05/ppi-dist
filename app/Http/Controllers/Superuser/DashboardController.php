@@ -86,12 +86,28 @@ class DashboardController extends Controller
                         ->orderBy('total_qty', 'DESC')
                         ->get();
 
+        // Approval Sales Order Needs
+        $approval_so = SalesOrder::leftJoin('master_customer_other_addresses', 'penjualan_so.customer_other_address_id', '=', 'master_customer_other_addresses.id')
+                        ->selectRaw('
+                            penjualan_so.id as id,
+                            penjualan_so.so_code as so_code,
+                            penjualan_so.so_date as so_date,
+                            penjualan_so.brand_name as brand_name,
+                            penjualan_so.approval_mou as approval_mou,
+                            penjualan_so.approval_mou_status as approval_mou_status,
+                            master_customer_other_addresses.name as customer_name,
+                            master_customer_other_addresses.text_kota as customer_city
+                        ')
+                        ->whereIn('penjualan_so.status', [1, 2, 3, 4])
+                        ->get();
+
         $data = [
             'sales' => $sales,
             'revenue' => $revenue,
             'top_sell_variant' => $top_sell_variant,
             'is_see' => $is_see,
-            'selectedMonth' => $selectedMonth
+            'selectedMonth' => $selectedMonth,
+            'approval_so' => $approval_so,
         ];
 
     

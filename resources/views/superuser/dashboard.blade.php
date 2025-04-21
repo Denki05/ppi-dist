@@ -46,6 +46,75 @@
 @if($is_see == true)
 <div class="block">
     <div class="block-content">
+    <div class="row">
+            <div class="col">
+                <div class="card">
+                    <div class="card-header d-flex align-items-center justify-content-between">
+                        <h3>Approval Sales Order MOU</h3>
+                    </div>
+                    <div class="card-body">
+                        <table class="datatable table table-striped" id="so_approval">
+                            <thead>
+                                <tr>
+                                    <td class="text-center">#</td>
+                                    <td class="text-center">So Code</td>
+                                    <td class="text-center">Brand</td>
+                                    <td class="text-center">Customer</td>
+                                    <td class="text-center">Approval</td>
+                                    <td class="text-center">Status</td>
+                                    <td class="text-center">Action</td>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach($approval_so as $so)
+                                    @if($so->approval_mou == 1)
+                                    <tr>
+                                        <th class="text-center">{{ $loop->iteration }}</th>
+                                        <th class="text-center">{{ $so->so_code }}</th>
+                                        <th class="text-center">{{ $so->brand_name }}</th>
+                                        <th class="text-center">{{ $so->customer_name }} {{ $so->customer_city }}</th>
+                                        <th class="text-center">
+                                            @if($so->approval_mou == 1)
+                                                <span class="badge badge-success">YES</span>
+                                            @else
+                                                <span class="badge badge-danger">NO</span>
+                                            @endif
+                                        </th>
+                                        <th class="text-center">
+                                            @if($so->approval_mou_status == 1)
+                                                <span class="badge badge-success">Approved</span>
+                                            @else
+                                                <span class="badge badge-danger">No Approved</span>
+                                            @endif
+                                        </th>
+                                        <td class="text-center">
+                                            @if($so->approval_mou == 1 && $so->approval_mou_status != 1)
+                                                <button 
+                                                    class="btn btn-sm btn-success btn-approval-mou" 
+                                                    data-id="{{ $so->id }}">
+                                                    <i class="fa fa-check"></i> Proses
+                                                </button>
+                                            @else
+                                                <button class="btn btn-sm btn-secondary" disabled>
+                                                    <i class="fa fa-check"></i> Approved
+                                                </button>
+                                            @endif
+                                        </td>
+                                    </tr>
+                                    @endif
+                                @endforeach
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="block">
+    <div class="block-content">
         <div class="row">
             <div class="col">
                 <div class="card">
@@ -81,7 +150,6 @@
                         </table>
                     </div>
                 </div>
-
             </div>
         </div>
     </div>
@@ -266,6 +334,43 @@
             },
             processing: true,
             serverSide: false,
+        });
+
+        var datatable_so = $('#so_approval').DataTable({
+            language: {
+                processing: "<span class='fa-stack fa-lg'>\n\
+                                <i class='fa fa-spinner fa-spin fa-stack-2x fa-fw'></i>\n\
+                            </span>",
+            },
+            processing: true,
+            serverSide: false,
+        });
+
+        $('.btn-approval-mou').on('click', function() {
+            const id = $(this).data('id');
+
+            if (!confirm('Apakah Anda yakin ingin memproses approval ini?')) return;
+
+            $.ajax({
+                url: "{{ route('superuser.penjualan.sales_order.approvalMouSo', ['id' => '__id__']) }}".replace('__id__', id),
+                type: 'POST',
+                data: {
+                    _token: '{{ csrf_token() }}'
+                },
+                beforeSend: function() {
+                    // Optional: tampilkan loader
+                },
+                success: function(response) {
+                    if(response.notification && response.notification.type === 'success') {
+                        alert(response.notification.content);
+                        location.reload(); // atau redirect jika perlu
+                    }
+                },
+                error: function(xhr) {
+                    alert('Terjadi kesalahan saat memproses approval.');
+                    console.error(xhr.responseText);
+                }
+            });
         });
     });
 </script>

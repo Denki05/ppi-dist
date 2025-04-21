@@ -35,7 +35,13 @@ class CustomerOtherAddress extends Model
         'text_kelurahan',
         'zipcode', 
         'free_shipping', 
-        'zone', 'setting_income_target', 'image_npwp', 'image_ktp', 'status', 'situation', 'status_key'
+        'zone', 
+        'setting_income_target', 
+        'image_npwp', 
+        'image_ktp', 
+        'status', 
+        'situation', 
+        'status_key'
     ];
     protected $table = 'master_customer_other_addresses';
     public $incrementing = false;

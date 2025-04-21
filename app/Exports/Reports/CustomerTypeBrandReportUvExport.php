@@ -7,7 +7,7 @@ use Maatwebsite\Excel\Concerns\WithHeadings;
 use Maatwebsite\Excel\Concerns\WithStyles;
 use PhpOffice\PhpSpreadsheet\Worksheet\Worksheet;
 
-class CustomerTypeBrandReportExport implements FromArray, WithHeadings, WithStyles
+class CustomerTypeBrandReportUvExport implements FromArray, WithHeadings, WithStyles
 {
     protected $groupedData;
     protected $globalTotals;

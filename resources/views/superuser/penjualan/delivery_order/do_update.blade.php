@@ -210,7 +210,7 @@
                                     <td>{{ $loop->iteration }}</td>
                                     <td>{{ $detail->product_pack->code }} - <b>{{ $detail->product_pack->name }}</b> - {{$detail->product_pack->warehouse->name}}</td>
                                     <td>{{$detail->qty}}</td>
-                                    <td>detail
+                                    <td>
                                       <input type="number" name="repeater[{{$index}}][do_qty]" class="form-control count" data-index="{{$index}}" value="{{$detail->qty}}" step="any">
                                     </td>
                                     <td>

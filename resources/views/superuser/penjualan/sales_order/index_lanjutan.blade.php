@@ -158,12 +158,13 @@
                           <i class="fas fa-clipboard-list"></i> Print Manifest
                         </a>
                       @if($row->type_transaction == 'TEMPO' OR $row->type_transaction == "COD" OR $row->type_transaction == "MARKETPLACE")
-                        <!-- <a href="#" class="btn btn-danger btn-sm btn-flat btn-frmedit" data-id="{{$row->id}}"><i class="fa fa-edit"></i> Revisi</a> -->
                         <a href="javascript:saveConfirmation('{{ route('superuser.penjualan.packing_order.revisi', $row->id) }}')" class="btn btn-danger btn-sm btn-flat" data-id="{{$row->id}}"><i class="fa fa-edit"></i> Revisi</a>
                       @endif
-                      @if($superuser->division == "Developer" && $row->type_transaction == "CASH")
-                      <a href="javascript:saveConfirmation('{{ route('superuser.penjualan.packing_order.revisi', $row->id) }}')" class="btn btn-info btn-sm btn-flat" data-id="{{$row->id}}"><i class="fa fa-edit"></i> Revisi</a>
-                      @endif
+                      @role('Developer')
+                        @if($row->type_transaction == 'CASH')
+                          <a href="javascript:saveConfirmation('{{ route('superuser.penjualan.packing_order.revisi', $row->id) }}')" class="btn btn-dark btn-sm btn-flat" data-id="{{$row->id}}"><i class="fa fa-edit"></i> Revisi</a>
+                        @endif
+                      @endrole
                     @endif
                       </td>
                   @endif
@@ -186,17 +187,21 @@
               <th>#</th>
               <th>Refrensi SO</th>
               <th>DO Code</th>
+              <th>Customer</th>
               <th>Tanggal Buat</th>
               <th>Transaction Type</th>
               <th>Status</th>
+              <!-- <th>Action</th> -->
             </tr>
           </thead>
           <tbody>
-          @foreach($packing_order as $index => $row)
+          @foreach($so_progress as $index => $row)
+            @if(isset($row->so) && $row->so->type_so == 'nonppn')
                   <tr>
                       <td>{{ $index+1 }}</td>
-                      <td>{{$row->so->code ?? '-'}}</td>
+                      <td>{{$row->so->so_code}}</td>
                       <td>{{$row->do_code}}</td>
+                      <td>{{$row->member->name}} {{$row->member->text_kota}}</td>
                       <td><?= date('d-m-Y h:i:s',strtotime($row->created_at)); ?></td>
                       <td>{{$row->type_transaction}}</td>
                       <td>
@@ -204,23 +209,24 @@
                           <span class="badge badge-pill badge-info"><b>Submit DO</bb></span>
                         @endif
                         @if($row->status == 3)
-                          <span class="badge badge-pill badge-primary"><b>Packing Proses</b></span>
+                          <span class="badge badge-pill badge-primary"><b>Dikemas</b></span>
                         @endif
                         @if($row->status == 4)
                           <span class="badge badge-pill badge-primary"><b>Cetak SJ / DO</b></span>
                         @endif
                         @if($row->status == 5)
-                          <span class="badge badge-pill badge-warning"><b>Delivering</b></span>
+                          <span class="badge badge-pill badge-warning"><b>Dikirim</b></span>
                         @endif
                         @if($row->status == 6)
-                          <span class="badge badge-pill badge-success"><b>Delivered</b></span>
+                          <span class="badge badge-pill badge-success"><b>Terkirim</b></span>
                         @endif
                         @if($row->status == 7)
                           <span class="badge badge-pill badge-danger"><b>Revisi</b></span>
                         @endif
                       </td>
                   </tr>
-                  @endforeach
+                @endif
+              @endforeach
           </tbody>
         </table>
       </div>
@@ -230,44 +236,42 @@
     <section id="content4">
       <div class="row mb-30">
         <div class="col-12">
-          <table class="table table-hover" id="do_cancel">
-            <thead>
-              <tr>
-                <th>#</th>
-                <th>DO Code</th>
-                <th>Refrensi SO</th>
-                <th>Customer</th>
-                <th>Tanggal Buat</th>
-                <th>Transaction Type</th>
-                <th>Action</th>
-              </tr>
-            </thead>
-            <tbody>
-              @foreach($packing_order as $index => $row)
-                  @if(in_array($row->status, [5, 6, 7]))
-                      <tr>
-                          <td>{{ $loop->iteration }}</td>
-                          <td>{{ $row->do_code }}</td>
-                          <td>{{ $row->so->code ?? '-' }}</td>
-                          <td>{{ $row->member->name ?? '-' }}</td>
-                          <td>{{ $row->created_at->format('d-m-Y h:i:s') }}</td>
-                          <td>{{ $row->so->type_transaction ?? '-' }}</td>
-                          
-                          <td>
-                              @if(in_array($row->status, [5, 6]) || ($superuser->division == "Management" || $superuser->division == "Developer"))
-                                  <a href="javascript:void(0)" type="button" class="btn btn-danger opneModalDoCancel" data-id="{{ $row->id }}">Cancel DO</a> 
-                              @endif
-                              @if($row->status == 7 && $row->count_cancel == 1)
-                                  <a href="#" class="btn btn-info btn-sm btn-flat btn-frmdoedit" data-id="{{ $row->id }}">
-                                      <i class="fa fa-edit"></i> Form Revisi
-                                  </a>
-                              @endif
-                          </td>
-                      </tr>
-                  @endif
-              @endforeach
-            </tbody>
-          </table>
+        <table class="table table-hover" id="do_cancel">
+    <thead>
+        <tr>
+            <th>#</th>
+            <th>DO Code</th>
+            <th>Refrensi SO</th>
+            <th>Customer</th>
+            <th>Tanggal Buat</th>
+            <th>Transaction Type</th>
+            <th>Action</th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach($packing_order as $index => $row)
+            @if(in_array($row->status, [5, 6, 7]))
+                <tr>
+                    <td>{{ $index + 1 }}</td>
+                    <td>{{ $row->do_code }}</td>
+                    <td>{{ $row->so->code ?? '-' }}</td>
+                    <td>{{ $row->member->name ?? '-' }} {{ $row->member->text_kota }}</td>
+                    <td>{{ \Carbon\Carbon::parse($row->created_at)->format('d-m-Y h:i:s') }}</td>
+                    <td>{{ $row->so->type_transaction ?? '-' }}</td>
+                    <td>
+                        @if((in_array($row->status, [5, 6]) || ($superuser->division == "Management" && $superuser->division == "Developer")))
+                            <a href="javascript:void(0)" type="button" class="btn btn-danger opneModalDoCancel" data-id="{{ $row->id }}">Cancel DO</a>
+                        @endif
+                        @if($row->status == 7)
+                            <a href="#" class="btn btn-info btn-sm btn-flat btn-frmdoedit" data-id="{{ $row->id }}"><i class="fa fa-edit"></i> Form Revisi</a>
+                        @endif
+                    </td>
+                </tr>
+            @endif
+        @endforeach
+    </tbody>
+</table>
+
         </div>
       </div>
     </section>
@@ -281,7 +285,7 @@
 <div class="modal fade" id="modalDoCancel" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true">
   <div class="modal-dialog" role="document">
     <div class="modal-content">
-      <div role="alert" class="alert" style="display: none;"></div>
+      <div role="alert" class="alert" id="alert-message" style="display: none;"></div>
       <div class="modal-header">
         <h5 class="modal-title" id="exampleModalLabel">verify auth token</h5>
         <button type="button" class="close" data-dismiss="modal" aria-label="Close">
@@ -293,10 +297,10 @@
           @csrf
           <div class="mb-3">
             <label>TOKEN :</label>
-            <input type="password" class="form-control" name="secreatCode">
+            <input type="password" class="form-control" name="secreatCode" id="secreatCode">
           </div>
           <input type="hidden" id="doID" />
-          <button type="submit" class="btn btn-info">Auth</button>
+          <button type="button" class="btn btn-info" id="submitDoCancel">Auth</button>
           <button type="button" class="btn btn-danger" data-bs-dismiss="modal">Close</button>
         </form>
       </div>
@@ -309,7 +313,7 @@
     <div class="modal-dialog modal-xl" role="document">
       <div class="modal-content">
         <div class="modal-header">
-          <h5 class="modal-title">#View SO </h5>
+          <h5 class="modal-title">#View SO <span id="so_code_display"></span></span></h5>
           <button type="button" class="close" data-dismiss="modal" aria-label="Close">
             <span aria-hidden="true">&times;</span>
           </button>
@@ -347,17 +351,17 @@
                               </div>
 
                               <div class="form-row">
-                                  <div class="form-group col-md-6">
+                                  <div class="form-group col-md-4">
                                       <label for="type_transaction">Type Transaksi</label>
                                       <input type="text" id="type_transaction" class="form-control" readonly>
                                   </div>
-                                  <div class="form-group col-md-6" id="note-container">
+                                  <div class="form-group col-md-8" id="note-container">
                                       <label for="note">Note</label>
-                                      <input type="text" id="note" class="form-control" readonly>
+                                      <textarea class="form-control" style="height:auto; min-height:50px; overflow:hidden;" id="note" rows="1" readonly></textarea>
                                   </div>
                                   <div class="form-group col-md-6" id="catatan-container">
                                       <label for="catatan">Catatan</label>
-                                      <textarea class="form-control" id="catatan" rows="1" readonly></textarea>
+                                      <textarea class="form-control" style="height:auto; min-height:50px; overflow:hidden;" id="catatan" rows="1" readonly></textarea>
                                   </div>
                               </div>
                           </div>
@@ -402,6 +406,7 @@
                           <thead>
                               <tr>
                                   <th>#</th>
+                                  <th>Kode</th>
                                   <th>Product</th>
                                   <th>Kemasan</th>
                                   <th>Qty</th>
@@ -444,8 +449,8 @@
                                 </span>",
               },
               processing: true,
-              serverSide: true,
-              searching: false,
+              serverSide: false,
+              searching: true,
               paging: true,
               info: false,
               ajax: {
@@ -486,7 +491,7 @@
                 var status = $('#status_so').val();
                 let newDatatableUrl = datatableUrl + '?status_so=' + status;
                 datatable.ajax.url(newDatatableUrl).load();
-            });
+            })
 
             $('#so_lanjutan tbody').on('click', 'button.btn-view', function() {
               var data = datatable.row($(this).parents('tr')).data();
@@ -502,6 +507,7 @@
                       $('#invoice_date').val(response.created_at);
                       $('#so_code').val(response.so_code);
                       $('#invoice_code').val(response.so_code);
+                      $('#so_code_display').text(response.so_code);
                       // $('#sales_senior_id').val(response.sales_senior_id);
                       
                       // $('#sales_id').val(response.sales_id);
@@ -531,6 +537,7 @@
                       response.products.forEach(function(product, index) {
                           productDetails += '<tr>';
                           productDetails += '<td>' + (index + 1) + '</td>';
+                          productDetails += '<td>' + product.code + '</td>';
                           productDetails += '<td>' + product.name + '</td>';
                           productDetails += '<td>' + product.kemasan + '</td>';
                           productDetails += '<td>' + product.qty + '</td>';
@@ -638,50 +645,43 @@
                 var id = $(this).data('id');
                 $('#doID').val(id);
                 $('#modalDoCancel').modal('show');
-
-                // alert(id);
             });
 
-            $('#myFormDoCancel').on('submit', function (e) {
-                e.preventDefault(); // Prevent the form submission
-                var id = $('#doID').val();
-                var url = "{{ route('superuser.penjualan.delivery_order.cancel_proses', ':id') }}";
-                url = url.replace(':id', id);
-                var alertMsg = $('div[role="alert"]');
-                var formData = new FormData(this);
+            $('#submitDoCancel').on('click', function (e) {
+              e.preventDefault();
+              var code = $('#secreatCode').val();
+              var do_id = $('#doID').val();
 
-                // AJAX request
-                $.ajax({
-                    url: url,
-                    type: 'POST',
-                    headers: {'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')},
-                    data: formData,
-                    contentType: false,
-                    processData: false,
-                    success: function (response) {
-                        // Display a success alert
-                        alertMsg
-                            .removeClass('alert-danger') // Remove the error class if it exists
-                            .addClass('alert-success') // Add the success class
-                            .text('Cancellation successful!') // Set the alert message
-                            .show(); // Display the alert
+              $.ajax({
+                  type: 'POST',
+                  url: "{{ route('superuser.penjualan.delivery_order.cancel_proses') }}",
+                  data: {
+                      "_token": "{{ csrf_token() }}",
+                      "pass": code,
+                      "id": do_id
+                  },
+                  success: function (response) {
+                      $('#alert-message') // Assuming this is the alert message div
+                          .removeClass('alert-danger')
+                          .addClass('alert-success')
+                          .text(response.message)
+                          .show();
 
-                        setTimeout(function () {
-                            $('#modalDoCancel').modal('show');
-                            setTimeout(function () {
-                                window.location.reload();
-                            }, 800);
-                        }, 800);
-                    },
-                    error: function (xhr, status, error) {
-                        // Display an error alert
-                        alertMsg
-                            .removeClass('alert-success') // Remove the success class if it exists
-                            .addClass('alert-danger') // Add the error class
-                            .text('Cancellation failed: ' + error) // Set the alert message
-                            .show(); // Display the alert
-                    }
-                });
+                      setTimeout(function () {
+                          $('#modalDoCancel').modal('hide');
+                          setTimeout(function () {
+                              window.location.reload();
+                          }, 800);
+                      }, 800);
+                  },
+                  error: function (xhr, status, error) {
+                      $('#alert-message') // Assuming this is the alert message div
+                          .removeClass('alert-success')
+                          .addClass('alert-danger')
+                          .text(xhr.responseJSON.message || 'Token tidak sah!')
+                          .show();
+                  }
+              });
             });
         })
     </script>

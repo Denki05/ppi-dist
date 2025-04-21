@@ -22,8 +22,6 @@ use App\Entities\Penjualan\SalesOrderKontrakLog;
 use App\Entities\Penjualan\SalesOrderKontrakPivot;
 use App\DataTables\Penjualan\DeliveryOrdersTable;
 use App\Entities\Finance\Invoicing;
-use App\Entities\Finance\Payable;
-use App\Entities\Finance\PayableDetail;
 use App\Entities\Master\Vendor;
 use App\Entities\Master\Warehouse;
 use App\Entities\Gudang\StockMove;
@@ -33,6 +31,7 @@ use App\Notifications\DoNotification;
 use App\Repositories\CodeRepo;
 use Illuminate\Support\Collection;
 use Validator;
+use App\Helper\LogActivity;
 use PDF;
 use DB;
 use Auth;
@@ -66,7 +65,6 @@ class DeliveryOrderController extends Controller
 
     public function json(Request $request, DeliveryOrdersTable $datatable)
     {
-        // return $datatable->build();
         return $datatable->with('show', $request->show)->build($request);
     }
 
@@ -107,7 +105,7 @@ class DeliveryOrderController extends Controller
                                         // Cari SO > lalu cari SO Item > lalu cari DO Item > lalu cari Id nya
 
                                         // Cari SO
-                                        $salesOrderDb = SalesOrder::where('code', 'like', '%'.$search.'%')->get();
+                                        $salesOrderDb = SalesOrder::where('code', 'like', '%'.$search.'%')->where('type_so', 'nonppn')->get();
                                         $salesOrderId = array();
                                         for($c=0; $c<count($salesOrderDb); $c++) $salesOrderId[$c] = $salesOrderDb[$c]->id;
 
@@ -141,9 +139,9 @@ class DeliveryOrderController extends Controller
                             ->orderBy('id','DESC')
                             ->get();
 
+        // $table->withPath('delivery_order?field='.$field.'&search='.$search);
         $customer = Customer::all();
         $packing = PackingOrder::first();
-
         $data = [
             'table' => $table,
             'customer' => $customer,
@@ -239,31 +237,59 @@ class DeliveryOrderController extends Controller
     {
         //
     }
-    
     public function print($id){
-        if (empty($id) || !is_numeric($id)) {
-            abort(404, 'DO ID tidak valid.');
+        // Access
+        if(Auth::user()->is_superuser == 0){
+            if(empty($this->access) || empty($this->access->user) || $this->access->can_print == 0){
+                return redirect()->route('superuser.index')->with('error','Anda tidak punya akses untuk membuka menu terkait');
+            }
         }
 
-        $result = PackingOrder::find($id);
-        if (!$result) {
-            abort(404, 'DO tidak ditemukan.');
-        }
+        $result = PackingOrder::where('id',$id)->first();
+        
+        $my_report = "C:\\xampp\\htdocs\\ppi-dist\public\\cr\\do\\do.rpt"; 
+        $my_pdf = 'C:\\xampp\\htdocs\\ppi-dist\\public\\cr\\do\\export\\'.$result->do_code.'.pdf';
 
-        $data = [
-            'result' => $result,
-        ];
+        $my_server = "LOCAL"; 
+        $my_user = "root"; 
+        $my_password = ""; 
+        $my_database = "ppi-dist";
+        $COM_Object = "CrystalDesignRunTime.Application";
 
-        $pdf = PDF::loadView('superuser.penjualan.delivery_order.print_new', $data)
-                ->setPaper('a5', 'landscape');
+        //-Create new COM object-depends on your Crystal Report version
+        $crapp= New COM($COM_Object) or die("Unable to Create Object");
+        $creport = $crapp->OpenReport($my_report,1); // call rpt report
 
-        $generate = false; // Ubah sesuai logika bisnis.
+        //- Set database logon info - must have
+        $creport->Database->Tables(1)->SetLogOnInfo($my_server, $my_database, $my_user, $my_password);
 
-        if ($generate) {
-            return $pdf->download("{$result->code}-DO.pdf");
-        }
+        //- field prompt or else report will hang - to get through
+        $creport->EnableParameterPrompting = FALSE;
+        $creport->RecordSelectionFormula = "{penjualan_do.id}= $result->id";
 
-        return $pdf->stream("{$result->code}-DO.pdf");
+
+        //export to PDF process
+        $creport->ExportOptions->DiskFileName=$my_pdf; //export to pdf
+        $creport->ExportOptions->PDFExportAllPages=true;
+        $creport->ExportOptions->DestinationType=1; // export to file
+        $creport->ExportOptions->FormatType=31; // PDF type
+        $creport->Export(false);
+
+        //------ Release the variables ------
+        $creport = null;
+        $crapp = null;
+        $ObjectFactory = null;
+
+        $file = 'C:\\xampp\\htdocs\\ppi-dist\\public\\cr\\do\\export\\'.$result->do_code.'.pdf';
+
+        header("Content-Description: File Transfer"); 
+        header("Content-Type: application/octet-stream"); 
+        header("Content-Transfer-Encoding: Binary"); 
+        header("Content-Disposition: attachment; filename=\"". basename($file) ."\""); 
+        ob_clean();
+        flush();
+        readfile ($file);
+        exit();
     }
 
     public function packed(Request $request)
@@ -409,133 +435,126 @@ class DeliveryOrderController extends Controller
         return response()->json($data_json,200);
     }
 
-    public function sent(Request $request){
+    public function sent(Request $request)
+    {
+        // Initialize response data
         $data_json = [];
-        $post = $request->all();
 
-        // Access
-        if(Auth::user()->is_superuser == 0){
-            if(empty($this->access) || empty($this->access->user) || $this->access->can_approve == 0){
-                $data_json["IsError"] = TRUE;
+        // Validate request
+        $validated = $request->validate([
+            'do_id' => 'required|integer',
+            'delivery_cost_idr' => 'nullable|numeric',
+            'other_cost_idr' => 'nullable|numeric',
+            'delivery_cost_note' => 'nullable|string',
+            'other_cost_note' => 'nullable|string',
+            'image' => 'nullable|image|mimes:jpeg,png,jpg,gif',
+            'image2' => 'nullable|image|mimes:jpeg,png,jpg,gif',
+        ]);
+
+        // Check user access
+        if (Auth::user()->is_superuser == 0) {
+            if (empty($this->access) || empty($this->access->user) || $this->access->can_approve == 0) {
+                $data_json["IsError"] = true;
                 $data_json["Message"] = 'Anda tidak punya akses untuk membuka menu terkait';
-                goto ResultData;
+                return response()->json($data_json, 200);
             }
         }
 
-        if($request->method() == "POST"){
-            DB::beginTransaction();
-            try{
-                $image = $request->file('image');
-                $image2 = $request->file('image2');
+        // Begin transaction
+        DB::beginTransaction();
+        try {
+            $post = $request->all();
+            $do_id = $post["do_id"];
 
-                if(!empty($image && $image2)){
-                    $extension = $image->getClientOriginalExtension();
-                    $valid_ext = ['jpeg','png','jpg','gif'];
-    
-                    if(!in_array(strtolower($extension), $valid_ext)){
-                        return redirect()->route('superuser.penjualan.delivery_order.detail')->with('error',"Format image diperbolehkan yaitu jpeg,jpg,png,gif");
-                    }
-                
-                    $data = [
-                        'image' => (empty($image)) ? null : $image->store('images/delivery_order/expedition_receipt', 'public'),
-                        'image2' => (empty($image2)) ? null : $image2->store('images/delivery_order/expedition_receipt', 'public'),
-                        'updated_by' => Auth::id(),
-                    ];
-
-                    $update = PackingOrder::where('id',$post["do_id"])->update($data);
-                }
-                
-
-                $delivery_cost_idr = (empty($post["delivery_cost_idr"])) ? 0 : $post["delivery_cost_idr"]; 
-                $other_cost_idr = (empty($post["other_cost_idr"])) ? 0 : $post["other_cost_idr"];
-
-                $result_cost = PackingOrderDetail::where('do_id',$post["do_id"])->first();
-
-                // check shipping cost buyyer & customer free shipping
-                $get_do = PackingOrder::where('id', $post["do_id"])->first();
-                $get_so = SalesOrder::where('id', $get_do->so_id)->first();
-                $customer = CustomerOtherAddress::where('id', $get_do->customer_other_address_id)->first();
-
-                // Prepare update data
-                $updateData = [
-                    'delivery_cost_note' => trim(htmlentities($post["delivery_cost_note"] ?? '')),
-                    'delivery_cost_idr' => $post["delivery_cost_idr"],
-                    'other_cost_note' => trim(htmlentities($post["other_cost_note"] ?? '')),
-                    'other_cost_idr' => $post["other_cost_idr"] ?? 0,
-                    'updated_by' => Auth::id(),
-                    'status_resi' => 1,
-                ];
-
-                if ($get_do->type_transaction == "TEMPO" && $customer->free_shipping == 1) {
-                    $updateData['other_cost_idr'] = $post["other_cost_idr"];
-                } elseif ($get_do->type_transaction == "CASH" && $customer->free_shipping == 1) {
-                    $updateData['other_cost_idr'] = $post["other_cost_idr"];
-                } elseif ($get_do->type_transaction == "TEMPO" && $customer->free_shipping == 0) {
-                    $updateData['delivery_cost_idr'] = $post["other_cost_idr"];
-                } elseif ($get_do->type_transaction == "CASH" && $customer->free_shipping == 0) {
-                    $updateData['other_cost_idr'] = $post["other_cost_idr"];
-                }
-
-                // Update PackingOrderDetail
-                $updateDetailCost =  PackingOrderDetail::where('do_id', $post["do_id"])->update($updateData);
-
-                // DD($post["other_cost_note"]);
-
-                $detail_do = PackingOrder::where('id',$post["do_id"])->first();
-                $detail_item = PackingOrderItem::where('do_id',$post["do_id"])->get();
-
-                if(empty($detail_do->do_code)){
-                    $detail_do->update([
-                        'do_code' => CodeRepo::generateDO(),
-                        'date_sent' => date('Y-m-d')
-                    ]);
-                }
-
-                $update = PackingOrder::where('id',$post["do_id"])->update(['status' => 6, 'updated_by' => Auth::id()]);
-
-                // update so kontrak
-                $salesOrderItemDB = SalesOrderItem::where('so_id', $get_so->id)->where('kontrak', 1)->get();
-                foreach($salesOrderItemDB AS $item){
-                    $pivotKontrak = SalesOrderKontrakPivot::where('so_item_id', $item->id)->first();
-                    $kontrak_item = SalesOrderKontrakItem::where('id', $pivotKontrak->so_kontrak_item_id)->first();
-
-                    $peng_kontrak_qty = $kontrak_item->qty - $item->qty_worked;
-                    
-                    $log_kontrak = new SalesOrderKontrakLog;
-                    $log_kontrak->customer_other_address_id = $get_so->customer_other_address_id;
-                    $log_kontrak->so_kontrak_id = $kontrak_item->so_kontrak_id;
-                    $log_kontrak->so_id = $item->so_id;
-                    $log_kontrak->qty_worked = $item->qty_worked;
-                    $log_kontrak->outstanding_qty = $peng_kontrak_qty;
-                    $log_kontrak->save();
-
-                    // updated qty kontrak
-                    $update_kontrak = SalesOrderKontrakItem::where('id', $kontrak_item->id)->update(['qty_sent' => $item->qty_worked]);
-                }
-                
-                DB::commit();
-
-                // add notif
-                $user = User::find(32);
-                $user->notify(new DoNotification($get_do));
-
-                return redirect()->route('superuser.penjualan.delivery_order.index')->with('success','DO berhasil update resi!');
-
-            }catch(\Throwable $e){
-                dd($e);
-                DB::rollback();
-                $data_json["IsError"] = TRUE;
-                $data_json["Message"] = $e->getMessage();
-                goto ResultData;
+            // Handle image upload
+            $data = [];
+            if ($request->hasFile('image')) {
+                $data['image'] = $request->file('image')->store('images/delivery_order/expedition_receipt', 'public');
             }
+            if ($request->hasFile('image2')) {
+                $data['image2'] = $request->file('image2')->store('images/delivery_order/expedition_receipt', 'public');
+            }
+            $data['updated_by'] = Auth::id();
+
+            // Update PackingOrder
+            $updateDO = PackingOrder::where('id', $do_id)->update($data);
+
+            // Get necessary data
+            $result_cost = PackingOrderDetail::where('do_id', $do_id)->firstOrFail();
+            $get_do = PackingOrder::where('id', $do_id)->firstOrFail();
+            $get_so = SalesOrder::where('id', $get_do->so_id)->firstOrFail();
+            $customer = CustomerOtherAddress::where('id', $result_cost->do_header->customer_other_address_id)->firstOrFail();
+
+            // Prepare update data
+            $updateData = [
+                'delivery_cost_note' => trim(htmlentities($post["delivery_cost_note"] ?? '')),
+                'delivery_cost_idr' => $post["delivery_cost_idr"],
+                'other_cost_note' => trim(htmlentities($post["other_cost_note"] ?? '')),
+                'other_cost_idr' => $post["other_cost_idr"] ?? 0,
+                'updated_by' => Auth::id(),
+                'status_resi' => 1,
+            ];
+
+            if ($get_do->type_transaction == "TEMPO" && $customer->free_shipping == 1) {
+                $updateData['other_cost_idr'] = $post["other_cost_idr"];
+            } elseif ($get_do->type_transaction == "CASH" && $customer->free_shipping == 1) {
+                $updateData['other_cost_idr'] = $post["other_cost_idr"];
+            } elseif ($get_do->type_transaction == "TEMPO" && $customer->free_shipping == 0) {
+                $updateData['delivery_cost_idr'] = $post["other_cost_idr"];
+            } elseif ($get_do->type_transaction == "CASH" && $customer->free_shipping == 0) {
+                $updateData['other_cost_idr'] = $post["other_cost_idr"];
+            }
+
+            // Update PackingOrderDetail
+            $updateDetailCost =  PackingOrderDetail::where('do_id', $do_id)->update($updateData);
+
+            // Update PackingOrder
+            $detail_do = PackingOrder::where('id', $do_id)->firstOrFail();
+            if (empty($detail_do->do_code)) {
+                $detail_do->update([
+                    'do_code' => CodeRepo::generateDO(),
+                    'date_sent' => now()->format('Y-m-d'),
+                ]);
+            }
+            $detail_do->update(['status' => 6]);
+
+            // Update SalesOrder items and log
+            $salesOrderItemDB = SalesOrderItem::where('so_id', $get_do->so_id)->where('kontrak', 1)->get();
+            foreach ($salesOrderItemDB as $item) {
+
+                SalesOrderKontrakLog::create([
+                    'code' => $get_so->code,
+                    'customer_other_address_id' => $get_so->customer_other_address_id,
+                    'so_kontrak_id' => $item->kontrak_id,
+                    'so_id' => $item->so_id,
+                    'qty_worked' => $item->qty_worked,
+                    'created_at' => now(),
+                ]);
+            }
+
+            // Commit transaction
+            DB::commit();
+
+            // add notif
+            // $user = User::find(32);
+            // $user->notify(new DoNotification($get_do));
+            $userIds = [32, 36];
+            $users = User::whereIn('id', $userIds)->get();
+
+            foreach ($users as $user) {
+                $user->notify(new DoNotification($detail_do));
+            }
+
+            LogActivity::addToLog('Update Resi DO: ' . $detail_do->do_code);
+            return redirect()->route('superuser.penjualan.delivery_order.index')->with('success','DO berhasil update resi!');
+
+        } catch (\Throwable $e) {
+            dd($e);
+            DB::rollback();
+            $data_json["IsError"] = true;
+            $data_json["Message"] = $e->getMessage();
+            return response()->json($data_json, 200);
         }
-        else{
-            $data_json["IsError"] = TRUE;
-            $data_json["Message"] = "Invalid Method";
-            goto ResultData;
-        }
-        ResultData:
-        return response()->json($data_json,200);
     }
 
     public function get_cost(Request $request){
@@ -754,59 +773,39 @@ class DeliveryOrderController extends Controller
         }
     }
 
-    public function cancel_proses(Request $request, $id)
+    public function cancel_proses(Request $request)
     {
-        if ($request->ajax()) {
-            // Check access rights
-            if (Auth::user()->is_superuser == 0) {
-                if (empty($this->access) || empty($this->access->user) || $this->access->can_approve == 0) {
-                    return response()->json(['message' => 'Anda tidak mempunyai akses untuk melakukan proses ini!'], 403);
-                }
+        $pass_code = $request->input('pass');
+        $id = $request->input('id');
+
+        DB::beginTransaction();
+
+        try {
+            $do = PackingOrder::findOrFail($id); // Find the record or fail
+
+            // Jika cashback_status == 1, tidak bisa dibatalkan
+            if ($do->cashback_status == 1) {
+                return response()->json(['message' => 'Pesanan dengan cashback tidak dapat dibatalkan!'], 403);
             }
 
-            DB::beginTransaction();
-
-            try {
-                $do = PackingOrder::find($id);
-                if (!$do) {
-                    throw new \Exception('Delivery Order not found!', 404);
-                }
-
-                $secretCode = $request->input('secretCode');
-                // $invoice = Invoicing::where('do_id', $do->id)->first();
-                // $payable_detail = $invoice ? PayableDetail::where('invoice_id', $invoice->id)->first() : null;
-
-                // if (!$invoice || !$payable_detail || !$payable_detail->payable) {
-                //     throw new \Exception('Payment information is incomplete or missing!', 404);
-                // }
-
-                // // Check if the payment is approved
-                // if ($payable_detail->payable->status === 'ACC') {
-                //     throw new \Exception('Cannot cancel because the payment has already been made!', 403);
-                // }
-
-                // Verify secret code
-                if ($secretCode !== env('ABORT_PROCESS_CODE')) {
-                    throw new \Exception('Token tidak sah!', 401);
-                }
-
-                // Perform cancellation
-                $do->status = 7;
-                $do->count_cancel = 1;
+            // Jika password benar, lanjutkan pembatalan
+            if ($pass_code == 1122) {
+                $do->status = 7; // Assuming 7 means canceled
+                $do->count_cancel += 1; // Increment the cancellation count
                 $do->save();
 
                 DB::commit();
+
                 return response()->json(['message' => 'Proses berhasil dibatalkan!'], 200);
-
-            } catch (\Exception $e) {
-                DB::rollBack();
-                return response()->json(['message' => $e->getMessage()], $e->getCode());
+            } else {
+                return response()->json(['message' => 'Token tidak sah!'], 401);
             }
+
+        } catch (\Exception $e) {
+            DB::rollBack(); // Rollback transaction on error
+            return response()->json(['message' => $e->getMessage()], $e->getCode() ?: 500);
         }
-
-        return response()->json(['message' => 'Invalid request!'], 400);
     }
-
 
     public function do_edit(Request $request)
     {
@@ -819,9 +818,9 @@ class DeliveryOrderController extends Controller
 
         $post = $request->all();
         $result = PackingOrder::where('id', $post["id"])->first();
-        $rekening = DB::table('rekening')->get();
         $ekspedisi = Vendor::where('type', 1)->get();
         $warehouse = Warehouse::get();
+        $rekening = DB::table('rekening')->get();
 
         if(empty($result)){
             abort(404);
@@ -855,7 +854,7 @@ class DeliveryOrderController extends Controller
                 if (!$result) {
                     abort(404);
                 }
-                
+
                 $result_cost = PackingOrderDetail::where('do_id', $result->id)->first();
         
                 // Check if order is canceled
@@ -903,6 +902,8 @@ class DeliveryOrderController extends Controller
                         'total' => ($value['price'] * $value["do_qty"]) - $total_disc,
                         'price' => $value['price'],
                     ];
+
+                    // dd($data);
         
                     PackingOrderItem::where('id', $value["do_item_id"])->update($data);
                 }
@@ -917,8 +918,8 @@ class DeliveryOrderController extends Controller
                 }
         
                 $discount_1 = $request->disc_agen_percent / 100;
-                $discount_2 = $request->disc_tambahan / 100;
-                $discount_idr = $request->disc_idr;
+                $discount_2 = $request->disc_kemasan_percent / 100;
+                $discount_idr = $request->disc_tambahan_idr;
                 $voucher_idr = $request->voucher_idr;
                 $delivery_cost_idr = $request->delivery_cost_idr;
                 $other_cost_idr = $request->resi_ongkir;
@@ -934,35 +935,33 @@ class DeliveryOrderController extends Controller
                 // definisi hasil penjumlahan di view
                 $discount_agen_idr = $request->disc_agen_idr;
                 $discount_kemasan_idr = $request->disc_kemasan_idr;
-                $sub_total = $request->subtotal_2;
-                $grand_total_idr = $request->grand_total_idr;
 
                 // pecah format currency 
                 $discount_agen_idr = str_replace('.', '', $discount_agen_idr);
                 $discount_kemasan_idr = str_replace('.', '', $discount_kemasan_idr);
-                $sub_total = str_replace('.', '', $sub_total);
-                $grand_total_idr = str_replace('.', '', $grand_total_idr);
-                
+                $ongkir = str_replace('.', '', $delivery_cost_idr);
+        
                 // ubah decimal koma ke titik
                 $discount_agen_idr = str_replace(',', '.', $discount_agen_idr);
                 $discount_kemasan_idr = str_replace(',', '.', $discount_kemasan_idr);
-                $sub_total = str_replace(',', '.', $sub_total);
-                $grand_total_idr = str_replace(',', '.', $grand_total_idr);
-        
+                $ongkir = str_replace(',', '.', $delivery_cost_idr);
+
                 $data = [
                     'discount_1' => $request->disc_agen_percent,
                     'discount_1_idr' => $discount_agen_idr,
-                    'discount_2' => $request->disc_tambahan,
+                    'discount_2' => $request->disc_kemasan_percent,
                     'discount_2_idr' => $discount_kemasan_idr,
-                    'discount_idr' => $discount_idr,
+                    'discount_idr' => $request->disc_tambahan_idr,
                     'total_discount_idr' => $total_discount_idr,
                     'voucher_idr' => $voucher_idr,
                     'purchase_total_idr' => $purchase_total_idr,
-                    'delivery_cost_idr' => $delivery_cost_idr,
+                    'delivery_cost_idr' => $ongkir,
                     'other_cost_idr' => $other_cost_idr,
                     'grand_total_idr' => $grand_total_idr,
                     'updated_by' => Auth::id()
                 ];
+
+                // dd($data);
         
                 PackingOrderDetail::where('do_id', $request->id)->update($data);
         
@@ -983,6 +982,7 @@ class DeliveryOrderController extends Controller
                     ]);
                 }
             } catch (\Exception $e) {
+                dd($e);
                 DB::rollback();
                 return $this->response(400, [
                     'notification' => [
@@ -993,7 +993,19 @@ class DeliveryOrderController extends Controller
                     ],
                 ]);
             }
-        }        
+        }
+    }
+
+    public function unread_notif(Request $request, $id, $do)
+    {
+        $notification = DB::table('notifications')->where('id', $id)->first();
+
+        if ($notification && $notification->notifiable_id == Auth::id()) {
+            DB::table('notifications')->where('id', $id)->update(['read_at' => now()]);
+
+        }
+
+        Return redirect()->route('superuser.penjualan.delivery_order.detail', ['id' => $do])->with('success', 'Notification marked as read.');
     }
 
     public function getNotifData()

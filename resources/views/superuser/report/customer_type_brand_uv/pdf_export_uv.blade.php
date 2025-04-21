@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Laporan Customer Type Brand</title>
+    <title>Laporan Customer Type Brand UV</title>
     <style>
         @page {
             margin: 15pt;
@@ -50,7 +50,7 @@
 </head>
 <body>
     <h3>
-        REPORT REGISTER BRAND<br>
+        REPORT REGISTER BRAND UV <br>
         Periode : {{ \Carbon\Carbon::parse($startDate)->format('Y-m-d') }} - {{ \Carbon\Carbon::parse($endDate)->format('Y-m-d') }}
     </h3>
 

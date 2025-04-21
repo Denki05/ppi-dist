@@ -106,12 +106,14 @@
             <th>#</th>
             <th>Code</th>
             <th>Nota</th>
+            <th>Approval</th>
             <th>Brand</th>
             <th>Customer</th>
             <th>Sales</th>
             <th>Created By</th>
             <th>Created At</th>
             <th>Status</th>
+            <th>Status Approval</th>
             <th>Action</th>
           </thead>
           <tbody>
@@ -124,7 +126,7 @@
 
 <!-- modal add so -->
 <div class="modal fade" id="exampleModal" role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true">
-  <div class="modal-dialog " role="document">
+  <div class="modal-dialog modal-lg" role="document">
     <div class="modal-content">
       <div class="modal-header">
         <h5 class="modal-title" id="exampleModalLabel">#Add SO {{$step_txt}}</h5>
@@ -182,6 +184,33 @@
               </div>
             </div>
           </div>
+
+            <div class="row">
+              <div class="col">
+                <div class="form-group">
+                  <span class="form-label"><b>Kurs </b> <span class="text-danger">*</span></span>
+                  <input class="form-control" type="text" name="kurs" id="kurs">
+                </div>
+                <div class="form-group">
+                  <span class="form-label"><b>Disc % </b> <span class="text-danger">*</span></span>
+                  <input class="form-control" type="text" name="disc_percent" id="disc_percent">
+                </div>
+                <div class="form-group">
+                  <label class="form-check form-check-inline">
+                    <input class="form-check-input" type="checkbox" name="approval_spv" id="approval_spv" value="1">
+                    <span class="form-label"><b>Approval </b> <span class="text-danger">*</span></span>
+                  </label>
+                </div>
+              </div>
+              <div class="col">
+                <div class="form-group">
+                  <span class="form-label"><b>Note </b> <span class="text-danger">*</span></span>
+                  <textarea class="form-control" name="note_so" id="editor" rows="4" col="10"></textarea>
+                  <br>
+                  <a class="btn btn-info" id="test" href="javascript:void(0);" title="">click</a>
+                </div>
+              </div>
+            </div>
           
       </div>
       <div class="modal-footer">
@@ -226,6 +255,7 @@
                 {data: 'DT_RowIndex', name: 'id'},
                 {data: 'so_code', name: 'penjualan_so.so_code'},
                 {data: 'code', name: 'penjualan_so.code'},
+                {data: 'approval_mou', name: 'penjualan_so.approval_mou'},
                 {data: 'nota_brand', name: 'penjualan_so.brand_name'},
                 {data: 'customer'},
                 {data: 'sales'},
@@ -238,6 +268,7 @@
                     }
                 },
                 {data: 'status_so'},
+                {data: 'approval_mou_status'},
                 {data: 'action'},
             ],
             order: [
@@ -266,13 +297,23 @@
             var type_so = $('#so_type').val();
             var indent_so = $('#indent_so').val();
             var step_so = 1;
+            var note = $('#editor').val();
+            var kurs = $('#kurs').val();
+            var approval_spv = $('#approval_spv').is(':checked') ? 1 : 0;
+            var disc_percent = $('#disc_percent').val();
 
-            var url = '{{ route('superuser.penjualan.sales_order.create',  [":step", ":member", ":brand", ":type", ":indent"]) }}';
+            alert(note);
+
+            var url = '{{ route('superuser.penjualan.sales_order.create',  [":step", ":member", ":brand", ":type", ":indent", ":approval", ":note", ":kurs", ":disc_percent"]) }}';
             url = url.replace(':member', customer); 
             url = url.replace(':brand', merek); 
             url = url.replace(':type', type_so);
             url = url.replace(':indent', indent_so);
             url = url.replace(':step', step_so);
+            url = url.replace(':approval', approval_spv);
+            url = url.replace(':kurs', kurs);
+            url = url.replace(':note', encodeURIComponent(note));
+            url = url.replace(':disc_percent', disc_percent);
 
             $.ajax({
                 url: url,
@@ -300,6 +341,37 @@
             var target = $( $(this).attr('href') );
             target.fadeToggle(100);
         });
+
+        $("#test").on("click",function(e){
+          e.preventDefault();
+          addListItem();
+        });
+
+        function addListItem() {
+          var text = document.getElementById('editor').value;
+          var listNumberRegex = /^[0-9]+(?=\.)/gm;
+          var existingNums = [];
+          var num;
+        
+          while ((num = listNumberRegex.exec(text)) !== null) {
+            existingNums.push(num);
+          }
+          
+          existingNums.sort();
+
+          var addListItemNum;
+          if (existingNums.length > 0) {
+          
+            addListItemNum = parseInt(existingNums[existingNums.length - 1], 10) + 1;
+          } else {
+          
+            addListItemNum = 1;
+          } 
+
+          var exp = '\n' + addListItemNum + '.\xa0';
+          text = text.concat(exp);
+          document.getElementById('editor').value = text;
+        }
     })
 </script>
 @endpush

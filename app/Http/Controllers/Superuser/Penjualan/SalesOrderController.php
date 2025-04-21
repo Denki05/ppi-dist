@@ -35,19 +35,20 @@ use App\Entities\Setting\UserMenu;
 use App\Entities\Account\User;
 use App\Repositories\CodeRepo;
 use App\Helper\CustomHelper;
+use Spatie\PdfToImage\pdf;
 use App\DataTables\Penjualan\SalesOrderAwalTable;
 use App\DataTables\Penjualan\SalesOrderLanjutanTable;
 use Illuminate\Support\Facades\Response;
 use Org_Heigl\Ghostscript\Ghostscript;
 use App\Helper\LogActivity;
 use App\Notifications\SoNotification;
+use Illuminate\Support\Facades\Log;
 use Imagick;
 use Validator;
 // use Twilio\Rest\Client;
 use Auth;
 use DB;
 use COM;
-use PDF;
 use Carbon;
 use Excel;
 
@@ -186,8 +187,12 @@ class SalesOrderController extends Controller
             }
         }
 
-        $packing_order = PackingOrder::get();
-        $so_progress = PackingOrder::whereMonth('created_at', Carbon\Carbon::now()->month)->get();
+        $packing_order = PackingOrder::whereYear('created_at', Carbon\Carbon::now()->year)
+                            ->get();
+                            
+        $so_progress = PackingOrder::whereMonth('created_at', Carbon\Carbon::now()->month)
+                           ->whereYear('created_at', Carbon\Carbon::now()->year)
+                           ->get();
 
         $data = [
             'packing_order' => $packing_order,
@@ -260,6 +265,7 @@ class SalesOrderController extends Controller
         ->leftJoin('master_packaging', 'master_products_packaging.packaging_id', '=', 'master_packaging.id')
         ->select(
             'penjualan_so_item.*',
+            'master_products_packaging.code AS code',
             'master_products_packaging.name AS name',
             'master_packaging.pack_name AS kemasan'
         )
@@ -277,7 +283,7 @@ class SalesOrderController extends Controller
      *
      * @return \Illuminate\Http\Response
      */
-    public function create(Request $request, $step, $member, $brand, $type, $indent)
+    public function create(Request $request, $step, $member, $brand, $type, $indent, $approval, $note, $kurs, $disc_percent)
     {
         // Access
         if(Auth::user()->is_superuser == 0){
@@ -296,6 +302,10 @@ class SalesOrderController extends Controller
         $type_transaction = $type;
         $type_indent = $indent;
         $rekenings = SalesOrder::REKENING;
+        $approval_mou = $approval;
+        $note_so = $note;
+        $idr_rate = is_numeric($kurs) ? $kurs : 0;
+        $disc = is_numeric($disc_percent) ? $disc_percent : 0;
 
         $data = [
             'other_address' => $other_address,
@@ -309,7 +319,11 @@ class SalesOrderController extends Controller
             'step_txt' => SalesOrder::STEP[$step],
             'type_transaction' => $type_transaction,
             'type_indent' => $type_indent,
-            'rekenings' => $rekenings
+            'rekenings' => $rekenings,
+            'approval_mou' => $approval_mou,
+            'note_so' => $note_so,
+            'idr_rate' => $idr_rate,
+            'disc' => $disc,
         ];
         
         
@@ -354,12 +368,15 @@ class SalesOrderController extends Controller
                     $insert->customer_other_address_id = $member;
                     $insert->type_transaction = $request->type_transaction;
                     $insert->so_for = 1;
-                    $insert->so_date = Carbon\Carbon::now();
+                    $insert->so_date = null;
                     $insert->type_so = 'nonppn';
+                    $insert->approval_mou = $request->approval;
                     $insert->idr_rate = 1;
                     $insert->catatan = $request->catatan;
-                    $insert->note = $request->note;
+                    $insert->note = $request->note_so;
                     $insert->created_by = Auth::id();
+
+                    // dd($request->note_so);
 
                     if($request->so_indent == "YES"){
                         $insert->code = null;
@@ -403,25 +420,25 @@ class SalesOrderController extends Controller
                     
                                     return $this->response(400, $response);
                                 }else{
-                                    // Find the base product packaging ID if the current product is a clone
-                                    $baseProductPackagingId = null;
-                                    $product = ProductPack::where('id', $request->sku[$key])->first();
-
-                                    // dd($product);
-                                    if ($product) {
-                                        // Check if it's a clone product and get the base product's packaging ID
-                                        if (strpos($product->id, '_1') !== false) { 
-                                            $baseProduct = ProductPack::where('id', str_replace('_1', '', $product->id))->first();
-
-                                            // dd($baseProduct->id);
-                                            if ($baseProduct) {
-                                                $baseProductPackagingId = $baseProduct->id;
-                                            }
-                                        } else {
-                                            // It's a base product, use its packaging ID
-                                            $baseProductPackagingId = $product->id;
-                                        }
-                                    }
+                                     // Find the base product packaging ID if the current product is a clone
+                                     $baseProductPackagingId = null;
+                                     $product = ProductPack::where('id', $request->sku[$key])->first();
+ 
+                                     // dd($product);
+                                     if ($product) {
+                                         // Check if it's a clone product and get the base product's packaging ID
+                                         if (strpos($product->id, '_1') !== false) { 
+                                             $baseProduct = ProductPack::where('id', str_replace('_1', '', $product->id))->first();
+ 
+                                             // dd($baseProduct->id);
+                                             if ($baseProduct) {
+                                                 $baseProductPackagingId = $baseProduct->id;
+                                             }
+                                         } else {
+                                             // It's a base product, use its packaging ID
+                                             $baseProductPackagingId = $product->id;
+                                         }
+                                     }
 
                                     $insertDetail = new SalesOrderItem;
                                     $insertDetail->so_id = $insert->id;
@@ -480,11 +497,11 @@ class SalesOrderController extends Controller
 
                         DB::commit();
 
-                        // if($request->so_indent == "YES"){
-                        //     LogActivity::addToLog('Created a new SO-Indent: ' . $insert->so_code);
-                        // } elseif ($request->so_indent == "NO") {
-                        //     LogActivity::addToLog('Created a new SO: ' . $insert->so_code);
-                        // }
+                        if($request->so_indent == "YES"){
+                            LogActivity::addToLog('Created a new SO-Indent: ' . $insert->so_code);
+                        } elseif ($request->so_indent == "NO") {
+                            LogActivity::addToLog('Created a new SO: ' . $insert->so_code);
+                        }
 
                         $response['notification'] = [
                             'alert' => 'notify',
@@ -498,6 +515,7 @@ class SalesOrderController extends Controller
                 }catch (\Exception $e) {
                     dd($e);
                     DB::rollBack(); // Rollback in case of any exception
+                    Log::error('Sales Order creation failed: ' . $e->getMessage());
                     $response['notification'] = [
                         'alert' => 'block',
                         'type' => 'alert-danger',
@@ -1195,7 +1213,7 @@ class SalesOrderController extends Controller
                     $sales_order->sales_id = $request->sales_id;
                     
                     $sales_order->ekspedisi_id = $request->ekspedisi ?? null;
-                    $sales_order->so_date = date("y-m-d", strtotime($request->so_date));
+                    $sales_order->so_date = $request->so_date;
                     $sales_order->rekening = $request->rekening;
                     $sales_order->shipping_cost_buyer = $request->shipping_cost_buyer ?? 0;
                     $sales_order->status = 4;
@@ -1326,30 +1344,28 @@ class SalesOrderController extends Controller
                             //             ->where('warehouse_id', $request->origin_warehouse_id)
                             //             ->where('product_packaging_id', $value["product_packaging_id"])
                             //             ->first();
-
-                            // if ($stock) {
-                            //     if ($do_qty > 0 && $stock->quantity < $do_qty) {
+                            
+                            // if($stock){
+                            //     if($stock->quantity < $do_qty){
                             //         $out_of_stock = true;
                             //         $product = $value["product_packaging_id"];
                             //         break;
                             //     }
                             // }
 
-                            // Extract the base product-packaging ID (remove suffix like "_1", "_2")
-                            $base_product_packaging_id = preg_replace('/_\d+$/', '', $value["product_packaging_id"]);
-                            // dd($base_product_packaging_id);
-                            // dd($base_product_packaging_id);
-
-                            // Check stock only for the primary variant (no suffix)
-                            $stock = DB::table('master_product_min_stocks')
-                                        ->where('warehouse_id', $request->origin_warehouse_id)
-                                        ->where('product_packaging_id', $base_product_packaging_id) // Only the base ID
-                                        ->first();
-
-                            // dd($stock);
+                             // Extract the base product-packaging ID (remove suffix like "_1", "_2")
+                             $base_product_packaging_id = preg_replace('/_\d+$/', '', $value["product_packaging_id"]);
+                             // dd($base_product_packaging_id);
+                             // dd($base_product_packaging_id);
+ 
+                             // Check stock only for the primary variant (no suffix)
+                             $stock = DB::table('master_product_min_stocks')
+                                         ->where('warehouse_id', $request->origin_warehouse_id)
+                                         ->where('product_packaging_id', $base_product_packaging_id) // Only the base ID
+                                         ->first();
 
                             if ($stock) {
-                                // Check stock if do_qty is greater than 0
+                                // Only check stock if do_qty is greater than 0
                                 if ($do_qty > 0 && ($stock->quantity < $do_qty || $stock->quantity < 0)) {
                                     $out_of_stock = true;
                                     $product = $value["product_packaging_id"];
@@ -1432,6 +1448,7 @@ class SalesOrderController extends Controller
                     $sales_order->sales_senior_id = $request->sales_senior_id;
                     $sales_order->sales_id = $request->sales_id;
                     $sales_order->rekening = $request->rekening;
+                    $sales_order->so_date = $request->so_date;
                     $sales_order->status = 4;
                     $sales_order->count_rev = 0;
                     $sales_order->updated_by = Auth::id();
@@ -1817,8 +1834,9 @@ class SalesOrderController extends Controller
                 }
             })
             ->leftJoin('master_packaging', 'master_products_packaging.packaging_id', '=', 'master_packaging.id')
+            ->leftJoin('master_product_types', 'master_products_packaging.type_id', '=', 'master_product_types.id')
             ->selectRaw(
-                'master_packaging.id, master_packaging.pack_name'
+                'master_packaging.id, master_packaging.pack_name, master_product_types.name as type'
             )
             ->get();
             $data_json["IsError"] = FALSE;
@@ -2008,7 +2026,6 @@ class SalesOrderController extends Controller
                 
                 $product = Product::where('master_products.brand_name', $request->id)
                         ->where('master_products.status', 1)
-                        ->where('master_products_packaging.condition', 0)
                         ->leftJoin('master_products_packaging', 'master_products.id', '=', 'master_products_packaging.product_id')
                         ->leftJoin('master_packaging', 'master_products_packaging.packaging_id', '=', 'master_packaging.id')
                         ->leftJoin('master_product_types', 'master_products_packaging.type_id', '=', 'master_product_types.id')
@@ -2039,33 +2056,6 @@ class SalesOrderController extends Controller
 
                 return response()->json(['code' => 200, 'data' => $data]);
         }
-    }
-
-    public function print_so_new($so_id)
-    {
-        if (empty($so_id) || !is_numeric($so_id)) {
-            abort(404, 'SO ID tidak valid.');
-        }
-
-        $result = SalesOrder::find($so_id);
-        if (!$result) {
-            abort(404, 'SO tidak ditemukan.');
-        }
-
-        $data = [
-            'result' => $result,
-        ];
-
-        $pdf = PDF::loadView('superuser.penjualan.sales_order.print_pdf', $data)
-                ->setPaper('a5', 'landscape');
-
-        $generate = false; // Ubah sesuai logika bisnis.
-
-        if ($generate) {
-            return $pdf->download("{$result->code}-SO.pdf");
-        }
-
-        return $pdf->stream("{$result->code}-FULL.pdf");
     }
 
     public function print_so($so_id)
@@ -2197,6 +2187,8 @@ class SalesOrderController extends Controller
         }
     
         try {
+
+            $excludedCustomerId = 118.1;
             // Perform the query to search for contracts, excluding fulfilled items
             $sales_kontrak = SalesOrderKontrak::where('penjualan_so_kontrak.status', 2)
                 ->where('penjualan_so_kontrak.customer_other_address_id', $id)
@@ -2286,5 +2278,55 @@ class SalesOrderController extends Controller
         }
 
         return response()->json(['code' => 200, 'data' => $data]);
+    }
+
+    public function approvalMouSo(Request $request, $id)
+    {
+        if ($request->ajax()) {
+            if(Auth::user()->is_superuser == 0){
+                if(empty($this->access) || empty($this->access->user) || $this->access->can_approve == 0){
+                    return redirect()->route('superuser.index')->with('error','Anda tidak punya akses untuk membuka menu terkait');
+                }
+            }
+
+            DB::beginTransaction();
+
+            try{
+                $errors = [];
+
+                $sales_order = SalesOrder::find($id);
+
+                if($sales_order == null){
+                    abort(404);
+                }
+
+                $sales_order->approval_mou_status = 1;
+                $sales_order->approval_mou_date = date('Y-m-d H:i:s');
+                $sales_order->approval_mou_by = Auth::id();
+
+                if($sales_order->save()){
+                    DB::commit();
+                    $response['notification'] = [
+                        'alert' => 'notify',
+                        'type' => 'success',
+                        'content' => 'Approval MOU berhasil disimpan.',
+                    ];
+                    $response['redirect_to'] = url()->previous();
+                    return response()->json($response, 200);
+                }
+
+            }catch (\Exception $e) {
+                dd($e);
+                DB::rollback();
+                $response['notification'] = [
+                    'alert' => 'block',
+                    'type' => 'alert-danger',
+                    'header' => 'Error',
+                    'content' => $errors,
+                ];
+
+                return $this->response(400, $response);
+            }
+        }
     }
 }

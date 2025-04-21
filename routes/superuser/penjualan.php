@@ -17,7 +17,6 @@ Route::group([
         Route::get('/import_template', 'SettingPriceController@import_template')->name('import_template');
         Route::post('/import', 'SettingPriceController@import')->name('import');
         Route::get('/sync_price', 'SettingPriceController@sync_price')->name('sync_price');
-
     });
 
     Route::group(['as' => 'sales_order.', 'prfix' => '/sales_order'], function () {
@@ -25,7 +24,7 @@ Route::group([
         Route::get('/so_awal', 'SalesOrderController@index_awal')->name('index_awal');
         Route::get('/so_lanjutan', 'SalesOrderController@index_lanjutan')->name('index_lanjutan');
         Route::get('/so_mutasi', 'SalesOrderController@index_mutasi')->name('index_mutasi');
-        Route::get('/create/{step}/{member}/{brand}/{type}/{indent}', 'SalesOrderController@create')->name('create');
+        Route::get('/create/{step}/{member}/{brand}/{type}/{indent}/{approval}/{note}/{kurs}/{disc_percent}', 'SalesOrderController@create')->name('create');
         Route::get('/{id}/edit/{step}', 'SalesOrderController@edit')->name('edit');
         Route::get('/{id}/detail', 'SalesOrderController@detail')->name('detail');
         Route::post('/{member}/store', 'SalesOrderController@store')->name('store');
@@ -36,7 +35,7 @@ Route::group([
         Route::post('/tutup_so', 'SalesOrderController@tutup_so')->name('tutup_so');
         Route::get('/destroy/{id}', 'SalesOrderController@destroy')->name('destroy');
         Route::get('/{id}/print_proforma', 'SalesOrderController@print_proforma')->name('print_proforma');
-        Route::get('/destroy_lanjutan/{id}', 'SalesorderController@destroy_lanjutan')->name('destroy_lanjutan');
+        Route::get('/destroy_lanjutan/{id}', 'SalesOrderController@destroy_lanjutan')->name('destroy_lanjutan');
         Route::get('/indent/{id}', 'SalesorderController@indent')->name('indent');
         Route::post('/kembali_hold/{id}', 'SalesOrderController@kembali_hold')->name('kembali_hold');
 
@@ -49,8 +48,6 @@ Route::group([
         Route::post('/ajax_product_detail', 'SalesOrderController@ajax_product_detail')->name('ajax_product_detail');
         Route::get('/{id}/print_rejected_so', 'SalesOrderController@print_rejected_so')->name('print_rejected_so');
         Route::get('/{so_id}/print_so', 'SalesOrderController@print_so')->name('print_so');
-        Route::get('/{so_id}/print_so_new', 'SalesOrderController@print_so_new')->name('print_so_new');
-        Route::get('/create/pdf/{data?}/{protect?}', 'SalesOrderController@pdf')->name('pdf');
 
         Route::get('/get_category', 'SalesOrderController@get_category')->name('get_category');
         Route::get('/get_product', 'SalesOrderController@get_product')->name('get_product');
@@ -58,12 +55,13 @@ Route::group([
         Route::get('/get_brand', 'SalesOrderController@get_brand')->name('get_brand');
         Route::post('/get_product_pack', 'SalesOrderController@get_product_pack')->name('get_product_pack');
         Route::get('/updateBrandName', 'SalesOrderController@updateBrandName')->name('updateBrandName');
-        Route::post('/changeCodeNota/{id}', 'SalesOrderController@changeCodeNota')->name('changeCodeNota');
+        Route::get('/export', 'SalesOrderController@export')->name('export');
         Route::get('/search_kontrak/{id}/{merek}', 'SalesOrderController@search_kontrak')->name('search_kontrak');
         Route::post('/get_product_kontrak', 'SalesOrderController@get_product_kontrak')->name('get_product_kontrak');
         Route::get('/json_awal', 'SalesOrderController@json_awal')->name('json_awal');
         Route::get('/json_lanjutan', 'SalesOrderController@json_lanjutan')->name('json_lanjutan');
         Route::get('/data_so/{id}', 'SalesOrderController@data_so')->name('data_so');
+        Route::post('/approvalMouSo/{id}', 'SalesOrderController@approvalMouSo')->name('approvalMouSo');
     });
 
     Route::group(['as' => 'packing_order.', 'prefix' => '/packing_order'], function () {
@@ -93,8 +91,7 @@ Route::group([
         Route::post('/ajax_customer_other_address', 'PackingOrderController@ajax_customer_other_address')->name('ajax_customer_other_address');
         Route::post('/ajax_customer_other_address_detail', 'PackingOrderController@ajax_customer_other_address_detail')->name('ajax_customer_other_address_detail');
 
-        // Route::get('/{id}/print_proforma', 'PackingOrderController@print_proforma')->name('print_proforma');
-        Route::get('/json', 'PackingOrderController@json')->name('json');
+        Route::get('/{id}/print_proforma', 'PackingOrderController@print_proforma')->name('print_proforma');
     });
 
     Route::group(['as' => 'delivery_order.', 'prefix' => '/delivery_order'], function () {
@@ -112,12 +109,12 @@ Route::group([
         Route::get('/{id}/print_manifest', 'DeliveryOrderController@print_manifest')->name('print_manifest');
         Route::get('/{id}/print_label', 'DeliveryOrderController@print_label')->name('print_label');
         Route::get('/print_label_pengirim', 'DeliveryOrderController@print_label_pengirim')->name('print_label_pengirim');
-        Route::post('/cancel_proses/{id}', 'DeliveryOrderController@cancel_proses')->name('cancel_proses');
+        Route::post('/cancel_proses', 'DeliveryOrderController@cancel_proses')->name('cancel_proses');
         Route::post('/do_edit', 'DeliveryOrderController@do_edit')->name('do_edit');
         Route::post('/do_update', 'DeliveryOrderController@do_update')->name('do_update');
         Route::get('/json', 'DeliveryOrderController@json')->name('json');
-        
-        // Route::get('/getNotifData', 'DeliveryOrderController@getNotifData')->name('getNotifData');
+        Route::post('/unread_notif/{id}/{do}', 'DeliveryOrderController@unread_notif')->name('unread_notif');
+        Route::get('/getNotifData', 'DeliveryOrderController@getNotifData')->name('getNotifData');
     });
 
     Route::group(['as' => 'delivery_order_mutation.', 'prefix' => '/delivery_order_mutation'], function () {
@@ -174,10 +171,11 @@ Route::group([
     Route::resource('sales_order_ppn', 'SalesOrderPpnController');
 
     Route::group(['as' => 'sales_order_indent.', 'prefix' => '/sales_order_indent'], function () {
-        Route::get('/index_ppn_awal', 'SalesOrderIndentController@index_ppn_awal')->name('index_ppn_awal');
+        Route::get('/', 'SalesOrderIndentController@index')->name('index');
         Route::get('/export', 'SalesOrderIndentController@export')->name('export');
         Route::get('/destroy/{id}', 'SalesOrderIndentController@destroy')->name('destroy');
         Route::post('/proses_ready', 'SalesOrderIndentController@proses_ready')->name('proses_ready');
+        Route::post('/deleteItems', 'SalesOrderIndentController@deleteItems')->name('deleteItems');
         Route::get('/print_out_indent/{so_id}', 'SalesOrderIndentController@print_out_indent')->name('print_out_indent');
     });
     Route::resource('sales_order_indent', 'SalesOrderIndentController');
@@ -189,6 +187,7 @@ Route::group([
         Route::post('/get_packaging', 'SalesOrderKontrakController@get_packaging')->name('get_packaging');
         Route::post('/get_packaging_edit', 'SalesOrderKontrakController@get_packaging_edit')->name('get_packaging_edit');
         Route::post('/store', 'SalesOrderKontrakController@store')->name('store');
+        Route::patch('/update/{id}', 'SalesOrderKontrakController@update')->name('update');
         Route::get('/acc/{id}', 'SalesOrderKontrakController@acc')->name('acc');
         Route::get('/complete/{id}', 'SalesOrderKontrakController@complete')->name('complete');
         Route::get('/destroy/{id}', 'SalesOrderKontrakController@destroy')->name('destroy');
@@ -209,19 +208,20 @@ Route::group([
         Route::post('/mark_as_read_so/{id}/{do}', 'NotificationController@unread_notif_so')->name('mark_as_read_so');
         Route::post('/mark_as_read_payable/{id}', 'NotificationController@unread_notif_payable')->name('mark_as_read_payable');
         Route::post('/mark_as_read_only/{id}', 'NotificationController@mark_as_read_only')->name('mark_as_read_only');
+        Route::post('/unread_all_notif', 'NotificationController@unread_all_notif')->name('unread_all_notif');
     });
-    Route::resource('notification', 'NotificationController');    
+    Route::resource('notification', 'NotificationController');
 
-     Route::group(['as' => 'so_proforma.', 'prefix' => '/so_proforma'], function () {
-       Route::post('/store', 'SalesOrderProformaController@store')->name('store');
-       Route::get('/show/{id}', 'SalesOrderProformaController@show')->name('show');
-       Route::get('/search_sku', 'SalesOrderProformaController@search_sku')->name('search_sku');
-       Route::put('/update/{id}', 'SalesOrderProformaController@update')->name('update');
-       Route::get('/print_so_proforma/{id}', 'SalesOrderProformaController@print_so_proforma')->name('print_so_proforma');
-       Route::get('/acc/{id}', 'SalesOrderProformaController@acc')->name('acc');
-       Route::get('/approval_so/{id}', 'SalesOrderProformaController@approval_so')->name('approval_so');
-       Route::get('/destroy/{id}', 'SalesOrderProformaController@destroy')->name('destroy');
-       Route::get('/getCustomer', 'SalesOrderProformaController@getCustomer')->name('getCustomer');
-    });
-    Route::resource('so_proforma', 'SalesOrderProformaController');
+    Route::group(['as' => 'so_proforma.', 'prefix' => '/so_proforma'], function () {
+        Route::post('/store', 'SalesOrderProformaController@store')->name('store');
+        Route::get('/show/{id}', 'SalesOrderProformaController@show')->name('show');
+        Route::get('/search_sku', 'SalesOrderProformaController@search_sku')->name('search_sku');
+        Route::put('/update/{id}', 'SalesOrderProformaController@update')->name('update');
+        Route::get('/print_so_proforma/{id}', 'SalesOrderProformaController@print_so_proforma')->name('print_so_proforma');
+        Route::get('/acc/{id}', 'SalesOrderProformaController@acc')->name('acc');
+        Route::get('/approval_so/{id}', 'SalesOrderProformaController@approval_so')->name('approval_so');
+        Route::get('/destroy/{id}', 'SalesOrderProformaController@destroy')->name('destroy');
+        Route::get('/getCustomer', 'SalesOrderProformaController@getCustomer')->name('getCustomer');
+     });
+     Route::resource('so_proforma', 'SalesOrderProformaController');
 });
