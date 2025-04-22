@@ -304,8 +304,8 @@ class SalesOrderController extends Controller
         $rekenings = SalesOrder::REKENING;
         $approval_mou = $approval;
         $note_so = $note;
-        $idr_rate = is_numeric($kurs) ? $kurs : 0;
-        $disc = is_numeric($disc_percent) ? $disc_percent : 0;
+        $idr_rate = is_numeric($kurs) ? (float) $kurs : 0;
+        $disc = is_numeric($disc_percent) ? (float) $disc_percent : 0;
 
         $data = [
             'other_address' => $other_address,
