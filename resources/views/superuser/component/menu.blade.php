@@ -272,6 +272,8 @@
                                         <li><a class="dropdown-item" href="">Report</a></li>
                                     </ul>
                                 </li>
+
+                                <li><a class="dropdown-item" href="{{ route('superuser.report.customer_type_brand_uv.index') }}">Report Register UV</a></li>
                             </ul>
                         </li>
                     </ul>
@@ -340,7 +342,7 @@
                                         <li><a class="dropdown-item" href="{{ route('superuser.report.customer_order_variant.index') }}">Customer History</a></li>
                                         <li><a class="dropdown-item" href="{{ route('superuser.report.customer_type_zone.index') }}">Customer - Zoning</a></li>
                                         <li><a class="dropdown-item" href="{{ route('superuser.report.summary_customer_product.index') }}">Summary Customer - Produk</a></li>
-                                        <li><a class="dropdown-item" href="{{ route('superuser.report.sales.index') }}">Penjualan</a></li>
+                                        
                                     </ul>
                                 </li>
                                 <li class="submenu submenu-md dropend">
@@ -374,9 +376,7 @@
                             <ul class="dropdown-menu">
                                 <li><a class="dropdown-item" href="{{ route('superuser.report.forecast_supplier.index') }}">Forcasting Principal</a></li>
                                 <li><a class="dropdown-item" href="{{ route('superuser.report.customer_type_brand.index') }}">Register Customer</a></li>
-                               
-                                <li><a class="dropdown-item" href="{{ route('superuser.report.customer_type_brand_uv.index') }}">UV</a></li>
-                                
+                                <li><a class="dropdown-item" href="{{ route('superuser.report.sales.index') }}">Penjualan</a></li>      
                             </ul>
                         </li>
                         @endif

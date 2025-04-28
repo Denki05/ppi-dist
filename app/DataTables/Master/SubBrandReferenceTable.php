@@ -57,13 +57,6 @@ class SubBrandReferenceTable extends Table
             return $model->status();
         });
 
-        $table->editColumn('created_date', function (SubBrandReference $model) {
-            return [
-              'display' => Carbon::parse($model->created_date)->format('j F Y H:i:s'),
-              'timestamp' => $model->created_date
-            ];
-        });
-
         $table->addColumn('action', function (SubBrandReference $model) {
             $view = route('superuser.master.sub_brand_reference.show', $model);
             $edit = route('superuser.master.sub_brand_reference.edit', $model);

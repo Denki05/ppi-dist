@@ -51,7 +51,7 @@
     </div>
 
     <div class="table-responsive">
-      <table class="table table-striped" id="searah_list">
+      <table class="table table-striped" id="tableSearah">
         <thead>
           <tr>
             <th>#</th>
@@ -115,9 +115,9 @@
     $('.js-select2').select2();
 
     // Initialize DataTable
-    const datatable = $('#searah_list').DataTable({
+    var datatable = $('#tableSearah').DataTable({
       processing: true,
-      serverSide: true,
+      serverSide: false,
       ajax: {
         url: '{{ route('superuser.master.sub_brand_reference.json') }}',
         type: 'GET',
@@ -127,7 +127,7 @@
       },
       columns: [
         { data: 'DT_RowIndex', name: 'id' },
-        { data: 'created_date', name: 'created_at' },
+        { data: 'created_date' },
         { data: 'brand_name', name: 'brand' },
         { data: 'searah_name', name: 'searah' },
         { data: 'searah_link', name: 'link', render: data => `<a href="${data}" class="btn btn-primary"><i class="fa fa-link"></i></a>` },
