@@ -805,8 +805,8 @@ class DeliveryOrderController extends Controller
             $do = PackingOrder::findOrFail($id); // Find the record or fail
 
             // Jika cashback_status == 1, tidak bisa dibatalkan
-            if ($do->cashback_status == 1) {
-                return response()->json(['message' => 'Pesanan dengan cashback tidak dapat dibatalkan!'], 403);
+            if ($do->cashback_status == 1 || $do->status == 6) {
+                return response()->json(['message' => 'Pesanan dengan cashback atau sudah update resi tidak dapat dibatalkan!'], 403);
             }
 
             // Jika password benar, lanjutkan pembatalan

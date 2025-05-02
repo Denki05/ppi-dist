@@ -101,8 +101,8 @@ class ReportCustomerTypeBrandController extends Controller
                     'penjualan_do_details.discount_idr AS discount_idr',
                     'penjualan_do_details.ppn_idr AS ppn_idr'
                 )
-                ->where('penjualan_so.status', 4)
-                // ->whereBetween('penjualan_so.so_date', ['2025-03-01', '2025-03-26'])
+                ->where('penjualan_do.status', 6)
+                // ->whereBetween('penjualan_so.so_date', ['2025-04-01', '2025-04-30'])
                 ->where(function ($query) {
                     $query->where('master_customers.status', 1)
                         ->orWhere('master_customers.existence', 1);
@@ -129,7 +129,8 @@ class ReportCustomerTypeBrandController extends Controller
                             'invoice_brand' => $row->invoice_brand,
                             'invoice_type' => $row->invoice_type,
                             'invoice_qty' => $row->invoice_qty ?? 0,
-                            'invoice_purchase' => ($row->grand_total_idr - $row->ppn_idr - $row->invoice_delivery_order_cost ?? 0),
+                            // 'invoice_purchase' => ($row->grand_total_idr - $row->ppn_idr - $row->invoice_delivery_order_cost ?? 0),
+                            'invoice_purchase' => ($row->invoice_purchase - $row->ppn_idr),
                             'invoice_delivery_order_cost' => $row->invoice_delivery_order_cost ?? 0,
                             'created_at' => now(),
                             'updated_at' => now()
