@@ -510,22 +510,6 @@ class DeliveryOrderController extends Controller
                 // $updateData['grand_total_idr'] = $get_do->do_detail_cost->grand_total_idr + $post["other_cost_idr"];
             }
 
-            // $otherCost = isset($post["other_cost_idr"]) ? $post["other_cost_idr"] : 0;
-            // $grandTotal = isset($get_do->do_detail_cost->grand_total_idr) ? $get_do->do_detail_cost->grand_total_idr : 0;
-
-            // if (in_array($get_do->type_transaction, ["TEMPO", "CASH"])) {
-            //     if ($customer->free_shipping == 1) {
-            //         $updateData['other_cost_idr'] = $otherCost;
-            //     } else {
-            //         $updateData['other_cost_idr'] = $otherCost;
-            //         $updateData['grand_total_idr'] = $grandTotal + $otherCost;
-                    
-            //         if ($get_do->type_transaction == "TEMPO") {
-            //             $updateData['delivery_cost_idr'] = $otherCost;
-            //         }
-            //     }
-            // }
-
             // Update PackingOrderDetail
             $updateDetailCost =  PackingOrderDetail::where('do_id', $do_id)->update($updateData);
 

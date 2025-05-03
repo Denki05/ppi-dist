@@ -177,7 +177,8 @@
                                     $superuser->can('superuser-manage') || 
                                     $superuser->division == "Admin" || 
                                     $superuser->division == "Management" || 
-                                    $superuser->id == 38
+                                    $superuser->id == 38 ||
+                                    $superuser->id == 35
                                 )
                                     <li class="submenu submenu-md dropend">
                                         <a class="dropdown-item dropdown-toggle" role="button"

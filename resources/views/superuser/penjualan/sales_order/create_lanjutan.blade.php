@@ -167,7 +167,11 @@
                 @if($step == 2)
                 <div class="form-group col-md-4">
                   <label for="customer_area">Kurs <span class="text-danger">*</span></label>
-                  <input type="text" name="idr_rate" id="idr_rate"  class="form-control" value="{{ $result->idr_rate }}">
+                  @if($result->approval_mou == 1)
+                    <input type="text" name="idr_rate" id="idr_rate"  class="form-control" value="{{ $result->idr_rate }}" readonly>
+                  @else
+                    <input type="text" name="idr_rate" id="idr_rate"  class="form-control" value="{{ $result->idr_rate }}">
+                  @endif    
                 </div>
                 @endif
                 @if($step == 2)
@@ -277,7 +281,11 @@
                       <div class="form-group row">
                         <label class="col-sm-4 col-form-label">Disc %</label>
                         <div class="col-sm-3">
-                          <input type="text" class="form-control" id="disc_agen_percent" name="disc_agen_percent" placeholder="{{ $result->catatan }}">
+                        @if($result->approval_mou == 1)
+                            <input type="text" class="form-control" id="disc_agen_percent" name="disc_agen_percent" value="{{ $result->catatan }}" readonly>
+                          @else
+                            <input type="text" class="form-control" id="disc_agen_percent" name="disc_agen_percent" placeholder="{{ $result->catatan }}" required>
+                          @endif
                         </div>
                         <div class="col-sm-5">
                           <input type="text" readonly class="form-control" id="disc_agen_idr" name="disc_agen_idr">
@@ -378,6 +386,8 @@
 <script src="{{ asset('utility/superuser/js/form.js') }}"></script>
 <script type="text/javascript">
   $(document).ready(function () {
+    let approval_mou = {{ $result->approval_mou ?? 0 }};
+
     $('.js-select2').select2();
 
     $('#datatables').DataTable({
@@ -392,20 +402,22 @@
       countGetUsd();
     })
 
-    function countGetUsd(){
-        $('tbody tr').each(function(index,e){
-          
-          let baseDisc = $('.base_disc').val();
-          let freeProduct = $('tr.index'+index+'').find('input[name="repeater['+index+'][free_product]"]').val();
-          
-          if(freeProduct == 1){
-            $('tr.index'+index+'').find('input[name="repeater['+index+'][usd_disc]"]').val(0);
-          }else{
-            $('tr.index'+index+'').find('input[name="repeater['+index+'][usd_disc]"]').val(baseDisc);
-          }
+    function countGetUsd() {
+      $('tbody tr').each(function (index, e) {
+        let baseDisc = $('.base_disc').val();
+        let freeProduct = $('tr.index' + index + '').find('input[name="repeater[' + index + '][free_product]"]').val();
 
-          count_per_item(index);
-        }) ;
+        if (freeProduct == 1) {
+          $('tr.index' + index + '').find('input[name="repeater[' + index + '][usd_disc]"]').val(0);
+        } else {
+          $('tr.index' + index + '').find('input[name="repeater[' + index + '][usd_disc]"]').val(baseDisc);
+        }
+
+        count_per_item(index);
+      });
+
+      // Panggil kalkulasi disc agen setelah semua item dihitung
+      hitungDiscAgen();
     }
 
     $(document).on('keyup','.count',function(){
@@ -448,35 +460,39 @@
       sub_total_item();
     }
 
-    function sub_total_item(){
+    function sub_total_item() {
       let total = 0;
-      $('tbody tr').each(function(index,e){
-        let sub_total = $('tr.index'+index+'').find('input[name="repeater['+index+'][total]"]').val();
+
+      $('tbody tr').each(function (index, e) {
+        let sub_total = $('tr.index' + index + '').find('input[name="repeater[' + index + '][total]"]').val();
         sub_total = parseFloat(sub_total.split('.').join(''));
-
-
-        sub_total = (isNaN(sub_total)) ? 0 : sub_total;
+        if (isNaN(sub_total)) sub_total = 0;
         total += sub_total;
-          
       });
 
       $('input[name="sub_total_item"]').val(formatRupiah(total));
+
+      // Panggil ulang hitung diskon setelah subtotal selesai
+      hitungDiscAgen();
     }
 
-    $('#disc_agen_percent').on('keyup', function(e) {
-      if($(this).val() != ''){
-        let sub_total_item = $('input[name="sub_total_item"]').val();
+    // Hitung diskon agen berdasarkan input atau otomatis
+    function hitungDiscAgen() {
+      let discPercent = parseFloat($('#disc_agen_percent').val());
+      let subTotalItem = parseFloat($('input[name="sub_total_item"]').val().split('.').join(''));
 
-        sub_total_item = parseFloat(sub_total_item.split('.').join(''));
+      if (isNaN(discPercent)) discPercent = 0;
+      if (isNaN(subTotalItem)) subTotalItem = 0;
 
-        let amount = sub_total_item * $(this).val() / 100;
+      let result = (subTotalItem * discPercent) / 100;
 
-        $('input[name="disc_agen_idr"]').val(formatRupiah(amount));
-      }else{
-        $('input[name="disc_agen_idr').val(0);
-      }
-      subtotal();
-    })
+      $('#disc_agen_idr').val(formatRupiah(result)); // Format IDR
+      subtotal(); // Lanjutkan perhitungan subtotal akhir
+    }
+
+    $('#disc_agen_percent').on('keyup change', function () {
+      hitungDiscAgen();
+    });
 
     $('#disc_kemasan_percent').on('input', function(e){
           if($(this).val() != ''){
