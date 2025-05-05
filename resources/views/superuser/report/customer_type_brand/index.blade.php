@@ -48,7 +48,7 @@
                     </button>
                 </div>
                 <div class="btn-group mr-2">
-                    <button type="button" class="btn btn-success" onclick="submitForm('print')" targe="_blank">
+                    <button type="button" class="btn btn-success" onclick="submitForm('print')" target="_blank">
                         <i class="fa fa-file-pdf-o" aria-hidden="true"></i> Export PDF
                     </button>
                 </div>

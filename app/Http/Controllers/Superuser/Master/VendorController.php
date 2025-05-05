@@ -260,6 +260,7 @@ class VendorController extends Controller
                 return redirect()->route('superuser.index')->with('error','Anda tidak punya akses untuk membuka menu terkait');
             }
         }
+        
         $validator = Validator::make($request->all(), [
             'import_file' => 'required|file|mimes:xls,xlsx|max:2048',
         ]);

@@ -188,18 +188,18 @@
             <div class="row">
               <div class="col">
                 <div class="form-group">
+                  <label class="form-check form-check-inline">
+                  <input class="form-check-input" type="checkbox" name="approval_spv" id="approval_spv" value="1">
+                  <span class="form-label"><b>Approval </b> <span class="text-danger">*</span></span>
+                  </label>
+                </div>
+                <div class="form-group" id="kurs-group" style="display: none;">
                   <span class="form-label"><b>Kurs </b> <span class="text-danger">*</span></span>
                   <input class="form-control" type="text" name="kurs" id="kurs">
                 </div>
-                <div class="form-group">
+                <div class="form-group" id="disc-percent-group" style="display: none;">
                   <span class="form-label"><b>Disc % </b> <span class="text-danger">*</span></span>
                   <input class="form-control" type="text" name="disc_percent" id="disc_percent">
-                </div>
-                <div class="form-group">
-                  <label class="form-check form-check-inline">
-                    <input class="form-check-input" type="checkbox" name="approval_spv" id="approval_spv" value="1">
-                    <span class="form-label"><b>Approval </b> <span class="text-danger">*</span></span>
-                  </label>
                 </div>
               </div>
               <div class="col">
@@ -229,6 +229,16 @@
 @include('superuser.asset.plugin.datatables')
 
 @push('scripts')
+
+<script>
+  document.addEventListener('DOMContentLoaded', function() {
+    document.getElementById('approval_spv').addEventListener('change', function () {
+      const isChecked = this.checked;
+      document.getElementById('kurs-group').style.display = isChecked ? 'block' : 'none';
+      document.getElementById('disc-percent-group').style.display = isChecked ? 'block' : 'none';
+    });
+  });
+</script>
 <script type="text/javascript">
     $(document).ready(function() {
       let datatableUrl = '{{ route('superuser.penjualan.sales_order.json_awal') }}';
@@ -297,12 +307,10 @@
             var type_so = $('#so_type').val();
             var indent_so = $('#indent_so').val();
             var step_so = 1;
-            var note = $('#editor').val();
-            var kurs = $('#kurs').val();
+            var note = $('#editor').val() || '-';
+            var kurs = $('#kurs').val() || 1;
             var approval_spv = $('#approval_spv').is(':checked') ? 1 : 0;
-            var disc_percent = $('#disc_percent').val();
-
-            alert(note);
+            var disc_percent = $('#disc_percent').val() || 0;
 
             var url = '{{ route('superuser.penjualan.sales_order.create',  [":step", ":member", ":brand", ":type", ":indent", ":approval", ":note", ":kurs", ":disc_percent"]) }}';
             url = url.replace(':member', customer); 

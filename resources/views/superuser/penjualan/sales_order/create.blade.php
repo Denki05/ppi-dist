@@ -87,6 +87,16 @@
                   </div>
 
                   <div class="form-group col-md-4">
+                    <span class="form-label"><b>Disc % </b>
+                    @if($approval_mou == 1)
+                    <input class="form-control" type="text" name="disc_percent" id="disc_percent" value="{{ $disc }}" readonly>
+                    @else
+                    <input class="form-control" type="text" name="disc_percent" id="disc_percent" required>
+                    @endif
+                  </div>
+                </div>
+                <div class="form-row">
+                  <div class="form-group col-md-8">
                     <span class="form-label"><b>Approval </b> <span class="text-danger">*</span></span>
                     <?php 
                       if($approval_mou == 0){
@@ -97,12 +107,6 @@
                     ?>
                     <input class="form-control" type="text" name="approvalText" id="approvalText" value="{{ $approval }}" readonly>
                     <input type="hidden" name="approval" id="approval" value="{{ $approval_mou }}">
-                  </div>
-                </div>
-                <div class="form-row">
-                  <div class="form-group col-md-4">
-                    <span class="form-label"><b>Disc % </b> <span class="text-danger">*</span></span>
-                    <input class="form-control" type="text" name="disc_percent" id="disc_percent" value="{{ $disc }}" readonly>
                   </div>
                 </div>
               </div>

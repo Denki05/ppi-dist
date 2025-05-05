@@ -65,7 +65,11 @@
 
               <div class="form-group col-md-6">
                 <label for="catatan">Disc %</label>
-                <input class="form-control" type="number" name="catatan" value="{{ $result->catatan }}">
+                @if($result->approval_mou == 1)
+                  <input class="form-control" type="number" name="catatan" value="{{ $result->catatan }}" disabled>
+                @else
+                  <input class="form-control" type="number" name="catatan" value="{{ $result->catatan }}" step="any">
+                @endif
               </div>
             </div>
           </div>

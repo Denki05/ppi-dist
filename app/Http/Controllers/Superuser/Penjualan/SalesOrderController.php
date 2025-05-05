@@ -371,12 +371,10 @@ class SalesOrderController extends Controller
                     $insert->so_date = null;
                     $insert->type_so = 'nonppn';
                     $insert->approval_mou = $request->approval;
-                    $insert->idr_rate = 1;
-                    $insert->catatan = $request->catatan;
+                    $insert->idr_rate = $request->kurs;
+                    $insert->catatan = $request->disc_percent;
                     $insert->note = $request->note_so;
                     $insert->created_by = Auth::id();
-
-                    // dd($request->note_so);
 
                     if($request->so_indent == "YES"){
                         $insert->code = null;

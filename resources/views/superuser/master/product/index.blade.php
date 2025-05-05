@@ -5,17 +5,21 @@
   <a href="{{ route('superuser.master.product.create') }}" class="btn btn-primary btn-lg active" role="button" aria-pressed="true" style="margin-left: 10px !important;">Create</a>
   <button type="button" class="btn btn-outline-info ml-10" data-toggle="modal" data-target="#modal-manage">Manage</button>
 
-  <button type="button" class="btn btn-outline-warning ml-10" data-toggle="modal" data-target="#ModalLoginForm">
-    Print
+  <button type="button" class="btn btn-outline-info ml-10" data-toggle="modal" data-target="#ModalLoginForm">
+    Print PL / PD
+  </button>
+
+  <button type="button" class="btn btn-outline-secondary ml-10" data-toggle="modal" data-target="#ModalProductProject">
+    Print Project
   </button>
 
   @role('Developer')
-    <a class="btn btn-outline-success ml-10" href="javascript:saveConfirmation('{{ route('superuser.master.product.update_category_type_pack') }}')" role="button">Fee</a>
+    <!-- <a class="btn btn-outline-success ml-10" href="javascript:saveConfirmation('{{ route('superuser.master.product.update_category_type_pack') }}')" role="button">Fee</a> -->
 
     <!-- Button to Open the Update Ratio Modal -->
-    <button type="button" class="btn btn-outline-secondary ml-10" data-toggle="modal" data-target="#modal-import-export-ratio">
+    <!-- <button type="button" class="btn btn-outline-secondary ml-10" data-toggle="modal" data-target="#modal-import-export-ratio">
         Import/Export Ratio
-    </button>
+    </button> -->
   @endrole
 </nav>
 
@@ -211,6 +215,114 @@
     </div>
 </div>
 
+<!-- Modal HTML Markup -->
+<div id="ModalLoginForm" class="modal fade">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h1 class="modal-title">Print Product</h1>
+            </div>
+            <div class="modal-body">
+                <form role="form" method="get" action="{{ route('superuser.master.product.print_product') }}">
+                @csrf
+                    <div class="form-group">
+                        <label class="control-label">Merek</label>
+                        <div>
+                            <select class="form-control js-select2" name="brand_name" style="width:100%;">
+                              <option value="">Pilih Merek</option>
+                              @foreach($brand_lokal as $row)
+                              <option value="{{$row->brand_name}}">{{$row->brand_name}}</option>
+                              @endforeach
+                            </select>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label class="control-label">Type Print</label>
+                        <div>
+                            <select class="form-control js-select2" name="type_print" style="width:100%;">
+                              <option value="">Pilih Category</option>
+                              <option value="price_list">Price List</option>
+                              <option value="product_list">Product List</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <div>
+                          <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+                            <button type="submit" class="btn btn-success">Print</button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div><!-- /.modal-content -->
+    </div><!-- /.modal-dialog -->
+</div><!-- /.modal -->
+
+<div id="ModalProductProject" class="modal fade">
+    <div class="modal-dialog modal-lg" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 class="modal-title">Product Project</h2>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                {{-- Import & Export Section --}}
+                <div class="row mb-4">
+                    <div class="col-md-12">
+                        <h5>Import & Export Data</h5>
+
+                        {{-- Input File --}}
+                        <form id="importExportForm" method="POST" action="{{ route('superuser.master.product_project_print.import') }}" enctype="multipart/form-data">
+                            @csrf
+                            <div class="form-group">
+                                <input type="file" name="import_file" class="form-control mb-3" required>
+                            </div>
+
+                            <div class="d-flex gap-2">
+                                <button type="submit" class="btn btn-primary mr-2">Import Data</button>
+                                <a href="{{ route('superuser.master.product_project_print.import_template') }}" class="btn btn-success">
+                                    Export Template
+                                </a>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+
+                <hr>
+
+                {{-- Filter & Print Section --}}
+                <h5>Print Product</h5>
+                <form role="form" method="GET" action="">
+                    @csrf
+                    <div class="form-row">
+                        <div class="form-group col-md-6">
+                            <label>Merek</label>
+                            <select class="form-control js-select2" name="brand_name" style="width:100%;">
+                                <option value="">Pilih Merek</option>
+                                <option value="fine_fragrance">Fine Fragrance</option>
+                                <option value="non_fine_fragrance">Non Fine Fragrance</option>
+                            </select>
+                        </div>
+                        <div class="form-group col-md-6">
+                            <label>Type Print</label>
+                            <select class="form-control js-select2" name="type_print" style="width:100%;">
+                                <option value="">Pilih Category</option>
+                                <option value="price_list">Price List</option>
+                                <option value="product_list">Product List</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="form-group text-right">
+                        <button type="button" class="btn btn-danger" data-dismiss="modal">Close</button>
+                        <button type="submit" class="btn btn-success">Print</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
 @endsection
 
 @include('superuser.asset.plugin.swal2')
