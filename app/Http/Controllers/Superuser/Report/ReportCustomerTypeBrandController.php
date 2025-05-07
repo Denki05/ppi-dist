@@ -75,6 +75,9 @@ class ReportCustomerTypeBrandController extends Controller
     public function postData(Request $request)
     {
         try {
+            $currentMonth = Carbon::now()->month;
+            $currentYear = Carbon::now()->year;
+
             DB::table('penjualan_do')
                 ->leftJoin('penjualan_do_details', 'penjualan_do_details.do_id', '=', 'penjualan_do.id')
                 ->leftJoin('penjualan_do_item', 'penjualan_do_item.do_id', '=', 'penjualan_do.id')
@@ -102,7 +105,8 @@ class ReportCustomerTypeBrandController extends Controller
                     'penjualan_do_details.ppn_idr AS ppn_idr'
                 )
                 ->where('penjualan_do.status', 6)
-                // ->whereBetween('penjualan_so.so_date', ['2025-04-01', '2025-04-30'])
+                ->whereMonth('penjualan_so.so_date', $currentMonth)
+                ->whereYear('penjualan_so.so_date', $currentYear)
                 ->where(function ($query) {
                     $query->where('master_customers.status', 1)
                         ->orWhere('master_customers.existence', 1);
@@ -118,37 +122,64 @@ class ReportCustomerTypeBrandController extends Controller
 
                         // Define the values to be set or updated
                         $values = [
-                            'customer_id' => $row->customerID,
-                            'other_address_id' => $row->otherAddressID,
-                            'customer_name' => $row->customer_name,
-                            'customer_type' => $row->customer_type,
-                            'customer_kota' => $row->customer_kota,
-                            'customer_provinsi' => $row->customer_provinsi,
-                            'customer_zone' => $row->customer_zone,
-                            'invoice_date' => $row->invoice_date,
-                            'invoice_brand' => $row->invoice_brand,
-                            'invoice_type' => $row->invoice_type,
-                            'invoice_qty' => $row->invoice_qty ?? 0,
-                            // 'invoice_purchase' => ($row->grand_total_idr - $row->ppn_idr - $row->invoice_delivery_order_cost ?? 0),
-                            'invoice_purchase' => ($row->invoice_purchase - $row->ppn_idr),
-                            'invoice_delivery_order_cost' => $row->invoice_delivery_order_cost ?? 0,
-                            'created_at' => now(),
-                            'updated_at' => now()
+                            'customer_id'                   => $row->customerID,
+                            'other_address_id'              => $row->otherAddressID,
+                            'customer_name'                 => $row->customer_name,
+                            'customer_type'                 => $row->customer_type,
+                            'customer_kota'                 => $row->customer_kota,
+                            'customer_provinsi'             => $row->customer_provinsi,
+                            'customer_zone'                 => $row->customer_zone,
+                            'invoice_date'                  => $row->invoice_date,
+                            'invoice_brand'                 => $row->invoice_brand,
+                            'invoice_type'                  => $row->invoice_type,
+                            'invoice_qty'                   => $row->invoice_qty ?? 0,
+                            'invoice_purchase'              => ($row->invoice_purchase - $row->ppn_idr),
+                            'invoice_delivery_order_cost'   => $row->invoice_delivery_order_cost ?? 0,
+                            'created_at'                    => now(),
+                            'updated_at'                    => now()
                         ];
 
-                        // Find the record or create a new one
+                        // perhitungan ulang untuk pengecekan hasil valid purchase
+                        $penjualan_do = DB::table('penjualan_do')
+                        ->where('do_code', $row->invoice_code)
+                        ->first();
+
+                        if ($penjualan_do) {
+                            $penjualan_do_details = DB::table('penjualan_do_details')
+                                ->where('do_id', $penjualan_do->id)
+                                ->first();
+
+                            $penjualan_do_items = DB::table('penjualan_do_item')
+                                ->where('do_id', $penjualan_do->id)
+                                ->get();
+
+                            if ($penjualan_do_details && $penjualan_do_items->isNotEmpty()) {
+                                $subtotal_item = $penjualan_do_items->sum(function ($item) use ($penjualan_do) {
+                                    return (($item->price - $item->usd_disc) * $item->qty) * $penjualan_do->idr_rate;
+                                });
+
+                                $purchase_total = $subtotal_item
+                                    - ($penjualan_do_details->discount_1_idr ?? 0)
+                                    - ($penjualan_do_details->discount_2_idr ?? 0)
+                                    - ($penjualan_do_details->discount_idr ?? 0)
+                                    - ($penjualan_do_details->voucher_idr ?? 0)
+                                    - ($penjualan_do_details->ppn_idr ?? 0);
+
+                                if (abs($values['invoice_purchase'] - $purchase_total) > 2) {
+                                    throw new Exception("Mismatch in purchase total for DO code: {$row->invoice_code}. Calculated: {$purchase_total}, Expected: {$values['invoice_purchase']}");
+                                }
+                            }
+                        }
+
+                        // handle jika data sudah ada
                         $report = CustomerTypeBrandReports::firstOrNew($attributes);
-
-                        // Set or update the additional values
                         $report->fill($values);
-
-                        // Save the record to the database
                         $report->save();
                     }
                 });
-
             return redirect()->back()->with('message', 'Berhasil Sync data!');
         } catch (\Exception $e) {
+            dd($e);
             Log::error('Sync data failed: ' . $e->getMessage());
             return redirect()->back()->with('error', 'Error: ' . $e->getMessage());
         }

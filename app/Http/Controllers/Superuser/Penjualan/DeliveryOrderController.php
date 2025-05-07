@@ -965,8 +965,6 @@ class DeliveryOrderController extends Controller
                     'grand_total_idr' => $grand_total_idr,
                     'updated_by' => Auth::id()
                 ];
-
-                // dd($data);
         
                 PackingOrderDetail::where('do_id', $request->id)->update($data);
         
