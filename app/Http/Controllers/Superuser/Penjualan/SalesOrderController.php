@@ -307,6 +307,8 @@ class SalesOrderController extends Controller
         $idr_rate = is_numeric($kurs) ? (float) $kurs : 0;
         $disc = is_numeric($disc_percent) ? (float) $disc_percent : 0;
 
+        // dd($member);
+
         $data = [
             'other_address' => $other_address,
             'merek' => $merek,
