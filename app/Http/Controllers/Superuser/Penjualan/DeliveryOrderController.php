@@ -483,7 +483,7 @@ class DeliveryOrderController extends Controller
             $result_cost = PackingOrderDetail::where('do_id', $do_id)->firstOrFail();
             $get_do = PackingOrder::where('id', $do_id)->firstOrFail();
             $get_so = SalesOrder::where('id', $get_do->so_id)->firstOrFail();
-            $customer = CustomerOtherAddress::where('id', $result_cost->do_header->customer_other_address_id)->firstOrFail();
+            $customer = CustomerOtherAddress::where('id', $result_cost->do->customer_other_address_id)->firstOrFail();
 
             // Prepare update data
             $updateData = [
@@ -502,12 +502,8 @@ class DeliveryOrderController extends Controller
                 $updateData['other_cost_idr'] = $post["other_cost_idr"];
             } elseif ($get_do->type_transaction == "TEMPO" && $customer->free_shipping == 0) {
                 $updateData['delivery_cost_idr'] = $post["other_cost_idr"];
-                // update grand total
-                // $updateData['grand_total_idr'] = $get_do->do_detail_cost->grand_total_idr + $post["other_cost_idr"];
             } elseif ($get_do->type_transaction == "CASH" && $customer->free_shipping == 0) {
                 $updateData['other_cost_idr'] = $post["other_cost_idr"];
-                // update grand total
-                // $updateData['grand_total_idr'] = $get_do->do_detail_cost->grand_total_idr + $post["other_cost_idr"];
             }
 
             // Update PackingOrderDetail
