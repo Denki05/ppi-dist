@@ -206,8 +206,6 @@ class ReportCustomerTypeBrandController extends Controller
             });
             return redirect()->back()->with('message', 'Berhasil Sync data!');
         } catch (\Exception $e) {
-            // dd($e);
-            // Log::error('Sync data failed: ' . $e->getMessage());
             return redirect()->back()->with('error', 'Error: ' . $e->getMessage());
         }
     }
@@ -295,7 +293,7 @@ class ReportCustomerTypeBrandController extends Controller
             ->whereYear('invoice_date', $currentYear)
             ->delete();
 
-        return redirect()->back()->with('message', 'Berhasil remove data bulan ini!');
+        return redirect()->back()->with('message', 'Berhasil remove data!');
     }
 
     public function exportReport(Request $request)
