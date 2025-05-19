@@ -17,7 +17,7 @@ class PurchaseOrderTable extends Table
     {
         // Gunakan cache untuk menyimpan hasil query
         $cacheKey = 'purchase_orders_cache';
-        $cacheTime = now()->addMinutes(10);
+        $cacheTime = now()->addMinutes(1);
 
         // Periksa apakah hasil query sudah ada di cache
         $model = Cache::remember($cacheKey, $cacheTime, function () {
