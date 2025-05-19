@@ -148,7 +148,7 @@
               {
                   extend: 'excel',
                   text: '<i class="fa fa-file-excel-o"></i>',
-                  title: 'UNIFRA-Report-Beli',
+                  title: 'UNIFRA-Report-Jual',
                   exportOptions: {
                       modifier: {
                           page: 'all'
@@ -158,7 +158,7 @@
               {
                   extend: 'pdf',
                   text: '<i class="fa fa-file-pdf-o"></i>',
-                  title: 'UNIFRA-Report-Beli',
+                  title: 'UNIFRA-Report-Jual',
                   orientation: 'landscape',
                   pageSize: 'A4',
                   exportOptions: {

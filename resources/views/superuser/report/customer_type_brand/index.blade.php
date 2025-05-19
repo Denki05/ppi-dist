@@ -21,9 +21,9 @@
 
 <div id="alert-block"></div>
 
-@if(session('error') || session('success'))
+@if(session('error') || session('message'))
 <div class="alert alert-{{ session('error') ? 'danger' : 'success' }} alert-dismissible fade show" role="alert">
-    <strong>{{ session('error') ? 'Error!' : 'Berhasil!' }}</strong> {!! session('error') ?? session('success') !!}
+    <strong>{{ session('error') ? 'Error!' : 'Berhasil!' }}</strong> {!! session('error') ?? session('message') !!}
     <button type="button" class="close" data-dismiss="alert" aria-label="Close">
         <span aria-hidden="true">&times;</span>
     </button>
@@ -38,9 +38,13 @@
         <div class="block-content block-content-full">
             <div class="btn-toolbar" role="toolbar">
                 <div class="btn-group mr-2">
-                    <a class="btn btn-primary" href="{{ route('superuser.report.customer_type_brand.postData') }}">
+                    <!-- <a class="btn btn-primary" href="{{ route('superuser.report.customer_type_brand.postData') }}">
                         <i class="fa fa-sync"></i> Sync Data
-                    </a>
+                    </a> -->
+
+                    <button type="button" class="btn btn-primary" onclick="saveConfirmation('{{ route('superuser.report.customer_type_brand.postData') }}')">
+                        <i class="fa fa-sync"></i> Sync Data
+                    </button>
                 </div>
                 <div class="btn-group mr-2">
                     <button type="button" class="btn btn-danger" onclick="saveConfirmation('{{ route('superuser.report.customer_type_brand.removeDt') }}')">

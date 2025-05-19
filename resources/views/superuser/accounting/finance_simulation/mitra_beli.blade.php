@@ -97,12 +97,12 @@
             <tr>
               <td style="width: 35% !important;">Toko</td>
               <td style="width: 2% !important;">:</td>
-              <td style="width: 63% !important;">{{ $result->do_uv->customer_other_address->name }} {{ $result->do_uv->customer_other_address->text_kota }}</td>
+              <td style="width: 63% !important;">{{ $result->do->member->name }} {{ $result->do->member->text_kota }}</td>
             </tr>
             <tr>
               <td>Alamat</td>
               <td>:</td>
-              <td>{{$result->do_uv->customer_other_address->address}}, {{ $result->do_uv->customer_other_address->text_kelurahan }}, {{ $result->do_uv->customer_other_address->text_kecamatan }}, {{ $result->do_uv->customer_other_address->text_kota }}, {{ $result->do_uv->customer_other_address->text_provinsi }}</td>
+              <td>{{$result->do->member->address}}, {{ $result->do->member->text_kelurahan }}, {{ $result->do->member->text_kecamatan }}, {{ $result->do->member->text_kota }}, {{ $result->do->member->text_provinsi }}</td>
             </tr>
           </tbody>
         </table>

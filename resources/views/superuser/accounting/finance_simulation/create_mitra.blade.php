@@ -102,18 +102,18 @@
                                                     </tr>
                                                 </thead>
                                                 <tbody>
-                                                    @foreach($do_uv->simulation_item as $item => $key)
+                                                @foreach($do_uv->do_detail as $item => $key)
                                                         <tr>
                                                             <td style="width: 5%;">{{ $item + 1 }}</td>
-                                                            <td style="width: 10%;">{{ $key->product->code }}</td>
-                                                            <td style="width: 15%;">{{ $key->product->name }}</td>
+                                                            <td style="width: 10%;">{{ $key->product_pack->code }}</td>
+                                                            <td style="width: 15%;">{{ $key->product_pack->name }}</td>
                                                             <td style="width: 10%;">
-                                                                {{ $key->product->packaging->pack_name }}
-                                                                <input type="hidden" name="product_name_jual[]" class="product_name_jual" value="{{ $key->product->id }}">
+                                                                {{ $key->product_pack->packaging->pack_name }}
+                                                                <input type="hidden" name="product_name_jual[]" class="product_name_jual" value="{{ $key->product_pack->id }}">
                                                             </td>
                                                             <td style="width: 10%;">
                                                                 <input type="text" class="form-control price_jual" style="text-align: center;" name="price_jual[]" 
-                                                                    value="{{ optional($key->product->latest_price_uv())->selling_price_usd_unit }}" readonly>
+                                                                    value="{{ optional($key->product_pack->latest_price_uv())->selling_price_usd_unit }}" readonly>
                                                             </td>
                                                             <td style="width: 10%;">
                                                                 <input type="text" class="form-control qty_jual" style="text-align: center;" name="qty_jual[]" value="{{ $key->qty }}" readonly>
@@ -210,18 +210,18 @@
                                                     </tr>
                                                 </thead>
                                                 <tbody>
-                                                    @foreach($do_uv->simulation_item as $key => $row)
+                                                    @foreach($do_uv->do_detail as $key => $row)
                                                         <tr>
                                                             <td style="width: 5%;">{{ $key + 1 }}</td>
-                                                            <td style="width: 10%;">{{ $row->product->code }}</td>
-                                                            <td style="width: 15%;">{{ $row->product->name }}</td>
+                                                            <td style="width: 10%;">{{ $row->product_pack->code }}</td>
+                                                            <td style="width: 15%;">{{ $row->product_pack->name }}</td>
                                                             <td style="width: 10%;">
-                                                                {{ $row->product->packaging->pack_name }}
-                                                                <input type="hidden" name="product_name_beli[]" class="product_name_beli" value="{{ $row->product->id }}">
+                                                                {{ $row->product_pack->packaging->pack_name }}
+                                                                <input type="hidden" name="product_name_beli[]" class="product_name_beli" value="{{ $row->product_pack->id }}">
                                                             </td>
                                                             <td style="width: 10%;">
                                                                 <input type="text" class="form-control price_beli" style="text-align: center;" name="price_beli[]" 
-                                                                    value="{{ optional($row->product->latest_price_uv())->buying_price_usd_unit }}" readonly>
+                                                                    value="{{ optional($row->product_pack->latest_price_uv())->buying_price_usd_unit }}" readonly>
                                                             </td>
                                                             <td style="width: 10%;">
                                                                 <input type="text" class="form-control qty_beli" style="text-align: center;" name="qty_beli[]" value="{{ $row->qty }}" readonly>

@@ -32,7 +32,7 @@
 
 <div class="block">
     <div class="block-content">
-      {{--<div class="row mb-3">
+        <div class="row mb-3">
               <div class="col-lg-3 col-md-6">
                   <label>Bulan</label>
                   <select class="form-control js-select2" name="month" id="month">
@@ -55,7 +55,7 @@
               <div class="col-lg-3 col-md-6 d-flex align-items-end">
                 <button type="button" id="btn-search" class="btn btn-primary btn-block">Cari</button>
               </div>
-          </div>--}}
+          </div>
     </div>
     <div class="block-content block-content-full">
       <ul class="nav nav-tabs" id="myTab" role="tablist">
@@ -91,7 +91,7 @@
                         <td>{{ $row->customer_name }} {{ $row->customer_kota }}</td>
                         <td>{{ $row->mitra_nama }}</td>
                         <td>
-                            <a href="{{ route('superuser.accounting.finance_simulation.create_mitra', [$row->do_uv, $row->id_mitra]) }}" class="btn btn-primary btn-sm">Proses</a>
+                            <a href="{{ route('superuser.accounting.finance_simulation.create_mitra', [$row->do_id, $row->id_mitra]) }}" class="btn btn-primary btn-sm">Proses</a>
                         </td>
                         </tr>
                         @endforeach
@@ -120,7 +120,7 @@
                             <td>{{ $row->transaksi }}</td>
                             <td>
                                 @if($row->uv_unifra == 0)
-                                    <a href="{{ route('superuser.accounting.finance_simulation.create_non_mitra', [$row->do_uv]) }}" class="btn btn-primary btn-sm">Proses</a>
+                                    <a href="{{ route('superuser.accounting.finance_simulation.create_non_mitra', [$row->do_id]) }}" class="btn btn-primary btn-sm">Proses</a>
                                 @else
                                     <a class="btn btn-info btn-sm" href="{{ route('superuser.accounting.finance_simulation.print_jual_mitra', $row->do_uv) }}" role="button" title="Invoice Jual Mitra" target="_blank"><i class="fa fa-print"></i></a>
                                     <a class="btn btn-success btn-sm" href="{{ route('superuser.accounting.finance_simulation.print_beli_mitra', $row->do_uv) }}" role="button" title="Invoice Beli Mitra" target="_blank"><i class="fa fa-print"></i></a>
@@ -153,8 +153,8 @@
                             <td>{{ $row->customer_name }} {{ $row->customer_kota }}</td>
                             <td>{{ $row->mitra_nama }}</td>
                             <td>
-                                <a class="btn btn-info btn-sm" href="{{ route('superuser.accounting.finance_simulation.print_jual_mitra', $row->do_uv) }}" role="button" title="Invoice Jual Mitra" target="_blank"><i class="fa fa-print"></i></a>
-                                <a class="btn btn-success btn-sm" href="{{ route('superuser.accounting.finance_simulation.print_beli_mitra', $row->do_uv) }}" role="button" title="Invoice Beli Mitra" target="_blank"><i class="fa fa-print"></i></a>
+                                <a class="btn btn-info btn-sm" href="{{ route('superuser.accounting.finance_simulation.print_jual_mitra', $row->do_id) }}" role="button" title="Invoice Jual Mitra" target="_blank"><i class="fa fa-print"></i></a>
+                                <a class="btn btn-success btn-sm" href="{{ route('superuser.accounting.finance_simulation.print_beli_mitra', $row->do_id) }}" role="button" title="Invoice Beli Mitra" target="_blank"><i class="fa fa-print"></i></a>
                             </td>
                         </tr>
                         @endforeach
@@ -224,6 +224,12 @@
                 [10, 30, 100, -1],
                 [10, 30, 100, 'All']
             ], 
+        });
+
+        $('#btn-search').click(function () {
+            var month = $('#month').val();
+            var year = $('#year').val();
+            window.location.href = "{{ route('superuser.accounting.finance_simulation.index_mitra') }}?month=" + month + "&year=" + year;
         });
     });
 </script>

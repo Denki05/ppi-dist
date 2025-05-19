@@ -61,13 +61,13 @@
             <div class="col-lg-3 col-md-6 d-flex align-items-end">
                 <button type="button" id="btn-search" class="btn btn-primary mr-2">Cari</button>
 
-                <a href="#" id="btn-uv" class="btn bg-gd-sea border-0 text-white mr-2">
+                {{--<a href="#" id="btn-uv" class="btn bg-gd-sea border-0 text-white mr-2">
                     Generate <i class="fa fa-sync ml-10"></i>
                 </a>
 
                 <a href="#" id="btn-remove" class="btn btn-danger">
                     Remove <i class="fa fa-trash ml-10"></i>
-                </a>
+                </a>--}}
             </div>
         </div>
     </div>

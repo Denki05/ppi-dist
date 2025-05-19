@@ -14,6 +14,7 @@ class InvoiceTaxJualTable extends Table
     {
         $month = $request->input('bulan', now()->month);
         $year = $request->input('tahun', now()->year);
+        // $year = '2024';
 
         $model = InvoiceTax::leftJoin('master_mitra', 'finance_invoice_mitra.mitra_id', '=', 'master_mitra.id')
             ->select(

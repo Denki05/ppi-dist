@@ -8,7 +8,9 @@ use App\Entities\Accounting\PackingOrderUv;
 use App\Entities\Accounting\PackingOrderDetailUv;
 use App\Entities\Accounting\PackingOrderItemUv;
 use App\Entities\Accounting\InvoiceTaxUv;
+use App\Entities\Accounting\InvoiceTax;
 use App\Entities\Accounting\InvoiceTaxDetailUv;
+use App\Entities\Accounting\InvoiceTaxDetail;
 use App\Entities\Penjualan\PackingOrder;
 use App\Entities\Penjualan\PackingOrderDetail;
 use App\Entities\Penjualan\PackingOrderItem;
@@ -489,41 +491,62 @@ class FinanceSimulationPriceController extends Controller
         }
 
         // Ambil bulan dan tahun dari request, jika kosong pakai bulan & tahun berjalan
-        $year = $request->year ?? date('Y');
-        $month = $request->month ?? date('m');
+        $year = $request->has('year') ? intval($request->year) : date('Y');
+        $month = $request->has('month') ? intval($request->month) : date('m');
 
-        // Query utama dengan join tabel terkait
-        $query = PackingOrder::leftJoin('penjualan_do_uv', 'penjualan_do.id', '=', 'penjualan_do_uv.do_id')
-            ->leftJoin('master_customer_other_addresses', 'penjualan_do_uv.customer_other_address_id', '=', 'master_customer_other_addresses.id')
-            ->leftJoin('master_mitra_detail', 'master_customer_other_addresses.id', '=', 'master_mitra_detail.customer_other_address_id')
-            ->leftJoin('master_mitra', 'master_mitra_detail.mitra_id', '=', 'master_mitra.id')
-            ->select([
-                'penjualan_do_uv.id as do_uv',
-                'penjualan_do_uv.code as uv_code',
-                'penjualan_do_uv.transaksi as transaksi',
-                'master_customer_other_addresses.name as customer_name', 
-                'master_customer_other_addresses.text_kota as customer_kota',
-                'master_mitra.id as id_mitra', 
-                'master_mitra.name as mitra_nama',
-                'penjualan_do.uv_unifra',
-            ])
-            ->whereNotNull('penjualan_do_uv.id'); // Pastikan hanya data yang memiliki penjualan_do_uv
+        // ========== Query Dasar untuk Mitra ==========
+        $query = DB::table('penjualan_do')
+        ->leftJoin('master_customer_other_addresses', 'penjualan_do.customer_other_address_id', '=', 'master_customer_other_addresses.id')
+        ->leftJoin('master_mitra_detail', 'master_customer_other_addresses.id', '=', 'master_mitra_detail.customer_other_address_id')
+        ->leftJoin('master_mitra', 'master_mitra_detail.mitra_id', '=', 'master_mitra.id')
+        ->select(
+            'penjualan_do.id as do_id',
+            'penjualan_do.do_code as uv_code',
+            'penjualan_do.type_transaction as transaksi',
+            'master_customer_other_addresses.name as customer_name',
+            'master_customer_other_addresses.text_kota as customer_kota',
+            'master_mitra.id as id_mitra',
+            'master_mitra.name as mitra_nama',
+            'penjualan_do.uv_unifra'
+        )
+        ->whereMonth('penjualan_do.created_at', $month)
+        ->whereYear('penjualan_do.created_at', $year)
+        ->where('penjualan_do.cashback_status', 1)
+        ->whereNull('penjualan_do.deleted_at');
 
-        // Data Mitra (customer yang punya relasi dengan mitra)
-        $mitra = clone $query;
-        $mitra = $mitra->whereNotNull('master_mitra.id')
-                    ->where('penjualan_do.uv_unifra', 0)
-                    ->get();
+        // ========== Data Non-Mitra ==========
+        $nonMitra = (clone $query)
+        ->whereNull('master_mitra.id')
+        ->get();
 
-        // Data Non Mitra (customer yang tidak punya relasi dengan mitra)
-        $nonMitra = clone $query;
-        $nonMitra = $nonMitra->whereNull('master_mitra.id')->get();
+        // ========== Data Mitra Belum Unifra (uv_unifra = 0) ==========
+        $mitraBelumUnifra = (clone $query)
+        ->where('penjualan_do.uv_unifra', 0)
+        ->whereNotNull('master_mitra.id')
+        ->get();
 
-        // Data Done (proses mitra sudah selesai)
-        $done = clone $query;
-        $done = $done->where('penjualan_do.uv_unifra', 1)
-                    ->whereNotNull('master_mitra.id')
-                    ->get();
+        // ========== Data Mitra Sudah Unifra (uv_unifra = 1) ==========
+        $done = DB::table('penjualan_do')
+        ->leftJoin('master_customer_other_addresses', 'penjualan_do.customer_other_address_id', '=', 'master_customer_other_addresses.id')
+        ->leftJoin('master_mitra_detail', 'master_customer_other_addresses.id', '=', 'master_mitra_detail.customer_other_address_id')
+        ->leftJoin('master_mitra', 'master_mitra_detail.mitra_id', '=', 'master_mitra.id')
+        ->select(
+            'penjualan_do.id as do_id',
+            'penjualan_do.do_code as uv_code',
+            'penjualan_do.type_transaction as transaksi',
+            'master_customer_other_addresses.name as customer_name',
+            'master_customer_other_addresses.text_kota as customer_kota',
+            'master_mitra.id as id_mitra',
+            'master_mitra.name as mitra_nama',
+            'penjualan_do.uv_unifra'
+        )
+        ->whereMonth('penjualan_do.created_at', $month)
+        ->whereYear('penjualan_do.created_at', $year)
+        ->where('penjualan_do.uv_unifra', 1)
+        ->whereNull('penjualan_do.deleted_at')
+        ->get();
+
+        $mitra = $mitraBelumUnifra;
 
         return view($this->view . 'index_mitra', compact('year', 'month', 'mitra', 'nonMitra', 'done'));
     }
@@ -539,8 +562,10 @@ class FinanceSimulationPriceController extends Controller
             }
         }
 
-        $do_uv = PackingOrderUv::find($id);
+        $do_uv = PackingOrder::find($id);
         $mitra = Mitra::find($mitra);
+
+        // dd($do_uv);
 
         $data = [
             'do_uv' => $do_uv,
@@ -572,7 +597,7 @@ class FinanceSimulationPriceController extends Controller
     {
         if ($request->ajax()) {
             $validator = Validator::make($request->all(), [
-                'do_uv_id' => 'required|exists:penjualan_do_uv,id',
+                'do_uv_id' => 'required|exists:penjualan_do,id',
             ]);
 
             if ($validator->fails()) {
@@ -586,7 +611,8 @@ class FinanceSimulationPriceController extends Controller
                 ]);
             }
 
-            $invoice_uv = PackingOrderUv::find($request->do_uv_id);
+            $invoice_uv = PackingOrder::find($request->do_uv_id);
+            // dd($invoice_uv);
             if (!$invoice_uv) {
                 return $this->response(404, [
                     'notification' => [
@@ -636,9 +662,9 @@ class FinanceSimulationPriceController extends Controller
                     $grand_total_jual = str_replace(',', '.', str_replace('.', '', $request->all_grand_total_jual));
                     $ppn_jual_idr = str_replace(',', '.', str_replace('.', '', $request->ppn_idr_jual));
 
-                    $invoice_mitra_jual = new InvoiceTaxUv;
-                    $invoice_mitra_jual->code = "TS-" . $invoice_uv->code . "-JUAL";
-                    $invoice_mitra_jual->do_uv_id = $invoice_uv->id;
+                    $invoice_mitra_jual = new InvoiceTax;
+                    $invoice_mitra_jual->code = "TS-" . $invoice_uv->do_code . "-JUAL";
+                    $invoice_mitra_jual->do_id = $invoice_uv->id;
                     $invoice_mitra_jual->mitra_id = $request->mitra_id ?? null;
                     $invoice_mitra_jual->type = 1;
                     $invoice_mitra_jual->date = Carbon::now();
@@ -652,8 +678,8 @@ class FinanceSimulationPriceController extends Controller
 
                     if ($request->product_name_jual) {
                         foreach ($request->product_name_jual as $row => $key) {
-                            $invoice_mitra_jual_detail = new InvoiceTaxDetailUv;
-                            $invoice_mitra_jual_detail->invoice_mitra_id = $invoice_mitra_jual->id;
+                            $invoice_mitra_jual_detail = new InvoiceTaxDetail;
+                            $invoice_mitra_jual_detail->invoice_tax_id = $invoice_mitra_jual->id;
                             $invoice_mitra_jual_detail->product_finance_id = $request->product_name_jual[$row];
                             $invoice_mitra_jual_detail->price = $request->price_jual[$row] ?? 0;
                             $invoice_mitra_jual_detail->qty = $request->qty_jual[$row] ?? 1;
@@ -669,9 +695,9 @@ class FinanceSimulationPriceController extends Controller
                     $grand_total_beli = str_replace(',', '.', str_replace('.', '', $request->all_grand_total_beli));
                     $ppn_beli_idr = str_replace(',', '.', str_replace('.', '', $request->ppn_idr_beli));
 
-                    $invoice_mitra_beli = new InvoiceTaxUv;
-                    $invoice_mitra_beli->code = "TS-" . $invoice_uv->code . "-BELI";
-                    $invoice_mitra_beli->do_uv_id = $invoice_uv->id;
+                    $invoice_mitra_beli = new InvoiceTax;
+                    $invoice_mitra_beli->code = "TS-" . $invoice_uv->do_code . "-BELI";
+                    $invoice_mitra_beli->do_id = $invoice_uv->id;
                     $invoice_mitra_beli->mitra_id = $request->mitra_id ?? null;
                     $invoice_mitra_beli->type = 2;
                     $invoice_mitra_beli->date = Carbon::now();
@@ -688,8 +714,8 @@ class FinanceSimulationPriceController extends Controller
                             // parse nominal
                             $subtotal_item = str_replace(',', '.', str_replace('.', '', $request->subtotal_item_beli[$row]));
 
-                            $invoice_mitra_beli_detail = new InvoiceTaxDetailUv;
-                            $invoice_mitra_beli_detail->invoice_mitra_id = $invoice_mitra_beli->id;
+                            $invoice_mitra_beli_detail = new InvoiceTaxDetail;
+                            $invoice_mitra_beli_detail->invoice_tax_id = $invoice_mitra_beli->id;
                             $invoice_mitra_beli_detail->product_finance_id = $request->product_name_beli[$row];
                             $invoice_mitra_beli_detail->price = $request->price_beli[$row] ?? 0;
                             $invoice_mitra_beli_detail->qty = $request->qty_beli[$row] ?? 1;
@@ -699,7 +725,7 @@ class FinanceSimulationPriceController extends Controller
                     }
 
                     // update invoice real
-                    $invoice_real = PackingOrder::where('id', $invoice_uv->do_id)->update(['uv_unifra' => 1]);
+                    $invoice_real = PackingOrder::where('id', $invoice_uv->id)->update(['uv_unifra' => 1]);
 
                      // Tambahkan saldo mitra
                     $cek_saldo->saldo += $grand_total_jual;
@@ -716,14 +742,14 @@ class FinanceSimulationPriceController extends Controller
                 $response['redirect_to'] = route('superuser.accounting.finance_simulation.index_mitra');
                 return $this->response(200, $response);
             } catch (\Exception $e) {
-                // dd($e);
+                dd($e);
                 Log::error('Error saat menyimpan invoice mitra: ' . $e->getMessage());
                 DB::rollBack();
                 $response['notification'] = [
                     'alert' => 'block',
                     'type' => 'alert-danger',
                     'header' => 'Error',
-                    'content' => $errors,
+                    'content' => $e->getMessage(),
                 ];
 
                 return $this->response(400, $response);
@@ -749,7 +775,7 @@ class FinanceSimulationPriceController extends Controller
                 ]);
             }
 
-            $invoice_uv = PackingOrderUv::find($request->do_uv_id);
+            $invoice_uv = PackingOrder::find($request->do_uv_id);
             if (!$invoice_uv) {
                 return $this->response(404, [
                     'notification' => [
@@ -770,9 +796,9 @@ class FinanceSimulationPriceController extends Controller
                     $grand_total_jual = str_replace(',', '.', str_replace('.', '', $request->all_grand_total_jual));
                     $ppn_jual_idr = str_replace(',', '.', str_replace('.', '', $request->ppn_idr_jual));
 
-                    $invoice_mitra_jual = new InvoiceTaxUv;
+                    $invoice_mitra_jual = new InvoiceTax;
                     $invoice_mitra_jual->code = "TS-" . $invoice_uv->code . "-JUAL";
-                    $invoice_mitra_jual->do_uv_id = $invoice_uv->id;
+                    $invoice_mitra_jual->do_id = $invoice_uv->id;
                     $invoice_mitra_jual->mitra_id = $request->mitra_id ?? null;
                     $invoice_mitra_jual->type = 1;
                     $invoice_mitra_jual->date = Carbon::now();
@@ -786,8 +812,8 @@ class FinanceSimulationPriceController extends Controller
 
                     if ($request->product_name_jual) {
                         foreach ($request->product_name_jual as $row => $key) {
-                            $invoice_mitra_jual_detail = new InvoiceTaxDetailUv;
-                            $invoice_mitra_jual_detail->invoice_mitra_id = $invoice_mitra_jual->id;
+                            $invoice_mitra_jual_detail = new InvoiceTaxDetail;
+                            $invoice_mitra_jual_detail->invoice_tax_id = $invoice_mitra_jual->id;
                             $invoice_mitra_jual_detail->product_finance_id = $request->product_name_jual[$row];
                             $invoice_mitra_jual_detail->price = $request->price_jual[$row] ?? 0;
                             $invoice_mitra_jual_detail->qty = $request->qty_jual[$row] ?? 1;
@@ -803,9 +829,9 @@ class FinanceSimulationPriceController extends Controller
                     $grand_total_beli = str_replace(',', '.', str_replace('.', '', $request->all_grand_total_beli));
                     $ppn_beli_idr = str_replace(',', '.', str_replace('.', '', $request->ppn_idr_beli));
 
-                    $invoice_mitra_beli = new InvoiceTaxUv;
+                    $invoice_mitra_beli = new InvoiceTax;
                     $invoice_mitra_beli->code = "TS-" . $invoice_uv->code . "-BELI";
-                    $invoice_mitra_beli->do_uv_id = $invoice_uv->id;
+                    $invoice_mitra_beli->do_id = $invoice_uv->id;
                     $invoice_mitra_beli->mitra_id = $request->mitra_id ?? null;
                     $invoice_mitra_beli->type = 2;
                     $invoice_mitra_beli->date = Carbon::now();
@@ -822,8 +848,8 @@ class FinanceSimulationPriceController extends Controller
                             // parse nominal
                             $subtotal_item = str_replace(',', '.', str_replace('.', '', $request->subtotal_item_beli[$row]));
 
-                            $invoice_mitra_beli_detail = new InvoiceTaxDetailUv;
-                            $invoice_mitra_beli_detail->invoice_mitra_id = $invoice_mitra_beli->id;
+                            $invoice_mitra_beli_detail = new InvoiceTaxDetail;
+                            $invoice_mitra_beli_detail->invoice_tax_id = $invoice_mitra_beli->id;
                             $invoice_mitra_beli_detail->product_finance_id = $request->product_name_beli[$row];
                             $invoice_mitra_beli_detail->price = $request->price_beli[$row] ?? 0;
                             $invoice_mitra_beli_detail->qty = $request->qty_beli[$row] ?? 1;
@@ -868,7 +894,7 @@ class FinanceSimulationPriceController extends Controller
             abort(404, 'Invoice ID tidak valid.');
         }
 
-        $result = InvoiceTaxUv::where('do_uv_id', $id)->where('type', 2)->first();
+        $result = InvoiceTax::where('do_id', $id)->where('type', 2)->first();
         if (!$result) {
             abort(404, 'Invoice tidak ditemukan.');
         }
@@ -895,7 +921,7 @@ class FinanceSimulationPriceController extends Controller
             abort(404, 'Invoice ID tidak valid.');
         }
 
-        $result = InvoiceTaxUv::where('do_uv_id', $id)->where('type', 1)->first();
+        $result = InvoiceTax::where('do_id', $id)->where('type', 1)->first();
         if (!$result) {
             abort(404, 'Invoice tidak ditemukan.');
         }
