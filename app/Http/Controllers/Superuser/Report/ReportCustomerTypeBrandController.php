@@ -81,6 +81,8 @@ class ReportCustomerTypeBrandController extends Controller
             $currentMonth = Carbon::now()->month;
             $currentYear = Carbon::now()->year;
 
+            // dd($currentMonth, $currentYear);
+
             $query = DB::table('penjualan_do')
                 // Subquery untuk jumlah qty dari penjualan_do_item
                 ->leftJoin(DB::raw('(
@@ -205,7 +207,7 @@ class ReportCustomerTypeBrandController extends Controller
             return redirect()->back()->with('message', 'Berhasil Sync data!');
         } catch (\Exception $e) {
             // dd($e);
-            Log::error('Sync data failed: ' . $e->getMessage());
+            // Log::error('Sync data failed: ' . $e->getMessage());
             return redirect()->back()->with('error', 'Error: ' . $e->getMessage());
         }
     }
@@ -285,9 +287,15 @@ class ReportCustomerTypeBrandController extends Controller
 
     public function removeDt(Request $request)
     {
-        DB::table('report_customer_type_brand')->truncate();
+        $currentMonth = Carbon::now()->month;
+        $currentYear = Carbon::now()->year;
 
-        return redirect()->back()->with('message', 'Berhasil remove data!');
+        DB::table('report_customer_type_brand')
+            ->whereMonth('invoice_date', $currentMonth)
+            ->whereYear('invoice_date', $currentYear)
+            ->delete();
+
+        return redirect()->back()->with('message', 'Berhasil remove data bulan ini!');
     }
 
     public function exportReport(Request $request)
