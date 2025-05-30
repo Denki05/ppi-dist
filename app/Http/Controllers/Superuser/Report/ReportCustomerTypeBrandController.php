@@ -255,11 +255,11 @@ class ReportCustomerTypeBrandController extends Controller
     public function removeDt(Request $request)
     {
         $currentMonth = Carbon::now()->month;
-        // $currentYear = Carbon::now()->year;
+        $currentYear = Carbon::now()->year;
 
         DB::table('report_customer_type_brand')
             ->whereMonth('invoice_date', $currentMonth)
-            // ->whereYear('invoice_date', $currentYear)
+            ->whereYear('invoice_date', $currentYear)
             ->delete();
 
         return redirect()->back()->with('message', 'Berhasil remove data!');

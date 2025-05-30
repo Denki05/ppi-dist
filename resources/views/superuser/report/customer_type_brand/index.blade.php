@@ -103,6 +103,12 @@
                     </div>
                 </div>
             </div>
+
+            <div class="row">
+                <div style="font-size: 12pt; color: red; font-weight: bold;">
+                    * Sebelum tarik report harap Remove Data dahulu & Sync Data ulang!
+                </div>
+            </div>
         </div>
     </div>
 </form>
