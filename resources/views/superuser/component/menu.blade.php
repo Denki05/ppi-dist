@@ -395,7 +395,8 @@
                                 <i class="fa-solid fa-bars"></i> Menu
                             </a>
                             <ul class="dropdown-menu">
-                                <li><a class="dropdown-item" href="{{ route('superuser.account.log_activity.index') }}">Halaman</a></li>
+                                <li><a class="dropdown-item" href="{{ route('superuser.setting.menu.index') }}">Halaman</a></li>
+                                <li><a class="dropdown-item" href="{{ route('superuser.setting.api_keys.index') }}">API</a></li>
                                 <li><a class="dropdown-item" href="{{ route('superuser.account.superuser.index') }}">Kegunaan</a></li>
                                 <li><a class="dropdown-item" href="{{ route('superuser.account.user.index') }}">Wilayah indonesia</a></li>
                                 <li><a class="dropdown-item" href="{{ route('superuser.utility.settings.index') }}">Maintenance Mode</a></li>

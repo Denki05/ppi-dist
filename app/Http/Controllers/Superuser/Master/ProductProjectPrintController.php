@@ -43,4 +43,21 @@ class ProductProjectPrintController extends Controller
             return redirect()->back();
         }
     }
+
+    public function print(Request $request)
+    {
+        // Access control
+        if(Auth::user()->is_superuser == 0){
+            if(empty($this->access) || empty($this->access->user) || $this->access->can_create == 0){
+                return redirect()->route('superuser.index')->with('error','Anda tidak punya akses untuk membuka menu terkait');
+            }
+        }
+
+        // Ambil data dari database
+        $products = ProductProjectPrint::where('tipe', $request->brand_name)->get();
+
+        // Kirim ke view
+        return view('superuser.master.product_project_print.print', compact('products'));
+    }
+
 }

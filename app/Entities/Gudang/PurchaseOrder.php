@@ -27,6 +27,7 @@ class PurchaseOrder extends Model
         'ACTIVE' => 1,
         'ACC' => 2,
         'DRAFT' => 3,
+        'SENT' => 4,
     ];
 
     public function warehouse(){

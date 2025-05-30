@@ -269,9 +269,7 @@ Route::group([
     Route::group(['as' => 'product_project_print.', 'prefix' => '/product_project_print'], function () {
         Route::get('/import_template', 'ProductProjectPrintController@import_template')->name('import_template');
         Route::post('/import', 'ProductProjectPrintController@import')->name('import');
-        // Route::get('/export', 'ProductProjectPrintController@export')->name('export');
-        // Route::get('/cetak', 'ProductProjectPrintController@cetak')->name('cetak');
-        // Route::post('/cetak/pdf', 'ProductProjectPrintController@cetakPdf')->name('pdf');
+        Route::get('/print', 'ProductProjectPrintController@print')->name('print');
     });
     Route::resource('product_project_print', 'ProductProjectPrintController');
 });

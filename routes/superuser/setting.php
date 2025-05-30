@@ -13,5 +13,14 @@ Route::group([
         Route::post('/update', 'MenuController@update')->name('update');
         Route::post('/destroy', 'MenuController@destroy')->name('destroy');
     });
-   
+
+    Route::group(['as' => 'api_keys.', 'prefix' => '/api_keys'], function () {
+        Route::get('/', 'ApiKeyController@index')->name('index');
+        Route::get('/create', 'ApiKeyController@create')->name('create');
+        Route::post('/store', 'ApiKeyController@store')->name('store');
+        Route::get('/edit', 'ApiKeyController@edit')->name('edit');
+        Route::post('/update', 'ApiKeyController@update')->name('update');
+        Route::delete('/destroy/{id}', 'ApiKeyController@destroy')->name('destroy');
+
+    });
 });

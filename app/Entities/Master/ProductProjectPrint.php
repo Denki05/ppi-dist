@@ -10,6 +10,7 @@ class ProductProjectPrint extends Model
     protected $fillable = [
         'kode_produk',
         'nama_produk',
+        'tipe',
         'kategori',
         'brand',
         'searah',

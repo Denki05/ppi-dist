@@ -294,15 +294,15 @@
 
                 {{-- Filter & Print Section --}}
                 <h5>Print Product</h5>
-                <form role="form" method="GET" action="">
+                <form role="form" method="GET" action="{{ route('superuser.master.product_project_print.print') }}">
                     @csrf
                     <div class="form-row">
                         <div class="form-group col-md-6">
                             <label>Merek</label>
                             <select class="form-control js-select2" name="brand_name" style="width:100%;">
                                 <option value="">Pilih Merek</option>
-                                <option value="fine_fragrance">Fine Fragrance</option>
-                                <option value="non_fine_fragrance">Non Fine Fragrance</option>
+                                <option value="PPI FF">Fine Fragrance</option>
+                                <option value="PPI NON FF">Non Fine Fragrance</option>
                             </select>
                         </div>
                         <div class="form-group col-md-6">

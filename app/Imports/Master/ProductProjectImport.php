@@ -26,6 +26,7 @@ class ProductProjectImport implements ToModel, WithHeadingRow, WithStartRow, Wit
         $this->validateHeader([
             'kode_produk', 
             'nama_produk', 
+            'tipe',
             'kategori', 
             'brand', 
             'searah', 
@@ -36,6 +37,7 @@ class ProductProjectImport implements ToModel, WithHeadingRow, WithStartRow, Wit
         return new ProductProjectPrint([
             'kode_produk' => $row['kode_produk'],
             'nama_produk' => $row['nama_produk'],
+            'tipe' => $row['tipe'] ?? null,
             'kategori' => $row['kategori'],
             'brand' => $row['brand'] ?? null,
             'searah' => $row['searah'] ?? null,
@@ -52,10 +54,11 @@ class ProductProjectImport implements ToModel, WithHeadingRow, WithStartRow, Wit
 
     public function rules(): array {
         return [
-            'kode_produk' => 'required',
-            'nama_produk' => 'required',
-            'kategori' => 'required',
-            'harga' => 'required',
+            'kode_produk'   => 'required',
+            'nama_produk'   => 'required',
+            'tipe'          => 'required',
+            'kategori'      => 'required',
+            'harga'         => 'required',
         ];
     }
 }

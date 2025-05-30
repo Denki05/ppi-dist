@@ -13,6 +13,7 @@ class ProductProjectImportTemplate implements FromArray, ShouldAutoSize
             [
                 'kode_produk',
                 'nama_produk',
+                'tipe',
                 'kategori',
                 'brand',
                 'searah',
