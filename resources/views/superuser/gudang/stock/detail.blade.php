@@ -76,25 +76,6 @@ $(document).ready(function() {
     // paging: false,
     searching: false,
     sorting: false,
-    dom: "<'row'<'col-sm-2'l><'col-sm-7 text-left'B><'col-sm-3'f>>" +
-          "<'row'<'col-sm-12'tr>>" +
-          "<'row'<'col-sm-5'i><'col-sm-7'p>>",
-    // buttons: [
-    //       {
-    //         extend: 'excelHtml5',
-    //         text: '<i class="fa fa-file-excel-o"></i>',
-    //         titleAttr: 'Excel',
-    //         title: 'Stock-Report',
-    //       },
-    //       {
-    //         extend: 'pdfHtml5',
-    //         orientation: 'landscape',
-    //         pageSize: 'A4',
-    //         text: '<i class="fa fa-file-pdf-o"></i>',
-    //         titleAttr: 'PDF',
-    //         title: 'Stock-Report',
-    //       }
-    // ],
   });
 });
 </script>

@@ -20,6 +20,29 @@
 
 <div id="alert-block"></div>
 
+@if(session('error') || session('success'))
+<div class="alert alert-{{ session('error') ? 'danger' : 'success' }} alert-dismissible fade show" role="alert">
+    @if (session('error'))
+    <strong>Error!</strong> {!! session('error') !!}
+    @elseif (session('success'))
+    <strong>Berhasil!</strong> {!! session('success') !!}
+    @endif
+    <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+        <span aria-hidden="true">&times;</span>
+    </button>
+</div>
+@endif
+
+@if(session()->has('message'))
+<div class="alert alert-success alert-dismissable" role="alert">
+  <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+      <span aria-hidden="true">×</span>
+  </button>
+  <h3 class="alert-heading font-size-h4 font-w400">Success</h3>
+  <p class="mb-0">{{ session()->get('message') }}</p>
+</div>
+@endif
+
 <div class="block">
   <div class="block-content">
       <!-- <div class="row mb-30">
@@ -29,6 +52,10 @@
       </div> -->
       <a href="{{route('superuser.gudang.purchase_order.create')}}">
         <button type="button" class="btn btn-outline-primary min-width-125">New</button>
+      </a>
+
+      <a href="{{route('superuser.gudang.purchase_order.summary')}}">
+        <button type="button" class="btn btn-outline-info min-width-125">Summary</button>
       </a>
 
       <hr class="my-20">

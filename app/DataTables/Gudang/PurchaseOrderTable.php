@@ -5,7 +5,6 @@ namespace App\DataTables\Gudang;
 use App\DataTables\Table;
 use App\Entities\Gudang\PurchaseOrder;
 use Carbon\Carbon;
-use Illuminate\Support\Facades\Cache;
 
 class PurchaseOrderTable extends Table
 {
@@ -15,14 +14,7 @@ class PurchaseOrderTable extends Table
      */
     private function query()
     {
-        // Gunakan cache untuk menyimpan hasil query
-        $cacheKey = 'purchase_orders_cache';
-        $cacheTime = now()->addMinutes(1);
-
-        // Periksa apakah hasil query sudah ada di cache
-        $model = Cache::remember($cacheKey, $cacheTime, function () {
-            return PurchaseOrder::select('id', 'code', 'edit_counter', 'updated_by', 'status', 'note', 'created_at', 'updated_by')->get();
-        });
+        $model = PurchaseOrder::select('id', 'code', 'edit_counter', 'updated_by', 'status', 'note', 'created_at', 'updated_by');
 
         return $model;
     }
@@ -37,6 +29,7 @@ class PurchaseOrderTable extends Table
         $table->addIndexColumn();
 
         $table->setRowClass(function (PurchaseOrder $model) {
+
             switch ($model->status) {
                 case $model::STATUS['DELETED']:
                     return 'table-danger';
@@ -50,7 +43,7 @@ class PurchaseOrderTable extends Table
                     return '';
             }
         });
-
+        
         $table->editColumn('status', function (PurchaseOrder $model) {
             return $model->status();
         });
@@ -73,6 +66,8 @@ class PurchaseOrderTable extends Table
             $acc = route('superuser.gudang.purchase_order.acc', $model);
             $pdf = route('superuser.gudang.purchase_order.print_pdf', $model);
             $cancel_acc = route('superuser.gudang.purchase_order.cancel_acc', $model);
+            $sent = route('superuser.gudang.purchase_order.send', $model);
+            $cancel_send = route('superuser.gudang.purchase_order.cancel_send', $model);
 
             switch ($model->status) {
                 case $model::STATUS['ACTIVE']:
@@ -115,7 +110,7 @@ class PurchaseOrderTable extends Table
                         </a>
 
                         <a href=\"{$pdf}\">
-                            <button type=\"button\" class=\"btn btn-sm btn-circle btn-alt-secondary\" title=\"Print\">
+                            <button type=\"button\" class=\"btn btn-sm btn-circle btn-alt-secondary\" title=\"Print Out\">
                                 <i class=\"fa fa-print\"></i>
                             </button>
                         </a>
@@ -125,7 +120,28 @@ class PurchaseOrderTable extends Table
                                 <i class=\"fa fa-refresh\"></i>
                             </button>
                         </a>
+
+                        <a href=\"javascript:saveConfirmation('{$sent}')\">
+                            <button type=\"button\" class=\"btn btn-sm btn-circle btn-alt-secondary\" title=\"Send\">
+                                <i class=\"fa fa-paper-plane\"></i>
+                            </button>
+                        </a>
                         
+                    ";
+
+                case $model::STATUS['SENT']:
+                    return "
+                        <a href=\"{$view}\">
+                            <button type=\"button\" class=\"btn btn-sm btn-circle btn-alt-secondary\" title=\"View\">
+                                <i class=\"fa fa-eye\"></i>
+                            </button>
+                        </a>
+
+                        <a href=\"javascript:saveConfirmation2('{$cancel_send}')\">
+                            <button type=\"button\" class=\"btn btn-sm btn-circle btn-alt-danger\" title=\"Cancel\">
+                                <i class=\"fa fa-ban\"></i>
+                            </button>
+                        </a>
                     ";
                 default:
                     return "

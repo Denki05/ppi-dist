@@ -6,6 +6,7 @@ use App\DataTables\Table;
 use App\Entities\Gudang\Receiving;
 use App\Entities\Master\Warehouse;
 use Carbon\Carbon;
+use Illuminate\Support\Facades\Auth;   // ← tambahkan
 
 class ReceivingTable extends Table
 {
@@ -17,6 +18,8 @@ class ReceivingTable extends Table
     {
         $model = Receiving::select('receiving.id', 'receiving.code', 'receiving.status', 'master_warehouses.name as warehouse', 'receiving.created_at', 'receiving.pbm_date', 'receiving.note')
             ->join('master_warehouses', 'master_warehouses.id', '=', 'receiving.warehouse_id');
+
+        
 
         return $model;
     }
@@ -72,11 +75,6 @@ class ReceivingTable extends Table
             switch ($model->status) {
                 case $model::STATUS['ACTIVE']:
                     return "
-                        <a href=\"javascript:saveConfirmation2('{$acc}')\">
-                            <button type=\"button\" class=\"btn btn-sm btn-circle btn-alt-success\" title=\"ACC\">
-                                <i class=\"fa fa-check\"></i>
-                            </button>
-                        </a>
                         <a href=\"{$edit}\">
                             <button type=\"button\" class=\"btn btn-sm btn-circle btn-alt-warning\" title=\"Edit\">
                                 <i class=\"fa fa-pencil\"></i>
@@ -88,11 +86,19 @@ class ReceivingTable extends Table
                             </button>
                         </a>
                     ";
-                case $model::STATUS['ACC']:
+                case $model::STATUS['QC']:
                     return "
-                        <a href=\"{$view}\">
-                            <button type=\"button\" class=\"btn btn-sm btn-circle btn-alt-secondary\" title=\"View\">
-                                <i class=\"fa fa-eye\"></i>
+                        <a href=\"{$edit}\">
+                            <button type=\"button\" class=\"btn btn-sm btn-circle btn-alt-warning\" title=\"Edit\">
+                                <i class=\"fa fa-pencil\"></i>
+                            </button>
+                        </a>
+                    ";
+                case $model::STATUS['READY']:
+                    return "
+                        <a href=\"javascript:saveConfirmation2('{$acc}')\">
+                            <button type=\"button\" class=\"btn btn-sm btn-circle btn-alt-success\" title=\"ACC\">
+                                <i class=\"fa fa-check\"></i>
                             </button>
                         </a>
                     ";

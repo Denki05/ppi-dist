@@ -36,6 +36,9 @@ Route::group([
         Route::get('/search_sku', 'PurchaseOrderController@search_sku')->name('search_sku');
         Route::get('/search_kemasan', 'PurchaseOrderController@search_kemasan')->name('search_kemasan');
         Route::get('/{id}/cancel_acc', 'PurchaseOrderController@cancel_acc')->name('cancel_acc');
+        Route::get('/{id}/send', 'PurchaseOrderController@send')->name('send');
+        Route::get('/summary', 'PurchaseOrderController@summary')->name('summary');
+        Route::get('/{id}/cancel_send', 'PurchaseOrderController@cancel_send')->name('cancel_send');
 
         Route::group(['as' => 'detail.'], function () {
             Route::get('{purchase_id}/detail/create', 'PurchaseOrderDetailController@create')->name('create');
@@ -67,6 +70,8 @@ Route::group([
             Route::put('{id}/detail/{detail_id}', 'ReceivingDetailController@update')->name('update');
 
             Route::post('detail/get_sku_json', 'ReceivingDetailController@get_sku_json')->name('get_sku_json');
+
+            Route::post('{id}/detail/qty_qc', 'ReceivingDetailController@qty_qc')->name('qty_qc');
 
             Route::group(['as' => 'colly.'], function () {
                 Route::get('{id}/colly/{detail_id}/create', 'ReceivingDetailCollyController@create')->name('create');

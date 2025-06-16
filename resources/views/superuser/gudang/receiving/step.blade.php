@@ -4,31 +4,40 @@
 
 @if ( $receiving->status() == $receiving::STATUS['ACTIVE'] )
   <nav class="breadcrumb bg-white push">
-    <span class="breadcrumb-item">Purchasing</span>
+    <span class="breadcrumb-item">Gudang</span>
     <span class="breadcrumb-item">Receiving</span>
     <span class="breadcrumb-item">New</span>
     <span class="breadcrumb-item active">Add Detail</span>
   </nav>
 @else
   <nav class="breadcrumb bg-white push">
-    <span class="breadcrumb-item">Purchasing</span>
+    <span class="breadcrumb-item">Gudang</span>
     <span class="breadcrumb-item">Receiving</span>
     <span class="breadcrumb-item">{{ $receiving->code }}</span>
     <span class="breadcrumb-item active">Edit Detail</span>
   </nav>
 @endif
 
-@if($errors->any())
+@if(session()->has('message'))
+<div class="alert alert-success alert-dismissable" role="alert">
+  <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+      <span aria-hidden="true">×</span>
+  </button>
+  <h3 class="alert-heading font-size-h4 font-w400">Success</h3>
+  <p class="mb-0">{{ session('message') }}</p>
+</div>
+@endif
+
+@if(session()->has('error'))
 <div class="alert alert-danger alert-dismissable" role="alert">
   <button type="button" class="close" data-dismiss="alert" aria-label="Close">
       <span aria-hidden="true">×</span>
   </button>
   <h3 class="alert-heading font-size-h4 font-w400">Error</h3>
-  @foreach ($errors->all() as $error)
-  <p class="mb-0">{{ $error }}</p>
-  @endforeach
+  <p class="mb-0">{{ session('error') }}</p>
 </div>
 @endif
+
 <div id="alert-block"></div>
 
 @if(session()->has('collect_success') || session()->has('collect_error'))
@@ -54,17 +63,6 @@
 </div>
 @endif
 
-@if(session()->has('message'))
-<div class="alert alert-success alert-dismissable" role="alert">
-  <button type="button" class="close" data-dismiss="alert" aria-label="Close">
-      <span aria-hidden="true">×</span>
-  </button>
-  <h3 class="alert-heading font-size-h4 font-w400">Success</h3>
-  <p class="mb-0">{{ session()->get('message') }}</p>
-</div>
-@endif
-
-
 <div class="block">
   <div class="block-header block-header-default">
     <h3 class="block-title">New Receiving</h3>
@@ -88,12 +86,6 @@
         <div class="form-control-plaintext">{{ $receiving->pbm_date ? date('d/m/Y', strtotime($receiving->pbm_date)) : '' }}</div>
       </div>
     </div>
-    {{--<div class="row">
-      <label class="col-md-3 col-form-label text-right">No container</label>
-      <div class="col-md-7">
-        <div class="form-control-plaintext">{{ $receiving->no_container }}</div>
-      </div>
-    </div>--}}
     <div class="row">
       <label class="col-md-3 col-form-label text-right">Note</label>
       <div class="col-md-7">
@@ -109,31 +101,63 @@
 
     <div class="row pt-30 mb-15">
       <div class="col-md-6">
+        <a href="{{ route('superuser.gudang.receiving.index') }}">
+          <button type="button" class="btn bg-gd-cherry border-0 text-white">
+            <i class="fa fa-arrow-left mr-10"></i> Back
+          </button>
+        </a>
       </div>
-
       <div class="col-md-6 text-right">
+        @php
+            use App\Entities\Gudang\Receiving as RI;
+            $role = $superuser->division;           // singkat
+        @endphp
 
-        <a href="{{ route('superuser.gudang.receiving.edit', $receiving->id) }}">
-          <button type="button" class="btn bg-gd-sea border-0 text-white">
-            Edit <i class="fa fa-pencil ml-10"></i>
-          </button>
-        </a>
-        <a href="javascript:deleteConfirmation('{{ route('superuser.gudang.receiving.destroy', $receiving->id) }}', true)">
-          <button type="button" class="btn bg-gd-pulse border-0 text-white">
-            Delete <i class="fa fa-trash ml-10"></i>
-          </button>
-        </a>
-        <a href="javascript:saveConfirmation2('{{ route('superuser.gudang.receiving.publish', $receiving->id) }}')">
-          <button type="button" class="btn bg-gd-leaf border-0 text-white">
-            ACC <i class="fa fa-check ml-10"></i>
-          </button>
-        </a>
+        {{-- 1. Draft (ACTIVE) – tombol Edit/Publish/Delete hanya utk Admin & Developer --}}
+        @if($receiving->status == \App\Entities\Gudang\Receiving::STATUS['ACTIVE']
+            && in_array($role, ['Admin','Developer']))
+            <a href="{{ route('superuser.gudang.receiving.edit', $receiving->id) }}">
+                <button type="button" class="btn bg-gd-sea border-0 text-white">
+                    Edit <i class="fa fa-pencil ml-10"></i>
+                </button>
+            </a>
+
+            <a href="{{ route('superuser.gudang.receiving.publish', $receiving->id) }}">
+              <button type="button" class="btn bg-gd-leaf border-0 text-white">
+                Publish to QC <i class="fa fa-check ml-10"></i>
+              </button>
+            </a>
+
+            <a href="javascript:deleteConfirmation('{{ route('superuser.gudang.receiving.destroy', $receiving->id) }}', true)">
+                <button type="button" class="btn bg-gd-pulse border-0 text-white">
+                    Delete <i class="fa fa-trash ml-10"></i>
+                </button>
+            </a>
+
+        {{-- 2. Tahap QC – tombol Finish QC hanya utk Warehouse --}}
+        @elseif($receiving->status == \App\Entities\Gudang\Receiving::STATUS['QC'] && in_array($role, ['Warehouse','Developer']))
+            <a href="{{ route('superuser.gudang.receiving.publish', $receiving->id) }}">
+              <button type="button" class="btn bg-gd-leaf border-0 text-white">
+                Publish to Ready <i class="fa fa-check ml-10"></i>
+              </button>
+            </a>
+
+        {{-- 3. Tahap ACC --}}
+        @elseif($receiving->status == \App\Entities\Gudang\Receiving::STATUS['READY'] && in_array($role, ['Admin','Developer']))
+            <a href="javascript:saveConfirmation2('{{ route('superuser.gudang.receiving.acc', $receiving->id) }}')">
+                <button type="button" class="btn bg-gd-leaf border-0 text-white" title="ACC">
+                  ACC <i class="fa fa-check"></i>
+                </button>
+            </a>
+        @endif
       </div>
     </div>
   </div>
 </div>
 
 <div class="block">
+
+  @if(in_array($role, ['Admin','Developer']) )
   <div class="block-header block-header-default">
     <h3 class="block-title">Add Detail ({{ $receiving->details->count() }})</h3>
 
@@ -143,18 +167,16 @@
       <button type="button" class="btn btn-outline-primary min-width-125 pull-right">Create</button>
     </a>
   </div>
+  @endif
   <div class="block-content">
     <table id="datatable" class="table table-striped">
       <thead>
         <tr>
           <th class="text-center">#</th>
-          <th class="text-center">PO Number</th>
           <th class="text-center">Product</th>
-          
-          <th class="text-center">PO Quantity</th>
-          <th class="text-center">RI Quantity</th>
-          <th class="text-center">Sisa Quantity</th>
-          <th class="text-center">Colly Quantity</th>
+          <th class="text-center">Quantity SJ</th>
+          <th class="text-center">Quantity QC</th>
+          <th class="text-center">Selisih</th>
           <th class="text-center">NO BATCH</th>
           <th class="text-center">Note</th>
           <th class="text-center">Action</th>
@@ -164,28 +186,50 @@
         @foreach($receiving->details as $detail)
         <tr>
           <td class="text-center">{{ $loop->iteration }}</td>
-          <td class="text-center">{{ $detail->purchase_order->code }}</td>
           <td class="text-center">{{ $detail->product_pack->code }} - <b>{{ $detail->product_pack->name }}</b> - {{$detail->product_pack->packaging->pack_name}}</td>
-          <td class="text-center">{{ $receiving->price_format($detail->quantity) }}</td>
-          <td class="text-center">{{ $receiving->price_format($detail->total_quantity_ri) }}{{ $detail->total_reject_ri($detail->id) ? ' [RE '.$receiving->price_format($detail->total_reject_ri($detail->id)).']' : '' }}</td>
-          <td class="text-center">{{ $detail->quantity - $detail->total_quantity_ri }}</td>
-          <td class="text-center">{{ $receiving->price_format($detail->total_quantity_colly) }}{{ $detail->total_reject_colly($detail->id) ? ' [RE '.$receiving->price_format($detail->total_reject_colly($detail->id)).']' : '' }}</td>
+          <td class="text-center">{{ $detail->quantity_po }}</td>
+          <td class="text-center">{{ $detail->quantity_ri ?? '-' }}</td>
+          <td class="text-center">{{ $detail->selisih ?? '-' }}</td>
           <td class="text-center">{{ $detail->no_batch ?? '-'}}</td>
           <td class="text-center">{{ $detail->note }}</td>
           <td class="text-center" style="white-space: nowrap;">
-            <a href="{{ route('superuser.gudang.receiving.detail.edit', [$receiving->id, $detail->id]) }}">
+            @if($receiving->status == \App\Entities\Gudang\Receiving::STATUS['ACTIVE'] && (in_array($superuser->division, ['Admin', 'Developer'])))
+            {{--<a href="{{ route('superuser.gudang.receiving.detail.edit', [$receiving->id, $detail->id]) }}">
               <button type="button" class="btn btn-sm btn-circle btn-alt-warning" title="Edit Note">
                 <i class="fa fa-pencil"></i>
               </button>
-            </a>
-            @if(is_null($detail->colly))
-              <a href="javascript:void(0)" type="button" class="btn btn-sm btn-circle btn-alt-info openModal" data-id="{{$receiving->id}}" data-detail-id="{{$detail->id}}"><i class="fa fa-plus"></i></a> 
+            </a>--}}
             @endif
+            @php
+                $role = $superuser->division;          // Admin | Developer | Warehouse
+            @endphp
+
+            @if($receiving->status == \App\Entities\Gudang\Receiving::STATUS['QC'])
+                @if(in_array($role, ['Admin','Developer']))
+                    {{-- Admin & Developer: ikon selalu ada (boleh koreksi berkali‑kali) --}}
+                    <a href="javascript:void(0)"
+                      class="btn btn-sm btn-circle btn-alt-info openModal"
+                      data-id="{{ $detail->id }}"
+                      data-qc="{{ $detail->quantity_ri ?? '' }}">
+                        <i class="fa fa-plus"></i>
+                    </a>
+                @elseif($role == 'Warehouse' && $detail->quantity_ri < 1)
+                    {{-- Warehouse: hanya saat pertama kali (quantity_ri masih kosong) --}}
+                    <a href="javascript:void(0)"
+                      class="btn btn-sm btn-circle btn-alt-info openModal"
+                      data-id="{{ $detail->id }}"
+                      data-qc="">
+                        <i class="fa fa-plus"></i>
+                    </a>
+                @endif
+            @endif
+            @if($receiving->status == \App\Entities\Gudang\Receiving::STATUS['ACTIVE'] && in_array($superuser->division, ['Admin', 'Developer']))
             <a href="javascript:deleteConfirmation('{{ route('superuser.gudang.receiving.detail.destroy', [$receiving->id, $detail->id]) }}')">
               <button type="button" class="btn btn-sm btn-circle btn-alt-danger" title="Delete">
                   <i class="fa fa-times"></i>
               </button>
             </a>
+            @endif
           </td>
         </tr>
         @endforeach
@@ -216,14 +260,9 @@
                   @csrf
                     <input type="hidden" class="form-control" id="colly" name="colly" value="1">
                     <div class="mb-3">
-                        <label>Quantity RI</label>
-                        <input type="number" class="form-control" id="ri" name="ri" step="any">
+                        <label>Quantity QC</label>
+                        <input type="number" class="form-control" id="qc" name="qc" step="any">
                     </div>
-                    <div class="mb-3">
-                        <label>No Batch</label>
-                        <input type="text" class="form-control" id="batch" name="batch" step="any">
-                    </div>
-                    <input type="hidden" id="receivingID" />
                     <input type="hidden" id="detailID" />
                     <button type="submit" class="btn btn-info">Save</button>
                     <button type="button" class="btn btn-danger" data-bs-dismiss="modal">Close</button>
@@ -251,26 +290,21 @@
 <script src="{{ asset('utility/superuser/js/form.js') }}"></script>
 <script type="text/javascript">
   $(document).ready(function() {
-    $('#datatable').DataTable({
-      // "pageLength": 50,
-    })
+    $('#datatable').DataTable({});
   })
 
-  $(document).on('click', '.openModal', function () {
-    var id = $(this).data('id');
-    var detail = $(this).data('detail-id');
-    $('#receivingID').val(id);
-    $('#detailID').val(detail);
+  $(document).on('click','.openModal',function(){
+    $('#detailID').val($(this).data('id'));
+    $('#qc').val($(this).data('qc'));   // prefills if exists
+    $('.alert').hide();                 // reset pesan
     $('#appointmentModal').modal('show');
-  })
+  });
 
   $('#myForm').on('submit', function (e) {
       e.preventDefault(); // prevent the form submit
-      var id = $('#receivingID').val();
-      var detail = $('#detailID').val();
-      var url = '{{ route("superuser.gudang.receiving.detail.colly.store", [":id",":detail_id"]) }}';
+      var id = $('#detailID').val();
+      var url = '{{ route("superuser.gudang.receiving.detail.qty_qc", [":id"]) }}';
       url = url.replace(':id', id);
-      url = url.replace(':detail_id', detail);
       var AlertMsg = $('div[role="alert"]');
 
       var formData = new FormData(this); 

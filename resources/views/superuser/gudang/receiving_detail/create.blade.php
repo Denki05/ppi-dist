@@ -14,55 +14,48 @@
   </div>
   <div class="block-content">
     <form class="ajax" data-action="{{ route('superuser.gudang.receiving.detail.store', $receiving->id) }}" data-type="POST" enctype="multipart/form-data">
+      <input type="hidden" id="po_id" name="po_id">
+      <input type="hidden" id="pack_name" name="pack_name">
+      {{-- 1. Select Product --}}
       <div class="form-group row">
-        <label class="col-md-3 col-form-label text-right" for="ppb">Select PO <span class="text-danger">*</span></label>
+        <label class="col-md-3 col-form-label text-right" for="product_id">
+          Select Product <span class="text-danger">*</span>
+        </label>
         <div class="col-md-7">
-          <select class="js-select2 form-control" id="ppb" name="ppb" data-placeholder="Select PO">
-            <option></option>
-            @foreach($purchase_orders as $purchase_order)
-            <option value="{{ $purchase_order->id }}">{{ $purchase_order->code }}</option>
-            @endforeach
-          </select>
+          <select class="js-select2 form-control"
+                id="product_pack_id"        {{-- ① ganti id --}}
+                name="product_pack_id"
+                data-placeholder="Select Product">
+          <option></option>
+          @foreach($products as $p)
+            <option value="{{ $p->product_pack_id }}">
+              {{ $p->code }} - {{ $p->name }} - {{ $p->pack_name }}
+              (Remaining: {{ number_format($p->qty_available,2) }})
+            </option>
+          @endforeach
+        </select>
         </div>
       </div>
-      <div class="form-group row">
-        <label class="col-md-3 col-form-label text-right" for="ppb_detail">Select Product <span class="text-danger">*</span></label>
-        <div class="col-md-7">
-          <select class="js-select2 form-control" id="ppb_detail" name="ppb_detail" data-placeholder="Select Product">
-            <option></option>
-          </select>
-        </div>
-      </div>
-      <div class="form-group row">
-        <label class="col-md-3 col-form-label text-right" for="product_text">Packaging</label>
-        <div class="col-md-4">
-          <input type="text" class="form-control" id="product_text" name="product_text" readonly>
-        </div>
-      </div>
-      <input type="hidden" class="form-control" id="product" name="product">
+
+      {{-- Qty TIDAK readonly lagi --}}
       <div class="form-group row">
         <label class="col-md-3 col-form-label text-right" for="quantity">Qty</label>
         <div class="col-md-4">
-          <input type="number" class="form-control" id="quantity" name="quantity" readonly>
+          <input type="number" class="form-control" id="quantity" name="quantity" min="1">
         </div>
       </div>
-      {{--<div class="form-group row">
-        <label class="col-md-3 col-form-label text-right" for="delivery_cost">Sea Freight</label>
-        <div class="col-md-4">
-          <input type="number" class="form-control" id="delivery_cost" name="delivery_cost" min="0" value="0" step="any">
-        </div>
-      </div>--}}
-      {{--<div class="form-group row">
-        <label class="col-md-3 col-form-label text-right" for="no_batch">NO Batch</label>
-        <div class="col-md-4">
-          <input type="text" class="form-control" id="no_batch" name="no_batch">
-        </div>
-      </div>--}}
+
       <div class="form-group row">
-        <label class="col-md-3 col-form-label text-right" for="description">Note</label>
+        <label class="col-md-3 col-form-label text-right" for="no_batch">No Batch</label>
         <div class="col-md-4">
-          <textarea class="form-control" id="description" name="description"></textarea>
-          {{-- <input type="number" class="form-control" id="description" name="description"> --}}
+          <input type="number" class="form-control" id="no_batch" name="no_batch" min="1">
+        </div>
+      </div>
+
+      <div class="form-group row">
+        <label class="col-md-3 col-form-label text-right" for="note">Note</label>
+        <div class="col-md-4">
+          <input type="text" class="form-control" id="description" name="description">
         </div>
       </div>
 
@@ -118,66 +111,29 @@
       }
     }
 
-    $("#ppb").on('select2:select', function() {
-      var ppb = $("#ppb").val();
+    $(function () {
+      $('#product_pack_id').on('select2:select', function () {
+        const id = $(this).val();
+        $.post(
+          '{{ route('superuser.gudang.receiving.detail.get_sku_json') }}',
+          { id: id, receiving_id: {{ $receiving->id }}, _token: '{{ csrf_token() }}' },
+          function (json) {
+            if (json.code === 200) {
+              $('#quantity')
+                .val('')
+                .attr('max', json.data.quantity)
+                .attr('placeholder', '≤ ' + json.data.quantity);
 
-      $.ajax({
-        url: '{{ route('superuser.gudang.receiving.detail.get_sku_json') }}',
-        data: {id:ppb, type: "GET_SELECT_SKU", _token: "{{csrf_token()}}"},
-        type: 'POST',
-        cache: false,
-        dataType: 'json',
-        beforeSend: function () {
-          addLoadSpiner($('#ppb_detail'))
-        },
-        complete: function () {
-          hideLoadSpinner($('#ppb_detail'))
-        },
-        success: function(json) {
-          $('#ppb_detail').empty().trigger('change');
-          $('#product_text, #quantity').val('');
-          console.log(json);
-          if (json.code == 200) {
-            let ph = new Option('', '', false, false);
-            $('#ppb_detail').append(ph).trigger('change');
-
-            for (i = 0; i < Object.keys(json.data).length; i++) {
-              let newOption = new Option(json.data[i].product.code+' - '+json.data[i].product.name+' - '+json.data[i].packaging.pack_name ,json.data[i].po_detail_id, false, false);
-              $('#ppb_detail').append(newOption).trigger('change');
+              $('#pack_name').val(json.data.packaging.pack_name);
+              $('#po_id').val(json.data.po_id);                 // simpan PO jika ingin
             }
-
-            let data_val = $('#ppb_detail').data('value')
-            if (data_val > 0) {
-              $('#ppb_detail').val(data_val);
-              $('#ppb_detail').trigger('select2:select');
-            }
-          }
-        }
+          },
+          'json'
+        );
       });
+
+      $('.js-select2').select2();
     });
-
-    $("#ppb_detail").on('select2:select', function() {
-      var ppb_detail = $("#ppb_detail").val();
-
-      $.ajax({
-        url: '{{ route('superuser.gudang.receiving.detail.get_sku_json') }}',
-        data: {id:ppb_detail, type: "GET_TEXT_DETAIL", _token: "{{csrf_token()}}"},
-        type: 'POST',
-        cache: false,
-        dataType: 'json',
-        success: function(json) {
-          $('#product_text, #quantity').val('');
-          console.log(json);
-          if (json.code == 200) {
-            $('#product_text').val(json.data.packaging.pack_name);
-            $('#quantity').val(json.data.quantity);
-            $('#product').val(json.data.purchase_order_detail.product_packaging_id);
-          }
-        }
-      });
-    });
-
-    $('.js-select2').select2()
   })
 </script>
 @endpush

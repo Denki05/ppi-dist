@@ -102,13 +102,11 @@
 
     <div class="row pt-30 mb-15">
       <div class="col-md-6">
-        @if ($purchase_order->status != $purchase_order::STATUS['DRAFT'])
         <a href="{{ route('superuser.gudang.purchase_order.index') }}">
           <button type="button" class="btn bg-gd-cherry border-0 text-white">
             <i class="fa fa-arrow-left mr-10"></i> Back
           </button>
         </a>
-        @endif
       </div>
       @if ($purchase_order->status == $purchase_order::STATUS['DRAFT'])
       <div class="col-md-6 text-right">

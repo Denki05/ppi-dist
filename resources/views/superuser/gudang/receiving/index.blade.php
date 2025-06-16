@@ -2,7 +2,7 @@
 
 @section('content')
 <nav class="breadcrumb bg-white push">
-  <span class="breadcrumb-item">Purchasing</span>
+  <span class="breadcrumb-item">Gudang</span>
   <span class="breadcrumb-item active">Receiving</span>
 </nav>
 
@@ -61,6 +61,7 @@
           <th class="text-center">Pbm date</th>
           <th class="text-center">Code</th>
           <th class="text-center">Warehouse</th>
+          <th class="text-center">Status</th>
           <th class="text-center">Action</th>
         </tr>
       </thead>
@@ -114,6 +115,7 @@ $(document).ready(function() {
       },
       {data: 'code'},
       {data: 'warehouse'},
+      {data: 'status'},
       {data: 'action', orderable: false, searcable: false}
     ],
     order: [

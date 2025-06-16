@@ -6,7 +6,7 @@ use App\Entities\Gudang\Receiving;
 use App\Entities\Gudang\ReceivingDetail;
 use App\Entities\Gudang\PurchaseOrder;
 use App\Entities\Gudang\PurchaseOrderDetail;
-use App\Entities\Gudang\ReceivingDetailColly;
+use App\Entities\Gudang\PurchaseOrderSummary;
 use App\Entities\Master\ProductPack;
 use App\Entities\Master\Packaging;
 use App\Http\Controllers\Controller;
@@ -36,60 +36,43 @@ class ReceivingDetailController extends Controller
         });
     }
 
-
     public function get_sku_json(Request $request)
     {
-        if ($request->ajax()) {
-            switch ($request->type) {
-                case 'GET_SELECT_SKU':
-                    $receiving = Receiving::where('status', '!=', Receiving::STATUS['DELETED'] )->pluck('id')->all();
-                    $receiving_detail_ids = ReceivingDetail::whereIn('receiving_id', $receiving )
-                                    ->where('po_id', $request->id)
-                                    ->selectRaw('receiving_detail.id, receiving_detail.po_detail_id, receiving_detail.quantity, sum(receiving_detail_colly.quantity_ri) AS qty')
-                                    ->join('receiving_detail_colly', 'receiving_detail_colly.receiving_detail_id', '=', 'receiving_detail.id')
-                                    ->groupBy('receiving_detail.id', 'po_detail_id', 'receiving_detail.quantity')
-                                    ->having('qty', \DB::raw('receiving_detail.quantity'))
-                                    ->pluck('po_detail_id')
-                                    ->all();
-
-                    $purchase_order_details = PurchaseOrderDetail::whereNotIn('id', $receiving_detail_ids)->where('po_id', $request->id)->get();
-
-                    foreach($purchase_order_details as $purchase_order_detail) {
-                        $data[] = [
-                            'po_detail_id' => $purchase_order_detail->id,
-                            'product'      => ProductPack::findOrFail($purchase_order_detail->product_pack->id),
-                            'packaging'    => Packaging::findOrFail($purchase_order_detail->product_pack->packaging->id),
-                        ];
-                    }
-
-                    return response()->json(['code'=> 200, 'data' => $data]);
-                    break;
-                case 'GET_TEXT_DETAIL':
-                    $purchase_order_detail = PurchaseOrderDetail::findOrFail($request->id);
-
-                    $quantity = ReceivingDetail::where('po_detail_id', $request->id)->sum('quantity');
-
-                    $total_quantity_ri = 0;
-                    $receiving_detail = ReceivingDetail::where('po_detail_id', $request->id)->get();
-                    foreach ($receiving_detail as $detail) {
-                        $total_in_colly = ReceivingDetailColly::where('receiving_detail_id', $detail->id)->sum('quantity_ri');
-                        $total_quantity_ri = $total_quantity_ri + $total_in_colly;
-                    }
-
-                    $data = [
-                        'product'               => ProductPack::findOrFail($purchase_order_detail->product_pack->id),
-                        'packaging'             => Packaging::findOrFail($purchase_order_detail->product_pack->packaging->id),
-                        'purchase_order_detail' => $purchase_order_detail,
-                        'quantity'              => $purchase_order_detail->quantity - $total_quantity_ri,
-                    ];
-                    return response()->json(['code'=> 200, 'data' => $data]);
-                    break;
-                default:
-                    return response()->json(['code'=> 301]);
-            }
-
-            
+        if (!$request->ajax()) {
+            return response()->json(['code' => 301]);
         }
+
+        $receivingId = $request->receiving_id;
+
+        $productPack = ProductPack::with('packaging')->findOrFail($request->id);
+
+        $totalRemaining = PurchaseOrderSummary::where([
+                    ['status', 2],
+                    ['product_packaging_id', $productPack->id],
+                  ])->sum('quantity');
+
+        $qtyCurrent = ReceivingDetail::where([
+                 ['receiving_id', $receivingId],
+                 ['product_packaging_id', $productPack->id],
+               ])->sum('quantity_po');
+
+        $available = max($totalRemaining - $qtyCurrent, 0);
+
+        $firstPO = PurchaseOrderSummary::where([
+                ['status', 2],
+                ['product_packaging_id', $productPack->id],
+            ])->value('po_id');
+
+        return response()->json([
+            'code' => 200,
+            'data' => [
+                'product_pack_id' => $productPack->id,
+                'product'         => $productPack,
+                'packaging'      => $productPack->packaging,
+                'po_id'          => $firstPO,
+                'quantity'       => $available      // sisa yang tersedia
+            ]
+        ]);
     }
 
     public function show($id, $detail_id)
@@ -114,89 +97,107 @@ class ReceivingDetailController extends Controller
             }
         }
 
-        $data['receiving'] = Receiving::findOrFail($id);
+        $data['receiving'] = $receiving = Receiving::findOrFail($id);
 
-        $receiving = Receiving::where('status', '!=', Receiving::STATUS['DELETED'] )->pluck('id')->all();
-    
-        $receiving_detail_ids = ReceivingDetail::whereIn('receiving_id', $receiving )
-                                ->selectRaw('receiving_detail.id, receiving_detail.po_detail_id, receiving_detail.quantity, sum(receiving_detail_colly.quantity_ri) AS qty')
-                                ->join('receiving_detail_colly', 'receiving_detail_colly.receiving_detail_id', '=', 'receiving_detail.id')
-                                ->groupBy('receiving_detail.id', 'po_detail_id', 'receiving_detail.quantity')
-                                ->having('qty', \DB::raw('receiving_detail.quantity'))
-                                ->pluck('po_detail_id')
-                                ->all();
+        // semua summary status 2 (UNDONE)
+        $summaries = PurchaseOrderSummary::where('status', 2)
+                    ->with(['product.packaging'])
+                    ->get() 
+                    ->groupBy('product_packaging_id');
 
-        $receiving_detail_current = ReceivingDetail::where('receiving_id', $id)->pluck('po_detail_id')->all();
-        $merge = array_merge($receiving_detail_ids, $receiving_detail_current);
-        $purchase_order_details = PurchaseOrderDetail::whereNotIn('id', $merge)->pluck('po_id')->all();
-        $purchase_orders = PurchaseOrder::whereIn('id', $purchase_order_details)
-                                ->where([
-                                    [ 'status', PurchaseOrder::STATUS['ACC'] ],
-                                ])
-                                ->orderBy('code')->get();
-        
-        $data['purchase_orders'] = $purchase_orders;
+        $products = collect();
 
+        foreach ($summaries as $pack_id => $grp) {
+
+            $first          = $grp->first();
+            $qty_remaining  = $grp->sum('quantity');   // sisa global (summary sudah dipotong ACC)
+
+            // qty yang SUDAH dipilih di receiving ini (draft)
+            $qty_current = ReceivingDetail::where([
+                                ['receiving_id', $receiving->id],
+                                ['product_packaging_id', $pack_id]
+                        ])->sum('quantity_po');      // atau quantity_ri jika Anda pakai field lain
+
+            $sisa_dropdown = $qty_remaining - $qty_current;
+
+            if ($sisa_dropdown > 0) {
+                $products->push((object)[
+                    'product_pack_id' => $pack_id,
+                    'code'            => $first->product->code,
+                    'name'            => $first->product->name,
+                    'pack_name'       => $first->product->packaging->pack_name,
+                    'qty_remaining'   => $qty_remaining,
+                    'qty_current'     => $qty_current,
+                    'qty_available'   => $sisa_dropdown,   // tampil di UI
+                ]);
+            }
+        }
+
+        $data['products'] = $products;
         return view('superuser.gudang.receiving_detail.create', $data);
     }
 
     public function store(Request $request, $id)
     {
-        if ($request->ajax()) {
-            $validator = Validator::make($request->all(), [
-                'ppb' => 'required|integer',
-                'ppb_detail' => 'required|integer',
-                'product' => 'required|string',
-                'quantity' => 'required|numeric',
-                'delivery_cost' => 'nullable|numeric',
-                'description' => 'nullable|string',
-            ]);
-
-            if ($validator->fails()) {
-                $response['notification'] = [
-                    'alert' => 'block',
-                    'type' => 'alert-danger',
-                    'header' => 'Error',
-                    'content' => $validator->errors()->all(),
-                ];
-  
-                return $this->response(400, $response);
-            }
-
-            if ($validator->passes()) {
-                $receiving = Receiving::find($id);
-                $ppb_detail = PurchaseOrderDetail::find($id);
-
-                if ($receiving == null) {
-                    abort(404);
-                }
-
-                $receiving_detail = new ReceivingDetail;
-
-                $receiving_detail->receiving_id = $receiving->id;
-                $receiving_detail->po_id = $request->ppb;
-                $receiving_detail->po_detail_id = $request->ppb_detail;
-                $receiving_detail->product_packaging_id = $request->product;
-                $receiving_detail->quantity = $request->quantity;
-                // $receiving_detail->no_batch = $request->no_batch;
-                $receiving_detail->note = $request->description;
-                $receiving_detail->created_by = Auth::id();
-
-                
-
-                if ($receiving_detail->save()) {
-                    $response['notification'] = [
-                        'alert' => 'notify',
-                        'type' => 'success',
-                        'content' => 'Success',
-                    ];
-
-                    $response['redirect_to'] = route('superuser.gudang.receiving.step', $id);
-
-                    return $this->response(200, $response);
-                }
-            }
+        if (!$request->ajax()) {
+            return $this->response(400, ['notification' => ['alert'=>'block','type'=>'alert-danger','content'=>'Invalid']]);
         }
+
+        /* 1. validasi dasar ─────────────────────────── */
+        $available = PurchaseOrderSummary::where([
+                        ['status', 2],
+                        ['product_packaging_id', $request->product_pack_id]
+                    ])->sum('quantity');
+
+        $validator = Validator::make($request->all(), [
+            'product_pack_id' => 'required|string|exists:master_products_packaging,id',
+            'no_batch'        => 'nullable|string|max:50',
+            'quantity'        => "required|numeric|min:1|max:$available",
+            'description'     => 'nullable|string',
+        ]);
+
+        if ($validator->fails()) {
+            return $this->response(400, [
+                'notification' => [
+                    'alert'   => 'block',
+                    'type'    => 'alert-danger',
+                    'header'  => 'Error',
+                    'content' => $validator->errors()->all(),
+                ]
+            ]);
+        }
+
+        /* 2. ambil Receiving & simpan detail ────────── */
+        $receiving = Receiving::find($id);
+        if (!$receiving) abort(404);
+
+        /* ambil PO id pertama yg masih UNDONE utk produk tsb */
+        $poId = PurchaseOrderSummary::where([
+                    ['status', 2],
+                    ['product_packaging_id', $request->product_pack_id]
+                ])->orderBy('id')->value('po_id');
+
+        $detail                         = new ReceivingDetail;
+        $detail->receiving_id           = $receiving->id;
+        $detail->po_id                  = $poId;                    // opsional, bisa NULL
+        $detail->product_packaging_id   = $request->product_pack_id;
+        $detail->quantity_po            = $request->quantity;
+        $detail->no_batch               = $request->no_batch;
+        $detail->note                   = $request->description ?? null;
+
+        if (!$detail->save()) {
+            return $this->response(500, ['notification'=>['alert'=>'block','type'=>'alert-danger','content'=>'Save failed']]);
+        }
+
+        /* 4. response sukses ───────────────────────── */
+        return $this->response(200, [
+            'notification' => [
+                'alert'   => 'notify',
+                'type'    => 'success',
+                'content' => 'Success',
+            ],
+            'redirect_to' => route('superuser.gudang.receiving.step', $id),
+        ]);
     }
 
     public function edit($id, $detail_id)
@@ -279,4 +280,60 @@ class ReceivingDetailController extends Controller
             }
         }
     }
+
+    public function qty_qc(Request $request, $id)
+    {
+        if (!$request->ajax()) {
+            return $this->response(400, ['notification'=>[
+                'alert'=>'block','type'=>'alert-danger','content'=>'Invalid request'
+            ]]);
+        }
+
+        $detail = ReceivingDetail::find($id);
+        if (!$detail) abort(404);
+
+        /* 1. validasi: angka >= 0 */
+        $validator = Validator::make($request->all(), [
+            'qc' => 'required|numeric|min:0'
+        ]);
+
+        if ($validator->fails()) {
+            return $this->response(400, ['notification'=>[
+                'alert'=>'block',
+                'type'=>'alert-danger',
+                'header'=>'Error',
+                'content'=>$validator->errors()->all()
+            ]]);
+        }
+
+        /* 2. logika reset / update */
+        $qc = floatval($request->qc);
+
+        if ($qc <= 0) {
+            // • reset
+            $detail->quantity_ri = null;   // atau 0 jika Anda lebih suka
+            $detail->selisih     = null;
+        } else {
+            // • update normal
+            $detail->quantity_ri = $qc;
+            $detail->selisih     = $detail->quantity_po - $qc;
+        }
+
+        $detail->save();
+
+        /* 3. kirim respon sukses */
+        return $this->response(200, [
+            'notification'=>[
+                'alert'=>'notify',
+                'type'=>'success',
+                'content'=>'Quantity QC diperbarui'
+            ],
+            // redirect ke halaman receiving (pakai parent‑id!)
+            'redirect_to' => route(
+                'superuser.gudang.receiving.step',
+                ['id'=>$detail->receiving_id]
+            )
+        ]);
+    }
+
 }

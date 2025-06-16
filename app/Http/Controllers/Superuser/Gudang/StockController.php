@@ -54,173 +54,47 @@ class StockController extends Controller
 
     public function json(Request $request)
     {
-        $data = [];
         $warehouse = $request->warehouse_id;
-        $totalStock = 0; // Initialize total stock
-        $totalIn = 0;
-        $totalOut = 0;
-        $totalSell = 0;
+        if (!$warehouse) return ['data'=>''];
 
-        $collect = [];
-        if($warehouse){
-
-            $receivings = Receiving::where('warehouse_id', $warehouse)->where('status', Receiving::STATUS['ACC'])->get();
-            foreach ($receivings as $receiving) {
-                foreach ($receiving->details as $detail) {
-                    if (!empty($collect[$detail->product_packaging_id]['in'])) {
-                        $collect[$detail->product_packaging_id]['in'] += $detail->total_quantity_ri;
-                    } else {
-                        $collect[$detail->product_packaging_id]['in'] = $detail->total_quantity_ri;
-                    }
-
-                    foreach ($detail->collys as $colly) {
-                        if ($colly->status_qc == ReceivingDetailColly::STATUS_QC['USED'] && $colly->quantity_recondition > 0) {
-                            if (!empty($collect[$colly->receiving_detail->product_packaging_id]['out'])) {
-                                $collect[$colly->receiving_detail->product_packaging_id]['out'] += $colly->quantity_recondition;
-                            } else {
-                                $collect[$colly->receiving_detail->product_packaging_id]['out'] = $colly->quantity_recondition;
-                            }
-                        }
-
-                        if ($colly->status_mutation == ReceivingDetailColly::STATUS_MUTATION['USED'] && $colly->quantity_mutation > 0) {
-                            $mutation_detail = MutationDetail::where('receiving_detail_colly_id', $colly->id)->groupBy('receiving_detail_colly_id')->get();
-
-                            $mutation_gudang_utama_detail = MutationGudangUtamaDetail::where('receiving_detail_colly_id', $colly->id)->groupBy('receiving_detail_colly_id')->get();
-
-                            foreach($mutation_detail as $item){
-                                if ($item && $item->mutation->status == Mutation::STATUS['ACC']) {
-                                    if($colly->product_to == 0){
-                                        if (!empty($collect[$colly->receiving_detail->product_packaging_id]['out'])) {
-                                            $collect[$colly->receiving_detail->product_packaging_id]['out'] += $colly->quantity_mutation;
-                                        } else {
-                                            $collect[$colly->receiving_detail->product_packaging_id]['out'] = $colly->quantity_mutation;
-                                        }
-                                    } else {
-                                        if (!empty($collect[$colly->product_to]['out'])) {
-                                            $collect[$colly->product_to]['out'] += $colly->quantity_mutation;
-                                        } else {
-                                            $collect[$colly->product_to]['out'] = $colly->quantity_mutation;
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-
-            $sales_orders = SalesOrder::select(\DB::raw('penjualan_so_item.product_packaging_id, SUM(penjualan_so_item.qty_worked) as totalquantity'))
-                ->leftJoin('penjualan_so_item', 'penjualan_so_item.so_id', '=', 'penjualan_so.id')
-                ->where('penjualan_so.origin_warehouse_id', $warehouse)
-                ->where('penjualan_so.status', '4')
-                ->whereHas('do', function ($query) {
-                    $query->where('status_validate', '1');
-                })
-                ->groupBy('penjualan_so_item.product_packaging_id')
+        /* 1. tarik ringkasan in/out per produk */
+        $rows = StockMove::select(
+                    'product_packaging_id',
+                    DB::raw('SUM(stock_in)  as qty_in'),
+                    DB::raw('SUM(stock_out) as qty_out'),
+                    DB::raw('MAX(created_at) as last_tx')
+                )
+                ->where('warehouse_id', $warehouse)
+                ->groupBy('product_packaging_id')
                 ->get();
 
-            foreach ($sales_orders as $detail) {
-                if (!empty($collect[$detail->product_packaging_id]['out'])) {
-                    $collect[$detail->product_packaging_id]['out'] += $detail->totalquantity;
-                } else {
-                    $collect[$detail->product_packaging_id]['out'] = $detail->totalquantity;
-                }
-            }
+        $totalIn = $totalOut = 0;
+        $dataRows = [];
 
-            $sales_orders = SalesOrder::where('penjualan_so.origin_warehouse_id', $warehouse)
-                ->where('penjualan_so.status', '4')
-                ->where(function ($query) {
-                    $query->whereHas('do', function ($query) {
-                        $query->where('status_validate', '0');
-                    })->orDoesntHave('do');
-                })
-                ->select(\DB::raw('penjualan_so_item.product_packaging_id, SUM(penjualan_so_item.qty_worked) as totalquantity'))
-                ->leftJoin('penjualan_so_item', 'penjualan_so_item.so_id', '=', 'penjualan_so.id')
-                ->groupBy('penjualan_so_item.product_packaging_id')
-                ->get();
+        foreach ($rows as $r) {
+            $pack   = ProductPack::with(['product','packaging'])->find($r->product_packaging_id);
+            $stock  = $r->qty_in - $r->qty_out;
 
-            foreach ($sales_orders as $detail) {
-                if (!empty($collect[$detail->product_packaging_id]['sell'])) {
-                    $collect[$detail->product_packaging_id]['sell'] += $detail->totalquantity;
-                } else {
-                    $collect[$detail->product_packaging_id]['sell'] = $detail->totalquantity;
-                }
-            }
+            $totalIn  += $r->qty_in;
+            $totalOut += $r->qty_out;
 
-            $stock_adjusments = StockAdjustment::where('warehouse_id', $warehouse)
-                ->get();
-
-            foreach ($stock_adjusments as $stock_adjusment) {
-                if ($stock_adjusment->min == '0') {
-                    if (!empty($collect[$stock_adjusment->product_packaging_id]['in'])) {
-                        $collect[$stock_adjusment->product_packaging_id]['in'] += $stock_adjusment->plus;
-                    } else {
-                        $collect[$stock_adjusment->product_packaging_id]['in'] = $stock_adjusment->plus;
-                    }
-                } else {
-                    if (!empty($collect[$stock_adjusment->product_packaging_id]['out'])) {
-                        $collect[$stock_adjusment->product_packaging_id]['out'] += $stock_adjusment->min;
-                    } else {
-                        $collect[$stock_adjusment->product_packaging_id]['out'] = $stock_adjusment->min;
-                    }
-                }
-            }
-
-            foreach ($collect as $key => $value) {
-                $product_pack = ProductPack::find($key);
-            
-                if ($product_pack) {
-                    $base_key = preg_replace('/_\d+$/', '', $key);
-            
-                    if ($base_key !== $key) {
-                        unset($collect[$key]);
-                        continue;
-                    }
-                }
-            }
-
-            // COLLECT
-            foreach ($collect as $key => $value) {
-                $product_pack = ProductPack::find($key);
-
-                $in = !empty($value['in']) ? $value['in'] : 0;
-                $out = !empty($value['out']) ? $value['out'] : 0;
-                $sell = !empty($value['sell']) ? $value['sell'] : 0;
-                $stock = $in - $out;
-                $effective = $stock;
-
-                // Sum up the stock
-                $totalStock += $stock;
-                $totalIn += $in;
-                $totalOut += $out;
-                $totalSell += $sell;
-
-                $data['data'][] = [
-                    '<a href="' . route('superuser.gudang.stock.detail', [$warehouse, base64_encode($product_pack->id)]) . '" target="_blank">' . $product_pack->code. '</a>',
-                    $product_pack->name,
-                    $product_pack->product->brand_name,
-                    $product_pack->packaging->pack_name,
-                    $in,
-                    $out,
-                    $stock,
-                    $sell,
-                    $effective
-                ];
-            }
-
-            if (empty($collect)) {
-                $data['data'] = '';
-            } else {
-                $data['total_stock'] = $totalStock; // Include total stock in the response
-                $data['total_in'] = $totalIn;
-                $data['total_out'] = $totalOut;
-                $data['total_sell'] = $totalSell;
-            }
-        }else {
-            $data['data'] = '';
+            $dataRows[] = [
+                '<a href="'.route('superuser.gudang.stock.detail', [$warehouse, base64_encode($pack->id)]).'" target="_blank">'.$pack->code.'</a>',
+                $pack->name,
+                $pack->product->brand_name ?? '-',
+                $pack->packaging->pack_name ?? '-',
+                number_format($r->qty_in, 2),
+                number_format($r->qty_out, 2),
+                number_format($stock, 2),
+            ];
         }
 
-        return $data;
+        return [
+            'data'        => $dataRows,
+            'total_in'    => number_format($totalIn, 2),
+            'total_out'   => number_format($totalOut, 2),
+            'total_stock' => number_format($totalIn-$totalOut, 2),
+        ];
     }
 
     public function index()
@@ -232,7 +106,7 @@ class StockController extends Controller
             }
         }
 
-        $data['warehouses'] = Warehouse::get();
+        $data['warehouses'] = Warehouse::all();
 
         return view($this->view."index",$data);
     }
@@ -244,120 +118,39 @@ class StockController extends Controller
         return $datetime1 - $datetime2;
     }
 
-    public function detail($warehouse, $product)
+    public function detail($warehouse, $encoded)
     {
-        if(Auth::user()->is_superuser == 0){
-            if(empty($this->access) || empty($this->access->user) || $this->access->can_read == 0){
-                return redirect()->route('superuser.index')->with('error','Anda tidak punya akses untuk membuka menu terkait');
-            }
+        $productId = base64_decode($encoded);
+
+        $warehouse = Warehouse::findOrFail($warehouse);
+        $pack      = ProductPack::with(['product','packaging'])->findOrFail($productId);
+
+        /* tarik seluruh move utk produk+gudang, urut naik */
+        $moves = StockMove::where([
+                    ['warehouse_id', $warehouse->id],
+                    ['product_packaging_id', $productId]
+                 ])->orderBy('created_at')->get();
+
+        $balance = 0;  $collect = [];
+
+        foreach ($moves as $m) {
+            $balance += ($m->stock_in - $m->stock_out);
+
+            $collect[] = [
+                'created_at'  => $m->created_at->format('d/m/Y H:i'),
+                'transaction' => $m->code_transaction,
+                'in'          => $m->stock_in ?: '',
+                'out'         => $m->stock_out ?: '',
+                'balance'     => number_format($balance, 2),
+                'description' => '',   // tambahkan kolom di tabel kalau ingin catatan
+            ];
         }
 
-        $decode_product = base64_decode($product);
-
-        $data['product'] = ProductPack::findOrFail($decode_product);
-        $data['warehouse'] = Warehouse::findOrFail($warehouse);
-        // DD($product);
-        $data['collects'] = [];
-
-        $collect = [];
-
-        $receivings = Receiving::where('warehouse_id', $warehouse)->where('status', Receiving::STATUS['ACC'])
-            ->whereHas('details', function ($query) use ($decode_product) {
-                $query->where('product_packaging_id', $decode_product);
-            })
-            ->get();
-        foreach ($receivings as $receiving) {
-            foreach ($receiving->details as $detail) {
-                if ($detail->product_packaging_id == $decode_product) {
-                    foreach ($detail->collys as $colly) {
-                        if($colly->is_reject == 0){
-                            $collect[] = [
-                                'created_at' => $receiving->created_at,
-                                'second_date' => 0,
-                                'transaction' => $receiving->code,
-                                'in' => $colly->quantity_ri,
-                                'out' => '',
-                                'balance' => '',
-                                'description' => $receiving->note,
-                            ];
-
-                            // DD($colly->quantity_ri);
-                        }
-                    }
-                }
-            }
-        }
-
-        $sales_orders = SalesOrder::where('origin_warehouse_id', $warehouse)
-            ->where('status', 4)
-            ->where('condition', '1')
-            ->whereHas('so_detail', function ($query) use ($decode_product) {
-                $query->where('product_packaging_id', $decode_product);
-            })
-            ->get();
-        foreach ($sales_orders as $sales_order) {
-            
-                foreach ($sales_order->so_detail as $detail) {
-                    if ($detail->product_packaging_id == $decode_product) {
-                        $collect[] = [
-                            'created_at' => $detail->created_at,
-                            'second_date' => 0,
-                            'transaction' => $sales_order->code,
-                            'in' => '',
-                            'out' => $detail->qty_worked,
-                            'balance' => '',
-                            'description' => $detail->description ?? '',
-                        ];
-                    }
-                }
-            
-        }
-
-        $stock_adjusments = StockAdjustment::where('warehouse_id', $warehouse)
-            ->get();
-
-        foreach ($stock_adjusments as $stock_adjusment) {
-            if ($stock_adjusment->product_packaging_id == $decode_product) {
-                $collect[] = [
-                    'created_at' => $stock_adjusment->created_at,
-                    'second_date' => 0,
-                    'transaction' => $stock_adjusment->code,
-                    'in' => $stock_adjusment->plus,
-                    'out' => $stock_adjusment->min,
-                    'balance' => '',
-                    'description' => $detail->note,
-                ];
-            }
-        }
-
-        if ($collect) {
-            $balance = 0;
-            $newCollect = [];
-
-            $sortedArr = collect($collect)->sortBy('second_date')->sortBy('created_at')->all();
-            foreach ($sortedArr as $key => $value) {
-                if ($value['in']) {
-                    $balance = $balance + $value['in'];
-                } else if ($value['out']) {
-                    $balance = $balance - $value['out'];
-                }
-                $newCollect[] = [
-                    'created_at' => $value['created_at'],
-                    'second_date' => $value['second_date'],
-                    'transaction' => $value['transaction'],
-                    'in' => ($value['in'] == '') ? '' : $value['in'],
-                    'out' => ($value['out'] == '') ? '' : $value['out'],
-                    'balance' => $balance,
-                    'description' => $value['description'],
-                ];
-            }
-
-            $sortedArr = collect($newCollect)->sortKeysDesc()->all();
-            $data['collects'] = $sortedArr;
-        }
-
-        // return view('superuser.gudang.stock.detail', $data);
-        return view($this->view."detail",$data);
+        return view('superuser.gudang.stock.detail', [
+            'product'  => $pack,
+            'warehouse'=> $warehouse,
+            'collects' => $collect,
+        ]);
     }
 
     public function exportTransactions($warehouse, $startDate, $endDate)

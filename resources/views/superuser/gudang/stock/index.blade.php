@@ -42,12 +42,7 @@
 @endif
 
 <div class="block">
-  @role('Developer')
-  <div class="block-content">
-    <button type="button" class="btn btn-outline-info ml-10" data-toggle="modal" data-target="#modal-manage">Manage</button>
-  </div>
-  <hr class="my-20">
-  @endrole
+  
   <div class="block-content block-content-full">
     <div class="form-group row align-items-center">
       <label class="col-md-2 col-form-label" for="warehouse">Warehouse <span class="text-danger">*</span></label>
@@ -58,27 +53,6 @@
               <option value="{{ $warehouse->id }}">{{ $warehouse->name }}</option>
               @endforeach
           </select>
-      </div>
-    </div>
-
-    <div class="form-group row align-items-center" id="export-container" style="display: none;">
-      <label class="col-md-2 col-form-label" for="date-range">Pilih rentan waktu</label>
-      <div class="col-md-4">
-          <input type="date" id="start_date" class="form-control">
-      </div>
-      <div class="col-md-4">
-          <input type="date" id="end_date" class="form-control">
-      </div>
-      <div class="col-md-2 text-right">
-          <div>
-              <a href="#" id="export-link" class="btn btn-success">
-                  <i class="fa fa-file-excel"></i> Export All
-              </a>
-
-              <!-- <button id="backfillBalancesButton" class="btn btn-primary">
-                Balances
-              </button> -->
-          </div>
       </div>
     </div>
 </div>
@@ -94,21 +68,9 @@
           <th class="text-center">In</th>
           <th class="text-center">Out</th>
           <th class="text-center">Stock</th>
-          <th class="text-center">Sell Forecast</th>
-          <th class="text-center">Effective</th>
         </tr>
       </thead>
-      <tfoot>
-          <tr>
-            <th colspan="3"></th>
-            <th class="text-right">Total :</th>
-            <th class="text-center" id="total-in"></th>
-            <th class="text-center" id="total-out"></th>
-            <th class="text-center" id="total-stock"></th>
-            <th class="text-center" id="total-sell"></th>
-            <th colspan="1"></th>
-          </tr>
-        </tfoot>
+      
     </table>
   </div>
 </div>
@@ -147,77 +109,45 @@ $(document).ready(function() {
 
   $('#datatable').DataTable({
     processing: true,
-    // serverSide: true,
     ajax: {
-      "url": datatableUrl,
-      "dataType": "json",
-      "type": "GET",
-      "data":{ _token: "{{csrf_token()}}"},
-      "dataSrc": function(json) {
-        // Format the total stock with 2 decimal places
-        let formattedTotalStock = parseFloat(json.total_stock || 0).toFixed(2);
-        let formattedTotalIn = parseFloat(json.total_in || 0).toFixed(2);
-        let formattedTotalOut = parseFloat(json.total_out || 0).toFixed(2);
-        let formattedTotalSell = parseFloat(json.total_sell || 0).toFixed(2);
-
-        $('#total-stock').html(formattedTotalStock); // Set the formatted total stock in the footer
-        $('#total-in').html(formattedTotalIn);
-        $('#total-out').html(formattedTotalOut);
-        $('#total-sell').html(formattedTotalSell);
-
+      url: datatableUrl,
+      type: 'GET',
+      data:{ _token: "{{csrf_token()}}" },
+      dataSrc: function (json) {
+        $('#total-stock').html(json.total_stock);
+        $('#total-in').html(json.total_in);
+        $('#total-out').html(json.total_out);
         return json.data;
       }
     },
-    order: [
-      [1, 'asc']
+    columns: [
+      { data: 0 },
+      { data: 1 },
+      { data: 2 },
+      { data: 3 },
+      { data: 4, className:'text-center' },
+      { data: 5, className:'text-center' },
+      { data: 6, className:'text-center' }
     ],
+    order: [[1,'asc']],
     pageLength: 10,
-    lengthMenu: [
-      [10, 25, 50, 100],
-      [10, 25, 50, 100]
-    ],
-    "dom": '<"row"<"col-sm-2"l><"col-sm-7 text-left"B><"col-sm-3"f>> <"row"<"col-sm-12 col-md-12"p>> <"row"<"col-sm-12"rt>> <"row"<"col-sm-12 col-md-6"i><"col-sm-12 col-md-6"p>>',
-    buttons: [
-      {
+    dom: '<"row"<"col-sm-2"l><"col-sm-7"B><"col-sm-3"f>>rt<"row"<"col-sm-6"i><"col-sm-6"p>>',
+    buttons: [{
         extend: 'excelHtml5',
         text: '<i class="fa fa-file-excel-o"></i>',
         titleAttr: 'Excel',
         title: 'Report-Stock',
-        footer: true, // This ensures that the footer is included in the export
-        customize: function(xlsx) {
-          let sheet = xlsx.xl.worksheets['sheet1.xml'];
-          
-          // Insert total values into the footer cells
-          $('row c[r^="A"]', sheet).each(function() {
-            if ($(this).text() === 'Total Stock') {
-              let totalStockCell = $(this).attr('r').replace('A', 'B');
-              $('row c[r="'+totalStockCell+'"]', sheet).text($('#total-stock').text());
-            } else if ($(this).text() === 'Total In') {
-              let totalInCell = $(this).attr('r').replace('A', 'B');
-              $('row c[r="'+totalInCell+'"]', sheet).text($('#total-in').text());
-            } else if ($(this).text() === 'Total Out') {
-              let totalOutCell = $(this).attr('r').replace('A', 'B');
-              $('row c[r="'+totalOutCell+'"]', sheet).text($('#total-out').text());
-            } else if ($(this).text() === 'Total Sell') {
-              let totalSellCell = $(this).attr('r').replace('A', 'B');
-              $('row c[r="'+totalSellCell+'"]', sheet).text($('#total-sell').text());
-            }
-          });
-        }
-      }
-    ],
-    footerCallback: function(row, data, start, end, display) {
-      // Use this callback to dynamically update the footer with totals
+        footer: true
+    }],
+    footerCallback: function (row, data) {
       let api = this.api();
-      let totalStock = api.column(6).data().reduce((a, b) => parseFloat(a) + parseFloat(b), 0);
-      let totalIn = api.column(4).data().reduce((a, b) => parseFloat(a) + parseFloat(b), 0);
-      let totalOut = api.column(5).data().reduce((a, b) => parseFloat(a) + parseFloat(b), 0);
-      let totalSell = api.column(7).data().reduce((a, b) => parseFloat(a) + parseFloat(b), 0);
+      let totalIn  = api.column(4).data().reduce((a,b)=>(+a)+(+b.replace(/,/g,'')),0);
+      let totalOut = api.column(5).data().reduce((a,b)=>(+a)+(+b.replace(/,/g,'')),0);
+      let totalStk = api.column(6).data().reduce((a,b)=>(+a)+(+b.replace(/,/g,'')),0);
 
-      $(api.column(6).footer()).html(totalStock.toFixed(2));
       $(api.column(4).footer()).html(totalIn.toFixed(2));
       $(api.column(5).footer()).html(totalOut.toFixed(2));
-      $(api.column(7).footer()).html(totalSell.toFixed(2));
+      $(api.column(6).footer()).html(totalStk.toFixed(2));
     }
   });
 

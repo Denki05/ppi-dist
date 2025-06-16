@@ -2,20 +2,15 @@
 
 namespace App\Http\Controllers\Superuser\Gudang;
 
-use App\DataTables\Gudang\ReceivingTable;
-use App\Entities\Accounting\Journal;
-use App\Entities\Accounting\JournalPeriode;
-use App\Entities\Accounting\Hpp;
-use App\Entities\Master\Company;
-use App\Entities\Master\SupplierCoa;
+use App\DataTables\Gudang\ReceivingTable; 
 use App\Entities\Master\Warehouse;
 use App\Entities\Gudang\Receiving;
 use App\Entities\Gudang\ReceivingDetail;
-use App\Entities\Gudang\ReceivingDetailColly;
 use App\Exports\Gudang\ReceivingDetailImportTemplate;
 use App\Imports\Gudang\ReceivingDetailImport;
 use App\Entities\Gudang\PurchaseOrder;
 use App\Entities\Gudang\PurchaseOrderDetail;
+use App\Entities\Gudang\PurchaseOrderSummary;
 use App\Entities\Gudang\StockMove;
 use App\Entities\Master\ProductMinStock;
 use App\Entities\Master\ProductPack;
@@ -83,46 +78,30 @@ class ReceivingController extends Controller
 
     public function store(Request $request)
     {
-        if ($request->ajax()) {
-            $validator = Validator::make($request->all(), [
-                'code'              => 'required|string|unique:receiving,code',
-                'warehouse'         => 'required|integer',
-            ]);
+        if (!$request->ajax()) return;  // guard
 
-            if ($validator->fails()) {
-                $response['notification'] = [
-                    'alert' => 'block',
-                    'type' => 'alert-danger',
-                    'header' => 'Error',
-                    'content' => $validator->errors()->all(),
-                ];
+        $validator = Validator::make($request->all(), [
+            'code'      => 'required|string|unique:receiving,code',
+            'warehouse' => 'required|integer'
+        ]);
+        if ($validator->fails()) return $this->validationError($validator);
 
-                return $this->response(400, $response);
-            }
+        $receiving               = new Receiving;
+        $receiving->code         = $request->code;
+        $receiving->warehouse_id = $request->warehouse;
+        $receiving->pbm_date     = $request->pbm_date;
+        $receiving->note         = $request->note ?? null;
+        $receiving->status       = Receiving::STATUS['ACTIVE'];
+        $receiving->save();
 
-            if ($validator->passes()) {
-                $receiving = new Receiving;
-
-                $receiving->code = $request->code;
-                $receiving->warehouse_id = $request->warehouse;
-                $receiving->pbm_date = $request->pbm_date;
-                $receiving->note = $request->note;
-
-                $receiving->status = Receiving::STATUS['ACTIVE'];
-
-                if ($receiving->save()) {
-                    $response['notification'] = [
-                        'alert' => 'notify',
-                        'type' => 'success',
-                        'content' => 'Success',
-                    ];
-
-                    $response['redirect_to'] = route('superuser.gudang.receiving.step', ['id' => $receiving->id]);
-
-                    return $this->response(200, $response);
-                }
-            }
-        }
+        return $this->response(200, [
+            'notification' => [
+                'alert'   => 'notify',
+                'type'    => 'success',
+                'content' => 'Receiving created successfully',
+            ],
+            'redirect_to' => route('superuser.gudang.receiving.step', $receiving->id)
+        ]);
     }
 
     public function edit($id)
@@ -197,222 +176,173 @@ class ReceivingController extends Controller
 
     public function publish(Request $request, $id)
     {
-        return $this->save_acc($request, $id, 'publish');
+        try {
+            $receiving = Receiving::findOrFail($id);
+
+            // Publish to QC
+            if ($receiving->status == Receiving::STATUS['ACTIVE']) {
+                if ($receiving->details->isEmpty()) {
+                    return redirect()
+                        ->back()
+                        ->with('error', 'Receiving tidak memiliki list Product');
+                }
+
+                $receiving->status = Receiving::STATUS['QC'];
+                $receiving->save();
+
+                return redirect()
+                    ->route('superuser.gudang.receiving.step', $receiving->id)
+                    ->with('message', 'Receiving berhasil dipindah ke tahap QC');
+            }
+
+            // Publish to Ready
+            if ($receiving->status == Receiving::STATUS['QC']) {
+                $hasRi = $receiving->details->contains(function ($detail) {
+                    return !is_null($detail->quantity_ri) && $detail->quantity_ri > 0;
+                });
+
+                if (!$hasRi) {
+                    return redirect()
+                        ->back()
+                        ->with('error', 'Semua detail Receiving harus memiliki stok QC yang valid');
+                }
+
+                $receiving->status = Receiving::STATUS['READY'];
+                $receiving->save();
+
+                return redirect()
+                    ->route('superuser.gudang.receiving.step', $receiving->id)
+                    ->with('message', 'Receiving berhasil dipindah ke tahap Ready');
+            }
+
+            return redirect()
+                ->back()
+                ->with('error', 'Status tidak valid untuk diproses');
+        } catch (\Exception $e) {
+            return redirect()
+                ->back()
+                ->with('error', 'Terjadi kesalahan: ' . $e->getMessage());
+        }
     }
 
     public function acc(Request $request, $id)
     {
-        return $this->save_acc($request, $id, 'acc');
-    }
-
-    private function save_acc(Request $request, $id, $button_type)
-    {
-        if($request->ajax()){
-            if(Auth::user()->is_superuser == 0){
-                if(empty($this->access) || empty($this->access->user) || $this->access->can_approve == 0){
-                    return redirect()->route('superuser.index')->with('error','Anda tidak punya akses untuk membuka menu terkait');
-                }
-            }
-
-            $failed = "";
-
+        if ($request->ajax()) {
             DB::beginTransaction();
+            try {
 
-            try{
+                $receiving = Receiving::findOrFail($id);
 
-                $receiving = Receiving::find($id);
-                $total_qty_ri = 0;
-                foreach($receiving->details as $detail){
-                    if($detail->total_quantity_ri == 0){
-                        $failed = "Item quantity belum di input!";
-                        break;
-                    }
+                if ($receiving->status != Receiving::STATUS['READY']) {
+                    return $this->response(400, [
+                        'notification' => [
+                            'alert'   => 'block',
+                            'type'    => 'alert-danger',
+                            'content' => 'Receiving tidak dalam status READY'
+                        ]
+                    ]);
                 }
-                
-                if ($failed) {
-                    $response['failed'] = $failed;
-                    DB::rollback();
-                    return $this->response(200, $response);
-                }else{
-                    $receiving->acc_by = Auth::id();
-                    $receiving->acc_at = Carbon::now()->toDateTimeString();
-                    $receiving->status = Receiving::STATUS['ACC'];
 
-                    if ($receiving->save()) {
-                        // Input stock
-                        foreach($receiving->details as $detail){
-                            $check_stock = ProductMinStock::where('product_packaging_id', $detail->product_packaging_id)
-                                    ->where('warehouse_id', $detail->receiving->warehouse_id)
-                                    ->first();
-                            // DD($check_stock);
+                /** ─── 2. FIFO pemotongan stok PurchaseOrderSummary ─── */
+                foreach ($receiving->details as $detail) {
 
-                                if (empty($check_stock)) {
-                                    $product_check = ProductPack::find($detail->product_packaging_id);
-                                    // $failed = "Product stock belum ada, Silahkan hubungi Admin!";
-                                    $failed = 'Variant : <b>'. $product_check->code .' - '. $product_check->code . '</b> Stock belum ada, silahkan hubungi Administrator!';
-                                    break;
-                                }else {
-                                    $total_quantity = $detail->total_quantity_ri;
-                                    $get_stock = $check_stock->quantity;
-                                    // DD($get_stock);
-                                    $check_stock->quantity = $get_stock + $total_quantity;
-                                    $check_stock->save();
-                                    
-                                    // Record log stock
-                                    $move = StockMove::where('product_packaging_id', $detail->product_packaging_id)
-                                    ->where('warehouse_id', $receiving->warehuse_id)
-                                    ->get();
-                                    $move_in = $move->sum('stock_in');
-                                    $move_out = $move->sum('stock_out');
-                                    
-                                    $sisa = $get_stock + $move_in - $move_out + $total_quantity;
-                                    $insert_stock_move = StockMove::create([
-                                        'code_transaction' => 'Receiving-'.$receiving->code,
-                                        'warehouse_id' => $receiving->warehouse_id,
-                                        'product_packaging_id' => $detail->product_packaging_id,
-                                        'stock_in' => $total_quantity,
-                                        'stock_balance' => $sisa,
-                                        'created_by' => Auth::id()
-                                    ]);
-                                }
-                        }
-
-                        if ($failed) {
-                            $response['failed'] = $failed;
-                            DB::rollback();
-        
-                            return $this->response(200, $response);
-                        } else {
-                            DB::commit();
-                            if ($button_type == 'publish') {
-                                $response['redirect_to'] = route('superuser.gudang.receiving.index');
-                            } else {
-                                $response['redirect_to'] = '#datatable';
-                            }
-    
-                            return $this->response(200, $response);
-                        }
+                    // lewati detail yg belum di‑QC
+                    if (is_null($detail->quantity_ri) || $detail->quantity_ri <= 0) {
+                        continue;
                     }
+
+                    $sisaToCut = $detail->quantity_ri;
+
+                    // summary dengan status 2 (UNDONE) – urut ID (first‑in)
+                    $summaries = PurchaseOrderSummary::where([
+                                        ['product_packaging_id', $detail->product_packaging_id],
+                                        ['status', 2]   // 2 = UNDONE
+                                ])->orderBy('id')
+                                ->lockForUpdate()
+                                ->get();
+
+                    foreach ($summaries as $sum) {
+                        if ($sisaToCut <= 0) break;
+
+                        $ambil        = min($sisaToCut, $sum->quantity);
+                        $sum->quantity -= $ambil;
+                        $sisaToCut     -= $ambil;
+
+                        if ($sum->quantity == 0) {
+                            $sum->status = 1;            // 1 = DONE  (ganti jika konvensi Anda berbeda)
+                        }
+                        $sum->save();
+                    }
+
+                    if ($sisaToCut > 0) {
+                        DB::rollBack();
+                        return $this->response(400, [
+                            'notification' => [
+                                'alert'   => 'block',
+                                'type'    => 'alert-danger',
+                                'content' => 'Stok PO Summary tidak mencukupi untuk '
+                                        . $detail->product_pack->code . ' - '
+                                        . $detail->product_pack->name
+                            ]
+                        ]);
+                    }
+
+                    /* ── 2b. Update / insert master_product_min_stocks ── */
+                    $minStock = ProductMinStock::firstOrNew([
+                        'product_packaging_id' => $detail->product_packaging_id,
+                        'warehouse_id'         => $receiving->warehouse_id,
+                    ]);
+
+                    if (!$minStock->exists) {
+                        // asumsi unit_id dari relasi ProductPack
+                        $prodPack                 = ProductPack::find($detail->product_packaging_id);
+                        $minStock->unit_id        = 1;  // fallback
+                        $minStock->selling_price  = 0;
+                        $minStock->quantity       = 0;
+                    }
+
+                    $startBalance          = $minStock->quantity;
+                    $minStock->quantity   += $detail->quantity_ri;
+                    $minStock->save();
+
+                    /* ── 2c. Insert ke gudang_move_stock ── */
+                    StockMove::create([
+                        'warehouse_id'         => $receiving->warehouse_id,
+                        'product_packaging_id' => $detail->product_packaging_id,
+                        'code_transaction'     => 'RI-'.$receiving->code,
+                        'stock_in'             => $detail->quantity_ri,
+                        'stock_out'            => 0,
+                        'stock_balance'        => $minStock->quantity,
+                        'created_by'           => Auth::id(),
+                    ]);
                 }
+
+                /** ─── 3. Update status Receiving ─── */
+                $receiving->status = Receiving::STATUS['ACC'];
+                $receiving->acc_by = Auth::id();
+                $receiving->acc_at = Carbon::now();
+                $receiving->save();
+
+                DB::commit();
+                return $this->response(200, [
+                    'notification' => [
+                        'alert'   => 'notify',
+                        'type'    => 'success',
+                        'content' => 'Receiving berhasil di ACC'
+                    ],
+                    'redirect_to' => route('superuser.gudang.receiving.index')
+                ]);
+
             } catch (\Exception $e) {
                 // dd($e);
-                DB::rollback();
-                $response['notification'] = [
-                    'alert' => 'block',
-                    'type' => 'alert-danger',
-                    'header' => 'Error',
-                    'content' => $failed,
-                ];
-
-                return $this->response(400, $response);
-            }
-        }
-    }
-    
-    public function cancel_approve(Request $request, $id)
-    {
-        if ($request->ajax()) {
-            $failed = "";
-
-            DB::beginTransaction();
-
-            try{
-                $receiving = Receiving::find($id);
-                
-                $superuser = Auth::guard('superuser')->user();
-                $journal_periode = JournalPeriode::where('type', $superuser->type)->where('branch_office_id', $superuser->branch_office_id)->latest()->first();
-
-                if($journal_periode) {
-                    $min_date = Carbon::parse( $journal_periode->to_date );
-                    if($receiving->acc_at <= $min_date ) {
-                        $response['failed'] = 'Transaksi sudah terposting';
-                        return $this->response(200, $response);
-                    }
-                }
-                
-                foreach($receiving->details as $detail){
-                    foreach($detail->collys as $colly){
-                        if($colly->status_mutation == 1){
-                            $failed = "Ada SKU yang sudah dimutasi";
-                            break;
-                        }
-
-                        if($colly->status_recondition == 1){
-                            $failed = "Ada SKU yang sudah direkondisi";
-                            break;
-                        }
-                    }
-                }
-
-                if ($failed) {
-                    $response['failed'] = $failed;
-                    DB::rollback();
-
-                    return $this->response(200, $response);
-                }
-
-                //Delete jurnal ACC
-                $jurnals = Journal::where('transaction_type', Journal::TRANSACTION_TYPE['RECEIVING'])
-                                  ->where('transaction_id', $receiving->id)
-                                  ->get();
-
-                if($jurnals->isEmpty()){
-                    //Delete jurnal ACC
-                    $jurnals = Journal::where('name', Journal::PREJOURNAL['RI_ACC'] . $receiving->code)->get();
-
-                    foreach($jurnals as $jurnal){
-                        $data = Journal::find($jurnal->id);
-
-                        $data->delete();
-                    }
-
-                    //Delete jurnal TAX
-                    $jurnals = Journal::where('name', Journal::PREJOURNAL['RI_TAX'] . $receiving->code)->get();
-
-                    foreach($jurnals as $jurnal){
-                        $data = Journal::find($jurnal->id);
-
-                        $data->delete();
-                    }
-
-                    foreach($receiving->details as $detail){
-                        $jurnals = Journal::where('name', Journal::PREJOURNAL['RI_REJECT'] . $detail->purchase_order->code);
-
-                        foreach($jurnals as $jurnal){
-                            $data = Journal::find($jurnal->id);
-
-                            $data->delete();
-                        }
-                    }
-                } else {
-                    foreach($jurnals as $jurnal){
-                        $data = Journal::find($jurnal->id);
-
-                        $data->delete();
-                    }
-                }
-
-                $receiving->status = Receiving::STATUS['ACTIVE'];
-                $receiving->acc_by = null;
-                $receiving->acc_at = null;
-
-                if($receiving->save()){
-
-                    DB::commit();
-                    $response['redirect_to'] = '#datatable';
-                    return $this->response(200, $response);
-                }
-            } catch (\Exception $e) {
-                DB::rollback();
-                // DD($e);
-                $response['notification'] = [
-                    'alert' => 'block',
-                    'type' => 'alert-danger',
-                    'header' => 'Error',
-                    'content' => "Internal Server Error",
-                ];
-
-                return $this->response(400, $response);
+                DB::rollBack();
+                return $this->response(500, [
+                    'notification' => [
+                        'alert'   => 'block',
+                        'type'    => 'alert-danger',
+                        'content' => 'Terjadi kesalahan: '.$e->getMessage()
+                    ]
+                ]);
             }
         }
     }
@@ -428,83 +358,6 @@ class ReceivingController extends Controller
         $data['receiving'] = Receiving::findOrFail($id);
 
         return view('superuser.gudang.receiving.show', $data);
-    }
-
-    public function pdf($id = NULL, $protect = false, $generate = false)
-    {
-        if (!Auth::guard('superuser')->user()->can('receiving-print')) {
-            return abort(403);
-        }
-
-        if ($id == NULL) {
-            abort(404);
-        }
-
-        $data['company'] = Company::find(1);
-        $data['receiving'] = Receiving::findOrFail($id);
-
-        $pdf = app('dompdf.wrapper');
-        $pdf->getDomPDF()->set_option("enable_php", true);
-        $pdf->loadView('superuser.purchasing.receiving.pdf', $data);
-        $pdf->setPaper('a4', 'landscape');
-
-        if ($protect) {
-            $pdf->setEncryption('12345678');
-        }
-
-        if ($generate) {
-            return $pdf;
-        }
-
-        return $pdf->stream();
-    }
-
-    public function print_barcode($id = NULL, $protect = false, $generate = false)
-    {
-        if (!Auth::guard('superuser')->user()->can('receiving-print')) {
-            return abort(403);
-        }
-
-        if ($id == NULL) {
-            abort(404);
-        }
-
-        $data['receiving'] = Receiving::findOrFail($id);
-
-        $pdf = DomPDF::loadView('superuser.purchasing.receiving.print_barcode', $data);
-
-        // 50mm x 70mm
-        $customPaper = array(0, 0, 198.10, 141.50);
-        $pdf->setPaper($customPaper, 'portrait');
-
-        if ($protect) {
-            $pdf->setEncryption('12345678');
-        }
-
-        if ($generate) {
-            return $pdf;
-        }
-
-        return $pdf->stream();
-    }
-
-    public function print_barcodeWithCode($code)
-    {
-        if (!Auth::guard('superuser')->user()->can('receiving-print')) {
-            return abort(403);
-        }
-
-        $code = str_replace('\\', '/', $code);
-
-        $data['receiving'] = Receiving::where('code', $code)->first();
-
-        $pdf = DomPDF::loadView('superuser.purchasing.receiving.print_barcode', $data);
-
-        // 50mm x 70mm
-        $customPaper = array(0, 0, 198.10, 141.50);
-        $pdf->setPaper($customPaper, 'portrait');
-
-        return $pdf->stream();
     }
 
     public function destroy(Request $request, $id)

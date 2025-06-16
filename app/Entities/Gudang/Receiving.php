@@ -15,25 +15,23 @@ class Receiving extends Model
     use SoftDeletes;
 
     protected $fillable = [
-        'code', 'warehouse_id', 'pbm_date', 'status', 'acc_by', 'acc_at', 'description', 'no_batch'
+        'code', 
+        'warehouse_id', 
+        'pbm_date', 
+        'status', 
+        'acc_by', 
+        'acc_at', 
+        'note', 
     ];
     protected $table = 'receiving';
 
     const STATUS = [
         'DELETED' => 0,
-        'ACTIVE' => 1,
-        'ACC' => 2
+        'ACTIVE'  => 1,   // draft admin
+        'QC'      => 2,   // proses QC logistik
+        'READY'   => 3,   // semua qty QC OK, menunggu ACC
+        'ACC'     => 4,   // final
     ];
-    
-    const TRANSACTION_TYPE = [
-        'Tunai' => 1,   
-        'Non Tunai' => 0,
-    ];
-
-    public function transaction_type()
-    {
-        return array_search($this->transaction_type, self::TRANSACTION_TYPE);
-    }
 
     public function warehouse()
     {
@@ -44,12 +42,6 @@ class Receiving extends Model
     {
         return $this->hasMany('App\Entities\Gudang\ReceivingDetail', 'receiving_id');
     }
-    
-    public function price_format($value)
-    {
-        return number_format($value, 2, ".", ",");
-    }
-
 
     public function createdBySuperuser()
     {

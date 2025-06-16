@@ -7,6 +7,7 @@ use Illuminate\Http\Request;
 use App\Entities\Setting\UserMenu;
 use App\Entities\Gudang\PurchaseOrder;
 use App\Entities\Gudang\PurchaseOrderDetail;
+use App\Entities\Gudang\PurchaseOrderSummary;
 use App\Entities\Master\BrandLokal;
 use App\Entities\Master\ProductPack;
 use App\Entities\Master\Packaging;
@@ -503,6 +504,131 @@ class PurchaseOrderController extends Controller
             if ($purchase_order->save()) {
                 $response['redirect_to'] = route('superuser.gudang.purchase_order.index');
                 return $this->response(200, $response);
+            }
+        }
+    }
+
+    public function send(Request $request, $id)
+    {
+        if ($request->ajax()) {
+            $purchase_order = PurchaseOrder::find($id);
+
+            if ($purchase_order === null) {
+                abort(404);
+            }
+
+            $purchase_order->updated_by = Auth::id();
+            $purchase_order->status = PurchaseOrder::STATUS['SENT'];
+
+            if ($purchase_order->save()) {
+                $purchase_order_details = PurchaseOrderDetail::where('po_id', $id)->get();
+                foreach ($purchase_order_details as $detail) {
+                    $summary = new PurchaseOrderSummary;
+                    $summary->po_id = $id;
+                    $summary->product_packaging_id = $detail->product_packaging_id;
+                    $summary->quantity = $detail->quantity;
+                    $summary->status = PurchaseOrderSummary::STATUS['UNDONE'];
+                    $summary->save();
+                }
+
+                $response['notification'] = [
+                    'alert' => 'notify',
+                    'type' => 'success',
+                    'content' => 'Success',
+                ];
+
+                $response['redirect_to'] = route('superuser.gudang.purchase_order.index');
+
+                return $this->response(200, $response);
+            }
+        }
+    } 
+
+    public function summary()
+    {
+        if(Auth::user()->is_superuser == 0){
+            if(empty($this->access) || empty($this->access->user) || $this->access->can_read == 0){
+                return redirect()->route('superuser.index')->with('error','Anda tidak punya akses untuk membuka menu terkait');
+            }
+        }
+
+        $summary = DB::table('purchase_order_summary')
+            ->leftJoin('master_products_packaging', 'purchase_order_summary.product_packaging_id', '=', 'master_products_packaging.id')
+            ->leftJoin('master_packaging', 'master_products_packaging.packaging_id', '=', 'master_packaging.id')
+            ->leftJoin('purchase_order', 'purchase_order_summary.po_id', '=', 'purchase_order.id')
+            ->select(
+                'master_products_packaging.id as id',
+                'master_products_packaging.name as produk_name',
+                'master_products_packaging.code as produk_code',
+                'master_packaging.pack_name as kemasan',
+                DB::raw('SUM(purchase_order_summary.quantity) as total_quantity'),
+                DB::raw('GROUP_CONCAT(DISTINCT purchase_order.code ORDER BY purchase_order.code SEPARATOR ", ") as kode_po'),
+                'purchase_order_summary.created_at as created_at'
+            )
+            ->where('purchase_order_summary.status', PurchaseOrderSummary::STATUS['UNDONE'])
+            ->groupBy(
+                'master_products_packaging.id',
+                'master_products_packaging.name',
+                'master_products_packaging.code',
+                'master_packaging.pack_name'
+            )
+            ->orderBy('master_products_packaging.name', 'ASC')
+            ->get();
+
+        return view($this->view."summary", compact('summary'));
+    }
+
+    public function cancel_send(Request $request, $id)
+    {
+        if ($request->ajax()) {
+            $purchase_order = PurchaseOrder::find($id);
+
+            if ($purchase_order === null) {
+                abort(404);
+            }
+
+            if ($purchase_order->receiving_detail()->exists()) { 
+                return $this->response(400, [
+                    'notification' => [
+                        'alert'   => 'block',
+                        'type'    => 'alert-danger',
+                        'content' => 'PO tidak dapat dibatalkan karena sudah ada penerimaan yang terkait.',
+                    ]
+                ]);
+            }
+
+            DB::beginTransaction();
+            try {
+
+                $purchase_order->updated_by = Auth::id();
+                $purchase_order->status = PurchaseOrder::STATUS['ACC'];
+                $purchase_order->save();
+
+                PurchaseOrderSummary::where([
+                    ['po_id', $purchase_order->id],
+                    ['status', PurchaseOrderSummary::STATUS['UNDONE']]
+                ])->delete();
+
+                DB::commit();
+
+                return $this->response(200, [
+                    'notification' => [
+                        'alert'   => 'notify',
+                        'type'    => 'success',
+                        'content' => 'PO berhasil dibatalkan dari status SENT'
+                    ],
+                    'redirect_to' => route('superuser.gudang.purchase_order.index')
+                ]);
+
+            }catch (\Exception $e) {
+                DB::rollBack();
+                return $this->response(500, [
+                    'notification' => [
+                        'alert'   => 'block',
+                        'type'    => 'alert-danger',
+                        'content' => 'Terjadi kesalahan: '.$e->getMessage()
+                    ]
+                ]);
             }
         }
     }
