@@ -340,7 +340,7 @@ class SalesOrderPpnController extends Controller
         $brand = BrandLokal::get();
         $ekspedisi = Vendor::where('type', 1)->get();
         $packaging = Packaging::get();
-        $rekening = DB::table('rekening')->get();
+        $rekening = DB::table('rekening')->where('id', 5)->get();
 
         $data = [
             'other_address' => $other_address,

@@ -62,10 +62,13 @@ class ReportCustomerOrderVariantV2Controller extends Controller
     {
         if ($request->ajax()) {
             $products = Product::leftJoin('master_brand_lokal', 'master_products.brand_name', '=', 'master_brand_lokal.brand_name')
+                ->leftJoin('master_products_packaging', 'master_products.id', '=', 'master_products_packaging.product_id')
+                ->leftJoin('master_packaging', 'master_products_packaging.packaging_id', '=', 'master_packaging.id')
                 ->select(
-                    'master_products.id as product_id', 
-                    'master_products.code as product_code', 
-                    'master_products.name as product_name', 
+                    'master_products_packaging.id as product_id', 
+                    'master_products_packaging.code as product_code', 
+                    'master_products_packaging.name as product_name', 
+                    'master_packaging.pack_name as product_kemasan', 
                 )
                 ->where('master_products.brand_name', $request->brand_name)
                 ->get();
@@ -131,8 +134,10 @@ class ReportCustomerOrderVariantV2Controller extends Controller
         $productSearch = empty($product) || in_array('all', $product)
             ? '1=1' // Select all products
             : collect($product)->map(function($value) {
-                return "{master_products.id}='$value'";
+                return "{master_products_packaging.id}='$value'";
             })->implode(' OR ');
+
+        // dd($productSearch);
 
         // File paths
         $basePath = "C:\\xampp\\htdocs\\ppi-dist\\public\\cr\\report\\operasional\\customer_order_variant_v2\\";
@@ -176,6 +181,7 @@ class ReportCustomerOrderVariantV2Controller extends Controller
             return response()->download($file);
 
         } catch (Exception $e) {
+            dd($e);
             // Log the error for debugging
             Log::error('Failed to generate report: ' . $e->getMessage());
             return response()->json(['error' => 'Failed to generate report. Please try again later.'], 500);

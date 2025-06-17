@@ -134,40 +134,40 @@
           </thead>
           <tbody>
             @foreach($packing_order as $index => $row)
-              @if($row->status == 2)
+              @if($row->status == 2 && ($row->so->payment_status == 1 || in_array($row->type_transaction, ['TEMPO', 'COD', 'MARKETPLACE'])))
                 <tr>
-                  @if($row->so->payment_status == 1 OR $row->type_transaction == "TEMPO" OR $row->type_transaction == "COD" OR $row->type_transaction == "MARKETPLACE")
-                    <td>{{ $index+1 }}</td>
-                    <td>{{$row->code ?? '-'}}</td>
-                    <td>{{ $row->member->name }} {{$row->member->text_kota}}</td>
-                    <td><?= date('d-m-Y h:i:s',strtotime($row->created_at)); ?></td>
-                    <td>{{$row->so->code}} / {{$row->so->type_transaction}}</td>
-                    <td>
-                        <!-- <span class="badge badge-{{ $row->do_status()->class }}"><b>{{ $row->do_status()->msg }}</b></span> -->
-                      @if($row->status == 2)
-                        <span class="badge badge-{{ $row->do_status()->class }}"><b>{{ $row->do_status()->msg }}</b></span>
-                      @endif
-                      @if($row->status == 3)
-                        <span class="badge badge-success"><b>Success</b></span>
-                      @endif
-                    </td>
-                    <td>
-                      @if($row->status == 2)
-                        <a href="javascript:saveConfirmation('{{ route('superuser.penjualan.packing_order.ready', $row->id) }}')" class="btn btn-success btn-sm btn-flat" data-id="{{$row->id}}"><i class="fa fa-send"></i> Naik Ke DO</a>
-                        <a href="{{route('superuser.penjualan.delivery_order.print_manifest', $row->id)}}" class="btn btn-info btn-sm btn-flat" data-id="{{$row->id}}" target="_blank">
-                          <i class="fas fa-clipboard-list"></i> Print Manifest
-                        </a>
-                      @if($row->type_transaction == 'TEMPO' OR $row->type_transaction == "COD" OR $row->type_transaction == "MARKETPLACE")
-                        <a href="javascript:saveConfirmation('{{ route('superuser.penjualan.packing_order.revisi', $row->id) }}')" class="btn btn-danger btn-sm btn-flat" data-id="{{$row->id}}"><i class="fa fa-edit"></i> Revisi</a>
-                      @endif
-                      @role('Developer')
-                        @if($row->type_transaction == 'CASH')
-                          <a href="javascript:saveConfirmation('{{ route('superuser.penjualan.packing_order.revisi', $row->id) }}')" class="btn btn-dark btn-sm btn-flat" data-id="{{$row->id}}"><i class="fa fa-edit"></i> Revisi</a>
-                        @endif
-                      @endrole
+                  <td>{{ $index + 1 }}</td>
+                  <td>{{ $row->code ?? '-' }}</td>
+                  <td>{{ $row->member->name ?? '-' }} {{ $row->member->text_kota ?? '' }}</td>
+                  <td>{{ \Carbon\Carbon::parse($row->created_at)->format('d-m-Y H:i:s') }}</td>
+                  <td>{{ $row->so->code }} / {{ $row->so->type_transaction }}</td>
+                  <td>
+                    <span class="badge badge-{{ $row->do_status()->class }}">
+                      <b>{{ $row->do_status()->msg }}</b>
+                    </span>
+                  </td>
+                  <td>
+                    <a href="javascript:saveConfirmation('{{ route('superuser.penjualan.packing_order.ready', $row->id) }}')" class="btn btn-success btn-sm btn-flat" data-id="{{ $row->id }}">
+                      <i class="fa fa-send"></i> Naik Ke DO
+                    </a>
+                    <a href="{{ route('superuser.penjualan.delivery_order.print_manifest', $row->id) }}" class="btn btn-info btn-sm btn-flat" data-id="{{ $row->id }}" target="_blank">
+                      <i class="fas fa-clipboard-list"></i> Print Manifest
+                    </a>
+
+                    @if(in_array($row->type_transaction, ['TEMPO', 'COD', 'MARKETPLACE']))
+                      <a href="javascript:saveConfirmation('{{ route('superuser.penjualan.packing_order.revisi', $row->id) }}')" class="btn btn-danger btn-sm btn-flat" data-id="{{ $row->id }}">
+                        <i class="fa fa-edit"></i> Revisi
+                      </a>
                     @endif
-                      </td>
-                  @endif
+
+                    @role('Developer')
+                      @if($row->type_transaction == 'CASH')
+                        <a href="javascript:saveConfirmation('{{ route('superuser.penjualan.packing_order.revisi', $row->id) }}')" class="btn btn-dark btn-sm btn-flat" data-id="{{ $row->id }}">
+                          <i class="fa fa-edit"></i> Revisi
+                        </a>
+                      @endif
+                    @endrole
+                  </td>
                 </tr>
               @endif
             @endforeach

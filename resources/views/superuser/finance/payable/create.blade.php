@@ -57,6 +57,7 @@
                 <table class="table table-striped table-bordered" id="datatables">
                     <thead>
                         <tr>
+                            <th>#</th>
                             <th>Nota</th>
                             <th>Total Nota</th>
                             <th>Total Terbayar</th>
@@ -68,6 +69,7 @@
                             @if($row->invoicing && ($remaining = $row->invoicing->grand_total_idr - $row->invoicing->payable_detail->sum('total')) > 0)
                                 <tr>
                                     <input type="hidden" name="repeater[{{ $index }}][invoice_id]" value="{{ $row->invoicing->id }}">
+                                    <td>{{ $loop->iteration }}</td>
                                     <td>{{ $row->invoicing->code }}</td>
                                     <td><input type="text" class="form-control total_nota" value="{{ number_format($remaining, 0, ',', '.') }}" readonly></td>
                                     <td><input type="text" name="repeater[{{ $index }}][payable]" class="form-control formatRupiah total_payment"></td>

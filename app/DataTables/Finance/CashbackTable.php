@@ -15,6 +15,8 @@ class CashbackTable extends Table
         $month = $request->input('bulan', now()->month);
         $year = $request->input('tahun', now()->year);
 
+        // dd($month);
+
         $model = Cashback::where('finance_cashback.status', 1)
             ->leftJoin('finance_cashback_detail', 'finance_cashback.id', '=', 'finance_cashback_detail.cashback_id')
             ->leftJoin('penjualan_do', 'penjualan_do.id', '=', 'finance_cashback.do_id')

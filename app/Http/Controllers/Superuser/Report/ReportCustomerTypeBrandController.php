@@ -133,43 +133,43 @@ class ReportCustomerTypeBrandController extends Controller
                             'invoice_brand'                 => $row->invoice_brand,
                             'invoice_type'                  => $row->invoice_type,
                             'invoice_qty'                   => $row->invoice_qty ?? 0,
-                            'invoice_purchase'              => ($row->invoice_purchase - $row->ppn_idr),
+                            'invoice_purchase'              => $row->invoice_purchase,
                             'invoice_delivery_order_cost'   => $row->invoice_delivery_order_cost ?? 0,
                             'created_at'                    => now(),
                             'updated_at'                    => now()
                         ];
 
                         // perhitungan ulang untuk pengecekan hasil valid purchase
-                        $penjualan_do = DB::table('penjualan_do')
-                        ->where('do_code', $row->invoice_code)
-                        ->first();
+                        // $penjualan_do = DB::table('penjualan_do')
+                        // ->where('do_code', $row->invoice_code)
+                        // ->first();
 
-                        if ($penjualan_do) {
-                            $penjualan_do_details = DB::table('penjualan_do_details')
-                                ->where('do_id', $penjualan_do->id)
-                                ->first();
+                        // if ($penjualan_do) {
+                        //     $penjualan_do_details = DB::table('penjualan_do_details')
+                        //         ->where('do_id', $penjualan_do->id)
+                        //         ->first();
 
-                            $penjualan_do_items = DB::table('penjualan_do_item')
-                                ->where('do_id', $penjualan_do->id)
-                                ->get();
+                        //     $penjualan_do_items = DB::table('penjualan_do_item')
+                        //         ->where('do_id', $penjualan_do->id)
+                        //         ->get();
 
-                            if ($penjualan_do_details && $penjualan_do_items->isNotEmpty()) {
-                                $subtotal_item = $penjualan_do_items->sum(function ($item) use ($penjualan_do) {
-                                    return (($item->price - $item->usd_disc) * $item->qty) * $penjualan_do->idr_rate;
-                                });
+                        //     if ($penjualan_do_details && $penjualan_do_items->isNotEmpty()) {
+                        //         $subtotal_item = $penjualan_do_items->sum(function ($item) use ($penjualan_do) {
+                        //             return (($item->price - $item->usd_disc) * $item->qty) * $penjualan_do->idr_rate;
+                        //         });
 
-                                $purchase_total = $subtotal_item
-                                    - ($penjualan_do_details->discount_1_idr ?? 0)
-                                    - ($penjualan_do_details->discount_2_idr ?? 0)
-                                    - ($penjualan_do_details->discount_idr ?? 0)
-                                    - ($penjualan_do_details->voucher_idr ?? 0)
-                                    - ($penjualan_do_details->ppn_idr ?? 0);
+                        //         $purchase_total = $subtotal_item
+                        //             - ($penjualan_do_details->discount_1_idr ?? 0)
+                        //             - ($penjualan_do_details->discount_2_idr ?? 0)
+                        //             - ($penjualan_do_details->discount_idr ?? 0)
+                        //             - ($penjualan_do_details->voucher_idr ?? 0)
+                        //             - ($penjualan_do_details->ppn_idr ?? 0);
 
-                                if (abs($values['invoice_purchase'] - $purchase_total) > 2) {
-                                    throw new Exception("Mismatch in purchase total for DO code: {$row->invoice_code}. Calculated: {$purchase_total}, Expected: {$values['invoice_purchase']}");
-                                }
-                            }
-                        }
+                        //         if (abs($values['invoice_purchase'] - $purchase_total) > 2) {
+                        //             throw new Exception("Mismatch in purchase total for DO code: {$row->invoice_code}. Calculated: {$purchase_total}, Expected: {$values['invoice_purchase']}");
+                        //         }
+                        //     }
+                        // }
 
                         // handle jika data sudah ada
                         $report = CustomerTypeBrandReports::firstOrNew($attributes);
