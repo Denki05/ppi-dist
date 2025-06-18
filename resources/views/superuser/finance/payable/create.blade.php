@@ -84,7 +84,7 @@
                     </tbody>
                     <tfoot>
                         <tr>
-                            <td colspan="2" class="text-right">TOTAL</td>
+                            <td colspan="3" class="text-right">TOTAL</td>
                             <td><input type="text" class="form-control total" readonly></td>
                             <td><input type="text" class="form-control sisa_bayar" readonly></td>
                         </tr>
