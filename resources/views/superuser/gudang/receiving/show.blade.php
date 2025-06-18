@@ -52,6 +52,51 @@
           </button>
         </a>
       </div>
+
+      <div class="col-md-6 text-right">
+        @php
+            use App\Entities\Gudang\Receiving as RI;
+            $role = $superuser->division;           // singkat
+        @endphp
+
+        {{-- 1. Draft (ACTIVE) – tombol Edit/Publish/Delete hanya utk Admin & Developer --}}
+        @if($receiving->status == \App\Entities\Gudang\Receiving::STATUS['ACTIVE']
+            && in_array($role, ['Admin','Developer']))
+            <a href="{{ route('superuser.gudang.receiving.edit', $receiving->id) }}">
+                <button type="button" class="btn bg-gd-sea border-0 text-white">
+                    Edit <i class="fa fa-pencil ml-10"></i>
+                </button>
+            </a>
+
+            <a href="{{ route('superuser.gudang.receiving.publish', $receiving->id) }}">
+              <button type="button" class="btn bg-gd-leaf border-0 text-white">
+                Publish to QC <i class="fa fa-check ml-10"></i>
+              </button>
+            </a>
+
+            <a href="javascript:deleteConfirmation('{{ route('superuser.gudang.receiving.destroy', $receiving->id) }}', true)">
+                <button type="button" class="btn bg-gd-pulse border-0 text-white">
+                    Delete <i class="fa fa-trash ml-10"></i>
+                </button>
+            </a>
+
+        {{-- 2. Tahap QC – tombol Finish QC hanya utk Warehouse --}}
+        @elseif($receiving->status == \App\Entities\Gudang\Receiving::STATUS['QC'] && in_array($role, ['Warehouse','Developer']))
+            <a href="{{ route('superuser.gudang.receiving.publish', $receiving->id) }}">
+              <button type="button" class="btn bg-gd-leaf border-0 text-white">
+                Publish to Ready <i class="fa fa-check ml-10"></i>
+              </button>
+            </a>
+
+        {{-- 3. Tahap ACC --}}
+        @elseif($receiving->status == \App\Entities\Gudang\Receiving::STATUS['READY'] && in_array($role, ['Admin','Developer']))
+            <a href="javascript:saveConfirmation2('{{ route('superuser.gudang.receiving.acc', $receiving->id) }}')">
+                <button type="button" class="btn bg-gd-leaf border-0 text-white" title="ACC">
+                  ACC <i class="fa fa-check"></i>
+                </button>
+            </a>
+        @endif
+      </div>
     </div>
   </div>
 </div>

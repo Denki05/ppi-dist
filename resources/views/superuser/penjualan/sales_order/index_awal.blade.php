@@ -135,13 +135,13 @@
         </button>
       </div>
       <div class="modal-body">
-        <form>
+        <form id="formAddSO">
           @csrf
           <div class="row">
             <div class="col">
               <div class="form-group">
                 <span class="form-label"><b>Customer </b> <span class="text-danger">*</span></span>
-                <select class="js-select2 form-control account_member" id="account_member" name="member_name" style="width:100%;" data-placeholder="Cari Customer">
+                <select class="js-select2 form-control account_member" id="account_member" name="member_name" style="width:100%;" data-placeholder="Cari Customer" required>
                   <option value="">Pilih Customer</option>
                   @foreach($other_address as $row)
                   <option value="{{$row->id}}">{{$row->name}}  {{$row->text_kota}}</option>
@@ -152,7 +152,7 @@
             <div class="col">
               <div class="form-group">
                 <span class="form-label"><b>Brand </b> <span class="text-danger">*</span></span>
-                <select class="js-select2 form-control" id="merek_ppi" name="brand_name" style="width:100%;" data-placeholder="Pilih Brand">
+                <select class="js-select2 form-control" id="merek_ppi" name="brand_name" style="width:100%;" data-placeholder="Pilih Brand" required>
                   <option value="">Pilih Brand</option>
                   @foreach($brand as $row)
                   <option value="{{$row->brand_name}}">{{$row->brand_name}}</option>
@@ -165,7 +165,7 @@
             <div class="col">
               <div class="form-group">
                 <span class="form-label"><b>Type Transaksi </b> <span class="text-danger">*</span></span>
-                <select class="form-control js-select2" name="so_type" id="so_type" style="width:100%;">
+                <select class="form-control js-select2" name="so_type" id="so_type" style="width:100%;" required>
                   <option value="">Pilih Transaksi Type </option>
                   @foreach(App\Entities\Penjualan\SalesOrder::TYPE_TRANSACTION as $row => $value)
                   <option value="{{$value}}">{{$value}}</option>
@@ -176,7 +176,7 @@
             <div class="col">
               <div class="form-group">
                 <span class="form-label"><b>Indent </b> <span class="text-danger">*</span></span>
-                <select class="form-control js-select2" name="so_indent" id="indent_so" style="width:100%;">
+                <select class="form-control js-select2" name="so_indent" id="indent_so" style="width:100%;" required>
                   <option value="">Pilih status indent</option>
                   <option value="0">NO</option>
                   <option value="1">YES</option>
@@ -301,7 +301,15 @@
 
         $('.js-select2').select2();
 
-        $('#addSO').on('click', function() {
+        $('#addSO').on('click', function (e) {
+          e.preventDefault();                 // cegah anchor
+          const form = document.getElementById('formAddSO');
+
+          if (!form.checkValidity()) {        // validasi HTML5
+            form.reportValidity();            // munculkan pesan bawaan
+            return;                           // batalkan AJAX
+          }
+
             var customer = $('#account_member').val();
             var merek = $('#merek_ppi').val();
             var type_so = $('#so_type').val();

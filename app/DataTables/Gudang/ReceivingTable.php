@@ -96,6 +96,11 @@ class ReceivingTable extends Table
                     ";
                 case $model::STATUS['READY']:
                     return "
+                        <a href=\"{$view}\">
+                            <button type=\"button\" class=\"btn btn-sm btn-circle btn-alt-secondary\" title=\"View\">
+                                <i class=\"fa fa-eye\"></i>
+                            </button>
+                        </a>
                         <a href=\"javascript:saveConfirmation2('{$acc}')\">
                             <button type=\"button\" class=\"btn btn-sm btn-circle btn-alt-success\" title=\"ACC\">
                                 <i class=\"fa fa-check\"></i>
@@ -111,7 +116,6 @@ class ReceivingTable extends Table
                         </a>
                     ";
             }
-
         });
 
         return $table->make(true);
