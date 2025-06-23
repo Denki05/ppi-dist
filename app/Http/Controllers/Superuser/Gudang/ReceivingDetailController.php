@@ -319,8 +319,6 @@ class ReceivingDetailController extends Controller
             $detail->selisih     = $detail->quantity_po - $qc;
         }
 
-        $detail->status_item_qc = ReceivingDetail::STATUS_QC['OK'];
-
         $detail->save();
 
         /* 3. kirim respon sukses */
