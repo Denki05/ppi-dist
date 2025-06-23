@@ -144,7 +144,7 @@
 
         {{-- 3. Tahap ACC --}}
         @elseif($receiving->status == \App\Entities\Gudang\Receiving::STATUS['READY'] && in_array($role, ['Admin','Developer']))
-            <a href="javascript:saveConfirmation2('{{ route('superuser.gudang.receiving.acc_ri', $receiving->id) }}')">
+            <a href="javascript:saveConfirmation2('{{ route('superuser.gudang.receiving.acc', $receiving->id) }}')">
                 <button type="button" class="btn bg-gd-leaf border-0 text-white" title="ACC">
                   ACC <i class="fa fa-check"></i>
                 </button>
@@ -231,6 +231,8 @@
     </table>
   </div>
   @endif
+
+  @if($receiving->status == \App\Entities\Gudang\Receiving::STATUS['QC'])
   <div class="block-header block-header-default">
     <h3 class="block-title">Add Detail ({{ $receiving->details->count() }})</h3>
 
@@ -308,6 +310,7 @@
       </tbody>
     </table>
   </div>
+  @endif
 </div>
 
 <!-- Modal -->

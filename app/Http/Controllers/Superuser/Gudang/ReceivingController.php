@@ -246,20 +246,6 @@ class ReceivingController extends Controller
                 /** ─── 2. FIFO pemotongan stok PurchaseOrderSummary ─── */
                 foreach ($receiving->details as $detail) {
 
-                    // Cek apakah quantity_ri valid
-                    // if (is_null($detail->quantity_ri) || $detail->quantity_ri < 0) {
-                    //     DB::rollBack();
-                    //     return $this->response(400, [
-                    //         'notification' => [
-                    //             'alert'   => 'block',
-                    //             'type'    => 'alert-danger',
-                    //             'content' => 'Quantity Receiving tidak valid untuk '
-                    //                     . $detail->product_pack->code . ' - '
-                    //                     . $detail->product_pack->name
-                    //         ]
-                    //     ]);
-                    // }
-
                     if (is_null($detail->quantity_ri) || $detail->quantity_ri < 0) {
                         break;
                     }
