@@ -8,6 +8,7 @@ use App\Entities\Finance\CBPaymentInvoiceDetail;
 use App\Entities\Master\SupplierCoa;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Facades\Auth;
+use App\Entities\Gudang\ReceivingDetail;
 
 
 class Receiving extends Model
@@ -40,7 +41,7 @@ class Receiving extends Model
 
     public function details()
     {
-        return $this->hasMany('App\Entities\Gudang\ReceivingDetail', 'receiving_id');
+        return $this->hasMany(ReceivingDetail::class);
     }
 
     public function createdBySuperuser()

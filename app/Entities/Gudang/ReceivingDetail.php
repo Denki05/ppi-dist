@@ -4,9 +4,11 @@ namespace App\Entities\Gudang;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Auth;
+use App\Entities\Gudang\Receiving;
 
 class ReceivingDetail extends Model
 {
+    protected $table = 'receiving_detail';
     protected $fillable = [
         'receiving_id', 
         'po_id',
@@ -17,11 +19,10 @@ class ReceivingDetail extends Model
         'no_batch',
         'note'
     ];
-    protected $table = 'receiving_detail';
-
+    
     public function receiving()
     {
-        return $this->belongsTo('App\Entities\Gudang\Receiving', 'receiving_id');
+        return $this->belongsTo(Receiving::class); 
     }
 
     public function purchase_order()

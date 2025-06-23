@@ -225,7 +225,7 @@ class ReceivingController extends Controller
         }
     }
 
-    public function acc(Request $request, $id)
+    public function acc_ri(Request $request, $id)
     {
         if ($request->ajax()) {
             DB::beginTransaction();

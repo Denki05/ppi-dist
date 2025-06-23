@@ -157,7 +157,7 @@
 
 <div class="block">
 
-  @if(in_array($role, ['Admin','Developer']) )
+  @if(in_array($role, ['Admin','Developer']) && $receiving->status == \App\Entities\Gudang\Receiving::STATUS['ACTIVE'] )
   <div class="block-header block-header-default">
     <h3 class="block-title">Add Detail ({{ $receiving->details->count() }})</h3>
 
@@ -168,13 +168,87 @@
     </a>
   </div>
   @endif
+  @if($receiving->status == \App\Entities\Gudang\Receiving::STATUS['ACTIVE'])
   <div class="block-content">
     <table id="datatable" class="table table-striped">
       <thead>
         <tr>
           <th class="text-center">#</th>
           <th class="text-center">Product</th>
-          <th class="text-center">Quantity SJ</th>
+          <th class="text-center">Quantity RI</th>
+          <th class="text-center">Quantity QC</th>
+          <th class="text-center">Selisih</th>
+          <th class="text-center">NO BATCH</th>
+          <th class="text-center">Note</th>
+          <th class="text-center">Action</th>
+        </tr>
+      </thead>
+      <tbody>
+        @foreach($receiving->details as $detail)
+        <tr>
+          <td class="text-center">{{ $loop->iteration }}</td>
+          <td class="text-center">{{ $detail->product_pack->code }} - <b>{{ $detail->product_pack->name }}</b> - {{$detail->product_pack->packaging->pack_name}}</td>
+          <td class="text-center">{{ $detail->quantity_po }}</td>
+          <td class="text-center">{{ $detail->quantity_ri ?? '-' }}</td>
+          <td class="text-center">{{ $detail->selisih ?? '-' }}</td>
+          <td class="text-center">{{ $detail->no_batch ?? '-'}}</td>
+          <td class="text-center">{{ $detail->note }}</td>
+          <td class="text-center" style="white-space: nowrap;">
+            @php
+                $role = $superuser->division;          // Admin | Developer | Warehouse
+            @endphp
+
+            @if($receiving->status == \App\Entities\Gudang\Receiving::STATUS['QC'])
+                @if(in_array($role, ['Admin','Developer']))
+                    {{-- Admin & Developer: ikon selalu ada (boleh koreksi berkali‑kali) --}}
+                    <a href="javascript:void(0)"
+                      class="btn btn-sm btn-circle btn-alt-info openModal"
+                      data-id="{{ $detail->id }}"
+                      data-qc="{{ $detail->quantity_ri ?? '' }}">
+                        <i class="fa fa-plus"></i>
+                    </a>
+                @elseif($role == 'Warehouse' && $detail->quantity_ri < 1)
+                    {{-- Warehouse: hanya saat pertama kali (quantity_ri masih kosong) --}}
+                    <a href="javascript:void(0)"
+                      class="btn btn-sm btn-circle btn-alt-info openModal"
+                      data-id="{{ $detail->id }}"
+                      data-qc="">
+                        <i class="fa fa-plus"></i>
+                    </a>
+                @endif
+            @endif
+            @if($receiving->status == \App\Entities\Gudang\Receiving::STATUS['ACTIVE'] && in_array($superuser->division, ['Admin', 'Developer']))
+            <a href="javascript:deleteConfirmation('{{ route('superuser.gudang.receiving.detail.destroy', [$receiving->id, $detail->id]) }}')">
+              <button type="button" class="btn btn-sm btn-circle btn-alt-danger" title="Delete">
+                  <i class="fa fa-times"></i>
+              </button>
+            </a>
+            @endif
+          </td>
+        </tr>
+        @endforeach
+      </tbody>
+    </table>
+  </div>
+  @endif
+
+  @if($receiving->status == \App\Entities\Gudang\Receiving::STATUS['QC'])
+  <div class="block-header block-header-default">
+    <h3 class="block-title">Add Detail ({{ $receiving->details->count() }})</h3>
+
+    <button type="button" class="btn btn-outline-info mr-10 min-width-125 pull-right" data-toggle="modal" data-target="#modal-manage">Import</button>
+
+    <a href="{{ route('superuser.gudang.receiving.detail.create', [$receiving->id]) }}">
+      <button type="button" class="btn btn-outline-primary min-width-125 pull-right">Create</button>
+    </a>
+  </div>
+  <div class="block-content">
+    <table id="datatable_qc" class="table table-striped">
+      <thead>
+        <tr>
+          <th class="text-center">#</th>
+          <th class="text-center">Product</th>
+          <th class="text-center">Quantity RI</th>
           <th class="text-center">Quantity QC</th>
           <th class="text-center">Selisih</th>
           <th class="text-center">NO BATCH</th>
@@ -236,6 +310,7 @@
       </tbody>
     </table>
   </div>
+  @endif
 </div>
 
 <!-- Modal -->
@@ -291,6 +366,7 @@
 <script type="text/javascript">
   $(document).ready(function() {
     $('#datatable').DataTable({});
+    $('#datatable_qc').DataTable({});
   })
 
   $(document).on('click','.openModal',function(){

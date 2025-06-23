@@ -55,7 +55,7 @@ Route::group([
     Route::group(['as' => 'receiving.', 'perfix' => '/receiving'], function (){
         Route::get('/step/{id}', 'ReceivingController@step')->name('step');
         Route::get('{id}/publish', 'ReceivingController@publish')->name('publish');
-        Route::get('{id}/acc', 'ReceivingController@acc')->name('acc');
+        Route::get('{id}/acc_ri', 'ReceivingController@acc_ri')->name('acc_ri');
         Route::get('/cancel_approve/{id}', 'ReceivingController@cancel_approve')->name('cancel_approve');
         Route::get('/import_template', 'ReceivingController@import_template')->name('import_template');
         Route::post('/import/{id}', 'ReceivingController@import')->name('import');
@@ -84,4 +84,10 @@ Route::group([
         });
     });
     Route::resource('receiving', 'ReceivingController');
+
+    Route::group(['as' => 'mutasi_out.', 'perfix' => '/mutasi_out'], function (){
+        Route::get('/search_sku', 'MutasiOutController@search_sku')->name('search_sku');
+        Route::get('{id}/acc', 'MutasiOutController@acc')->name('acc');
+    });
+    Route::resource('mutasi_out', 'MutasiOutController');
 });

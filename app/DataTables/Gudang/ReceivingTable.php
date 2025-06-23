@@ -70,7 +70,7 @@ class ReceivingTable extends Table
             $view = route('superuser.gudang.receiving.show', $model);
             $edit = route('superuser.gudang.receiving.step', $model);
             $destroy = route('superuser.gudang.receiving.destroy', $model);
-            $acc = route('superuser.gudang.receiving.acc', $model);
+            $acc = route('superuser.gudang.receiving.acc_ri', $model);
 
             switch ($model->status) {
                 case $model::STATUS['ACTIVE']:
