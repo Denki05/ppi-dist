@@ -174,7 +174,7 @@
           <th class="text-center">Product</th>
           <th class="text-center">Quantity RI</th>
           <th class="text-center">Quantity QC</th>
-          <th class="text-center">Selisih</th>
+          <th class="text-center">Kurang Kirim</th>
           <th class="text-center">NO BATCH</th>
           <th class="text-center">Note</th>
         </tr>
@@ -207,12 +207,13 @@
         </tr>
       </thead>
       <tbody>
-        @foreach($receiving->details as $detail)
-          <button type="button"
-                  class="btn btn-sm btn-outline-primary btn-add-qc"
-                  data-id="{{ $detail->id }}">
+        <div class="mb-3">
+        <button type="button"
+                  class="btn btn-sm btn-outline-primary btn-add-qc-global">
             <i class="fa fa-plus"></i> Tambah QC
           </button>
+        </div>
+        @foreach($receiving->details as $detail)
           @foreach($detail->qcLogs as $qc)
             <tr>
               <td class="text-center">{{ $loop->iteration }}</td>
@@ -248,14 +249,24 @@
             <label class="font-weight-bold" for="detail_id">Produk</label>
             <select name="detail_id" id="detail_id" class="form-control select2" required>
               <option value="">-- Pilih Produk --</option>
-              @foreach($receiving->details as $d)
-                <option value="{{ $d->id }}">
-                  {{ $d->product_pack->code }} - {{ $d->product_pack->name }}
-                  ({{ number_format($d->quantity_po,1) }} kg)
-                </option>
-              @endforeach
+              {{-- Opsi akan di-*render* dari JavaScript --}}
             </select>
           </div>
+
+          <script>
+            const productOptions = {!! json_encode(
+              $receiving->details->map(function($d) {
+                return [
+                  'id' => $d->id,
+                  'code' => $d->product_pack->code,
+                  'name' => $d->product_pack->name,
+                  'pack' => optional($d->product_pack->packaging)->pack_name,
+                  'po' => (float) $d->quantity_po,
+                  'qc' => (float) $d->qcLogs->sum('qty_qc'),
+                ];
+              })
+            ) !!};
+          </script>
 
           {{-- ▼ JUMLAH QC --}}
           <div class="form-group">
@@ -270,7 +281,7 @@
             <select name="status_qc" id="status_qc" class="form-control select2" required>
               <option value="">-- Pilih Status --</option>
               <option value="OK">OK</option>
-              <option value="Not OK">Not OK</option>
+              <option value="NOT OK">NOT OK</option>
             </select>
           </div>
 
@@ -316,27 +327,46 @@
 <script src="{{ asset('utility/superuser/js/form.js') }}"></script>
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 <script type="text/javascript">
-  $(document).ready(function() {
-    $('#datatable').DataTable({});
-    $('#datatable_qc').DataTable({});
-  })
-
-  $(function () {
-  /*  Select2  */
+$(document).ready(function () {
+  $('#datatable').DataTable({});
+  $('#datatable_qc').DataTable({});
   $('.select2').select2({ width: '100%' });
 
-  /*  ──► Tombol +QC  */
-  $('.btn-add-qc').on('click', function () {
-      const detailId = $(this).data('id');          // id ReceivingDetail
-      $('#detail_id').val(detailId).trigger('change'); // pilih di dropdown
-      $('#modalQcPartial').modal('show');
+  // Tombol tambah QC
+  $('.btn-add-qc-global').on('click', function () {
+    filterSelectOptions();
+    $('#modalQcPartial').modal('show');
   });
 
+  // Checkbox is_sellable
   $('#is_sellable_checkbox').on('change', function () {
     $('#is_sellable').val(this.checked ? 1 : 0);
   });
 
-  /*  ──► Submit form QC  */
+  // Filter opsi select detail_id (hanya yang belum selesai QC)
+  function filterSelectOptions() {
+    const $select = $('#detail_id');
+    $select.empty();
+    $select.append(`<option value="">-- Pilih Produk --</option>`);
+
+    let count = 0;
+    productOptions.forEach(p => {
+      if (p.qc < p.po) {
+        const displayText = `${p.code} - ${p.name} (${p.po.toFixed(1)} kg)`;
+        $select.append(`<option value="${p.id}">${displayText}</option>`);
+        count++;
+      }
+    });
+
+    $select.val(null).trigger('change');
+
+    if (count === 0) {
+      Swal.fire('Info', 'Semua produk sudah selesai QC.', 'info');
+      $('#modalQcPartial').modal('hide');
+    }
+  }
+
+  // Submit form QC
   $('#formQcPartial').on('submit', function (e) {
     e.preventDefault();
 
@@ -354,8 +384,6 @@
           .then(() => location.reload());
       })
       .fail(xhr => {
-        console.log('XHR Response:', xhr); // debug
-
         if (xhr.responseJSON && xhr.responseJSON.notification) {
           const notif = xhr.responseJSON.notification;
           const content = Array.isArray(notif.content)
@@ -368,12 +396,11 @@
             html: content,
           });
         } else {
-          console.error('Fallback triggered:', xhr.responseText);
           Swal.fire('Gagal', 'Terjadi kesalahan pada server', 'error');
         }
       });
-
   });
 });
 </script>
 @endpush
+

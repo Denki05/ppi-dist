@@ -174,6 +174,79 @@ class ReceivingController extends Controller
         return view('superuser.gudang.receiving.step', $data);
     }
 
+    // public function publish(Request $request, $id)
+    // {
+    //     try {
+    //         $receiving = Receiving::findOrFail($id);
+
+    //         // Publish to QC
+    //         if ($receiving->status == Receiving::STATUS['ACTIVE']) {
+    //             if ($receiving->details->isEmpty()) {
+    //                 return redirect()
+    //                     ->back()
+    //                     ->with('error', 'Receiving tidak memiliki list Product');
+    //             }
+
+    //             $receiving->status = Receiving::STATUS['QC'];
+    //             $receiving->save();
+
+    //             return redirect()
+    //                 ->route('superuser.gudang.receiving.step', $receiving->id)
+    //                 ->with('message', 'Receiving berhasil dipindah ke tahap QC');
+    //         }
+
+    //         // Publish to Ready
+    //         if ($receiving->status == Receiving::STATUS['QC']) {
+
+    //             /* ────────────────────────────────────────────────────────────────
+    //             1. Re-kalkulasi quantity_ri & selisih untuk setiap detail
+    //             ----------------------------------------------------------------*/
+    //             foreach ($receiving->details as $detail) {
+
+    //                 // hanya menghitung log ber-status OK
+    //                 $qtyOkTotal = $detail->qcLogs()
+    //                                     ->where('status_qc', 1)
+    //                                     ->sum('qty_qc');
+
+    //                 $detail->quantity_ri = $qtyOkTotal;
+    //                 $detail->selisih     = $detail->quantity_po - $qtyOkTotal;
+    //                 $detail->save();
+    //             }
+
+    //             /* ────────────────────────────────────────────────────────────────
+    //             2. Validasi: semua detail harus sudah punya quantity_ri > 0
+    //             ----------------------------------------------------------------*/
+    //             $hasRi = $receiving->details->contains(function ($d) {
+    //                 return is_null($d->quantity_ri) || $d->quantity_ri <= 0;
+    //             });
+
+    //             if ($hasRi) {
+    //                 return redirect()
+    //                     ->back()
+    //                     ->with('error', 'Semua detail Receiving harus memiliki data QC yang valid');
+    //             }
+
+    //             /* ────────────────────────────────────────────────────────────────
+    //             3. Ubah status → READY
+    //             ----------------------------------------------------------------*/
+    //             $receiving->status = Receiving::STATUS['READY'];
+    //             $receiving->save();
+
+    //             return redirect()
+    //                 ->route('superuser.gudang.receiving.step', $receiving->id)
+    //                 ->with('message', 'Receiving berhasil dipindah ke tahap Ready');
+    //         }
+
+    //         return redirect()
+    //             ->back()
+    //             ->with('error', 'Status tidak valid untuk diproses');
+    //     } catch (\Exception $e) {
+    //         return redirect()
+    //             ->back()
+    //             ->with('error', 'Terjadi kesalahan: ' . $e->getMessage());
+    //     }
+    // }
+
     public function publish(Request $request, $id)
     {
         try {
@@ -198,37 +271,28 @@ class ReceivingController extends Controller
             // Publish to Ready
             if ($receiving->status == Receiving::STATUS['QC']) {
 
-                /* ────────────────────────────────────────────────────────────────
-                1. Re-kalkulasi quantity_ri & selisih untuk setiap detail
-                ----------------------------------------------------------------*/
+                // 1. Re-kalkulasi quantity_ri dan selisih
                 foreach ($receiving->details as $detail) {
+                    // Akumulasi semua log QC baik status OK maupun NOT OK
+                    $totalQtyQc = $detail->qcLogs()->sum('qty_qc');
 
-                    // hanya menghitung log ber-status OK
-                    $qtyOkTotal = $detail->qcLogs()
-                                        ->where('status_qc', 1)
-                                        ->sum('qty_qc');
-
-                    $detail->quantity_ri = $qtyOkTotal;
-                    $detail->selisih     = $detail->quantity_po - $qtyOkTotal;
+                    $detail->quantity_ri = $totalQtyQc;
+                    $detail->selisih     = $detail->quantity_po - $totalQtyQc;
                     $detail->save();
                 }
 
-                /* ────────────────────────────────────────────────────────────────
-                2. Validasi: semua detail harus sudah punya quantity_ri > 0
-                ----------------------------------------------------------------*/
-                $hasRi = $receiving->details->contains(function ($d) {
+                // 2. Validasi: setiap detail harus memiliki quantity_ri > 0
+                $hasInvalidRi = $receiving->details->contains(function ($d) {
                     return is_null($d->quantity_ri) || $d->quantity_ri <= 0;
                 });
 
-                if ($hasRi) {
+                if ($hasInvalidRi) {
                     return redirect()
                         ->back()
-                        ->with('error', 'Semua detail Receiving harus memiliki data QC yang valid');
+                        ->with('error', 'Semua detail Receiving harus memiliki data QC yang valid (jumlah yang diterima > 0).');
                 }
 
-                /* ────────────────────────────────────────────────────────────────
-                3. Ubah status → READY
-                ----------------------------------------------------------------*/
+                // 3. Update status menjadi READY
                 $receiving->status = Receiving::STATUS['READY'];
                 $receiving->save();
 
@@ -269,7 +333,6 @@ class ReceivingController extends Controller
                 foreach ($receiving->details as $detail) {
                     // Ambil total logs QC yang OK dan is_sellable = 0
                     $qtyToStock = $detail->qcLogs()
-                                        ->where('status_qc', 1)
                                         ->where('is_sellable', 0)
                                         ->sum('qty_qc');
 

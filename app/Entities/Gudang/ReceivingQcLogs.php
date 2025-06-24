@@ -25,6 +25,7 @@ class ReceivingQcLogs extends Model
     const STATUS_QC = [
         'NOT OK' => 0,
         'OK'  => 1, 
+        'HOLD'  => 2, 
     ];
 
     public function details()

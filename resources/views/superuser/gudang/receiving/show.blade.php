@@ -113,7 +113,7 @@
           <th class="text-center">Product</th>
           <th class="text-center">Quantity SJ</th>
           <th class="text-center">Quantity QC</th>
-          <th class="text-center">Selisih</th>
+          <th class="text-center">Kurang Kirim</th>
           <th class="text-center">NO BATCH</th>
           <th class="text-center">Note</th>
         </tr>
