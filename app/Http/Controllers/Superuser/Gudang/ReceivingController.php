@@ -197,16 +197,38 @@ class ReceivingController extends Controller
 
             // Publish to Ready
             if ($receiving->status == Receiving::STATUS['QC']) {
-                $hasRi = $receiving->details->contains(function ($detail) {
-                    return !is_null($detail->quantity_ri) && $detail->quantity_ri > 0;
-                });
 
-                if (!$hasRi) {
-                    return redirect()
-                        ->back()
-                        ->with('error', 'Semua detail Receiving harus memiliki stok QC yang valid');
+                /* ────────────────────────────────────────────────────────────────
+                1. Re-kalkulasi quantity_ri & selisih untuk setiap detail
+                ----------------------------------------------------------------*/
+                foreach ($receiving->details as $detail) {
+
+                    // hanya menghitung log ber-status OK
+                    $qtyOkTotal = $detail->qcLogs()
+                                        ->where('status_qc', 1)
+                                        ->sum('qty_qc');
+
+                    $detail->quantity_ri = $qtyOkTotal;
+                    $detail->selisih     = $detail->quantity_po - $qtyOkTotal;
+                    $detail->save();
                 }
 
+                /* ────────────────────────────────────────────────────────────────
+                2. Validasi: semua detail harus sudah punya quantity_ri > 0
+                ----------------------------------------------------------------*/
+                $hasRi = $receiving->details->contains(function ($d) {
+                    return is_null($d->quantity_ri) || $d->quantity_ri <= 0;
+                });
+
+                if ($hasRi) {
+                    return redirect()
+                        ->back()
+                        ->with('error', 'Semua detail Receiving harus memiliki data QC yang valid');
+                }
+
+                /* ────────────────────────────────────────────────────────────────
+                3. Ubah status → READY
+                ----------------------------------------------------------------*/
                 $receiving->status = Receiving::STATUS['READY'];
                 $receiving->save();
 
@@ -229,8 +251,8 @@ class ReceivingController extends Controller
     {
         if ($request->ajax()) {
             DB::beginTransaction();
-            try {
 
+            try {
                 $receiving = Receiving::findOrFail($id);
 
                 if ($receiving->status != Receiving::STATUS['READY']) {
@@ -245,31 +267,38 @@ class ReceivingController extends Controller
 
                 /** ─── 2. FIFO pemotongan stok PurchaseOrderSummary ─── */
                 foreach ($receiving->details as $detail) {
+                    // Ambil total logs QC yang OK dan is_sellable = 0
+                    $qtyToStock = $detail->qcLogs()
+                                        ->where('status_qc', 1)
+                                        ->where('is_sellable', 0)
+                                        ->sum('qty_qc');
 
-                    if (is_null($detail->quantity_ri) || $detail->quantity_ri < 0) {
-                        break;
+                    // Skip jika tidak ada qty yang harus masuk stok
+                    if ($qtyToStock <= 0) {
+                        continue;
                     }
 
-                    $sisaToCut = $detail->quantity_ri;
+                    $sisaToCut = $qtyToStock;
 
-                    // summary dengan status 2 (UNDONE) – urut ID (first‑in)
+                    // Ambil summary PO dengan status UNDONE
                     $summaries = PurchaseOrderSummary::where([
-                                        ['product_packaging_id', $detail->product_packaging_id],
-                                        ['status', 2]   // 2 = UNDONE
-                                ])->orderBy('id')
-                                ->lockForUpdate()
-                                ->get();
+                            ['product_packaging_id', $detail->product_packaging_id],
+                            ['status', 2] // 2 = UNDONE
+                        ])->orderBy('id')
+                        ->lockForUpdate()
+                        ->get();
 
                     foreach ($summaries as $sum) {
                         if ($sisaToCut <= 0) break;
 
-                        $ambil        = min($sisaToCut, $sum->quantity);
+                        $ambil = min($sisaToCut, $sum->quantity);
                         $sum->quantity -= $ambil;
-                        $sisaToCut     -= $ambil;
+                        $sisaToCut -= $ambil;
 
                         if ($sum->quantity == 0) {
-                            $sum->status = 1;            // 1 = DONE  (ganti jika konvensi Anda berbeda)
+                            $sum->status = 1; // 1 = DONE
                         }
+
                         $sum->save();
                     }
 
@@ -286,30 +315,28 @@ class ReceivingController extends Controller
                         ]);
                     }
 
-                    /* ── 2b. Update / insert master_product_min_stocks ── */
+                    /** ─── 2b. Update / insert master_product_min_stocks ─── */
                     $minStock = ProductMinStock::firstOrNew([
                         'product_packaging_id' => $detail->product_packaging_id,
                         'warehouse_id'         => $receiving->warehouse_id,
                     ]);
 
                     if (!$minStock->exists) {
-                        // asumsi unit_id dari relasi ProductPack
-                        $prodPack                 = ProductPack::find($detail->product_packaging_id);
-                        $minStock->unit_id        = 1;  // fallback
-                        $minStock->selling_price  = 0;
-                        $minStock->quantity       = 0;
+                        $prodPack = ProductPack::find($detail->product_packaging_id);
+                        $minStock->unit_id       = $prodPack->unit_id ?? 1;
+                        $minStock->selling_price = 0;
+                        $minStock->quantity      = 0;
                     }
 
-                    $startBalance          = $minStock->quantity;
-                    $minStock->quantity   += $detail->quantity_ri;
+                    $minStock->quantity += $qtyToStock;
                     $minStock->save();
 
-                    /* ── 2c. Insert ke gudang_move_stock ── */
+                    /** ─── 2c. Insert ke gudang_move_stock ─── */
                     StockMove::create([
                         'warehouse_id'         => $receiving->warehouse_id,
                         'product_packaging_id' => $detail->product_packaging_id,
                         'code_transaction'     => 'RI-'.$receiving->code,
-                        'stock_in'             => $detail->quantity_ri,
+                        'stock_in'             => $qtyToStock,
                         'stock_out'            => 0,
                         'stock_balance'        => $minStock->quantity,
                         'created_by'           => Auth::id(),
@@ -323,6 +350,7 @@ class ReceivingController extends Controller
                 $receiving->save();
 
                 DB::commit();
+
                 return $this->response(200, [
                     'notification' => [
                         'alert'   => 'notify',
@@ -331,9 +359,9 @@ class ReceivingController extends Controller
                     ],
                     'redirect_to' => route('superuser.gudang.receiving.index')
                 ]);
-
             } catch (\Exception $e) {
                 DB::rollBack();
+
                 return $this->response(500, [
                     'notification' => [
                         'alert'   => 'block',

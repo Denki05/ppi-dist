@@ -5,6 +5,7 @@ namespace App\Entities\Gudang;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Auth;
 use App\Entities\Gudang\Receiving;
+use App\Entities\Gudang\ReceivingQcLogs;
 
 class ReceivingDetail extends Model
 {
@@ -33,5 +34,10 @@ class ReceivingDetail extends Model
     public function product_pack()
     {
         return $this->belongsTo('App\Entities\Master\ProductPack', 'product_packaging_id', 'id');
+    }
+
+    public function qcLogs()
+    {
+        return $this->hasMany(ReceivingQcLogs::class, 'receiving_details_id');
     }
 }

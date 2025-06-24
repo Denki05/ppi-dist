@@ -90,7 +90,7 @@
 
         {{-- 3. Tahap ACC --}}
         @elseif($receiving->status == \App\Entities\Gudang\Receiving::STATUS['READY'] && in_array($role, ['Admin','Developer']))
-            <a href="javascript:saveConfirmation2('{{ route('superuser.gudang.receiving.acc', $receiving->id) }}')">
+            <a href="javascript:saveConfirmation2('{{ route('superuser.gudang.receiving.acc_ri', $receiving->id) }}')">
                 <button type="button" class="btn bg-gd-leaf border-0 text-white" title="ACC">
                   ACC <i class="fa fa-check"></i>
                 </button>

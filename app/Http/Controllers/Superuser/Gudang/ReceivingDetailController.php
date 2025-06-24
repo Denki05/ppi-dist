@@ -4,9 +4,12 @@ namespace App\Http\Controllers\Superuser\Gudang;
 
 use App\Entities\Gudang\Receiving;
 use App\Entities\Gudang\ReceivingDetail;
+use App\Entities\Gudang\ReceivingQcLogs;
 use App\Entities\Gudang\PurchaseOrder;
 use App\Entities\Gudang\PurchaseOrderDetail;
 use App\Entities\Gudang\PurchaseOrderSummary;
+use App\Entities\Gudang\StockMove;
+use App\Entities\Master\ProductMinStock;
 use App\Entities\Master\ProductPack;
 use App\Entities\Master\Packaging;
 use App\Http\Controllers\Controller;
@@ -15,6 +18,7 @@ use Illuminate\Validation\Rule;
 use Illuminate\Support\Facades\Auth;
 use Validator;
 use App\Entities\Setting\UserMenu;
+use DB;
 
 class ReceivingDetailController extends Controller
 {
@@ -281,58 +285,85 @@ class ReceivingDetailController extends Controller
         }
     }
 
-    public function qty_qc(Request $request, $id)
+    public function storeQc(Request $req, $detailId)
     {
-        if (!$request->ajax()) {
+        if (!$req->ajax()) {
             return $this->response(400, ['notification'=>[
                 'alert'=>'block','type'=>'alert-danger','content'=>'Invalid request'
             ]]);
         }
 
-        $detail = ReceivingDetail::find($id);
-        if (!$detail) abort(404);
+        $detail    = ReceivingDetail::with('receiving', 'qcLogs')->findOrFail($detailId);
+        $receiving = $detail->receiving;
 
-        /* 1. validasi: angka >= 0 */
-        $validator = Validator::make($request->all(), [
-            'qc' => 'required|numeric|min:0'
+        // 1. Validasi awal
+        $req->validate([
+            'qty_qc'      => 'required|numeric|min:1',
+            'status_qc'   => ['required', Rule::in(['OK','NOT OK','Not OK'])],
+            'is_sellable' => 'sometimes|boolean',
         ]);
 
-        if ($validator->fails()) {
-            return $this->response(400, ['notification'=>[
-                'alert'=>'block',
-                'type'=>'alert-danger',
-                'header'=>'Error',
-                'content'=>$validator->errors()->all()
-            ]]);
+        // 2. Validasi akumulasi qty QC
+        $existingTotalQc = $detail->qcLogs()->sum('qty_qc');
+        $newTotal = $existingTotalQc + floatval($req->qty_qc);
+
+        if ($newTotal > $detail->quantity_po) {
+            return response()->json([
+                'notification' => [
+                    'alert' => 'block',
+                    'type' => 'alert-danger',
+                    'header' => 'Validasi Gagal',
+                    'content' => "Total QC melebihi RI. Sisa maksimal: " . number_format($detail->quantity_po - $existingTotalQc, 1) . " kg"
+                ]
+            ], 400);
         }
 
-        /* 2. logika reset / update */
-        $qc = floatval($request->qc);
+        // 3. Simpan data
+        DB::transaction(function () use ($req, $detail, $receiving) {
 
-        if ($qc <= 0) {
-            // • reset
-            $detail->quantity_ri = null;   // atau 0 jika Anda lebih suka
-            $detail->selisih     = null;
-        } else {
-            // • update normal
-            $detail->quantity_ri = $qc;
-            $detail->selisih     = $detail->quantity_po - $qc;
-        }
+            $log = ReceivingQcLogs::create([
+                'receiving_details_id'  => $detail->id,
+                'product_packaging_id' => $detail->product_packaging_id,
+                'qty_qc'               => $req->qty_qc,
+                'status_qc'            => strtoupper($req->status_qc) === 'OK' ? 1 : 0,
+                'is_sellable'          => $req->boolean('is_sellable'),
+            ]);
 
-        $detail->save();
+            if ($log->status_qc && $log->is_sellable) {
+                // Potong SUM PO LIST
+                
 
-        /* 3. kirim respon sukses */
+                $minStock = ProductMinStock::firstOrNew([
+                    'product_packaging_id' => $detail->product_packaging_id,
+                    'warehouse_id'         => $receiving->warehouse_id,
+                ]);
+
+                if (!$minStock->exists) {
+                    $minStock->unit_id        = 1;
+                    $minStock->selling_price  = 0;
+                    $minStock->quantity       = 0;
+                }
+
+                $minStock->quantity += $req->qty_qc;
+                $minStock->save();
+
+                StockMove::create([
+                    'warehouse_id'         => $receiving->warehouse_id,
+                    'product_packaging_id' => $detail->product_packaging_id,
+                    'code_transaction'     => 'RI-' . $receiving->code,
+                    'stock_in'             => $req->qty_qc,
+                    'stock_out'            => 0,
+                    'stock_balance'        => $minStock->quantity,
+                    'created_by'           => Auth::id(),
+                ]);
+            }
+        });
+
         return $this->response(200, [
             'notification'=>[
-                'alert'=>'notify',
-                'type'=>'success',
-                'content'=>'Quantity QC diperbarui'
+                'alert'=>'notify','type'=>'success','content'=>'QC tersimpan'
             ],
-            // redirect ke halaman receiving (pakai parent‑id!)
-            'redirect_to' => route(
-                'superuser.gudang.receiving.step',
-                ['id'=>$detail->receiving_id]
-            )
+            'redirect_to'=>url()->previous()
         ]);
     }
 }

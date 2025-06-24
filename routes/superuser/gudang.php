@@ -71,7 +71,7 @@ Route::group([
 
             Route::post('detail/get_sku_json', 'ReceivingDetailController@get_sku_json')->name('get_sku_json');
 
-            Route::post('{id}/detail/qty_qc', 'ReceivingDetailController@qty_qc')->name('qty_qc');
+            Route::post('detail/{detail}/qc', 'ReceivingDetailController@storeQc')->name('qty_qc');
 
             Route::group(['as' => 'colly.'], function () {
                 Route::get('{id}/colly/{detail_id}/create', 'ReceivingDetailCollyController@create')->name('create');
