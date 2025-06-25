@@ -110,7 +110,8 @@ class DashboardController extends Controller
             'approval_so' => $approval_so,
         ];
 
-    
         return view($this->view, $data);
     }
+
+    
 }

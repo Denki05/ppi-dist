@@ -62,6 +62,7 @@ Route::group([
         Route::get('/json_lanjutan', 'SalesOrderController@json_lanjutan')->name('json_lanjutan');
         Route::get('/data_so/{id}', 'SalesOrderController@data_so')->name('data_so');
         Route::post('/approvalMouSo/{id}', 'SalesOrderController@approvalMouSo')->name('approvalMouSo');
+        Route::get('/viewSalesOrderDetail/{id}', 'SalesOrderController@viewSalesOrderDetail')->name('viewSalesOrderDetail');
     });
 
     Route::group(['as' => 'packing_order.', 'prefix' => '/packing_order'], function () {

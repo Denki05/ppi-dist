@@ -64,13 +64,15 @@
               </div>
 
               <div class="form-group col-md-6">
-                <label for="catatan">Disc %</label>
+                <label for="disc">Disc %</label>
                 @if($result->approval_mou == 1)
-                  <input class="form-control" type="number" name="catatan" value="{{ $result->catatan }}" disabled>
+                  <input type="hidden" name="catatan" value="{{ $result->catatan }}">
+                  <input class="form-control" type="number" value="{{ $result->catatan }}" readonly>
                 @else
                   <input class="form-control" type="number" name="catatan" value="{{ $result->catatan }}" step="any">
                 @endif
               </div>
+              <input type="hidden" id="idr_rate" name="idr_rate" value="{{ $result->idr_rate }}">
             </div>
           </div>
         </div>
