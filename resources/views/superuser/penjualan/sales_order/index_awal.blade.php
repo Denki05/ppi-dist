@@ -195,7 +195,8 @@
                 </div>
                 <div class="form-group" id="kurs-group" style="display: none;">
                   <span class="form-label"><b>Kurs </b> <span class="text-danger">*</span></span>
-                  <input class="form-control" type="text" name="kurs" id="kurs">
+                  <!-- <input class="form-control" type="text" name="kurs" id="kurs"> -->
+                   <input class="form-control" type="text" name="kurs" id="kurs" pattern="^\d+$" title="Hanya angka tanpa titik/koma" placeholder="Masukkan angka bulat, contoh: 15500" required>
                 </div>
                 <div class="form-group" id="disc-percent-group" style="display: none;">
                   <span class="form-label"><b>Disc % </b> <span class="text-danger">*</span></span>
@@ -308,6 +309,20 @@
           if (!form.checkValidity()) {        // validasi HTML5
             form.reportValidity();            // munculkan pesan bawaan
             return;                           // batalkan AJAX
+          }
+
+          var kurs = $('#kurs').val() || 1;
+
+          if (kurs.includes('.') || kurs.includes(',')) {
+              alert('Input "Kurs" tidak boleh mengandung titik atau koma. Masukkan angka bulat saja, contoh: 15500');
+              $('#kurs').focus();
+              return;
+          }
+
+          if (!/^\d+$/.test(kurs)) {
+              alert('Input "Kurs" hanya boleh berupa angka bulat positif.');
+              $('#kurs').focus();
+              return;
           }
 
             var customer = $('#account_member').val();
