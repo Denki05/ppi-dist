@@ -273,12 +273,24 @@ class ReceivingController extends Controller
 
                 // 1. Re-kalkulasi quantity_ri dan selisih
                 foreach ($receiving->details as $detail) {
-                    // Akumulasi semua log QC baik status OK maupun NOT OK
+                    // Akumulasi semua log QC
                     $totalQtyQc = $detail->qcLogs()->sum('qty_qc');
 
                     $detail->quantity_ri = $totalQtyQc;
                     $detail->selisih     = $detail->quantity_po - $totalQtyQc;
                     $detail->save();
+
+                    // 🔒 Tambahan validasi: cek apakah ada log QC yang belum di-approve
+                    $hasUnapprovedSellable = $detail->qcLogs()
+                        ->where('is_sellable', 1)
+                        ->where('is_approved', 0)
+                        ->exists();
+
+                    if ($hasUnapprovedSellable) {
+                        return redirect()
+                            ->back()
+                            ->with('error', "Terdapat item QC yang sudah ditandai saleable namun belum di-approve pada produk: {$detail->product_pack->name}");
+                    }
                 }
 
                 // 2. Validasi: setiap detail harus memiliki quantity_ri > 0
@@ -300,6 +312,7 @@ class ReceivingController extends Controller
                     ->route('superuser.gudang.receiving.step', $receiving->id)
                     ->with('message', 'Receiving berhasil dipindah ke tahap Ready');
             }
+
 
             return redirect()
                 ->back()
@@ -495,6 +508,59 @@ class ReceivingController extends Controller
             Excel::import($import, $request->import_file);
         
             return redirect()->back()->with(['collect_success' => $import->success, 'collect_error' => $import->error]);
+        }
+    }
+
+    public function cancel(Request $request, $id)
+    {
+        if ($request->ajax()) {
+            if(Auth::user()->is_superuser == 0){
+                if(empty($this->access) || empty($this->access->user) || $this->access->can_update == 0){
+                    abort(405);
+                }
+            }
+
+            DB::beginTransaction();
+
+            try {
+                $receiving = Receiving::with('details.qcLogs')->findOrFail($id);
+
+                // Cek apakah ada log QC
+                $hasQcLogs = $receiving->details->pluck('qcLogs')->flatten()->isNotEmpty();
+                if ($hasQcLogs) {
+                    // return response()->json(['status' => 'error', 'message' => 'Receiving tidak bisa dibatalkan karena sudah ada item QC.']);
+                    return $this->response(400, [
+                            'notification' => [
+                                'alert'   => 'block',
+                                'type'    => 'alert-danger',
+                                'content' => 'Receiving tidak bisa dibatalkan karena sudah ada item QC.'
+                            ]
+                    ]);
+                }
+
+                $receiving->status = Receiving::STATUS['ACTIVE'];
+                $receiving->save();
+
+                DB::commit();
+
+                return $this->response(200, [
+                    'notification' => [
+                        'alert'   => 'notify',
+                        'type'    => 'success',
+                        'content' => 'Receiving berhasil di batalkan'
+                    ],
+                    'redirect_to' => route('superuser.gudang.receiving.index')
+                ]);
+            } catch (\Exception $e) {
+                DB::rollBack();
+                return $this->response(500, [
+                    'notification' => [
+                        'alert'   => 'notify',
+                        'type'    => 'error',
+                        'content' => 'Terjadi kesalahan: ' . $e->getMessage()
+                    ]
+                ]);
+            }
         }
     }
 }

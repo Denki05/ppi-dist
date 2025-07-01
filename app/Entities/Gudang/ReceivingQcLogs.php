@@ -4,21 +4,19 @@ namespace App\Entities\Gudang;
 
 use App\Entities\Model;
 use App\Entities\Account\Superuser;
-use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Facades\Auth;
 use App\Entities\Gudang\ReceivingDetail;
 
 
 class ReceivingQcLogs extends Model
 {
-    use SoftDeletes;
-
     protected $fillable = [
         'receiving_details_id', 
         'product_packing_id', 
         'qty_qc', 
         'status_qc', 
         'is_sellable', 
+        'is_approved',
     ];
     protected $table = 'receiving_qc_logs';
 
@@ -28,9 +26,9 @@ class ReceivingQcLogs extends Model
         'HOLD'  => 2, 
     ];
 
-    public function details()
+    public function detail()
     {
-        return $this->hasMany(ReceivingDetail::class);
+        return $this->belongsTo(ReceivingDetail::class, 'receiving_details_id');
     }
 
     public function status_qc()

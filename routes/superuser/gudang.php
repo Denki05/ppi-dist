@@ -56,7 +56,7 @@ Route::group([
         Route::get('/step/{id}', 'ReceivingController@step')->name('step');
         Route::get('{id}/publish', 'ReceivingController@publish')->name('publish');
         Route::get('{id}/acc_ri', 'ReceivingController@acc_ri')->name('acc_ri');
-        Route::get('/cancel_approve/{id}', 'ReceivingController@cancel_approve')->name('cancel_approve');
+        Route::get('/cancel/{id}', 'ReceivingController@cancel')->name('cancel');
         Route::get('/import_template', 'ReceivingController@import_template')->name('import_template');
         Route::post('/import/{id}', 'ReceivingController@import')->name('import');
 
@@ -72,6 +72,8 @@ Route::group([
             Route::post('detail/get_sku_json', 'ReceivingDetailController@get_sku_json')->name('get_sku_json');
 
             Route::post('detail/{detail}/qc', 'ReceivingDetailController@storeQc')->name('qty_qc');
+            Route::get('detail/qc/{id}/approve', 'ReceivingDetailController@approveQc')->name('approveQc');
+            Route::get('detail/qc/{id}/destroy', 'ReceivingDetailController@destroyQc')->name('destroyQc');
 
             Route::group(['as' => 'colly.'], function () {
                 Route::get('{id}/colly/{detail_id}/create', 'ReceivingDetailCollyController@create')->name('create');

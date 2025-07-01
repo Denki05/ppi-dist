@@ -45,9 +45,16 @@
 
 <div class="block">
   <div class="block-content">
+    @php
+      use App\Entities\Gudang\Receiving as RI;
+      $role = $superuser->division;           // singkat
+    @endphp
+
+    @if(in_array($role, ['Admin','Developer', 'Management']))
     <a href="{{ route('superuser.gudang.receiving.create') }}">
       <button type="button" class="btn btn-outline-primary min-width-125">New</button>
     </a>
+    @endif
 
     {{-- <button type="button" class="btn btn-outline-info ml-10" data-toggle="modal" data-target="#modal-manage">Manage</button> --}}
   </div>

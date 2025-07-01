@@ -289,22 +289,19 @@ class ReceivingDetailController extends Controller
     {
         try {
             if ($req->ajax()) {
-
-                $detail    = ReceivingDetail::with('receiving', 'qcLogs')->findOrFail($detailId);
+                $detail    = ReceivingDetail::findOrFail($detailId);
                 $receiving = $detail->receiving;
 
-                // 1. Validasi awal
                 $req->validate([
                     'qty_qc'      => 'required|numeric|min:0.1',
                     'status_qc'   => ['required', Rule::in(['OK','NOT OK','Not OK'])],
                     'is_sellable' => 'sometimes|boolean',
                 ]);
 
-                $qtyQc = floatval($req->qty_qc);
-                $statusOk = strtoupper($req->status_qc) === 'OK';
+                $qtyQc      = floatval($req->qty_qc);
+                $statusOk   = strtoupper($req->status_qc) === 'OK';
                 $isSellable = $req->boolean('is_sellable');
 
-                // 2. Validasi: total akumulasi tidak boleh melebihi jumlah PO
                 $existingTotalQc = $detail->qcLogs()->sum('qty_qc');
                 $newTotal = $existingTotalQc + $qtyQc;
 
@@ -319,81 +316,21 @@ class ReceivingDetailController extends Controller
                     ], 400);
                 }
 
-                // 3. Simpan log + proses stok jika perlu
-                DB::transaction(function () use ($detail, $receiving, $qtyQc, $statusOk, $isSellable, $req) {
-                    // 3a. Simpan log QC
-                    ReceivingQcLogs::create([
-                        'receiving_details_id'  => $detail->id,
-                        'product_packaging_id'  => $detail->product_packaging_id,
-                        'qty_qc'                => $qtyQc,
-                        'status_qc'             => $statusOk ? 1 : 0,
-                        'is_sellable'           => $isSellable,
-                    ]);
-
-                    // 3b. Tidak mengubah quantity_po di sini
-
-                    // 3c. Jika status OK dan saleable, proses stock + potong PO summary
-                    if ($statusOk && $isSellable) {
-                        $sisaToCut = $qtyQc;
-
-                        $summaries = PurchaseOrderSummary::where([
-                            ['product_packaging_id', $detail->product_packaging_id],
-                            ['status', 2] // UNDONE
-                        ])->orderBy('id')
-                        ->lockForUpdate()
-                        ->get();
-
-                        foreach ($summaries as $sum) {
-                            if ($sisaToCut <= 0) break;
-
-                            $ambil = min($sisaToCut, $sum->quantity);
-                            $sum->quantity -= $ambil;
-                            $sisaToCut -= $ambil;
-
-                            if ($sum->quantity <= 0) {
-                                $sum->status = 1; // DONE
-                            }
-
-                            $sum->save();
-                        }
-
-                        if ($sisaToCut > 0) {
-                            throw new \Exception('Stok PO Summary tidak mencukupi untuk produk ini');
-                        }
-
-                        // Tambah ke stok
-                        $minStock = ProductMinStock::firstOrNew([
-                            'product_packaging_id' => $detail->product_packaging_id,
-                            'warehouse_id'         => $receiving->warehouse_id,
-                        ]);
-
-                        if (!$minStock->exists) {
-                            $prodPack = ProductPack::find($detail->product_packaging_id);
-                            $minStock->unit_id       = $prodPack->unit_id ?? 1;
-                            $minStock->selling_price = 0;
-                            $minStock->quantity      = 0;
-                        }
-
-                        $minStock->quantity += $qtyQc;
-                        $minStock->save();
-
-                        StockMove::create([
-                            'warehouse_id'         => $receiving->warehouse_id,
-                            'product_packaging_id' => $detail->product_packaging_id,
-                            'code_transaction'     => 'RI-' . $receiving->code,
-                            'stock_in'             => $qtyQc,
-                            'stock_out'            => 0,
-                            'stock_balance'        => $minStock->quantity,
-                            'created_by'           => Auth::id(),
-                        ]);
-                    }
-                });
+                // Simpan QC log - tidak proses stok di sini
+                ReceivingQcLogs::create([
+                    'receiving_details_id'  => $detail->id,
+                    'product_packaging_id'  => $detail->product_packaging_id,
+                    'qty_qc'                => $qtyQc,
+                    'status_qc'             => $statusOk ? 1 : 0,
+                    'is_sellable'           => $isSellable,
+                    'is_approved'           => 0,
+                ]);
 
                 return $this->response(200, [
                     'notification' => [
                         'alert'   => 'notify',
                         'type'    => 'success',
-                        'content' => 'QC tersimpan'
+                        'content' => 'QC berhasil disimpan, menunggu approval jika saleable.'
                     ],
                     'redirect_to' => url()->previous()
                 ]);
@@ -408,5 +345,163 @@ class ReceivingDetailController extends Controller
                 ]
             ], 500);
         }
+    }
+
+    public function approveQc(Request $req, $id)
+    {
+        try {
+            $qcLog = ReceivingQcLogs::findOrFail($id);
+
+            if ($qcLog->is_approved) {
+                return response()->json([
+                    'notification' => [
+                        'alert' => 'block',
+                        'type' => 'alert-danger',
+                        'header' => 'Validasi Gagal',
+                        'content' => 'Log QC ini sudah pernah di-approve.'
+                    ]
+                ], 400);
+            }
+
+            if ($qcLog->status_qc != 1 || !$qcLog->is_sellable) {
+                return response()->json([
+                    'notification' => [
+                        'alert' => 'block',
+                        'type' => 'alert-danger',
+                        'header' => 'Validasi Gagal',
+                        'content' => 'Log QC ini tidak valid untuk di-approve.'
+                    ]
+                ], 400);
+            }
+
+            $detail = $qcLog->detail;
+            $receiving = $detail->receiving;
+            $qtyQc = $qcLog->qty_qc;
+
+            DB::transaction(function () use ($detail, $receiving, $qcLog, $qtyQc) {
+                $sisaToCut = $qtyQc;
+
+                $summaries = PurchaseOrderSummary::where([
+                    ['product_packaging_id', $detail->product_packaging_id],
+                    ['status', 2]
+                ])->orderBy('id')->lockForUpdate()->get();
+
+                foreach ($summaries as $sum) {
+                    if ($sisaToCut <= 0) break;
+
+                    $ambil = min($sisaToCut, $sum->quantity);
+                    $sum->quantity -= $ambil;
+                    $sisaToCut -= $ambil;
+
+                    if ($sum->quantity <= 0) {
+                        $sum->status = 1;
+                    }
+
+                    $sum->save();
+                }
+
+                if ($sisaToCut > 0) {
+                    return response()->json([
+                        'notification' => [
+                            'alert' => 'block',
+                            'type' => 'alert-danger',
+                            'header' => 'Validasi Gagal',
+                            'content' => 'Stok PO Summary tidak mencukupi untuk produk ini.'
+                        ]
+                    ], 400);
+                }
+
+                $minStock = ProductMinStock::firstOrNew([
+                    'product_packaging_id' => $detail->product_packaging_id,
+                    'warehouse_id'         => $receiving->warehouse_id,
+                ]);
+
+                if (!$minStock->exists) {
+                    $prodPack = ProductPack::find($detail->product_packaging_id);
+                    $minStock->unit_id       = $prodPack->unit_id ?? 1;
+                    $minStock->selling_price = 0;
+                    $minStock->quantity      = 0;
+                }
+
+                $minStock->quantity += $qtyQc;
+                $minStock->save();
+
+                StockMove::create([
+                    'warehouse_id'         => $receiving->warehouse_id,
+                    'product_packaging_id' => $detail->product_packaging_id,
+                    'code_transaction'     => 'RI-' . $receiving->code,
+                    'stock_in'             => $qtyQc,
+                    'stock_out'            => 0,
+                    'stock_balance'        => $minStock->quantity,
+                    'created_by'           => Auth::id(),
+                ]);
+
+                // Set QC sudah diproses
+                $qcLog->is_approved = 1;
+                $qcLog->save();
+            });
+
+            return $this->response(200, [
+                    'notification' => [
+                        'alert'   => 'notify',
+                        'type'    => 'success',
+                        'content' => 'QC berhasil di-approve dan masuk ke stok.'
+                    ],
+                    'redirect_to' => url()->previous()
+                ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'notification' => [
+                    'alert' => 'block',
+                    'type' => 'alert-danger',
+                    'header' => 'Error',
+                    'content' => $e->getMessage()
+                ]
+            ], 500);
+        }
+    }
+
+    public function destroyQc(Request $request, $id)
+    {
+        if ($request->ajax()) {
+            if (Auth::user()->is_superuser == 0) {
+                if (empty($this->access) || empty($this->access->user) || $this->access->can_delete == 0) {
+                    return response()->json([
+                        'status' => 'error',
+                        'message' => 'Anda tidak punya akses untuk menghapus data QC.'
+                    ], 403);
+                }
+            }
+
+            $qcLog = ReceivingQcLogs::find($id);
+
+            if (!$qcLog) {
+                return response()->json([
+                    'status' => 'error',
+                    'message' => 'Data QC tidak ditemukan.'
+                ], 404);
+            }
+
+            if ($qcLog->is_sellable) {
+                return response()->json([
+                    'status' => 'error',
+                    'message' => 'Tidak dapat menghapus log QC yang sudah masuk ke stok.'
+                ], 400);
+            }
+
+            if ($qcLog->delete()) {
+                return response()->json([
+                    'status' => 'success',
+                    'message' => 'Log QC berhasil dihapus.'
+                ]);
+            }
+
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Gagal menghapus log QC.'
+            ], 500);
+        }
+
+        return abort(403, 'Invalid Request');
     }
 }

@@ -155,16 +155,18 @@
   </div>
 </div>
 <div class="block">
-  @if(in_array($role, ['Admin','Developer']) && in_array($receiving->status, [
+  @if(in_array($role, ['Admin','Developer', 'Warehouse', 'Management']) && in_array($receiving->status, [
     \App\Entities\Gudang\Receiving::STATUS['ACTIVE'],
     \App\Entities\Gudang\Receiving::STATUS['READY'],
     \App\Entities\Gudang\Receiving::STATUS['ACC']
   ]))
   <div class="block-header block-header-default">
     <h3 class="block-title">Add Detail ({{ $receiving->details->count() }})</h3>
+    @if(in_array($role, ['Admin','Developer', 'Management']))
     <a href="{{ route('superuser.gudang.receiving.detail.create', [$receiving->id]) }}">
       <button type="button" class="btn btn-outline-primary min-width-125 pull-right">Create</button>
     </a>
+    @endif
   </div>
   <div class="block-content">
     <table id="datatable" class="table table-striped">
@@ -204,15 +206,18 @@
           <th class="text-center">Product</th>
           <th class="text-center">Quantity</th>
           <th class="text-center">Status Qc</th>
+          <th class="text-center">Action</th>
         </tr>
       </thead>
       <tbody>
+        @if(in_array($role, ['Warehouse','Developer']))
         <div class="mb-3">
         <button type="button"
                   class="btn btn-sm btn-outline-primary btn-add-qc-global">
             <i class="fa fa-plus"></i> Tambah QC
           </button>
         </div>
+        @endif
         @foreach($receiving->details as $detail)
           @foreach($detail->qcLogs as $qc)
             <tr>
@@ -220,6 +225,23 @@
               <td class="text-center">{{ $detail->product_pack->code }} - <b>{{ $detail->product_pack->name }}</b> - {{$detail->product_pack->packaging->pack_name}}</td>
               <td class="text-center">{{ $qc->qty_qc }}</td>
               <td class="text-center">{{ $qc->status_qc() }}</td>
+              <td class="text-center">
+                @if($qc->is_sellable && $qc->is_approved == 0 && in_array($role, ['Admin','Developer']))
+                    <a href="javascript:saveConfirmation2('{{ route('superuser.gudang.receiving.detail.approveQc', $qc->id) }}')">
+                      <button type="button" class="btn btn-sm btn-circle btn-alt-warning" title="Approve QC Saleable">
+                        <i class="fa fa-check"></i>
+                      </button>
+                    </a>
+                @endif
+
+                @if(in_array($role, ['Warehouse','Developer']))
+                  <a href="javascript:void(0);" onclick="deleteQc('{{ route('superuser.gudang.receiving.detail.destroyQc', $qc->id) }}')">
+                    <button type="button" class="btn btn-sm btn-outline-danger" title="Hapus Log QC">
+                      <i class="fa fa-trash"></i>
+                    </button>
+                  </a>
+                @endif
+              </td>
             </tr>
           @endforeach
         @endforeach
@@ -263,6 +285,7 @@
                   'pack' => optional($d->product_pack->packaging)->pack_name,
                   'po' => (float) $d->quantity_po,
                   'qc' => (float) $d->qcLogs->sum('qty_qc'),
+                  'sisa' => (float) $d->quantity_po - (float) $d->qcLogs->sum('qty_qc'),
                 ];
               })
             ) !!};
@@ -326,6 +349,29 @@
 @push('scripts')
 <script src="{{ asset('utility/superuser/js/form.js') }}"></script>
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<script>
+function deleteQc(url) {
+    if (confirm("Apakah Anda yakin ingin menghapus data QC ini?")) {
+        $.ajax({
+            url: url,
+            type: 'GET', // Gunakan POST/DELETE jika lebih aman
+            dataType: 'json',
+            success: function(response) {
+                if (response.status === 'success') {
+                    alert(response.message);
+                    location.reload(); // atau datatable.ajax.reload() jika pakai datatables
+                } else {
+                    alert(response.message);
+                }
+            },
+            error: function(xhr) {
+                alert(xhr.responseJSON.message || 'Terjadi kesalahan saat menghapus data QC.');
+            }
+        });
+    }
+}
+</script>
+
 <script type="text/javascript">
 $(document).ready(function () {
   $('#datatable').DataTable({});
@@ -352,7 +398,7 @@ $(document).ready(function () {
     let count = 0;
     productOptions.forEach(p => {
       if (p.qc < p.po) {
-        const displayText = `${p.code} - ${p.name} (${p.po.toFixed(1)} kg)`;
+        const displayText = `${p.code} - ${p.name} / ${p.pack} (Remaind : ${p.sisa.toFixed(2)} kg)`;
         $select.append(`<option value="${p.id}">${displayText}</option>`);
         count++;
       }
@@ -399,6 +445,19 @@ $(document).ready(function () {
           Swal.fire('Gagal', 'Terjadi kesalahan pada server', 'error');
         }
       });
+  });
+
+  $(function() {
+    $('#modalQcPartial').on('hidden.bs.modal', function () {
+      // Reset form fields
+      $('#formQcPartial')[0].reset();
+      // Reset select2 fields
+      $('#detail_id').val('').trigger('change');
+      $('#status_qc').val('').trigger('change');
+      // Uncheck checkbox and reset hidden input
+      $('#is_sellable_checkbox').prop('checked', false);
+      $('#is_sellable').val(0);
+    });
   });
 });
 </script>
