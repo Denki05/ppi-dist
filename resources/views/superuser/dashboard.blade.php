@@ -88,6 +88,10 @@
                                             @endif
                                         </th>
                                         <td class="text-center">
+                                            <button type="button" class="btn btn-sm btn-info btn-view"
+                                                data-id="{{$so->id}}" title="Show SO">
+                                                <i class="fa fa-eye"></i> View
+                                            </button>
                                             @if($so->approval_mou == 1 && $so->approval_mou_status != 1)
                                                 <button 
                                                     class="btn btn-sm btn-success btn-approval-mou" 
@@ -184,6 +188,123 @@
     <br>
 </div>
 @endif
+
+<!-- Modal approval SO -->
+<div class="modal fade bd-example-modal-xl" id="modalViewSo" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-xl" role="document">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title">#View SO <span id="so_code_display"></span></span></h5>
+          <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+            <span aria-hidden="true">&times;</span>
+          </button>
+        </div>
+        <div class="modal-body">
+          <div id="modal-data">
+              <!-- Invoice and Customer Details -->
+              <div class="row">
+                  <div class="col">
+                      <div class="block">
+                          <div class="block-header block-header-default">
+                              <h3 class="block-title">#Detail Nota</h3>
+                          </div>
+                          <div class="block-content">
+                              <div class="form-row">
+                                  <div class="form-group col-md-6">
+                                      <label for="invoice_date">Tanggal Nota</label>
+                                      <input type="text" id="invoice_date" class="form-control" readonly>
+                                  </div>
+                                  <div class="form-group col-md-6">
+                                      <label for="invoice_code">Code</label>
+                                      <input type="text" id="invoice_code" class="form-control" readonly>
+                                  </div>
+                              </div>
+
+                              <div class="form-row">
+                                  <div class="form-group col-md-6">
+                                      <label for="kurs">Kurs</label>
+                                      <input type="text" id="kurs" class="form-control" readonly>
+                                  </div>
+                                  <div class="form-group col-md-6">
+                                      <label for="disc_percent">Disc %</label>
+                                      <input type="text" id="disc_percent" class="form-control" readonly>
+                                  </div>
+                              </div>
+
+                              <div class="form-row">
+                                  <div class="form-group col-md-4">
+                                      <label for="type_transaction">Type Transaksi</label>
+                                      <input type="text" id="type_transaction" class="form-control" readonly>
+                                  </div>
+                                  <div class="form-group col-md-8" id="note-container">
+                                      <label for="note">Note</label>
+                                      <textarea class="form-control" style="height:auto; min-height:50px; overflow:hidden;" id="note" rows="1" readonly></textarea>
+                                  </div>
+                              </div>
+                          </div>
+                      </div>
+                  </div>
+                  <div class="col">
+                      <div class="block">
+                          <div class="block-header block-header-default">
+                              <h3 class="block-title">#Customer</h3>
+                          </div>
+                          <div class="block-content">
+                              <div class="form-row">
+                                  <div class="form-group col-md-6">
+                                      <label for="customer_name">Customer</label>
+                                      <input type="text" id="customer_name" class="form-control" readonly>
+                                  </div>
+                                  <div class="form-group col-md-6">
+                                      <label for="customer_address">Alamat Kirim</label>
+                                      <textarea class="form-control" id="customer_address" rows="1" readonly></textarea>
+                                  </div>
+                              </div>
+
+                              <div class="form-row">
+                                  <div class="form-group col-md-6">
+                                      <label for="customer_city">Kota</label>
+                                      <input type="text" id="customer_city" class="form-control" readonly>
+                                  </div>
+                                  <div class="form-group col-md-6">
+                                      <label for="customer_area">Provinsi</label>
+                                      <input type="text" id="customer_area" class="form-control" readonly>
+                                  </div>
+                              </div>
+                          </div>
+                      </div>
+                  </div>
+              </div>
+
+              <!-- Product Details Table -->
+              <div class="row">
+                  <div class="col">
+                      <table class="table">
+                          <thead>
+                              <tr>
+                                  <th>#</th>
+                                  <th>Kode</th>
+                                  <th>Product</th>
+                                  <th>Kemasan</th>
+                                  <th>Qty</th>
+                                  <th>Harga</th>
+                                  <th>Free</th>
+                              </tr>
+                          </thead>
+                          <tbody id="product-details">
+                              <!-- Product details will be injected here -->
+                          </tbody>
+                      </table>
+                  </div>
+              </div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-danger" data-dismiss="modal">Close</button>
+        </div>
+      </div>
+    </div>
+</div>
 @endsection
 
 @include('superuser.asset.plugin.select2')
@@ -192,6 +313,53 @@
 
 @push('scripts')
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+$(document).ready(function () {
+    $(document).on('click', '.btn-view', function () {
+        var id = $(this).data('id');
+        var url = "{{ route('superuser.penjualan.sales_order.viewSalesOrderDetail', ['id' => '__id__']) }}".replace('__id__', id);
+
+        $.ajax({
+            url: url,
+            method: 'GET',
+            success: function (data) {
+                $('#invoice_date').val(data.so_date ?? '-');
+                $('#invoice_code').val(data.so_code ?? '-');
+                $('#kurs').val(data.idr_rate ?? '-');
+                $('#disc_percent').val(data.disc_percent ?? '-');
+                $('#type_transaction').val(data.type_transaction ?? '-');
+                $('#note').val(data.note ?? '-');
+
+                $('#customer_name').val(data.customer_name ?? '-');
+                $('#customer_address').val(data.customer_address ?? '-');
+                $('#customer_city').val(data.customer_city ?? '-');
+                $('#customer_area').val(data.customer_province ?? '-');
+
+                var html = '';
+                data.so_items.forEach((item, index) => {
+                    html += `
+                        <tr>
+                            <td>${index + 1}</td>
+                            <td>${item.product_code ?? '-'}</td>
+                            <td>${item.product_name ?? '-'}</td>
+                            <td>${item.packaging_name ?? '-'}</td>
+                            <td>${item.qty}</td>
+                            <td>${item.price}</td>
+                            <td>${item.free_product}</td>
+                        </tr>`;
+                });
+                $('#product-details').html(html);
+
+                $('#modalViewSo').modal('show');
+            },
+            error: function () {
+                alert('Gagal memuat data Sales Order.');
+            }
+        });
+    });
+});
+
+</script>
 <script>
     document.addEventListener("DOMContentLoaded", function() {
         const salesData = @json($sales);
@@ -346,7 +514,7 @@
             serverSide: false,
         });
 
-        $('.btn-approval-mou').on('click', function() {
+        $(document).on('click', '.btn-approval-mou', function() {
             const id = $(this).data('id');
 
             if (!confirm('Apakah Anda yakin ingin memproses approval ini?')) return;
@@ -363,7 +531,7 @@
                 success: function(response) {
                     if(response.notification && response.notification.type === 'success') {
                         alert(response.notification.content);
-                        location.reload(); // atau redirect jika perlu
+                        location.reload(); // Refresh tampilan setelah sukses
                     }
                 },
                 error: function(xhr) {
@@ -372,6 +540,7 @@
                 }
             });
         });
+
     });
 </script>
 @endpush

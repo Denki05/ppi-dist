@@ -732,7 +732,7 @@ class SalesOrderController extends Controller
                     $sales_order->type_transaction = trim(htmlentities($post["type_transaction"]));
                     $sales_order->catatan = trim(htmlentities($post["catatan"]));
                     $sales_order->brand_name = trim(htmlentities($post["brand_name"]));
-                    $sales_order->idr_rate = 1;
+                    $sales_order->idr_rate = trim(htmlentities($post["idr_rate"]));
                     $sales_order->note = trim(htmlentities($post["note"]));
                     $sales_order->updated_by = Auth::id();
                     $sales_order->status = $step;
@@ -2303,6 +2303,7 @@ class SalesOrderController extends Controller
                 $sales_order->approval_mou_status = 1;
                 $sales_order->approval_mou_date = date('Y-m-d H:i:s');
                 $sales_order->approval_mou_by = Auth::id();
+                $sales_order->status = 2;
 
                 if($sales_order->save()){
                     DB::commit();
@@ -2328,5 +2329,63 @@ class SalesOrderController extends Controller
                 return $this->response(400, $response);
             }
         }
+    }
+
+    public function viewSalesOrderDetail($id)
+    {
+        // Ambil header satu kali
+        $so_header = SalesOrder::join('master_customer_other_addresses', 'penjualan_so.customer_other_address_id', '=', 'master_customer_other_addresses.id')
+            ->select(
+                'penjualan_so.so_date',
+                'penjualan_so.so_code',
+                'penjualan_so.idr_rate',
+                'penjualan_so.catatan as disc_percent',
+                'penjualan_so.note',
+                'penjualan_so.type_transaction',
+                'master_customer_other_addresses.name as customer_name',
+                'master_customer_other_addresses.address as customer_address',
+                'master_customer_other_addresses.text_kota as customer_city',
+                'master_customer_other_addresses.text_provinsi as customer_province'
+            )
+            ->where('penjualan_so.id', $id)
+            ->where('penjualan_so.approval_mou', 1)
+            ->first();
+
+        if (!$so_header) {
+            return response()->json(['error' => 'SO tidak ditemukan'], 404);
+        }
+
+        // Ambil items
+        $so_items = DB::table('penjualan_so_item')
+            ->join('master_products_packaging', 'penjualan_so_item.product_packaging_id', '=', 'master_products_packaging.id')
+            ->leftJoin('master_packaging', 'master_products_packaging.packaging_id', '=', 'master_packaging.id')
+            ->join('master_products', 'master_products_packaging.product_id', '=', 'master_products.id')
+            ->where('penjualan_so_item.so_id', $id)
+            ->select(
+                'master_products.code as product_code',
+                'master_products.name as product_name',
+                'master_packaging.pack_name as packaging_name',
+                'penjualan_so_item.qty',
+                'penjualan_so_item.price',
+                'penjualan_so_item.free_product'
+            )
+            ->get();
+
+        // Gabungkan
+        $data = [
+            'so_code' => $so_header->so_code,
+            'so_date' => $so_header->so_date,
+            'idr_rate' => $so_header->idr_rate,
+            'disc_percent' => $so_header->disc_percent,
+            'note' => $so_header->note,
+            'type_transaction' => $so_header->type_transaction,
+            'customer_name' => $so_header->customer_name,
+            'customer_address' => $so_header->customer_address,
+            'customer_city' => $so_header->customer_city,
+            'customer_province' => $so_header->customer_province,
+            'so_items' => $so_items
+        ];
+
+        return response()->json($data);
     }
 }

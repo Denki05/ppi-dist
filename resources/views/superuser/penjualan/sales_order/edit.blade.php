@@ -67,6 +67,7 @@
                 <label for="catatan">Disc %</label>
                 <input class="form-control" type="number" name="catatan" value="{{ $result->catatan }}">
               </div>
+              <input type="hidden" id="idr_rate" name="idr_rate" value="{{ $result->idr_rate }}">
             </div>
           </div>
         </div>

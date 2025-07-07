@@ -190,7 +190,8 @@
               <div class="col">
                 <div class="form-group">
                   <span class="form-label"><b>Kurs </b>
-                  <input class="form-control" type="text" name="kurs" id="kurs">
+                  <!-- <input class="form-control" type="text" name="kurs" id="kurs"> -->
+                  <input class="form-control" type="text" name="kurs" id="kurs" pattern="^\d+$" title="Hanya angka tanpa titik/koma" placeholder="Masukkan angka bulat, contoh: 15500" required>
                 </div>
                 <div class="form-group">
                   <span class="form-label"><b>Disc % </b>
@@ -302,13 +303,27 @@
             return;                           // batalkan AJAX
           }
 
+          var kurs = $('#kurs').val() || 1;
+
+          if (kurs.includes('.') || kurs.includes(',')) {
+              alert('Input "Kurs" tidak boleh mengandung titik atau koma. Masukkan angka bulat saja, contoh: 15500');
+              $('#kurs').focus();
+              return;
+          }
+
+          if (!/^\d+$/.test(kurs)) {
+              alert('Input "Kurs" hanya boleh berupa angka bulat positif.');
+              $('#kurs').focus();
+              return;
+          }
+
             var customer = $('#account_member').val();
             var merek = $('#merek_ppi').val();
             var type_so = $('#so_type').val();
             var indent_so = $('#indent_so').val();
             var step_so = 1;
             var note = $('#editor').val() || '-';
-            var kurs = $('#kurs').val() || 1;
+            
             var approval_spv = $('#approval_spv').is(':checked') ? 1 : 0;
             var disc_percent = $('#disc_percent').val() || 0;
 

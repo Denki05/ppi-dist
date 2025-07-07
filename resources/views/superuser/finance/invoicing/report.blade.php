@@ -129,6 +129,8 @@
         let firstDatatableUrl = datatableUrl + '?startDate=' + startDate + '&endDate=' + endDate +
           '&customer=all';
 
+        const rupiah = $.fn.dataTable.render.number('.', ',', 2, 'Rp. ').display;
+
         var datatable = $('#datatables').DataTable({
             processing: true,
             serverSide: false,
@@ -151,8 +153,16 @@
                     }
                 },
                 { data: 'jatuh_tempo' },
-                { data: 'nilai_faktur' },
-                { data: 'hutang_asing' },
+                {
+                  data: 'nilai_faktur',
+                  render: $.fn.dataTable.render.number('.', ',', 2, 'Rp. '),
+                  searchable: false
+                },
+                {
+                  data: 'hutang_asing',
+                  render: $.fn.dataTable.render.number('.', ',', 2, 'Rp. '),
+                  searchable: false
+                },
                 { data: 'diff_days' },
                 { data: 'status_faktur' },
             ],
@@ -175,11 +185,11 @@
                         }, 0);
 
                     return $('<tr/>')
-                    .append('<td style="font-weight:bold; background-color: #bfbfbf;">' + group + '</td>')
-                        .append('<td colspan="2" style="background-color: #bfbfbf;"></td>')
-                        .append('<td style="font-weight:bold; background-color: #bfbfbf;">' + totalNilaiFaktur.toFixed(2) + '</td>')
-                        .append('<td style="font-weight:bold; background-color: #bfbfbf;">' + totalHutangAsing.toFixed(2) + '</td>')
-                        .append('<td colspan="3" style="background-color: #bfbfbf;"></td>');
+                      .append('<td style="font-weight:bold; background-color: #bfbfbf;">' + group + '</td>')
+                      .append('<td colspan="2" style="background-color: #bfbfbf;"></td>')
+                      .append(`<td style="font-weight:bold; background:#bfbfbf;">${rupiah(totalNilaiFaktur)}</td>`)
+                      .append(`<td style="font-weight:bold; background:#bfbfbf;">${rupiah(totalHutangAsing)}</td>`)
+                      .append('<td colspan="3" style="background-color: #bfbfbf;"></td>');
                 }
             },
             columnDefs: [

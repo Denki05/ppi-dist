@@ -53,7 +53,7 @@
             @if($row->exsisting_customer == 0)
               {{$row->customer_name}}
             @elseif($row->exsisting_customer === 1)
-            {{$row->member->name}} {{ $row->member->text_kota }}
+            {{$row->member->name ?? '-'}} {{ $row->member->text_kota ?? '-' }}
             @endif
           </td>
           <td>{{ $row->createdBySuperuser() }}</td>

@@ -28,16 +28,15 @@ class PiutangFakturTable extends Table
                 'master_customer_other_addresses.name AS customer_name', 
                 'master_customer_other_addresses.text_kota AS customer_kota', 
                 'finance_invoicing.code AS no_faktur',
-                'finance_invoicing.grand_total_idr AS nilai_faktur',
+                'penjualan_do_details.grand_total_idr AS nilai_faktur',
                 'penjualan_do_details.delivery_cost_idr AS ongkos_kirim',
                 'penjualan_so.so_date AS tanggal_faktur', 
                 'master_customers.tempo_limit AS tempo_limit', 
                 DB::raw('IFNULL(SUM(finance_payable_detail.total), 0) AS pembayaran'),
                 DB::raw('
                     CASE
-                        WHEN penjualan_so.payment_status = 0 THEN "UNPAID"
-                        WHEN penjualan_so.payment_status = 1 THEN "PAID"
-                        WHEN penjualan_so.payment_status = 2 THEN "UNPAID"
+                        WHEN penjualan_do_details.grand_total_idr - IFNULL(SUM(finance_payable_detail.total), 0) <= 0 THEN "PAID"
+                        ELSE "UNPAID"
                     END AS status_faktur
                 ')
             )
@@ -53,6 +52,8 @@ class PiutangFakturTable extends Table
             ->get();
 
 
+
+        // dd($model);
         return $model;
     }
     
@@ -91,11 +92,11 @@ class PiutangFakturTable extends Table
         });
 
         $table->addColumn('nilai_faktur', function (Invoicing $model) {
-            return $model->nilai_faktur + $model->ongkos_kirim;
+            return $model->nilai_faktur;
         });
 
         $table->addColumn('hutang_asing', function (Invoicing $model) {
-            return $model->nilai_faktur - $model->pembayaran + $model->ongkos_kirim;
+            return $model->nilai_faktur - $model->pembayaran;
         });
 
         $table->addColumn('diff_days', function (Invoicing $model) use ($request) {

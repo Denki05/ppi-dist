@@ -491,7 +491,6 @@ class DeliveryOrderController extends Controller
                 'delivery_cost_idr' => $post["delivery_cost_idr"],
                 'other_cost_note' => trim(htmlentities($post["other_cost_note"] ?? '')),
                 'other_cost_idr' => $post["other_cost_idr"] ?? 0,
-                // 'grand_total_idr' => $get_do->do_detail_cost->grand_total_idr,
                 'updated_by' => Auth::id(),
                 'status_resi' => 1,
             ];
@@ -502,12 +501,8 @@ class DeliveryOrderController extends Controller
                 $updateData['other_cost_idr'] = $post["other_cost_idr"];
             } elseif ($get_do->type_transaction == "TEMPO" && $customer->free_shipping == 0) {
                 $updateData['delivery_cost_idr'] = $post["other_cost_idr"];
-                // update grand total
-                // $updateData['grand_total_idr'] = $get_do->do_detail_cost->grand_total_idr + $post["other_cost_idr"];
             } elseif ($get_do->type_transaction == "CASH" && $customer->free_shipping == 0) {
                 $updateData['other_cost_idr'] = $post["other_cost_idr"];
-                // update grand total
-                // $updateData['grand_total_idr'] = $get_do->do_detail_cost->grand_total_idr + $post["other_cost_idr"];
             }
 
             // Update PackingOrderDetail
