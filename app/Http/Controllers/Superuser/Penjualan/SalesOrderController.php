@@ -2281,6 +2281,7 @@ class SalesOrderController extends Controller
                 $sales_order->approval_mou_status = 1;
                 $sales_order->approval_mou_date = date('Y-m-d H:i:s');
                 $sales_order->approval_mou_by = Auth::id();
+                $sales_order->status = 2;
 
                 if($sales_order->save()){
                     DB::commit();

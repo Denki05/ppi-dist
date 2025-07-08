@@ -117,6 +117,10 @@
   <section id="content2">
     <div class="alert alert-warning" role="alert" align="left">
       Revisi hanya transaksi <strong>Tempo</strong>
+
+      <a href="{{ route('superuser.penjualan.packing_order.update_header_do') }}" class="btn btn-sm btn-circle btn-alt-success" title="Update Header DO">
+          <i class="fa fa-sync"></i>
+      </a>
     </div>
     <div class="row mb-30">
       <div class="col-12">

@@ -79,20 +79,15 @@ Route::group([
         Route::get('/ready/{id}', 'PackingOrderController@ready')->name('ready');
         Route::post('/packed', 'PackingOrderController@packed')->name('packed');
         Route::get('/revisi/{id}', 'PackingOrderController@revisi')->name('revisi');
-
         Route::get('/{id}/select_so', 'PackingOrderController@select_so')->name('select_so');
         Route::post('/store_so', 'PackingOrderController@store_so')->name('store_so');
-
         Route::post('/destroy_item', 'PackingOrderController@destroy_item')->name('destroy_item');
-
-
         Route::post('/update_cost', 'PackingOrderController@update_cost')->name('update_cost');
-
         Route::post('/ajax_customer_detail', 'PackingOrderController@ajax_customer_detail')->name('ajax_customer_detail');
         Route::post('/ajax_customer_other_address', 'PackingOrderController@ajax_customer_other_address')->name('ajax_customer_other_address');
         Route::post('/ajax_customer_other_address_detail', 'PackingOrderController@ajax_customer_other_address_detail')->name('ajax_customer_other_address_detail');
-
         Route::get('/{id}/print_proforma', 'PackingOrderController@print_proforma')->name('print_proforma');
+        Route::get('/update_header_do', 'PackingOrderController@update_header_do')->name('update_header_do');
     });
 
     Route::group(['as' => 'delivery_order.', 'prefix' => '/delivery_order'], function () {
@@ -225,4 +220,10 @@ Route::group([
         Route::get('/getCustomer', 'SalesOrderProformaController@getCustomer')->name('getCustomer');
      });
      Route::resource('so_proforma', 'SalesOrderProformaController');
+
+    Route::group(['as' => 'migrasi_so.', 'prefix' => '/migrasi_so'], function () {
+        Route::post('/import', 'MigrasiImportController@import')->name('import');
+        
+     });
+    Route::resource('migrasi_so', 'MigrasiImportController');
 });

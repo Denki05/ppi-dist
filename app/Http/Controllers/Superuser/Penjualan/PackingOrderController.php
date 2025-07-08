@@ -1183,6 +1183,7 @@ class PackingOrderController extends Controller
         ResultData:
         return response()->json($data_json,200);
     }
+    
     public function ajax_customer_other_address(Request $request){
         $data_json = [];
         $post = $request->all();
@@ -1354,5 +1355,60 @@ class PackingOrderController extends Controller
 
       $update = PackingOrderDetail::where('do_id',$id)->update($data);
       return true;
+    }
+
+    public function update_header_do(Request $request)
+    {
+        try {
+            DB::beginTransaction();
+
+            // Ambil data DO yang memenuhi syarat
+            $reports = DB::select("
+                SELECT
+                    d.id AS do_id,
+                    s.customer_other_address_id,
+                    s.code,
+                    s.brand_name,
+                    s.so_date AS order_date,
+                    det.discount_1 AS disc_percent,
+                    MAX(item.usd_disc) AS disc_usd,
+                    SUM(item.qty) AS total_qty,
+                    SUM(item.price * item.qty) AS total_usd_before,
+                    SUM((item.price - item.usd_disc) * item.qty) AS total_usd_after,
+                    (det.purchase_total_idr - det.discount_idr) AS grand_total_idr
+                FROM penjualan_do d
+                JOIN penjualan_so s ON d.so_id = s.id
+                JOIN penjualan_do_details det ON d.id = det.do_id
+                JOIN penjualan_do_item item ON d.id = item.do_id
+                WHERE d.status = 6 AND YEAR(s.so_date) = 2025
+                GROUP BY d.id, s.customer_other_address_id, s.code, s.brand_name,
+                        s.so_date, det.discount_1, item.usd_disc, det.purchase_total_idr, det.discount_idr
+            ");
+
+            // Insert ke tabel penjualan_do_report
+            foreach ($reports as $r) {
+                DB::table('penjualan_do_report')->insert([
+                    'do_id'                 => $r->do_id,
+                    'customer_other_address_id' => $r->customer_other_address_id,
+                    'code'                  => $r->code,
+                    'brand_name'            => $r->brand_name,
+                    'order_date'            => $r->order_date,
+                    'disc_percent'          => $r->disc_percent,
+                    'disc_usd'              => $r->disc_usd,
+                    'total_qty'             => $r->total_qty,
+                    'total_usd_before'      => $r->total_usd_before,
+                    'total_usd_after'       => $r->total_usd_after,
+                    'grand_total_idr'       => $r->grand_total_idr,
+                    'created_at'            => now(),
+                ]);
+            }
+
+            DB::commit();
+
+            return redirect()->back()->with('message', 'Berhasil memasukkan data ke laporan DO!');
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return redirect()->back()->with('error', 'Gagal insert data: ' . $e->getMessage());
+        }
     }
 }
