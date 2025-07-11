@@ -1366,10 +1366,12 @@ class PackingOrderController extends Controller
             $reports = DB::select("
                 SELECT
                     d.id AS do_id,
-                    s.customer_other_address_id,
+                    coa.name AS customer_name,
+                    coa.text_kota AS customer_city,
                     s.code,
                     s.brand_name,
                     s.so_date AS order_date,
+                    d.idr_rate AS idr_rate,
                     det.discount_1 AS disc_percent,
                     MAX(item.usd_disc) AS disc_usd,
                     SUM(item.qty) AS total_qty,
@@ -1380,7 +1382,8 @@ class PackingOrderController extends Controller
                 JOIN penjualan_so s ON d.so_id = s.id
                 JOIN penjualan_do_details det ON d.id = det.do_id
                 JOIN penjualan_do_item item ON d.id = item.do_id
-                WHERE d.status = 6 AND YEAR(s.so_date) = 2025
+                JOIN master_customer_other_addresses coa ON s.customer_other_address_id = coa.id
+                WHERE d.status = 6 AND YEAR(s.so_date) = 2024
                 GROUP BY d.id, s.customer_other_address_id, s.code, s.brand_name,
                         s.so_date, det.discount_1, item.usd_disc, det.purchase_total_idr, det.discount_idr
             ");
@@ -1389,10 +1392,12 @@ class PackingOrderController extends Controller
             foreach ($reports as $r) {
                 DB::table('penjualan_do_report')->insert([
                     'do_id'                 => $r->do_id,
-                    'customer_other_address_id' => $r->customer_other_address_id,
+                    'customer_name'         => $r->customer_name,
+                    'customer_city'         => $r->customer_city,
                     'code'                  => $r->code,
                     'brand_name'            => $r->brand_name,
                     'order_date'            => $r->order_date,
+                    'idr_rate'              => $r->idr_rate,
                     'disc_percent'          => $r->disc_percent,
                     'disc_usd'              => $r->disc_usd,
                     'total_qty'             => $r->total_qty,

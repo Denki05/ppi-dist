@@ -22,6 +22,8 @@ class ImportSoHeader implements ToModel, WithHeadingRow
             'disc_amount_2' => $row['disc_amount_2'] ?? 0.00,
             'disc_percent' => $row['disc_percent'] ?? 0.00,
             'disc_percent_2' => $row['disc_percent_2'] ?? 0.00,
+            'ppn_idr' => $row['ppn_idr'] ?? 0.00,
+            'ppn' => $row['ppn'] ?? 0.00,
             'grand_total' => $row['grand_total'] ?? 0.00,
             'brand' => $row['brand'] ?? null,
             'idr_rate' => $row['idr_rate'] ?? 0.00,

@@ -173,7 +173,7 @@ class SalesOrder extends Model
 
     public function so_detail()
     {
-        return $this->hasMany('App\Entities\Penjualan\SalesOrderItem', 'so_id');
+        return $this->hasMany('App\Entities\Penjualan\SalesOrderItem', 'so_id', 'id');
     }
 
     public function do(){

@@ -12,6 +12,7 @@ class ImportSoList implements ToModel, WithHeadingRow
     {
         return new MigrasiSoList([
             'so_id' => $row['so_id'],
+            'brand' => $row['brand'],
             'product_code' => $row['product_code'] ?? null,
             'product_name' => $row['product_name'] ?? null,
             'packaging' => $row['packaging'] ?? null,

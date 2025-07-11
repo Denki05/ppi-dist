@@ -63,6 +63,7 @@ Route::group([
         Route::get('/data_so/{id}', 'SalesOrderController@data_so')->name('data_so');
         Route::post('/approvalMouSo/{id}', 'SalesOrderController@approvalMouSo')->name('approvalMouSo');
         Route::get('/viewSalesOrderDetail/{id}', 'SalesOrderController@viewSalesOrderDetail')->name('viewSalesOrderDetail');
+        Route::get('/migrasi_so', 'SalesOrderController@migrasi_so')->name('migrasi_so');
     });
 
     Route::group(['as' => 'packing_order.', 'prefix' => '/packing_order'], function () {
@@ -223,7 +224,8 @@ Route::group([
 
     Route::group(['as' => 'migrasi_so.', 'prefix' => '/migrasi_so'], function () {
         Route::post('/import', 'MigrasiImportController@import')->name('import');
-        
+        Route::get('/prosesMigrasi', 'MigrasiImportController@prosesMigrasi')->name('prosesMigrasi');
+        Route::get('/prosesKalkulasiDO', 'MigrasiImportController@prosesKalkulasiDO')->name('prosesKalkulasiDO');
      });
     Route::resource('migrasi_so', 'MigrasiImportController');
 });

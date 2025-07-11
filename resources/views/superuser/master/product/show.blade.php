@@ -4,7 +4,7 @@
 
 <div class="block">
   <div class="block-header block-header-default">
-    <h3 class="block-title">#SHOW PRODUCT : {{$product->code}} - {{$product->name}}</h3>
+    <h3 class="block-title">#SHOW PRODUCT : {{$product->code ?? '-'}} - {{$product->name ?? '-'}}</h3>
   </div>
   <div class="block-content">
     <input style="display: none;" id="tab1" type="radio" name="tabs" checked>
@@ -25,7 +25,7 @@
               <div class="form-group row">
                 <label for="example-text-input" class="col-3 col-form-label">Kode Bahan</label>
                 <div class="col-8">
-                  <input class="form-control" type="text" value="{{ $product->material_code }}" id="example-text-input" readonly>
+                  <input class="form-control" type="text" value="{{ $product->material_code ?? '-' }}" id="example-text-input" readonly>
                   <br>
                   <a href="#material_optional" class="link-primary"><i class="fa fa-plus-circle" aria-hidden="true"></i> Other Data</a>
                 </div>
@@ -35,7 +35,7 @@
               <div class="form-group row">
                 <label for="example-text-input" class="col-3 col-form-label">Nama Bahan</label>
                 <div class="col-8">
-                  <input class="form-control" type="text" value="{{ $product->material_name }}" id="example-text-input" readonly>
+                  <input class="form-control" type="text" value="{{ $product->material_name ?? '-' }}" id="example-text-input" readonly>
                 </div>
               </div>
             </div>
