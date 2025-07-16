@@ -41,7 +41,18 @@
 
 <h4 style="font-weight: bold;">#SALES ORDER LANJUTAN</h4>
 @role('Developer', 'superuser')
-  <a class="btn btn-primary" href="{{ route('superuser.penjualan.sales_order.updateBrandName') }}" role="button">Update</a>
+  <a class="btn btn-primary" href="{{ route('superuser.penjualan.sales_order.updateBrandName') }}" role="button" title="Update Brand Invoice">
+    <i class="bi bi-cloud-upload"></i>
+  </a>
+  
+  <a class="btn btn-info" href="#" class="btn btn-sm btn-circle btn-alt-success" title="Update Header DO">
+    <i class="bi bi-arrow-repeat"></i>
+  </a>
+
+  <!-- Kalkulasi DO migrasi -->
+  <a class="btn btn-warning" href="{{ route('superuser.penjualan.migrasi_so.prosesKalkulasiDO') }}" class="btn btn-sm btn-circle btn-alt-success" title="Kalkulasi DO Migrasi">
+    <i class="bi bi-calculator"></i>
+  </a>
 @endrole
 <br>
 <br>

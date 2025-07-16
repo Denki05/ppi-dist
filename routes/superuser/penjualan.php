@@ -225,4 +225,11 @@ Route::group([
         Route::get('/getCustomer', 'SalesOrderProformaController@getCustomer')->name('getCustomer');
      });
      Route::resource('so_proforma', 'SalesOrderProformaController');
+
+    Route::group(['as' => 'migrasi_so.', 'prefix' => '/migrasi_so'], function () {
+        Route::post('/import', 'MigrasiImportController@import')->name('import');
+        Route::get('/prosesMigrasi', 'MigrasiImportController@prosesMigrasi')->name('prosesMigrasi');
+        Route::get('/prosesKalkulasiDO', 'MigrasiImportController@prosesKalkulasiDO')->name('prosesKalkulasiDO');
+    });
+    Route::resource('migrasi_so', 'MigrasiImportController');
 });

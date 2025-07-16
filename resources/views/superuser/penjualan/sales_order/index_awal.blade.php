@@ -95,11 +95,11 @@
 
         @if($superuser->division == "Admin" OR $superuser->division == "Management" OR $superuser->division == "Developer")
           <button type="button" class="btn btn-outline-info ml-10" data-toggle="modal" data-target="#modal-manage">Export</button>
+
+          <button type="button" class="btn btn-outline-info ml-10" data-toggle="modal" data-target="#modal-manage">Manage</button>
+
+          <a href="{{ route('superuser.penjualan.migrasi_so.prosesMigrasi') }}" class="btn btn-outline-info ml-10">Migrasi SO</a>
         @endif
-
-
-        <!-- <button type="button" class="btn btn-outline-info"><i class="fa fa-print"></i> GET SO</button> -->
-
         <br>
         <br>
         <table class="table table-bordred table-striped" style="width:100%" id="sales_order_awal">

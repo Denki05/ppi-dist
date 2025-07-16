@@ -282,9 +282,9 @@
         table.row.add([
                     counter,
                     makeselect,
-                    '<input class="form-control text-center" name="price[]" readonly><input type="hidden" class="form-control packaging" name="packaging[]">',
-                    '<input type="number" class="form-control noscroll" name="qty[]" required>',
-                    '<input type="number" class="form-control noscroll" name="disc[]">',
+                    '<input class="form-control text-center" name="price[]" readonly><input type="hidden" class="form-control packaging" name="packaging[]" required>',
+                    '<input type="number" class="form-control noscroll text-center" name="qty[]" required>',
+                    '<input type="number" class="form-control noscroll text-center" name="disc[]" required>',
                     '<a href="#" class="row-delete"><button type="button" class="btn btn-sm btn-circle btn-alt-danger" title="Delete"><i class="fa fa-trash"></i></button></a>'
                   ]).draw( false );
                   

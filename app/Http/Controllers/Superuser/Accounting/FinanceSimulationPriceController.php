@@ -949,7 +949,7 @@ class FinanceSimulationPriceController extends Controller
                 // Ambil data invoice real
                 $invoice_real = DB::table('penjualan_do')
                     ->where('penjualan_do.status', 6)
-                    ->whereYear('penjualan_so.so_date', 2024)
+                    ->whereYear('penjualan_so.so_date', 2025)
                     ->where('penjualan_so.type_so', 'nonppn')
                     ->leftJoin('penjualan_do_details', 'penjualan_do.id', '=', 'penjualan_do_details.do_id')
                     ->leftJoin('penjualan_do_item', 'penjualan_do.id', '=', 'penjualan_do_item.do_id')
@@ -1083,7 +1083,7 @@ class FinanceSimulationPriceController extends Controller
                     // Lakukan perhitungan diskon dan total
                     $disc_1 = $total_item_idr * (($invoice_items->first()->invoice_disc_1 ?? 0) / 100);
                     $disc_2 = ($total_item_idr - $disc_1) * (($invoice_items->first()->invoice_disc_2 ?? 0) / 100);
-                    $purchas_total = $total_item_idr - $disc_1 - $disc_2 - ($invoice_items->first()->invoice_disc_idr ?? 0) - ($invoice_items->first()->invoice_voucher_idr ?? 0) - ($invoice_items->first()->invoice_ppn_idr ?? 0);
+                    $purchas_total = $total_item_idr - $disc_1 - $disc_2 - ($invoice_items->first()->invoice_disc_idr ?? 0) - ($invoice_items->first()->invoice_voucher_idr ?? 0);
                     $grand_total = $purchas_total + ($invoice_items->first()->invoice_delivery_cost_idr ?? 0);
 
                     // input do detils uv
@@ -1164,14 +1164,14 @@ class FinanceSimulationPriceController extends Controller
 
     public function delete_data(Request $request)
     {
-        $tahun = 2024; // Tahun langsung didefinisikan
+        // $tahun = 2024; // Tahun langsung didefinisikan
 
         try {
             DB::beginTransaction(); // Mulai transaksi
 
             // Ambil semua ID dari penjualan_do_uv yang memiliki proses_at di tahun tertentu
             $do_uv_ids = DB::table('penjualan_do_uv')
-                ->whereYear('proses_at', $tahun)
+                // ->whereYear('proses_at', $tahun)
                 ->pluck('id')
                 ->toArray();
 

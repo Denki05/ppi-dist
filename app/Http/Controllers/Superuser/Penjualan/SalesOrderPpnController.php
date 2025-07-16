@@ -266,7 +266,7 @@ class SalesOrderPpnController extends Controller
                                 $sales_khusus_detail->packaging_id = $request->packaging[$key];
                                 $sales_khusus_detail->qty = $request->qty[$key];
                                 $sales_khusus_detail->price = $request->price[$key];
-                                $sales_khusus_detail->disc_usd = $request->disc[$key];
+                                $sales_khusus_detail->disc_usd = $request->disc[$key] ?? 0.00;
                                 $sales_khusus_detail->created_by = Auth::id();
                                 $sales_khusus_detail->save();
                             }

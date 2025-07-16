@@ -66,7 +66,11 @@
                     </thead>
                     <tbody>
                         @forelse($customer->do as $index => $row)
-                            @if($row->invoicing && ($remaining = $row->invoicing->grand_total_idr - $row->invoicing->payable_detail->sum('total')) > 0)
+                            @php
+                                $invoice = $row->invoicing;
+                                $getYear = $invoice->created_at->format('Y');
+                            @endphp
+                            @if($invoice && !in_array($getYear, ['2022', '2023']) && ($remaining = $invoice->grand_total_idr - $invoice->payable_detail->sum('total')) > 0)
                                 <tr>
                                     <input type="hidden" name="repeater[{{ $index }}][invoice_id]" value="{{ $row->invoicing->id }}">
                                     <td>{{ $loop->iteration }}</td>
