@@ -398,4 +398,27 @@ class CodeRepo
         // Return the generated code
         return $code;
     }
+
+    public static function generatePurchaseOrderSPK()
+    {
+        // $get_max = Purchaseorder::max('code');
+        $parts = explode('-', date("d-m-Y"));
+        $p1 = substr($parts[2], (strlen($parts[2]) - 2) );
+        $abjadMonth = array( '-', 'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L');
+        $p2 = $abjadMonth[date('n')];
+        $str_code = "SPK";
+        $yearMonth = $str_code.$p1.$p2;
+        $latestNumber = "";
+
+        $get_max = DB::table('purchase_order')->where('type', 0)->where('code', 'LIKE', '%'.$yearMonth.'%')->where('deleted_at', null)->max('code');
+
+        if($get_max == 'false'){
+            $latestNumber = $yearMonth . '001';
+        }else{
+            $latestNumber = $get_max;
+            $id = (int) substr($latestNumber, strlen($yearMonth)) + 1;
+            $latestNumber = $yearMonth . str_pad($id, 3, 0, STR_PAD_LEFT);
+        }
+        return $latestNumber;
+    }
 }

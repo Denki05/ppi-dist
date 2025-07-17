@@ -57,6 +57,10 @@ class CustomerOrderVariantTable extends Table
             $multiple_brand = explode(',', $request->brand_name);
             $model->whereIn('master_products.brand_name', $multiple_brand);
         }
+        
+        if($request->product != 'all') {
+            $model = $model->where('master_products_packaging.id', $request->product);
+        }
 
         return $model;
     }      

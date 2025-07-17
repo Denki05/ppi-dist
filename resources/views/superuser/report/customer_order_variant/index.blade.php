@@ -141,7 +141,7 @@
 
       let datatableUrl = '{{ route('superuser.report.customer_order_variant.json') }}';
       let firstDatatableUrl = datatableUrl + '?start_date=' + start_date + '&end_date=' + end_date +
-      '&customer=all&brand=all';
+      '&customer=all&brand=all&product=all';
 
       var datatable = $('#datatable').DataTable({
         language: {
@@ -199,11 +199,12 @@
         e.preventDefault();
         var customer = $('#customer').val();
         var brand = $('#brand_name').val();
+        var product = $('#product').val();
         var start_date = $('#start_date').val();
         var end_date = $('#end_date').val();
         
         let newDatatableUrl = datatableUrl + '?start_date=' + start_date + '&end_date=' + end_date +
-          '&customer=' + customer + '&brand_name=' + brand;
+          '&customer=' + customer + '&brand_name=' + brand + '&product=' + product;
         datatable.ajax.url(newDatatableUrl).load();
       });
 

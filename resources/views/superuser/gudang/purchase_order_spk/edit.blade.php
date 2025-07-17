@@ -3,7 +3,7 @@
 @section('content')
 <nav class="breadcrumb bg-white push">
   <span class="breadcrumb-item">Gudang</span>
-  <a class="breadcrumb-item" href="{{ route('superuser.gudang.purchase_order.index') }}">Purchase Order (PO)</a>
+  <a class="breadcrumb-item" href="{{ route('superuser.gudang.purchase_order_spk.index') }}">SPK</a>
   <span class="breadcrumb-item active">Edit</span>
 </nav>
 <div id="alert-block"></div>
@@ -12,9 +12,9 @@
     <h3 class="block-title">Edit Purchase Order (PO)</h3>
   </div>
   <div class="block-content">
-    <form class="ajax" data-action="{{ route('superuser.gudang.purchase_order.update', $purchase_order->id) }}" data-type="POST" enctype="multipart/form-data">
+    <form class="ajax" data-action="{{ route('superuser.gudang.purchase_order_spk.update', $purchase_order->id) }}" data-type="POST" enctype="multipart/form-data">
       <input type="hidden" name="_method" value="PUT">
-      <input type="hidden" name="type" value="1">
+      <input type="hidden" name="type" value="0">
       <div class="form-group row">
         <label class="col-md-3 col-form-label text-right" for="code">PO Code <span class="text-danger">*</span></label>
         <div class="col-md-7">
@@ -46,7 +46,7 @@
       </div>
       <div class="form-group row pt-30">
         <div class="col-md-6">
-          <a href="{{ route('superuser.gudang.purchase_order.step', ['id' => $purchase_order->id]) }}">
+          <a href="{{ route('superuser.gudang.purchase_order_spk.step', ['id' => $purchase_order->id]) }}">
             <button type="button" class="btn bg-gd-cherry border-0 text-white">
               <i class="fa fa-arrow-left mr-10"></i> Back
             </button>

@@ -66,6 +66,7 @@
                     <tr>
                       <th>Vendor</th>
                       <th>Material</th>
+                      <th>Searah</th>
                       <th>Brand</th>
                       <th>Produk</th>
                       <th>Harga</th>
@@ -114,6 +115,7 @@
           columns: [
             { data: 'vendor_name' },
             { data: 'material' },
+            { data: 'searah_name' },
             { data: 'brand' },
             { data: 'produk' },
             { data: 'harga' },

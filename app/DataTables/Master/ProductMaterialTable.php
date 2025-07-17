@@ -18,14 +18,16 @@ class ProductMaterialTable extends Table
     {
         $model = Product::leftJoin('master_products_packaging', 'master_products.id', '=', 'master_products_packaging.product_id')
             ->leftJoin('master_vendors', 'master_products.vendor_id', '=', 'master_vendors.id')
+            ->leftJoin('master_sub_brand_references', 'master_products.sub_brand_reference_id', '=', 'master_sub_brand_references.id')
             ->select(
                 'master_vendors.name as vendor_name',
                 DB::raw("CONCAT(master_products.material_code, ' - ', master_products.material_name) as material"),
                 'master_products.brand_name as brand',
                 DB::raw("MIN(CONCAT(master_products_packaging.code, ' - ', master_products_packaging.name)) as produk"),
-                DB::raw("MIN(master_products_packaging.price) as harga")
+                DB::raw("MIN(master_products_packaging.price) as harga"),
+                'master_sub_brand_references.name as searah_name'
             )
-            ->groupBy('master_vendors.name', 'master_products.material_code', 'master_products.material_name', 'master_products.brand_name')
+            ->groupBy('master_vendors.name', 'master_products.material_code', 'master_products.material_name', 'master_products.brand_name', 'master_sub_brand_references.name')
             ->orderBy('master_vendors.name', 'asc');
 
         // Apply vendor filter if necessary

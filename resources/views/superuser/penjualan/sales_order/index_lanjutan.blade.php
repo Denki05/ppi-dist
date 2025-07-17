@@ -40,7 +40,7 @@
 @endif
 
 <h4 style="font-weight: bold;">#SALES ORDER LANJUTAN</h4>
-@role('Developer', 'superuser')
+@role('Developer')
   <a class="btn btn-primary" href="{{ route('superuser.penjualan.sales_order.updateBrandName') }}" role="button" title="Update Brand Invoice">
     <i class="bi bi-cloud-upload"></i>
   </a>

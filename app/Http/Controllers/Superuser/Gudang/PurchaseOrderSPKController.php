@@ -11,24 +11,23 @@ use App\Entities\Gudang\PurchaseOrderSummary;
 use App\Entities\Master\BrandLokal;
 use App\Entities\Master\ProductPack;
 use App\Entities\Master\Packaging;
-use App\DataTables\Gudang\PurchaseOrderTable;
+use App\DataTables\Gudang\PurchaseOrderSPKTable;
 use App\Exports\Gudang\PurchaseOrderDetailImportTemplate;
-use App\Exports\Gudang\PurchaseOrderExport;
 use App\Imports\Gudang\PurchaseOrderDetailImport;
 use App\Entities\Master\Warehouse;
-use App\Helper\LogActivity;
 use Auth;
 use COM;
 use DB;
 use Excel;
+use PDF;
 use Validator;
 use Carbon\Carbon;
 
-class PurchaseOrderController extends Controller
+class PurchaseOrderSPKController extends Controller
 {
     public function __construct(){
-        $this->view = "superuser.gudang.purchase_order.";
-        $this->route = "superuser.gudang.purchase_order";
+        $this->view = "superuser.gudang.purchase_order_spk.";
+        $this->route = "superuser.gudang.purchase_order_spk";
         $this->user_menu = new UserMenu;
         $this->access = null;
         $this->middleware(function ($request, $next) {
@@ -44,22 +43,16 @@ class PurchaseOrderController extends Controller
         });
     }
 
-    public function json(Request $request, PurchaseOrderTable $datatable)
+    public function json(Request $request, PurchaseOrderSPKTable $datatable)
     {
         return $datatable->build();
     }
 
     public function search_sku(Request $request)
     {
-        $products = ProductPack::where('master_products_packaging.name', 'LIKE', '%'.$request->input('q', '').'%')
-            ->leftJoin('master_packaging', 'master_products_packaging.packaging_id', '=', 'master_packaging.id')
-            ->where('master_products_packaging.status', ProductPack::STATUS['ACTIVE'])
-            ->select(
-                'master_products_packaging.id',
-                DB::raw("CONCAT(master_products_packaging.code, ' - ', master_products_packaging.name, ' / ', master_packaging.pack_name) as text")
-            )
-            ->get();
-
+        $products = ProductPack::where('name', 'LIKE', '%'.$request->input('q', '').'%')
+            ->where('status', ProductPack::STATUS['ACTIVE'])
+            ->get(['id', 'code as text', 'name']);
         return ['results' => $products];
     }
 
@@ -84,7 +77,7 @@ class PurchaseOrderController extends Controller
             }
         }
 
-        $data['purchase_order'] = PurchaseOrder::get();
+        $data['purchase_order'] = PurchaseOrder::where('type', PurchaseOrder::TYPE['SPK'])->get();
 
         return view($this->view."index", $data);
     }
@@ -138,22 +131,21 @@ class PurchaseOrderController extends Controller
 
                 $purchase_order->code = $request->code;
                 $purchase_order->warehouse_id = $request->warehouse;
-                $purchase_order->type = 1;
                 $purchase_order->etd = $request->etd;
+                $purchase_order->type = 0;
                 $purchase_order->note = $request->note;
                 $purchase_order->created_by = Auth::id();
 
                 $purchase_order->status = PurchaseOrder::STATUS['DRAFT'];
 
                 if ($purchase_order->save()) {
-                    LogActivity::addToLog('Created a new PO: ' . $purchase_order->code);
                     $response['notification'] = [
                         'alert' => 'notify',
                         'type' => 'success',
                         'content' => 'Success',
                     ];
 
-                    $response['redirect_to'] = route('superuser.gudang.purchase_order.step', ['id' => $purchase_order->id]);
+                    $response['redirect_to'] = route('superuser.gudang.purchase_order_spk.step', ['id' => $purchase_order->id]);
 
                     return $this->response(200, $response);
                 }
@@ -189,7 +181,7 @@ class PurchaseOrderController extends Controller
     public function edit($id)
     {
         if(Auth::user()->is_superuser == 0){
-            if(empty($this->access) || empty($this->access->user) || $this->access->can_update == 0){
+            if(empty($this->access) || empty($this->access->user) || $this->access->can_edit == 0){
                 return redirect()->route('superuser.index')->with('error','Anda tidak punya akses untuk membuka menu terkait');
             }
         }
@@ -241,14 +233,13 @@ class PurchaseOrderController extends Controller
                 $purchase_order->note = $request->note;
 
                 if ($purchase_order->save()) {
-                    LogActivity::addToLog('Updated PO: ' . $purchase_order->code);
                     $response['notification'] = [
                         'alert' => 'notify',
                         'type' => 'success',
                         'content' => 'Success',
                     ];
 
-                    $response['redirect_to'] = route('superuser.gudang.purchase_order.step', ['id' => $purchase_order->id]);
+                    $response['redirect_to'] = route('superuser.gudang.purchase_order_spk.step', ['id' => $purchase_order->id]);
 
                     return $this->response(200, $response);
                 }
@@ -293,7 +284,7 @@ class PurchaseOrderController extends Controller
                     'content' => 'Success',
                 ];
 
-                $response['redirect_to'] = route('superuser.gudang.purchase_order.index');
+                $response['redirect_to'] = route('superuser.gudang.purchase_order_spk.index');
 
                 return $this->response(200, $response);
             }
@@ -319,7 +310,7 @@ class PurchaseOrderController extends Controller
                     'content' => 'Success',
                 ];
 
-                $response['redirect_to'] = route('superuser.gudang.purchase_order.index');
+                $response['redirect_to'] = route('superuser.gudang.purchase_order_spk.index');
 
                 return $this->response(200, $response);
             }
@@ -355,7 +346,7 @@ class PurchaseOrderController extends Controller
                         'content' => 'Success',
                     ];
     
-                    $response['redirect_to'] = route('superuser.gudang.purchase_order.index');
+                    $response['redirect_to'] = route('superuser.gudang.purchase_order_spk.index');
     
                     return $this->response(200, $response);
                 }
@@ -396,9 +387,10 @@ class PurchaseOrderController extends Controller
                 $purchase_order->status = PurchaseOrder::STATUS['ACC'];
 
                 if ($purchase_order->save()) {
+
+                    
                     DB::commit();
-                    LogActivity::addToLog('ACC PO: ' . $purchase_order->code);
-                    $response['redirect_to'] = route('superuser.gudang.purchase_order.index');
+                    $response['redirect_to'] = route('superuser.gudang.purchase_order_spk.index');
                     return $this->response(200, $response);
                 }
             }catch (\Exception $e) {
@@ -434,8 +426,7 @@ class PurchaseOrderController extends Controller
             $purchase_order->status = PurchaseOrder::STATUS['DELETED'];
 
             if ($purchase_order->save()) {
-                LogActivity::addToLog('Deleted PO: ' . $purchase_order->code);
-                $response['redirect_to'] = route('superuser.gudang.purchase_order.index');
+                $response['redirect_to'] = route('superuser.gudang.purchase_order_spk.index');
                 return $this->response(200, $response);
             }
         }
@@ -443,64 +434,29 @@ class PurchaseOrderController extends Controller
 
     public function print_pdf($id)
     {
-        // Access
-        if(Auth::user()->is_superuser == 0){
-            if(empty($this->access) || empty($this->access->user) || $this->access->can_print == 0){
-                return redirect()->route('superuser.index')->with('error','Anda tidak punya akses untuk membuka menu terkait');
-            }
+        if (empty($id) || !is_numeric($id)) {
+            abort(404, 'PO ID tidak valid.');
         }
 
-        $result = PurchaseOrder::where('id', $id)->first();
-
-        $my_report = "C:\\xampp\\htdocs\\ppi-dist\public\\cr\\purchase_order\\po_rev.rpt"; 
-        $my_pdf = 'C:\\xampp\\htdocs\\ppi-dist\\public\\cr\\purchase_order\\export\\'.$result->code.'.pdf';
-
-        //- Variables - Server Information 
-        $my_server = "LOCAL_3"; 
-        $my_user = "root"; 
-        $my_password = ""; 
-        $my_database = "ppi-dist";
-        $COM_Object = "CrystalDesignRunTime.Application";
-
-         //-Create new COM object-depends on your Crystal Report version
-         $crapp= New COM($COM_Object) or die("Unable to Create Object");
-         $creport = $crapp->OpenReport($my_report,1); // call rpt report
-
-        //- Set database logon info - must have
-        $creport->Database->Tables(1)->SetLogOnInfo($my_server, $my_database, $my_user, $my_password);
-
-        //- field prompt or else report will hang - to get through
-        $creport->EnableParameterPrompting = FALSE;
-        $creport->RecordSelectionFormula = "{purchase_order.id}= $result->id";
-
-        //export to PDF process
-        $creport->ExportOptions->DiskFileName=$my_pdf; //export to pdf
-        $creport->ExportOptions->PDFExportAllPages=true;
-        $creport->ExportOptions->DestinationType=1; // export to file
-        $creport->ExportOptions->FormatType=31; // PDF type
-        $creport->Export(false);
-
-        //------ Release the variables ------
-        $creport = null;
-        $crapp = null;
-        $ObjectFactory = null;
-
-        $file = 'C:\\xampp\\htdocs\\ppi-dist\\public\\cr\\purchase_order\\export\\'.$result->code.'.pdf';
-
-        header("Content-Description: File Transfer"); 
-        header("Content-Type: application/octet-stream"); 
-        header("Content-Transfer-Encoding: Binary"); 
-        header("Content-Disposition: attachment; filename=\"". basename($file) ."\""); 
-        ob_clean();
-        flush();
-        readfile ($file);
-
-        if (file_exists($file)) {
-            unlink($file);
+        $result = PurchaseOrder::find($id);
+        if (!$result) {
+            abort(404, 'PO tidak ditemukan.');
         }
 
-        exit();
+        $data = [
+            'result' => $result,
+        ];
 
+        $pdf = PDF::loadView('superuser.gudang.purchase_order_spk.print_pdf', $data)
+                ->setPaper('a5', 'landscape');
+
+        $generate = false; // Ubah sesuai logika bisnis.
+
+        if ($generate) {
+            return $pdf->download("PO-{$result->code}.pdf");
+        }
+
+        return $pdf->stream("PO-{$result->code}.pdf");
     }
 
     public function import_template()
@@ -548,16 +504,10 @@ class PurchaseOrderController extends Controller
             $purchase_order->status = PurchaseOrder::STATUS['DRAFT'];
 
             if ($purchase_order->save()) {
-                $response['redirect_to'] = route('superuser.gudang.purchase_order.index');
+                $response['redirect_to'] = route('superuser.gudang.purchase_order_spk.index');
                 return $this->response(200, $response);
             }
         }
-    }
-
-    public function export(Request $request)
-    {
-        $filename = 'Purchase-Order-' . date('d-m-Y_H-i-s') . '.xlsx';
-        return Excel::download(new PurchaseOrderExport, $filename);
     }
 
     public function send(Request $request, $id)
@@ -589,7 +539,7 @@ class PurchaseOrderController extends Controller
                     'content' => 'Success',
                 ];
 
-                $response['redirect_to'] = route('superuser.gudang.purchase_order.index');
+                $response['redirect_to'] = route('superuser.gudang.purchase_order_spk.index');
 
                 return $this->response(200, $response);
             }
@@ -618,7 +568,7 @@ class PurchaseOrderController extends Controller
                 'purchase_order_summary.created_at as created_at'
             )
             ->where('purchase_order_summary.status', PurchaseOrderSummary::STATUS['UNDONE'])
-            ->where('purchase_order.type', 1)
+            ->where('purchase_order.type', 0)
             ->groupBy(
                 'master_products_packaging.id',
                 'master_products_packaging.name',
@@ -670,7 +620,7 @@ class PurchaseOrderController extends Controller
                         'type'    => 'success',
                         'content' => 'PO berhasil dibatalkan dari status SENT'
                     ],
-                    'redirect_to' => route('superuser.gudang.purchase_order.index')
+                    'redirect_to' => route('superuser.gudang.purchase_order_spk.index')
                 ]);
 
             }catch (\Exception $e) {

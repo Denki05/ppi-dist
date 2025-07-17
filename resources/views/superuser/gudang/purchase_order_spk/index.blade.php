@@ -3,7 +3,7 @@
 @section('content')
 <nav class="breadcrumb bg-white push">
   <span class="breadcrumb-item">Gudang</span>
-  <span class="breadcrumb-item active">Purchase Order (PO)</span>
+  <span class="breadcrumb-item active">SPK</span>
 </nav>
 
 @if($errors->any())
@@ -20,17 +20,41 @@
 
 <div id="alert-block"></div>
 
+@if(session('error') || session('success'))
+<div class="alert alert-{{ session('error') ? 'danger' : 'success' }} alert-dismissible fade show" role="alert">
+    @if (session('error'))
+    <strong>Error!</strong> {!! session('error') !!}
+    @elseif (session('success'))
+    <strong>Berhasil!</strong> {!! session('success') !!}
+    @endif
+    <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+        <span aria-hidden="true">&times;</span>
+    </button>
+</div>
+@endif
+
+@if(session()->has('message'))
+<div class="alert alert-success alert-dismissable" role="alert">
+  <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+      <span aria-hidden="true">×</span>
+  </button>
+  <h3 class="alert-heading font-size-h4 font-w400">Success</h3>
+  <p class="mb-0">{{ session()->get('message') }}</p>
+</div>
+@endif
+
 <div class="block">
   <div class="block-content">
-      <a href="{{route('superuser.gudang.purchase_order.create')}}">
-        <button type="button" class="btn btn-outline-success min-width-125">Create</button>
+      <!-- <div class="row mb-30">
+        <div class="col-12">
+          <a href="{{route('superuser.gudang.purchase_order.create')}}" class="btn btn-primary btn-add"><i class="fa fa-plus"></i> Add PO</a>
+        </div>
+      </div> -->
+      <a href="{{route('superuser.gudang.purchase_order_spk.create')}}">
+        <button type="button" class="btn btn-outline-primary min-width-125">New</button>
       </a>
 
-      <a href="{{route('superuser.gudang.purchase_order.export')}}">
-        <button type="button" class="btn btn-outline-primary min-width-125">Export</button>
-      </a>
-
-      <a href="{{route('superuser.gudang.purchase_order.summary')}}">
+      <a href="{{route('superuser.gudang.purchase_order_spk.summary')}}">
         <button type="button" class="btn btn-outline-info min-width-125">Summary</button>
       </a>
 
@@ -71,7 +95,7 @@
       processing: true,
       serverSide: false,
       ajax: {
-        "url": '{{route('superuser.gudang.purchase_order.json')}}',
+        "url": '{{route('superuser.gudang.purchase_order_spk.json')}}',
         "dataType": "json",
         "type": "GET",
         "data":{ _token: "{{csrf_token()}}"}
@@ -90,9 +114,9 @@
         {data: 'status'},
         {data: 'action', orderable: false, searcable: false}
       ],
-      // scrollCollapse: false,
-      // scrollX: false,
-      // scrollY: 300,
+      scrollCollapse: true,
+      scrollX: true,
+      scrollY: 300,
       order: [
         [1, 'desc']
       ],

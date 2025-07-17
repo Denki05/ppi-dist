@@ -6,7 +6,7 @@ use App\DataTables\Table;
 use App\Entities\Gudang\PurchaseOrder;
 use Carbon\Carbon;
 
-class PurchaseOrderTable extends Table
+class PurchaseOrderSPKTable extends Table
 {
     /**
      * Get query source of dataTable.
@@ -15,7 +15,7 @@ class PurchaseOrderTable extends Table
     private function query()
     {
         $model = PurchaseOrder::select('id', 'code', 'edit_counter', 'updated_by', 'status', 'note', 'created_at', 'updated_by')
-                ->where('type', PurchaseOrder::TYPE['PO']);
+                ->where('type', PurchaseOrder::TYPE['SPK']);
 
         return $model;
     }
@@ -61,14 +61,14 @@ class PurchaseOrderTable extends Table
         });
 
         $table->addColumn('action', function (PurchaseOrder $model) {
-            $view = route('superuser.gudang.purchase_order.show', $model);
-            $edit = route('superuser.gudang.purchase_order.step', $model);
-            $destroy = route('superuser.gudang.purchase_order.destroy', $model);
-            $acc = route('superuser.gudang.purchase_order.acc', $model);
-            $pdf = route('superuser.gudang.purchase_order.print_pdf', $model);
-            $cancel_acc = route('superuser.gudang.purchase_order.cancel_acc', $model);
-            $sent = route('superuser.gudang.purchase_order.send', $model);
-            $cancel_send = route('superuser.gudang.purchase_order.cancel_send', $model);
+            $view = route('superuser.gudang.purchase_order_spk.show', $model);
+            $edit = route('superuser.gudang.purchase_order_spk.step', $model);
+            $destroy = route('superuser.gudang.purchase_order_spk.destroy', $model);
+            $acc = route('superuser.gudang.purchase_order_spk.acc', $model);
+            $pdf = route('superuser.gudang.purchase_order_spk.print_pdf', $model);
+            $cancel_acc = route('superuser.gudang.purchase_order_spk.cancel_acc', $model);
+            $sent = route('superuser.gudang.purchase_order_spk.send', $model);
+            $cancel_send = route('superuser.gudang.purchase_order_spk.cancel_send', $model);
 
             switch ($model->status) {
                 case $model::STATUS['ACTIVE']:
@@ -140,12 +140,6 @@ class PurchaseOrderTable extends Table
                         <a href=\"{$view}\">
                             <button type=\"button\" class=\"btn btn-sm btn-circle btn-alt-secondary\" title=\"View\">
                                 <i class=\"fa fa-eye\"></i>
-                            </button>
-                        </a>
-
-                        <a href=\"{$pdf}\">
-                            <button type=\"button\" class=\"btn btn-sm btn-circle btn-alt-secondary\" title=\"Print Out\">
-                                <i class=\"fa fa-print\"></i>
                             </button>
                         </a>
 
