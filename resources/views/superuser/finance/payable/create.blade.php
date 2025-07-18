@@ -68,13 +68,13 @@
                         @forelse($customer->do as $index => $row)
                             @php
                                 $invoice = $row->invoicing;
-                                $getYear = $invoice->created_at->format('Y');
                             @endphp
-                            @if($invoice && !in_array($getYear, ['2022', '2023']) && ($remaining = $invoice->grand_total_idr - $invoice->payable_detail->sum('total')) > 0)
+
+                            @if($invoice && !in_array($invoice->created_at->format('Y'), ['2022', '2023']) && ($remaining = $invoice->grand_total_idr - $invoice->payable_detail->sum('total')) > 0)
                                 <tr>
-                                    <input type="hidden" name="repeater[{{ $index }}][invoice_id]" value="{{ $row->invoicing->id }}">
+                                    <input type="hidden" name="repeater[{{ $index }}][invoice_id]" value="{{ $invoice->id }}">
                                     <td>{{ $loop->iteration }}</td>
-                                    <td>{{ $row->invoicing->code }}</td>
+                                    <td>{{ $invoice->code }}</td>
                                     <td><input type="text" class="form-control total_nota" value="{{ number_format($remaining, 0, ',', '.') }}" readonly></td>
                                     <td><input type="text" name="repeater[{{ $index }}][payable]" class="form-control formatRupiah total_payment"></td>
                                     <td><input type="text" class="form-control formatRupiah count_sisa" readonly></td>
@@ -82,7 +82,7 @@
                             @endif
                         @empty
                             <tr>
-                                <td colspan="4" class="text-center">Data tidak ditemukan</td>
+                                <td colspan="5" class="text-center">Data tidak ditemukan</td>
                             </tr>
                         @endforelse
                     </tbody>

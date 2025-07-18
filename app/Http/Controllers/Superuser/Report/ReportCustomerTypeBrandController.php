@@ -75,8 +75,9 @@ class ReportCustomerTypeBrandController extends Controller
     public function postData(Request $request)
     {
         try {
-            $currentMonth = Carbon::now()->month;
-            $currentYear = Carbon::now()->year;
+            // $currentMonth = Carbon::now()->month;
+            // $currentYear = Carbon::now()->year;
+            $currentYear = 20224;
 
             DB::table('penjualan_do')
                 ->leftJoin('penjualan_do_details', 'penjualan_do_details.do_id', '=', 'penjualan_do.id')
@@ -105,7 +106,7 @@ class ReportCustomerTypeBrandController extends Controller
                     'penjualan_do_details.ppn_idr AS ppn_idr'
                 )
                 ->where('penjualan_do.status', 6)
-                ->whereMonth('penjualan_so.so_date', $currentMonth)
+                // ->whereMonth('penjualan_so.so_date', $currentMonth)
                 ->whereYear('penjualan_so.so_date', $currentYear)
                 ->where(function ($query) {
                     $query->where('master_customers.status', 1)
@@ -254,12 +255,12 @@ class ReportCustomerTypeBrandController extends Controller
 
     public function removeDt(Request $request)
     {
-        $currentMonth = Carbon::now()->month;
-        $currentYear = Carbon::now()->year;
+        // $currentMonth = Carbon::now()->month;
+        // $currentYear = Carbon::now()->year;
 
         DB::table('report_customer_type_brand')
-            ->whereMonth('invoice_date', $currentMonth)
-            ->whereYear('invoice_date', $currentYear)
+            // ->whereMonth('invoice_date', $currentMonth)
+            // ->whereYear('invoice_date', $currentYear)
             ->delete();
 
         return redirect()->back()->with('message', 'Berhasil remove data!');
