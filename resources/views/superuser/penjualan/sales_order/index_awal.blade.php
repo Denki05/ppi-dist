@@ -324,7 +324,7 @@
             },
             processing: true,
             serverSide: true,
-            searching: false,
+            searching: true,
             paging: true,
             info: false,
             ajax: {

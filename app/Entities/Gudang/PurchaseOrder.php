@@ -16,6 +16,7 @@ class PurchaseOrder extends Model
         'etd', 
         'note', 
         'edit_counter', 
+        'type',
         'status', 
         'created_by', 
         'updated_by',
@@ -28,6 +29,11 @@ class PurchaseOrder extends Model
         'ACC' => 2,
         'DRAFT' => 3,
         'SENT' => 4,
+    ];
+
+    const TYPE = [
+        'SPK' => 0,
+        'PO' => 1,
     ];
 
     public function warehouse(){
@@ -63,5 +69,10 @@ class PurchaseOrder extends Model
     public function status()
     {
         return array_search($this->status, self::STATUS);
+    }
+
+    public function type()
+    {
+        return array_search($this->type, self::TYPE);
     }
 }

@@ -24,6 +24,7 @@ Route::group([
         Route::post('/store', 'StockAdjustmentController@store')->name('store');
     });
 
+    // SIRIE
     Route::group(['as' => 'purchase_order.', 'prefix' => '/purchase_order'], function () {
         Route::get('/step/{id}', 'PurchaseOrderController@step')->name('step');
         Route::get('{id}/publish', 'PurchaseOrderController@publish')->name('publish');
@@ -51,6 +52,35 @@ Route::group([
         });
     });
     Route::resource('purchase_order', 'PurchaseOrderController');
+
+    // SPK
+    Route::group(['as' => 'purchase_order_spk.', 'prefix' => '/purchase_order_spk'], function () {
+        Route::get('/step/{id}', 'PurchaseOrderSPKController@step')->name('step');
+        Route::get('{id}/publish', 'PurchaseOrderSPKController@publish')->name('publish');
+        Route::get('{id}/unpublish', 'PurchaseOrderSPKController@unpublish')->name('unpublish');
+        Route::get('{id}/save_modify/{save_type}', 'PurchaseOrderSPKController@save_modify')->name('save_modify');
+        Route::get('{id}/acc', 'PurchaseOrderSPKController@acc')->name('acc');
+        Route::get('{id}/print_pdf', 'PurchaseOrderSPKController@print_pdf')->name('print_pdf');
+        Route::get('/import_template', 'PurchaseOrderSPKController@import_template')->name('import_template');
+        Route::post('/import/{id}', 'PurchaseOrderSPKController@import')->name('import');
+        Route::get('/search_sku', 'PurchaseOrderSPKController@search_sku')->name('search_sku');
+        Route::get('/search_kemasan', 'PurchaseOrderSPKController@search_kemasan')->name('search_kemasan');
+        Route::get('/{id}/cancel_acc', 'PurchaseOrderSPKController@cancel_acc')->name('cancel_acc');
+        Route::get('/{id}/send', 'PurchaseOrderSPKController@send')->name('send');
+        Route::get('/summary', 'PurchaseOrderSPKController@summary')->name('summary');
+        Route::get('/{id}/cancel_send', 'PurchaseOrderSPKController@cancel_send')->name('cancel_send');
+
+        Route::group(['as' => 'detail.'], function () {
+            Route::get('{purchase_id}/detail/create', 'PurchaseOrderDetailSPKController@create')->name('create');
+            Route::post('{purchase_id}/detail', 'PurchaseOrderDetailSPKController@store')->name('store');
+            Route::get('{id}/detail/{detail_id}/edit', 'PurchaseOrderDetailSPKController@edit')->name('edit');
+            Route::put('{id}/detail/{detail_id}', 'PurchaseOrderDetailSPKController@update')->name('update');
+            Route::delete('{id}/detail/{detail_id}', 'PurchaseOrderDetailSPKController@destroy')->name('destroy');
+            Route::get('/get_product', 'PurchaseOrderDetailSPKController@get_product')->name('get_product');
+            Route::get('/get_packaging', 'PurchaseOrderDetailSPKController@get_packaging')->name('get_packaging');
+        });
+    });
+    Route::resource('purchase_order_spk', 'PurchaseOrderSPKController');
 
     Route::group(['as' => 'receiving.', 'perfix' => '/receiving'], function (){
         Route::get('/step/{id}', 'ReceivingController@step')->name('step');

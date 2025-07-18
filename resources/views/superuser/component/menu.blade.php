@@ -197,6 +197,7 @@
                     <ul class="dropdown-menu">
                         @if($superuser->can('superuser-manage') OR $superuser->division == "Admin" OR $superuser->division == "Management" OR $superuser->division == "Warehouse")
                         <li><a class="dropdown-item" href="{{ route('superuser.penjualan.delivery_order.index') }}"><i class="fa-solid fa-truck"></i> Delivery Order (DO)</a></li>
+                        <li><a class="dropdown-item" href="{{ route('superuser.gudang.purchase_order_spk.index') }}"><i class="fa-solid fa-shop"></i> SPK</a></li>
                         <li><a class="dropdown-item" href="{{ route('superuser.gudang.purchase_order.index') }}"><i class="fa-solid fa-shop"></i> Purchase order (PO)</a></li>
                         <li><a class="dropdown-item" href="{{ route('superuser.gudang.receiving.index') }}"><i class="fa-solid fa-receipt"></i> Receiving</a></li>
                         <li><a class="dropdown-item" href="{{ route('superuser.gudang.mutasi_out.index') }}"><i class="fa-solid fa-warehouse"></i> Mutasi Gudang(OUT)</a></li>

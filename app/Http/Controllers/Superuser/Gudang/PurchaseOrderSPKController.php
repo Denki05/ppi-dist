@@ -11,7 +11,7 @@ use App\Entities\Gudang\PurchaseOrderSummary;
 use App\Entities\Master\BrandLokal;
 use App\Entities\Master\ProductPack;
 use App\Entities\Master\Packaging;
-use App\DataTables\Gudang\PurchaseOrderTable;
+use App\DataTables\Gudang\PurchaseOrderSPKTable;
 use App\Exports\Gudang\PurchaseOrderDetailImportTemplate;
 use App\Imports\Gudang\PurchaseOrderDetailImport;
 use App\Entities\Master\Warehouse;
@@ -23,11 +23,11 @@ use PDF;
 use Validator;
 use Carbon\Carbon;
 
-class PurchaseOrderController extends Controller
+class PurchaseOrderSPKController extends Controller
 {
     public function __construct(){
-        $this->view = "superuser.gudang.purchase_order.";
-        $this->route = "superuser.gudang.purchase_order";
+        $this->view = "superuser.gudang.purchase_order_spk.";
+        $this->route = "superuser.gudang.purchase_order_spk";
         $this->user_menu = new UserMenu;
         $this->access = null;
         $this->middleware(function ($request, $next) {
@@ -43,7 +43,7 @@ class PurchaseOrderController extends Controller
         });
     }
 
-    public function json(Request $request, PurchaseOrderTable $datatable)
+    public function json(Request $request, PurchaseOrderSPKTable $datatable)
     {
         return $datatable->build();
     }
@@ -77,7 +77,7 @@ class PurchaseOrderController extends Controller
             }
         }
 
-        $data['purchase_order'] = PurchaseOrder::get();
+        $data['purchase_order'] = PurchaseOrder::where('type', PurchaseOrder::TYPE['SPK'])->get();
 
         return view($this->view."index", $data);
     }
@@ -132,6 +132,7 @@ class PurchaseOrderController extends Controller
                 $purchase_order->code = $request->code;
                 $purchase_order->warehouse_id = $request->warehouse;
                 $purchase_order->etd = $request->etd;
+                $purchase_order->type = 0;
                 $purchase_order->note = $request->note;
                 $purchase_order->created_by = Auth::id();
 
@@ -144,7 +145,7 @@ class PurchaseOrderController extends Controller
                         'content' => 'Success',
                     ];
 
-                    $response['redirect_to'] = route('superuser.gudang.purchase_order.step', ['id' => $purchase_order->id]);
+                    $response['redirect_to'] = route('superuser.gudang.purchase_order_spk.step', ['id' => $purchase_order->id]);
 
                     return $this->response(200, $response);
                 }
@@ -237,7 +238,7 @@ class PurchaseOrderController extends Controller
                         'content' => 'Success',
                     ];
 
-                    $response['redirect_to'] = route('superuser.gudang.purchase_order.step', ['id' => $purchase_order->id]);
+                    $response['redirect_to'] = route('superuser.gudang.purchase_order_spk.step', ['id' => $purchase_order->id]);
 
                     return $this->response(200, $response);
                 }
@@ -282,7 +283,7 @@ class PurchaseOrderController extends Controller
                     'content' => 'Success',
                 ];
 
-                $response['redirect_to'] = route('superuser.gudang.purchase_order.index');
+                $response['redirect_to'] = route('superuser.gudang.purchase_order_spk.index');
 
                 return $this->response(200, $response);
             }
@@ -308,7 +309,7 @@ class PurchaseOrderController extends Controller
                     'content' => 'Success',
                 ];
 
-                $response['redirect_to'] = route('superuser.gudang.purchase_order.index');
+                $response['redirect_to'] = route('superuser.gudang.purchase_order_spk.index');
 
                 return $this->response(200, $response);
             }
@@ -344,7 +345,7 @@ class PurchaseOrderController extends Controller
                         'content' => 'Success',
                     ];
     
-                    $response['redirect_to'] = route('superuser.gudang.purchase_order.index');
+                    $response['redirect_to'] = route('superuser.gudang.purchase_order_spk.index');
     
                     return $this->response(200, $response);
                 }
@@ -388,7 +389,7 @@ class PurchaseOrderController extends Controller
 
                     
                     DB::commit();
-                    $response['redirect_to'] = route('superuser.gudang.purchase_order.index');
+                    $response['redirect_to'] = route('superuser.gudang.purchase_order_spk.index');
                     return $this->response(200, $response);
                 }
             }catch (\Exception $e) {
@@ -424,7 +425,7 @@ class PurchaseOrderController extends Controller
             $purchase_order->status = PurchaseOrder::STATUS['DELETED'];
 
             if ($purchase_order->save()) {
-                $response['redirect_to'] = route('superuser.gudang.purchase_order.index');
+                $response['redirect_to'] = route('superuser.gudang.purchase_order_spk.index');
                 return $this->response(200, $response);
             }
         }
@@ -445,7 +446,7 @@ class PurchaseOrderController extends Controller
             'result' => $result,
         ];
 
-        $pdf = PDF::loadView('superuser.gudang.purchase_order.print_pdf', $data)
+        $pdf = PDF::loadView('superuser.gudang.purchase_order_spk.print_pdf', $data)
                 ->setPaper('a5', 'landscape');
 
         $generate = false; // Ubah sesuai logika bisnis.
@@ -502,7 +503,7 @@ class PurchaseOrderController extends Controller
             $purchase_order->status = PurchaseOrder::STATUS['DRAFT'];
 
             if ($purchase_order->save()) {
-                $response['redirect_to'] = route('superuser.gudang.purchase_order.index');
+                $response['redirect_to'] = route('superuser.gudang.purchase_order_spk.index');
                 return $this->response(200, $response);
             }
         }
@@ -537,7 +538,7 @@ class PurchaseOrderController extends Controller
                     'content' => 'Success',
                 ];
 
-                $response['redirect_to'] = route('superuser.gudang.purchase_order.index');
+                $response['redirect_to'] = route('superuser.gudang.purchase_order_spk.index');
 
                 return $this->response(200, $response);
             }
@@ -566,7 +567,7 @@ class PurchaseOrderController extends Controller
                 'purchase_order_summary.created_at as created_at'
             )
             ->where('purchase_order_summary.status', PurchaseOrderSummary::STATUS['UNDONE'])
-            ->where('purchase_order.type', 1)
+            ->where('purchase_order.type', 0)
             ->groupBy(
                 'master_products_packaging.id',
                 'master_products_packaging.name',
@@ -618,7 +619,7 @@ class PurchaseOrderController extends Controller
                         'type'    => 'success',
                         'content' => 'PO berhasil dibatalkan dari status SENT'
                     ],
-                    'redirect_to' => route('superuser.gudang.purchase_order.index')
+                    'redirect_to' => route('superuser.gudang.purchase_order_spk.index')
                 ]);
 
             }catch (\Exception $e) {
