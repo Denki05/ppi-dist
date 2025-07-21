@@ -333,7 +333,7 @@
                         <li class="submenu submenu-md dropend">
                             <a class="dropdown-item dropdown-toggle" role="button" data-bs-toggle="dropdown"
                                 aria-expanded="false">
-                                <i class="fa-solid fa-file-import"></i> Operasional
+                                <i class="fa-solid fa-file-import"></i> Penjualan
                             </a>
                             <ul class="dropdown-menu">
                                 <li class="submenu submenu-md dropend">
@@ -358,13 +358,13 @@
                                         @endif
                                     </ul>
                                 </li>
-                                <li class="submenu submenu-md dropend">
+                                <!-- <li class="submenu submenu-md dropend">
                                     <a class="dropdown-item dropdown-toggle" role="button"
                                         data-bs-toggle="dropdown" aria-expanded="false">Sales</a>
                                     <ul class="dropdown-menu">
-                                        <li><a class="dropdown-item" href="{{ route('superuser.report.employee_performance.index') }}">Penjualan Salesman</a></li>
+                                        
                                     </ul>
-                                </li>
+                                </li> -->
                             </ul>
                         </li>
                         @endif
@@ -376,9 +376,10 @@
                                 <i class="fa-solid fa-file-import"></i> Management
                             </a>
                             <ul class="dropdown-menu">
-                                <li><a class="dropdown-item" href="{{ route('superuser.report.forecast_supplier.index') }}">Forcasting Principal</a></li>
-                                <li><a class="dropdown-item" href="{{ route('superuser.report.customer_type_brand.index') }}">Register Customer</a></li>
-                                <li><a class="dropdown-item" href="{{ route('superuser.report.sales.index') }}">Penjualan</a></li>      
+                                <li><a class="dropdown-item" href="{{ route('superuser.report.forecast_supplier.index') }}">Forecasting Principles</a></li>
+                                <li><a class="dropdown-item" href="{{ route('superuser.report.customer_type_brand.index') }}">Tabulasi</a></li>
+                                <li><a class="dropdown-item" href="{{ route('superuser.report.sales.index') }}">Omset Penjualan</a></li>
+                                <li><a class="dropdown-item" href="{{ route('superuser.report.employee_performance.index') }}">Penjualan Salesman</a></li>   
                             </ul>
                         </li>
                         @endif

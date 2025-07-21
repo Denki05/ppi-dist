@@ -97,6 +97,13 @@
               </a>
             </div>
           </div>
+          <div class="form-group row">
+            <div class="col-md-12 text-center">
+              <button type="button" id="btn-reset" class="btn btn-warning">
+                Reset <i class="fa fa-refresh ml-5"></i>
+              </button>
+            </div>
+          </div>
         </div>
       </div>
     </div>
@@ -221,9 +228,9 @@
         return value.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
       }
 
-      $("#customer").val("all").change();
-      $("#brand_name").val("all").change();
-      $("#product").val("all").change();
+      // $("#customer").val("all").change();
+      // $("#brand_name").val("all").change();
+      // $("#product").val("all").change();
 
       $('#brand_name').on('change', function () {
             let brand_name = $(this).val();
@@ -253,6 +260,26 @@
                     alert('Gagal memuat data produk.');
                 }
             });
+        });
+
+        $('#btn-reset').on('click', function (e) {
+          e.preventDefault();
+
+          // Kosongkan pilihan select2 (customer, brand, product)
+          $('#customer').val(null).trigger('change');
+          $('#brand_name').val(null).trigger('change');
+          $('#product').html('').val(null).trigger('change');
+
+          // Reset tanggal ke default (bulan berjalan)
+          let defaultStart = '{{ date('Y-m-01') }}';
+          let defaultEnd = '{{ date('Y-m-d') }}';
+          $('#start_date').val(defaultStart);
+          $('#end_date').val(defaultEnd);
+
+          // Panggil ulang datatable dengan URL dasar tanpa parameter customer/brand/product
+          let resetUrl = datatableUrl + '?start_date=' + defaultStart + '&end_date=' + defaultEnd;
+
+          datatable.ajax.url(resetUrl).load();
         });
   })
 </script>

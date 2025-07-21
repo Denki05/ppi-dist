@@ -28,9 +28,11 @@ class ProductHighSaleTable extends Table
             ->whereBetween('penjualan_so.so_date', [$startDate, $endDate])
             ->groupBy('master_products_packaging.name');
 
-        if ($request->brand != 'all') {
-            $multipleBrand = explode(',', $request->brand);
-            $model->whereIn('master_products.brand_name', $multipleBrand);
+        if ($request->filled('brand')) {
+            $brands = is_array($request->brand) ? $request->brand : explode(',', $request->brand);
+            if (!in_array('all', $brands)) {
+                $model->whereIn('master_products.brand_name', $brands);
+            }
         }
     
         return $model->get();

@@ -187,7 +187,8 @@ class SalesOrderController extends Controller
             }
         }
 
-        $packing_order = PackingOrder::whereYear('created_at', Carbon\Carbon::now()->year)
+        $packing_order = PackingOrder::whereMonth('created_at', Carbon\Carbon::now()->month)
+                            ->whereYear('created_at', Carbon\Carbon::now()->year)
                             ->get();
                             
         $so_progress = PackingOrder::whereMonth('created_at', Carbon\Carbon::now()->month)

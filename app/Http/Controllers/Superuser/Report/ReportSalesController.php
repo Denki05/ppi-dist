@@ -19,6 +19,7 @@ use Box\Spout\Writer\Common\Creator\Style\StyleBuilder;
 use \Carbon\Carbon;
 use Auth;
 use COM;
+use DB;
 use PDF;
 use Validator;
 
@@ -61,10 +62,12 @@ class ReportSalesController extends Controller
             }
         }
 
-        $customer = CustomerOtherAddress::where('situation', 1)->get();
+        $customer = CustomerOtherAddress::get();
+        $brand = DB::table('master_brand_lokal')->select('brand_name')->get();
 
         $data = [
             'customer' => $customer,
+            'brand' => $brand,
         ];
 
         return view($this->view."index", $data);

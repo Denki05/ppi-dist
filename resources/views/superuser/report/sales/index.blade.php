@@ -49,6 +49,16 @@
                   @endforeach
                 </select>
               </div>
+
+              <label class="col-md-2 col-form-label text-left" for="customer">Brand :</label>
+              <div class="col-md-4">
+                <select class="js-select2 form-control" id="brand" name="brand[]" data-placeholder="Select Brand" multiple="multiple">
+                  <option value="all">All</option>
+                  @foreach ($brand as $value)
+                    <option value="{{ $value->brand_name }}">{{ $value->brand_name }}</option>
+                  @endforeach
+                </select>
+              </div>
             </div>
           </div>
         </div>
@@ -60,6 +70,14 @@
               <div class="col-md-12 text-center">
                 <a href="#" id="btn-filter" class="btn bg-gd-corporate border-0 text-white pl-50 pr-50">
                   Filter <i class="fa fa-search ml-10"></i>
+                </a>
+              </div>
+            </div>
+
+            <div class="form-group row">
+              <div class="col-md-12 text-center">
+                <a href="#" id="btn-reset" class="btn bg-danger text-white pl-50 pr-50">
+                  Reset <i class="fa fa-refresh ml-10"></i>
                 </a>
               </div>
             </div>
@@ -85,6 +103,7 @@
                   <th>#</th>
                   <th>Date</th>
                   <th>SO</th>
+                  <th>Brand</th>
                   <th>Invoice</th>
                   <th>Customer</th>
                   <th>Cash</th>
@@ -95,12 +114,12 @@
           </tbody>
           <tfoot>
               <tr>
-                  <th colspan="5" style="text-align:right"></th>
+                  <th colspan="6" style="text-align:right"></th>
                   <th id="totalInvoiceCash" style="text-align: center;"></th>
                   <th id="totalInvoiceTempo" style="text-align: center;"></th>
               </tr>
               <tr>
-                  <th colspan="6" style="text-align:right"></th>
+                  <th colspan="7" style="text-align:right"></th>
                   <th id="subTotal" style="text-align: center;"></th>
               </tr>
           </tfoot>
@@ -125,8 +144,7 @@
     $('.js-select2').select2()
 
     let datatableUrl = '{{ route('superuser.report.sales.json') }}';
-    let firstDatatableUrl = datatableUrl + '?start_date=' + start_date + '&end_date=' + end_date +
-      '&marketplace=all';
+    let firstDatatableUrl = datatableUrl + '?start_date=' + start_date + '&end_date=' + end_date ;
 
       var datatable = $('.datatable').DataTable({
         language: {
@@ -146,13 +164,14 @@
           {data: 'DT_RowIndex', name: 'id'},
           {data: 'so_date'},
           {data: 'so_code'},
+          {data: 'invoice_brand'},
           {data: 'invoice_code'},
           {data: 'combined_column'},
           {data: 'invoice_cash'},
           {data: 'invoice_tempo'},
         ],
         order: [
-            [3, 'asc'] // Sorting by combined column
+            [4, 'asc'] // Sorting by combined column
         ],
         pageLength: 10,
         lengthMenu: [
@@ -231,6 +250,7 @@
                 '10%', // DT_RowIndex (small width)
                 '10%', // so_date (small width)
                 '15%', // so_code (adjusted width)
+                '15%', // so_code (adjusted width)
                 '15%', // invoice_code (adjusted width)
                 '25%', // combined_column (extra width)
                 '12.5%', // invoice_cash (regular width)
@@ -266,7 +286,7 @@
 
           // Calculate total for `invoice_cash` column (index 3)
           var totalInvoiceCash = api
-              .column(5)
+              .column(6)
               .data()
               .reduce(function (a, b) {
                   return intVal(a) + intVal(b);
@@ -274,7 +294,7 @@
 
           // Calculate total for `invoice_tempo` column (index 4)
           var totalInvoiceTempo = api
-              .column(6)
+              .column(7)
               .data()
               .reduce(function (a, b) {
                   return intVal(a) + intVal(b);
@@ -314,12 +334,26 @@
       $('#btn-filter').on('click', function(e) {
         e.preventDefault();
         var customer = $('#customer').val();
+        var brand = $('#brand').val();
         let periode_from = $("#periode_from").val();
         let periode_to = $("#periode_to").val();
         
         let newDatatableUrl = datatableUrl + '?start_date=' + periode_from + '&end_date=' + periode_to +
-          '&customer=' + customer;
+          '&customer=' + customer + '&brand=' + brand;
         datatable.ajax.url(newDatatableUrl).load();
+      });
+
+      $('#btn-reset').on('click', function(e) {
+        e.preventDefault();
+
+        // Reset filter ke default
+        $('#periode_from').val("{{ date('Y-m-01') }}");
+        $('#periode_to').val("{{ date('Y-m-d') }}");
+        $('#customer').val(null).trigger('change');
+        $('#brand').val(null).trigger('change');
+
+        let resetUrl = datatableUrl + '?start_date={{ date('Y-m-01') }}&end_date={{ date('Y-m-d') }}';
+        datatable.ajax.url(resetUrl).load();
       });
 
       function toCommas(value) {
@@ -348,7 +382,8 @@
         });
       })
 
-      $("#customer").val("all").change();
+      // $("#customer").val("all").change();
+      // $("#brand").val("all").change();
   })
 </script>
 @endpush

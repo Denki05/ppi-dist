@@ -96,6 +96,13 @@
               </a>
             </div>
           </div>
+          <div class="form-group row">
+            <div class="col-md-12 text-center">
+              <button type="button" id="btn-reset" class="btn btn-warning">
+                Reset <i class="fa fa-refresh ml-5"></i>
+              </button>
+            </div>
+          </div>
         </div>
       </div>
     </div>
@@ -195,16 +202,24 @@
       });
 
       $('#btn-filter').on('click', function(e) {
-        e.preventDefault();
-        var customer = $('#customer').val();
-        var brand = $('#brand_name').val();
-        var start_date = $('#start_date').val();
-        var end_date = $('#end_date').val();
-        
-        let newDatatableUrl = datatableUrl + '?start_date=' + start_date + '&end_date=' + end_date +
-          '&customer=' + customer + '&brand_name=' + brand;
-        datatable.ajax.url(newDatatableUrl).load();
+          e.preventDefault();
+
+          var customer = $('#customer').val();
+          var brand = $('#brand_name').val();
+          var product = $('#product').val();
+          var start_date = $('#start_date').val();
+          var end_date = $('#end_date').val();
+
+          let newDatatableUrl = datatableUrl
+              + '?start_date=' + start_date
+              + '&end_date=' + end_date
+              + '&customer=' + customer.join(',')
+              + '&brand_name=' + brand.join(',')
+              + '&product=' + product.join(','); // tambahkan ini
+
+          datatable.ajax.url(newDatatableUrl).load();
       });
+
 
       function handleClick(cb) {
         cb.value = cb.checked ? 0 : 1;
@@ -215,39 +230,60 @@
         return value.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
       }
 
-      $("#customer").val("all").change();
-      $("#brand_name").val("all").change();
-      $("#product").val("all").change();
+      // $("#customer").val("all").change();
+      // $("#brand_name").val("all").change();
+      // $("#product").val("all").change();
 
       $('#brand_name').on('change', function () {
-            let brand_name = $(this).val();
+        let brand_name = $(this).val();
 
-            // Kosongkan dropdown produk jika tidak ada brand yang dipilih
-            if (brand_name === '') {
-                $('#product').html('<option value="">Pilih Produk</option>');
-                return;
+        // Jika tidak ada brand yang dipilih, tampilkan opsi "All" saja
+        if (!brand_name || brand_name.length === 0 || brand_name.includes("all")) {
+            $('#product').html('<option value="all" selected>All</option>');
+            $('#product').val("all").trigger('change'); // set kembali ke all
+            return;
+        }
+
+        // AJAX untuk mengambil produk berdasarkan brand
+        $.ajax({
+            url: "{{ route('superuser.report.customer_order_variant_v2.getProductsByBrand') }}",
+            type: "GET",
+            data: { brand_name: brand_name },
+            success: function (data) {
+                let productOptions = '<option value="all">All</option>';
+                data.forEach(function (product) {
+                    productOptions += `<option value="${product.product_id}">
+                        ${product.product_code} - ${product.product_name} (${product.product_kemasan})
+                    </option>`;
+                });
+                $('#product').html(productOptions);
+                $('#product').val("all").trigger('change'); // reset ke All setelah load
+            },
+            error: function () {
+                alert('Gagal memuat data produk.');
             }
-
-            // Panggil endpoint untuk mendapatkan produk berdasarkan brand
-            $.ajax({
-                url: "{{ route('superuser.report.customer_order_variant_v2.getProductsByBrand') }}", // Ganti dengan route yang sesuai
-                type: "GET",
-                data: { brand_name: brand_name },
-                success: function (data) {
-                    let productOptions = '<option value="">Pilih Produk</option>';
-                    data.forEach(function (product) {
-                        // Gunakan detail data yang dikembalikan
-                        productOptions += `<option value="${product.product_id}">
-                            ${product.product_code} - ${product.product_name} (${product.product_kemasan})
-                        </option>`;
-                    });
-                    $('#product').html(productOptions);
-                },
-                error: function () {
-                    alert('Gagal memuat data produk.');
-                }
-            });
         });
+    });
+
+    $('#btn-reset').on('click', function (e) {
+      e.preventDefault();
+
+      // Kosongkan pilihan select2 (customer, brand, product)
+      $('#customer').val(null).trigger('change');
+      $('#brand_name').val(null).trigger('change');
+      $('#product').html('').val(null).trigger('change');
+
+      // Reset tanggal ke default (bulan berjalan)
+      let defaultStart = '{{ date('Y-m-01') }}';
+      let defaultEnd = '{{ date('Y-m-d') }}';
+      $('#start_date').val(defaultStart);
+      $('#end_date').val(defaultEnd);
+
+      // Panggil ulang datatable dengan URL dasar tanpa parameter customer/brand/product
+      let resetUrl = datatableUrl + '?start_date=' + defaultStart + '&end_date=' + defaultEnd;
+
+      datatable.ajax.url(resetUrl).load();
+    });
   })
 </script>
 @endpush

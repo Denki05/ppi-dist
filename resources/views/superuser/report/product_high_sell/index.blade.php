@@ -40,7 +40,7 @@
           <div class="form-group row">
             <label class="col-md-2 col-form-label text-left" for="brand_name">Brand / Merek :</label>
             <div class="col-md-4">
-              <select class="js-select2 form-control" id="brand_name" name="brand_name[]" multiple required>
+              <select class="js-select2 form-control" id="brand_name" name="brand_name[]"  data-placeholder="Pilih Brand" multiple required>
                 <option value="all">All</option>
                 @foreach ($brand as $value)
                   <option value="{{ $value->brand_name }}">{{ $value->brand_name }}</option>
@@ -83,6 +83,14 @@
               </a>
             </div>
           </div>
+
+          <div class="form-group row">
+            <div class="col-md-12 text-center">
+              <button type="button" id="btn-reset" class="btn btn-warning">
+                Reset <i class="fa fa-refresh ml-5"></i>
+              </button>
+            </div>
+          </div>
         </div>
       </div>
     </div>
@@ -121,8 +129,7 @@
         $('.js-select2').select2();
 
         let datatableUrl = '{{ route('superuser.report.product_high_sell.json') }}';
-        let firstDatatableUrl = datatableUrl + '?start_date=' + start_date + '&end_date=' + end_date +
-        '&brand=all';
+        let firstDatatableUrl = datatableUrl + '?start_date=' + start_date + '&end_date=' + end_date;
 
         var datatable = $('#datatables').DataTable({
           language: {
@@ -133,7 +140,7 @@
           processing: true,
           serverSide: false,
           ajax: {
-            "url": datatableUrl,
+            "url": firstDatatableUrl,
             "dataType": "json",
             "type": "GET",
             "data": {
@@ -192,7 +199,23 @@
           datatable.ajax.url(newDatatableUrl).load();
         })
 
-        $("#brand_name").val("all").change();
+        $('#btn-reset').on('click', function (e) {
+          e.preventDefault();
+
+          // Kosongkan pilihan select2 (customer, brand, product)
+          $('#brand').val(null).trigger('change');
+
+          // Reset tanggal ke default (bulan berjalan)
+          let defaultStart = '{{ date('Y-m-01') }}';
+          let defaultEnd = '{{ date('Y-m-d') }}';
+          $('#start_date').val(defaultStart);
+          $('#end_date').val(defaultEnd);
+
+          // Panggil ulang datatable dengan URL dasar tanpa parameter customer/brand/product
+          let resetUrl = datatableUrl + '?start_date=' + defaultStart + '&end_date=' + defaultEnd;
+
+          datatable.ajax.url(resetUrl).load();
+        });
     })
 </script>
 @endpush

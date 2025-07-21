@@ -90,6 +90,14 @@
                 </button>
             </div>
           </div>
+
+          <div class="form-group row">
+            <div class="col-md-12 text-center">
+              <button type="button" id="btn-reset" class="btn btn-warning">
+                Reset <i class="fa fa-refresh ml-5"></i>
+              </button>
+            </div>
+          </div>
         </div>
       </div>
     </div>
@@ -104,7 +112,6 @@
               <th>Brand</th>
               <th>Variant</th>
               <th>Customer</th>
-              <th>Kota</th>
               <th>Qty</th>
             </tr>
           </thead>
@@ -132,8 +139,7 @@
     $('.js-select2').select2()
 
     let datatableUrl = '{{ route('superuser.report.product_performance.json') }}';
-    let firstDatatableUrl = datatableUrl + '?start_date=' + start_date + '&end_date=' + end_date +
-      '&product=all&brand=all';
+    let firstDatatableUrl = datatableUrl + '?start_date=' + start_date + '&end_date=' + end_date;
 
     var datatable = $('#datatable').DataTable({
       language: {
@@ -144,7 +150,7 @@
       processing: true,
       serverSide: false,
       ajax: {
-        "url": datatableUrl,
+        "url": firstDatatableUrl,
         "dataType": "json",
         "type": "GET",
         "data":{ _token: "{{csrf_token()}}"}
@@ -152,8 +158,7 @@
       columns: [
         {data: 'brand'},
         {data: 'product'},
-        {data: 'customer_name'},
-        {data: 'customer_city'},
+        {data: 'customer'},
         {data: 'qty'},
       ],
       order: [
@@ -199,8 +204,8 @@
         datatable.ajax.url(newDatatableUrl).load();
     });
 
-    $("#brand").val("all").change();
-    $("#product").val("all").change();
+    // $("#brand").val("all").change();
+    // $("#product").val("all").change();
 
     $('#brand').on('change', function () {
             let brandId = $(this).val();
@@ -230,6 +235,25 @@
                     alert('Gagal memuat data produk.');
                 }
             });
+        });
+
+        $('#btn-reset').on('click', function (e) {
+          e.preventDefault();
+
+          // Kosongkan pilihan select2 (customer, brand, product)
+          $('#brand_name').val(null).trigger('change');
+          $('#product').html('').val(null).trigger('change');
+
+          // Reset tanggal ke default (bulan berjalan)
+          let defaultStart = '{{ date('Y-m-01') }}';
+          let defaultEnd = '{{ date('Y-m-d') }}';
+          $('#start_date').val(defaultStart);
+          $('#end_date').val(defaultEnd);
+
+          // Panggil ulang datatable dengan URL dasar tanpa parameter customer/brand/product
+          let resetUrl = datatableUrl + '?start_date=' + defaultStart + '&end_date=' + defaultEnd;
+
+          datatable.ajax.url(resetUrl).load();
         });
   })
 </script>

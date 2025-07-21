@@ -131,7 +131,7 @@ class ReceivingDetailController extends Controller
         $purchase_order_details = PurchaseOrderDetail::whereNotIn('id', $merge)->pluck('po_id')->all();
         $purchase_orders = PurchaseOrder::whereIn('id', $purchase_order_details)
                                 ->where([
-                                    [ 'status', PurchaseOrder::STATUS['ACC'] ],
+                                    [ 'status', PurchaseOrder::STATUS['SENT'] ],
                                     ])
                                 ->orderBy('code')->get();
         

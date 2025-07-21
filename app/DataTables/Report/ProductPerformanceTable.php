@@ -12,13 +12,16 @@ class ProductPerformanceTable extends Table
 {
     private function query(Request $request)
     {
+        $startDate = $request->start_date . " 00:00:00";
+        $endDate = $request->end_date . " 23:59:59";
+
         $model = SalesOrder::leftJoin('penjualan_so_item', 'penjualan_so.id', '=', 'penjualan_so_item.so_id')
             ->leftJoin('master_products_packaging', 'penjualan_so_item.product_packaging_id', '=', 'master_products_packaging.id')
             ->leftJoin('master_customer_other_addresses', 'penjualan_so.customer_other_address_id', '=', 'master_customer_other_addresses.id')
             ->leftJoin('master_products', 'master_products_packaging.product_id', '=', 'master_products.id')
             ->leftJoin('master_packaging', 'master_products_packaging.packaging_id', '=', 'master_packaging.id')
             ->leftJoin('penjualan_do', 'penjualan_so.id', '=', 'penjualan_do.so_id')
-            ->whereBetween('penjualan_so.so_date', [$request->start_date . " 00:00:00", $request->end_date . " 23:59:59"])
+            ->whereBetween('penjualan_so.so_date', [$startDate, $endDate])
             ->where('penjualan_do.status', 6)
             ->select(
                 'master_customer_other_addresses.id AS id', 
@@ -33,14 +36,19 @@ class ProductPerformanceTable extends Table
             );
 
         // Filter brand
-        if ($request->brand != 'all') {
-            $model->where('master_products.brand_name', $request->brand);
+        if ($request->filled('brand')) {
+            $brands = is_array($request->brand) ? $request->brand : explode(',', $request->brand);
+            if (!in_array('all', $brands)) {
+                $model->whereIn('master_products.brand_name', $brands);
+            }
         }
 
         // Filter produk jika diperlukan
-        if ($request->product != 'all') {
-            $multiple_product = explode(',', $request->product);
-            $model->whereIn('master_products_packaging.id', $multiple_product);
+        if ($request->filled('product')) {
+            $products = is_array($request->product) ? $request->product : explode(',', $request->product);
+            if (!in_array('all', $products)) {
+                $model->whereIn('master_products_packaging.id', $products);
+            }
         }
 
         return $model->get();
@@ -53,9 +61,9 @@ class ProductPerformanceTable extends Table
 
         $table->addIndexColumn();
 
-        // $table->addColumn('customer', function (SalesOrder $model) {
-        //     return $model->customer_name . ' ' . $model->customer_city;
-        // });
+        $table->addColumn('customer', function (SalesOrder $model) {
+            return $model->customer_name . ' ' . $model->customer_city;
+        });
 
         $table->addColumn('product', function (SalesOrder $model) {
             return $model->product_code . ' - ' . $model->product_name . ' / ' . $model->packaging;
