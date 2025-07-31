@@ -838,141 +838,95 @@ class DeliveryOrderController extends Controller
     public function do_update(Request $request)
     {
         if ($request->ajax()) {
-            $failed = "";
-        
             DB::beginTransaction();
-        
             try {
-                // Authorization check
-                if (Auth::user()->is_superuser == 0) {
-                    if (empty($this->access) || empty($this->access->user) || $this->access->can_read == 0) {
-                        return redirect()->route('superuser.index')->with('error', 'Anda tidak punya akses untuk membuka menu terkait');
-                    }
-                }
-        
-                // Fetch packing order
-                $result = PackingOrder::find($request->id);
-                if (!$result) {
-                    abort(404);
+                $do = PackingOrder::findOrFail($request->id);
+                $do_detail = PackingOrderDetail::findOrFail($request->cost_id);
+
+                if ($do->count_cancel == 0) {
+                    return response()->json(['failed' => 'DO belum di-cancel']);
                 }
 
-                $result_cost = PackingOrderDetail::where('do_id', $result->id)->first();
-        
-                // Check if order is canceled
-                if ($result->count_cancel == 0) {
-                    return redirect()->route('superuser.penjualan.sales_order.index_lanjutan')->with('error', 'DO belum di cancel');
-                }
-        
-                // Update packing order
                 if (empty($request->idr_rate)) {
-                    return $this->response(200, ['failed' => 'IDR RATE tidak boleh kosong!']);
+                    return response()->json(['failed' => 'Kurs IDR tidak boleh kosong']);
                 }
-        
-                $result->warehouse_id = $request->warehouse_id;
-                $result->idr_rate = $request->idr_rate;
-                // $result->status = ($result->do_detail_cost->status_resi == 0) ? 4 : 6;
-                if($result_cost->status_resi == '1') {
-                    $result->status = 6;
-                }elseif ($result_cost->status_resi == '0') {
-                    $result->status = 4;
-                }
-                $result->updated_by = Auth::id();
-        
-                // Update packing order items
-                $check_cost = PackingOrderDetail::find($request->cost_id);
-                if (!$check_cost) {
-                    return $this->response(200, ['failed' => 'Item DO tidak ditemukan']);
-                }
-        
-                foreach ($request->repeater as $value) {
-                    if (empty($value["usd_disc"])) {
-                        continue;
-                    }
-        
-                    $packingOrderItem = PackingOrderItem::find($value["do_item_id"]);
-                    if (!$packingOrderItem) continue;
-        
-                    $total_disc = $packingOrderItem->percent_disc > 0
-                        ? floatval(($value["usd_disc"] + (($value['price'] - $value["usd_disc"]) * ($packingOrderItem->percent_disc / 100))) * $value["do_qty"])
-                        : floatval($value["usd_disc"] * $value["do_qty"]);
-        
-                    $data = [
-                        'usd_disc' => $value["usd_disc"],
-                        'qty' => $value["do_qty"],
+
+                $do->warehouse_id = $request->warehouse_id;
+                $do->idr_rate = $request->idr_rate;
+                $do->status = $do_detail->status_resi == 1 ? 6 : 4;
+                $do->updated_by = Auth::id();
+                $do->save();
+
+                foreach ($request->repeater as $item) {
+                    $poItem = PackingOrderItem::find($item['do_item_id']);
+                    if (!$poItem) continue;
+
+                    $usd_disc = floatval($item['usd_disc']);
+                    $qty = floatval($item['do_qty']);
+                    $price = floatval($item['price']);
+                    $percent_disc = floatval($poItem->percent_disc);
+
+                    $total_disc = $percent_disc > 0
+                        ? ($usd_disc + (($price - $usd_disc) * $percent_disc / 100)) * $qty
+                        : $usd_disc * $qty;
+
+                    $total = ($price * $qty) - $total_disc;
+
+                    $poItem->update([
+                        'usd_disc' => $usd_disc,
+                        'qty' => $qty,
                         'total_disc' => $total_disc,
-                        'total' => ($value['price'] * $value["do_qty"]) - $total_disc,
-                        'price' => $value['price'],
-                    ];
-
-                    // dd($data);
-        
-                    PackingOrderItem::where('id', $value["do_item_id"])->update($data);
-                }
-        
-                // Calculate totals and discounts
-                $detail_po = PackingOrder::find($check_cost->do_id);
-                $detail_po_items = PackingOrderItem::where('do_id', $check_cost->do_id)->get();
-        
-                $idr_total = 0;
-                foreach ($detail_po_items as $row) {
-                    $idr_total += ceil((($row->price * $detail_po->idr_rate) * $row->qty) - ($row->total_disc * $detail_po->idr_rate));
-                }
-        
-                $discount_1 = $request->disc_agen_percent / 100;
-                $discount_2 = $request->disc_kemasan_percent / 100;
-                $discount_idr = $request->disc_tambahan_idr;
-                $voucher_idr = $request->voucher_idr;
-                $delivery_cost_idr = $request->delivery_cost_idr;
-                $other_cost_idr = $request->resi_ongkir;
-        
-                $total_discount_idr = ceil(($idr_total * $discount_1) + (($idr_total - ($idr_total * $discount_1)) * $discount_2) + $discount_idr);
-                $purchase_total_idr = ceil($idr_total - $total_discount_idr - $voucher_idr);
-                $grand_total_idr = ceil($purchase_total_idr + $delivery_cost_idr + $other_cost_idr);
-        
-                if ($total_discount_idr > $grand_total_idr) {
-                    return $this->response(200, ['failed' => 'Total Discount melebihi IDR total item pembelian']);
+                        'total' => $total,
+                        'price' => $price,
+                    ]);
                 }
 
-                // definisi hasil penjumlahan di view
-                $discount_agen_idr = $request->disc_agen_idr;
-                $discount_kemasan_idr = $request->disc_kemasan_idr;
+                // Hitung total IDR
+                $items = PackingOrderItem::where('do_id', $request->id)->get();
+                $rate = $do->idr_rate;
+                $idr_total = $items->sum(function ($i) use ($rate) {
+                    return ceil((($i->price * $rate) * $i->qty) - ($i->total_disc * $rate));
+                });
 
-                // pecah format currency 
-                $discount_agen_idr = str_replace('.', '', $discount_agen_idr);
-                $discount_kemasan_idr = str_replace('.', '', $discount_kemasan_idr);
-                $ongkir = str_replace('.', '', $delivery_cost_idr);
-        
-                // ubah decimal koma ke titik
-                $discount_agen_idr = str_replace(',', '.', $discount_agen_idr);
-                $discount_kemasan_idr = str_replace(',', '.', $discount_kemasan_idr);
-                $ongkir = str_replace(',', '.', $delivery_cost_idr);
+                $disc1 = floatval($request->disc_agen_percent) / 100;
+                $disc2 = floatval($request->disc_kemasan_percent) / 100;
+                $disc_idr = intval(str_replace('.', '', $request->disc_tambahan_idr));
+                $voucher = intval(str_replace('.', '', $request->voucher_idr));
+                $delivery = intval(str_replace('.', '', $request->delivery_cost_idr));
+                $other = intval(str_replace('.', '', $request->resi_ongkir));
 
-                $data = [
+                $total_disc_idr = ceil(($idr_total * $disc1) + (($idr_total - ($idr_total * $disc1)) * $disc2) + $disc_idr);
+                $purchase_total_idr = ceil($idr_total - $total_disc_idr - $voucher);
+                $grand_total_idr = ceil($purchase_total_idr + $delivery + $other);
+
+                if ($total_disc_idr > $grand_total_idr) {
+                    return response()->json(['failed' => 'Total diskon melebihi total belanja']);
+                }
+
+                // Update Detail DO
+                $do_detail->update([
                     'discount_1' => $request->disc_agen_percent,
-                    'discount_1_idr' => $discount_agen_idr,
+                    'discount_1_idr' => $request->disc_agen_idr,
                     'discount_2' => $request->disc_kemasan_percent,
-                    'discount_2_idr' => $discount_kemasan_idr,
-                    'discount_idr' => $request->disc_tambahan_idr,
-                    'total_discount_idr' => $total_discount_idr,
-                    'voucher_idr' => $voucher_idr,
+                    'discount_2_idr' => $request->disc_kemasan_idr,
+                    'discount_idr' => $disc_idr,
+                    'total_discount_idr' => $total_disc_idr,
+                    'voucher_idr' => $voucher,
                     'purchase_total_idr' => $purchase_total_idr,
-                    'delivery_cost_idr' => $ongkir,
-                    'other_cost_idr' => $other_cost_idr,
+                    'delivery_cost_idr' => $delivery,
+                    'other_cost_idr' => $other,
                     'grand_total_idr' => $grand_total_idr,
-                    'updated_by' => Auth::id()
-                ];
+                    'updated_by' => Auth::id(),
+                ]);
 
-                // dd($data);
-        
-                PackingOrderDetail::where('do_id', $request->id)->update($data);
-        
-                // Update invoice
-                if ($detail_po->invoicing->grand_total_idr > 0) {
-                    Invoicing::where('do_id', $request->id)->update(['grand_total_idr' => $grand_total_idr]);
+                // Update invoice jika ada
+                if ($do->invoicing && $do->invoicing->grand_total_idr > 0) {
+                    $do->invoicing->update([
+                        'grand_total_idr' => $grand_total_idr
+                    ]);
                 }
-        
-                if ($result->save()) {
-                    DB::commit();
+
+                DB::commit();
                     return $this->response(200, [
                         'notification' => [
                             'alert' => 'notify',
@@ -981,20 +935,24 @@ class DeliveryOrderController extends Controller
                         ],
                         'redirect_to' => route('superuser.penjualan.sales_order.index_lanjutan'),
                     ]);
-                }
+
             } catch (\Exception $e) {
-                dd($e);
-                DB::rollback();
-                return $this->response(400, [
+                DB::rollBack();
+                \Log::error("DO Update Error: " . $e->getMessage());
+                return response()->json([
                     'notification' => [
-                        'alert' => 'block',
-                        'type' => 'alert-danger',
-                        'header' => 'Error',
-                        'content' => 'Internal Server Error',
-                    ],
+                        'type' => 'error',
+                        'content' => 'Terjadi kesalahan: ' . $e->getMessage(),
+                    ]
                 ]);
             }
         }
+    }
+
+    // Helper function
+    private function parseCurrency($value)
+    {
+        return floatval(str_replace([',', '.'], ['', '.'], preg_replace('/[^0-9,\.]/', '', $value ?? '0')));
     }
 
     public function unread_notif(Request $request, $id, $do)

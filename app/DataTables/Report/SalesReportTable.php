@@ -20,33 +20,40 @@ class SalesReportTable extends Table
             ->leftJoin('penjualan_do', 'penjualan_so.id', '=', 'penjualan_do.so_id')
             ->leftJoin('penjualan_do_details', 'penjualan_do.id', '=', 'penjualan_do_details.do_id')
             ->select(
-                'master_customer_other_addresses.name AS customer_name', 
-                'master_customer_other_addresses.text_kota AS customer_city', 
+                'master_customer_other_addresses.name AS customer_name',
+                'master_customer_other_addresses.text_kota AS customer_city',
                 'penjualan_so.so_code AS so_code',
-                'penjualan_so.so_date AS so_date', 
+                'penjualan_so.so_date AS so_date',
                 'penjualan_do.id AS id',
-                'penjualan_do.do_code AS invoice_code', 
-                DB::raw('SUM(
-                    CASE
-                        WHEN penjualan_do.type_transaction = "CASH" 
-                        THEN IFNULL(penjualan_do_details.purchase_total_idr - penjualan_do_details.discount_idr, 0)
-                    END
-                ) AS invoice_cash'),
-                DB::raw('SUM(
-                    CASE
-                        WHEN penjualan_do.type_transaction IN ("TEMPO", "COD") 
-                        THEN IFNULL(penjualan_do_details.purchase_total_idr - penjualan_do_details.discount_idr, 0)
-                    END
-                ) AS invoice_tempo')
+                'penjualan_do.do_code AS invoice_code',
+                'penjualan_so.brand_name AS invoice_brand',
+                DB::raw('SUM(CASE WHEN penjualan_do.type_transaction = "CASH" THEN IFNULL(penjualan_do_details.grand_total_idr - penjualan_do_details.delivery_cost_idr , 0) END) AS invoice_cash'),
+                DB::raw('SUM(CASE WHEN penjualan_do.type_transaction IN ("TEMPO", "COD", "MARKETPLACE") THEN IFNULL(penjualan_do_details.grand_total_idr - penjualan_do_details.delivery_cost_idr, 0) END) AS invoice_tempo')
             )
             ->where('penjualan_so.status', 4)
+            ->where('penjualan_so.status', '!=', 7)
             ->whereBetween('penjualan_so.so_date', [$startDate, $endDate])
             ->groupBy('penjualan_do.id', 'master_customer_other_addresses.name', 'penjualan_do.do_code');
 
+        // Filter berdasarkan customer jika diberikan
+        if ($request->filled('customer')) {
+            $customerInput = is_array($request->customer)
+                ? $request->customer
+                : explode(',', $request->customer);
 
-        if ($request->customer != 'all') {
-            $multipleCustomer = explode(',', $request->customer);
-            $model->whereIn('penjualan_so.customer_other_address_id', $multipleCustomer);
+            if (!in_array('all', $customerInput)) {
+                $model->whereIn('penjualan_so.customer_other_address_id', $customerInput);
+            }
+        }
+
+        if ($request->filled('brand')) {
+            $brandInput = is_array($request->brand)
+                ? $request->brand
+                : explode(',', $request->brand);
+
+            if (!in_array('all', $brandInput)) {
+                $model->whereIn('penjualan_so.brand_name', $brandInput);
+            }
         }
 
         return $model->get();

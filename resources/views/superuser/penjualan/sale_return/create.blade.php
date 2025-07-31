@@ -23,7 +23,7 @@
       <div class="form-group row">
         <label class="col-md-3 col-form-label text-right" for="delivery_order">Delivery Order <span class="text-danger">*</span></label>
         <div class="col-md-7">
-          <select class="js-select2 form-control js-select2-do" id="delivery_order" name="delivery_order" data-placeholder="Type DO/SO/AWB/STORE">
+          <select class="js-select2 form-control js-select2-do" id="delivery_order" name="delivery_order" data-placeholder="DO">
           </select>
         </div>
       </div>

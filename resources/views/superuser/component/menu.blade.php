@@ -183,6 +183,7 @@
                                     </ul>
                                 </li>
                                 @endif
+                                <li><a class="dropdown-item" href="{{ route('superuser.penjualan.sale_return.index') }}"><i class="fa-solid fa-file-prescription"></i> Retur</a></li>
                             </ul>
                         </li>
                     </ul>

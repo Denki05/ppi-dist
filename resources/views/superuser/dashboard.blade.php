@@ -167,8 +167,8 @@
                     <div class="card-header">
                         <h3>Total Sales Quantity</h3>
                     </div>
-                    <div class="card-body">
-                        <canvas id="salesChart" style="max-height: 400px;"></canvas>
+                    <div class="card-body" style="position: relative; height: 400px;">
+                        <canvas id="salesChart"></canvas>
                     </div>
                 </div>
             </div>
@@ -177,8 +177,8 @@
                     <div class="card-header">
                         <h3>Total Sales Revenue</h3>
                     </div>
-                    <div class="card-body">
-                        <canvas id="revenueChart" style="max-height: 400px;"></canvas>
+                    <div class="card-body" style="position: relative; height: 400px;">
+                        <canvas id="revenueChart"></canvas>
                     </div>
                 </div>
             </div>
@@ -431,6 +431,7 @@ $(document).ready(function () {
                     },
                 },
                 responsive: true,
+                maintainAspectRatio: false,
                 plugins: {
                     legend: { position: 'top' },
                 },
@@ -473,6 +474,7 @@ $(document).ready(function () {
             },
             options: {
                 responsive: true,
+                maintainAspectRatio: false,
                 scales: {
                     y: {
                         beginAtZero: true,

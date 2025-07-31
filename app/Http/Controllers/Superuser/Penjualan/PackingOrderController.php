@@ -1374,16 +1374,17 @@ class PackingOrderController extends Controller
                     d.idr_rate AS idr_rate,
                     det.discount_1 AS disc_percent,
                     MAX(item.usd_disc) AS disc_usd,
-                    SUM(item.qty) AS total_qty,
-                    SUM(item.price * item.qty) AS total_usd_before,
-                    SUM((item.price - item.usd_disc) * item.qty) AS total_usd_after,
+                    SUM(CASE WHEN soi.free_product = 0 THEN item.qty ELSE 0 END) AS total_qty,
+                    SUM(CASE WHEN soi.free_product = 0 THEN (item.price * item.qty) ELSE 0 END) AS total_usd_before,
+                    SUM(CASE WHEN soi.free_product = 0 THEN ((item.price - item.usd_disc) * item.qty) ELSE 0 END) AS total_usd_after,
                     (det.purchase_total_idr - det.discount_idr) AS grand_total_idr
                 FROM penjualan_do d
                 JOIN penjualan_so s ON d.so_id = s.id
                 JOIN penjualan_do_details det ON d.id = det.do_id
                 JOIN penjualan_do_item item ON d.id = item.do_id
+                JOIN penjualan_so_item soi ON soi.id = item.so_item_id
                 JOIN master_customer_other_addresses coa ON s.customer_other_address_id = coa.id
-                WHERE d.status = 6 AND YEAR(s.so_date) = 2024
+                WHERE d.status = 6
                 GROUP BY d.id, s.customer_other_address_id, s.code, s.brand_name,
                         s.so_date, det.discount_1, item.usd_disc, det.purchase_total_idr, det.discount_idr
             ");

@@ -23,42 +23,19 @@ use DomPDF;
 
 class SaleReturnController extends Controller
 {
-    // public function json(Request $request, SaleReturnTable $datatable)
-    // {
-    //     return $datatable->build($request);
-    // }
-
     public function search_do(Request $request)
     {
-        // DD(MasterRepo::warehouses_by_branch()->pluck('id')->toArray());
-        // DB::enableQueryLog();
-        $delivery_orders = DeliveryOrderDetail::where('created_at', '>=', Carbon::now()->subDays(30)->toDateTimeString())
-            ->where(function ($query) use ($request) {
-                $query->where('code', 'LIKE', $request->input('q', '') . '%')
-                    ->orWhere(function ($query) use ($request) {
-                        $query->whereHas('sales_order', function ($query) use ($request) {
-                            $query->where('code', 'LIKE', $request->input('q', '') . '%')
-                                ->orWhere('resi', 'LIKE', $request->input('q', '') . '%')
-                                ->orWhere('store_name', 'LIKE', $request->input('q', '') . '%')
-                                ->whereIn('warehouse_id', MasterRepo::warehouses_by_branch()->pluck('id')->toArray());
-                        });
-                    });
-            })
-            // ->whereHas('sales_order', function ($query) use ($request) {
-            //     $query->whereIn('warehouse_id', MasterRepo::warehouses_by_branch()->pluck('id')->toArray());
-            // })
-            ->whereHas('delivery_order', function ($query2) {
-                $query2->where('status', 2);
-            })
+        $delivery_orders = PackingOrder::where('created_at', '>=', Carbon::now()->subDays(30)->toDateTimeString())
+            ->where('do_code', 'LIKE', $request->input('q', '') . '%')
+            ->where('status', 6)
             ->get();
 
-        // DD(DB::getQueryLog());
         $results = [];
 
         foreach ($delivery_orders as $item) {
             $results[] = [
                 'id' => $item->id,
-                'text' => $item->code . ' / ' . $item->sales_order->code . ' / ' . $item->sales_order->resi . ' / ' . $item->sales_order->store_name,
+                'text' => $item->do_code,
             ];
         }
 
@@ -119,7 +96,7 @@ class SaleReturnController extends Controller
             'sales_return' => $sales_retun
         ];
 
-        return view("superuser.coming-soon");
+        return view('superuser.penjualan.sale_return.index', $data);
     }
 
     public function create()

@@ -50,7 +50,7 @@
   </a>
 
   <!-- Kalkulasi DO migrasi -->
-  <a class="btn btn-warning" href="{{ route('superuser.penjualan.migrasi_so.prosesKalkulasiDO') }}" class="btn btn-sm btn-circle btn-alt-success" title="Update Header DO">
+  <a class="btn btn-warning" href="{{ route('superuser.penjualan.migrasi_so.prosesKalkulasiDO') }}" class="btn btn-sm btn-circle btn-alt-success" title="Migrasi Data">
     <i class="bi bi-calculator"></i>
   </a>
 @endrole
@@ -212,7 +212,13 @@
                       <td>{{ $index+1 }}</td>
                       <td>{{$row->so->so_code}}</td>
                       <td>{{$row->do_code}}</td>
-                      <td>{{$row->member->name}} {{$row->member->text_kota}}</td>
+                      <td>
+                          @if($row->member)
+                              {{ $row->member->name }} {{ $row->member->text_kota }}
+                          @else
+                              <span class="text-danger">-</span>
+                          @endif
+                      </td>
                       <td><?= date('d-m-Y h:i:s',strtotime($row->created_at)); ?></td>
                       <td>{{$row->type_transaction}}</td>
                       <td>
@@ -266,7 +272,13 @@
                     <td>{{ $index + 1 }}</td>
                     <td>{{ $row->do_code }}</td>
                     <td>{{ $row->so->code ?? '-' }}</td>
-                    <td>{{ $row->member->name ?? '-' }} {{ $row->member->text_kota }}</td>
+                    <td>
+                        @if($row->member)
+                            {{ $row->member->name }} {{ $row->member->text_kota }}
+                        @else
+                            <span class="text-danger">-</span>
+                        @endif
+                    </td>
                     <td>{{ \Carbon\Carbon::parse($row->created_at)->format('d-m-Y h:i:s') }}</td>
                     <td>{{ $row->so->type_transaction ?? '-' }}</td>
                     <td>
