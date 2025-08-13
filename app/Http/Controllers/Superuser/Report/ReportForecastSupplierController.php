@@ -9,6 +9,7 @@ use App\Entities\Master\Product;
 use App\Entities\Master\ProductPack;
 use App\Entities\Penjualan\SalesOrder;
 use App\Entities\Setting\UserMenu;
+use Illuminate\Support\Facades\File;
 use Auth;
 use COM;
 use DB;
@@ -51,22 +52,25 @@ class ReportForecastSupplierController extends Controller
         $start = $request->all()['period_from'];
         $end = $request->all()['period_to'];
         $vendor = $request->all()['vendor_name'];
-        $date = date("Y-m");
-
-        // dd($vendor);
+        $date = date("Y-m-d_H-i-s");
 
         if ( $start == null && $end == null && $vendor == null ) {
-            return response()->json(['error' => 'Invalid input'], 400);
+            return response()->json(['error' => 'Input tanggal dan vendor tidak boleh kosong.'], 400);
         }
 
-        // dd($vendor);
-
-        // Convert date
         $new_date_start = date('d-m-Y', strtotime($start));
         $new_date_end = date('d-m-Y', strtotime($end));
 
-        $my_report = "C:\\xampp\\htdocs\\ppi-dist\\public\\cr\\report\\forecasting_principal\\forecasting_principal_v2.rpt";
-        $my_pdf = 'C:\\xampp\\htdocs\\ppi-dist\\public\\cr\\report\\forecasting_principal\\export\\forcasting-principal'.$date.'.pdf';
+        $reportBaseDir = public_path('cr/report/forecasting_principal/');
+        $exportDir = $reportBaseDir . 'export/';
+        $my_report = $reportBaseDir . 'forecasting_principal_v2.rpt';
+        $fileName = 'forecasting-principal-' . $date . '.pdf';
+        $my_pdf = $exportDir . $fileName;
+        $pdf_url = asset('cr/report/forecasting_principal/export/' . $fileName);
+
+        if (!File::isDirectory($exportDir)) {
+            File::makeDirectory($exportDir, 0777, true, true);
+        }
 
         $my_server = "LOCAL"; 
         $my_user = "root"; 
@@ -74,44 +78,45 @@ class ReportForecastSupplierController extends Controller
         $my_database = "ppi_araya";
         $COM_Object = "CrystalDesignRunTime.Application";
 
-        //-Create new COM object-depends on your Crystal Report version
-        $crapp= New COM($COM_Object) or die("Unable to Create Object");
-        $creport = $crapp->OpenReport($my_report,1); // call rpt report
+        try {
+            // Refactored line to support older PHP versions
+            $crapp = null; // Initialize to null
+            try {
+                $crapp = new COM($COM_Object);
+            } catch (\com_exception $e) { // Catch COM specific exceptions
+                throw new \Exception("Unable to Create Crystal Reports Object: " . $e->getMessage());
+            }
+            
+            if (!$crapp) { // Fallback check
+                 throw new \Exception("Unable to Create Crystal Reports Object (COM object is null).");
+            }
 
-        //- Set database logon info - must have
-        $creport->Database->Tables(1)->SetLogOnInfo($my_server, $my_database, $my_user, $my_password);
+            $creport = $crapp->OpenReport($my_report,1);
 
-        //- field prompt or else report will hang - to get through
-        $creport->EnableParameterPrompting = FALSE;
+            $creport->Database->Tables(1)->SetLogOnInfo($my_server, $my_database, $my_user, $my_password);
 
-        $creport->ParameterFields(2)->SetCurrentValue ("$new_date_start"); // <-- param 1
-        $creport->ParameterFields(3)->SetCurrentValue ("$new_date_end"); // <-- param 2
+            $creport->EnableParameterPrompting = FALSE;
 
-        // pass parameter record selection formula
+            $creport->ParameterFields(2)->SetCurrentValue ("$new_date_start");
+            $creport->ParameterFields(3)->SetCurrentValue ("$new_date_end");
 
-        $creport->RecordSelectionFormula = "{Command.tanggal_so} >= #$start# AND {Command.tanggal_so} <= #$end# AND {Command.nama_vendor} = '$vendor'";
+            $creport->RecordSelectionFormula = "{Command.tanggal_so} >= #$start# AND {Command.tanggal_so} <= #$end# AND {Command.nama_vendor} = '$vendor'";
 
-         //export to PDF process
-        $creport->ExportOptions->DiskFileName=$my_pdf; //export to pdf
-        $creport->ExportOptions->PDFExportAllPages=true;
-        $creport->ExportOptions->DestinationType=1; // export to file
-        $creport->ExportOptions->FormatType=31; // PDF type
-        $creport->Export(false);
- 
-         //------ Release the variables ------
-        $creport = null;
-        $crapp = null;
-        $ObjectFactory = null;
- 
-        $file = 'C:\\xampp\\htdocs\\ppi-dist\\public\\cr\\report\\forecasting_principal\\export\\forcasting-principal'.$date.'.pdf';
- 
-        header("Content-Description: File Transfer"); 
-        header("Content-Type: application/octet-stream"); 
-        header("Content-Transfer-Encoding: Binary"); 
-        header("Content-Disposition: attachment; filename=\"". basename($file) ."\""); 
-        ob_clean();
-        flush();
-        readfile ($file);
-        exit();
+            $creport->ExportOptions->DiskFileName=$my_pdf;
+            $creport->ExportOptions->PDFExportAllPages=true;
+            $creport->ExportOptions->DestinationType=1;
+            $creport->ExportOptions->FormatType=31;
+            $creport->Export(false);
+     
+            $creport = null;
+            $crapp = null;
+            $ObjectFactory = null;
+
+            return response()->json(['success' => true, 'pdf_url' => $pdf_url]);
+
+        } catch (\Exception $e) {
+            \Log::error('Crystal Reports Export Error: ' . $e->getMessage());
+            return response()->json(['error' => 'Gagal membuat laporan: ' . $e->getMessage()], 500);
+        }
     }
 }

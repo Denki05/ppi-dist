@@ -227,28 +227,23 @@
                                                                 </select>
                                                             </div>
 
-                                                            {{-- Period From --}}
+                                                            {{-- Period From (Month & Year) --}}
                                                             <div>
-                                                                <label for="period_from_forecast" class="form-label visually-hidden">Dari Tanggal:</label>
-                                                                <input type="date" name="period_from" id="period_from_forecast" class="form-control form-control-sm" style="width: 150px;">
+                                                                <label for="period_from_forecast" class="form-label visually-hidden">Dari Bulan & Tahun:</label>
+                                                                <input type="month" name="period_from" id="period_from_forecast" class="form-control form-control-sm" style="width: 150px;">
                                                             </div>
 
-                                                            {{-- Period To --}}
+                                                            {{-- Period To (Month & Year) --}}
                                                             <div>
-                                                                <label for="period_to_forecast" class="form-label visually-hidden">Sampai Tanggal:</label>
-                                                                <input type="date" name="period_to" id="period_to_forecast" class="form-control form-control-sm" style="width: 150px;">
+                                                                <label for="period_to_forecast" class="form-label visually-hidden">Sampai Bulan & Tahun:</label>
+                                                                <input type="month" name="period_to" id="period_to_forecast" class="form-control form-control-sm" style="width: 150px;">
                                                             </div>
 
                                                             {{-- Tombol Aksi --}}
                                                             <div class="btn-group" role="group" aria-label="Forecasting Actions">
-                                                                <button type="button" class="btn btn-primary btn-sm" onclick="syncForecastingData()">
-                                                                    <i class="fa fa-sync"></i> Sync {{-- Placeholder Sync --}}
-                                                                </button>
-                                                                <button type="button" class="btn btn-danger btn-sm" onclick="deleteForecastingData()">
-                                                                    <i class="fa fa-trash"></i> Hapus {{-- Placeholder Hapus --}}
-                                                                </button>
-                                                                <button type="submit" id="printReportForecast" class="btn btn-success btn-sm">
-                                                                    <i class="fa fa-print"></i> Print
+                                                                
+                                                                <button type="button" id="printReportForecast" class="btn btn-success btn-sm" onclick="submitForecastingForm('print_pdf')">
+                                                                    <i class="fa fa-file-pdf-o" aria-hidden="true"></i> Export
                                                                 </button>
                                                             </div>
                                                         </div>
@@ -260,6 +255,13 @@
                                         </div>
                                     </div>
                                 </form>
+                                <div class="row mt-4">
+                                    <div class="col-12">
+                                        <iframe src="" type="application/pdf" id="iframeForecastPdf" style="width: 100%; height: 800px; border: 1px solid #ddd;">
+                                            <p>Browser Anda tidak mendukung iframe atau tidak dapat menampilkan file PDF secara langsung. Silakan <a href="#" id="forecastPdfDownloadLink">klik di sini untuk mengunduh PDF</a>.</p>
+                                        </iframe>
+                                    </div>
+                                </div>
                             </section>
                             {{-- MODIFIKASI BERAKHIR DI SINI --}}
                         </main>
@@ -324,31 +326,31 @@
 <script>
 // Fungsi untuk memperbarui hidden input tanggal pada form Tabulasi
 function applyTabulasiMonthYearToForm() {
-    var selectedMonthYear = $('#tabulasi-month-year').val(); // Format: YYYY-MM
+    var selectedMonthYear = $('#tabulasi-month-year').val(); // Format: YYYY-MM
 
-    // Bersihkan semua hidden input tanggal terlebih dahulu
-    $('#tabulasi_start_date').val('');
-    $('#tabulasi_end_date').val('');
-    $('#tabulasi_period_from').val('');
-    $('#tabulasi_period_to').val('');
+    // Bersihkan semua hidden input tanggal terlebih dahulu
+    $('#tabulasi_start_date').val('');
+    $('#tabulasi_end_date').val('');
+    $('#tabulasi_period_from').val('');
+    $('#tabulasi_period_to').val('');
 
-    if (selectedMonthYear) {
-        var year = parseInt(selectedMonthYear.substring(0, 4));
-        var month = parseInt(selectedMonthYear.substring(5, 7)); // Bulan dari input (1-12)
-        
-        var startDate = selectedMonthYear + '-01';
-        // Mengambil hari terakhir bulan
-        var lastDay = new Date(year, month, 0).getDate(); 
-        var endDate = selectedMonthYear + '-' + (lastDay < 10 ? '0' : '') + lastDay; 
+    if (selectedMonthYear) {
+        var year = parseInt(selectedMonthYear.substring(0, 4));
+        var month = parseInt(selectedMonthYear.substring(5, 7)); // Bulan dari input (1-12)
+        
+        var startDate = selectedMonthYear + '-01';
+        // Mengambil hari terakhir bulan
+        var lastDay = new Date(year, month, 0).getDate(); 
+        var endDate = selectedMonthYear + '-' + (lastDay < 10 ? '0' : '') + lastDay; 
 
-        // Isi hidden input untuk CustomerTypeBrandController
-        $('#tabulasi_start_date').val(startDate);
-        $('#tabulasi_end_date').val(endDate);
+        // Isi hidden input untuk CustomerTypeBrandController
+        $('#tabulasi_start_date').val(startDate);
+        $('#tabulasi_end_date').val(endDate);
 
-        // Isi hidden input untuk ReportEmployeePerformanceController
-        $('#tabulasi_period_from').val(startDate);
-        $('#tabulasi_period_to').val(endDate);
-    }
+        // Isi hidden input untuk ReportEmployeePerformanceController
+        $('#tabulasi_period_from').val(startDate);
+        $('#tabulasi_period_to').val(endDate);
+    }
 }
 
 // Fungsi untuk submit form Tabulasi dengan aksi yang berbeda
@@ -483,15 +485,125 @@ function submitTabulasiForm(actionType) {
         });
 
     } else if (actionType === 'sync_register') {
-        form.attr('action', "{{ route('superuser.report.customer_type_brand.postData') }}");
-        form.removeAttr('target');
-        // Untuk sync, kita bisa menggunakan submit form biasa atau AJAX jika perlu feedback lebih dinamis
-        form.submit();
+         // Dapatkan data dari form
+            const periodFrom = form.find('input[name="period_from"]').val();
+            const periodTo = form.find('input[name="period_to"]').val();
+            // const vendorName = form.find('input[name="vendor_name"]').val(); <-- Dihapus sesuai permintaan.
+
+            // Buat URL baru dengan parameter GET
+            // Gunakan URL Helper dari Laravel untuk memastikan routing yang benar
+            const baseUrl = "{{ route('superuser.report.customer_type_brand.postData') }}";
+
+            // Buat objek URLSearchParams untuk menyusun parameter dengan aman
+            const params = new URLSearchParams({
+                period_from: periodFrom,
+                period_to: periodTo
+                // vendor_name: vendorName <-- Dihapus dari parameter
+            });
+
+            // Buat URL akhir
+            const finalUrl = baseUrl + '?' + params.toString();
+
+            // Arahkan browser ke URL baru
+            window.location.href = finalUrl;
     } else {
         console.warn('Unknown actionType:', actionType);
         return;
     }
 }
+
+// === Fungsi untuk tab Forecasting Principle ===
+
+// Fungsi untuk submit form Forecasting dengan aksi yang berbeda
+function submitForecastingForm() {
+        // Swal.fire for loading message
+        Swal.fire({
+            title: 'Membuat Laporan Forecasting...',
+            html: 'Mohon tunggu sebentar',
+            allowOutsideClick: false,
+            onBeforeOpen: () => {
+                Swal.showLoading();
+            },
+        });
+
+        // Get values from the form
+        let vendor_name = $('#vendor_name_forecast').val();
+        let period_from = $('#period_from_forecast').val(); // YYYY-MM
+        let period_to = $('#period_to_forecast').val();     // YYYY-MM
+
+        // Construct full date strings for the controller
+        // Period From: YYYY-MM-01
+        let formatted_period_from = period_from ? period_from + '-01' : '';
+
+        // Period To: YYYY-MM-LastDayOfMonth
+        let formatted_period_to = '';
+        if (period_to) {
+            let parts = period_to.split('-');
+            let year = parseInt(parts[0]);
+            let month = parseInt(parts[1]);
+            let lastDay = new Date(year, month, 0).getDate(); // Get last day of the month
+            formatted_period_to = `${period_to}-${lastDay}`;
+        }
+        
+        // Validation check
+        if (!vendor_name || !formatted_period_from || !formatted_period_to) {
+            Swal.fire({
+                icon: 'error',
+                title: 'Input Tidak Lengkap!',
+                text: 'Vendor, Bulan Awal, dan Bulan Akhir tidak boleh kosong.',
+            });
+            return; // Stop the function if validation fails
+        }
+
+        $.ajax({
+            url: "{{ route('superuser.report.forecast_supplier.printReport') }}",
+            type: "POST",
+            data: {
+                vendor_name: vendor_name,
+                period_from: formatted_period_from,
+                period_to: formatted_period_to,
+                _token: "{{ csrf_token() }}" // Laravel CSRF token
+            },
+            success: function(response) {
+                Swal.close(); // Close loading message
+                if (response.success) {
+                    $('#iframeForecastPdf').attr('src', response.pdf_url);
+                    $('#downloadForecastPdf').attr('href', response.pdf_url).show();
+                    Swal.fire({
+                        icon: 'success',
+                        title: 'Berhasil!',
+                        text: 'Laporan berhasil dibuat.',
+                    });
+                } else {
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Gagal!',
+                        text: response.error || 'Terjadi kesalahan saat membuat laporan.',
+                    });
+                }
+            },
+            error: function(xhr, status, error) {
+                Swal.close(); // Close loading message
+                let errorMessage = 'Terjadi kesalahan tidak terduga.';
+                if (xhr.responseJSON && xhr.responseJSON.error) {
+                    errorMessage = xhr.responseJSON.error;
+                } else if (error) {
+                    errorMessage = error;
+                }
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Error!',
+                    text: errorMessage,
+                });
+            }
+        });
+    }
+
+    // Bind the form submission to the new function
+    $('#forecastingForm').on('submit', function(e) {
+        e.preventDefault(); // Prevent default form submission
+        submitForecastingForm();
+    });
 
 // Fungsi dummy untuk tombol sync di tab Forecasting Principle
 function syncForecastingData() {
@@ -578,147 +690,58 @@ $(document).ready(function () {
 
     // Sembunyikan semua konten tab kecuali yang pertama saat halaman dimuat
     $('.tab-content').not('.active').hide();
-    // Berikan kelas aktif pada label tab pertama saat dimuat
-    $('label[data-tab="content1"]').addClass('active-tab-label');
+    // Berikan kelas aktif pada label tab pertama
+    $('label[for="tab1"]').addClass('active-tab-label');
 
-    // Tambahkan event listener untuk label tab utama
-    $('.tab-label').on('click', function() {
-        // Hapus kelas 'active' dari semua konten tab dan sembunyikan
+    // Tangani perubahan tab
+    $('input[name="tabs"]').on('change', function() {
+        var tabId = $(this).attr('id');
+        var contentId = $('label[for="' + tabId + '"]').data('tab');
+
+        // Hapus kelas aktif dari semua label dan sembunyikan semua konten
+        $('.tab-label').removeClass('active-tab-label');
         $('.tab-content').removeClass('active').hide();
 
-        // Hapus kelas 'active-tab-label' dari semua label tab
-        $('.tab-label').removeClass('active-tab-label');
-
-        // Dapatkan ID konten yang akan ditampilkan dari atribut data-tab
-        var targetTabId = $(this).data('tab');
-
-        // Tambahkan kelas 'active' ke konten yang sesuai dan tampilkan
-        $('#' + targetTabId).addClass('active').show();
-
-        // Tambahkan kelas 'active-tab-label' ke label yang baru diklik
-        $(this).addClass('active-tab-label');
-
-        // Refresh DataTable jika tabnya diaktifkan
-        if (targetTabId === 'content1') {
-            setTimeout(function() {
-                datatableOmset.columns.adjust().draw();
-            }, 10);
-        } else if (targetTabId === 'content2') {
-            // Ketika tabulasi aktif, pastikan picker tanggalnya terisi dengan yang sedang aktif di URL
-            // atau tanggal saat ini jika tidak ada di URL
-            var urlParams = new URLSearchParams(window.location.search);
-            var urlMonth = urlParams.get('month');
-            var urlYear = urlParams.get('year');
-            
-            var currentMonthYear = '{{ $selectedMonthYear }}'; 
-            if (urlMonth && urlYear) {
-                currentMonthYear = urlYear + '-' + (urlMonth < 10 ? '0' : '') + urlMonth;
-            }
-            $('#tabulasi-month-year').val(currentMonthYear);
-            applyTabulasiMonthYearToForm(); // Pastikan hidden inputs diperbarui
-        }
+        // Tambahkan kelas aktif ke label yang dipilih dan tampilkan konten yang sesuai
+        $('label[for="' + tabId + '"]').addClass('active-tab-label');
+        $('#' + contentId).addClass('active').show();
     });
 
-    // --- Handler untuk Omset Month/Year Picker (Otomatis) ---
+    // Event listener untuk perubahan month-year picker di tab Omset
     $('#omset-month-year').on('change', function() {
-        var selectedMonthYear = $(this).val(); // Format YYYY-MM
-        if (selectedMonthYear) {
-            var year = selectedMonthYear.substring(0, 4);
-            var month = selectedMonthYear.substring(5, 7);
-            
-            // Redirect ke URL dashboard dengan parameter bulan dan tahun baru
-            window.location.href = "{{ route('superuser.index') }}" + "?month=" + month + "&year=" + year;
+        var selectedDate = $(this).val(); // Format: YYYY-MM
+        if (selectedDate) {
+            // Redirect ke halaman yang sama dengan parameter bulan dan tahun
+            window.location.href = "{{ route('superuser.index') }}" + "?month_year=" + selectedDate;
         } else {
-            Swal.fire({
-                icon: 'error',
-                title: 'Input Dibutuhkan',
-                text: 'Harap pilih bulan dan tahun untuk menerapkan filter omset.',
-                confirmButtonText: 'Oke'
-            });
+            // Jika dikosongkan, kembali ke default (bulan saat ini)
+            window.location.href = "{{ route('superuser.index') }}";
         }
     });
 
-    // --- Handler untuk Tabulasi Month/Year Picker ---
-    // Panggil ini saat halaman dimuat untuk memastikan nilai awal terisi
+    // Event listener untuk perubahan month-year picker di tab Tabulasi
+    $('#tabulasi-month-year').on('change', function() {
+        // Saat picker berubah, panggil fungsi untuk memperbarui hidden inputs
+        applyTabulasiMonthYearToForm();
+    });
+
+    // Panggil fungsi ini saat halaman pertama kali dimuat untuk menginisialisasi nilai hidden inputs
+    // Ini penting jika Anda ingin nilai default atau nilai dari $selectedMonthYear diterapkan saat tab Tabulasi pertama kali aktif
     applyTabulasiMonthYearToForm();
 
-    $('#tabulasi-month-year').on('change', function() {
-        applyTabulasiMonthYearToForm();
-        Swal.fire({
-            icon: 'success',
-            title: 'Periode Diterapkan! ✅',
-            text: 'Periode bulan dan tahun telah diperbarui untuk semua aksi di Tabulasi.',
-            showConfirmButton: false,
-            timer: 1500
-        });
-    });
-
-    const salesmanSelect = $('#salesman_id_tabulasi');
-    const reportTypeSelect = $('#report_type_tabulasi');
-
-    function updateSalesmanFilterState() {
-        if (reportTypeSelect.val() === 'salesman') {
-            salesmanSelect.prop('disabled', false); // Aktifkan dropdown salesman
+    // Logika untuk mengaktifkan/menonaktifkan dropdown Salesman berdasarkan pilihan Report Type di Tabulasi
+    $('#report_type_tabulasi').on('change', function() {
+        const selectedType = $(this).val();
+        if (selectedType === 'salesman') {
+            $('#salesman_id_tabulasi').prop('disabled', false);
         } else {
-            salesmanSelect.val('').trigger('change'); // Reset nilai salesman ke default (Semua Salesman)
-            salesmanSelect.prop('disabled', true); // Non-aktifkan dropdown salesman
+            $('#salesman_id_tabulasi').val('').trigger('change'); // Reset dan nonaktifkan
+            $('#salesman_id_tabulasi').prop('disabled', true);
         }
-        // Penting: Memaksa Select2 untuk memperbarui tampilannya setelah status 'disabled' berubah
-        salesmanSelect.select2();
-    }
-
-    // Panggil fungsi saat halaman pertama kali dimuat
-    updateSalesmanFilterState();
-
-    // Tambahkan event listener untuk memantau perubahan pada dropdown Tipe Laporan
-    reportTypeSelect.on('change', function() {
-        updateSalesmanFilterState();
     });
 
-    // --- Handler untuk Forecasting Principle Print Button ---
-    $('#printReportForecast').on('click', function(e) {
-        e.preventDefault(); // Mencegah submit form bawaan agar bisa validasi dan setting action
-
-        let form = $('#forecastingForm');
-        let start = $('#period_from_forecast').val();
-        let end = $('#period_to_forecast').val();
-        let vendorName = $('#vendor_name_forecast').val();
-        
-        // Validasi input
-        if (!vendorName) {
-            Swal.fire({
-                icon: 'error',
-                title: 'Validasi Gagal',
-                text: 'Vendor harus dipilih.',
-                confirmButtonText: 'Oke'
-            });
-            return;
-        }
-        if (!start || !end) {
-            Swal.fire({
-                icon: 'error',
-                title: 'Validasi Gagal',
-                text: 'Periode tanggal (Dari & Sampai) harus diisi.',
-                confirmButtonText: 'Oke'
-            });
-            return;
-        }
-        if (new Date(start) > new Date(end)) {
-            Swal.fire({
-                icon: 'error',
-                title: 'Validasi Gagal',
-                text: 'Tanggal "Dari" tidak boleh melebihi tanggal "Sampai".',
-                confirmButtonText: 'Oke'
-            });
-            return;
-        }
-
-        // Set action form dan submit
-        form.attr('action', "{{ route('superuser.report.forecast_supplier.printReport') }}");
-        $('#action_forecast_param').val('print'); // Mengatur parameter jika diperlukan di controller
-        form.submit();
-    });
-
-}); // End of document ready
+    // Trigger change event saat inisialisasi untuk memastikan state awal yang benar
+    $('#report_type_tabulasi').trigger('change');
+});
 </script>
 @endpush

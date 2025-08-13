@@ -76,9 +76,17 @@ class ReportCustomerTypeBrandController extends Controller
     public function postData(Request $request)
     {
         try {
-            // $currentMonth = Carbon::now()->month;
-            $currentYear = Carbon::now()->year;
-            // $currentYear = 2024;
+            // Mengambil rentang tanggal dari query string (GET request)
+            $start = $request->query('period_from');
+            $end = $request->query('period_to');
+
+            if (!$start || !$end) {
+                return redirect()->back()->with('error', 'Error: Rentang tanggal harus diisi.');
+            }
+
+            // Memastikan format tanggal sesuai untuk query database
+            $startDate = Carbon::parse($start)->startOfDay();
+            $endDate = Carbon::parse($end)->endOfDay();
 
             DB::table('penjualan_do')
                 ->leftJoin('penjualan_do_details', 'penjualan_do_details.do_id', '=', 'penjualan_do.id')
@@ -107,8 +115,7 @@ class ReportCustomerTypeBrandController extends Controller
                     'penjualan_do_details.ppn_idr AS ppn_idr'
                 )
                 ->where('penjualan_do.status', 6)
-                // ->whereMonth('penjualan_so.so_date', $currentMonth)
-                ->whereYear('penjualan_so.so_date', $currentYear)
+                ->whereBetween('penjualan_so.so_date', [$startDate, $endDate])
                 ->where(function ($query) {
                     $query->where('master_customers.status', 1)
                         ->orWhere('master_customers.existence', 1);
