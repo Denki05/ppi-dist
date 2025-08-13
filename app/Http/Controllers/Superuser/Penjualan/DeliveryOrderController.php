@@ -532,6 +532,20 @@ class DeliveryOrderController extends Controller
                 ]);
             }
 
+            // check invoice total = grand_total_idr
+            $get_inv = DB::table('finance_invoicing')->where('do_id', $do_id)->first();
+            $do_details = PackingOrderDetail::where('do_id', $do_id)->first();
+
+            if ($get_inv && $do_details) {
+                $new_grand_total = $do_details->purchase_total_idr + $do_details->delivery_cost_idr;
+
+                if ($get_inv->grand_total_idr != $new_grand_total) {
+                    DB::table('finance_invoicing')->where('do_id', $do_id)->update([
+                        'grand_total_idr' => $new_grand_total
+                    ]);
+                }
+            }
+
             // Commit transaction
             DB::commit();
 
@@ -918,8 +932,7 @@ class DeliveryOrderController extends Controller
                     'updated_by' => Auth::id(),
                 ]);
 
-                // Update invoice jika ada
-                if ($do->invoicing && $do->invoicing->grand_total_idr > 0) {
+                if ($do->invoicing && $do->invoicing->grand_total_idr != $grand_total_idr) {
                     $do->invoicing->update([
                         'grand_total_idr' => $grand_total_idr
                     ]);

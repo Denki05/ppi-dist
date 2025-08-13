@@ -2,10 +2,10 @@
 
 @section('content')
 <nav class="breadcrumb bg-white push">
-  <span class="breadcrumb-item">Laporan</span>
-  <span class="breadcrumb-item">Operasional</span>
-  <span class="breadcrumb-item">Sales</span>
-  <span class="breadcrumb-item active">Penjualan Salesman</span>
+  <span class="breadcrumb-item">Report</span>
+  <span class="breadcrumb-item">Management</span>
+  <span class="breadcrumb-item">Penjualan Sales</span>
+  <span class="breadcrumb-item active">Omset Sales</span>
 </nav>
 
 @if($errors->any())

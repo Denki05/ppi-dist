@@ -116,7 +116,9 @@ class ReceivingDetailController extends Controller
 
         $data['receiving'] = Receiving::findOrFail($id);
 
-        $receiving = Receiving::where('status', '!=', Receiving::STATUS['DELETED'] )->pluck('id')->all();
+        $receiving = Receiving::where('status', '!=', Receiving::STATUS['DELETED'] )
+                ->pluck('id')
+                ->all();
     
         $receiving_detail_ids = ReceivingDetail::whereIn('receiving_id', $receiving )
                                 ->selectRaw('receiving_detail.id, receiving_detail.po_detail_id, receiving_detail.quantity, sum(receiving_detail_colly.quantity_ri) AS qty')
@@ -133,6 +135,7 @@ class ReceivingDetailController extends Controller
                                 ->where([
                                     [ 'status', PurchaseOrder::STATUS['SENT'] ],
                                     ])
+                                ->where('type', 1)
                                 ->orderBy('code')->get();
         
         $data['purchase_orders'] = $purchase_orders;

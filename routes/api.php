@@ -19,4 +19,5 @@ use App\Http\Controllers\ApiInvoiceController;
 Route::get('customers', [ApiCustomerController::class, 'getApiDataCustomer']);
 Route::get('products', [ApiCustomerController::class, 'getApiDataProduct']);
 Route::get('brands', [ApiCustomerController::class, 'getApiDataBrand']);
+Route::get('member', [ApiCustomerController::class, 'getApiMember']);
 Route::get('invoices', [ApiInvoiceController::class, 'getApiData']);

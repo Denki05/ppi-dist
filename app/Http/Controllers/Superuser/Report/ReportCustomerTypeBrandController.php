@@ -7,6 +7,7 @@ use Illuminate\Http\Request;
 use App\Entities\Reports\CustomerTypeBrandReports;
 Use App\Entities\Penjualan\SalesOrder;
 use App\Entities\Setting\UserMenu;
+use Illuminate\Support\Facades\Log;
 use Carbon\Carbon;
 use Exception;
 use Auth;
@@ -76,8 +77,8 @@ class ReportCustomerTypeBrandController extends Controller
     {
         try {
             // $currentMonth = Carbon::now()->month;
-            // $currentYear = Carbon::now()->year;
-            $currentYear = 20224;
+            $currentYear = Carbon::now()->year;
+            // $currentYear = 2024;
 
             DB::table('penjualan_do')
                 ->leftJoin('penjualan_do_details', 'penjualan_do_details.do_id', '=', 'penjualan_do.id')
@@ -256,11 +257,11 @@ class ReportCustomerTypeBrandController extends Controller
     public function removeDt(Request $request)
     {
         // $currentMonth = Carbon::now()->month;
-        // $currentYear = Carbon::now()->year;
+        $currentYear = Carbon::now()->year;
 
         DB::table('report_customer_type_brand')
             // ->whereMonth('invoice_date', $currentMonth)
-            // ->whereYear('invoice_date', $currentYear)
+            ->whereYear('invoice_date', $currentYear)
             ->delete();
 
         return redirect()->back()->with('message', 'Berhasil remove data!');
@@ -282,8 +283,8 @@ class ReportCustomerTypeBrandController extends Controller
         $nominal = $validatedData['nominal'];
         $action = $validatedData['action'];
 
-        $reportPath = "C:\\xampp\\htdocs\\ppi-dist\\public\\cr\\report\\management\\report_customer_register\\";
-        $exportPath = $reportPath . "export\\";
+        $baseReportPath = public_path('cr/report/management/report_customer_register/');
+        $exportPath = $baseReportPath . "export\\";
 
         if ($type == 1) {
             $reportName = $nominal == 1 ? "customer_type_brand.rpt" : "customer_type_brand_non_nominal.rpt";
@@ -293,12 +294,17 @@ class ReportCustomerTypeBrandController extends Controller
             $fileName = $nominal == 1 ? "customer-zone-" : "customer-zone-non-nominal-";
         }
 
-        $my_report = $reportPath . $reportName;
-        $outputFile = $exportPath . $fileName . date("Y-m") . ($action === 'print' ? ".pdf" : ".xls");
+        $my_report = $baseReportPath . $reportName;
+        $outputFile = $exportPath . $fileName . date("Y-m-d_H-i-s") . ($action === 'print' ? ".pdf" : ".xls");
 
         try {
             if (!file_exists($my_report)) {
                 return response()->json(['error' => 'Report file not found'], 404);
+            }
+
+            // Create export directory if it doesn't exist
+            if (!file_exists($exportPath)) {
+                mkdir($exportPath, 0777, true);
             }
 
             $crapp = new COM("CrystalDesignRunTime.Application");
@@ -320,15 +326,22 @@ class ReportCustomerTypeBrandController extends Controller
             $crapp = null;
 
             if (file_exists($outputFile)) {
-                \Log::info('File generated successfully: ' . $outputFile);
-                return response()->download($outputFile, basename($outputFile))->deleteFileAfterSend(true);
+                Log::info('File generated successfully: ' . $outputFile);
+                if ($action === 'print') {
+                    // Return URL for PDF to be displayed in iframe
+                    $pdfUrl = asset('cr/report/management/report_customer_register/export/' . basename($outputFile));
+                    return response()->json(['success' => true, 'pdf_url' => $pdfUrl]);
+                } else {
+                    // For Excel, still download directly
+                    return response()->download($outputFile, basename($outputFile))->deleteFileAfterSend(true);
+                }
             } else {
-                \Log::error('File not generated: ' . $outputFile);
+                Log::error('File not generated: ' . $outputFile);
                 return response()->json(['error' => 'File not generated'], 500);
             }
         } catch (\Exception $e) {
-            \Log::error('Report generation failed: ' . $e->getMessage());
-            return response()->json(['error' => 'An error occurred while generating the report'], 500);
+            Log::error('Report generation failed: ' . $e->getMessage());
+            return response()->json(['error' => 'An error occurred while generating the report: ' . $e->getMessage()], 500);
         }
     }
 }

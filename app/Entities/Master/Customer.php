@@ -37,6 +37,7 @@ class Customer extends Model
         'KANTOR' => 1,
         'IVAN' => 2,
         'NIA' => 3,
+        'ERICK' => 4,
     ];
 
     const HAS_TEMPO = [

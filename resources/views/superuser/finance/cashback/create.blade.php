@@ -56,7 +56,7 @@
                             <div class="form-row">
                                 <div class="form-group col-md-6">
                                     <label for="type_transaction">Tanggal Nota <span class="text-danger">*</span></label>
-                                    <input type="date" class="form-control" value="{{ $invoice->so->so_date }}" readonly>
+                                    <input type="date" class="form-control" value="{{ $invoice->so->so_date ?? '-' }}" readonly>
                                 </div>
                                 <div class="form-group col-md-6">
                                     <label for="warehouse_id">Gudang <span class="text-danger">*</span></label>
@@ -138,6 +138,7 @@
                             <tbody>
                                 @foreach($invoice->do_detail AS $key)
                                     <tr>
+                                        
                                         <input type="hidden" name="disc_usd[]" id="disc_usd" value="{{ $key->usd_disc }}">
                                         <input type="hidden" name="disc_percent[]" id="disc_percent" value="{{ $invoice->do_detail_cost[0]->discount_1 }}">
                                         <input type="hidden" name="disc_kemasan[]" id="disc_kemasan" value="{{ $invoice->do_detail_cost[0]->discount_2 }}">

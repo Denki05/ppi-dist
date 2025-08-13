@@ -54,68 +54,64 @@ class ReportEmployeePerformanceController extends Controller
     }
 
     public function print_report(Request $request)
-{
-    $validatedData = $request->validate([
-        'period_from' => 'required|date',
-        'period_to' => 'required|date',
-        'nominal' => 'required|integer|in:1,2',
-        'type' => 'required|integer|in:1,2',
-        'salesman_officer' => 'nullable|array',
-    ]);
+    {
+        $validatedData = $request->validate([
+            'period_from' => 'required|date',
+            'period_to' => 'required|date',
+            'nominal' => 'required|integer|in:1,2',
+            'type' => 'required|integer|in:1,2',
+            'salesman_officer' => 'nullable|array',
+        ]);
 
-    $start = $validatedData['period_from'];
-    $end = $validatedData['period_to'];
-    $nominal = $validatedData['nominal'];
-    $type = $validatedData['type'];
-    $salesman = $request->input('salesman_officer', []);
+        $start = $validatedData['period_from'];
+        $end = $validatedData['period_to'];
+        $nominal = $validatedData['nominal'];
+        $type = $validatedData['type'];
+        $salesman = $request->input('salesman_officer', []);
 
-    // Menggunakan variabel lokal date
-    $date = date("Y-m");
+        // Gunakan timestamp untuk nama file unik
+        $timestamp = date("Y-m-d_H-i-s");
 
-    // dd($salesman);
+        // Format tanggal
+        $new_date_start = date('d-m-Y', strtotime($start));
+        $new_date_end = date('d-m-Y', strtotime($end));
 
-    // Format tanggal
-    $new_date_start = date('d-m-Y', strtotime($start));
-    $new_date_end = date('d-m-Y', strtotime($end));
+        $officerSearch = empty($salesman) || in_array('all', $salesman)
+                ? '1=1'
+                : collect($salesman)->map(function($value) {
+                    return "{Command.officer}='$value'";
+                })->implode(' OR ');
 
-    $officerSearch = empty($salesman) || in_array('all', $salesman)
-            ? '1=1'
-            : collect($salesman)->map(function($value) {
-                return "{Command.officer}='$value'";
-            })->implode(' OR ');
-
-    $officerSearch1 = empty($salesman) || in_array('all', $salesman)
-            ? '1=1'
-            : collect($salesman)->map(function($value) {
-                return "{penjualan_do.officer}='$value'";
-            })->implode(' OR ');
+        $officerSearch1 = empty($salesman) || in_array('all', $salesman)
+                ? '1=1'
+                : collect($salesman)->map(function($value) {
+                    return "{penjualan_do.officer}='$value'";
+                })->implode(' OR ');
 
 
-    $basePath = "C:\\xampp\\htdocs\\ppi-dist\\public\\cr\\report\\management\\report_employee_performance\\";
+        $basePath = public_path('cr/report/management/report_employee_performance/'); // Gunakan public_path()
 
-    if ($type == 1) {
-        if ($nominal == 1) {
-            $my_report = "{$basePath}pic_report_nominal.rpt";
-            $my_pdf = "{$basePath}export\\pic_report_nominal{$date}.pdf";
-        } elseif ($nominal == 2) { 
-            $my_report = "{$basePath}pic_report_non_nominal.rpt";
-            $my_pdf = "{$basePath}export\\pic_report_non_nominal{$date}.pdf";
+        if ($type == 1) { // Type 1 for PIC (Customer Type Brand related)
+            if ($nominal == 1) {
+                $my_report = "{$basePath}pic_report_nominal.rpt";
+                $my_pdf = "{$basePath}export\\pic_report_nominal_{$timestamp}.pdf"; // Unique filename
+            } elseif ($nominal == 2) { 
+                $my_report = "{$basePath}pic_report_non_nominal.rpt";
+                $my_pdf = "{$basePath}export\\pic_report_non_nominal_{$timestamp}.pdf"; // Unique filename
+            }
+        } elseif ($type == 2) { // Type 2 for Officer/Salesman
+            if ($nominal == 1) {
+                $my_report = "{$basePath}officer_report_nominal_3.rpt";
+                $my_pdf = "{$basePath}export\\officer_report_nominal-{$timestamp}.pdf"; // Unique filename
+            } elseif ($nominal == 2) { 
+                $my_report = "{$basePath}officer_report_non_nominal.rpt";
+                $my_pdf = "{$basePath}export\\officer_report_non_nominal-{$timestamp}.pdf"; // Unique filename
+            }
         }
-    } elseif ($type == 2) {
-        if ($nominal == 1) {
-            $my_report = "{$basePath}officer_report_nominal_3.rpt";
-            $my_pdf = "{$basePath}export\\officer_report_nominal-{$date}.pdf";
-        } elseif ($nominal == 2) { 
-            $my_report = "{$basePath}officer_report_non_nominal.rpt";
-            $my_pdf = "{$basePath}export\\officer_report_non_nominal-{$date}.pdf";
-        }
+
+        // Kirim ke fungsi generateReport
+        return $this->generateReport($my_report, $my_pdf, $new_date_start, $new_date_end, $start, $end, $type, $officerSearch, $officerSearch1, $nominal);
     }
-
-    // dd($nominal);
-
-    // Kirim ke fungsi generateReport
-    return $this->generateReport($my_report, $my_pdf, $new_date_start, $new_date_end, $start, $end, $type, $officerSearch, $officerSearch1, $nominal);
-}
 
     private function generateReport($reportPath, $pdfPath, $newDateStart, $newDateEnd, $start, $end, $type, $officerSearch, $officerSearch1, $nominal)
     {
@@ -127,6 +123,16 @@ class ReportEmployeePerformanceController extends Controller
         ];
 
         try {
+            if (!file_exists($reportPath)) {
+                return response()->json(['error' => 'Report file not found: ' . $reportPath], 404);
+            }
+
+            // Create export directory if it doesn't exist
+            $exportDir = dirname($pdfPath);
+            if (!file_exists($exportDir)) {
+                mkdir($exportDir, 0777, true);
+            }
+
             // Buat objek Crystal Reports
             $crapp = new COM("CrystalDesignRunTime.Application");
             $creport = $crapp->OpenReport($reportPath, 1);
@@ -162,9 +168,15 @@ class ReportEmployeePerformanceController extends Controller
             $creport = null;
             $crapp = null;
 
-            // Unduh file PDF
-            return response()->download($pdfPath)->deleteFileAfterSend(true);
-        } catch (Exception $e) {
+            if (file_exists($pdfPath)) {
+                // Return the URL to the PDF
+                $pdfUrl = asset('cr/report/management/report_employee_performance/export/' . basename($pdfPath));
+                return response()->json(['success' => true, 'pdf_url' => $pdfUrl]);
+            } else {
+                return response()->json(['error' => 'PDF not generated'], 500);
+            }
+        } catch (\Exception $e) { // Tangkap Exception dari PHP, bukan COM Exception secara spesifik
+            Log::error('Gagal membuat laporan: ' . $e->getMessage());
             return response()->json(['error' => 'Gagal membuat laporan: ' . $e->getMessage()], 500);
         }
     }

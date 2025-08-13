@@ -230,10 +230,6 @@
         return value.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
       }
 
-      // $("#customer").val("all").change();
-      // $("#brand_name").val("all").change();
-      // $("#product").val("all").change();
-
       $('#brand_name').on('change', function () {
         let brand_name = $(this).val();
 

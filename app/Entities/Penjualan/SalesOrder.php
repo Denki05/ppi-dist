@@ -69,7 +69,7 @@ class SalesOrder extends Model
 
     const SALES = [
         'Lindy' => 1,
-        'Alivi' => 2,
+        'Kumala' => 2,
         'S.A' => 3,
         'Santi' => 4,
         'Eric' => 5,

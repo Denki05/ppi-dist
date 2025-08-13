@@ -1,5 +1,9 @@
 @extends('superuser.app')
 
+@section('plugin-styles')
+<link rel="stylesheet" href="https://cdn.datatables.net/buttons/2.4.2/css/buttons.bootstrap4.min.css">
+@endsection
+
 @section('content')
 <nav class="breadcrumb bg-white push">
   <span class="breadcrumb-item">Laporan</span>
@@ -126,11 +130,16 @@
 
 @include('superuser.asset.plugin.select2')
 @include('superuser.asset.plugin.swal2')
-@include('superuser.asset.plugin.datatables')
 @include('superuser.asset.plugin.daterangepicker')
-@include('superuser.asset.plugin.datatables-button')
-
+@include('superuser.asset.plugin.datatables')
 @push('scripts')
+<script src="https://cdn.datatables.net/buttons/2.4.2/js/dataTables.buttons.min.js"></script>
+<script src="https://cdn.datatables.net/buttons/2.4.2/js/buttons.bootstrap4.min.js"></script>
+<script src="https://cdn.datatables.net/buttons/2.4.2/js/buttons.html5.min.js"></script>
+<script src="https://cdn.datatables.net/buttons/2.4.2/js/buttons.print.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.7/pdfmake.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.7/vfs_fonts.js"></script>
 <script type="text/javascript">
   var start_date = $('#periode_from').val();
   var end_date = $('#periode_to').val();
@@ -165,31 +174,15 @@
         [0, 'asc']
       ],
       pageLength: 10,
-        lengthMenu: [
-          [10, 30, 100, -1],
-          [10, 30, 100, 'All']
-        ], 
-        dom: "<'row'<'col-sm-2'l><'col-sm-7 text-left'B><'col-sm-3'f>>" +
-          "<'row'<'col-sm-12'tr>>" +
-          "<'row'<'col-sm-5'i><'col-sm-7'p>>",
-        buttons: [
-          {
-            extend: 'excelHtml5',
-            text: '<i class="fa fa-file-excel-o"></i>',
-            titleAttr: 'Excel',
-            title: 'Product-Order Report',
-            footer: true,
-          },
-          {
-            extend: 'pdfHtml5',
-            orientation: 'landscape',
-            pageSize: 'A4',
-            text: '<i class="fa fa-file-pdf-o"></i>',
-            titleAttr: 'PDF',
-            title: 'Product-Order Report',
-            footer: true,
-          }
-        ],
+      lengthMenu: [
+        [10, 30, 100, -1],
+        [10, 30, 100, 'All']
+      ],
+      dom: 'Bfrtip',
+      buttons: [
+          'excel',
+          'pdf'
+      ]
     });
 
     $('#btn-filter').on('click', function(e) {
@@ -203,9 +196,6 @@
           '&brand=' + brand + '&product=' + product;
         datatable.ajax.url(newDatatableUrl).load();
     });
-
-    // $("#brand").val("all").change();
-    // $("#product").val("all").change();
 
     $('#brand').on('change', function () {
             let brandId = $(this).val();

@@ -45,7 +45,7 @@ class SalesOrderLanjutanTable extends Table
                         WHEN penjualan_so.created_by = 34 THEN "Santi"
                         WHEN penjualan_so.created_by = 35 THEN "Eric"
                         WHEN penjualan_so.created_by = 1 THEN "Dev"
-                        WHEN penjualan_so.created_by = 38 THEN "Alivi"
+                        WHEN penjualan_so.created_by = 38 THEN "Kumala"
                         ELSE "-"
                     END AS so_created_by
                 '),

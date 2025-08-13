@@ -95,11 +95,18 @@
 
 @php
   $offset = 0; // Untuk menyimpan indeks awal di setiap halaman
+
+  $header_text = null;
+  if ($result->type == 0) {
+      $header_text = "SURAT PERINTAH KKERJA PPN";
+  } else {
+    $header_text = "FORM PERMINTAAN BARANG";
+  }
 @endphp
 
 @for ($page = 0; $page < $totalPages; $page++)
 <div>
-  <h2 style="text-align: center; margin: 0; padding: 0; margin-bottom: 5px;"><u>FORM PERMINTAAN BARANG</u></h2>
+  <h2 style="text-align: center; margin: 0; padding: 0; margin-bottom: 5px;"><u>{{ $header_text }}</u></h2>
   
   <div style="margin-bottom: 15px; font-size: 11px;">
     <div class="row-float">
@@ -188,7 +195,21 @@
 
 <div>
   <div style="font-size: 12px; position: absolute; bottom: 10px; width: 100%; margin-top: 30px;">
+  <div class="row-float">
+        <div class="column-float note" style="width: 65%">
+        @if(!empty($result->note ?? ''))
+            <div class="p-note">
+              <?= htmlspecialchars_decode($result->note ?? ''); ?>
+            </div>
+            @else
+            <p style="width: 100%;border:1px solid grey;height: 100px;">
+            </p>
+            @endif
+        </div>
+      </div>
     <div class="row-float clearfix" style="display: flex; justify-content: space-between;">
+
+      
 
       <div class="row-float" style="display: flex; justify-content: space-between; align-items: flex-start;">
         

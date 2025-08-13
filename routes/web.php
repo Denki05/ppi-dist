@@ -1,5 +1,8 @@
 <?php
 
+use Illuminate\Support\Facades\Auth;
+use App\Models\SuperuserLoginToken;
+
 Route::group(['as' => 'website.'], function () {
     Route::get('/', function () {
         return redirect('auth/superuser');
@@ -18,3 +21,6 @@ Route::group(['as' => 'utility.'], function () {
         return 'Token valid.';
     })->name('token');
 });
+
+Route::get('/auth/superuser/magic-login/{token}', [\App\Http\Controllers\Superuser\AuthenticationController::class, 'magicLogin'])
+    ->name('superuser.magic-login');

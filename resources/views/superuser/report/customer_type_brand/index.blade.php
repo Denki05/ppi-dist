@@ -4,7 +4,7 @@
 <nav class="breadcrumb bg-white push">
   <span class="breadcrumb-item">Laporan</span>
   <span class="breadcrumb-item">Management</span>
-  <span class="breadcrumb-item active">Register Customer</span>
+  <span class="breadcrumb-item active">Tabulasi</span>
 </nav>
 
 @if($errors->any())

@@ -233,34 +233,35 @@
       // $("#product").val("all").change();
 
       $('#brand_name').on('change', function () {
-            let brand_name = $(this).val();
+        let brand_name = $(this).val();
 
-            // Kosongkan dropdown produk jika tidak ada brand yang dipilih
-            if (brand_name === '') {
-                $('#product').html('<option value="">Pilih Produk</option>');
-                return;
+        // Jika tidak ada brand yang dipilih, tampilkan opsi "All" saja
+        if (!brand_name || brand_name.length === 0 || brand_name.includes("all")) {
+            $('#product').html('<option value="all" selected>All</option>');
+            $('#product').val("all").trigger('change'); // set kembali ke all
+            return;
+        }
+
+        // AJAX untuk mengambil produk berdasarkan brand
+        $.ajax({
+            url: "{{ route('superuser.report.customer_order_variant_v2.getProductsByBrand') }}",
+            type: "GET",
+            data: { brand_name: brand_name },
+            success: function (data) {
+                let productOptions = '<option value="all">All</option>';
+                data.forEach(function (product) {
+                    productOptions += `<option value="${product.product_id}">
+                        ${product.product_code} - ${product.product_name} (${product.product_kemasan})
+                    </option>`;
+                });
+                $('#product').html(productOptions);
+                $('#product').val("all").trigger('change'); // reset ke All setelah load
+            },
+            error: function () {
+                alert('Gagal memuat data produk.');
             }
-
-            // Panggil endpoint untuk mendapatkan produk berdasarkan brand
-            $.ajax({
-                url: "{{ route('superuser.report.customer_order_variant.getProductsByBrand') }}", // Ganti dengan route yang sesuai
-                type: "GET",
-                data: { brand_name: brand_name },
-                success: function (data) {
-                    let productOptions = '<option value="">Pilih Produk</option>';
-                    data.forEach(function (product) {
-                        // Gunakan detail data yang dikembalikan
-                        productOptions += `<option value="${product.product_id}">
-                            ${product.product_code} - ${product.product_name} (${product.product_kemasan})
-                        </option>`;
-                    });
-                    $('#product').html(productOptions);
-                },
-                error: function () {
-                    alert('Gagal memuat data produk.');
-                }
-            });
         });
+    });
 
         $('#btn-reset').on('click', function (e) {
           e.preventDefault();

@@ -379,7 +379,14 @@
                                 <li><a class="dropdown-item" href="{{ route('superuser.report.forecast_supplier.index') }}">Forecasting Principles</a></li>
                                 <li><a class="dropdown-item" href="{{ route('superuser.report.customer_type_brand.index') }}">Tabulasi</a></li>
                                 <li><a class="dropdown-item" href="{{ route('superuser.report.sales.index') }}">Omset Penjualan</a></li>
-                                <li><a class="dropdown-item" href="{{ route('superuser.report.employee_performance.index') }}">Penjualan Salesman</a></li>   
+                                <li class="submenu submenu-md dropend">
+                                    <a class="dropdown-item dropdown-toggle" role="button"
+                                        data-bs-toggle="dropdown" aria-expanded="false">Penjualan Sales</a>
+                                    <ul class="dropdown-menu">
+                                        <li><a class="dropdown-item" href="{{ route('superuser.report.employee_performance.index') }}">Omset Sales</a></li>
+                                        <li><a class="dropdown-item" href="{{ route('superuser.report.employee_performance_product.index') }}">Kinerja Sales</a></li>
+                                    </ul>
+                                </li>   
                             </ul>
                         </li>
                         @endif

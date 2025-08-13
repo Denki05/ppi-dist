@@ -1,10 +1,6 @@
 @extends('superuser.app')
 
 @section('content')
-<nav class="breadcrumb bg-white push">
-  <span class="breadcrumb-item">Pages</span>
-  <span class="breadcrumb-item active">Dashboard</span>
-</nav>
 
 @if($errors->any())
 <div class="alert alert-danger alert-dismissable" role="alert">
@@ -46,265 +42,235 @@
 @if($is_see == true)
 <div class="block">
     <div class="block-content">
-    <div class="row">
-            <div class="col">
-                <div class="card">
-                    <div class="card-header d-flex align-items-center justify-content-between">
-                        <h3>Approval Sales Order MOU</h3>
-                    </div>
-                    <div class="card-body">
-                        <table class="datatable table table-striped" id="so_approval">
-                            <thead>
-                                <tr>
-                                    <td class="text-center">#</td>
-                                    <td class="text-center">So Code</td>
-                                    <td class="text-center">Brand</td>
-                                    <td class="text-center">Customer</td>
-                                    <td class="text-center">Approval</td>
-                                    <td class="text-center">Status</td>
-                                    <td class="text-center">Action</td>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                @foreach($approval_so as $so)
-                                    @if($so->approval_mou == 1)
-                                    <tr>
-                                        <th class="text-center">{{ $loop->iteration }}</th>
-                                        <th class="text-center">{{ $so->so_code }}</th>
-                                        <th class="text-center">{{ $so->brand_name }}</th>
-                                        <th class="text-center">{{ $so->customer_name }} {{ $so->customer_city }}</th>
-                                        <th class="text-center">
-                                            @if($so->approval_mou == 1)
-                                                <span class="badge badge-success">YES</span>
-                                            @else
-                                                <span class="badge badge-danger">NO</span>
-                                            @endif
-                                        </th>
-                                        <th class="text-center">
-                                            @if($so->approval_mou_status == 1)
-                                                <span class="badge badge-success">Approved</span>
-                                            @else
-                                                <span class="badge badge-danger">No Approved</span>
-                                            @endif
-                                        </th>
-                                        <td class="text-center">
-                                            <button type="button" class="btn btn-sm btn-info btn-view"
-                                                data-id="{{$so->id}}" title="Show SO">
-                                                <i class="fa fa-eye"></i> View
-                                            </button>
-                                            @if($so->approval_mou == 1 && $so->approval_mou_status != 1)
-                                                <button 
-                                                    class="btn btn-sm btn-success btn-approval-mou" 
-                                                    data-id="{{ $so->id }}">
-                                                    <i class="fa fa-check"></i> Proses
-                                                </button>
-                                            @else
-                                                <button class="btn btn-sm btn-secondary" disabled>
-                                                    <i class="fa fa-check"></i> Approved
-                                                </button>
-                                            @endif
-                                        </td>
-                                    </tr>
-                                    @endif
-                                @endforeach
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-
-            </div>
-        </div>
-    </div>
-</div>
-
-<div class="block">
-    <div class="block-content">
         <div class="row">
             <div class="col">
                 <div class="card">
-                    <div class="card-header d-flex align-items-center justify-content-between">
-                        <h3>Top Sale Variant - {{ \Carbon\Carbon::create()->month($selectedMonth)->format('F') }}</h3>
-
-                        <select id="monthSelect" class="form-select" aria-label="Select month" style="width: 25%;">
-                            @foreach (range(1, 12) as $month)
-                                <option value="{{ $month }}" {{ $month == ($selectedMonth ?? now()->month) ? 'selected' : '' }}>
-                                    {{ \Carbon\Carbon::create()->month($month)->format('F') }}
-                                </option>
-                            @endforeach
-                        </select>
-                    </div>
                     <div class="card-body">
-                        <table class="datatable table table-striped" id="datatables">
-                            <thead>
-                                <tr>
-                                    <td class="text-center">#</td>
-                                    <td class="text-center">Variant</td>
-                                    <td class="text-center">Quantity (KG)</td>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                @foreach($top_sell_variant AS $key)
-                                    <tr>
-                                        <th class="text-center">{{ $loop->iteration }}</th>
-                                        <th class="text-center">{{ $key->product }}</th>
-                                        <th class="text-center">{{ $key->total_qty }}</th>
-                                    </tr>
-                                @endforeach
-                            </tbody>
-                        </table>
+                        <main style="background:#fff">
+                            <input style="display: none;" id="tab1" type="radio" name="tabs" checked>
+                            <label style="padding: 15px 25px; cursor: pointer;" for="tab1" class="tab-label" data-tab="content1">Omset</label>
+
+                            <input style="display: none;" id="tab2" type="radio" name="tabs">
+                            <label style="padding: 15px 25px; cursor: pointer;" for="tab2" class="tab-label" data-tab="content2">Tabulasi</label>
+                            
+                            <input style="display: none;" id="tab3" type="radio" name="tabs">
+                            <label style="padding: 15px 25px; cursor: pointer;" for="tab3" class="tab-label" data-tab="content3">Forecasting Principle</label>
+
+                            <section id="content1" class="tab-content active">
+                                <div class="mb-3 d-flex justify-content-between align-items-center">
+                                    <div>
+                                        <div class="btn-group" role="group" aria-label="Filter Omset">
+                                            <button class="btn btn-primary btn-filter-type-omset active" data-type="all" style="margin-right: 6px;">ALL</button>
+                                            <button class="btn btn-success btn-filter-type-omset" data-type="ppn" style="margin-right: 6px;">PPN</button>
+                                            <button class="btn btn-warning btn-filter-type-omset" data-type="nonppn">NonPPN</button>
+                                        </div>
+                                    </div>
+                                    {{-- Single Month and Year Picker for Omset forms --}}
+                                    <div class="form-group mb-0 d-flex align-items-center">
+                                        <input type="month" id="omset-month-year" class="form-control" style="width: 180px;" value="{{ $selectedMonthYear }}">
+                                        <button class="btn btn-danger" id="reset-month-filter"><i class="fa fa-sync"></i></button>
+                                    </div>
+                                    {{-- End Single Month and Year Picker --}}
+                                </div>
+
+                                <table class="datatableOmset table table-striped" id="datatableOmset">
+                                    <thead>
+                                        <tr>
+                                            <th>#</th>
+                                            <th>Date</th>
+                                            <th>Brand</th>
+                                            <th>Invoice</th>
+                                            <th>Customer</th>
+                                            <th>Cash</th>
+                                            <th>Tempo</th>
+                                            <th style="display:none;">TypeSO</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        @foreach ($progress as $row)
+                                            @php
+                                                $tipe = strtolower(trim($row->invoice_type ?? 'nonppn'));
+                                                $tipe = str_replace(' ', '', $tipe);
+                                            @endphp
+                                            <tr data-type-so="{{ $tipe }}">
+                                                <td>{{ $loop->iteration }}</td>
+                                                <td>{{ $row->so_date }}</td>
+                                                <td>{{ $row->invoice_brand }}</td>
+                                                <td>{{ $row->invoice_code }}</td>
+                                                <td>{{ $row->customer_name }} - {{ $row->customer_city }}</td>
+                                                <td>{{ number_format($row->invoice_cash, 0, ',', '.') }}</td>
+                                                <td>{{ number_format($row->invoice_tempo, 0, ',', '.') }}</td>
+                                                <td style="display:none;">{{ $tipe }}</td>
+                                            </tr>
+                                        @endforeach
+                                    </tbody>
+                                    <tfoot>
+                                        <tr>
+                                            <th colspan="5" style="text-align:right"></th>
+                                            <th id="totalInvoiceCash" style="text-align: center;"></th>
+                                            <th id="totalInvoiceTempo" style="text-align: center;"></th>
+                                        </tr>
+                                        <tr>
+                                            <th colspan="6" style="text-align:right"></th>
+                                            <th id="subTotal" style="text-align: center;"></th>
+                                        </tr>
+                                    </tfoot>
+                                </table>
+                            </section>
+
+                            <section id="content2" class="tab-content">
+                                <form id="tabulasiForm" method="POST">
+                                    @csrf
+                                    <div class="row">
+                                        <div class="col-12">
+                                            <div class="card">
+                                                <div class="card-body">
+                                                    <div class="d-flex flex-column gap-3"> {{-- Kontainer utama untuk menumpuk baris --}}
+
+                                                        <div class="d-flex justify-content-start align-items-center gap-3"> {{-- Menggunakan justify-content-start untuk menjaga di kiri --}}
+                                                            {{-- Tombol Aksi --}}
+                                                            
+                                                        </div>
+
+                                                        {{-- Baris 1: Periode & Salesman --}}
+                                                        <div class="d-flex justify-content-start align-items-center gap-3"> {{-- Menggunakan justify-content-start untuk menjaga di kiri --}}
+                                                            {{-- Periode Laporan --}}
+                                                            <div>
+                                                                <label for="tabulasi-month-year" class="form-label visually-hidden">Periode:</label>
+                                                                <input type="month" id="tabulasi-month-year" class="form-control form-control-sm" value="{{ $selectedMonthYear }}" style="width: 130px;">
+                                                            </div>
+
+                                                            <div>
+                                                                <label for="report_type_tabulasi" class="form-label visually-hidden">Tipe Laporan:</label>
+                                                                <select class="form-control form-control-sm js-select2" name="report_type_tabulasi" id="report_type_tabulasi" style="min-width: 180px;">
+                                                                    <option value="brand">R. by Brand</option>
+                                                                    <option value="zone">R. by Zone</option>
+                                                                    <option value="salesman">R. by Salesman</option> {{-- Opsi baru: Salesman --}}
+                                                                </select>
+                                                            </div>
+
+                                                            {{-- Salesman --}}
+                                                            <div>
+                                                                <label for="salesman_id_tabulasi" class="form-label visually-hidden">Salesman:</label>
+                                                                {{-- Ubah name dari salesman_id_tabulasi menjadi salesman_officer[] agar sesuai dengan parameter controller ReportEmployeePerformanceController --}}
+                                                                <select class="form-control form-control-sm js-select2" name="salesman_officer[]" id="salesman_id_tabulasi" style="min-width: 180px;" disabled> {{-- Awalnya disabled --}}
+                                                                    <option value="">Semua Salesman</option>
+                                                                    {{-- Tambahkan opsi salesman lain dari database jika ada --}}
+                                                                    {{-- Contoh: @foreach($salesmen as $salesman) <option value="{{ $salesman->officer }}">{{ $salesman->officer }}</option> @endforeach --}}
+                                                                    <option value="Erick">Erick</option>
+                                                                    <option value="Lindy">Lindy</option>
+                                                                    <option value="Kumala">Kumala</option>
+                                                                </select>
+                                                            </div>
+
+                                                            <div class="btn-group" role="group" aria-label="Tabulasi Actions">
+                                                                <button type="button" class="btn btn-primary btn-sm" onclick="submitTabulasiForm('sync_register')">
+                                                                    <i class="fa fa-sync"></i> Sync
+                                                                </button>
+                                                                <button type="button" class="btn btn-danger btn-sm" onclick="saveConfirmation('{{ route('superuser.report.customer_type_brand.removeDt') }}')">
+                                                                    <i class="fa fa-trash"></i> Hapus
+                                                                </button>
+                                                                <button type="button" class="btn btn-success btn-sm" onclick="submitTabulasiForm('export_register_pdf')">
+                                                                    <i class="fa fa-file-pdf-o" aria-hidden="true"></i> Export
+                                                                </button>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            
+                                            {{-- Hidden inputs untuk parameter yang dibutuhkan controller --}}
+                                            {{-- Untuk ReportCustomerTypeBrandController --}}
+                                            <input type="hidden" name="start" id="tabulasi_start_date">
+                                            <input type="hidden" name="end" id="tabulasi_end_date">
+                                            {{-- Untuk ReportEmployeePerformanceController --}}
+                                            <input type="hidden" name="period_from" id="tabulasi_period_from">
+                                            <input type="hidden" name="period_to" id="tabulasi_period_to">
+                                            
+                                            <input type="hidden" name="type" id="tabulasi_report_type_param">
+                                            <input type="hidden" name="nominal" id="tabulasi_nominal_param">
+                                            <input type="hidden" name="action" id="tabulasi_action_param"> {{-- Untuk ReportCustomerTypeBrandController@exportReport --}}
+                                            <input type="hidden" name="action_type_tabulasi" id="action_type_tabulasi_hidden"> {{-- Pertahankan untuk sync_register --}}
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="row mt-4"> {{-- Tambahkan margin top agar tidak terlalu dekat --}}
+                                        <div class="col-12">
+                                            <iframe src="" type="application/pdf" id="iframePdf" style="width: 100%; height: 800px; border: 1px solid #ddd;">
+                                                <p>Browser Anda tidak mendukung iframe atau tidak dapat menampilkan file PDF secara langsung. Silakan <a href="#" id="pdfDownloadLink">klik di sini untuk mengunduh PDF</a>.</p>
+                                            </iframe>
+                                        </div>
+                                    </div>
+                                </form>
+                            </section>
+                            
+                            {{-- MODIFIKASI DIMULAI DI SINI --}}
+                            <section id="content3" class="tab-content">
+                                <form id="forecastingForm" method="POST" target="_blank"> {{-- Tambahkan form dan target="_blank" untuk PDF --}}
+                                    @csrf
+                                    <div class="row">
+                                        <div class="col-12">
+                                            <div class="card">
+                                                <div class="card-body">
+                                                    <div class="d-flex flex-column gap-3"> {{-- Kontainer utama untuk menumpuk baris --}}
+
+                                                        {{-- Baris 1: Vendor & Periode --}}
+                                                        <div class="d-flex justify-content-start align-items-center gap-3">
+                                                            {{-- Select Vendor --}}
+                                                            <div>
+                                                                <label for="vendor_name_forecast" class="form-label visually-hidden">Vendor:</label>
+                                                                <select class="form-control form-control-sm js-select2" name="vendor_name" id="vendor_name_forecast" style="min-width: 180px;">
+                                                                    <option value="">Select Vendor</option>
+                                                                    @foreach($vendor AS $row)
+                                                                    <option value="{{$row->name}}">{{$row->name}}</option>
+                                                                    @endforeach
+                                                                </select>
+                                                            </div>
+
+                                                            {{-- Period From --}}
+                                                            <div>
+                                                                <label for="period_from_forecast" class="form-label visually-hidden">Dari Tanggal:</label>
+                                                                <input type="date" name="period_from" id="period_from_forecast" class="form-control form-control-sm" style="width: 150px;">
+                                                            </div>
+
+                                                            {{-- Period To --}}
+                                                            <div>
+                                                                <label for="period_to_forecast" class="form-label visually-hidden">Sampai Tanggal:</label>
+                                                                <input type="date" name="period_to" id="period_to_forecast" class="form-control form-control-sm" style="width: 150px;">
+                                                            </div>
+
+                                                            {{-- Tombol Aksi --}}
+                                                            <div class="btn-group" role="group" aria-label="Forecasting Actions">
+                                                                <button type="button" class="btn btn-primary btn-sm" onclick="syncForecastingData()">
+                                                                    <i class="fa fa-sync"></i> Sync {{-- Placeholder Sync --}}
+                                                                </button>
+                                                                <button type="button" class="btn btn-danger btn-sm" onclick="deleteForecastingData()">
+                                                                    <i class="fa fa-trash"></i> Hapus {{-- Placeholder Hapus --}}
+                                                                </button>
+                                                                <button type="submit" id="printReportForecast" class="btn btn-success btn-sm">
+                                                                    <i class="fa fa-print"></i> Print
+                                                                </button>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            {{-- Hidden inputs untuk parameter yang dibutuhkan controller --}}
+                                            <input type="hidden" name="action_forecast" id="action_forecast_param">
+                                        </div>
+                                    </div>
+                                </form>
+                            </section>
+                            {{-- MODIFIKASI BERAKHIR DI SINI --}}
+                        </main>
                     </div>
                 </div>
             </div>
         </div>
     </div>
-    <br>
-</div>
-
-<div class="block">
-    <div class="block-content">
-        <div class="row">
-            <div class="col-6">
-                <div class="card">
-                    <div class="card-header">
-                        <h3>Total Sales Quantity</h3>
-                    </div>
-                    <div class="card-body">
-                        <canvas id="salesChart" style="max-height: 400px;"></canvas>
-                    </div>
-                </div>
-            </div>
-            <div class="col-6">
-                <div class="card">
-                    <div class="card-header">
-                        <h3>Total Sales Revenue</h3>
-                    </div>
-                    <div class="card-body">
-                        <canvas id="revenueChart" style="max-height: 400px;"></canvas>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-    <br>
 </div>
 @endif
 
-<!-- Modal approval SO -->
-<div class="modal fade bd-example-modal-xl" id="modalViewSo" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true">
-    <div class="modal-dialog modal-xl" role="document">
-      <div class="modal-content">
-        <div class="modal-header">
-          <h5 class="modal-title">#View SO <span id="so_code_display"></span></span></h5>
-          <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-            <span aria-hidden="true">&times;</span>
-          </button>
-        </div>
-        <div class="modal-body">
-          <div id="modal-data">
-              <!-- Invoice and Customer Details -->
-              <div class="row">
-                  <div class="col">
-                      <div class="block">
-                          <div class="block-header block-header-default">
-                              <h3 class="block-title">#Detail Nota</h3>
-                          </div>
-                          <div class="block-content">
-                              <div class="form-row">
-                                  <div class="form-group col-md-6">
-                                      <label for="invoice_date">Tanggal Nota</label>
-                                      <input type="text" id="invoice_date" class="form-control" readonly>
-                                  </div>
-                                  <div class="form-group col-md-6">
-                                      <label for="invoice_code">Code</label>
-                                      <input type="text" id="invoice_code" class="form-control" readonly>
-                                  </div>
-                              </div>
-
-                              <div class="form-row">
-                                  <div class="form-group col-md-6">
-                                      <label for="kurs">Kurs</label>
-                                      <input type="text" id="kurs" class="form-control" readonly>
-                                  </div>
-                                  <div class="form-group col-md-6">
-                                      <label for="disc_percent">Disc %</label>
-                                      <input type="text" id="disc_percent" class="form-control" readonly>
-                                  </div>
-                              </div>
-
-                              <div class="form-row">
-                                  <div class="form-group col-md-4">
-                                      <label for="type_transaction">Type Transaksi</label>
-                                      <input type="text" id="type_transaction" class="form-control" readonly>
-                                  </div>
-                                  <div class="form-group col-md-8" id="note-container">
-                                      <label for="note">Note</label>
-                                      <textarea class="form-control" style="height:auto; min-height:50px; overflow:hidden;" id="note" rows="1" readonly></textarea>
-                                  </div>
-                              </div>
-                          </div>
-                      </div>
-                  </div>
-                  <div class="col">
-                      <div class="block">
-                          <div class="block-header block-header-default">
-                              <h3 class="block-title">#Customer</h3>
-                          </div>
-                          <div class="block-content">
-                              <div class="form-row">
-                                  <div class="form-group col-md-6">
-                                      <label for="customer_name">Customer</label>
-                                      <input type="text" id="customer_name" class="form-control" readonly>
-                                  </div>
-                                  <div class="form-group col-md-6">
-                                      <label for="customer_address">Alamat Kirim</label>
-                                      <textarea class="form-control" id="customer_address" rows="1" readonly></textarea>
-                                  </div>
-                              </div>
-
-                              <div class="form-row">
-                                  <div class="form-group col-md-6">
-                                      <label for="customer_city">Kota</label>
-                                      <input type="text" id="customer_city" class="form-control" readonly>
-                                  </div>
-                                  <div class="form-group col-md-6">
-                                      <label for="customer_area">Provinsi</label>
-                                      <input type="text" id="customer_area" class="form-control" readonly>
-                                  </div>
-                              </div>
-                          </div>
-                      </div>
-                  </div>
-              </div>
-
-              <!-- Product Details Table -->
-              <div class="row">
-                  <div class="col">
-                      <table class="table">
-                          <thead>
-                              <tr>
-                                  <th>#</th>
-                                  <th>Kode</th>
-                                  <th>Product</th>
-                                  <th>Kemasan</th>
-                                  <th>Qty</th>
-                                  <th>Harga</th>
-                                  <th>Free</th>
-                              </tr>
-                          </thead>
-                          <tbody id="product-details">
-                              <!-- Product details will be injected here -->
-                          </tbody>
-                      </table>
-                  </div>
-              </div>
-          </div>
-        </div>
-        <div class="modal-footer">
-          <button type="button" class="btn btn-danger" data-dismiss="modal">Close</button>
-        </div>
-      </div>
-    </div>
-</div>
 @endsection
 
 @include('superuser.asset.plugin.select2')
@@ -312,235 +278,447 @@
 @include('superuser.asset.plugin.datatables')
 
 @push('scripts')
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-<script>
-$(document).ready(function () {
-    $(document).on('click', '.btn-view', function () {
-        var id = $(this).data('id');
-        var url = "{{ route('superuser.penjualan.sales_order.viewSalesOrderDetail', ['id' => '__id__']) }}".replace('__id__', id);
+<style>
+    /* Styling untuk label tab agar terlihat seperti tombol */
+    .tab-label {
+        background-color: #f0f0f0;
+        border: 1px solid #ddd;
+        border-bottom: none;
+        padding: 10px 20px;
+        cursor: pointer;
+        display: inline-block;
+        border-radius: 5px 5px 0 0;
+        margin-right: 5px;
+        transition: background-color 0.3s ease;
+        font-weight: bold;
+        color: #555;
+    }
 
+    .tab-label:hover {
+        background-color: #e0e0e0;
+    }
+
+    /* Styling untuk label tab yang aktif */
+    .tab-label.active-tab-label {
+        background-color: #fff;
+        border-color: #ccc;
+        border-bottom: 1px solid #fff;
+        color: #000;
+    }
+
+    /* Sembunyikan semua konten tab secara default */
+    .tab-content {
+        display: none;
+        border: 1px solid #ccc;
+        padding: 20px;
+        border-radius: 0 5px 5px 5px;
+        background-color: #fff;
+    }
+
+    /* Tampilkan konten tab yang aktif */
+    .tab-content.active {
+        display: block;
+    }
+</style>
+
+<script>
+// Fungsi untuk memperbarui hidden input tanggal pada form Tabulasi
+function applyTabulasiMonthYearToForm() {
+    var selectedMonthYear = $('#tabulasi-month-year').val(); // Format: YYYY-MM
+
+    // Bersihkan semua hidden input tanggal terlebih dahulu
+    $('#tabulasi_start_date').val('');
+    $('#tabulasi_end_date').val('');
+    $('#tabulasi_period_from').val('');
+    $('#tabulasi_period_to').val('');
+
+    if (selectedMonthYear) {
+        var year = parseInt(selectedMonthYear.substring(0, 4));
+        var month = parseInt(selectedMonthYear.substring(5, 7)); // Bulan dari input (1-12)
+        
+        var startDate = selectedMonthYear + '-01';
+        // Mengambil hari terakhir bulan
+        var lastDay = new Date(year, month, 0).getDate(); 
+        var endDate = selectedMonthYear + '-' + (lastDay < 10 ? '0' : '') + lastDay; 
+
+        // Isi hidden input untuk CustomerTypeBrandController
+        $('#tabulasi_start_date').val(startDate);
+        $('#tabulasi_end_date').val(endDate);
+
+        // Isi hidden input untuk ReportEmployeePerformanceController
+        $('#tabulasi_period_from').val(startDate);
+        $('#tabulasi_period_to').val(endDate);
+    }
+}
+
+// Fungsi untuk submit form Tabulasi dengan aksi yang berbeda
+// Fungsi submitTabulasiForm diubah untuk menggunakan AJAX ketika mengekspor PDF
+function submitTabulasiForm(actionType) {
+    let form = $('#tabulasiForm');
+    applyTabulasiMonthYearToForm(); // Pastikan input tanggal tersembunyi di form sudah diperbarui
+
+    const selectedSalesman = $('#salesman_id_tabulasi').val();
+    const selectedReportType = $('#report_type_tabulasi').val();
+    const selectedMonthYear = $('#tabulasi-month-year').val();
+
+    if (!selectedMonthYear) {
+        Swal.fire({
+            icon: 'error',
+            title: 'Validasi Gagal',
+            text: 'Periode Laporan harus diisi.',
+            confirmButtonText: 'Oke'
+        });
+        return;
+    }
+
+    // Bersihkan nilai parameter spesifik laporan yang mungkin tidak relevan untuk aksi saat ini
+    $('#tabulasi_report_type_param').val('');
+    $('#tabulasi_nominal_param').val('');
+    $('#tabulasi_action_param').val('');
+    $('#action_type_tabulasi_hidden').val(actionType);
+
+    let url = '';
+    let method = 'POST';
+    let formData = new FormData(form[0]); // Gunakan FormData untuk mengirim data form, termasuk file jika ada
+
+    if (actionType === 'export_register_pdf') {
+        $('#tabulasi_nominal_param').val(1); // Default: Dengan Nominal
+        formData.append('nominal', 1); // Pastikan nominal terkirim
+
+        if (selectedReportType === 'brand') {
+            url = "{{ route('superuser.report.customer_type_brand.exportReport') }}";
+            formData.append('type', 1); // Type 1 untuk Brand
+            formData.append('action', 'print'); // Untuk exportReport agar menghasilkan PDF
+        } else if (selectedReportType === 'zone') {
+            if (selectedSalesman && selectedSalesman !== '') {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Tidak Diizinkan',
+                    text: 'Export "R. by Zone" tidak dapat dilakukan jika salesman dipilih.',
+                    confirmButtonText: 'Oke'
+                });
+                return;
+            }
+            url = "{{ route('superuser.report.customer_type_brand.exportReport') }}";
+            formData.append('type', 2); // Type 2 untuk Zone
+            formData.append('action', 'print');
+        } else if (selectedReportType === 'salesman') {
+            url = "{{ route('superuser.report.employee_performance.print_report') }}";
+            formData.append('type', 2); // Type 2 untuk Officer/Salesman
+            // salesman_officer[] sudah otomatis terkirim dari form data
+        } else {
+            Swal.fire({
+                icon: 'error',
+                title: 'Aksi Tidak Valid',
+                text: 'Tipe laporan tidak dikenali untuk ekspor.',
+                confirmButtonText: 'Oke'
+            });
+            return;
+        }
+
+        // Kirim permintaan AJAX untuk mendapatkan URL PDF
         $.ajax({
             url: url,
-            method: 'GET',
-            success: function (data) {
-                $('#invoice_date').val(data.so_date ?? '-');
-                $('#invoice_code').val(data.so_code ?? '-');
-                $('#kurs').val(data.idr_rate ?? '-');
-                $('#disc_percent').val(data.disc_percent ?? '-');
-                $('#type_transaction').val(data.type_transaction ?? '-');
-                $('#note').val(data.note ?? '-');
-
-                $('#customer_name').val(data.customer_name ?? '-');
-                $('#customer_address').val(data.customer_address ?? '-');
-                $('#customer_city').val(data.customer_city ?? '-');
-                $('#customer_area').val(data.customer_province ?? '-');
-
-                var html = '';
-                data.so_items.forEach((item, index) => {
-                    html += `
-                        <tr>
-                            <td>${index + 1}</td>
-                            <td>${item.product_code ?? '-'}</td>
-                            <td>${item.product_name ?? '-'}</td>
-                            <td>${item.packaging_name ?? '-'}</td>
-                            <td>${item.qty}</td>
-                            <td>${item.price}</td>
-                            <td>${item.free_product}</td>
-                        </tr>`;
+            type: method,
+            data: formData,
+            processData: false, // Penting: Jangan proses data (FormData akan mengurusnya)
+            contentType: false, // Penting: Jangan set content type (FormData akan mengurusnya)
+            headers: {
+                'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content') // Pastikan CSRF token terkirim
+            },
+            beforeSend: function() {
+                Swal.fire({
+                    title: 'Membuat Laporan...',
+                    text: 'Mohon tunggu, laporan sedang dibuat.',
+                    allowOutsideClick: false,
+                    didOpen: () => {
+                        Swal.showLoading();
+                    }
                 });
-                $('#product-details').html(html);
-
-                $('#modalViewSo').modal('show');
             },
-            error: function () {
-                alert('Gagal memuat data Sales Order.');
-            }
-        });
-    });
-});
-
-</script>
-<script>
-    document.addEventListener("DOMContentLoaded", function() {
-        const salesData = @json($sales);
-        const revenueData = @json($revenue);
-
-        // Group sales data by month and brand
-        const salesGrouped = {};
-        salesData.forEach(sale => {
-            if (!salesGrouped[sale.month_name]) {
-                salesGrouped[sale.month_name] = {};
-            }
-            if (!salesGrouped[sale.month_name][sale.brand]) {
-                salesGrouped[sale.month_name][sale.brand] = 0;
-            }
-            salesGrouped[sale.month_name][sale.brand] += sale.total_qty;
-        });
-
-        const labels = Object.keys(salesGrouped); // Get unique months
-        const salesDatasets = [];
-        const colorMap = {
-            'GCF': 'rgba(255, 236, 0, 0.8)',
-            'Nginden': 'rgba(0, 19, 255, 0.8)',
-            'PPI NON FF': 'rgba(112, 112, 112, 0.8)',
-            'PPI FF': 'rgba(0, 255, 77, 0.8)',
-            'PPI X': 'rgba(0, 0, 0, 0.8)',
-            'Senses': 'rgba(255, 0, 0, 0.8)',
-        };
-
-        const brandMap = new Map(); // Track datasets by brand
-        Object.keys(salesGrouped).forEach((month) => {
-            Object.keys(salesGrouped[month]).forEach((brand) => {
-                if (!brandMap.has(brand)) {
-                    brandMap.set(brand, {
-                        label: brand,
-                        data: Array(labels.length).fill(0),
-                        backgroundColor: colorMap[brand] || 'rgba(150, 150, 150, 1)',
-                        borderColor: colorMap[brand] || 'rgba(150, 150, 150, 1)',
-                        borderWidth: 1,
-                        fill: true,
+            success: function(response) {
+                Swal.close();
+                if (response.success && response.pdf_url) {
+                    $('#iframePdf').attr('src', response.pdf_url);
+                    $('#pdfDownloadLink').attr('href', response.pdf_url); // Update download link
+                    Swal.fire({
+                        icon: 'success',
+                        title: 'Laporan Berhasil Dibuat! 🎉',
+                        text: 'PDF telah dimuat di iframe.',
+                        showConfirmButton: false,
+                        timer: 2000
                     });
-                    salesDatasets.push(brandMap.get(brand));
+                } else if (response.error) {
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Gagal Membuat Laporan',
+                        text: response.error,
+                        confirmButtonText: 'Oke'
+                    });
+                } else {
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Error',
+                        text: 'Terjadi kesalahan tidak dikenal.',
+                        confirmButtonText: 'Oke'
+                    });
                 }
-                const datasetIndex = salesDatasets.findIndex(ds => ds.label === brand);
-                if (datasetIndex > -1) {
-                    const monthIndex = labels.indexOf(month);
-                    if (monthIndex > -1) {
-                        salesDatasets[datasetIndex].data[monthIndex] = salesGrouped[month][brand];
-                    }
+            },
+            error: function(xhr, status, error) {
+                Swal.close();
+                let errorMessage = 'Terjadi kesalahan saat membuat laporan.';
+                if (xhr.responseJSON && xhr.responseJSON.message) {
+                    errorMessage = xhr.responseJSON.message;
+                } else if (error) {
+                    errorMessage += ': ' + error;
                 }
-            });
-        });
-
-        // Create the sales chart
-        const salesCtx = document.getElementById('salesChart').getContext('2d');
-        const salesChart = new Chart(salesCtx, {
-            type: 'bar',
-            data: {
-                labels: labels,
-                datasets: salesDatasets,
-            },
-            options: {
-                scales: {
-                    x: {
-                        title: { display: true, text: 'Month' },
-                    },
-                    y: {
-                        beginAtZero: true,
-                        title: { display: true, text: 'Total Qty (KG)' },
-                    },
-                },
-                responsive: true,
-                plugins: {
-                    legend: { position: 'top' },
-                },
-            },
-        });
-
-        // Group revenue data by month
-        const revenueGrouped = {};
-        revenueData.forEach(revenue => {
-            if (!revenueGrouped[revenue.month_name]) {
-                revenueGrouped[revenue.month_name] = 0;
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Error',
+                    text: errorMessage,
+                    confirmButtonText: 'Oke'
+                });
+                console.error('AJAX Error:', status, error, xhr.responseText);
             }
-            revenueGrouped[revenue.month_name] += revenue.total_purchase;
         });
 
-        const revenueLabels = Object.keys(revenueGrouped);
-        const revenueDataPoints = Object.values(revenueGrouped);
+    } else if (actionType === 'sync_register') {
+        form.attr('action', "{{ route('superuser.report.customer_type_brand.postData') }}");
+        form.removeAttr('target');
+        // Untuk sync, kita bisa menggunakan submit form biasa atau AJAX jika perlu feedback lebih dinamis
+        form.submit();
+    } else {
+        console.warn('Unknown actionType:', actionType);
+        return;
+    }
+}
 
-        // Create the revenue chart
-        const revenueCtx = document.getElementById('revenueChart').getContext('2d');
-        const revenueChart = new Chart(revenueCtx, {
-            type: 'line',
-            data: {
-                labels: revenueLabels,
-                datasets: [{
-                    label: 'Total Purchase (IDR)',
-                    data: revenueDataPoints,
-                    backgroundColor: 'rgba(75, 192, 192, 0.2)',
-                    borderColor: 'rgba(75, 192, 192, 1)',
-                    borderWidth: 2,
-                    fill: true,
-                    tension: 0.3,
-                    pointStyle: 'circle',
-                    pointRadius: 5,
-                    pointBackgroundColor: 'rgba(255, 99, 132, 1)',
-                    hoverRadius: 7,
-                    pointHoverBackgroundColor: 'rgba(255, 99, 132, 1)',
-                    pointHoverBorderWidth: 2,
-                }]
-            },
-            options: {
-                responsive: true,
-                scales: {
-                    y: {
-                        beginAtZero: true,
-                        title: { display: true, text: 'Total Purchase (IDR)' },
-                    },
-                    x: {
-                        title: { display: true, text: 'Month' },
-                    },
-                },
-                plugins: {
-                    legend: { position: 'top' },
-                },
-            },
-        });
-
-        // Change month and reload page
-        document.getElementById('monthSelect').addEventListener('change', function() {
-            window.location.href = '?month=' + this.value;
-        });
-
-        // Initialize DataTable
-        var datatable = $('#datatables').DataTable({
-            language: {
-                processing: "<span class='fa-stack fa-lg'>\n\
-                                <i class='fa fa-spinner fa-spin fa-stack-2x fa-fw'></i>\n\
-                            </span>",
-            },
-            processing: true,
-            serverSide: false,
-        });
-
-        var datatable_so = $('#so_approval').DataTable({
-            language: {
-                processing: "<span class='fa-stack fa-lg'>\n\
-                                <i class='fa fa-spinner fa-spin fa-stack-2x fa-fw'></i>\n\
-                            </span>",
-            },
-            processing: true,
-            serverSide: false,
-        });
-
-        $(document).on('click', '.btn-approval-mou', function() {
-            const id = $(this).data('id');
-
-            if (!confirm('Apakah Anda yakin ingin memproses approval ini?')) return;
-
-            $.ajax({
-                url: "{{ route('superuser.penjualan.sales_order.approvalMouSo', ['id' => '__id__']) }}".replace('__id__', id),
-                type: 'POST',
-                data: {
-                    _token: '{{ csrf_token() }}'
-                },
-                beforeSend: function() {
-                    // Optional: tampilkan loader
-                },
-                success: function(response) {
-                    if(response.notification && response.notification.type === 'success') {
-                        alert(response.notification.content);
-                        location.reload(); // Refresh tampilan setelah sukses
-                    }
-                },
-                error: function(xhr) {
-                    alert('Terjadi kesalahan saat memproses approval.');
-                    console.error(xhr.responseText);
-                }
-            });
-        });
-
+// Fungsi dummy untuk tombol sync di tab Forecasting Principle
+function syncForecastingData() {
+    Swal.fire({
+        icon: 'info',
+        title: 'Fungsi Sync',
+        text: 'Fungsi sync untuk Forecasting Principle belum diimplementasikan.',
+        confirmButtonText: 'Oke'
     });
+}
+
+// Fungsi dummy untuk tombol hapus di tab Forecasting Principle
+function deleteForecastingData() {
+    Swal.fire({
+        icon: 'info',
+        title: 'Fungsi Hapus',
+        text: 'Fungsi hapus untuk Forecasting Principle belum diimplementasikan.',
+        confirmButtonText: 'Oke'
+    });
+}
+
+
+$(document).ready(function () {
+    // Inisialisasi Select2
+    $('.js-select2').select2();
+
+    $('#reset-month-filter').on('click', function() {
+        // Redirect tanpa parameter bulan dan tahun, sehingga akan kembali ke default bulan berjalan
+        window.location.href = "{{ route('superuser.index') }}";
+    });
+
+    // --- Inisialisasi DataTable untuk tab "Omset" ---
+    var filterTypeOmset = 'all'; 
+    var datatableOmset = $('.datatableOmset').DataTable({
+        "footerCallback": function ( row, data, start, end, display ) {
+            var api = this.api();
+
+            var totalCash = 0;
+            var totalTempo = 0;
+
+            api.rows({ filter: 'applied' }).every(function(){
+                var node = this.node();
+                var cashText = $(node).find('td:eq(5)').text().replace(/[.,]/g, '');
+                var tempoText = $(node).find('td:eq(6)').text().replace(/[.,]/g, '');
+                var cash = parseInt(cashText) || 0;
+                var tempo = parseInt(tempoText) || 0;
+                totalCash += cash;
+                totalTempo += tempo;
+            });
+
+            var subTotal = totalCash + totalTempo;
+
+            function formatRupiah(angka) {
+                return angka.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ".");
+            }
+
+            $('#totalInvoiceCash').html('Cash: ' + formatRupiah(totalCash));
+            $('#totalInvoiceTempo').html('Tempo: ' + formatRupiah(totalTempo));
+            $('#subTotal').html('Subtotal: ' + formatRupiah(subTotal));
+        }
+    });
+
+    // Custom filter berdasarkan type_so untuk DataTable Omset
+    $.fn.dataTable.ext.search.push(function(settings, data, dataIndex) {
+        if (settings.nTable.id !== 'datatableOmset') {
+            return true; 
+        }
+        var rowType = $(datatableOmset.row(dataIndex).node()).data('type-so');
+        if (filterTypeOmset === 'all') {
+            return true;
+        }
+        return rowType === filterTypeOmset;
+    });
+
+    // Event tombol filter untuk Omset
+    $('.btn-filter-type-omset').on('click', function() {
+        $('.btn-filter-type-omset').removeClass('active');
+        $(this).addClass('active');
+        filterTypeOmset = $(this).data('type');
+        datatableOmset.draw(); 
+    });
+
+    // --- Fungsionalitas Tab Toggle Umum (Omset, Tabulasi, Forecasting) ---
+
+    // Sembunyikan semua konten tab kecuali yang pertama saat halaman dimuat
+    $('.tab-content').not('.active').hide();
+    // Berikan kelas aktif pada label tab pertama saat dimuat
+    $('label[data-tab="content1"]').addClass('active-tab-label');
+
+    // Tambahkan event listener untuk label tab utama
+    $('.tab-label').on('click', function() {
+        // Hapus kelas 'active' dari semua konten tab dan sembunyikan
+        $('.tab-content').removeClass('active').hide();
+
+        // Hapus kelas 'active-tab-label' dari semua label tab
+        $('.tab-label').removeClass('active-tab-label');
+
+        // Dapatkan ID konten yang akan ditampilkan dari atribut data-tab
+        var targetTabId = $(this).data('tab');
+
+        // Tambahkan kelas 'active' ke konten yang sesuai dan tampilkan
+        $('#' + targetTabId).addClass('active').show();
+
+        // Tambahkan kelas 'active-tab-label' ke label yang baru diklik
+        $(this).addClass('active-tab-label');
+
+        // Refresh DataTable jika tabnya diaktifkan
+        if (targetTabId === 'content1') {
+            setTimeout(function() {
+                datatableOmset.columns.adjust().draw();
+            }, 10);
+        } else if (targetTabId === 'content2') {
+            // Ketika tabulasi aktif, pastikan picker tanggalnya terisi dengan yang sedang aktif di URL
+            // atau tanggal saat ini jika tidak ada di URL
+            var urlParams = new URLSearchParams(window.location.search);
+            var urlMonth = urlParams.get('month');
+            var urlYear = urlParams.get('year');
+            
+            var currentMonthYear = '{{ $selectedMonthYear }}'; 
+            if (urlMonth && urlYear) {
+                currentMonthYear = urlYear + '-' + (urlMonth < 10 ? '0' : '') + urlMonth;
+            }
+            $('#tabulasi-month-year').val(currentMonthYear);
+            applyTabulasiMonthYearToForm(); // Pastikan hidden inputs diperbarui
+        }
+    });
+
+    // --- Handler untuk Omset Month/Year Picker (Otomatis) ---
+    $('#omset-month-year').on('change', function() {
+        var selectedMonthYear = $(this).val(); // Format YYYY-MM
+        if (selectedMonthYear) {
+            var year = selectedMonthYear.substring(0, 4);
+            var month = selectedMonthYear.substring(5, 7);
+            
+            // Redirect ke URL dashboard dengan parameter bulan dan tahun baru
+            window.location.href = "{{ route('superuser.index') }}" + "?month=" + month + "&year=" + year;
+        } else {
+            Swal.fire({
+                icon: 'error',
+                title: 'Input Dibutuhkan',
+                text: 'Harap pilih bulan dan tahun untuk menerapkan filter omset.',
+                confirmButtonText: 'Oke'
+            });
+        }
+    });
+
+    // --- Handler untuk Tabulasi Month/Year Picker ---
+    // Panggil ini saat halaman dimuat untuk memastikan nilai awal terisi
+    applyTabulasiMonthYearToForm();
+
+    $('#tabulasi-month-year').on('change', function() {
+        applyTabulasiMonthYearToForm();
+        Swal.fire({
+            icon: 'success',
+            title: 'Periode Diterapkan! ✅',
+            text: 'Periode bulan dan tahun telah diperbarui untuk semua aksi di Tabulasi.',
+            showConfirmButton: false,
+            timer: 1500
+        });
+    });
+
+    const salesmanSelect = $('#salesman_id_tabulasi');
+    const reportTypeSelect = $('#report_type_tabulasi');
+
+    function updateSalesmanFilterState() {
+        if (reportTypeSelect.val() === 'salesman') {
+            salesmanSelect.prop('disabled', false); // Aktifkan dropdown salesman
+        } else {
+            salesmanSelect.val('').trigger('change'); // Reset nilai salesman ke default (Semua Salesman)
+            salesmanSelect.prop('disabled', true); // Non-aktifkan dropdown salesman
+        }
+        // Penting: Memaksa Select2 untuk memperbarui tampilannya setelah status 'disabled' berubah
+        salesmanSelect.select2();
+    }
+
+    // Panggil fungsi saat halaman pertama kali dimuat
+    updateSalesmanFilterState();
+
+    // Tambahkan event listener untuk memantau perubahan pada dropdown Tipe Laporan
+    reportTypeSelect.on('change', function() {
+        updateSalesmanFilterState();
+    });
+
+    // --- Handler untuk Forecasting Principle Print Button ---
+    $('#printReportForecast').on('click', function(e) {
+        e.preventDefault(); // Mencegah submit form bawaan agar bisa validasi dan setting action
+
+        let form = $('#forecastingForm');
+        let start = $('#period_from_forecast').val();
+        let end = $('#period_to_forecast').val();
+        let vendorName = $('#vendor_name_forecast').val();
+        
+        // Validasi input
+        if (!vendorName) {
+            Swal.fire({
+                icon: 'error',
+                title: 'Validasi Gagal',
+                text: 'Vendor harus dipilih.',
+                confirmButtonText: 'Oke'
+            });
+            return;
+        }
+        if (!start || !end) {
+            Swal.fire({
+                icon: 'error',
+                title: 'Validasi Gagal',
+                text: 'Periode tanggal (Dari & Sampai) harus diisi.',
+                confirmButtonText: 'Oke'
+            });
+            return;
+        }
+        if (new Date(start) > new Date(end)) {
+            Swal.fire({
+                icon: 'error',
+                title: 'Validasi Gagal',
+                text: 'Tanggal "Dari" tidak boleh melebihi tanggal "Sampai".',
+                confirmButtonText: 'Oke'
+            });
+            return;
+        }
+
+        // Set action form dan submit
+        form.attr('action', "{{ route('superuser.report.forecast_supplier.printReport') }}");
+        $('#action_forecast_param').val('print'); // Mengatur parameter jika diperlukan di controller
+        form.submit();
+    });
+
+}); // End of document ready
 </script>
 @endpush

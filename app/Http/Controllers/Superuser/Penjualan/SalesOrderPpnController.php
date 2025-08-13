@@ -184,7 +184,7 @@ class SalesOrderPpnController extends Controller
 
         $brand = BrandLokal::all();
         $products = Product::all();
-        $other_address = CustomerOtherAddress::get();
+        $other_address = CustomerOtherAddress::where('situation', 1)->get();
         $warehouse = Warehouse::all();
 		$ekspedisi = vendor::where('type', 1)->get();
         $sales = Sales::where('is_active', 1)->get();

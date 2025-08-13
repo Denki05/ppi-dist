@@ -7,6 +7,8 @@ use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Crypt;
+use App\Models\SuperuserLoginToken;
+use Illuminate\Support\Str;
 
 class AuthenticationController extends Controller
 {
@@ -84,5 +86,38 @@ class AuthenticationController extends Controller
         } else {
             return 'hello';
         }
+    }
+
+    public function generateMagicLink($superuserId)
+    {
+        $user = Superuser::findOrFail($superuserId);
+
+        $plainToken = Str::random(64);
+
+        SuperuserLoginToken::create([
+            'superuser_id' => $user->id,
+            'token' => hash('sha256', $plainToken),
+            'expires_at' => now()->addHours(12),
+            'used' => false,
+        ]);
+
+        // Gunakan route agar lebih fleksibel
+        return route('superuser.magic-login', ['token' => $plainToken]);
+    }
+
+    public function magicLogin($plainToken)
+    {
+        $tokenData = SuperuserLoginToken::where('token', hash('sha256', $plainToken))->first();
+
+        if (!$tokenData) {
+            return redirect()->route('auth.superuser.index')
+                ->withErrors(['Token tidak valid.']);
+        }
+
+        Auth::guard('superuser')->login($tokenData->superuser);
+
+        // Jangan tandai token sebagai used agar bisa dipakai berulang kali
+
+        return redirect()->route('superuser.index');
     }
 }

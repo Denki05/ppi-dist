@@ -139,8 +139,8 @@
                           </div>
                           @if($row->status == 2 || $row->status == 4)
                           <div class="form-group col-md-6">
-                            <label for="note">Note</label>
-                            <input type="text" class="form-control" value="{{ $row->note }}"  readonly>
+                            <label for="note">No Document</label>
+                            <input type="text" class="form-control" value="{{ $row->no_ducument_ppn }}"  readonly>
                           </div>
                           @endif
                           @if($row->status == 5)

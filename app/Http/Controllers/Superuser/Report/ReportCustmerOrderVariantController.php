@@ -125,6 +125,9 @@ class ReportCustmerOrderVariantController extends Controller
                 return "{master_products_packaging.id}='$value'";
             })->implode(' OR ');
 
+
+            // dd($productSearch);
+
         // File paths
         $basePath = "C:\\xampp\\htdocs\\ppi-dist\\public\\cr\\report\\operasional\\customer_order_variant\\";
         $my_report = $nominal == 1 
