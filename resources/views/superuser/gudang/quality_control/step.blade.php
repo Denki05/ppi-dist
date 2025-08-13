@@ -101,7 +101,7 @@
 
     <div class="row pt-30 mb-15">
       <div class="col-md-6">
-        <a href="{{ route('superuser.gudang.receiving.index') }}">
+        <a href="{{ route('superuser.gudang.quality_control.index') }}">
           <button type="button" class="btn bg-gd-cherry border-0 text-white">
             <i class="fa fa-arrow-left mr-10"></i> Back
           </button>
@@ -109,42 +109,42 @@
       </div>
       <div class="col-md-6 text-right">
         @php
-            use App\Entities\Gudang\Receiving as RI;
+            use App\Entities\Gudang\QualityControl as RI;
             $role = $superuser->division;           // singkat
         @endphp
 
         {{-- 1. Draft (ACTIVE) – tombol Edit/Publish/Delete hanya utk Admin & Developer --}}
-        @if($receiving->status == \App\Entities\Gudang\Receiving::STATUS['ACTIVE']
+        @if($receiving->status == \App\Entities\Gudang\QualityControl::STATUS['ACTIVE']
             && in_array($role, ['Admin','Developer']))
-            <a href="{{ route('superuser.gudang.receiving.edit', $receiving->id) }}">
+            <a href="{{ route('superuser.gudang.quality_control.edit', $receiving->id) }}">
                 <button type="button" class="btn bg-gd-sea border-0 text-white">
                     Edit <i class="fa fa-pencil ml-10"></i>
                 </button>
             </a>
 
-            <a href="{{ route('superuser.gudang.receiving.publish', $receiving->id) }}">
+            <a href="{{ route('superuser.gudang.quality_control.publish', $receiving->id) }}">
               <button type="button" class="btn bg-gd-leaf border-0 text-white">
                 Publish to QC <i class="fa fa-check ml-10"></i>
               </button>
             </a>
 
-            <a href="javascript:deleteConfirmation('{{ route('superuser.gudang.receiving.destroy', $receiving->id) }}', true)">
+            <a href="javascript:deleteConfirmation('{{ route('superuser.gudang.quality_control.destroy', $receiving->id) }}', true)">
                 <button type="button" class="btn bg-gd-pulse border-0 text-white">
                     Delete <i class="fa fa-trash ml-10"></i>
                 </button>
             </a>
 
         {{-- 2. Tahap QC – tombol Finish QC hanya utk Warehouse --}}
-        @elseif($receiving->status == \App\Entities\Gudang\Receiving::STATUS['QC'] && in_array($role, ['Warehouse','Developer']))
-            <a href="{{ route('superuser.gudang.receiving.publish', $receiving->id) }}">
+        @elseif($receiving->status == \App\Entities\Gudang\QualityControl::STATUS['QC'] && in_array($role, ['Warehouse','Developer']))
+            <a href="{{ route('superuser.gudang.quality_control.publish', $receiving->id) }}">
               <button type="button" class="btn bg-gd-leaf border-0 text-white">
                 Publish to Ready <i class="fa fa-check ml-10"></i>
               </button>
             </a>
 
         {{-- 3. Tahap ACC --}}
-        @elseif($receiving->status == \App\Entities\Gudang\Receiving::STATUS['READY'] && in_array($role, ['Admin','Developer']))
-            <a href="javascript:saveConfirmation2('{{ route('superuser.gudang.receiving.acc_ri', $receiving->id) }}')">
+        @elseif($receiving->status == \App\Entities\Gudang\QualityControl::STATUS['READY'] && in_array($role, ['Admin','Developer']))
+            <a href="javascript:saveConfirmation2('{{ route('superuser.gudang.quality_control.acc_ri', $receiving->id) }}')">
                 <button type="button" class="btn bg-gd-leaf border-0 text-white" title="ACC">
                   ACC <i class="fa fa-check"></i>
                 </button>
@@ -156,14 +156,14 @@
 </div>
 <div class="block">
   @if(in_array($role, ['Admin','Developer', 'Warehouse', 'Management']) && in_array($receiving->status, [
-    \App\Entities\Gudang\Receiving::STATUS['ACTIVE'],
-    \App\Entities\Gudang\Receiving::STATUS['READY'],
-    \App\Entities\Gudang\Receiving::STATUS['ACC']
+    \App\Entities\Gudang\QualityControl::STATUS['ACTIVE'],
+    \App\Entities\Gudang\QualityControl::STATUS['READY'],
+    \App\Entities\Gudang\QualityControl::STATUS['ACC']
   ]))
   <div class="block-header block-header-default">
     <h3 class="block-title">Add Detail ({{ $receiving->details->count() }})</h3>
     @if(in_array($role, ['Admin','Developer', 'Management']))
-    <a href="{{ route('superuser.gudang.receiving.detail.create', [$receiving->id]) }}">
+    <a href="{{ route('superuser.gudang.quality_control.detail.create', [$receiving->id]) }}">
       <button type="button" class="btn btn-outline-primary min-width-125 pull-right">Create</button>
     </a>
     @endif
@@ -189,7 +189,7 @@
             <td class="text-center">{{ $detail->note }}</td>
             <td class="text-center">
               @if(in_array($role, ['Admin','Developer', 'Management']))
-                <a href="javascript:deleteConfirmation('{{ route('superuser.gudang.receiving.detail.destroy', [$receiving->id, $detail->id]) }}')">
+                <a href="javascript:deleteConfirmation('{{ route('superuser.gudang.quality_control.detail.destroy', [$receiving->id, $detail->id]) }}')">
                   <button type="button" class="btn btn-sm btn-circle btn-alt-danger" title="Delete Detail">
                     <i class="fa fa-trash"></i>
                   </button>
@@ -223,7 +223,7 @@
             <td class="text-center">{{ $detail->note }}</td>
             <td class="text-center">
               @if(in_array($role, ['Admin','Developer', 'Management']))
-                <a href="javascript:deleteConfirmation('{{ route('superuser.gudang.receiving.detail.destroy', [$receiving->id, $detail->id]) }}')">
+                <a href="javascript:deleteConfirmation('{{ route('superuser.gudang.quality_control.detail.destroy', [$receiving->id, $detail->id]) }}')">
                   <button type="button" class="btn btn-sm btn-circle btn-alt-danger" title="Delete Detail">
                     <i class="fa fa-trash"></i>
                   </button>
@@ -237,7 +237,7 @@
     </table>
   </div>
 
-  @elseif($receiving->status == \App\Entities\Gudang\Receiving::STATUS['QC'])
+  @elseif($receiving->status == \App\Entities\Gudang\QualityControl::STATUS['QC'])
   <div class="block-content">
     <table id="datatable_qc" class="table table-striped">
       <thead>
@@ -267,7 +267,7 @@
               <td class="text-center">{{ $qc->status_qc() }}</td>
               <td class="text-center">
                 @if($qc->is_sellable && $qc->is_approved == 0 && in_array($role, ['Admin','Developer']))
-                    <a href="javascript:saveConfirmation2('{{ route('superuser.gudang.receiving.detail.approveQc', $qc->id) }}')">
+                    <a href="javascript:saveConfirmation2('{{ route('superuser.gudang.quality_control.detail.approveQc', $qc->id) }}')">
                       <button type="button" class="btn btn-sm btn-circle btn-alt-warning" title="Approve QC Saleable">
                         <i class="fa fa-check"></i>
                       </button>
@@ -275,7 +275,7 @@
                 @endif
 
                 @if(in_array($role, ['Warehouse','Developer']))
-                  <a href="javascript:void(0);" onclick="deleteQc('{{ route('superuser.gudang.receiving.detail.destroyQc', $qc->id) }}')">
+                  <a href="javascript:void(0);" onclick="deleteQc('{{ route('superuser.gudang.quality_control.detail.destroyQc', $qc->id) }}')">
                     <button type="button" class="btn btn-sm btn-outline-danger" title="Hapus Log QC">
                       <i class="fa fa-trash"></i>
                     </button>
@@ -382,9 +382,9 @@
 
 @section('modal')
   @include('superuser.component.modal-manage-receiving-detail', [
-    'import_template_url' => route('superuser.gudang.receiving.import_template'),
-    'import_url' => route('superuser.gudang.receiving.import', $receiving->id),
-    // 'export_url' => route('superuser.gudang.receiving.export')
+    'import_template_url' => route('superuser.gudang.quality_control.import_template'),
+    'import_url' => route('superuser.gudang.quality_control.import', $receiving->id),
+    // 'export_url' => route('superuser.gudang.quality_control.export')
   ])
 @endsection
 
@@ -463,7 +463,7 @@ $(document).ready(function () {
       return Swal.fire('Oops', 'Produk harus dipilih', 'warning');
     }
 
-    let url = '{{ route("superuser.gudang.receiving.detail.qty_qc", ":detail") }}';
+    let url = '{{ route("superuser.gudang.quality_control.detail.qty_qc", ":detail") }}';
     url = url.replace(':detail', detailId);
 
     $.post(url, $(this).serialize())

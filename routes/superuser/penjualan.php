@@ -230,12 +230,15 @@ Route::group([
     Route::resource('migrasi_so', 'MigrasiImportController');
 
     Route::group(['as' => 'sale_return.', 'prefix' => '/sale_return'], function () {
-        Route::get('{id}/acc', 'SaleReturnController@acc')->name('acc');
+        // Route::get('{id}/review', 'SaleReturnController@review')->name('review');
+        // Route::get('{id}/reviewDetail', 'SaleReturnController@reviewDetail')->name('reviewDetail');
+        Route::post('{id}/acc', 'SaleReturnController@acc')->name('acc');
         Route::post('get_product', 'SaleReturnController@get_product')->name('get_product');
         Route::get('/search_do', 'SaleReturnController@search_do')->name('search_do');
         Route::get('/create/pdf/{data?}/{protect?}', 'SaleReturnController@pdf')->name('pdf');
-        Route::get('/getSalesOrder/{delivery_order_id}', 'SaleReturnController@getDataSalesorder')->name('updateCustom');
-        Route::get('/cancel_approve/{id}', 'SaleReturnController@cancel_approve')->name('cancel_approve');
+        Route::get('/create/pdf_tt/{data?}/{protect?}', 'SaleReturnController@pdf_tt')->name('pdf_tt');
+        Route::get('/create/pdf_sj/{data?}/{protect?}', 'SaleReturnController@pdf_sj')->name('pdf_sj');
+
     });
     Route::resource('sale_return', 'SaleReturnController');
 });

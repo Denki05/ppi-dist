@@ -2,9 +2,9 @@
 
 namespace App\Http\Controllers\Superuser\Gudang;
 
-use App\Entities\Gudang\Receiving;
-use App\Entities\Gudang\ReceivingDetail;
-use App\Entities\Gudang\ReceivingQcLogs;
+use App\Entities\Gudang\QualityControl;
+use App\Entities\Gudang\QualityControlDetail;
+use App\Entities\Gudang\QualityControlLogs;
 use App\Entities\Gudang\PurchaseOrder;
 use App\Entities\Gudang\PurchaseOrderDetail;
 use App\Entities\Gudang\PurchaseOrderSummary;
@@ -21,11 +21,11 @@ use Validator;
 use App\Entities\Setting\UserMenu;
 use DB;
 
-class ReceivingDetailController extends Controller
+class QualityControlDetailController extends Controller
 {
     public function __construct(){
-        $this->view = "superuser.gudang.receiving.detail.";
-        $this->route = "superuser.gudang.receiving.detail";
+        $this->view = "superuser.gudang.quality_control.detail.";
+        $this->route = "superuser.gudang.quality_control.detail";
         $this->user_menu = new UserMenu;
         $this->access = null;
         $this->middleware(function ($request, $next) {
@@ -140,15 +140,15 @@ class ReceivingDetailController extends Controller
             }
         }
 
-        $data['receiving'] = Receiving::findOrFail($id);
-        $data['receiving_detail'] = ReceivingDetail::findOrFail($detail_id);
+        $data['receiving'] = QualityControl::findOrFail($id);
+        $data['receiving_detail'] = QualityControlDetail::findOrFail($detail_id);
 
         return view('superuser.gudang.receiving_detail.show', $data);
     }
     
     public function create($id)
     {
-        $receiving = Receiving::findOrFail($id);
+        $receiving = QualityControl::findOrFail($id);
         $products = collect();
 
         if ($receiving->type == 1) {
@@ -209,7 +209,7 @@ class ReceivingDetailController extends Controller
             return $this->response(400, ['notification' => ['alert'=>'block','type'=>'alert-danger','content'=>'Invalid']]);
         }
 
-        $receiving = Receiving::find($id);
+        $receiving = QualityControl::find($id);
         if (!$receiving) abort(404);
 
         $available = 0;
@@ -275,7 +275,7 @@ class ReceivingDetailController extends Controller
             ])->orderBy('id')->value('po_id');
         }
 
-        $detail                         = new ReceivingDetail;
+        $detail                         = new QualityControlDetail;
         $detail->receiving_id           = $receiving->id;
         $detail->po_id                  = $poId;                    // opsional, bisa NULL
         $detail->product_packaging_id   = $request->product_pack_id;
@@ -310,8 +310,8 @@ class ReceivingDetailController extends Controller
             }
         }
 
-        $data['receiving'] = Receiving::findOrFail($id);
-        $data['receiving_detail'] = ReceivingDetail::findOrFail($detail_id);
+        $data['receiving'] = QualityControl::findOrFail($id);
+        $data['receiving_detail'] = QualityControlDetail::findOrFail($detail_id);
 
         return view('superuser.gudang.receiving_detail.edit', $data);
     }
@@ -319,7 +319,7 @@ class ReceivingDetailController extends Controller
     public function update(Request $request, $id, $detail_id)
     {
         if ($request->ajax()) {
-            $receiving_detail = ReceivingDetail::find($detail_id);
+            $receiving_detail = QualityControlDetail::find($detail_id);
 
             if ($receiving_detail == null) {
                 abort(404);
@@ -352,7 +352,7 @@ class ReceivingDetailController extends Controller
                         'content' => 'Success',
                     ];
 
-                    $response['redirect_to'] = route('superuser.gudang.receiving.step', ['id' => $id]);
+                    $response['redirect_to'] = route('superuser.gudang.quality_control.step', ['id' => $id]);
 
                     return $this->response(200, $response);
                 }
@@ -369,8 +369,8 @@ class ReceivingDetailController extends Controller
                 }
             }
 
-            $receiving = Receiving::find($id);
-            $receiving_detail = ReceivingDetail::find($detail_id);
+            $receiving = QualityControl::find($id);
+            $receiving_detail = QualityControlDetail::find($detail_id);
 
             if ($receiving === null OR $receiving_detail === null) {
                 abort(404);
@@ -387,7 +387,7 @@ class ReceivingDetailController extends Controller
     {
         try {
             if ($req->ajax()) {
-                $detail    = ReceivingDetail::findOrFail($detailId);
+                $detail    = QualityControlDetail::findOrFail($detailId);
                 $receiving = $detail->receiving;
 
                 $req->validate([
@@ -414,10 +414,8 @@ class ReceivingDetailController extends Controller
                     ], 400);
                 }
 
-                // dd($detail->product_packaging_id);
-
                 // Simpan QC log - tidak proses stok di sini
-                ReceivingQcLogs::create([
+                QualityControlLogs::create([
                     'receiving_details_id'  => $detail->id,
                     'product_packaging_id'  => $detail->product_packaging_id,
                     'qty_qc'                => $qtyQc,
@@ -436,6 +434,7 @@ class ReceivingDetailController extends Controller
                 ]);
             }
         } catch (\Exception $e) {
+            dd($e);
             return response()->json([
                 'notification' => [
                     'alert' => 'block',
@@ -573,7 +572,7 @@ class ReceivingDetailController extends Controller
                 }
             }
 
-            $qcLog = ReceivingQcLogs::find($id);
+            $qcLog = QualityControlLogs::find($id);
 
             if (!$qcLog) {
                 return response()->json([

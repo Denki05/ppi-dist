@@ -3,37 +3,74 @@
 namespace App\Entities\Penjualan;
 
 use App\Entities\Model;
-use Illuminate\Database\Eloquent\SoftDeletes;
 use App\Entities\Account\Superuser as AccountSuperuser;
 
 class SaleReturn extends Model
 {
-    use SoftDeletes;
-
     protected $fillable = [
-        'code', 'retur_code', 'invoice_id', 'customer_id', 'warehouse_id',
-        'description', 'status', 'return_date'];
+        'code',
+        'payment_status',
+        'idr_rate',
+        'do_id',
+        'return_date',
+        'warehouse_id',
+        'customer_other_address_id',
+        'status',
+        'type',
+        'created_by',
+        'updated_by',
+    ];
     protected $table = 'penjualan_retur';
 
     const STATUS = [
         'DELETED' => 0,
         'ACTIVE' => 1,
-        'ACC' => 2
+        'ACC' => 2,
     ];
+
+    const TYPE = [
+        'RETUR' => 1,
+        'TUKAR BARANG' => 2,
+    ];
+
+    const PAYMENT_STATUS = [
+        'BELUM' => 0,
+        'LUNAS' => 1,
+    ];
+
+    public function status()
+    {
+        return array_search($this->status, self::STATUS);
+    }
+
+    public function type()
+    {
+        return array_search($this->type, self::TYPE);
+    }
+
+    public function payment_status()
+    {
+        return array_search($this->payment_status, self::PAYMENT_STATUS);
+    }
 
     public function invoice()
     {
-        return $this->belongsTo('App\Entities\Finance\Invoicing', 'invoice_id');
+        return $this->belongsTo('App\Entities\Penjualan\PackingOrder', 'do_id');
     }
 
     public function sale_return_details()
     {
-        return $this->hasMany('App\Entities\Penjualan\SaleReturnDetail');
+        return $this->hasMany('App\Entities\Penjualan\SaleReturnDetail', 'retur_id', 'id');
     }
 
     public function warehouse()
     {
         return $this->belongsTo('App\Entities\Master\Warehouse','warehouse_id');
+    }
+
+    public function customer()
+    {
+        return $this->belongsTo('App\Entities\Master\CustomerOtherAddress', 'customer_other_address_id');
     }
 
     public function createdBySuperuser()
@@ -45,4 +82,8 @@ class SaleReturn extends Model
         }
     }
 
+    public function cost()
+    {
+        return $this->hasOne('App\Entities\Penjualan\SaleReturnCost', 'retur_id', 'id');
+    }
 }

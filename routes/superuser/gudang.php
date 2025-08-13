@@ -82,6 +82,7 @@ Route::group([
     });
     Route::resource('purchase_order_spk', 'PurchaseOrderSPKController');
 
+    // RECEIVING IN SIRIE
     Route::group(['as' => 'receiving.', 'perfix' => '/receiving'], function (){
         Route::get('/step/{id}', 'ReceivingController@step')->name('step');
         Route::get('{id}/publish', 'ReceivingController@publish')->name('publish');
@@ -116,6 +117,42 @@ Route::group([
         });
     });
     Route::resource('receiving', 'ReceivingController');
+
+    // Quality Control
+    Route::group(['as' => 'quality_control.', 'perfix' => '/quality_control'], function (){
+        Route::get('/step/{id}', 'QualityControlController@step')->name('step');
+        Route::get('{id}/publish', 'QualityControlController@publish')->name('publish');
+        Route::get('{id}/acc_ri', 'QualityControlController@acc_ri')->name('acc_ri');
+        Route::get('/cancel/{id}', 'QualityControlController@cancel')->name('cancel');
+        Route::get('/import_template', 'QualityControlController@import_template')->name('import_template');
+        Route::post('/import/{id}', 'QualityControlController@import')->name('import');
+
+        Route::group(['as' => 'detail.'], function () {
+            Route::get('{id}/detail/{detail_id}/colly', 'QualityControlDetailController@show')->name('show');
+            Route::get('{id}/detail/create', 'QualityControlDetailController @create')->name('create');
+            Route::post('{id}/detail', 'QualityControlDetailController @store')->name('store');
+            Route::delete('{id}/detail/{detail_id}/delete', 'QualityControlDetailController@destroy')->name('destroy');
+
+            Route::get('{id}/detail/{detail_id}/edit', 'QualityControlDetailController@edit')->name('edit');
+            Route::put('{id}/detail/{detail_id}', 'QualityControlDetailController @update')->name('update');
+
+            Route::post('detail/get_sku_json', 'QualityControlDetailController@get_sku_json')->name('get_sku_json');
+
+            Route::post('detail/{detail}/qc', 'QualityControlDetailController@storeQc')->name('qty_qc');
+            Route::get('detail/qc/{id}/approve', 'QualityControlDetailController @approveQc')->name('approveQc');
+            Route::get('detail/qc/{id}/destroy', 'QualityControlDetailController@destroyQc')->name('destroyQc');
+
+            Route::group(['as' => 'colly.'], function () {
+                Route::get('{id}/colly/{detail_id}/create', 'ReceivingDetailCollyController@create')->name('create');
+                Route::post('{id}/{detail_id}/colly', 'ReceivingDetailCollyController@store')->name('store');
+                Route::get('{id}/detail/{detail_id}/colly/{colly_id}/edit', 'ReceivingDetailCollyController@edit')->name('edit');
+                Route::put('{id}/detail/{detail_id}/colly/{colly_id}', 'ReceivingDetailCollyController@update')->name('update');
+                Route::delete('{id}/detail/{detail_id}/colly/{colly_id}/delete', 'ReceivingDetailCollyController@destroy')->name('destroy');
+            });
+
+        });
+    });
+    Route::resource('quality_control', 'QualityControlController');
 
     Route::group(['as' => 'mutasi_out.', 'perfix' => '/mutasi_out'], function (){
         Route::get('/search_sku', 'MutasiOutController@search_sku')->name('search_sku');

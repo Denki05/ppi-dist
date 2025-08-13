@@ -19,7 +19,7 @@ class InvoicingTable extends Table
             ->join('master_customer_other_addresses', 'master_customer_other_addresses.id', '=', 'finance_invoicing.customer_other_address_id')
             ->join('penjualan_do', 'penjualan_do.id', '=', 'finance_invoicing.do_id')
             ->join('penjualan_so', 'penjualan_so.id', '=', 'penjualan_do.so_id')
-            ->where('finance_invoicing.status', 1)
+            ->whereIn('finance_invoicing.status', [1, 4])
             ->where('penjualan_so.type_so', 'nonppn')
             ->select(
                 'finance_invoicing.id AS id',
@@ -85,25 +85,24 @@ class InvoicingTable extends Table
             $print_new_full = route('superuser.finance.invoicing.download_invoice_full', $model);
             $print_new_proforma = route('superuser.finance.invoicing.download_invoice_proforma', $model);
 
-            switch ($model->status) {
-                case $model::STATUS['ACTIVE']:
-                    return "
-                        <a href=\"{$view}\">
-                            <button type=\"button\" class=\"btn btn-primary btn-sm btn-flat\" title=\"View\">
-                                <i class=\"fa fa-eye\"></i>
-                            </button>
-                        </a>
-                        <a href=\"{$print_new_proforma}\" target=\"_blank\">
-                            <button type=\"button\" class=\"btn btn-outline-primary btn-sm btn-flat\" title=\"Print Full\">
-                                <i class=\"fa fa-print\"></i>
-                            </button>
-                        </a>
-                        <a href=\"{$print_new_full}\" target=\"_blank\">
-                            <button type=\"button\" class=\"btn btn-outline-success btn-sm btn-flat\" title=\"Print Full\">
-                                <i class=\"fa fa-print\"></i>
-                            </button>
-                        </a>
-                    ";
+            if (in_array($model->status, [$model::STATUS['ACTIVE'], $model::STATUS['PENDING']])) {
+                return "
+                    <a href=\"{$view}\">
+                        <button type=\"button\" class=\"btn btn-primary btn-sm btn-flat\" title=\"View\">
+                            <i class=\"fa fa-eye\"></i>
+                        </button>
+                    </a>
+                    <a href=\"{$print_new_proforma}\" target=\"_blank\">
+                        <button type=\"button\" class=\"btn btn-outline-primary btn-sm btn-flat\" title=\"Print Full\">
+                            <i class=\"fa fa-print\"></i>
+                        </button>
+                    </a>
+                    <a href=\"{$print_new_full}\" target=\"_blank\">
+                        <button type=\"button\" class=\"btn btn-outline-success btn-sm btn-flat\" title=\"Print Full\">
+                            <i class=\"fa fa-print\"></i>
+                        </button>
+                    </a>
+                ";
             }
         });
 

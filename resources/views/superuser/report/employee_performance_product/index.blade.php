@@ -5,7 +5,7 @@
   <span class="breadcrumb-item">Report</span>
   <span class="breadcrumb-item">Management</span>
   <span class="breadcrumb-item">Penjualan Sales</span>
-  <span class="breadcrumb-item active">Omset Sales</span>
+  <span class="breadcrumb-item active">Kinerja Sales</span>
 </nav>
 
 @if($errors->any())
@@ -49,44 +49,27 @@
   <hr class="my-20">
   <div class="block-content block-content-full">
           <div class="mb-3 row">
-            <div class="col-3 col-form-label required"><h5>Type Report :</h5></div>
+            <div class="col-3 col-form-label required"><h5>Sales :</h5></div>
               <div class="col">
-                <label class="form-check form-check-inline">
-                  <input class="form-check-input" type="radio" name="radios-inline" id="pic_report" value="1">
-                  <h6>PIC</h6>
-                </label>
-                <label class="form-check form-check-inline">
-                  <input class="form-check-input" type="radio" name="radios-inline" id="officer_report" value="2">
-                  <!-- <span class="form-check-label">Customer by Zone (transaksi)</span> -->
-                  <h6>Officer</h6>
-                </label>
-            </div>
-          </div>
-          <div class="mb-3 row">
-            <div class="col-3 col-form-label required"><h5>Tampilkan Nominal :</h5></div>
-              <div class="col">
-                <label class="form-check form-check-inline">
-                  <input class="form-check-input" type="radio" name="radios-inline-nominal" id="nominal_yes" value="1">
-                  <h6>Yes</h6>
-                </label>
-                <label class="form-check form-check-inline">
-                  <input class="form-check-input" type="radio" name="radios-inline-nominal" id="nominal_no" value="2">
-                  <!-- <span class="form-check-label">Customer by Zone (transaksi)</span> -->
-                  <h6>No</h6>
-                </label>
-            </div>
+                <select class="js-select2 form-control" id="sales" name="sales[]" style="width: 50%;" data-placeholder="Select Sales" multiple required>
+                  <option value="">Pilih Sales</option>
+                  @foreach($sales as $sale)
+                    <option value="{{ $sale->officer }}">{{ $sale->officer }}</option>
+                  @endforeach
+                </select>
+              </div>
           </div>
         <div class="row">
           <div class="col-lg-3">
             <div class="form-group">
               <label>Set Period From</label>
-              <input type="date" name="period_from" id="period_from" class="form-control">
+              <input type="date" name="period_from" id="period_from" class="form-control" value="{{ date('Y-m-01') }}">
             </div>   
           </div>
           <div class="col-lg-3">
             <div class="form-group">
               <label>Set Period To</label>
-              <input type="date" name="period_to" id="period_to" class="form-control">
+              <input type="date" name="period_to" id="period_to" class="form-control" value="{{ date('Y-m-d') }}">
             </div>   
           </div>
           <div class="col-lg-3">

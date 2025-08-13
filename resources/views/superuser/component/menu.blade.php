@@ -183,9 +183,10 @@
                                     </ul>
                                 </li>
                                 @endif
-                                <li><a class="dropdown-item" href="{{ route('superuser.penjualan.sale_return.index') }}"><i class="fa-solid fa-file-prescription"></i> Retur</a></li>
                             </ul>
                         </li>
+
+                        <li><a class="dropdown-item" href="{{ route('superuser.penjualan.sale_return.index') }}"><i class="fa-solid fa-file-prescription"></i> Retur</a></li>
                     </ul>
                 </li>
 
@@ -201,6 +202,7 @@
                         <li><a class="dropdown-item" href="{{ route('superuser.gudang.purchase_order_spk.index') }}"><i class="fa-solid fa-shop"></i> SPK</a></li>
                         <li><a class="dropdown-item" href="{{ route('superuser.gudang.purchase_order.index') }}"><i class="fa-solid fa-shop"></i> Purchase order (PO)</a></li>
                         <li><a class="dropdown-item" href="{{ route('superuser.gudang.receiving.index') }}"><i class="fa-solid fa-receipt"></i> Receiving</a></li>
+                        <li><a class="dropdown-item" href="{{ route('superuser.gudang.quality_control.index') }}"><i class="fa-solid fa-receipt"></i> Quality Control</a></li>
                         <li><a class="dropdown-item" href="{{ route('superuser.gudang.mutasi_out.index') }}"><i class="fa-solid fa-warehouse"></i> Mutasi Gudang(OUT)</a></li>
                         @endif
                         <li><a class="dropdown-item" href="{{ route('superuser.gudang.stock.index') }}"><i class="fa-solid fa-cubes"></i> Stock</a></li>
@@ -342,13 +344,6 @@
                                         @endif
                                     </ul>
                                 </li>
-                                <li class="submenu submenu-md dropend">
-                                    <a class="dropdown-item dropdown-toggle" role="button"
-                                        data-bs-toggle="dropdown" aria-expanded="false">Sales</a>
-                                    <ul class="dropdown-menu">
-                                        <li><a class="dropdown-item" href="{{ route('superuser.report.employee_performance.index') }}">Penjualan Salesman</a></li>
-                                    </ul>
-                                </li>
                             </ul>
                         </li>
                         @endif
@@ -360,8 +355,16 @@
                                 <i class="fa-solid fa-file-import"></i> Management
                             </a>
                             <ul class="dropdown-menu">
-                                <li><a class="dropdown-item" href="{{ route('superuser.report.forecast_supplier.index') }}">Forcasting Principal</a></li>
+                                <li><a class="dropdown-item" href="{{ route('superuser.report.forecast_supplier.index') }}">Forecasting Principle</a></li>
                                 <li><a class="dropdown-item" href="{{ route('superuser.report.customer_type_brand.index') }}">Register Customer</a></li>
+                                <li class="submenu submenu-md dropend">
+                                    <a class="dropdown-item dropdown-toggle" role="button"
+                                        data-bs-toggle="dropdown" aria-expanded="false">Penjualan Sales</a>
+                                    <ul class="dropdown-menu">
+                                        <li><a class="dropdown-item" href="{{ route('superuser.report.employee_performance.index') }}">Omset Sales</a></li>
+                                        <li><a class="dropdown-item" href="{{ route('superuser.report.employee_performance_product.index') }}">Kinerja Sales</a></li>
+                                    </ul>
+                                </li>
                                 <li><a class="dropdown-item" href="{{ route('superuser.report.customer_type_brand_uv.index') }}">UV</a></li>
                             </ul>
                         </li>

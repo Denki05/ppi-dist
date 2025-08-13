@@ -212,13 +212,13 @@ class ReportCustomerTypeBrandController extends Controller
     {
         // Validasi input
         $validated = $request->validate([
-            'start' => 'required|date',
-            'end' => 'required|date|after_or_equal:start',
+            'start_register' => 'required|date',
+            'end_register' => 'required|date|after_or_equal:start',
         ]);
 
         // Parsing tanggal dengan format yang lebih aman
-        $startDate = Carbon::createFromFormat('Y-m-d', $validated['start'])->format('Y-m-d');
-        $endDate = Carbon::createFromFormat('Y-m-d', $validated['end'])->format('Y-m-d');
+        $startDate = Carbon::createFromFormat('Y-m-d', $validated['start_register'])->format('Y-m-d');
+        $endDate = Carbon::createFromFormat('Y-m-d', $validated['end_register'])->format('Y-m-d');
 
         // Query data dari database
         $query = CustomerTypeBrandReports::selectRaw('

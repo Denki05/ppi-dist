@@ -1,92 +1,162 @@
-<html>
+@php
+  $idr_total = 0;
+  $code = $result->code;
+  $kurs = $result->idr_rate;
+@endphp
 
-<head>
-    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-    <title>{{ $data->code }}</title>
-    @include('superuser.asset.css-pdf')
-    <style type="text/css">
-        @font-face {
-            font-family: 'Broadway';
-            src: url('{{ asset('superuser_assets/fonts/broadway/BROADW.TTF') }}') format('truetype');
-        }
+<style type="text/css">
+  body {
+    color: #333;
+    font-family: Arial, sans-serif;
+    font-size: 12px;
+  }
 
-        .table-body {
-            border: 1px solid black;
-            border-collapse: collapse;
-        }
+  table {
+    border-collapse: collapse;
+    width: 100%;
+  }
 
-        .padding-between {
-            padding-top: 8px;
-            padding-bottom: 8px;
-        }
+  .info td {
+    padding: 2px 4px;
+    font-size: 11px;
+    vertical-align: top;
+  }
 
-    </style>
-</head>
+  .table-data thead th {
+    background: #eee;
+    border: 1px solid #ccc;
+    padding: 5px;
+    font-size: 11px;
+  }
 
-<body style="font-size: 0.7em;">
-    <table class="table-body">
+  .table-data tbody td {
+    border: 1px solid #ccc;
+    padding: 5px;
+    font-size: 11px;
+    text-align: center;
+  }
+
+  .text-right {
+    text-align: right;
+  }
+
+  .text-left {
+    text-align: left;
+  }
+
+  .clearfix::after {
+    content: "";
+    display: table;
+    clear: both;
+  }
+
+  .column-float {
+    float: left;
+    box-sizing: border-box;
+  }
+
+  .row-float {
+    width: 100%;
+    clear: both;
+  }
+
+  .signature {
+    margin-top: 50px;
+    text-align: right;
+    font-size: 12px;
+  }
+</style>
+
+<div>
+  <h2 style="text-align: center; margin-bottom: 10px;"><u>NOTA KREDIT</u></h2>
+
+  <div class="row-float clearfix" style="margin-bottom: 15px;">
+    <div class="column-float" style="width: 50%;">
+      <table class="info">
+        <tr><td style="width: 35%;">Code</td><td style="width: 5%;">:</td><td>{{ $code }}</td></tr>
+        <tr><td>Ref Invoice</td><td>:</td><td>{{ $result->invoice->do_code }}</td></tr>
+      </table>
+    </div>
+    <div class="column-float" style="width: 50%;">
+      <table class="info">
         <tr>
-            <td>
-                <table style="border-collapse: collapse">
-                    <tr>
-                        <td colspan="2" style="background: rgb(243, 199, 207); font-size: 20px;font-family: 'Broadway', sans-serif;" class="text-center">NOTA
-                            RETUR
-                            PENJUALAN</td>
-                    </tr>
-                    <tr>
-                        <td width="60%" style="line-height: 16px;padding-top: 10px; padding-left: 40px; vertical-align: top;">
-                            {{ $data->delivery_order->sales_order->code }}<br>
-                            {{ $data->delivery_order->sales_order->order_date ? \Carbon\Carbon::parse($data->delivery_order->sales_order->order_date)->format('d/m/Y H:i') : '-' }}<br>
-                            {{ $data->delivery_order->sales_order->customer_name() }}
-                        </td>
-                        <td style="line-height: 16px; padding-top: 10px; padding-bottom: 10px;">
-                            {{ $data->code }}<br>
-                            {{ $data->return_date ? \Carbon\Carbon::parse($data->return_date)->format('d/m/Y H:i') : '-' }}<br>
-                            {{ $data->warehouse->name }}
-                        </td>
-                    </tr>
-                </table>
-                <table style="border-collapse: collapse;text-align: center;margin-left: -1px;margin-right: -1px;">
-                    <thead>
-                        <tr>
-                            <th class="border-full padding-between" width="3%">NO</th>
-                            <th class="border-full padding-between">SKU</th>
-                            <th class="border-full padding-between">PRODUCT</th>
-                            <th class="border-full padding-between" width="10%">QTY</th>
-                            <th class="border-full padding-between" width="50%">DESCRIPTION</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        @foreach ($data->sale_return_details as $item)
-                            <tr>
-                                <td class="border-full">{{ $loop->iteration }}.</td>
-                                <td class="border-full">{{ $item->product->code }}</td>
-                                <td class="border-full">{{ $item->product->name }}</td>
-                                <td class="border-full">{{ $item->quantity }}</td>
-                                <td class="border-full">{{ $item->description }}</td>
-                            </tr>
-                        @endforeach
-                    </tbody>
-                </table>
-
-                <table style="margin-top: 10px;text-align: center;">
-                    <tr>
-                        <td width="15%">Created by,</td>
-                        <td width="10%"></td>
-                        <td width="20%">Approved by,</td>
-                        <td width="20%">Checked by,</td>
-                        <td width="10%"></td>
-                        <td width="15%">Received by,</td>
-                        <td width="10%"></td>
-                    </tr>
-                    <tr>
-                        <td style="padding-top: 50px; padding-bottom: 20px">{{ $data->createdBySuperuser() }}</td>
-                        <td colspan="6"></td>
-                    </tr>
-                </table>
-            </td>
+          <td style="width: 30%;">Customer</td><td style="width: 5%;">:</td>
+          <td>{{ $result->customer->name }} {{ $result->customer->text_kota }}</td>
         </tr>
-    </table>
-</body>
+        <tr>
+          <td>Alamat</td><td>:</td>
+          <td>{{ $result->customer->address }}, {{ $result->customer->text_kelurahan }}, {{ $result->customer->text_kecamatan }}, {{ $result->customer->text_kota }}, {{ $result->customer->text_provinsi }}</td>
+        </tr>
+        <tr><td>Telepon</td><td>:</td><td>{{ $result->customer->phone ?? '-' }}</td></tr>
+      </table>
+    </div>
+  </div>
 
-</html>
+  <table class="table-data">
+    <thead>
+      <tr>
+        <th style="width: 5%;">No</th>
+        <th style="width: 25%;">Product</th>
+        <th style="width: 10%;">Acuan</th>
+        <th style="width: 8%;">Qty</th>
+        <th style="width: 15%;">Kemasan</th>
+        <th style="width: 12%;" class="text-right">Harga</th>
+        <th style="width: 12%;" class="text-right">Disc</th>
+        <th style="width: 13%;" class="text-right">Jumlah</th>
+      </tr>
+    </thead>
+    <tbody>
+      @foreach ($result->sale_return_details as $index => $row)
+        @php
+          $harga = $row->price * $kurs;
+          $disc_usd = $row->disc_usd * $kurs;
+          $jumlah = ($row->price - $row->disc_usd) * $row->qty * $kurs;
+          $idr_total += $jumlah;
+        @endphp
+        <tr>
+          <td>{{ $loop->iteration }}</td>
+          <td class="text-left">{{ $row->product->code }} - {{ $row->product->name }}</td>
+          <td>{{ number_format($row->price, 2) }}</td>
+          <td>{{ $row->qty }}</td>
+          <td>{{ $row->product->packaging->pack_name ?? '' }}</td>
+          <td class="text-right">{{ number_format($harga, 0, ',', '.') }}</td>
+          <td class="text-right">{{ number_format($disc_usd, 0, ',', '.') }}</td>
+          <td class="text-right">{{ number_format($jumlah, 0, ',', '.') }}</td>
+        </tr>
+      @endforeach
+    </tbody>
+  </table>
+
+  @php
+    use App\Helper\CustomHelper;
+
+    $disc_1 = $result->cost->discount_1 ?? 0;
+    $disc_2 = $result->cost->discount_2 ?? 0;
+    $disc_idr = $result->cost->discount_idr ?? 0;
+    $grand_total = $result->cost->purchase_total_idr ?? ($idr_total - $disc_1 - $disc_2 - $disc_idr);
+
+    $terbilang = ucwords(CustomHelper::terbilang($grand_total)) . ' Rupiah';
+  @endphp
+
+  <div class="row-float clearfix" style="margin-top: 25px;">
+    <div class="column-float" style="width: 60%; font-size: 11px;">
+      Terbilang: {{ $terbilang }} <br>
+      <br>
+      <b>*Kurs USD: {{ number_format($kurs, 0, ',', '.') }}</b>
+    </div>
+    <div class="column-float" style="width: 40%;">
+      <table style="width: 100%; font-size: 11px;">
+        <tr><td style="text-align:right;">Sub Total</td><td class="text-left">: {{ number_format($idr_total, 0, ',', '.') }}</td></tr>
+        <tr><td style="text-align:right;">Disc Persen</td><td class="text-left">: {{ number_format($disc_1, 0, ',', '.') }}</td></tr>
+        <tr><td style="text-align:right;">Disc Kemasan</td><td class="text-left">: {{ number_format($disc_2, 0, ',', '.') }}</td></tr>
+        <tr><td style="text-align:right;">Disc IDR</td><td class="text-left">: {{ number_format($disc_idr, 0, ',', '.') }}</td></tr>
+        <tr><td style="text-align:right;"><strong>Grand Total</strong></td><td class="text-left"><strong>: {{ number_format($grand_total, 0, ',', '.') }}</strong></td></tr>
+      </table>
+    </div>
+  </div>
+
+  <div class="signature">
+    Hormat Kami<br><br><br><br>
+    <span>.......................</span>
+  </div>
+</div>

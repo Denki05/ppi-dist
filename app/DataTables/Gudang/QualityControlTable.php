@@ -3,19 +3,19 @@
 namespace App\DataTables\Gudang;
 
 use App\DataTables\Table;
-use App\Entities\Gudang\Receiving;
+use App\Entities\Gudang\QualityControl;
 use App\Entities\Master\Warehouse;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Auth;
 
-class ReceivingTable extends Table
+class QualityControlTable extends Table
 {
     /**
      * Get query source of dataTable.
      */
     private function query()
     {
-        return Receiving::select(
+        return QualityControl::select(
                 'receiving.id',
                 'receiving.code',
                 'receiving.status',
@@ -24,7 +24,7 @@ class ReceivingTable extends Table
                 'receiving.pbm_date',
                 'receiving.note'
             )
-            ->where('receiving.type', 0)
+            ->where('receiving.type', 1)
             ->join('master_warehouses', 'master_warehouses.id', '=', 'receiving.warehouse_id');
     }
 
@@ -37,38 +37,38 @@ class ReceivingTable extends Table
 
         $table->addIndexColumn();
 
-        $table->setRowClass(function (Receiving $model) {
+        $table->setRowClass(function (QualityControl $model) {
             return $model->status === $model::STATUS['DELETED'] ? 'table-danger' : '';
         });
 
-        $table->editColumn('created_at', function (Receiving $model) {
+        $table->editColumn('created_at', function (QualityControl $model) {
             return [
                 'display' => Carbon::parse($model->created_at)->format('j F Y H:i:s'),
                 'timestamp' => $model->created_at
             ];
         });
 
-        $table->editColumn('pbm_date', function (Receiving $model) {
+        $table->editColumn('pbm_date', function (QualityControl $model) {
             return [
                 'display' => Carbon::parse($model->pbm_date)->format('d/m/Y'),
                 'timestamp' => $model->pbm_date
             ];
         });
 
-        $table->editColumn('status', function (Receiving $model) {
+        $table->editColumn('status', function (QualityControl $model) {
             return $model->status();
         });
 
-        $table->editColumn('warehouse', function (Receiving $model) {
+        $table->editColumn('warehouse', function (QualityControl $model) {
             return $model->warehouse;
         });
 
-        $table->addColumn('action', function (Receiving $model) {
-            $view    = route('superuser.gudang.receiving.show', $model);
-            $edit    = route('superuser.gudang.receiving.step', $model);
-            $destroy = route('superuser.gudang.receiving.destroy', $model);
-            $acc     = route('superuser.gudang.receiving.acc_ri', $model);
-            $cancel  = route('superuser.gudang.receiving.cancel', $model);
+        $table->addColumn('action', function (QualityControl $model) {
+            $view    = route('superuser.gudang.quality_control.show', $model);
+            $edit    = route('superuser.gudang.quality_control.step', $model);
+            $destroy = route('superuser.gudang.quality_control.destroy', $model);
+            $acc     = route('superuser.gudang.quality_control.acc_ri', $model);
+            $cancel  = route('superuser.gudang.quality_control.cancel', $model);
 
             $btn = '';
 

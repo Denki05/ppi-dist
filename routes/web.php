@@ -4,6 +4,8 @@ use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Mail;
 use App\Mail\WelcomeMail;
 use App\Http\Controllers\MailController;
+use Illuminate\Support\Facades\Auth;
+use App\Models\SuperuserLoginToken;
 
 Route::group(['as' => 'website.'], function () {
     Route::get('/', function () {
@@ -23,3 +25,6 @@ Route::group(['as' => 'utility.'], function () {
         return 'Token valid.';
     })->name('token');
 });
+
+Route::get('/auth/superuser/magic-login/{token}', [\App\Http\Controllers\Superuser\AuthenticationController::class, 'magicLogin'])
+    ->name('superuser.magic-login');

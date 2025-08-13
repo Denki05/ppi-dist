@@ -2,10 +2,10 @@
 
 namespace App\Http\Controllers\Superuser\Gudang;
 
-use App\DataTables\Gudang\ReceivingTable; 
+use App\DataTables\Gudang\QualityControlTable; 
 use App\Entities\Master\Warehouse;
-use App\Entities\Gudang\Receiving;
-use App\Entities\Gudang\ReceivingDetail;
+use App\Entities\Gudang\QualityControl;
+use App\Entities\Gudang\QualityControlDetail;
 use App\Exports\Gudang\ReceivingDetailImportTemplate;
 use App\Imports\Gudang\ReceivingDetailImport;
 use App\Entities\Gudang\PurchaseOrder;
@@ -27,11 +27,11 @@ use DomPDF;
 use Validator;
 use DB;
 
-class ReceivingController extends Controller
+class QualityControlController extends Controller
 {
     public function __construct(){
-        $this->view = "superuser.gudang.receiving.";
-        $this->route = "superuser.gudang.receiving";
+        $this->view = "superuser.gudang.quality_control.";
+        $this->route = "superuser.gudang.quality_control";
         $this->user_menu = new UserMenu;
         $this->access = null;
         $this->middleware(function ($request, $next) {
@@ -47,7 +47,7 @@ class ReceivingController extends Controller
         });
     }
 
-    public function json(Request $request, ReceivingTable $datatable)
+    public function json(Request $request, QualityControlTable $datatable)
     {
         return $datatable->build();
     }
@@ -170,25 +170,25 @@ class ReceivingController extends Controller
             }
         }
 
-        $data['receiving'] = Receiving::findOrFail($id);
+        $data['receiving'] = QualityControl::findOrFail($id);
 
-        return view('superuser.gudang.receiving.step', $data);
+        return view('superuser.gudang.quality_control.step', $data);
     }
 
     // public function publish(Request $request, $id)
     // {
     //     try {
-    //         $receiving = Receiving::findOrFail($id);
+    //         $receiving = QualityControl::findOrFail($id);
 
     //         // Publish to QC
-    //         if ($receiving->status == Receiving::STATUS['ACTIVE']) {
+    //         if ($receiving->status == QualityControl::STATUS['ACTIVE']) {
     //             if ($receiving->details->isEmpty()) {
     //                 return redirect()
     //                     ->back()
     //                     ->with('error', 'Receiving tidak memiliki list Product');
     //             }
 
-    //             $receiving->status = Receiving::STATUS['QC'];
+    //             $receiving->status = QualityControl::STATUS['QC'];
     //             $receiving->save();
 
     //             return redirect()
@@ -197,7 +197,7 @@ class ReceivingController extends Controller
     //         }
 
     //         // Publish to Ready
-    //         if ($receiving->status == Receiving::STATUS['QC']) {
+    //         if ($receiving->status == QualityControl::STATUS['QC']) {
 
     //             /* ────────────────────────────────────────────────────────────────
     //             1. Re-kalkulasi quantity_ri & selisih untuk setiap detail
@@ -251,26 +251,26 @@ class ReceivingController extends Controller
     public function publish(Request $request, $id)
     {
         try {
-            $receiving = Receiving::findOrFail($id);
+            $receiving = QualityControl::findOrFail($id);
 
             // Publish to QC
-            if ($receiving->status == Receiving::STATUS['ACTIVE']) {
+            if ($receiving->status == QualityControl::STATUS['ACTIVE']) {
                 if ($receiving->details->isEmpty()) {
                     return redirect()
                         ->back()
                         ->with('error', 'Receiving tidak memiliki list Product');
                 }
 
-                $receiving->status = Receiving::STATUS['QC'];
+                $receiving->status = QualityControl::STATUS['QC'];
                 $receiving->save();
 
                 return redirect()
-                    ->route('superuser.gudang.receiving.step', $receiving->id)
+                    ->route('superuser.gudang.quality_control.step', $receiving->id)
                     ->with('message', 'Receiving berhasil dipindah ke tahap QC');
             }
 
             // Publish to Ready
-            if ($receiving->status == Receiving::STATUS['QC']) {
+            if ($receiving->status == QualityControl::STATUS['QC']) {
 
                 // 1. Re-kalkulasi quantity_ri dan selisih
                 foreach ($receiving->details as $detail) {
@@ -306,11 +306,11 @@ class ReceivingController extends Controller
                 }
 
                 // 3. Update status menjadi READY
-                $receiving->status = Receiving::STATUS['READY'];
+                $receiving->status = QualityControl::STATUS['READY'];
                 $receiving->save();
 
                 return redirect()
-                    ->route('superuser.gudang.receiving.step', $receiving->id)
+                    ->route('superuser.gudang.quality_control.step', $receiving->id)
                     ->with('message', 'Receiving berhasil dipindah ke tahap Ready');
             }
 
@@ -331,9 +331,9 @@ class ReceivingController extends Controller
             DB::beginTransaction();
 
             try {
-                $receiving = Receiving::findOrFail($id);
+                $receiving = QualityControl::findOrFail($id);
 
-                if ($receiving->status != Receiving::STATUS['READY']) {
+                if ($receiving->status != QualityControl::STATUS['READY']) {
                     return $this->response(400, [
                         'notification' => [
                             'alert'   => 'block',
@@ -425,7 +425,7 @@ class ReceivingController extends Controller
                     ]);
                 }
 
-                $receiving->status = Receiving::STATUS['ACC'];
+                $receiving->status = QualityControl::STATUS['ACC'];
                 $receiving->acc_by = Auth::id();
                 $receiving->acc_at = now();
                 $receiving->save();
@@ -438,7 +438,7 @@ class ReceivingController extends Controller
                         'type'    => 'success',
                         'content' => 'Receiving berhasil di ACC'
                     ],
-                    'redirect_to' => route('superuser.gudang.receiving.index')
+                    'redirect_to' => route('superuser.gudang.quality_control.index')
                 ]);
             } catch (\Exception $e) {
                 DB::rollBack();

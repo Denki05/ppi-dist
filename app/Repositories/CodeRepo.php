@@ -14,6 +14,7 @@ use App\Entities\Master\Unit;
 use App\Entities\Master\Vendor;
 use App\Entities\Master\Warehouse;
 use App\Entities\Penjualan\SalesOrder;
+use App\Entities\Penjualan\SaleReturn;
 use App\Entities\Penjualan\SalesOrderProforma;
 use App\Entities\Penjualan\SalesOrderKontrak;
 use App\Entities\Penjualan\PackingOrder;
@@ -396,5 +397,33 @@ class CodeRepo
     
         // Return the generated code
         return $code;
+    }
+
+    public static function generateReturCode(){
+        $parts = explode('-', date("d-m-Y"));
+        // $p1 = substr($parts[2], (strlen($parts[2]) - 1) );
+
+        // If year is 2025, take last 2 digits, else last 1 digit
+        if ($parts[2]) {
+            $p1 = substr($parts[2], -2);
+        } else {
+            $p1 = substr($parts[2], -1);
+        }
+        $abjadMonth = array( '-', 'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L');
+        $p2 = $abjadMonth[date('n')];
+        $yearMonth = $p1.$p2;
+        $latestNumber = "";
+
+        $get_max = DB::table('penjualan_retur')->where('code', 'LIKE', '%'.$yearMonth.'%')->where('deleted_at', null)->max('code');
+
+        if($get_max == 'false'){
+            $latestNumber = $yearMonth . '001';
+        }else{
+            $latestNumber = $get_max;
+            $id = (int) substr($latestNumber, strlen($yearMonth)) + 1;
+            $latestNumber = 'R' . $yearMonth . str_pad($id, 3, 0, STR_PAD_LEFT);
+        }
+
+        return $latestNumber;
     }
 }

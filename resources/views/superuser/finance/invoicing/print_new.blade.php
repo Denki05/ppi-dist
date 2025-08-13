@@ -227,7 +227,7 @@
         
         <!-- Left Column -->
         <div class="column-float" style="width: 70%">
-          Terbilang: {{ $result->do->do_detail_cost[0]->terbilang }}<br><br>
+          Terbilang: {{ $result->do->do_detail_cost->terbilang }}<br><br>
           <b>*Kurs USD: {{ number_format($result->do->idr_rate, 0, ',', '.') }}</b>
         </div>
         
@@ -241,37 +241,37 @@
               </tr>
               <tr>
                 <td style="width: 60%; text-align: right;">Disc Persen</td>
-                <td style="width: 40%; text-align: left;">: {{ number_format($result->do->do_detail_cost[0]->discount_1_idr ?? 0, 0, ',', '.') }}</td>
+                <td style="width: 40%; text-align: left;">: {{ number_format($result->do->do_detail_cost->discount_1_idr ?? 0, 0, ',', '.') }}</td>
               </tr>
               <tr>
                 <td style="width: 60%; text-align: right;">Disc Kemasan</td>
-                <td style="width: 40%; text-align: left; border-bottom: 1px solid black;">: {{ $result->do->do_detail_cost[0]->discount_2_idr }}</td>
+                <td style="width: 40%; text-align: left; border-bottom: 1px solid black;">: {{ $result->do->do_detail_cost->discount_2_idr }}</td>
               </tr>
-              @if($result->do->do_detail_cost[0]->discount_idr != null && $result->do->do_detail_cost[0]->discount_idr > 0)
+              @if($result->do->do_detail_cost->discount_idr != null && $result->do->do_detail_cost->discount_idr > 0)
               <tr>
                 <td style="width: 60%; text-align: right;">Disc IDR</td>
-                <td style="width: 40%; text-align: left;">: {{ number_format($result->do->do_detail_cost[0]->discount_idr ?? 0, 0, ',', '.') }}</td>
+                <td style="width: 40%; text-align: left;">: {{ number_format($result->do->do_detail_cost->discount_idr ?? 0, 0, ',', '.') }}</td>
               </tr>
               @endif
-              @if($result->do->do_detail_cost[0]->voucher_idr != null && $result->do->do_detail_cost[0]->voucher_idr > 0)
+              @if($result->do->do_detail_cost->voucher_idr != null && $result->do->do_detail_cost->voucher_idr > 0)
               <tr>
                 <td style="width: 60%; text-align: right;">Cashback/Voucher</td>
-                <td style="width: 40%; text-align: left;">: {{ number_format($result->do->do_detail_cost[0]->voucher_idr ?? 0, 0, ',', '.') }}</td>
+                <td style="width: 40%; text-align: left;">: {{ number_format($result->do->do_detail_cost->voucher_idr ?? 0, 0, ',', '.') }}</td>
               </tr>
               @endif
-              @if($result->do->do_detail_cost[0]->purchase_total_idr != null && $result->do->do_detail_cost[0]->purchase_total_idr > 0)
+              @if($result->do->do_detail_cost->purchase_total_idr != null && $result->do->do_detail_cost->purchase_total_idr > 0)
               <tr>
                 <td style="width: 60%; text-align: right;">Total</td>
-                <td style="width: 40%; text-align: left;">: {{ number_format($result->do->do_detail_cost[0]->purchase_total_idr ?? 0, 0, ',', '.') }}</td>
+                <td style="width: 40%; text-align: left;">: {{ number_format($result->do->do_detail_cost->purchase_total_idr ?? 0, 0, ',', '.') }}</td>
               </tr>
               @endif
               <tr>
                 <td style="width: 60%; text-align: right;">Ongkos Kirim</td>
-                <td style="width: 40%; text-align: left; border-bottom: 1px solid black;">: {{ number_format($result->do->do_detail_cost[0]->delivery_cost_idr ?? 0, 0, ',', '.') }}</td>
+                <td style="width: 40%; text-align: left; border-bottom: 1px solid black;">: {{ number_format($result->do->do_detail_cost->delivery_cost_idr ?? 0, 0, ',', '.') }}</td>
               </tr>
               <tr>
                 <td style="width: 60%; text-align: right;"><strong>Grand Total</strong></td>
-                <td style="width: 40%; text-align: left;"><strong>: {{ number_format($result->do->do_detail_cost[0]->grand_total_idr ?? 0, 0, ',', '.') }}</strong></td>
+                <td style="width: 40%; text-align: left;"><strong>: {{ number_format($result->do->do_detail_cost->grand_total_idr ?? 0, 0, ',', '.') }}</strong></td>
               </tr>
             </tbody>
           </table>

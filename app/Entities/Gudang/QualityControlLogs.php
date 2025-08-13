@@ -8,7 +8,7 @@ use Illuminate\Support\Facades\Auth;
 use App\Entities\Gudang\ReceivingDetail;
 
 
-class ReceivingQcLogs extends Model
+class QualityControlLogs extends Model
 {
     protected $fillable = [
         'receiving_details_id', 

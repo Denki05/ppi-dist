@@ -27,6 +27,7 @@ class Invoicing extends Model
         'ACTIVE' => 1,
         'DELETED' => 2,
         'REVISI' => 3,
+        'PENDING' => 4,
     ];
 
     public function do(){

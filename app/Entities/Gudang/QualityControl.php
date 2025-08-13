@@ -4,14 +4,12 @@ namespace App\Entities\Gudang;
 
 use App\Entities\Model;
 use App\Entities\Account\Superuser;
-use App\Entities\Finance\CBPaymentInvoiceDetail;
-use App\Entities\Master\SupplierCoa;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Facades\Auth;
 use App\Entities\Gudang\ReceivingDetail;
 
 
-class Receiving extends Model
+class QualityControl extends Model
 {
     use SoftDeletes;
 
@@ -47,7 +45,7 @@ class Receiving extends Model
 
     public function details()
     {
-        return $this->hasMany(ReceivingDetail::class);
+        return $this->hasMany(QualityControlDetail::class, 'receiving_id');
     }
 
     public function createdBySuperuser()

@@ -16,26 +16,28 @@ class PiutangFakturTable extends Table
      */
     private function query(Request $request)
     {
-        $model = Invoicing::where('finance_invoicing.status', 1)
+        $model = Invoicing::whereIn('finance_invoicing.status', [1, 4])
             ->leftJoin('finance_payable_detail', 'finance_invoicing.id', '=', 'finance_payable_detail.invoice_id')
             ->leftJoin('finance_payable', 'finance_payable_detail.payable_id', '=', 'finance_payable.id')
             ->leftJoin('master_customer_other_addresses', 'finance_invoicing.customer_other_address_id', '=', 'master_customer_other_addresses.id')
             ->leftJoin('penjualan_do', 'finance_invoicing.do_id', '=', 'penjualan_do.id')
+            ->leftJoin('penjualan_retur', 'penjualan_do.id', '=', 'penjualan_retur.do_id')
             ->leftJoin('penjualan_so', 'penjualan_do.so_id', '=', 'penjualan_so.id')
+            ->leftJoin('penjualan_do_details', 'penjualan_do.id', '=', 'penjualan_do_details.do_id')
             ->leftJoin('master_customers', 'master_customer_other_addresses.customer_id', '=', 'master_customers.id')
             ->select(
                 'master_customer_other_addresses.name AS customer_name', 
                 'master_customer_other_addresses.text_kota AS customer_kota', 
                 'finance_invoicing.code AS no_faktur',
-                'finance_invoicing.grand_total_idr AS nilai_faktur',
+                'penjualan_do_details.grand_total_idr AS nilai_faktur',
+                'penjualan_do_details.delivery_cost_idr AS ongkos_kirim',
                 'penjualan_so.so_date AS tanggal_faktur', 
                 'master_customers.tempo_limit AS tempo_limit', 
                 DB::raw('IFNULL(SUM(finance_payable_detail.total), 0) AS pembayaran'),
                 DB::raw('
                     CASE
-                        WHEN penjualan_so.payment_status = 0 THEN "UNPAID"
-                        WHEN penjualan_so.payment_status = 1 THEN "PAID"
-                        WHEN penjualan_so.payment_status = 2 THEN "UNPAID"
+                        WHEN penjualan_do_details.grand_total_idr - IFNULL(SUM(finance_payable_detail.total), 0) <= 0 THEN "PAID"
+                        ELSE "UNPAID"
                     END AS status_faktur
                 ')
             )
@@ -51,6 +53,8 @@ class PiutangFakturTable extends Table
             ->get();
 
 
+
+        // dd($model);
         return $model;
     }
     
@@ -71,7 +75,7 @@ class PiutangFakturTable extends Table
         $table->editColumn('tanggal_faktur', function (Invoicing $model) {
             return [
             'display' => Carbon::parse($model->tanggal_faktur)->format('d-m-Y'),
-            'timestamp' => $model->tanggal_faktur
+            'timestamp' => $model->created_at
             ];
         });
 
@@ -86,6 +90,10 @@ class PiutangFakturTable extends Table
             } else {
                 return 'N/A';  // Handle cases where tempo_limit is 0 or negative
             }
+        });
+
+        $table->addColumn('nilai_faktur', function (Invoicing $model) {
+            return $model->nilai_faktur;
         });
 
         $table->addColumn('hutang_asing', function (Invoicing $model) {
@@ -112,5 +120,4 @@ class PiutangFakturTable extends Table
         
         return $table->make(true);
     }
-
 }

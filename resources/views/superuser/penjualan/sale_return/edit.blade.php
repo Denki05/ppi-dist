@@ -2,16 +2,16 @@
 
 @section('content')
 <nav class="breadcrumb bg-white push">
-  <span class="breadcrumb-item">Sale</span>
-  <a class="breadcrumb-item" href="{{ route('superuser.sale.sale_return.index') }}">Sale Return</a>
+  <span class="breadcrumb-item">Penjualan</span>
+  <a class="breadcrumb-item" href="{{ route('superuser.penjualan.sale_return.index') }}">Retur</a>
   <span class="breadcrumb-item active">Edit</span>
 </nav>
-<form class="ajax" data-action="{{ route('superuser.sale.sale_return.update', $sale_return->id) }}" data-type="POST" enctype="multipart/form-data">
+<form class="ajax" data-action="{{ route('superuser.penjualan.sale_return.update', $sale_return->id) }}" data-type="POST" enctype="multipart/form-data">
     <input type="hidden" name="_method" value="PATCH">
     <input type="hidden" name="ids_delete" value="">
 <div class="block">
   <div class="block-header block-header-default">
-    <h3 class="block-title">Edit Sale Return</h3>
+    <h3 class="block-title">Edit Retur</h3>
   </div>
 
   <div class="block-content">
@@ -25,20 +25,20 @@
     <div class="form-group row">
       <label class="col-md-3 col-form-label text-right" for="delivery_order" >Delivery Order</label>
       <div class="col-md-7">
-          <input type="hidden" id="delivery_order" value="{{ $sale_return->delivery_order->id }}">
-        <div class="form-control-plaintext">{{ $sale_return->delivery_order->code }} / <a href="{{ route('superuser.sale.sales_order.show', $sale_return->delivery_order->sales_order_id) }}" target="_blank"> {{ $sale_return->delivery_order->sales_order->code }} </a></div>
+          <input type="hidden" id="delivery_order" value="{{ $sale_return->invoice->id }}">
+        <div class="form-control-plaintext">{{ $sale_return->invoice->do_code }}</div>
       </div>
     </div>
     <div class="form-group row">
-      <label class="col-md-3 col-form-label text-right" for="warehouse_reparation">Warehouse Reparation</label>
+      <label class="col-md-3 col-form-label text-right" for="warehouse_reparation">Warehouse</label>
       <div class="col-md-7">
-        <div class="form-control-plaintext">{{ $sale_return->warehouse->name }}</div>
+        <div class="form-control-plaintext">{{ $sale_return->warehouse->name ?? '-' }}</div>
       </div>
     </div>
     <div class="form-group row">
       <label class="col-md-3 col-form-label text-right" for="return_date">Return Date</label>
       <div class="col-md-7">
-        <div class="form-control-plaintext">{{ $sale_return->return_date ? date('d/m/Y', strtotime($sale_return->return_date)) : '-' }}</div>
+        <div class="form-control-plaintext">{{ $sale_return->retur_date ? date('d/m/Y', strtotime($sale_return->retur_date)) : '-' }}</div>
       </div>
     </div>
     <div class="form-group row">
@@ -49,7 +49,7 @@
     </div>
     <div class="form-group row pt-30">
       <div class="col-md-6">
-        <a href="{{ route('superuser.sale.sale_return.index') }}">
+        <a href="{{ route('superuser.penjualan.sale_return.index') }}">
           <button type="button" class="btn bg-gd-cherry border-0 text-white">
             <i class="fa fa-arrow-left mr-10"></i> Back
           </button>
@@ -73,15 +73,14 @@
         </a>
       </div>
   <div class="block-content">
-    <table id="datatable" class="table table-striped table-vcenter table-responsive">
+    <table id="datatable" class="table table-striped">
       <thead>
         <tr>
-          <th class="text-center">#</th>
-          <th class="text-center">SKU</th>
-          <th class="text-center">Product</th>
+          <th class="text-center">Counter</th>
+          <th class="text-center">Product</th> <!-- gabungan code - name -->
+          <th class="text-center">Packaging</th> <!-- kemasan -->
           <th class="text-center">Quantity</th>
-          <th class="text-center">Description</th>
-          <th class="text-center">Ref</th>
+          <th class="text-center">Note</th>
           <th class="text-center">Action</th>
         </tr>
       </thead>
@@ -90,27 +89,22 @@
             @php
                 $max = 0;
             @endphp
-           @foreach ( $sale_return->delivery_order->sales_order->sales_order_details as $item)
-                @if($item->product_id == $detail->product_id)
+           @foreach ( $sale_return->invoice->do_detail as $item)
+                @if($item->product_packaging_id == $detail->product_packaging_id)
                     @php
-                        $max = $item->quantity;
+                        $max = $item->qty;
                     @endphp
                 @endif
            @endforeach
           <tr id="list-body">
             <td>{{ $loop->iteration }}</td>
-            <td><input type="hidden" name="hpp[]" value="{{ $detail->hpp }}">
-                <input type="hidden" name="price[]" value="{{ $detail->price }}">
-                <input type="hidden" name="sku[]" value="{{ $detail->product_id }}">
-                {{--  <select class="js-select2 form-control js-ajax" id="sku[{{ $loop->iteration }}]" name="sku[]" data-placeholder="Select SKU" style="width:100%" required>
-                    <option></option>
-                </select>  --}}
-                <span class="name">{{ $detail->product->code }}</span>
+            <td>
+              <input type="hidden" name="sku[]" value="{{ $detail->product_packaging_id }}">
+              <span class="name">{{ $detail->product->code }} - {{ $detail->product->name }}</span>
             </td>
-            <td><span class="name">{{ $detail->product->name }}</span></td>
-            <td><input type="number" class="form-control" name="quantity[]" min="1" max="{{ $max }}" required value="{{ $detail->quantity }}"></td>
-            <td><input type="text" class="form-control" name="description[]" value="{{ $detail->description }}"></td>
-            <td><span class="ref">Selling Price : {{ $detail->price }}</span></td>
+            <td><span class="name">{{ $detail->product->packaging->pack_name }}</span></td>
+            <td><input type="number" class="form-control text-center" name="quantity[]" min="1" max="{{ $max }}" required value="{{ $detail->qty }}"></td>
+            <td><input type="text" class="form-control" name="description[]" value="{{ $detail->note }}"></td>
             <td><a href="#" class="row-delete"><button type="button" class="btn btn-sm btn-circle btn-alt-danger" title="Delete"><i class="fa fa-trash"></i></button></a></td>
           </tr>
         @endforeach
@@ -127,7 +121,7 @@
 @push('scripts')
 <script src="{{ asset('utility/superuser/js/form.js') }}"></script>
 <script>
-  var product_data = new Object();
+ var product_data = new Object();
   $(document).ready(function () {
     var table = $('#datatable').DataTable({
         paging: false,
@@ -135,12 +129,11 @@
         searching: false,
         columns: [
           {name: 'counter', "visible": false},
-          {name: 'sku', orderable: false, width: "25%"},
-          {name: 'name', orderable: false, searcable: false},
-          {name: 'quantity', orderable: false, searcable: false, width: "5%"},
-          {name: 'description', orderable: false, searcable: false},
-          {name: 'ref', orderable: false, searcable: false},
-          {name: 'action', orderable: false, searcable: false, width: "5%"}
+          {name: 'product', orderable: false, width: "Auto"},
+          {name: 'packaging', orderable: false, width: "Auto"},
+          {name: 'quantity', orderable: false, width: "Auto"},
+          {name: 'note', orderable: false, width: "Auto"},
+          {name: 'action', orderable: false, width: "Auto"}
         ],
         'order' : [[0,'desc']]
     })
@@ -148,7 +141,7 @@
     var counter = {{ count($sale_return->sale_return_details) + 1 }};
 
     $.ajax({
-        url: '{{ route('superuser.sale.sale_return.get_product') }}',
+        url: '{{ route('superuser.penjualan.sale_return.get_product') }}',
         data: {id:$('#delivery_order').val() , _token: "{{csrf_token()}}"},
         type: 'POST',
         cache: false,
@@ -159,8 +152,8 @@
 
             $.each( product_data, function( key, value ) {
                 var makeselect;
-                $.map( product_data, function( val, i ) {
-                    makeselect += '<option value="'+ val['id'] +'" data-name="'+ val['name'] +'" data-hpp="'+ val['hpp'] +'" data-price="'+ val['price'] +'" data-quantity="'+ val['quantity'] +'">'+ val['sku'] +'</option>';
+                $.map(product_data, function(val, i) {
+                  makeselect += '<option value="'+ val['id'] +'" data-name="'+ val['name'] +'" data-sku="'+ val['sku'] +'" data-quantity="'+ val['quantity'] + '" data-kemasan="'+ val['kemasan'] +'">'+ val['sku'] +' - '+ val['name'] +'</option>';
                 });
 
 
@@ -192,25 +185,24 @@
         if($('#delivery_order').val()) {
           $('#submit-table').prop('disabled', false);
 
-          makeselect = '<select class="js-select2 form-control js-ajax" id="sku['+counter+']" name="sku[]" data-placeholder="Select SKU" style="width:100%" required><option></option>';
+          makeselect = '<select class="js-select2 form-control js-ajax" id="sku['+counter+']" name="sku[]" data-placeholder="Select Product" style="width:100%" required><option></option>';
 
-          $.map( product_data, function( val, i ) {
-            makeselect += '<option value="'+ val['id'] +'" data-name="'+ val['name'] +'" data-hpp="'+ val['hpp'] +'" data-price="'+ val['price'] +'" data-quantity="'+ val['quantity'] +'">'+ val['sku'] +'</option>';
+          $.map(product_data, function(val, i) {
+            makeselect += '<option value="'+ val['id'] +'" data-name="'+ val['name'] +'" data-sku="'+ val['sku'] +'" data-quantity="'+ val['quantity'] + '" data-kemasan="'+ val['kemasan'] +'">'+ val['sku'] +' - '+ val['name'] +'</option>';
           });
 
           makeselect += '</select>';
 
           table.row.add([
-                      counter,
-                      makeselect,
-                      '<span class="name"></span>',
-                      '<input type="number" class="form-control" name="quantity[]" min="1" required><input type="hidden" class="form-control" name="hpp[]"><input type="hidden" class="form-control" name="price[]">',
-                      '<input type="text" class="form-control" name="description[]">',
-                      '<span class="ref"></span>',
-                      '<a href="#" class="row-delete"><button type="button" class="btn btn-sm btn-circle btn-alt-danger" title="Delete"><i class="fa fa-trash"></i></button></a>'
-                    ]).draw( false );
+            counter,
+            makeselect, // Select product
+            '<span class="packaging"></span>', // Packaging info (sku)
+            '<input type="number" class="form-control text-center" name="quantity[]" min="0.01" step="0.01" required>',
+            '<input type="text" class="form-control text-center" name="description[]" placeholder="Note">',
+            '<a href="#" class="row-delete"><button type="button" class="btn btn-sm btn-circle btn-alt-danger" title="Delete"><i class="fa fa-trash"></i></button></a>',
+          ]).draw(false);
 
-                    initailizeSelect2();
+          initailizeSelect2();
           counter++;
         }
 
@@ -229,24 +221,17 @@
   });
 
   function initailizeSelect2(){
-    $(".js-ajax").select2();
+      $(".js-ajax").select2();
 
-    $('.js-ajax').on('select2:select', function (e) {
-      var name = $(this).find(':selected').data('name');
-      $(this).parents('tr').find('.name').text(name);
+      $('.js-ajax').on('select2:select', function (e) {
+        var sku = $(this).find(':selected').data('sku');
+        var quantity = $(this).find(':selected').data('quantity');
+        var kemasan = $(this).find(':selected').data('kemasan');
 
-      var hpp = $(this).find(':selected').data('hpp');
-      $(this).parents('tr').find('input[name="hpp[]"]').val(hpp);
-
-      var price = $(this).find(':selected').data('price');
-      $(this).parents('tr').find('input[name="price[]"]').val(price);
-
-      $(this).parents('tr').find('.ref').text('Selling price : '+price);
-
-      var quantity = $(this).find(':selected').data('quantity');
-      $(this).parents('tr').find('input[name="quantity[]"]').prop('max', quantity);
-      $(this).parents('tr').find('input[name="quantity[]"]').prop('placeholder', quantity);
-    });
+        $(this).parents('tr').find('.packaging').text(kemasan);
+        $(this).parents('tr').find('input[name="quantity[]"]').prop('max', quantity);
+        $(this).parents('tr').find('input[name="quantity[]"]').prop('placeholder', quantity);
+      });
 
   };
 </script>
