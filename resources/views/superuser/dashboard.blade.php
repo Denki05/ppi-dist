@@ -119,107 +119,60 @@
                             </section>
 
                             <section id="content2" class="tab-content">
-                                {{-- Single Month and Year Picker for Tabulasi forms --}}
-                               
-                                <div class="d-flex align-items-center gap-2">
-                                    <input type="month" id="omset-month-year" class="form-control" style="width: 180px;" value="{{ $selectedMonthYear }}">
-                                    
-                                    <button class="btn btn-primary btn-tabulasi-form-toggle active mr-2" data-target-form="form-register">Market</button>
-                                    <button class="btn btn-success btn-tabulasi-form-toggle" data-target-form="form-salesman">Salesman</button>
-                                </div>
-
-                                <div id="tabulasi-forms-container">
-                                    
-                                    <div id="form-register" class="tabulasi-form active">
-                                        <form id="registerForm" method="POST" action="{{ route('superuser.report.customer_type_brand.postData') }}">
-                                            @csrf
-                                            <input type="hidden" name="action_type" value="register">
-                                            {{-- Hidden inputs for start_date and end_date --}}
-                                            <input type="hidden" name="start_register" id="period_from_register_hidden">
-                                            <input type="hidden" name="end_register" id="period_to_register_hidden">
-                                            <div class="block">
-                                                <div class="block-content block-content-full">
-                                                    <div class="btn-toolbar" role="toolbar">
-                                                        <div class="btn-group mr-2">
-                                                            <button type="submit" class="btn btn-primary" onclick="submitForm('sync', 'registerForm')">
-                                                                <i class="fa fa-sync"></i> Sync Register Data
-                                                            </button>
-                                                        </div>
-                                                        <div class="btn-group mr-2">
-                                                            <button type="button" class="btn btn-danger" onclick="saveConfirmation('{{ route('superuser.report.customer_type_brand.removeDt') }}')">
-                                                                <i class="fa fa-trash"></i> Remove Register Data
-                                                            </button>
-                                                        </div>
-                                                        <div class="btn-group mr-2">
-                                                            <button type="button" class="btn btn-success" onclick="submitForm('print', 'registerForm')">
-                                                                <i class="fa fa-file-pdf-o" aria-hidden="true"></i> Export Register PDF
-                                                            </button>
-                                                        </div>
-                                                    </div>
-                                                    <br>
-                                                    <div class="mb-3 row">
-                                                        <div class="col-3 col-form-label required"><h5>Type Report:</h5></div>
-                                                        <div class="col">
-                                                            <label class="form-check form-check-inline">
-                                                                <input class="form-check-input" type="radio" name="type_register" id="type_customer_register" value="1" checked>
-                                                                <h6>R. by Brand</h6>
-                                                            </label>
-                                                            <label class="form-check form-check-inline">
-                                                                <input class="form-check-input" type="radio" name="type_register" id="zone_customer_register" value="2">
-                                                                <h6>R. by Zone</h6>
-                                                            </label>
-                                                        </div>
-                                                    </div>
+                                <form id="tabulasiForm" method="POST">
+                                    @csrf
+                                    <div class="row">
+                                        <div class="col-md-6"> {{-- Bagian kiri untuk input bulan/tahun dan tipe laporan --}}
+                                            <div class="mb-3 row align-items-center">
+                                                <div class="col-4">
+                                                    <input type="month" id="tabulasi-month-year" class="form-control" value="{{ $selectedMonthYear }}">
+                                                </div>
+                                                 <div class="col-4">
+                                                    <select class="form-control js-select2" name="salesman_id_tabulasi" style="width: 100%;">
+                                                        <option value="">Semua Salesman</option>
+                                                        {{-- Contoh data salesman, ganti dengan loop data dari backend --}}
+                                                        <option value="1">Salesman A</option>
+                                                        <option value="2">Salesman B</option>
+                                                        <option value="3">Salesman C</option>
+                                                    </select>
                                                 </div>
                                             </div>
-                                        </form>
-                                    </div>
-
-                                    <div id="form-salesman" class="tabulasi-form">
-                                        <form id="salesmanForm" method="POST" action=""> {{-- Ganti dengan route yang sesuai --}}
-                                            @csrf
-                                            <input type="hidden" name="action_type" value="salesman">
-                                            {{-- Hidden inputs for start_date and end_date --}}
-                                            <input type="hidden" name="start_sales" id="period_from_sales_hidden">
-                                            <input type="hidden" name="end_sales" id="period_to_sales_hidden">
-                                            <div class="block">
-                                                <div class="block-content block-content-full">
-                                                    <div class="btn-toolbar" role="toolbar">
-                                                        <div class="btn-group mr-2">
-                                                            <button type="submit" class="btn btn-info" onclick="submitForm('upload', 'salesmanForm')">
-                                                                <i class="fa fa-upload"></i> Upload Salesman Data
-                                                            </button>
-                                                        </div>
-                                                        <div class="btn-group mr-2">
-                                                            <button type="button" class="btn btn-secondary" onclick="saveConfirmation('')">
-                                                                <i class="fa fa-undo"></i> Reset Salesman Data
-                                                            </button>
-                                                        </div>
-                                                        <div class="btn-group mr-2">
-                                                            <button type="button" class="btn btn-warning" onclick="submitForm('export', 'salesmanForm')">
-                                                                <i class="fa fa-file-excel-o" aria-hidden="true"></i> Export Salesman Excel
-                                                            </button>
-                                                        </div>
-                                                    </div>
-                                                    <br>
-                                                    <div class="mb-3 row">
-                                                        <div class="col-3 col-form-label required"><h5>Salesman Filter:</h5></div>
-                                                        <div class="col">
-                                                            <select class="form-control js-select2" name="salesman_id" style="width: 100%;">
-                                                                <option value="">Pilih Salesman</option>
-                                                                {{-- Contoh data salesman, ganti dengan loop data dari backend --}}
-                                                                <option value="1">Salesman A</option>
-                                                                <option value="2">Salesman B</option>
-                                                                <option value="3">Salesman C</option>
-                                                            </select>
-                                                        </div>
-                                                    </div>
+                                            <div class="mb-3 row align-items-center">
+                                                <div class="col-4 col-form-label required"><h5>Tipe Laporan:</h5></div>
+                                                <div class="col-8">
+                                                    <label class="form-check form-check-inline">
+                                                        <input class="form-check-input" type="radio" name="report_type_tabulasi" id="type_customer_register" value="brand" checked>
+                                                        <h6>R. by Brand</h6>
+                                                    </label>
+                                                    <label class="form-check form-check-inline">
+                                                        <input class="form-check-input" type="radio" name="report_type_tabulasi" id="zone_customer_register" value="zone">
+                                                        <h6>R. by Zone</h6>
+                                                    </label>
                                                 </div>
                                             </div>
-                                        </form>
+                                            
+                                        </div>
+                                        <div class="col-md-6 d-flex flex-column justify-content-start align-items-end"> {{-- Bagian kanan untuk tombol-tombol --}}
+                                            <div class="btn-group-horizontal" role="group" aria-label="Tabulasi Actions">
+                                                <button type="button" class="btn btn-primary mb-2" onclick="submitTabulasiForm('sync_register')">
+                                                    <i class="fa fa-sync"></i> Sync
+                                                </button>
+                                                <button type="button" class="btn btn-danger mb-2" onclick="saveConfirmation('{{ route('superuser.report.customer_type_brand.removeDt') }}')">
+                                                    <i class="fa fa-trash"></i> Remove
+                                                </button>
+                                                <button type="button" class="btn btn-success mb-2" onclick="submitTabulasiForm('export_register_pdf')">
+                                                    <i class="fa fa-file-pdf-o" aria-hidden="true"></i> Export
+                                                </button>
+                                            </div>
+                                        </div>
                                     </div>
-                                </div>
+                                    {{-- Hidden inputs for start_date and end_date for all tabulasi actions --}}
+                                    <input type="hidden" name="start_date_tabulasi" id="period_from_tabulasi_hidden">
+                                    <input type="hidden" name="end_date_tabulasi" id="period_to_tabulasi_hidden">
+                                    <input type="hidden" name="action_type_tabulasi" id="action_type_tabulasi_hidden">
+                                </form>
                             </section>
+                            
                             <section id="content3" class="tab-content">
                                 <h3>Konten untuk Forecasting Principle</h3>
                                 <p>Ini adalah area untuk konten "Forecasting Principle".</p>
@@ -287,21 +240,11 @@
     .tab-content.active {
         display: block;
     }
-
-    /* Sembunyikan form tabulasi secara default */
-    .tabulasi-form {
-        display: none;
-    }
-
-    /* Tampilkan form tabulasi yang aktif */
-    .tabulasi-form.active {
-        display: block;
-    }
 </style>
 
 <script>
-// Pastikan fungsi ini dideklarasikan di sini (global scope)
-function applyTabulasiMonthYearToForms() {
+// Fungsi untuk memperbarui hidden input tanggal pada form Tabulasi
+function applyTabulasiMonthYearToForm() {
     var selectedMonthYear = $('#tabulasi-month-year').val(); // Format: YYYY-MM
 
     if (selectedMonthYear) {
@@ -309,42 +252,48 @@ function applyTabulasiMonthYearToForms() {
         var month = parseInt(selectedMonthYear.substring(5, 7)); // Bulan dari input (1-12)
 
         var startDate = selectedMonthYear + '-01';
-        // Untuk mendapatkan hari terakhir bulan, gunakan bulan+1 dan tanggal 0
-        // Contoh: new Date(2025, 8, 0) akan memberikan 31 Agustus 2025
         var lastDay = new Date(year, month, 0).getDate(); 
         var endDate = selectedMonthYear + '-' + (lastDay < 10 ? '0' : '') + lastDay; 
 
-        $('#period_from_register_hidden').val(startDate);
-        $('#period_to_register_hidden').val(endDate);
-
-        $('#period_from_sales_hidden').val(startDate);
-        $('#period_to_sales_hidden').val(endDate);
+        $('#period_from_tabulasi_hidden').val(startDate);
+        $('#period_to_tabulasi_hidden').val(endDate);
     }
 }
 
-// Fungsi submitForm dan saveConfirmation juga tetap di global scope
-function submitForm(actionType, formId) {
-    let form = $('#' + formId); 
+// Fungsi untuk submit form Tabulasi dengan aksi yang berbeda
+function submitTabulasiForm(actionType) {
+    let form = $('#tabulasiForm'); 
     
     // Pastikan input tanggal tersembunyi di form sudah diperbarui
-    applyTabulasiMonthYearToForms(); // Ini akan menemukan fungsi yang sudah dideklarasikan di atas
+    applyTabulasiMonthYearToForm();
 
-    if (formId === 'registerForm') {
-        if (actionType === 'print') {
-            form.attr('action', "{{ route('superuser.report.customer_type_brand.print_report') }}");
-            form.attr('target', '_blank'); 
-        } else if (actionType === 'sync') { 
+    // Set nilai hidden input action_type
+    $('#action_type_tabulasi_hidden').val(actionType);
+
+    // Atur action form berdasarkan actionType
+    switch (actionType) {
+        case 'sync_register':
             form.attr('action', "{{ route('superuser.report.customer_type_brand.postData') }}");
             form.removeAttr('target'); 
-        }
-    } else if (formId === 'salesmanForm') {
-        if (actionType === 'export') {
-            form.attr('action', ""); // Ganti dengan route export excel salesman Anda
+            break;
+        case 'export_register_pdf':
+            form.attr('action', "{{ route('superuser.report.customer_type_brand.print_report') }}");
+            form.attr('target', '_blank'); 
+            break;
+        case 'upload_salesman':
+            form.attr('action', "{{-- Ganti dengan route upload salesman Anda --}}"); 
             form.removeAttr('target');
-        } else if (actionType === 'upload') { 
-             form.attr('action', ""); // Ganti dengan route upload salesman Anda
-             form.removeAttr('target');
-        }
+            break;
+        case 'export_salesman_excel':
+            form.attr('action', "{{-- Ganti dengan route export excel salesman Anda --}}"); 
+            form.removeAttr('target');
+            break;
+        default:
+            // Default action jika tidak ada yang cocok
+            form.removeAttr('action');
+            form.removeAttr('target');
+            console.warn('Unknown actionType:', actionType);
+            return; // Hentikan proses jika actionType tidak dikenal
     }
     
     form.submit();
@@ -456,40 +405,19 @@ $(document).ready(function () {
                 datatableOmset.columns.adjust().draw();
             }, 10);
         } else if (targetTabId === 'content2') {
-            // Ketika tabulasi aktif, pastikan form register yang muncul duluan
-            $('.tabulasi-form').removeClass('active').hide();
-            $('#form-register').addClass('active').show();
-            // Juga pastikan tombol 'Register' aktif
-            $('.btn-tabulasi-form-toggle').removeClass('active');
-            $('button[data-target-form="form-register"]').addClass('active');
-            // Terapkan tanggal default/terpilih ke form tabulasi saat tab dibuka
-            applyTabulasiMonthYearToForms();
+            // Ketika tabulasi aktif, pastikan picker tanggalnya terisi dengan yang sedang aktif di URL
+            // atau tanggal saat ini jika tidak ada di URL
+            var urlParams = new URLSearchParams(window.location.search);
+            var urlMonth = urlParams.get('month');
+            var urlYear = urlParams.get('year');
+            
+            var currentMonthYear = '{{ $selectedMonthYear }}'; 
+            if (urlMonth && urlYear) {
+                currentMonthYear = urlYear + '-' + (urlMonth < 10 ? '0' : '') + urlMonth;
+            }
+            $('#tabulasi-month-year').val(currentMonthYear);
+            applyTabulasiMonthYearToForm(); // Pastikan hidden inputs diperbarui
         }
-    });
-
-    // --- Fungsionalitas Toggle Form di dalam Tabulasi (#content2) ---
-    // Sembunyikan semua form tabulasi kecuali yang pertama saat halaman dimuat
-    $('.tabulasi-form').not('.active').hide();
-
-    $('.btn-tabulasi-form-toggle').on('click', function() {
-        // Hapus kelas 'active' dari semua tombol toggle form di tabulasi
-        $('.btn-tabulasi-form-toggle').removeClass('active');
-        // Tambahkan kelas 'active' pada tombol yang diklik
-        $(this).addClass('active');
-
-        // Dapatkan ID form yang akan ditampilkan
-        var targetFormId = $(this).data('target-form');
-
-        // Sembunyikan semua form di dalam container dan hapus kelas 'active'
-        $('#tabulasi-forms-container .tabulasi-form').removeClass('active').hide();
-
-        // Tampilkan form yang sesuai dan tambahkan kelas 'active'
-        $('#' + targetFormId).addClass('active').show();
-
-        if (targetFormId === 'form-salesman') {
-            $('#salesmanForm .js-select2').select2(); 
-        }
-        applyTabulasiMonthYearToForms();
     });
 
     // --- Handler untuk Omset Month/Year Picker (Otomatis) ---
@@ -511,30 +439,16 @@ $(document).ready(function () {
         }
     });
 
-    // Ketika tab Omset diaktifkan, pastikan picker tanggalnya terisi dengan yang sedang aktif di URL
-    // atau tanggal saat ini jika tidak ada di URL
-    $('label[data-tab="content1"]').on('click', function() {
-        var urlParams = new URLSearchParams(window.location.search);
-        var urlMonth = urlParams.get('month');
-        var urlYear = urlParams.get('year');
-        
-        var currentMonthYear = '{{ $selectedMonthYear }}'; // Dari backend
-        if (urlMonth && urlYear) {
-            currentMonthYear = urlYear + '-' + (urlMonth < 10 ? '0' : '') + urlMonth;
-        }
-        $('#omset-month-year').val(currentMonthYear);
-    });
-
-    // --- Handler untuk Tabulasi Month/Year Picker (Otomatis) ---
+    // --- Handler untuk Tabulasi Month/Year Picker ---
     // Panggil ini saat halaman dimuat untuk memastikan nilai awal terisi
-    applyTabulasiMonthYearToForms();
+    applyTabulasiMonthYearToForm();
 
     $('#tabulasi-month-year').on('change', function() {
-        applyTabulasiMonthYearToForms();
+        applyTabulasiMonthYearToForm();
         Swal.fire({
             icon: 'success',
             title: 'Periode Diterapkan! ✅',
-            text: 'Periode bulan dan tahun telah diperbarui untuk form Register dan Salesman.',
+            text: 'Periode bulan dan tahun telah diperbarui untuk semua aksi di Tabulasi.',
             showConfirmButton: false,
             timer: 1500
         });
