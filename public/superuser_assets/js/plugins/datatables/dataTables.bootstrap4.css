@@ -21,8 +21,7 @@ table.dataTable.nowrap td {
 }
 
 div.dataTables_wrapper div.dataTables_length label {
-  font-weight: normal;
-  text-align: left;
+  text-align: left; /* Sesuaikan dari default center jika ada */
   white-space: nowrap;
 }
 div.dataTables_wrapper div.dataTables_length select {
@@ -45,16 +44,18 @@ div.dataTables_wrapper div.dataTables_filter input {
 div.dataTables_wrapper div.dataTables_info {
   padding-top: 0.85em;
   white-space: nowrap;
+  margin-right: 15px; /* Jarak antara "Showing X entries" dan "Show Y entries" */
+  text-align: left;
 }
 div.dataTables_wrapper div.dataTables_paginate {
   margin: 0;
   white-space: nowrap;
-  text-align: right;
+  text-align: right; /* Ini penting agar rata kanan */
 }
 div.dataTables_wrapper div.dataTables_paginate ul.pagination {
   margin: 2px 0;
   white-space: nowrap;
-  justify-content: flex-end;
+  justify-content: flex-end; /* Memastikan tombol pagination rata kanan dalam flexbox */
 }
 div.dataTables_wrapper div.dataTables_processing {
   position: absolute;
@@ -155,11 +156,32 @@ div.dataTables_scrollFoot > .dataTables_scrollFootInner > table {
 }
 
 @media screen and (max-width: 767px) {
+  .dataTables_wrapper .row:last-child .col-sm-12.col-md-6:first-child {
+    display: flex; /* Pastikan tetap flex pada mobile */
+    flex-direction: column; /* Tumpuk vertikal pada mobile */
+    align-items: flex-start; /* Sejajarkan ke kiri */
+    width: 100%; /* Ambil lebar penuh pada mobile */
+    padding-left: 0;
+    padding-right: 0;
+  }
+  .dataTables_wrapper .row:last-child .col-sm-12.col-md-6:last-child {
+    width: 100%; /* Ambil lebar penuh pada mobile */
+    padding-left: 0;
+    padding-right: 0;
+  }
   div.dataTables_wrapper div.dataTables_length,
   div.dataTables_wrapper div.dataTables_filter,
   div.dataTables_wrapper div.dataTables_info,
   div.dataTables_wrapper div.dataTables_paginate {
-    text-align: center;
+    text-align: left !important; /* Paksa rata kiri pada mobile */
+    margin-left: 0;
+    margin-right: 0;
+    margin-top: 10px; /* Jarak antar elemen saat menumpuk */
+    padding-top: 0;
+    width: 100%; /* Pastikan elemen mengambil lebar penuh */
+  }
+  div.dataTables_wrapper div.dataTables_paginate ul.pagination {
+    justify-content: flex-start !important;
   }
 }
 table.dataTable.table-sm > thead > tr > th {

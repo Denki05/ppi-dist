@@ -8,6 +8,7 @@ use App\Entities\Penjualan\SalesOrder;
 use App\Entities\Penjualan\PackingOrder;
 use App\Entities\Reports\CustomerTypeBrandReports;
 use App\Entities\Master\CustomerOtherAddress;
+use App\Entities\Master\Vendor;
 use App\Entities\Master\ProductPack;
 use App\Entities\Setting\UserMenu;
 use Illuminate\Support\Facades\Session;
@@ -35,7 +36,7 @@ class DashboardController extends Controller
         });
     }
     
-    public function index(Request $request) 
+    public function index(Request $request)
     {
         $is_see = true;
         if (Auth::user()->is_superuser == 0) {
@@ -44,16 +45,31 @@ class DashboardController extends Controller
             }
         }
 
-        // Dapatkan bulan dan tahun dari request, jika tidak ada gunakan bulan dan tahun saat ini
-        // PASTIKAN $selectedMonth dan $selectedYear adalah INTEGER
-        $selectedMonth = (int)$request->input('month', Carbon::now()->month);
-        $selectedYear = (int)$request->input('year', Carbon::now()->year);
+        $selectedMonthYear = $request->input('month_year'); // Ini akan menjadi 'YYYY-MM'
+        $selectedMonthYearFirst = null; // Deklarasi variabel baru dan inisialisasi
 
-        // Buat objek Carbon untuk tanggal awal dan akhir bulan yang dipilih
-        // Pastikan format yang digunakan untuk startOfMonth dan endOfMonth benar
+        if ($selectedMonthYear) {
+            list($year, $month) = explode('-', $selectedMonthYear);
+            $selectedYear = (int)$year;
+            $selectedMonth = (int)$month;
+
+            $selectedMonthYearFirst = Carbon::createFromDate($selectedYear, 1, 1)->format('Y-m');
+
+        } else {
+            $selectedYear = Carbon::now()->year;
+            $selectedMonth = Carbon::now()->month; // Tetap bulan saat ini untuk selectedMonthYear
+            $selectedMonthYear = Carbon::now()->format('Y-m'); // Tetap format bulan saat ini
+
+            // 👇 Bagian untuk selectedMonthYearFirst saja 👇
+            $selectedMonthFirst = 1; // Selalu Januari
+            $selectedMonthYearFirst = Carbon::createFromDate($selectedYear, $selectedMonthFirst, 1)->format('Y-m');
+            // 👆 Bagian untuk selectedMonthYearFirst saja 👆
+        }
+
         $startDate = Carbon::createFromDate($selectedYear, $selectedMonth, 1)->startOfMonth()->format('Y-m-d H:i:s');
         $endDate = Carbon::createFromDate($selectedYear, $selectedMonth, 1)->endOfMonth()->format('Y-m-d H:i:s');
 
+        // Query untuk data 'progress' (Omset)
         $progress = SalesOrder::leftJoin('master_customer_other_addresses', 'penjualan_so.customer_other_address_id', '=', 'master_customer_other_addresses.id')
             ->leftJoin('penjualan_do', 'penjualan_so.id', '=', 'penjualan_do.so_id')
             ->leftJoin('penjualan_do_details', 'penjualan_do.id', '=', 'penjualan_do_details.do_id')
@@ -61,7 +77,7 @@ class DashboardController extends Controller
                 'master_customer_other_addresses.name AS customer_name',
                 'master_customer_other_addresses.text_kota AS customer_city',
                 'penjualan_so.so_code AS so_code',
-                'penjualan_so.so_date AS so_date',
+                'penjualan_so.so_date AS so_date', // Pastikan kolom tanggal ini digunakan untuk filter
                 'penjualan_do.id AS id',
                 'penjualan_do.do_code AS invoice_code',
                 'penjualan_so.brand_name AS invoice_brand',
@@ -72,28 +88,17 @@ class DashboardController extends Controller
             ->where('penjualan_so.status', 4)
             ->where('penjualan_so.status', '!=', 7)
             ->whereBetween('penjualan_so.so_date', [$startDate, $endDate]) // Filter berdasarkan tanggal awal dan akhir bulan
-            ->groupBy('penjualan_do.id', 'master_customer_other_addresses.name', 'penjualan_do.do_code')
+            ->groupBy('penjualan_do.id', 'master_customer_other_addresses.name', 'penjualan_do.do_code', 'penjualan_so.so_code', 'penjualan_so.so_date', 'penjualan_so.brand_name', 'penjualan_so.type_so') // Tambahkan kolom non-aggregate ke GROUP BY
             ->get();
 
-        // Siapkan daftar bulan untuk dropdown (tidak digunakan lagi jika menggunakan input type="month")
-        // Baris kode ini bisa dihapus atau diabaikan jika tidak ada dropdown bulan/tahun tradisional.
-        // Namun, jika masih ingin ada, pastikan logikanya sesuai.
-        $months = []; // Bisa dihapus
-        $currentDate = Carbon::now(); // Bisa dihapus
-        for ($i = -6; $i <= 6; $i++) { // Bisa dihapus
-            $date = $currentDate->copy()->addMonths($i); // Bisa dihapus
-            $months[] = [ // Bisa dihapus
-                'value' => $date->format('Y-m'),
-                'text' => $date->isoFormat('MMMM YYYY'),
-                'selected' => ($date->month == $selectedMonth && $date->year == $selectedYear)
-            ]; // Bisa dihapus
-        }
+        $vendor = Vendor::where('type', 2)->get();
 
         $data = [
             'is_see' => $is_see,
+            'vendor' => $vendor,
             'progress' => $progress,
-            'months' => $months, // Bisa dihapus jika tidak lagi digunakan
-            'selectedMonthYear' => Carbon::createFromDate($selectedYear, $selectedMonth, 1)->format('Y-m'), // Untuk default selected di frontend
+            'selectedMonthYear' => $selectedMonthYear,
+            'selectedMonthYearFirst' => $selectedMonthYearFirst, // Kirimkan variabel baru ini ke view
         ];
 
         return view($this->view, $data);
