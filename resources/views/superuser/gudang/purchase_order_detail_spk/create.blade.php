@@ -55,11 +55,11 @@
               </select>
             </div>
             <div class="form-group col-md-2">
-              <label>Catatan Produksi</label>
+              <label>Notes</label>
               <input type="text" name="note_produksi[]" class="form-control note_produksi" data-index="0" placeholder="Catatan...">
             </div>
             <div class="form-group col-md-2">
-              <label>Catatan Repack</label>
+              <label>Customer</label>
               <input type="text" name="note_repack[]" class="form-control note_repack" data-index="0" placeholder="Catatan...">
             </div>
             <div class="form-group col-md-2 text-right">

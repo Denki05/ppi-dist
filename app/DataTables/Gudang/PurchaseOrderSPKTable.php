@@ -115,12 +115,6 @@ class PurchaseOrderSPKTable extends Table
                             </button>
                         </a>
 
-                        <a href=\"{$pdf}\">
-                            <button type=\"button\" class=\"btn btn-sm btn-circle btn-alt-secondary\" title=\"Print Out\">
-                                <i class=\"fa fa-print\"></i>
-                            </button>
-                        </a>
-
                         <a href=\"javascript:saveConfirmation('{$cancel_acc}')\">
                             <button type=\"button\" class=\"btn btn-sm btn-circle btn-alt-secondary\" title=\"Cancel Approve\">
                                 <i class=\"fa fa-refresh\"></i>
@@ -140,6 +134,12 @@ class PurchaseOrderSPKTable extends Table
                         <a href=\"{$view}\">
                             <button type=\"button\" class=\"btn btn-sm btn-circle btn-alt-secondary\" title=\"View\">
                                 <i class=\"fa fa-eye\"></i>
+                            </button>
+                        </a>
+
+                        <a href=\"{$pdf}\">
+                            <button type=\"button\" class=\"btn btn-sm btn-circle btn-alt-secondary\" title=\"Print Out\">
+                                <i class=\"fa fa-print\"></i>
                             </button>
                         </a>
 

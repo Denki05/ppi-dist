@@ -152,7 +152,7 @@
                                                                 {{-- Radio button dan Dropdown Tahun --}}
                                                                 <div class="form-check me-2">
                                                                     <input class="form-check-input" type="radio" name="period_filter_type" id="filterByYear" value="year">
-                                                                    <select class="form-control form-control-sm js-select2" id="tabulasi-year-select" style="width: 100px;">
+                                                                    <select class="form-control form-control-sm js-select2" id="tabulasi-year-select" style="width: 130px;">
                                                                         @php
                                                                             $currentYear = date('Y');
                                                                             // Misalnya, tampilkan tahun 5 tahun ke belakang dan 5 tahun ke depan
@@ -170,8 +170,6 @@
                                                             <select class="form-control form-control-sm js-select2" name="report_type_tabulasi" id="report_type_tabulasi" style="min-width: 180px;">
                                                                 <option value="brand">R. by Brand</option>
                                                                 <option value="zone">R. by Zone</option>
-                                                                {{-- Tambahkan opsi salesman jika relevan --}}
-                                                                <option value="salesman">R. by Salesman</option>
                                                             </select>
                                                         </div>
                                                     </div>
@@ -231,35 +229,39 @@
                                                             </div>
 
                                                             <div>
-                                                                <label for="semester_count_forecast" class="form-label visually-hidden">Select Semester:</label>
-                                                                <select class="form-control form-control-sm js-select2" name="semester_count" id="semester_count_forecast" style="min-width: 280px;">
-                                                                    <option value="">Select Semester</option>
-                                                                    <option value="1">1 Semester</option>
-                                                                    <option value="2">2 Semesters</option>
-                                                                    <option value="3">3 Semesters</option>
-                                                                    <option value="4">4 Semesters</option>
-                                                                    <option value="6">6 Semesters</option>
-                                                                </select>
-                                                            </div>
-
-                                                            <div>
                                                                 <label for="period_from_forecast" class="form-label visually-hidden">Dari Bulan & Tahun:</label>
-                                                                <input type="month" name="period_from" id="period_from_forecast" class="form-control form-control-sm" style="width: 150px;">
+                                                                 <input type="month" name="period_from" id="period_from_forecast" class="form-control form-control-sm" style="width: 150px;" value="{{ $selectedMonthYear }}">
                                                             </div>
 
                                                             <div>
                                                                 <label for="period_to_forecast" class="form-label visually-hidden">Sampai Bulan & Tahun:</label>
-                                                                <input type="month" name="period_to" id="period_to_forecast" class="form-control form-control-sm" style="width: 150px;">
+                                                                <input type="month" name="period_to" id="period_to_forecast" class="form-control form-control-sm" style="width: 150px;" value="{{ $selectedMonthYear }}">
                                                             </div>
-                                                        </div>
 
-                                                        <div class="ms-auto">
-                                                            <div class="btn-group" role="group" aria-label="Forecasting Actions">
+                                                            <div>
+                                                                <label for="semester_count_forecast" class="form-label visually-hidden">Select Semester:</label>
+                                                                <select class="form-control form-control-sm js-select2" name="semester_count" id="semester_count_forecast" style="min-width: 280px;">
+                                                                    <option value="">Pilih Semester</option>
+                                                                    <option value="1">1 Semester</option>
+                                                                    <option value="2">2 Semester</option>
+                                                                    <option value="3">3 Semester</option>
+                                                                    <option value="4">4 Semester</option>
+                                                                    <option value="6">6 Semester</option>
+                                                                </select>
+                                                            </div>
+
+                                                            <div>
                                                                 <button type="button" id="printReportForecast" class="btn btn-success btn-sm" onclick="submitForecastingForm()">
                                                                     <i class="fa fa-file-pdf-o" aria-hidden="true"></i> Export
                                                                 </button>
                                                             </div>
                                                         </div>
+
+                                                        <!-- <div class="ms-auto">
+                                                            <div class="btn-group" role="group" aria-label="Forecasting Actions">
+                                                                
+                                                            </div>
+                                                        </div> -->
                                                     </div>
 
                                                 </div>
@@ -338,8 +340,9 @@
         let endDate = '';
 
         const filterType = $('input[name="period_filter_type"]:checked').val();
-        const selectedMonth = $('#tabulasi-month-select').val();
-        const selectedYear = $('#tabulasi-year-select').val();
+        // Pastikan ada nilai default jika dropdown belum terpilih atau tidak ada value
+        const selectedMonth = $('#tabulasi-month-select').val() || '{{ sprintf('%02d', date('n')) }}'; // Default ke bulan saat ini
+        const selectedYear = $('#tabulasi-year-select').val() || '{{ date('Y') }}';   // Default ke tahun saat ini
 
         if (filterType === 'month') {
             const year = parseInt(selectedYear);
@@ -354,10 +357,11 @@
             endDate = `${year}-12-31`;
         }
 
-        $('#tabulasi_start_date').val('');
-        $('#tabulasi_end_date').val('');
-        $('#tabulasi_period_from').val('');
-        $('#tabulasi_period_to').val('');
+        // Hapus baris-baris ini, karena hanya akan menyebabkan input kosong sesaat.
+        // $('#tabulasi_start_date').val('');
+        // $('#tabulasi_end_date').val('');
+        // $('#tabulasi_period_from').val('');
+        // $('#tabulasi_period_to').val('');
 
         $('#tabulasi_start_date').val(startDate);
         $('#tabulasi_end_date').val(endDate);
@@ -415,7 +419,7 @@
                 formData.append('type', 2); 
                 formData.append('action', 'print');
             } else if (selectedReportType === 'salesman') {
-                url = ""; // Make sure this route is correctly defined or handled
+                url = "";
                 formData.append('type', 2); 
             } else {
                 Swal.fire({
@@ -493,8 +497,32 @@
             });
 
         } else if (actionType === 'sync_register') {
-            const periodFrom = form.find('input[name="tabulasi_period_from"]').val();
-            const periodTo = form.find('input[name="tabulasi_period_to"]').val();
+            let startDate = '';
+            let endDate = '';
+
+            const selectedMonth = $('#tabulasi-month-select').val() || '{{ sprintf('%02d', date('n')) }}'; // Default ke bulan saat ini
+            const selectedYear = $('#tabulasi-year-select').val() || '{{ date('Y') }}';   // Default ke tahun saat ini
+
+            const year = parseInt(selectedYear);
+            const month = parseInt(selectedMonth);
+
+            startDate = `${year}-${selectedMonth}-01`;
+            const lastDay = new Date(year, month, 0).getDate();
+            endDate = `${year}-${selectedMonth}-${lastDay}`;
+
+            const periodFrom = startDate
+            const periodTo = endDate
+
+            // Tambahkan validasi di sini sebelum redirect
+            if (!periodFrom || !periodTo) {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Validasi Gagal',
+                    text: 'Periode Sync (Dari Bulan & Sampai Bulan) tidak boleh kosong.',
+                    confirmButtonText: 'Oke'
+                });
+                return; // Hentikan proses jika periode kosong
+            }
 
             const baseUrl = "{{ route('superuser.report.customer_type_brand.postData') }}";
 
