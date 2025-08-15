@@ -124,7 +124,7 @@
                                     <div class="card">
                                         <div class="card-body">
                                             <div class="d-flex flex-column">
-                                                <div class="d-flex justify-content-between align-items-center mb-4"> {{-- mb-4 untuk jarak dari iframe --}}
+                                                <div class="d-flex justify-content-between align-items-center mb-4">
                                                     {{-- Group input --}}
                                                     <div class="d-flex align-items-center me-3">
                                                         <div>
@@ -191,16 +191,15 @@
                                                 </div>
 
                                                 {{-- Bagian Iframe --}}
-                                                {{-- iframe akan mengikuti lebar container induknya (card-body) --}}
                                                 <iframe src="" type="application/pdf" id="iframePdf" style="width: 100%; height: 800px; border: 1px solid #ddd;">
                                                     <p>Browser Anda tidak mendukung iframe atau tidak dapat menampilkan file PDF secara langsung. Silakan <a href="#" id="pdfDownloadLink">klik di sini untuk mengunduh PDF</a>.</p>
                                                 </iframe>
 
-                                            </div> {{-- Akhir dari d-flex flex-column --}}
+                                            </div>
                                         </div>
                                     </div>
 
-                                    {{-- Hidden inputs (tetap di luar flex container utama) --}}
+                                    {{-- Hidden inputs --}}
                                     <input type="hidden" name="start" id="tabulasi_start_date">
                                     <input type="hidden" name="end" id="tabulasi_end_date">
                                     <input type="hidden" name="period_from" id="tabulasi_period_from">
@@ -212,19 +211,15 @@
                                 </form>
                             </section>
                             
-                            {{-- MODIFIKASI DIMULAI DI SINI --}}
                             <section id="content3" class="tab-content">
-                                <form id="forecastingForm" method="POST" target="_blank"> {{-- Tambahkan form dan target="_blank" untuk PDF --}}
+                                <form id="forecastingForm" method="POST" target="_blank">
                                     @csrf
                                     <div class="row">
                                         <div class="col-12">
                                             <div class="card">
                                                 <div class="card-body">
-                                                    {{-- Baris utama untuk inputan dan tombol, menggunakan d-flex untuk mengatur horizontal --}}
-                                                    <div class="d-flex justify-content-start align-items-center mb-4"> {{-- mb-4 untuk jarak dari iframe --}}
-                                                        {{-- Group input Vendor, Period From, Period To --}}
-                                                        <div class="d-flex align-items-center gap-3"> {{-- Menggunakan gap-3 untuk jarak antar input --}}
-                                                            {{-- Select Vendor --}}
+                                                    <div class="d-flex justify-content-start align-items-center mb-4">
+                                                        <div class="d-flex align-items-center gap-3">
                                                             <div>
                                                                 <label for="vendor_name_forecast" class="form-label visually-hidden">Vendor:</label>
                                                                 <select class="form-control form-control-sm js-select2" name="vendor_name" id="vendor_name_forecast" style="min-width: 280px;">
@@ -235,43 +230,46 @@
                                                                 </select>
                                                             </div>
 
-                                                            
+                                                            <div>
+                                                                <label for="semester_count_forecast" class="form-label visually-hidden">Select Semester:</label>
+                                                                <select class="form-control form-control-sm js-select2" name="semester_count" id="semester_count_forecast" style="min-width: 280px;">
+                                                                    <option value="">Select Semester</option>
+                                                                    <option value="1">1 Semester</option>
+                                                                    <option value="2">2 Semesters</option>
+                                                                    <option value="3">3 Semesters</option>
+                                                                    <option value="4">4 Semesters</option>
+                                                                    <option value="6">6 Semesters</option>
+                                                                </select>
+                                                            </div>
 
-                                                            {{-- Period From (Month & Year) --}}
                                                             <div>
                                                                 <label for="period_from_forecast" class="form-label visually-hidden">Dari Bulan & Tahun:</label>
                                                                 <input type="month" name="period_from" id="period_from_forecast" class="form-control form-control-sm" style="width: 150px;">
                                                             </div>
 
-                                                            {{-- Period To (Month & Year) --}}
                                                             <div>
                                                                 <label for="period_to_forecast" class="form-label visually-hidden">Sampai Bulan & Tahun:</label>
                                                                 <input type="month" name="period_to" id="period_to_forecast" class="form-control form-control-sm" style="width: 150px;">
                                                             </div>
                                                         </div>
 
-                                                        {{-- Tombol Aksi - Pindahkan ke kanan jika diinginkan, atau biarkan mengikuti input --}}
-                                                        {{-- Jika ingin tombol di kanan terpisah, gunakan justify-content-between di div utama --}}
-                                                        <div class="ms-auto"> {{-- ms-auto untuk mendorong tombol ke kanan --}}
+                                                        <div class="ms-auto">
                                                             <div class="btn-group" role="group" aria-label="Forecasting Actions">
-                                                                <button type="button" id="printReportForecast" class="btn btn-success btn-sm" onclick="submitForecastingForm('print_pdf')">
+                                                                <button type="button" id="printReportForecast" class="btn btn-success btn-sm" onclick="submitForecastingForm()">
                                                                     <i class="fa fa-file-pdf-o" aria-hidden="true"></i> Export
                                                                 </button>
                                                             </div>
                                                         </div>
                                                     </div>
-                                                    {{-- Akhir dari d-flex untuk inputan dan tombol --}}
 
-                                                </div> {{-- Akhir card-body --}}
-                                            </div> {{-- Akhir card --}}
+                                                </div>
+                                            </div>
                                         </div>
                                     </div>
-                                    {{-- Hidden inputs untuk parameter yang dibutuhkan controller --}}
                                     <input type="hidden" name="action_forecast" id="action_forecast_param">
                                 </form>
 
-                                {{-- Iframe berada di row terpisah dengan margin atas --}}
-                                <div class="row mt-4"> {{-- mt-4 untuk jarak vertikal dari card di atas --}}
+                                <div class="row mt-4">
                                     <div class="col-12">
                                         <iframe src="" type="application/pdf" id="iframeForecastPdf" style="width: 100%; height: 800px; border: 1px solid #ddd;">
                                             <p>Browser Anda tidak mendukung iframe atau tidak dapat menampilkan file PDF secara langsung. Silakan <a href="#" id="forecastPdfDownloadLink">klik di sini untuk mengunduh PDF</a>.</p>
@@ -279,7 +277,6 @@
                                     </div>
                                 </div>
                             </section>
-                            {{-- MODIFIKASI BERAKHIR DI SINI --}}
                         </main>
                     </div>
                 </div>
@@ -297,7 +294,6 @@
 
 @push('scripts')
 <style>
-    /* Styling untuk label tab agar terlihat seperti tombol */
     .tab-label {
         background-color: #f0f0f0;
         border: 1px solid #ddd;
@@ -316,7 +312,6 @@
         background-color: #e0e0e0;
     }
 
-    /* Styling untuk label tab yang aktif */
     .tab-label.active-tab-label {
         background-color: #fff;
         border-color: #ccc;
@@ -324,7 +319,6 @@
         color: #000;
     }
 
-    /* Sembunyikan semua konten tab secara default */
     .tab-content {
         display: none;
         border: 1px solid #ccc;
@@ -333,7 +327,6 @@
         background-color: #fff;
     }
 
-    /* Tampilkan konten tab yang aktif */
     .tab-content.active {
         display: block;
     }
@@ -345,8 +338,8 @@
         let endDate = '';
 
         const filterType = $('input[name="period_filter_type"]:checked').val();
-        const selectedMonth = $('#tabulasi-month-select').val(); // Format: MM
-        const selectedYear = $('#tabulasi-year-select').val();   // Format: YYYY
+        const selectedMonth = $('#tabulasi-month-select').val();
+        const selectedYear = $('#tabulasi-year-select').val();
 
         if (filterType === 'month') {
             const year = parseInt(selectedYear);
@@ -422,7 +415,7 @@
                 formData.append('type', 2); 
                 formData.append('action', 'print');
             } else if (selectedReportType === 'salesman') {
-                url = "";
+                url = ""; // Make sure this route is correctly defined or handled
                 formData.append('type', 2); 
             } else {
                 Swal.fire({
@@ -519,6 +512,7 @@
         }
     }
 
+    // UPDATED FUNCTION: submitForecastingForm
     function submitForecastingForm() {
         Swal.fire({
             title: 'Membuat Laporan Forecasting...',
@@ -530,27 +524,42 @@
         });
 
         let vendor_name = $('#vendor_name_forecast').val();
-        let period_from = $('#period_from_forecast').val(); 
-        let period_to = $('#period_to_forecast').val();     
+        // semester_count tetap diambil, namun tidak digunakan untuk kalkulasi tanggal di frontend
+        let semester_count = $('#semester_count_forecast').val(); 
+        let period_from_input = $('#period_from_forecast').val();
+        let period_to_input = $('#period_to_forecast').val();
 
-        let formatted_period_from = period_from ? period_from + '-01' : '';
-
+        let formatted_period_from = '';
         let formatted_period_to = '';
-        if (period_to) {
-            let parts = period_to.split('-');
-            let year = parseInt(parts[0]);
-            let month = parseInt(parts[1]);
-            let lastDay = new Date(year, month, 0).getDate(); 
-            formatted_period_to = `${period_to}-${lastDay}`;
-        }
-        
-        if (!vendor_name || !formatted_period_from || !formatted_period_to) {
+
+        // Prioritaskan input manual untuk periode
+        if (!period_from_input || !period_to_input) {
             Swal.fire({
                 icon: 'error',
                 title: 'Input Tidak Lengkap!',
-                text: 'Vendor, Bulan Awal, dan Bulan Akhir tidak boleh kosong.',
+                text: 'Periode (Dari Bulan & Sampai Bulan) tidak boleh kosong.',
             });
-            return; 
+            return;
+        }
+
+        // Jika input manual ada, gunakan itu
+        formatted_period_from = period_from_input + '-01'; // Tambahkan -01 untuk tanggal awal bulan
+        
+        // Hitung hari terakhir dari bulan untuk period_to_input
+        let parts = period_to_input.split('-');
+        let year = parseInt(parts[0]);
+        let month = parseInt(parts[1]);
+        let lastDay = new Date(year, month, 0).getDate();
+        formatted_period_to = `${period_to_input}-${lastDay}`;
+        
+        // Validasi Vendor
+        if (!vendor_name) {
+            Swal.fire({
+                icon: 'error',
+                title: 'Input Tidak Lengkap!',
+                text: 'Vendor tidak boleh kosong.',
+            });
+            return;
         }
 
         $.ajax({
@@ -560,13 +569,14 @@
                 vendor_name: vendor_name,
                 period_from: formatted_period_from,
                 period_to: formatted_period_to,
+                semester_count: semester_count, // Tetap kirim semester_count (opsional di backend)
                 _token: "{{ csrf_token() }}" 
             },
             success: function(response) {
                 Swal.close(); 
                 if (response.success) {
                     $('#iframeForecastPdf').attr('src', response.pdf_url);
-                    $('#downloadForecastPdf').attr('href', response.pdf_url).show();
+                    $('#forecastPdfDownloadLink').attr('href', response.pdf_url).show();
                     Swal.fire({
                         icon: 'success',
                         title: 'Berhasil!',
@@ -627,14 +637,12 @@
             window.location.href = "{{ route('superuser.index') }}";
         });
 
-        // --- Inisialisasi DataTable untuk tab "Omset" ---
         var filterTypeOmset = 'all'; 
         var datatableOmset = $('.datatableOmset').DataTable({
             "info": false,
             "dom": '<"top"f><"row"<"col-sm-12"tr>><"row"<"col-sm-12 col-md-6 d-flex align-items-center"il><"col-sm-12 col-md-6"p>>',
             "footerCallback": function ( row, data, start, end, display ) {
                 var api = this.api();
-
                 var totalCash = 0;
                 var totalTempo = 0;
 
@@ -701,7 +709,7 @@
             }
         });
 
-        // Event listener untuk perubahan dropdown bulan atau tahun, atau radio button
+        // Event listener untuk perubahan dropdown bulan atau tahun, atau radio button (Tabulasi)
         $('#tabulasi-month-select, #tabulasi-year-select, input[name="period_filter_type"]').on('change', function() {
             applyTabulasiMonthYearToForm();
         });
@@ -718,21 +726,20 @@
         });
 
         $('#report_type_tabulasi').trigger('change');
-        
         applyTabulasiMonthYearToForm();
 
-        // **LOGIKA BARU: Mengaktifkan/menonaktifkan dropdown berdasarkan radio button**
+        // LOGIKA BARU: Mengaktifkan/menonaktifkan dropdown berdasarkan radio button (Tabulasi)
         $('input[name="period_filter_type"]').on('change', function() {
             const filterType = $(this).val();
             if (filterType === 'month') {
-                $('#tabulasi-month-select').prop('disabled', false).trigger('change'); // Aktifkan bulan
-                $('#tabulasi-year-select').prop('disabled', true);   // Nonaktifkan tahun
+                $('#tabulasi-month-select').prop('disabled', false).trigger('change');
+                $('#tabulasi-year-select').prop('disabled', true);
             } else { // filterType === 'year'
-                $('#tabulasi-month-select').prop('disabled', true);   // Nonaktifkan bulan
-                $('#tabulasi-year-select').prop('disabled', false).trigger('change');  // Aktifkan tahun
+                $('#tabulasi-month-select').prop('disabled', true);
+                $('#tabulasi-year-select').prop('disabled', false).trigger('change');
             }
-            applyTabulasiMonthYearToForm(); // Panggil ulang untuk update tanggal setelah perubahan mode
-        }).trigger('change'); // Panggil trigger change saat load untuk set initial state
+            applyTabulasiMonthYearToForm();
+        }).trigger('change');
     });
 </script>
 @endpush

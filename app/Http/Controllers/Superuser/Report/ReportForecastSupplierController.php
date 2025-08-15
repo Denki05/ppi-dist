@@ -49,15 +49,25 @@ class ReportForecastSupplierController extends Controller
 
     public function printReport(Request $request)
     {
-        $start = $request->all()['period_from'];
-        $end = $request->all()['period_to'];
-        $vendor = $request->all()['vendor_name'];
-        $date = date("Y-m-d_H-i-s");
+        $start = $request->input('period_from');
+        $end = $request->input('period_to');
+        $vendor = $request->input('vendor_name');
+        $semesterCount = $request->input('semester_count'); // Sekarang Anda menerima semester_count
 
-        if ( $start == null && $end == null && $vendor == null ) {
-            return response()->json(['error' => 'Input tanggal dan vendor tidak boleh kosong.'], 400);
+        // Validasi input
+        if (empty($vendor)) {
+            return response()->json(['error' => 'Vendor tidak boleh kosong.'], 400);
         }
 
+        if (empty($start) || empty($end)) {
+            // Ini akan mencakup kasus di mana semester dipilih dan tanggal dihitung di frontend
+            // atau tanggal manual tidak diisi
+            return response()->json(['error' => 'Periode laporan (Dari Bulan & Sampai Bulan) tidak boleh kosong.'], 400);
+        }
+
+        $date = date("Y-m-d_H-i-s");
+
+        // Format tanggal untuk Crystal Reports jika diperlukan dalam format d-m-Y
         $new_date_start = date('d-m-Y', strtotime($start));
         $new_date_end = date('d-m-Y', strtotime($end));
 
@@ -72,23 +82,24 @@ class ReportForecastSupplierController extends Controller
             File::makeDirectory($exportDir, 0777, true, true);
         }
 
-        $my_server = "LOCAL"; 
-        $my_user = "root"; 
-        $my_password = ""; 
+        $my_server = "LOCAL";
+        $my_user = "root";
+        $my_password = "";
         $my_database = "ppi_araya";
         $COM_Object = "CrystalDesignRunTime.Application";
 
         try {
-            // Refactored line to support older PHP versions
-            $crapp = null; // Initialize to null
+            $crapp = null;
             try {
                 $crapp = new COM($COM_Object);
-            } catch (\com_exception $e) { // Catch COM specific exceptions
+            } catch (\com_exception $e) {
+                // Log the COM exception for debugging
+                Log::error('COM Exception: ' . $e->getMessage());
                 throw new \Exception("Unable to Create Crystal Reports Object: " . $e->getMessage());
             }
             
-            if (!$crapp) { // Fallback check
-                 throw new \Exception("Unable to Create Crystal Reports Object (COM object is null).");
+            if (!$crapp) {
+                throw new \Exception("Unable to Create Crystal Reports Object (COM object is null).");
             }
 
             $creport = $crapp->OpenReport($my_report,1);
@@ -97,25 +108,33 @@ class ReportForecastSupplierController extends Controller
 
             $creport->EnableParameterPrompting = FALSE;
 
-            $creport->ParameterFields(2)->SetCurrentValue ("$new_date_start");
-            $creport->ParameterFields(3)->SetCurrentValue ("$new_date_end");
+            // Pastikan ParameterFields 2 dan 3 sesuai dengan urutan parameter di laporan Crystal Anda
+            // Gunakan $new_date_start dan $new_date_end yang sudah diformat d-m-Y
+            $creport->ParameterFields(2)->SetCurrentValue("$new_date_start");
+            $creport->ParameterFields(3)->SetCurrentValue("$new_date_end");
+            $creport->ParameterFields(5)->SetCurrentValue("$semesterCount");
+            // Jika Anda memiliki parameter lain di Crystal Report yang ingin diisi (misal untuk semesterCount), tambahkan di sini
+            // Contoh: $creport->ParameterFields(4)->SetCurrentValue($semesterCount);
 
-            $creport->RecordSelectionFormula = "{Command.tanggal_so} >= #$start# AND {Command.tanggal_so} <= #$end# AND {Command.nama_vendor} = '$vendor'";
+            // Record Selection Formula menggunakan $start dan $end dalam format Y-m-d yang diterima dari frontend
+            $creport->RecordSelectionFormula = "{Command.tanggal_so} >= #{$start}# AND {Command.tanggal_so} <= #{$end}# AND {Command.nama_vendor} = '$vendor'";
 
             $creport->ExportOptions->DiskFileName=$my_pdf;
             $creport->ExportOptions->PDFExportAllPages=true;
             $creport->ExportOptions->DestinationType=1;
-            $creport->ExportOptions->FormatType=31;
+            $creport->ExportOptions->FormatType=31; // crEFTPDF
             $creport->Export(false);
-     
+        
+            // Penting: Kosongkan objek COM setelah selesai
             $creport = null;
             $crapp = null;
-            $ObjectFactory = null;
+            // $ObjectFactory = null; // Ini tidak diperlukan jika $crapp dibuat langsung
 
             return response()->json(['success' => true, 'pdf_url' => $pdf_url]);
 
         } catch (\Exception $e) {
-            \Log::error('Crystal Reports Export Error: ' . $e->getMessage());
+            // Log error secara lebih detail untuk debugging
+            Log::error('Crystal Reports Export Error: ' . $e->getMessage() . ' Trace: ' . $e->getTraceAsString());
             return response()->json(['error' => 'Gagal membuat laporan: ' . $e->getMessage()], 500);
         }
     }
