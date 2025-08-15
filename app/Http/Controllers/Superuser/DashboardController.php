@@ -45,16 +45,31 @@ class DashboardController extends Controller
             }
         }
 
-        // Dapatkan bulan dan tahun dari request, jika tidak ada gunakan bulan dan tahun saat ini
-        // PASTIKAN $selectedMonth dan $selectedYear adalah INTEGER
-        $selectedMonth = (int)$request->input('month', Carbon::now()->month);
-        $selectedYear = (int)$request->input('year', Carbon::now()->year);
+        // --- REVISI DI SINI ---
+        // 1. Ambil parameter 'month_year' dari URL
+        $selectedMonthYear = $request->input('month_year'); // Ini akan menjadi 'YYYY-MM'
 
-        // Buat objek Carbon untuk tanggal awal dan akhir bulan yang dipilih
-        // Pastikan format yang digunakan untuk startOfMonth dan endOfMonth benar
+        // Tentukan rentang tanggal berdasarkan parameter atau bulan saat ini
+        if ($selectedMonthYear) {
+            // Pisahkan tahun dan bulan dari 'YYYY-MM'
+            list($year, $month) = explode('-', $selectedMonthYear);
+            $selectedYear = (int)$year;
+            $selectedMonth = (int)$month;
+            
+        } else {
+            // Jika parameter tidak ada, gunakan bulan saat ini sebagai default
+            $selectedYear = Carbon::now()->year;
+            $selectedMonth = Carbon::now()->month;
+            // Ini penting untuk memastikan picker di frontend menampilkan bulan saat ini jika tidak ada parameter di URL
+            $selectedMonthYear = Carbon::now()->format('Y-m'); 
+        }
+
+        // Buat objek Carbon untuk start dan end date bulan yang dipilih
+        // Ini sudah benar, tetapi pastikan formatnya konsisten (Y-m-d H:i:s)
         $startDate = Carbon::createFromDate($selectedYear, $selectedMonth, 1)->startOfMonth()->format('Y-m-d H:i:s');
         $endDate = Carbon::createFromDate($selectedYear, $selectedMonth, 1)->endOfMonth()->format('Y-m-d H:i:s');
 
+        // Query untuk data 'progress' (Omset)
         $progress = SalesOrder::leftJoin('master_customer_other_addresses', 'penjualan_so.customer_other_address_id', '=', 'master_customer_other_addresses.id')
             ->leftJoin('penjualan_do', 'penjualan_so.id', '=', 'penjualan_do.so_id')
             ->leftJoin('penjualan_do_details', 'penjualan_do.id', '=', 'penjualan_do_details.do_id')
@@ -62,7 +77,7 @@ class DashboardController extends Controller
                 'master_customer_other_addresses.name AS customer_name',
                 'master_customer_other_addresses.text_kota AS customer_city',
                 'penjualan_so.so_code AS so_code',
-                'penjualan_so.so_date AS so_date',
+                'penjualan_so.so_date AS so_date', // Pastikan kolom tanggal ini digunakan untuk filter
                 'penjualan_do.id AS id',
                 'penjualan_do.do_code AS invoice_code',
                 'penjualan_so.brand_name AS invoice_brand',
@@ -73,22 +88,19 @@ class DashboardController extends Controller
             ->where('penjualan_so.status', 4)
             ->where('penjualan_so.status', '!=', 7)
             ->whereBetween('penjualan_so.so_date', [$startDate, $endDate]) // Filter berdasarkan tanggal awal dan akhir bulan
-            ->groupBy('penjualan_do.id', 'master_customer_other_addresses.name', 'penjualan_do.do_code')
+            ->groupBy('penjualan_do.id', 'master_customer_other_addresses.name', 'penjualan_do.do_code', 'penjualan_so.so_code', 'penjualan_so.so_date', 'penjualan_so.brand_name', 'penjualan_so.type_so') // Tambahkan kolom non-aggregate ke GROUP BY
             ->get();
 
-        // Siapkan daftar bulan untuk dropdown (tidak digunakan lagi jika menggunakan input type="month")
-        // Baris kode ini bisa dihapus atau diabaikan jika tidak ada dropdown bulan/tahun tradisional.
-        // Namun, jika masih ingin ada, pastikan logikanya sesuai.
-        $months = []; // Bisa dihapus
-        $currentDate = Carbon::now(); // Bisa dihapus
-        for ($i = -6; $i <= 6; $i++) { // Bisa dihapus
-            $date = $currentDate->copy()->addMonths($i); // Bisa dihapus
-            $months[] = [ // Bisa dihapus
-                'value' => $date->format('Y-m'),
-                'text' => $date->isoFormat('MMMM YYYY'),
-                'selected' => ($date->month == $selectedMonth && $date->year == $selectedYear)
-            ]; // Bisa dihapus
-        }
+        // Baris-baris ini bisa dihapus karena tidak lagi relevan dengan cara Anda menangani bulan/tahun
+        // $currentDate = Carbon::now(); 
+        // for ($i = -6; $i <= 6; $i++) { 
+        //     $date = $currentDate->copy()->addMonths($i); 
+        //     $months[] = [ 
+        //         'value' => $date->format('Y-m'),
+        //         'text' => $date->isoFormat('MMMM YYYY'),
+        //         'selected' => ($date->month == $selectedMonth && $date->year == $selectedYear)
+        //     ]; 
+        // }
 
         $vendor = Vendor::where('type', 2)->get();
 
@@ -96,8 +108,8 @@ class DashboardController extends Controller
             'is_see' => $is_see,
             'vendor' => $vendor,
             'progress' => $progress,
-            'months' => $months, // Bisa dihapus jika tidak lagi digunakan
-            'selectedMonthYear' => Carbon::createFromDate($selectedYear, $selectedMonth, 1)->format('Y-m'), // Untuk default selected di frontend
+            // 'months' => $months, // Hapus ini jika tidak lagi digunakan di view
+            'selectedMonthYear' => $selectedMonthYear, // Kirimkan ini ke frontend untuk mengisi nilai picker
         ];
 
         return view($this->view, $data);

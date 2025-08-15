@@ -514,6 +514,8 @@ class SalesOrderPpnController extends Controller
                         $packing_order->idr_rate = $request->idr_rate;
                         $packing_order->other_address = 0 ?? Null;
                         $packing_order->note = $company->note ?? null;
+                        $packing_order->pic = $sales_order_ppn->customer->pic;
+                        $packing_order->officer = $sales_order_ppn->member->officer;
                         $packing_order->status = 6;
                         $packing_order->count_cancel = 0;
                         $packing_order->created_by = Auth::id();

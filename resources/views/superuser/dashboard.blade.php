@@ -48,29 +48,29 @@
                     <div class="card-body">
                         <main style="background:#fff">
                             <input style="display: none;" id="tab1" type="radio" name="tabs" checked>
-                            <label style="padding: 15px 25px; cursor: pointer;" for="tab1" class="tab-label" data-tab="content1">Omset</label>
+                            <label style="padding: 5px 10px; cursor: pointer;" for="tab1" class="tab-label" data-tab="content1">Omset</label>
 
                             <input style="display: none;" id="tab2" type="radio" name="tabs">
-                            <label style="padding: 15px 25px; cursor: pointer;" for="tab2" class="tab-label" data-tab="content2">Tabulasi</label>
+                            <label style="padding: 5px 10px; cursor: pointer;" for="tab2" class="tab-label" data-tab="content2">Tabulasi</label>
                             
                             <input style="display: none;" id="tab3" type="radio" name="tabs">
-                            <label style="padding: 15px 25px; cursor: pointer;" for="tab3" class="tab-label" data-tab="content3">Forecasting Principle</label>
+                            <label style="padding: 5px 10px; cursor: pointer;" for="tab3" class="tab-label" data-tab="content3">Forecasting Principle</label>
 
                             <section id="content1" class="tab-content active">
                                 <div class="mb-3 d-flex justify-content-between align-items-center">
+                                    {{-- Single Month and Year Picker for Omset forms --}}
+                                    <div class="form-group mb-0 d-flex align-items-center">
+                                        <input type="month" id="omset-month-year" class="form-control" style="width: 150px;" value="{{ $selectedMonthYear }}">
+                                        <button class="btn btn-danger" id="reset-month-filter"><i class="fa fa-sync"></i></button>
+                                    </div>
+                                    {{-- End Single Month and Year Picker --}}
                                     <div>
                                         <div class="btn-group" role="group" aria-label="Filter Omset">
-                                            <button class="btn btn-primary btn-filter-type-omset active" data-type="all" style="margin-right: 6px;">ALL</button>
+                                            <button class="btn btn-primary btn-outline-primary btn-filter-type-omset active" data-type="all" style="margin-right: 6px;">ALL</button>
                                             <button class="btn btn-success btn-filter-type-omset" data-type="ppn" style="margin-right: 6px;">PPN</button>
                                             <button class="btn btn-warning btn-filter-type-omset" data-type="nonppn">NonPPN</button>
                                         </div>
                                     </div>
-                                    {{-- Single Month and Year Picker for Omset forms --}}
-                                    <div class="form-group mb-0 d-flex align-items-center">
-                                        <input type="month" id="omset-month-year" class="form-control" style="width: 180px;" value="{{ $selectedMonthYear }}">
-                                        <button class="btn btn-danger" id="reset-month-filter"><i class="fa fa-sync"></i></button>
-                                    </div>
-                                    {{-- End Single Month and Year Picker --}}
                                 </div>
 
                                 <table class="datatableOmset table table-striped" id="datatableOmset">
@@ -121,86 +121,64 @@
                             <section id="content2" class="tab-content">
                                 <form id="tabulasiForm" method="POST">
                                     @csrf
-                                    <div class="row">
-                                        <div class="col-12">
-                                            <div class="card">
-                                                <div class="card-body">
-                                                    <div class="d-flex flex-column gap-3"> {{-- Kontainer utama untuk menumpuk baris --}}
+                                    <div class="card">
+                                        <div class="card-body">
+                                            {{-- Container utama yang akan menampung input, tombol, dan iframe secara vertikal --}}
+                                            {{-- d-flex flex-column: membuat item berjejer ke bawah --}}
+                                            {{-- align-items-stretch: memastikan item mengisi lebar yang tersedia (default untuk flex-column) --}}
+                                            <div class="d-flex flex-column">
 
-                                                        <div class="d-flex justify-content-start align-items-center gap-3"> {{-- Menggunakan justify-content-start untuk menjaga di kiri --}}
-                                                            {{-- Tombol Aksi --}}
-                                                            
+                                                {{-- Bagian input bulan/tahun dan select, dan tombol --}}
+                                                {{-- d-flex justify-content-between align-items-center: tetap membuat input dan tombol sejajar horizontal --}}
+                                                <div class="d-flex justify-content-between align-items-center mb-4"> {{-- mb-4 untuk jarak dari iframe --}}
+                                                    {{-- Group input --}}
+                                                    <div class="d-flex align-items-center me-3"> {{-- me-3 untuk jarak antar input --}}
+                                                        <div>
+                                                            <label for="tabulasi-month-year" class="form-label visually-hidden">Periode:</label>
+                                                            <input type="month" id="tabulasi-month-year" class="form-control form-control-sm" value="{{ $selectedMonthYear }}" style="width: 130px;">
                                                         </div>
-
-                                                        {{-- Baris 1: Periode & Salesman --}}
-                                                        <div class="d-flex justify-content-start align-items-center gap-3"> {{-- Menggunakan justify-content-start untuk menjaga di kiri --}}
-                                                            {{-- Periode Laporan --}}
-                                                            <div>
-                                                                <label for="tabulasi-month-year" class="form-label visually-hidden">Periode:</label>
-                                                                <input type="month" id="tabulasi-month-year" class="form-control form-control-sm" value="{{ $selectedMonthYear }}" style="width: 130px;">
-                                                            </div>
-
-                                                            <div>
-                                                                <label for="report_type_tabulasi" class="form-label visually-hidden">Tipe Laporan:</label>
-                                                                <select class="form-control form-control-sm js-select2" name="report_type_tabulasi" id="report_type_tabulasi" style="min-width: 180px;">
-                                                                    <option value="brand">R. by Brand</option>
-                                                                    <option value="zone">R. by Zone</option>
-                                                                    <option value="salesman">R. by Salesman</option> {{-- Opsi baru: Salesman --}}
-                                                                </select>
-                                                            </div>
-
-                                                            {{-- Salesman --}}
-                                                            <div>
-                                                                <label for="salesman_id_tabulasi" class="form-label visually-hidden">Salesman:</label>
-                                                                {{-- Ubah name dari salesman_id_tabulasi menjadi salesman_officer[] agar sesuai dengan parameter controller ReportEmployeePerformanceController --}}
-                                                                <select class="form-control form-control-sm js-select2" name="salesman_officer[]" id="salesman_id_tabulasi" style="min-width: 180px;" disabled> {{-- Awalnya disabled --}}
-                                                                    <option value="">Semua Salesman</option>
-                                                                    {{-- Tambahkan opsi salesman lain dari database jika ada --}}
-                                                                    {{-- Contoh: @foreach($salesmen as $salesman) <option value="{{ $salesman->officer }}">{{ $salesman->officer }}</option> @endforeach --}}
-                                                                    <option value="Erick">Erick</option>
-                                                                    <option value="Lindy">Lindy</option>
-                                                                    <option value="Kumala">Kumala</option>
-                                                                </select>
-                                                            </div>
-
-                                                            <div class="btn-group" role="group" aria-label="Tabulasi Actions">
-                                                                <button type="button" class="btn btn-primary btn-sm" onclick="submitTabulasiForm('sync_register')">
-                                                                    <i class="fa fa-sync"></i> Sync
-                                                                </button>
-                                                                <button type="button" class="btn btn-danger btn-sm" onclick="saveConfirmation('{{ route('superuser.report.customer_type_brand.removeDt') }}')">
-                                                                    <i class="fa fa-trash"></i> Hapus
-                                                                </button>
-                                                                <button type="button" class="btn btn-success btn-sm" onclick="submitTabulasiForm('export_register_pdf')">
-                                                                    <i class="fa fa-file-pdf-o" aria-hidden="true"></i> Export
-                                                                </button>
-                                                            </div>
+                                                        <div class="ms-3"> {{-- ms-3 untuk jarak dari input bulan/tahun --}}
+                                                            <label for="report_type_tabulasi" class="form-label visually-hidden">Tipe Laporan:</label>
+                                                            <select class="form-control form-control-sm js-select2" name="report_type_tabulasi" id="report_type_tabulasi" style="min-width: 180px;">
+                                                                <option value="brand">R. by Brand</option>
+                                                                <option value="zone">R. by Zone</option>
+                                                            </select>
                                                         </div>
                                                     </div>
+
+                                                    {{-- Group tombol --}}
+                                                    <div class="btn-group" role="group" aria-label="Filter Omset">
+                                                        <button type="button" class="btn btn-primary btn-sm me-2" onclick="submitTabulasiForm('sync_register')">
+                                                            <i class="fa fa-sync"></i> Sync
+                                                        </button>
+                                                        <button type="button" class="btn btn-danger btn-sm me-2" onclick="saveConfirmation('{{ route('superuser.report.customer_type_brand.removeDt') }}')">
+                                                            <i class="fa fa-trash"></i> Hapus
+                                                        </button>
+                                                        <button type="button" class="btn btn-success btn-sm" onclick="submitTabulasiForm('export_register_pdf')">
+                                                            <i class="fa fa-file-pdf-o" aria-hidden="true"></i> Export
+                                                        </button>
+                                                    </div>
                                                 </div>
-                                            </div>
-                                            
-                                            {{-- Hidden inputs untuk parameter yang dibutuhkan controller --}}
-                                            {{-- Untuk ReportCustomerTypeBrandController --}}
-                                            <input type="hidden" name="start" id="tabulasi_start_date">
-                                            <input type="hidden" name="end" id="tabulasi_end_date">
-                                            {{-- Untuk ReportEmployeePerformanceController --}}
-                                            <input type="hidden" name="period_from" id="tabulasi_period_from">
-                                            <input type="hidden" name="period_to" id="tabulasi_period_to">
-                                            
-                                            <input type="hidden" name="type" id="tabulasi_report_type_param">
-                                            <input type="hidden" name="nominal" id="tabulasi_nominal_param">
-                                            <input type="hidden" name="action" id="tabulasi_action_param"> {{-- Untuk ReportCustomerTypeBrandController@exportReport --}}
-                                            <input type="hidden" name="action_type_tabulasi" id="action_type_tabulasi_hidden"> {{-- Pertahankan untuk sync_register --}}
+
+                                                {{-- Bagian Iframe --}}
+                                                {{-- iframe akan mengikuti lebar container induknya (card-body) --}}
+                                                <iframe src="" type="application/pdf" id="iframePdf" style="width: 100%; height: 800px; border: 1px solid #ddd;">
+                                                    <p>Browser Anda tidak mendukung iframe atau tidak dapat menampilkan file PDF secara langsung. Silakan <a href="#" id="pdfDownloadLink">klik di sini untuk mengunduh PDF</a>.</p>
+                                                </iframe>
+
+                                            </div> {{-- Akhir dari d-flex flex-column --}}
                                         </div>
                                     </div>
-                                    
-                                    <div class="row mt-4"> {{-- Tambahkan margin top agar tidak terlalu dekat --}}
-                                        <div class="col-12">
-                                            <iframe src="" type="application/pdf" id="iframePdf" style="width: 100%; height: 800px; border: 1px solid #ddd;">
-                                                <p>Browser Anda tidak mendukung iframe atau tidak dapat menampilkan file PDF secara langsung. Silakan <a href="#" id="pdfDownloadLink">klik di sini untuk mengunduh PDF</a>.</p>
-                                            </iframe>
-                                        </div>
-                                    </div>
+
+                                    {{-- Hidden inputs (tetap di luar flex container utama) --}}
+                                    <input type="hidden" name="start" id="tabulasi_start_date">
+                                    <input type="hidden" name="end" id="tabulasi_end_date">
+                                    <input type="hidden" name="period_from" id="tabulasi_period_from">
+                                    <input type="hidden" name="period_to" id="tabulasi_period_to">
+                                    <input type="hidden" name="type" id="tabulasi_report_type_param">
+                                    <input type="hidden" name="nominal" id="tabulasi_nominal_param">
+                                    <input type="hidden" name="action" id="tabulasi_action_param">
+                                    <input type="hidden" name="action_type_tabulasi" id="action_type_tabulasi_hidden">
                                 </form>
                             </section>
                             
@@ -212,14 +190,14 @@
                                         <div class="col-12">
                                             <div class="card">
                                                 <div class="card-body">
-                                                    <div class="d-flex flex-column gap-3"> {{-- Kontainer utama untuk menumpuk baris --}}
-
-                                                        {{-- Baris 1: Vendor & Periode --}}
-                                                        <div class="d-flex justify-content-start align-items-center gap-3">
+                                                    {{-- Baris utama untuk inputan dan tombol, menggunakan d-flex untuk mengatur horizontal --}}
+                                                    <div class="d-flex justify-content-start align-items-center mb-4"> {{-- mb-4 untuk jarak dari iframe --}}
+                                                        {{-- Group input Vendor, Period From, Period To --}}
+                                                        <div class="d-flex align-items-center gap-3"> {{-- Menggunakan gap-3 untuk jarak antar input --}}
                                                             {{-- Select Vendor --}}
                                                             <div>
                                                                 <label for="vendor_name_forecast" class="form-label visually-hidden">Vendor:</label>
-                                                                <select class="form-control form-control-sm js-select2" name="vendor_name" id="vendor_name_forecast" style="min-width: 180px;">
+                                                                <select class="form-control form-control-sm js-select2" name="vendor_name" id="vendor_name_forecast" style="min-width: 280px;">
                                                                     <option value="">Select Vendor</option>
                                                                     @foreach($vendor AS $row)
                                                                     <option value="{{$row->name}}">{{$row->name}}</option>
@@ -238,24 +216,30 @@
                                                                 <label for="period_to_forecast" class="form-label visually-hidden">Sampai Bulan & Tahun:</label>
                                                                 <input type="month" name="period_to" id="period_to_forecast" class="form-control form-control-sm" style="width: 150px;">
                                                             </div>
+                                                        </div>
 
-                                                            {{-- Tombol Aksi --}}
+                                                        {{-- Tombol Aksi - Pindahkan ke kanan jika diinginkan, atau biarkan mengikuti input --}}
+                                                        {{-- Jika ingin tombol di kanan terpisah, gunakan justify-content-between di div utama --}}
+                                                        <div class="ms-auto"> {{-- ms-auto untuk mendorong tombol ke kanan --}}
                                                             <div class="btn-group" role="group" aria-label="Forecasting Actions">
-                                                                
                                                                 <button type="button" id="printReportForecast" class="btn btn-success btn-sm" onclick="submitForecastingForm('print_pdf')">
                                                                     <i class="fa fa-file-pdf-o" aria-hidden="true"></i> Export
                                                                 </button>
                                                             </div>
                                                         </div>
                                                     </div>
-                                                </div>
-                                            </div>
-                                            {{-- Hidden inputs untuk parameter yang dibutuhkan controller --}}
-                                            <input type="hidden" name="action_forecast" id="action_forecast_param">
+                                                    {{-- Akhir dari d-flex untuk inputan dan tombol --}}
+
+                                                </div> {{-- Akhir card-body --}}
+                                            </div> {{-- Akhir card --}}
                                         </div>
                                     </div>
+                                    {{-- Hidden inputs untuk parameter yang dibutuhkan controller --}}
+                                    <input type="hidden" name="action_forecast" id="action_forecast_param">
                                 </form>
-                                <div class="row mt-4">
+
+                                {{-- Iframe berada di row terpisah dengan margin atas --}}
+                                <div class="row mt-4"> {{-- mt-4 untuk jarak vertikal dari card di atas --}}
                                     <div class="col-12">
                                         <iframe src="" type="application/pdf" id="iframeForecastPdf" style="width: 100%; height: 800px; border: 1px solid #ddd;">
                                             <p>Browser Anda tidak mendukung iframe atau tidak dapat menampilkan file PDF secara langsung. Silakan <a href="#" id="forecastPdfDownloadLink">klik di sini untuk mengunduh PDF</a>.</p>
@@ -638,6 +622,8 @@ $(document).ready(function () {
     // --- Inisialisasi DataTable untuk tab "Omset" ---
     var filterTypeOmset = 'all'; 
     var datatableOmset = $('.datatableOmset').DataTable({
+        "info": false,
+        "dom": '<"top"f><"row"<"col-sm-12"tr>><"row"<"col-sm-12 col-md-6 d-flex align-items-center"il><"col-sm-12 col-md-6"p>>',
         "footerCallback": function ( row, data, start, end, display ) {
             var api = this.api();
 

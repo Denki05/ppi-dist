@@ -21,9 +21,13 @@ table.dataTable.nowrap td {
 }
 
 div.dataTables_wrapper div.dataTables_length label {
-  font-weight: normal;
-  text-align: left;
-  white-space: nowrap;
+  /* Properti yang Anda miliki */
+        text-align: left; /* Sesuaikan dari default center jika ada */
+        white-space: nowrap;
+        /* Hapus jika sudah diatur di tempat lain */
+        /* width: auto; */
+        /* display: inline-block; */
+        /* Karena parentnya sudah d-flex, ini mungkin tidak diperlukan atau bahkan bisa mengganggu */
 }
 div.dataTables_wrapper div.dataTables_length select {
   width: auto;
@@ -43,18 +47,25 @@ div.dataTables_wrapper div.dataTables_filter input {
   width: auto;
 }
 div.dataTables_wrapper div.dataTables_info {
-  padding-top: 0.85em;
-  white-space: nowrap;
+        /* Properti yang Anda miliki */
+        padding-top: 0.85em;
+        white-space: nowrap;
+        /* Properti tambahan untuk jarak */
+        margin-right: 15px; /* Jarak antara "Showing X entries" dan "Show Y entries" */
+        /* Pastikan text-align sesuai jika ada konflik */
+        text-align: left;
 }
 div.dataTables_wrapper div.dataTables_paginate {
-  margin: 0;
-  white-space: nowrap;
-  text-align: right;
+        /* Properti yang Anda miliki */
+        margin: 0;
+        white-space: nowrap;
+        text-align: right; /* Ini penting agar rata kanan */
 }
 div.dataTables_wrapper div.dataTables_paginate ul.pagination {
-  margin: 2px 0;
-  white-space: nowrap;
-  justify-content: flex-end;
+        /* Properti yang Anda miliki */
+        margin: 2px 0;
+        white-space: nowrap;
+        justify-content: flex-end; /* Memastikan tombol pagination rata kanan dalam flexbox */
 }
 div.dataTables_wrapper div.dataTables_processing {
   position: absolute;
@@ -155,13 +166,40 @@ div.dataTables_scrollFoot > .dataTables_scrollFootInner > table {
 }
 
 @media screen and (max-width: 767px) {
-  div.dataTables_wrapper div.dataTables_length,
-  div.dataTables_wrapper div.dataTables_filter,
-  div.dataTables_wrapper div.dataTables_info,
-  div.dataTables_wrapper div.dataTables_paginate {
-    text-align: center;
-  }
-}
+        /* Target kolom yang berisi info dan length */
+        .dataTables_wrapper .row:last-child .col-sm-12.col-md-6:first-child {
+            display: flex; /* Pastikan tetap flex pada mobile */
+            flex-direction: column; /* Tumpuk vertikal pada mobile */
+            align-items: flex-start; /* Sejajarkan ke kiri */
+            width: 100%; /* Ambil lebar penuh pada mobile */
+            padding-left: 0;
+            padding-right: 0;
+        }
+
+        /* Target kolom pagination */
+        .dataTables_wrapper .row:last-child .col-sm-12.col-md-6:last-child {
+            width: 100%; /* Ambil lebar penuh pada mobile */
+            padding-left: 0;
+            padding-right: 0;
+        }
+
+        /* Atur ulang alignment untuk mobile agar tidak terpusat */
+        div.dataTables_wrapper div.dataTables_length,
+        div.dataTables_wrapper div.dataTables_filter,
+        div.dataTables_wrapper div.dataTables_info,
+        div.dataTables_wrapper div.dataTables_paginate {
+            text-align: left !important; /* Paksa rata kiri pada mobile */
+            margin-left: 0;
+            margin-right: 0;
+            margin-top: 10px; /* Jarak antar elemen saat menumpuk */
+            padding-top: 0;
+            width: 100%; /* Pastikan elemen mengambil lebar penuh */
+        }
+        /* Override specifically for pagination ul to be left aligned on mobile */
+        div.dataTables_wrapper div.dataTables_paginate ul.pagination {
+            justify-content: flex-start !important;
+        }
+    }
 table.dataTable.table-sm > thead > tr > th {
   padding-right: 20px;
 }
