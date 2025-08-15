@@ -123,25 +123,55 @@
                                     @csrf
                                     <div class="card">
                                         <div class="card-body">
-                                            {{-- Container utama yang akan menampung input, tombol, dan iframe secara vertikal --}}
-                                            {{-- d-flex flex-column: membuat item berjejer ke bawah --}}
-                                            {{-- align-items-stretch: memastikan item mengisi lebar yang tersedia (default untuk flex-column) --}}
                                             <div class="d-flex flex-column">
-
-                                                {{-- Bagian input bulan/tahun dan select, dan tombol --}}
-                                                {{-- d-flex justify-content-between align-items-center: tetap membuat input dan tombol sejajar horizontal --}}
                                                 <div class="d-flex justify-content-between align-items-center mb-4"> {{-- mb-4 untuk jarak dari iframe --}}
                                                     {{-- Group input --}}
-                                                    <div class="d-flex align-items-center me-3"> {{-- me-3 untuk jarak antar input --}}
+                                                    <div class="d-flex align-items-center me-3">
                                                         <div>
-                                                            <label for="tabulasi-month-year" class="form-label visually-hidden">Periode:</label>
-                                                            <input type="month" id="tabulasi-month-year" class="form-control form-control-sm" value="{{ $selectedMonthYear }}" style="width: 130px;">
+                                                            <label class="form-label visually-hidden">Periode:</label>
+                                                            <div class="d-flex align-items-center">
+                                                                {{-- Radio button dan Dropdown Bulan --}}
+                                                                <div class="form-check me-2">
+                                                                    <input class="form-check-input" type="radio" name="period_filter_type" id="filterByMonth" value="month" checked>
+                                                                        <select class="form-control form-control-sm js-select2 me-3" id="tabulasi-month-select" style="width: 130px;">
+                                                                        @php
+                                                                            $months = [
+                                                                                1 => 'Januari', 2 => 'Februari', 3 => 'Maret', 4 => 'April',
+                                                                                5 => 'Mei', 6 => 'Juni', 7 => 'Juli', 8 => 'Agustus',
+                                                                                9 => 'September', 10 => 'Oktober', 11 => 'November', 12 => 'Desember'
+                                                                            ];
+                                                                            $currentMonth = date('n'); // Bulan saat ini (1-12)
+                                                                        @endphp
+                                                                        @foreach($months as $num => $name)
+                                                                            <option value="{{ sprintf('%02d', $num) }}" {{ $num == $currentMonth ? 'selected' : '' }}>{{ $name }}</option>
+                                                                        @endforeach
+                                                                    </select>
+                                                                </div>
+                                                                
+
+                                                                {{-- Radio button dan Dropdown Tahun --}}
+                                                                <div class="form-check me-2">
+                                                                    <input class="form-check-input" type="radio" name="period_filter_type" id="filterByYear" value="year">
+                                                                    <select class="form-control form-control-sm js-select2" id="tabulasi-year-select" style="width: 100px;">
+                                                                        @php
+                                                                            $currentYear = date('Y');
+                                                                            // Misalnya, tampilkan tahun 5 tahun ke belakang dan 5 tahun ke depan
+                                                                            for ($year = $currentYear - 5; $year <= $currentYear + 5; $year++) {
+                                                                                echo "<option value='{$year}'" . ($year == $currentYear ? ' selected' : '') . ">{$year}</option>";
+                                                                            }
+                                                                        @endphp
+                                                                    </select>
+                                                                </div>
+                                                                
+                                                            </div>
                                                         </div>
-                                                        <div class="ms-3"> {{-- ms-3 untuk jarak dari input bulan/tahun --}}
+                                                        <div class="ms-3">
                                                             <label for="report_type_tabulasi" class="form-label visually-hidden">Tipe Laporan:</label>
                                                             <select class="form-control form-control-sm js-select2" name="report_type_tabulasi" id="report_type_tabulasi" style="min-width: 180px;">
                                                                 <option value="brand">R. by Brand</option>
                                                                 <option value="zone">R. by Zone</option>
+                                                                {{-- Tambahkan opsi salesman jika relevan --}}
+                                                                <option value="salesman">R. by Salesman</option>
                                                             </select>
                                                         </div>
                                                     </div>
@@ -204,6 +234,8 @@
                                                                     @endforeach
                                                                 </select>
                                                             </div>
+
+                                                            
 
                                                             {{-- Period From (Month & Year) --}}
                                                             <div>
@@ -308,199 +340,186 @@
 </style>
 
 <script>
-// Fungsi untuk memperbarui hidden input tanggal pada form Tabulasi
-function applyTabulasiMonthYearToForm() {
-    var selectedMonthYear = $('#tabulasi-month-year').val(); // Format: YYYY-MM
+    function applyTabulasiMonthYearToForm() {
+        let startDate = '';
+        let endDate = '';
 
-    // Bersihkan semua hidden input tanggal terlebih dahulu
-    $('#tabulasi_start_date').val('');
-    $('#tabulasi_end_date').val('');
-    $('#tabulasi_period_from').val('');
-    $('#tabulasi_period_to').val('');
+        const filterType = $('input[name="period_filter_type"]:checked').val();
+        const selectedMonth = $('#tabulasi-month-select').val(); // Format: MM
+        const selectedYear = $('#tabulasi-year-select').val();   // Format: YYYY
 
-    if (selectedMonthYear) {
-        var year = parseInt(selectedMonthYear.substring(0, 4));
-        var month = parseInt(selectedMonthYear.substring(5, 7)); // Bulan dari input (1-12)
-        
-        var startDate = selectedMonthYear + '-01';
-        // Mengambil hari terakhir bulan
-        var lastDay = new Date(year, month, 0).getDate(); 
-        var endDate = selectedMonthYear + '-' + (lastDay < 10 ? '0' : '') + lastDay; 
+        if (filterType === 'month') {
+            const year = parseInt(selectedYear);
+            const month = parseInt(selectedMonth);
 
-        // Isi hidden input untuk CustomerTypeBrandController
+            startDate = `${year}-${selectedMonth}-01`;
+            const lastDay = new Date(year, month, 0).getDate();
+            endDate = `${year}-${selectedMonth}-${lastDay}`;
+        } else if (filterType === 'year') {
+            const year = parseInt(selectedYear);
+            startDate = `${year}-01-01`;
+            endDate = `${year}-12-31`;
+        }
+
+        $('#tabulasi_start_date').val('');
+        $('#tabulasi_end_date').val('');
+        $('#tabulasi_period_from').val('');
+        $('#tabulasi_period_to').val('');
+
         $('#tabulasi_start_date').val(startDate);
         $('#tabulasi_end_date').val(endDate);
-
-        // Isi hidden input untuk ReportEmployeePerformanceController
         $('#tabulasi_period_from').val(startDate);
         $('#tabulasi_period_to').val(endDate);
     }
-}
 
-// Fungsi untuk submit form Tabulasi dengan aksi yang berbeda
-// Fungsi submitTabulasiForm diubah untuk menggunakan AJAX ketika mengekspor PDF
-function submitTabulasiForm(actionType) {
-    let form = $('#tabulasiForm');
-    applyTabulasiMonthYearToForm(); // Pastikan input tanggal tersembunyi di form sudah diperbarui
+    function submitTabulasiForm(actionType) {
+        let form = $('#tabulasiForm');
+        applyTabulasiMonthYearToForm(); 
 
-    const selectedSalesman = $('#salesman_id_tabulasi').val();
-    const selectedReportType = $('#report_type_tabulasi').val();
-    const selectedMonthYear = $('#tabulasi-month-year').val();
+        const selectedSalesman = $('#salesman_id_tabulasi').val();
+        const selectedReportType = $('#report_type_tabulasi').val();
+        const startDate = $('#tabulasi_start_date').val();
+        const endDate = $('#tabulasi_end_date').val();
 
-    if (!selectedMonthYear) {
-        Swal.fire({
-            icon: 'error',
-            title: 'Validasi Gagal',
-            text: 'Periode Laporan harus diisi.',
-            confirmButtonText: 'Oke'
-        });
-        return;
-    }
-
-    // Bersihkan nilai parameter spesifik laporan yang mungkin tidak relevan untuk aksi saat ini
-    $('#tabulasi_report_type_param').val('');
-    $('#tabulasi_nominal_param').val('');
-    $('#tabulasi_action_param').val('');
-    $('#action_type_tabulasi_hidden').val(actionType);
-
-    let url = '';
-    let method = 'POST';
-    let formData = new FormData(form[0]); // Gunakan FormData untuk mengirim data form, termasuk file jika ada
-
-    if (actionType === 'export_register_pdf') {
-        $('#tabulasi_nominal_param').val(1); // Default: Dengan Nominal
-        formData.append('nominal', 1); // Pastikan nominal terkirim
-
-        if (selectedReportType === 'brand') {
-            url = "{{ route('superuser.report.customer_type_brand.exportReport') }}";
-            formData.append('type', 1); // Type 1 untuk Brand
-            formData.append('action', 'print'); // Untuk exportReport agar menghasilkan PDF
-        } else if (selectedReportType === 'zone') {
-            if (selectedSalesman && selectedSalesman !== '') {
-                Swal.fire({
-                    icon: 'error',
-                    title: 'Tidak Diizinkan',
-                    text: 'Export "R. by Zone" tidak dapat dilakukan jika salesman dipilih.',
-                    confirmButtonText: 'Oke'
-                });
-                return;
-            }
-            url = "{{ route('superuser.report.customer_type_brand.exportReport') }}";
-            formData.append('type', 2); // Type 2 untuk Zone
-            formData.append('action', 'print');
-        } else if (selectedReportType === 'salesman') {
-            url = "{{ route('superuser.report.employee_performance.print_report') }}";
-            formData.append('type', 2); // Type 2 untuk Officer/Salesman
-            // salesman_officer[] sudah otomatis terkirim dari form data
-        } else {
+        if (!startDate || !endDate) {
             Swal.fire({
                 icon: 'error',
-                title: 'Aksi Tidak Valid',
-                text: 'Tipe laporan tidak dikenali untuk ekspor.',
+                title: 'Validasi Gagal',
+                text: 'Periode Laporan harus diisi. Pilih Bulan atau Tahun.',
                 confirmButtonText: 'Oke'
             });
             return;
         }
 
-        // Kirim permintaan AJAX untuk mendapatkan URL PDF
-        $.ajax({
-            url: url,
-            type: method,
-            data: formData,
-            processData: false, // Penting: Jangan proses data (FormData akan mengurusnya)
-            contentType: false, // Penting: Jangan set content type (FormData akan mengurusnya)
-            headers: {
-                'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content') // Pastikan CSRF token terkirim
-            },
-            beforeSend: function() {
-                Swal.fire({
-                    title: 'Membuat Laporan...',
-                    text: 'Mohon tunggu, laporan sedang dibuat.',
-                    allowOutsideClick: false,
-                    didOpen: () => {
-                        Swal.showLoading();
-                    }
-                });
-            },
-            success: function(response) {
-                Swal.close();
-                if (response.success && response.pdf_url) {
-                    $('#iframePdf').attr('src', response.pdf_url);
-                    $('#pdfDownloadLink').attr('href', response.pdf_url); // Update download link
-                    Swal.fire({
-                        icon: 'success',
-                        title: 'Laporan Berhasil Dibuat! 🎉',
-                        text: 'PDF telah dimuat di iframe.',
-                        showConfirmButton: false,
-                        timer: 2000
-                    });
-                } else if (response.error) {
+        $('#tabulasi_report_type_param').val('');
+        $('#tabulasi_nominal_param').val('');
+        $('#tabulasi_action_param').val('');
+        $('#action_type_tabulasi_hidden').val(actionType);
+
+        let url = '';
+        let method = 'POST';
+        let formData = new FormData(form[0]); 
+
+        if (actionType === 'export_register_pdf') {
+            $('#tabulasi_nominal_param').val(1); 
+            formData.append('nominal', 1); 
+
+            if (selectedReportType === 'brand') {
+                url = "{{ route('superuser.report.customer_type_brand.exportReport') }}";
+                formData.append('type', 1); 
+                formData.append('action', 'print'); 
+            } else if (selectedReportType === 'zone') {
+                if (selectedSalesman && selectedSalesman !== '') {
                     Swal.fire({
                         icon: 'error',
-                        title: 'Gagal Membuat Laporan',
-                        text: response.error,
+                        title: 'Tidak Diizinkan',
+                        text: 'Export "R. by Zone" tidak dapat dilakukan jika salesman dipilih.',
                         confirmButtonText: 'Oke'
                     });
-                } else {
+                    return;
+                }
+                url = "{{ route('superuser.report.customer_type_brand.exportReport') }}";
+                formData.append('type', 2); 
+                formData.append('action', 'print');
+            } else if (selectedReportType === 'salesman') {
+                url = "";
+                formData.append('type', 2); 
+            } else {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Aksi Tidak Valid',
+                    text: 'Tipe laporan tidak dikenali untuk ekspor.',
+                    confirmButtonText: 'Oke'
+                });
+                return;
+            }
+
+            $.ajax({
+                url: url,
+                type: method,
+                data: formData,
+                processData: false, 
+                contentType: false, 
+                headers: {
+                    'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content') 
+                },
+                beforeSend: function() {
+                    Swal.fire({
+                        title: 'Membuat Laporan...',
+                        text: 'Mohon tunggu, laporan sedang dibuat.',
+                        allowOutsideClick: false,
+                        didOpen: () => {
+                            Swal.showLoading();
+                        }
+                    });
+                },
+                success: function(response) {
+                    Swal.close();
+                    if (response.success && response.pdf_url) {
+                        $('#iframePdf').attr('src', response.pdf_url);
+                        $('#pdfDownloadLink').attr('href', response.pdf_url); 
+                        Swal.fire({
+                            icon: 'success',
+                            title: 'Laporan Berhasil Dibuat! 🎉',
+                            text: 'PDF telah dimuat di iframe.',
+                            showConfirmButton: false,
+                            timer: 2000
+                        });
+                    } else if (response.error) {
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'Gagal Membuat Laporan',
+                            text: response.error,
+                            confirmButtonText: 'Oke'
+                        });
+                    } else {
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'Error',
+                            text: 'Terjadi kesalahan tidak dikenal.',
+                            confirmButtonText: 'Oke'
+                        });
+                    }
+                },
+                error: function(xhr, status, error) {
+                    Swal.close();
+                    let errorMessage = 'Terjadi kesalahan saat membuat laporan.';
+                    if (xhr.responseJSON && xhr.responseJSON.message) {
+                        errorMessage = xhr.responseJSON.message;
+                    } else if (error) {
+                        errorMessage += ': ' + error;
+                    }
                     Swal.fire({
                         icon: 'error',
                         title: 'Error',
-                        text: 'Terjadi kesalahan tidak dikenal.',
+                        text: errorMessage,
                         confirmButtonText: 'Oke'
                     });
+                    console.error('AJAX Error:', status, error, xhr.responseText);
                 }
-            },
-            error: function(xhr, status, error) {
-                Swal.close();
-                let errorMessage = 'Terjadi kesalahan saat membuat laporan.';
-                if (xhr.responseJSON && xhr.responseJSON.message) {
-                    errorMessage = xhr.responseJSON.message;
-                } else if (error) {
-                    errorMessage += ': ' + error;
-                }
-                Swal.fire({
-                    icon: 'error',
-                    title: 'Error',
-                    text: errorMessage,
-                    confirmButtonText: 'Oke'
-                });
-                console.error('AJAX Error:', status, error, xhr.responseText);
-            }
-        });
+            });
 
-    } else if (actionType === 'sync_register') {
-         // Dapatkan data dari form
-            const periodFrom = form.find('input[name="period_from"]').val();
-            const periodTo = form.find('input[name="period_to"]').val();
-            // const vendorName = form.find('input[name="vendor_name"]').val(); <-- Dihapus sesuai permintaan.
+        } else if (actionType === 'sync_register') {
+            const periodFrom = form.find('input[name="tabulasi_period_from"]').val();
+            const periodTo = form.find('input[name="tabulasi_period_to"]').val();
 
-            // Buat URL baru dengan parameter GET
-            // Gunakan URL Helper dari Laravel untuk memastikan routing yang benar
             const baseUrl = "{{ route('superuser.report.customer_type_brand.postData') }}";
 
-            // Buat objek URLSearchParams untuk menyusun parameter dengan aman
             const params = new URLSearchParams({
                 period_from: periodFrom,
                 period_to: periodTo
-                // vendor_name: vendorName <-- Dihapus dari parameter
             });
 
-            // Buat URL akhir
             const finalUrl = baseUrl + '?' + params.toString();
 
-            // Arahkan browser ke URL baru
             window.location.href = finalUrl;
-    } else {
-        console.warn('Unknown actionType:', actionType);
-        return;
+        } else {
+            console.warn('Unknown actionType:', actionType);
+            return;
+        }
     }
-}
 
-// === Fungsi untuk tab Forecasting Principle ===
-
-// Fungsi untuk submit form Forecasting dengan aksi yang berbeda
-function submitForecastingForm() {
-        // Swal.fire for loading message
+    function submitForecastingForm() {
         Swal.fire({
             title: 'Membuat Laporan Forecasting...',
             html: 'Mohon tunggu sebentar',
@@ -510,33 +529,28 @@ function submitForecastingForm() {
             },
         });
 
-        // Get values from the form
         let vendor_name = $('#vendor_name_forecast').val();
-        let period_from = $('#period_from_forecast').val(); // YYYY-MM
-        let period_to = $('#period_to_forecast').val();     // YYYY-MM
+        let period_from = $('#period_from_forecast').val(); 
+        let period_to = $('#period_to_forecast').val();     
 
-        // Construct full date strings for the controller
-        // Period From: YYYY-MM-01
         let formatted_period_from = period_from ? period_from + '-01' : '';
 
-        // Period To: YYYY-MM-LastDayOfMonth
         let formatted_period_to = '';
         if (period_to) {
             let parts = period_to.split('-');
             let year = parseInt(parts[0]);
             let month = parseInt(parts[1]);
-            let lastDay = new Date(year, month, 0).getDate(); // Get last day of the month
+            let lastDay = new Date(year, month, 0).getDate(); 
             formatted_period_to = `${period_to}-${lastDay}`;
         }
         
-        // Validation check
         if (!vendor_name || !formatted_period_from || !formatted_period_to) {
             Swal.fire({
                 icon: 'error',
                 title: 'Input Tidak Lengkap!',
                 text: 'Vendor, Bulan Awal, dan Bulan Akhir tidak boleh kosong.',
             });
-            return; // Stop the function if validation fails
+            return; 
         }
 
         $.ajax({
@@ -546,10 +560,10 @@ function submitForecastingForm() {
                 vendor_name: vendor_name,
                 period_from: formatted_period_from,
                 period_to: formatted_period_to,
-                _token: "{{ csrf_token() }}" // Laravel CSRF token
+                _token: "{{ csrf_token() }}" 
             },
             success: function(response) {
-                Swal.close(); // Close loading message
+                Swal.close(); 
                 if (response.success) {
                     $('#iframeForecastPdf').attr('src', response.pdf_url);
                     $('#downloadForecastPdf').attr('href', response.pdf_url).show();
@@ -567,7 +581,7 @@ function submitForecastingForm() {
                 }
             },
             error: function(xhr, status, error) {
-                Swal.close(); // Close loading message
+                Swal.close(); 
                 let errorMessage = 'Terjadi kesalahan tidak terduga.';
                 if (xhr.responseJSON && xhr.responseJSON.error) {
                     errorMessage = xhr.responseJSON.error;
@@ -583,151 +597,142 @@ function submitForecastingForm() {
         });
     }
 
-    // Bind the form submission to the new function
     $('#forecastingForm').on('submit', function(e) {
-        e.preventDefault(); // Prevent default form submission
+        e.preventDefault(); 
         submitForecastingForm();
     });
 
-// Fungsi dummy untuk tombol sync di tab Forecasting Principle
-function syncForecastingData() {
-    Swal.fire({
-        icon: 'info',
-        title: 'Fungsi Sync',
-        text: 'Fungsi sync untuk Forecasting Principle belum diimplementasikan.',
-        confirmButtonText: 'Oke'
-    });
-}
+    function syncForecastingData() {
+        Swal.fire({
+            icon: 'info',
+            title: 'Fungsi Sync',
+            text: 'Fungsi sync untuk Forecasting Principle belum diimplementasikan.',
+            confirmButtonText: 'Oke'
+        });
+    }
 
-// Fungsi dummy untuk tombol hapus di tab Forecasting Principle
-function deleteForecastingData() {
-    Swal.fire({
-        icon: 'info',
-        title: 'Fungsi Hapus',
-        text: 'Fungsi hapus untuk Forecasting Principle belum diimplementasikan.',
-        confirmButtonText: 'Oke'
-    });
-}
+    function deleteForecastingData() {
+        Swal.fire({
+            icon: 'info',
+            title: 'Fungsi Hapus',
+            text: 'Fungsi hapus untuk Forecasting Principle belum diimplementasikan.',
+            confirmButtonText: 'Oke'
+        });
+    }
 
+    $(document).ready(function () {
+        $('.js-select2').select2();
 
-$(document).ready(function () {
-    // Inisialisasi Select2
-    $('.js-select2').select2();
-
-    $('#reset-month-filter').on('click', function() {
-        // Redirect tanpa parameter bulan dan tahun, sehingga akan kembali ke default bulan berjalan
-        window.location.href = "{{ route('superuser.index') }}";
-    });
-
-    // --- Inisialisasi DataTable untuk tab "Omset" ---
-    var filterTypeOmset = 'all'; 
-    var datatableOmset = $('.datatableOmset').DataTable({
-        "info": false,
-        "dom": '<"top"f><"row"<"col-sm-12"tr>><"row"<"col-sm-12 col-md-6 d-flex align-items-center"il><"col-sm-12 col-md-6"p>>',
-        "footerCallback": function ( row, data, start, end, display ) {
-            var api = this.api();
-
-            var totalCash = 0;
-            var totalTempo = 0;
-
-            api.rows({ filter: 'applied' }).every(function(){
-                var node = this.node();
-                var cashText = $(node).find('td:eq(5)').text().replace(/[.,]/g, '');
-                var tempoText = $(node).find('td:eq(6)').text().replace(/[.,]/g, '');
-                var cash = parseInt(cashText) || 0;
-                var tempo = parseInt(tempoText) || 0;
-                totalCash += cash;
-                totalTempo += tempo;
-            });
-
-            var subTotal = totalCash + totalTempo;
-
-            function formatRupiah(angka) {
-                return angka.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ".");
-            }
-
-            $('#totalInvoiceCash').html('Cash: ' + formatRupiah(totalCash));
-            $('#totalInvoiceTempo').html('Tempo: ' + formatRupiah(totalTempo));
-            $('#subTotal').html('Subtotal: ' + formatRupiah(subTotal));
-        }
-    });
-
-    // Custom filter berdasarkan type_so untuk DataTable Omset
-    $.fn.dataTable.ext.search.push(function(settings, data, dataIndex) {
-        if (settings.nTable.id !== 'datatableOmset') {
-            return true; 
-        }
-        var rowType = $(datatableOmset.row(dataIndex).node()).data('type-so');
-        if (filterTypeOmset === 'all') {
-            return true;
-        }
-        return rowType === filterTypeOmset;
-    });
-
-    // Event tombol filter untuk Omset
-    $('.btn-filter-type-omset').on('click', function() {
-        $('.btn-filter-type-omset').removeClass('active');
-        $(this).addClass('active');
-        filterTypeOmset = $(this).data('type');
-        datatableOmset.draw(); 
-    });
-
-    // --- Fungsionalitas Tab Toggle Umum (Omset, Tabulasi, Forecasting) ---
-
-    // Sembunyikan semua konten tab kecuali yang pertama saat halaman dimuat
-    $('.tab-content').not('.active').hide();
-    // Berikan kelas aktif pada label tab pertama
-    $('label[for="tab1"]').addClass('active-tab-label');
-
-    // Tangani perubahan tab
-    $('input[name="tabs"]').on('change', function() {
-        var tabId = $(this).attr('id');
-        var contentId = $('label[for="' + tabId + '"]').data('tab');
-
-        // Hapus kelas aktif dari semua label dan sembunyikan semua konten
-        $('.tab-label').removeClass('active-tab-label');
-        $('.tab-content').removeClass('active').hide();
-
-        // Tambahkan kelas aktif ke label yang dipilih dan tampilkan konten yang sesuai
-        $('label[for="' + tabId + '"]').addClass('active-tab-label');
-        $('#' + contentId).addClass('active').show();
-    });
-
-    // Event listener untuk perubahan month-year picker di tab Omset
-    $('#omset-month-year').on('change', function() {
-        var selectedDate = $(this).val(); // Format: YYYY-MM
-        if (selectedDate) {
-            // Redirect ke halaman yang sama dengan parameter bulan dan tahun
-            window.location.href = "{{ route('superuser.index') }}" + "?month_year=" + selectedDate;
-        } else {
-            // Jika dikosongkan, kembali ke default (bulan saat ini)
+        $('#reset-month-filter').on('click', function() {
             window.location.href = "{{ route('superuser.index') }}";
-        }
-    });
+        });
 
-    // Event listener untuk perubahan month-year picker di tab Tabulasi
-    $('#tabulasi-month-year').on('change', function() {
-        // Saat picker berubah, panggil fungsi untuk memperbarui hidden inputs
+        // --- Inisialisasi DataTable untuk tab "Omset" ---
+        var filterTypeOmset = 'all'; 
+        var datatableOmset = $('.datatableOmset').DataTable({
+            "info": false,
+            "dom": '<"top"f><"row"<"col-sm-12"tr>><"row"<"col-sm-12 col-md-6 d-flex align-items-center"il><"col-sm-12 col-md-6"p>>',
+            "footerCallback": function ( row, data, start, end, display ) {
+                var api = this.api();
+
+                var totalCash = 0;
+                var totalTempo = 0;
+
+                api.rows({ filter: 'applied' }).every(function(){
+                    var node = this.node();
+                    var cashText = $(node).find('td:eq(5)').text().replace(/[.,]/g, '');
+                    var tempoText = $(node).find('td:eq(6)').text().replace(/[.,]/g, '');
+                    var cash = parseInt(cashText) || 0;
+                    var tempo = parseInt(tempoText) || 0;
+                    totalCash += cash;
+                    totalTempo += tempo;
+                });
+
+                var subTotal = totalCash + totalTempo;
+
+                function formatRupiah(angka) {
+                    return angka.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ".");
+                }
+
+                $('#totalInvoiceCash').html('Cash: ' + formatRupiah(totalCash));
+                $('#totalInvoiceTempo').html('Tempo: ' + formatRupiah(totalTempo));
+                $('#subTotal').html('Subtotal: ' + formatRupiah(subTotal));
+            }
+        });
+
+        $.fn.dataTable.ext.search.push(function(settings, data, dataIndex) {
+            if (settings.nTable.id !== 'datatableOmset') {
+                return true; 
+            }
+            var rowType = $(datatableOmset.row(dataIndex).node()).data('type-so');
+            if (filterTypeOmset === 'all') {
+                return true;
+            }
+            return rowType === filterTypeOmset;
+        });
+
+        $('.btn-filter-type-omset').on('click', function() {
+            $('.btn-filter-type-omset').removeClass('active');
+            $(this).addClass('active');
+            filterTypeOmset = $(this).data('type');
+            datatableOmset.draw(); 
+        });
+
+        $('.tab-content').not('.active').hide();
+        $('label[for="tab1"]').addClass('active-tab-label');
+
+        $('input[name="tabs"]').on('change', function() {
+            var tabId = $(this).attr('id');
+            var contentId = $('label[for="' + tabId + '"]').data('tab');
+
+            $('.tab-label').removeClass('active-tab-label');
+            $('.tab-content').removeClass('active').hide();
+
+            $('label[for="' + tabId + '"]').addClass('active-tab-label');
+            $('#' + contentId).addClass('active').show();
+        });
+
+        $('#omset-month-year').on('change', function() {
+            var selectedDate = $(this).val(); 
+            if (selectedDate) {
+                window.location.href = "{{ route('superuser.index') }}" + "?month_year=" + selectedDate;
+            } else {
+                window.location.href = "{{ route('superuser.index') }}";
+            }
+        });
+
+        // Event listener untuk perubahan dropdown bulan atau tahun, atau radio button
+        $('#tabulasi-month-select, #tabulasi-year-select, input[name="period_filter_type"]').on('change', function() {
+            applyTabulasiMonthYearToForm();
+        });
+
+        // Logika untuk mengaktifkan/menonaktifkan dropdown Salesman berdasarkan pilihan Report Type di Tabulasi
+        $('#report_type_tabulasi').on('change', function() {
+            const selectedType = $(this).val();
+            if (selectedType === 'salesman') {
+                $('#salesman_id_tabulasi').prop('disabled', false);
+            } else {
+                $('#salesman_id_tabulasi').val('').trigger('change'); 
+                $('#salesman_id_tabulasi').prop('disabled', true);
+            }
+        });
+
+        $('#report_type_tabulasi').trigger('change');
+        
         applyTabulasiMonthYearToForm();
+
+        // **LOGIKA BARU: Mengaktifkan/menonaktifkan dropdown berdasarkan radio button**
+        $('input[name="period_filter_type"]').on('change', function() {
+            const filterType = $(this).val();
+            if (filterType === 'month') {
+                $('#tabulasi-month-select').prop('disabled', false).trigger('change'); // Aktifkan bulan
+                $('#tabulasi-year-select').prop('disabled', true);   // Nonaktifkan tahun
+            } else { // filterType === 'year'
+                $('#tabulasi-month-select').prop('disabled', true);   // Nonaktifkan bulan
+                $('#tabulasi-year-select').prop('disabled', false).trigger('change');  // Aktifkan tahun
+            }
+            applyTabulasiMonthYearToForm(); // Panggil ulang untuk update tanggal setelah perubahan mode
+        }).trigger('change'); // Panggil trigger change saat load untuk set initial state
     });
-
-    // Panggil fungsi ini saat halaman pertama kali dimuat untuk menginisialisasi nilai hidden inputs
-    // Ini penting jika Anda ingin nilai default atau nilai dari $selectedMonthYear diterapkan saat tab Tabulasi pertama kali aktif
-    applyTabulasiMonthYearToForm();
-
-    // Logika untuk mengaktifkan/menonaktifkan dropdown Salesman berdasarkan pilihan Report Type di Tabulasi
-    $('#report_type_tabulasi').on('change', function() {
-        const selectedType = $(this).val();
-        if (selectedType === 'salesman') {
-            $('#salesman_id_tabulasi').prop('disabled', false);
-        } else {
-            $('#salesman_id_tabulasi').val('').trigger('change'); // Reset dan nonaktifkan
-            $('#salesman_id_tabulasi').prop('disabled', true);
-        }
-    });
-
-    // Trigger change event saat inisialisasi untuk memastikan state awal yang benar
-    $('#report_type_tabulasi').trigger('change');
-});
 </script>
 @endpush
