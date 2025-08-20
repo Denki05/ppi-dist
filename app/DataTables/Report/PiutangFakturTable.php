@@ -25,17 +25,19 @@ class PiutangFakturTable extends Table
             ->leftJoin('penjualan_do_details', 'penjualan_do.id', '=', 'penjualan_do_details.do_id')
             ->leftJoin('master_customers', 'master_customer_other_addresses.customer_id', '=', 'master_customers.id')
             ->select(
-                'master_customer_other_addresses.name AS customer_name', 
-                'master_customer_other_addresses.text_kota AS customer_kota', 
+                'master_customer_other_addresses.name AS customer_name',
+                'master_customer_other_addresses.text_kota AS customer_kota',
                 'finance_invoicing.code AS no_faktur',
-                'penjualan_do_details.grand_total_idr AS nilai_faktur',
+                // Perubahan di sini: Menggunakan DB::raw untuk menjumlahkan kolom
+                DB::raw('SUM(penjualan_do_details.purchase_total_idr + penjualan_do_details.delivery_cost_idr) AS nilai_faktur'),
                 'penjualan_do_details.delivery_cost_idr AS ongkos_kirim',
-                'penjualan_so.so_date AS tanggal_faktur', 
-                'master_customers.tempo_limit AS tempo_limit', 
+                'penjualan_so.so_date AS tanggal_faktur',
+                'master_customers.tempo_limit AS tempo_limit',
                 DB::raw('IFNULL(SUM(finance_payable_detail.total), 0) AS pembayaran'),
                 DB::raw('
                     CASE
-                        WHEN penjualan_do_details.grand_total_idr - IFNULL(SUM(finance_payable_detail.total), 0) <= 0 THEN "PAID"
+                        -- Pastikan Anda juga menggunakan nilai_faktur yang baru di sini untuk perhitungan status
+                        WHEN (SUM(penjualan_do_details.purchase_total_idr + penjualan_do_details.delivery_cost_idr)) - IFNULL(SUM(finance_payable_detail.total), 0) <= 0 THEN "PAID"
                         ELSE "UNPAID"
                     END AS status_faktur
                 ')
@@ -50,8 +52,6 @@ class PiutangFakturTable extends Table
             ->groupBy('finance_invoicing.code')
             ->having('status_faktur', '=', 'UNPAID')
             ->get();
-
-
 
         // dd($model);
         return $model;

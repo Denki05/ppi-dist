@@ -36,7 +36,7 @@ class DashboardController extends Controller
         });
     }
     
-    public function index(Request $request) 
+    public function index(Request $request)
     {
         $is_see = true;
         if (Auth::user()->is_superuser == 0) {
@@ -45,27 +45,27 @@ class DashboardController extends Controller
             }
         }
 
-        // --- REVISI DI SINI ---
-        // 1. Ambil parameter 'month_year' dari URL
         $selectedMonthYear = $request->input('month_year'); // Ini akan menjadi 'YYYY-MM'
+        $selectedMonthYearFirst = null; // Deklarasi variabel baru dan inisialisasi
 
-        // Tentukan rentang tanggal berdasarkan parameter atau bulan saat ini
         if ($selectedMonthYear) {
-            // Pisahkan tahun dan bulan dari 'YYYY-MM'
             list($year, $month) = explode('-', $selectedMonthYear);
             $selectedYear = (int)$year;
             $selectedMonth = (int)$month;
-            
+
+            $selectedMonthYearFirst = Carbon::createFromDate($selectedYear, 1, 1)->format('Y-m');
+
         } else {
-            // Jika parameter tidak ada, gunakan bulan saat ini sebagai default
             $selectedYear = Carbon::now()->year;
-            $selectedMonth = Carbon::now()->month;
-            // Ini penting untuk memastikan picker di frontend menampilkan bulan saat ini jika tidak ada parameter di URL
-            $selectedMonthYear = Carbon::now()->format('Y-m'); 
+            $selectedMonth = Carbon::now()->month; // Tetap bulan saat ini untuk selectedMonthYear
+            $selectedMonthYear = Carbon::now()->format('Y-m'); // Tetap format bulan saat ini
+
+            // 👇 Bagian untuk selectedMonthYearFirst saja 👇
+            $selectedMonthFirst = 1; // Selalu Januari
+            $selectedMonthYearFirst = Carbon::createFromDate($selectedYear, $selectedMonthFirst, 1)->format('Y-m');
+            // 👆 Bagian untuk selectedMonthYearFirst saja 👆
         }
 
-        // Buat objek Carbon untuk start dan end date bulan yang dipilih
-        // Ini sudah benar, tetapi pastikan formatnya konsisten (Y-m-d H:i:s)
         $startDate = Carbon::createFromDate($selectedYear, $selectedMonth, 1)->startOfMonth()->format('Y-m-d H:i:s');
         $endDate = Carbon::createFromDate($selectedYear, $selectedMonth, 1)->endOfMonth()->format('Y-m-d H:i:s');
 
@@ -91,25 +91,14 @@ class DashboardController extends Controller
             ->groupBy('penjualan_do.id', 'master_customer_other_addresses.name', 'penjualan_do.do_code', 'penjualan_so.so_code', 'penjualan_so.so_date', 'penjualan_so.brand_name', 'penjualan_so.type_so') // Tambahkan kolom non-aggregate ke GROUP BY
             ->get();
 
-        // Baris-baris ini bisa dihapus karena tidak lagi relevan dengan cara Anda menangani bulan/tahun
-        // $currentDate = Carbon::now(); 
-        // for ($i = -6; $i <= 6; $i++) { 
-        //     $date = $currentDate->copy()->addMonths($i); 
-        //     $months[] = [ 
-        //         'value' => $date->format('Y-m'),
-        //         'text' => $date->isoFormat('MMMM YYYY'),
-        //         'selected' => ($date->month == $selectedMonth && $date->year == $selectedYear)
-        //     ]; 
-        // }
-
         $vendor = Vendor::where('type', 2)->get();
 
         $data = [
             'is_see' => $is_see,
             'vendor' => $vendor,
             'progress' => $progress,
-            // 'months' => $months, // Hapus ini jika tidak lagi digunakan di view
-            'selectedMonthYear' => $selectedMonthYear, // Kirimkan ini ke frontend untuk mengisi nilai picker
+            'selectedMonthYear' => $selectedMonthYear,
+            'selectedMonthYearFirst' => $selectedMonthYearFirst, // Kirimkan variabel baru ini ke view
         ];
 
         return view($this->view, $data);

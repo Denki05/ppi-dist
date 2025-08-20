@@ -105,24 +105,9 @@
               </a>
 
               <!-- Check setting mitra -->
-              @php
-                  $currentMonth = now()->format('m'); // Ambil bulan sekarang
-                  $mitraSetting = \App\Entities\Master\MitraSetting::where('mitra_id', $row->id)
-                      ->where('bulan', $currentMonth)
-                      ->exists(); // Cek apakah mitra sudah di-setting bulan ini
-              @endphp
-
-              @if(!$mitraSetting)
-                  <!-- Jika belum setting, tetap buka modal -->
-                  <button type="button" class="btn btn-sm btn-circle btn-alt-info" data-toggle="modal" data-target="#modal-import-export-ratio">
-                      <i class="fa fa-cog" aria-hidden="true"></i>
-                  </button>
-              @else
-                  <!-- Jika sudah setting, tampilkan SweetAlert saat tombol diklik -->
-                  <button type="button" class="btn btn-sm btn-circle btn-alt-warning" onclick="showSettingWarning()">
-                      <i class="fa fa-cog" aria-hidden="true"></i>
-                  </button>
-              @endif
+              <button type="button" class="btn btn-sm btn-circle btn-alt-info" data-toggle="modal" data-target="#modal-import-export-ratio">
+                <i class="fa fa-cog" aria-hidden="true"></i>
+              </button>
             </td>
           </tr>
         @endif

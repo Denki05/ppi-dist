@@ -4,7 +4,6 @@ namespace App\Imports\Master;
 
 use App\Entities\Master\Mitra;
 use App\Entities\Master\MitraSetting;
-use App\Entities\Master\CustomerOtherAddress;
 use Maatwebsite\Excel\Concerns\ToCollection;
 use Maatwebsite\Excel\Concerns\SkipsOnFailure;
 use Maatwebsite\Excel\Concerns\SkipsFailures;
@@ -12,11 +11,7 @@ use Maatwebsite\Excel\Concerns\SkipsOnError;
 use Maatwebsite\Excel\Concerns\SkipsErrors;
 use Maatwebsite\Excel\Concerns\WithHeadingRow;
 use Maatwebsite\Excel\Concerns\WithStartRow;
-use Maatwebsite\Excel\Concerns\WithValidation;
-use Illuminate\Validation\Rule;
-use Maatwebsite\Excel\Imports\HeadingRowFormatter;
 use Illuminate\Support\Collection;
-use Maatwebsite\Excel\Validators\Failure;
 use DB;
 
 class MitraSettingImport implements ToCollection, WithHeadingRow, WithStartRow, SkipsOnFailure, SkipsOnError
@@ -28,7 +23,20 @@ class MitraSettingImport implements ToCollection, WithHeadingRow, WithStartRow, 
 
     public function collection(Collection $rows)
     {
-        // dd($rows);
+        $bulanNama = [
+            1  => 'Januari',
+            2  => 'Februari',
+            3  => 'Maret',
+            4  => 'April',
+            5  => 'Mei',
+            6  => 'Juni',
+            7  => 'Juli',
+            8  => 'Agustus',
+            9  => 'September',
+            10 => 'Oktober',
+            11 => 'November',
+            12 => 'Desember',
+        ];
 
         DB::beginTransaction();
 
@@ -37,31 +45,48 @@ class MitraSettingImport implements ToCollection, WithHeadingRow, WithStartRow, 
             $collect_success = [];
 
             foreach ($rows as $row) {
-                // Find product using extracted ID
                 $mitra = Mitra::where('name', $row['mitra'])->first();
 
                 if (!$mitra) {
-                    $collect_error[] = 'Mitra with name ' . $row['mitra'] . ' not found.';
-                    continue; // Continue processing other rows
+                    $collect_error[] = "Mitra dengan nama {$row['mitra']} tidak ditemukan.";
+                    continue;
                 }
 
-                $mitra_setting = new MitraSetting;
+                // Validasi bulan
+                $bulan = (int) $row['bulan'];
+                if ($bulan < 1 || $bulan > 12) {
+                    $collect_error[] = "Bulan {$row['bulan']} tidak valid. Gunakan angka 1–12.";
+                    continue;
+                }
+
+                // ✅ Cek duplikasi bulan per mitra
+                $exists = MitraSetting::where('mitra_id', $mitra->id)
+                    ->where('bulan', $bulan)
+                    ->exists();
+
+                if ($exists) {
+                    $collect_error[] = "Bulan {$bulanNama[$bulan]} untuk Mitra {$mitra->name} sudah ada.";
+                    continue;
+                }
+
+                // ✅ Simpan data
+                $mitra_setting = new MitraSetting();
                 $mitra_setting->mitra_id = $mitra->id;
                 $mitra_setting->bulan = $row['bulan'];
                 $mitra_setting->batas_bawah = $row['batas_bawah'];
                 $mitra_setting->batas_atas = $row['batas_atas'];
                 $mitra_setting->save();
 
-                $collect_success[] = "Setting Mitra: {$mitra->name}";
+                $collect_success[] = "Setting berhasil: Mitra {$mitra->name}, Bulan {$row['bulan']}";
             }
 
-            // Provide feedback for success and errors
+            // Feedback jika kosong
             if (empty($collect_success)) {
-                $collect_success[] = 'No successful import.';
+                $collect_success[] = 'Tidak ada data yang berhasil diimport.';
             }
 
             if (empty($collect_error)) {
-                $collect_error[] = 'No failed import.';
+                $collect_error[] = 'Tidak ada error pada import.';
             }
 
             $this->error = $collect_error;
@@ -69,14 +94,14 @@ class MitraSettingImport implements ToCollection, WithHeadingRow, WithStartRow, 
 
             DB::commit();
         } catch (\Exception $e) {
-            dd($e);
             DB::rollBack();
             $this->error = ['Error: ' . $e->getMessage()];
+            $this->success = [];
         }
     }
 
     public function startRow(): int
     {
-        return 2;
+        return 2; // Mulai baca dari baris kedua (abaikan header)
     }
 }

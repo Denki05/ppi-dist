@@ -949,7 +949,7 @@ class FinanceSimulationPriceController extends Controller
                 // Ambil data invoice real
                 $invoice_real = DB::table('penjualan_do')
                     ->where('penjualan_do.status', 6)
-                    ->whereYear('penjualan_so.so_date', 2024)
+                    ->whereYear('penjualan_so.so_date', 2025)
                     ->where('penjualan_so.type_so', 'nonppn')
                     ->leftJoin('penjualan_do_details', 'penjualan_do.id', '=', 'penjualan_do_details.do_id')
                     ->leftJoin('penjualan_do_item', 'penjualan_do.id', '=', 'penjualan_do_item.do_id')

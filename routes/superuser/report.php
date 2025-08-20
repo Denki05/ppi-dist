@@ -67,6 +67,7 @@ Route::group([
     Route::group(['as' => 'forecast_supplier.', 'prefix' => '/forecast_supplier'], function () {
         Route::get('/', 'ReportForecastSupplierController@index')->name('index');
         Route::post('/printReport', 'ReportForecastSupplierController@printReport')->name('printReport');
+        Route::post('/printReportSummary', 'ReportForecastSupplierController@printReportSummary')->name('printReportSummary');
     });
     Route::resource('forecast_supplier', 'ReportForecastSupplierController');
 

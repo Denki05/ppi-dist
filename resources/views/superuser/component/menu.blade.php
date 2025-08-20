@@ -370,7 +370,7 @@
                         @endif
 
                         @if($superuser->division == "Developer" OR $superuser->division == "Management")
-                        <li class="submenu submenu-md dropend">
+                        {{--<li class="submenu submenu-md dropend">
                             <a class="dropdown-item dropdown-toggle" role="button" data-bs-toggle="dropdown"
                                 aria-expanded="false">
                                 <i class="fa-solid fa-file-import"></i> Management
@@ -388,7 +388,7 @@
                                     </ul>
                                 </li>   
                             </ul>
-                        </li>
+                        </li>--}}
                         @endif
                     </ul>
                 </li>

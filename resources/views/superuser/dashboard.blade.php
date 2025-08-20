@@ -57,22 +57,7 @@
                             <label style="padding: 5px 10px; cursor: pointer;" for="tab3" class="tab-label" data-tab="content3">Forecasting Principle</label>
 
                             <section id="content1" class="tab-content active">
-                                <div class="mb-3 d-flex justify-content-between align-items-center">
-                                    {{-- Single Month and Year Picker for Omset forms --}}
-                                    <div class="form-group mb-0 d-flex align-items-center">
-                                        <input type="month" id="omset-month-year" class="form-control" style="width: 150px;" value="{{ $selectedMonthYear }}">
-                                        <button class="btn btn-danger" id="reset-month-filter"><i class="fa fa-sync"></i></button>
-                                    </div>
-                                    {{-- End Single Month and Year Picker --}}
-                                    <div>
-                                        <div class="btn-group" role="group" aria-label="Filter Omset">
-                                            <button class="btn btn-primary btn-outline-primary btn-filter-type-omset active" data-type="all" style="margin-right: 6px;">ALL</button>
-                                            <button class="btn btn-success btn-filter-type-omset" data-type="ppn" style="margin-right: 6px;">PPN</button>
-                                            <button class="btn btn-warning btn-filter-type-omset" data-type="nonppn">NonPPN</button>
-                                        </div>
-                                    </div>
-                                </div>
-
+                                <input type="hidden" class="form-control" id="default_month" name="default_month" value="{{ $selectedMonthYear }}">
                                 <table class="datatableOmset table table-striped" id="datatableOmset">
                                     <thead>
                                         <tr>
@@ -122,78 +107,76 @@
                                 <form id="tabulasiForm" method="POST">
                                     @csrf
                                     <div class="card">
-                                        <div class="card-body">
-                                            <div class="d-flex flex-column">
-                                                <div class="d-flex justify-content-between align-items-center mb-4">
-                                                    {{-- Group input --}}
-                                                    <div class="d-flex align-items-center me-3">
-                                                        <div>
-                                                            <label class="form-label visually-hidden">Periode:</label>
-                                                            <div class="d-flex align-items-center">
-                                                                {{-- Radio button dan Dropdown Bulan --}}
-                                                                <div class="form-check me-2">
-                                                                    <input class="form-check-input" type="radio" name="period_filter_type" id="filterByMonth" value="month" checked>
-                                                                        <select class="form-control form-control-sm js-select2 me-3" id="tabulasi-month-select" style="width: 130px;">
-                                                                        @php
-                                                                            $months = [
-                                                                                1 => 'Januari', 2 => 'Februari', 3 => 'Maret', 4 => 'April',
-                                                                                5 => 'Mei', 6 => 'Juni', 7 => 'Juli', 8 => 'Agustus',
-                                                                                9 => 'September', 10 => 'Oktober', 11 => 'November', 12 => 'Desember'
-                                                                            ];
-                                                                            $currentMonth = date('n'); // Bulan saat ini (1-12)
-                                                                        @endphp
-                                                                        @foreach($months as $num => $name)
-                                                                            <option value="{{ sprintf('%02d', $num) }}" {{ $num == $currentMonth ? 'selected' : '' }}>{{ $name }}</option>
-                                                                        @endforeach
-                                                                    </select>
-                                                                </div>
-                                                                
-
-                                                                {{-- Radio button dan Dropdown Tahun --}}
-                                                                <div class="form-check me-2">
-                                                                    <input class="form-check-input" type="radio" name="period_filter_type" id="filterByYear" value="year">
-                                                                    <select class="form-control form-control-sm js-select2" id="tabulasi-year-select" style="width: 130px;">
-                                                                        @php
-                                                                            $currentYear = date('Y');
-                                                                            // Misalnya, tampilkan tahun 5 tahun ke belakang dan 5 tahun ke depan
-                                                                            for ($year = $currentYear - 5; $year <= $currentYear + 5; $year++) {
-                                                                                echo "<option value='{$year}'" . ($year == $currentYear ? ' selected' : '') . ">{$year}</option>";
-                                                                            }
-                                                                        @endphp
-                                                                    </select>
-                                                                </div>
-                                                                
+                                        <div class="card-body py-2"> {{-- Memastikan padding vertikal konsisten --}}
+                                            <div class="d-flex justify-content-between align-items-end mb-4"> {{-- Container utama untuk filter (kiri) dan tombol (kanan) --}}
+                                                {{-- KIRI: Grup Filter (Periode dan Tipe Laporan) --}}
+                                                <div class="d-flex align-items-end"> {{-- Menyusun Periode dan Tipe Laporan secara horizontal, sejajar di bagian bawah --}}
+                                                    {{-- Periode Group --}}
+                                                    <div class="d-flex flex-column me-3"> {{-- Membuat Label "Periode" berada di atas inputannya --}}
+                                                        <label class="form-label text-start mb-1">Periode</label> {{-- Label Periode, 'visually-hidden' dihapus --}}
+                                                        <div class="d-flex align-items-center"> {{-- Menjaga radio button dan dropdown tetap sejajar horizontal --}}
+                                                            {{-- Radio button dan Dropdown Bulan --}}
+                                                            <div class="form-check me-2">
+                                                                <input class="form-check-input" type="radio" name="period_filter_type" id="filterByMonth" value="month" checked>
                                                             </div>
-                                                        </div>
-                                                        <div class="ms-3">
-                                                            <label for="report_type_tabulasi" class="form-label visually-hidden">Tipe Laporan:</label>
-                                                            <select class="form-control form-control-sm js-select2" name="report_type_tabulasi" id="report_type_tabulasi" style="min-width: 180px;">
-                                                                <option value="brand">R. by Brand</option>
-                                                                <option value="zone">R. by Zone</option>
+                                                            <select class="form-control form-control-sm js-select2 me-3" id="tabulasi-month-select" style="width: 130px;">
+                                                            @php
+                                                                $months = [
+                                                                    1 => 'Januari', 2 => 'Februari', 3 => 'Maret', 4 => 'April',
+                                                                    5 => 'Mei', 6 => 'Juni', 7 => 'Juli', 8 => 'Agustus',
+                                                                    9 => 'September', 10 => 'Oktober', 11 => 'November', 12 => 'Desember'
+                                                                ];
+                                                                $currentMonth = date('n'); // Bulan saat ini (1-12)
+                                                            @endphp
+                                                            @foreach($months as $num => $name)
+                                                                <option value="{{ sprintf('%02d', $num) }}" {{ $num == $currentMonth ? 'selected' : '' }}>{{ $name }}</option>
+                                                            @endforeach
+                                                            </select>
+
+                                                            {{-- Radio button dan Dropdown Tahun --}}
+                                                            <div class="form-check me-2">
+                                                                <input class="form-check-input" type="radio" name="period_filter_type" id="filterByYear" value="year">
+                                                            </div>
+                                                            <select class="form-control form-control-sm js-select2" id="tabulasi-year-select" style="width: 130px;">
+                                                            @php
+                                                                $currentYear = date('Y');
+                                                                for ($year = $currentYear - 5; $year <= $currentYear + 5; $year++) {
+                                                                    echo "<option value='{$year}'" . ($year == $currentYear ? ' selected' : '') . ">{$year}</option>";
+                                                                }
+                                                            @endphp
                                                             </select>
                                                         </div>
                                                     </div>
 
-                                                    {{-- Group tombol --}}
-                                                    <div class="btn-group" role="group" aria-label="Filter Omset">
-                                                        <button type="button" class="btn btn-primary btn-sm me-2" onclick="submitTabulasiForm('sync_register')">
-                                                            <i class="fa fa-sync"></i> Sync
-                                                        </button>
-                                                        <button type="button" class="btn btn-danger btn-sm me-2" onclick="saveConfirmation('{{ route('superuser.report.customer_type_brand.removeDt') }}')">
-                                                            <i class="fa fa-trash"></i> Hapus
-                                                        </button>
-                                                        <button type="button" class="btn btn-success btn-sm" onclick="submitTabulasiForm('export_register_pdf')">
-                                                            <i class="fa fa-file-pdf-o" aria-hidden="true"></i> Export
-                                                        </button>
+                                                    {{-- Tipe Laporan Group --}}
+                                                    <div class="d-flex flex-column ms-3"> {{-- Membuat Label "Tipe Laporan" berada di atas inputannya --}}
+                                                        <label for="report_type_tabulasi" class="form-label text-start mb-1">Tipe Laporan</label> {{-- Label Tipe Laporan, 'visually-hidden' dihapus --}}
+                                                        <select class="form-control form-control-sm js-select2" name="report_type_tabulasi" id="report_type_tabulasi" style="min-width: 180px;">
+                                                            <option value="brand">R. by Brand</option>
+                                                            <option value="zone">R. by Zone</option>
+                                                        </select>
                                                     </div>
                                                 </div>
 
-                                                {{-- Bagian Iframe --}}
-                                                <iframe src="" type="application/pdf" id="iframePdf" style="width: 100%; height: 800px; border: 1px solid #ddd;">
-                                                    <p>Browser Anda tidak mendukung iframe atau tidak dapat menampilkan file PDF secara langsung. Silakan <a href="#" id="pdfDownloadLink">klik di sini untuk mengunduh PDF</a>.</p>
-                                                </iframe>
-
+                                                {{-- KANAN: Group Tombol --}}
+                                                <div class="btn-group" role="group" aria-label="Filter Omset">
+                                                    <button type="button" class="btn btn-primary btn-sm me-2" onclick="submitTabulasiForm('sync_register')">
+                                                        <i class="fa fa-sync"></i> Sync
+                                                    </button>
+                                                    <button type="button" class="btn btn-danger btn-sm me-2" onclick="saveConfirmation('{{ route('superuser.report.customer_type_brand.removeDt') }}')">
+                                                        <i class="fa fa-trash"></i> Hapus
+                                                    </button>
+                                                    <button type="button" class="btn btn-success btn-sm" onclick="submitTabulasiForm('export_register_pdf')">
+                                                        <i class="fa fa-file-pdf-o" aria-hidden="true"></i> Export
+                                                    </button>
+                                                </div>
                                             </div>
+
+                                            {{-- Bagian Iframe --}}
+                                            <iframe src="" type="application/pdf" id="iframePdf" style="width: 100%; height: 800px; border: 1px solid #ddd;">
+                                                <p>Browser Anda tidak mendukung iframe atau tidak dapat menampilkan file PDF secara langsung. Silakan <a href="#" id="pdfDownloadLink">klik di sini untuk mengunduh PDF</a>.</p>
+                                            </iframe>
+
                                         </div>
                                     </div>
 
@@ -208,73 +191,109 @@
                                     <input type="hidden" name="action_type_tabulasi" id="action_type_tabulasi_hidden">
                                 </form>
                             </section>
-                            
+
                             <section id="content3" class="tab-content">
                                 <form id="forecastingForm" method="POST" target="_blank">
                                     @csrf
-                                    <div class="row">
-                                        <div class="col-12">
+
+                                    <div class="row g-2">
+                                        {{-- Col 1: Vendor dan Periode Tanggal --}}
+                                        <div class="col-6">
                                             <div class="card">
-                                                <div class="card-body">
-                                                    <div class="d-flex justify-content-start align-items-center mb-4">
-                                                        <div class="d-flex align-items-center gap-3">
-                                                            <div>
-                                                                <label for="vendor_name_forecast" class="form-label visually-hidden">Vendor:</label>
-                                                                <select class="form-control form-control-sm js-select2" name="vendor_name" id="vendor_name_forecast" style="min-width: 280px;">
-                                                                    <option value="">Select Vendor</option>
-                                                                    @foreach($vendor AS $row)
-                                                                    <option value="{{$row->name}}">{{$row->name}}</option>
-                                                                    @endforeach
-                                                                </select>
-                                                            </div>
-
-                                                            <div>
-                                                                <label for="period_from_forecast" class="form-label visually-hidden">Dari Bulan & Tahun:</label>
-                                                                 <input type="month" name="period_from" id="period_from_forecast" class="form-control form-control-sm" style="width: 150px;" value="{{ $selectedMonthYear }}">
-                                                            </div>
-
-                                                            <div>
-                                                                <label for="period_to_forecast" class="form-label visually-hidden">Sampai Bulan & Tahun:</label>
-                                                                <input type="month" name="period_to" id="period_to_forecast" class="form-control form-control-sm" style="width: 150px;" value="{{ $selectedMonthYear }}">
-                                                            </div>
-
-                                                            <div>
-                                                                <label for="semester_count_forecast" class="form-label visually-hidden">Select Semester:</label>
-                                                                <select class="form-control form-control-sm js-select2" name="semester_count" id="semester_count_forecast" style="min-width: 280px;">
-                                                                    <option value="">Pilih Semester</option>
-                                                                    <option value="1">1 Semester</option>
-                                                                    <option value="2">2 Semester</option>
-                                                                    <option value="3">3 Semester</option>
-                                                                    <option value="4">4 Semester</option>
-                                                                    <option value="6">6 Semester</option>
-                                                                </select>
-                                                            </div>
-
-                                                            <div>
-                                                                <button type="button" id="printReportForecast" class="btn btn-success btn-sm" onclick="submitForecastingForm()">
-                                                                    <i class="fa fa-file-pdf-o" aria-hidden="true"></i> Export
-                                                                </button>
-                                                            </div>
+                                                <div class="card-body py-2">
+                                                    <div class="row g-2 align-items-end">
+                                                        <div class="col d-flex flex-column">
+                                                            <label for="vendor_name_forecast" class="form-label text-start mb-1">Vendor</label>
+                                                            <select class="form-select js-select2 uniform-width"
+                                                                    name="vendor_name"
+                                                                    id="vendor_name_forecast">
+                                                                <option value="">Select Vendor</option>
+                                                                @foreach($vendor as $row)
+                                                                    <option value="{{ $row->name }}">{{ $row->name }}</option>
+                                                                @endforeach
+                                                            </select>
                                                         </div>
 
-                                                        <!-- <div class="ms-auto">
-                                                            <div class="btn-group" role="group" aria-label="Forecasting Actions">
-                                                                
-                                                            </div>
-                                                        </div> -->
-                                                    </div>
+                                                        <div class="col d-flex flex-column">
+                                                            <label for="period_from_forecast" class="form-label text-start mb-1">Dari Bulan & Tahun</label>
+                                                            <input type="month"
+                                                                name="period_from"
+                                                                id="period_from_forecast"
+                                                                class="form-control uniform-width"
+                                                                value="{{ $selectedMonthYearFirst }}">
+                                                        </div>
 
+                                                        <div class="col d-flex flex-column">
+                                                            <label for="period_to_forecast" class="form-label text-start mb-1">Sampai Bulan & Tahun</label>
+                                                            <input type="month"
+                                                                name="period_to"
+                                                                id="period_to_forecast"
+                                                                class="form-control uniform-width"
+                                                                value="{{ $selectedMonthYear }}">
+                                                        </div>
+                                                    </div>
                                                 </div>
                                             </div>
                                         </div>
+
+                                        {{-- Col 2: Pilih Periodik dan Export Summary --}}
+                                        <div class="col-4">
+                                            <div class="card">
+                                                <div class="card-body py-2">
+                                                    <div class="row g-2 align-items-end">
+                                                        <div class="col d-flex flex-column">
+                                                            <label for="periodic_select" class="form-label text-start mb-1">Pilih Periodik</label>
+                                                            <select id="periodic_select" class="form-select uniform-width">
+                                                                <option value="1">Per 1 Bulan</option>
+                                                                <option value="3">Per 3 Bulan</option>
+                                                                <option value="4">Per 4 Bulan</option>
+                                                                <option value="6">Per 6 Bulan</option>
+                                                            </select>
+                                                        </div>
+
+                                                        <div class="col d-flex flex-column">
+                                                            <label class="form-label text-start mb-1">Forecasting</label>
+                                                            <button type="button"
+                                                                    id="printReportForecast"
+                                                                    class="btn btn-primary btn-sm"
+                                                                    onclick="submitForecastingForm('detail')"> {{-- Pass 'detail' as argument --}}
+                                                                <i class="fa fa-file-pdf-o" aria-hidden="true"></i> Export
+                                                            </button>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        {{-- Col 3: Export Detail --}}
+                                        <div class="col-2">
+                                            <div class="card">
+                                                <div class="card-body py-2">
+                                                    <div class="col d-flex flex-column">
+                                                        <label class="form-label text-start mb-1">Penjualan</label>
+                                                        <button type="button"
+                                                            id="printReportForecastSummary"
+                                                            class="btn btn-info btn-sm"
+                                                            onclick="submitForecastingForm('summary')"> {{-- Pass 'summary' as argument --}}
+                                                            <i class="fa fa-file-pdf-o" aria-hidden="true"></i> Export
+                                                        </button>
+                                                    </div>
+                                                </div>
+                                                
+                                            </div>
+                                        </div>
                                     </div>
-                                    <input type="hidden" name="action_forecast" id="action_forecast_param">
                                 </form>
 
-                                <div class="row mt-4">
+                                <div class="row mt-3"> <!-- margin lebih kecil -->
                                     <div class="col-12">
-                                        <iframe src="" type="application/pdf" id="iframeForecastPdf" style="width: 100%; height: 800px; border: 1px solid #ddd;">
-                                            <p>Browser Anda tidak mendukung iframe atau tidak dapat menampilkan file PDF secara langsung. Silakan <a href="#" id="forecastPdfDownloadLink">klik di sini untuk mengunduh PDF</a>.</p>
+                                        <iframe src="" type="application/pdf" 
+                                                id="iframeForecastPdf" 
+                                                style="width: 100%; height: 800px; border: 1px solid #ddd;">
+                                            <p>
+                                                Browser Anda tidak mendukung iframe atau tidak dapat menampilkan file PDF secara langsung. 
+                                                Silakan <a href="#" id="forecastPdfDownloadLink">klik di sini untuk mengunduh PDF</a>.
+                                            </p>
                                         </iframe>
                                     </div>
                                 </div>
@@ -296,6 +315,10 @@
 
 @push('scripts')
 <style>
+    .uniform-width {
+        min-width: 200px;  /* semua input & select punya lebar seragam */
+    }
+
     .tab-label {
         background-color: #f0f0f0;
         border: 1px solid #ddd;
@@ -541,7 +564,7 @@
     }
 
     // UPDATED FUNCTION: submitForecastingForm
-    function submitForecastingForm() {
+    function submitForecastingForm(reportType) { // Add reportType parameter
         Swal.fire({
             title: 'Membuat Laporan Forecasting...',
             html: 'Mohon tunggu sebentar',
@@ -552,15 +575,13 @@
         });
 
         let vendor_name = $('#vendor_name_forecast').val();
-        // semester_count tetap diambil, namun tidak digunakan untuk kalkulasi tanggal di frontend
-        let semester_count = $('#semester_count_forecast').val(); 
+        let semester_count = $('#semester_count_forecast').val(); // Keep retrieving it for 'detail'
         let period_from_input = $('#period_from_forecast').val();
         let period_to_input = $('#period_to_forecast').val();
 
         let formatted_period_from = '';
         let formatted_period_to = '';
 
-        // Prioritaskan input manual untuk periode
         if (!period_from_input || !period_to_input) {
             Swal.fire({
                 icon: 'error',
@@ -570,17 +591,14 @@
             return;
         }
 
-        // Jika input manual ada, gunakan itu
-        formatted_period_from = period_from_input + '-01'; // Tambahkan -01 untuk tanggal awal bulan
-        
-        // Hitung hari terakhir dari bulan untuk period_to_input
+        formatted_period_from = period_from_input + '-01';
+
         let parts = period_to_input.split('-');
         let year = parseInt(parts[0]);
         let month = parseInt(parts[1]);
         let lastDay = new Date(year, month, 0).getDate();
         formatted_period_to = `${period_to_input}-${lastDay}`;
-        
-        // Validasi Vendor
+
         if (!vendor_name) {
             Swal.fire({
                 icon: 'error',
@@ -590,18 +608,36 @@
             return;
         }
 
+        let url = '';
+        let requestData = {
+            vendor_name: vendor_name,
+            period_from: formatted_period_from,
+            period_to: formatted_period_to,
+            _token: "{{ csrf_token() }}"
+        };
+
+        if (reportType === 'detail') {
+            url = "{{ route('superuser.report.forecast_supplier.printReport') }}";
+            requestData.semester_count = semester_count; // Only include for 'detail'
+        } else if (reportType === 'summary') {
+            url = "{{ route('superuser.report.forecast_supplier.printReportSummary') }}";
+            // Do NOT add semester_count to requestData for 'summary'
+        } else {
+            Swal.fire({
+                icon: 'error',
+                title: 'Aksi Tidak Valid',
+                text: 'Tipe laporan tidak dikenali.',
+            });
+            Swal.close();
+            return;
+        }
+
         $.ajax({
-            url: "{{ route('superuser.report.forecast_supplier.printReport') }}",
+            url: url,
             type: "POST",
-            data: {
-                vendor_name: vendor_name,
-                period_from: formatted_period_from,
-                period_to: formatted_period_to,
-                semester_count: semester_count, // Tetap kirim semester_count (opsional di backend)
-                _token: "{{ csrf_token() }}" 
-            },
+            data: requestData, // Use the dynamically created requestData
             success: function(response) {
-                Swal.close(); 
+                Swal.close();
                 if (response.success) {
                     $('#iframeForecastPdf').attr('src', response.pdf_url);
                     $('#forecastPdfDownloadLink').attr('href', response.pdf_url).show();
@@ -619,7 +655,7 @@
                 }
             },
             error: function(xhr, status, error) {
-                Swal.close(); 
+                Swal.close();
                 let errorMessage = 'Terjadi kesalahan tidak terduga.';
                 if (xhr.responseJSON && xhr.responseJSON.error) {
                     errorMessage = xhr.responseJSON.error;
@@ -667,9 +703,11 @@
 
         var filterTypeOmset = 'all'; 
         var datatableOmset = $('.datatableOmset').DataTable({
-            "info": false,
-            "dom": '<"top"f><"row"<"col-sm-12"tr>><"row"<"col-sm-12 col-md-6 d-flex align-items-center"il><"col-sm-12 col-md-6"p>>',
-            "footerCallback": function ( row, data, start, end, display ) {
+            info: false,
+            dom: '<"row mb-2"<"col-sm-12 col-md-6 custom-filter-placeholder"><"col-sm-12 col-md-6"f>>' + // baris atas
+                '<"row"<"col-sm-12"tr>>' + 
+                '<"row"<"col-sm-12 col-md-6 d-flex align-items-center"l><"col-sm-12 col-md-6"p>>',  // baris bawah
+            footerCallback: function (row, data, start, end, display) {
                 var api = this.api();
                 var totalCash = 0;
                 var totalTempo = 0;
@@ -693,6 +731,27 @@
                 $('#totalInvoiceCash').html('Cash: ' + formatRupiah(totalCash));
                 $('#totalInvoiceTempo').html('Tempo: ' + formatRupiah(totalTempo));
                 $('#subTotal').html('Subtotal: ' + formatRupiah(subTotal));
+            },
+            initComplete: function () {
+                var selectedMonthYear = $('#default_month').val() || '';
+                $('.custom-filter-placeholder').html(`
+                    <div id="custom-filter-group" class="d-flex align-items-center flex-wrap">
+                        <input type="month" id="omset-month-year" 
+                            class="form-control form-control-sm me-2 mb-2" 
+                            style="width: 150px;" 
+                            value="${selectedMonthYear}">
+                        <button class="btn btn-danger btn-sm me-2 mb-2" id="reset-month-filter">
+                            <i class="fa fa-sync"></i>
+                        </button>
+                        <button class="btn btn-primary btn-sm btn-outline-primary btn-filter-type-omset active me-2 mb-2" data-type="all">ALL</button>
+                        <button class="btn btn-success btn-sm btn-filter-type-omset me-2 mb-2" data-type="ppn">PPN</button>
+                        <button class="btn btn-warning btn-sm btn-filter-type-omset mb-2" data-type="nonppn">NonPPN</button>
+                    </div>
+                `);
+
+                $('#reset-month-filter').on('click', function() {
+                    window.location.href = "{{ route('superuser.index') }}";
+                });
             }
         });
 
