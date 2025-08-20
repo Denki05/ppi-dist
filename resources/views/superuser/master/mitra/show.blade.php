@@ -8,95 +8,72 @@
 </nav>
 <div id="alert-block"></div>
 
-<div class="row">
-    <div class="col-6">
-        <div class="block">
-            <div class="block-header block-header-default">
-                <h3 class="block-title">Detail {{ $mitra->name }}</h3>
-            </div>
-            <div class="block-content">
-                <div class="form-group row">
-                    <label class="col-lg-3 col-form-label text-right">Kode</label>
-                    <div class="col-lg-8">
-                        <input type="text" class="form-control" value="{{ $mitra->code }}" readonly>
-                    </div>
-                </div>
-                <div class="form-group row">
-                    <label class="col-lg-3 col-form-label text-right">Nama</label>
-                    <div class="col-lg-8">
-                        <input type="text" class="form-control" value="{{ $mitra->name }}" readonly>
-                    </div>
-                </div>
-                <div class="form-group row">
-                    <label class="col-lg-3 col-form-label text-right">Bulan</label>
-                    <div class="col-lg-8">
-                        <input type="text" class="form-control" value="{{ $bulan }}" readonly>
-                    </div>
-                </div>
-                <div class="form-group row">
-                    <label class="col-lg-3 col-form-label text-right">Batas Bawah</label>
-                    <div class="col-lg-8">
-                        <input type="text" class="form-control" value="{{ number_format($batas_bawah) }}" readonly>
-                    </div>
-                </div>
-                <div class="form-group row">
-                    <label class="col-lg-3 col-form-label text-right">Batas Atas</label>
-                    <div class="col-lg-8">
-                        <input type="text" class="form-control" value="{{ number_format($batas_atas) }}" readonly>
-                    </div>
-                </div>
-                <div class="form-group row">
-                    <label class="col-lg-3 col-form-label text-right">Saldo</label>
-                    <div class="col-lg-8">
-                        <input type="text" class="form-control" value="{{ number_format($saldo) }}" readonly>
-                    </div>
-                </div>
-            </div>
+<div class="container-fluid px-2">
+
+    <h4 class="mb-3">Detail Mitra</h4>
+
+    <div class="card mb-3">
+        <div class="card-body">
+            <p><strong>Nama Mitra:</strong> {{ $mitra->name ?? '-' }}</p>
+            <p><strong>Bulan Aktif:</strong> {{ $bulan }}</p>
+            <p><strong>Batas Bawah:</strong> {{ number_format($batas_bawah,0,',','.') }}</p>
+            <p><strong>Batas Atas:</strong> {{ number_format($batas_atas,0,',','.') }}</p>
+            <p><strong>Saldo:</strong> {{ number_format($saldo,0,',','.') }}</p>
         </div>
     </div>
 
-    <div class="col-6">
-        <div class="block">
-            <div class="block-header block-header-default">
-                <h3 class="block-title">List Customer</h3>
-                <a class="btn btn-secondary btn-sm" data-toggle="collapse" href="#detailCustomer" role="button" aria-expanded="false" aria-controls="detailCustomer" id="toggleDetailCustomer">
-                    <i class="fas fa-chevron-down"></i> <!-- Ikon awal -->
-                </a>
-            </div>
-            <div class="collapse" id="detailCustomer">
-                <div class="block-content">
-                    <table class="table table-striped table-hover" id="customer_mitra">
-                        <thead>
+    {{-- Tombol History --}}
+    <div class="mb-3">
+        <button class="btn btn-sm btn-primary" data-bs-toggle="modal" data-bs-target="#historyModal">
+            <i class="bi bi-clock-history"></i> Lihat History Import
+        </button>
+    </div>
+
+    {{-- Modal History --}}
+    <div class="modal fade" id="historyModal" tabindex="-1" aria-labelledby="historyModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg modal-dialog-scrollable">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="historyModalLabel">History Target Omset ({{ date('Y') }})</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <table class="table table-bordered table-striped">
+                        <thead class="table-light">
                             <tr>
-                                <th>#</th>
-                                <th>Nama</th>
-                                <th>Kota</th>
+                                <th style="width:5%">#</th>
+                                <th>Bulan</th>
+                                <th>Batas Bawah</th>
+                                <th>Batas Atas</th>
+                                <th>Saldo</th>
+                                <th>Tanggal Import</th>
                             </tr>
                         </thead>
                         <tbody>
-                            @foreach ($mitra->mitra_detail as $detail)
-                            <tr>
-                                <td>{{ $loop->iteration }}</td>
-                                <td>{{ $detail->customers->name }}</td>
-                                <td>{{ $detail->customers->text_kota }}</td>
-                            </tr>
-                            @endforeach
+                            @forelse($history as $i => $h)
+                                <tr>
+                                    <td>{{ $i+1 }}</td>
+                                    <td>{{ $bulan_list[$h->bulan] ?? $h->bulan }}</td>
+                                    <td>{{ number_format($h->batas_bawah,0,',','.') }}</td>
+                                    <td>{{ number_format($h->batas_atas,0,',','.') }}</td>
+                                    <td>{{ number_format($h->saldo,0,',','.') }}</td>
+                                    <td>{{ $h->created_at->format('d-m-Y H:i') }}</td>
+                                </tr>
+                            @empty
+                                <tr>
+                                    <td colspan="6" class="text-center">Belum ada history</td>
+                                </tr>
+                            @endforelse
                         </tbody>
                     </table>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Tutup</button>
                 </div>
             </div>
         </div>
     </div>
 
-    <div class="form-group row pt-30">
-        <div class="col-md-6">
-          <a href="{{ route('superuser.master.mitra.index') }}">
-            <button type="button" class="btn bg-gd-cherry border-0 text-white">
-              <i class="fa fa-arrow-left mr-10"></i> Back
-            </button>
-          </a>
-        </div>
-      </div>
 </div>
 @endsection
 

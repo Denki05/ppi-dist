@@ -182,40 +182,48 @@
   
     var counter = 1;
   
-    $('a.row-add').on( 'click', function (e) {
+    $('a.row-add').on('click', function (e) {
       e.preventDefault();
       if($('#delivery_order').val()) {
         $('#submit-table').prop('disabled', false);
-        
-        makeselect = '<select class="js-select2 form-control js-ajax" id="sku['+counter+']" name="sku[]" data-placeholder="Select Product" style="width:100%" required><option></option>';
+
+        // Ambil semua product yang sudah dipilih
+        let selected = $('.product-select').map(function() {
+          return $(this).val();
+        }).get();
+
+        let makeselect = '<select class="js-select2 form-control js-ajax product-select" id="sku['+counter+']" name="sku[]" data-placeholder="Select Product" style="width:100%" required><option></option>';
 
         $.map(product_data, function(val, i) {
-          makeselect += '<option value="'+ val['id'] +'" data-name="'+ val['name'] +'" data-sku="'+ val['sku'] +'" data-quantity="'+ val['quantity'] + '" data-kemasan="'+ val['kemasan'] +'" data-acuan="'+ val['acuan'] +'" data-disc_usd="'+ val['disc_usd'] +'" data-disc_1="'+ val['discount_percent'] +'" data-disc_2="'+ val['discount_kemasan'] +'" data-disc_idr="'+ val['discount_idr'] +'" data-idr_rate="'+ val['idr_rate'] +'">'+ val['sku'] +' - '+ val['name'] +'</option>';
+          // Skip product yang sudah dipilih di row lain
+          if (!selected.includes(String(val['id']))) {
+            makeselect += '<option value="'+ val['id'] +'" data-name="'+ val['name'] +'" data-sku="'+ val['sku'] +'" data-quantity="'+ val['quantity'] + '" data-kemasan="'+ val['kemasan'] +'" data-acuan="'+ val['acuan'] +'" data-disc_usd="'+ val['disc_usd'] +'" data-disc_1="'+ val['discount_percent'] +'" data-disc_2="'+ val['discount_kemasan'] +'" data-disc_idr="'+ val['discount_idr'] +'" data-idr_rate="'+ val['idr_rate'] +'">'+ val['sku'] +' - '+ val['name'] +'</option>';
+          }
         });
 
         makeselect += '</select>';
 
         table.row.add([
           counter,
-          makeselect, // Select product
+          makeselect,
           '<span class="packaging"></span>',
-          '<input type="number" class="form-control text-right" name="acuan[]" min="0.01" step="0.01" readonly><input type="hidden" name="kurs[]">', // Acuan info
+          '<input type="number" class="form-control text-right" name="acuan[]" min="0.01" step="0.01" readonly><input type="hidden" name="kurs[]">',
           '<input type="number" class="form-control text-right" name="quantity[]" id="quantity['+counter+']" min="0.01" step="0.01" required>',
           '<input type="number" class="form-control text-right" name="disc_usd[]" id="disc_usd['+counter+']" min="0.01" step="0.01" readonly>',
           '<input type="number" class="form-control text-right" name="jumlah[]" id="jumlah['+counter+']" min="0.01" step="0.01" readonly>',
           '<a href="#" class="row-delete"><button type="button" class="btn btn-sm btn-circle btn-alt-danger" title="Delete"><i class="fa fa-trash"></i></button></a>',
         ]).draw(false);
-                  
-                  initailizeSelect2();
+
+        initailizeSelect2();
+        refreshProductOptions(); // update hide option
         counter++;
       }
-      
     });
 
     function initailizeSelect2(){
       $(".js-ajax").select2();
 
-      $('.js-ajax').on('select2:select', function (e) {
+      $('.js-ajax').off('select2:select').on('select2:select', function (e) {
         var sku = $(this).find(':selected').data('sku');
         var quantity = $(this).find(':selected').data('quantity');
         var kemasan = $(this).find(':selected').data('kemasan');
@@ -235,9 +243,40 @@
         $('input[name="disc_percent"]').val(disc_1);
         $('input[name="disc_percent_2"]').val(disc_2);
         $('input[name="disc_idr"]').val(disc_idr);
-      });
 
+        refreshProductOptions(); // hide produk setelah dipilih
+      });
     };
+
+    // 🔹 fungsi untuk hide produk yang sudah dipilih
+    function refreshProductOptions() {
+      let selected = $('.product-select').map(function() {
+        return $(this).val();
+      }).get();
+
+      // alert(selected);
+
+      $('.product-select').each(function() {
+        let $sel = $(this);
+        let current = $sel.val();
+
+        $sel.find('option').each(function() {
+          let val = $(this).attr('value');
+          if (!val) return;
+
+          if (selected.includes(val) && val !== current) {
+            $(this).hide();
+          } else {
+            $(this).show();
+          }
+        });
+
+        // refresh tampilan select2
+        if ($sel.hasClass('select2-hidden-accessible')) {
+          $sel.trigger('change.select2');
+        }
+      });
+    }
 
     // calculate jumlah
     $('#datatable tbody').on('keyup', 'input[name="quantity[]"]', function () {
@@ -256,10 +295,10 @@
     function calculateTotal() {
       var subtotal = 0;
       $('input[name="jumlah[]"]').each(function() {
-      var val = parseFloat($(this).val());
-      if (!isNaN(val)) {
-        subtotal += val;
-      }
+        var val = parseFloat($(this).val());
+        if (!isNaN(val)) {
+          subtotal += val;
+        }
       });
       $('#subtotal_item').val(subtotal.toFixed(2));
 
@@ -282,7 +321,6 @@
       $('#grand_total').val(grand_total.toFixed(2));
     }
 
-    
     $('#datatable').on('draw.dt', function () {
       calculateTotal();
     });
@@ -291,17 +329,14 @@
       calculateTotal();
     });
 
-    // Recalculate when a row is deleted
-    $('#datatable tbody').on('click', '.row-delete', function () {
+    // Recalculate + refresh options when a row is deleted
+    $('#datatable tbody').on('click', '.row-delete', function (e) {
+      e.preventDefault();
+      table.row($(this).parents('tr')).remove().draw();
+      refreshProductOptions();
       setTimeout(function() {
         calculateTotal();
-      }, 100); // wait for row to be removed
-    });
-
-    $('#datatable tbody').on( 'click', '.row-delete', function (e) {
-      e.preventDefault();
-      table.row( $(this).parents('tr') ).remove().draw();
-
+      }, 100);
       if(typeof $('input[name="id[]"]').val() == 'undefined') {
         $('#submit-table').prop('disabled', true);
       }
@@ -330,7 +365,6 @@
           }
         }
       });
-
     });
 
   })

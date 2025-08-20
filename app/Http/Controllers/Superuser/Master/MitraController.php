@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Superuser\Master;
 
 use App\Entities\Master\Mitra;
 use App\Entities\Master\MitraDetail;
+use App\Entities\Master\MitraSetting;
 use App\Repositories\CodeRepo;
 use App\Http\Controllers\Controller;
 use App\Entities\Master\CustomerOtherAddress;
@@ -167,6 +168,14 @@ class MitraController extends Controller
         $data['batas_bawah'] = $mitraSetting ? (float) $mitraSetting->batas_bawah : 0;
         $data['batas_atas'] = $mitraSetting ? (float) $mitraSetting->batas_atas : 0;
         $data['saldo'] = $mitraSetting ? (float) $mitraSetting->saldo : 0;
+
+        // ========================
+        // Tambahan: history 1 tahun terakhir
+        // ========================
+        $data['history'] = MitraSetting::where('mitra_id', $id)
+            ->whereYear('created_at', now()->year) // hanya tahun berjalan
+            ->orderBy('bulan', 'asc')
+            ->get();
 
         return view('superuser.master.mitra.show', $data);
     }
