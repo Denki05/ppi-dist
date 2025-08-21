@@ -112,48 +112,55 @@
                                                 {{-- KIRI: Grup Filter (Periode dan Tipe Laporan) --}}
                                                 <div class="d-flex align-items-end"> {{-- Menyusun Periode dan Tipe Laporan secara horizontal, sejajar di bagian bawah --}}
                                                     {{-- Periode Group --}}
-                                                    <div class="d-flex flex-column me-3"> {{-- Membuat Label "Periode" berada di atas inputannya --}}
-                                                        <label class="form-label text-start mb-1">Periode</label> {{-- Label Periode, 'visually-hidden' dihapus --}}
-                                                        <div class="d-flex align-items-center"> {{-- Menjaga radio button dan dropdown tetap sejajar horizontal --}}
-                                                            {{-- Radio button dan Dropdown Bulan --}}
-                                                            <div class="form-check me-2">
-                                                                <input class="form-check-input" type="radio" name="period_filter_type" id="filterByMonth" value="month" checked>
-                                                            </div>
-                                                            <select class="form-control form-control-sm js-select2 me-3" id="tabulasi-month-select" style="width: 130px;">
-                                                            @php
-                                                                $months = [
-                                                                    1 => 'Januari', 2 => 'Februari', 3 => 'Maret', 4 => 'April',
-                                                                    5 => 'Mei', 6 => 'Juni', 7 => 'Juli', 8 => 'Agustus',
-                                                                    9 => 'September', 10 => 'Oktober', 11 => 'November', 12 => 'Desember'
-                                                                ];
-                                                                $currentMonth = date('n'); // Bulan saat ini (1-12)
-                                                            @endphp
-                                                            @foreach($months as $num => $name)
-                                                                <option value="{{ sprintf('%02d', $num) }}" {{ $num == $currentMonth ? 'selected' : '' }}>{{ $name }}</option>
-                                                            @endforeach
-                                                            </select>
+                                                    <div class="d-flex flex-column me-3">
+                                                        <label class="form-label text-start mb-1">Periode:</label>
+                                                        <div class="d-flex align-items-center">
 
-                                                            {{-- Radio button dan Dropdown Tahun --}}
-                                                            <div class="form-check me-2">
-                                                                <input class="form-check-input" type="radio" name="period_filter_type" id="filterByYear" value="year">
+                                                            {{-- Grup Bulan --}}
+                                                            <div class="d-flex align-items-center me-3">
+                                                                <div class="form-check me-2">
+                                                                    <input class="form-check-input" type="radio" name="period_filter_type" id="filterByMonth" value="month" checked>
+                                                                </div>
+                                                                <select class="form-control form-control-sm js-select2" id="tabulasi-month-select" style="width: 130px;">
+                                                                    @php
+                                                                        $months = [
+                                                                            1 => 'Januari', 2 => 'Februari', 3 => 'Maret', 4 => 'April',
+                                                                            5 => 'Mei', 6 => 'Juni', 7 => 'Juli', 8 => 'Agustus',
+                                                                            9 => 'September', 10 => 'Oktober', 11 => 'November', 12 => 'Desember'
+                                                                        ];
+                                                                        $currentMonth = date('n');
+                                                                    @endphp
+                                                                    @foreach($months as $num => $name)
+                                                                        <option value="{{ sprintf('%02d', $num) }}" {{ $num == $currentMonth ? 'selected' : '' }}>{{ $name }}</option>
+                                                                    @endforeach
+                                                                </select>
                                                             </div>
-                                                            <select class="form-control form-control-sm js-select2" id="tabulasi-year-select" style="width: 130px;">
-                                                            @php
-                                                                $currentYear = date('Y');
-                                                                for ($year = $currentYear - 5; $year <= $currentYear + 5; $year++) {
-                                                                    echo "<option value='{$year}'" . ($year == $currentYear ? ' selected' : '') . ">{$year}</option>";
-                                                                }
-                                                            @endphp
-                                                            </select>
+
+                                                            {{-- Grup Tahun --}}
+                                                            <div class="d-flex align-items-center">
+                                                                <div class="form-check me-2">
+                                                                    <input class="form-check-input" type="radio" name="period_filter_type" id="filterByYear" value="year">
+                                                                </div>
+                                                                <select class="form-control form-control-sm js-select2" id="tabulasi-year-select" style="width: 130px;">
+                                                                    @php
+                                                                        $currentYear = date('Y');
+                                                                        for ($year = $currentYear - 5; $year <= $currentYear + 5; $year++) {
+                                                                            echo "<option value='{$year}'" . ($year == $currentYear ? ' selected' : '') . ">{$year}</option>";
+                                                                        }
+                                                                    @endphp
+                                                                </select>
+                                                            </div>
+
                                                         </div>
                                                     </div>
 
+
                                                     {{-- Tipe Laporan Group --}}
                                                     <div class="d-flex flex-column ms-3"> {{-- Membuat Label "Tipe Laporan" berada di atas inputannya --}}
-                                                        <label for="report_type_tabulasi" class="form-label text-start mb-1">Tipe Laporan</label> {{-- Label Tipe Laporan, 'visually-hidden' dihapus --}}
+                                                        <label for="report_type_tabulasi" class="form-label text-start mb-1">Tipe Laporan:</label> {{-- Label Tipe Laporan, 'visually-hidden' dihapus --}}
                                                         <select class="form-control form-control-sm js-select2" name="report_type_tabulasi" id="report_type_tabulasi" style="min-width: 180px;">
-                                                            <option value="brand">R. by Brand</option>
-                                                            <option value="zone">R. by Zone</option>
+                                                            <option value="brand">Market Brand</option>
+                                                            <option value="zone">Zone</option>
                                                         </select>
                                                     </div>
                                                 </div>
@@ -821,7 +828,16 @@
                 $('#tabulasi-year-select').prop('disabled', false).trigger('change');
             }
             applyTabulasiMonthYearToForm();
-        }).trigger('change');
+        });
+
+        // --- INISIALISASI SAAT HALAMAN PERTAMA KALI ---
+        if ($('#filterByMonth').is(':checked')) {
+            $('#tabulasi-month-select').prop('disabled', false);
+            $('#tabulasi-year-select').prop('disabled', true);
+        } else if ($('#filterByYear').is(':checked')) {
+            $('#tabulasi-month-select').prop('disabled', true);
+            $('#tabulasi-year-select').prop('disabled', false);
+        }
     });
 </script>
 @endpush

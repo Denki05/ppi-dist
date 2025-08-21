@@ -483,7 +483,7 @@ class DeliveryOrderController extends Controller
             $result_cost = PackingOrderDetail::where('do_id', $do_id)->firstOrFail();
             $get_do = PackingOrder::where('id', $do_id)->firstOrFail();
             $get_so = SalesOrder::where('id', $get_do->so_id)->firstOrFail();
-            $customer = CustomerOtherAddress::where('id', $result_cost->do->customer_other_address_id)->firstOrFail();
+            $customer = CustomerOtherAddress::where('id', $result_cost->do_header->customer_other_address_id)->firstOrFail();
 
             // Prepare update data
             $updateData = [
@@ -491,7 +491,6 @@ class DeliveryOrderController extends Controller
                 'delivery_cost_idr' => $post["delivery_cost_idr"],
                 'other_cost_note' => trim(htmlentities($post["other_cost_note"] ?? '')),
                 'other_cost_idr' => $post["other_cost_idr"] ?? 0,
-                // 'grand_total_idr' => $get_do->do_detail_cost->grand_total_idr,
                 'updated_by' => Auth::id(),
                 'status_resi' => 1,
             ];
@@ -505,6 +504,9 @@ class DeliveryOrderController extends Controller
             } elseif ($get_do->type_transaction == "CASH" && $customer->free_shipping == 0) {
                 $updateData['other_cost_idr'] = $post["other_cost_idr"];
             }
+
+            $purchase_total = $result_cost->purchase_total_idr ?? 0; // pakai data yg sudah diambil biar hemat query
+            $updateData['grand_total_idr'] = $purchase_total + ($updateData['delivery_cost_idr'] ?? 0);
 
             // Update PackingOrderDetail
             $updateDetailCost =  PackingOrderDetail::where('do_id', $do_id)->update($updateData);
@@ -533,12 +535,23 @@ class DeliveryOrderController extends Controller
                 ]);
             }
 
+            // check invoice total = grand_total_idr
+            $get_inv = DB::table('finance_invoicing')->where('do_id', $do_id)->first();
+            $do_details = PackingOrderDetail::where('do_id', $do_id)->first();
+
+            if ($get_inv && $do_details) {
+                $new_grand_total = $do_details->purchase_total_idr + $do_details->delivery_cost_idr;
+
+                if ($get_inv->grand_total_idr != $new_grand_total) {
+                    DB::table('finance_invoicing')->where('do_id', $do_id)->update([
+                        'grand_total_idr' => $new_grand_total
+                    ]);
+                }
+            }
+
             // Commit transaction
             DB::commit();
 
-            // add notif
-            // $user = User::find(32);
-            // $user->notify(new DoNotification($get_do));
             $userIds = [32, 36];
             $users = User::whereIn('id', $userIds)->get();
 
@@ -550,7 +563,6 @@ class DeliveryOrderController extends Controller
             return redirect()->route('superuser.penjualan.delivery_order.index')->with('success','DO berhasil update resi!');
 
         } catch (\Throwable $e) {
-            dd($e);
             DB::rollback();
             $data_json["IsError"] = true;
             $data_json["Message"] = $e->getMessage();
@@ -786,7 +798,7 @@ class DeliveryOrderController extends Controller
 
             // Jika cashback_status == 1, tidak bisa dibatalkan
             if ($do->cashback_status == 1) {
-                return response()->json(['message' => 'Pesanan dengan cashback tidak dapat dibatalkan!'], 403);
+                return response()->json(['message' => 'Pesanan dengan cashback atau sudah update resi tidak dapat dibatalkan!'], 403);
             }
 
             // Jika password benar, lanjutkan pembatalan
@@ -919,8 +931,7 @@ class DeliveryOrderController extends Controller
                     'updated_by' => Auth::id(),
                 ]);
 
-                // Update invoice jika ada
-                if ($do->invoicing && $do->invoicing->grand_total_idr > 0) {
+                if ($do->invoicing && $do->invoicing->grand_total_idr != $grand_total_idr) {
                     $do->invoicing->update([
                         'grand_total_idr' => $grand_total_idr
                     ]);
