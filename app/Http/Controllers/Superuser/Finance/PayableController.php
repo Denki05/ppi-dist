@@ -790,9 +790,10 @@ class PayableController extends Controller
 
             if (!in_array($year, ['2022','2023']) && $remaining > 0) {
                 $rows[] = [
-                    'id'        => $invoice->id,
-                    'code'      => $invoice->code,
-                    'remaining' => number_format($remaining,0,',','.'),
+                    'id'            => $invoice->id,
+                    'date'          => $invoice->created_at->format('d-m-Y'),
+                    'code'          => $invoice->code,
+                    'remaining'     => number_format($remaining,0,',','.'),
                 ];
             }
         }
