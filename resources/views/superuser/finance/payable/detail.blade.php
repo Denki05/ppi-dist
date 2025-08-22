@@ -84,7 +84,7 @@
     </div>
     <div class="row mb-30">
       <div class="col-12">
-        <a href="{{route('superuser.finance.payable.index')}}" class="btn btn-warning"><i class="fa fa-arrow-left"></i> Back</a>
+        <a href="javascript:history.back()" class="btn btn-warning"><i class="fa fa-arrow-left"></i> Back</a>
       </div>
     </div>
   </div>

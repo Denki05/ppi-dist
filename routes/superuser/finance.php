@@ -57,6 +57,9 @@ Route::group([
         Route::get('/{id}/cancel_approve', 'PayableController@cancel_approve')->name('cancel_approve');
         Route::get('/{id}/cancel_edit', 'PayableController@cancel_edit')->name('cancel_edit');
         Route::post('/{id}/update_cancel', 'PayableController@update_cancel')->name('update_cancel');
+        Route::get('/unpaidInvoices', 'PayableController@unpaidInvoices')->name('unpaidInvoices');
+        Route::get('/customerSearch', 'PayableController@customerSearch')->name('customerSearch');
+        Route::get('/json_done', 'PayableController@json_done')->name('json_done');
     });
     Route::resource('payable', 'PayableController');
 
