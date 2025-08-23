@@ -786,20 +786,25 @@ class PayableController extends Controller
             if (!$invoice) continue;
 
             $year = $invoice->created_at->format('Y');
-            $remaining = $invoice->grand_total_idr - $invoice->payable_detail->sum('total');
+
+            // hitung sisa tagihan
+            $paid = $invoice->payable_detail->sum('total');
+            $remaining = $invoice->grand_total_idr - $paid;
 
             if (!in_array($year, ['2022','2023']) && $remaining > 0) {
                 $rows[] = [
                     'id'            => $invoice->id,
                     'date'          => $invoice->created_at->format('d-m-Y'),
                     'code'          => $invoice->code,
-                    'remaining'     => number_format($remaining,0,',','.'),
+                    'tagihan'       => number_format($invoice->grand_total_idr,0,',','.'),
+                    'sisa_tagihan'  => number_format($remaining,0,',','.'),
                 ];
             }
         }
 
         return response()->json($rows);
     }
+
 
     public function customerSearch(Request $request)
     {

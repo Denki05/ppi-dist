@@ -56,6 +56,7 @@
                 <div class="col-6">
                     <div class="card">
                         <div class="card-body">
+                            <!-- <h5 class="card-title">List Tagihan</h5> -->
                             <div id="invoice_section">
                                 <table class="table table-bordered" id="invoice_table">
                                     <thead>
@@ -63,7 +64,7 @@
                                             <th>Tanggal</th>
                                             <th>Nota</th>
                                             <th>Tagihan</th>
-                                            <th>Action</th>
+                                            <th>Sisa</th>
                                         </tr>
                                     </thead>
                                     <tbody>
@@ -75,57 +76,66 @@
                     </div>
                 </div>
 
-                {{-- GRID KANAN: detail pembayaran --}}
+                {{-- GRID KANAN --}}
                 <div class="col-6">
-                    <div class="card">
+                    
+                    {{-- CARD BARU: Saldo Transfer Customer --}}
+                    <div class="card mb-3">
                         <div class="card-body">
-                            <div id="invoice_detail">
-                                <input type="hidden" name="invoice_id" id="detail_invoice_id">
-
-                                <div class="row">
-                                    <div class="col-md-6">
-                                        <div class="form-group">
-                                            <label for="detail_invoice_code">Kode Invoice</label>
-                                            <input type="text" id="detail_invoice_code" class="form-control" readonly>
-                                        </div>
-                                    </div>
-
-                                    <div class="col-md-6">
-                                        <div class="form-group">
-                                            <label for="detail_invoice_total">Total Tagihan</label>
-                                            <input type="text" id="detail_invoice_total" class="form-control" readonly>
-                                        </div>
+                            <!-- <h5 class="card-title">Saldo Transfer Customer</h5> -->
+                            <div class="row">
+                                <div class="col-md-4">
+                                    <div class="form-group">
+                                        <label for="saldo_transfer">Transfer</label>
+                                        <input type="number" step="0.01" name="saldo_transfer" id="saldo_transfer" class="form-control">
                                     </div>
                                 </div>
-
-                                <div class="row">
-                                    <div class="col-md-6">
-                                        <div class="form-group">
-                                            <label for="payment_amount">Jumlah Bayar</label>
-                                            <input type="number" step="0.01" name="payment_amount" id="payment_amount" class="form-control" required>
-                                        </div>
-                                    </div>
-
-                                    <div class="col-md-6">
+                                <div class="col-md-4">
                                         <div class="form-group">
                                             <label for="pay_date">Tanggal Bayar</label>
                                             <input type="date" name="pay_date" id="pay_date" class="form-control" required>
                                         </div>
-                                    </div>
                                 </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    {{-- CARD EXISTING: Invoice Detail --}}
+                    <div class="card">
+                        <div class="card-body">
+                            <!-- <h5 class="card-title">Detail Pembayaran</h5> -->
+                            <div id="invoice_detail">
+                                <input type="hidden" name="invoice_id" id="detail_invoice_id">
 
                                 <div class="row">
-                                    <div class="col-md-12">
+                                    <div class="col-md-4">
                                         <div class="form-group">
-                                            <label for="note">Catatan</label>
-                                            <textarea name="note" id="note" class="form-control"></textarea>
+                                            <label for="detail_invoice_total">Total Tagihan</label>
+                                            <input type="text" id="detail_invoice_total" class="form-control text-center" readonly>
+                                        </div>
+                                    </div>
+
+                                    <div class="col-md-4">
+                                        <div class="form-group">
+                                            <label for="payment_amount">Jumlah Bayar</label>
+                                            <input type="number" step="0.01" name="payment_amount" id="payment_amount" class="form-control text-center" required>
                                         </div>
                                     </div>
                                 </div>
 
-                                <button type="submit" class="btn btn-primary btn-block">Proses Pembayaran</button>
-                            </div>
+                                <div class="row">
+                                    
+                                    <div class="col-md-12">
+                                        <div class="form-group">
+                                            <label for="note">Catatan</label>
+                                            <!-- <input type="text" name="note" id="note" class="form-control"> -->
+                                            <textarea name="note" id="note" class="form-control" rows="1"></textarea>
+                                        </div>
+                                    </div>
+                                </div>
 
+                                <button type="submit" class="btn btn-primary w-25">Proses</button>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -190,6 +200,14 @@
     vertical-align: middle;
     white-space: nowrap;
 }
+
+#invoice_table tbody tr {
+    cursor: pointer;
+}
+#invoice_table tbody tr.selected-row {
+    background-color: #d1ecf1; /* biru muda */
+}
+
 </style>
 
 <script>
@@ -229,16 +247,14 @@ $(document).ready(function () {
             if(res.length > 0){
                 res.forEach(item=>{
                     rows += `
-                        <tr>
+                        <tr class="invoice-row" 
+                            data-id="${item.id}" 
+                            data-code="${item.code}" 
+                            data-total="${item.sisa_tagihan}">
                             <td>${item.date}</td>
                             <td>${item.code}</td>
-                            <td>${item.remaining}</td>
-                            <td>
-                                <button type="button" class="btn btn-sm btn-info btn-select-invoice"
-                                    data-id="${item.id}" data-code="${item.code}" data-total="${item.remaining}">
-                                    Pilih
-                                </button>
-                            </td>
+                            <td>${item.tagihan}</td>
+                            <td>${item.sisa_tagihan}</td>
                         </tr>`;
                 });
                 $('#invoice_table tbody').html(rows);
@@ -246,12 +262,12 @@ $(document).ready(function () {
                 $('#invoice_table tbody').html('<tr><td colspan="4" class="text-center">Tidak ada invoice yang belum dibayar.</td></tr>');
             }
         });
+
     });
 
     // klik pilih invoice -> isi detail
     $(document).on('click','.btn-select-invoice',function(){
         $('#detail_invoice_id').val($(this).data('id'));
-        $('#detail_invoice_code').val($(this).data('code'));
         $('#detail_invoice_total').val($(this).data('total'));
     });
 
@@ -262,7 +278,6 @@ $(document).ready(function () {
         $('#customerList').hide();
         $('#invoice_table tbody').html('<tr><td colspan="4" class="text-center">Silahkan cari customer terlebih dahulu.</td></tr>');
         $('#detail_invoice_id').val('');
-        $('#detail_invoice_code').val('');
         $('#detail_invoice_total').val('');
         $('#payment_amount').val('');
         $('#pay_date').val('');
@@ -278,15 +293,25 @@ $(document).ready(function () {
         ordering: false,         // matikan sorting
         autoWidth: false,        // jangan pakai width otomatis
         columnDefs: [
-            { width: "20%", targets: 0 }, // tanggal
-            { width: "20%", targets: 1 }, // nota
-            { width: "30%", targets: 2 }, // tagihan
-            { width: "30%", targets: 3 }  // action
+            { width: "10%", targets: 0 }, // tanggal
+            { width: "10%", targets: 1 }, // nota
+            { width: "10%", targets: 2 }, // tagihan
+            { width: "10%", targets: 3 }  // action
         ]
     });
 
     // pastikan kolom sinkron setelah render
     table.columns.adjust().draw();
+
+    $(document).on('click', '.invoice-row', function(){
+        $('#detail_invoice_id').val($(this).data('id'));
+        $('#detail_invoice_code').val($(this).data('code'));
+        $('#detail_invoice_total').val($(this).data('total'));
+
+        // highlight baris aktif
+        $('#invoice_table tbody tr').removeClass('selected-row');
+        $(this).addClass('selected-row');
+    });
 });
 </script>
 @endpush
