@@ -213,7 +213,6 @@ $(document).ready(function () {
     // Ketika input saldo_transfer diubah, update saldo_sisa
     $('#saldo_transfer').on('input', function() {
         saldoTransfer = parseFloat($(this).val()) || 0;
-        // Tampilkan saldo sisa di input tersembunyi
         $('#saldo_sisa').val(saldoTransfer);
     });
 
@@ -245,7 +244,6 @@ $(document).ready(function () {
         $('#searchCustomer').val($(this).text());
         $('#customerList').hide();
 
-        // Kosongkan form detail invoice saat customer baru dipilih
         $('#detail_invoice_id').val('');
         $('#detail_invoice_total').val('');
         $('#payment_amount').val('');
@@ -284,7 +282,6 @@ $(document).ready(function () {
         $('#pay_date').val('');
         $('#note').val('');
         
-        // Reset saldo
         saldoTransfer = 0;
         $('#saldo_transfer').val('');
         $('#saldo_sisa').val(0);
@@ -306,36 +303,26 @@ $(document).ready(function () {
         ]
     });
 
-    // Hapus duplikasi kode ini, karena ini mirip dengan .invoice-row
-    // $(document).on('click','.btn-select-invoice',function(){
-    //     $('#detail_invoice_id').val($(this).data('id'));
-    //     $('#detail_invoice_total').val($(this).data('total'));
-    // });
-
     // Pilihan invoice dan pengisian otomatis (perbaikan)
     $(document).on('click', '.invoice-row', function(){
-        // Ambil data dari baris yang diklik
         let invoiceId = $(this).data('id');
-        let invoiceCode = $(this).data('code');
-        let totalTagihan = $(this).data('total');
-
-        // Isi form detail pembayaran
-        $('#detail_invoice_id').val(invoiceId);
-        // $('#detail_invoice_code').val(invoiceCode); // Tidak ada input dengan id ini di HTML
-        $('#detail_invoice_total').val(totalTagihan);
+        let totalTagihan = parseFloat($(this).data('total').replace(/\./g, '').replace(/,/g, '.')) || 0; // Bersihkan format ribuan
         
-        // Cek apakah saldo transfer mencukupi untuk pembayaran penuh
+        $('#detail_invoice_id').val(invoiceId);
+        $('#detail_invoice_total').val(totalTagihan);
+
         let saldoSisa = parseFloat($('#saldo_sisa').val()) || 0;
         
-        if (totalTagihan <= saldoSisa) {
-            // Jika saldo cukup, isi otomatis payment_amount
+        // Logika pengisian otomatis berdasarkan selisih nominal
+        // Menggunakan selisih nominal < 1 untuk mengakomodir perbedaan kecil di belakang koma
+        if (Math.abs(totalTagihan - saldoTransfer) <= 1) {
+            $('#payment_amount').val(totalTagihan);
+        } else if (totalTagihan <= saldoSisa) {
             $('#payment_amount').val(totalTagihan);
         } else {
-            // Jika tidak cukup, biarkan user input manual
             $('#payment_amount').val(saldoSisa);
         }
 
-        // Highlight baris aktif
         $('#invoice_table tbody tr').removeClass('selected-row');
         $(this).addClass('selected-row');
     });
@@ -344,19 +331,22 @@ $(document).ready(function () {
     $('#processPayment').on('click', function(e) {
         e.preventDefault();
 
+        // Tambahkan konfirmasi di sini
+        if (!confirm('Apakah Anda yakin ingin memproses pembayaran ini?')) {
+            return; // Hentikan proses jika user membatalkan
+        }
+
         let customerId = $('#customer_id').val();
         let payDate = $('#pay_date').val();
         let invoiceId = $('#detail_invoice_id').val();
         let paymentAmount = parseFloat($('#payment_amount').val()) || 0;
         let note = $('#note').val();
         
-        // Validasi sederhana di frontend
         if (!customerId || !payDate || !invoiceId || paymentAmount <= 0) {
             alert('Mohon lengkapi data pembayaran dengan benar!');
             return;
         }
 
-        // Ambil saldo sisa dari input tersembunyi
         let saldoSisa = parseFloat($('#saldo_sisa').val()) || 0;
         
         if(paymentAmount > saldoSisa){
@@ -364,7 +354,6 @@ $(document).ready(function () {
             return;
         }
 
-        // Siapkan data untuk dikirim ke server
         let data = {
             _token: '{{ csrf_token() }}',
             customer_id: customerId,
@@ -376,7 +365,6 @@ $(document).ready(function () {
             }]
         };
         
-        // Menggunakan AJAX untuk mengirim data
         $.ajax({
             url: "{{ route('superuser.finance.payable.store') }}",
             method: "POST",
@@ -385,14 +373,10 @@ $(document).ready(function () {
                 if (res.success) {
                     alert('Pembayaran berhasil diproses!');
                     
-                    // Kurangi saldo transfer di sisi frontend
                     saldoSisa -= paymentAmount;
                     $('#saldo_sisa').val(saldoSisa);
-                    
-                    // Update tampilan saldo di input Transfer
                     $('#saldo_transfer').val(saldoSisa);
 
-                    // Hapus baris invoice yang sudah dibayar dari tabel
                     $(`tr[data-id="${invoiceId}"]`).remove();
                     
                     // Reset form detail
@@ -403,6 +387,9 @@ $(document).ready(function () {
                     
                     // Hapus highlight
                     $('#invoice_table tbody tr').removeClass('selected-row');
+                    
+                    // Permintaan baru: reset tanggal
+                    $('#pay_date').val('');
 
                 } else {
                     alert('Terjadi kesalahan: ' + res.message);
