@@ -177,13 +177,15 @@ class PayableController extends Controller
                 'pay_date' => 'required|date',
                 'repeater' => 'required|array',
                 'repeater.*.invoice_id' => 'required|exists:finance_invoicing,id',
-                'repeater.*.payable' => 'nullable|string',
+                // Perhatikan ini: ganti 'nullable|string' menjadi 'nullable|numeric' jika Anda mengirimkan angka
+                'repeater.*.payable' => 'required|numeric', 
             ]);
 
             if ($validator->fails()) {
-                return redirect()->back()
-                    ->withErrors($validator)
-                    ->withInput();
+                return response()->json([
+                    'success' => false, 
+                    'errors' => $validator->errors()
+                ], 422);
             }
 
             // Create Payable
@@ -291,16 +293,20 @@ class PayableController extends Controller
                 $user->notify(new PayableNotification($payable));
             }
 
-            return redirect()->route('superuser.finance.payable.index')
-                ->with('success', 'Payable berhasil dibuat');
+            return response()->json([
+                'success' => true,
+                'message' => "Payable berhasil dibuat"
+            ]);
 
         } catch (\Throwable $e) {
             dd($e);
             DB::rollback();
             Log::error('Payable creation failed: ' . $e->getMessage());
 
-            return redirect()->back()
-                ->with('error', 'Terjadi kesalahan saat membuat Payable. Silakan coba lagi.');
+            return response()->json([
+                'success' => false,
+                'message' => 'Terjadi kesalahan saat membuat Payable. Silakan coba lagi.'
+            ], 500);
         }
     }
 

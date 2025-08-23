@@ -88,6 +88,7 @@
                                     <div class="form-group">
                                         <label for="saldo_transfer">Transfer</label>
                                         <input type="number" step="0.01" name="saldo_transfer" id="saldo_transfer" class="form-control">
+                                        <input type="hidden" id="saldo_sisa" class="form-control" value="0" readonly>
                                     </div>
                                 </div>
                                 <div class="col-md-4">
@@ -106,7 +107,6 @@
                             <!-- <h5 class="card-title">Detail Pembayaran</h5> -->
                             <div id="invoice_detail">
                                 <input type="hidden" name="invoice_id" id="detail_invoice_id">
-
                                 <div class="row">
                                     <div class="col-md-4">
                                         <div class="form-group">
@@ -114,7 +114,6 @@
                                             <input type="text" id="detail_invoice_total" class="form-control text-center" readonly>
                                         </div>
                                     </div>
-
                                     <div class="col-md-4">
                                         <div class="form-group">
                                             <label for="payment_amount">Jumlah Bayar</label>
@@ -122,19 +121,15 @@
                                         </div>
                                     </div>
                                 </div>
-
                                 <div class="row">
-                                    
                                     <div class="col-md-12">
                                         <div class="form-group">
                                             <label for="note">Catatan</label>
-                                            <!-- <input type="text" name="note" id="note" class="form-control"> -->
                                             <textarea name="note" id="note" class="form-control" rows="1"></textarea>
                                         </div>
                                     </div>
                                 </div>
-
-                                <button type="submit" class="btn btn-primary w-25">Proses</button>
+                                <button type="button" class="btn btn-primary w-25" id="processPayment">Proses</button>
                             </div>
                         </div>
                     </div>
@@ -212,15 +207,23 @@
 
 <script>
 $(document).ready(function () {
-    // pencarian customer
+    // Inisialisasi saldo transfer
+    let saldoTransfer = 0;
+    
+    // Ketika input saldo_transfer diubah, update saldo_sisa
+    $('#saldo_transfer').on('input', function() {
+        saldoTransfer = parseFloat($(this).val()) || 0;
+        // Tampilkan saldo sisa di input tersembunyi
+        $('#saldo_sisa').val(saldoTransfer);
+    });
+
+    // Pencarian customer (tidak ada perubahan di sini)
     $('#searchCustomer').on('keyup', function(){
         let query = $(this).val().trim();
-
         if(query.length < 2){
             $('#customerList').hide();
             return;
         }
-
         $.get("{{ route('superuser.finance.payable.customerSearch') }}",{query}, function(res){
             let list = $('#customerList').empty();
             if(res.length > 0){
@@ -234,7 +237,7 @@ $(document).ready(function () {
         });
     });
 
-    // pilih customer -> load invoice
+    // Pilih customer -> load invoice (tidak ada perubahan di sini)
     $(document).on('click','.customer-item',function(e){
         e.preventDefault();
         let id = $(this).data('id');
@@ -242,6 +245,11 @@ $(document).ready(function () {
         $('#searchCustomer').val($(this).text());
         $('#customerList').hide();
 
+        // Kosongkan form detail invoice saat customer baru dipilih
+        $('#detail_invoice_id').val('');
+        $('#detail_invoice_total').val('');
+        $('#payment_amount').val('');
+        
         $.get("{{ route('superuser.finance.payable.unpaidInvoices') }}",{customer_id:id},function(res){
             let rows = '';
             if(res.length > 0){
@@ -262,16 +270,9 @@ $(document).ready(function () {
                 $('#invoice_table tbody').html('<tr><td colspan="4" class="text-center">Tidak ada invoice yang belum dibayar.</td></tr>');
             }
         });
-
     });
 
-    // klik pilih invoice -> isi detail
-    $(document).on('click','.btn-select-invoice',function(){
-        $('#detail_invoice_id').val($(this).data('id'));
-        $('#detail_invoice_total').val($(this).data('total'));
-    });
-
-    // reset
+    // Reset customer (tidak ada perubahan di sini)
     $('#resetCustomer').on('click', function(){
         $('#searchCustomer').val('');
         $('#customer_id').val('');
@@ -282,6 +283,11 @@ $(document).ready(function () {
         $('#payment_amount').val('');
         $('#pay_date').val('');
         $('#note').val('');
+        
+        // Reset saldo
+        saldoTransfer = 0;
+        $('#saldo_transfer').val('');
+        $('#saldo_sisa').val(0);
     });
 
     var table = $('#invoice_table').DataTable({
@@ -300,17 +306,121 @@ $(document).ready(function () {
         ]
     });
 
-    // pastikan kolom sinkron setelah render
-    table.columns.adjust().draw();
+    // Hapus duplikasi kode ini, karena ini mirip dengan .invoice-row
+    // $(document).on('click','.btn-select-invoice',function(){
+    //     $('#detail_invoice_id').val($(this).data('id'));
+    //     $('#detail_invoice_total').val($(this).data('total'));
+    // });
 
+    // Pilihan invoice dan pengisian otomatis (perbaikan)
     $(document).on('click', '.invoice-row', function(){
-        $('#detail_invoice_id').val($(this).data('id'));
-        $('#detail_invoice_code').val($(this).data('code'));
-        $('#detail_invoice_total').val($(this).data('total'));
+        // Ambil data dari baris yang diklik
+        let invoiceId = $(this).data('id');
+        let invoiceCode = $(this).data('code');
+        let totalTagihan = $(this).data('total');
 
-        // highlight baris aktif
+        // Isi form detail pembayaran
+        $('#detail_invoice_id').val(invoiceId);
+        // $('#detail_invoice_code').val(invoiceCode); // Tidak ada input dengan id ini di HTML
+        $('#detail_invoice_total').val(totalTagihan);
+        
+        // Cek apakah saldo transfer mencukupi untuk pembayaran penuh
+        let saldoSisa = parseFloat($('#saldo_sisa').val()) || 0;
+        
+        if (totalTagihan <= saldoSisa) {
+            // Jika saldo cukup, isi otomatis payment_amount
+            $('#payment_amount').val(totalTagihan);
+        } else {
+            // Jika tidak cukup, biarkan user input manual
+            $('#payment_amount').val(saldoSisa);
+        }
+
+        // Highlight baris aktif
         $('#invoice_table tbody tr').removeClass('selected-row');
         $(this).addClass('selected-row');
+    });
+
+    // Proses pembayaran (perbaikan)
+    $('#processPayment').on('click', function(e) {
+        e.preventDefault();
+
+        let customerId = $('#customer_id').val();
+        let payDate = $('#pay_date').val();
+        let invoiceId = $('#detail_invoice_id').val();
+        let paymentAmount = parseFloat($('#payment_amount').val()) || 0;
+        let note = $('#note').val();
+        
+        // Validasi sederhana di frontend
+        if (!customerId || !payDate || !invoiceId || paymentAmount <= 0) {
+            alert('Mohon lengkapi data pembayaran dengan benar!');
+            return;
+        }
+
+        // Ambil saldo sisa dari input tersembunyi
+        let saldoSisa = parseFloat($('#saldo_sisa').val()) || 0;
+        
+        if(paymentAmount > saldoSisa){
+            alert('Saldo transfer tidak mencukupi untuk pembayaran ini');
+            return;
+        }
+
+        // Siapkan data untuk dikirim ke server
+        let data = {
+            _token: '{{ csrf_token() }}',
+            customer_id: customerId,
+            pay_date: payDate,
+            note: note,
+            repeater: [{
+                invoice_id: invoiceId,
+                payable: paymentAmount
+            }]
+        };
+        
+        // Menggunakan AJAX untuk mengirim data
+        $.ajax({
+            url: "{{ route('superuser.finance.payable.store') }}",
+            method: "POST",
+            data: data,
+            success: function(res) {
+                if (res.success) {
+                    alert('Pembayaran berhasil diproses!');
+                    
+                    // Kurangi saldo transfer di sisi frontend
+                    saldoSisa -= paymentAmount;
+                    $('#saldo_sisa').val(saldoSisa);
+                    
+                    // Update tampilan saldo di input Transfer
+                    $('#saldo_transfer').val(saldoSisa);
+
+                    // Hapus baris invoice yang sudah dibayar dari tabel
+                    $(`tr[data-id="${invoiceId}"]`).remove();
+                    
+                    // Reset form detail
+                    $('#detail_invoice_id').val('');
+                    $('#detail_invoice_total').val('');
+                    $('#payment_amount').val('');
+                    $('#note').val('');
+                    
+                    // Hapus highlight
+                    $('#invoice_table tbody tr').removeClass('selected-row');
+
+                } else {
+                    alert('Terjadi kesalahan: ' + res.message);
+                }
+            },
+            error: function(xhr) {
+                let error = JSON.parse(xhr.responseText);
+                if (error.errors) {
+                    let errorMessage = '';
+                    for (let key in error.errors) {
+                        errorMessage += error.errors[key][0] + '\n';
+                    }
+                    alert('Gagal memproses pembayaran:\n' + errorMessage);
+                } else {
+                    alert('Gagal terhubung ke server. Mohon coba lagi.');
+                }
+            }
+        });
     });
 });
 </script>
