@@ -369,7 +369,7 @@
                         </li>
                         @endif
 
-                        @if($superuser->division == "Developer" OR $superuser->division == "Management")
+                        @if($superuser->division == "Developer")
                         {{--<li class="submenu submenu-md dropend">
                             <a class="dropdown-item dropdown-toggle" role="button" data-bs-toggle="dropdown"
                                 aria-expanded="false">

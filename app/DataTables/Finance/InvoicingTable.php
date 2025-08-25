@@ -93,12 +93,12 @@ class InvoicingTable extends Table
                                 <i class=\"fa fa-eye\"></i>
                             </button>
                         </a>
-                        <a href=\"{$print}\">
+                        <a href=\"{$print}\" target=\"_blank\">
                             <button type=\"button\" class=\"btn btn-outline-primary btn-sm btn-flat\" title=\"Print\">
                                 <i class=\"fa fa-print\"></i>
                             </button>
                         </a>
-                        <a href=\"{$print_full}\">
+                        <a href=\"{$print_full}\" target=\"_blank\">
                             <button type=\"button\" class=\"btn btn-outline-success btn-sm btn-flat\" title=\"Print Full\">
                                 <i class=\"fa fa-print\"></i>
                             </button>

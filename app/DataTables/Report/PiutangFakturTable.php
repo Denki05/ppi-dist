@@ -25,19 +25,24 @@ class PiutangFakturTable extends Table
             ->leftJoin('penjualan_do_details', 'penjualan_do.id', '=', 'penjualan_do_details.do_id')
             ->leftJoin('master_customers', 'master_customer_other_addresses.customer_id', '=', 'master_customers.id')
             ->select(
-                'master_customer_other_addresses.name AS customer_name',
-                'master_customer_other_addresses.text_kota AS customer_kota',
+                'master_customer_other_addresses.name AS customer_name', 
+                'master_customer_other_addresses.text_kota AS customer_kota', 
                 'finance_invoicing.code AS no_faktur',
-                // Perubahan di sini: Menggunakan DB::raw untuk menjumlahkan kolom
-                DB::raw('SUM(penjualan_do_details.purchase_total_idr + penjualan_do_details.delivery_cost_idr) AS nilai_faktur'),
+                DB::raw('
+                    CASE
+                        WHEN (penjualan_do_details.grand_total_idr = 
+                            (COALESCE(penjualan_do_details.purchase_total_idr,0) + COALESCE(penjualan_do_details.delivery_cost_idr,0)))
+                        THEN penjualan_do_details.grand_total_idr
+                        ELSE (penjualan_do_details.purchase_total_idr + penjualan_do_details.delivery_cost_idr)
+                    END
+                AS nilai_faktur'),
                 'penjualan_do_details.delivery_cost_idr AS ongkos_kirim',
-                'penjualan_so.so_date AS tanggal_faktur',
-                'master_customers.tempo_limit AS tempo_limit',
+                'penjualan_so.so_date AS tanggal_faktur', 
+                'master_customers.tempo_limit AS tempo_limit', 
                 DB::raw('IFNULL(SUM(finance_payable_detail.total), 0) AS pembayaran'),
                 DB::raw('
                     CASE
-                        -- Pastikan Anda juga menggunakan nilai_faktur yang baru di sini untuk perhitungan status
-                        WHEN (SUM(penjualan_do_details.purchase_total_idr + penjualan_do_details.delivery_cost_idr)) - IFNULL(SUM(finance_payable_detail.total), 0) <= 0 THEN "PAID"
+                        WHEN penjualan_do_details.grand_total_idr - IFNULL(SUM(finance_payable_detail.total), 0) <= 0 THEN "PAID"
                         ELSE "UNPAID"
                     END AS status_faktur
                 ')

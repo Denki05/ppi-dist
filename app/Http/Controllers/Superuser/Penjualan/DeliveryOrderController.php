@@ -505,6 +505,9 @@ class DeliveryOrderController extends Controller
                 $updateData['other_cost_idr'] = $post["other_cost_idr"];
             }
 
+            $purchase_total = $result_cost->purchase_total_idr ?? 0; // pakai data yg sudah diambil biar hemat query
+            $updateData['grand_total_idr'] = $purchase_total + ($updateData['delivery_cost_idr'] ?? 0);
+
             // Update PackingOrderDetail
             $updateDetailCost =  PackingOrderDetail::where('do_id', $do_id)->update($updateData);
 
@@ -549,9 +552,6 @@ class DeliveryOrderController extends Controller
             // Commit transaction
             DB::commit();
 
-            // add notif
-            // $user = User::find(32);
-            // $user->notify(new DoNotification($get_do));
             $userIds = [32, 36];
             $users = User::whereIn('id', $userIds)->get();
 
@@ -563,7 +563,6 @@ class DeliveryOrderController extends Controller
             return redirect()->route('superuser.penjualan.delivery_order.index')->with('success','DO berhasil update resi!');
 
         } catch (\Throwable $e) {
-            dd($e);
             DB::rollback();
             $data_json["IsError"] = true;
             $data_json["Message"] = $e->getMessage();

@@ -43,6 +43,10 @@ class PurchaseOrder extends Model
     public function purchase_order_detail(){
         return $this->hasMany('App\Entities\Gudang\PurchaseOrderDetail', 'po_id', 'id');
     }
+
+    public function receiving_detail(){
+        return $this->hasMany('App\Entities\Gudang\ReceivingDetail', 'po_id', 'id');
+    }
     
     public function updateBySuperuser()
     {

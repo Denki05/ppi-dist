@@ -1,4 +1,5 @@
 @extends('superuser.app')
+@section('content')
 <nav class="breadcrumb bg-white push">
   <span class="breadcrumb-item">Master</span>
   <a class="breadcrumb-item" href="{{ route('superuser.master.customer.index') }}">Store</a>
@@ -6,7 +7,7 @@
   <span class="breadcrumb-item active">Edit</span>
 </nav>
 <div id="alert-block"></div>
-@section('content')
+
 <div class="block">
             <div class="block-conten" align="center">
                 <div class="col-md-10 col-md-offset-1">
@@ -206,10 +207,19 @@
                               </div>
                               <div class="row">
                                 <div class="mb-3">
-                                  <label for="image_store" class="form-label">Zoning</label>
-                                  <input type="text" name="zone" id="zone" placeholder="Zone Area" class="form-control" value="{{$customer->zone}}">
+                                  <label for="image_store" class="form-label">Zone</label>
+                                  <select class="form-control js-select2" name="zone" style="width:100%;">
+                                    <option value="">Pilih Zona</option>
+                                    @foreach(\App\Entities\Master\CustomerOtherAddress::ZONING as $zone => $zoning)
+                                      <option value="{{ $zoning }}" 
+                                        {{ old('zone', $customer->zone ?? '') == $zoning ? 'selected' : '' }}>
+                                        {{ $zoning }}
+                                      </option>
+                                    @endforeach
+                                  </select>
                                 </div>
                               </div>
+
                               <div class="f1-buttons">
                                 <button type="button" class="btn btn-warning btn-previous"><i class="fa fa-arrow-left"></i> Previous</button>
                                 <button type="button" class="btn btn-primary btn-next">Next <i class="fa fa-arrow-right"></i></button>

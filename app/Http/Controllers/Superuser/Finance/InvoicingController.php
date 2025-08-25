@@ -493,14 +493,11 @@ class InvoicingController extends Controller
         }
 
         $result = Invoicing::where('id', $id)->first();
-
         if (!$result) {
             return redirect()->route('superuser.index')->with('error', 'Invoice not found.');
         }
 
-        // Get Packing Order
         $get_do = PackingOrder::where('id', $result->do_id)->first();
-
         if (!$get_do) {
             return redirect()->route('superuser.index')->with('error', 'Packing Order not found.');
         }
@@ -508,62 +505,43 @@ class InvoicingController extends Controller
         $my_report = "C:\\xampp\\htdocs\\ppi-dist\\public\\cr\\invoice\\invoice_rev_2.rpt"; 
         $my_pdf = 'C:\\xampp\\htdocs\\ppi-dist\\public\\cr\\invoice\\export\\' . $result->code . '.pdf';
 
-        // Variables for server information
+        // Crystal Report setup
         $my_server = "LOCAL";
         $my_user = "root";
         $my_password = "";
         $my_database = "ppi-dist";
         $COM_Object = "CrystalDesignRunTime.Application";
 
-        // Create new COM object - depends on your Crystal Report version
         $crapp = new COM($COM_Object) or die("Unable to create COM object");
-        $creport = $crapp->OpenReport($my_report, 1); // call rpt report
+        $creport = $crapp->OpenReport($my_report, 1);
 
-        // Set database logon info
         $creport->Database->Tables(1)->SetLogOnInfo($my_server, $my_database, $my_user, $my_password);
-
-        // Prevent field prompt and set record selection
         $creport->EnableParameterPrompting = false;
         $creport->RecordSelectionFormula = "{penjualan_do.id} = " . $get_do->id;
 
-        // Export to PDF process
-        $creport->ExportOptions->DiskFileName = $my_pdf; // Export to PDF
+        // Export to PDF
+        $creport->ExportOptions->DiskFileName = $my_pdf;
         $creport->ExportOptions->PDFExportAllPages = true;
-        $creport->ExportOptions->DestinationType = 1; // Export to file
-        $creport->ExportOptions->FormatType = 31; // PDF type
+        $creport->ExportOptions->DestinationType = 1;
+        $creport->ExportOptions->FormatType = 31;
         $creport->Export(false);
 
-        // Release the COM objects
         $creport = null;
         $crapp = null;
 
-        // File path
-        $file = 'C:\\xampp\\htdocs\\ppi-dist\\public\\cr\\invoice\\export\\' . $result->code . '.pdf';
+        $file = $my_pdf;
 
         if (file_exists($file)) {
-            // Set headers for file download
-            header("Content-Description: File Transfer");
-            header("Content-Type: application/pdf");
-            header("Content-Disposition: attachment; filename=\"" . basename($file) . "\"");
-            header("Content-Transfer-Encoding: binary");
-            header("Expires: 0");
-            header("Cache-Control: must-revalidate");
-            header("Pragma: public");
-            header("Content-Length: " . filesize($file));
-
-            // Clear the output buffer and read the file
-            ob_clean();
-            flush();
-            readfile($file);
-
-            // Delete the file after download
-            unlink($file);
-
-            exit();
+            // Preview di browser (inline)
+            return response()->file($file, [
+                'Content-Type' => 'application/pdf',
+                'Content-Disposition' => 'inline; filename="' . basename($file) . '"'
+            ]);
         } else {
             return redirect()->route('superuser.index')->with('error', 'File not found.');
         }
     }
+
 
     public function print2($id)
     {
@@ -575,14 +553,11 @@ class InvoicingController extends Controller
         }
 
         $result = Invoicing::where('id', $id)->first();
-
         if (!$result) {
             return redirect()->route('superuser.index')->with('error', 'Invoice not found.');
         }
 
-        // Get Packing Order
         $get_do = PackingOrder::where('id', $result->do_id)->first();
-
         if (!$get_do) {
             return redirect()->route('superuser.index')->with('error', 'Packing Order not found.');
         }
@@ -590,59 +565,38 @@ class InvoicingController extends Controller
         $my_report = "C:\\xampp\\htdocs\\ppi-dist\\public\\cr\\invoice\\full.rpt"; 
         $my_pdf = 'C:\\xampp\\htdocs\\ppi-dist\\public\\cr\\invoice\\export\\' . $result->code . '-FULL' . '.pdf';
 
-        // Variables for server information
+        // Crystal Report
         $my_server = "LOCAL";
         $my_user = "root";
         $my_password = "";
         $my_database = "ppi-dist";
         $COM_Object = "CrystalDesignRunTime.Application";
 
-        // Create new COM object - depends on your Crystal Report version
         $crapp = new COM($COM_Object) or die("Unable to create COM object");
-        $creport = $crapp->OpenReport($my_report, 1); // call rpt report
+        $creport = $crapp->OpenReport($my_report, 1);
 
-        // Set database logon info
         $creport->Database->Tables(1)->SetLogOnInfo($my_server, $my_database, $my_user, $my_password);
-
-        // Prevent field prompt and set record selection
         $creport->EnableParameterPrompting = false;
         $creport->RecordSelectionFormula = "{penjualan_do.id} = " . $get_do->id;
 
-        // Export to PDF process
-        $creport->ExportOptions->DiskFileName = $my_pdf; // Export to PDF
+        $creport->ExportOptions->DiskFileName = $my_pdf;
         $creport->ExportOptions->PDFExportAllPages = true;
-        $creport->ExportOptions->DestinationType = 1; // Export to file
-        $creport->ExportOptions->FormatType = 31; // PDF type
+        $creport->ExportOptions->DestinationType = 1;
+        $creport->ExportOptions->FormatType = 31;
         $creport->Export(false);
 
-        // Release the COM objects
         $creport = null;
         $crapp = null;
         $ObjectFactory = null;
 
-        // File path
-        $file = 'C:\\xampp\\htdocs\\ppi-dist\\public\\cr\\invoice\\export\\' . $result->code . '-FULL' . '.pdf';
+        $file = $my_pdf;
 
         if (file_exists($file)) {
-            // Set headers for file download
-            header("Content-Description: File Transfer");
-            header("Content-Type: application/pdf");
-            header("Content-Disposition: attachment; filename=\"" . basename($file) . "\"");
-            header("Content-Transfer-Encoding: binary");
-            header("Expires: 0");
-            header("Cache-Control: must-revalidate");
-            header("Pragma: public");
-            header("Content-Length: " . filesize($file));
-
-            // Clear the output buffer and read the file
-            ob_clean();
-            flush();
-            readfile($file);
-
-            // Delete the file after download
-            unlink($file); // Delete the file
-
-            exit();
+            // Preview di browser (inline)
+            return response()->file($file, [
+                'Content-Type' => 'application/pdf',
+                'Content-Disposition' => 'inline; filename="' . basename($file) . '"'
+            ]);
         } else {
             return redirect()->route('superuser.index')->with('error', 'File not found.');
         }

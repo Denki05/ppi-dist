@@ -448,6 +448,7 @@ class CustomerController extends Controller
                 $customer->text_kota = $request->text_kota;
                 $customer->text_kecamatan = $request->text_kecamatan;
                 $customer->text_kelurahan = $request->text_kelurahan;
+                $customer->zone = $request->zone;
 
                 $customer->zipcode = $request->zipcode;
 

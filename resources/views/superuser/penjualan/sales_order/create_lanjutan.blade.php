@@ -386,207 +386,178 @@
 <script src="{{ asset('utility/superuser/js/form.js') }}"></script>
 <script type="text/javascript">
   $(document).ready(function () {
-    let approval_mou = {{ $result->approval_mou ?? 0 }};
+      let approval_mou = {{ $result->approval_mou ?? 0 }};
 
-    $('.js-select2').select2();
+      $('.js-select2').select2();
 
-    $('#datatables').DataTable({
-      paging: false,
-      searching: false,
-      info: false,
-      scrollY: '430px',
-      scrollCollapse: true,
-    });
-
-    $('.base_disc').on('change', function () {
-      countGetUsd();
-    })
-
-    function countGetUsd() {
-      $('tbody tr').each(function (index, e) {
-        let baseDisc = $('.base_disc').val();
-        let freeProduct = $('tr.index' + index + '').find('input[name="repeater[' + index + '][free_product]"]').val();
-
-        if (freeProduct == 1) {
-          $('tr.index' + index + '').find('input[name="repeater[' + index + '][usd_disc]"]').val(0);
-        } else {
-          $('tr.index' + index + '').find('input[name="repeater[' + index + '][usd_disc]"]').val(baseDisc);
-        }
-
-        count_per_item(index);
+      $('#datatables').DataTable({
+          paging: false,
+          searching: false,
+          info: false,
+          scrollY: '430px',
+          scrollCollapse: true,
       });
 
-      // Panggil kalkulasi disc agen setelah semua item dihitung
-      hitungDiscAgen();
-    }
+      $('.base_disc').on('change', function () {
+          countGetUsd();
+      })
 
-    $(document).on('keyup','.count',function(){
-      let index = $(this).attr('data-index');
-      count_per_item(index);
-    });
+      function countGetUsd() {
+          $('tbody tr').each(function (index, e) {
+              let baseDisc = $('.base_disc').val();
+              let freeProduct = $('tr.index' + index + '').find('input[name="repeater[' + index + '][free_product]"]').val();
 
-    function count_per_item(indx){
-      let index = indx;
-      let price = parseFloat($('tr.index'+index+'').find('input[name="repeater['+index+'][price]"]').val()); 
-      let do_qty = parseFloat($('tr.index'+index+'').find('input[name="repeater['+index+'][do_qty]"]').val()); 
-      let so_qty = parseFloat($('tr.index'+index+'').find('input[name="repeater['+index+'][so_qty]"]').val()); 
-      let val_usd_disc = parseFloat($('tr.index'+index+'').find('input[name="repeater['+index+'][usd_disc]"]').val());
-      let val_percent_disc = parseFloat($('tr.index'+index+'').find('input[name="repeater['+index+'][percent_disc]"]').val());
-      let kurs = $('#idr_rate').val();
+              if (freeProduct == 1) {
+                  $('tr.index' + index + '').find('input[name="repeater[' + index + '][usd_disc]"]').val(0);
+              } else {
+                  $('tr.index' + index + '').find('input[name="repeater[' + index + '][usd_disc]"]').val(baseDisc);
+              }
 
-      if(isNaN(val_usd_disc)){
-        val_usd_disc = 0;
-      }
-      
-      if(isNaN(val_percent_disc)){
-        val_percent_disc = 0;
+              // Memanggil fungsi perhitungan per item
+              count_per_item(index);
+          });
+
+          // Panggil kalkulasi disc agen setelah semua item dihitung
+          hitungDiscAgen();
       }
 
-      let total_disc = (val_usd_disc + ((price - val_usd_disc) * (val_percent_disc/100))) * do_qty;
+      $(document).on('keyup', '.count', function () {
+          let index = $(this).attr('data-index');
+          count_per_item(index);
+      });
+
+      function count_per_item(indx) {
+        let index = indx;
+        let price = parseFloat($('tr.index' + index + '').find('input[name="repeater[' + index + '][price]"]').val());
+        let do_qty = parseFloat($('tr.index' + index + '').find('input[name="repeater[' + index + '][do_qty]"]').val());
+        let val_usd_disc = parseFloat($('tr.index' + index + '').find('input[name="repeater[' + index + '][usd_disc]"]').val());
+        let kurs = parseFloat($('#idr_rate').val());
+
+        if (isNaN(price)) price = 0;
+        if (isNaN(do_qty)) do_qty = 0;
+        if (isNaN(val_usd_disc)) val_usd_disc = 0;
+        if (isNaN(kurs)) kurs = 0;
+
+        // Perhitungan subtotal per item dalam USD
+        let sub_total_usd = (do_qty * price) - val_usd_disc;
         
-      let sub_total  = parseFloat((do_qty * price) - total_disc) * kurs;
+        // Konversi ke IDR tanpa bulatkan ke integer dulu
+        let sub_total_idr = sub_total_usd * kurs;
 
-      if(isNaN(total_disc)){
-        total_disc = 0;
+        // Tampilkan dengan 2 desimal agar terlihat transparan
+        $('tr.index' + index + '').find('input[name="repeater[' + index + '][total]"]').val(formatNumber(sub_total_idr.toFixed(2)));
+
+        sub_total_item();
       }
 
-      if(isNaN(sub_total)){
-        sub_total = 0;
+      function sub_total_item() {
+        let total = 0;
+
+        $('tbody tr').each(function (index, e) {
+            let sub_total_val = $('tr.index' + index + '').find('input[name="repeater[' + index + '][total]"]').val();
+            let sub_total = parseFloat(sub_total_val.replace(/\./g, '').replace(',', '.')); // biar bisa baca decimal
+            if (isNaN(sub_total)) sub_total = 0;
+            total += sub_total;
+        });
+
+        // Baru BULATKAN di total
+        let roundedTotal = Math.round(total);
+
+        $('input[name="sub_total_item"]').val(formatNumber(roundedTotal));
+        hitungDiscAgen();
       }
 
-      $('tr.index'+index+'').find('input[name="repeater['+index+'][total_disc]"]').val(total_disc);
-      $('tr.index'+index+'').find('input[name="repeater['+index+'][total]"]').val(formatRupiah(sub_total));
-      
-      sub_total_item();
-    }
+      // Hitung diskon agen berdasarkan input
+      function hitungDiscAgen() {
+          let discPercent = parseFloat($('#disc_agen_percent').val());
+          let subTotalItemVal = $('input[name="sub_total_item"]').val();
+          let subTotalItem = parseFloat(subTotalItemVal.replace(/\./g, ''));
 
-    function sub_total_item() {
-      let total = 0;
+          if (isNaN(discPercent)) discPercent = 0;
+          if (isNaN(subTotalItem)) subTotalItem = 0;
 
-      $('tbody tr').each(function (index, e) {
-        let sub_total = $('tr.index' + index + '').find('input[name="repeater[' + index + '][total]"]').val();
-        sub_total = parseFloat(sub_total.split('.').join(''));
-        if (isNaN(sub_total)) sub_total = 0;
-        total += sub_total;
+          let result = (subTotalItem * discPercent) / 100;
+          
+          $('#disc_agen_idr').val(formatNumber(result));
+          subtotal();
+      }
+
+      $('#disc_agen_percent').on('keyup change', function () {
+          hitungDiscAgen();
       });
 
-      $('input[name="sub_total_item"]').val(formatRupiah(total));
-
-      // Panggil ulang hitung diskon setelah subtotal selesai
-      hitungDiscAgen();
-    }
-
-    // Hitung diskon agen berdasarkan input atau otomatis
-    function hitungDiscAgen() {
-      let discPercent = parseFloat($('#disc_agen_percent').val());
-      let subTotalItem = parseFloat($('input[name="sub_total_item"]').val().split('.').join(''));
-
-      if (isNaN(discPercent)) discPercent = 0;
-      if (isNaN(subTotalItem)) subTotalItem = 0;
-
-      let result = (subTotalItem * discPercent) / 100;
-
-      $('#disc_agen_idr').val(formatRupiah(result)); // Format IDR
-      subtotal(); // Lanjutkan perhitungan subtotal akhir
-    }
-
-    $('#disc_agen_percent').on('keyup change', function () {
-      hitungDiscAgen();
-    });
-
-    $('#disc_kemasan_percent').on('input', function(e){
-          if($(this).val() != ''){
-              let sub_total_item = $('input[name="sub_total_item"]').val();
-              let disc_percent = $('input[name="disc_agen_idr"]').val();
-
-              sub_total_item = parseFloat(sub_total_item.split('.').join(''));
-              disc_percent = parseFloat(disc_percent.split('.').join(''));
-
-              let subAfterDiscPercent = sub_total_item - disc_percent;
-
-              var amount = subAfterDiscPercent * $(this).val() / 100;
-              $('#disc_kemasan_idr').val(formatRupiah(amount));
-          }else{
+      $('#disc_kemasan_percent').on('input', function(e){
+          let disc_kemasan_percent = parseFloat($(this).val());
+          if (isNaN(disc_kemasan_percent)) {
               $('#disc_kemasan_idr').val(0);
+          } else {
+              let sub_total_item_val = $('input[name="sub_total_item"]').val();
+              let sub_total_item = parseFloat(sub_total_item_val.replace(/\./g, ''));
+              
+              let disc_agen_val = $('input[name="disc_agen_idr"]').val();
+              let disc_agen = parseFloat(disc_agen_val.replace(/\./g, ''));
+              
+              let subAfterDiscAgen = sub_total_item - disc_agen;
+              let amount = subAfterDiscAgen * disc_kemasan_percent / 100;
+              
+              $('#disc_kemasan_idr').val(formatNumber(amount));
           }
           subtotal();
-    });
+      });
 
-    function subtotal(){
-      let sub_total = $('#sub_total_item').val();
-      let disc_agen = $('#disc_agen_idr').val();
-      let dics_kemasan = $('#disc_kemasan_idr').val();
+      function subtotal(){
+        let sub_total_val = $('#sub_total_item').val();
+        let disc_agen_val = $('#disc_agen_idr').val();
+        let dics_kemasan_val = $('#disc_kemasan_idr').val();
 
-      sub_total = parseFloat(sub_total.split('.').join(''));
-      disc_agen = parseFloat(disc_agen.split('.').join(''));
-      dics_kemasan = parseFloat(dics_kemasan.split('.').join(''));
+        let sub_total = parseFloat(sub_total_val.replace(/\./g, ''));
+        let disc_agen = parseFloat(disc_agen_val.replace(/\./g, ''));
+        let dics_kemasan = parseFloat(dics_kemasan_val.replace(/\./g, ''));
 
-      if(isNaN(sub_total)){
-        sub_total = 0;
+        if(isNaN(sub_total)) sub_total = 0;
+        if(isNaN(disc_agen)) disc_agen = 0;
+        if(isNaN(dics_kemasan)) dics_kemasan = 0;
+
+        let sub_total_before = sub_total - disc_agen - dics_kemasan;
+
+        // Bulatkan subtotal sebelum dipakai ke grand total
+        sub_total_before = Math.round(sub_total_before);
+
+        $('#subtotal_2').val(formatNumber(sub_total_before));
+      };
+
+      $('#shipping_cost_buyer').change(function(){
+          $('input[name="delivery_cost_idr"]').val(($(this).is(':checked')) ? "0" : "");
+      });
+
+      $(document).on('click', '#btn_call', function(e) {
+          let subtotal_before_val = $('#subtotal_2').val();
+          let disc_tambahan_val = $('#disc_tambahan_idr').val();
+          let voucher_idr_val = $('#voucher_idr').val();
+          let ongkir_val = $('#delivery_cost_idr').val();
+
+          let subtotal_before = parseFloat(subtotal_before_val.replace(/\./g, ''));
+          let disc_tambahan = parseFloat(disc_tambahan_val.replace(/\./g, ''));
+          let voucher_idr = parseFloat(voucher_idr_val.replace(/\./g, ''));
+          let ongkir = parseFloat(ongkir_val.replace(/\./g, ''));
+
+          if(isNaN(subtotal_before)) subtotal_before = 0;
+          if(isNaN(disc_tambahan)) disc_tambahan = 0;
+          if(isNaN(voucher_idr)) voucher_idr = 0;
+          if(isNaN(ongkir)) ongkir = 0;
+
+          let grand_total_idr = subtotal_before - disc_tambahan - voucher_idr + ongkir;
+
+          $('#grand_total_idr').val(formatNumber(grand_total_idr));
+      });
+      
+
+      function formatNumber(num) {
+          if (isNaN(num)) {
+              return "0";
+          }
+          return new Intl.NumberFormat('id-ID').format(num);
       }
-
-      if(isNaN(disc_agen)){
-        disc_agen = 0;
-      }
-
-      if(isNaN(dics_kemasan)){
-        dics_kemasan = 0;
-      }
-
-      let sub_total_before = sub_total - disc_agen - dics_kemasan;
-
-      // alert(sub_total_before);
-
-      $('#subtotal_2').val(formatRupiah(sub_total_before));
-    };
-
-    $('#shipping_cost_buyer').change(function(){
-        $('input[name="delivery_cost_idr"]').val(($(this).is(':checked')) ? "0" : "");
-    });
-
-    $(document).on('click', '#btn_call', function(e) {
-      let subtotal_before = $('#subtotal_2').val();
-      let disc_tambahan = $('#disc_tambahan_idr').val();
-      let voucher_idr = $('#voucher_idr').val();
-      let ongkir = $('#delivery_cost_idr').val();
-
-      subtotal_before = parseFloat(subtotal_before.split('.').join(''));
-      disc_tambahan = parseFloat(disc_tambahan);
-      voucher_idr = parseFloat(voucher_idr);
-      ongkir = parseFloat(ongkir);
-
-      if(isNaN(disc_tambahan)){
-        disc_tambahan = 0;
-      }
-
-      if(isNaN(voucher_idr)){
-        voucher_idr = 0;
-      }
-
-      if(isNaN(ongkir)){
-        ongkir = 0;
-      }
-     
-
-      let grand_total_idr = subtotal_before - disc_tambahan -  voucher_idr + ongkir;
-
-      $('#grand_total_idr').val(formatRupiah(grand_total_idr));
-    });
-    
-
-    function formatRupiah(money) {
-      return new Intl.NumberFormat('id-ID',
-        { style: 'currency', currency: 'IDR' }
-      ).formatToParts(money).map(
-        p => p.type != 'literal' && p.type != 'currency' ? p.value : ''
-      ).join('');
-    }
-
-    // $(document).on('click', '#indentProduct', function() {
-    //   var so_detail_id = $(this).data('id');
-    //   var product_id = $(this).data('product');
-    //   var val = $(this).val();
-    // })
-  })
+  });
 </script>
 @endpush
