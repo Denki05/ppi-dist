@@ -60,6 +60,7 @@ Route::group([
         Route::get('/unpaidInvoices', 'PayableController@unpaidInvoices')->name('unpaidInvoices');
         Route::get('/customerSearch', 'PayableController@customerSearch')->name('customerSearch');
         Route::get('/json_done', 'PayableController@json_done')->name('json_done');
+        Route::delete('payable/{id}', 'PayableController@destroy')->name('superuser.finance.payable.destroy');
     });
     Route::resource('payable', 'PayableController');
 
@@ -76,4 +77,10 @@ Route::group([
 
     });
     Route::resource('cashback', 'CashbackController')->except(['create']);
+
+    Route::group(['as' => 'nota_kredit_finance.', 'prefix' => '/nota_kredit_finance'], function () {
+        Route::get('/', 'NotaKreditFinanceController@index')->name('index');
+        Route::post('/store', 'NotaKreditFinanceController@store')->name('store');
+    });
+    Route::resource('nota_kredit_finance', 'NotaKreditFinanceController');
 });

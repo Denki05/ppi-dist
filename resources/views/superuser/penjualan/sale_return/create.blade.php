@@ -248,7 +248,7 @@
       });
     };
 
-    // 🔹 fungsi untuk hide produk yang sudah dipilih
+    // ðŸ”¹ fungsi untuk hide produk yang sudah dipilih
     function refreshProductOptions() {
       let selected = $('.product-select').map(function() {
         return $(this).val();

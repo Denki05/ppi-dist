@@ -15,13 +15,12 @@ use App\DataTables\Finance\PayableTable;
 use App\DataTables\Report\PaymentReportTable;
 use App\Entities\Penjualan\SalesOrder;
 use App\Entities\Setting\UserMenu;
-use App\Entities\Account\User;
 use App\Repositories\CodeRepo;
 use App\Entities\Penjualan\PackingOrder;
 use App\Helper\LogActivity;
 use App\Notifications\PayableNotification;
+use App\Entities\Account\User;
 use Illuminate\Support\Facades\Log;
-use App\DataTables\Table;
 use DB;
 use Auth;
 use PDF;
@@ -51,6 +50,16 @@ class PayableController extends Controller
             $this->access = $access;
             return $next($request);
         });
+    }
+
+    public function json(Request $request, PayableTable $datatable)
+    {
+        return $datatable->build($request);
+    }
+
+    public function json2(Request $request, PaymentReportTable $datatable)
+    {
+        return $datatable->build($request);
     }
 
     public function json_done(Request $request)
@@ -115,21 +124,23 @@ class PayableController extends Controller
             ->make(true);
     }
 
-    public function json2(Request $request, PaymentReportTable $datatable)
-    {
-        return $datatable->build($request);
-    }
-
     public function index(Request $request)
     {
-        // Access
-        if(Auth::user()->is_superuser == 0){
-            if(empty($this->access)){
-                return redirect()->route('superuser.index')->with('error','Anda tidak punya akses untuk membuka menu terkait');
+        // Pemeriksaan akses
+        if (Auth::user()->is_superuser == 0) {
+            if (empty($this->access) || empty($this->access->user)) {
+                return redirect()->route('superuser.index')->with('error', 'Anda tidak punya akses untuk membuka menu terkait');
             }
         }
 
-        return view($this->view."index");
+        // Menggunakan eager loading untuk memuat relasi yang diperlukan (customer, payable_details, dan invoice)
+        // dalam jumlah query yang minimal. Ini akan sangat meningkatkan performa.
+        $data['payable'] = Payable::with(['customer', 'payable_detail.invoice'])
+                                    ->orderBy('created_at', 'DESC')
+                                    ->get();
+
+        // Mengembalikan view dengan data yang sudah dimuat
+        return view($this->view . "index", $data);
     }
 
     /**
@@ -177,13 +188,14 @@ class PayableController extends Controller
                 'pay_date' => 'required|date',
                 'repeater' => 'required|array',
                 'repeater.*.invoice_id' => 'required|exists:finance_invoicing,id',
-                // Perhatikan ini: ganti 'nullable|string' menjadi 'nullable|numeric' jika Anda mengirimkan angka
-                'repeater.*.payable' => 'required|numeric', 
+                'repeater.*.payable' => 'required|numeric',
+                'repeater.*.is_balanced' => 'nullable|boolean',
             ]);
 
             if ($validator->fails()) {
                 return response()->json([
-                    'success' => false, 
+                    'success' => false,
+                    'message' => 'Gagal memproses pembayaran. Periksa kembali data yang diinput.',
                     'errors' => $validator->errors()
                 ], 422);
             }
@@ -202,96 +214,108 @@ class PayableController extends Controller
             $totalPayable = 0;
 
             foreach ($post["repeater"] as $value) {
-                if (!empty($value["payable"])) {
+                // Perbaikan: Ubah if (!empty) menjadi if (isset) untuk memastikan 0 tetap diproses
+                if (isset($value["payable"])) {
                     $input_payable = floatval(str_replace(".", "", $value["payable"]));
                     $get_invoice = Invoicing::find($value["invoice_id"]);
+                    // Perbaikan: Konversi string "true"/"false" dari AJAX menjadi boolean
+                    $is_balanced = filter_var($value["is_balanced"], FILTER_VALIDATE_BOOLEAN);
 
                     if (!$get_invoice) {
-                        return redirect()->back()
-                            ->with('error', "Invoice ID {$value['invoice_id']} tidak ditemukan");
+                        DB::rollback();
+                        return response()->json([
+                            'success' => false,
+                            'message' => "Invoice ID {$value['invoice_id']} tidak ditemukan"
+                        ], 404);
                     }
 
                     $payable_detail = $get_invoice->payable_detail->sum('total');
                     $sisa = $get_invoice->grand_total_idr - $payable_detail;
 
                     if ($sisa <= 0) {
-                        return redirect()->back()
-                            ->with('error', "Invoice {$get_invoice->code} sudah lunas");
+                        DB::rollback();
+                        return response()->json([
+                            'success' => false,
+                            'message' => "Invoice {$get_invoice->code} sudah lunas"
+                        ], 400);
                     }
 
-                    if ($input_payable > $sisa) {
-                        return redirect()->back()
-                            ->with('error', "Jumlah pembayaran melebihi saldo untuk Invoice {$get_invoice->code}");
+                    // Tambahkan validasi jika pembayaran melebihi sisa tagihan, kecuali jika 'is_balanced' true
+                    if ($input_payable > $sisa && !$is_balanced) {
+                        DB::rollback();
+                        return response()->json([
+                            'success' => false,
+                            'message' => "Jumlah pembayaran melebihi saldo untuk Invoice {$get_invoice->code}"
+                        ], 400);
                     }
 
+                    // Atur nilai input_payable jika is_balanced dicentang
+                    if ($is_balanced) {
+                        $input_payable = $sisa;
+                    }
+                    
                     PayableDetail::create([
                         'payable_id' => $payable->id,
                         'invoice_id' => $value["invoice_id"],
                         'total' => $input_payable,
                         'prev_account_receivable' => $sisa,
-                        'remaining_account_receivable' => $sisa - $input_payable,
+                        'remaining_account_receivable' => $is_balanced ? 0 : ($sisa - $input_payable),
                         'created_by' => Auth::id(),
                     ]);
 
                     $totalPayable += $input_payable;
-                }
 
-                // update status sales_order
-                $invoice = Invoicing::where('id', $value["invoice_id"])->first();
-                $total_tagihan = $invoice->grand_total_idr;
-                $payment = $invoice->payable_detail->sum('total'); // Total pembayaran hingga saat ini
-                $sisa = $total_tagihan - $payment;
-            
-                // Tentukan status pembayaran
-                if ($sisa == 0) {
-                    $payment_status = 1; // Lunas
-                } elseif ($sisa > 0) {
-                    $payment_status = 2; // Belum lunas
-                } else {
-                    return redirect()->back()
-                        ->with('error', "Pembayaran melampaui total tagihan untuk Invoice");
-                }
-            
-                // Update status pembayaran di SalesOrder
-                if ($invoice->do && $invoice->do->so_id) {
-                    SalesOrder::where('id', $invoice->do->so_id)
-                        ->update(['payment_status' => $payment_status]);
-                }
+                    // update status sales_order
+                    $total_tagihan = $get_invoice->grand_total_idr;
+                    $payment = $get_invoice->payable_detail->sum('total');
+                    $sisa_update = $total_tagihan - $payment;
 
-                // Insert history
-                $invoiceGet = Invoicing::where('id', $value["invoice_id"])->first();
+                    // Tentukan status pembayaran
+                    if ($sisa_update == 0) {
+                        $payment_status = 1; // Lunas
+                    } else {
+                        $payment_status = 0; // Belum lunas
+                    }
 
-                $history_pay = new PayableHistory([
-                    'payable_id' => $payable->id,
-                    'do_id' => $invoiceGet->do_id,
-                    'invoice_id' => $invoiceGet->id,
-                    'invoice_code' => $invoiceGet->code,
-                    'payable_code' => $payable->code,
-                    'customer_other_address_id' => $invoiceGet->customer_other_address_id,
-                    'acc_by' => Auth::id(),
-                    'created_by' => $payable->created_by,
-                ]);
+                    // Update status pembayaran di SalesOrder
+                    if ($get_invoice->do && $get_invoice->do->so_id) {
+                        SalesOrder::where('id', $get_invoice->do->so_id)
+                            ->update(['payment_status' => $payment_status]);
+                    }
 
-                if (!$history_pay->save()) {
-                    return redirect()->back()
-                        ->with('error', "Gagal menyimpan riwayat pembayaran");
+                    // Insert history
+                    $history_pay = new PayableHistory([
+                        'payable_id' => $payable->id,
+                        'do_id' => $get_invoice->do_id,
+                        'invoice_id' => $get_invoice->id,
+                        'invoice_code' => $get_invoice->code,
+                        'payable_code' => $payable->code,
+                        'customer_other_address_id' => $get_invoice->customer_other_address_id,
+                        'acc_by' => Auth::id(),
+                        'created_by' => $payable->created_by,
+                    ]);
+
+                    if (!$history_pay->save()) {
+                        DB::rollback();
+                        return response()->json([
+                            'success' => false,
+                            'message' => "Gagal menyimpan riwayat pembayaran"
+                        ], 500);
+                    }
                 }
             }
 
             if ($totalPayable == 0) {
-                return redirect()->back()
-                    ->with('error', "Tidak bisa melakukan payable. Tidak ada payable yang diinput.");
+                DB::rollback();
+                return response()->json([
+                    'success' => false,
+                    'message' => "Tidak bisa melakukan payable. Tidak ada payable yang diinput."
+                ], 400);
             }
 
             $payable->update(['total' => $totalPayable]);
 
             DB::commit();
-
-            // kirim notifikasi Laravel
-            $user = User::find(36);
-            if ($user) {
-                $user->notify(new PayableNotification($payable));
-            }
 
             return response()->json([
                 'success' => true,
@@ -299,13 +323,12 @@ class PayableController extends Controller
             ]);
 
         } catch (\Throwable $e) {
-            dd($e);
             DB::rollback();
             Log::error('Payable creation failed: ' . $e->getMessage());
 
             return response()->json([
                 'success' => false,
-                'message' => 'Terjadi kesalahan saat membuat Payable. Silakan coba lagi.'
+                'message' => 'Terjadi kesalahan saat membuat Payable. Silakan coba lagi. Error: ' . $e->getMessage()
             ], 500);
         }
     }
@@ -340,12 +363,6 @@ class PayableController extends Controller
         
     }
 
-    /**
-     * Show the form for editing the specified resource.
-     *
-     * @param  int  $id
-     * @return \Illuminate\Http\Response
-     */
     public function edit($id)
     {
         // Access
@@ -397,7 +414,7 @@ class PayableController extends Controller
 
                     $payment->code = $request->code;
                     $payment->pay_date = $request->pay_date;
-                    $payment->pay_date = $request->note;
+                    $payment->note = $request->note;
 
                     // Prepare payable details update
                     $payableDetails = PayableDetail::whereIn('id', $request->payable_detail)->get();
@@ -459,7 +476,6 @@ class PayableController extends Controller
             }
         }
     }
-    
 
     public function approve($id)
     {
@@ -531,14 +547,18 @@ class PayableController extends Controller
             DB::commit();
 
             // log acctivity
-            // LogActivity::addToLog('Approved Payable: ' . $payable->code . '| Invoice: '. $get_invoice->code);
+            LogActivity::addToLog('Approved Payable: ' . $payable->code . '| Invoice: '. $get_invoice->code);
 
             // Logging
             Log::info("Payable {$payable->code} approved by user " . Auth::id());
 
             // add notif
-            $user = User::find(32);
-            $user->notify(new PayableNotification($payable));
+            $userIds = [32, 33];
+            $users = User::whereIn('id', $userIds)->get();
+
+            foreach ($users as $user) {
+                $user->notify(new PayableNotification($payable));
+            }
 
             // Response sukses
             $response['notification'] = [
@@ -550,6 +570,7 @@ class PayableController extends Controller
 
             return $this->response(200, $response);
         } catch (\Exception $e) {
+            dd($e);
             // Rollback jika terjadi error
             DB::rollback();
 
@@ -577,33 +598,46 @@ class PayableController extends Controller
     public function destroy(Request $request, $id)
     {
         // Access
-        if(Auth::user()->is_superuser == 0){
-            if(empty($this->access) || empty($this->access->user) || $this->access->can_delete == 0){
+        if (Auth::user()->is_superuser == 0) {
+            if (empty($this->access) || empty($this->access->user) || $this->access->can_delete == 0) {
                 abort(405);
             }
         }
 
-        if ($request->ajax()) {
-            $result = Payable::findOrFail($id);
+        $payable = Payable::findOrFail($id);
 
-            DB::beginTransaction();
+        DB::beginTransaction();
 
-            try {
-
-                $result->status = Payable::STATUS['DELETED'];
-
-                if ($result->save()) {
-                    DB::commit();
-                    // LogActivity::addToLog('Destory Payable:' . $result->code);
-                    $response['redirect_to'] = route('superuser.finance.payable.index');
-                    return $this->response(200, $response);
+        try {
+            // Pengecekan dan pembaruan status SalesOrder yang terkait
+            foreach ($payable->payable_detail as $detail) { 
+                $invoice = $detail->invoice;
+                if ($invoice) {
+                    $salesOrder = $invoice->sales_order;
+                    if ($salesOrder) {
+                        // Ubah status SalesOrder
+                        $salesOrder->status = SalesOrder::STATUS['COPY']; // Atau status lain yang sesuai
+                        $salesOrder->save();
+                    }
                 }
-
-            } catch (\Exception $e) {
-                DB::rollBack();
-                Log::error("Failed to delete payable: " . $e->getMessage());
-                return redirect()->back()->with('error', 'Failed to delete payable. Please try again.');
+                
+                // Hapus detail setelah status SalesOrder diperbarui
+                $detail->delete();
             }
+            
+            // Selanjutnya, hapus Payable itu sendiri secara permanen
+            if ($payable->delete()) {
+                DB::commit();
+                // LogActivity::addToLog('Hard-delete Payable:' . $payable->code);
+
+                return redirect()->route('superuser.finance.payable.index')->with('success', 'Data berhasil dihapus permanen.');
+            }
+
+        } catch (\Exception $e) {
+            DB::rollBack();
+            Log::error("Failed to hard-delete payable: " . $e->getMessage());
+
+            return redirect()->back()->with('error', 'Gagal menghapus data. Silakan coba lagi.');
         }
     }
 
@@ -775,6 +809,18 @@ class PayableController extends Controller
         }
 
         return view($this->view."report");
+    }
+
+    public function getDetailInvoice($id)
+    {
+        $invoice = Invoicing::find($id);
+
+        if (!$invoice) {
+            return response()->json(['error' => 'Invoice not found'], 404);
+        }
+
+        // Example of returned HTML content
+        return view('superuser.finance.payable.invoice_details', compact('invoice'))->render();
     }
 
     public function unpaidInvoices(Request $request)

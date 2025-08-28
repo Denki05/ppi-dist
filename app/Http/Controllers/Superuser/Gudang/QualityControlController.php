@@ -426,6 +426,7 @@ class QualityControlController extends Controller
                 }
 
                 $receiving->status = QualityControl::STATUS['ACC'];
+                $receiving->pbm_date = now();
                 $receiving->acc_by = Auth::id();
                 $receiving->acc_at = now();
                 $receiving->save();
@@ -462,9 +463,9 @@ class QualityControlController extends Controller
             }
         }
 
-        $data['receiving'] = Receiving::findOrFail($id);
+        $data['receiving'] = QualityControl::findOrFail($id);
 
-        return view('superuser.gudang.receiving.show', $data);
+        return view('superuser.gudang.quality_control.show', $data);
     }
 
     public function destroy(Request $request, $id)

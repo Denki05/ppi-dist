@@ -3,11 +3,9 @@
 namespace App\Entities\Finance;
 
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\SoftDeletes;
 
 class PayableDetail extends Model
 {
-    use SoftDeletes;
     
     protected $table = "finance_payable_detail";
     protected $fillable = [

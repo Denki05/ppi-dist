@@ -216,8 +216,7 @@ class CodeRepo
     }
     
     public static function generatePayable(){ 
-        $count = Payable::withTrashed()
-                              ->where('status','>',1)
+        $count = Payable::where('status','>',1)
                               ->whereYear('created_at',date('Y'))
                               ->whereMonth('created_at',date('m'))
                               ->get();
@@ -399,31 +398,37 @@ class CodeRepo
         return $code;
     }
 
-    public static function generateReturCode(){
-        $parts = explode('-', date("d-m-Y"));
-        // $p1 = substr($parts[2], (strlen($parts[2]) - 1) );
-
-        // If year is 2025, take last 2 digits, else last 1 digit
-        if ($parts[2]) {
-            $p1 = substr($parts[2], -2);
+    public static function generateReturCode()
+    {
+        // Ambil tanggal sekarang
+        $day   = date('d');
+        $month = date('n'); // 1-12
+        $year  = date('Y');
+    
+        // Tahun: ambil 2 digit terakhir
+        $p1 = substr($year, -2);
+    
+        // Konversi bulan ke huruf
+        $abjadMonth = [ '-', 'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L'];
+        $p2 = $abjadMonth[$month];
+    
+        $yearMonth = $p1 . $p2; // contoh: 25H
+    
+        // Ambil kode terakhir bulan ini
+        $get_max = DB::table('penjualan_retur')
+            ->where('code', 'LIKE', 'R' . $yearMonth . '%')
+            ->whereNull('deleted_at')
+            ->max('code');
+    
+        if ($get_max === null) {
+            // Belum ada kode bulan ini
+            $latestNumber = 'R' . $yearMonth . '001';
         } else {
-            $p1 = substr($parts[2], -1);
+            // Ambil nomor urut dari kode terakhir
+            $id = (int) substr($get_max, strlen('R' . $yearMonth)) + 1;
+            $latestNumber = 'R' . $yearMonth . str_pad($id, 3, '0', STR_PAD_LEFT);
         }
-        $abjadMonth = array( '-', 'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L');
-        $p2 = $abjadMonth[date('n')];
-        $yearMonth = $p1.$p2;
-        $latestNumber = "";
-
-        $get_max = DB::table('penjualan_retur')->where('code', 'LIKE', '%'.$yearMonth.'%')->where('deleted_at', null)->max('code');
-
-        if($get_max == 'false'){
-            $latestNumber = $yearMonth . '001';
-        }else{
-            $latestNumber = $get_max;
-            $id = (int) substr($latestNumber, strlen($yearMonth)) + 1;
-            $latestNumber = 'R' . $yearMonth . str_pad($id, 3, 0, STR_PAD_LEFT);
-        }
-
+    
         return $latestNumber;
     }
 }

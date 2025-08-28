@@ -35,7 +35,7 @@
           <th class="text-center">Created at</th>
           <th class="text-center">Code</th>
           <th class="text-center">Customer</th>
-          <th class="text-center">Reff Do/Invoice</th>
+          <th class="text-center">Reff Invoice</th>
           <th class="text-center">Status</th>
           <th class="text-center">Action</th>
         </tr>
@@ -50,9 +50,10 @@
             <td>{{$row->invoice->do_code}}</td>
             <td>{{$row->status()}}</td>
             <td>
+            @if($superuser->division == "Admin" OR $superuser->division == "Management" OR $superuser->division == "Developer")
               <a href="{{ route('superuser.penjualan.sale_return.show', $row->id) }}" class="btn btn-sm btn-primary" title="Show"><i class="fa fa-eye"></i></a>
               @if($row->status() == 'ACTIVE')
-                <a href="{{ route('superuser.penjualan.sale_return.edit', $row->id) }}" class="btn btn-sm btn-warning"><i class="fa fa-pencil"></i></a>
+                {{--<a href="{{ route('superuser.penjualan.sale_return.edit', $row->id) }}" class="btn btn-sm btn-warning"><i class="fa fa-pencil"></i></a>--}}
                 <form action="{{ route('superuser.penjualan.sale_return.acc', $row->id) }}" method="POST" style="display:inline;" onsubmit="return confirm('Are you sure you want to confirm this retur?');">
                   @csrf
                   <button type="submit" class="btn btn-sm btn-success">
@@ -67,11 +68,17 @@
               @endif
               @if($row->status() == 'ACC')
                 <a href="{{ route('superuser.penjualan.sale_return.pdf', $row->id) }}" class="btn btn-sm btn-success" target="_blank" title="Nota Kredit"><i class="fa fa-file-invoice"></i></a>
-                <a href="{{ route('superuser.penjualan.sale_return.pdf_sj', $row->id) }}" class="btn btn-sm btn-info" target="_blank" title="Surat Jalan"><i class="fa fa-file-pdf-o" aria-hidden="true"></i></a>
+                {{--<a href="{{ route('superuser.penjualan.sale_return.pdf_sj', $row->id) }}" class="btn btn-sm btn-info" target="_blank" title="Surat Jalan"><i class="fa fa-file-pdf-o" aria-hidden="true"></i></a>--}}
                 {{--@if($row->payment_status() == 'BELUM')
                   <a href="{{ route('superuser.penjualan.sale_return.pdf_tt', $row->id) }}" class="btn btn-sm btn-info" target="_blank" title="TT"><i class="fa fa-files-o" aria-hidden="true"></i></a>
                 @endif--}}
               @endif
+            @endif
+            @if($superuser->division == "Finance")
+                @if($row->status() == 'ACC')
+                    <a href="{{ route('superuser.penjualan.sale_return.pdf', $row->id) }}" class="btn btn-sm btn-success" target="_blank" title="Nota Kredit"><i class="fa fa-file-invoice"></i></a>
+                @endif
+            @endif
             </td>
           </tr>
         @endforeach
@@ -89,10 +96,10 @@
 <script type="text/javascript">
   $(function(){
     $('#datatables').DataTable( {
-        "paging":   false,
+        "paging":   true,
         "ordering": true,
         "info":     false,
-        "searching" : false,
+        "searching" : true,
         "columnDefs": [{
           "targets": 0,
           "orderable": false

@@ -80,7 +80,20 @@
     </div>
     <div class="column-float" style="width: 50%;">
       <table class="info">
-        <tr><td style="width: 35%;">Code</td><td style="width: 5%;">:</td><td>{{ $code }} / {{ $result->invoice->do_code }}</td></tr>
+        @php
+            $get_date_qc = DB::table('receiving_detail')
+                ->leftJoin('penjualan_retur', 'penjualan_retur.id', '=', 'receiving_detail.po_id')
+                ->leftJoin('receiving', 'receiving.id', '=', 'receiving_detail.receiving_id')
+                ->where('receiving_detail.po_id', $result->id)
+                ->select('receiving.pbm_date')
+                ->first();
+        @endphp
+        <tr>
+            <td style="width: 35%;">Kode</td><td style="width: 5%;">:</td><td>{{ $code }} / {{ $result->invoice->do_code }}</td>
+        </tr>
+        <tr>
+            <td style="width: 35%;">Tanggal</td><td style="width: 5%;">:</td><td>{{ date('d-m-Y', strtotime($get_date_qc->pbm_date)) }}</td>
+        </tr>
       </table>
     </div>
     

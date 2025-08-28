@@ -5,66 +5,75 @@
 @endphp
 
 <style type="text/css">
-  body {
-    color: #333;
-    font-family: Arial, sans-serif;
-    font-size: 12px;
-  }
+    body {
+        color: #333;
+        font-family: Arial, sans-serif;
+        font-size: 12px;
+        margin-top: -40px; /* Tambahkan ini */
+    }
 
-  table {
-    border-collapse: collapse;
-    width: 100%;
-  }
+    table {
+        border-collapse: collapse;
+        width: 100%;
+    }
 
-  .info td {
-    padding: 2px 4px;
-    font-size: 11px;
-    vertical-align: top;
-  }
+    .info td {
+        padding: 2px 4px;
+        font-size: 11px;
+        vertical-align: top;
+    }
 
-  .table-data thead th {
-    background: #eee;
-    border: 1px solid #ccc;
-    padding: 5px;
-    font-size: 11px;
-  }
+    .table-data thead th {
+        background: #eee;
+        border: 1px solid #ccc;
+        padding: 5px;
+        font-size: 11px;
+    }
 
-  .table-data tbody td {
-    border: 1px solid #ccc;
-    padding: 5px;
-    font-size: 11px;
-    text-align: center;
-  }
+    .table-data tbody td {
+        border: 1px solid #ccc;
+        padding: 5px;
+        font-size: 11px;
+        text-align: center;
+    }
 
   .text-right {
     text-align: right;
   }
 
-  .text-left {
-    text-align: left;
-  }
+    .text-left {
+        text-align: left;
+    }
 
-  .clearfix::after {
-    content: "";
-    display: table;
-    clear: both;
-  }
+    .clearfix::after {
+        content: "";
+        display: table;
+        clear: both;
+    }
 
-  .column-float {
-    float: left;
-    box-sizing: border-box;
-  }
+    .column-float {
+        float: left;
+        box-sizing: border-box;
+    }
 
-  .row-float {
-    width: 100%;
-    clear: both;
-  }
+    .row-float {
+        width: 100%;
+        clear: both;
+    }
 
-  .signature {
-    margin-top: 50px;
-    text-align: right;
-    font-size: 12px;
-  }
+    .page-container {
+        position: relative;
+        min-height: 100%; /* Pastikan tinggi penuh */
+        padding-bottom: 80px; /* Hindari tabrakan dengan signature */
+    }
+
+    .signature {
+      position: absolute;
+      bottom: 20px;
+      right: 30px;
+      text-align: right;
+      font-size: 12px;
+    }
 </style>
 
 <div>
@@ -74,7 +83,8 @@
     <div class="column-float" style="width: 50%;">
       <table class="info">
         <tr><td style="width: 35%;">Code</td><td style="width: 5%;">:</td><td>{{ $code }}</td></tr>
-        <tr><td>Ref Invoice</td><td>:</td><td>{{ $result->invoice->do_code }}</td></tr>
+        <tr><td>Tanggal Retur</td><td>:</td><td>{{ date('d-m-Y', strtotime($result->retur_date)) }}</td></tr>
+        <tr><td>Ref DO</td><td>:</td><td>{{ $result->invoice->do_code }}</td></tr>
       </table>
     </div>
     <div class="column-float" style="width: 50%;">
@@ -139,7 +149,7 @@
   @endphp
 
   <div class="row-float clearfix" style="margin-top: 25px;">
-    <div class="column-float" style="width: 60%; font-size: 11px;">
+    <div class="column-float" style="width: 60%; font-size: 12px;">
       Terbilang: {{ $terbilang }} <br>
       <br>
       <b>*Kurs USD: {{ number_format($kurs, 0, ',', '.') }}</b>

@@ -13,8 +13,8 @@ use App\Entities\Penjualan\SalesOrder;
 use App\Entities\Penjualan\SaleReturn;
 use App\Entities\Penjualan\SaleReturnDetail;
 use App\Entities\Penjualan\SaleReturnCost;
-use App\Entities\Gudang\Receiving;
-use App\Entities\Gudang\ReceivingDetail;
+use App\Entities\Gudang\QualityControl;
+use App\Entities\Gudang\QualityControlDetail;
 use App\Entities\Master\Warehouse;
 use App\Http\Controllers\Controller;
 use App\Repositories\MasterRepo;
@@ -142,8 +142,10 @@ class SaleReturnController extends Controller
 
     public function create()
     {
-        if (!Auth::guard('superuser')->user()->can('sale return-create')) {
-            return abort(403);
+        if (Auth::user()->is_superuser == 0) {
+            if (empty($this->access) || empty($this->access->user) || $this->access->can_create == 0) {
+                return redirect()->route('superuser.index')->with('error', 'Anda tidak punya akses untuk membuka menu terkait');
+            }
         }
 
         $data['warehouses'] = Warehouse::get();
@@ -234,18 +236,17 @@ class SaleReturnController extends Controller
                     $sale_return_cost->save();
 
                     // tambahakan langsung receiving
-                    $receiving = new Receiving;
+                    $receiving = new QualityControl;
 
                     $receiving->code = $sale_return->code;
-                    $receiving->type = Receiving::TYPE['RETURN'];
-                    $receiving->pbm_date = $sale_return->retur_date;
+                    $receiving->type = QualityControl::TYPE['RETURN'];
                     $receiving->warehouse_id = 2;
-                    $receiving->status = Receiving::STATUS['QC'];
+                    $receiving->status = QualityControl::STATUS['QC'];
                     $receiving->save();
 
                     // tambahkan detail receiving
                     foreach ($sale_return->sale_return_details as $detail) {
-                        $receiving_detail = new ReceivingDetail;
+                        $receiving_detail = new QualityControlDetail;
                         $receiving_detail->receiving_id = $receiving->id;
                         $receiving_detail->po_id = $sale_return->id;
                         $receiving_detail->product_packaging_id = $detail->product_packaging_id;
@@ -295,8 +296,10 @@ class SaleReturnController extends Controller
 
     public function show($id)
     {
-        if (!Auth::guard('superuser')->user()->can('sale return-show')) {
-            return abort(403);
+        if (Auth::user()->is_superuser == 0) {
+            if (empty($this->access) || empty($this->access->user) || $this->access->can_show == 0) {
+                return redirect()->route('superuser.index')->with('error', 'Anda tidak punya akses untuk membuka menu terkait');
+            }
         }
 
         $data['sale_return'] = SaleReturn::findOrFail($id);
@@ -390,14 +393,15 @@ class SaleReturnController extends Controller
         DB::beginTransaction();
         try {
             // check apakah sudah acc untuk QC nya?
-            $getReceivingDetail = ReceivingDetail::where('po_id', $sale_return->id)->first();
+            $getReceivingDetail = QualityControlDetail::where('po_id', $sale_return->id)->first();
             if ($getReceivingDetail) {
-                if ($getReceivingDetail->receiving->status != Receiving::STATUS['ACC']) {
+                if ($getReceivingDetail->receiving->status != QualityControl::STATUS['ACC']) {
                     return redirect()->route('superuser.penjualan.sale_return.index')
                         ->with('error', 'Proses QC sedang berlangsung, tidak bisa melanjutkan proses');
                 }
             }
 
+            $sale_return->retur_date = now();
             $sale_return->status = SaleReturn::STATUS['ACC'];
             $sale_return->save();
 
@@ -405,6 +409,7 @@ class SaleReturnController extends Controller
             return redirect()->route('superuser.penjualan.sale_return.index')
                  ->with('success', 'Data retur berhasil di Acc.');
         } catch (\Throwable $e) {
+            dd($e);
             DB::rollback();
             return redirect()->back()->with('error', 'Terjadi kesalahan saat menghapus data');
         }

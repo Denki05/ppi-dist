@@ -15,6 +15,7 @@ class SaleReturn extends Model
         'return_date',
         'warehouse_id',
         'customer_other_address_id',
+        'fat_status',
         'status',
         'type',
         'created_by',
@@ -34,8 +35,15 @@ class SaleReturn extends Model
     ];
 
     const PAYMENT_STATUS = [
-        'BELUM' => 0,
+        'BELUM LUNAS' => 0,
         'LUNAS' => 1,
+    ];
+
+    const FAT_STATUS = [
+        'NONE' => 0,
+        'KASIR' => 1,
+        'SPV' => 2,
+        'DONE' => 3,
     ];
 
     public function status()
@@ -51,6 +59,11 @@ class SaleReturn extends Model
     public function payment_status()
     {
         return array_search($this->payment_status, self::PAYMENT_STATUS);
+    }
+
+    public function fat_status()
+    {
+        return array_search($this->fat_status, self::FAT_STATUS);
     }
 
     public function invoice()

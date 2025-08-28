@@ -221,6 +221,7 @@
                     </a>
                     <ul class="dropdown-menu">
                         <li><a class="dropdown-item" href="{{ route('superuser.finance.payable.index') }}"><i class="fa-solid fa-credit-card"></i> Payment</a></li>
+                        <li><a class="dropdown-item" href="{{ route('superuser.finance.nota_kredit_finance.index') }}"><i class="fa-solid fa-file-prescription"></i> Nota Kredit</a></li>
                         <li><a class="dropdown-item" href="{{ route('superuser.finance.cashback.index') }}"><i class="fa-solid fa-code-branch"></i> Araya</a></li>
                         <!-- <li class="submenu submenu-md dropend">
                             <a class="dropdown-item dropdown-toggle" role="button" data-bs-toggle="dropdown"
@@ -228,7 +229,7 @@
                                 <i class="fa-solid fa-chart-simple"></i> Accounting
                             </a>
                             <ul class="dropdown-menu">
-                                <li class="submenu submenu-md dropend">
+                                <li class=s"ubmenu submenu-md dropend">
                                     <a class="dropdown-item dropdown-toggle" role="button"
                                         data-bs-toggle="dropdown" aria-expanded="false"><i class="fa-solid fa-code-branch"></i> Unifra</a>
                                     <ul class="dropdown-menu">

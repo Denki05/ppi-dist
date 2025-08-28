@@ -22,10 +22,12 @@ class QualityControlTable extends Table
                 'master_warehouses.name as warehouse',
                 'receiving.created_at',
                 'receiving.pbm_date',
-                'receiving.note'
+                'receiving.note',
+                'receiving_detail.po_id'
             )
             ->where('receiving.type', 1)
-            ->join('master_warehouses', 'master_warehouses.id', '=', 'receiving.warehouse_id');
+            ->join('master_warehouses', 'master_warehouses.id', '=', 'receiving.warehouse_id')
+            ->join('receiving_detail', 'receiving_detail.receiving_id', 'receiving.id');
     }
 
     /**
@@ -69,6 +71,7 @@ class QualityControlTable extends Table
             $destroy = route('superuser.gudang.quality_control.destroy', $model);
             $acc     = route('superuser.gudang.quality_control.acc_ri', $model);
             $cancel  = route('superuser.gudang.quality_control.cancel', $model);
+            $pdf    = route('superuser.penjualan.sale_return.pdf_sj', $model->po_id);
 
             $btn = '';
 
@@ -119,6 +122,21 @@ class QualityControlTable extends Table
                         ";
                     }
                     break;
+                    
+                case $model::STATUS['ACC']:
+                    $btn .= "
+                        <a href=\"{$view}\">
+                            <button type=\"button\" class=\"btn btn-sm btn-circle btn-alt-secondary\" title=\"View\">
+                                <i class=\"fa fa-eye\"></i>
+                            </button>
+                        </a>
+                        <a href=\"{$pdf}\" target=\"_blank\">
+                            <button type=\"button\" class=\"btn btn-sm btn-circle btn-alt-info\" title=\"PDF\">
+                                <i class=\"fa fa-file-pdf-o\"></i>
+                            </button>
+                        </a>
+                    ";
+                    break;
 
                 default:
                     $btn .= "
@@ -127,6 +145,7 @@ class QualityControlTable extends Table
                                 <i class=\"fa fa-eye\"></i>
                             </button>
                         </a>
+                        
                     ";
                     break;
             }
