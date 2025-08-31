@@ -843,7 +843,7 @@ class PayableController extends Controller
             $paid = $invoice->payable_detail->sum('total');
             $remaining = $invoice->grand_total_idr - $paid;
 
-            if (!in_array($year, ['2022','2023']) && $remaining > 0) {
+            if (!in_array($year, ['2022','2023']) && $remaining > 0 && $invoice->status != Invoicing::STATUS['PENDING']) {
                 $rows[] = [
                     'id'            => $invoice->id,
                     'date'          => $invoice->created_at->format('d-m-Y'),

@@ -206,7 +206,7 @@ class SaleReturnController extends Controller
                 $sale_return->type = $request->type;
                 $sale_return->payment_status = $paymentStatus === 'LUNAS'
                     ? SaleReturn::PAYMENT_STATUS['LUNAS']
-                    : SaleReturn::PAYMENT_STATUS['BELUM'];
+                    : SaleReturn::PAYMENT_STATUS['BELUM LUNAS'];
                 $sale_return->customer_other_address_id = $getDo->customer_other_address_id;
                 $sale_return->status = SaleReturn::STATUS['ACTIVE'];
 
@@ -403,6 +403,7 @@ class SaleReturnController extends Controller
 
             $sale_return->retur_date = now();
             $sale_return->status = SaleReturn::STATUS['ACC'];
+            $sale_return->fat_status = SaleReturn::FAT_STATUS['KASIR'];
             $sale_return->save();
 
             DB::commit();
@@ -530,5 +531,80 @@ class SaleReturnController extends Controller
         }
 
         return $pdf->stream("{$result->code}.pdf");
+    }
+
+    public function pdf_tt_fat($id)
+    {
+        $result = SaleReturn::find($id);
+        if (!$result) {
+            abort(404, 'Invoice tidak ditemukan.');
+        }
+
+        $data = [
+            'result' => $result,
+        ];
+
+        $pdf = PDF::loadView('superuser.penjualan.sale_return.nota_kredit_fat', $data)
+                ->setPaper('a5', 'landscape');
+
+        $generate = false; // Ubah sesuai logika bisnis.
+
+        if ($generate) {
+            return $pdf->download("{$result->code}.pdf");
+        }
+
+        return $pdf->stream("{$result->code}.pdf");
+    }
+
+    public function pdf_refund($id)
+    {
+        $result = SaleReturn::find($id);
+        if (!$result) {
+            abort(404, 'Tidak ditemukan.');
+        }
+
+        $data = [
+            'result' => $result,
+        ];
+
+        $pdf = PDF::loadView('superuser.penjualan.sale_return.print_nota_refund', $data)
+                ->setPaper('a5', 'landscape');
+
+        $generate = false;
+
+        if ($generate) {
+            return $pdf->download("{$result->code}.pdf");
+        }
+
+        return $pdf->stream("{$result->code}.pdf");
+    }
+
+    public function pdf_download($id)
+    {
+        $result = SaleReturn::find($id);
+        if (!$result) {
+            abort(404, 'Tidak ditemukan.');
+        }
+
+        $data = [
+            'result' => $result,
+        ];
+
+        // Mengambil tipe retur dan status untuk menentukan view yang benar
+        $returType = $result->type();
+        $paymentStatus = $result->payment_status();
+
+        if ($returType == 'RETUR' && $paymentStatus == 'LUNAS') {
+            // Tentukan nama view yang benar (nota_refund)
+            $viewName = 'superuser.penjualan.sale_return.print_nota_refund';
+        } else {
+            // Tentukan nama view yang benar (nota_tt)
+            $viewName = 'superuser.penjualan.sale_return.print_nota_tt_fat'; // Asumsi nama view untuk nota_tt
+        }
+
+        $pdf = PDF::loadView($viewName, $data)
+                ->setPaper('a5', 'landscape');
+
+        return $pdf->download("Nota_Refund_{$result->code}.pdf");
     }
 }

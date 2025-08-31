@@ -9,6 +9,7 @@ use App\Entities\Penjualan\SaleReturn;
 use App\Entities\Setting\UserMenu;
 use Validator;
 use Auth;
+use PDF;
 use DB;
 
 class NotaKreditFinanceController extends Controller
@@ -79,7 +80,7 @@ class NotaKreditFinanceController extends Controller
                 'jumlah_nota_awal_cell' => 'required',
                 'jumlah_nota_kredit_cell' => 'required',
                 'total_piutang_cell' => 'required',
-                'action_type' => 'required|string|in:next,verify', // Tambahkan validasi untuk action_type
+                'action_type' => 'required|string|in:verify', // Diubah menjadi 'in:verify'
             ]);
 
             if ($validator->fails()) {
@@ -95,22 +96,19 @@ class NotaKreditFinanceController extends Controller
             $retur_id = $request->retur_id;
             $action_type = $request->action_type;
 
-            // Logika berdasarkan tombol yang diklik
+            // Logika hanya untuk VERIFIKASI
             if ($action_type === 'verify') {
-                
-
-            } else if ($action_type === 'next') {
-                // Logika untuk tombol VERIFIKASI
                 $getRetur = SaleReturn::find($retur_id);
 
                 if ($getRetur) {
-                    $getRetur->fat_status = 1; // 1 = diverifikasi kasir
+                    $getRetur->fat_status = 2;
                     $getRetur->updated_by = Auth::user()->id;
                     $getRetur->save();
                 }
 
                 // input finance_retur
                 $retur_fat = new ReturFat;
+                $retur_fat->code = $getRetur->code;
                 $retur_fat->do_id = $do_id;
                 $retur_fat->retur_id = $retur_id;
 
@@ -120,7 +118,8 @@ class NotaKreditFinanceController extends Controller
                 $retur_fat->total_final = (float)str_replace(['.', ','], '', $request->total_piutang_cell);
 
                 $retur_fat->type_retur = $getRetur->type;
-                $retur_fat->status_retur = $getRetur->payment_status;
+                $retur_fat->payment_retur = $getRetur->payment_status;
+                $retur_fat->status = 1; // Ubah status menjadi 1 karena sudah diverifikasi
                 $retur_fat->created_by = Auth::user()->id;
                 $retur_fat->save();
 
@@ -141,50 +140,5 @@ class NotaKreditFinanceController extends Controller
                 'message' => 'Terjadi kesalahan saat membuat Payable. Silakan coba lagi. Error: ' . $e->getMessage()
             ], 500);
         }
-    }
-
-    /**
-     * Display the specified resource.
-     *
-     * @param  int  $id
-     * @return \Illuminate\Http\Response
-     */
-    public function show($id)
-    {
-        //
-    }
-
-    /**
-     * Show the form for editing the specified resource.
-     *
-     * @param  int  $id
-     * @return \Illuminate\Http\Response
-     */
-    public function edit($id)
-    {
-        //
-    }
-
-    /**
-     * Update the specified resource in storage.
-     *
-     * @param  \Illuminate\Http\Request  $request
-     * @param  int  $id
-     * @return \Illuminate\Http\Response
-     */
-    public function update(Request $request, $id)
-    {
-        //
-    }
-
-    /**
-     * Remove the specified resource from storage.
-     *
-     * @param  int  $id
-     * @return \Illuminate\Http\Response
-     */
-    public function destroy($id)
-    {
-        //
     }
 }

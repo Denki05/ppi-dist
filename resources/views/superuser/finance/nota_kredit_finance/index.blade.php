@@ -1,208 +1,237 @@
 @extends('superuser.app')
 
 @section('content')
-<!-- Notifikasi -->
 @if($errors->any())
 <div class="alert alert-danger alert-dismissable" role="alert">
-  <button type="button" class="close" data-dismiss="alert" aria-label="Close">
-      <span aria-hidden="true">×</span>
-  </button>
-  <h3 class="alert-heading font-size-h4 font-w400">Error</h3>
-  @foreach ($errors->all() as $error)
-  <p class="mb-0">{{ $error }}</p>
-  @endforeach
+    <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+        <span aria-hidden="true">×</span>
+    </button>
+    <h3 class="alert-heading font-size-h4 font-w400">Error</h3>
+    @foreach ($errors->all() as $error)
+    <p class="mb-0">{{ $error }}</p>
+    @endforeach
 </div>
 @endif
 
 @if(session()->has('success'))
 <div class="alert alert-success alert-dismissable" role="alert">
-  <button type="button" class="close" data-dismiss="alert" aria-label="Close">
-      <span aria-hidden="true">×</span>
-  </button>
-  <h3 class="alert-heading font-size-h4 font-w400">Success</h3>
-  <p class="mb-0">{{ session()->get('success') }}</p>
+    <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+        <span aria-hidden="true">×</span>
+    </button>
+    <h3 class="alert-heading font-size-h4 font-w400">Success</h3>
+    <p class="mb-0">{{ session()->get('success') }}</p>
 </div>
 @endif
 
-    <div class="block finance-tabs">
-        <div class="block-content block-content-full">
+<div class="block finance-tabs">
+    <div class="block-content block-content-full">
 
-            {{-- Tab Header --}}
-            <main class="tab-header">
-                <input type="radio" id="tab1" name="tabs" checked hidden>
-                <label for="tab1" class="tab-label tab-list" data-tab="content1">Kasir</label>
+        {{-- Tab Header --}}
+        <main class="tab-header">
+            <input type="radio" id="tab1" name="tabs" checked hidden>
+            <label for="tab1" class="tab-label tab-list" data-tab="content1">Nota Kredit</label>
 
-                <input type="radio" id="tab2" name="tabs" hidden>
-                <label for="tab2" class="tab-label tab-list" data-tab="content2">SPV</label>
+            <!-- <input type="radio" id="tab2" name="tabs" hidden>
+            <label for="tab2" class="tab-label tab-list" data-tab="content2">Done</label> -->
+        </main>
 
-                <input type="radio" id="tab3" name="tabs" hidden>
-                <label for="tab3" class="tab-label tab-list" data-tab="content3">Done</label>
-            </main>
+        {{-- Tab Content: Kasir --}}
+        <div class="tab-content active" id="content1">
+            <form id="payableForm" method="POST" action="{{ route('superuser.finance.nota_kredit_finance.store') }}">
+                @csrf
+                <input type="hidden" name="action_type" id="action_type">
 
-            {{-- Tab Content: Kasir --}}
-            <div class="tab-content active" id="content1">
-                <form id="payableForm" method="POST" action="{{ route('superuser.finance.nota_kredit_finance.store') }}">
-                    @csrf
-                    <input type="hidden" name="action_type" id="action_type">
-                    <!-- <h5>Verifikasi Nota Kredit (Kasir)</h5> -->
-                    <div class="row">
-                        {{-- List Retur --}}
-                        <div class="col-md-6">
-                            <table class="table table-striped" id="table_retur">
-                                <thead>
-                                    <tr>
-                                        <th>#</th>
-                                        <th>Code</th>
-                                        <th>Customer</th>
-                                        <th>Total</th>
-                                        <th>Status</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                @foreach($retur as $p)
-                                    @if($p->fat_status == 0)
-                                        <tr class="retur-row"
-                                            style="cursor:pointer"
-                                            data-retur_id="{{ $p->id }}"
-                                            data-do_id="{{ $p->invoice->id ?? '-' }}"
-                                            data-nota_awal="{{ $p->invoice->do_code ?? '-' }}"
-                                            data-jumlah_nota_awal="{{ $p->invoice->do_detail_cost->purchase_total_idr ?? 0 }}"
-                                            data-nota_kredit="{{ $p->code }}"
-                                            data-jumlah_nota_kredit="{{ $p->cost->purchase_total_idr ?? 0 }}"
-                                            data-payment_status="{!! $p->payment_status() !!}"
-                                        >
-                                            <td>{{ $loop->iteration }}</td>
-                                            <td>{{ $p->code }}</td>
-                                            <td>{{ $p->customer->name }} {{ $p->customer->text_kota }}</td>
-                                            <td>{{ number_format($p->cost->purchase_total_idr,0,',','.') }}</td>
-                                            <td>{!! $p->payment_status() !!}</td>
-                                        </tr>
-                                    @endif
-                                @endforeach
-                                </tbody>
-                            </table>
+                {{-- Baris pertama: Tabel Retur dan Tabel Piutang --}}
+                <div class="row">
+                    {{-- Kolom Kiri: List Retur --}}
+                    <div class="col-md-6">
+                        <div class="card h-100">
+                            <div class="card-body">
+                                <div class="table-responsive table-fixed-height">
+                                    <table class="table table-striped" id="table_retur">
+                                        <thead>
+                                            <tr>
+                                                <th>#</th>
+                                                <th>Code</th>
+                                                <th>Customer</th>
+                                                <th>Total</th>
+                                                <th>Status</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            @foreach($retur as $p)
+                                            @if($p->fat_status == 1)
+                                            <tr class="retur-row"
+                                                style="cursor:pointer"
+                                                data-retur_id="{{ $p->id }}"
+                                                data-do_id="{{ $p->invoice->id ?? '-' }}"
+                                                data-nota_awal="{{ $p->invoice->do_code ?? '-' }}"
+                                                data-jumlah_nota_awal="{{ $p->invoice->do_detail_cost->purchase_total_idr ?? 0 }}"
+                                                data-nota_kredit="{{ $p->code }}"
+                                                data-jumlah_nota_kredit="{{ $p->cost->purchase_total_idr ?? 0 }}"
+                                                data-payment_status="{!! $p->payment_status() !!}"
+                                                data-retur_type="{{ $p->type() }}"
+                                            >
+                                                <td>{{ $loop->iteration }}</td>
+                                                <td>{{ $p->code }}</td>
+                                                <td>{{ $p->customer->name }} {{ $p->customer->text_kota }}</td>
+                                                <td>{{ number_format($p->cost->purchase_total_idr,0,',','.') }}</td>
+                                                <td>{!! $p->payment_status() !!}</td>
+                                            </tr>
+                                            @endif
+                                            @endforeach
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
                         </div>
+                    </div>
 
-                        {{-- Detail Piutang --}}
-                        <div class="col-md-6">
-                            <div class="card mb-3">
-                                <div class="card-body">
-                                    <div class="table-responsive">
-                                        <table class="table table-striped" id="table_piutang">
-                                            <thead class="table-light">
-                                                <tr>
-                                                    <th style="width: 40%;">Keterangan</th>
-                                                    <th style="width: 20%;">Code</th>
-                                                    <th style="width: 20%;">Jumlah</th>
-                                                </tr>
-                                            </thead>
-                                            <tbody>
-                                                <tr>
-                                                    <td>Nota Awal</td>
-                                                    <td>
-                                                        <input type="text" id="nota_awal_cell" style="font-size: 1rem; font-weight: bold;" class="form-control form-control-sm text-center" readonly>
-                                                        <input type="hidden" id="do_id" name="do_id">
-                                                    </td>
-                                                    <td>
-                                                        <input type="text" id="jumlah_nota_awal_cell" name="jumlah_nota_awal_cell" style="font-size: 1rem;" class="form-control form-control-sm text-end" readonly>
-                                                    </td>
-                                                    
-                                                </tr>
-                                                <tr>
-                                                    <td>Nota Kredit</td>
-                                                    <td>
-                                                        <input type="text" id="nota_kredit_cell" style="font-size: 1rem; font-weight: bold;" class="form-control form-control-sm text-center" readonly>
-                                                        <input type="hidden" id="retur_id" name="retur_id">
-                                                    </td>
-                                                    <td>
-                                                        <input type="text" id="jumlah_nota_kredit_cell" name="jumlah_nota_kredit_cell" style="font-size: 1rem;" class="form-control form-control-sm text-end" readonly>
-                                                    </td>
-                                                </tr>
-                                                <tr class="table-secondary fw-bold">
-                                                    <td>Total Piutang Akhir</td>
-                                                    <td colspan="2"><input type="text" style="font-size: 1rem;" id="total_piutang_cell" name="total_piutang_cell" class="form-control form-control-sm text-end" readonly></td>
-                                                </tr>
-                                            </tbody>
-                                        </table>
-                                        <button type="submit" id="btnNext" class="btn btn-info" disabled>LANJUT</button>
+                    {{-- Kolom Kanan: Detail Piutang --}}
+                    <div class="col-md-6">
+                        <div class="card h-100">
+                            <div class="card-body">
+                                <div class="table-responsive table-fixed-height">
+                                    <table class="table table-striped" id="table_piutang">
+                                        <thead class="table-light">
+                                            <tr>
+                                                <th style="width: 40%;">Keterangan</th>
+                                                <th style="width: 20%;">Code</th>
+                                                <th style="width: 20%;">Jumlah</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            <tr>
+                                                <td>Nota Awal</td>
+                                                <td>
+                                                    <input type="text" id="nota_awal_cell" style="font-size: 1rem; font-weight: bold;" class="form-control form-control-sm text-center" readonly>
+                                                    <input type="hidden" id="do_id" name="do_id">
+                                                </td>
+                                                <td>
+                                                    <input type="text" id="jumlah_nota_awal_cell" name="jumlah_nota_awal_cell" style="font-size: 1rem;" class="form-control form-control-sm text-end" readonly>
+                                                </td>
+                                            </tr>
+                                            <tr>
+                                                <td>Nota Kredit</td>
+                                                <td>
+                                                    <input type="text" id="nota_kredit_cell" style="font-size: 1rem; font-weight: bold;" class="form-control form-control-sm text-center" readonly>
+                                                    <input type="hidden" id="retur_id" name="retur_id">
+                                                </td>
+                                                <td>
+                                                    <input type="text" id="jumlah_nota_kredit_cell" name="jumlah_nota_kredit_cell" style="font-size: 1rem;" class="form-control form-control-sm text-end" readonly>
+                                                </td>
+                                            </tr>
+                                            <tr class="table-secondary fw-bold">
+                                                <td>Total Piutang Akhir</td>
+                                                <td colspan="2"><input type="text" style="font-size: 1rem;" id="total_piutang_cell" name="total_piutang_cell" class="form-control form-control-sm text-end" readonly></td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
+                                    <div class="d-flex justify-content-end mt-3">
+                                        <button type="button" class="btn btn-info me-2" data-toggle="modal" data-target="#printModal" id="btnGenerate">CETAK</button>
                                         <button type="submit" id="btnVerify" class="btn btn-primary" disabled>VERIFIKASI</button>
                                     </div>
                                 </div>
                             </div>
                         </div>
                     </div>
-                </form>
-            </div>
+                </div>
+            </form>
+        </div>
 
-            {{-- Tab Content: SPV --}}
-            <div class="tab-content" id="content2">
-                <table class="table table-bordered table-striped">
-                    <thead>
-                        <tr>
-                            <th>#</th>
-                            <th>Code</th>
-                            <th>Customer</th>
-                            <th>Total</th>
-                            <th>Status</th>
-                            <th>Aksi</th>
-                        </tr>
-                    </thead>
-                    <tbody>
+        {{-- Tab Content: SPV --}}
+        <div class="tab-content" id="content2">
+            <div class="row align-items-center">
+                <div class="col-auto">
+                    <label for="selectCode" class="col-form-label">Code</label>
+                </div>
+                <div class="col-auto">
+                    <select class="form-control js-select2" id="selectCode">
+                        <option value="">Pilih Code</option>
                         @foreach($retur as $p)
-                            @if($p->fat_status() == 'KASIR')
-                                <tr>
-                                    <td>{{ $loop->iteration }}</td>
-                                    <td>{{ $p->code }}</td>
-                                    <td>{{ $p->customer_name }}</td>
-                                    <td>{{ number_format($p->total, 0, ',', '.') }}</td>
-                                    <td>{{ $p->fat_status() }}</td>
-                                    <td>
-                                        <button class="btn btn-primary btn-sm">Verifikasi</button>
-                                    </td>
-                                </tr>
-                            @endif
+                        @if($p->fat_status == 2)
+                        <option value="{{ $p->id }}"
+                            data-type="{{ $p->type() }}"
+                            data-status="{{ $p->payment_status() }}">
+                            {{ $p->code }}
+                        </option>
+                        @endif
                         @endforeach
-                    </tbody>
-                </table>
+                    </select>
+                </div>
+
+                <div class="col-auto">
+                    <label for="inputType" class="col-form-label">Type</label>
+                </div>
+                <div class="col-auto">
+                    <input type="text" class="form-control text-center" id="inputType" style="width: 130px;" readonly>
+                </div>
+
+                <div class="col-auto">
+                    <label for="inputStatus" class="col-form-label">Status</label>
+                </div>
+                <div class="col-auto">
+                    <input type="text" class="form-control text-center" id="inputStatus" style="width: 120px;" readonly>
+                </div>
+
+                <div class="col-auto">
+                    
+                </div>
             </div>
 
-            {{-- Tab Content: Done --}}
-            <div class="tab-content" id="content3">
-                <!-- <h5>Transaksi Retur Selesai (Done)</h5> -->
-                <table class="table table-bordered table-striped">
-                    <thead>
-                        <tr>
-                            <th>#</th>
-                            <th>Code</th>
-                            <th>Customer</th>
-                            <th>Total</th>
-                            <th>Jenis</th>
-                            <th>Dokumen</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {{-- contoh data --}}
-                        <tr>
-                            <td>1</td>
-                            <td>R25H001</td>
-                            <td>Customer X</td>
-                            <td>2,000,000</td>
-                            <td>Retur Tanpa Ganti Barang</td>
-                            <td><a href="#" class="btn btn-sm btn-secondary">Print Refund</a></td>
-                        </tr>
-                    </tbody>
-                </table>
-            </div>
+            <br>
 
+            <div class="row">
+                <div class="col-6">
+                    <div class="card">
+                        <div class="card-body">
+                            <iframe id="iframeNotaKreditFat" src="" style="width:100%; height:500px;" frameborder="0"></iframe>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-6">
+                    <div class="card">
+                        <div class="card-body">
+                            <iframe src="" style="width:100%; height:500px;" frameborder="0"></iframe>
+                            
+                            
+                        </div>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
+</div>
+
+<div class="modal fade" id="printModal" aria-labelledby="exampleModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-xl custom-modal">
+    <div class="modal-content h-100">
+      <div class="modal-header">
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body p-0">
+        <div class="row no-gutters h-100">
+          <div class="col-12 h-100">
+            <iframe id="modalIframe" src="" class="iframe-full"></iframe>
+          </div>
+          <!-- <div class="col-6 h-100">
+            <iframe id="modalIframe2" src="" class="iframe-full"></iframe>
+          </div> -->
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
 @endsection
 
 @include('superuser.asset.plugin.datatables')
 @include('superuser.asset.plugin.swal2')
+@include('superuser.asset.plugin.select2')
 
 @push('scripts')
-<style>
 <style>
 /* CSS Anda sebelumnya */
 .finance-tabs .tab-label::before {
@@ -261,10 +290,37 @@
 
 .retur-row { cursor: pointer; }
 .active-row { background-color: #fff3cd; }
+
+.table-fixed-height {
+    height: 270px;
+    overflow-y: auto;
+}
+.custom-modal {
+    max-width: 95% !important;   /* hampir full lebar */
+    width: 95% !important;
+    height: 95vh;               /* tinggi hampir penuh viewport */
+}
+
+.custom-modal .modal-content {
+    height: 95vh;               /* isi modal penuh */
+}
+
+.modal-body {
+    height: calc(100% - 100px); /* sisakan ruang untuk header+footer */
+    overflow: hidden;           /* buang scrollbar */
+}
+
+.iframe-full {
+    width: 100%;
+    height: 100%;
+    border: none;
+}
 </style>
 
 <script type="text/javascript">
 $(document).ready(function(){
+    $('.js-select2').select2();
+
     $('input[name="tabs"]').on('change', function() {
         let tabId = $(this).attr('id');
         $('.tab-content').removeClass('active');
@@ -287,6 +343,9 @@ $(document).ready(function(){
         return parseFloat(str);
     }
 
+    // Tombol CETAK tidak lagi dinonaktifkan secara default
+    $('#btnVerify').prop('disabled', true);
+
     $('#table_retur').on('click', '.retur-row', function(){
         let nota_awal = $(this).data('nota_awal') || '-';
         let jumlah_nota_awal = parseFloat($(this).data('jumlah_nota_awal')) || 0;
@@ -294,7 +353,6 @@ $(document).ready(function(){
         let jumlah_nota_kredit = parseFloat($(this).data('jumlah_nota_kredit')) || 0;
         let do_id = $(this).data('do_id') || '';
         let retur_id = $(this).data('retur_id') || '';
-        let payment_status = $(this).data('payment_status').trim();
         let total_piutang = jumlah_nota_awal - jumlah_nota_kredit;
 
         $('#nota_awal_cell').val(nota_awal);
@@ -308,41 +366,100 @@ $(document).ready(function(){
 
         $('.retur-row').removeClass('active-row');
         $(this).addClass('active-row');
+        
+        // Tombol VERIFIKASI tetap dinonaktifkan
+        $('#btnVerify').prop('disabled', true);
+    });
 
-        if (do_id && retur_id) {
-            if (payment_status === 'LUNAS') {
-                $('#btnNext').prop('disabled', false);
-                $('#btnVerify').prop('disabled', true);
-            } else if (payment_status === 'BELUM LUNAS') {
-                $('#btnNext').prop('disabled', true);
-                $('#btnVerify').prop('disabled', false);
-            } else {
-                $('#btnNext').prop('disabled', true);
-                $('#btnVerify').prop('disabled', true);
-            }
-        } else {
-            $('#btnNext').prop('disabled', true);
-            $('#btnVerify').prop('disabled', true);
+    // Handler untuk tombol CETAK
+    $('#btnGenerate').on('click', function() {
+        let returId = $('#retur_id').val();
+
+        // Cek apakah returId sudah ada (berarti baris sudah dipilih)
+        if (!returId) {
+            Swal.fire({
+                icon: 'warning',
+                title: 'Peringatan',
+                text: 'Harap pilih salah satu Nota Kredit dari daftar di samping terlebih dahulu.',
+            });
+            return; // Hentikan eksekusi jika tidak ada baris yang dipilih
         }
+
+        // Ambil data dari row aktif
+        let returType = $('.retur-row.active-row').data('retur_type');
+        let paymentStatus = $('.retur-row.active-row').data('payment_status');
+
+        // Tentukan URL PDF pertama
+        let pdfUrl1 = '';
+        if (returType === 'RETUR' && paymentStatus && paymentStatus.trim() === 'LUNAS') {
+            pdfUrl1 = "{{ route('superuser.penjualan.sale_return.pdf_refund', ['data' => '']) }}" + returId;
+        } else {
+            pdfUrl1 = "{{ route('superuser.penjualan.sale_return.pdf_tt', ['data' => '']) }}" + returId;
+        } 
+
+        // Tentukan URL PDF kedua (opsional, bisa sama atau berbeda sesuai kebutuhan)
+        let pdfUrl2 = "{{ route('superuser.penjualan.sale_return.pdf_tt_fat', ['data' => '']) }}" + returId;
+
+        // Load URL ke iframe
+        $('#modalIframe').attr('src', pdfUrl1);
+        // $('#modalIframe2').attr('src', pdfUrl1);
+
+        // Tampilkan modal (Bootstrap 4)
+        $('#printModal').modal({
+            backdrop: 'static',
+            keyboard: false
+        });
+
+        $('#closeModalButton').hide();
+
+        // Aktifkan tombol verifikasi
+        $('#btnVerify').prop('disabled', false);
+    });
+
+    // Event saat modal ditutup
+    $('#printModal').on('hidden.bs.modal', function () {
+        // Reset iframe
+        $('#modalIframe').attr('src', '');
+        $('#modalIframe2').attr('src', '');
+    });
+
+
+    // Handler untuk tombol Download
+    $('#downloadButton').on('click', function() {
+        let returId = $('#retur_id').val();
+        let downloadUrl = "{{ route('superuser.penjualan.sale_return.pdf_download', ['id' => 'placeholder']) }}".replace('placeholder', returId);
+        window.open(downloadUrl, '_blank');
+        
+        // Setelah tombol download diklik, aktifkan kembali tombol tutup
+        $('#closeModalButton').show();
+
+        // Aktifkan tombol verifikasi
+        $('#btnVerify').prop('disabled', false);
+    });
+
+    // Handler untuk tombol Print
+    $('#printButton').on('click', function() {
+        let iframe = document.getElementById('modalIframe');
+        iframe.contentWindow.print();
+        
+        // Setelah tombol print diklik, aktifkan kembali tombol tutup
+        $('#closeModalButton').show();
+
+        // Aktifkan tombol verifikasi
+        $('#btnVerify').prop('disabled', false);
     });
 
     // Menangani klik tombol untuk mengisi hidden input
-    $('#btnNext').on('click', function() {
-        $('#action_type').val('next');
-    });
-
     $('#btnVerify').on('click', function() {
         $('#action_type').val('verify');
     });
-
+    
     // Handler form submission menggunakan AJAX
     $('#payableForm').on('submit', function(e) {
         e.preventDefault(); // Mencegah form dikirim secara normal
 
-        // Mengambil data form
         var formData = $(this).serialize();
 
-        // Mengirim data menggunakan AJAX
         $.ajax({
             url: $(this).attr('action'),
             type: 'POST',
@@ -375,6 +492,30 @@ $(document).ready(function(){
                 });
             }
         });
+    });
+
+    // TAB SPV
+    var tableSpv = $('#table_spv').DataTable({});
+
+    $('#selectCode').on('change', function() {
+        let type = $(this).find(':selected').data('type');
+        let status = $(this).find(':selected').data('status');
+        let returId = $(this).val();
+
+        $('#inputType').val(type ?? '');
+        $('#inputStatus').val(status ?? '');
+
+        if (returId) {
+            // set src untuk iframe Nota Kredit FAT
+            $('#iframeNotaKreditFat').attr(
+                'src',
+                "{{ route('superuser.penjualan.sale_return.pdf_tt_fat', ['data' => '']) }}" + returId
+            );
+
+            
+        } else {
+            $('#iframeNotaKreditFat').attr('src', '');
+        }
     });
 });
 </script>

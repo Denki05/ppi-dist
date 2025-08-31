@@ -99,4 +99,9 @@ class SaleReturn extends Model
     {
         return $this->hasOne('App\Entities\Penjualan\SaleReturnCost', 'retur_id', 'id');
     }
+
+    public function returFat()
+    {
+        return $this->hasOne('App\Entities\Finance\ReturFat', 'retur_id', 'id');
+    }
 }
