@@ -12,6 +12,7 @@ class SaleReturn extends Model
         'payment_status',
         'idr_rate',
         'do_id',
+        'do_new_id',
         'return_date',
         'warehouse_id',
         'customer_other_address_id',
@@ -71,6 +72,11 @@ class SaleReturn extends Model
         return $this->belongsTo('App\Entities\Penjualan\PackingOrder', 'do_id');
     }
 
+    public function invoiceNew()
+    {
+        return $this->belongsTo('App\Entities\Penjualan\PackingOrder', 'do_new_id');
+    }
+
     public function sale_return_details()
     {
         return $this->hasMany('App\Entities\Penjualan\SaleReturnDetail', 'retur_id', 'id');
@@ -83,7 +89,7 @@ class SaleReturn extends Model
 
     public function customer()
     {
-        return $this->belongsTo('App\Entities\Master\CustomerOtherAddress', 'customer_other_address_id');
+        return $this->belongsTo('App\Entities\Master\CustomerOtherAddress', 'customer_other_address_id', 'id');
     }
 
     public function createdBySuperuser()

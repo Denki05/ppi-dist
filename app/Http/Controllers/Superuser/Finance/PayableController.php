@@ -139,6 +139,8 @@ class PayableController extends Controller
                                     ->orderBy('created_at', 'DESC')
                                     ->get();
 
+        $data['customers'] = CustomerOtherAddress::get();
+
         // Mengembalikan view dengan data yang sudah dimuat
         return view($this->view . "index", $data);
     }
@@ -823,36 +825,86 @@ class PayableController extends Controller
         return view('superuser.finance.payable.invoice_details', compact('invoice'))->render();
     }
 
+    // public function unpaidInvoices(Request $request)
+    // {
+    //     $customer = Customer::with(['do.invoicing.payable_detail'])
+    //         ->find($request->customer_id);
+
+    //     if (!$customer) {
+    //         return response()->json([]);
+    //     }
+
+    //     $rows = [];
+    //     foreach ($customer->do as $index => $row) {
+    //         $invoice = $row->invoicing;
+    //         if (!$invoice) continue;
+
+    //         $year = $invoice->created_at->format('Y');
+
+    //         // hitung sisa tagihan
+    //         $paid = $invoice->payable_detail->sum('total');
+    //         $remaining = $invoice->grand_total_idr - $paid;
+
+    //         if (!in_array($year, ['2022','2023']) && $remaining > 0 && $invoice->status != Invoicing::STATUS['PENDING']) {
+    //             $rows[] = [
+    //                 'id'            => $invoice->id,
+    //                 'date'          => $invoice->created_at->format('d-m-Y'),
+    //                 'code'          => $invoice->code,
+    //                 'brand'         => $invoice->do->so->brand_name,
+    //                 'tagihan'       => number_format($invoice->grand_total_idr,0,',','.'),
+    //                 'sisa_tagihan'  => number_format($remaining,0,',','.'),
+    //                 'type_value'    => $invoice->type,
+    //                 'type_name'     => $invoice->type(),
+    //             ];
+    //         }
+    //     }
+
+    //     // Urutkan array $rows: 'TT' (1) di atas 'N' (0)
+    //     usort($rows, function($a, $b) {
+    //         return $b['type_value'] <=> $a['type_value'];
+    //     });
+
+    //     return response()->json($rows);
+    // }
+
     public function unpaidInvoices(Request $request)
     {
-        $customer = Customer::with(['do.invoicing.payable_detail'])
-            ->find($request->customer_id);
-
-        if (!$customer) {
-            return response()->json([]);
-        }
+        $invoices = Invoicing::with(['do.so', 'payable_detail'])
+            ->where('customer_id', $request->customer_id)
+            ->get();
 
         $rows = [];
-        foreach ($customer->do as $index => $row) {
-            $invoice = $row->invoicing;
-            if (!$invoice) continue;
 
+        foreach ($invoices as $invoice) {
             $year = $invoice->created_at->format('Y');
-
-            // hitung sisa tagihan
             $paid = $invoice->payable_detail->sum('total');
             $remaining = $invoice->grand_total_idr - $paid;
 
             if (!in_array($year, ['2022','2023']) && $remaining > 0 && $invoice->status != Invoicing::STATUS['PENDING']) {
+                
+                // kalau type 0 → normal pakai brand dari DO
+                // kalau type 1 → TT, tidak perlu DO (brand bisa -)
+                $brand = $invoice->type == 0 
+                    ? ($invoice->do->so->brand_name ?? '-') 
+                    : '-';
+
                 $rows[] = [
                     'id'            => $invoice->id,
                     'date'          => $invoice->created_at->format('d-m-Y'),
                     'code'          => $invoice->code,
-                    'tagihan'       => number_format($invoice->grand_total_idr,0,',','.'),
-                    'sisa_tagihan'  => number_format($remaining,0,',','.'),
+                    'brand'         => $brand,
+                    'tagihan'       => number_format($invoice->grand_total_idr, 0, ',', '.'),
+                    'sisa_tagihan'  => number_format($remaining, 0, ',', '.'),
+                    'type_value'    => $invoice->type,
+                    'type_name'     => $invoice->type(), // method type() di model
                 ];
             }
         }
+
+        // Urutkan: TT (1) di atas normal (0)
+        usort($rows, function($a, $b) {
+             return $b['type_value'] <=> $a['type_value'];
+        });
 
         return response()->json($rows);
     }

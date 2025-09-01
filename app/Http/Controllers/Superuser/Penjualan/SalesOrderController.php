@@ -1340,21 +1340,21 @@ class SalesOrderController extends Controller
                             }
 
                             // Check stok
-                            $base_pack_id = preg_replace('/_\\d+$/', '', $value["product_packaging_id"]); // jika id ada suffiks
+                            // $base_pack_id = preg_replace('/_\\d+$/', '', $value["product_packaging_id"]); // jika id ada suffiks
                             
-                            $atp = $this->getAtp($request->origin_warehouse_id, $base_pack_id);
+                            // $atp = $this->getAtp($request->origin_warehouse_id, $base_pack_id);
 
-                            if ($do_qty > 0 && $do_qty > $atp) {
-                                $out_of_stock = true;
-                                $product      = $base_pack_id;
-                                break;
-                            }
+                            // if ($do_qty > 0 && $do_qty > $atp) {
+                            //     $out_of_stock = true;
+                            //     $product      = $base_pack_id;
+                            //     break;
+                            // }
         
-                            if(empty($do_qty) && $rej_qty > 0){
-                                $updateSO = SalesOrderItem::where('id',$value["so_item_id"])->update([
-                                    'qty_worked' => $do_qty
-                                ]);
-                            }
+                            // if(empty($do_qty) && $rej_qty > 0){
+                            //     $updateSO = SalesOrderItem::where('id',$value["so_item_id"])->update([
+                            //         'qty_worked' => $do_qty
+                            //     ]);
+                            // }
                         }
 
                         if (count($data) == 0) {

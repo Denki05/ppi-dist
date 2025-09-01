@@ -31,8 +31,8 @@
             <input type="radio" id="tab1" name="tabs" checked hidden>
             <label for="tab1" class="tab-label tab-list" data-tab="content1">Nota Kredit</label>
 
-            <!-- <input type="radio" id="tab2" name="tabs" hidden>
-            <label for="tab2" class="tab-label tab-list" data-tab="content2">Done</label> -->
+            <input type="radio" id="tab2" name="tabs" hidden>
+            <label for="tab2" class="tab-label tab-list" data-tab="content2">Done</label>
         </main>
 
         {{-- Tab Content: Kasir --}}
@@ -71,6 +71,10 @@
                                                 data-jumlah_nota_kredit="{{ $p->cost->purchase_total_idr ?? 0 }}"
                                                 data-payment_status="{!! $p->payment_status() !!}"
                                                 data-retur_type="{{ $p->type() }}"
+
+                                                data-nota_baru_id="{{ $p->invoiceNew->id ?? '-' }}"
+                                                data-nota_baru="{{ $p->invoiceNew->do_code ?? '-' }}"
+                                                data-jumlah_nota_baru="{{$p->invoiceNew->do_detail_cost->purchase_total_idr ?? 0}}"
                                             >
                                                 <td>{{ $loop->iteration }}</td>
                                                 <td>{{ $p->code }}</td>
@@ -111,6 +115,18 @@
                                                     <input type="text" id="jumlah_nota_awal_cell" name="jumlah_nota_awal_cell" style="font-size: 1rem;" class="form-control form-control-sm text-end" readonly>
                                                 </td>
                                             </tr>
+
+                                            <tr>
+                                                <td>Nota Baru</td>
+                                                <td>
+                                                    <input type="text" id="nota_baru_cell" style="font-size: 1rem; font-weight: bold;" class="form-control form-control-sm text-center" readonly>
+                                                    <input type="hidden" id="do_baru_id" name="do_baru_id">
+                                                </td>
+                                                <td>
+                                                    <input type="text" id="jumlah_nota_baru_cell" name="jumlah_nota_baru_cell" style="font-size: 1rem;" class="form-control form-control-sm text-end" readonly>
+                                                </td>
+                                            </tr>
+
                                             <tr>
                                                 <td>Nota Kredit</td>
                                                 <td>
@@ -315,6 +331,11 @@
     height: 100%;
     border: none;
 }
+
+.table-fixed-height {
+    max-height: 400px; /* atur sesuai kebutuhan */
+    overflow-y: auto;
+}
 </style>
 
 <script type="text/javascript">
@@ -351,12 +372,20 @@ $(document).ready(function(){
         let jumlah_nota_awal = parseFloat($(this).data('jumlah_nota_awal')) || 0;
         let nota_kredit = $(this).data('nota_kredit') || '-';
         let jumlah_nota_kredit = parseFloat($(this).data('jumlah_nota_kredit')) || 0;
+
         let do_id = $(this).data('do_id') || '';
         let retur_id = $(this).data('retur_id') || '';
-        let total_piutang = jumlah_nota_awal - jumlah_nota_kredit;
+
+        let nota_baru = $(this).data('nota_baru') || '-';
+        let jumlah_nota_baru = parseFloat($(this).data('jumlah_nota_baru')) || 0;
+        let do_baru_id = $(this).data('do_baru_id') || '';
+
+        let total_piutang = jumlah_nota_awal + jumlah_nota_baru - jumlah_nota_kredit;
 
         $('#nota_awal_cell').val(nota_awal);
         $('#jumlah_nota_awal_cell').val(formatIDR(jumlah_nota_awal));
+        $('#nota_baru_cell').val(nota_baru);
+        $('#jumlah_nota_baru_cell').val(formatIDR(jumlah_nota_baru));
         $('#nota_kredit_cell').val(nota_kredit);
         $('#jumlah_nota_kredit_cell').val(formatIDR(jumlah_nota_kredit));
         $('#total_piutang_cell').val(formatIDR(total_piutang));

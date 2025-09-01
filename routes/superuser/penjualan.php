@@ -239,7 +239,7 @@ Route::group([
         Route::get('/create/pdf_tt_fat/{data?}/{protect?}', 'SaleReturnController@pdf_tt_fat')->name('pdf_tt_fat');
         Route::get('/create/pdf_refund/{data?}/{protect?}', 'SaleReturnController@pdf_refund')->name('pdf_refund');
         Route::get('/pdf-download/{id}', 'SaleReturnController@pdf_download')->name('pdf_download');
-
+        Route::post('{id}/update-do-new', 'SaleReturnController@updateDoNewId')->name('updateDoNewId');
     });
     Route::resource('sale_return', 'SaleReturnController');
 });

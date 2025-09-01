@@ -134,10 +134,17 @@
     </thead>
     <tbody>
       <tr>
-        <td style="text-align: center;">Invoice</td>
+        <td style="text-align: center;">Nota Awal</td>
         <td style="text-align: center;">{{ $getDo->do_code }}</td>
         <td class="text-right">{{ number_format($getDo->do_detail_cost->purchase_total_idr, 0, ',', '.') }}</td>
       </tr>
+      @if($getRetur->type == 2)
+      <tr>
+        <td style="text-align: center;">Nota Baru</td>
+        <td style="text-align: center;">{{ $getRetur->invoiceNew->do_code ?? '-' }}</td>
+        <td class="text-right">{{ number_format($getRetur->invoiceNew->do_detail_cost->purchase_total_idr ?? 0, 0, ',', '.') }}</td>
+      </tr>
+      @endif
       <tr>
         <td style="text-align: center;">Nota Kredit</td>
         <td style="text-align: center;">{{ $getRetur->code }}</td>
@@ -145,7 +152,7 @@
       </tr>
       <tr>
         <td colspan="2" class="text-right"><strong>Total :</strong></td>
-        <td class="text-right"><strong>{{ number_format( $getDo->do_detail_cost->purchase_total_idr - $getRetur->cost->purchase_total_idr, 0, ',', '.') }}</strong></td>
+        <td class="text-right"><strong>{{ number_format( $getDo->do_detail_cost->purchase_total_idr + ($getRetur->invoiceNew->do_detail_cost->purchase_total_idr ?? 0) - $getRetur->cost->purchase_total_idr, 0, ',', '.') }}</strong></td>
       </tr>
     </tbody>
   </table>

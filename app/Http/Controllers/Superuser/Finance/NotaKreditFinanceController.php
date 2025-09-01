@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Superuser\Finance;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use App\Entities\Finance\ReturFat;
+use App\Entities\Finance\Invoicing;
 use App\Entities\Penjualan\SaleReturn;
 use App\Entities\Setting\UserMenu;
 use Validator;
@@ -110,10 +111,12 @@ class NotaKreditFinanceController extends Controller
                 $retur_fat = new ReturFat;
                 $retur_fat->code = $getRetur->code;
                 $retur_fat->do_id = $do_id;
+                $retur_fat->do_new_id = $getRetur->invoice_new_id; // Menyimpan ID nota baru jika ada
                 $retur_fat->retur_id = $retur_id;
 
                 // Perbaikan: Bersihkan string nominal dari titik dan koma
                 $retur_fat->total_nota = (float)str_replace(['.', ','], '', $request->jumlah_nota_awal_cell);
+                $retur_fat->total_nota_new = (float)str_replace(['.', ','], '', $request->jumlah_nota_baru_cell);
                 $retur_fat->total_retur = (float)str_replace(['.', ','], '', $request->jumlah_nota_kredit_cell);
                 $retur_fat->total_final = (float)str_replace(['.', ','], '', $request->total_piutang_cell);
 
@@ -122,6 +125,20 @@ class NotaKreditFinanceController extends Controller
                 $retur_fat->status = 1; // Ubah status menjadi 1 karena sudah diverifikasi
                 $retur_fat->created_by = Auth::user()->id;
                 $retur_fat->save();
+
+                // buat invoice baru
+                // $data = [
+                //     'code' => $getRetur->code,
+                //     'do_id' => $retur_fat->id, // ambil dari table finance_retur
+                //     'customer_id' => $getRetur->customer->customer_id,
+                //     'customer_other_address_id' => $getRetur->customer_other_address_id,
+                //     'grand_total_idr' => (float)str_replace(['.', ','], '', $request->total_piutang_cell),
+                //     'status' => 1,
+                //     'type' => 1,
+                //     'created_by' => Auth::id(),
+                // ];
+
+                // $insert_invoice = Invoicing::create($data);
 
                 DB::commit();
 
@@ -132,6 +149,7 @@ class NotaKreditFinanceController extends Controller
             }
 
         } catch (\Throwable $e) {
+            dd($e);
             DB::rollback();
             Log::error('Payable creation failed: ' . $e->getMessage());
 

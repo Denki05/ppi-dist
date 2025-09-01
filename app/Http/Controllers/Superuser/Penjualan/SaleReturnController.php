@@ -132,9 +132,11 @@ class SaleReturnController extends Controller
         }
 
         $sales_retun = SaleReturn::get();
+        $salesOrder = SalesOrder::with('member')->where('penjualan_so.status', 4)->where('created_at', '>=', Carbon::now()->subDays(30)->toDateTimeString())->get();
 
         $data = [
-            'sales_return' => $sales_retun
+            'sales_return' => $sales_retun,
+            'salesOrder'   => $salesOrder,
         ];
 
         return view('superuser.penjualan.sale_return.index', $data);
@@ -376,6 +378,29 @@ class SaleReturnController extends Controller
         }
     }
 
+    public function updateDoNewId(Request $request, $id)
+    {
+        try {
+            $request->validate([
+                'do_new_id' => 'required|exists:penjualan_so,id' // sesuaikan nama tabel kalau SO ada di `penjualan_so`
+            ]);
+
+            $saleReturn = SaleReturn::findOrFail($id);
+            $saleReturn->do_new_id = $request->do_new_id;
+            $saleReturn->save();
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Nota pengganti berhasil disimpan ke retur.'
+            ]);
+        } catch (\Throwable $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Terjadi kesalahan: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
     public function acc($id)
     {
         if (Auth::user()->is_superuser == 0) {
@@ -399,6 +424,11 @@ class SaleReturnController extends Controller
                     return redirect()->route('superuser.penjualan.sale_return.index')
                         ->with('error', 'Proses QC sedang berlangsung, tidak bisa melanjutkan proses');
                 }
+            }
+
+            if ($sale_return->type == 2 && $sale_return->do_new_id == null) {
+                return redirect()->route('superuser.penjualan.sale_return.index')
+                        ->with('error', 'Harus melampirkan DO baru untuk tukar barang');
             }
 
             $sale_return->retur_date = now();
