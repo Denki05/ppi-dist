@@ -112,7 +112,13 @@
                                 <div id="invoice_detail">
                                     <input type="hidden" name="invoice_id" id="detail_invoice_id">
                                     <div class="row">
-                                        <div class="col-md-4">
+                                        <div class="col-md-3">
+                                            <div class="form-group">
+                                                <label for="info_tagihan">Kode - Tipe</label>
+                                                <input type="text" id="info_tagihan" name="info_tagihan" class="form-control text-center border-0" readonly>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-3">
                                             <div class="form-group">
                                                 <label for="detail_invoice_total">Total Tagihan</label>
                                                 <input type="text" id="detail_invoice_total" class="form-control text-center border-0" readonly>
@@ -139,7 +145,14 @@
                                             </div>
                                         </div>
                                     </div>
-                                    <button type="button" class="btn btn-primary w-25" id="processPayment">Proses</button>
+                                    <div class="mt-2">
+                                        <button type="button" id="prosesBtn" class="btn btn-warning">
+                                            <i class="fa fa-cogs"></i> Proses
+                                        </button>
+                                        <button type="button" id="settelBtn" class="btn btn-success" disabled>
+                                            <i class="fa fa-check"></i> Settel
+                                        </button>
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -309,6 +322,9 @@
 
 <script>
     $(document).ready(function () {
+        $('#lockSaldoBtn').removeClass("btn-success").addClass("btn-danger");
+        $('#lockSaldoBtn').find('i').removeClass("fa-lock").addClass("fa-lock-open");
+
         // Helper function untuk format angka ke Rupiah
         function formatRupiah(angka, prefix) {
             let number_string = angka.toString().replace(/[^,\d]/g, '').toString(),
@@ -334,12 +350,47 @@
 
         let saldoTransfer = 0;
 
-        $('#saldo_transfer').on('input', function() {
+        $('#saldo_transfer').on('blur', function() {
             let cleanValue = cleanRupiah($(this).val());
-            saldoTransfer = cleanValue;
-            $('#saldo_sisa').val(saldoTransfer);
             $(this).val(formatRupiah(cleanValue, 'Rp. '));
+            $('#saldo_sisa').val(formatRupiah(cleanValue, 'Rp. '));
+
+            if (cleanValue > 0) {
+                $(this).prop("readonly", true);
+                $('#lockSaldoBtn').removeClass("btn-danger").addClass("btn-success");
+                $('#lockSaldoBtn').find('i').removeClass("fa-lock-open").addClass("fa-lock");
+            }
         });
+
+        $("#lockSaldoBtn").on("click", function () {
+            const saldoInput   = $("#saldo_transfer");
+            const saldoSisa    = cleanRupiah($("#saldo_sisa").val());
+            const icon         = $(this).find("i");
+            const isReadonly   = saldoInput.prop("readonly");
+
+            // Jika sedang terkunci → coba buka
+            if (isReadonly) {
+                if (saldoSisa === 0) {
+                    saldoInput.prop("readonly", false);
+                    $(this).toggleClass("btn-success btn-danger");
+                    icon.toggleClass("fa-lock fa-lock-open");
+                } else {
+                    alert("Saldo belum 0, tidak bisa release!");
+                }
+                return;
+            }
+
+            // Jika sedang terbuka → coba kunci
+            const saldoSekarang = cleanRupiah(saldoInput.val());
+            if (saldoSekarang > 0) {
+                saldoInput.prop("readonly", true);
+                $(this).toggleClass("btn-danger btn-success");
+                icon.toggleClass("fa-lock-open fa-lock");
+            } else {
+                alert("Masukkan nominal transfer terlebih dahulu!");
+            }
+        });
+
 
         $('#payment_amount').on('input', function() {
             let cleanValue = cleanRupiah($(this).val());
@@ -376,6 +427,7 @@
             let customerId = $(this).val();
 
             $('#detail_invoice_id').val('');
+            $('#info_tagihan').val('');
             $('#detail_invoice_total').val('');
             $('#payment_amount').val('');
             $('#balance_checkbox').prop('disabled', true).prop('checked', false);
@@ -391,7 +443,8 @@
                                     data-id="${item.id}" 
                                     data-code="${item.code}" 
                                     data-total-raw="${item.sisa_tagihan.replace(/\./g, '').replace(/,/g, '.')}"
-                                    data-total="${item.sisa_tagihan}">
+                                    data-total="${item.sisa_tagihan}"
+                                    data-type-nota="${item.type_name}">
                                     <td>${item.type_name}</td>
                                     <td>${item.date}</td>
                                     <td>${item.code}</td>
@@ -421,7 +474,11 @@
             
             saldoTransfer = 0;
             $('#saldo_transfer').val('');
+            $('#saldo_transfer').prop("readonly", false); // Add this line
             $('#saldo_sisa').val(0);
+
+            // Reset the button's state to unlocked
+           
             
             $('#balance_checkbox').prop('checked', false).prop('disabled', true);
 
@@ -451,116 +508,18 @@
         $(document).on('click', '.invoice-row', function(){
             let invoiceId = $(this).data('id');
             let totalTagihan = cleanRupiah($(this).data('total-raw').toString());
+            let invoiceCode = $(this).data('code');
+            let typeNota = $(this).data('type-nota');
             
             $('#detail_invoice_id').val(invoiceId);
             $('#detail_invoice_total').val(formatRupiah(totalTagihan, 'Rp. '));
             $('#payment_amount').val(formatRupiah(totalTagihan, 'Rp. '));
-            
+            $('#info_tagihan').val(`${invoiceCode} - ${typeNota}`);
+
             $('#balance_checkbox').prop('disabled', false).prop('checked', false);
 
             $('#invoice_table tbody tr').removeClass('selected-row');
             $(this).addClass('selected-row');
-        });
-
-        $('#processPayment').on('click', function(e) {
-            e.preventDefault();
-
-            if (!confirm('Apakah Anda yakin ingin memproses pembayaran ini?')) {
-                return;
-            }
-
-            let customerId = $('#selectCustomer').val(); // Gunakan selectCustomer
-            let payDate = $('#pay_date').val();
-            let invoiceId = $('#detail_invoice_id').val();
-            let note = $('#note').val();
-            let paymentAmount = cleanRupiah($('#payment_amount').val());
-            let isBalanced = $('#balance_checkbox').is(':checked');
-            let totalTagihan = cleanRupiah($('#detail_invoice_total').val());
-
-            if (!customerId || !payDate || !invoiceId || (paymentAmount <= 0 && !isBalanced)) {
-                alert('Mohon lengkapi data pembayaran dengan benar!');
-                return;
-            }
-
-            let saldoSisa = parseFloat($('#saldo_sisa').val()) || 0;
-            
-            let amountToSend;
-            if (isBalanced) {
-                amountToSend = totalTagihan;
-            } else {
-                amountToSend = paymentAmount;
-                if (amountToSend > saldoSisa) {
-                    alert('Saldo transfer tidak mencukupi untuk pembayaran ini');
-                    return;
-                }
-            }
-
-            let data = {
-                _token: '{{ csrf_token() }}',
-                customer_id: customerId,
-                pay_date: payDate,
-                note: note,
-                repeater: [{
-                    invoice_id: invoiceId,
-                    is_balanced: isBalanced ? 1 : 0, 
-                    payable: amountToSend
-                }]
-            };
-            
-            $.ajax({
-                url: "{{ route('superuser.finance.payable.store') }}",
-                method: "POST",
-                data: data,
-                success: function(res) {
-                    if (res.success) {
-                        alert('Pembayaran berhasil diproses!');
-                        
-                        saldoSisa -= amountToSend; 
-                        $('#saldo_sisa').val(saldoSisa);
-                        $('#saldo_transfer').val(formatRupiah(saldoSisa, 'Rp. '));
-
-                        // Temukan baris invoice yang baru saja dibayar
-                        let row = $(`tr[data-id="${invoiceId}"]`);
-
-                        // Hapus class unpaid dan tambahkan class paid
-                        row.removeClass('invoice-unpaid').addClass('invoice-paid');
-                        
-                        // Perbarui nilai sisa tagihan di tabel menjadi 0
-                        row.find('td:last').text(formatRupiah(0, 'Rp. ')); // Kolom terakhir adalah Sisa
-                        row.data('total-raw', 0); // Perbarui data atribut untuk perhitungan selanjutnya
-                        
-                        // Nonaktifkan klik pada baris yang sudah lunas
-                        row.off('click').addClass('disabled-row');
-
-                        // Reset form detail
-                        $('#detail_invoice_id').val('');
-                        $('#detail_invoice_total').val('');
-                        $('#payment_amount').val('');
-                        $('#note').val('');
-                        
-                        // Hapus highlight
-                        $('#invoice_table tbody tr').removeClass('selected-row');
-                        
-                        // Reset tanggal dan checkbox
-                        $('#pay_date').val('');
-                        $('#balance_checkbox').prop('checked', false).prop('disabled', true);
-                    } else {
-                        alert('Terjadi kesalahan: ' + res.message);
-                    }
-                },
-                error: function(xhr) {
-                    let error = JSON.parse(xhr.responseText);
-                    if (error.errors) {
-                        let errorMessage = '';
-                        for (let key in error.errors) {
-                            errorMessage += error.errors[key][0] + '\n';
-                        }
-                        alert('Gagal memproses pembayaran:\n' + errorMessage);
-                    } else {
-                        alert('Gagal terhubung ke server. Mohon coba lagi. ' + (error.message || ''));
-                    }
-                }
-            });
         });
 
         $('input[name="tabs"]').on('change', function() {
@@ -594,26 +553,117 @@
                 "<'row'<'col-sm-5'i><'col-sm-7'p>>",
         });
 
-        $("#lockSaldoBtn").on("click", function () {
-            let saldo = parseFloat($("#saldo_transfer").val()) || 0;
+        // penampung data sementara
+        let draftData = {
+            _token: $('meta[name="csrf-token"]').attr("content"),
+            customer_id: null,
+            pay_date: null,
+            note: null,
+            repeater: [] // menampung banyak invoice
+        };
 
-            if (!$(this).hasClass("locked")) {
-                // Lock mode
-                $("#saldo_transfer").prop("readonly", true);
-                $(this).addClass("locked btn-success")
-                    .removeClass("btn-outline-secondary btn-danger")
-                    .html('<i class="fa fa-lock"></i>');
-            } else {
-                // Release mode (hanya kalau saldo 0)
-                if (saldo === 0) {
-                    $("#saldo_transfer").prop("readonly", false);
-                    $(this).removeClass("locked btn-success")
-                        .addClass("btn-danger")
-                        .html('<i class="fa fa-unlock"></i>');
-                } else {
-                    alert("Saldo belum 0, tidak bisa release!");
-                }
+        $("#prosesBtn").on("click", function () {
+            let customerId = $('#selectCustomer').val();
+            let payDate = $('#pay_date').val();
+            let invoiceId = $('#detail_invoice_id').val();
+            let note = $('#note').val();
+            let paymentAmount = cleanRupiah($('#payment_amount').val());
+            let isBalanced = $('#balance_checkbox').is(':checked');
+            let totalTagihan = cleanRupiah($('#detail_invoice_total').val());
+            let saldoSisa = cleanRupiah($('#saldo_sisa').val());
+
+            if (!customerId || !payDate || !invoiceId || (paymentAmount <= 0 && !isBalanced)) {
+                alert('Mohon lengkapi data pembayaran dengan benar!');
+                return;
             }
+
+            let amountToPay = isBalanced ? totalTagihan : paymentAmount;
+
+            if (amountToPay > saldoSisa) {
+                alert('Saldo transfer tidak mencukupi untuk pembayaran ini');
+                return;
+            }
+
+            // kalau data baru, set header
+            if (!draftData.customer_id) {
+                draftData.customer_id = customerId;
+                draftData.pay_date = payDate;
+                draftData.note = note;
+            }
+
+            // cek apakah invoice sudah pernah diproses
+            let existing = draftData.repeater.find(item => item.invoice_id === invoiceId);
+            if (existing) {
+                alert("Invoice ini sudah diproses!");
+                return;
+            }
+
+            // simpan invoice ke draft array
+            draftData.repeater.push({
+                invoice_id: invoiceId,
+                is_balanced: isBalanced ? 1 : 0,
+                payable: amountToPay
+            });
+
+            // update saldo_sisa di frontend
+            let newSaldoSisa = saldoSisa - amountToPay;
+            $('#saldo_sisa').val(formatRupiah(newSaldoSisa, 'Rp. '));
+
+            // update tabel invoice
+            let row = $(`tr[data-id="${invoiceId}"]`);
+            let sisaTagihan = totalTagihan - amountToPay;
+            row.find('td:last').text(formatRupiah(sisaTagihan, 'Rp. '));
+            if (sisaTagihan <= 0) {
+                row.removeClass('invoice-unpaid').addClass('invoice-paid');
+                row.off('click').addClass('disabled-row');
+            }
+
+            // aktifkan tombol settel
+            $("#settelBtn").prop("disabled", false);
+
+            alert("Invoice berhasil diproses sementara. Klik Settel untuk simpan ke database.");
+        });
+
+        $("#settelBtn").on("click", function () {
+            if (!draftData || draftData.repeater.length === 0) {
+                alert("Belum ada data invoice yang diproses!");
+                return;
+            }
+
+            $.ajax({
+                url: "{{ route('superuser.finance.payable.store') }}",
+                method: "POST",
+                data: draftData,
+                success: function (res) {
+                    if (res.success) {
+                        alert("Data berhasil disimpan!");
+                        // reset draft
+                        draftData = {
+                            _token: $('meta[name="csrf-token"]').attr("content"),
+                            customer_id: null,
+                            pay_date: null,
+                            note: null,
+                            repeater: []
+                        };
+                        $("#settelBtn").prop("disabled", true);
+
+                        // reset form detail
+                        $('#detail_invoice_id').val('');
+                        $('#info_tagihan').val('');
+                        $('#detail_invoice_total').val('');
+                        $('#payment_amount').val('');
+                        $('#note').val('');
+                        $('#invoice_table tbody tr').removeClass('selected-row');
+                        $('#balance_checkbox').prop('checked', false).prop('disabled', true);
+                    } else {
+                        alert('Terjadi kesalahan: ' + res.message);
+                    }
+                },
+                error: function (xhr) {
+                    alert("Terjadi kesalahan saat menyimpan!");
+                    console.error(xhr.responseText);
+                }
+            });
         });
     });
 </script>
