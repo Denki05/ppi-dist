@@ -9,6 +9,8 @@ class SaleReturnCost extends Model
 {
     protected $fillable = [
         'retur_id',
+        'discount_1_persen',
+        'discount_2_persen',
         'discount_1',
         'discount_2',
         'discount_idr',

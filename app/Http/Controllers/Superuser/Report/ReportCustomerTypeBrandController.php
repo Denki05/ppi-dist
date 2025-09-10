@@ -76,17 +76,7 @@ class ReportCustomerTypeBrandController extends Controller
     public function postData(Request $request)
     {
         try {
-            // Mengambil rentang tanggal dari query string (GET request)
-            $start = $request->query('period_from');
-            $end = $request->query('period_to');
-
-            if (!$start || !$end) {
-                return redirect()->back()->with('error', 'Error: Rentang tanggal harus diisi.');
-            }
-
-            // Memastikan format tanggal sesuai untuk query database
-            $startDate = Carbon::parse($start)->startOfDay();
-            $endDate = Carbon::parse($end)->endOfDay();
+            $currentYear = 2024;
 
             DB::table('penjualan_do')
                 ->leftJoin('penjualan_do_details', 'penjualan_do_details.do_id', '=', 'penjualan_do.id')
@@ -108,14 +98,11 @@ class ReportCustomerTypeBrandController extends Controller
                     'penjualan_so.so_date AS invoice_date',
                     'penjualan_so.brand_name AS invoice_brand',
                     'penjualan_so.type_so AS invoice_type',
-                    'penjualan_do_details.purchase_total_idr AS invoice_purchase',
-                    'penjualan_do_details.grand_total_idr AS grand_total_idr',
-                    'penjualan_do_details.delivery_cost_idr AS invoice_delivery_order_cost',
-                    'penjualan_do_details.discount_idr AS discount_idr',
-                    'penjualan_do_details.ppn_idr AS ppn_idr'
+                    'penjualan_do.id AS do_id',
+                    'penjualan_do.idr_rate AS do_rate'
                 )
                 ->where('penjualan_do.status', 6)
-                ->whereBetween('penjualan_so.so_date', [$startDate, $endDate])
+                ->whereYear('penjualan_so.so_date', $currentYear)
                 ->where(function ($query) {
                     $query->where('master_customers.status', 1)
                         ->orWhere('master_customers.existence', 1);
@@ -124,75 +111,66 @@ class ReportCustomerTypeBrandController extends Controller
                 ->orderBy('penjualan_do.do_code')
                 ->chunk(100, function ($results) {
                     foreach ($results as $row) {
-                        // Define the attributes to find or create
+                        // ambil detail DO & item
+                        $penjualan_do_details = DB::table('penjualan_do_details')
+                            ->where('do_id', $row->do_id)
+                            ->first();
+
+                        $penjualan_do_items = DB::table('penjualan_do_item')
+                            ->where('do_id', $row->do_id)
+                            ->get();
+
+                        $purchase_total = 0;
+
+                        if ($penjualan_do_details && $penjualan_do_items->isNotEmpty()) {
+                            $subtotal_item = $penjualan_do_items->sum(function ($item) use ($row) {
+                                return (($item->price - $item->usd_disc) * $item->qty) * $row->do_rate;
+                            });
+
+                            // purchase_total_idr = subtotal - semua diskon - voucher (tanpa ppn)
+                            $purchase_total = $subtotal_item
+                                - ($penjualan_do_details->discount_1_idr ?? 0)
+                                - ($penjualan_do_details->discount_2_idr ?? 0)
+                                - ($penjualan_do_details->discount_idr ?? 0)
+                                - ($penjualan_do_details->voucher_idr ?? 0);
+                        }
+
+                        // siapkan data untuk disimpan
                         $attributes = [
                             'invoice_code' => $row->invoice_code,
                         ];
 
-                        // Define the values to be set or updated
                         $values = [
-                            'customer_id'                   => $row->customerID,
-                            'other_address_id'              => $row->otherAddressID,
-                            'customer_name'                 => $row->customer_name,
-                            'customer_type'                 => $row->customer_type,
-                            'customer_kota'                 => $row->customer_kota,
-                            'customer_provinsi'             => $row->customer_provinsi,
-                            'customer_zone'                 => $row->customer_zone,
-                            'invoice_date'                  => $row->invoice_date,
-                            'invoice_brand'                 => $row->invoice_brand,
-                            'invoice_type'                  => $row->invoice_type,
-                            'invoice_qty'                   => $row->invoice_qty ?? 0,
-                            'invoice_purchase'              => $row->invoice_purchase,
-                            'invoice_delivery_order_cost'   => $row->invoice_delivery_order_cost ?? 0,
-                            'created_at'                    => now(),
-                            'updated_at'                    => now()
+                            'customer_id'                 => $row->customerID,
+                            'other_address_id'            => $row->otherAddressID,
+                            'customer_name'               => $row->customer_name,
+                            'customer_type'               => $row->customer_type,
+                            'customer_kota'               => $row->customer_kota,
+                            'customer_provinsi'           => $row->customer_provinsi,
+                            'customer_zone'               => $row->customer_zone,
+                            'invoice_date'                => $row->invoice_date,
+                            'invoice_brand'               => $row->invoice_brand,
+                            'invoice_type'                => $row->invoice_type,
+                            'invoice_qty'                 => $row->invoice_qty ?? 0,
+                            'invoice_purchase'            => $purchase_total, // selalu pakai nilai betul
+                            'invoice_delivery_order_cost' => $penjualan_do_details->delivery_cost_idr ?? 0,
+                            'updated_at'                  => now()
                         ];
 
-                        // perhitungan ulang untuk pengecekan hasil valid purchase
-                        // $penjualan_do = DB::table('penjualan_do')
-                        // ->where('do_code', $row->invoice_code)
-                        // ->first();
-
-                        // if ($penjualan_do) {
-                        //     $penjualan_do_details = DB::table('penjualan_do_details')
-                        //         ->where('do_id', $penjualan_do->id)
-                        //         ->first();
-
-                        //     $penjualan_do_items = DB::table('penjualan_do_item')
-                        //         ->where('do_id', $penjualan_do->id)
-                        //         ->get();
-
-                        //     if ($penjualan_do_details && $penjualan_do_items->isNotEmpty()) {
-                        //         $subtotal_item = $penjualan_do_items->sum(function ($item) use ($penjualan_do) {
-                        //             return (($item->price - $item->usd_disc) * $item->qty) * $penjualan_do->idr_rate;
-                        //         });
-
-                        //         $purchase_total = $subtotal_item
-                        //             - ($penjualan_do_details->discount_1_idr ?? 0)
-                        //             - ($penjualan_do_details->discount_2_idr ?? 0)
-                        //             - ($penjualan_do_details->discount_idr ?? 0)
-                        //             - ($penjualan_do_details->voucher_idr ?? 0)
-                        //             - ($penjualan_do_details->ppn_idr ?? 0);
-
-                        //         if (abs($values['invoice_purchase'] - $purchase_total) > 2) {
-                        //             throw new Exception("Mismatch in purchase total for DO code: {$row->invoice_code}. Calculated: {$purchase_total}, Expected: {$values['invoice_purchase']}");
-                        //         }
-                        //     }
-                        // }
-
-                        // handle jika data sudah ada
+                        // simpan ke CustomerTypeBrandReports
                         $report = CustomerTypeBrandReports::firstOrNew($attributes);
                         $report->fill($values);
                         $report->save();
                     }
                 });
+
             return redirect()->back()->with('message', 'Berhasil Sync data!');
         } catch (\Exception $e) {
-            dd($e);
             Log::error('Sync data failed: ' . $e->getMessage());
             return redirect()->back()->with('error', 'Error: ' . $e->getMessage());
         }
     }
+
 
     public function print_report(Request $request)
     {
@@ -264,7 +242,7 @@ class ReportCustomerTypeBrandController extends Controller
     public function removeDt(Request $request)
     {
         // $currentMonth = Carbon::now()->month;
-        $currentYear = Carbon::now()->year;
+        $currentYear = 2024;
 
         DB::table('report_customer_type_brand')
             // ->whereMonth('invoice_date', $currentMonth)

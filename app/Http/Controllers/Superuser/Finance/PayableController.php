@@ -14,6 +14,7 @@ use App\Entities\Finance\PayableHistory;
 use App\DataTables\Finance\PayableTable;
 use App\DataTables\Report\PaymentReportTable;
 use App\Entities\Penjualan\SalesOrder;
+use App\Entities\Penjualan\SaleReturn;
 use App\Entities\Setting\UserMenu;
 use App\Repositories\CodeRepo;
 use App\Entities\Penjualan\PackingOrder;
@@ -269,8 +270,9 @@ class PayableController extends Controller
 
                     // update status sales_order
                     $total_tagihan = $get_invoice->grand_total_idr;
-                    $payment = $get_invoice->payable_detail->sum('total');
+                    $payment = $input_payable;
                     $sisa_update = $total_tagihan - $payment;
+
 
                     // Tentukan status pembayaran
                     if ($sisa_update == 0) {
@@ -825,48 +827,6 @@ class PayableController extends Controller
         return view('superuser.finance.payable.invoice_details', compact('invoice'))->render();
     }
 
-    // public function unpaidInvoices(Request $request)
-    // {
-    //     $customer = Customer::with(['do.invoicing.payable_detail'])
-    //         ->find($request->customer_id);
-
-    //     if (!$customer) {
-    //         return response()->json([]);
-    //     }
-
-    //     $rows = [];
-    //     foreach ($customer->do as $index => $row) {
-    //         $invoice = $row->invoicing;
-    //         if (!$invoice) continue;
-
-    //         $year = $invoice->created_at->format('Y');
-
-    //         // hitung sisa tagihan
-    //         $paid = $invoice->payable_detail->sum('total');
-    //         $remaining = $invoice->grand_total_idr - $paid;
-
-    //         if (!in_array($year, ['2022','2023']) && $remaining > 0 && $invoice->status != Invoicing::STATUS['PENDING']) {
-    //             $rows[] = [
-    //                 'id'            => $invoice->id,
-    //                 'date'          => $invoice->created_at->format('d-m-Y'),
-    //                 'code'          => $invoice->code,
-    //                 'brand'         => $invoice->do->so->brand_name,
-    //                 'tagihan'       => number_format($invoice->grand_total_idr,0,',','.'),
-    //                 'sisa_tagihan'  => number_format($remaining,0,',','.'),
-    //                 'type_value'    => $invoice->type,
-    //                 'type_name'     => $invoice->type(),
-    //             ];
-    //         }
-    //     }
-
-    //     // Urutkan array $rows: 'TT' (1) di atas 'N' (0)
-    //     usort($rows, function($a, $b) {
-    //         return $b['type_value'] <=> $a['type_value'];
-    //     });
-
-    //     return response()->json($rows);
-    // }
-
     public function unpaidInvoices(Request $request)
     {
         $invoices = Invoicing::with(['do.so', 'payable_detail'])
@@ -882,6 +842,12 @@ class PayableController extends Controller
 
             if (!in_array($year, ['2022','2023']) && $remaining > 0 && $invoice->status != Invoicing::STATUS['PENDING']) {
                 
+                // 🚫 skip jika invoice normal (type = 0) sudah ada retur dari DO yang sama
+                $hasRetur = SaleReturn::where('do_id', $invoice->do_id)->exists();
+                if ($invoice->type == 0 && $hasRetur) {
+                    continue;
+                }
+
                 // kalau type 0 → normal pakai brand dari DO
                 // kalau type 1 → TT, tidak perlu DO (brand bisa -)
                 $brand = $invoice->type == 0 
@@ -903,12 +869,11 @@ class PayableController extends Controller
 
         // Urutkan: TT (1) di atas normal (0)
         usort($rows, function($a, $b) {
-             return $b['type_value'] <=> $a['type_value'];
+            return $b['type_value'] <=> $a['type_value'];
         });
 
         return response()->json($rows);
     }
-
 
     public function customerSearch(Request $request)
     {

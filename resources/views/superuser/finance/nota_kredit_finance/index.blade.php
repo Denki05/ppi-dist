@@ -30,9 +30,6 @@
         <main class="tab-header">
             <input type="radio" id="tab1" name="tabs" checked hidden>
             <label for="tab1" class="tab-label tab-list" data-tab="content1">Nota Kredit</label>
-
-            <input type="radio" id="tab2" name="tabs" hidden>
-            <label for="tab2" class="tab-label tab-list" data-tab="content2">Done</label>
         </main>
 
         {{-- Tab Content: Kasir --}}
@@ -54,16 +51,16 @@
                                                 <th>#</th>
                                                 <th>Code</th>
                                                 <th>Customer</th>
-                                                <th>Total</th>
                                                 <th>Status</th>
                                             </tr>
                                         </thead>
                                         <tbody>
                                             @foreach($retur as $p)
-                                            @if($p->fat_status == 1)
+                                            @if($p->fat_status == 0)
                                             <tr class="retur-row"
                                                 style="cursor:pointer"
                                                 data-retur_id="{{ $p->id }}"
+                                                data-invoice_id="{{ $p->invoice->invoicing->id ?? '-' }}"
                                                 data-do_id="{{ $p->invoice->id ?? '-' }}"
                                                 data-nota_awal="{{ $p->invoice->do_code ?? '-' }}"
                                                 data-jumlah_nota_awal="{{ $p->invoice->do_detail_cost->purchase_total_idr ?? 0 }}"
@@ -79,7 +76,6 @@
                                                 <td>{{ $loop->iteration }}</td>
                                                 <td>{{ $p->code }}</td>
                                                 <td>{{ $p->customer->name }} {{ $p->customer->text_kota }}</td>
-                                                <td>{{ number_format($p->cost->purchase_total_idr,0,',','.') }}</td>
                                                 <td>{!! $p->payment_status() !!}</td>
                                             </tr>
                                             @endif
@@ -115,23 +111,12 @@
                                                     <input type="text" id="jumlah_nota_awal_cell" name="jumlah_nota_awal_cell" style="font-size: 1rem;" class="form-control form-control-sm text-end" readonly>
                                                 </td>
                                             </tr>
-
-                                            <tr>
-                                                <td>Nota Baru</td>
-                                                <td>
-                                                    <input type="text" id="nota_baru_cell" style="font-size: 1rem; font-weight: bold;" class="form-control form-control-sm text-center" readonly>
-                                                    <input type="hidden" id="do_baru_id" name="do_baru_id">
-                                                </td>
-                                                <td>
-                                                    <input type="text" id="jumlah_nota_baru_cell" name="jumlah_nota_baru_cell" style="font-size: 1rem;" class="form-control form-control-sm text-end" readonly>
-                                                </td>
-                                            </tr>
-
                                             <tr>
                                                 <td>Nota Kredit</td>
                                                 <td>
                                                     <input type="text" id="nota_kredit_cell" style="font-size: 1rem; font-weight: bold;" class="form-control form-control-sm text-center" readonly>
                                                     <input type="hidden" id="retur_id" name="retur_id">
+                                                    <input type="hidden" id="invoice_id" name="invoice_id">
                                                 </td>
                                                 <td>
                                                     <input type="text" id="jumlah_nota_kredit_cell" name="jumlah_nota_kredit_cell" style="font-size: 1rem;" class="form-control form-control-sm text-end" readonly>
@@ -153,69 +138,6 @@
                     </div>
                 </div>
             </form>
-        </div>
-
-        {{-- Tab Content: SPV --}}
-        <div class="tab-content" id="content2">
-            <div class="row align-items-center">
-                <div class="col-auto">
-                    <label for="selectCode" class="col-form-label">Code</label>
-                </div>
-                <div class="col-auto">
-                    <select class="form-control js-select2" id="selectCode">
-                        <option value="">Pilih Code</option>
-                        @foreach($retur as $p)
-                        @if($p->fat_status == 2)
-                        <option value="{{ $p->id }}"
-                            data-type="{{ $p->type() }}"
-                            data-status="{{ $p->payment_status() }}">
-                            {{ $p->code }}
-                        </option>
-                        @endif
-                        @endforeach
-                    </select>
-                </div>
-
-                <div class="col-auto">
-                    <label for="inputType" class="col-form-label">Type</label>
-                </div>
-                <div class="col-auto">
-                    <input type="text" class="form-control text-center" id="inputType" style="width: 130px;" readonly>
-                </div>
-
-                <div class="col-auto">
-                    <label for="inputStatus" class="col-form-label">Status</label>
-                </div>
-                <div class="col-auto">
-                    <input type="text" class="form-control text-center" id="inputStatus" style="width: 120px;" readonly>
-                </div>
-
-                <div class="col-auto">
-                    
-                </div>
-            </div>
-
-            <br>
-
-            <div class="row">
-                <div class="col-6">
-                    <div class="card">
-                        <div class="card-body">
-                            <iframe id="iframeNotaKreditFat" src="" style="width:100%; height:500px;" frameborder="0"></iframe>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="col-6">
-                    <div class="card">
-                        <div class="card-body">
-                            <iframe src="" style="width:100%; height:500px;" frameborder="0"></iframe>
-                            
-                            
-                        </div>
-                    </div>
-                </div>
-            </div>
         </div>
     </div>
 </div>
@@ -308,7 +230,7 @@
 .active-row { background-color: #fff3cd; }
 
 .table-fixed-height {
-    height: 270px;
+    height: 350px;
     overflow-y: auto;
 }
 .custom-modal {
@@ -374,23 +296,20 @@ $(document).ready(function(){
         let jumlah_nota_kredit = parseFloat($(this).data('jumlah_nota_kredit')) || 0;
 
         let do_id = $(this).data('do_id') || '';
+        let invoice_id = $(this).data('invoice_id') || '';
         let retur_id = $(this).data('retur_id') || '';
 
-        let nota_baru = $(this).data('nota_baru') || '-';
-        let jumlah_nota_baru = parseFloat($(this).data('jumlah_nota_baru')) || 0;
-        let do_baru_id = $(this).data('do_baru_id') || '';
 
-        let total_piutang = jumlah_nota_awal + jumlah_nota_baru - jumlah_nota_kredit;
+        let total_piutang = jumlah_nota_awal - jumlah_nota_kredit;
 
         $('#nota_awal_cell').val(nota_awal);
         $('#jumlah_nota_awal_cell').val(formatIDR(jumlah_nota_awal));
-        $('#nota_baru_cell').val(nota_baru);
-        $('#jumlah_nota_baru_cell').val(formatIDR(jumlah_nota_baru));
         $('#nota_kredit_cell').val(nota_kredit);
         $('#jumlah_nota_kredit_cell').val(formatIDR(jumlah_nota_kredit));
         $('#total_piutang_cell').val(formatIDR(total_piutang));
 
         $('#do_id').val(do_id);
+        $('#invoice_id').val(invoice_id);
         $('#retur_id').val(retur_id);
 
         $('.retur-row').removeClass('active-row');
@@ -403,6 +322,7 @@ $(document).ready(function(){
     // Handler untuk tombol CETAK
     $('#btnGenerate').on('click', function() {
         let returId = $('#retur_id').val();
+        let invoicingId = $('#invoice_id').val();
 
         // Cek apakah returId sudah ada (berarti baris sudah dipilih)
         if (!returId) {
@@ -420,18 +340,18 @@ $(document).ready(function(){
 
         // Tentukan URL PDF pertama
         let pdfUrl1 = '';
-        if (returType === 'RETUR' && paymentStatus && paymentStatus.trim() === 'LUNAS') {
+        if (returType === 'RETUR' && paymentStatus.trim() === 'LUNAS') {
+            pdfUrl1 = "{{ route('superuser.penjualan.sale_return.pdf_refund', ['data' => '']) }}" + returId;    
+        } else if (returType === 'TUKAR BARANG' && paymentStatus.trim() === 'LUNAS') {
             pdfUrl1 = "{{ route('superuser.penjualan.sale_return.pdf_refund', ['data' => '']) }}" + returId;
         } else {
-            pdfUrl1 = "{{ route('superuser.penjualan.sale_return.pdf_tt', ['data' => '']) }}" + returId;
-        } 
+            pdfUrl1 = "{{ route('superuser.penjualan.sale_return.mergePdf', ['invoice' => 0, 'retur' => 0]) }}";
+            pdfUrl1 = pdfUrl1.replace('/0/0', '/' + invoicingId + '/' + returId);
 
-        // Tentukan URL PDF kedua (opsional, bisa sama atau berbeda sesuai kebutuhan)
-        let pdfUrl2 = "{{ route('superuser.penjualan.sale_return.pdf_tt_fat', ['data' => '']) }}" + returId;
+        }
 
         // Load URL ke iframe
-        $('#modalIframe').attr('src', pdfUrl1);
-        // $('#modalIframe2').attr('src', pdfUrl1);
+        $('#modalIframe').attr('src', pdfUrl1); 
 
         // Tampilkan modal (Bootstrap 4)
         $('#printModal').modal({

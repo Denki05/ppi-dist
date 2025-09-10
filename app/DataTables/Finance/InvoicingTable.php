@@ -19,7 +19,8 @@ class InvoicingTable extends Table
             ->join('master_customer_other_addresses', 'master_customer_other_addresses.id', '=', 'finance_invoicing.customer_other_address_id')
             ->join('penjualan_do', 'penjualan_do.id', '=', 'finance_invoicing.do_id')
             ->join('penjualan_so', 'penjualan_so.id', '=', 'penjualan_do.so_id')
-            ->whereIn('finance_invoicing.status', [1, 4])
+            ->where('finance_invoicing.status', 1)
+            ->where('finance_invoicing.type', 0)
             ->where('penjualan_so.type_so', 'nonppn')
             ->select(
                 'finance_invoicing.id AS id',

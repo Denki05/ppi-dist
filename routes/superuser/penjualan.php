@@ -240,6 +240,8 @@ Route::group([
         Route::get('/create/pdf_refund/{data?}/{protect?}', 'SaleReturnController@pdf_refund')->name('pdf_refund');
         Route::get('/pdf-download/{id}', 'SaleReturnController@pdf_download')->name('pdf_download');
         Route::post('{id}/update-do-new', 'SaleReturnController@updateDoNewId')->name('updateDoNewId');
+        Route::get('/mergePdf/{invoice}/{retur}', 'SaleReturnController@mergePdf')->name('mergePdf');
+        Route::post('/proses/{id}', 'SaleReturnController@proses')->name('proses');
     });
     Route::resource('sale_return', 'SaleReturnController');
 });

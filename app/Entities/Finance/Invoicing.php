@@ -32,8 +32,8 @@ class Invoicing extends Model
     ];
 
     const TYPE = [
-        'N' => 0,
-        'TT' => 1,
+        'N' => 0, // Normal
+        'TT' => 1, // TT
     ];
 
     public function do(){

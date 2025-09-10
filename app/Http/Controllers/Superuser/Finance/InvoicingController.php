@@ -15,6 +15,8 @@ use App\Entities\Master\Customer;
 use App\Entities\Master\Company;
 use App\Entities\Master\Ekspedisi;
 use App\Entities\Finance\Invoicing;
+use setasign\Fpdi\Fpdi;
+use iio\libmergepdf\Merger;
 use App\Entities\Setting\UserMenu;
 use App\Repositories\CodeRepo;
 use Carbon\Carbon;
@@ -955,8 +957,35 @@ class InvoicingController extends Controller
             abort(404, "File not found.");
         }
     }
+    
+    public function download_invoice_merge($id, $returnBinary = false)
+    {
+        if (empty($id) || !is_numeric($id)) {
+            abort(404, 'Invoice ID tidak valid.');
+        }
+        
+        $result = Invoicing::find($id);
+        if (!$result) {
+            abort(404, 'Invoice tidak ditemukan.');
+        }
+        
+        $data = [
+                'result' => $result,
+                'company' => Company::first(), // Pastikan data perusahaan diambil.
+                'watermark' => $result->do->so->payment_status == '1' ? 'PAID' : 'COPY' // Atur sesuai kebutuhan, atau tambahkan logika dinamis.
+            ];
 
-    public function download_invoice_full($id)
+        $pdf = PDF::loadView('superuser.finance.invoicing.print_new', $data)
+                ->setPaper('a5', 'landscape');
+
+        if ($returnBinary) {
+            return $pdf->output(); // hasil biner PDF
+        }
+
+        return $pdf->stream("{$result->code}-FULL.pdf");
+    }
+
+    public function download_invoice_full($id, $returnBinary = false)
     {
         if (empty($id) || !is_numeric($id)) {
             abort(404, 'Invoice ID tidak valid.');
@@ -967,22 +996,45 @@ class InvoicingController extends Controller
             abort(404, 'Invoice tidak ditemukan.');
         }
 
-        $data = [
-            'result' => $result,
-            'company' => Company::first(), // Pastikan data perusahaan diambil.
-            'watermark' => $result->do->so->payment_status == '1' ? 'PAID' : 'COPY' // Atur sesuai kebutuhan, atau tambahkan logika dinamis.
-        ];
+        $hasReturn = $result->do && $result->do->saleReturn ? true : false;
 
-        $pdf = PDF::loadView('superuser.finance.invoicing.print_new', $data)
-                ->setPaper('a5', 'landscape');
+        if ($hasReturn == false) {
+            $data = [
+                'result' => $result,
+                'company' => Company::first(), // Pastikan data perusahaan diambil.
+                'watermark' => $result->do->so->payment_status == '1' ? 'PAID' : 'COPY' // Atur sesuai kebutuhan, atau tambahkan logika dinamis.
+            ];
 
-        $generate = false; // Ubah sesuai logika bisnis.
+            $pdf = PDF::loadView('superuser.finance.invoicing.print_new', $data)
+                    ->setPaper('a5', 'landscape');
 
-        if ($generate) {
-            return $pdf->download("{$result->code}-FULL.pdf");
+            if ($returnBinary) {
+                return $pdf->output(); // hasil biner PDF
+            }
+
+            return $pdf->stream("{$result->code}-FULL.pdf");
+        } else {
+            // check id retur
+            $get_retur = $result->do->saleReturn->id;
+
+            // 1. panggil controller nota tt balde
+            $notaTT = app(\App\Http\Controllers\Superuser\Penjualan\SaleReturnController::class)->pdf_tt($get_retur, true);
+ 
+            // 2. Panggil controller invoicing untuk generate PDF invoice awal
+            $invoicePdf = app(\App\Http\Controllers\Superuser\Finance\InvoicingController::class)->download_invoice_merge($id, true);
+
+            // 4. Merge
+            $merger = new Merger;
+            $merger->addRaw($notaTT); // data biner PDF
+            $merger->addRaw($invoicePdf); // data biner PDF
+
+            $createdPdf = $merger->merge();
+
+            // 4. Stream ke browser (tanpa simpan file)
+            return response($createdPdf)
+                ->header('Content-Type', 'application/pdf')
+                ->header('Content-Disposition', 'inline; filename="nota-tt.pdf"');
         }
-
-        return $pdf->stream("{$result->code}-FULL.pdf");
     }
 
     public function download_invoice_proforma($id)

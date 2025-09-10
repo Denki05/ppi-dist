@@ -240,11 +240,11 @@
                 <td style="width: 40%; text-align: left;">: {{ number_format($idr_total, 0, ',', '.') }}</td>
               </tr>
               <tr>
-                <td style="width: 60%; text-align: right;">Disc Persen</td>
+                <td style="width: 60%; text-align: right;">Disc Persen ({{ $result->do->do_detail_cost->discount_1 }})</td>
                 <td style="width: 40%; text-align: left;">: {{ number_format($result->do->do_detail_cost->discount_1_idr ?? 0, 0, ',', '.') }}</td>
               </tr>
               <tr>
-                <td style="width: 60%; text-align: right;">Disc Kemasan</td>
+                <td style="width: 60%; text-align: right;">Disc Kemasan ({{ $result->do->do_detail_cost->discount_2 }})</td>
                 <td style="width: 40%; text-align: left; border-bottom: 1px solid black;">: {{ $result->do->do_detail_cost->discount_2_idr }}</td>
               </tr>
               @if($result->do->do_detail_cost->discount_idr != null && $result->do->do_detail_cost->discount_idr > 0)

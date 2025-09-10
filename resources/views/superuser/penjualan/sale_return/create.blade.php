@@ -244,6 +244,8 @@
         $('input[name="disc_percent_2"]').val(disc_2);
         $('input[name="disc_idr"]').val(disc_idr);
 
+        // alert(disc_1);
+
         refreshProductOptions(); // hide produk setelah dipilih
       });
     };

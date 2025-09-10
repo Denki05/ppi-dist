@@ -168,4 +168,9 @@ class PackingOrder extends Model
     {
         return $this->hasMany('App\Entities\Accounting\PackingOrderUv', 'do_id', 'id');
     }
+
+	public function saleReturn()
+{
+    return $this->hasOne('App\Entities\Penjualan\SaleReturn', 'do_id', 'id');
+}
 }

@@ -187,7 +187,8 @@ class SalesOrderController extends Controller
             }
         }
 
-        $packing_order = PackingOrder::whereYear('created_at', Carbon\Carbon::now()->year)
+        $packing_order = PackingOrder::whereMonth('created_at', Carbon\Carbon::now()->month)
+                            ->whereYear('created_at', Carbon\Carbon::now()->year)
                             ->get();
                             
         $so_progress = PackingOrder::whereMonth('created_at', Carbon\Carbon::now()->month)
@@ -304,8 +305,10 @@ class SalesOrderController extends Controller
         $rekenings = SalesOrder::REKENING;
         $approval_mou = $approval;
         $note_so = $note;
-        $idr_rate = is_numeric($kurs) ? $kurs : 0;
-        $disc = is_numeric($disc_percent) ? $disc_percent : 0;
+        $idr_rate = is_numeric($kurs) ? (float) $kurs : 0;
+        $disc = is_numeric($disc_percent) ? (float) $disc_percent : 0;
+
+        // dd($member);
 
         $data = [
             'other_address' => $other_address,
@@ -734,8 +737,6 @@ class SalesOrderController extends Controller
                     $sales_order->note = trim(htmlentities($post["note"]));
                     $sales_order->updated_by = Auth::id();
                     $sales_order->status = $step;
-
-                    // dd(trim(htmlentities($post["idr_rate"])));
                 } else if ($step == 2) {
                     // di set statusnya, kalau dari front end dia di cancel, tidak di forward, maka status jadi 3 => awal perlu revisi
                     $data = [
@@ -1339,22 +1340,45 @@ class SalesOrderController extends Controller
                                 ]);
                             }
 
-                            // Check stok
-                            // $base_pack_id = preg_replace('/_\\d+$/', '', $value["product_packaging_id"]); // jika id ada suffiks
+                            // Check Stock
+                            // $stock = DB::table('master_product_min_stocks')
+                            //             ->where('warehouse_id', $request->origin_warehouse_id)
+                            //             ->where('product_packaging_id', $value["product_packaging_id"])
+                            //             ->first();
                             
-                            // $atp = $this->getAtp($request->origin_warehouse_id, $base_pack_id);
+                            // if($stock){
+                            //     if($stock->quantity < $do_qty){
+                            //         $out_of_stock = true;
+                            //         $product = $value["product_packaging_id"];
+                            //         break;
+                            //     }
+                            // }
 
-                            // if ($do_qty > 0 && $do_qty > $atp) {
-                            //     $out_of_stock = true;
-                            //     $product      = $base_pack_id;
-                            //     break;
-                            // }
+                             // Extract the base product-packaging ID (remove suffix like "_1", "_2")
+                             $base_product_packaging_id = preg_replace('/_\d+$/', '', $value["product_packaging_id"]);
+                             // dd($base_product_packaging_id);
+                             // dd($base_product_packaging_id);
+ 
+                             // Check stock only for the primary variant (no suffix)
+                             $stock = DB::table('master_product_min_stocks')
+                                         ->where('warehouse_id', $request->origin_warehouse_id)
+                                         ->where('product_packaging_id', $base_product_packaging_id) // Only the base ID
+                                         ->first();
+
+                            if ($stock) {
+                                // Only check stock if do_qty is greater than 0
+                                if ($do_qty > 0 && ($stock->quantity < $do_qty || $stock->quantity < 0)) {
+                                    $out_of_stock = true;
+                                    $product = $value["product_packaging_id"];
+                                    break;
+                                }
+                            }
         
-                            // if(empty($do_qty) && $rej_qty > 0){
-                            //     $updateSO = SalesOrderItem::where('id',$value["so_item_id"])->update([
-                            //         'qty_worked' => $do_qty
-                            //     ]);
-                            // }
+                            if(empty($do_qty) && $rej_qty > 0){
+                                $updateSO = SalesOrderItem::where('id',$value["so_item_id"])->update([
+                                    'qty_worked' => $do_qty
+                                ]);
+                            }
                         }
 
                         if (count($data) == 0) {
@@ -1364,26 +1388,27 @@ class SalesOrderController extends Controller
 
                         if($out_of_stock){
                             $product_check = ProductPack::find($product);
-                            $errors[] = 'Stok tidak mencukupi! <b>'.$product_check->code.' - '.$product_check->name.
-                                        '</b>. Available: '.$atp;
+                            $errors[] = 'Out Of Stock! <b>'.$product_check->code.' - '.$product_check->name.'</b> Please contact Administrator';
                             DB::rollback();
                         }else{
                             foreach ($data as $key => $value) {
                                 $insert = PackingOrderItem::create($data[$key]);
                             }
 
-                            // Cetak Invoice disini
-                            if(empty($packing_order->invoicing)){
-                                $data = [
+                            $invoice = Invoicing::where('do_id', $packing_order->id)
+                                                ->where('type', 1) // tambahkan filter type
+                                                ->first();
+
+                            if(!$invoice){
+                                Invoicing::create([
                                     'code' => $sales_order->code,
                                     'do_id' => $packing_order->id,
                                     'customer_id' => $sales_order->customer_id,
                                     'customer_other_address_id' => $sales_order->customer_other_address_id,
                                     'grand_total_idr' => $packing_order_detail->grand_total_idr,
+                                    'type' => 1,
                                     'created_by' => Auth::id(),
-                                ];
-
-                                $insert_invoice = Invoicing::create($data);
+                                ]);
                             }
                         }
 
@@ -2307,25 +2332,6 @@ class SalesOrderController extends Controller
                 return $this->response(400, $response);
             }
         }
-    }
-
-    protected function getAtp($warehouseId, $packId)
-    {
-        // 1. saldo fisik (master_product_min_stocks)
-        $saldo = DB::table('master_product_min_stocks')
-                ->where('warehouse_id', $warehouseId)
-                ->where('product_packaging_id', $packId)
-                ->value('quantity') ?? 0;
-
-        // 2. reserved (PackingOrderItem status 2 = pending ACC DO)
-        $reserved = DB::table('penjualan_do_item as poi')
-                    ->join('penjualan_do as po', 'po.id', '=', 'poi.do_id')
-                    ->where('po.warehouse_id', $warehouseId)
-                    ->where('poi.product_packaging_id', $packId)
-                    ->where('po.status', 2)          // 2 = menunggu ACC/pengeluaran
-                    ->sum('poi.qty');
-
-        return $saldo - $reserved;   // nilai bisa 0 atau negatif
     }
 
     public function viewSalesOrderDetail($id)

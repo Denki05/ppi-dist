@@ -62,6 +62,30 @@
       display: block;
       clear: both;
     }
+
+    .signature {
+      position: absolute;
+      bottom: 20px;
+      right: 30px;
+      text-align: right;
+      font-size: 12px;
+    }
+
+    .header {
+    width: 100%;
+    position: fixed;
+    z-index: 99999;
+    letter-spacing: 10px;
+    font-size: 150px;
+    font-weight: 800;
+    opacity: 0.2;
+    color: #404040;
+    text-transform: uppercase;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%) rotate(-20deg);
+    text-align: center;
+  }
   </style>
 </head>
 <body>
@@ -70,8 +94,11 @@
     $getDo = $result->invoice;
     $getRetur = $result;
   @endphp
-
-  <h2 style="text-align: center; margin: 0; padding: 0; margin-bottom: 5px;"><u>TANDA TERIMA RETUR</u></h2>
+<div>
+  <div class="header {{ $watermark == 'Paid' ? 'copy' : '' }}">
+    {{$watermark}}
+  </div>
+  <h2 style="text-align: center; margin: 0; padding: 0; margin-bottom: 5px;"><u>NOTA TT</u></h2>
 
   <div style="margin-bottom: 15px; font-size: 11px;">
     <div class="row-float">
@@ -79,7 +106,7 @@
         <table class="table borderless info" style="width: 100%;">
           <tbody>
             <tr>
-              <td style="width: 35%;">TT Code</td>
+              <td style="width: 35%;">Kode</td>
               <td style="width: 2%;">:</td>
                 <td style="width: 63%;"><b>{{ $result->code }}</b></td>
             </tr>
@@ -127,32 +154,25 @@
   <table>
     <thead>
       <tr>
-        <th>Jenis Dokumen</th>
+        <!-- <th>Jenis Dokumen</th> -->
         <th>Nomor</th>
-        <th class="text-right">Nilai</th>
+        <th class="text-right">Total</th>
       </tr>
     </thead>
     <tbody>
       <tr>
-        <td style="text-align: center;">Nota Awal</td>
+        <!-- <td style="text-align: center;">Nota Awal</td> -->
         <td style="text-align: center;">{{ $getDo->do_code }}</td>
         <td class="text-right">{{ number_format($getDo->do_detail_cost->purchase_total_idr, 0, ',', '.') }}</td>
       </tr>
-      @if($getRetur->type == 2)
       <tr>
-        <td style="text-align: center;">Nota Baru</td>
-        <td style="text-align: center;">{{ $getRetur->invoiceNew->do_code ?? '-' }}</td>
-        <td class="text-right">{{ number_format($getRetur->invoiceNew->do_detail_cost->purchase_total_idr ?? 0, 0, ',', '.') }}</td>
-      </tr>
-      @endif
-      <tr>
-        <td style="text-align: center;">Nota Kredit</td>
+        <!-- <td style="text-align: center;">Nota Kredit</td> -->
         <td style="text-align: center;">{{ $getRetur->code }}</td>
-        <td class="text-right">{{ number_format($getRetur->cost->purchase_total_idr, 0, ',', '.') }}</td>
+        <td class="text-right">(-) {{ number_format($getRetur->cost->purchase_total_idr, 0, ',', '.') }}</td>
       </tr>
       <tr>
-        <td colspan="2" class="text-right"><strong>Total :</strong></td>
-        <td class="text-right"><strong>{{ number_format( $getDo->do_detail_cost->purchase_total_idr + ($getRetur->invoiceNew->do_detail_cost->purchase_total_idr ?? 0) - $getRetur->cost->purchase_total_idr, 0, ',', '.') }}</strong></td>
+        <td colspan="1" class="text-right"><strong>Total :</strong></td>
+        <td class="text-right"><strong>{{ number_format( $getDo->do_detail_cost->purchase_total_idr - $getRetur->cost->purchase_total_idr, 0, ',', '.') }}</strong></td>
       </tr>
     </tbody>
   </table>
@@ -181,5 +201,10 @@
       @endforeach
     </tbody>
   </table>
+
+  <div class="signature">
+    Hormat Kami<br><br><br><br>
+    <span>.......................</span>
+  </div>
 </body>
 </html>

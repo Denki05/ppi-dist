@@ -24,6 +24,8 @@ class PiutangFakturTable extends Table
             ->leftJoin('penjualan_so', 'penjualan_do.so_id', '=', 'penjualan_so.id')
             ->leftJoin('penjualan_do_details', 'penjualan_do.id', '=', 'penjualan_do_details.do_id')
             ->leftJoin('master_customers', 'master_customer_other_addresses.customer_id', '=', 'master_customers.id')
+            ->leftJoin('penjualan_retur', 'penjualan_do.id', '=', 'penjualan_retur.do_id')
+            ->leftJoin('penjualan_retur_cost', 'penjualan_retur.id', '=', 'penjualan_retur_cost.retur_id')
             ->select(
                 'master_customer_other_addresses.name AS customer_name', 
                 'master_customer_other_addresses.text_kota AS customer_kota', 
@@ -42,7 +44,7 @@ class PiutangFakturTable extends Table
                 DB::raw('IFNULL(SUM(finance_payable_detail.total), 0) AS pembayaran'),
                 DB::raw('
                     CASE
-                        WHEN penjualan_do_details.grand_total_idr - IFNULL(SUM(finance_payable_detail.total), 0) <= 0 THEN "PAID"
+                        WHEN penjualan_do_details.grand_total_idr - IFNULL(SUM(finance_payable_detail.total), 0) - COALESCE(penjualan_retur_cost.purchase_total_idr, 0) <= 0 THEN "PAID"
                         ELSE "UNPAID"
                     END AS status_faktur
                 ')

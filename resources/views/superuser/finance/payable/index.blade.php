@@ -579,7 +579,7 @@
 
             let amountToPay = isBalanced ? totalTagihan : paymentAmount;
 
-            if (amountToPay > saldoSisa) {
+            if (amountToPay > saldoSisa && !isBalanced) {
                 alert('Saldo transfer tidak mencukupi untuk pembayaran ini');
                 return;
             }

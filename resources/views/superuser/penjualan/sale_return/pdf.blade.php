@@ -3,170 +3,287 @@
   $code = $result->code;
   $kurs = $result->idr_rate;
 @endphp
-
 <style type="text/css">
-    body {
-        color: #333;
-        font-family: Arial, sans-serif;
-        font-size: 12px;
-        margin-top: -40px; /* Tambahkan ini */
-    }
-
-    table {
-        border-collapse: collapse;
-        width: 100%;
-    }
-
-    .info td {
-        padding: 2px 4px;
-        font-size: 11px;
-        vertical-align: top;
-    }
-
-    .table-data thead th {
-        background: #eee;
-        border: 1px solid #ccc;
-        padding: 5px;
-        font-size: 11px;
-    }
-
-    .table-data tbody td {
-        border: 1px solid #ccc;
-        padding: 5px;
-        font-size: 11px;
-        text-align: center;
-    }
-
+  body {
+    color: #333;
+    font-family: Arial, sans-serif;
+    font-size: 12px;
+  }
+  table.borderless {
+    border-collapse: collapse;
+    border-spacing: 0;
+  }
+  .borderless td, .borderless th {
+    border: none;
+  }
+  .info td, .info th {
+    padding: 2px;
+    margin: 2px;
+    box-sizing: border-box;
+  }
+  .column-float {
+    float: left;
+    width: 50%;
+  }
+  .row-float {
+    position: relative;
+  }
+  .row-float:after {
+    content: "";
+    display: block;
+    clear: both;
+  }
+  table.table-data {
+    width: 100%;
+    border-collapse: collapse;
+    color: #333;
+  }
+  table.table-data th {
+    font-size: 12px;
+    background-color: #d3d3d3;
+  }
+  table.table-data td {
+    border: none;
+  }
+  table.table-data tbody {
+    text-align: center;
+    font-size: 12px;
+  }
+  @page {
+    margin-top: 0px;
+  }
   .text-right {
     text-align: right;
   }
+  .text-left {
+    text-align: left;
+  }
+  .header {
+    width: 100%;
+    position: fixed;
+    z-index: 99999;
+    letter-spacing: 10px;
+    font-size: 150px;
+    font-weight: 800;
+    opacity: 0.3;
+    color: #404040;
+    text-transform: uppercase;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%) rotate(-20deg);
+    text-align: center;
+  }
+  .page-break {
+    page-break-after: always;
+  }
 
-    .text-left {
-        text-align: left;
-    }
-
-    .clearfix::after {
-        content: "";
-        display: table;
-        clear: both;
-    }
-
-    .column-float {
-        float: left;
-        box-sizing: border-box;
-    }
-
-    .row-float {
-        width: 100%;
-        clear: both;
-    }
-
-    .page-container {
-        position: relative;
-        min-height: 100%; /* Pastikan tinggi penuh */
-        padding-bottom: 80px; /* Hindari tabrakan dengan signature */
-    }
-
-    .signature {
-      position: absolute;
-      bottom: 20px;
-      right: 30px;
-      text-align: right;
-      font-size: 12px;
-    }
+  .clearfix::after {
+    content: "";
+    display: table;
+    clear: both;
+  }
 </style>
 
-<div>
-  <h2 style="text-align: center; margin-bottom: 10px;"><u>NOTA KREDIT</u></h2>
+@php
+  $limit = 12; // Limit items per page
+  $doDetails = $result->sale_return_details;
+  $doDetails = $doDetails->sortBy(function($row) {
+      return $row->product_pack->name ?? '';
+  });
+  $totalItems = $doDetails->count();
+  $totalPages = ceil($totalItems / $limit);
+@endphp
 
-  <div class="row-float clearfix" style="margin-bottom: 15px;">
-    <div class="column-float" style="width: 50%;">
-      <table class="info">
-        <tr><td style="width: 35%;">Code</td><td style="width: 5%;">:</td><td>{{ $code }}</td></tr>
-        <tr><td>Tanggal Retur</td><td>:</td><td>{{ date('d-m-Y', strtotime($result->retur_date)) }}</td></tr>
-        <tr><td>Ref DO</td><td>:</td><td>{{ $result->invoice->do_code }}</td></tr>
-      </table>
-    </div>
-    <div class="column-float" style="width: 50%;">
-      <table class="info">
-        <tr>
-          <td style="width: 30%;">Customer</td><td style="width: 5%;">:</td>
-          <td>{{ $result->customer->name }} {{ $result->customer->text_kota }}</td>
-        </tr>
-        <tr>
-          <td>Alamat</td><td>:</td>
-          <td>{{ $result->customer->address }}, {{ $result->customer->text_kelurahan }}, {{ $result->customer->text_kecamatan }}, {{ $result->customer->text_kota }}, {{ $result->customer->text_provinsi }}</td>
-        </tr>
-        <tr><td>Telepon</td><td>:</td><td>{{ $result->customer->phone ?? '-' }}</td></tr>
-      </table>
+@php
+  $offset = 0; // Untuk menyimpan indeks awal di setiap halaman
+@endphp
+
+@for ($page = 0; $page < $totalPages; $page++)
+<div>
+  <h2 style="text-align: center; margin: 0; padding: 0; margin-bottom: 5px;"><u>NOTA KREDIT</u></h2>
+  
+  <div style="margin-bottom: 15px; font-size: 11px;">
+    <div class="row-float">
+      <div class="column-float" style="width: 40%; margin-top: 4px;">
+        <table class="table borderless info" style="width: 100%;">
+          <tbody>
+            <tr>
+              <td style="width: 35%;">Code</td>
+              <td style="width: 2%;">:</td>
+                <td style="width: 63%;"><b>{{ $code }}</b> / Page {{ $page + 1 }} of {{ $totalPages }}</td>
+            </tr>
+            <tr>
+              <td>Tanggal</td>
+              <td>:</td>
+              <td>{{ date('d-m-Y', strtotime($result->retur_date)) }}</td>
+            </tr>
+            <tr>
+              <td>Reff</td>
+              <td>:</td>
+              <td>{{ $result->invoice->do_code }}</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="column-float" style="width: 60%;">
+          <table class="table borderless info" style="width: 100%;">
+            <tbody>
+              <tr>
+                <td style="width: 35% !important;"><b>Customer</b></td>
+                <td style="width: 2% !important;">:</td>
+                <td style="width: 63% !important;">
+                    {{ $result->customer->name }} {{ $result->customer->text_kota }}
+                </td>
+              </tr>
+              <tr>
+                <td style="width: 35% !important;">Alamat</td>
+                <td style="width: 2% !important;">:</td>
+                <td style="width: 63% !important;">
+                  {{ $result->customer->address }}, {{ $result->customer->text_kelurahan }}, {{ $result->customer->text_kecamatan }}, {{ $result->customer->text_kota }}, {{ $result->customer->text_provinsi }}
+                </td>
+              </tr>
+              <tr>
+                <td style="width: 35% !important;">Telepon</td>
+                <td style="width: 2% !important;">:</td>
+                <td style="width: 63% !important;">
+                   {{ $result->customer->phone ?? '-' }}
+                </td>
+              </tr>
+            </tbody>
+          </table>
+      </div>
     </div>
   </div>
-
+  
   <table class="table-data">
     <thead>
       <tr>
-        <th style="width: 5%;">No</th>
-        <th style="width: 25%;">Product</th>
-        <th style="width: 10%;">Acuan</th>
-        <th style="width: 8%;">Qty</th>
-        <th style="width: 15%;">Kemasan</th>
-        <th style="width: 12%;" class="text-right">Harga</th>
-        <th style="width: 12%;" class="text-right">Disc</th>
-        <th style="width: 13%;" class="text-right">Jumlah</th>
+        <th>No</th>
+        <th>Kode</th>
+        <th>Variant</th>
+        <th>Acuan</th>
+        <th>Qty</th>
+        <th>Kemasan</th>
+        <th class="text-right">Harga</th>
+        <th class="text-right">Disc</th>
+        <th class="text-right">Jumlah</th>
       </tr>
     </thead>
     <tbody>
-      @foreach ($result->sale_return_details as $index => $row)
-        @php
-          $harga = $row->price * $kurs;
-          $disc_usd = $row->disc_usd * $kurs;
-          $jumlah = ($row->price - $row->disc_usd) * $row->qty * $kurs;
-          $idr_total += $jumlah;
-        @endphp
-        <tr>
-          <td>{{ $loop->iteration }}</td>
-          <td class="text-left">{{ $row->product->code }} - {{ $row->product->name }}</td>
-          <td>{{ number_format($row->price, 2) }}</td>
-          <td>{{ $row->qty }}</td>
-          <td>{{ $row->product->packaging->pack_name ?? '' }}</td>
-          <td class="text-right">{{ number_format($harga, 0, ',', '.') }}</td>
-          <td class="text-right">{{ number_format($disc_usd, 0, ',', '.') }}</td>
-          <td class="text-right">{{ number_format($jumlah, 0, ',', '.') }}</td>
-        </tr>
+      @foreach ($doDetails->slice($page * $limit, $limit)->values() as $index => $row)
+      @php
+        $harga = $row->price * $kurs;
+        $disc_usd = $row->disc_usd * $kurs;
+        $jumlah = ($row->price - $row->disc_usd) * $row->qty * $kurs;
+        $idr_total += $jumlah;
+
+        // Nomor urut dihitung berdasarkan offset + index
+        $nomor_urut = $offset + $index + 1;
+      @endphp
+      <tr>
+        <td>{{ $nomor_urut }}</td>
+        <td>{{ $row->product->code }}</td>
+        <td>{{ $row->product->name ?? '' }}</td>
+        <td>{{ number_format($row->price, 2) }}</td>
+        <td>{{ $row->qty }}</td>
+        <td>{{ $row->product->packaging->pack_name ?? '' }}</td>
+        <td class="text-right">{{ number_format($harga, 0, ',', '.') }}</td>
+        <td class="text-right">{{ number_format($disc_usd, 0, ',', '.') }}</td>
+        <td class="text-right">{{ number_format($jumlah, 0, ',', '.') }}</td>
+      </tr>
       @endforeach
     </tbody>
   </table>
+</div>
 
-  @php
-    use App\Helper\CustomHelper;
+@php
+  // Tambahkan jumlah item yang dirender di halaman ini ke offset
+  $offset += $doDetails->slice($page * $limit, $limit)->count();
+@endphp
 
-    $disc_1 = $result->cost->discount_1 ?? 0;
-    $disc_2 = $result->cost->discount_2 ?? 0;
-    $disc_idr = $result->cost->discount_idr ?? 0;
-    $grand_total = $result->cost->purchase_total_idr ?? ($idr_total - $disc_1 - $disc_2 - $disc_idr);
+@if ($page < $totalPages - 1)
+<div class="page-break"></div>
+@endif
+@endfor
 
-    $terbilang = ucwords(CustomHelper::terbilang($grand_total)) . ' Rupiah';
-  @endphp
+<div>
+  <div style="font-size: 12px; position: absolute; bottom: -50px; width: 100%; margin-top: 30px;">
+    <div class="row-float clearfix" style="display: flex; justify-content: space-between;">
+        @php
+          use App\Helper\CustomHelper;
 
-  <div class="row-float clearfix" style="margin-top: 25px;">
-    <div class="column-float" style="width: 60%; font-size: 12px;">
-      Terbilang: {{ $terbilang }} <br>
-      <br>
-      <b>*Kurs USD: {{ number_format($kurs, 0, ',', '.') }}</b>
+          $disc_1 = $result->cost->discount_1 ?? 0;
+          $disc_2 = $result->cost->discount_2 ?? 0;
+          $disc_idr = $result->cost->discount_idr ?? 0;
+          $grand_total = $result->cost->purchase_total_idr ?? ($idr_total - $disc_1 - $disc_2 - $disc_idr);
+
+          $terbilang = ucwords(CustomHelper::terbilang($grand_total)) . ' Rupiah';
+        @endphp
+        <!-- Left Column -->
+        <div class="column-float" style="width: 70%">
+          Terbilang: {{ $terbilang }}<br><br>
+          <b>*Kurs USD: {{ number_format($kurs, 0, ',', '.') }}</b>
+        </div>
+        
+        <!-- Right Column (Table) -->
+        <div class="column-float" style="width: 30%;">
+          <table style="width: 100%;">
+            <tbody>
+              <tr>
+                <td style="width: 60%; text-align: right;">Sub Total</td>
+                <td style="width: 40%; text-align: left;">: {{ number_format($idr_total, 0, ',', '.') }}</td>
+              </tr>
+              <tr>
+                <td style="width: 60%; text-align: right;">Disc % ({{ $result->invoice->do_detail_cost->discount_1 }})</td>
+                <td style="width: 40%; text-align: left;">: {{ number_format($disc_1, 0, ',', '.') }}</td>
+              </tr>
+              <tr>
+                <td style="width: 60%; text-align: right;">Disc Kemasan ({{ $result->invoice->do_detail_cost->discount_2 }})</td>
+                <td style="width: 40%; text-align: left; border-bottom: 1px solid black;">: {{ number_format($disc_2, 0, ',', '.') }}</td>
+              </tr>
+              <tr>
+                <td style="width: 60%; text-align: right;">Disc IDR</td>
+                <td style="width: 40%; text-align: left;">: {{ number_format($disc_idr, 0, ',', '.') }}</td>
+              </tr>
+              <tr>
+                <td style="width: 60%; text-align: right;"><strong>Grand Total</strong></td>
+                <td style="width: 40%; text-align: left;"><strong>: {{ number_format($grand_total, 0, ',', '.') }}</strong></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="row-float" style="display: flex; justify-content: space-between; align-items: flex-start;">
+        
+        <!-- Payment Notes Column -->
+        <div class="column-float" style="width: 60%; font-size: 9px; font-weight: bold;">
+          <!-- - Pembayaran Cheque/Wesel/BG dianggap sah bila telah diuangkan <br>
+          - Pembayaran TUNAI wajib disertai Tanda Terima Tunai resmi dari kantor <br>
+          - Pembayaran diluar ketentuan diatas tidak diakui <br>
+          - Barang yang sudah dibeli tidak dapat ditukar/dikembalikan -->
+        </div>
+        
+        <!-- Bank Logo Column -->
+        <div class="column-float" style="width: 20%; text-align: left; margin-left: -35px;">
+          <div style="height: 100px;">
+          
+          </div>
+        </div>
+        
+        <!-- Signature Column -->
+        <div class="column-float" style="width: 20%; text-align: center;">
+          <br><br><br><br>
+          .......................
+          <br>
+          Hormat Kami
+        </div>
+
+      </div>
     </div>
-    <div class="column-float" style="width: 40%;">
-      <table style="width: 100%; font-size: 11px;">
-        <tr><td style="text-align:right;">Sub Total</td><td class="text-left">: {{ number_format($idr_total, 0, ',', '.') }}</td></tr>
-        <tr><td style="text-align:right;">Disc Persen</td><td class="text-left">: {{ number_format($disc_1, 0, ',', '.') }}</td></tr>
-        <tr><td style="text-align:right;">Disc Kemasan</td><td class="text-left">: {{ number_format($disc_2, 0, ',', '.') }}</td></tr>
-        <tr><td style="text-align:right;">Disc IDR</td><td class="text-left">: {{ number_format($disc_idr, 0, ',', '.') }}</td></tr>
-        <tr><td style="text-align:right;"><strong>Grand Total</strong></td><td class="text-left"><strong>: {{ number_format($grand_total, 0, ',', '.') }}</strong></td></tr>
-      </table>
-    </div>
-  </div>
+    
 
-  <div class="signature">
-    Hormat Kami<br><br><br><br>
-    <span>.......................</span>
-  </div>
+    <div id="footer">
+      <div class="page-number"></div>
+    </div>
 </div>

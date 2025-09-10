@@ -12,13 +12,13 @@ class SaleReturn extends Model
         'payment_status',
         'idr_rate',
         'do_id',
-        'do_new_id',
         'return_date',
         'warehouse_id',
         'customer_other_address_id',
         'fat_status',
         'status',
         'type',
+        'bukti_refund',
         'created_by',
         'updated_by',
     ];
@@ -28,6 +28,7 @@ class SaleReturn extends Model
         'DELETED' => 0,
         'ACTIVE' => 1,
         'ACC' => 2,
+        'PROSES' => 3,
     ];
 
     const TYPE = [

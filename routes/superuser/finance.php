@@ -29,6 +29,7 @@ Route::group([
         Route::get('/pageReport', 'InvoicingController@pageReport')->name('pageReport');
         Route::post('/printReportPage', 'InvoicingController@printReportPage')->name('printReportPage');
         Route::get('/download_invoice_full/{id}', 'InvoicingController@download_invoice_full')->name('download_invoice_full');
+        Route::get('/download_invoice_merge/{id}', 'InvoicingController@download_invoice_merge')->name('download_invoice_merge');
         Route::get('/download_invoice_proforma/{id}', 'InvoicingController@download_invoice_proforma')->name('download_invoice_proforma');
     });
 
@@ -81,6 +82,8 @@ Route::group([
     Route::group(['as' => 'nota_kredit_finance.', 'prefix' => '/nota_kredit_finance'], function () {
         Route::get('/', 'NotaKreditFinanceController@index')->name('index');
         Route::post('/store', 'NotaKreditFinanceController@store')->name('store');
+        Route::get('/refund_page', 'NotaKreditFinanceController@refund_page')->name('refund_page');
+        Route::post('/upload_bukti_refund', 'NotaKreditFinanceController@upload_bukti_refund')->name('upload_bukti_refund');
     });
     Route::resource('nota_kredit_finance', 'NotaKreditFinanceController');
 });

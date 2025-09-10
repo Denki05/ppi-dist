@@ -15,6 +15,7 @@ use App\Entities\Penjualan\SaleReturnDetail;
 use App\Entities\Penjualan\SaleReturnCost;
 use App\Entities\Gudang\QualityControl;
 use App\Entities\Gudang\QualityControlDetail;
+// use App\Entities\GUdang\ReceivingDetail;
 use App\Entities\Master\Warehouse;
 use App\Http\Controllers\Controller;
 use App\Repositories\MasterRepo;
@@ -26,6 +27,8 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Validator;
 use PDF;
+use setasign\Fpdi\Fpdi;
+use iio\libmergepdf\Merger;
 
 class SaleReturnController extends Controller
 {
@@ -49,8 +52,7 @@ class SaleReturnController extends Controller
     
     public function search_do(Request $request)
     {
-        $delivery_orders = PackingOrder::where('date_sent', '>=', Carbon::now()->subDays(30)->toDateTimeString())
-            ->where('do_code', 'LIKE', $request->input('q', '') . '%')
+        $delivery_orders = PackingOrder::where('do_code', 'LIKE', $request->input('q', '') . '%')
             ->where('status', 6)
             ->get();
 
@@ -132,7 +134,7 @@ class SaleReturnController extends Controller
         }
 
         $sales_retun = SaleReturn::get();
-        $salesOrder = SalesOrder::with('member')->where('penjualan_so.status', 4)->where('created_at', '>=', Carbon::now()->subDays(30)->toDateTimeString())->get();
+        $salesOrder = PackingOrder::with('member')->where('penjualan_do.status', 2)->where('created_at', '>=', Carbon::now()->subDays(30)->toDateTimeString())->get();
 
         $data = [
             'sales_return' => $sales_retun,
@@ -257,10 +259,6 @@ class SaleReturnController extends Controller
                         $receiving_detail->save();
                     }
 
-                    // Update status invoicing
-                    DB::table('finance_invoicing')->where('do_id', $sale_return->do_id)
-                        ->update(['status' => 4]);
-
                     DB::commit();
 
                     $response['notification'] = [
@@ -283,7 +281,6 @@ class SaleReturnController extends Controller
                     return $this->response(400, $response);
                 }
             } catch (\Throwable $e) {
-                dd($e);
                 DB::rollBack();
                 $response['notification'] = [
                     'alert' => 'block',
@@ -378,29 +375,6 @@ class SaleReturnController extends Controller
         }
     }
 
-    public function updateDoNewId(Request $request, $id)
-    {
-        try {
-            $request->validate([
-                'do_new_id' => 'required|exists:penjualan_so,id' // sesuaikan nama tabel kalau SO ada di `penjualan_so`
-            ]);
-
-            $saleReturn = SaleReturn::findOrFail($id);
-            $saleReturn->do_new_id = $request->do_new_id;
-            $saleReturn->save();
-
-            return response()->json([
-                'success' => true,
-                'message' => 'Nota pengganti berhasil disimpan ke retur.'
-            ]);
-        } catch (\Throwable $e) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Terjadi kesalahan: ' . $e->getMessage()
-            ], 500);
-        }
-    }
-
     public function acc($id)
     {
         if (Auth::user()->is_superuser == 0) {
@@ -426,14 +400,9 @@ class SaleReturnController extends Controller
                 }
             }
 
-            if ($sale_return->type == 2 && $sale_return->do_new_id == null) {
-                return redirect()->route('superuser.penjualan.sale_return.index')
-                        ->with('error', 'Harus melampirkan DO baru untuk tukar barang');
-            }
-
             $sale_return->retur_date = now();
             $sale_return->status = SaleReturn::STATUS['ACC'];
-            $sale_return->fat_status = SaleReturn::FAT_STATUS['KASIR'];
+            $sale_return->fat_status = SaleReturn::FAT_STATUS['NONE'];
             $sale_return->save();
 
             DB::commit();
@@ -442,7 +411,36 @@ class SaleReturnController extends Controller
         } catch (\Throwable $e) {
             dd($e);
             DB::rollback();
-            return redirect()->back()->with('error', 'Terjadi kesalahan saat menghapus data');
+            return redirect()->back()->with('error', 'Terjadi kesalahan saat acc data');
+        }
+    }
+
+    public function proses($id)
+    {
+        if (Auth::user()->is_superuser == 0) {
+            if (empty($this->access) || empty($this->access->user) || $this->access->can_approve == 0) {
+                return redirect()->route('superuser.index')->with('error', 'Anda tidak punya akses untuk membuka menu terkait');
+            }
+        }
+
+        $sale_return = SaleReturn::find($id);
+
+        if ($sale_return === null) {
+            abort(404);
+        }
+
+        DB::beginTransaction();
+        try {
+            $sale_return->status = SaleReturn::STATUS['PROSES'];
+            $sale_return->save();
+
+            DB::commit();
+            return redirect()->route('superuser.penjualan.sale_return.index')
+                 ->with('success', 'Retur Berhasil di Proses.');
+        } catch (\Throwable $e) {
+            dd($e);
+            DB::rollback();
+            return redirect()->back()->with('error', 'Terjadi kesalahan saat acc data');
         }
     }
 
@@ -461,9 +459,9 @@ class SaleReturnController extends Controller
         }
 
         // check proses QC jika sudah ACC atau sudah dibuat receiving
-        $getReceivingDetail = ReceivingDetail::where('po_id', $sale_return->id)->first();
+        $getReceivingDetail = QualityControlDetail::where('po_id', $sale_return->id)->first();
         if ($getReceivingDetail) {
-            if ($getReceivingDetail->receiving->status === Receiving::STATUS['ACTIVE']) {
+            if ($getReceivingDetail->receiving->status === QualityControl::STATUS['ACTIVE']) {
                 return redirect()->route('superuser.penjualan.sale_return.index')
                     ->with('error', 'Proses QC sedang berlangsung, tidak bisa menghapus data ini');
             }
@@ -494,7 +492,7 @@ class SaleReturnController extends Controller
         }
     }
 
-    public function pdf($id)
+    public function pdf($id, $returnBinary = false)
     {
         $result = SaleReturn::find($id);
         if (!$result) {
@@ -508,16 +506,14 @@ class SaleReturnController extends Controller
         $pdf = PDF::loadView('superuser.penjualan.sale_return.pdf', $data)
                 ->setPaper('a5', 'landscape');
 
-        $generate = false; // Ubah sesuai logika bisnis.
-
-        if ($generate) {
-            return $pdf->download("{$result->code}.pdf");
+        if ($returnBinary) {
+            return $pdf->output(); // hasil biner PDF
         }
 
         return $pdf->stream("{$result->code}.pdf");
     }
 
-    public function pdf_tt($id)
+    public function pdf_tt($id, $returnBinary = false)
     {
         $result = SaleReturn::find($id);
         if (!$result) {
@@ -526,15 +522,14 @@ class SaleReturnController extends Controller
 
         $data = [
             'result' => $result,
+            'watermark' => $result->invoice->so->payment_status == '1' ? 'PAID' : 'COPY',
         ];
 
         $pdf = PDF::loadView('superuser.penjualan.sale_return.pdf_tt', $data)
                 ->setPaper('a5', 'landscape');
 
-        $generate = false; // Ubah sesuai logika bisnis.
-
-        if ($generate) {
-            return $pdf->download("{$result->code}.pdf");
+        if ($returnBinary) {
+            return $pdf->output(); // hasil biner PDF
         }
 
         return $pdf->stream("{$result->code}.pdf");
@@ -609,32 +604,28 @@ class SaleReturnController extends Controller
         return $pdf->stream("{$result->code}.pdf");
     }
 
-    public function pdf_download($id)
+    public function mergePdf($invoice, $retur)
     {
-        $result = SaleReturn::find($id);
-        if (!$result) {
-            abort(404, 'Tidak ditemukan.');
-        }
+        // 1. panggil controller nota tt balde
+        $notaTT = app(\App\Http\Controllers\Superuser\Penjualan\SaleReturnController::class)->pdf_tt($retur, true);
 
-        $data = [
-            'result' => $result,
-        ];
+        // 2. Panggil controller invoicing untuk generate PDF invoice awal
+        $invoicePdf = app(\App\Http\Controllers\Superuser\Finance\InvoicingController::class)->download_invoice_merge($invoice, true);
 
-        // Mengambil tipe retur dan status untuk menentukan view yang benar
-        $returType = $result->type();
-        $paymentStatus = $result->payment_status();
+        // 3. Panggil controller retur untuk generate PDF nota kredit
+        $returPdf = app(\App\Http\Controllers\Superuser\Penjualan\SaleReturnController::class)->pdf($retur, true);
 
-        if ($returType == 'RETUR' && $paymentStatus == 'LUNAS') {
-            // Tentukan nama view yang benar (nota_refund)
-            $viewName = 'superuser.penjualan.sale_return.print_nota_refund';
-        } else {
-            // Tentukan nama view yang benar (nota_tt)
-            $viewName = 'superuser.penjualan.sale_return.print_nota_tt_fat'; // Asumsi nama view untuk nota_tt
-        }
+        // 4. Merge
+        $merger = new Merger;
+        $merger->addRaw($notaTT); // data biner PDF
+        $merger->addRaw($invoicePdf); // data biner PDF
+        $merger->addRaw($returPdf);
 
-        $pdf = PDF::loadView($viewName, $data)
-                ->setPaper('a5', 'landscape');
+        $createdPdf = $merger->merge();
 
-        return $pdf->download("Nota_Refund_{$result->code}.pdf");
+        // 4. Stream ke browser (tanpa simpan file)
+        return response($createdPdf)
+            ->header('Content-Type', 'application/pdf')
+            ->header('Content-Disposition', 'inline; filename="nota-tt.pdf"');
     }
 }
