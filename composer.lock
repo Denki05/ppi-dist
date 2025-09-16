@@ -10771,16 +10771,16 @@
         },
         {
             "name": "phpunit/phpunit",
-            "version": "8.5.44",
+            "version": "8.5.46",
             "source": {
                 "type": "git",
                 "url": "https://github.com/sebastianbergmann/phpunit.git",
-                "reference": "e1d7ab63dc670dedf76202bb01b593195b0d4196"
+                "reference": "2da51ff4b15c95e8c060d7dd693fd5899f87a112"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/sebastianbergmann/phpunit/zipball/e1d7ab63dc670dedf76202bb01b593195b0d4196",
-                "reference": "e1d7ab63dc670dedf76202bb01b593195b0d4196",
+                "url": "https://api.github.com/repos/sebastianbergmann/phpunit/zipball/2da51ff4b15c95e8c060d7dd693fd5899f87a112",
+                "reference": "2da51ff4b15c95e8c060d7dd693fd5899f87a112",
                 "shasum": ""
             },
             "require": {
@@ -10849,7 +10849,7 @@
             "support": {
                 "issues": "https://github.com/sebastianbergmann/phpunit/issues",
                 "security": "https://github.com/sebastianbergmann/phpunit/security/policy",
-                "source": "https://github.com/sebastianbergmann/phpunit/tree/8.5.44"
+                "source": "https://github.com/sebastianbergmann/phpunit/tree/8.5.46"
             },
             "funding": [
                 {
@@ -10873,7 +10873,7 @@
                     "type": "tidelift"
                 }
             ],
-            "time": "2025-08-20T14:35:58+00:00"
+            "time": "2025-09-14T06:16:44+00:00"
         },
         {
             "name": "prologue/alerts",

@@ -2028,7 +2028,7 @@ class SalesOrderController extends Controller
                 $data = [];
                 
                 $product = Product::where('master_products.brand_name', $request->id)
-                        ->where('master_products.status', 1)
+                        ->where('master_products.on_order', 1)
                         ->leftJoin('master_products_packaging', 'master_products.id', '=', 'master_products_packaging.product_id')
                         ->leftJoin('master_packaging', 'master_products_packaging.packaging_id', '=', 'master_packaging.id')
                         ->leftJoin('master_product_types', 'master_products_packaging.type_id', '=', 'master_product_types.id')

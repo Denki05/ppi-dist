@@ -15,7 +15,7 @@ class Product extends Model
                         'packaging_id', 'category_id', 'brand_reference_id', 'sub_brand_reference_id', 'brand_name', 'count_pack',
                         'code', 'name', 'material_code', 'material_name', 'material_code_optional', 'material_name_optional', 'alias', 'description', 
                         'default_quantity', 'default_unit_id', 'ratio', 'default_warehouse_id', 
-                        'vendor_id', 'vendor_optional_id', 'buying_price', 'selling_price', 'image', 'image_hd', 'status', 'product_finance_tax', 'gender'
+                        'vendor_id', 'vendor_optional_id', 'buying_price', 'selling_price', 'image', 'image_hd', 'status', 'on_order', 'product_finance_tax', 'gender'
                     ];
 
     protected $table = 'master_products';
@@ -42,6 +42,11 @@ class Product extends Model
         'INACTIVE' => 2,
         'ENABLE' => 3,
         'DISABLE' => 4
+    ];
+
+    const ON_ORDER = [
+        'NON_ORDER' => 0,
+        'ORDER' => 1,
     ];
 
     public function sub_brand_reference()
@@ -161,5 +166,10 @@ class Product extends Model
     public function gender()
     {
         return array_search($this->gender, self::GENDER);
+    }
+
+    public function on_order()
+    {
+        return array_search($this->on_order, self::ON_ORDER);
     }
 }

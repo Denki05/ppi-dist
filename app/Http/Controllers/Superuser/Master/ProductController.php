@@ -1110,4 +1110,40 @@ class ProductController extends Controller
         $filename = 'master-product-update-import-template.xlsx';
         return Excel::download(new ProductUpdateImportTemplate, $filename);
     }
+
+    public function update_on_order(Request $request, $id)
+    {
+        if ($request->ajax()) {
+            $decode = base64_decode($id);
+            $product = Product::findOrFail($decode);
+
+            DB::beginTransaction();
+            try {
+                // Lebih rapi: pakai request on_order kalau dikirim dari JS
+                if ($request->has('on_order')) {
+                    $product->on_order = $request->on_order;
+                } else {
+                    // fallback: toggle
+                    $product->on_order = $product->on_order == Product::ON_ORDER['ORDER']
+                        ? Product::ON_ORDER['NON_ORDER']
+                        : Product::ON_ORDER['ORDER'];
+                }
+
+                $product->save();
+                DB::commit();
+
+                return response()->json([
+                    'success' => true,
+                    'message' => 'On Order status updated successfully'
+                ]);
+            } catch (\Throwable $e) {
+                DB::rollBack();
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Internal Server Error',
+                    'error' => $e->getMessage()
+                ], 500);
+            }
+        }
+    }
 }

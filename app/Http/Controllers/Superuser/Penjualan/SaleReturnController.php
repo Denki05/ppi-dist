@@ -154,6 +154,8 @@ class SaleReturnController extends Controller
 
         $data['warehouses'] = Warehouse::get();
 
+        // dd($data);
+
         return view('superuser.penjualan.sale_return.create', $data);
     }
 

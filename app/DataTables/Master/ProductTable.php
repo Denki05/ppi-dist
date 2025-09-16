@@ -22,7 +22,8 @@ class ProductTable extends Table
             'master_products.brand_name as brand_name', 
             'master_product_categories.name as category_name', 
             'master_products.name', 'master_products.status', 
-            'master_products.created_at'
+            'master_products.created_at',
+            'master_products.on_order',
         )
         ->where(function ($query) use ($request) {
             if ($request->product_name != 'all') {
@@ -140,16 +141,29 @@ class ProductTable extends Table
         });
 
         $table->addColumn('action2', function (Product $model) {
-            $inactive = route('superuser.master.product.inactiveStatus', base64_encode($model->id));
-            $active = route('superuser.master.product.activeStatus', base64_encode($model->id));
+            $inactive  = route('superuser.master.product.inactiveStatus', base64_encode($model->id));
+            $active    = route('superuser.master.product.activeStatus', base64_encode($model->id));
+            $toggleUrl = route('superuser.master.product.update_on_order', base64_encode($model->id));
+
+            $checkbox = "
+                <div class='d-inline-flex align-items-center ms-3'>
+                    <input type='checkbox' 
+                        class='toggle-on-order form-check-input me-1' 
+                        data-url='{$toggleUrl}' 
+                        ".($model->on_order == $model::ON_ORDER['ORDER'] ? "checked" : "")." 
+                    />
+                    <small class='text-muted'>On Order</small>
+                </div>
+            ";
 
             if ($model->status == $model::STATUS['ACTIVE']) {
                 return "
                     <a href=\"javascript:saveConfirmation('{$inactive}')\">
                         <button type=\"button\" class=\"btn btn-sm btn-circle btn-alt-secondary\" title=\"Inactive Status\">
-                            <i class=\"fa fa-lock\" aria-hidden=\"true\"></i>
+                            <i class=\"fa fa-unlock-alt\" aria-hidden=\"true\"></i>
                         </button>
                     </a>
+                    {$checkbox}
                 ";
             }
 
@@ -157,12 +171,14 @@ class ProductTable extends Table
                 return "
                     <a href=\"javascript:saveConfirmation('{$active}')\">
                         <button type=\"button\" class=\"btn btn-sm btn-circle btn-alt-secondary\" title=\"Active Status\">
-                            <i class=\"fa fa-unlock-alt\" aria-hidden=\"true\"></i>
+                            <i class=\"fa fa-lock\" aria-hidden=\"true\"></i>
                         </button>
                     </a>
+                    {$checkbox}
                 ";
             }
         });
+
 
         $table->rawColumns(['name', 'check', 'action', 'action2']);
 

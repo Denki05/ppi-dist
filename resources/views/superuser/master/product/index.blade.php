@@ -23,6 +23,16 @@
   @endrole
 </nav>
 
+@if(session('success'))
+<div class="alert alert-success alert-dismissable" role="alert">
+  <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+      <span aria-hidden="true">×</span>
+  </button>
+  <h3 class="alert-heading font-size-h4 font-w400">Success</h3>
+  <p class="mb-0">{{ session('success') }}</p>
+</div>
+@endif
+
 @if($errors->any())
 <div class="alert alert-danger alert-dismissable" role="alert">
   <button type="button" class="close" data-dismiss="alert" aria-label="Close">
@@ -371,6 +381,52 @@ $(document).ready(function() {
     });
 
     $('.js-select2').select2();
+
+    $(document).on('change', '.toggle-on-order', function(e) {
+        e.preventDefault();
+        let checkbox = $(this);
+        let url = checkbox.data('url');
+        let isChecked = checkbox.is(':checked');
+
+        Swal.fire({
+            title: 'Apakah Anda yakin?',
+            text: isChecked ? "Produk akan ditandai sebagai ON ORDER." : "Produk akan dihapus dari ON ORDER.",
+            type: 'warning',
+            showCancelButton: true,
+            confirmButtonText: 'Ya, lanjutkan',
+            cancelButtonText: 'Batal'
+        }).then((result) => {
+            if (result.value) { // swal2 lama pakai result.value
+                $.ajax({
+                    url: url,
+                    type: 'POST',
+                    data: {
+                        _token: '{{ csrf_token() }}',
+                        on_order: isChecked ? 1 : 0
+                    },
+                    success: function(res) {
+                        Swal.fire({
+                            title: 'Berhasil!',
+                            text: res.message ?? "Status berhasil diperbarui.",
+                            type: 'success',
+                            timer: 2000,
+                            showConfirmButton: false
+                        });
+                    },
+                    error: function(xhr) {
+                        Swal.fire({
+                            title: 'Gagal!',
+                            text: "Terjadi kesalahan saat memperbarui status.",
+                            type: 'error'
+                        });
+                        checkbox.prop('checked', !isChecked);
+                    }
+                });
+            } else {
+                checkbox.prop('checked', !isChecked);
+            }
+        });
+    });
 });
 </script>
 @endpush

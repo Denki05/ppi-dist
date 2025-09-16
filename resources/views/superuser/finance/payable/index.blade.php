@@ -120,7 +120,7 @@
                                         </div>
                                         <div class="col-md-3">
                                             <div class="form-group">
-                                                <label for="detail_invoice_total">Total Tagihan</label>
+                                                <label for="detail_invoice_total">Sisa Tagihan</label>
                                                 <input type="text" id="detail_invoice_total" class="form-control text-center border-0" readonly>
                                             </div>
                                         </div>
@@ -145,12 +145,15 @@
                                             </div>
                                         </div>
                                     </div>
-                                    <div class="mt-2">
+                                    <div class="mt-2 d-flex justify-content-between">
+                                        <!-- Tombol kiri -->
                                         <button type="button" id="prosesBtn" class="btn btn-warning">
                                             <i class="fa fa-cogs"></i> Proses
                                         </button>
+
+                                        <!-- Tombol kanan -->
                                         <button type="button" id="settelBtn" class="btn btn-success" disabled>
-                                            <i class="fa fa-check"></i> Settel
+                                            <i class="fa fa-check"></i> Settle
                                         </button>
                                     </div>
                                 </div>
@@ -577,11 +580,20 @@
                 return;
             }
 
-            let amountToPay = isBalanced ? totalTagihan : paymentAmount;
+            let amountToPay = paymentAmount;
 
-            if (amountToPay > saldoSisa && !isBalanced) {
-                alert('Saldo transfer tidak mencukupi untuk pembayaran ini');
-                return;
+            // Kalau centang balance, override jadi lunas
+            if (isBalanced) {
+                amountToPay = totalTagihan;
+            }
+
+            // Validasi saldo transfer vs cicilan
+            if (amountToPay > saldoSisa) {
+                let selisih = amountToPay - saldoSisa;
+                if (!(isBalanced && selisih <= 100)) { // toleransi Rp 100 jika Adjustment dicentang
+                    alert('Saldo transfer tidak mencukupi untuk pembayaran ini');
+                    return;
+                }
             }
 
             // kalau data baru, set header

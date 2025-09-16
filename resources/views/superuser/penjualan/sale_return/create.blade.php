@@ -290,7 +290,7 @@
       if(qty && acuan) {
         jumlah = ((acuan - disc_usd) * qty) * kurs;
       }
-      $(this).parents('tr').find('input[name="jumlah[]"]').val(jumlah.toFixed(2));
+      $(this).parents('tr').find('input[name="jumlah[]"]').val(jumlah.toFixed(0));
       calculateTotal();
     });
 
@@ -311,16 +311,16 @@
 
       // Calculate disc_amount_1 (percent of subtotal)
       var disc_amount_1 = subtotal * (disc_percent / 100);
-      $('#disc_amount_1').val(disc_amount_1.toFixed(2));
+      $('#disc_amount_1').val(disc_amount_1.toFixed(0));
 
       // Calculate disc_amount_2 (percent of subtotal)
       var total_after_disc_1 = subtotal - $('#disc_amount_1').val();
       var disc_amount_2 = total_after_disc_1 * (disc_percent_2 / 100);
-      $('#disc_amount_2').val(disc_amount_2.toFixed(2));
+      $('#disc_amount_2').val(disc_amount_2.toFixed(0));
 
       // Calculate grand total
       var grand_total = subtotal - disc_amount_1 - disc_amount_2 - disc_idr;
-      $('#grand_total').val(grand_total.toFixed(2));
+      $('#grand_total').val(grand_total.toFixed(0));
     }
 
     $('#datatable').on('draw.dt', function () {
