@@ -49,6 +49,7 @@ Route::group([
 
         Route::post('/update_ratio', 'ProductController@update_ratio')->name('update_ratio');
         Route::get('/update_ratio_template', 'ProductController@update_ratio_template')->name('update_ratio_template');
+        Route::post('/update_on_order/{id}', 'ProductController@update_on_order')->name('update_on_order');
         
         Route::group(['as' => 'product_pack.'], function () {
             Route::get('/{id}/product_pack/create', 'ProductPackController@create')->name('create');

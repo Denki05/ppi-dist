@@ -308,7 +308,7 @@ class SalesOrderController extends Controller
         $idr_rate = is_numeric($kurs) ? (float) $kurs : 0;
         $disc = is_numeric($disc_percent) ? (float) $disc_percent : 0;
 
-        // dd($member);
+        // dd($member); 
 
         $data = [
             'other_address' => $other_address,
@@ -1396,17 +1396,30 @@ class SalesOrderController extends Controller
                             }
 
                             // Cetak Invoice disini
-                            if(empty($packing_order->invoicing)){
-                                $data = [
+                            // if(empty($packing_order->invoicing)){
+                            //     $data = [
+                            //         'code' => $sales_order->code,
+                            //         'do_id' => $packing_order->id,
+                            //         'customer_id' => $sales_order->customer_id,
+                            //         'customer_other_address_id' => $sales_order->customer_other_address_id,
+                            //         'grand_total_idr' => $packing_order_detail->grand_total_idr,
+                            //         'created_by' => Auth::id(),
+                            //     ];
+
+                            //     $insert_invoice = Invoicing::create($data);
+                            // }
+
+                            $invoice = Invoicing::where('do_id', $packing_order->id)->first();
+
+                            if(!$invoice){
+                                Invoicing::create([
                                     'code' => $sales_order->code,
                                     'do_id' => $packing_order->id,
                                     'customer_id' => $sales_order->customer_id,
                                     'customer_other_address_id' => $sales_order->customer_other_address_id,
                                     'grand_total_idr' => $packing_order_detail->grand_total_idr,
                                     'created_by' => Auth::id(),
-                                ];
-
-                                $insert_invoice = Invoicing::create($data);
+                                ]);
                             }
                         }
 
@@ -2026,7 +2039,8 @@ class SalesOrderController extends Controller
                 $data = [];
                 
                 $product = Product::where('master_products.brand_name', $request->id)
-                        ->where('master_products.status', 1)
+                        // ->where('master_products.status', 1)
+                        ->where('master_products.on_order', 1)
                         ->leftJoin('master_products_packaging', 'master_products.id', '=', 'master_products_packaging.product_id')
                         ->leftJoin('master_packaging', 'master_products_packaging.packaging_id', '=', 'master_packaging.id')
                         ->leftJoin('master_product_types', 'master_products_packaging.type_id', '=', 'master_product_types.id')

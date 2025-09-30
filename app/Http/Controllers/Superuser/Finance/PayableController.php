@@ -62,35 +62,87 @@ class PayableController extends Controller
         return $datatable->build($request);
     }
 
+    public function json_done(Request $request)
+    {
+        // Pastikan pengguna memiliki akses
+        if (Auth::user()->is_superuser == 0 && (empty($this->access) || empty($this->access->user) || $this->access->can_read == 0)) {
+            return response()->json(['error' => 'Anda tidak punya akses untuk melihat data ini.'], 403);
+        }
+
+        $model = Payable::select(
+            'finance_payable.id AS id',
+            'finance_payable.code AS code',
+            'master_customers.name AS customer_name',
+            'master_customers.text_kota AS customer_kota',
+            'finance_payable.total AS total_pay',
+            'finance_payable.pay_date AS tanggal_buat', // Alias kolom
+            'finance_payable.status AS status',
+            DB::raw('GROUP_CONCAT(DISTINCT finance_invoicing.code) AS invoice_code') // Menggunakan GROUP_CONCAT untuk invoice_code
+        )
+        ->leftJoin('master_customers', 'master_customers.id', '=', 'finance_payable.customer_id')
+        ->leftJoin('finance_payable_detail', 'finance_payable.id', '=', 'finance_payable_detail.payable_id')
+        ->leftJoin('finance_invoicing', 'finance_payable_detail.invoice_id', '=', 'finance_invoicing.id')
+        ->where('finance_payable.status', Payable::STATUS['ACC'])
+        ->groupBy('finance_payable.id') // Penting untuk menghindari duplikasi jika ada beberapa payable_detail
+        ->orderBy('finance_payable.pay_date', 'desc'); // Perbaikan: Urutkan berdasarkan alias 'tanggal_buat'
+
+        return Table::of($model)
+            ->addIndexColumn()
+            ->addColumn('customer_display_name', function($row){
+                return $row->customer_name . ' ' . $row->customer_kota . ' ';
+            })
+            ->addColumn('status_label', function($row){
+                // Sesuaikan label status sesuai dengan kebutuhan Anda
+                switch ($row->status) {
+                    case Payable::STATUS['ACC']:
+                        return '<span class="badge badge-success">ACC</span>';
+                    case Payable::STATUS['REVISI']:
+                        return '<span class="badge badge-warning">Revisi</span>';
+                    case Payable::STATUS['DELETED']:
+                        return '<span class="badge badge-danger">Dihapus</span>';
+                    case Payable::STATUS['ACTIVE']: // Asumsi 'ACTIVE' adalah status default/pending
+                        return '<span class="badge badge-info">Pending</span>';
+                    default:
+                        return '<span class="badge badge-secondary">Unknown</span>';
+                }
+            })
+            ->addColumn('action', function($row){
+                $buttons = '<a href="'.route('superuser.finance.payable.detail', $row->id).'" class="btn btn-primary btn-sm btn-square" title="Detail"><i class="si si-eye"></i></a> ';
+                // Anda bisa menambahkan tombol lain di sini (edit, print, dll.)
+                // if (Auth::user()->is_superuser == 1 || (Auth::user()->is_superuser == 0 && !empty($this->access) && $this->access->can_update == 1)) {
+                //     $buttons .= '<a href="'.route('superuser.finance.payable.edit', $row->id).'" class="btn btn-warning btn-sm btn-square" title="Edit"><i class="si si-pencil"></i></a> ';
+                // }
+                // if (Auth::user()->is_superuser == 1 || (Auth::user()->is_superuser == 0 && !empty($this->access) && $this->access->can_print == 1)) {
+                //     $buttons .= '<a href="'.route('superuser.finance.payable.print', $row->id).'" class="btn btn-info btn-sm btn-square" title="Print" target="_blank"><i class="si si-printer"></i></a> ';
+                // }
+                // if (Auth::user()->is_superuser == 1 || (Auth::user()->is_superuser == 0 && !empty($this->access) && $this->access->can_delete == 1)) {
+                //     $buttons .= '<a href="#" data-id="'.$row->id.'" class="btn btn-danger btn-sm btn-square btn-delete" title="Delete"><i class="si si-trash"></i></a>';
+                // }
+                return $buttons;
+            })
+            ->rawColumns(['status_label', 'action'])
+            ->make(true);
+    }
+
     public function index(Request $request)
     {
-        // Access
-        if(Auth::user()->is_superuser == 0){
-            if(empty($this->access)){
-                return redirect()->route('superuser.index')->with('error','Anda tidak punya akses untuk membuka menu terkait');
+        // Pemeriksaan akses
+        if (Auth::user()->is_superuser == 0) {
+            if (empty($this->access) || empty($this->access->user)) {
+                return redirect()->route('superuser.index')->with('error', 'Anda tidak punya akses untuk membuka menu terkait');
             }
         }
 
-        $search = $request->input('search');
-        $customer_id = $request->input('customer_id');
-        $table = Payable::where(function($query2) use($search){
-                            if(!empty($search)){
-                                $query2->where('code','like','%'.$search.'%');
-                            }
-                        })
-                        ->where(function($query2) use($customer_id){
-                            if(!empty($customer_id)){
-                                $query2->where('customer_id',$customer_id);
-                            }
-                        })
-                        ->orderBy('id','DESC')
-                        ->paginate(10);
-        $customer = Customer::where('status', Customer::STATUS['ACTIVE'])->get();
-        $data = [
-            'customer' => $customer,
-            'table' => $table
-        ];
-        return view($this->view."index",$data);
+        // Menggunakan eager loading untuk memuat relasi yang diperlukan (customer, payable_details, dan invoice)
+        // dalam jumlah query yang minimal. Ini akan sangat meningkatkan performa.
+        $data['payable'] = Payable::with(['customer', 'payable_detail.invoice'])
+                                    ->orderBy('created_at', 'DESC')
+                                    ->get();
+
+        $data['customers'] = CustomerOtherAddress::get();
+
+        // Mengembalikan view dengan data yang sudah dimuat
+        return view($this->view . "index", $data);
     }
 
     /**
@@ -119,125 +171,150 @@ class PayableController extends Controller
         return view($this->view."create", $data);
     }
 
-    /**
-     * Store a newly created resource in storage.
-     *
-     * @param  \Illuminate\Http\Request  $request
-     * @return \Illuminate\Http\Response
-     */
     public function store(Request $request)
     {
         $post = $request->all();
 
-        // Start transaction
         DB::beginTransaction();
-
         try {
-            // Validate request
             $validator = Validator::make($post, [
                 'customer_id' => 'required|exists:master_customers,id',
                 'pay_date' => 'required|date',
                 'repeater' => 'required|array',
                 'repeater.*.invoice_id' => 'required|exists:finance_invoicing,id',
-                'repeater.*.payable' => 'nullable|string',
+                'repeater.*.payable' => 'required|numeric',
+                'repeater.*.is_balanced' => 'nullable|boolean',
             ]);
 
             if ($validator->fails()) {
                 return response()->json([
-                    'IsError' => true,
-                    'Message' => $validator->errors()->first()
-                ], 400);
+                    'success' => false,
+                    'message' => 'Gagal memproses pembayaran. Periksa kembali data yang diinput.',
+                    'errors' => $validator->errors()
+                ], 422);
             }
-
-            // Create Payable entry
-            $payable = Payable::create([
-                'code' => CodeRepo::generatePayable(),
-                'customer_id' => $post['customer_id'],
-                'pay_date' => Carbon::parse($post['pay_date']),
-                'note' => $post['note'] ?? null,
-                'status' => 1,
-                'created_by' => Auth::id(),
-                'total' => 0,
-            ]);
 
             $totalPayable = 0;
 
-            // Process each repeater item
             foreach ($post["repeater"] as $value) {
-                if (!empty($value["payable"])) {
+                if (isset($value["payable"])) {
                     $input_payable = floatval(str_replace(".", "", $value["payable"]));
                     $get_invoice = Invoicing::find($value["invoice_id"]);
-            
-                    if ($get_invoice) {
-                        $payable_detail = $get_invoice->payable_detail->sum('total'); // Total pembayaran sebelumnya
-                        $sisa = $get_invoice->grand_total_idr - $payable_detail; // Sisa tagihan
-            
-                        // Validasi sisa tagihan
-                        if ($sisa <= 0) {
-                            throw new \Exception("Invoice {$get_invoice->code} sudah lunas");
-                        }
-            
-                        if ($input_payable > $sisa) {
-                            throw new \Exception("Jumlah pembayaran melebihi saldo sisa untuk Invoice {$get_invoice->code}");
-                        }
-            
-                        // Data untuk PayableDetail
-                        $remaining_pay = $sisa - $input_payable; // Saldo sisa setelah pembayaran baru
-                        $data = [
-                            'payable_id' => $payable->id,
-                            'invoice_id' => $value["invoice_id"],
-                            'total' => $input_payable,
-                            'prev_account_receivable' => $sisa, // Saldo sebelum pembayaran
-                            'remaining_account_receivable' => $remaining_pay, // Saldo setelah pembayaran
-                            'created_by' => Auth::id(),
-                        ];
-            
-                        // Simpan detail pembayaran
-                        PayableDetail::create($data);
-            
-                        $totalPayable += $input_payable;
-                    } else {
-                        throw new \Exception("Invoice ID {$value['invoice_id']} tidak ditemukan");
+                    $is_balanced = filter_var($value["is_balanced"], FILTER_VALIDATE_BOOLEAN);
+
+                    if (!$get_invoice) {
+                        DB::rollBack();
+                        return response()->json([
+                            'success' => false,
+                            'message' => "Invoice ID {$value['invoice_id']} tidak ditemukan"
+                        ], 404);
                     }
+
+                    $payable_detail = $get_invoice->payable_detail->sum('total');
+                    $sisa = $get_invoice->grand_total_idr - $payable_detail;
+
+                    if ($sisa <= 0) {
+                        DB::rollBack();
+                        return response()->json([
+                            'success' => false,
+                            'message' => "Invoice {$get_invoice->code} sudah lunas"
+                        ], 400);
+                    }
+
+                    if ($input_payable > $sisa && !$is_balanced) {
+                        DB::rollBack();
+                        return response()->json([
+                            'success' => false,
+                            'message' => "Jumlah pembayaran melebihi saldo untuk Invoice {$get_invoice->code}"
+                        ], 400);
+                    }
+
+                    if ($is_balanced) {
+                        $input_payable = $sisa;
+                    }
+
+                    // 🔹 Buat Payable header baru per invoice
+                    $payable = Payable::create([
+                        'code' => CodeRepo::generatePayable(),
+                        'customer_id' => $post['customer_id'],
+                        'pay_date' => Carbon::parse($post['pay_date']),
+                        'note' => $post['note'] ?? null,
+                        'status' => 2,
+                        'created_by' => Auth::id(),
+                        'total' => $input_payable,
+                    ]);
+
+                    // 🔹 Simpan detail
+                    PayableDetail::create([
+                        'payable_id' => $payable->id,
+                        'invoice_id' => $value["invoice_id"],
+                        'total' => $input_payable,
+                        'prev_account_receivable' => $sisa,
+                        'remaining_account_receivable' => $is_balanced ? 0 : ($sisa - $input_payable),
+                        'created_by' => Auth::id(),
+                    ]);
+
+                    $totalPayable += $input_payable;
+
+                    // update status sales_order
+                    $total_bayar = $get_invoice->payable_detail->sum('total') + $input_payable;
+
+                    $sisa_update = $get_invoice->grand_total_idr - $total_bayar;
+
+                    // Tentukan status pembayaran
+                    if ($sisa_update <= 0) {
+                        $payment_status = 1; // Lunas
+                    } else {
+                        $payment_status = 0; // Belum lunas
+                    }
+
+                    // Update status pembayaran di SalesOrder
+                    if ($get_invoice->do && $get_invoice->do->so_id) {
+                        SalesOrder::where('id', $get_invoice->do->so_id)
+                            ->update(['payment_status' => $payment_status]);
+                    }
+
+                    // 🔹 Insert history
+                    PayableHistory::create([
+                        'payable_id' => $payable->id,
+                        'do_id' => $get_invoice->do_id,
+                        'invoice_id' => $get_invoice->id,
+                        'invoice_code' => $get_invoice->code,
+                        'payable_code' => $payable->code,
+                        'customer_other_address_id' => $get_invoice->customer_other_address_id,
+                        'acc_by' => Auth::id(),
+                        'created_by' => $payable->created_by,
+                    ]);
                 }
             }
 
             if ($totalPayable == 0) {
-                throw new \Exception("Tidak bisa melakukan payable. Tidak ada payable yang diinput.");
+                DB::rollback();
+                return response()->json([
+                    'success' => false,
+                    'message' => "Tidak bisa melakukan payable. Tidak ada payable yang diinput."
+                ], 400);
             }
 
-            // Update the Payable entry with the total payable amount
             $payable->update(['total' => $totalPayable]);
 
-            // Commit transaction
             DB::commit();
 
-            LogActivity::addToLog('Create Payable:' . $payable->code);
-
-            // Logging
-            Log::info("Payable {$payable->code} Created by user " . Auth::id());
-
-            // add notif
-            $user = User::find(36);
-            $user->notify(new PayableNotification($payable));
-
             return response()->json([
-                'IsError' => false,
-                'Message' => "Payable berhasil dibuat"
-            ], 200);
+                'success' => true,
+                'message' => "Payable berhasil dibuat per invoice"
+            ]);
 
         } catch (\Throwable $e) {
-            // dd($e);
-            // Rollback transaction and log error
-            DB::rollback();
+            DB::rollBack();
             Log::error('Payable creation failed: ' . $e->getMessage());
 
             return response()->json([
-                'IsError' => true,
-                'Message' => 'An error occurred while processing your request. Please try again.'
+                'success' => false,
+                'message' => 'Terjadi kesalahan saat membuat Payable. Error: ' . $e->getMessage()
             ], 500);
         }
-    } 
+    }
 
     public function detail($id)
     {
@@ -504,33 +581,46 @@ class PayableController extends Controller
     public function destroy(Request $request, $id)
     {
         // Access
-        if(Auth::user()->is_superuser == 0){
-            if(empty($this->access) || empty($this->access->user) || $this->access->can_delete == 0){
+        if (Auth::user()->is_superuser == 0) {
+            if (empty($this->access) || empty($this->access->user) || $this->access->can_delete == 0) {
                 abort(405);
             }
         }
 
-        if ($request->ajax()) {
-            $result = Payable::findOrFail($id);
+        $payable = Payable::findOrFail($id);
 
-            DB::beginTransaction();
+        DB::beginTransaction();
 
-            try {
-
-                $result->status = Payable::STATUS['DELETED'];
-
-                if ($result->save()) {
-                    DB::commit();
-                    LogActivity::addToLog('Destory Payable:' . $result->code);
-                    $response['redirect_to'] = route('superuser.finance.payable.index');
-                    return $this->response(200, $response);
+        try {
+            // Pengecekan dan pembaruan status SalesOrder yang terkait
+            foreach ($payable->payable_detail as $detail) { 
+                $invoice = $detail->invoice;
+                if ($invoice) {
+                    $salesOrder = $invoice->sales_order;
+                    if ($salesOrder) {
+                        // Ubah status SalesOrder
+                        $salesOrder->status = SalesOrder::STATUS['COPY']; // Atau status lain yang sesuai
+                        $salesOrder->save();
+                    }
                 }
-
-            } catch (\Exception $e) {
-                DB::rollBack();
-                Log::error("Failed to delete payable: " . $e->getMessage());
-                return redirect()->back()->with('error', 'Failed to delete payable. Please try again.');
+                
+                // Hapus detail setelah status SalesOrder diperbarui
+                $detail->delete();
             }
+            
+            // Selanjutnya, hapus Payable itu sendiri secara permanen
+            if ($payable->delete()) {
+                DB::commit();
+                // LogActivity::addToLog('Hard-delete Payable:' . $payable->code);
+
+                return redirect()->route('superuser.finance.payable.index')->with('success', 'Data berhasil dihapus permanen.');
+            }
+
+        } catch (\Exception $e) {
+            DB::rollBack();
+            Log::error("Failed to hard-delete payable: " . $e->getMessage());
+
+            return redirect()->back()->with('error', 'Gagal menghapus data. Silakan coba lagi.');
         }
     }
 
@@ -714,5 +804,123 @@ class PayableController extends Controller
 
         // Example of returned HTML content
         return view('superuser.finance.payable.invoice_details', compact('invoice'))->render();
+    }
+
+    // public function unpaidInvoices(Request $request)
+    // {
+    //     $customer = Customer::with(['do.invoicing.payable_detail'])
+    //         ->find($request->customer_id);
+
+    //     if (!$customer) {
+    //         return response()->json([]);
+    //     }
+
+    //     $rows = [];
+    //     foreach ($customer->do as $index => $row) {
+    //         $invoice = $row->invoicing;
+    //         if (!$invoice) continue;
+
+    //         $year = $invoice->created_at->format('Y');
+
+    //         // hitung sisa tagihan
+    //         $paid = $invoice->payable_detail->sum('total');
+    //         $remaining = $invoice->grand_total_idr - $paid;
+
+    //         if (!in_array($year, ['2022','2023']) && $remaining > 0 && $invoice->status != Invoicing::STATUS['PENDING']) {
+    //             $rows[] = [
+    //                 'id'            => $invoice->id,
+    //                 'date'          => $invoice->created_at->format('d-m-Y'),
+    //                 'code'          => $invoice->code,
+    //                 'brand'         => $invoice->do->so->brand_name,
+    //                 'tagihan'       => number_format($invoice->grand_total_idr,0,',','.'),
+    //                 'sisa_tagihan'  => number_format($remaining,0,',','.'),
+    //                 'type_value'    => $invoice->type,
+    //                 'type_name'     => $invoice->type(),
+    //             ];
+    //         }
+    //     }
+
+    //     // Urutkan array $rows: 'TT' (1) di atas 'N' (0)
+    //     usort($rows, function($a, $b) {
+    //         return $b['type_value'] <=> $a['type_value'];
+    //     });
+
+    //     return response()->json($rows);
+    // }
+
+    public function unpaidInvoices(Request $request)
+    {
+        $invoices = Invoicing::with(['do.so', 'payable_detail'])
+            ->where('customer_id', $request->customer_id)
+            ->get();
+
+        $rows = [];
+
+        foreach ($invoices as $invoice) {
+            $year = $invoice->created_at->format('Y');
+            $paid = $invoice->payable_detail->sum('total');
+            $remaining = $invoice->grand_total_idr - $paid;
+
+            if (!in_array($year, ['2022','2023']) && $remaining > 0 && $invoice->status != Invoicing::STATUS['PENDING']) {
+                
+                // kalau type 0 → normal pakai brand dari DO
+                // kalau type 1 → TT, tidak perlu DO (brand bisa -)
+                $brand = $invoice->type == 0 
+                    ? ($invoice->do->so->brand_name ?? '-') 
+                    : '-';
+
+                $rows[] = [
+                    'id'            => $invoice->id,
+                    'date'          => $invoice->created_at->format('d-m-Y'),
+                    'code'          => $invoice->code,
+                    'brand'         => $brand,
+                    'tagihan'       => number_format($invoice->grand_total_idr, 0, ',', '.'),
+                    'sisa_tagihan'  => number_format($remaining, 0, ',', '.'),
+                    'type_value'    => $invoice->type,
+                    'type_name'     => $invoice->type(), // method type() di model
+                ];
+            }
+        }
+
+        // Urutkan: TT (1) di atas normal (0)
+        usort($rows, function($a, $b) {
+            // Jika beda type → type 1 lebih tinggi
+            if ($a['type_value'] !== $b['type_value']) {
+                return $b['type_value'] <=> $a['type_value'];
+            }
+
+            // Kalau sama-sama type 0 → urut tanggal ASC
+            if ($a['type_value'] == 0) {
+                $dateA = \Carbon\Carbon::createFromFormat('d-m-Y', $a['date']);
+                $dateB = \Carbon\Carbon::createFromFormat('d-m-Y', $b['date']);
+                return $dateA <=> $dateB;
+            }
+
+            // Kalau sama-sama type 1 → biarkan urut default
+            return 0;
+        });
+
+        return response()->json($rows);
+    }
+
+
+    public function customerSearch(Request $request)
+    {
+        $query = $request->get('query');
+
+        $customers = Customer::where(function($q) use ($query) {
+                $q->where('name', 'like', "%{$query}%")
+                ->orWhere('text_kota', 'like', "%{$query}%");
+            })
+            ->limit(10)
+            ->get(['id','name','text_kota']);
+
+        // gabungkan nama + kota untuk ditampilkan
+        $customers->transform(function($item){
+            $item->display_name = $item->name . '  ' . $item->text_kota;
+            return $item;
+        });
+
+        return response()->json($customers);
     }
 }

@@ -16,6 +16,7 @@ class Invoicing extends Model
         'customer_other_address_id',
     	'grand_total_idr',
     	'status',
+        'type',
         'image',
     	'updated_by',
     	'created_by',
@@ -26,6 +27,13 @@ class Invoicing extends Model
         'ACTIVE' => 1,
         'DELETED' => 2,
         'REVISI' => 3,
+        'PENDING' => 4,
+    ];
+
+    const TYPE = [
+        'N' => 0, // Normal
+        'TT' => 1, // TT
+        'RT' => 2 // Nota pengganti retur
     ];
 
     public function do(){
@@ -46,5 +54,10 @@ class Invoicing extends Model
     public function status()
     {
         return array_search($this->status, self::STATUS);
+    }
+
+    public function type()
+    {
+        return array_search($this->type, self::TYPE);
     }
 }

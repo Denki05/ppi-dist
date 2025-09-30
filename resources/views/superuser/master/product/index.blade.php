@@ -19,6 +19,16 @@
   @endrole
 </nav>
 
+@if(session('success'))
+<div class="alert alert-success alert-dismissable" role="alert">
+  <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+      <span aria-hidden="true">×</span>
+  </button>
+  <h3 class="alert-heading font-size-h4 font-w400">Success</h3>
+  <p class="mb-0">{{ session('success') }}</p>
+</div>
+@endif
+
 @if($errors->any())
 <div class="alert alert-danger alert-dismissable" role="alert">
   <button type="button" class="close" data-dismiss="alert" aria-label="Close">
@@ -132,16 +142,16 @@
 <!-- Table Section -->
 <div class="block">
   <div class="block-content block-content-full">
-    <table class="table table-striped" id="datatables">
+    <table class="table table-striped table-custom" id="datatables">
         <thead>
             <tr>
                 <th>Code</th>
                 <th>Brand</th>
                 <th>Category</th>
                 <th>Name</th>
+                <th>On Order</th>
                 <th>Status</th>
                 <th>Action</th>
-                <th>Action 2</th>
             </tr>
         </thead>
         <tbody></tbody>
@@ -260,6 +270,20 @@
 @include('superuser.asset.plugin.select2')
 
 @push('scripts')
+<style>
+    table.table-custom th,
+    table.table-custom td {
+        text-align: center;       /* horizontal center */
+        vertical-align: middle;   /* vertical center */
+        font-size: 14px;          /* font lebih besar */
+    }
+
+    table.table-custom td i,
+    table.table-custom td .form-check-input {
+        vertical-align: middle;
+    }
+</style>
+
 <script>
 $(document).ready(function() {
     let datatableUrl = '{{ route('superuser.master.product.json') }}';
@@ -281,9 +305,9 @@ $(document).ready(function() {
             {data: 'brand_name', name: 'master_products.brand_name', width: "150px"},
             {data: 'category_name', name: 'master_product_categories.category_name', width: "200px"},
             {data: 'name', name: 'master_products.name', width: "250px"},
+            {data: 'on_order', width: "100px"},
             {data: 'status', width: "150px"},
             {data: 'action', width: "100px"},
-            {data: 'action2', width: "100px"},
         ],
         autoWidth: false
     });
@@ -301,6 +325,52 @@ $(document).ready(function() {
     });
 
     $('.js-select2').select2();
+
+    $(document).on('change', '.toggle-on-order', function(e) {
+        e.preventDefault();
+        let checkbox = $(this);
+        let url = checkbox.data('url');
+        let isChecked = checkbox.is(':checked');
+
+        Swal.fire({
+            title: 'Apakah Anda yakin?',
+            text: isChecked ? "Produk akan ditandai sebagai ON ORDER." : "Produk akan dihapus dari ON ORDER.",
+            type: 'warning',
+            showCancelButton: true,
+            confirmButtonText: 'Ya, lanjutkan',
+            cancelButtonText: 'Batal'
+        }).then((result) => {
+            if (result.value) { // swal2 lama pakai result.value
+                $.ajax({
+                    url: url,
+                    type: 'POST',
+                    data: {
+                        _token: '{{ csrf_token() }}',
+                        on_order: isChecked ? 1 : 0
+                    },
+                    success: function(res) {
+                        Swal.fire({
+                            title: 'Berhasil!',
+                            text: res.message ?? "Status berhasil diperbarui.",
+                            type: 'success',
+                            timer: 2000,
+                            showConfirmButton: false
+                        });
+                    },
+                    error: function(xhr) {
+                        Swal.fire({
+                            title: 'Gagal!',
+                            text: "Terjadi kesalahan saat memperbarui status.",
+                            type: 'error'
+                        });
+                        checkbox.prop('checked', !isChecked);
+                    }
+                });
+            } else {
+                checkbox.prop('checked', !isChecked);
+            }
+        });
+    });
 });
 </script>
 @endpush

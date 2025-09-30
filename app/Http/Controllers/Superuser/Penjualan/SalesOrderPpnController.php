@@ -130,7 +130,8 @@ class SalesOrderPpnController extends Controller
         $customer_other_address_id = $request->input('customer_other_address_id');
         $status_so = $request->input('status_so');
 
-        $table = SalesOrder::where(function($query2) use($search,$so_for,$step){
+        $table = SalesOrder::with('do.do_detail_cost')
+                            ->where(function($query2) use($search,$so_for,$step){
                                 if(!empty($step)){
                                     if ($step === 2) { // SO Lanjutan
                                         $query2->whereIn('status', [2, 4]);

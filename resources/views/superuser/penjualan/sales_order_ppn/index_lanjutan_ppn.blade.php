@@ -59,6 +59,7 @@
                     <th scope="col">Created By</th>
                     <th scope="col">Transaksi Type</th>
                     <th scope="col">Tanggal Buat</th>
+                    <th scope="col">Total</th>
                     <th scope="col">Action</th>
                   </tr>
                 </thead>
@@ -72,6 +73,34 @@
                     <td>{{ $row->createdBySuperuser() }}</td>
                     <td>{{$row->type_transaction}}</td>
                     <td><?= date('d-m-Y h:i:s',strtotime($row->created_at)); ?></td>
+                    <td>
+                      @php
+                          // Ambil relasi "do" — bisa Model tunggal atau Collection
+                          $doRelation = $row->do;
+                          if ($doRelation instanceof \Illuminate\Database\Eloquent\Collection) {
+                              $doItem = $doRelation->first();
+                          } else {
+                              $doItem = $doRelation;
+                          }
+
+                          // Normalisasi do_detail_cost jadi Collection (aman jika array/null/model)
+                          $doDetails = collect();
+                          if ($doItem && $doItem->do_detail_cost) {
+                              // Jika sudah Collection (Eloquent), pakai langsung; kalau array/obj pakai collect()
+                              $doDetails = $doItem->do_detail_cost instanceof \Illuminate\Database\Eloquent\Collection
+                                  ? $doItem->do_detail_cost
+                                  : collect($doItem->do_detail_cost);
+                          }
+                      @endphp
+
+                      @if($doDetails->isNotEmpty())
+                          {{-- tampilkan nilai grand_total_idr dari record pertama --}}
+                          {{ number_format($doDetails->first()->grand_total_idr ?? 0, 0, ',', '.') }}
+                      @else
+                          -
+                      @endif
+                  </td>
+
                     <td>
                       @if ($step == 2 && $row->status === 2)
                       <button type="button" class="btn btn-primary btn-sm btn-flat" data-toggle="modal" data-target="#myModal{{$row->id}}"><i class="fa fa-eye"></i> View</button>

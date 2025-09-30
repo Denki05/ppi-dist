@@ -11,16 +11,19 @@ use Maatwebsite\Excel\Concerns\WithMapping;
 class CustomerOtherAddressExport implements FromQuery, WithHeadings, WithMapping, ShouldAutoSize
 {
     private $columns = [
-        'master_customer_other_addresses.id', 
+        'master_customer_other_addresses.id as id', 
         'master_customer_other_addresses.name', 
         'master_customer_other_addresses.member_default', 
         'master_customer_other_addresses.text_kota', 
-        'master_customer_other_addresses.officer',
         'master_customer_other_addresses.account_representative', 
         'master_customer_other_addresses.account_representative_optional_1', 
         'master_customer_other_addresses.account_representative_optional_2', 
         'master_customer_other_addresses.situation',
-        'master_customers.pic', // Adding a column from the joined 'customers' table
+        'master_customers.pic as pic', // Adding a column from the joined 'customers' table
+        'master_customer_other_addresses.officer as officer',
+        'master_customer_other_addresses.account_representative as ar1',
+        'master_customer_other_addresses.account_representative_optional_1 as ar2',
+        'master_customer_other_addresses.account_representative_optional_2 as ar3',
         'master_customer_categories.name as category_name', // Including category name
         'master_customer_other_addresses.address', 
         'master_customer_other_addresses.text_provinsi', 
@@ -29,12 +32,13 @@ class CustomerOtherAddressExport implements FromQuery, WithHeadings, WithMapping
         'master_customer_other_addresses.zone',
         'master_customer_other_addresses.phone',
         'master_customer_other_addresses.contact_person',
+        'master_customer_other_addresses.setting_income_target',
         'master_customers.has_tempo',
     ];
 
     private $headings = [
-        'Nama', 'Owner', 'Category', 'Alamat', 'Provinsi',
-        'Kota', 'Kecamatan', 'Kelurahan', 'Zona', 'Nomer Telfon', 'Tipe Pembayaran'
+        'Id', 'Member Default', 'Nama', 'Owner', 'Category', 'Alamat', 'Pic', 'Office', 'AR1', 'AR2', 'AR3', 'Provinsi',
+        'Kota', 'Kecamatan', 'Kelurahan', 'Zona', 'Nomer Telfon', 'Tipe Pembayaran', 'Target Omset'
     ];
 
     private $status;
@@ -64,12 +68,20 @@ class CustomerOtherAddressExport implements FromQuery, WithHeadings, WithMapping
     public function map($row): array
     {
         $paymentType = $row->has_tempo == 0 ? 'CASH' : 'TEMPO';
+        $memberDefault = $row->member_default == 0 ? 'NO' : 'YES';
 
         return [
+            $row->id, // ID member
+            $memberDefault,
             $row->name . ' ' . $row->text_kota, // Combine name and city
             $row->contact_person ?? 'N/A', // Default to 'N/A' if null
             $row->category_name ?? 'Uncategorized', // Use category name
             $row->address ?? 'N/A', // Address handling
+            $row->pic ?? 'N/A', // Address handling
+            $row->officer ?? 'N/A', // Address handling
+            $row->ar1 ?? 'N/A', // Address handling
+            $row->ar2 ?? 'N/A', // Address handling
+            $row->ar3 ?? 'N/A', // Address handling
             $row->text_provinsi ?? 'N/A',
             $row->text_kota ?? 'N/A',
             $row->text_kecamatan ?? 'N/A',
@@ -77,6 +89,7 @@ class CustomerOtherAddressExport implements FromQuery, WithHeadings, WithMapping
             $row->zone ?? 'N/A',
             $row->phone ?? 'N/A', // Phone number
             $paymentType, // Payment type
+            $row->setting_income_target,
         ];
     }
 }

@@ -53,6 +53,10 @@ Route::group([
         Route::get('/json2', 'PayableController@json2')->name('json2');
         Route::get('/pageReport', 'PayableController@pageReport')->name('pageReport');
         Route::get('/getDetailInvoice/{id}', 'PayableController@getDetailInvoice')->name('getDetailInvoice');
+        Route::get('/unpaidInvoices', 'PayableController@unpaidInvoices')->name('unpaidInvoices');
+        Route::get('/customerSearch', 'PayableController@customerSearch')->name('customerSearch');
+        Route::get('/json_done', 'PayableController@json_done')->name('json_done');
+        Route::delete('payable/{id}', 'PayableController@destroy')->name('superuser.finance.payable.destroy');
     });
     Route::resource('payable', 'PayableController');
 

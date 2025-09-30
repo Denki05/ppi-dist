@@ -22,7 +22,8 @@ class ProductTable extends Table
             'master_products.brand_name as brand_name', 
             'master_product_categories.name as category_name', 
             'master_products.name', 'master_products.status', 
-            'master_products.created_at'
+            'master_products.created_at',
+            'master_products.on_order',
         )
         ->where(function ($query) use ($request) {
             if ($request->product_name != 'all') {
@@ -76,12 +77,7 @@ class ProductTable extends Table
                 return 'table-warning';
             }
         });
-        
-        $table->editColumn('name', function (Product $model) {
-            $view = route('superuser.master.product.show', $model);
-            return "<a href=\"{$view}\">$model->name</a>";
-        });
-        
+
         $table->editColumn('status', function (Product $model) {
             return $model->status();
         });
@@ -103,11 +99,39 @@ class ProductTable extends Table
             }
         });
 
+        $table->addColumn('on_order', function (Product $model) {
+            $toggleUrl = route('superuser.master.product.update_on_order', base64_encode($model->id));
+
+            $checkbox = "
+                <div class='d-inline-flex align-items-center ms-3'>
+                    <input type='checkbox' 
+                        class='toggle-on-order form-check-input me-1' 
+                        data-url='{$toggleUrl}' 
+                        ".($model->on_order == $model::ON_ORDER['ORDER'] ? "checked" : "")." 
+                    />
+                </div>
+            ";
+
+            if ($model->status == $model::STATUS['ACTIVE']) {
+                return "
+                    {$checkbox}
+                ";
+            }
+            
+            if ($model->status == $model::STATUS['INACTIVE']) {
+                return "
+                    {$checkbox}
+                ";
+            }
+        });
+
         $table->addColumn('action', function (Product $model) {
 
             $view = route('superuser.master.product.show', base64_encode($model->id));
             $edit = route('superuser.master.product.edit', base64_encode($model->id));
             $destroy = route('superuser.master.product.destroy', $model);
+            $inactive  = route('superuser.master.product.inactiveStatus', base64_encode($model->id));
+            $active    = route('superuser.master.product.activeStatus', base64_encode($model->id));
 
             if ($model->status == $model::STATUS['DELETED']) {
                 return "
@@ -119,6 +143,36 @@ class ProductTable extends Table
                 ";
             }
 
+            if ($model->status == $model::STATUS['ACTIVE']) {
+               return "
+                    <a href=\"{$view}\">
+                        <button type=\"button\" class=\"btn btn-sm btn-circle btn-alt-secondary\" title=\"View\">
+                            <i class=\"fa fa-eye\"></i>
+                        </button>
+                    </a>
+                    <a href=\"{$edit}\">
+                        <button type=\"button\" class=\"btn btn-sm btn-circle btn-alt-secondary\" title=\"Edit\">
+                            <i class=\"fa fa-pencil\"></i>
+                        </button>
+                    </a>
+                    
+                    <a href=\"javascript:deleteConfirmation('{$destroy}')\">
+                        <button type=\"button\" class=\"btn btn-sm btn-circle btn-alt-danger\" title=\"Delete\">
+                            <i class=\"fa fa-trash\"></i>
+                        </button>
+                    </a>
+
+                    <a href=\"javascript:saveConfirmation('{$inactive}')\">
+                        <button type=\"button\" class=\"btn btn-sm btn-circle btn-alt-secondary\" title=\"Inactive Status\">
+                            <i class=\"fa fa-unlock-alt\" aria-hidden=\"true\"></i>
+                        </button>
+                    </a>
+
+                    
+                ";
+            }
+
+            if ($model->status == $model::STATUS['INACTIVE']) {
                 return "
                     <a href=\"{$view}\">
                         <button type=\"button\" class=\"btn btn-sm btn-circle btn-alt-secondary\" title=\"View\">
@@ -136,27 +190,7 @@ class ProductTable extends Table
                             <i class=\"fa fa-trash\"></i>
                         </button>
                     </a>
-                ";
 
-            
-        });
-
-        $table->addColumn('action2', function (Product $model) {
-            $inactive = route('superuser.master.product.inactiveStatus', base64_encode($model->id));
-            $active = route('superuser.master.product.activeStatus', base64_encode($model->id));
-
-            if ($model->status == $model::STATUS['ACTIVE']) {
-                return "
-                    <a href=\"javascript:saveConfirmation('{$inactive}')\">
-                        <button type=\"button\" class=\"btn btn-sm btn-circle btn-alt-secondary\" title=\"Inactive Status\">
-                            <i class=\"fa fa-unlock-alt\" aria-hidden=\"true\"></i>
-                        </button>
-                    </a>
-                ";
-            }
-
-            if ($model->status == $model::STATUS['INACTIVE']) {
-                return "
                     <a href=\"javascript:saveConfirmation('{$active}')\">
                         <button type=\"button\" class=\"btn btn-sm btn-circle btn-alt-secondary\" title=\"Active Status\">
                             <i class=\"fa fa-lock\" aria-hidden=\"true\"></i>
@@ -164,9 +198,12 @@ class ProductTable extends Table
                     </a>
                 ";
             }
+
+            
         });
 
-        $table->rawColumns(['name', 'check', 'action', 'action2']);
+
+        $table->rawColumns(['check', 'action', 'on_order']);
 
         return $table->make(true);
     }

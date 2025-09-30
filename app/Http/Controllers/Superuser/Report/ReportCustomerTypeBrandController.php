@@ -80,6 +80,8 @@ class ReportCustomerTypeBrandController extends Controller
             $start = $request->query('period_from');
             $end = $request->query('period_to');
 
+            // $currentYear = 2024;
+
             if (!$start || !$end) {
                 return redirect()->back()->with('error', 'Error: Rentang tanggal harus diisi.');
             }
@@ -87,6 +89,8 @@ class ReportCustomerTypeBrandController extends Controller
             // Memastikan format tanggal sesuai untuk query database
             $startDate = Carbon::parse($start)->startOfDay();
             $endDate = Carbon::parse($end)->endOfDay();
+
+            // dd($startDate, $endDate);
 
             DB::table('penjualan_do')
                 ->leftJoin('penjualan_do_details', 'penjualan_do_details.do_id', '=', 'penjualan_do.id')
@@ -116,6 +120,7 @@ class ReportCustomerTypeBrandController extends Controller
                 )
                 ->where('penjualan_do.status', 6)
                 ->whereBetween('penjualan_so.so_date', [$startDate, $endDate])
+                // ->whereYear('penjualan_so.so_date', $currentYear)
                 ->where(function ($query) {
                     $query->where('master_customers.status', 1)
                         ->orWhere('master_customers.existence', 1);
@@ -194,6 +199,104 @@ class ReportCustomerTypeBrandController extends Controller
         }
     }
 
+    // public function postData(Request $request)
+    // {
+    //     try {
+    //         $currentYear = 2024;
+
+    //         DB::table('penjualan_do')
+    //             ->leftJoin('penjualan_do_details', 'penjualan_do_details.do_id', '=', 'penjualan_do.id')
+    //             ->leftJoin('penjualan_do_item', 'penjualan_do_item.do_id', '=', 'penjualan_do.id')
+    //             ->leftJoin('penjualan_so', 'penjualan_do.so_id', '=', 'penjualan_so.id')
+    //             ->leftJoin('master_customer_other_addresses', 'penjualan_do.customer_other_address_id', '=', 'master_customer_other_addresses.id')
+    //             ->leftJoin('master_customers', 'master_customer_other_addresses.customer_id', '=', 'master_customers.id')
+    //             ->leftJoin('master_customer_categories', 'master_customers.category_id', '=', 'master_customer_categories.id')
+    //             ->select(
+    //                 DB::raw('SUM(penjualan_do_item.qty) AS invoice_qty'),
+    //                 'master_customers.id AS customerID',
+    //                 'master_customer_other_addresses.id AS otherAddressID',
+    //                 'master_customer_other_addresses.name AS customer_name',
+    //                 'master_customer_categories.name AS customer_type',
+    //                 'master_customer_other_addresses.text_kota AS customer_kota',
+    //                 'master_customer_other_addresses.text_provinsi AS customer_provinsi',
+    //                 'master_customer_other_addresses.zone AS customer_zone',
+    //                 'penjualan_do.do_code AS invoice_code',
+    //                 'penjualan_so.so_date AS invoice_date',
+    //                 'penjualan_so.brand_name AS invoice_brand',
+    //                 'penjualan_so.type_so AS invoice_type',
+    //                 'penjualan_do.id AS do_id',
+    //                 'penjualan_do.idr_rate AS do_rate'
+    //             )
+    //             ->where('penjualan_do.status', 6)
+    //             ->whereYear('penjualan_so.so_date', $currentYear)
+    //             ->where(function ($query) {
+    //                 $query->where('master_customers.status', 1)
+    //                     ->orWhere('master_customers.existence', 1);
+    //             })
+    //             ->groupBy('penjualan_do.do_code')
+    //             ->orderBy('penjualan_do.do_code')
+    //             ->chunk(100, function ($results) {
+    //                 foreach ($results as $row) {
+    //                     // ambil detail DO & item
+    //                     $penjualan_do_details = DB::table('penjualan_do_details')
+    //                         ->where('do_id', $row->do_id)
+    //                         ->first();
+
+    //                     $penjualan_do_items = DB::table('penjualan_do_item')
+    //                         ->where('do_id', $row->do_id)
+    //                         ->get();
+
+    //                     $purchase_total = 0;
+
+    //                     if ($penjualan_do_details && $penjualan_do_items->isNotEmpty()) {
+    //                         $subtotal_item = $penjualan_do_items->sum(function ($item) use ($row) {
+    //                             return (($item->price - $item->usd_disc) * $item->qty) * $row->do_rate;
+    //                         });
+
+    //                         // purchase_total_idr = subtotal - semua diskon - voucher (tanpa ppn)
+    //                         $purchase_total = $subtotal_item
+    //                             - ($penjualan_do_details->discount_1_idr ?? 0)
+    //                             - ($penjualan_do_details->discount_2_idr ?? 0)
+    //                             - ($penjualan_do_details->discount_idr ?? 0)
+    //                             - ($penjualan_do_details->voucher_idr ?? 0);
+    //                     }
+
+    //                     // siapkan data untuk disimpan
+    //                     $attributes = [
+    //                         'invoice_code' => $row->invoice_code,
+    //                     ];
+
+    //                     $values = [
+    //                         'customer_id'                 => $row->customerID,
+    //                         'other_address_id'            => $row->otherAddressID,
+    //                         'customer_name'               => $row->customer_name,
+    //                         'customer_type'               => $row->customer_type,
+    //                         'customer_kota'               => $row->customer_kota,
+    //                         'customer_provinsi'           => $row->customer_provinsi,
+    //                         'customer_zone'               => $row->customer_zone,
+    //                         'invoice_date'                => $row->invoice_date,
+    //                         'invoice_brand'               => $row->invoice_brand,
+    //                         'invoice_type'                => $row->invoice_type,
+    //                         'invoice_qty'                 => $row->invoice_qty ?? 0,
+    //                         'invoice_purchase'            => $purchase_total, // selalu pakai nilai betul
+    //                         'invoice_delivery_order_cost' => $penjualan_do_details->delivery_cost_idr ?? 0,
+    //                         'updated_at'                  => now()
+    //                     ];
+
+    //                     // simpan ke CustomerTypeBrandReports
+    //                     $report = CustomerTypeBrandReports::firstOrNew($attributes);
+    //                     $report->fill($values);
+    //                     $report->save();
+    //                 }
+    //             });
+
+    //         return redirect()->back()->with('message', 'Berhasil Sync data!');
+    //     } catch (\Exception $e) {
+    //         Log::error('Sync data failed: ' . $e->getMessage());
+    //         return redirect()->back()->with('error', 'Error: ' . $e->getMessage());
+    //     }
+    // }
+
     public function print_report(Request $request)
     {
         $validatedData = $request->validate([
@@ -263,11 +366,13 @@ class ReportCustomerTypeBrandController extends Controller
 
     public function removeDt(Request $request)
     {
-        // $currentMonth = Carbon::now()->month;
+        $currentMonth = Carbon::now()->month;
         $currentYear = Carbon::now()->year;
 
+        // $currentYear = 2024;     
+
         DB::table('report_customer_type_brand')
-            // ->whereMonth('invoice_date', $currentMonth)
+            ->whereMonth('invoice_date', $currentMonth)
             ->whereYear('invoice_date', $currentYear)
             ->delete();
 
