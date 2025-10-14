@@ -256,6 +256,7 @@ class SalesOrderPpnController extends Controller
                 $sales_order_ppn->status = 1;
                 $sales_order_ppn->count_rev = 0;
                 $sales_order_ppn->idr_rate = 1;
+                $sales_order_ppn->note = $request->note;
                 if($sales_order_ppn->save()){
                     if($request->sku) {
                         foreach($request->sku as $key => $value){

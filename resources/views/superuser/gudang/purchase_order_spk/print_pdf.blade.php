@@ -98,7 +98,7 @@
 
   $header_text = null;
   if ($result->type == 0) {
-      $header_text = "SURAT PERINTAH KKERJA PPN";
+      $header_text = "SURAT PERINTAH KERJA PPN";
   } else {
     $header_text = "FORM PERMINTAAN BARANG";
   }
