@@ -19,6 +19,7 @@
         "fideloper/proxy": "^4.0",
         "florianv/laravel-swap": "^2.1",
         "fsasvari/laravel-trailing-slash": "^1.1",
+        "guzzlehttp/guzzle": "^6.5",
         "intervention/image": "^2.7",
         "laravel/framework": "^6.0",
         "laravel/helpers": "^1.6",

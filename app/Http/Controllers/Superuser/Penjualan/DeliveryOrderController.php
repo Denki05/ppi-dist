@@ -30,6 +30,8 @@ use App\Entities\Account\User;
 use App\Notifications\DoNotification;
 use App\Repositories\CodeRepo;
 use Illuminate\Support\Collection;
+use GuzzleHttp\Client;
+use Illuminate\Support\Facades\Log;
 use Validator;
 use App\Helper\LogActivity;
 use PDF;
@@ -552,6 +554,42 @@ class DeliveryOrderController extends Controller
             // Commit transaction
             DB::commit();
 
+
+            // KIRIM INVOICE KE AGENDA TAKS LIST
+            // =============== KIRIM DATA INVOICE KE SISTEM AGENDA ===================
+            try {
+                if ($get_inv && $customer) {
+                    $payload = [
+                        'pic'          => $customer->store->pic ?? '-',
+                        'customer'     => $customer->name ?? 'Unknown',
+                        'invoice_code' => $get_inv->invoice_code ?? $get_inv->code ?? '-',
+                        'amount'       => $get_inv->grand_total_idr ?? 0,
+                    ];
+
+                    $client = new Client();
+                    $response = $client->post(env('AGENDA_URL'), [
+                        'headers' => [
+                            'Authorization' => 'Bearer ' . env('AGENDA_TOKEN'),
+                            'Accept'        => 'application/json',
+                        ],
+                        'form_params' => $payload,
+                        'timeout'     => 10,
+                    ]);
+
+                    $result = json_decode($response->getBody(), true);
+
+                    Log::info('✅ Invoice sent to Agenda', [
+                        'payload'  => $payload,
+                        'response' => $result,
+                    ]);
+                } else {
+                    Log::warning('⚠️ Invoice or Customer not found for DO ID: ' . $do_id);
+                }
+            } catch (\Exception $ex) {
+                Log::error('❌ Gagal kirim data invoice ke Agenda: ' . $ex->getMessage());
+            }
+            // ======================================================================
+
             $userIds = [32, 36];
             $users = User::whereIn('id', $userIds)->get();
 
@@ -563,6 +601,7 @@ class DeliveryOrderController extends Controller
             return redirect()->route('superuser.penjualan.delivery_order.index')->with('success','DO berhasil update resi!');
 
         } catch (\Throwable $e) {
+            dd($e);
             DB::rollback();
             $data_json["IsError"] = true;
             $data_json["Message"] = $e->getMessage();
