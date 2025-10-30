@@ -43,8 +43,10 @@ class ReportSummaryCustomerProductController extends Controller
             }
         }
 
+        // $data['customers'] = CustomerOtherAddress::leftJoin('master_customers', 'master_customers_other_addresses')
+        //                             ->where('master_customers.status', 1)
+        //                             ->get();
         $data['customers'] = CustomerOtherAddress::get();
-        // $data['product'] = ProductPack::get();
         $data['brand'] = BrandLokal::get();
 
         // return view($this->view."index",$data);

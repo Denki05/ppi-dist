@@ -23,6 +23,12 @@
 
 <div class="block">
   <div class="block-content">
+  @if(session('is_from_agenda', false))
+    <button id="btn-back-agenda" class="btn btn-warning">
+      ← Kembali ke Daftar SO
+    </button>
+  @endif
+
     <a href="{{ route('superuser.penjualan.so_proforma.create') }}">
       <button type="button" class="btn btn-outline-primary min-width-125">Create</button>
     </a>
@@ -123,5 +129,20 @@
 @push('scripts')
 <script type="text/javascript">
     var table = $('#datatable').DataTable({});
+
+    $(document).ready(function() {
+        @if(session('is_from_agenda', false))
+          $('#btn-back-agenda').on('click', function() {
+              window.location.href = "https://sys-af.lsfragrance.id/transaksi/sales_order/list";
+          });
+
+          // Cegah back browser
+          window.history.replaceState(null, null, window.location.href);
+          window.onpopstate = function(event) {
+              alert("Gunakan tombol Back di halaman ini, tidak bisa pakai back browser.");
+              history.pushState(null, null, window.location.href);
+          };
+        @endif
+    });
 </script>
 @endpush

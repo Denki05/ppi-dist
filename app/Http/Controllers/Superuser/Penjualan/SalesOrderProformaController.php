@@ -57,6 +57,7 @@ class SalesOrderProformaController extends Controller
             ->where('master_products_packaging.name', 'LIKE', '%'.$request->input('q', '').'%')
             ->where('master_products_packaging.status', ProductPack::STATUS['ACTIVE'])
             ->where('master_products_packaging.condition', ProductPack::CONDITION['ENABLE'])
+            ->where('master_products.on_order', 1)
             ->selectRaw("
                 master_products_packaging.id, 
                 CONCAT(master_products_packaging.code, ' - ', master_products_packaging.name, ' / ', master_packaging.pack_name) as text, 

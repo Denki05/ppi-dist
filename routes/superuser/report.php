@@ -33,6 +33,7 @@ Route::group([
         Route::get('/removeDt', 'ReportCustomerTypeBrandController@removeDt')->name('removeDt');
         Route::post('/print_report', 'ReportCustomerTypeBrandController@print_report')->name('print_report');
         Route::post('/exportReport', 'ReportCustomerTypeBrandController@exportReport')->name('exportReport');
+        Route::post('/export_officer', 'ReportCustomerTypeBrandController@export_officer')->name('export_officer');
     });
     Route::resource('customer_type_brand', 'ReportCustomerTypeBrandController');
 

@@ -76,7 +76,8 @@ class ProductController extends Controller
         }
 
         $data['product'] = Product::distinct()->get(['code', 'name']);
-        $data['brand_lokal'] = BrandLokal::get();
+        // $data['brand_lokal'] = BrandLokal::get();
+        $data['brand_lokal'] = BrandLokal::whereIn('brand_name', ['GCF', 'Senses'])->get();
         $data['kategori'] = ProductCategory::get();
 
         return view('superuser.master.product.index', $data);

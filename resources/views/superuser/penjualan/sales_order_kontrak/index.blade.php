@@ -67,6 +67,12 @@
 
 <div class="block">
   <div class="block-content">
+    @if(session('is_from_agenda', false))
+      <button id="btn-back-agenda" class="btn btn-warning">
+        ← Kembali ke Daftar SO
+      </button>
+    @endif
+
     <a href="{{ route('superuser.penjualan.sales_order_kontrak.create') }}">
       <button type="button" class="btn btn-outline-primary min-width-125">Create</button>
     </a>
@@ -150,6 +156,21 @@
         [20, 50, 100]
       ],
     });
+
+    $('#btn-back-agenda').on('click', function() {
+      window.location.href = "https://sys-af.lsfragrance.id/transaksi/sales_order/list";
+    });
+
+    @if(session('is_from_agenda', false))
+          // Tambah state baru agar history browser diubah
+          history.pushState(null, null, location.href);
+
+          // Saat user klik back
+          window.onpopstate = function(event) {
+              // Redirect ke halaman yang kita tentukan (daftar SO)
+              window.location.replace("https://sys-af.lsfragrance.id/transaksi/sales_order/list");
+          };
+      @endif
   });
 </script>
 @endpush

@@ -160,7 +160,7 @@ class ApiCustomerController extends Controller
             'customers' => $allCustomers->sortBy('nama')->values()
         ], 200);
     }
-    
+
     /**
      * Mengonversi nama kategori dari DB ke nama yang diinginkan.
      *
@@ -182,5 +182,64 @@ class ApiCustomerController extends Controller
         ];
         
         return $categoryMap[$dbCategory] ?? 'Lain-lain';
+    }
+
+    public function getApiFileDoctorByName(Request $request)
+    {
+        $nama_customer = $request->query('q'); 
+
+        if (empty($nama_customer) || strlen($nama_customer) < 3) {
+            return response()->json([], 200); // Kembalikan array kosong jika query tidak valid
+        }
+
+        // Ambil data pelanggan existing
+        $existingCustomers = DB::table('master_customers')
+            ->join('master_customer_other_addresses', 'master_customers.id', '=', 'master_customer_other_addresses.customer_id')
+            ->join('master_customer_categories', 'master_customers.category_id', '=', 'master_customer_categories.id')
+            ->where('master_customer_other_addresses.name', 'like', "%{$nama_customer}%")
+            ->select(
+                'master_customer_other_addresses.id',
+                'master_customer_other_addresses.name as nama_customer_existing',
+                'master_customer_categories.name as nama_kategori_existing',
+                'master_customers.pic as pic_existing'
+            )
+            ->get();
+        
+        // Ambil data pelanggan prospek
+        $prospekCustomers = DB::table('master_customers_prospek')
+            ->join('master_customer_other_addresses_prospek', 'master_customers_prospek.id', '=', 'master_customer_other_addresses_prospek.customer_id')
+            ->join('master_customer_categories', 'master_customers_prospek.category_id', '=', 'master_customer_categories.id')
+            ->where('master_customer_other_addresses_prospek.name', 'like', "%{$nama_customer}%")
+            ->select(
+                'master_customer_other_addresses_prospek.id',
+                'master_customer_other_addresses_prospek.name as nama_customer_prospek',
+                'master_customer_categories.name as nama_kategori_prospek',
+                'master_customers.pic as pic_prospek'
+            )
+            ->get();
+
+        // Gabungkan kedua koleksi data ke dalam format yang seragam
+        $allCustomers = $existingCustomers->map(function ($customer) {
+            return [
+                'id' => $customer->id, // Beri prefix agar unik
+                'nama' => $customer->nama_customer_existing,
+                'kategori' => $this->getCategoryName($customer->nama_kategori_existing),
+                'pic' => $customer->pic_existing,
+                'jenis' => 'EXISTING',
+            ];
+        })->merge($prospekCustomers->map(function ($customer) {
+            return [
+                'id' => $customer->id, // Beri prefix agar unik
+                'nama' => $customer->nama_customer_prospek,
+                'kategori' => $this->getCategoryName($customer->nama_kategori_prospek),
+                'pic' => $customer->pic_prospek,
+                'jenis' => 'PROSPEK',
+            ];
+        }));
+
+        return response()->json([
+            'success' => true,
+            'customers' => $allCustomers->sortBy('nama')->values()
+        ], 200);
     }
 }

@@ -89,6 +89,12 @@
       </div>
     </div>
 
+        @if(session('is_from_agenda', false))
+          <button id="btn-back-agenda" class="btn btn-warning">
+            ← Kembali ke Daftar SO
+          </button>
+        @endif
+        
         <button type="button" class="btn btn-primary" data-toggle="modal" data-target="#exampleModal">
           <i class="fa fa-plus mr-10"></i> Add SO
         </button>
@@ -395,6 +401,21 @@
           text = text.concat(exp);
           document.getElementById('editor').value = text;
         }
+
+        $('#btn-back-agenda').on('click', function() {
+            window.location.href = "https://sys-af.lsfragrance.id/transaksi/sales_order/list";
+        });
+
+        @if(session('is_from_agenda', false))
+            // Tambah state baru agar history browser diubah
+            history.pushState(null, null, location.href);
+
+            // Saat user klik back
+            window.onpopstate = function(event) {
+                // Redirect ke halaman yang kita tentukan (daftar SO)
+                window.location.replace("https://sys-af.lsfragrance.id/transaksi/sales_order/list");
+            };
+        @endif
     })
 </script>
 @endpush

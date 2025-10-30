@@ -456,4 +456,83 @@ class ReportCustomerTypeBrandController extends Controller
             return response()->json(['error' => 'An error occurred while generating the report: ' . $e->getMessage()], 500);
         }
     }
+
+    public function export_officer(Request $request)
+    {
+        $validatedData = $request->validate([
+            'start' => 'required|date',
+            'end' => 'required|date|after_or_equal:start',
+            'officer_name' => 'nullable|string',
+            'action' => 'required|string|in:print,excel',
+        ]);
+
+        $start = $validatedData['start'];
+        $end = $validatedData['end'];
+        $officer = $validatedData['officer_name'] ?? '';
+        $action = $validatedData['action'];
+
+        // dd($officer);
+
+        $baseReportPath = public_path('cr/report/management/report_customer_register/');
+        $exportPath = $baseReportPath . "export\\";
+
+        $reportName = "officer_report_nominal_2.rpt";
+        $fileName = "report-officer-";
+
+        $my_report = $baseReportPath . $reportName;
+        $outputFile = $exportPath . $fileName . date("Y-m-d_H-i-s") . ($action === 'print' ? ".pdf" : ".xls");
+
+        try {
+            if (!file_exists($my_report)) {
+                return response()->json(['error' => 'Report file not found'], 404);
+            }
+
+            if (!file_exists($exportPath)) {
+                mkdir($exportPath, 0777, true);
+            }
+
+            $crapp = new COM("CrystalDesignRunTime.Application");
+            $creport = $crapp->OpenReport($my_report, 1);
+
+            $creport->Database->Tables(1)->SetLogOnInfo("LOCAL", "ppi_araya", "root", "");
+            $creport->EnableParameterPrompting = false;
+
+            // ✅ Sesuaikan parameter index sesuai rpt (2=start, 3=end, 4=officer)
+            $creport->ParameterFields(2)->SetCurrentValue(date('d-m-Y', strtotime($start)));
+            $creport->ParameterFields(3)->SetCurrentValue(date('d-m-Y', strtotime($end)));
+            $creport->ParameterFields(4)->SetCurrentValue($officer);
+
+            // ✅ Officer diambil dari tabel yang benar
+            $creport->RecordSelectionFormula =
+                "({penjualan_so.so_date}>=#$start# AND " .
+                "{penjualan_so.so_date}<=#$end#)" .
+                (!empty($officer) ? " AND {penjualan_do.officer}='$officer'" : "");
+
+            $creport->ExportOptions->DiskFileName = $outputFile;
+            $creport->ExportOptions->DestinationType = 1;
+            $creport->ExportOptions->FormatType = $action === 'print' ? 31 : 29;
+
+            $creport->Export(false);
+            $creport = null;
+            $crapp = null;
+
+            if (file_exists($outputFile)) {
+
+                if ($action === 'print') {
+                    $pdfUrl = asset('cr/report/management/report_customer_register/export/' . basename($outputFile));
+                    return response()->json(['success' => true, 'pdf_url' => $pdfUrl]);
+                }
+
+                return response()->download($outputFile, basename($outputFile))->deleteFileAfterSend(true);
+            }
+
+            return response()->json(['error' => 'File not generated'], 500);
+
+        } catch (\Exception $e) {
+            dd($e);
+            Log::error('export_officer FAILED: ' . $e->getMessage());
+            return response()->json(['error' => $e->getMessage()], 500);
+        }
+    }
+
 }

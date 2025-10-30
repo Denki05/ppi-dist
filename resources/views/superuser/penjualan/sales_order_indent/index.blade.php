@@ -55,6 +55,12 @@
 
 <div class="block">
   <div class="block-content">
+    @if(session('is_from_agenda', false))
+      <button id="btn-back-agenda" class="btn btn-warning">
+        ← Kembali ke Daftar SO
+      </button>
+    @endif
+
     <button type="button" class="btn btn-outline-info ml-10" data-toggle="modal" data-target="#modal-manage">Manage</button>
   </div>
   <div class="block-content block-content-full">
@@ -286,6 +292,21 @@
         }
       });
     });
+
+    $('#btn-back-agenda').on('click', function() {
+      window.location.href = "https://sys-af.lsfragrance.id/transaksi/sales_order/list";
+    });
+
+    @if(session('is_from_agenda', false))
+        // Tambah state baru agar history browser diubah
+        history.pushState(null, null, location.href);
+
+        // Saat user klik back
+        window.onpopstate = function(event) {
+            // Redirect ke halaman yang kita tentukan (daftar SO)
+            window.location.replace("https://sys-af.lsfragrance.id/transaksi/sales_order/list");
+        };
+    @endif
   });
 </script>
 

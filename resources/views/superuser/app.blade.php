@@ -5,6 +5,10 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, shrink-to-fit=no">
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <meta name="theme-color" content="#ffffff">
+
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
+    <meta http-equiv="Pragma" content="no-cache" />
+    <meta http-equiv="Expires" content="0" />
     @php
       $user = Auth::id();
       $notifCount = DB::table('notifications')
@@ -22,7 +26,9 @@
   <body>
     <div class="container-scroller">
       <div class="horizontal-menu">
+      @if(!session('is_from_agenda', false))
         @include('superuser.component.menu')
+      @endif
       </div>
       <main id="main-container">
         <div class="content">

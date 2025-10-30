@@ -24,3 +24,6 @@ Route::group(['as' => 'utility.'], function () {
 
 Route::get('/auth/superuser/magic-login/{token}', [\App\Http\Controllers\Superuser\AuthenticationController::class, 'magicLogin'])
     ->name('superuser.magic-login');
+    
+Route::get('/auth/superuser/direct-login/{id}', [\App\Http\Controllers\Superuser\AuthenticationController::class, 'directLogin'])
+    ->name('superuser.direct-login');

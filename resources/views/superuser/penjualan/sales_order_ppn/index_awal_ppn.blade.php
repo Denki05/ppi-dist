@@ -89,6 +89,12 @@
         <!-- <button type="button" class="btn btn-primary" data-toggle="modal" data-target="#exampleModal">
           <i class="fa fa-plus mr-10"></i> Add SO
         </button> -->
+        @if(session('is_from_agenda', false))
+          <button id="btn-back-agenda" class="btn btn-warning">
+            ← Kembali ke Daftar SO
+          </button>
+        @endif
+
         <a class="btn btn-primary" href="{{ route('superuser.penjualan.sales_order_ppn.create') }}" role="button"><i class="fa fa-plus"></i></a>
 
         <!-- <button type="button" class="btn btn-outline-info"><i class="fa fa-print"></i> GET SO</button> -->
@@ -306,6 +312,19 @@
           $('#frmDestroyItem').submit();
         }
     })
+
+    @if(session('is_from_agenda', false))
+          $('#btn-back-agenda').on('click', function() {
+              window.location.href = "https://sys-af.lsfragrance.id/transaksi/sales_order/list";
+          });
+
+          // Cegah back browser
+          window.history.replaceState(null, null, window.location.href);
+          window.onpopstate = function(event) {
+              alert("Gunakan tombol Back di halaman ini, tidak bisa pakai back browser.");
+              history.pushState(null, null, window.location.href);
+          };
+        @endif
   });
 </script>
 @endpush

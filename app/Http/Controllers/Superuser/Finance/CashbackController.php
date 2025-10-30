@@ -130,10 +130,6 @@ class CashbackController extends Controller
 
         $invoice = PackingOrder::find($id);
 
-        // dd($id);
-
-        // dd($invoice);
-
         $data = [
             'invoice' => $invoice
         ];

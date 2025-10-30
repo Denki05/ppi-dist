@@ -153,6 +153,8 @@ class SalesOrderController extends Controller
             }
         }
 
+        $session = session('is_from_agenda', false);
+
         $search = $request->input('search');
         $so_for = $request->input('so_for');
         $customer_other_address_id = $request->input('customer_other_address_id');
@@ -174,6 +176,7 @@ class SalesOrderController extends Controller
             'brand' => $brand,
             'step' => $step,
             'step_txt' => SalesOrder::STEP[$step] ?? '',
+            'session' => $session,
         ];
 
         return view($this->view . "index_awal", $data);
