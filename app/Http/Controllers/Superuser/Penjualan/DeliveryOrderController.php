@@ -609,6 +609,7 @@ class DeliveryOrderController extends Controller
                     Log::warning('⚠️ Invoice or Customer not found for DO ID: ' . $do_id);
                 }
             } catch (\Exception $ex) {
+                dd($ex);
                 Log::error('❌ Gagal kirim data + PDF invoice ke Agenda: ' . $ex->getMessage());
             }
 
