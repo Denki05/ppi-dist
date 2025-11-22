@@ -15,52 +15,59 @@ class PiutangFakturTable extends Table
      *
      */
     private function query(Request $request)
-    {
-        $model = Invoicing::where('finance_invoicing.status', 1)
-            ->leftJoin('finance_payable_detail', 'finance_invoicing.id', '=', 'finance_payable_detail.invoice_id')
-            ->leftJoin('finance_payable', 'finance_payable_detail.payable_id', '=', 'finance_payable.id')
-            ->leftJoin('master_customer_other_addresses', 'finance_invoicing.customer_other_address_id', '=', 'master_customer_other_addresses.id')
-            ->leftJoin('penjualan_do', 'finance_invoicing.do_id', '=', 'penjualan_do.id')
-            ->leftJoin('penjualan_so', 'penjualan_do.so_id', '=', 'penjualan_so.id')
-            ->leftJoin('penjualan_do_details', 'penjualan_do.id', '=', 'penjualan_do_details.do_id')
-            ->leftJoin('master_customers', 'master_customer_other_addresses.customer_id', '=', 'master_customers.id')
-            ->select(
-                'master_customer_other_addresses.name AS customer_name', 
-                'master_customer_other_addresses.text_kota AS customer_kota', 
-                'finance_invoicing.code AS no_faktur',
-                DB::raw('
-                    CASE
-                        WHEN (penjualan_do_details.grand_total_idr = 
-                            (COALESCE(penjualan_do_details.purchase_total_idr,0) + COALESCE(penjualan_do_details.delivery_cost_idr,0)))
-                        THEN penjualan_do_details.grand_total_idr
-                        ELSE (penjualan_do_details.purchase_total_idr + penjualan_do_details.delivery_cost_idr)
-                    END
-                AS nilai_faktur'),
-                'penjualan_do_details.delivery_cost_idr AS ongkos_kirim',
-                'penjualan_so.so_date AS tanggal_faktur', 
-                'master_customers.tempo_limit AS tempo_limit', 
-                DB::raw('IFNULL(SUM(finance_payable_detail.total), 0) AS pembayaran'),
-                DB::raw('
-                    CASE
-                        WHEN penjualan_do_details.grand_total_idr - IFNULL(SUM(finance_payable_detail.total), 0) <= 0 THEN "PAID"
-                        ELSE "UNPAID"
-                    END AS status_faktur
-                ')
-            )
-            ->whereBetween('penjualan_so.so_date', [$request->startDate, $request->endDate])
-            ->where(function ($query) use ($request) {
-                if ($request->customer != 'all') {
-                    $query->where('master_customer_other_addresses.id', $request->customer);
-                }
-            })
-            ->where('penjualan_so.type_so', 'nonppn')
-            ->groupBy('finance_invoicing.code')
-            ->having('status_faktur', '=', 'UNPAID')
-            ->get();
+{
+    $customer = $request->customer;
 
-        // dd($model);
-        return $model;
+    // Jika customer bisa lebih dari 1 (array atau csv), ubah ke array
+    if ($customer !== 'all') {
+        if (!is_array($customer)) {
+            $customer = explode(',', $customer);
+        }
     }
+
+    $model = Invoicing::where('finance_invoicing.status', 1)
+        ->leftJoin('finance_payable_detail', 'finance_invoicing.id', '=', 'finance_payable_detail.invoice_id')
+        ->leftJoin('finance_payable', 'finance_payable_detail.payable_id', '=', 'finance_payable.id')
+        ->leftJoin('master_customer_other_addresses', 'finance_invoicing.customer_other_address_id', '=', 'master_customer_other_addresses.id')
+        ->leftJoin('penjualan_do', 'finance_invoicing.do_id', '=', 'penjualan_do.id')
+        ->leftJoin('penjualan_so', 'penjualan_do.so_id', '=', 'penjualan_so.id')
+        ->leftJoin('penjualan_do_details', 'penjualan_do.id', '=', 'penjualan_do_details.do_id')
+        ->leftJoin('master_customers', 'master_customer_other_addresses.customer_id', '=', 'master_customers.id')
+        ->select(
+            'master_customer_other_addresses.name AS customer_name',
+            'master_customer_other_addresses.text_kota AS customer_kota',
+            'finance_invoicing.code AS no_faktur',
+            DB::raw('
+                CASE
+                    WHEN (penjualan_do_details.grand_total_idr = 
+                        (COALESCE(penjualan_do_details.purchase_total_idr,0) + COALESCE(penjualan_do_details.delivery_cost_idr,0)))
+                    THEN penjualan_do_details.grand_total_idr
+                    ELSE (penjualan_do_details.purchase_total_idr + penjualan_do_details.delivery_cost_idr)
+                END AS nilai_faktur
+            '),
+            'penjualan_do_details.delivery_cost_idr AS ongkos_kirim',
+            'penjualan_so.so_date AS tanggal_faktur',
+            'master_customers.tempo_limit AS tempo_limit',
+            DB::raw('IFNULL(SUM(finance_payable_detail.total), 0) AS pembayaran'),
+            DB::raw('
+                CASE
+                    WHEN penjualan_do_details.grand_total_idr - IFNULL(SUM(finance_payable_detail.total), 0) <= 0 THEN "PAID"
+                    ELSE "UNPAID"
+                END AS status_faktur
+            ')
+        )
+        ->whereBetween('penjualan_so.so_date', [$request->startDate, $request->endDate])
+        ->when($customer !== 'all', function ($q) use ($customer) {
+            $q->whereIn('master_customer_other_addresses.id', $customer);
+        })
+        ->where('penjualan_so.type_so', 'nonppn')
+        ->groupBy('finance_invoicing.id')
+        ->having('status_faktur', 'UNPAID')
+        ->get();
+
+    return $model;
+}
+
     
 
     /**

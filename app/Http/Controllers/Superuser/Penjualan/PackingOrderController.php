@@ -893,12 +893,19 @@ class PackingOrderController extends Controller
 
     public function ready(Request $request, $id)
     {
-        if ($request->ajax()) {
-            if(Auth::user()->is_superuser == 0){
-                if(empty($this->access) || empty($this->access->user) || $this->access->can_approve == 0){
-                    return redirect()->route('superuser.index')->with('error','Anda tidak punya akses untuk membuka menu terkait');
+        if (!$request->ajax()) {
+            abort(404);
+        }
+
+        try {
+            if (Auth::user()->is_superuser == 0) {
+                if (empty($this->access) || empty($this->access->user) || $this->access->can_approve == 0) {
+                    return redirect()->route('superuser.index')
+                        ->with('error', 'Anda tidak punya akses untuk membuka menu terkait');
                 }
             }
+
+            DB::beginTransaction();
 
             $getDo = PackingOrder::find($id);
 
@@ -906,66 +913,83 @@ class PackingOrderController extends Controller
                 abort(404);
             }
 
-            // Potong Stock
-            $get_stock = 0;
-            foreach($getDo->do_detail as $row => $value){
+            // --- PROSES POTONG STOK ---
+            foreach ($getDo->do_detail as $row => $value) {
+
                 $base_product_packaging_id = preg_replace('/_\d+$/', '', $value->product_packaging_id);
 
                 $stock = ProductMinStock::where('warehouse_id', $getDo->warehouse_id)
-                                        ->where('product_packaging_id', $base_product_packaging_id) // Base ID
-                                        ->first();
+                    ->where('product_packaging_id', $base_product_packaging_id)
+                    ->first();
+
+                if (!$stock) {
+                    throw new \Exception("Stock tidak ditemukan untuk product_packaging_id: $base_product_packaging_id");
+                }
 
                 $get_stock = $stock->quantity;
-                // DD($stock);
+
                 $stock->quantity = $get_stock - $value->qty;
                 $stock->save();
 
-                // log stock
-                $move = StockMove::where('product_packaging_id' , $value->product_id)
+                // LOG STOCK
+                $move = StockMove::where('product_packaging_id', $value->product_id)
                     ->where('warehouse_id', $getDo->warehouse_id)
                     ->get();
+
                 $move_in = $move->sum('stock_in');
                 $move_out = $move->sum('stock_out');
 
                 $sisa = $get_stock + $move_in - $move_out - $value->qty;
 
-                $insert_stock_move = StockMove::create([
-                    'code_transaction' => $getDo->do_code,
-                    'warehouse_id' => $getDo->warehouse_id,
+                StockMove::create([
+                    'code_transaction'   => $getDo->do_code,
+                    'warehouse_id'       => $getDo->warehouse_id,
                     'product_packaging_id' => $value->product_packaging_id,
-                    'stock_out' => $value->qty,
-                    'stock_balance' => $sisa,
-                    'created_by' => Auth::id()
+                    'stock_out'          => $value->qty,
+                    'stock_balance'      => $sisa,
+                    'created_by'         => Auth::id()
                 ]);
             }
 
+            // Update DO
             $update = PackingOrder::where('id', $getDo->id)->update(['status' => 3]);
 
+            // Kirim Notifikasi
             $user = User::find(29);
-            $user->notify(new DoNotification($getDo));
+            if ($user) {
+                $user->notify(new DoNotification($getDo));
+            }
 
-            if($update){
-                $response['notification'] = [
-                    'alert' => 'notify',
-                    'type' => 'success',
-                    'content' => 'Success',
-                ];
-    
-                $response['redirect_to'] = route('superuser.penjualan.sales_order.index_lanjutan');
-                return $this->response(200, $response); 
-            }
-            else{
-                $response['notification'] = [
-                    'alert' => 'notify',
-                    'type' => 'error',
-                    'content' => 'Error',
-                ];
-    
-                $response['redirect_to'] = route('superuser.penjualan.sales_order.index_lanjutan');
-                return $this->response(200, $response);
-            }
+            DB::commit();
+
+            // RESPONSE SUCCESS
+            $response['notification'] = [
+                'alert'     => 'notify',
+                'type'      => 'success',
+                'content'   => 'Success',
+            ];
+            $response['redirect_to'] = route('superuser.penjualan.sales_order.index_lanjutan');
+
+            return $this->response(200, $response);
+        }
+
+        catch (\Exception $e) {
+            dd($e);
+            DB::rollBack();
+
+            // Untuk debugging bila perlu: Log::error($e->getMessage());
+
+            $response['notification'] = [
+                'alert'     => 'notify',
+                'type'      => 'error',
+                'content'   => 'Terjadi kesalahan: ' . $e->getMessage(),
+            ];
+            $response['redirect_to'] = route('superuser.penjualan.sales_order.index_lanjutan');
+
+            return $this->response(200, $response);
         }
     }
+
 
     public function packed(Request $request)
     {

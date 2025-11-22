@@ -534,7 +534,25 @@
             });
 
         } else if (actionType === 'sync_register') {
-            window.location.href = "{{ route('superuser.report.customer_type_brand.postData') }}";
+            applyTabulasiMonthYearToForm(); // pastikan form sudah diisi tanggalnya
+
+            const startDate = $('#tabulasi_period_from').val();
+            const endDate = $('#tabulasi_period_to').val();
+
+            if (!startDate || !endDate) {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Validasi Gagal',
+                    text: 'Periode harus diisi sebelum melakukan sync.',
+                    confirmButtonText: 'Oke'
+                });
+                return;
+            }
+
+            const url = "{{ route('superuser.report.customer_type_brand.postData') }}" + 
+                        `?period_from=${startDate}&period_to=${endDate}`;
+
+            window.location.href = url;
         }
     }
 

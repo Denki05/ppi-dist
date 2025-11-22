@@ -198,34 +198,37 @@
     });
 
     $('#brand').on('change', function () {
-            let brandId = $(this).val();
+      let selectedBrands = $(this).val();
 
-            // Kosongkan dropdown produk jika tidak ada brand yang dipilih
-            if (brandId === '') {
-                $('#product').html('<option value="">Pilih Produk</option>');
-                return;
-            }
+      if (!selectedBrands || selectedBrands.length === 0) {
+          $('#product').html('<option value="all">All</option>').trigger('change');
+          return;
+      }
 
-            // Panggil endpoint untuk mendapatkan produk berdasarkan brand
-            $.ajax({
-                url: "{{ route('superuser.report.product_performance.getProductsByBrand') }}", // Ganti dengan route yang sesuai
-                type: "GET",
-                data: { brand_id: brandId },
-                success: function (data) {
-                    let productOptions = '<option value="">Pilih Produk</option>';
-                    data.forEach(function (product) {
-                        // Gunakan detail data yang dikembalikan
-                        productOptions += `<option value="${product.product_id}">
-                            ${product.product_code} - ${product.product_name} (${product.product_kemasan})
-                        </option>`;
-                    });
-                    $('#product').html(productOptions);
-                },
-                error: function () {
-                    alert('Gagal memuat data produk.');
-                }
-            });
-        });
+      if (selectedBrands.includes('all')) {
+          $('#product').html('<option value="all">All</option>').trigger('change');
+          return;
+      }
+
+      $.ajax({
+          url: "{{ route('superuser.report.product_performance.getProductsByBrand') }}",
+          type: "GET",
+          data: { 'brand_id[]': selectedBrands }, // <-- penting
+          success: function (data) {
+              let productOptions = '<option value="all">All</option>';
+              data.forEach(function (product) {
+                  productOptions += `<option value="${product.product_id}">
+                      ${product.product_code} - ${product.product_name} (${product.product_kemasan})
+                  </option>`;
+              });
+              $('#product').html(productOptions).trigger('change');
+          },
+          error: function () {
+              alert('Gagal memuat data produk.');
+          }
+      });
+  });
+
 
         $('#btn-reset').on('click', function (e) {
           e.preventDefault();

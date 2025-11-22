@@ -162,6 +162,17 @@ class SalesOrderController extends Controller
 
         $customers = Customer::get();
         $brand = BrandLokal::get();
+
+        // Filter brand berdasarkan division
+        $userDivision = Auth::user()->division;
+        if(!in_array($userDivision, ['Admin', 'Developer', 'Management'])){
+            // Jika bukan Admin/Developer/Management, hanya tampilkan brand tertentu
+            $allowedBrands = ['GCF', 'Senses', 'PPI FF', 'PPI NON FF'];
+            $brand = $brand->filter(function($b) use ($allowedBrands){
+                return in_array($b->brand_name, $allowedBrands);
+            });
+        }
+
         $packing_order = PackingOrder::get();
         
         // Filter addresses based on user access
@@ -2036,43 +2047,113 @@ class SalesOrderController extends Controller
         return ['results' => $results];
     }
 
+    // public function get_product_pack(Request $request)
+    // {
+    //     if ($request->ajax()) {
+    //             $data = [];
+                
+    //             $product = Product::where('master_products.brand_name', $request->id)
+    //                     // ->where('master_products.status', 1)
+    //                     ->where('master_products.on_order', 1)
+    //                     ->leftJoin('master_products_packaging', 'master_products.id', '=', 'master_products_packaging.product_id')
+    //                     ->leftJoin('master_packaging', 'master_products_packaging.packaging_id', '=', 'master_packaging.id')
+    //                     ->leftJoin('master_product_types', 'master_products_packaging.type_id', '=', 'master_product_types.id')
+    //                     ->leftJoin('master_warehouses', 'master_products_packaging.warehouse_id', '=', 'master_warehouses.id')
+    //                     ->select('master_products_packaging.id as id' ,
+    //                                 'master_products_packaging.code as ProductCode', 
+    //                                 'master_products_packaging.name as productName', 
+    //                                 'master_products_packaging.price as productPrice', 
+    //                                 'master_packaging.id as  productPackagingID', 
+    //                                 'master_packaging.pack_name as productPackaging', 
+    //                                 'master_warehouses.name as warehouseName',
+    //                                 'master_product_types.name as typeName',
+    //                     )
+    //                     ->get();
+
+    //             foreach($product as $key){
+    //                 $data[] = [
+    //                     'id' => $key->id,
+    //                     'code' => $key->ProductCode,
+    //                     'name' => $key->productName,
+    //                     'price' => $key->productPrice,
+    //                     'packName' => $key->productPackaging,
+    //                     'packID' => $key->productPackagingID,
+    //                     'warehouseName' => $key->warehouseName,
+    //                     'typeName' => $key->typeName,
+    //                 ];
+    //             }
+
+    //             return response()->json(['code' => 200, 'data' => $data]);
+    //     }
+    // }
+
     public function get_product_pack(Request $request)
     {
-        if ($request->ajax()) {
-                $data = [];
-                
-                $product = Product::where('master_products.brand_name', $request->id)
-                        // ->where('master_products.status', 1)
-                        ->where('master_products.on_order', 1)
-                        ->leftJoin('master_products_packaging', 'master_products.id', '=', 'master_products_packaging.product_id')
-                        ->leftJoin('master_packaging', 'master_products_packaging.packaging_id', '=', 'master_packaging.id')
-                        ->leftJoin('master_product_types', 'master_products_packaging.type_id', '=', 'master_product_types.id')
-                        ->leftJoin('master_warehouses', 'master_products_packaging.warehouse_id', '=', 'master_warehouses.id')
-                        ->select('master_products_packaging.id as id' ,
-                                    'master_products_packaging.code as ProductCode', 
-                                    'master_products_packaging.name as productName', 
-                                    'master_products_packaging.price as productPrice', 
-                                    'master_packaging.id as  productPackagingID', 
-                                    'master_packaging.pack_name as productPackaging', 
-                                    'master_warehouses.name as warehouseName',
-                                    'master_product_types.name as typeName',
-                        )
-                        ->get();
+        if (!$request->ajax()) {
+            abort(403, 'Unauthorized');
+        }
 
-                foreach($product as $key){
-                    $data[] = [
-                        'id' => $key->id,
-                        'code' => $key->ProductCode,
-                        'name' => $key->productName,
-                        'price' => $key->productPrice,
-                        'packName' => $key->productPackaging,
-                        'packID' => $key->productPackagingID,
-                        'warehouseName' => $key->warehouseName,
-                        'typeName' => $key->typeName,
-                    ];
-                }
+        try {
+            // Validasi input dasar
+            $brand = $request->id;
+            if (!$brand) {
+                return response()->json(['code' => 400, 'message' => 'Brand tidak valid']);
+            }
 
-                return response()->json(['code' => 200, 'data' => $data]);
+            // Gunakan select eksplisit + eager loading minimalis
+            $products = Product::query()
+                ->where('master_products.brand_name', $brand)
+                ->where('master_products.on_order', 1)
+                ->leftJoin('master_products_packaging', 'master_products.id', '=', 'master_products_packaging.product_id')
+                ->leftJoin('master_packaging', 'master_products_packaging.packaging_id', '=', 'master_packaging.id')
+                ->leftJoin('master_product_types', 'master_products_packaging.type_id', '=', 'master_product_types.id')
+                ->leftJoin('master_warehouses', 'master_products_packaging.warehouse_id', '=', 'master_warehouses.id')
+                ->select([
+                    'master_products_packaging.id as id',
+                    'master_products_packaging.code as ProductCode',
+                    'master_products_packaging.name as productName',
+                    'master_products_packaging.price as productPrice',
+                    'master_packaging.id as productPackagingID',
+                    'master_packaging.pack_name as productPackaging',
+                    'master_warehouses.name as warehouseName',
+                    'master_product_types.name as typeName',
+                ])
+                ->orderBy('master_products_packaging.code')
+                ->limit(500) // ✅ batasi data agar cepat dikirim
+                ->get();
+
+            // Jika tidak ada hasil
+            if ($products->isEmpty()) {
+                return response()->json(['code' => 204, 'message' => 'Produk tidak ditemukan']);
+            }
+
+            // Format data secara langsung tanpa foreach (lebih cepat)
+            $data = $products->map(function ($p) {
+                return [
+                    'id' => $p->id,
+                    'code' => $p->ProductCode,
+                    'name' => $p->productName,
+                    'price' => $p->productPrice,
+                    'packName' => $p->productPackaging,
+                    'packID' => $p->productPackagingID,
+                    'warehouseName' => $p->warehouseName,
+                    'typeName' => $p->typeName,
+                ];
+            });
+
+            return response()->json([
+                'code' => 200,
+                'data' => $data,
+                'count' => $data->count(),
+            ]);
+
+        } catch (\Exception $e) {
+            // Tangani jika query gagal
+            return response()->json([
+                'code' => 500,
+                'message' => 'Terjadi kesalahan saat mengambil data.',
+                'error' => $e->getMessage(),
+            ]);
         }
     }
 

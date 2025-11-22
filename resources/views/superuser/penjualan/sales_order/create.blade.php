@@ -350,32 +350,53 @@
     var counter = 1;
 
     $.ajax({
-      url: '{{ route('superuser.penjualan.sales_order.get_product_pack') }}',
-        data: {id:$('#brand_name').val() , _token: "{{csrf_token()}}"},
-        type: 'POST',
-        cache: false,
-        dataType: 'json',
-        success: function(json) {
-          if (json.code == 200) {
-            product_data = json.data;
+    url: '{{ route('superuser.penjualan.sales_order.get_product_pack') }}',
+    type: 'POST',
+    cache: false,
+    dataType: 'json',
+    data: {
+        id: $('#brand_name').val(),
+        _token: "{{ csrf_token() }}"
+    },
+    beforeSend: function() {
+        // Tambahkan loading state agar user tahu proses berjalan
+        $('.js-ajax').html('<option>Loading data produk...</option>');
+    },
+    success: function(json) {
+      if (json.code === 200) {
+          product_data = json.data; // tanpa const!
+            let makeselect = '';
 
-            $.each( product_data, function( key, value ) {
-                var makeselect;
-                $.map( product_data, function( val, i ) {
-                  if(val['typeName'] === null){
-                    makeselect += '<option value="'+ val['id'] +'" data-name="'+ val['name'] +'" data-packname="'+ val['packName'] +'" data-price="'+ val['price'] +'" data-packid="'+ val['packID']+'">'+ val['code'] + ' - ' + val['name'] + ' - ' + val['packName'] + ' - '+ val['warehouseName'] +'</option>';
-                  } else {
-                    makeselect += '<option value="'+ val['id'] +'" data-name="'+ val['name'] +'" data-packname="'+ val['packName'] +'" data-price="'+ val['price'] +'" data-packid="'+ val['packID']+'">'+ val['code'] + ' - ' + val['name'] + ' - ' + val['packName'] + ' - '+ val['typeName'] +'</option>';
-                  }
-                });
+            // Gunakan satu loop saja
+            $.each(product_data, function(i, val) {
+                let labelText = `${val['code']} - ${val['name']} - ${val['packName']} - ${val['typeName'] ?? val['warehouseName']}`;
 
-
-                $('.js-ajax').append(makeselect);
-                initailizeSelect2();
+                makeselect += `
+                    <option value="${val['id']}"
+                        data-name="${val['name']}"
+                        data-packname="${val['packName']}"
+                        data-price="${val['price']}"
+                        data-packid="${val['packID']}">
+                        ${labelText}
+                    </option>`;
             });
-          }
+
+            // Kosongkan dan tambahkan data baru
+            $('.js-ajax').empty().append(makeselect);
+
+            // Re-initialize Select2
+            initializeSelect2();
+
+        } else {
+            $('.js-ajax').html('<option>Tidak ada produk ditemukan</option>');
         }
-      });
+    },
+    error: function(xhr, status, error) {
+        console.error('❌ AJAX Error:', error);
+        $('.js-ajax').html('<option>Gagal memuat data produk</option>');
+    }
+});
+
 
     $('a.row-add').on( 'click', function (e) {
       e.preventDefault();
@@ -407,7 +428,7 @@
                       '<a href="#" class="row-delete"><button type="button" class="btn btn-sm btn-circle btn-alt-danger" title="Delete"><i class="fa fa-trash"></i></button></a>'
                     ]).draw( false );
                     
-                    initailizeSelect2();
+                    initializeSelect2();
           counter++;
 
         }else{
@@ -437,7 +458,7 @@
       
     });
 
-    function initailizeSelect2(){
+    function initializeSelect2() {
       $(".js-ajax").select2();
 
       $('.js-ajax').on('select2:select', function (e) {
@@ -447,8 +468,7 @@
         var pack = $(this).find(':selected').data('packid');
         $(this).parents('tr').find('input[name="packaging[]"]').val(pack);
       });
-
-    };
+    }
 
     function initailizeSelectKontrak2(){
       $(".js-ajax-kontrak").select2();

@@ -154,7 +154,10 @@
                           <input type="hidden" name="packaging[]" value="{{ $detail->packaging_id }}">
                           <span class="name">{{ $detail->product_pack->code }} - {{ $detail->product_pack->name }} - {{ $detail->product_pack->packaging->pack_name }}</span>
                       </td>
-                      <td><span class="name">{{ $detail->product_pack->price }}</span></td>
+                      <td>
+                        <span class="name">{{ $detail->product_pack->price }}</span>
+                        <input type="hidden" name="price[]" value="{{ $detail->product_pack->price }}">
+                      </td>
                       <td><input type="number" class="form-control" name="qty[]" required value="{{ $detail->qty }}" step="any"></td>
                       <td><input type="text" class="form-control" name="disc[]" value="{{ $detail->disc_usd }}"></td>
                       <td><a href="#" class="row-delete"><button type="button" class="btn btn-sm btn-circle btn-alt-danger" title="Delete"><i class="fa fa-trash"></i></button></a></td>

@@ -557,7 +557,14 @@ class DeliveryOrderController extends Controller
 
             // === Kirim data invoice + file PDF ke Agenda ===
             try {
-                if ($get_inv && $customer) {
+                if ($get_inv && $customer && $detail_do) {
+
+                    // Cek apakah tipe transaksi TEMPO
+                    if (($detail_do->type_transaction ?? null) !== 'TEMPO') {
+                        Log::info('⚠️ Invoice bukan TEMPO, dilewati: ' . ($detail_do->do_code ?? $get_inv->code));
+                        return; // atau continue jika ini di loop
+                    }
+
                     $payload = [
                         'pic'          => $customer->store->pic ?? '-',
                         'customer'     => $customer->name ?? 'Unknown',
