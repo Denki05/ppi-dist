@@ -82,6 +82,38 @@ class DeliveryOrdersTable extends Table
                       $model = $model->whereDate("created_at", ">=", $request->from)->whereDate("created_at", "<=", $request->to);
                   }
               break;
+            case 'update':
+                $model = PackingOrder::select(
+                    'id', 
+                    'do_code', 
+                    'customer_other_address_id', 
+                    DB::raw('
+                        CASE 
+                            WHEN status = 3 THEN "READY"
+                            WHEN status = 4 THEN "PACKED"
+                            WHEN status = 5 THEN "DELIVERING"
+                            WHEN status = 6 THEN "DELIVERED"
+                            ELSE "-"
+                        END AS status
+                    '),
+                    'created_at'
+                )
+                ->where('status', 6);
+            
+                // Jika user memilih tanggal manually
+                if ($request->from ?? false) {
+            
+                    $model = $model->whereDate("created_at", ">=", $request->from)
+                                   ->whereDate("created_at", "<=", $request->to);
+            
+                } else {
+            
+                    // Default: ambil bulan berjalan (current month)
+                    $model = $model->whereMonth('created_at', now()->month)
+                                   ->whereYear('created_at', now()->year);
+                }
+            
+            break;            
             default:
             $model = PackingOrder::select(
                 'id', 
@@ -172,6 +204,15 @@ class DeliveryOrdersTable extends Table
                             </button>
                         </a>
                     ";
+
+                case $model->status == "DELIVERED":
+                        return "
+                            <a href=\"{$kerjakan}\">
+                                <button type=\"button\" class=\"btn btn-primary btn-sm btn-flat\" title=\"Update Resi\">
+                                    <i class=\"fas fa-money\"></i>
+                                </button>
+                            </a>
+                        ";
             }
         });
         $table->rawColumns(['action']);

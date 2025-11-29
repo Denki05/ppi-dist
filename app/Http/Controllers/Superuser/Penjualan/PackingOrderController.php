@@ -914,42 +914,42 @@ class PackingOrderController extends Controller
             }
 
             // --- PROSES POTONG STOK ---
-            foreach ($getDo->do_detail as $row => $value) {
+            // foreach ($getDo->do_detail as $row => $value) {
 
-                $base_product_packaging_id = preg_replace('/_\d+$/', '', $value->product_packaging_id);
+            //     $base_product_packaging_id = preg_replace('/_\d+$/', '', $value->product_packaging_id);
 
-                $stock = ProductMinStock::where('warehouse_id', $getDo->warehouse_id)
-                    ->where('product_packaging_id', $base_product_packaging_id)
-                    ->first();
+            //     $stock = ProductMinStock::where('warehouse_id', $getDo->warehouse_id)
+            //         ->where('product_packaging_id', $base_product_packaging_id)
+            //         ->first();
 
-                if (!$stock) {
-                    throw new \Exception("Stock tidak ditemukan untuk product_packaging_id: $base_product_packaging_id");
-                }
+            //     if (!$stock) {
+            //         throw new \Exception("Stock tidak ditemukan untuk product_packaging_id: $base_product_packaging_id");
+            //     }
 
-                $get_stock = $stock->quantity;
+            //     $get_stock = $stock->quantity;
 
-                $stock->quantity = $get_stock - $value->qty;
-                $stock->save();
+            //     $stock->quantity = $get_stock - $value->qty;
+            //     $stock->save();
 
-                // LOG STOCK
-                $move = StockMove::where('product_packaging_id', $value->product_id)
-                    ->where('warehouse_id', $getDo->warehouse_id)
-                    ->get();
+            //     // LOG STOCK
+            //     $move = StockMove::where('product_packaging_id', $value->product_id)
+            //         ->where('warehouse_id', $getDo->warehouse_id)
+            //         ->get();
 
-                $move_in = $move->sum('stock_in');
-                $move_out = $move->sum('stock_out');
+            //     $move_in = $move->sum('stock_in');
+            //     $move_out = $move->sum('stock_out');
 
-                $sisa = $get_stock + $move_in - $move_out - $value->qty;
+            //     $sisa = $get_stock + $move_in - $move_out - $value->qty;
 
-                StockMove::create([
-                    'code_transaction'   => $getDo->do_code,
-                    'warehouse_id'       => $getDo->warehouse_id,
-                    'product_packaging_id' => $value->product_packaging_id,
-                    'stock_out'          => $value->qty,
-                    'stock_balance'      => $sisa,
-                    'created_by'         => Auth::id()
-                ]);
-            }
+            //     StockMove::create([
+            //         'code_transaction'   => $getDo->do_code,
+            //         'warehouse_id'       => $getDo->warehouse_id,
+            //         'product_packaging_id' => $value->product_packaging_id,
+            //         'stock_out'          => $value->qty,
+            //         'stock_balance'      => $sisa,
+            //         'created_by'         => Auth::id()
+            //     ]);
+            // }
 
             // Update DO
             $update = PackingOrder::where('id', $getDo->id)->update(['status' => 3]);

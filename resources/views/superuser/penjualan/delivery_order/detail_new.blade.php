@@ -302,6 +302,92 @@
 </div>
 @endif
 
+@if($result->status == 6)
+<div class="card">
+  <div class="card-header">
+    <h4 style="font-weight: bold;">#REVISI DO RESI : {{ $result->do_code }}</h4>
+  </div>
+  <div class="card-body">
+    <div class="block-content">
+      <div class="row">
+        <div class="col-12">
+          <form id="frmSent" action="{{route('superuser.penjualan.delivery_order.sent')}}" method="post" enctype="multipart/form-data">
+            @csrf
+            <input type="hidden" name="do_id" value="{{$result->id}}">
+
+            <div class="form-group row">
+              <label class="col-md-2 col-form-label text-right" for="name">Customer</label>
+              <div class="col-md-4">
+                <input class="form-control" value="{{$result->member->name}}" readonly>
+              </div>
+              <div class="col-md-4">
+                <input class="form-control" value="{{$result->member->text_kota}}" readonly>
+              </div>
+            </div>
+
+            @if($result->status == 6 && $result->image == null)
+            <div class="form-group row">
+              <label class="col-md-2 col-form-label text-right" for="name">Upload Image</label>
+              <div class="col-md-4">
+                <input type="file" id="image" name="image" data-max-file-size="2000" accept="image/png, image/jpeg">
+              </div>
+              <div class="col-md-4">
+                <input type="file" id="image2" name="image2" data-max-file-size="2000" accept="image/png, image/jpeg">
+              </div>
+            </div>
+            @endif
+
+            @if(!empty($result->image))
+            <div class="form-group row">
+              <div class="col-12">
+                <a href="<?= asset($result->image) ?>" class=" mb-5" target="_blank"><img src="<?= asset($result->image) ?>" style="max-width: 300px; max-height: 300px" /></a><br>
+              </div>
+            </div>
+            @endif
+
+            <div class="form-group row">
+              <label class="col-md-2 col-form-label text-right" for="name">Ongkir (IDR)</label>
+              <div class="col-md-4">
+                <input type="text" class="form-control" placeholder="Input Note" value="{{ $result->vendor->name }}" name="delivery_cost_note">
+              </div>
+              <div class="col-md-4">
+                <input type="text" class="form-control" value="{{ $result->do_detail_cost[0]->delivery_cost_idr ?? 0 }}" name="delivery_cost_idr" step="any" >
+              </div>
+            </div>
+            <div class="form-group row">
+              <label class="col-md-2 col-form-label text-right" for="name">Resi (IDR)</label>
+              <div class="col-md-4">
+                <select class="form-control js-select2" name="other_cost_note" id="other_cost_note">
+                  <option value="">Pilih Ekspedisi</option>
+                  @foreach($ekspedisi as $row)
+                   <option value="{{$row->name}}">{{ $row->name }}</option>
+                  @endforeach
+                </select>
+              </div>
+              <div class="col-md-4">
+                <input type="number" class="form-control" value="{{$result->do_detail_cost->first()->other_cost_idr ?? 0}}" name="other_cost_idr" step="any">
+              </div>
+            </div>
+            
+
+            <div class="form-group row">
+              <div class="col-6">
+                <a href="{{route('superuser.penjualan.delivery_order.index')}}" class="btn btn-warning"><i class="fa fa-arrow-left"></i> Back</a>
+              </div>
+              <div class="col-6 text-right">
+                @if($result->status===6)
+                <button type="button" class="btn btn-primary btn-delivered"><i class="fa fa-save"></i> Selesaikan</button>
+                @endif
+              </div>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+@endif
+
 <form method="post" action="{{route('superuser.penjualan.delivery_order.packed')}}" id="frmUpdateStatusPacked">
     @csrf
     <input type="hidden" name="id" value="{{$result->id}}">

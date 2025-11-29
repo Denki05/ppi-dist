@@ -92,6 +92,12 @@
         <input type="radio" class="css-control-input" name="show-control" value="all">
         <span class="css-control-indicator"></span> DO Resi
       </label>
+      @if( Auth::id() == 1 || Auth::id() == 33)
+      <label class="css-control css-control-warning css-radio">
+        <input type="radio" class="css-control-input" name="show-control" value="update">
+        <span class="css-control-indicator"></span> Update Resi
+      </label>
+      @endif
     </div>
   </div>
   <br>
