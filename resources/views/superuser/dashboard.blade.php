@@ -58,49 +58,51 @@
 
                             <section id="content1" class="tab-content active">
                                 <input type="hidden" class="form-control" id="default_month" name="default_month" value="{{ $selectedMonthYear }}">
-                                <table class="datatableOmset table table-striped" id="datatableOmset">
-                                    <thead>
-                                        <tr>
-                                            <th>#</th>
-                                            <th>Date</th>
-                                            <th>Brand</th>
-                                            <th>Invoice</th>
-                                            <th>Customer</th>
-                                            <th>Cash</th>
-                                            <th>Tempo</th>
-                                            <th style="display:none;">TypeSO</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        @foreach ($progress as $row)
-                                            @php
-                                                $tipe = strtolower(trim($row->invoice_type ?? 'nonppn'));
-                                                $tipe = str_replace(' ', '', $tipe);
-                                            @endphp
-                                            <tr data-type-so="{{ $tipe }}">
-                                                <td>{{ $loop->iteration }}</td>
-                                                <td>{{ $row->so_date }}</td>
-                                                <td>{{ $row->invoice_brand }}</td>
-                                                <td>{{ $row->invoice_code }}</td>
-                                                <td>{{ $row->customer_name }} - {{ $row->customer_city }}</td>
-                                                <td>{{ number_format($row->invoice_cash, 0, ',', '.') }}</td>
-                                                <td>{{ number_format($row->invoice_tempo, 0, ',', '.') }}</td>
-                                                <td style="display:none;">{{ $tipe }}</td>
+                                <div class="table-responsive">
+                                    <table class="datatableOmset table table-striped" id="datatableOmset">
+                                        <thead>
+                                            <tr>
+                                                <th>#</th>
+                                                <th>Date</th>
+                                                <th>Brand</th>
+                                                <th>Invoice</th>
+                                                <th>Customer</th>
+                                                <th>Cash</th>
+                                                <th>Tempo</th>
+                                                <th style="display:none;">TypeSO</th>
                                             </tr>
-                                        @endforeach
-                                    </tbody>
-                                    <tfoot>
-                                        <tr>
-                                            <th colspan="5" style="text-align:right"></th>
-                                            <th id="totalInvoiceCash" style="text-align: center;"></th>
-                                            <th id="totalInvoiceTempo" style="text-align: center;"></th>
-                                        </tr>
-                                        <tr>
-                                            <th colspan="6" style="text-align:right"></th>
-                                            <th id="subTotal" style="text-align: center;"></th>
-                                        </tr>
-                                    </tfoot>
-                                </table>
+                                        </thead>
+                                        <tbody>
+                                            @foreach ($progress as $row)
+                                                @php
+                                                    $tipe = strtolower(trim($row->invoice_type ?? 'nonppn'));
+                                                    $tipe = str_replace(' ', '', $tipe);
+                                                @endphp
+                                                <tr data-type-so="{{ $tipe }}">
+                                                    <td>{{ $loop->iteration }}</td>
+                                                    <td>{{ $row->so_date }}</td>
+                                                    <td>{{ $row->invoice_brand }}</td>
+                                                    <td>{{ $row->invoice_code }}</td>
+                                                    <td>{{ $row->customer_name }} - {{ $row->customer_city }}</td>
+                                                    <td>{{ number_format($row->invoice_cash, 0, ',', '.') }}</td>
+                                                    <td>{{ number_format($row->invoice_tempo, 0, ',', '.') }}</td>
+                                                    <td style="display:none;">{{ $tipe }}</td>
+                                                </tr>
+                                            @endforeach
+                                        </tbody>
+                                        <tfoot>
+                                            <tr>
+                                                <th colspan="5" style="text-align:right"></th>
+                                                <th id="totalInvoiceCash" style="text-align: center;"></th>
+                                                <th id="totalInvoiceTempo" style="text-align: center;"></th>
+                                            </tr>
+                                            <tr>
+                                                <th colspan="6" style="text-align:right"></th>
+                                                <th id="subTotal" style="text-align: center;"></th>
+                                            </tr>
+                                        </tfoot>
+                                    </table>
+                                </div>
                             </section>
 
                             <section id="content2" class="tab-content">
@@ -108,9 +110,9 @@
                                     @csrf
                                     <div class="card">
                                         <div class="card-body py-2"> {{-- Memastikan padding vertikal konsisten --}}
-                                            <div class="d-flex justify-content-between align-items-end mb-4"> {{-- Container utama untuk filter (kiri) dan tombol (kanan) --}}
+                                            <div class="d-flex flex-wrap justify-content-between align-items-end mb-4"> {{-- Container utama untuk filter (kiri) dan tombol (kanan) --}}
                                                 {{-- KIRI: Grup Filter (Periode dan Tipe Laporan) --}}
-                                                <div class="d-flex align-items-end"> {{-- Menyusun Periode dan Tipe Laporan secara horizontal, sejajar di bagian bawah --}}
+                                                <div class="d-flex flex-wrap align-items-end gap-2"> {{-- Menyusun Periode dan Tipe Laporan secara horizontal, sejajar di bagian bawah --}}
                                                     {{-- Periode Group --}}
                                                     <div class="d-flex flex-column me-3">
                                                         <label class="form-label text-start mb-1">Periode:</label>
@@ -374,6 +376,98 @@
 
     .tab-content.active {
         display: block;
+    }
+
+    /* --- BASIC RESPONSIVE LAYOUT --- */
+    .card-body {
+        width: 100%;
+        overflow-x: auto;
+    }
+
+    /* --- TAB LABEL: responsif & bisa scroll pada HP --- */
+    .tab-label {
+        padding: 8px 14px;
+        font-size: 14px;
+        white-space: nowrap;
+    }
+
+    /* Wrap tab */
+    main {
+        overflow-x: auto;
+        white-space: nowrap;
+    }
+
+    @media (max-width: 768px) {
+        main {
+            display: block;
+            white-space: normal; /* biarkan turun ke bawah */
+        }
+
+        .tab-label {
+            display: inline-block;
+            margin-bottom: 6px;
+        }
+
+        .tab-content {
+            padding: 15px !important;
+        }
+    }
+
+
+    /* --- TABLE RESPONSIVE --- */
+    table {
+        width: 100% !important;
+    }
+
+    .table-responsive {
+        width: 100%;
+        overflow-x: visible;
+    }
+
+    /* Datatable scroll HP */
+    #datatableOmset_wrapper {
+        overflow-x: visible;
+        width: 100%;
+    }
+
+
+    /* --- FILTERS & FORM RESPONSIVE --- */
+    @media (max-width: 768px) {
+        .d-flex.justify-content-between {
+            flex-direction: column;
+            align-items: stretch !important;
+            gap: 10px;
+        }
+
+        .d-flex.align-items-end {
+            flex-direction: column;
+            gap: 10px;
+            align-items: stretch !important;
+        }
+
+        .form-control, .form-select {
+            width: 100% !important;
+        }
+
+        .uniform-width {
+            min-width: 100% !important;
+        }
+
+        /* Button group jadi full width */
+        .btn-group {
+            width: 100%;
+            display: flex;
+            justify-content: space-between;
+        }
+        .btn-group .btn {
+            flex: 1;
+        }
+
+        /* iframe PDF otomatis menyesuaikan HP */
+        #iframePdf,
+        #iframeForecastPdf {
+            height: 500px !important;
+        }
     }
 </style>
 

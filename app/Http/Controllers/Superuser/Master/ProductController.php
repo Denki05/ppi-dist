@@ -339,8 +339,6 @@ class ProductController extends Controller
             }
         }
 
-        // $data['product'] = Product::find($id);
-
         $decode = base64_decode($id);
 
         $data['product'] = Product::find($decode);

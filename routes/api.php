@@ -3,6 +3,7 @@
 use Illuminate\Http\Request;
 use App\Http\Controllers\ApiCustomerController;
 use App\Http\Controllers\ApiInvoiceController;
+use App\Http\Controllers\ReportRequestController;
 
 /*
 |--------------------------------------------------------------------------
@@ -27,3 +28,6 @@ Route::post('generate-report', [ApiCustomerController::class, 'generateReportApi
 
 // generate api file_doctor
 Route::get('/customers/search', [ApiCustomerController::class, 'getApiFileDoctor']);
+
+// Request Report
+Route::post('/request/report', [ReportRequestController::class, 'handle']);

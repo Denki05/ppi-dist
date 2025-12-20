@@ -462,16 +462,15 @@ class ReportCustomerTypeBrandController extends Controller
         $validatedData = $request->validate([
             'start' => 'required|date',
             'end' => 'required|date|after_or_equal:start',
-            'officer_name' => 'nullable|string',
+            'officer_name' => 'nullable|string', // Menerima "All" atau nama officer
             'action' => 'required|string|in:print,excel',
         ]);
 
         $start = $validatedData['start'];
         $end = $validatedData['end'];
-        $officer = $validatedData['officer_name'] ?? '';
+        // Default ke string kosong jika null, tapi umumnya dari form akan berisi "All" atau nama officer
+        $officer = $validatedData['officer_name'] ?? ''; 
         $action = $validatedData['action'];
-
-        // dd($officer);
 
         $baseReportPath = public_path('cr/report/management/report_customer_register/');
         $exportPath = $baseReportPath . "export\\";
@@ -491,6 +490,7 @@ class ReportCustomerTypeBrandController extends Controller
                 mkdir($exportPath, 0777, true);
             }
 
+            // Inisialisasi COM Object
             $crapp = new COM("CrystalDesignRunTime.Application");
             $creport = $crapp->OpenReport($my_report, 1);
 
@@ -500,16 +500,27 @@ class ReportCustomerTypeBrandController extends Controller
             // ✅ Sesuaikan parameter index sesuai rpt (2=start, 3=end, 4=officer)
             $creport->ParameterFields(2)->SetCurrentValue(date('d-m-Y', strtotime($start)));
             $creport->ParameterFields(3)->SetCurrentValue(date('d-m-Y', strtotime($end)));
-            $creport->ParameterFields(4)->SetCurrentValue($officer);
+            
+            // Mengirimkan nilai officer (walaupun tidak digunakan untuk filtering, ini mungkin dibutuhkan di header report)
+            $creport->ParameterFields(4)->SetCurrentValue($officer); 
 
-            // ✅ Officer diambil dari tabel yang benar
+            // --- Logika Utama Perbaikan Filter Officer ---
+            $officerFilter = "";
+            if (!empty($officer) && $officer !== 'All' && $officer !== 'pilih_officer') {
+                // Terapkan filter hanya jika nilai BUKAN 'All' atau 'pilih_officer' (atau string kosong)
+                $officerFilter = " AND {penjualan_do.officer}='$officer'";
+            }
+
+            // Konstruksi Record Selection Formula
             $creport->RecordSelectionFormula =
                 "({penjualan_so.so_date}>=#$start# AND " .
                 "{penjualan_so.so_date}<=#$end#)" .
-                (!empty($officer) ? " AND {penjualan_do.officer}='$officer'" : "");
+                $officerFilter; 
+            // ---------------------------------------------
 
             $creport->ExportOptions->DiskFileName = $outputFile;
             $creport->ExportOptions->DestinationType = 1;
+            // PDF=31, Excel=29
             $creport->ExportOptions->FormatType = $action === 'print' ? 31 : 29;
 
             $creport->Export(false);
@@ -523,13 +534,14 @@ class ReportCustomerTypeBrandController extends Controller
                     return response()->json(['success' => true, 'pdf_url' => $pdfUrl]);
                 }
 
+                // Download Excel
                 return response()->download($outputFile, basename($outputFile))->deleteFileAfterSend(true);
             }
 
             return response()->json(['error' => 'File not generated'], 500);
 
         } catch (\Exception $e) {
-            dd($e);
+            // dd($e); // Hapus dd() di produksi
             Log::error('export_officer FAILED: ' . $e->getMessage());
             return response()->json(['error' => $e->getMessage()], 500);
         }

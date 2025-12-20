@@ -108,25 +108,27 @@
         @endif
         <br>
         <br>
-        <table class="table table-bordred table-striped" style="width:100%" id="sales_order_awal">
-          <thead>
-            <th>#</th>
-            <th>Code</th>
-            <th>Nota</th>
-            <th>Approval</th>
-            <th>Brand</th>
-            <th>Customer</th>
-            <th>Sales</th>
-            <th>Created By</th>
-            <th>Created At</th>
-            <th>Status</th>
-            <th>Status Approval</th>
-            <th>Action</th>
-          </thead>
-          <tbody>
-            
-          </tbody>
-        </table>
+        <div class="table-responsive">
+          <table class="table table-bordred table-striped" style="width:100%" id="sales_order_awal">
+            <thead>
+              <th>#</th>
+              <th>Code</th>
+              <th>Nota</th>
+              <th>Approval</th>
+              <th>Brand</th>
+              <th>Customer</th>
+              <th>Sales</th>
+              <th>Created By</th>
+              <th>Created At</th>
+              <th>Status</th>
+              <th>Status Approval</th>
+              <th>Action</th>
+            </thead>
+            <tbody>
+              
+            </tbody>
+          </table>
+        </div>
     </div>
   </div>
 </div>
@@ -242,53 +244,50 @@
       let datatableUrl = '{{ route('superuser.penjualan.sales_order.json_awal') }}';
       let firstDatatableUrl = datatableUrl + '?status_so=all' + '&customer_name=all';
 
-      var datatable =  $('#sales_order_awal').DataTable( {
-            language: {
-                processing: "<span class='fa-stack fa-lg'>\n\
-                                        <i class='fa fa-spinner fa-spin fa-stack-2x fa-fw'></i>\n\
-                                </span>",
+      var datatable = $('#sales_order_awal').DataTable({
+        processing: true,
+        responsive: {
+            details: {
+                type: 'inline',   // atau 'column'
+                target: 'tr'
+            }
+        },
+        searching: true,
+        paging: true,
+        info: false,
+
+        ajax: {
+            url: datatableUrl,
+            type: 'GET',
+            data: { _token: "{{ csrf_token() }}" }
+        },
+
+        columns: [
+            { data: 'DT_RowIndex' },
+            { data: 'so_code' },
+            { data: 'code' },
+            { data: 'approval_mou' },
+            { data: 'nota_brand' },
+            { data: 'customer' },
+            { data: 'sales' },
+            { data: 'so_created_by' },
+            {
+              data: 'so_created_at',
+              render: { _: 'display', sort: 'timestamp' }
             },
-            processing: true,
-            responsive: true,
-            serverSide: false,
-            searching: true,
-            paging: true,
-            info: false,
-            ajax: {
-                "url": datatableUrl,
-                "dataType": "json",
-                "type": "GET",
-                "data":{ _token: "{{csrf_token()}}"}
-            },
-            columns: [
-                {data: 'DT_RowIndex', name: 'id'},
-                {data: 'so_code', name: 'penjualan_so.so_code'},
-                {data: 'code', name: 'penjualan_so.code'},
-                {data: 'approval_mou', name: 'penjualan_so.approval_mou'},
-                {data: 'nota_brand', name: 'penjualan_so.brand_name'},
-                {data: 'customer'},
-                {data: 'sales'},
-                {data: 'so_created_by'},
-                {
-                    data: 'so_created_at',
-                    render: {
-                        _: 'display',
-                        sort: 'timestamp'
-                    }
-                },
-                {data: 'status_so'},
-                {data: 'approval_mou_status'},
-                {data: 'action'},
-            ],
-            order: [
-                [8, 'asc'],
-            ],
-            pageLength: 10,
-            lengthMenu: [
-                [10, 20, 50],
-                [10, 20, 50]
-            ],
-        });
+            { data: 'status_so' },
+            { data: 'approval_mou_status' },
+            { data: 'action' }
+        ],
+
+        columnDefs: [
+            { responsivePriority: 1, targets: 1 },  // Code
+            { responsivePriority: 2, targets: 5 },  // Customer
+            { responsivePriority: 3, targets: 9 },  // Status
+            { responsivePriority: 4, targets: -1 }, // Action
+        ]
+    });
+
 
         $('#btn-filter').on('click', function(e) {
             e.preventDefault();

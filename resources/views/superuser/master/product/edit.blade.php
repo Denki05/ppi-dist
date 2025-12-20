@@ -108,7 +108,11 @@
                                     <div class="form-group row">
                                       <label for="selling_price" class="col-sm-2 col-form-label">Price List <span class="text-danger">*</span></label>
                                       <div class="col-sm-6">
-                                        <input type="number" class="form-control" id="selling_price" name="selling_price" min="0" value="{{$product->selling_price}}">
+                                        <input type="number"
+                                          class="form-control"
+                                          id="selling_price"
+                                          name="selling_price"
+                                          value="{{ optional($product->product_pack->first())->price ?? 0 }}">
                                         <span class="text-danger">*Harga dalam USD</span>
                                       </div>
                                     </div>  
