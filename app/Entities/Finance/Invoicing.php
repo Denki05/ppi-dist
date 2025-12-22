@@ -8,6 +8,7 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 class Invoicing extends Model
 {
     use SoftDeletes;
+    
     protected $table = "finance_invoicing";
     protected $fillable = [
     	'code',
