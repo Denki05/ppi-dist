@@ -61,7 +61,7 @@
             </div>
             <div class="form-group col-md-6">
               <label for="type_transaction">Eksepdisi <span class="text-danger">*</span></label>
-              <select class="form-control js-select2" name="ekspedisi">
+              <select class="form-control js-select2" name="ekspedisi" required>
                 <option value="">Pilih Ekspedisi</option>
                 @foreach($ekspedisi as $index)
                 <option value="{{ $index->id }}">{{ $index->name }}</option>
@@ -73,7 +73,7 @@
           <div class="form-row">
             <div class="form-group col-md-6">
               <label for="sales_senior_id">Sales Senior <span class="text-danger">*</span></label>
-              <select class="form-control js-select2" name="sales_senior_id">
+              <select class="form-control js-select2" name="sales_senior_id" required>
                 <option value="">Pilih Sales Senior</option>
                 @foreach(\App\Entities\Penjualan\SalesOrder::SALES_SENIOR as $sales_senior => $senior_value)
                 <option value="{{ $senior_value }}">{{ $sales_senior }}</option>
@@ -82,7 +82,7 @@
             </div>
             <div class="form-group col-md-6">
               <label for="sales_id">Sales <span class="text-danger">*</span></label>
-              <select class="form-control js-select2" name="sales_id">
+              <select class="form-control js-select2" name="sales_id" required>
                 <option value="">Pilih Sales</option>
                 @foreach(\App\Entities\Penjualan\SalesOrder::SALES as $sales => $sales_value)
                 <option value="{{ $sales_value }}">{{ $sales }}</option>
@@ -156,7 +156,7 @@
                 @if($step == 2)
                 <div class="form-group col-md-4">
                   <label for="note">Rekening <span class="text-danger">*</span></label>
-                  <select class="form-control js-select2" name="rekening">
+                  <select class="form-control js-select2 required-field" name="rekening">
                     <option value="">Pilih Rekening</option>
                     @foreach($rekening as $key)
                     <option value="{{$key->id}}">{{$key->name}} - {{$key->number_card}}</option>
@@ -321,7 +321,7 @@
                       <div class="form-group row">
                         <label class="col-sm-4 col-form-label">Grand Total</label>
                         <div class="col-sm-8">
-                          <input type="text" class="form-control" id="grand_total_idr" name="grand_total_idr" readonly>
+                          <input type="text" class="form-control required-field" id="grand_total_idr" name="grand_total_idr" readonly>
                           <input type="hidden" class="form-control" name="subtotal_2" id="subtotal_2">
                         </div>
                       </div>

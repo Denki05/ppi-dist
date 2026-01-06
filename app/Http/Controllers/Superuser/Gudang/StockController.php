@@ -56,6 +56,8 @@ class StockController extends Controller
         $totalOut = 0;
         $totalSell = 0;
 
+        // dd($warehouse);
+
         $collect = [];
         if($warehouse){
 

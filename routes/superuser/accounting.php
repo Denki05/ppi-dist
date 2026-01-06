@@ -8,6 +8,7 @@ Route::group([
 ], function () {
 
     Route::group(['as' => 'product_finance.', 'prefix' => '/product_finance'], function () {
+        Route::get('/json', 'ProductFinanceController@json')->name('json');
         Route::get('/import_template', 'ProductFinanceController@import_template')->name('import_template');
         Route::post('/import', 'ProductFinanceController@import')->name('import');
         Route::get('/export', 'ProductFinanceController@export')->name('export');

@@ -74,6 +74,7 @@ Route::group([
 
     Route::group(['as' => 'customer_order_variant.', 'prefix' => '/customer_order_variant'], function () {
         Route::get('/', 'ReportCustmerOrderVariantController@index')->name('index');
+        Route::get('/json', 'ReportCustmerOrderVariantController@json')->name('json');
         Route::post('/print_report', 'ReportCustmerOrderVariantController@print_report')->name('print_report');
         Route::get('/getProductsByBrand', 'ReportCustmerOrderVariantController@getProductsByBrand')->name('getProductsByBrand');
         Route::get('/get_brand', 'ReportCustmerOrderVariantController@get_brand')->name('get_brand');
@@ -92,6 +93,7 @@ Route::group([
 
     Route::group(['as' => 'product_high_sell.', 'prefix' => '/product_high_sell'], function () {
         Route::get('/', 'ReportProductHighSellController@index')->name('index');
+        Route::get('/json', 'ReportProductHighSellController@json')->name('json');
         Route::post('/print_report', 'ReportProductHighSellController@print_report')->name('print_report');
     });
     Route::resource('product_high_sell', 'ReportProductHighSellController');

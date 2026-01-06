@@ -165,10 +165,10 @@
           "data":{ _token: "{{csrf_token()}}"}
         },
         columns: [
-          {data: 'combined_column'},
+          {data: 'combined_customer'},
           {data: 'invoice_brand', name: 'penjualan_so.brand_name'},
-          {data: 'invoice_month'},
-          {data: 'combined_column2'},
+          {data: 'combined_month_year'},
+          {data: 'combined_product'},
           {data: 'invoice_qty'},
         ],
         order: [

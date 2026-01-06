@@ -7,6 +7,7 @@ Route::group([
     'namespace' => 'Gudang'
 ], function () {
     Route::group(['as' => 'stock.', 'prefix' => '/stock'], function () {
+        Route::get('/json', 'StockController@json')->name('json');
         Route::get('{warehouse_id}/detail/{product_id}', 'StockController@detail')->name('detail');
         Route::get('{warehouse}/{startDate}/{endDate}/exportTransactions', 'StockController@exportTransactions')->name('exportTransactions');
         Route::get('/backfillMonthEndBalances', 'StockController@backfillMonthEndBalances')->name('backfillMonthEndBalances');
@@ -15,6 +16,7 @@ Route::group([
 
     Route::group(['as' => 'stock_adjustment.', 'prefix' => '/stock_adjustment'], function () {
         Route::get('/', 'StockAdjustmentController@index')->name('index');
+        Route::get('/json', 'StockAdjustmentController@json')->name('json');
         Route::get('/create', 'StockAdjustmentController@create')->name('create');
         Route::post('/check_product_warehouse', 'StockAdjustmentController@check_product_warehouse')->name('check_product_warehouse');
         Route::post('/store', 'StockAdjustmentController@store')->name('store');
@@ -22,6 +24,7 @@ Route::group([
     });
 
     Route::group(['as' => 'purchase_order.', 'prefix' => '/purchase_order'], function () {
+        Route::get('/json', 'PurchaseOrderController@json')->name('json');
         Route::get('/step/{id}', 'PurchaseOrderController@step')->name('step');
         Route::get('{id}/publish', 'PurchaseOrderController@publish')->name('publish');
         Route::get('{id}/unpublish', 'PurchaseOrderController@unpublish')->name('unpublish');
@@ -52,6 +55,7 @@ Route::group([
 
     // SPK
     Route::group(['as' => 'purchase_order_spk.', 'prefix' => '/purchase_order_spk'], function () {
+        Route::get('/json', 'PurchaseOrderSPKController@json')->name('json');
         Route::get('/step/{id}', 'PurchaseOrderSPKController@step')->name('step');
         Route::get('{id}/publish', 'PurchaseOrderSPKController@publish')->name('publish');
         Route::get('{id}/unpublish', 'PurchaseOrderSPKController@unpublish')->name('unpublish');
@@ -80,6 +84,7 @@ Route::group([
     Route::resource('purchase_order_spk', 'PurchaseOrderSPKController');
 
     Route::group(['as' => 'receiving.', 'perfix' => '/receiving'], function (){
+        Route::get('/json', 'ReceivingController@json')->name('json');
         Route::get('/step/{id}', 'ReceivingController@step')->name('step');
         Route::get('{id}/publish', 'ReceivingController@publish')->name('publish');
         Route::get('{id}/acc', 'ReceivingController@acc')->name('acc');

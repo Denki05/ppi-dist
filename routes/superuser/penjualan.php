@@ -183,6 +183,7 @@ Route::group([
 
     Route::group(['as' => 'sales_order_kontrak.', 'prefix' => '/sales_order_kontrak'], function () {
         Route::get('/index', 'SalesOrderKontrakController@index')->name('index');
+        Route::get('/json', 'SalesOrderKontrakController@json')->name('json');
         Route::get('/get_brand', 'SalesOrderKontrakController@get_brand')->name('get_brand');
         Route::post('/get_product', 'SalesOrderKontrakController@get_product')->name('get_product');
         Route::post('/get_packaging', 'SalesOrderKontrakController@get_packaging')->name('get_packaging');

@@ -178,7 +178,17 @@ class ReportCustomerOrderVariantV2Controller extends Controller
 
             $file = $my_pdf;
 
-            return response()->download($file);
+            // return response()->download($file);
+
+            if (file_exists($file)) {
+                // Preview di browser (inline)
+                return response()->file($file, [
+                    'Content-Type' => 'application/pdf',
+                    'Content-Disposition' => 'inline; filename="' . basename($file) . '"'
+                ]);
+            } else {
+                return redirect()->route('superuser.index')->with('error', 'File not found.');
+            }
 
         } catch (Exception $e) {
             dd($e);

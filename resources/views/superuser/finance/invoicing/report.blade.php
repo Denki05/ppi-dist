@@ -155,13 +155,37 @@
                 { data: 'jatuh_tempo' },
                 {
                   data: 'nilai_faktur',
-                  render: $.fn.dataTable.render.number('.', ',', 2, 'Rp. '),
-                  searchable: false
+                  searchable: false,
+                  render: {
+                    display: function (data) {
+                      return $.fn.dataTable.render
+                        .number('.', ',', 2, 'Rp. ')
+                        .display(data);
+                    },
+                    export: function (data) {
+                      return parseFloat(data) || 0;
+                    },
+                    sort: function (data) {
+                      return parseFloat(data) || 0;
+                    }
+                  }
                 },
                 {
                   data: 'hutang_asing',
-                  render: $.fn.dataTable.render.number('.', ',', 2, 'Rp. '),
-                  searchable: false
+                  searchable: false,
+                  render: {
+                    display: function (data) {
+                      return $.fn.dataTable.render
+                        .number('.', ',', 2, 'Rp. ')
+                        .display(data);
+                    },
+                    export: function (data) {
+                      return parseFloat(data) || 0;
+                    },
+                    sort: function (data) {
+                      return parseFloat(data) || 0;
+                    }
+                  }
                 },
                 { data: 'diff_days' },
                 { data: 'status_faktur' },
@@ -203,14 +227,46 @@
                 "<'row'<'col-sm-5'i><'col-sm-7'p>>",
             buttons: [
                 {
-                    extend: 'excel',
-                    text: '<i class="fa fa-file-excel-o"></i>',
-                    title: 'Piutang Faktur',
-                    exportOptions: {
-                        modifier: {
-                            page: 'all' // Export all data
-                        }
+                  extend: 'excel',
+                  text: '<i class="fa fa-file-excel-o"></i>',
+                  title: 'Piutang Faktur',
+                  exportOptions: {
+                    orthogonal: 'export', // ⭐ INI KUNCINYA
+                    modifier: {
+                      page: 'all'
                     }
+                  },
+                  customize: function (xlsx) {
+                    var sheet  = xlsx.xl.worksheets['sheet1.xml'];
+                    var styles = xlsx.xl['styles.xml'];
+
+                    // 1. Hilangkan underline
+                    $('fonts font u', styles).remove();
+
+                    // 2. Header BOLD
+                    var fonts = $('fonts', styles);
+                    fonts.append('<font><b/></font>');
+                    var boldFontId = $('font', fonts).length - 1;
+
+                    var cellXfs = $('cellXfs', styles);
+                    cellXfs.append(`<xf fontId="${boldFontId}" xfId="0" applyFont="1"/>`);
+                    var headerStyleIndex = $('xf', cellXfs).length - 1;
+
+                    $('row[r="2"] c', sheet).attr('s', headerStyleIndex);
+
+                    // 3. Format Rupiah numeric
+                    var numFmtId = 164;
+                    $('numFmts', styles).append(
+                      `<numFmt numFmtId="${numFmtId}" formatCode="[$Rp-421] #,##0.00"/>`
+                    );
+
+                    $('cellXfs', styles).append(
+                      `<xf numFmtId="${numFmtId}" fontId="0" xfId="0" applyNumberFormat="1"/>`
+                    );
+
+                    var rupiahStyleIndex = $('cellXfs xf', styles).length - 1;
+                    $('row c[r^="E"], row c[r^="F"]', sheet).attr('s', rupiahStyleIndex);
+                  }
                 },
                 {
                     extend: 'pdf',

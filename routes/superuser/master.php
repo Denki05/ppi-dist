@@ -22,6 +22,7 @@ Route::group([
     Route::resource('branch_office', 'BranchOfficeController');
 
     Route::group(['as' => 'warehouse.', 'prefix' => '/warehouse'], function () {
+        Route::get('/json', 'WarehouseController@json')->name('json');
         Route::get('/import_template', 'WarehouseController@import_template')->name('import_template');
         Route::post('/import', 'WarehouseController@import')->name('import');
         Route::get('/export', 'WarehouseController@export')->name('export');
@@ -29,7 +30,7 @@ Route::group([
     Route::resource('warehouse', 'WarehouseController');
 
     Route::group(['as' => 'product.', 'prefix' => '/product'], function () {
-       
+        Route::get('/json', 'ProductController@json')->name('json');
         Route::get('/import_template', 'ProductController@import_template')->name('import_template');
         Route::post('/import', 'ProductController@import')->name('import');
         Route::get('/export', 'ProductController@export')->name('export');
@@ -92,6 +93,7 @@ Route::group([
     Route::resource('unit', 'UnitController');
 
     Route::group(['as' => 'customer.', 'prefix' => '/customer'], function () {
+        Route::get('/json', 'CustomerController@json')->name('json');
         Route::get('/import_template', 'CustomerController@import_template')->name('import_template');
         Route::post('/import', 'CustomerController@import')->name('import');
         Route::get('/export', 'CustomerController@export')->name('export');
@@ -182,6 +184,7 @@ Route::group([
     Route::resource('contact', 'ContactController');
 
     Route::group(['as' => 'vendor.', 'prefix' => '/vendor'], function () {
+        Route::get('/json', 'VendorController@json')->name('json');
         Route::get('/import_template', 'VendorController@import_template')->name('import_template');
         Route::post('/import', 'VendorController@import')->name('import');
         Route::get('/export', 'VendorController@export')->name('export');

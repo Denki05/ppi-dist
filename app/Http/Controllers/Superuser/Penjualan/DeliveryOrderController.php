@@ -971,10 +971,11 @@ class DeliveryOrderController extends Controller
 
                 $disc1 = floatval($request->disc_agen_percent) / 100;
                 $disc2 = floatval($request->disc_kemasan_percent) / 100;
-                $disc_idr = intval(str_replace('.', '', $request->disc_tambahan_idr));
-                $voucher = intval(str_replace('.', '', $request->voucher_idr));
-                $delivery = intval(str_replace('.', '', $request->delivery_cost_idr));
-                $other = intval(str_replace('.', '', $request->resi_ongkir));
+                $disc_idr = $this->parseIdrToDecimal($request->disc_tambahan_idr);
+                $voucher  = $this->parseIdrToDecimal($request->voucher_idr);
+                $delivery = $this->parseIdrToDecimal($request->delivery_cost_idr);
+                $other    = $this->parseIdrToDecimal($request->resi_ongkir);
+                
 
                 $total_disc_idr = ceil(($idr_total * $disc1) + (($idr_total - ($idr_total * $disc1)) * $disc2) + $disc_idr);
                 $purchase_total_idr = ceil($idr_total - $total_disc_idr - $voucher);
@@ -987,9 +988,11 @@ class DeliveryOrderController extends Controller
                 // Update Detail DO
                 $do_detail->update([
                     'discount_1' => $request->disc_agen_percent,
-                    'discount_1_idr' => $request->disc_agen_idr,
+                    // 'discount_1_idr' => $request->disc_agen_idr,
+                    'discount_1_idr' => $this->parseIdrToDecimal($request->disc_agen_idr),
                     'discount_2' => $request->disc_kemasan_percent,
-                    'discount_2_idr' => $request->disc_kemasan_idr,
+                    // 'discount_2_idr' => $request->disc_kemasan_idr,
+                    'discount_2_idr' => $this->parseIdrToDecimal($request->disc_kemasan_idr),
                     'discount_idr' => $disc_idr,
                     'total_discount_idr' => $total_disc_idr,
                     'voucher_idr' => $voucher,
@@ -1029,12 +1032,6 @@ class DeliveryOrderController extends Controller
         }
     }
 
-    // Helper function
-    private function parseCurrency($value)
-    {
-        return floatval(str_replace([',', '.'], ['', '.'], preg_replace('/[^0-9,\.]/', '', $value ?? '0')));
-    }
-
     public function unread_notif(Request $request, $id, $do)
     {
         $notification = DB::table('notifications')->where('id', $id)->first();
@@ -1067,4 +1064,23 @@ class DeliveryOrderController extends Controller
             'notifCount' => $notifCount,
         ]);
     }
+
+    private function parseIdrToDecimal($value)
+    {
+        if ($value === null || $value === '') {
+            return 0;
+        }
+
+        // hilangkan spasi
+        $value = trim($value);
+
+        // hapus pemisah ribuan
+        $value = str_replace('.', '', $value);
+
+        // ubah koma menjadi titik (decimal)
+        $value = str_replace(',', '.', $value);
+
+        return (float) $value;
+    }
+
 }

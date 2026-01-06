@@ -69,6 +69,7 @@ Route::group([
         Route::get('/pageReport', 'CashbackController@pageReport')->name('pageReport');
         Route::get('/pageReportBeli', 'CashbackController@pageReportBeli')->name('pageReportBeli');
         Route::get('/pageReportJual', 'CashbackController@pageReportJual')->name('pageReportJual');
+        Route::get('/json', 'CashbackController@json')->name('json');
         Route::get('/json2', 'CashbackController@json2')->name('json2');
     });
     Route::resource('cashback', 'CashbackController')->except(['create']);

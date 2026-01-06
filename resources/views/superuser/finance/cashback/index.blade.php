@@ -155,7 +155,7 @@ $(document).ready(function() {
             },
             { data: 'code' },
             { data: 'code_invoice' },
-            { data: 'customer_name' },
+            { data: 'account_customer' },
             { 
               data: 'selisih_cashback',
               render: $.fn.dataTable.render.number('.', ',', 2, 'Rp. '),

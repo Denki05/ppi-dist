@@ -134,6 +134,36 @@ class ReportRequestController extends Controller
             ],
 
             // ================================
+            // GROUP: MANAGEMENT (baru)
+            // ================================
+            'management' => [
+
+                'management_by_brand' => [
+                    'file'       => 'customer_type_brand.rpt',
+                    'date_field' => '{report_customer_type_brand.invoice_date}',
+                    'uses_command' => false,
+                    'needs_officer' => false,
+                    'force_date_formula' => true,
+                
+                    // ⬇️ TAMBAHAN PENTING
+                    'display_date_param' => true,
+                ],
+                
+
+                'management_by_zone' => [
+                    'file'       => 'report_zone_customer.rpt',   // sama seperti target
+                    'date_field' => '{report_customer_type_brand.invoice_date}',
+                    'uses_command' => false,
+                    'needs_officer' => false,
+                    'force_date_formula' => true,
+                
+                    // ⬇️ TAMBAHAN PENTING
+                    'display_date_param' => true,
+                ],
+            ],
+
+
+            // ================================
             // GROUP: AKTIVITAS (opsional bila dibutuhkan)
             // ================================
             'aktivitas' => [
@@ -185,7 +215,7 @@ class ReportRequestController extends Controller
 
         $start = $r->start;
         $end   = $r->end;
-        $ao    = $r->ao;
+        $ao    = $r->ao ?? null;
 
         $startDt = date('Y-m-d', strtotime($start));
         $endDt   = date('Y-m-d', strtotime($end));
@@ -197,8 +227,15 @@ class ReportRequestController extends Controller
             // -----------------------------
             // 1. LOGIN DATABASE
             // -----------------------------
-            if (!$config['uses_command']) {
-                $creport->Database->Tables(1)->SetLogOnInfo("LOCAL_3", "ppi_araya", "root", "");
+            if (empty($config['uses_command'])) {
+                foreach ($creport->Database->Tables as $table) {
+                    $table->SetLogOnInfo(
+                        "LOCAL_3",
+                        "ppi_araya",
+                        "root",
+                        ""
+                    );
+                }
             }
 
             // -----------------------------
@@ -229,14 +266,51 @@ class ReportRequestController extends Controller
 
             $creport->EnableParameterPrompting = false;
 
-            // -----------------------------
-            // 3. BUILD RECORD SELECTION FORMULA
-            // -----------------------------
-            $formula = "({$config['date_field']} >= #$startDt# AND {$config['date_field']} <= #$endDt#)";
-            if ($config['needs_officer'] && !empty($ao) && $ao !== 'all' && $ao !== 'pilih_officer') {
-                $formula .= " AND {$config['officer_field']} = '$ao'";
+            // ==============================
+            // SET DISPLAY DATE (HEADER REPORT)
+            // ==============================
+            if (!empty($config['display_date_param'])) {
+
+                $creport->ParameterFields(2)->SetCurrentValue(
+                    date('d-m-Y', strtotime($start))
+                );
+
+                $creport->ParameterFields(3)->SetCurrentValue(
+                    date('d-m-Y', strtotime($end))
+                );
             }
-            $creport->RecordSelectionFormula = $formula;
+
+
+           
+            // ==============================
+            // RECORD SELECTION FORMULA
+            // ==============================
+
+            if (!empty($config['force_date_formula'])) {
+
+                // MENIRU FUNCTION LAMA (TERBUKTI STABIL)
+                $creport->RecordSelectionFormula =
+                    "{$config['date_field']}>=#$start# AND {$config['date_field']}<=#$end#";
+
+            } elseif (!empty($config['date_field'])) {
+
+                $formula =
+                    "({$config['date_field']} >= #$startDt# AND {$config['date_field']} <= #$endDt#)";
+
+                if (
+                    !empty($config['needs_officer']) &&
+                    !empty($config['officer_field']) &&
+                    !empty($ao) &&
+                    $ao !== 'all' &&
+                    $ao !== 'pilih_officer'
+                ) {
+                    $formula .= " AND {$config['officer_field']} = '$ao'";
+                }
+
+                $creport->RecordSelectionFormula = $formula;
+            }
+
+
 
             // -----------------------------
             // 4. EXPORT PDF
@@ -250,6 +324,7 @@ class ReportRequestController extends Controller
             $crapp = null;
 
         } catch (\Exception $e) {
+            DD($e);
             if (isset($creport)) $creport = null;
             if (isset($crapp)) $crapp = null;
             throw $e;
