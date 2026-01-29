@@ -1,11 +1,11 @@
 @extends('superuser.app')
 
 @section('content')
-<nav class="breadcrumb bg-white push">
-  <span class="breadcrumb-item">Purchasing</span>
-  <a class="breadcrumb-item" href="{{ route('superuser.gudang.receiving.index') }}">Receiving</a>
-  <span class="breadcrumb-item active">New</span>
-</nav>
+<!--<nav class="breadcrumb bg-white push">-->
+<!--  <span class="breadcrumb-item">Purchasing</span>-->
+<!--  <a class="breadcrumb-item" href="{{ route('superuser.gudang.receiving.index') }}">Receiving - Transaksi</a>-->
+<!--  <span class="breadcrumb-item active">New</span>-->
+<!--</nav>-->
 <div id="alert-block"></div>
 <div class="block">
   <div class="block-header block-header-default">

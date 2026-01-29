@@ -62,7 +62,7 @@
 </style>
 
 <div>
-  <h2 style="text-align: center; margin-bottom: 10px;"><u>SURAT JALAN</u></h2>
+  <h2 style="text-align: center; margin-bottom: 10px;"><u>SJ RECEIVING - TRANSAKSI</u></h2>
 
   <div class="row-float clearfix" style="margin-bottom: 15px;">
     <div class="column-float" style="width: 50%;">
@@ -93,6 +93,9 @@
         </tr>
         <tr>
             <td style="width: 35%;">Tanggal</td><td style="width: 5%;">:</td><td>{{ date('d-m-Y', strtotime($get_date_qc->pbm_date)) }}</td>
+        </tr>
+        <tr>
+            <td style="width: 35%;">Warehouse</td><td style="width: 5%;">:</td><td>{{ $result->warehouse->name }}</td>
         </tr>
       </table>
     </div>
@@ -129,28 +132,18 @@
 
   
 
-    <div style="position: absolute; bottom: 0px; left: 0; width: 100%;">
-        <div class="row-float clearfix">
-            <div class="column-float" style="width: 20%; text-align: center;">
-                Dibuat Oleh<br><br><br><br>
-                <span>.......................</span>
-            </div>
-            <div class="column-float" style="width: 20%; text-align: center;">
-                Gudang<br><br><br><br>
-                <span>.......................</span>
-            </div>
-            <div class="column-float" style="width: 20%; text-align: center;">
-                Packing<br><br><br><br>
-                <span>.......................</span>
-            </div>
-             <div class="column-float" style="width: 20%; text-align: center;">
-                Sopir<br><br><br><br>
-                <span>.......................</span>
-            </div>
-            <div class="column-float" style="width: 20%; text-align: center;">
-                Penerima<br><br><br><br>
-                <span>.......................</span>
-            </div>
-        </div>
-    </div>
+    <div style="margin-top: 188px;">
+      <table style="width: 100%; text-align: center;">
+          <tr>
+              <td style="width: 50%;">
+                  Dibuat Oleh<br><br><br><br>
+                  <span>.......................</span>
+              </td>
+              <td style="width: 50%;">
+                  Mengetahui<br><br><br><br>
+                  <span>.......................</span>
+              </td>
+          </tr>
+      </table>
+  </div>
 </div>

@@ -3,7 +3,7 @@
 @section('content')
 <nav class="breadcrumb bg-white push">
   <span class="breadcrumb-item">Penjualan</span>
-  <a class="breadcrumb-item" href="{{ route('superuser.penjualan.sale_return.index') }}">Retur</a>
+  <a class="breadcrumb-item" href="{{ route('superuser.penjualan.sale_return.index') }}">Nota Kredit</a>
   <span class="breadcrumb-item active">Show</span>
 </nav>
 <div class="block">

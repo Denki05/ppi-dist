@@ -1,54 +1,102 @@
 @extends('superuser.app')
 
 @section('content')
-  <nav class="breadcrumb bg-white push">
-    <span class="breadcrumb-item">Inventory</span>
-    <a class="breadcrumb-item" href="{{ route('superuser.gudang.mutasi_out.index') }}">Mutation Display</a>
-    <span class="breadcrumb-item active">Create</span>
-  </nav>
   <div id="alert-block"></div>
 
   <form class="ajax" data-action="{{ route('superuser.gudang.mutasi_out.store') }}" data-type="POST"
     enctype="multipart/form-data">
     <div class="block">
-      <div class="block-header block-header-default">
+      <!-- <div class="block-header block-header-default">
         <h3 class="block-title">Create Mutation Out</h3>
-      </div>
+      </div> -->
       <div class="block-content">
         <div class="form-group row">
-          <label class="col-md-3 col-form-label text-right" for="code">Code <span class="text-danger">*</span></label>
-          <div class="col-md-7">
-            <input type="text" class="form-control" id="code" name="code" onkeyup="nospaces(this)"
-              value="" readonly>
+          <!-- Kolom kiri -->
+          <div class="col-md-6">
+            <div class="form-group row">
+              <label class="col-md-4 col-form-label text-right" for="code">
+                Kode <span class="text-danger">*</span>
+              </label>
+              <div class="col-md-8">
+                <input type="text" class="form-control" id="code" name="code" readonly>
+              </div>
+            </div>
+          </div>
+
+          <div class="col-md-6">
+            <div class="form-group row">
+              <label class="col-md-4 col-form-label text-right" for="brand_name">
+                Brand <span class="text-danger">*</span>
+              </label>
+              <div class="col-md-8">
+                <select class="js-select2 form-control" id="brand_name" name="brand_name"
+                  data-placeholder="Select Brand">
+                  <option></option>
+                  @foreach ($brand as $row)
+                    <option value="{{ $row->brand_name }}">{{ $row->brand_name }}</option>
+                  @endforeach
+                </select>
+              </div>
+            </div>
           </div>
         </div>
+
         <div class="form-group row">
-          <label class="col-md-3 col-form-label text-right" for="warehouse_from">Warehouse From <span
-              class="text-danger">*</span></label>
-          <div class="col-md-7">
-            <select class="js-select2 form-control" id="warehouse_from" name="warehouse_from"
-              data-placeholder="Select Warehouse">
-              <option></option>
-              @foreach ($warehouse_from as $id => $name)
-                <option value="{{ $id }}">{{ $name }}</option>
-              @endforeach
-            </select>
-            <small class="form-text text-muted font-italic">Select warehouse first before choose product</small>
+          <div class="col-md-6">
+            <div class="form-group row">
+              <label class="col-md-4 col-form-label text-right" for="warehouse_from">
+                Gudang Asal <span class="text-danger">*</span>
+              </label>
+              <div class="col-md-8">
+                <select class="js-select2 form-control" id="warehouse_from" name="warehouse_from"
+                  data-placeholder="Select Warehouse">
+                  <option></option>
+                  @foreach ($warehouse_from as $id => $name)
+                    <option value="{{ $id }}">{{ $name }}</option>
+                  @endforeach
+                </select>
+                <small class="form-text text-muted font-italic">
+                  Select warehouse first before choose product
+                </small>
+              </div>
+            </div>
+          </div>
+          <!-- Kolom kiri -->
+          <div class="col-md-6">
+            <div class="form-group row">
+              <label class="col-md-4 col-form-label text-right" for="warehouse_to">
+                Gudang Tujuan <span class="text-danger">*</span>
+              </label>
+              <div class="col-md-8">
+                <select class="js-select2 form-control" id="warehouse_to" name="warehouse_to"
+                  data-placeholder="Select Warehouse">
+                  <option></option>
+                  @foreach ($warehouse_to as $id => $name)
+                    <option value="{{ $id }}">{{ $name }}</option>
+                  @endforeach
+                </select>
+              </div>
+            </div>
           </div>
         </div>
+
         <div class="form-group row">
-          <label class="col-md-3 col-form-label text-right" for="warehouse_to">Warehouse To <span
-              class="text-danger">*</span></label>
-          <div class="col-md-7">
-            <select class="js-select2 form-control" id="warehouse_to" name="warehouse_to"
-              data-placeholder="Select Warehouse">
-              <option></option>
-              @foreach ($warehouse_to as $id => $name)
-                <option value="{{ $id }}">{{ $name }}</option>
-              @endforeach
-            </select>
+          <div class="col-md-6">
+            <div class="form-group row">
+              <label class="col-md-4 col-form-label text-right" for="spk_code">
+                SPK <span class="text-danger">*</span>
+              </label>
+              <div class="col-md-8">
+                <select class="js-select2-spk form-control" id="spk_code" name="spk_code"
+                  data-placeholder="Select SPK">
+                  <option></option>
+                </select>
+              </div>
+            </div>
           </div>
         </div>
+
+        <!-- Tombol -->
         <div class="form-group row pt-30">
           <div class="col-md-6">
             <a href="{{ route('superuser.gudang.mutasi_out.index') }}">
@@ -63,28 +111,24 @@
             </button>
           </div>
         </div>
-
       </div>
     </div>
 
     <div class="block">
-      <div class="block-header block-header-default">
-        <h3 class="block-title">Add Product</h3>
+      <div class="block-content">
         <a href="#" class="row-add">
           <button type="button" class="btn bg-gd-sea border-0 text-white">
             <i class="fa fa-plus mr-10"></i> Row
           </button>
         </a>
-      </div>
-      <div class="block-content">
         <table id="datatable" class="table table-striped">
           <thead>
             <tr>
-              <th class="text-center">#</th>
-              <th class="text-center">Product</th>
-              <th class="text-center">Quantity</th>
-              <th class="text-center">Keterangan</th>
-              <th class="text-center">Action</th>
+              <th class="text-center" style="width:5%;">#</th>
+              <th class="text-center" style="width:30%;">Product</th>
+              <th class="text-center" style="width:10%;">Quantity</th>
+              <th class="text-center" style="width:30%;">Keterangan</th>
+              <th class="text-center" style="width:10%;">Action</th>
             </tr>
           </thead>
           <tbody>
@@ -145,7 +189,7 @@
         table.row.add([
           counter,
           '<select class="js-select2 form-control js-ajax" id="sku[' + counter +
-          ']" name="sku[]" data-placeholder="Select SKU" style="width:100%" required></select>',
+          ']" name="sku[]" data-placeholder="Select Product" style="width:100%" required></select>',
           '<input type="number" class="form-control text-center" name="qty[]" required>',
           '<input type="text" class="form-control text-center" name="description[]">',
           '<a href="#" class="row-delete"><button type="button" class="btn btn-sm btn-circle btn-alt-danger" title="Delete"><i class="fa fa-trash"></i></button></a>'
@@ -177,34 +221,49 @@
       }
 
       function initailizeSelect2() {
-      $(".js-ajax").select2({
-        ajax: {
-          url: '{{ route('superuser.gudang.mutasi_out.search_sku') }}',
-          dataType: 'json',
-          delay: 250,
-          data: params => ({
-            q: params.term,
-            warehouse: $('#warehouse_from').val(),
-            _token: "{{ csrf_token() }}"
-          }),
-          cache: true
-        },
-        templateResult: formatProduct,
-        templateSelection: formatProductSelection,
-        escapeMarkup: markup => markup      // biar HTML di template tidak di-escape
-      });
+        $(".js-ajax").select2({
+          ajax: {
+            url: '{{ route('superuser.gudang.mutasi_out.search_sku') }}',
+            dataType: 'json',
+            delay: 250,
+            data: params => {
+              let warehouse = $('#warehouse_from').val();
+              let brand = $('#brand_name').val();
 
-      $('.js-ajax').on('select2:select', function (e) {
-          $(this).closest('tr').find('input[name="qty[]"]').attr({
-            "max": e.params.data.stock,
-            "min": 0,
-            "placeholder": e.params.data.stock
-          });
+              if (!warehouse || !brand) {
+                return { q: params.term }; // kalau salah satu kosong, balikin kosong
+              }
+
+              return {
+                q: params.term,
+                warehouse: warehouse,
+                brand_name: brand,
+                _token: "{{ csrf_token() }}"
+              };
+            },
+            processResults: function (data) {
+              // kalau warehouse/brand kosong, balikin array kosong
+              return { results: data.results || [] };
+            },
+            cache: true
+          },
+          templateResult: formatProduct,
+          templateSelection: formatProductSelection,
+          escapeMarkup: markup => markup
+        });
+
+        $('.js-ajax').on('select2:select', function (e) {
+            $(this).closest('tr').find('input[name="qty[]"]').attr({
+              "max": e.params.data.stock,
+              "min": 0,
+              "placeholder": e.params.data.stock
+            });
         });
       }
 
-      $('#warehouse_from').on('select2:select', function(e) {
-        table.clear().draw();
+      // Reset table kalau ganti warehouse atau brand
+      $('#warehouse_from, #brand_name').on('select2:select', function(e) {
+        $('#datatable').DataTable().clear().draw();
       });
 
       $('#datatable tbody').on('click', '.row-delete', function(e) {
@@ -216,8 +275,56 @@
         }
       });
 
+      function generateCode(warehouseTo) {
+        let prefix = '';
+        switch (parseInt(warehouseTo)) {
+            case 6: prefix = 'MS-'; break; // Sirie
+            case 5: prefix = 'MO-PPN';  break; // Nginden
+            case 3: prefix = 'MOI-';  break; // QC
+            case 7: prefix = 'MOS-';  break; // Showroom
+            default: prefix = 'MOX-'; // fallback
+        }
 
+        // ambil tanggal hari ini
+        let now = new Date();
+        let year = now.getFullYear().toString().substr(-2); // 2 digit
+        let month = now.getMonth() + 1; // 1-12
+
+        // konversi bulan ke huruf
+        let abjadMonth = ['-', 'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L'];
+        let monthCode = abjadMonth[month];
+
+        // format awal: PREFIX + tahunbulan + 001
+        let code = prefix + year + monthCode + '001';
+
+        return code;
+      }
+
+      $('#warehouse_to').on('change', function() {
+          let warehouseTo = $(this).val();
+          if (warehouseTo) {
+              let code = generateCode(warehouseTo);
+              $('#code').val(code);
+          } else {
+              $('#code').val('');
+          }
+      });
+
+      $(".js-select2-spk").select2({
+      
+        ajax: {
+          url: '{{ route('superuser.gudang.mutasi_out.searchSpk') }}',
+          dataType: 'json',
+          delay: 250,
+          data: function (params) {
+            return {
+              q: params.term,
+              _token: "{{csrf_token()}}"
+            };
+          },
+          cache: true,
+        },
+      });
     });
-
   </script>
 @endpush

@@ -64,10 +64,9 @@
       <thead>
         <tr>
           <th class="text-center">#</th>
-          <th class="text-center">Created at</th>
-          <th class="text-center">Pbm date</th>
-          <th class="text-center">Code</th>
-          <th class="text-center">Warehouse</th>
+          <th class="text-center">Tanggal Terima</th>
+          <th class="text-center">kode</th>
+          <th class="text-center">Gudang</th>
           <th class="text-center">Status</th>
           <th class="text-center">Action</th>
         </tr>
@@ -106,13 +105,6 @@ $(document).ready(function() {
     },
     columns: [
       {data: 'DT_RowIndex', name: 'id'},
-      {
-        data: 'created_at',
-        render: {
-          _: 'display',
-          sort: 'timestamp'
-        }
-      },
       {
         data: 'pbm_date',
         render: {

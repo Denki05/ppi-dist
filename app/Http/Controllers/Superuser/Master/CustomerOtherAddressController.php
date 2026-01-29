@@ -535,4 +535,33 @@ class CustomerOtherAddressController extends Controller
             return redirect()->back()->with(['collect_success' => $import->success, 'collect_error' => $import->error]);
         }
     }
+
+    public function updateLastYearOrder(Request $request)
+    {
+        $addresses = DB::table('master_customer_other_addresses as mcoa')
+            ->leftJoin('penjualan_so as so', 'mcoa.id', '=', 'so.customer_other_address_id')
+            ->select(
+                'mcoa.id',
+                'mcoa.last_year_order',
+                DB::raw("COALESCE(MAX(YEAR(so.so_date)), 2024) as last_order_year")
+            )
+            ->groupBy('mcoa.id', 'mcoa.last_year_order')
+            ->get();
+
+        $updated = 0;
+
+        foreach ($addresses as $addr) {
+            if ((int) $addr->last_year_order !== (int) $addr->last_order_year) {
+                DB::table('master_customer_other_addresses')
+                    ->where('id', $addr->id)
+                    ->update([
+                        'last_year_order' => $addr->last_order_year,
+                        'updated_at'      => now(), // jika tabel punya field timestamp
+                    ]);
+                $updated++;
+            }
+        }
+
+        return redirect()->route('superuser.master.customer.index')->with('success', "Proses selesai. Total diupdate: {$updated}");
+    }
 }

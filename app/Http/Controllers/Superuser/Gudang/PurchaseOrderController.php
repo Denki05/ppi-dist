@@ -13,13 +13,15 @@ use App\Entities\Master\ProductPack;
 use App\Entities\Master\Packaging;
 use App\DataTables\Gudang\PurchaseOrderTable;
 use App\Exports\Gudang\PurchaseOrderDetailImportTemplate;
+use App\Exports\Gudang\PurchaseOrderExport;
 use App\Imports\Gudang\PurchaseOrderDetailImport;
 use App\Entities\Master\Warehouse;
+use App\Helper\LogActivity;
+use App\Repositories\CodeRepo;
 use Auth;
 use COM;
 use DB;
 use Excel;
-use PDF;
 use Validator;
 use Carbon\Carbon;
 
@@ -50,9 +52,15 @@ class PurchaseOrderController extends Controller
 
     public function search_sku(Request $request)
     {
-        $products = ProductPack::where('name', 'LIKE', '%'.$request->input('q', '').'%')
-            ->where('status', ProductPack::STATUS['ACTIVE'])
-            ->get(['id', 'code as text', 'name']);
+        $products = ProductPack::where('master_products_packaging.name', 'LIKE', '%'.$request->input('q', '').'%')
+            ->leftJoin('master_packaging', 'master_products_packaging.packaging_id', '=', 'master_packaging.id')
+            ->where('master_products_packaging.status', ProductPack::STATUS['ACTIVE'])
+            ->select(
+                'master_products_packaging.id',
+                DB::raw("CONCAT(master_products_packaging.code, ' - ', master_products_packaging.name, ' / ', master_packaging.pack_name) as text")
+            )
+            ->get();
+
         return ['results' => $products];
     }
 
@@ -96,6 +104,7 @@ class PurchaseOrderController extends Controller
         }
 
         $data['warehouse'] = Warehouse::get();
+        $data['sub_type'] = PurchaseOrder::SUB_TYPE;
 
         return view($this->view."create", $data);
     }
@@ -131,6 +140,8 @@ class PurchaseOrderController extends Controller
 
                 $purchase_order->code = $request->code;
                 $purchase_order->warehouse_id = $request->warehouse;
+                $purchase_order->type = 1;
+                $purchase_order->sub_type = $request->sub_type;
                 $purchase_order->etd = $request->etd;
                 $purchase_order->note = $request->note;
                 $purchase_order->created_by = Auth::id();
@@ -138,6 +149,7 @@ class PurchaseOrderController extends Controller
                 $purchase_order->status = PurchaseOrder::STATUS['DRAFT'];
 
                 if ($purchase_order->save()) {
+                    LogActivity::addToLog('Created a new PO: ' . $purchase_order->code);
                     $response['notification'] = [
                         'alert' => 'notify',
                         'type' => 'success',
@@ -180,7 +192,7 @@ class PurchaseOrderController extends Controller
     public function edit($id)
     {
         if(Auth::user()->is_superuser == 0){
-            if(empty($this->access) || empty($this->access->user) || $this->access->can_edit == 0){
+            if(empty($this->access) || empty($this->access->user) || $this->access->can_update == 0){
                 return redirect()->route('superuser.index')->with('error','Anda tidak punya akses untuk membuka menu terkait');
             }
         }
@@ -227,10 +239,12 @@ class PurchaseOrderController extends Controller
             if ($validator->passes()) {
                 $purchase_order->code = $request->code;
                 $purchase_order->warehouse_id = $request->warehouse;
+                $purchase_order->type = $request->type;
                 $purchase_order->etd = $request->etd;
                 $purchase_order->note = $request->note;
 
                 if ($purchase_order->save()) {
+                    LogActivity::addToLog('Updated PO: ' . $purchase_order->code);
                     $response['notification'] = [
                         'alert' => 'notify',
                         'type' => 'success',
@@ -385,9 +399,8 @@ class PurchaseOrderController extends Controller
                 $purchase_order->status = PurchaseOrder::STATUS['ACC'];
 
                 if ($purchase_order->save()) {
-
-                    
                     DB::commit();
+                    LogActivity::addToLog('ACC PO: ' . $purchase_order->code);
                     $response['redirect_to'] = route('superuser.gudang.purchase_order.index');
                     return $this->response(200, $response);
                 }
@@ -424,6 +437,7 @@ class PurchaseOrderController extends Controller
             $purchase_order->status = PurchaseOrder::STATUS['DELETED'];
 
             if ($purchase_order->save()) {
+                LogActivity::addToLog('Deleted PO: ' . $purchase_order->code);
                 $response['redirect_to'] = route('superuser.gudang.purchase_order.index');
                 return $this->response(200, $response);
             }
@@ -432,29 +446,64 @@ class PurchaseOrderController extends Controller
 
     public function print_pdf($id)
     {
-        if (empty($id) || !is_numeric($id)) {
-            abort(404, 'PO ID tidak valid.');
+        // Access
+        if(Auth::user()->is_superuser == 0){
+            if(empty($this->access) || empty($this->access->user) || $this->access->can_print == 0){
+                return redirect()->route('superuser.index')->with('error','Anda tidak punya akses untuk membuka menu terkait');
+            }
         }
 
-        $result = PurchaseOrder::find($id);
-        if (!$result) {
-            abort(404, 'PO tidak ditemukan.');
+        $result = PurchaseOrder::where('id', $id)->first();
+
+        $my_report = "C:\\xampp\\htdocs\\ppi-dist\public\\cr\\purchase_order\\po_rev.rpt"; 
+        $my_pdf = 'C:\\xampp\\htdocs\\ppi-dist\\public\\cr\\purchase_order\\export\\'.$result->code.'.pdf';
+
+        //- Variables - Server Information 
+        $my_server = "LOCAL_3"; 
+        $my_user = "root"; 
+        $my_password = ""; 
+        $my_database = "ppi-dist";
+        $COM_Object = "CrystalDesignRunTime.Application";
+
+         //-Create new COM object-depends on your Crystal Report version
+         $crapp= New COM($COM_Object) or die("Unable to Create Object");
+         $creport = $crapp->OpenReport($my_report,1); // call rpt report
+
+        //- Set database logon info - must have
+        $creport->Database->Tables(1)->SetLogOnInfo($my_server, $my_database, $my_user, $my_password);
+
+        //- field prompt or else report will hang - to get through
+        $creport->EnableParameterPrompting = FALSE;
+        $creport->RecordSelectionFormula = "{purchase_order.id}= $result->id";
+
+        //export to PDF process
+        $creport->ExportOptions->DiskFileName=$my_pdf; //export to pdf
+        $creport->ExportOptions->PDFExportAllPages=true;
+        $creport->ExportOptions->DestinationType=1; // export to file
+        $creport->ExportOptions->FormatType=31; // PDF type
+        $creport->Export(false);
+
+        //------ Release the variables ------
+        $creport = null;
+        $crapp = null;
+        $ObjectFactory = null;
+
+        $file = 'C:\\xampp\\htdocs\\ppi-dist\\public\\cr\\purchase_order\\export\\'.$result->code.'.pdf';
+
+        header("Content-Description: File Transfer"); 
+        header("Content-Type: application/octet-stream"); 
+        header("Content-Transfer-Encoding: Binary"); 
+        header("Content-Disposition: attachment; filename=\"". basename($file) ."\""); 
+        ob_clean();
+        flush();
+        readfile ($file);
+
+        if (file_exists($file)) {
+            unlink($file);
         }
 
-        $data = [
-            'result' => $result,
-        ];
+        exit();
 
-        $pdf = PDF::loadView('superuser.gudang.purchase_order.print_pdf', $data)
-                ->setPaper('a5', 'landscape');
-
-        $generate = false; // Ubah sesuai logika bisnis.
-
-        if ($generate) {
-            return $pdf->download("PO-{$result->code}.pdf");
-        }
-
-        return $pdf->stream("PO-{$result->code}.pdf");
     }
 
     public function import_template()
@@ -506,6 +555,12 @@ class PurchaseOrderController extends Controller
                 return $this->response(200, $response);
             }
         }
+    }
+
+    public function export(Request $request)
+    {
+        $filename = 'Purchase-Order-' . date('d-m-Y_H-i-s') . '.xlsx';
+        return Excel::download(new PurchaseOrderExport, $filename);
     }
 
     public function send(Request $request, $id)
@@ -631,6 +686,114 @@ class PurchaseOrderController extends Controller
                     ]
                 ]);
             }
+        }
+    }
+
+    public function send_spk(Request $request, $id)
+    {
+        if (!$request->ajax()) {
+            abort(403);
+        }
+
+        $po = PurchaseOrder::with('purchase_order_detail')->lockForUpdate()->findOrFail($id);
+
+        /** =====================
+         *  VALIDASI
+         *  ===================== */
+        if ($po->type != PurchaseOrder::TYPE['PO']) {
+            return $this->response(400, ['message' => 'Invalid PO type']);
+        }
+
+        if ($po->sub_type != PurchaseOrder::SUB_TYPE['INDUSTRI']) {
+            return $this->response(400, ['message' => 'PO bukan industri']);
+        }
+
+        if ($po->status != PurchaseOrder::STATUS['SENT']) {
+            return $this->response(400, ['message' => 'PO belum berstatus SENT']);
+        }
+
+        if ((int) $po->count_send_spk === 1) {
+            return $this->response(400, ['message' => 'SPK sudah pernah dikirim']);
+        }
+
+        if ($po->purchase_order_detail->isEmpty()) {
+            return $this->response(400, ['message' => 'Detail PO masih kosong']);
+        }
+
+        // Double safety
+        if (PurchaseOrder::where('ref_po_id', $po->id)->exists()) {
+            return $this->response(400, ['message' => 'SPK sudah pernah dibuat']);
+        }
+
+        DB::beginTransaction();
+        try {
+
+            /** =====================
+             *  CREATE SPK
+             *  ===================== */
+            $spk = PurchaseOrder::create([
+                'code'         => CodeRepo::generatePurchaseOrderSPK(),
+                'warehouse_id' => $po->warehouse_id,
+                'type'         => PurchaseOrder::TYPE['SPK'],
+                'etd'          => $po->etd,
+                'note'         => 'Generate from PO ' . $po->code,
+                'ref_po_id'    => $po->id,
+                'created_by'   => Auth::id(),
+                'status'       => PurchaseOrder::STATUS['ACC'],
+            ]);
+
+            /** =====================
+             *  DUPLIKASI DETAIL
+             *  ===================== */
+            foreach ($po->purchase_order_detail as $detail) {
+                PurchaseOrderDetail::create([
+                    'po_id'                 => $spk->id,
+                    'brand_lokal_id'        => $detail->brand_lokal_id,
+                    'product_packaging_id'  => $detail->product_packaging_id,
+                    'quantity'              => $detail->quantity,
+                    'packaging_id'          => $detail->packaging_id,
+                    'note_produksi'         => $detail->note_produksi,
+                    'note_repack'           => $detail->note_repack,
+                    'created_by'            => Auth::id(),
+                ]);
+            }
+
+            /** =====================
+             *  UPDATE FLAG PO
+             *  ===================== */
+            $po->update([
+                'count_send_spk' => 1,
+                'updated_by'     => Auth::id(),
+            ]);
+
+            DB::commit();
+
+            LogActivity::addToLog(
+                "Generate SPK {$spk->code} from PO {$po->code}"
+            );
+
+            return $this->response(200, [
+                'notification' => [
+                    'alert' => 'notify',
+                    'type' => 'success',
+                    'content' => 'SPK berhasil dibuat dan langsung ACC',
+                ],
+                'redirect_to' => route(
+                    'superuser.gudang.purchase_order.index'
+                ),
+            ]);
+
+        } catch (\Throwable $e) {
+            DB::rollBack();
+            report($e);
+
+            return $this->response(500, [
+                'notification' => [
+                    'alert' => 'block',
+                    'type' => 'alert-danger',
+                    'content' => ['Gagal generate SPK'],
+                ]
+            ]);
         }
     }
 }

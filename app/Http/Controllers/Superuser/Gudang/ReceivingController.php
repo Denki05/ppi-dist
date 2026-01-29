@@ -78,31 +78,45 @@ class ReceivingController extends Controller
 
     public function store(Request $request)
     {
-        if (!$request->ajax()) return;  // guard
+        if ($request->ajax()) {
+            $validator = Validator::make($request->all(), [
+                'code'              => 'required|string|unique:receiving,code',
+                'warehouse'         => 'required|integer',
+            ]);
 
-        $validator = Validator::make($request->all(), [
-            'code'      => 'required|string|unique:receiving,code',
-            'warehouse' => 'required|integer'
-        ]);
-        if ($validator->fails()) return $this->validationError($validator);
+            if ($validator->fails()) {
+                $response['notification'] = [
+                    'alert' => 'block',
+                    'type' => 'alert-danger',
+                    'header' => 'Error',
+                    'content' => $validator->errors()->all(),
+                ];
 
-        $receiving               = new Receiving;
-        $receiving->code         = $request->code;
-        $receiving->type         = $request->type ?? Receiving::TYPE['INBOUND'];
-        $receiving->warehouse_id = $request->warehouse;
-        $receiving->pbm_date     = $request->pbm_date;
-        $receiving->note         = $request->note ?? null;
-        $receiving->status       = Receiving::STATUS['ACTIVE'];
-        $receiving->save();
+                return $this->response(400, $response);
+            }
 
-        return $this->response(200, [
-            'notification' => [
-                'alert'   => 'notify',
-                'type'    => 'success',
-                'content' => 'Receiving created successfully',
-            ],
-            'redirect_to' => route('superuser.gudang.receiving.step', $receiving->id)
-        ]);
+            if ($validator->passes()) {
+                $receiving               = new Receiving;
+                $receiving->code         = $request->code;
+                $receiving->type         = $request->type ?? Receiving::TYPE['INBOUND'];
+                $receiving->warehouse_id = $request->warehouse;
+                $receiving->pbm_date     = $request->pbm_date;
+                $receiving->note         = $request->note ?? null;
+                $receiving->status       = Receiving::STATUS['ACTIVE'];
+
+                if ($receiving->save()) {
+                    $response['notification'] = [
+                        'alert' => 'notify',
+                        'type' => 'success',
+                        'content' => 'Success',
+                    ];
+
+                    $response['redirect_to'] = route('superuser.gudang.receiving.step', ['id' => $receiving->id]);
+
+                    return $this->response(200, $response);
+                }
+            }
+        }
     }
 
     public function edit($id)

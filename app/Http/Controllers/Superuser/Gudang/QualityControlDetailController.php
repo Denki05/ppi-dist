@@ -563,6 +563,14 @@ class QualityControlDetailController extends Controller
     public function destroyQc(Request $request, $id)
     {
         if ($request->ajax()) {
+            if (Auth::user()->is_superuser == 0) {
+                if (empty($this->access) || empty($this->access->user) || $this->access->can_delete == 0) {
+                    return response()->json([
+                        'status' => 'error',
+                        'message' => 'Anda tidak punya akses untuk menghapus data QC.'
+                    ], 403);
+                }
+            }
 
             $qcLog = QualityControlLogs::find($id);
 

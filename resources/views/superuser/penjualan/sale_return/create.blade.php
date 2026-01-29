@@ -3,7 +3,7 @@
 @section('content')
 <nav class="breadcrumb bg-white push">
   <span class="breadcrumb-item">Penjualan</span>
-  <a class="breadcrumb-item" href="{{ route('superuser.penjualan.sale_return.index') }}">Retur</a>
+  <a class="breadcrumb-item" href="{{ route('superuser.penjualan.sale_return.index') }}">Nota Kredit</a>
   <span class="breadcrumb-item active">Create</span>
 </nav>
 <div id="alert-block"></div>
@@ -13,7 +13,7 @@
     <div class="col-md-12">
       <div class="block">
         <div class="block-header block-header-default">
-          <h3 class="block-title">Create Return</h3>
+          <h3 class="block-title">Create Nota Kredit</h3>
         </div>
         <div class="block-content">
           <div class="row mb-3">
@@ -40,6 +40,26 @@
               </select>
             </div>
           </div>
+          <div class="row mb-3">
+            <label class="col-md-3 col-form-label text-right" for="retur_date">Tanggal <span class="text-danger">*</span></label>
+            <div class="col-md-7">
+              <input type="date" class="form-control" id="retur_date" name="retur_date" required>
+            </div>
+          </div>
+          <div class="row mb-3">
+            <label class="col-md-3 col-form-label text-right">
+              Komplain?
+            </label>
+            <div class="col-md-7 d-flex align-items-center">
+              <div class="form-check m-0">
+                <input class="form-check-input"
+                      type="checkbox"
+                      id="flag_qc"
+                      name="flag_qc"
+                      value="1">
+              </div>
+            </div>
+          </div>
           <div class="row pt-30">
             <div class="col-md-6">
               <a href="javascript:history.back()">
@@ -49,6 +69,13 @@
               </a>
             </div>
             <div class="col-md-6 text-right">
+              <button type="button"
+                      class="btn btn-warning text-black me-2"
+                      id="btn-qc"
+                      style="display:none">
+                <i class="fa fa-warehouse me-1"></i> Receiving – Komplain
+              </button>
+
               <button type="submit" class="btn bg-gd-corporate border-0 text-white" id="submit-table" disabled>
                 Submit <i class="fa fa-arrow-right ml-10"></i>
               </button>
@@ -135,6 +162,42 @@
     </div>
   </div>
 </form>
+
+<!-- MODAL -->
+<div class="modal fade" id="modalQc" tabindex="-1" role="dialog" aria-hidden="true">
+  <div class="modal-dialog modal-l modal-dialog-scrollable" role="document">
+    <div class="modal-content">
+
+      <div class="modal-header">
+        <h5 class="modal-title">Receiving – Komplain</h5>
+        <!-- <button type="button" class="close no-ajax" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button> -->
+      </div>
+
+      <div class="modal-body">
+        <table class="table table-bordered table-sm" id="table-qc">
+          <thead>
+            <tr>
+              <th style="width:15%">Kode</th>
+              <th>Produk</th>
+              <th style="width:10%" class="text-end">Qty</th>
+              <th style="width:10%" class="text-center">Action</th>
+            </tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </div>
+
+      <div class="modal-footer">
+        <!-- <button type="button" class="btn btn-warning no-ajax" data-dismiss="modal">
+          Tutup
+        </button> -->
+      </div>
+
+    </div>
+  </div>
+</div>
 @endsection
 
 @include('superuser.asset.plugin.datatables')
@@ -143,232 +206,346 @@
 @push('scripts')
 <script src="{{ asset('utility/superuser/js/form.js') }}"></script>
 <script>
-  $(document).ready(function () {
-    $('.js-select2').select2()
+$(document).ready(function () {
 
-    $(".js-select2-do").select2({
-      ajax: {
-        url: '{{ route('superuser.penjualan.sale_return.search_do') }}',
-        dataType: 'json',
-        delay: 250,
-        data: function (params) {
-          return {
-            q: params.term,
-            _token: "{{csrf_token()}}"
-          };
-        },
-        cache: true
+  /* ==========================
+     INIT SELECT2 (JANGAN DIUBAH)
+  ========================== */
+  $('.js-select2').select2();
+
+  $(".js-select2-do").select2({
+    ajax: {
+      url: '{{ route("superuser.penjualan.sale_return.search_do") }}',
+      dataType: 'json',
+      delay: 250,
+      data: function (params) {
+        return { q: params.term, _token: "{{ csrf_token() }}" };
       },
-    });
+      cache: true
+    }
+  });
 
-    var product_data = [];
+  let product_data = [];
+  let invoiceQty = {};
+  let usedQty = {};
+  let counter = 1;
 
-    var table = $('#datatable').DataTable({
-        paging: false,
-        bInfo : false,
-        searching: false,
-        columns: [
-          {name: 'counter', "visible": false},
-          {name: 'product', orderable: false, width: "15%"},
-          {name: 'kemasan', orderable: false, width: "5%"},
-          {name: 'acuan', orderable: false, width: "5%"},
-          {name: 'qty', orderable: false, width: "5%"},
-          {name: 'disc', orderable: false, width: "5%"},
-          {name: 'jumlah', orderable: false, width: "10%"},
-          {name: 'action', orderable: false, width: "5%"}
-        ],
-        'order' : [[0,'desc']]
-    })
-  
-    var counter = 1;
-  
-    $('a.row-add').on('click', function (e) {
-      e.preventDefault();
-      if($('#delivery_order').val()) {
-        $('#submit-table').prop('disabled', false);
+  let table = $('#datatable').DataTable({
+    paging: false,
+    bInfo: false,
+    searching: false,
+    columns: [
+      { visible: false },
+      null, null, null, null, null, null, null
+    ],
+    order: [[0, 'desc']]
+  });
 
-        // Ambil semua product yang sudah dipilih
-        let selected = $('.product-select').map(function() {
-          return $(this).val();
-        }).get();
+  /* ==========================
+     LOAD PRODUCT FROM INVOICE
+  ========================== */
+  $('#delivery_order').on('select2:select', function () {
 
-        let makeselect = '<select class="js-select2 form-control js-ajax product-select" id="sku['+counter+']" name="sku[]" data-placeholder="Select Product" style="width:100%" required><option></option>';
+    table.clear().draw();
+    counter = 1;
+    invoiceQty = {};
+    usedQty = {};
 
-        $.map(product_data, function(val, i) {
-          // Skip product yang sudah dipilih di row lain
-          if (!selected.includes(String(val['id']))) {
-            makeselect += '<option value="'+ val['id'] +'" data-name="'+ val['name'] +'" data-sku="'+ val['sku'] +'" data-quantity="'+ val['quantity'] + '" data-kemasan="'+ val['kemasan'] +'" data-acuan="'+ val['acuan'] +'" data-disc_usd="'+ val['disc_usd'] +'" data-disc_1="'+ val['discount_percent'] +'" data-disc_2="'+ val['discount_kemasan'] +'" data-disc_idr="'+ val['discount_idr'] +'" data-idr_rate="'+ val['idr_rate'] +'">'+ val['sku'] +' - '+ val['name'] +'</option>';
-          }
-        });
+    $('input[name^="disc"], #subtotal_item, #grand_total').val('');
 
-        makeselect += '</select>';
+    $.post('{{ route("superuser.penjualan.sale_return.get_product") }}', {
+      id: $(this).val(),
+      _token: "{{ csrf_token() }}"
+    }, function (res) {
 
-        table.row.add([
-          counter,
-          makeselect,
-          '<span class="packaging"></span>',
-          '<input type="number" class="form-control text-right" name="acuan[]" min="0.01" step="0.01" readonly><input type="hidden" name="kurs[]">',
-          '<input type="number" class="form-control text-right" name="quantity[]" id="quantity['+counter+']" min="0.01" step="0.01" required>',
-          '<input type="number" class="form-control text-right" name="disc_usd[]" id="disc_usd['+counter+']" min="0.01" step="0.01" readonly>',
-          '<input type="number" class="form-control text-right" name="jumlah[]" id="jumlah['+counter+']" min="0.01" step="0.01" readonly>',
-          '<a href="#" class="row-delete"><button type="button" class="btn btn-sm btn-circle btn-alt-danger" title="Delete"><i class="fa fa-trash"></i></button></a>',
-        ]).draw(false);
+      if (res.code !== 200) return;
 
-        initailizeSelect2();
-        refreshProductOptions(); // update hide option
-        counter++;
+      product_data = res.data;
+
+      product_data.forEach(p => {
+        invoiceQty[p.id] = parseFloat(p.quantity);
+        usedQty[p.id] = 0;
+      });
+
+    }, 'json');
+  });
+
+  /* ==========================
+     ADD ROW MANUAL
+  ========================== */
+  $('.row-add').on('click', function (e) {
+    e.preventDefault();
+    if (!$('#delivery_order').val()) return;
+
+    let selected = $('.product-select').map(function () {
+      return $(this).val();
+    }).get();
+
+    let select = `<select class="js-select2 form-control product-select" name="sku[]" required><option>Pilih Produk</option>`;
+
+    product_data.forEach(p => {
+      let sisa = invoiceQty[p.id] - (usedQty[p.id] || 0);
+      if (sisa > 0 && !selected.includes(String(p.id))) {
+        select += `
+          <option value="${p.id}"
+            data-quantity="${sisa}"
+            data-kemasan="${p.kemasan}"
+            data-acuan="${p.acuan}"
+            data-disc_usd="${p.disc_usd}"
+            data-disc_1="${p.discount_percent}"
+            data-disc_2="${p.discount_kemasan}"
+            data-disc_idr="${p.discount_idr}"
+            data-idr_rate="${p.idr_rate}">
+            ${p.sku} - ${p.name}
+          </option>`;
       }
     });
 
-    function initailizeSelect2(){
-      $(".js-ajax").select2();
+    select += '</select>';
 
-      $('.js-ajax').off('select2:select').on('select2:select', function (e) {
-        var sku = $(this).find(':selected').data('sku');
-        var quantity = $(this).find(':selected').data('quantity');
-        var kemasan = $(this).find(':selected').data('kemasan');
-        var acuan = $(this).find(':selected').data('acuan');
-        var disc_usd = $(this).find(':selected').data('disc_usd');
-        var disc_1 = $(this).find(':selected').data('disc_1');
-        var disc_2 = $(this).find(':selected').data('disc_2');
-        var disc_idr = $(this).find(':selected').data('disc_idr');
-        var idr_rate = $(this).find(':selected').data('idr_rate');
+    let row = table.row.add([
+      counter++,
+      select,
+      '<span class="packaging"></span>',
+      '<input type="number" class="form-control text-right" name="acuan[]" readonly><input type="hidden" name="kurs[]"><input type="hidden" name="row_type[]" value="manual">',
+      '<input type="number" class="form-control qty text-right" name="quantity[]" min="0" step="0.01">',
+      '<input type="number" class="form-control text-right" name="disc_usd[]" readonly>',
+      '<input type="number" class="form-control text-right" name="jumlah[]" readonly>',
+      '<a href="#" class="row-delete btn btn-sm btn-danger"><i class="fa fa-trash"></i></a>'
+    ]).draw(false).node();
 
-        $(this).parents('tr').find('.packaging').text(kemasan);
-        $(this).parents('tr').find('input[name="quantity[]"]').prop('max', quantity);
-        $(this).parents('tr').find('input[name="quantity[]"]').prop('placeholder', quantity);
-        $(this).parents('tr').find('input[name="acuan[]"]').val(acuan);
-        $(this).parents('tr').find('input[name="disc_usd[]"]').val(disc_usd);
-        $(this).parents('tr').find('input[name="kurs[]"]').val(idr_rate);
-        $('input[name="disc_percent"]').val(disc_1);
-        $('input[name="disc_percent_2"]').val(disc_2);
-        $('input[name="disc_idr"]').val(disc_idr);
+    $(row).addClass('row-manual');
+    $('.product-select').select2();
+    toggleQcButton();
+    toggleSubmitButton();
+  });
 
-        // alert(disc_1);
+  /* ==========================
+     SELECT PRODUCT
+  ========================== */
+  $('#datatable').on('select2:select', '.product-select', function () {
 
-        refreshProductOptions(); // hide produk setelah dipilih
-      });
-    };
+    let opt = $(this).find(':selected');
+    let row = $(this).closest('tr');
 
-    // ðŸ”¹ fungsi untuk hide produk yang sudah dipilih
-    function refreshProductOptions() {
-      let selected = $('.product-select').map(function() {
-        return $(this).val();
-      }).get();
+    row.find('.packaging').text(opt.data('kemasan'));
+    row.find('input[name="acuan[]"]').val(opt.data('acuan'));
+    row.find('input[name="disc_usd[]"]').val(opt.data('disc_usd'));
+    row.find('input[name="kurs[]"]').val(opt.data('idr_rate'));
 
-      // alert(selected);
+    $('#disc_percent').val(opt.data('disc_1'));
+    $('#disc_percent_2').val(opt.data('disc_2'));
+    $('#disc_idr').val(opt.data('disc_idr'));
 
-      $('.product-select').each(function() {
-        let $sel = $(this);
-        let current = $sel.val();
+    let max = opt.data('quantity');
+    row.find('.qty').attr('max', max).attr('placeholder', max);
+  });
 
-        $sel.find('option').each(function() {
-          let val = $(this).attr('value');
-          if (!val) return;
+  /* ==========================
+     QTY INPUT (AKUMULATIF)
+  ========================== */
+  $('#datatable').on('keyup change', '.qty', function () {
 
-          if (selected.includes(val) && val !== current) {
-            $(this).hide();
-          } else {
-            $(this).show();
-          }
-        });
+    let row = $(this).closest('tr');
+    let productId = row.find('.product-select').val();
+    let qty = parseFloat($(this).val()) || 0;
 
-        // refresh tampilan select2
-        if ($sel.hasClass('select2-hidden-accessible')) {
-          $sel.trigger('change.select2');
-        }
-      });
+    let totalUsed = 0;
+    $('.product-select').each(function (i) {
+      if ($(this).val() === productId) {
+        totalUsed += parseFloat($('input[name="quantity[]"]').eq(i).val()) || 0;
+      }
+    });
+
+    if (totalUsed > invoiceQty[productId]) {
+      alert('Qty melebihi qty nota');
+      $(this).val('');
+      return;
     }
 
-    // calculate jumlah
-    $('#datatable tbody').on('keyup', 'input[name="quantity[]"]', function () {
-      var qty = $(this).val();
-      var acuan = $(this).parents('tr').find('input[name="acuan[]"]').val();
-      var disc_usd = $(this).parents('tr').find('input[name="disc_usd[]"]').val();
-      var kurs = $(this).parents('tr').find('input[name="kurs[]"]').val();
-      var jumlah = 0;
-      if(qty && acuan) {
-        jumlah = ((acuan - disc_usd) * qty) * kurs;
-      }
-      $(this).parents('tr').find('input[name="jumlah[]"]').val(jumlah.toFixed(0));
-      calculateTotal();
+    usedQty[productId] = totalUsed;
+
+    let acuan = parseFloat(row.find('input[name="acuan[]"]').val()) || 0;
+    let disc = parseFloat(row.find('input[name="disc_usd[]"]').val()) || 0;
+    let kurs = parseFloat(row.find('input[name="kurs[]"]').val()) || 1;
+
+    let jumlah = ((acuan - disc) * qty) * kurs;
+    row.find('input[name="jumlah[]"]').val(jumlah.toFixed(2));
+
+    calculateTotal();
+  });
+
+  /* ==========================
+     DELETE ROW
+  ========================== */
+  $('#datatable').on('click', '.row-delete', function (e) {
+    e.preventDefault();
+    table.row($(this).closest('tr')).remove().draw();
+    recalcUsedQty();
+    calculateTotal();
+    toggleQcButton();
+    toggleSubmitButton();
+  });
+
+  function recalcUsedQty() {
+    usedQty = {};
+    $('.product-select').each(function (i) {
+      let pid = $(this).val();
+      let qty = parseFloat($('input[name="quantity[]"]').eq(i).val()) || 0;
+      usedQty[pid] = (usedQty[pid] || 0) + qty;
     });
+  }
 
-    function calculateTotal() {
-      var subtotal = 0;
-      $('input[name="jumlah[]"]').each(function() {
-        var val = parseFloat($(this).val());
-        if (!isNaN(val)) {
-          subtotal += val;
-        }
+  /* ==========================
+     RECEIVING – KOMPLAIN (QC)
+  ========================== */
+  $('#btn-qc').on('click', function () {
+
+    $('#modalQc').modal('show');
+    $('#table-qc tbody').html('<tr><td colspan="4">Loading...</td></tr>');
+
+    $.post('{{ route("superuser.penjualan.sale_return.get_qc_by_do") }}', {
+      delivery_order: $('#delivery_order').val(),
+      _token: "{{ csrf_token() }}"
+    }, function (res) {
+
+      let html = '';
+
+      res.forEach(qc => {
+        qc.details.forEach(d => {
+          html += `
+            <tr>
+              <td>${qc.code}</td>
+              <td>${d.product_pack.code} - ${d.product_pack.name}</td>
+              <td class="text-end">${d.qty}</td>
+              <td class="text-center">
+                <button type="button"
+                  class="btn btn-success btn-sm btn-pilih-qc"
+                  data-product="${d.product_pack.id}"
+                  data-qty="${d.qty}"
+                  data-komplain_id="${qc.id}">
+                  Pilih
+                </button>
+              </td>
+            </tr>`;
+        });
       });
-      $('#subtotal_item').val(subtotal.toFixed(2));
 
-      // Get discount values
-      var disc_percent = parseFloat($('#disc_percent').val()) || 0;
-      var disc_percent_2 = parseFloat($('#disc_percent_2').val()) || 0;
-      var disc_idr = parseFloat($('#disc_idr').val()) || 0;
+      $('#table-qc tbody').html(html || '<tr><td colspan="4">Tidak ada data</td></tr>');
+    });
+  });
 
-      // Calculate disc_amount_1 (percent of subtotal)
-      var disc_amount_1 = subtotal * (disc_percent / 100);
-      $('#disc_amount_1').val(disc_amount_1.toFixed(0));
+  $('#table-qc').on('click', '.btn-pilih-qc', function () {
 
-      // Calculate disc_amount_2 (percent of subtotal)
-      var total_after_disc_1 = subtotal - $('#disc_amount_1').val();
-      var disc_amount_2 = total_after_disc_1 * (disc_percent_2 / 100);
-      $('#disc_amount_2').val(disc_amount_2.toFixed(0));
+    let komplainId = String($(this).data('komplain_id'));
+    let productId = String($(this).data('product'));
+    let qtyQc = parseFloat($(this).data('qty')) || 0;
+    if (qtyQc <= 0) return;
 
-      // Calculate grand total
-      var grand_total = subtotal - disc_amount_1 - disc_amount_2 - disc_idr;
-      $('#grand_total').val(grand_total.toFixed(0));
+    let product = product_data.find(p => String(p.id) === productId);
+    if (!product) return;
+
+    let sisa = invoiceQty[productId] - (usedQty[productId] || 0);
+    if (qtyQc > sisa) {
+      alert('Qty QC melebihi sisa qty invoice');
+      return;
     }
 
-    $('#datatable').on('draw.dt', function () {
-      calculateTotal();
+    usedQty[productId] = (usedQty[productId] || 0) + qtyQc;
+
+    let jumlahQc = ((product.acuan - product.disc_usd) * qtyQc) * product.idr_rate;
+
+    let row = table.row.add([
+      counter++,
+      `<span>${product.sku} - ${product.name} <span class="badge bg-warning">QC</span></span>
+      <input type="hidden" name="sku[]" value="${product.id}"><input type="hidden" name="row_type[]" value="qc"><input type="hidden" name="komplain_id[]" value="${komplainId}">`,
+      `<span class="packaging">${product.kemasan}</span>`,
+      `<input type="number" class="form-control text-right" name="acuan[]" value="${product.acuan}" readonly>
+      <input type="hidden" name="kurs[]" value="${product.idr_rate}">`,
+      `<input type="number" class="form-control text-right" name="quantity[]" value="${qtyQc}" readonly>`,
+      `<input type="number" class="form-control text-right" name="disc_usd[]" value="${product.disc_usd}" readonly>`,
+      `<input type="number" class="form-control text-right" name="jumlah[]" value="${jumlahQc.toFixed(0)}" readonly>`,
+      `<a href="#" class="row-delete btn btn-sm btn-danger"><i class="fa fa-trash"></i></a>`
+    ]).draw(false).node();
+
+    $(row).addClass('row-qc');
+
+    calculateTotal();
+    toggleQcButton();
+    toggleSubmitButton();
+    $('#modalQc').modal('hide');
+  });
+
+  /* ==========================
+     TOTAL
+  ========================== */
+  function calculateTotal() {
+    let subtotal = 0;
+
+    $('input[name="jumlah[]"]').each(function () {
+      let val = parseFloat($(this).val());
+      if (!isNaN(val)) subtotal += val;
     });
 
-    $('#datatable tbody').on('change', 'input[name="quantity[]"]', function () {
-      calculateTotal();
-    });
+    // simpan subtotal asli (desimal)
+    $('#subtotal_item').val(subtotal.toFixed(2));
 
-    // Recalculate + refresh options when a row is deleted
-    $('#datatable tbody').on('click', '.row-delete', function (e) {
-      e.preventDefault();
-      table.row($(this).parents('tr')).remove().draw();
-      refreshProductOptions();
-      setTimeout(function() {
-        calculateTotal();
-      }, 100);
-      if(typeof $('input[name="id[]"]').val() == 'undefined') {
-        $('#submit-table').prop('disabled', true);
-      }
-    });
+    let disc_percent   = parseFloat($('#disc_percent').val()) || 0;
+    let disc_percent_2 = parseFloat($('#disc_percent_2').val()) || 0;
+    let disc_idr       = parseFloat($('#disc_idr').val()) || 0;
 
-    $('#delivery_order').on('select2:select', function (e) {
-      table.clear().draw();
+    let disc_amount_1 = subtotal * (disc_percent / 100);
+    let after_disc_1  = subtotal - disc_amount_1;
 
-      $('input[name="disc_percent"]').val('');
-      $('input[name="disc_percent_2"]').val('');
-      $('input[name="disc_idr"]').val('');
-      $('input[name="disc_amount_1"]').val('');
-      $('input[name="disc_amount_2"]').val('');
-      $('input[name="subtotal_item"]').val('');
-      $('input[name="grand_total"]').val('');
+    let disc_amount_2 = after_disc_1 * (disc_percent_2 / 100);
 
-      $.ajax({
-        url: '{{ route('superuser.penjualan.sale_return.get_product') }}',
-        data: {id:$(this).val() , _token: "{{csrf_token()}}"},
-        type: 'POST',
-        cache: false,
-        dataType: 'json',
-        success: function(json) {
-          if (json.code == 200) {
-            product_data = json.data;
-          }
-        }
-      });
-    });
+    $('#disc_amount_1').val(disc_amount_1.toFixed(2));
+    $('#disc_amount_2').val(disc_amount_2.toFixed(2));
 
-  })
+    // ⬇️ BULATKAN SEKALI DI SINI
+    let grand_total = subtotal - disc_amount_1 - disc_amount_2 - disc_idr;
+    $('#grand_total').val(Math.round(grand_total));
+  }
+
+  /* ==========================
+     TOGGLE QC BUTTON
+  ========================== */
+  $('#btn-qc').prop('disabled', true);
+
+  function toggleQcButton() {
+    let type = $('#type').val();
+    let invoice = $('#delivery_order').val();
+    let manualRow = $('.row-manual').length;
+
+    $('#btn-qc').prop('disabled', !(type && invoice && manualRow > 0));
+  }
+
+  $('#type, #delivery_order').on('change select2:select', toggleQcButton);
+  $('#datatable').on('draw.dt', toggleQcButton);
+
+  function toggleSubmitButton() {
+    let rowCount = $('#datatable tbody tr').length;
+
+    if (rowCount > 0) {
+      $('#submit-table').prop('disabled', false);
+    } else {
+      $('#submit-table').prop('disabled', true);
+    }
+  }
+
+  function toggleQcVisibility() {
+    if ($('#flag_qc').is(':checked')) {
+      $('#btn-qc').show();
+    } else {
+      $('#btn-qc').hide();
+    }
+  }
+
+  $('#flag_qc').on('change', function () {
+    toggleQcVisibility();
+    toggleQcButton(); // pakai validasi lama (type, invoice, manual row)
+  });
+
+});
 </script>
 @endpush

@@ -14,7 +14,7 @@ class PurchaseOrderTable extends Table
      */
     private function query()
     {
-        $model = PurchaseOrder::select('id', 'code', 'edit_counter', 'updated_by', 'status', 'note', 'created_at', 'updated_by')
+        $model = PurchaseOrder::select('id', 'code', 'edit_counter', 'updated_by', 'status', 'sub_type', 'count_send_spk', 'note', 'created_at', 'updated_by')
                 ->where('type', PurchaseOrder::TYPE['PO']);
 
         return $model;
@@ -69,6 +69,7 @@ class PurchaseOrderTable extends Table
             $cancel_acc = route('superuser.gudang.purchase_order.cancel_acc', $model);
             $sent = route('superuser.gudang.purchase_order.send', $model);
             $cancel_send = route('superuser.gudang.purchase_order.cancel_send', $model);
+            $send_spk = route('superuser.gudang.purchase_order.send_spk', $model);
 
             switch ($model->status) {
                 case $model::STATUS['ACTIVE']:
@@ -136,10 +137,34 @@ class PurchaseOrderTable extends Table
                     ";
 
                 case $model::STATUS['SENT']:
+
+                    $btnSendSpk = '';
+
+                    if (
+                        $model->sub_type == PurchaseOrder::SUB_TYPE['INDUSTRI'] &&
+                        (int) $model->count_send_spk === 0
+                    ) {
+                        $btnSendSpk = "
+                            <a href=\"javascript:saveConfirmation('{$send_spk}')\">
+                                <button type=\"button\"
+                                        class=\"btn btn-sm btn-circle btn-alt-success\"
+                                        title=\"Generate SPK\">
+                                    <i class=\"fa fa-industry\"></i>
+                                </button>
+                            </a>
+                        ";
+                    }
+
                     return "
                         <a href=\"{$view}\">
                             <button type=\"button\" class=\"btn btn-sm btn-circle btn-alt-secondary\" title=\"View\">
                                 <i class=\"fa fa-eye\"></i>
+                            </button>
+                        </a>
+
+                        <a href=\"{$pdf}\">
+                            <button type=\"button\" class=\"btn btn-sm btn-circle btn-alt-secondary\" title=\"Print Out\">
+                                <i class=\"fa fa-print\"></i>
                             </button>
                         </a>
 
@@ -148,6 +173,8 @@ class PurchaseOrderTable extends Table
                                 <i class=\"fa fa-ban\"></i>
                             </button>
                         </a>
+
+                        {$btnSendSpk}
                     ";
                 default:
                     return "

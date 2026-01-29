@@ -137,6 +137,12 @@ class PurchaseOrderSPKTable extends Table
 
                 case $model::STATUS['SENT']:
                     return "
+                        <a href=\"{$pdf}\">
+                            <button type=\"button\" class=\"btn btn-sm btn-circle btn-alt-secondary\" title=\"Print Out\">
+                                <i class=\"fa fa-print\"></i>
+                            </button>
+                        </a>
+
                         <a href=\"{$view}\">
                             <button type=\"button\" class=\"btn btn-sm btn-circle btn-alt-secondary\" title=\"View\">
                                 <i class=\"fa fa-eye\"></i>

@@ -29,7 +29,7 @@
         {{-- Tab Header --}}
         <main class="tab-header">
             <input type="radio" id="tab1" name="tabs" checked hidden>
-            <label for="tab1" class="tab-label tab-list" data-tab="content1">Nota Kredit</label>
+            <label for="tab1" class="tab-label tab-list" data-tab="content1">Nota TT</label>
         </main>
 
         {{-- Tab Content: Kasir --}}

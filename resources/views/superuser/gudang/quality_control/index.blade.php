@@ -3,7 +3,7 @@
 @section('content')
 <nav class="breadcrumb bg-white push">
   <span class="breadcrumb-item">Gudang</span>
-  <span class="breadcrumb-item active">Quality Control</span>
+  <span class="breadcrumb-item active">Receiving - Transaksi</span>
 </nav>
 
 @if($errors->any())
@@ -59,7 +59,7 @@
         <tr>
           <th class="text-center">#</th>
           <th class="text-center">Created at</th>
-          <th class="text-center">Pbm date</th>
+          <!--<th class="text-center">Pbm date</th>-->
           <th class="text-center">Code</th>
           <th class="text-center">Warehouse</th>
           <th class="text-center">Status</th>
@@ -107,13 +107,7 @@ $(document).ready(function() {
           sort: 'timestamp'
         }
       },
-      {
-        data: 'pbm_date',
-        render: {
-          _: 'display',
-          sort: 'timestamp'
-        }
-      },
+      
       {data: 'code'},
       {data: 'warehouse'},
       {data: 'status'},

@@ -40,6 +40,7 @@ Route::group([
         Route::get('/{id}/send', 'PurchaseOrderController@send')->name('send');
         Route::get('/summary', 'PurchaseOrderController@summary')->name('summary');
         Route::get('/{id}/cancel_send', 'PurchaseOrderController@cancel_send')->name('cancel_send');
+        Route::get('/{id}/send_spk', 'PurchaseOrderController@send_spk')->name('send_spk');
 
         Route::group(['as' => 'detail.'], function () {
             Route::get('{purchase_id}/detail/create', 'PurchaseOrderDetailController@create')->name('create');
@@ -69,6 +70,8 @@ Route::group([
         Route::get('/{id}/send', 'PurchaseOrderSPKController@send')->name('send');
         Route::get('/summary', 'PurchaseOrderSPKController@summary')->name('summary');
         Route::get('/{id}/cancel_send', 'PurchaseOrderSPKController@cancel_send')->name('cancel_send');
+        Route::get('/listRefPo', 'PurchaseOrderSPKController@listRefPo')->name('listRefPo');
+        Route::post('/{id}/updateRefPo', 'PurchaseOrderSPKController@updateRefPo')->name('updateRefPo');
 
         Route::group(['as' => 'detail.'], function () {
             Route::get('{purchase_id}/detail/create', 'PurchaseOrderDetailSPKController@create')->name('create');
@@ -83,7 +86,7 @@ Route::group([
     Route::resource('purchase_order_spk', 'PurchaseOrderSPKController');
 
     // RECEIVING IN SIRIE
-    Route::group(['as' => 'receiving.', 'perfix' => '/receiving'], function (){
+    Route::group(['as' => 'receiving.', 'prefix' => '/receiving'], function (){
         Route::get('/step/{id}', 'ReceivingController@step')->name('step');
         Route::get('{id}/publish', 'ReceivingController@publish')->name('publish');
         Route::get('{id}/acc_ri', 'ReceivingController@acc_ri')->name('acc_ri');
@@ -113,7 +116,6 @@ Route::group([
                 Route::put('{id}/detail/{detail_id}/colly/{colly_id}', 'ReceivingDetailCollyController@update')->name('update');
                 Route::delete('{id}/detail/{detail_id}/colly/{colly_id}/delete', 'ReceivingDetailCollyController@destroy')->name('destroy');
             });
-
         });
     });
     Route::resource('receiving', 'ReceivingController');
@@ -154,9 +156,55 @@ Route::group([
     });
     Route::resource('quality_control', 'QualityControlController');
 
-    Route::group(['as' => 'mutasi_out.', 'perfix' => '/mutasi_out'], function (){
+    Route::group(['as' => 'mutasi_out.', 'prefix' => '/mutasi_out'], function (){
         Route::get('/search_sku', 'MutasiOutController@search_sku')->name('search_sku');
-        Route::get('{id}/acc', 'MutasiOutController@acc')->name('acc');
+        Route::post('{id}/acc', 'MutasiOutController@acc')->name('acc');
+        Route::get('/searchSpk', 'MutasiOutController@searchSpk')->name('searchSpk');
     });
     Route::resource('mutasi_out', 'MutasiOutController');
+
+    Route::group(['as' => 'quality_control_2.', 'prefix' => '/quality_control_2'], function (){
+        Route::post('store', 'QualityControl2Controller@store')->name('store');
+        Route::get('brands', 'QualityControl2Controller@getBrands')->name('brands');
+        Route::get('products', 'QualityControl2Controller@getProductsByBrand')->name('products');
+        Route::get('packaging', 'QualityControl2Controller@getPackagingByProduct')->name('packaging');
+        Route::get('{id}/acc', 'QualityControl2Controller@acc')->name('acc');
+        Route::get('/create/pdf_sj/{data?}/{protect?}', 'QualityControl2Controller@pdf_sj_komplain')->name('pdf_sj_komplain');
+    });
+    Route::resource('quality_control_2', 'QualityControl2Controller');
+
+    Route::group(['as' => 'mutasi_showroom.', 'prefix' => '/mutasi_showroom'], function (){
+        Route::get('/', 'MutasiShowroomController@index')->name('index');
+
+        // AJAX partial
+        Route::get('/list-partial', 'MutasiShowroomController@listPartial')->name('list_partial');
+        Route::get('/create-partial', 'MutasiShowroomController@createPartial')->name('create_partial');
+        Route::get('/show-partial/{id}', 'MutasiShowroomController@showPartial')->name('show_partial');
+        Route::get('/update-list-partial', 'MutasiShowroomController@updateListPartial')->name('update_list_partial');
+        Route::get('/get-product-pack', 'MutasiShowroomController@get_product_pack')->name('get_product_pack');
+
+        Route::post('/store', 'MutasiShowroomController@store')->name('store');
+
+        Route::get('/print_pdf/{id}', 'MutasiShowroomController@print_pdf')->name('print_pdf');
+        Route::post('/{id}/publish', 'MutasiShowroomController@publish')->name('publish');
+        Route::post('/{id}/sent', 'MutasiShowroomController@sent')->name('sent');
+
+        Route::post('/update_price', 'MutasiShowroomController@updatePrice')->name('update_price');
+        
+        Route::get('/done', 'MutasiShowroomController@doneIndex')->name('done_index');
+        Route::get('/done/data', 'MutasiShowroomController@doneData')->name('done.data');
+        Route::get('/print-invoice/{id}', 'MutasiShowroomController@printInvoice')
+            ->name('print_invoice');
+
+        Route::post('settlePrices', 'MutasiShowroomController@settlePrices')->name('settle_prices');
+
+        Route::get('/mutasi-showroom/{kode}/items', 'MutasiShowroomController@getItemsByKode')->name('mutasi_showroom.items');
+
+        Route::get('/create/mode-1', 'MutasiShowroomController@createMode1')
+            ->name('create_mode1');
+
+        Route::get('/create/mode-2', 'MutasiShowroomController@createMode2')
+            ->name('create_mode2');
+    });
+    Route::resource('mutasi_showroom', 'MutasiShowroomController');
 });

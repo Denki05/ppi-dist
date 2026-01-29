@@ -56,8 +56,8 @@
 @endrole
 <br>
 <br>
-<main style="background:#fff">
-  
+
+<main style="background:#fff">  
   <input style="display: none;" id="tab1" type="radio" name="tabs" checked>
   <label style="padding: 15px 25px;" for="tab1">SO {{ $step_txt }}</label>
     

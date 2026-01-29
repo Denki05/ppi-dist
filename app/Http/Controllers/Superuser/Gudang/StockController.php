@@ -142,7 +142,7 @@ class StockController extends Controller
                 'in'          => $m->stock_in ?: '',
                 'out'         => $m->stock_out ?: '',
                 'balance'     => number_format($balance, 2),
-                'description' => '',   // tambahkan kolom di tabel kalau ingin catatan
+                'description' => $m->note,   // tambahkan kolom di tabel kalau ingin catatan
             ];
         }
 

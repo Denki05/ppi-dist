@@ -186,7 +186,7 @@
                             </ul>
                         </li>
 
-                        <li><a class="dropdown-item" href="{{ route('superuser.penjualan.sale_return.index') }}"><i class="fa-solid fa-file-prescription"></i> Retur</a></li>
+                        <li><a class="dropdown-item" href="{{ route('superuser.penjualan.sale_return.index') }}"><i class="fa-solid fa-file-prescription"></i> Nota Kredit</a></li>
                     </ul>
                 </li>
 
@@ -202,9 +202,11 @@
                         <li><a class="dropdown-item" href="{{ route('superuser.gudang.purchase_order_spk.index') }}"><i class="fa-solid fa-shop"></i> SPK</a></li>
                         <li><a class="dropdown-item" href="{{ route('superuser.gudang.purchase_order.index') }}"><i class="fa-solid fa-shop"></i> Purchase order (PO)</a></li>
                         <li><a class="dropdown-item" href="{{ route('superuser.gudang.receiving.index') }}"><i class="fa-solid fa-receipt"></i> Receiving</a></li>
-                        <li><a class="dropdown-item" href="{{ route('superuser.gudang.quality_control.index') }}"><i class="fa-solid fa-receipt"></i> Quality Control</a></li>
-                        <li><a class="dropdown-item" href="{{ route('superuser.gudang.mutasi_out.index') }}"><i class="fa-solid fa-warehouse"></i> Mutasi Gudang(OUT)</a></li>
+                        <li><a class="dropdown-item" href="{{ route('superuser.gudang.quality_control.index') }}"><i class="fa-solid fa-receipt"></i> Receiving - Transaksi</a></li>
+                        <li><a class="dropdown-item" href="{{ route('superuser.gudang.quality_control_2.index') }}"><i class="fa-solid fa-receipt"></i> Receiving - Komplain</a></li>
+                        <li><a class="dropdown-item" href="{{ route('superuser.gudang.mutasi_out.index') }}"><i class="fa-solid fa-warehouse"></i> Mutasi Out</a></li>
                         @endif
+                        <li><a class="dropdown-item" href="{{ route('superuser.gudang.mutasi_showroom.index') }}"><i class="fa-solid fa-warehouse"></i> Mutasi Showroom</a></li>
                         <li><a class="dropdown-item" href="{{ route('superuser.gudang.stock.index') }}"><i class="fa-solid fa-cubes"></i> Stock</a></li>
                         @if($superuser->can('superuser-manage') OR $superuser->division == "Admin" OR $superuser->division == "Management" OR $superuser->division == "Warehouse")
                         <li><a class="dropdown-item" href="{{ route('superuser.gudang.stock_adjustment.index') }}"><i class="fa-solid fa-sliders"></i> Stock Adjustment</a></li>
@@ -221,7 +223,7 @@
                     </a>
                     <ul class="dropdown-menu">
                         <li><a class="dropdown-item" href="{{ route('superuser.finance.payable.index') }}"><i class="fa-solid fa-credit-card"></i> Payment</a></li>
-                        <li><a class="dropdown-item" href="{{ route('superuser.finance.nota_kredit_finance.index') }}"><i class="fa-solid fa-file-prescription"></i> Nota Kredit</a></li>
+                        <li><a class="dropdown-item" href="{{ route('superuser.finance.nota_kredit_finance.index') }}"><i class="fa-solid fa-file-prescription"></i> Nota TT</a></li>
                         <li><a class="dropdown-item" href="{{ route('superuser.finance.nota_kredit_finance.refund_page') }}"><i class="fa-solid fa-file-prescription"></i> Refund</a></li>
                         <li><a class="dropdown-item" href="{{ route('superuser.finance.cashback.index') }}"><i class="fa-solid fa-code-branch"></i> Araya</a></li>
                         <!-- <li class="submenu submenu-md dropend">

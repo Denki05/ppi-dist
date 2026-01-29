@@ -3,7 +3,7 @@
 @section('content')
 <nav class="breadcrumb bg-white push">
   <span class="breadcrumb-item">Penjualan</span>
-  <span class="breadcrumb-item active">Retur</span>
+  <span class="breadcrumb-item active">Nota Kredit</span>
 </nav>
 
 @if (session('success'))
@@ -49,7 +49,7 @@
             <td>{{$row->type()}}</td>
             <td>{{$row->code}}</td>
             <td>{{$row->customer->name}} {{ $row->customer->text_kota }}</td>
-            <td>{{$row->invoice->do_code}}</td>
+            <td>{{$row->invoice->do_code ?? '-'}}</td>
             <td>{{$row->status()}}</td>
             <td>
             @if($superuser->division == "Admin" OR $superuser->division == "Management" OR $superuser->division == "Developer" OR $superuser->division == "Finance")

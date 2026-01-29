@@ -2,8 +2,8 @@
 
 @section('content')
 <nav class="breadcrumb bg-white push">
-  <span class="breadcrumb-item">Purchasing</span>
-  <a class="breadcrumb-item" href="{{ route('superuser.gudang.receiving.index') }}">Receiving</a>
+  <span class="breadcrumb-item">Gudang</span>
+  <a class="breadcrumb-item" href="{{ route('superuser.gudang.receiving.index') }}">Receiving - Transaksi</a>
   <span class="breadcrumb-item active">Edit</span>
 </nav>
 <div id="alert-block"></div>

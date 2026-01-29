@@ -10,6 +10,13 @@
   <button type="button" class="btn btn-outline-secondary ml-10" data-toggle="modal" data-target="#exampleModal">
     Export/Import Employee
   </button>
+
+  <form action="{{ route('superuser.master.customer.other_address.updateLastYearOrder') }}" method="POST" onsubmit="return confirm('Yakin update last year order?')">
+      @csrf
+      <button type="submit" class="btn btn-outline-info ml-10">
+          Update Last Year Order
+      </button>
+  </form>
 </nav>
 
 @if($errors->any())

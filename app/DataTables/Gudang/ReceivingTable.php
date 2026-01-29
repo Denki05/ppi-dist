@@ -6,26 +6,20 @@ use App\DataTables\Table;
 use App\Entities\Gudang\Receiving;
 use App\Entities\Master\Warehouse;
 use Carbon\Carbon;
-use Illuminate\Support\Facades\Auth;
 
 class ReceivingTable extends Table
 {
     /**
      * Get query source of dataTable.
+     *
      */
     private function query()
     {
-        return Receiving::select(
-                'receiving.id',
-                'receiving.code',
-                'receiving.status',
-                'master_warehouses.name as warehouse',
-                'receiving.created_at',
-                'receiving.pbm_date',
-                'receiving.note'
-            )
-            ->where('receiving.type', 0)
+        $model = Receiving::select('receiving.id', 'receiving.code', 'receiving.status', 'master_warehouses.name as warehouse', 'receiving.created_at', 'receiving.pbm_date', 'receiving.note')
+            ->where('receiving.type', 0)    
             ->join('master_warehouses', 'master_warehouses.id', '=', 'receiving.warehouse_id');
+
+        return $model;
     }
 
     /**
@@ -34,27 +28,34 @@ class ReceivingTable extends Table
     public function build()
     {
         $table = Table::of($this->query());
-
         $table->addIndexColumn();
 
         $table->setRowClass(function (Receiving $model) {
-            return $model->status === $model::STATUS['DELETED'] ? 'table-danger' : '';
+
+            switch ($model->status) {
+                case $model::STATUS['DELETED']:
+                    return 'table-danger';
+                // case $model::STATUS['ACTIVE']:
+                //     return 'table-primary';
+                default:
+                    return '';
+            }
         });
 
         $table->editColumn('created_at', function (Receiving $model) {
             return [
-                'display' => Carbon::parse($model->created_at)->format('j F Y H:i:s'),
-                'timestamp' => $model->created_at
+              'display' => Carbon::parse($model->created_at)->format('j F Y H:i:s'),
+              'timestamp' => $model->created_at
             ];
         });
-
+        
         $table->editColumn('pbm_date', function (Receiving $model) {
             return [
-                'display' => Carbon::parse($model->pbm_date)->format('d/m/Y'),
-                'timestamp' => $model->pbm_date
+              'display' => Carbon::parse($model->pbm_date)->format('d/m/Y'),
+              'timestamp' => $model->created_at
             ];
         });
-
+        
         $table->editColumn('status', function (Receiving $model) {
             return $model->status();
         });
@@ -64,17 +65,19 @@ class ReceivingTable extends Table
         });
 
         $table->addColumn('action', function (Receiving $model) {
-            $view    = route('superuser.gudang.receiving.show', $model);
-            $edit    = route('superuser.gudang.receiving.step', $model);
+            $view = route('superuser.gudang.receiving.show', $model);
+            $edit = route('superuser.gudang.receiving.step', $model);
             $destroy = route('superuser.gudang.receiving.destroy', $model);
-            $acc     = route('superuser.gudang.receiving.acc_ri', $model);
-            $cancel  = route('superuser.gudang.receiving.cancel', $model);
-
-            $btn = '';
+            $acc = route('superuser.gudang.receiving.acc_ri', $model);
 
             switch ($model->status) {
                 case $model::STATUS['ACTIVE']:
-                    $btn .= "
+                    return "
+                        <a href=\"javascript:saveConfirmation2('{$acc}')\">
+                            <button type=\"button\" class=\"btn btn-sm btn-circle btn-alt-success\" title=\"ACC\">
+                                <i class=\"fa fa-check\"></i>
+                            </button>
+                        </a>
                         <a href=\"{$edit}\">
                             <button type=\"button\" class=\"btn btn-sm btn-circle btn-alt-warning\" title=\"Edit\">
                                 <i class=\"fa fa-pencil\"></i>
@@ -82,56 +85,28 @@ class ReceivingTable extends Table
                         </a>
                         <a href=\"javascript:deleteConfirmation('{$destroy}')\">
                             <button type=\"button\" class=\"btn btn-sm btn-circle btn-alt-danger\" title=\"Delete\">
-                                <i class=\"fa fa-trash\"></i>
+                                <i class=\"fa fa-times\"></i>
                             </button>
                         </a>
                     ";
-                    break;
-
-                case $model::STATUS['QC']:
-                    $btn .= "
-                        <a href=\"{$edit}\">
-                            <button type=\"button\" class=\"btn btn-sm btn-circle btn-alt-warning\" title=\"Edit\">
-                                <i class=\"fa fa-pencil\"></i>
-                            </button>
-                        </a>
-                    ";
-                    break;
-
-                case $model::STATUS['READY']:
-                    $btn .= "
+                case $model::STATUS['ACC']:
+                    return "
                         <a href=\"{$view}\">
                             <button type=\"button\" class=\"btn btn-sm btn-circle btn-alt-secondary\" title=\"View\">
                                 <i class=\"fa fa-eye\"></i>
                             </button>
                         </a>
                     ";
-
-                    // Cek hak akses user untuk tombol ACC
-                    $allowedRoles = ['Management', 'Admin', 'Developer'];
-                    if (in_array(Auth::user()->division, $allowedRoles)) {
-                        $btn .= "
-                            <a href=\"javascript:saveConfirmation2('{$acc}')\">
-                                <button type=\"button\" class=\"btn btn-sm btn-circle btn-alt-warning\" title=\"Approve\">
-                                    <i class=\"fa fa-check\"></i>
-                                </button>
-                            </a>
-                        ";
-                    }
-                    break;
-
                 default:
-                    $btn .= "
+                    return "
                         <a href=\"{$view}\">
                             <button type=\"button\" class=\"btn btn-sm btn-circle btn-alt-secondary\" title=\"View\">
                                 <i class=\"fa fa-eye\"></i>
                             </button>
                         </a>
                     ";
-                    break;
             }
 
-            return $btn;
         });
 
         return $table->make(true);

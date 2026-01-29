@@ -133,6 +133,7 @@ class PurchaseOrderSPKController extends Controller
                 $purchase_order->warehouse_id = $request->warehouse;
                 $purchase_order->etd = $request->etd;
                 $purchase_order->type = 0;
+                $purchase_order->kategori = $request->kategori;
                 $purchase_order->note = $request->note;
                 $purchase_order->created_by = Auth::id();
 
@@ -633,5 +634,43 @@ class PurchaseOrderSPKController extends Controller
                 ]);
             }
         }
+    }
+
+    public function listRefPo(Request $request)
+    {
+        $query = PurchaseOrder::where('type', 1)
+            ->where('status', 4);
+
+        // tambahkan filter pencarian kalau ada parameter q
+        if ($request->has('q') && $request->q != '') {
+            $q = $request->q;
+            $query->where(function ($sub) use ($q) {
+                $sub->where('code', 'like', "%{$q}%")
+                    ->orWhere('id', 'like', "%{$q}%");
+            });
+        }
+
+        // kasih limit supaya tidak terlalu banyak hasil
+        $purchaseOrders = $query->limit(20)->get();
+
+        return response()->json($purchaseOrders);
+    }
+
+
+    public function updateRefPo(Request $request, $id)
+    {
+        $request->validate([
+            'ref_po_id' => 'required|exists:purchase_order,id',
+        ]);
+
+        $po = PurchaseOrder::findOrFail($id);
+        $po->ref_po_id = $request->ref_po_id;
+        $po->save();
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Ref PO berhasil diupdate',
+            'data'    => $po,
+        ]);
     }
 }

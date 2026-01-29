@@ -41,18 +41,18 @@
           <div class="form-row">
             <div class="form-group col-md-6">
               <label for="so_date">Tanggal Nota</label>
-              <input type="date" name="so_date" class="form-control" required>
+              <input type="date" name="so_date" class="form-control required-field" required>
             </div>
             <div class="form-group col-md-6">
               <label for="type_transaction">Type Transaksi</label>
-              <input type="text" name="type_transaction" class="form-control" value="{{ $result->type_transaction }}" readonly>
+              <input type="text" name="type_transaction" class="form-control required-field" value="{{ $result->type_transaction }}" readonly>
             </div>
           </div>
 
           <div class="form-row">
             <div class="form-group col-md-6">
               <label for="warehouse_id">Gudang <span class="text-danger">*</span></label>
-              <select class="form-control js-select2" style="font-size: 9pt;" name="origin_warehouse_id">
+              <select class="form-control js-select2 required-field" style="font-size: 9pt;" name="origin_warehouse_id">
                 <option value="">Pilih Gudang</option>
                 @foreach($warehouse as $index => $row)
                 <option style="font-size: 10pt;" value="{{$row->id}}" @if($result->origin_warehouse_id == $row->id) selected @endif>{{$row->name}}</option>
@@ -61,7 +61,7 @@
             </div>
             <div class="form-group col-md-6">
               <label for="type_transaction">Eksepdisi <span class="text-danger">*</span></label>
-              <select class="form-control js-select2" name="ekspedisi">
+              <select class="form-control js-select2 required-field" name="ekspedisi">
                 <option value="">Pilih Ekspedisi</option>
                 @foreach($ekspedisi as $index)
                 <option value="{{ $index->id }}">{{ $index->name }}</option>
@@ -73,7 +73,7 @@
           <div class="form-row">
             <div class="form-group col-md-6">
               <label for="sales_senior_id">Sales Senior <span class="text-danger">*</span></label>
-              <select class="form-control js-select2" name="sales_senior_id">
+              <select class="form-control js-select2 required-field" name="sales_senior_id">
                 <option value="">Pilih Sales Senior</option>
                 @foreach(\App\Entities\Penjualan\SalesOrder::SALES_SENIOR as $sales_senior => $senior_value)
                 <option value="{{ $senior_value }}">{{ $sales_senior }}</option>
@@ -82,7 +82,7 @@
             </div>
             <div class="form-group col-md-6">
               <label for="sales_id">Sales <span class="text-danger">*</span></label>
-              <select class="form-control js-select2" name="sales_id">
+              <select class="form-control js-select2 required-field" name="sales_id">
                 <option value="">Pilih Sales</option>
                 @foreach(\App\Entities\Penjualan\SalesOrder::SALES as $sales => $sales_value)
                 <option value="{{ $sales_value }}">{{ $sales }}</option>
@@ -156,7 +156,7 @@
                 @if($step == 2)
                 <div class="form-group col-md-4">
                   <label for="note">Rekening <span class="text-danger">*</span></label>
-                  <select class="form-control js-select2" name="rekening">
+                  <select class="form-control js-select2 required-field" name="rekening">
                     <option value="">Pilih Rekening</option>
                     @foreach($rekening as $key)
                     <option value="{{$key->id}}">{{$key->name}} - {{$key->number_card}}</option>
@@ -321,12 +321,12 @@
                       <div class="form-group row">
                         <label class="col-sm-4 col-form-label">Grand Total</label>
                         <div class="col-sm-8">
-                          <input type="text" class="form-control" id="grand_total_idr" name="grand_total_idr" readonly>
+                          <input type="text" class="form-control required-field" id="grand_total_idr" name="grand_total_idr" readonly>
                           <input type="hidden" class="form-control" name="subtotal_2" id="subtotal_2">
                         </div>
                       </div>
                       <button type="button" class="btn btn-warning" id="btn_call"><i class="fas fa-calculator pr-2" aria-hidden="true"></i>calculated</button>
-                      <button type="submit" class="btn btn-primary" id="save_form"><i class="fa fa-save  pr-2" aria-hidden="true" ></i> Save</button>
+                      <button type="submit" class="btn btn-primary" id="save_form" disabled><i class="fa fa-save  pr-2" aria-hidden="true" ></i> Save</button>
                     </div>
                 </div>
             </aside>
@@ -587,6 +587,61 @@
     //   var product_id = $(this).data('product');
     //   var val = $(this).val();
     // })
+
+    let isSubmitting = false;
+
+    function checkRequiredFields() {
+        let valid = true;
+
+        $('.required-field').each(function () {
+            if ($(this).is(':visible') && !$(this).val()) {
+                valid = false;
+            }
+        });
+
+        $('#save_form').prop('disabled', !valid);
+    }
+
+    $(document).on('change keyup', '.required-field', checkRequiredFields);
+
+    $('form.ajax').on('submit', function (e) {
+        if (isSubmitting) {
+            e.preventDefault();
+            return false;
+        }
+
+        isSubmitting = true;
+
+        const btn = $('#save_form');
+        btn.prop('disabled', true);
+        btn.html('<i class="fa fa-spinner fa-spin"></i> Processing...');
+
+        // timeout safety (jika request gantung)
+        setTimeout(() => {
+            isSubmitting = false;
+            btn.prop('disabled', false);
+            btn.html('<i class="fa fa-save pr-2"></i> Save');
+        }, 30000); // 30 detik
+    });
+
+    function checkConnection() {
+        if (!navigator.onLine) {
+            Swal.fire({
+                icon: 'warning',
+                title: 'Koneksi terputus',
+                text: 'Periksa jaringan Anda sebelum menyimpan data'
+            });
+            return false;
+        }
+        return true;
+    }
+
+    $('form.ajax').on('submit', function (e) {
+        if (!checkConnection()) {
+            e.preventDefault();
+            return false;
+        }
+    });
   })
 </script>
 @endpush

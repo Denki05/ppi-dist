@@ -242,6 +242,7 @@ Route::group([
         Route::post('{id}/update-do-new', 'SaleReturnController@updateDoNewId')->name('updateDoNewId');
         Route::get('/mergePdf/{invoice}/{retur}', 'SaleReturnController@mergePdf')->name('mergePdf');
         Route::post('/proses/{id}', 'SaleReturnController@proses')->name('proses');
+        Route::post('get-qc-by-do', 'SaleReturnController@getQcByDo')->name('get_qc_by_do');
     });
     Route::resource('sale_return', 'SaleReturnController');
 });

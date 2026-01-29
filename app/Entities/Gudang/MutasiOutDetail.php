@@ -7,7 +7,7 @@ use App\Entities\Account\Superuser;
 
 class MutasiOutDetail extends Model
 {
-    protected $table = "mutasi_out_detail";
+    protected $table = "gudang_mutasi_out_detail";
     protected $fillable = [
         'mutasi_out_id',
         'product_packaging_id',

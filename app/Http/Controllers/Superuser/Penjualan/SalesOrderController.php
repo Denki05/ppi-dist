@@ -1406,7 +1406,7 @@ class SalesOrderController extends Controller
                                     'customer_id' => $sales_order->customer_id,
                                     'customer_other_address_id' => $sales_order->customer_other_address_id,
                                     'grand_total_idr' => $packing_order_detail->grand_total_idr,
-                                    'type' => 1,
+                                    'type' => 0,
                                     'created_by' => Auth::id(),
                                 ]);
                             }

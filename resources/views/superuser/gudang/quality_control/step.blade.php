@@ -5,14 +5,14 @@
 @if ( $receiving->status() == $receiving::STATUS['ACTIVE'] )
   <nav class="breadcrumb bg-white push">
     <span class="breadcrumb-item">Gudang</span>
-    <span class="breadcrumb-item">Receiving</span>
+    <span class="breadcrumb-item">Receiving - Transaksi</span>
     <span class="breadcrumb-item">New</span>
     <span class="breadcrumb-item active">Add Detail</span>
   </nav>
 @else
   <nav class="breadcrumb bg-white push">
     <span class="breadcrumb-item">Gudang</span>
-    <span class="breadcrumb-item">Receiving</span>
+    <span class="breadcrumb-item">Receiving - Transaksi</span>
     <span class="breadcrumb-item">{{ $receiving->code }}</span>
     <span class="breadcrumb-item active">Edit Detail</span>
   </nav>
@@ -504,4 +504,3 @@ $(document).ready(function () {
 });
 </script>
 @endpush
-

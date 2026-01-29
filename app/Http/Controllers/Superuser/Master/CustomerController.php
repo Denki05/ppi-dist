@@ -822,4 +822,6 @@ class CustomerController extends Controller
         $results = Customer::all(); // Fetch all customer records
         return response()->json($results); // Return data as JSON
     }
+
+    
 }

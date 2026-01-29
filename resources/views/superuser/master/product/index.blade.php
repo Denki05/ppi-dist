@@ -146,16 +146,16 @@
 <!-- Table Section -->
 <div class="block">
   <div class="block-content block-content-full">
-    <table class="table table-striped" id="datatables">
+    <table class="table table-striped table-custom" id="datatables">
         <thead>
             <tr>
                 <th>Code</th>
                 <th>Brand</th>
                 <th>Category</th>
                 <th>Name</th>
+                <th>On Order</th>
                 <th>Status</th>
                 <th>Action</th>
-                <th>Action 2</th>
             </tr>
         </thead>
         <tbody></tbody>
@@ -340,6 +340,20 @@
 @include('superuser.asset.plugin.select2')
 
 @push('scripts')
+<style>
+    table.table-custom th,
+    table.table-custom td {
+        text-align: center;       /* horizontal center */
+        vertical-align: middle;   /* vertical center */
+        font-size: 14px;          /* font lebih besar */
+    }
+
+    table.table-custom td i,
+    table.table-custom td .form-check-input {
+        vertical-align: middle;
+    }
+</style>
+
 <script>
 $(document).ready(function() {
     let datatableUrl = '{{ route('superuser.master.product.json') }}';
@@ -357,15 +371,14 @@ $(document).ready(function() {
             "data":{ _token: "{{csrf_token()}}" }
         },
         columns: [
-            {data: 'code', name: 'master_products.code', width: "100px"},
-            {data: 'brand_name', name: 'master_products.brand_name', width: "150px"},
-            {data: 'category_name', name: 'master_product_categories.category_name', width: "200px"},
-            {data: 'name', name: 'master_products.name', width: "250px"},
-            {data: 'status', width: "150px"},
-            {data: 'action', width: "100px"},
-            {data: 'action2', width: "100px"},
+            {data: 'code', name: 'master_products.code', width: "10%"},
+            {data: 'brand_name', name: 'master_products.brand_name', width: "10%"},
+            {data: 'category_name', name: 'master_product_categories.category_name', width: "12%"},
+            {data: 'name', name: 'master_products.name', width: "10%"},
+            {data: 'on_order', width: "2%"},
+            {data: 'status', width: "10%"},
+            {data: 'action', width: "10%"},
         ],
-        autoWidth: false
     });
 
     $('#btn-filter').on('click', function(e) {

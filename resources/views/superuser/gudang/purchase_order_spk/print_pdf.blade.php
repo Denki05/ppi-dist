@@ -99,7 +99,7 @@
 
 @for ($page = 0; $page < $totalPages; $page++)
 <div>
-  <h2 style="text-align: center; margin: 0; padding: 0; margin-bottom: 5px;"><u>FORM PERMINTAAN BARANG</u></h2>
+  <h2 style="text-align: center; margin: 0; padding: 0; margin-bottom: 5px;"><u>SURAT PERINTAH KERJA</u></h2>
   
   <div style="margin-bottom: 15px; font-size: 11px;">
     <div class="row-float">

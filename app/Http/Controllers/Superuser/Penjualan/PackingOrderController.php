@@ -1374,7 +1374,7 @@ class PackingOrderController extends Controller
                     d.idr_rate AS idr_rate,
                     det.discount_1 AS disc_percent,
                     MAX(item.usd_disc) AS disc_usd,
-                    SUM(CASE WHEN soi.free_product = 0 THEN item.qty ELSE 0 END) AS total_qty,
+                    SUM(item.qty) AS total_qty,
                     SUM(CASE WHEN soi.free_product = 0 THEN (item.price * item.qty) ELSE 0 END) AS total_usd_before,
                     SUM(CASE WHEN soi.free_product = 0 THEN ((item.price - item.usd_disc) * item.qty) ELSE 0 END) AS total_usd_after,
                     (det.purchase_total_idr - det.discount_idr) AS grand_total_idr

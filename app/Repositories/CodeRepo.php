@@ -431,4 +431,106 @@ class CodeRepo
     
         return $latestNumber;
     }
+
+    public static function generateMutasiOutCode()
+    {
+        // Ambil tanggal sekarang
+        $day   = date('d');
+        $month = date('n'); // 1-12
+        $year  = date('Y');
+    
+        // Tahun: ambil 2 digit terakhir
+        $p1 = substr($year, -2);
+    
+        // Konversi bulan ke huruf
+        $abjadMonth = [ '-', 'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L'];
+        $p2 = $abjadMonth[$month];
+    
+        $yearMonth = $p1 . $p2; // contoh: 25H
+    
+        // Ambil kode terakhir bulan ini
+        $get_max = DB::table('gudang_mutasi_out')
+            ->where('code', 'LIKE', 'S' . $yearMonth . '%')
+            ->whereNull('deleted_at')
+            ->max('code');
+    
+        if ($get_max === null) {
+            // Belum ada kode bulan ini
+            $latestNumber = 'S' . $yearMonth . '001';
+        } else {
+            // Ambil nomor urut dari kode terakhir
+            $id = (int) substr($get_max, strlen('S' . $yearMonth)) + 1;
+            $latestNumber = 'S' . $yearMonth . str_pad($id, 3, '0', STR_PAD_LEFT);
+        }
+    
+        return $latestNumber;
+    }
+
+    public static function generateQualityControl2Code()
+    {
+        // Ambil tanggal sekarang
+        $day   = date('d');
+        $month = date('n'); // 1-12
+        $year  = date('Y');
+    
+        // Tahun: ambil 2 digit terakhir
+        $p1 = substr($year, -2);
+    
+        // Konversi bulan ke huruf
+        $abjadMonth = [ '-', 'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L'];
+        $p2 = $abjadMonth[$month];
+    
+        $yearMonth = $p1 . $p2; // contoh: 25H
+    
+        // Ambil kode terakhir bulan ini
+        $get_max = DB::table('receiving_komplain')
+            ->where('code', 'LIKE', 'RK' . $yearMonth . '%')
+            ->whereNull('deleted_at')
+            ->max('code');
+    
+        if ($get_max === null) {
+            // Belum ada kode bulan ini
+            $latestNumber = 'RK' . $yearMonth . '001';
+        } else {
+            // Ambil nomor urut dari kode terakhir
+            $id = (int) substr($get_max, strlen('RK' . $yearMonth)) + 1;
+            $latestNumber = 'RK' . $yearMonth . str_pad($id, 3, '0', STR_PAD_LEFT);
+        }
+    
+        return $latestNumber;
+    }
+
+    public static function generateMutasiShowroom()
+    {
+        // Ambil tanggal sekarang
+        $day   = date('d');
+        $month = date('n'); // 1-12
+        $year  = date('Y');
+    
+        // Tahun: ambil 2 digit terakhir
+        $p1 = substr($year, -2);
+    
+        // Konversi bulan ke huruf
+        $abjadMonth = [ '-', 'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L'];
+        $p2 = $abjadMonth[$month];
+    
+        $yearMonth = $p1 . $p2; // contoh: 25H
+    
+        // Ambil kode terakhir bulan ini
+        $get_max = DB::table('penjualan_showroom')
+            ->where('kode', 'LIKE', 'MS' . $yearMonth . '%')
+            ->whereNull('deleted_at')
+            ->max('kode');
+    
+        if ($get_max === null) {
+            // Belum ada kode bulan ini
+            $latestNumber = 'MS' . $yearMonth . '001';
+        } else {
+            // Ambil nomor urut dari kode terakhir
+            $id = (int) substr($get_max, strlen('MS' . $yearMonth)) + 1;
+            $latestNumber = 'MS' . $yearMonth . str_pad($id, 3, '0', STR_PAD_LEFT);
+        }
+    
+        return $latestNumber;
+    }
 }

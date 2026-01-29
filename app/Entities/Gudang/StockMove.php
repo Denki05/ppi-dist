@@ -14,6 +14,7 @@ class StockMove extends Model
     	'stock_in',
     	'stock_out',
     	'stock_balance',
+        'note',
     	'updated_by',
     	'created_by',
     	'deleted_by'

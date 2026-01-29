@@ -154,13 +154,24 @@
                                                         </div>
                                                     </div>
 
-
                                                     {{-- Tipe Laporan Group --}}
                                                     <div class="d-flex flex-column ms-3"> {{-- Membuat Label "Tipe Laporan" berada di atas inputannya --}}
-                                                        <label for="report_type_tabulasi" class="form-label text-start mb-1">Tipe Laporan:</label> {{-- Label Tipe Laporan, 'visually-hidden' dihapus --}}
+                                                        <label for="report_type_tabulasi" class="form-label text-start mb-1">Tipe Laporan</label> {{-- Label Tipe Laporan, 'visually-hidden' dihapus --}}
                                                         <select class="form-control form-control-sm js-select2" name="report_type_tabulasi" id="report_type_tabulasi" style="min-width: 180px;">
                                                             <option value="brand">Market Brand</option>
                                                             <option value="zone">Zone</option>
+                                                        </select>
+                                                    </div>
+
+                                                    <div class="d-flex flex-column ms-3"> {{-- Membuat Label "Officer" berada di atas inputannya --}}
+                                                        <label for="report_officer" class="form-label text-start mb-1">Officer:</label>
+                                                        <select class="form-control form-control-sm js-select2"
+                                                                name="report_officer" id="report_officer">
+                                                            <option value="All" selected>All</option>
+                                                            <option value="Erick">Erick</option>
+                                                            <option value="Lindy">Lindy</option>
+                                                            <option value="Kumala">Kumala</option>
+                                                            <option value="Kantor">Kantor</option>
                                                         </select>
                                                     </div>
                                                 </div>
@@ -210,7 +221,7 @@
                                                 <div class="card-body py-2">
                                                     <div class="row g-2 align-items-end">
                                                         <div class="col d-flex flex-column">
-                                                            <label for="vendor_name_forecast" class="form-label text-start mb-1">Vendor:</label>
+                                                            <label for="vendor_name_forecast" class="form-label text-start mb-1">Vendor</label>
                                                             <select class="form-select js-select2 uniform-width"
                                                                     name="vendor_name"
                                                                     id="vendor_name_forecast">
@@ -222,7 +233,7 @@
                                                         </div>
 
                                                         <div class="col d-flex flex-column">
-                                                            <label for="period_from_forecast" class="form-label text-start mb-1">Dari Bulan & Tahun:</label>
+                                                            <label for="period_from_forecast" class="form-label text-start mb-1">Dari Bulan & Tahun</label>
                                                             <input type="month"
                                                                 name="period_from"
                                                                 id="period_from_forecast"
@@ -231,7 +242,7 @@
                                                         </div>
 
                                                         <div class="col d-flex flex-column">
-                                                            <label for="period_to_forecast" class="form-label text-start mb-1">Sampai Bulan & Tahun:</label>
+                                                            <label for="period_to_forecast" class="form-label text-start mb-1">Sampai Bulan & Tahun</label>
                                                             <input type="month"
                                                                 name="period_to"
                                                                 id="period_to_forecast"
@@ -249,7 +260,7 @@
                                                 <div class="card-body py-2">
                                                     <div class="row g-2 align-items-end">
                                                         <div class="col d-flex flex-column">
-                                                            <label for="periodic_select" class="form-label text-start mb-1">Pilih Periodik:</label>
+                                                            <label for="periodic_select" class="form-label text-start mb-1">Pilih Periodik</label>
                                                             <select id="periodic_select" class="form-select uniform-width">
                                                                 <option value="1">Per 1 Bulan</option>
                                                                 <option value="3">Per 3 Bulan</option>
@@ -259,7 +270,7 @@
                                                         </div>
 
                                                         <div class="col d-flex flex-column">
-                                                            <label class="form-label text-start mb-1">Forecasting:</label>
+                                                            <label class="form-label text-start mb-1">Forecasting</label>
                                                             <button type="button"
                                                                     id="printReportForecast"
                                                                     class="btn btn-primary btn-sm"
@@ -277,7 +288,7 @@
                                             <div class="card">
                                                 <div class="card-body py-2">
                                                     <div class="col d-flex flex-column">
-                                                        <label class="form-label text-start mb-1">Penjualan:</label>
+                                                        <label class="form-label text-start mb-1">Penjualan</label>
                                                         <button type="button"
                                                             id="printReportForecastSummary"
                                                             class="btn btn-info btn-sm"
@@ -387,6 +398,12 @@
             endDate = `${year}-12-31`;
         }
 
+        // Hapus baris-baris ini, karena hanya akan menyebabkan input kosong sesaat.
+        // $('#tabulasi_start_date').val('');
+        // $('#tabulasi_end_date').val('');
+        // $('#tabulasi_period_from').val('');
+        // $('#tabulasi_period_to').val('');
+
         $('#tabulasi_start_date').val(startDate);
         $('#tabulasi_end_date').val(endDate);
         $('#tabulasi_period_from').val(startDate);
@@ -395,10 +412,9 @@
 
     function submitTabulasiForm(actionType) {
         let form = $('#tabulasiForm');
-        applyTabulasiMonthYearToForm(); 
+        applyTabulasiMonthYearToForm();
 
-        const selectedSalesman = $('#salesman_id_tabulasi').val();
-        const selectedReportType = $('#report_type_tabulasi').val();
+        const selectedOfficer = $('#report_officer').val();
         const startDate = $('#tabulasi_start_date').val();
         const endDate = $('#tabulasi_end_date').val();
 
@@ -406,163 +422,85 @@
             Swal.fire({
                 icon: 'error',
                 title: 'Validasi Gagal',
-                text: 'Periode Laporan harus diisi. Pilih Bulan atau Tahun.',
-                confirmButtonText: 'Oke'
+                text: 'Periode harus dipilih',
             });
             return;
         }
 
-        $('#tabulasi_report_type_param').val('');
-        $('#tabulasi_nominal_param').val('');
-        $('#tabulasi_action_param').val('');
-        $('#action_type_tabulasi_hidden').val(actionType);
-
-        let url = '';
-        let method = 'POST';
-        let formData = new FormData(form[0]); 
+        let formData = new FormData(form[0]);
+        formData.append('officer', selectedOfficer ?? 'All');
 
         if (actionType === 'export_register_pdf') {
-            $('#tabulasi_nominal_param').val(1); 
-            formData.append('nominal', 1); 
 
-            if (selectedReportType === 'brand') {
-                url = "{{ route('superuser.report.customer_type_brand.exportReport') }}";
-                formData.append('type', 1); 
-                formData.append('action', 'print'); 
-            } else if (selectedReportType === 'zone') {
-                if (selectedSalesman && selectedSalesman !== '') {
-                    Swal.fire({
-                        icon: 'error',
-                        title: 'Tidak Diizinkan',
-                        text: 'Export "R. by Zone" tidak dapat dilakukan jika salesman dipilih.',
-                        confirmButtonText: 'Oke'
-                    });
-                    return;
-                }
-                url = "{{ route('superuser.report.customer_type_brand.exportReport') }}";
-                formData.append('type', 2); 
-                formData.append('action', 'print');
-            } else if (selectedReportType === 'salesman') {
-                url = "";
-                formData.append('type', 2); 
-            } else {
-                Swal.fire({
-                    icon: 'error',
-                    title: 'Aksi Tidak Valid',
-                    text: 'Tipe laporan tidak dikenali untuk ekspor.',
-                    confirmButtonText: 'Oke'
-                });
-                return;
-            }
+            let url = "{{ route('superuser.report.customer_type_brand.export_officer') }}";
 
             $.ajax({
                 url: url,
-                type: method,
+                type: 'POST',
                 data: formData,
-                processData: false, 
-                contentType: false, 
+                processData: false,
+                contentType: false,
                 headers: {
-                    'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content') 
+                    'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
                 },
                 beforeSend: function() {
                     Swal.fire({
-                        title: 'Membuat Laporan...',
-                        text: 'Mohon tunggu, laporan sedang dibuat.',
+                        title: 'Memproses PDF Officer...',
                         allowOutsideClick: false,
-                        didOpen: () => {
-                            Swal.showLoading();
-                        }
+                        didOpen: () => Swal.showLoading()
                     });
                 },
                 success: function(response) {
                     Swal.close();
+
                     if (response.success && response.pdf_url) {
                         $('#iframePdf').attr('src', response.pdf_url);
-                        $('#pdfDownloadLink').attr('href', response.pdf_url); 
+                        $('#pdfDownloadLink').attr('href', response.pdf_url);
+
                         Swal.fire({
                             icon: 'success',
-                            title: 'Laporan Berhasil Dibuat! 🎉',
-                            text: 'PDF telah dimuat di iframe.',
+                            title: 'Berhasil!',
+                            text: 'PDF Officer berhasil dibuat.',
                             showConfirmButton: false,
                             timer: 2000
-                        });
-                    } else if (response.error) {
-                        Swal.fire({
-                            icon: 'error',
-                            title: 'Gagal Membuat Laporan',
-                            text: response.error,
-                            confirmButtonText: 'Oke'
                         });
                     } else {
                         Swal.fire({
                             icon: 'error',
-                            title: 'Error',
-                            text: 'Terjadi kesalahan tidak dikenal.',
-                            confirmButtonText: 'Oke'
+                            title: 'Gagal',
+                            text: response.error ?? 'Terjadi kesalahan.',
                         });
                     }
                 },
-                error: function(xhr, status, error) {
+                error: function(xhr) {
                     Swal.close();
-                    let errorMessage = 'Terjadi kesalahan saat membuat laporan.';
-                    if (xhr.responseJSON && xhr.responseJSON.message) {
-                        errorMessage = xhr.responseJSON.message;
-                    } else if (error) {
-                        errorMessage += ': ' + error;
-                    }
                     Swal.fire({
                         icon: 'error',
-                        title: 'Error',
-                        text: errorMessage,
-                        confirmButtonText: 'Oke'
+                        title: 'Server Error',
+                        text: xhr.responseJSON?.message ?? 'Kesalahan pada server',
                     });
-                    console.error('AJAX Error:', status, error, xhr.responseText);
+                    console.error('AJAX Error ->', xhr.responseText);
                 }
             });
 
         } else if (actionType === 'sync_register') {
-            let startDate = '';
-            let endDate = '';
 
-            const selectedMonth = $('#tabulasi-month-select').val() || '{{ sprintf('%02d', date('n')) }}'; // Default ke bulan saat ini
-            const selectedYear = $('#tabulasi-year-select').val() || '{{ date('Y') }}';   // Default ke tahun saat ini
-
+            // ✅ masih tetap arahkan ke laporan register untuk sinkronisasi
+            const selectedMonth = $('#tabulasi-month-select').val();
+            const selectedYear = $('#tabulasi-year-select').val();
             const year = parseInt(selectedYear);
             const month = parseInt(selectedMonth);
-
-            startDate = `${year}-${selectedMonth}-01`;
             const lastDay = new Date(year, month, 0).getDate();
-            endDate = `${year}-${selectedMonth}-${lastDay}`;
 
-            const periodFrom = startDate
-            const periodTo = endDate
-
-            // Tambahkan validasi di sini sebelum redirect
-            if (!periodFrom || !periodTo) {
-                Swal.fire({
-                    icon: 'error',
-                    title: 'Validasi Gagal',
-                    text: 'Periode Sync (Dari Bulan & Sampai Bulan) tidak boleh kosong.',
-                    confirmButtonText: 'Oke'
-                });
-                return; // Hentikan proses jika periode kosong
-            }
+            const start = `${year}-${selectedMonth}-01`;
+            const end = `${year}-${selectedMonth}-${lastDay}`;
 
             const baseUrl = "{{ route('superuser.report.customer_type_brand.postData') }}";
 
-            const params = new URLSearchParams({
-                period_from: periodFrom,
-                period_to: periodTo
-            });
-
-            const finalUrl = baseUrl + '?' + params.toString();
-
-            window.location.href = finalUrl;
-        } else {
-            console.warn('Unknown actionType:', actionType);
-            return;
+            window.location.href = baseUrl + '?period_from=' + start + '&period_to=' + end;
         }
     }
+
 
     // UPDATED FUNCTION: submitForecastingForm
     function submitForecastingForm(reportType) { // Add reportType parameter
@@ -621,7 +559,7 @@
             url = "{{ route('superuser.report.forecast_supplier.printReport') }}";
             requestData.semester_count = semester_count; // Only include for 'detail'
         } else if (reportType === 'summary') {
-            url = "";
+            url = "{{ route('superuser.report.forecast_supplier.printReportSummary') }}";
             // Do NOT add semester_count to requestData for 'summary'
         } else {
             Swal.fire({
@@ -705,6 +643,7 @@
         var filterTypeOmset = 'all'; 
         var datatableOmset = $('.datatableOmset').DataTable({
             info: false,
+            order: [[3, 'asc']], // ✅ urutkan berdasarkan kolom ke-3 (index 2)
             dom: '<"row mb-2"<"col-sm-12 col-md-6 custom-filter-placeholder"><"col-sm-12 col-md-6"f>>' + // baris atas
                 '<"row"<"col-sm-12"tr>>' + 
                 '<"row"<"col-sm-12 col-md-6 d-flex align-items-center"l><"col-sm-12 col-md-6"p>>',  // baris bawah
@@ -755,7 +694,6 @@
                 });
             }
         });
-
 
         $.fn.dataTable.ext.search.push(function(settings, data, dataIndex) {
             if (settings.nTable.id !== 'datatableOmset') {

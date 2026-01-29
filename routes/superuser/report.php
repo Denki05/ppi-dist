@@ -32,6 +32,7 @@ Route::group([
         Route::get('/removeDt', 'ReportCustomerTypeBrandController@removeDt')->name('removeDt');
         Route::post('/print_report', 'ReportCustomerTypeBrandController@print_report')->name('print_report');
         Route::post('/exportReport', 'ReportCustomerTypeBrandController@exportReport')->name('exportReport');
+        Route::post('/export_officer', 'ReportCustomerTypeBrandController@export_officer')->name('export_officer');
     });
     Route::resource('customer_type_brand', 'ReportCustomerTypeBrandController');
 
@@ -41,6 +42,8 @@ Route::group([
         Route::post('/print_report', 'ReportCustomerTypeBrandUVController@print_report')->name('print_report');
         Route::post('/print_report_2', 'ReportCustomerTypeBrandUVController@print_report_2')->name('print_report_2');
         Route::post('/exportReport', 'ReportCustomerTypeBrandUVController@exportReport')->name('exportReport');
+        Route::post('/report-officer/export', [App\Http\Controllers\Superuser\ReportController::class, 'export_officer'])
+                ->name('superuser.report.officer.export');
     });
     Route::resource('customer_type_brand_uv', 'ReportCustomerTypeBrandUVController');
 
@@ -67,6 +70,7 @@ Route::group([
     Route::group(['as' => 'forecast_supplier.', 'prefix' => '/forecast_supplier'], function () {
         Route::get('/', 'ReportForecastSupplierController@index')->name('index');
         Route::post('/printReport', 'ReportForecastSupplierController@printReport')->name('printReport');
+        Route::post('/printReportSummary', 'ReportForecastSupplierController@printReportSummary')->name('printReportSummary');
     });
     Route::resource('forecast_supplier', 'ReportForecastSupplierController');
 

@@ -12,6 +12,8 @@ class SaleReturn extends Model
         'payment_status',
         'idr_rate',
         'do_id',
+        'receiving_komplain_id',
+        'komplain',
         'return_date',
         'warehouse_id',
         'customer_other_address_id',
@@ -33,7 +35,8 @@ class SaleReturn extends Model
 
     const TYPE = [
         'RETUR' => 1,
-        'TUKAR BARANG' => 2,
+        'TUKAR VARIANT' => 2,
+        // 'TUKAR BARANG (REPLACEMENT)' => 3,
     ];
 
     const PAYMENT_STATUS = [
@@ -110,5 +113,10 @@ class SaleReturn extends Model
     public function returFat()
     {
         return $this->hasOne('App\Entities\Finance\ReturFat', 'retur_id', 'id');
+    }
+
+    public function qualityControl()
+    {
+        return $this->hasOne('App\Entities\Gudang\QualityControl2', 'retur_id', 'id');
     }
 }

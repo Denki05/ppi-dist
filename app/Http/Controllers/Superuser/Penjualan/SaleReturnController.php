@@ -15,6 +15,7 @@ use App\Entities\Penjualan\SaleReturnDetail;
 use App\Entities\Penjualan\SaleReturnCost;
 use App\Entities\Gudang\QualityControl;
 use App\Entities\Gudang\QualityControlDetail;
+use App\Entities\Gudang\QualityControl2;
 // use App\Entities\GUdang\ReceivingDetail;
 use App\Entities\Master\Warehouse;
 use App\Http\Controllers\Controller;
@@ -154,8 +155,6 @@ class SaleReturnController extends Controller
 
         $data['warehouses'] = Warehouse::get();
 
-        // dd($data);
-
         return view('superuser.penjualan.sale_return.create', $data);
     }
 
@@ -166,7 +165,8 @@ class SaleReturnController extends Controller
                 'code' => 'required|string|unique:penjualan_retur,code',
                 'delivery_order' => 'required',
                 'type' => 'required|integer',
-                'return_date' => 'nullable',
+                'retur_date' => 'nullable',
+                'flag_qc' => 'nullable'
             ]);
 
             if ($validator->fails()) {
@@ -214,18 +214,29 @@ class SaleReturnController extends Controller
                     ? SaleReturn::PAYMENT_STATUS['LUNAS']
                     : SaleReturn::PAYMENT_STATUS['BELUM LUNAS'];
                 $sale_return->customer_other_address_id = $getDo->customer_other_address_id;
+                $sale_return->komplain = $request->flag_qc ? 1 : 0;
+                $sale_return->retur_date = $request->retur_date;
                 $sale_return->status = SaleReturn::STATUS['ACTIVE'];
 
                 if ($sale_return->save()) {
                     if ($request->sku) {
+                        // dd($request->komplain_id);
                         foreach ($request->sku as $key => $value) {
+                            // ✅ HANYA SIMPAN BARIS MANUAL
+                            if (
+                                ($request->row_type[$key] ?? 'manual') !== 'manual'
+                            ) {
+                                continue;
+                            }
+
                             if (!empty($request->sku[$key]) && !empty($request->quantity[$key])) {
+
                                 $sale_return_detail = new SaleReturnDetail;
                                 $sale_return_detail->retur_id = $sale_return->id;
                                 $sale_return_detail->product_packaging_id = $request->sku[$key];
                                 $sale_return_detail->qty = $request->quantity[$key];
                                 $sale_return_detail->price = $request->acuan[$key];
-                                $sale_return_detail->disc_usd = $request->disc_usd[$key];
+                                $sale_return_detail->disc_usd = $request->disc_usd[$key] ?? 0;
                                 $sale_return_detail->note = $request->description[$key] ?? null;
                                 $sale_return_detail->save();
                             }
@@ -259,6 +270,18 @@ class SaleReturnController extends Controller
                         $receiving_detail->quantity_po = $detail->qty;
                         $receiving_detail->note = $detail->note;
                         $receiving_detail->save();
+                    }
+
+                    $qcIds = collect($request->komplain_id ?? [])
+                        ->filter()
+                        ->unique()
+                        ->values();
+
+                    if ($qcIds->isNotEmpty()) {
+                        QualityControl2::whereIn('id', $qcIds)
+                            ->update([
+                                'retur_id' => $sale_return->id,
+                            ]);
                     }
 
                     DB::commit();
@@ -381,38 +404,42 @@ class SaleReturnController extends Controller
     {
         if (Auth::user()->is_superuser == 0) {
             if (empty($this->access) || empty($this->access->user) || $this->access->can_approve == 0) {
-                return redirect()->route('superuser.index')->with('error', 'Anda tidak punya akses untuk membuka menu terkait');
+                return redirect()->route('superuser.index')
+                    ->with('error', 'Anda tidak punya akses untuk membuka menu terkait');
             }
         }
 
-        $sale_return = SaleReturn::find($id);
-
-        if ($sale_return === null) {
-            abort(404);
-        }
+        $sale_return = SaleReturn::findOrFail($id);
 
         DB::beginTransaction();
         try {
-            // check apakah sudah acc untuk QC nya?
-            $getReceivingDetail = QualityControlDetail::where('po_id', $sale_return->id)->first();
-            if ($getReceivingDetail) {
-                if ($getReceivingDetail->receiving->status != QualityControl::STATUS['ACC']) {
-                    return redirect()->route('superuser.penjualan.sale_return.index')
-                        ->with('error', 'Proses QC sedang berlangsung, tidak bisa melanjutkan proses');
-                }
+
+            $qcNotAcc = QualityControlDetail::where('po_id', $sale_return->id)
+                ->whereHas('receiving', function ($q) {
+                    $q->where('status', '!=', QualityControl::STATUS['ACC']);
+                })
+                ->exists();
+
+            if ($qcNotAcc) {
+                return redirect()
+                    ->route('superuser.penjualan.sale_return.index')
+                    ->with('error', 'Proses QC masih berlangsung, tidak bisa melanjutkan proses');
             }
 
-            $sale_return->retur_date = now();
-            $sale_return->status = SaleReturn::STATUS['ACC'];
-            $sale_return->fat_status = SaleReturn::FAT_STATUS['NONE'];
-            $sale_return->save();
+            $sale_return->update([
+                'retur_date' => now(),
+                'status'     => SaleReturn::STATUS['ACC'],
+                'fat_status' => SaleReturn::FAT_STATUS['NONE'],
+            ]);
 
             DB::commit();
-            return redirect()->route('superuser.penjualan.sale_return.index')
-                 ->with('success', 'Data retur berhasil di Acc.');
+
+            return redirect()
+                ->route('superuser.penjualan.sale_return.index')
+                ->with('success', 'Data retur berhasil di Acc.');
+
         } catch (\Throwable $e) {
-            dd($e);
-            DB::rollback();
+            DB::rollBack();
             return redirect()->back()->with('error', 'Terjadi kesalahan saat acc data');
         }
     }
@@ -440,7 +467,6 @@ class SaleReturnController extends Controller
             return redirect()->route('superuser.penjualan.sale_return.index')
                  ->with('success', 'Retur Berhasil di Proses.');
         } catch (\Throwable $e) {
-            dd($e);
             DB::rollback();
             return redirect()->back()->with('error', 'Terjadi kesalahan saat acc data');
         }
@@ -533,7 +559,7 @@ class SaleReturnController extends Controller
         if ($returnBinary) {
             return $pdf->output(); // hasil biner PDF
         }
-
+ 
         return $pdf->stream("{$result->code}.pdf");
     }
 
@@ -629,5 +655,13 @@ class SaleReturnController extends Controller
         return response($createdPdf)
             ->header('Content-Type', 'application/pdf')
             ->header('Content-Disposition', 'inline; filename="nota-tt.pdf"');
+    }
+
+    public function getQcByDo(Request $request)
+    {
+        return QualityControl2::with('details.product_pack')
+            ->where('status', QualityControl2::STATUS['ACC'])
+            ->whereNull('retur_id') // ✅ hanya QC yang belum dipakai retur
+            ->get();
     }
 }
