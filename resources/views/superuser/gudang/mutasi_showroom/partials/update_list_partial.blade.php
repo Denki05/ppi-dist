@@ -67,6 +67,10 @@
             <button class="btn btn-sm btn-success px-3" id="btnSettle" disabled>
                 Settle
             </button>
+
+            <button class="btn btn-sm btn-outline-warning" id="btnCancelUpdate">
+                Cancel
+            </button>
         </div>
     </div>
 
@@ -172,6 +176,25 @@
                                     </tr>
                                 </tfoot>
                             </table>
+
+                            <div class="d-flex justify-content-end gap-2 mt-2 mutasi-action">
+                                <button type="button"
+                                    class="btn btn-sm btn-primary btn-kalkulasi-group">
+                                    Kalkulasi
+                                </button>
+
+                                <button type="button"
+                                    class="btn btn-sm btn-success btn-save-group"
+                                    disabled>
+                                    Save
+                                </button>
+
+                                <button type="button"
+                                    class="btn btn-sm btn-warning btn-revisi-group"
+                                    disabled>
+                                    Revisi
+                                </button>
+                            </div>
                         </div>
                     </div>
                 @endforeach
@@ -296,10 +319,11 @@ function toggleButtons(card, state){
 
 /* ===================== INIT ===================== */
 $(document).ready(function(){
+    groupState = {};
 
     $('#btnSettle').prop('disabled', true);
 
-    $('.mutasi-card').each(function(){
+    $('.mutasi-card').each(function () {
         let card = $(this);
         let kode = card.find('.mutasi-header strong').text().trim();
 
@@ -311,96 +335,67 @@ $(document).ready(function(){
             items: {}
         };
 
-        let btnGroup = `
-            <div class="d-flex justify-content-end gap-2 mt-2">
-                <button class="btn btn-sm btn-primary btn-kalkulasi-group">Kalkulasi</button>
-                <button class="btn btn-sm btn-success btn-save-group" disabled>Save</button>
-                <button class="btn btn-sm btn-warning btn-revisi-group" disabled>Revisi</button>
-            </div>
-        `;
-        card.find('.mutasi-body').append(btnGroup);
         toggleButtons(card, 'init');
-
-        card.on('click','.btn-kalkulasi-group', function(){
-            recalcGroup(card);
-        });
-
-        card.on('click','.btn-save-group', function(){
-            let kode = card.data('kode');
-            if(!groupState[kode].calculated){
-                swalWarning('Belum Dikalkulasi','Lakukan kalkulasi terlebih dahulu');
-                return;
-            }
-            groupState[kode].saved = true;
-            toggleButtons(card,'saved');
-        });
-
-        card.on('click','.btn-revisi-group', function(){
-            let kode = card.data('kode');
-            groupState[kode].calculated = false;
-            groupState[kode].saved = false;
-            toggleButtons(card,'revisi');
-        });
     });
 
     /* ===================== SETTLE ===================== */
-    $('#btnSettle').on('click', function(){
+    $(document).on('click', '#btnSettle', function () {
+
         let payload = {};
 
-        Object.keys(groupState).forEach(kode=>{
-            if(groupState[kode].saved){
+        Object.keys(groupState).forEach(kode => {
+            if (groupState[kode].saved) {
                 payload[kode] = groupState[kode].items;
             }
         });
 
-        if(Object.keys(payload).length === 0){
-            swalWarning('Tidak Ada Data','Belum ada group yang disimpan');
+        if (Object.keys(payload).length === 0) {
+            swalWarning('Tidak Ada Data', 'Belum ada group yang disimpan');
             return;
         }
 
         Swal.fire({
-            icon:'question',
-            title:'Konfirmasi Settle',
-            text:'Settle hanya untuk group yang sudah disimpan. Lanjutkan?',
-            showCancelButton:true,
-            confirmButtonText:'Ya, Settle'
-        }).then(res=>{
-            if(!res.isConfirmed) return;
+            icon: 'question',
+            title: 'Konfirmasi Settle',
+            text: 'Settle hanya untuk group yang sudah disimpan. Lanjutkan?',
+            showCancelButton: true,
+            confirmButtonText: 'Ya, Settle'
+        }).then(res => {
+
+            if (!res.isConfirmed) return;
 
             $.ajax({
                 url: '{{ route("superuser.gudang.mutasi_showroom.settle_prices") }}',
-                type:'POST',
-                data:{
-                    _token:'{{ csrf_token() }}',
+                type: 'POST',
+                data: {
+                    _token: '{{ csrf_token() }}',
                     items: payload
                 },
-                beforeSend(){
+                beforeSend() {
                     Swal.fire({
-                        title:'Memproses...',
-                        allowOutsideClick:false,
-                        didOpen:()=>Swal.showLoading()
+                        title: 'Memproses...',
+                        allowOutsideClick: false,
+                        didOpen: () => Swal.showLoading()
                     });
                 },
-                success(res){
+                success(res) {
                     Swal.close();
 
                     Swal.fire({
                         icon: 'success',
                         title: 'Berhasil',
-                        text: res.message || 'Settle berhasil',
-                        confirmButtonText: 'OK'
+                        text: res.message || 'Settle berhasil'
                     }).then(() => {
-                        location.reload(true);
+                        loadFrameB('{{ route("superuser.gudang.mutasi_showroom.done_index") }}');
                     });
                 },
-                error(xhr){
+                error(xhr) {
                     Swal.close();
 
                     Swal.fire({
                         icon: 'error',
                         title: 'Gagal',
-                        text: xhr.responseJSON?.message || 'Terjadi kesalahan server',
-                        confirmButtonText: 'OK'
+                        text: xhr.responseJSON?.message || 'Terjadi kesalahan server'
                     });
                 }
             });
@@ -416,6 +411,49 @@ $(document).ready(function(){
         $(this)
             .find('.toggle-icon')
             .text(target.is(':visible') ? '▾' : '▸');
+    });
+
+    $(document).on('click', '#btnCancelUpdate', function () {
+
+        // Aktifkan menu PROSES
+        $('.menu-btn').removeClass('active');
+        $('.menu-btn[data-menu="process"]').addClass('active');
+
+        // Expand Frame A kembali
+        if (typeof expandFrameA === 'function') {
+            expandFrameA();
+        }
+
+        // Load kembali Done Partial
+        loadFrameB('{{ route("superuser.gudang.mutasi_showroom.done_index") }}');
+    });
+
+    $(document).on('click', '.btn-kalkulasi-group', function () {
+        let card = $(this).closest('.mutasi-card');
+        recalcGroup(card);
+    });
+
+    $(document).on('click', '.btn-save-group', function () {
+        let card = $(this).closest('.mutasi-card');
+        let kode = card.data('kode');
+
+        if (!groupState[kode]?.calculated) {
+            swalWarning('Belum Dikalkulasi', 'Lakukan kalkulasi terlebih dahulu');
+            return;
+        }
+
+        groupState[kode].saved = true;
+        toggleButtons(card, 'saved');
+    });
+
+    $(document).on('click', '.btn-revisi-group', function () {
+        let card = $(this).closest('.mutasi-card');
+        let kode = card.data('kode');
+
+        groupState[kode].calculated = false;
+        groupState[kode].saved = false;
+
+        toggleButtons(card, 'revisi');
     });
 
 });

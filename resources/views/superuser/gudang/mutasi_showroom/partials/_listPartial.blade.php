@@ -171,7 +171,11 @@
 }
 
 .select2-container {
-    z-index: 9999 !important; /* Memastikan di atas modal backdrop */
+    display: block;
+}
+
+.select2-dropdown {
+    z-index: 1061 !important;
 }
 
 /* ================= RANGE MONTH FIX ================= */
@@ -259,6 +263,23 @@
     margin-right: 6px;
 }
 
+/* Pastikan dropdown Select2 selalu di atas modal */
+.select2-container--open {
+    z-index: 9999999 !important;
+}
+
+.select2-container--bootstrap-5 .select2-dropdown {
+    border: 1px solid #dee2e6;
+    z-index: 9999999;
+}
+
+/* Memperbaiki tampilan box select2 agar lebih rapi di modal */
+.select2-container--bootstrap-5 .select2-selection {
+    min-height: 38px !important;
+    display: flex;
+    align-items: center;
+}
+
 /* =====================================================
    COMPACT MODE – CREATE MUTASI MODAL
 ===================================================== */
@@ -279,6 +300,8 @@
 /* Body dipadatkan */
 #modalCreateMutasi .modal-body {
     padding: 12px 14px;
+    overflow: visible !important; 
+    min-height: 250px;
 }
 
 /* Footer tipis */
@@ -423,18 +446,16 @@
     <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable mutasi-dialog">
         <div class="modal-content mutasi-modal">
 
-            {{-- ===== HEADER ===== --}}
+            {{-- HEADER --}}
             <div class="mutasi-modal-header">
                 <div class="mutasi-title">
                     <span>Detail Mutasi</span>
-                    <span class="text-muted ms-2" id="mutasiKode" style="font-size:13px;">
-                        <!-- kode mutasi akan diisi via JS -->
-                    </span>
+                    <span class="text-muted ms-2" id="mutasiKode" style="font-size:13px;"></span>
                 </div>
                 <button class="btn-close" data-bs-dismiss="modal"></button>
             </div>
 
-            {{-- ===== BODY ===== --}}
+            {{-- BODY --}}
             <div class="mutasi-modal-body">
 
                 {{-- NAV LEFT --}}
@@ -460,12 +481,14 @@
 
             </div>
 
-            {{-- ===== FOOTER ===== --}}
-            {{-- Di dalam .mutasi-modal-footer --}}
+            {{-- FOOTER --}}
             <div class="mutasi-modal-footer d-flex justify-content-end gap-2">
                 @if(in_array(auth()->id(), [1, 31, 36]))
-                    {{-- Tombol Utama --}}
-                    <button class="btn btn-primary" id="btnAction" style="display: none;" data-step="process">
+                    <button type="button"
+                            class="btn btn-primary"
+                            id="btnAction"
+                            style="display:none;"
+                            data-step="process">
                         Cetak
                     </button>
                 @endif
@@ -540,12 +563,6 @@
     </div>
   </div>
 </div>
-
-<script>
-$(function () {
-    $('#modalSelectType, #modalSelectCustomer').appendTo('body');
-});
-</script>
 
 <script>
     /* ================= GLOBAL STATE ================= */
@@ -725,6 +742,7 @@ $(function () {
             `;
         }
 
+        /* ====================== OPEN VIEWER ====================== */
         function openViewer() {
             const id = window.mutasiIds[currentIndex];
             const modalElem = $('#mutasiViewer');
@@ -742,22 +760,135 @@ $(function () {
                     updateHeader();
                     updateNav();
 
+                    // === SET BUTTON ACTION ===
                     const status = $('#status_viewer').val();
+                    const btn    = $('#btnAction');
+
                     if (status === 'ACTIVE') {
-                        $('#btnAction')
+                        // NORMAL (BELUM CETAK)
+                        btn
                             .show()
                             .text('Cetak')
                             .removeClass('btn-success')
                             .addClass('btn-primary')
                             .attr('data-step', 'process')
+                            .attr('data-printed', '0')
                             .attr('data-id', id);
+
+                        // Hapus tombol Proses jika ada sebelumnya
+                        $('#btnProses').remove();
                     } else {
-                        $('#btnAction').hide();
+                        btn.hide();
+                        $('#btnProses').remove();
                     }
                 }
             );
         }
 
+        /* ====================== BTN ACTION CETAK ====================== */
+        $('#mutasiViewer').on('click', '#btnAction', function(e){
+            e.preventDefault();
+            e.stopPropagation();
+
+            const btn  = $(this);
+            const id   = btn.attr('data-id'); // pakai attr() supaya dinamis terbaca
+            const step = btn.attr('data-step');
+
+            if (!id) return false;
+
+            if (step === 'process') {
+                // STEP 1: CETAK PDF
+                $('.mutasi-dialog').addClass('modal-pdf-mode');
+
+                const pdfUrl = '{{ route("superuser.gudang.mutasi_showroom.print_pdf", ":id") }}'.replace(':id', id);
+
+                // Hide tombol cetak dulu
+                btn.hide();
+
+                // Tambahkan tombol Proses jika belum ada
+                let prosesBtn = $('#btnProses');
+                if (prosesBtn.length === 0) {
+                    prosesBtn = $('<button>', {
+                        id: 'btnProses',
+                        class: 'btn btn-success',
+                        text: 'Proses',
+                        'data-id': id
+                    }).appendTo('.mutasi-modal-footer');
+                } else {
+                    prosesBtn.attr('data-id', id); // update id
+                }
+
+                prosesBtn.hide(); // sembunyikan sampai iframe load
+
+                // Load PDF iframe
+                const iframe = $('<iframe>', {
+                    src: pdfUrl,
+                    class: 'pdf-iframe'
+                });
+
+                // Attach load event setelah iframe ada di DOM
+                iframe.on('load', function(){
+                    // PDF sudah siap → tampilkan tombol Proses
+                    prosesBtn.show();
+                });
+
+                // Append ke container
+                $('#viewerContent').html(iframe);
+
+                return false;
+            }
+        });
+
+        /* ====================== BTN ACTION PUBLISH ====================== */
+        $('#mutasiViewer').on('click', '#btnProses', function(e){
+            e.preventDefault();
+            e.stopPropagation();
+
+            const btn = $(this);
+            const id  = btn.attr('data-id'); // gunakan attr() agar selalu terbaca
+
+            if (!id) return false;
+
+            Swal.fire({
+                title: 'Publish Mutasi?',
+                text: 'Pastikan dokumen sudah dicetak dan diperiksa.',
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonText: 'Ya, Publish',
+                cancelButtonText: 'Batal'
+            }).then((result) => {
+                if (!result.isConfirmed) return;
+
+                btn.prop('disabled', true);
+
+                $.ajax({
+                    url: '{{ route("superuser.gudang.mutasi_showroom.publish", ":id") }}'.replace(':id', id),
+                    type: 'POST',
+                    data: {_token: '{{ csrf_token() }}'},
+                    success(res) {
+                        Swal.fire('Sukses', res.message, 'success').then(() => {
+                            // sembunyikan tombol
+                            btn.hide();
+                            $('#btnAction').hide();
+
+                            // tutup modal Bootstrap
+                            const modalElem = $('#mutasiViewer');
+                            const modal = bootstrap.Modal.getInstance(modalElem);
+                            if(modal) modal.hide();
+
+                            // reload list
+                            reloadPartialList();
+                        });
+                    },
+                    error(xhr) {
+                        btn.prop('disabled', false);
+                        let msg = xhr.responseJSON?.message ?? 'Terjadi kesalahan';
+                        Swal.fire('Gagal', msg, 'error');
+                    }
+                });
+            });
+        });
+        
         /* ================= NAV VIEWER ================= */
         $(document).on('click', '#prevMutasi', function () {
             if (currentIndex > 0) {
@@ -796,27 +927,23 @@ $(function () {
         /* === TYPE CHANGE → TOGGLE CUSTOMER === */
         $(document).on('change', '#selectType', function () {
             const type = parseInt($(this).val());
-
             if ([2, 3].includes(type)) {
                 $('#customerWrapper').removeClass('d-none');
-
-                // 🔥 PENTING: refresh Select2 setelah ditampilkan
-                $('#selectCustomer').select2('destroy');
+                
+                // RE-INIT dengan dropdownParent yang benar
                 $('#selectCustomer').select2({
                     theme: 'bootstrap-5',
                     width: '100%',
-                    dropdownParent: $('#modalCreateMutasi'),
+                    dropdownParent: $('#modalCreateMutasi'), 
                     placeholder: 'Pilih Customer',
                     allowClear: true
                 });
-
             } else {
                 $('#customerWrapper').addClass('d-none');
                 $('#selectCustomer').val('').trigger('change');
             }
         });
 
-    
          /* === SUBMIT === */
         $(document).on('click', '#btnSubmitMutasi', function () {
             const brand    = $('#selectBrand').val();
@@ -869,12 +996,16 @@ $(function () {
         }
 
         function initSelect2(modalId) {
-            $(modalId + ' .select2').select2({
-                theme: 'bootstrap-5',
-                width: '100%',
-                dropdownParent: $(modalId),
-                placeholder: 'Pilih',
-                allowClear: true
+            $(modalId + ' .select2').each(function() {
+                $(this).select2({
+                    theme: 'bootstrap-5',
+                    width: '100%',
+                    dropdownParent: $(modalId), // Mengunci dropdown di dalam modal
+                    placeholder: 'Pilih',
+                    allowClear: true,
+                    // Opsional: Jika ingin memaksa selalu ke bawah, tapi pastikan ada ruang
+                    // selectOnClose: false 
+                });
             });
         }
     });

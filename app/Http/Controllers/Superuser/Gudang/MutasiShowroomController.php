@@ -310,12 +310,12 @@ class MutasiShowroomController extends Controller
             ->firstOrFail();
 
         // BATAS PRINT (kecuali developer)
-        // if ($mutasi->print_count >= 2 && auth()->id() != 1) {
-        //     abort(403, 'Dokumen ini sudah dicetak maksimal 2 kali.');
-        // }
+        if ($mutasi->print_count >= 2 && auth()->id() != 1) {
+            abort(403, 'Dokumen ini sudah dicetak maksimal 2 kali.');
+        }
 
         // UPDATE COUNTER PRINT
-        // $mutasi->increment('print_count');
+        $mutasi->increment('print_count');
 
         if (empty($mutasi->printed_at)) {
             $mutasi->updated_by = auth()->id();
@@ -434,7 +434,7 @@ class MutasiShowroomController extends Controller
     {
         $items = MutasiShowroomDetail::whereHas('mutasi_showroom', function ($q) use ($request) {
 
-                $q->where('status', MutasiShowroom::STATUS['SENT']);
+                $q->where('status', MutasiShowroom::STATUS['PUBLISH']);
 
                 if ($request->filled('start_date') && $request->filled('end_date')) {
                     $q->whereBetween('tanggal', [
@@ -557,7 +557,7 @@ class MutasiShowroomController extends Controller
                     ]);
 
                     MutasiShowroom::whereIn('kode', $kodeUnik)
-                        ->update(['status' => MutasiShowroom::STATUS['ACC']]);
+                        ->update(['status' => MutasiShowroom::STATUS['SETTLE']]);
                 }
 
             });
@@ -696,7 +696,7 @@ class MutasiShowroomController extends Controller
 
     public function doneData(Request $request)
     {
-        $query = MutasiShowroomHistory::where('status', 1)
+        $query = MutasiShowroom::where('status', MutasiShowroom::STATUS['SETTLE'])
             ->orderBy('tanggal', 'desc');
 
         if ($request->filled('start_date') && $request->filled('end_date')) {
@@ -706,28 +706,31 @@ class MutasiShowroomController extends Controller
             ]);
         }
 
-        $data = $query->paginate(5);
+        $data = $query->paginate(10);
 
         $rows = [];
         foreach ($data as $index => $row) {
-
             $rows[] = [
-                'id' => $row->id,
-                'no' => $data->firstItem() + $index,
-                'kode' => $row->kode,
-                'brand' => $row->brand_name,
-                'tanggal' => \Carbon\Carbon::parse($row->tanggal)->format('d M Y'),
+                'id'           => $row->id,
+                'no'           => $data->firstItem() + $index,
+                'kode'         => $row->kode,
+                'brand'        => $row->brand_name,
+                'tanggal'      => \Carbon\Carbon::parse($row->tanggal)->format('d M Y'),
                 'total_mutasi' => $row->total_mutasi,
-                'action' => $this->renderAction($row),
+                'type'         => $row->type() ?? '-', // Pastikan field ini ada di model
+                'status'       => $row->status() ?? '-',
+                'action'       => $this->renderAction($row),
             ];
         }
 
         return response()->json([
-            'data' => $rows,
-            'from' => $data->firstItem(),
-            'to' => $data->lastItem(),
-            'total' => $data->total(),
-            'pagination' => (string) $data->links()
+            'data'       => $rows,
+            'current_page' => $data->currentPage(),
+            'last_page'    => $data->lastPage(),
+            'from'       => $data->firstItem(),
+            'to'         => $data->lastItem(),
+            'total'      => $data->total(),
+            // Kita tidak mengirim (string) $data->links() karena akan menggunakan manual pagination JS
         ]);
     }
 

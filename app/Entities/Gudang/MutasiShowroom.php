@@ -66,6 +66,11 @@ class MutasiShowroom extends Model
         return $this->belongsTo('App\Entities\Master\Warehouse', 'warehouse_from_id', 'id');
     }
 
+    public function customer_other_address()
+    {
+        return $this->belongsTo('App\Entities\Master\CustomerOtherAddress', 'customer_other_address_id', 'id');
+    }
+
     public function status()
     {
         return array_search($this->status, self::STATUS);

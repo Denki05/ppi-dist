@@ -203,7 +203,7 @@ $(function() {
         }
 
         if(menu === 'process'){
-            collapseFrameA();
+            // collapseFrameA();
             loadFrameB('{{ route("superuser.gudang.mutasi_showroom.done_index") }}');
         }
     });
