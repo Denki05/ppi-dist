@@ -444,7 +444,8 @@ class MutasiShowroomController extends Controller
     {
         $items = MutasiShowroomDetail::whereHas('mutasi_showroom', function ($q) use ($request) {
 
-                $q->where('status', MutasiShowroom::STATUS['PUBLISH']);
+                $q->where('status', MutasiShowroom::STATUS['PUBLISH'])
+                ->where('type', '!=', 3);
 
                 if ($request->filled('start_date') && $request->filled('end_date')) {
                     $q->whereBetween('tanggal', [
