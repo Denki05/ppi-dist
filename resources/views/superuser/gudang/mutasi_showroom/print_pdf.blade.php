@@ -2,165 +2,229 @@
 <html lang="id">
 <head>
 <meta charset="UTF-8">
-<title>Form Permintaan Barang ke Showroom</title>
+<title>SURAT JALAN MUTASI BARANG</title>
 
 <style>
 @page {
     size: A5 landscape;
-    margin: 20px 30px; 
+    margin: 18px 25px;
 }
 
 body {
     font-family: Arial, Helvetica, sans-serif;
-    font-size: 10px; /* Ukuran font sedikit dikecilkan agar lebih padat */
+    font-size: 10px;
     color: #000;
-    line-height: 1.2;
+    line-height: 1.4;
 }
 
-/* ===== HEADER ===== */
+/* ================= HEADER ================= */
 .header {
+    padding: 10px 12px;
     margin-bottom: 10px;
-    border-bottom: 1px double #000; /* Garis pemisah header */
-    padding-bottom: 5px;
+}
+
+.header-title {
+    text-align: right;
+    font-size: 16px;
+    font-weight: bold;
+    letter-spacing: 0.5px;
+    margin-bottom: 8px;
+    text-transform: uppercase;
 }
 
 .header-table {
     width: 100%;
+    border-collapse: collapse;
+    border-top: 1px solid #000;
+    border-bottom: 1px solid #000;
 }
 
 .header-table td {
+    padding: 4px 0;
     vertical-align: top;
-    padding: 2px 0;
+    border: none; /* pastikan td tidak punya border */
 }
 
-h3 {
-    margin: 0 0 5px 0;
-    text-transform: uppercase;
-    font-size: 14px;
+.label {
+    width: 70px;
+    font-weight: bold;
 }
 
-/* ===== TABLE ===== */
-table {
+/* ================= TABLE ================= */
+table.data-table {
     width: 100%;
     border-collapse: collapse;
-    /* Menghapus table-layout: fixed agar kolom otomatis menyesuaikan jika perlu */
+    margin-top: 8px;
 }
 
-th, td {
+.data-table th,
+.data-table td {
     border: 1px solid #000;
-    padding: 5px 4px;
-    vertical-align: middle; /* Vertikal center agar lebih rapi */
+    padding: 6px 5px;
 }
 
-th {
-    background-color: #f2f2f2; /* Memberi warna sedikit agar header tabel menonjol */
-    text-align: center;
+.data-table th {
+    background: #f5f5f5;
     font-weight: bold;
     text-transform: uppercase;
-}
-
-.no-border td {
-    border: none;
-}
-
-/* ===== ALIGN ===== */
-.text-center { text-align: center; }
-.text-right { text-align: right; }
-.text-left  { text-align: left; }
-
-/* ===== SIGNATURE ===== */
-/* Menggunakan flow normal, bukan fixed agar tidak menabrak tabel jika datanya banyak */
-.signature-wrapper {
-    margin-top: 20px;
-    width: 100%;
-}
-
-.signature-box {
-    float: right;
-    width: 150px;
     text-align: center;
+}
+
+.data-table td {
+    vertical-align: middle;
+}
+
+.text-center { text-align: center; }
+.text-right  { text-align: right; }
+.text-left   { text-align: left; }
+
+/* ================= SIGNATURE ================= */
+.signature-table {
+    width: 100%;
+    margin-top: 30px;
+    border-collapse: collapse;
+    page-break-inside: avoid;
+}
+
+.signature-table td {
+    text-align: center;
+    vertical-align: top;
+    font-size: 10px;
+}
+
+.signature-label {
+    margin-bottom: 40px;
 }
 
 .signature-line {
-    margin-top: 45px;
     border-top: 1px solid #000;
+    width: 80%;
+    margin: 0 auto 4px auto;
 }
 
-.clearfix::after {
-    content: "";
-    clear: both;
-    display: table;
+.signature-note {
+    margin-top: 15px;
+    font-size: 10px;
+}
+
+@page {
+    size: A5 landscape;
+    margin: 18px 25px 90px 25px; /* tambah bottom margin */
+}
+
+/* FOOTER SIGNATURE */
+.footer-signature {
+    position: fixed;
+    bottom: 30px;
+    left: 25px;
+    right: 25px;
 }
 </style>
 </head>
+
 <body>
 
+<!-- ================= HEADER ================= -->
 <div class="header">
-    <table class="header-table no-border">
+    <div class="header-title">SURAT JALAN MUTASI BARANG</div>
+
+    <table class="header-table">
         <tr>
-            <td class="text-center" colspan="2">
-                <h3>Form Permintaan Barang ke Showroom</h3>
+            <!-- KOLOM KIRI -->
+            <td style="width: 50%;">
+                <table width="100%" cellspacing="0" cellpadding="0" style="font-size: 12px;">
+                    <tr>
+                        <td class="label">Kepada</td>
+                        <td>: {{ $mutasi->customer_other_address->name ?? 'SHOWROOM' }}</td>
+                    </tr>
+                    <tr>
+                        <td class="label">Alamat</td>
+                        <td>: {{ $mutasi->customer_other_address->address ?? 'SURABAYA' }}</td>
+                    </tr>
+                    <tr>
+                        <td class="label">Telp</td>
+                        <td>: {{ $mutasi->customer_other_address->phone ?? '-' }}</td>
+                    </tr>
+                </table>
             </td>
-        </tr>
-        <tr>
-            <td width="50%">
-                <strong>Tanggal / Kode :</strong> {{ \Carbon\Carbon::parse($mutasi->tanggal)->format('d-m-y') }} / {{ $mutasi->kode }}
-            </td>
-            <td class="text-right" width="50%">
-                <strong>Type :</strong> {{ $mutasi->type() }}
-            </td>
-        </tr>
-        <tr>
-            <td>    
-                <strong>Brand :</strong> {{ $mutasi->brand_name }}
-            </td>
-            <td class="text-right">  
-                <strong>Customer :</strong> {{ $mutasi->customer_other_address->name }} {{ $mutasi->customer_other_address->text_kota }}
+
+            <!-- KOLOM KANAN -->
+            <td style="width: 50%;">
+                <table width="100%" cellspacing="0" cellpadding="0" style="font-size: 12px;">
+                    <tr>
+                        <td class="label">Brand</td>
+                        <td>: {{ $mutasi->brand_name }}</td>
+                    </tr>
+                    <tr>
+                        <td class="label">Kode</td>
+                        <td>: {{ $mutasi->kode }}{{ optional($mutasi->so)->code ? ' / '.optional($mutasi->so)->code : '' }}</td>
+                    </tr>
+                    <tr>
+                        <td class="label">Tanggal</td>
+                        <td>: {{ $mutasi->tanggal->format('d-m-Y') }}</td>
+                    </tr>
+                </table>
             </td>
         </tr>
     </table>
 </div>
 
-<table>
+<!-- ================= TABLE ================= -->
+<table class="data-table">
     <thead>
         <tr>
-            <th width="30px">No</th>
-            <th class="text-left">Produk</th> {{-- Produk dibuat rata kiri agar mudah dibaca --}}
-            <th width="150px">Packaging</th>
-            <th width="60px">Qty</th>
+            <th width="30">No</th>
+            <th class="text-center">Kode Barang</th>
+            <th class="text-center">Nama Barang</th>
+            <th width="60">Qty(KG)</th>
+            <th width="140">Kemasan</th>
         </tr>
     </thead>
     <tbody>
         @forelse($mutasi->details as $i => $row)
-        <tr>
-            <td class="text-center">{{ $i + 1 }}</td>
-            <td class="text-left">
-                {{ $row->product_packaging->code }} - {{ $row->product_packaging->name }}
-            </td>
-            <td class="text-center">
-                {{ $row->product_packaging->packaging->pack_name }}
-            </td>
-            <td class="text-right" style="padding-right: 8px;">
-                {{ number_format($row->qty, 2) }}
-            </td>
-        </tr>
+            <tr>
+                <td class="text-center" style="font-size: 12px;">{{ $i + 1 }}</td>
+                <td class="text-center" style="font-size: 12px;">
+                    {{ $row->product_packaging->code }}
+                </td>
+                <td class="text-center" style="font-size: 12px;">
+                    {{ $row->product_packaging->name }}
+                </td>
+                <td class="text-right" style="font-size: 12px;">
+                    {{ number_format($row->qty, 2) }}
+                </td>
+                <td class="text-center" style="font-size: 12px;">
+                    {{ $row->product_packaging->packaging->pack_name }}
+                </td>
+                
+            </tr>
         @empty
-        <tr>
-            <td colspan="4" class="text-center">Tidak ada data</td>
-        </tr>
+            <tr>
+                <td colspan="4" class="text-center">Tidak ada data</td>
+            </tr>
         @endforelse
     </tbody>
 </table>
 
-<div class="signature-wrapper clearfix">
-    <div class="signature-box">
-        Mengetahui,<br><br><br><br>
-        
+<!-- ================= FOOTER SIGNATURE ================= -->
+<div class="footer-signature">
 
-        
-        ( ................................. )
-    </div>
+    <table class="signature-table">
+        <tr>
+            <td width="33%">
+                <div class="signature-label">Dibuat Oleh,</div>
+                <div class="signature-line"></div>
+            </td>
+            <td width="33%">
+                <div class="signature-label">Gudang,</div>
+                <div class="signature-line"></div>
+            </td>
+            <td width="33%">
+                <div class="signature-label">Diterima,</div>
+                <div class="signature-line"></div>
+            </td>
+        </tr>
+    </table>
 </div>
-
 </body>
 </html>

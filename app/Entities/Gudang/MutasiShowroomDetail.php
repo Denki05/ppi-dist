@@ -13,6 +13,7 @@ class MutasiShowroomDetail extends Model
         'penjualan_showroom_id',
         'product_packaging_id',
         'qty',
+        'is_checked',
         'price_usd',
         'price_idr',
         'total_price',

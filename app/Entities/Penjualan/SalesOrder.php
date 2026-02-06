@@ -183,6 +183,16 @@ class SalesOrder extends Model
     public function proforma(){
     	return $this->hasMany('App\Entities\Penjualan\SoProforma','so_id');
     }
+
+    public function showroom_mutation()
+    {
+        return $this->hasOne(
+            'App\Entities\Gudang\MutasiShowroom',
+            'so_id',
+            'id'
+        );
+    }
+
     public function so_brand_type()
     {
         if (isset($this->brand_type)) {

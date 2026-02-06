@@ -21,8 +21,11 @@ class MutasiShowroom extends Model
         'warehouse_from_id',
         'warehouse_to_id',
         'customer_other_address_id',
+        'so_id',
         'tanggal',
         'status',
+        'status_checked',
+        'status_barang',
         'print_count',
         'printed_at',
         'created_by',
@@ -42,9 +45,24 @@ class MutasiShowroom extends Model
         'KLAIM'         => 3,
         'BUNDLING'      => 4,
     ];
+    
+    const STATUS_CHECKED = [
+        'PENDING' => 0,
+        'CHECKED'   => 1,
+        'CANCELED'   => 2,
+    ];
+
+    const STATUS_BARANG = [
+        'PENDING' => 0,
+        'BELUM_DIAMBIL'   => 1,
+        'DIAMBIL'   => 2,
+    ];
 
     const INTERNAL_TYPES = [1, 4]; // SHOWROOM, BUNDLING
     const EKSTERNAL_TYPES = [2, 3]; // FREE PRODUCT, KLAIM
+    
+    const TYPE_SYSTEM_FREE_SO = 5;
+
 
     public static function isInternal($type)
     {
@@ -54,6 +72,22 @@ class MutasiShowroom extends Model
     public static function isEksternal($type)
     {
         return in_array((int)$type, self::EKSTERNAL_TYPES);
+    }
+    
+    public static function getKodePrefixByType(int $type): string
+    {
+        if ($type === self::TYPE_SYSTEM_FREE_SO) {
+            return 'MS-P';
+        }
+
+        if (
+            in_array($type, self::INTERNAL_TYPES) ||
+            in_array($type, self::EKSTERNAL_TYPES)
+        ) {
+            return 'MS';
+        }
+
+        throw new \InvalidArgumentException('Type mutasi tidak valid');
     }
 
     public function details()
@@ -79,5 +113,20 @@ class MutasiShowroom extends Model
     public function type()
     {
         return array_search($this->type, self::TYPE);
+    }
+    
+    public function so()
+    {
+        return $this->belongsTo('App\Entities\Penjualan\SalesOrder', 'so_id', 'id');
+    }
+    
+    public function statusChecked()
+    {
+        return array_search($this->status_checked, self::STATUS_CHECKED);
+    }
+
+    public function statusBarang()
+    {
+        return array_search($this->status_barang, self::STATUS_BARANG);
     }
 }

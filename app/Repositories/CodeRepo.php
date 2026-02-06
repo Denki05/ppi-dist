@@ -26,6 +26,7 @@ use App\Entities\Gudang\StockAdjustment;
 use App\Entities\Gudang\Receiving;
 use App\Entities\Master\BrandLokal;
 use App\Entities\Gudang\PurchaseOrder;
+use App\Entities\Gudang\MutasiShowroom;
 use DB;
 
 class CodeRepo
@@ -500,37 +501,50 @@ class CodeRepo
         return $latestNumber;
     }
 
-    public static function generateMutasiShowroom()
+    public static function generateMutasiShowroom(int $type) 
     {
-        // Ambil tanggal sekarang
-        $day   = date('d');
-        $month = date('n'); // 1-12
-        $year  = date('Y');
-    
-        // Tahun: ambil 2 digit terakhir
-        $p1 = substr($year, -2);
-    
-        // Konversi bulan ke huruf
-        $abjadMonth = [ '-', 'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L'];
-        $p2 = $abjadMonth[$month];
-    
-        $yearMonth = $p1 . $p2; // contoh: 25H
-    
-        // Ambil kode terakhir bulan ini
-        $get_max = DB::table('penjualan_showroom')
-            ->where('kode', 'LIKE', 'MS' . $yearMonth . '%')
+        // ===============================
+        // FORMAT TANGGAL
+        // ===============================
+        $monthMap = ['-', 'A','B','C','D','E','F','G','H','I','J','K','L'];
+
+        $year  = date('y');              // 26
+        $month = $monthMap[date('n')];   // A
+        $ym    = $year . $month;         // 26A
+
+        // ===============================
+        // PREFIX BERDASARKAN TYPE
+        // ===============================
+        $prefix = MutasiShowroom::getKodePrefixByType($type);
+        $base   = $prefix . $ym;
+
+        // ===============================
+        // AMBIL KODE TERAKHIR (AMAN)
+        // ===============================
+        $lastCode = DB::table('penjualan_showroom')
+            ->where('kode', 'LIKE', $base . '%')
             ->whereNull('deleted_at')
+            ->lockForUpdate()
             ->max('kode');
-    
-        if ($get_max === null) {
-            // Belum ada kode bulan ini
-            $latestNumber = 'MS' . $yearMonth . '001';
+
+        if (!$lastCode) {
+            $number = 1;
         } else {
-            // Ambil nomor urut dari kode terakhir
-            $id = (int) substr($get_max, strlen('MS' . $yearMonth)) + 1;
-            $latestNumber = 'MS' . $yearMonth . str_pad($id, 3, '0', STR_PAD_LEFT);
+            preg_match('/(\d{3})(\/|$)/', $lastCode, $match);
+            $number = ((int)$match[1]) + 1;
         }
-    
-        return $latestNumber;
+
+        // ===============================
+        // FINAL KODE
+        // ===============================
+        $kode = $base . str_pad($number, 3, '0', STR_PAD_LEFT);
+
+        if ($type === MutasiShowroom::TYPE_SYSTEM_FREE_SO) {
+            $kode;
+
+            // dd($kode);
+        }
+
+        return $kode;
     }
 }

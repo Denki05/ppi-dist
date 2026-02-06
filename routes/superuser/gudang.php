@@ -205,6 +205,22 @@ Route::group([
 
         Route::get('/create/mode-2', 'MutasiShowroomController@createMode2')
             ->name('create_mode2');
+
+        Route::get('mutasi_showroom/detail', 'MutasiShowroomController@detail')->name('detail');
+        Route::get('mutasi_showroom/print_request/{id}', 'MutasiShowroomController@printRequest')->name('print_request');
+        Route::get('/print_pdf_sj/{id}', 'MutasiShowroomController@print_pdf_sj')->name('print_pdf_sj');
     });
     Route::resource('mutasi_showroom', 'MutasiShowroomController');
+
+    Route::group(['as' => 'sj_mutasi_internal.', 'prefix' => '/sj_mutasi_internal'], function (){
+        Route::get('/', 'SjMutasiInternalController@index')->name('index');
+        Route::get('/show/{id}', 'SjMutasiInternalController@show')->name('show');
+        Route::post('step1Save', 'SjMutasiInternalController@step1Save')->name('step1Save');
+        Route::post('step1Cancel', 'SjMutasiInternalController@step1Cancel')->name('step1Cancel');
+        Route::post('step2Cancel', 'SjMutasiInternalController@step2Cancel')->name('step2Cancel');
+        Route::post('step2Next', 'SjMutasiInternalController@step2Next')->name('step2Next');
+        Route::post('step3Update', 'SjMutasiInternalController@step3Update')->name('step3Update');
+        Route::get('refreshTabs','SjMutasiInternalController@refreshTabs')->name('refreshTabs');
+    Route::resource('sj_mutasi_internal', 'SjMutasiInternalController');
+    });
 });

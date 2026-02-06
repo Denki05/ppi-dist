@@ -45,9 +45,14 @@ class PurchaseOrder extends Model
         'ORIGINAL_PACK' => 1,
     ];
 
-    const SUB_TYPE = [
-        'INDUSTRI' => 0,
-        'NON INDUSTRI' => 1,
+    // const SUB_TYPE = [
+    //     'SIRIE_NGINDEN' => 0,
+    //     'ARAYA_NGINDEN' => 1,
+    // ];
+
+     const SUB_TYPE = [
+        'INDUSTRI' => 1,
+        'NON_INDUSTRI' => 0,
     ];
 
     public function warehouse(){

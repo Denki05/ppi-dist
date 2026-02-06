@@ -15,6 +15,8 @@ use App\Entities\Penjualan\PackingOrderDetail;
 use App\Entities\Penjualan\SoProforma;
 use App\Entities\Penjualan\SoProformaDetail;
 use App\Entities\Penjualan\DeliveryOrderMutationItem;
+use App\Entities\Gudang\MutasiShowroom;
+use App\Entities\Gudang\MutasiShowroomDetail;
 use App\Entities\Finance\Invoicing;
 use App\Entities\Master\Customer;
 use App\Entities\Master\CustomerCategory;
@@ -1286,8 +1288,30 @@ class SalesOrderController extends Controller
                         $data = [];
                         $product = 0;
                         $out_of_stock = false;
+                        $mutasiItems = [];
                         foreach($request->repeater as $key => $value){
                             $result = SalesOrderItem::where('id', $value["so_item_id"])->first();
+                            
+                            if (!$result) {
+                                continue;
+                            }
+                        
+                            // free_product hanya sebagai FLAG
+                            $is_free_product = !empty($result->free_product) && (float)$result->free_product > 0;
+                        
+                            // dd($is_free_product);
+
+                            if ($is_free_product) {
+                                $real_qty = $value['so_qty'];
+                        
+                                if ($real_qty > 0) {
+                                    $mutasiItems[] = [
+                                        'product_packaging_id' => $result->product_packaging_id,
+                                        'qty'  => $real_qty,
+                                        'note' => 'Free product otomatis dari SO ' . $sales_order->code,
+                                    ];
+                                }
+                            }
 
                             $so_item_id = $value["so_item_id"];
                             $price = $value["price"];
@@ -1380,6 +1404,49 @@ class SalesOrderController extends Controller
                                 ]);
                             }
                         }
+                        
+                        // dd($mutasiItems);
+                        
+                        // ========================================
+                        // PROSES MUTASI SHOWROOM (FREE PRODUCT)
+                        // ========================================
+                        if (!empty($mutasiItems)) {
+                        
+                            // Pastikan tidak membuat mutasi kosong
+                            $mutasiItems = array_filter($mutasiItems, function ($item) {
+                                return isset($item['qty']) && $item['qty'] > 0;
+                            });
+                        
+                            if (!empty($mutasiItems)) {
+                        
+                                $mutasi = MutasiShowroom::create([
+                                    'kode' => CodeRepo::generateMutasiShowroom(MutasiShowroom::TYPE_SYSTEM_FREE_SO),
+                                    'brand_name'        => $sales_order->brand_name ?? '-',
+                                    'type'              => MutasiShowroom::TYPE_SYSTEM_FREE_SO, // hidden / system
+                                    'warehouse_from_id' => $request->origin_warehouse_id,
+                                    'warehouse_to_id'   => $sales_order->customer_id == 51
+                                                            ? 53
+                                                            : $sales_order->customer_id,
+                                    'customer_other_address_id' => $sales_order->customer_other_address_id ?? null,
+                                    'so_id'                     => $sales_order->id,
+                                    'tanggal'           => now(),
+                                    'status'            => MutasiShowroom::STATUS['ACTIVE'],
+                                    'note'              => 'Mutasi Free Product dari SO ' . $sales_order->code,
+                                    'created_by'        => Auth::id(),
+                                ]);
+                        
+                                foreach ($mutasiItems as $item) {
+                                    MutasiShowroomDetail::create([
+                                        'penjualan_showroom_id' => $mutasi->id,
+                                        'product_packaging_id'  => $item['product_packaging_id'],
+                                        'qty'                   => $item['qty'],
+                                        'price'                 => 0,
+                                        'total_price'           => 0,
+                                        'note'                  => $item['note'] ?? null,
+                                    ]);
+                                }
+                            }
+                        }
 
                         if (count($data) == 0) {
                             DB::rollback();
@@ -1406,7 +1473,7 @@ class SalesOrderController extends Controller
                                     'customer_id' => $sales_order->customer_id,
                                     'customer_other_address_id' => $sales_order->customer_other_address_id,
                                     'grand_total_idr' => $packing_order_detail->grand_total_idr,
-                                    'type' => 0,
+                                    'type' => 1,
                                     'created_by' => Auth::id(),
                                 ]);
                             }
@@ -2028,7 +2095,7 @@ class SalesOrderController extends Controller
                 $data = [];
                 
                 $product = Product::where('master_products.brand_name', $request->id)
-                        ->where('master_products.on_order', 1)
+                        ->where('master_products.status', 1)
                         ->leftJoin('master_products_packaging', 'master_products.id', '=', 'master_products_packaging.product_id')
                         ->leftJoin('master_packaging', 'master_products_packaging.packaging_id', '=', 'master_packaging.id')
                         ->leftJoin('master_product_types', 'master_products_packaging.type_id', '=', 'master_product_types.id')

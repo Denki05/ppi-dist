@@ -194,15 +194,29 @@
         </div>
         <div class="col-md-6 text-right">
           @if($result->count_cancel == 0)
-            <a href="{{route('superuser.penjualan.delivery_order.print_label', $result->id)}}" class="btn btn-success btn-sm btn-flat" data-id="{{$result->id}}" target="_blank"><i class="fas fa-tag"></i> Label Penerima</a>
-            <a href="{{route('superuser.penjualan.delivery_order.print_label_pengirim')}}" class="btn btn-warning btn-sm btn-flat" target="_blank"><i class="fas fa-tag"></i> Label Pengirim</a>
-            <a href="{{route('superuser.penjualan.delivery_order.print', $result->id)}}" class="btn btn-info btn-sm btn-flat" data-id="{{$result->id}}" target="_blank"><i class="fa fa-file-o"></i> Print DO</a>
+              <a href="{{ route('superuser.penjualan.delivery_order.print', $result->id) }}"
+                class="btn btn-info btn-sm btn-flat"
+                target="_blank">
+                  <i class="fa fa-file-o"></i> Print DO
+              </a>
+              @if(isset($result->so) && isset($result->so->showroom_mutation))
+                  <a href="{{ route(
+                      'superuser.gudang.mutasi_showroom.print_pdf',
+                      $result->so->showroom_mutation->id
+                  ) }}"
+                    class="btn btn-secondary btn-sm btn-flat"
+                    target="_blank">
+                      <i class="fa fa-file-o"></i> Print SJ Internal
+                  </a>
+              @endif
+          @elseif($result->count_cancel == 1)
+              <a href="{{ route('superuser.penjualan.delivery_order.print', $result->id) }}"
+                class="btn btn-info btn-sm btn-flat"
+                target="_blank">
+                  <i class="fa fa-print"></i> Print DO Revisi
+              </a>
           @endif
-          @if($result->count_cancel == 1)
-            <a href="{{route('superuser.penjualan.delivery_order.print', $result->id)}}" class="btn btn-info btn-sm btn-flat" data-id="{{$result->id}}" target="_blank"><i class="fa fa-print"></i> Print DO Revisi</a>
-          @endif
-         
-        </div>
+      </div>
       </div>
       <hr >
         <div class="form-group row">

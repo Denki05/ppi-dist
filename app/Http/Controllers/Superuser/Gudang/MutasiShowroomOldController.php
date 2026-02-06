@@ -116,13 +116,6 @@ class MutasiShowroomController extends Controller
 
         $types  = MutasiShowroom::TYPE;
 
-        $customer = CustomerOtherAddress::with('store')
-            ->whereHas('store', function($query) {
-                $query->where('status', 1);
-            })
-            ->orderBy('name')
-            ->get();
-
         $data = [
             'mutasi_showrooms' => $query->paginate(10)->appends($request->all()),
             'rangeStart'       => $startDate,
@@ -130,7 +123,7 @@ class MutasiShowroomController extends Controller
             'statusSelected'   => $request->status,
             'brands'           => $brands,
             'types'           => $types,
-            'customerAddresses' => $customer,
+            'customerAddresses' => CustomerOtherAddress::orderBy('name')->get(),
         ];
 
         return view($this->view . 'partials._listPartial', $data);
@@ -241,7 +234,7 @@ class MutasiShowroomController extends Controller
     public function store(Request $request)
     {
         $request->validate([
-            'type'        => 'required|in:1,2,3,4',
+            'type'        => 'required|in:1,2,3,4,5',
             'brand_name'  => 'required|string',
             'gudang_id'   => 'required|exists:master_warehouses,id',
             'vendor_id'   => 'required|exists:master_vendors,id',
@@ -262,13 +255,12 @@ class MutasiShowroomController extends Controller
             $tanggal = Carbon::now();
 
             $mutasi = MutasiShowroom::create([
-                'kode'                      => CodeRepo::generateMutasiShowroom($request->type),
+                'kode'                      => CodeRepo::generateMutasiShowroom(),
                 'brand_name'                => $request->brand_name,
                 'type'                      => $request->type,
                 'warehouse_from_id'         => $request->gudang_id,
                 'warehouse_to_id'           => $request->vendor_id,
                 'customer_other_address_id' => $request->customer_id ?? null,
-                'so_id'                     => null,
                 'tanggal'                   => $tanggal,
                 'status'                    => MutasiShowroom::STATUS['ACTIVE'],
                 'created_by'                => auth()->id(),
@@ -307,9 +299,9 @@ class MutasiShowroomController extends Controller
 
     public function print_pdf(Request $request, $id)
     {
-        if (Auth::user()->is_superuser == 0) {
-            if (empty($this->access) || empty($this->access->user) || $this->access->can_print == 0) {
-                abort(403, 'Anda tidak punya akses');
+        if(Auth::user()->is_superuser == 0){
+            if(empty($this->access) || empty($this->access->user) || $this->access->can_print == 0){
+                return redirect()->route('superuser.index')->with('error','Anda tidak punya akses untuk membuka menu terkait');
             }
         }
 
@@ -318,12 +310,12 @@ class MutasiShowroomController extends Controller
             ->firstOrFail();
 
         // BATAS PRINT (kecuali developer)
-        if ($mutasi->print_count >= 2 && auth()->id() != 1) {
-            abort(403, 'Dokumen ini sudah dicetak maksimal 2 kali.');
-        }
+        // if ($mutasi->print_count >= 2 && auth()->id() != 1) {
+        //     abort(403, 'Dokumen ini sudah dicetak maksimal 2 kali.');
+        // }
 
         // UPDATE COUNTER PRINT
-        $mutasi->increment('print_count');
+        // $mutasi->increment('print_count');
 
         if (empty($mutasi->printed_at)) {
             $mutasi->updated_by = auth()->id();
@@ -331,14 +323,12 @@ class MutasiShowroomController extends Controller
             $mutasi->save();
         }
 
-        $pdf = PDF::loadView(
+        return PDF::loadView(
             'superuser.gudang.mutasi_showroom.print_pdf',
             compact('mutasi')
-        )->setPaper('A5', 'landscape');
-
-        return response($pdf->output(), 200)
-            ->header('Content-Type', 'application/pdf')
-            ->header('Content-Disposition', 'inline; filename="mutasi-showroom-'.$mutasi->kode.'.pdf"');
+        )
+        ->setPaper('A5', 'landscape')
+        ->stream('mutasi-showroom-' . $mutasi->kode . '.pdf');
     }
 
     public function publish(Request $request, $id)
@@ -360,12 +350,12 @@ class MutasiShowroomController extends Controller
         }
 
         // Wajib sudah print
-        // if (empty($mutasi->printed_at) && ($mutasi->print_count ?? 0) < 1) {
-        //     return response()->json([
-        //         'status'  => false,
-        //         'message' => 'Dokumen wajib diprint sebelum publish'
-        //     ], 422);
-        // }
+        if (empty($mutasi->printed_at) && ($mutasi->print_count ?? 0) < 1) {
+            return response()->json([
+                'status'  => false,
+                'message' => 'Dokumen wajib diprint sebelum publish'
+            ], 422);
+        }
 
         // Update status
         $mutasi->update([
@@ -444,7 +434,7 @@ class MutasiShowroomController extends Controller
     {
         $items = MutasiShowroomDetail::whereHas('mutasi_showroom', function ($q) use ($request) {
 
-                $q->where('status', MutasiShowroom::STATUS['PUBLISH']);
+                $q->where('status', MutasiShowroom::STATUS['SENT']);
 
                 if ($request->filled('start_date') && $request->filled('end_date')) {
                     $q->whereBetween('tanggal', [
@@ -567,7 +557,7 @@ class MutasiShowroomController extends Controller
                     ]);
 
                     MutasiShowroom::whereIn('kode', $kodeUnik)
-                        ->update(['status' => MutasiShowroom::STATUS['SETTLE']]);
+                        ->update(['status' => MutasiShowroom::STATUS['ACC']]);
                 }
 
             });
@@ -704,46 +694,6 @@ class MutasiShowroomController extends Controller
         ';
     }
 
-    // public function doneData(Request $request)
-    // {
-    //     $query = MutasiShowroom::where('status', MutasiShowroom::STATUS['SETTLE'])
-    //         ->orderBy('tanggal', 'desc');
-
-    //     if ($request->filled('start_date') && $request->filled('end_date')) {
-    //         $query->whereBetween('tanggal', [
-    //             $request->start_date,
-    //             $request->end_date
-    //         ]);
-    //     }
-
-    //     $data = $query->paginate(10);
-
-    //     $rows = [];
-    //     foreach ($data as $index => $row) {
-    //         $rows[] = [
-    //             'id'           => $row->id,
-    //             'no'           => $data->firstItem() + $index,
-    //             'kode'         => $row->kode,
-    //             'brand'        => $row->brand_name,
-    //             'tanggal'      => \Carbon\Carbon::parse($row->tanggal)->format('d M Y'),
-    //             'total_mutasi' => $row->total_mutasi,
-    //             'type'         => $row->type() ?? '-', // Pastikan field ini ada di model
-    //             'status'       => $row->status() ?? '-',
-    //             'action'       => $this->renderAction($row),
-    //         ];
-    //     }
-
-    //     return response()->json([
-    //         'data'       => $rows,
-    //         'current_page' => $data->currentPage(),
-    //         'last_page'    => $data->lastPage(),
-    //         'from'       => $data->firstItem(),
-    //         'to'         => $data->lastItem(),
-    //         'total'      => $data->total(),
-    //         // Kita tidak mengirim (string) $data->links() karena akan menggunakan manual pagination JS
-    //     ]);
-    // }
-
     public function doneData(Request $request)
     {
         $query = MutasiShowroomHistory::where('status', 1)
@@ -756,7 +706,7 @@ class MutasiShowroomController extends Controller
             ]);
         }
 
-        $data = $query->paginate(10);
+        $data = $query->paginate(5);
 
         $rows = [];
         foreach ($data as $index => $row) {
@@ -777,8 +727,6 @@ class MutasiShowroomController extends Controller
             'from' => $data->firstItem(),
             'to' => $data->lastItem(),
             'total' => $data->total(),
-            'current_page' => $data->currentPage(), // Menambah baris ini
-            'last_page' => $data->lastPage(),       // Menambah baris ini
             'pagination' => (string) $data->links()
         ]);
     }
@@ -828,7 +776,7 @@ class MutasiShowroomController extends Controller
                 'mutasiList' => $mutasiList,
                 'history'    => $history,
             ]
-        )->setPaper('a4', 'portrait');
+        )->setPaper('a5', 'landscape');
 
         return $pdf->stream(
             'Invoice-Mutasi-' . $history->tanggal . '.pdf'
@@ -869,33 +817,5 @@ class MutasiShowroomController extends Controller
             'kurs'  => $mutasi->kurs,
             'items' => $items,
         ]);
-    }
-
-    public function detail(Request $request)
-    {
-        $mutasi = MutasiShowroom::with(['details.product_packaging.product', 'details.product_packaging.packaging', 'customer_other_address'])
-            ->where('status', MutasiShowroom::STATUS['SETTLE'])
-            ->orderBy('tanggal', 'desc')
-            ->get();
-
-        $dataList = $mutasi->map(function ($m) {
-        return [
-            'id'       => $m->id,
-            'kode'     => $m->kode,
-            'tanggal'  => $m->tanggal->format('d M Y'),
-            'type'     => $m->type(),
-            'brand'    => $m->brand_name,
-            'customer' => $m->customer_other_address->name ?? '-',
-            'details'  => $m->details->map(function($d) {
-                return [
-                    'product_name'   => $d->product_packaging->product->name,
-                    'packaging_name' => $d->product_packaging->packaging->name,
-                    'qty'            => $d->qty
-                ];
-            })->toArray(), // jangan lupa ->toArray() untuk kompatibilitas JSON
-        ];
-    })->toArray();
-
-        return response()->json(['dataList' => $dataList]);
     }
 }

@@ -99,7 +99,7 @@
 }
 
 .mutasi-dialog {
-    max-width: 600px;
+    max-width: 750px;
 }
 
 .mutasi-modal-footer {
@@ -196,7 +196,7 @@
 
 /* Wrapper input agar tidak melebar */
 .range-month-wrapper {
-    width: 80px; /* pas untuk "Jan 2026" */
+    width: 90px; /* pas untuk "Jan 2026" */
 }
 
 /* Input flatpickr */
@@ -339,6 +339,49 @@
     padding: 4px 8px;
     font-size: 14px;
 }
+/* Tampilan Header Modal ala PDF */
+.viewer-info-box {
+    border-top: 2px solid #333;
+    border-bottom: 1px solid #eee;
+    padding: 10px 0;
+    margin-bottom: 15px;
+}
+
+.viewer-row {
+    display: flex;
+    justify-content: space-between;
+    font-size: 13px;
+}
+
+.viewer-group {
+    flex: 0 0 48%;
+}
+
+.viewer-item {
+    display: flex;
+    margin-bottom: 2px;
+}
+
+.viewer-label {
+    color: #777;
+    width: 80px;
+    flex-shrink: 0;
+}
+
+.viewer-value {
+    font-weight: bold;
+    color: #222;
+}
+
+.text-end-custom {
+    text-align: right;
+}
+
+.badge-type-custom {
+    color: #0d6efd;
+    font-weight: bold;
+    text-transform: uppercase;
+}
 </style>
 
 @php
@@ -390,13 +433,23 @@
             <tr class="mutasi-row"
                 data-id="{{ $row->id }}"
                 data-kode="{{ $row->kode }}"
+                data-tanggal="{{ $row->tanggal }}"
+                data-brand="{{ $row->brand_name }}"
+                data-type="{{ $row->type == 5 ? 'PROMOSI' : $row->type() }}"
+                data-customer="{{ $row->customer_other_address->name ?? '' }} {{ $row->customer_other_address->text_kota ?? '' }}"
                 style="cursor:pointer;">
                 <td>{{ $mutasi_showrooms->firstItem() + $index }}</td>
                 <td>
-                    {{ \Carbon\Carbon::parse($row->tanggal)->format('d M Y') }} - {{ $row->kode }}
+                    {{ \Carbon\Carbon::parse($row->tanggal)->format('d M Y') }} - {{ $row->kode }}{{ optional($row->so)->code ? ' / '.optional($row->so)->code : '' }}
                 </td>
                 <td>{{ $row->brand_name }}</td>
-                <td>{{ $row->type() }}</td>
+                <td>
+                    @if($row->type == 5)
+                        PROMOSI
+                    @else
+                        {{ $row->type() }}
+                    @endif
+                </td>
                 <td>
                     {{ $row->status() }}
                 </td>
@@ -544,7 +597,7 @@
               <option value="">Pilih Customer</option>
               @foreach($customerAddresses as $cust)
                 <option value="{{ $cust->id }}">
-                  {{ $cust->name }} - {{ $cust->text_kota }}
+                  {{ $cust->name }} {{ $cust->text_kota }}
                 </option>
               @endforeach
             </select>
@@ -567,7 +620,10 @@
 <script>
     /* ================= GLOBAL STATE ================= */
     window.mutasiIds = @json($mutasi_showrooms->pluck('id'));
-    let currentIndex = null;
+    if (typeof window.currentIndex === 'undefined') {
+        window.currentIndex = null;
+    }
+
     window.rangePickerInstance = null;
 
     /* ================= HELPER DATE (WAJIB GLOBAL) ================= */
@@ -726,7 +782,62 @@
 
         function updateHeader() {
             const row = $('.mutasi-row').eq(currentIndex);
-            $('#mutasiKode').text('#' + row.data('kode'));
+
+            // --- LOGIKA TANGGAL ---
+            let tanggalRaw = row.data('tanggal'); 
+            let formattedTanggal = "-";
+            if (tanggalRaw) {
+                let dateOnly = tanggalRaw.split(' ')[0]; 
+                let parts = dateOnly.split('-'); 
+                if (parts.length === 3) {
+                    formattedTanggal = parts[2] + '/' + parts[1] + '/' + parts[0]; 
+                }
+            }
+
+            // Ambil Data dari Atribut Row
+            const kode = row.data('kode') || '---';
+            const brand = row.data('brand') || '-';
+            const customer = row.data('customer') || '-';
+            const type = row.data('type') || '-';
+
+            // Set Judul Modal (Kode saja agar ringkas)
+            $('#mutasiKode').text(`#${kode}`);
+
+            // Susun HTML Header ala PDF
+            const headerHtml = `
+                <div class="viewer-info-box">
+                    <div class="viewer-row">
+                        <div class="viewer-group">
+                            <div class="viewer-item">
+                                <span class="viewer-label">Tgl / Kode</span>
+                                <span class="viewer-value">: ${formattedTanggal} — ${kode}</span>
+                            </div>
+                            <div class="viewer-item">
+                                <span class="viewer-label">Customer</span>
+                                <span class="viewer-value">: ${customer}</span>
+                            </div>
+                        </div>
+                        <div class="viewer-group text-end-custom">
+                            <div class="viewer-item justify-content-end">
+                                <span class="viewer-label">Brand</span>
+                                <span class="viewer-value">: ${brand}</span>
+                            </div>
+                            <div class="viewer-item justify-content-end">
+                                <span class="viewer-label">Type</span>
+                                <span class="viewer-value badge-type-custom">: ${type}</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+
+            // Masukkan header ke bagian atas viewerContent sebelum tabel detail
+            // Kita gunakan prepend agar muncul di paling atas
+            if ($('#viewerContent .viewer-info-box').length === 0) {
+                $('#viewerContent').prepend(headerHtml);
+            } else {
+                $('#viewerContent .viewer-info-box').replaceWith(headerHtml);
+            }
         }
 
         function updateNav() {
@@ -748,6 +859,13 @@
             const modalElem = $('#mutasiViewer');
             const modal = bootstrap.Modal.getOrCreateInstance(modalElem);
 
+            // RESET STATE BUTTON (PENTING)
+            const btn = $('#btnAction');
+            btn
+                .prop('disabled', false)
+                .removeAttr('data-id')
+                .hide(); // ⬅️ JANGAN tampilkan dulu
+
             $('.mutasi-dialog').removeClass('modal-pdf-mode');
 
             modal.show();
@@ -765,93 +883,34 @@
                     const btn    = $('#btnAction');
 
                     if (status === 'ACTIVE') {
-                        // NORMAL (BELUM CETAK)
                         btn
+                            .prop('disabled', false) // PASTIKAN AKTIF
                             .show()
-                            .text('Cetak')
-                            .removeClass('btn-success')
-                            .addClass('btn-primary')
-                            .attr('data-step', 'process')
-                            .attr('data-printed', '0')
+                            .text('Publish')
+                            .removeClass('btn-primary')
+                            .addClass('btn-success')
                             .attr('data-id', id);
-
-                        // Hapus tombol Proses jika ada sebelumnya
-                        $('#btnProses').remove();
                     } else {
                         btn.hide();
-                        $('#btnProses').remove();
                     }
                 }
             );
         }
 
-        /* ====================== BTN ACTION CETAK ====================== */
-        $('#mutasiViewer').on('click', '#btnAction', function(e){
+        /* ====================== BTN ACTION ====================== */
+        $(document).on('click', '#btnAction', function (e) {
             e.preventDefault();
-            e.stopPropagation();
-
-            const btn  = $(this);
-            const id   = btn.attr('data-id'); // pakai attr() supaya dinamis terbaca
-            const step = btn.attr('data-step');
-
-            if (!id) return false;
-
-            if (step === 'process') {
-                // STEP 1: CETAK PDF
-                $('.mutasi-dialog').addClass('modal-pdf-mode');
-
-                const pdfUrl = '{{ route("superuser.gudang.mutasi_showroom.print_pdf", ":id") }}'.replace(':id', id);
-
-                // Hide tombol cetak dulu
-                btn.hide();
-
-                // Tambahkan tombol Proses jika belum ada
-                let prosesBtn = $('#btnProses');
-                if (prosesBtn.length === 0) {
-                    prosesBtn = $('<button>', {
-                        id: 'btnProses',
-                        class: 'btn btn-success',
-                        text: 'Proses',
-                        'data-id': id
-                    }).appendTo('.mutasi-modal-footer');
-                } else {
-                    prosesBtn.attr('data-id', id); // update id
-                }
-
-                prosesBtn.hide(); // sembunyikan sampai iframe load
-
-                // Load PDF iframe
-                const iframe = $('<iframe>', {
-                    src: pdfUrl,
-                    class: 'pdf-iframe'
-                });
-
-                // Attach load event setelah iframe ada di DOM
-                iframe.on('load', function(){
-                    // PDF sudah siap → tampilkan tombol Proses
-                    prosesBtn.show();
-                });
-
-                // Append ke container
-                $('#viewerContent').html(iframe);
-
-                return false;
-            }
-        });
-
-        /* ====================== BTN ACTION PUBLISH ====================== */
-        $('#mutasiViewer').on('click', '#btnProses', function(e){
-            e.preventDefault();
-            e.stopPropagation();
 
             const btn = $(this);
-            const id  = btn.attr('data-id'); // gunakan attr() agar selalu terbaca
+            const id  = btn.attr('data-id');
 
-            if (!id) return false;
+            console.log('CLICK PUBLISH', id); // DEBUG
+
+            if (!id) return;
 
             Swal.fire({
                 title: 'Publish Mutasi?',
-                text: 'Pastikan dokumen sudah dicetak dan diperiksa.',
+                text: 'Data akan dikunci dan diteruskan ke proses logistik.',
                 icon: 'warning',
                 showCancelButton: true,
                 confirmButtonText: 'Ya, Publish',
@@ -867,28 +926,30 @@
                     data: {_token: '{{ csrf_token() }}'},
                     success(res) {
                         Swal.fire('Sukses', res.message, 'success').then(() => {
-                            // sembunyikan tombol
-                            btn.hide();
-                            $('#btnAction').hide();
-
-                            // tutup modal Bootstrap
-                            const modalElem = $('#mutasiViewer');
-                            const modal = bootstrap.Modal.getInstance(modalElem);
-                            if(modal) modal.hide();
-
-                            // reload list
+                            bootstrap.Modal.getInstance($('#mutasiViewer'))?.hide();
                             reloadPartialList();
                         });
                     },
                     error(xhr) {
                         btn.prop('disabled', false);
-                        let msg = xhr.responseJSON?.message ?? 'Terjadi kesalahan';
-                        Swal.fire('Gagal', msg, 'error');
+                        Swal.fire(
+                            'Gagal',
+                            xhr.responseJSON?.message ?? 'Terjadi kesalahan',
+                            'error'
+                        );
                     }
                 });
             });
         });
-        
+
+
+        $('#mutasiViewer').on('hidden.bs.modal', function () {
+            $('#btnAction')
+                .prop('disabled', false)
+                .removeAttr('data-id')
+                .hide();
+        });
+
         /* ================= NAV VIEWER ================= */
         $(document).on('click', '#prevMutasi', function () {
             if (currentIndex > 0) {
@@ -979,7 +1040,7 @@
                     $('input[name="type"]').val(createContext.type);
                     $('input[name="brand_name"]').val(createContext.brand);
                     $('input[name="gudang_id"]').val(2);
-                    $('input[name="vendor_id"]').val(53);
+                    $('input[name="vendor_id"]').val(51);
 
                     if (createContext.customer_id) {
                         $('input[name="customer_id"]').val(createContext.customer_id);
