@@ -12,6 +12,7 @@ class MutasiOutDetail extends Model
         'mutasi_out_id',
         'product_packaging_id',
         'quantity',
+        'is_checked',
         'note'
     ];
 

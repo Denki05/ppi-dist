@@ -16,6 +16,8 @@ class MutasiOut extends Model
         'warehouse_to',
         'note',
         'status',
+        'status_checked',
+        'status_barang',
         'created_by',
         'acc_by',
         'acc_date'
@@ -26,6 +28,18 @@ class MutasiOut extends Model
         'ACTIVE'  => 1,
         'PUBLISH' => 2,
         'ACC'     => 3
+    ];
+
+    const STATUS_CHECKED = [
+        'PENDING' => 0,
+        'CHECKED'   => 1,
+        'CANCELED'   => 2,
+    ];
+
+    const STATUS_BARANG = [
+        'PENDING' => 0,
+        'BELUM_DIAMBIL'   => 1,
+        'DIAMBIL'   => 2,
     ];
 
     public function mutasiOutDetails()
@@ -57,5 +71,15 @@ class MutasiOut extends Model
             default:
                 return '<span class="badge bg-secondary">Unknown</span>';
         }
+    }
+
+    public function statusChecked()
+    {
+        return array_search($this->status_checked, self::STATUS_CHECKED);
+    }
+
+    public function statusBarang()
+    {
+        return array_search($this->status_barang, self::STATUS_BARANG);
     }
 }
