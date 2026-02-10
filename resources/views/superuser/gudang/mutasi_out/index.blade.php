@@ -519,12 +519,14 @@ $(function(){
                 <div class="swal-inline-form">
                     <div class="swal-row">
                         <label>Gudang Asal</label>
-                        <select id="warehouse_from">
-                            <option value=""></option>
-                            @foreach($warehouses as $w)
-                                <option value="{{ $w->id }}">{{ $w->name }}</option>
-                            @endforeach
+                        <select id="warehouse_from" disabled>
+                            <option value="{{ $warehouse_araya->id }}" selected>
+                                {{ $warehouse_araya->name }}
+                            </option>
                         </select>
+
+                        <input type="hidden" name="warehouse_from"
+                            value="{{ $warehouse_araya->id }}">
                     </div>
                     <div class="swal-row">
                         <label>Gudang Tujuan</label>

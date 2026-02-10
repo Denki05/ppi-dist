@@ -37,7 +37,8 @@
                     <tr>
                         <th width="40">No</th>
                         <th>Produk</th>
-                        <th width="80">Qty</th>
+                        <th>Kemasan</th>
+                        <th width="80">Qty (KG)</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -45,6 +46,7 @@
                         <tr>
                             <td>{{ $i + 1 }}</td>
                             <td>{{ $item->product_pack->code ?? '-' }} - {{ $item->product_pack->name ?? '-' }}</td>
+                            <td>{{ $item->product_pack->packaging->pack_name ?? '-' }}</td>
                             <td>{{ $item->quantity }}</td>
                         </tr>
                     @endforeach

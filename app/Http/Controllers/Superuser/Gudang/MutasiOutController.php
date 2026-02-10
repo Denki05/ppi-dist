@@ -104,6 +104,8 @@ class MutasiOutController extends Controller
             ->orderBy('date', 'desc')
             ->paginate(10, ['*'], 'page_selesai', request('page_selesai'));
 
+        $data['warehouse_araya'] = Warehouse::where('name', 'Gudang Araya')->first();
+
         return view($this->view . "index", $data);
     }
 
