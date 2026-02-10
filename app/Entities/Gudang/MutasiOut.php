@@ -11,10 +11,9 @@ class MutasiOut extends Model
 
     protected $fillable = [
         'code',
+        'date',
         'warehouse_from',
         'warehouse_to',
-        'type',
-        'spk_id',
         'note',
         'status',
         'created_by',
@@ -24,13 +23,9 @@ class MutasiOut extends Model
 
     const STATUS = [
         'DELETED' => 0,
-        'ACTIVE' => 1,
-        'ACC' => 2
-    ];
-
-    const TYPE = [
-        'REGULAR' => 0,
-        'INDUSTRI' => 1
+        'ACTIVE'  => 1,
+        'PUBLISH' => 2,
+        'ACC'     => 3
     ];
 
     public function mutasiOutDetails()
@@ -38,28 +33,29 @@ class MutasiOut extends Model
         return $this->hasMany('App\Entities\Gudang\MutasiOutDetail', 'mutasi_out_id', 'id');
     }
 
-    public function status()
-    {
-        return array_search($this->status, self::STATUS);
-    }
-
-    public function type()
-    {
-        return array_search($this->type, self::TYPE);
-    }
-
     public function warehouse_from_attribute()
     {
-        return $this->BelongsTo('App\Entities\Master\Warehouse', 'warehouse_from', 'id');
+        return $this->belongsTo('App\Entities\Master\Warehouse', 'warehouse_from', 'id');
     }
 
     public function warehouse_to_attribute()
     {
-        return $this->BelongsTo('App\Entities\Master\Warehouse', 'warehouse_to', 'id');
+        return $this->belongsTo('App\Entities\Master\Warehouse', 'warehouse_to', 'id');
     }
 
-    public function spk()
+    public function statusLabel()
     {
-        return $this->BelongsTo('App\Entities\Gudang\PurchaseOrder', 'spk_id', 'id');
+        switch ($this->status) {
+            case self::STATUS['DELETED']:
+                return '<span class="badge bg-warning">Draft</span>';
+            case self::STATUS['ACTIVE']:
+                return '<span class="badge bg-info">Aktif</span>';
+            case self::STATUS['PUBLISH']:
+                return '<span class="badge bg-primary">Publish</span>';
+            case self::STATUS['ACC']:
+                return '<span class="badge bg-success">ACC</span>';
+            default:
+                return '<span class="badge bg-secondary">Unknown</span>';
+        }
     }
 }

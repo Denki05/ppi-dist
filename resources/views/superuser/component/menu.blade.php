@@ -205,7 +205,7 @@
                         <li><a class="dropdown-item" href="{{ route('superuser.gudang.receiving.index') }}"><i class="fa-solid fa-receipt"></i> Receiving</a></li>
                         <li><a class="dropdown-item" href="{{ route('superuser.gudang.quality_control.index') }}"><i class="fa-solid fa-receipt"></i> Receiving - Transaksi</a></li>
                         <li><a class="dropdown-item" href="{{ route('superuser.gudang.quality_control_2.index') }}"><i class="fa-solid fa-receipt"></i> Receiving - Komplain</a></li>
-                        <li><a class="dropdown-item" href="{{ route('superuser.gudang.mutasi_out.index') }}"><i class="fa-solid fa-warehouse"></i> Mutasi Out</a></li>
+                        <li><a class="dropdown-item" href="{{ route('superuser.gudang.mutasi_out.index') }}"><i class="fa-solid fa-warehouse"></i> Mutasi Gudang Utama</a></li>
                         @endif
                         <li><a class="dropdown-item" href="{{ route('superuser.gudang.mutasi_showroom.index') }}"><i class="fa-solid fa-warehouse"></i> Mutasi Showroom</a></li>
                         <li><a class="dropdown-item" href="{{ route('superuser.gudang.stock.index') }}"><i class="fa-solid fa-cubes"></i> Stock</a></li>

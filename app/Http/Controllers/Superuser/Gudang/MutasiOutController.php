@@ -12,6 +12,8 @@ use App\Entities\Master\ProductPack;
 use App\Entities\Gudang\StockMove;
 use App\Entities\Master\ProductMinStock;
 use App\Entities\Master\Warehouse;
+use Yajra\DataTables\Facades\DataTables;
+use App\Repositories\CodeRepo;
 use Validator;
 use Carbon\Carbon;
 use Auth;
@@ -69,256 +71,181 @@ class MutasiOutController extends Controller
 
     public function index(Request $request)
     {
-        if(Auth::user()->is_superuser == 0){
-            if(empty($this->access) || empty($this->access->user) || $this->access->can_read == 0){
-                return redirect()->route('superuser.index')->with('error','Anda tidak punya akses untuk membuka menu terkait');
+        // 1. Cek Akses
+        if (Auth::user()->is_superuser == 0) {
+            if (empty($this->access) || empty($this->access->user) || $this->access->can_read == 0) {
+                return redirect()->route('superuser.index')->with('error', 'Anda tidak punya akses.');
             }
         }
 
-        $data['mutasi_out'] = MutasiOut::get();
+        // 2. Data untuk Dropdown (Modal Create)
+        $data['warehouses'] = Warehouse::where('status', Warehouse::STATUS['ACTIVE'])
+            ->forStockMutation()
+            ->get();
 
-        return view($this->view."index", $data);
+        $data['brands'] = DB::table('master_products')
+            ->select('brand_name')
+            ->distinct()
+            ->orderBy('brand_name', 'asc')
+            ->get();
+
+        // TAB AKTIF
+        $data['mutasiAktif'] = MutasiOut::where('status', 1)
+            ->orderBy('date', 'desc')
+            ->paginate(10, ['*'], 'page_aktif', request('page_aktif'));
+
+        // TAB PROSES LOG
+        $data['mutasiProses'] = MutasiOut::where('status', 2)
+            ->orderBy('date', 'desc')
+            ->paginate(10, ['*'], 'page_proses', request('page_proses'));
+
+        // TAB SELESAI
+        $data['mutasiSelesai'] = MutasiOut::where('status', 3)
+            ->orderBy('date', 'desc')
+            ->paginate(10, ['*'], 'page_selesai', request('page_selesai'));
+
+        return view($this->view . "index", $data);
+    }
+
+    public function refreshCounts()
+    {
+        $aktif = MutasiOut::where('status', 1)
+            ->count();
+
+        $proses = MutasiOut::where('status', 2)
+            ->count();
+
+        $selesai = MutasiOut::where('status', 3)
+            ->count();
+
+        return response()->json([
+            'aktif'   => $aktif,
+            'proses'  => $proses,
+            'selesai' => $selesai,
+        ]);
+    }
+
+    public function detail($id)
+    {
+        $data['mutasi'] = MutasiOut::findOrFail($id);
+
+        // Bisa sesuaikan view dengan tampilan Frame B
+        return view('superuser.gudang.mutasi_out.partials._detail_popup', $data);
     }
 
     public function create(Request $request)
     {
-        if(Auth::user()->is_superuser == 0){
-            if(empty($this->access) || empty($this->access->user) || $this->access->can_create == 0){
-                return redirect()->route('superuser.index')->with('error','Anda tidak punya akses untuk membuka menu terkait');
+        if (Auth::user()->is_superuser == 0) {
+            if (empty($this->access) || $this->access->can_create == 0) {
+                return redirect()
+                    ->route('superuser.gudang.mutasi_out.index')
+                    ->with('error', 'Anda tidak punya akses membuat mutasi');
             }
         }
 
-        $data['warehouse_to'] = Warehouse::pluck('name', 'id');
-        $data['warehouse_from'] = Warehouse::pluck('name', 'id');
-        $data['brand'] = DB::table('master_brand_lokal')->get();
+        $data['warehouses'] = Warehouse::where('status', 1)->get();
 
-        return view($this->view."create", $data);
+        $data['brands'] = DB::table('master_products')
+            ->select('brand_name')
+            ->distinct()
+            ->orderBy('brand_name', 'asc')
+            ->get();
+
+        // =========================
+        // DATA HEADER DARI POPUP
+        // =========================
+        $data['warehouseFrom'] = Warehouse::find($request->warehouse_from);
+        $data['warehouseTo']   = Warehouse::find($request->warehouse_to);
+        $data['brandSelected'] = $request->brand_name;
+        $data['note']          = $request->note;
+
+        return view('superuser.gudang.mutasi_out.create', $data);
     }
 
     public function store(Request $request)
     {
-        if ($request->ajax()) {
-            $validator = Validator::make($request->all(), [
-                'warehouse_from' => 'required|integer',
-                'warehouse_to'   => 'required|integer|different:warehouse_from',
-            ]);
-
-            if ($validator->fails()) {
-                return $this->response(400, [
-                    'notification' => [
-                        'alert'   => 'block',
-                        'type'    => 'alert-danger',
-                        'header'  => 'Error',
-                        'content' => $validator->errors()->all(),
-                    ]
-                ]);
-            }
-
-            DB::beginTransaction();
-            try {
-                $mutation_out = new MutasiOut;
-
-                // ✅ Generate kode otomatis sesuai warehouse_to
-                $mutation_out->code = $request->code;
-
-                $mutation_out->warehouse_from = $request->warehouse_from;
-                $mutation_out->warehouse_to   = $request->warehouse_to;
-                $mutation_out->spk_id         = $request->spk_code ?? null;
-                $mutation_out->created_by     = Auth::id();
-                $mutation_out->status         = MutasiOut::STATUS['ACTIVE'];
-                $mutation_out->save();
-
-                if ($request->sku) {
-                    foreach ($request->sku as $key => $value) {
-                        if ($value) {
-                            $mutation_detail = new MutasiOutDetail;
-                            $mutation_detail->mutasi_out_id       = $mutation_out->id;
-                            $mutation_detail->product_packaging_id = $value;
-                            $mutation_detail->quantity            = $request->qty[$key];
-                            $mutation_detail->note                = $request->description[$key];
-                            $mutation_detail->save();
-                        }
-                    }
-                }
-
-                DB::commit();
-
-                return $this->response(200, [
-                    'notification' => [
-                        'alert'   => 'notify',
-                        'type'    => 'success',
-                        'content' => 'Success',
-                    ],
-                    'redirect_to' => route('superuser.gudang.mutasi_out.index')
-                ]);
-
-            } catch (\Exception $e) {
-                dd($e);
-                DB::rollback();
-                return $this->response(400, [
-                    'notification' => [
-                        'alert'   => 'block',
-                        'type'    => 'alert-danger',
-                        'header'  => 'Error',
-                        'content' => "Internal Server Error!",
-                    ]
-                ]);
-            }
-        }
-    }
-
-    public function show($id)
-    {
-        if(Auth::user()->is_superuser == 0){
-            if(empty($this->access) || empty($this->access->user) || $this->access->can_read == 0){
-                return redirect()->route('superuser.index')->with('error','Anda tidak punya akses untuk membuka menu terkait');
-            }
-        }
-
-         $data['mutasi_out'] = MutasiOut::findOrFail($id);
-
-        return view($this->view."show", $data);
-    }
-
-    public function acc(Request $request, $id)
-    {
-        if(Auth::user()->is_superuser == 0){
-            if(empty($this->access) || empty($this->access->user) || $this->access->can_approve == 0){
-                return redirect()->route('superuser.index')->with('error','Anda tidak punya akses untuk membuka menu terkait');
-            }
-        }
-
-        $mutation_out = MutasiOut::findOrFail($id);
-
-        if ($mutation_out === null) {
-            abort(404);
-        }
+        $request->validate([
+            'warehouse_from' => 'required',
+            'warehouse_to'   => 'required|different:warehouse_from',
+            'items'          => 'required|array|min:1',
+            'items.*.product_id' => 'required',
+            'items.*.qty'        => 'required|numeric|min:0.1',
+        ]);
 
         DB::beginTransaction();
         try {
-            $failed = '';
-            $get_stok = 0;
 
-            foreach ($mutation_out->mutasiOutDetails as $item) {
-                $base_product_packaging_id = preg_replace('/_\d+$/', '', $item->product_packaging_id);
-                $stock = ProductMinStock::where('warehouse_id', $mutation_out->warehouse_from)
-                                    ->where('product_packaging_id', $base_product_packaging_id) // Base ID
-                                    ->first();
+            $mutation = MutasiOut::create([
+                'code'              => CodeRepo::generateMutasiGudangutamaCode(),
+                'date'              => Carbon::now(),
+                'warehouse_from'    => $request->warehouse_from,
+                'warehouse_to'      => $request->warehouse_to,
+                'note'              => $request->note,
+                'status'            => MutasiOut::STATUS['ACTIVE'], // ⬅️ default ACTIVE
+                'created_by'        => Auth::id(),
+            ]);
 
-                if ($stock) {
-                    $get_stock = $stock->quantity;
-
-                    if ($get_stock <= $item->quantity) {
-                        $failed = 'Stock ' . $item->productPackaging->code . ' - '. $item->productPackaging->name . ' tidak mencukupi. ';
-                        break;
-                    }
-
-                    // Kurangi stok
-                    $stock->quantity = $get_stock - $item->quantity;
-                    $stock->save();
-
-                    // Hitung pergerakan stok
-                    $move = StockMove::where('product_packaging_id', $base_product_packaging_id) // Base ID
-                                    ->where('warehouse_id', $mutation_out->warehouse_from)
-                                    ->get();
-
-                    $move_in = $move->sum('stock_in');
-                    $move_out = $move->sum('stock_out');
-
-                    // Sisa stok setelah transaksi
-                    $sisa = $get_stock + $move_in - $move_out - $item->quantity;
-
-                    // Out Move (wajib dibuat)
-                    StockMove::create([
-                        'code_transaction'     => $mutation_out->code,
-                        'warehouse_id'         => $mutation_out->warehouse_from,
-                        'product_packaging_id' => $base_product_packaging_id,
-                        'stock_out'            => $item->quantity,
-                        'stock_balance'        => $sisa,
-                        'created_by'           => Auth::id(),
-                    ]);
-
-                    // In Move (hanya jika warehouse_to bukan 5 atau 6)
-                    if (!in_array($mutation_out->warehouse_to, [5, 6])) {
-                        StockMove::create([
-                            'warehouse_id'         => $mutation_out->warehouse_to,
-                            'product_packaging_id' => $base_product_packaging_id,
-                            'code_transaction'     => $mutation_out->code,
-                            'stock_in'             => $item->quantity,
-                            'stock_out'            => 0,
-                            'stock_balance'        => $stock->quantity,
-                            'created_by'           => Auth::id(),
-                        ]);
-                    }
-                }
+            foreach ($request->items as $item) {
+                MutasiOutDetail::create([
+                    'mutasi_out_id'             => $mutation->id,
+                    'product_packaging_id'  => $item['product_id'],
+                    'quantity'              => $item['qty'],
+                ]);
             }
-
-            $mutation_out->status = MutasiOut::STATUS['ACC'];
-            $mutation_out->acc_by = Auth::id();
-            $mutation_out->acc_date = Carbon::now()->toDateTimeString();
-            $mutation_out->save();
 
             DB::commit();
 
-            $response['notification'] = [
-                'alert'   => 'notify',
-                'type'    => 'success',
-                'content' => 'Success',
-            ];
+            return redirect()
+                ->route('superuser.gudang.mutasi_out.index')
+                ->with('success', 'Mutasi berhasil dibuat');
 
-            $response['redirect_to'] = route('superuser.gudang.mutasi_out.index');
-
-            return $this->response(200, $response);
         } catch (\Exception $e) {
-            DB::rollback();
+            dd($e);
+            DB::rollBack();
 
-            $response['notification'] = [
-                'alert'   => 'block',
-                'type'    => 'alert-danger',
-                'header'  => 'Error',
-                'content' => "Internal Server Error!",
-            ];
-
-            return $this->response(400, $response);
+            return back()
+                ->withInput()
+                ->with('error', $e->getMessage());
         }
     }
 
-    public function searchSpk(Request $request)
+    public function publish($id)
     {
-        // Validate the input data
-        $validatedData = $request->validate([
-            'q' => 'nullable|string|max:255',
-        ]);
+        $mutasi = MutasiOut::findOrFail($id);
 
-        try {
-            
-            $spk = PurchaseOrder::from('purchase_order as po')
-                ->leftJoin('purchase_order_detail as pod', 'po.id', '=', 'pod.po_id')
-                ->where('po.type', PurchaseOrder::TYPE['SPK'])
-                ->where('po.status', PurchaseOrder::STATUS['SENT'])
-                ->when(!empty($validatedData['q']), function ($query) use ($validatedData) {
-                    $query->where('po.code', 'LIKE', '%' . $validatedData['q'] . '%');
-                })
-                ->select(
-                    'po.id',
-                    'po.code as po_code',
-                    'pod.note_repack'
-                )
-                ->get();
-
-                $results = $spk->map(function ($row) {
-                    return [
-                        'id' => $row->id,
-                        'text' => trim("{$row->po_code} - {$row->note_repack}"),
-                    ];
-                });
-            return response()->json(['results' => $results], 200);
-        } catch (\Exception $e) {
-            // Catch unexpected errors and respond with a 500 error code
+        if ($mutasi->status != MutasiOut::STATUS['ACTIVE']) {
             return response()->json([
-                'message' => 'An error occurred while fetching the data.',
-                'error' => $e->getMessage()
-            ], 500);
+                'status'  => 'error',
+                'message' => 'Data tidak dapat dipublish karena status bukan Aktif'
+            ], 400);
         }
+
+        $mutasi->status = MutasiOut::STATUS['PUBLISH'];
+        $mutasi->save();
+
+        return response()->json([
+            'status'  => 'success',
+            'message' => 'Mutasi berhasil dipublish'
+        ]);
     }
+
+    public function reloadTab($tab)
+    {
+        switch($tab){
+            case 'aktif':
+                $mutasi = MutasiOut::where('status', MutasiOut::STATUS['ACTIVE'])->paginate(10);
+                break;
+            case 'proses':
+                $mutasi = MutasiOut::where('status', MutasiOut::STATUS['PROCESS'])->paginate(10);
+                break;
+            case 'selesai':
+                $mutasi = MutasiOut::where('status', MutasiOut::STATUS['FINISH'])->paginate(10);
+                break;
+            default:
+                abort(404);
+        }
+
+        return view('superuser.gudang.mutasi_out._table_tab', compact('mutasi', 'tab'));
+    }
+
 }

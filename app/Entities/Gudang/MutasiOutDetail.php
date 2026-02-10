@@ -20,8 +20,8 @@ class MutasiOutDetail extends Model
         return $this->belongsTo('App\Entities\Gudang\MutasiOut', 'mutasi_out_id');
     }
 
-    public function productPackaging()
+    public function product_pack()
     {
-        return $this->belongsTo('App\Entities\Master\ProductPack', 'product_packaging_id');
+        return $this->belongsTo('App\Entities\Master\ProductPack', 'product_packaging_id', 'id');
     }
 }

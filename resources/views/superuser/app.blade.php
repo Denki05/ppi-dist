@@ -46,6 +46,7 @@
     @include('superuser.asset.js')
     @stack('scripts')
     <script src="{{ asset('utility/superuser/js/common.js') }}"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     @include('superuser.asset.prevent_direct_access')
   </body>
 </html>

@@ -156,10 +156,14 @@ Route::group([
     });
     Route::resource('quality_control', 'QualityControlController');
 
-    Route::group(['as' => 'mutasi_out.', 'prefix' => '/mutasi_out'], function (){
+    Route::group(['as' => 'mutasi_out.', 'prefix' => '/mutasi_out'], function () {
+        Route::get('/data', 'MutasiOutController@data')->name('data');
         Route::get('/search_sku', 'MutasiOutController@search_sku')->name('search_sku');
         Route::post('{id}/acc', 'MutasiOutController@acc')->name('acc');
-        Route::get('/searchSpk', 'MutasiOutController@searchSpk')->name('searchSpk');
+        Route::post('/{id}/publish', 'MutasiOutController@publish')->name('publish');
+        Route::get('/refreshCounts', 'MutasiOutController@refreshCounts')->name('refreshCounts');
+        Route::get('/{id}/detail', 'MutasiOutController@detail')->name('detail');
+        Route::get('/mutasi_out/reload/{tab}', 'MutasiOutController@reloadTab')->name('mutasi_out.reloadTab');
     });
     Route::resource('mutasi_out', 'MutasiOutController');
 
