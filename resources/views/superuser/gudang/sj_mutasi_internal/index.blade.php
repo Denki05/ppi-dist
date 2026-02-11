@@ -128,15 +128,19 @@
                         <!-- <div class="frame-title mb-2">
                             Pilih Jenis Mutasi
                         </div> -->
-
-                        <button class="btn btn-outline-primary w-100 mb-2 text-left" id="btnMutasiShowroom">
+                        <button 
+                            class="btn btn-primary w-100 mb-2 text-left mutasi-type-btn active"
+                            data-type="showroom"
+                            id="btnMutasiShowroom">
                             Mutasi Showroom
                         </button>
-
-                        <button class="btn btn-outline-primary w-100 text-left" id="btnMutasiGudang">
+                        
+                        <button 
+                            class="btn btn-outline-primary w-100 text-left mutasi-type-btn"
+                            data-type="gudang"
+                            id="btnMutasiGudang">
                             Mutasi Gudang Utama
                         </button>
-
                     </div>
                 </div>
             </div>
@@ -169,21 +173,45 @@
 let CURRENT_MUTASI_TYPE = null;   // showroom | gudang
 let CURRENT_TAB = 'aktif';        // aktif | belum | selesai
 
+$(document).ready(function () {
+
+    const activeBtn = $('.mutasi-type-btn.active').data('type');
+
+    if (activeBtn) {
+        CURRENT_MUTASI_TYPE = activeBtn;
+        loadMutasiTable(activeBtn); // 🔥 penting supaya langsung load
+    }
+});
+
+
 /* =========================================================
    LOAD MUTASI (SHOWROOM / GUDANG)
 ========================================================= */
-$('#btnMutasiShowroom').on('click', function () {
-    CURRENT_MUTASI_TYPE = 'showroom';
-    loadMutasiTable('showroom');
+$(document).on('click', '.mutasi-type-btn', function () {
+
+    // pindahkan active button
+    $('.mutasi-type-btn')
+        .removeClass('btn-primary active')
+        .addClass('btn-outline-primary');
+
+    $(this)
+        .removeClass('btn-outline-primary')
+        .addClass('btn-primary active');
+
+    // ambil type dari data-type
+    const type = $(this).data('type');
+
+    CURRENT_MUTASI_TYPE = type;
+
+    // reset tab default
+    CURRENT_TAB = 'aktif';
+
+    loadMutasiTable(type);
 });
 
-$('#btnMutasiGudang').on('click', function () {
-    CURRENT_MUTASI_TYPE = 'gudang';
-    loadMutasiTable('gudang');
-});
 
 function loadMutasiTable(type) {
-    resetFrameB(); // 🔧 hanya reset detail
+    resetFrameB(); // ðŸ”§ hanya reset detail
 
     $('#frameBContent').html(`
         <div class="text-center py-5">
@@ -210,13 +238,13 @@ $(document).on('click', '.tab-btn', function (e) {
     $('.tab-btn').removeClass('active');
     $(this).addClass('active');
 
-    CURRENT_TAB = $(this).data('tab'); // 🔥 SIMPAN TAB AKTIF
+    CURRENT_TAB = $(this).data('tab'); // ðŸ”¥ SIMPAN TAB AKTIF
 
     const tab = $(this).data('tab');
     $('.mutasi-tab-content').addClass('d-none');
     $('#tab-' + tab).removeClass('d-none');
 
-    resetFrameB(); // 🔧 TIDAK MERUSAK TAB
+    resetFrameB(); // ðŸ”§ TIDAK MERUSAK TAB
 });
 
 /* =========================================================
@@ -238,7 +266,7 @@ $(document).on('click', '.mutasi-table tbody tr', function () {
     $.get(
         "{{ route('superuser.gudang.sj_mutasi_internal.show', ':id') }}"
             .replace(':id', id),
-        { type: CURRENT_MUTASI_TYPE }, // 🔥 kirim type
+        { type: CURRENT_MUTASI_TYPE }, // ðŸ”¥ kirim type
         function (html) {
             $('#frameBContent').addClass('d-none');
             $('#frameBDetail').removeClass('d-none');
@@ -326,7 +354,7 @@ $(document).on('click', '#cancelStep1', function(){
                 {
                     _token: '{{ csrf_token() }}',
                     mutasi_id: $('input[name=mutasi_id]').val(),
-                    type: CURRENT_MUTASI_TYPE // 🔥 tambahkan type
+                    type: CURRENT_MUTASI_TYPE // ðŸ”¥ tambahkan type
                 },
                 function(res){
                     if(res.success){
@@ -356,7 +384,7 @@ $(document).on('click', '#cancelStep2', function () {
                 {
                     _token: '{{ csrf_token() }}',
                     mutasi_id: $('input[name=mutasi_id]').val(),
-                    type: CURRENT_MUTASI_TYPE // 🔥 wajib dikirim
+                    type: CURRENT_MUTASI_TYPE // ðŸ”¥ wajib dikirim
                 },
                 function () {
                     $('.mutasi-table tr.active').trigger('click');
@@ -411,7 +439,7 @@ $(document).on('click', '#nextStep2', function () {
             {
                 _token: '{{ csrf_token() }}',
                 mutasi_id: $('input[name=mutasi_id]').val(),
-                type: CURRENT_MUTASI_TYPE // 🔥 kirim type
+                type: CURRENT_MUTASI_TYPE // ðŸ”¥ kirim type
             }
         ).done(function (res) {
             if (res.success) {
@@ -433,6 +461,7 @@ $(document).on('click', '#nextStep2', function () {
    STEP 3 - SAVE
 ========================================================= */
 $(document).on('click', '#saveStep3', function () {
+
     let status = $('#status_barang').val();
 
     if (!status) {
@@ -465,36 +494,58 @@ $(document).on('click', '#saveStep3', function () {
             _token: '{{ csrf_token() }}',
             mutasi_id: $('input[name=mutasi_id]').val(),
             status_barang: status,
-            type: CURRENT_MUTASI_TYPE // 🔥 kirim type
-        }, function (res) {
+            type: CURRENT_MUTASI_TYPE
+        })
+        .done(function (res) {
 
             Swal.close();
 
-            if(res.success && res.to_selesai){
-                Swal.fire({
-                    icon: 'success',
-                    title: 'Berhasil',
-                    text: 'Mutasi telah selesai diproses.'
-                });
+            if(!res.success) return;
 
-                refreshMutasiTabs();
+            Swal.fire({
+                icon: 'success',
+                title: 'Berhasil',
+                text: 'Status mutasi berhasil diperbarui.'
+            });
 
-                // 🔥 reload tab asal
-                hotReloadTab(CURRENT_TAB);
+            refreshMutasiTabs();
 
-                // 🔥 reload tab tujuan
-                if (res.to_tab && res.to_tab !== CURRENT_TAB) {
-                    hotReloadTab(res.to_tab);
-                }
+            if (res.to_selesai) {
+
+                // PINDAH KE TAB SELESAI
+                hotReloadTab('selesai');
 
                 $('.tab-btn').removeClass('active');
                 $('.tab-btn[data-tab="selesai"]').addClass('active');
+
                 $('.mutasi-tab-content').addClass('d-none');
                 $('#tab-selesai').removeClass('d-none');
 
                 resetFrameB();
+
+            } else {
+
+                // TETAP DI TAB SAAT INI (BELUM DIAMBIL)
+                hotReloadTab(CURRENT_TAB);
+                resetFrameB();
             }
+        })
+        .fail(function(xhr){
+
+            Swal.close();
+
+            let message = 'Terjadi kesalahan sistem.';
+            if(xhr.responseJSON && xhr.responseJSON.message){
+                message = xhr.responseJSON.message;
+            }
+
+            Swal.fire({
+                icon: 'error',
+                title: 'Gagal',
+                text: message
+            });
         });
+
     });
 });
 
@@ -512,7 +563,7 @@ function resetFrameB() {
         </div>
     `);
 
-    $('#frameBContent').removeClass('d-none'); // 🔥 BALIK KE LIST
+    $('#frameBContent').removeClass('d-none'); // ðŸ”¥ BALIK KE LIST
 }
 
 /* =========================================================

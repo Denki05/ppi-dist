@@ -95,19 +95,41 @@ class SjMutasiInternalController extends Controller
         abort(404);
     }
     
-    public function refreshTabs()
+    public function refreshTabs(Request $request)
     {
-        $aktif = MutasiShowroom::where('status', 2)
-            ->where('status_barang', 0)
-            ->count();
+        $type = $request->type ?? 'showroom';
     
-        $belum = MutasiShowroom::where('status', 2)
-            ->where('status_barang', 1)
-            ->count();
+        if ($type === 'gudang') {
     
-        $selesai = MutasiShowroom::where('status', 2)
-            ->where('status_barang', 2)
-            ->count();
+            $aktif = MutasiOut::where('status', MutasiOut::STATUS['PUBLISH'])
+                ->where('status_barang', 0)
+                ->count();
+    
+            $belum = MutasiOut::whereIn('status', [
+                    MutasiOut::STATUS['PUBLISH'],
+                    MutasiOut::STATUS['ACC']
+                ])
+                ->where('status_barang', 1)
+                ->count();
+    
+            $selesai = MutasiOut::where('status', MutasiOut::STATUS['ACC'])
+                ->where('status_barang', 2)
+                ->count();
+    
+        } else {
+    
+            $aktif = MutasiShowroom::where('status', 2)
+                ->where('status_barang', 0)
+                ->count();
+    
+            $belum = MutasiShowroom::where('status', 2)
+                ->where('status_barang', 1)
+                ->count();
+    
+            $selesai = MutasiShowroom::where('status', 2)
+                ->where('status_barang', 2)
+                ->count();
+        }
     
         return response()->json([
             'aktif'   => $aktif,
@@ -118,17 +140,27 @@ class SjMutasiInternalController extends Controller
 
     public function show(Request $request, $id)
     {
-        $type = $request->type ?? 'showroom';
-
-        if ($type == 'showroom') {
-            $mutasi = MutasiShowroom::with('details.product_packaging')->findOrFail($id);
+        $type = $request->type;
+    
+        // Jika type tidak dikirim, deteksi dari database
+        if (!$type) {
+            if (MutasiOut::where('id', $id)->exists()) {
+                $type = 'gudang';
+            } else {
+                $type = 'showroom';
+            }
+        }
+    
+        if ($type === 'showroom') {
+            $mutasi = MutasiShowroom::with('details.product_packaging')
+                ->findOrFail($id);
         } else {
-            $mutasi = MutasiOut::with('mutasiOutDetails.product_pack')->findOrFail($id);
-            
-            // Supaya Blade tetap pakai ->details
+            $mutasi = MutasiOut::with('mutasiOutDetails.product_pack')
+                ->findOrFail($id);
+    
             $mutasi->details = $mutasi->mutasiOutDetails;
         }
-
+    
         return view(
             'superuser.gudang.sj_mutasi_internal.partials._detailWrapper',
             compact('mutasi', 'type')

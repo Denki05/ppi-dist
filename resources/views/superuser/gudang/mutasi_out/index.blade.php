@@ -89,10 +89,6 @@
     width: 32px;
     height: 32px;
     padding: 0;
-    background: transparent;
-    border: none;
-    opacity: 0.7;
-    transition: opacity 0.2s;
 }
 
 .btn-close:hover {
@@ -275,92 +271,7 @@
 <div class="crm-wrapper">
     {{-- TABEL UTAMA --}}
     <div class="card p-2">
-        {{-- Tab Aktif --}}
-        <div id="tab-aktif" class="mutasi-tab-content">
-            <div class="table-wrapper">
-                <table class="table table-hover table-sm align-middle w-100">
-                    <thead class="table-light">
-                        <tr>
-                            <th>No</th>
-                            <th>Kode</th>
-                            <th>Tanggal</th>
-                            <th>Gudang Tujuan</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        @forelse($mutasiAktif as $i => $m)
-                        <tr data-id="{{ $m->id }}" class="mutasi-row" data-tab="aktif">
-                            <td>{{ $i + $mutasiAktif->firstItem() }}</td>
-                            <td>{{ $m->code }}</td>
-                            <td>{{ \Carbon\Carbon::parse($m->date)->format('d-m-Y') }}</td>
-                            <td>{{ optional($m->warehouse_to_attribute)->name ?? '-' }}</td>
-                        </tr>
-                        @empty
-                        <tr><td colspan="5" class="text-center text-muted">Tidak ada data</td></tr>
-                        @endforelse
-                    </tbody>
-                </table>
-            </div>
-            <div id="compactPaginationAktif" class="mt-2 d-flex justify-content-center align-items-center"></div>
-        </div>
-
-        {{-- Tab Proses --}}
-        <div id="tab-proses" class="mutasi-tab-content d-none">
-            <div class="table-wrapper">
-                <table class="table table-hover table-sm align-middle w-100">
-                    <thead class="table-light">
-                        <tr>
-                            <th>No</th>
-                            <th>Kode</th>
-                            <th>Tanggal</th>
-                            <th>Gudang Tujuan</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        @forelse($mutasiProses as $i => $m)
-                        <tr data-id="{{ $m->id }}" class="mutasi-row" data-tab="proses">
-                            <td>{{ $i + $mutasiProses->firstItem() }}</td>
-                            <td>{{ $m->code }}</td>
-                            <td>{{ \Carbon\Carbon::parse($m->date)->format('d-m-Y') }}</td>
-                            <td>{{ optional($m->warehouse_to_attribute)->name ?? '-' }}</td>
-                        </tr>
-                        @empty
-                        <tr><td colspan="5" class="text-center text-muted">Tidak ada data</td></tr>
-                        @endforelse
-                    </tbody>
-                </table>
-            </div>
-            <div id="compactPaginationProses" class="mt-2 d-flex justify-content-center align-items-center"></div>
-        </div>
-
-        {{-- Tab Selesai --}}
-        <div id="tab-selesai" class="mutasi-tab-content d-none">
-            <div class="table-wrapper">
-                <table class="table table-hover table-sm align-middle w-100">
-                    <thead class="table-light">
-                        <tr>
-                            <th>No</th>
-                            <th>Kode</th>
-                            <th>Tanggal</th>
-                            <th>Gudang Tujuan</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        @forelse($mutasiSelesai as $i => $m)
-                        <tr data-id="{{ $m->id }}" class="mutasi-row text-muted" data-tab="selesai">
-                            <td>{{ $i + $mutasiSelesai->firstItem() }}</td>
-                            <td>{{ $m->code }}</td>
-                            <td>{{ \Carbon\Carbon::parse($m->date)->format('d-m-Y') }}</td>
-                            <td>{{ optional($m->warehouse_to_attribute)->name ?? '-' }}</td>
-                        </tr>
-                        @empty
-                        <tr><td colspan="5" class="text-center text-muted">Tidak ada data</td></tr>
-                        @endforelse
-                    </tbody>
-                </table>
-            </div>
-            <div id="compactPaginationSelesai" class="mt-2 d-flex justify-content-center align-items-center"></div>
-        </div>
+        @include('superuser.gudang.mutasi_out.partials._tab_content')
     </div>
 </div>
 
@@ -650,7 +561,7 @@ document.addEventListener("DOMContentLoaded", function() {
         const row = e.target.closest('.mutasi-row');
         if(!row) return;
 
-        mutasiIds = getMutasiIdsByActiveTab(); // 🔑 reset sesuai tab
+        mutasiIds = getMutasiIdsByActiveTab(); // ðŸ”‘ reset sesuai tab
         currentIndex = mutasiIds.indexOf(parseInt(row.dataset.id));
 
         if(currentIndex === -1) return;
@@ -697,34 +608,22 @@ document.addEventListener("DOMContentLoaded", function() {
                             icon: 'success',
                             title: 'Berhasil',
                             text: data.message,
-                            timer: 1200,
+                            timer: 1000,
                             showConfirmButton: false
                         });
-
-                        // Hapus row dari tabel tab saat ini
-                        const row = document.querySelector(`.mutasi-row[data-id="${currentId}"]`);
-                        if(row) row.remove();
-                        mutasiIds.splice(currentIndex, 1);
-
+                    
+                        const activeTab = document.querySelector('.status-tab.active')?.dataset.tab;
+                    
+                        // Reload isi tab
+                        reloadTabContent(activeTab);
+                    
+                        // Refresh count
                         refreshCounts();
-
-                        // --- HOT RELOAD ke tab target (Proses) ---
-                        const prosesTab = document.querySelector('#tab-proses tbody');
-                        if(prosesTab && prosesTab.querySelector('tr')) {
-                            // Ambil semua ID mutasi baru di tab Proses
-                            mutasiIds = Array.from(prosesTab.querySelectorAll('.mutasi-row')).map(r => parseInt(r.dataset.id));
-                            currentIndex = 0;
-                            loadMutasiDetailByIndex(currentIndex);
-                        } else {
-                            // Jika tab Proses kosong, coba lanjut di tab saat ini
-                            if(mutasiIds.length === 0){
-                                mutasiDetailModal.hide();
-                            } else {
-                                if(currentIndex >= mutasiIds.length) currentIndex = mutasiIds.length - 1;
-                                loadMutasiDetailByIndex(currentIndex);
-                            }
-                        }
-
+                    
+                        // Tutup modal setelah sedikit delay
+                        setTimeout(() => {
+                            mutasiDetailModal.hide();
+                        }, 1000);
                     } else {
                         Swal.fire({ icon:'error', title:'Gagal', text: data.message || 'Terjadi kesalahan' });
                     }
@@ -743,6 +642,28 @@ document.addEventListener("DOMContentLoaded", function() {
             $('#count-proses').text(res.proses);
             $('#count-selesai').text(res.selesai);
         });
+    }
+    
+    function reloadTabContent(activeTab){
+        if(!activeTab) return;
+    
+        fetch("{{ route('superuser.gudang.mutasi_out.reloadTab') }}?tab=" + activeTab)
+            .then(res => res.text())
+            .then(html => {
+                const parser = new DOMParser();
+                const doc = parser.parseFromString(html, 'text/html');
+    
+                const newTab = doc.querySelector('#tab-' + activeTab);
+                const currentTab = document.querySelector('#tab-' + activeTab);
+    
+                if(newTab && currentTab){
+                    currentTab.innerHTML = newTab.innerHTML;
+                }
+    
+                // rebuild ids
+                mutasiIds = getMutasiIdsByActiveTab();
+            })
+            .catch(err => console.error(err));
     }
 });
 </script>

@@ -127,7 +127,23 @@ class MutasiOutController extends Controller
             'selesai' => $selesai,
         ]);
     }
-
+    
+    public function reloadTab(Request $request)
+    {
+        $tab = $request->tab ?? 'aktif';
+    
+        $mutasiAktif   = MutasiOut::aktif()->paginate(10, ['*'], 'page_aktif');
+        $mutasiProses  = MutasiOut::proses()->paginate(10, ['*'], 'page_proses');
+        $mutasiSelesai = MutasiOut::selesai()->paginate(10, ['*'], 'page_selesai');
+    
+        return view('superuser.gudang.mutasi_out.partials._tab_content', compact(
+            'tab',
+            'mutasiAktif',
+            'mutasiProses',
+            'mutasiSelesai'
+        ));
+    }
+    
     public function detail($id)
     {
         $data['mutasi'] = MutasiOut::findOrFail($id);
@@ -230,25 +246,6 @@ class MutasiOutController extends Controller
             'status'  => 'success',
             'message' => 'Mutasi berhasil dipublish'
         ]);
-    }
-
-    public function reloadTab($tab)
-    {
-        switch($tab){
-            case 'aktif':
-                $mutasi = MutasiOut::where('status', MutasiOut::STATUS['ACTIVE'])->paginate(10);
-                break;
-            case 'proses':
-                $mutasi = MutasiOut::where('status', MutasiOut::STATUS['PROCESS'])->paginate(10);
-                break;
-            case 'selesai':
-                $mutasi = MutasiOut::where('status', MutasiOut::STATUS['FINISH'])->paginate(10);
-                break;
-            default:
-                abort(404);
-        }
-
-        return view('superuser.gudang.mutasi_out._table_tab', compact('mutasi', 'tab'));
     }
 
     public function print_pdf(Request $request, $id)

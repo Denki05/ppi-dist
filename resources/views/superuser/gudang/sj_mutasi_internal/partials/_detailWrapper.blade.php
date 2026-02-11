@@ -3,10 +3,14 @@
         $currentStep = 1;
     } elseif ($mutasi->status_checked == 1 && $mutasi->print_count == 0) {
         $currentStep = 2;
-    } else {
+    } elseif ($mutasi->status_checked == 1 && $mutasi->print_count > 0) {
+        // Masuk step 3 hanya jika sudah sampai tahap barang
         $currentStep = 3;
+    } else {
+        $currentStep = 1;
     }
 @endphp
+
 
 <div class="mutasi-detail">
 

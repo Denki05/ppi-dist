@@ -112,6 +112,21 @@ table.data-table {
     margin: 18px 25px 90px 25px; /* tambah bottom margin */
 }
 
+/* ================= NOTE SECTION ================= */
+.note-section {
+    margin-top: 10px;
+    border: 1px solid #000;
+    padding: 6px 8px;
+    min-height: 35px;
+    font-size: 11px;
+}
+
+.note-title {
+    font-weight: bold;
+    margin-bottom: 3px;
+}
+
+
 /* FOOTER SIGNATURE */
 .footer-signature {
     position: fixed;
@@ -204,6 +219,17 @@ table.data-table {
         @endforelse
     </tbody>
 </table>
+
+<!-- ================= NOTE ================= -->
+@if(!empty($mutasi->note))
+<div class="note-section">
+    <div class="note-title">Catatan:</div>
+    <div>
+        {{ $mutasi->note }}
+    </div>
+</div>
+@endif
+
 
 <!-- ================= FOOTER SIGNATURE ================= -->
 <div class="footer-signature">
