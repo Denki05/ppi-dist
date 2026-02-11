@@ -40,6 +40,7 @@ Route::group([
         Route::get('/{id}/send', 'PurchaseOrderController@send')->name('send');
         Route::get('/summary', 'PurchaseOrderController@summary')->name('summary');
         Route::get('/{id}/cancel_send', 'PurchaseOrderController@cancel_send')->name('cancel_send');
+        Route::get('/{id}/send_spk', 'PurchaseOrderController@send_spk')->name('send_spk');
 
         Route::group(['as' => 'detail.'], function () {
             Route::get('{purchase_id}/detail/create', 'PurchaseOrderDetailController@create')->name('create');

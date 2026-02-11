@@ -9,14 +9,24 @@ class PurchaseOrder extends Model
 {
 
     protected $table = "purchase_order";
+    protected $casts = [
+        'sub_type' => 'integer',
+        'count_send_spk' => 'integer',
+        'status' => 'integer',
+    ];
+    
     protected $fillable = [
     	'code',
         'warehouse_id', 
         'brand_lokal_id',
+        'ref_po_id',
         'etd', 
         'note', 
         'edit_counter', 
         'type',
+        'sub_type',
+        'count_send_spk',
+        'kategori',
         'status', 
         'created_by', 
         'updated_by',
@@ -34,6 +44,16 @@ class PurchaseOrder extends Model
     const TYPE = [
         'SPK' => 0,
         'PO' => 1,
+    ];
+
+    const KATEGORI = [
+        'PRODUKSI_REPACK' => 0,
+        'ORIGINAL_PACK' => 1,
+    ];
+
+    const SUB_TYPE = [
+        'INDUSTRI' => 1,
+        'NON_INDUSTRI' => 0,
     ];
 
     public function warehouse(){
@@ -74,5 +94,15 @@ class PurchaseOrder extends Model
     public function type()
     {
         return array_search($this->type, self::TYPE);
+    }
+
+    public function kategori()
+    {
+        return array_search($this->kategori, self::KATEGORI);
+    }
+
+    public function subTypeLabel()
+    {
+        return array_search($this->sub_type, self::SUB_TYPE);
     }
 }

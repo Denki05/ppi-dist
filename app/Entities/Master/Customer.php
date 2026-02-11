@@ -12,7 +12,7 @@ class Customer extends Model
     
     protected $appends = ['img_ktp', 'img_npwp', 'img_store'];
     protected $fillable = [
-        'category_id', 'count_member', 'pic', 'code', 'name',
+        'category_id', 'count_member', 'am', 'ams', 'pic', 'code', 'name',
         'email', 'phone', 'npwp', 'ktp', 'has_ppn', 'has_tempo', 'tempo_limit', 'address',
         'owner_name', 'plafon_piutang', 'saldo', 'gps_latitude', 'gps_longitude', 'zone',
         'provinsi', 'kota', 'kecamatan', 'kelurahan',

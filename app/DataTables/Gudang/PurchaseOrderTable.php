@@ -14,7 +14,7 @@ class PurchaseOrderTable extends Table
      */
     private function query()
     {
-        $model = PurchaseOrder::select('id', 'code', 'edit_counter', 'updated_by', 'status', 'note', 'created_at', 'updated_by')
+        $model = PurchaseOrder::select('id', 'code', 'edit_counter', 'updated_by', 'status', 'sub_type', 'count_send_spk', 'note', 'created_at', 'updated_by')
                 ->where('type', PurchaseOrder::TYPE['PO']);
 
         return $model;
@@ -69,6 +69,7 @@ class PurchaseOrderTable extends Table
             $cancel_acc = route('superuser.gudang.purchase_order.cancel_acc', $model);
             $sent = route('superuser.gudang.purchase_order.send', $model);
             $cancel_send = route('superuser.gudang.purchase_order.cancel_send', $model);
+            $send_spk = route('superuser.gudang.purchase_order.send_spk', $model);
 
             switch ($model->status) {
                 case $model::STATUS['ACTIVE']:
@@ -135,26 +136,55 @@ class PurchaseOrderTable extends Table
                         
                     ";
 
-                case $model::STATUS['SENT']:
-                    return "
-                        <a href=\"{$view}\">
-                            <button type=\"button\" class=\"btn btn-sm btn-circle btn-alt-secondary\" title=\"View\">
-                                <i class=\"fa fa-eye\"></i>
-                            </button>
-                        </a>
+                    case $model::STATUS['SENT']:
 
-                        <a href=\"{$pdf}\">
-                            <button type=\"button\" class=\"btn btn-sm btn-circle btn-alt-secondary\" title=\"Print Out\">
-                                <i class=\"fa fa-print\"></i>
-                            </button>
-                        </a>
+                        $btnSendSpk = '';
 
-                        <a href=\"javascript:saveConfirmation2('{$cancel_send}')\">
-                            <button type=\"button\" class=\"btn btn-sm btn-circle btn-alt-danger\" title=\"Cancel\">
-                                <i class=\"fa fa-ban\"></i>
-                            </button>
-                        </a>
-                    ";
+                        // \Log::info('DEBUG SPK', [
+                        //     'id' => $model->id,
+                        //     'status' => $model->status,
+                        //     'sub_type_attr' => $model->getAttributes()['sub_type'],
+                        //     'sub_type_cast' => $model->sub_type,
+                        //     'count_send_spk' => $model->count_send_spk,
+                        // ]);                        
+                    
+                        if (
+                            $model->sub_type === PurchaseOrder::SUB_TYPE['INDUSTRI'] &&
+                            $model->count_send_spk === 0
+                        ) {
+                            $btnSendSpk = "
+                                <a href=\"javascript:saveConfirmation('{$send_spk}')\">
+                                    <button type=\"button\"
+                                            class=\"btn btn-sm btn-circle btn-alt-success\"
+                                            title=\"Generate SPK\">
+                                        <i class=\"fa fa-industry\"></i>
+                                    </button>
+                                </a>
+                            ";
+                        }
+                    
+                        return "
+                            <a href=\"{$view}\">
+                                <button type=\"button\" class=\"btn btn-sm btn-circle btn-alt-secondary\" title=\"View\">
+                                    <i class=\"fa fa-eye\"></i>
+                                </button>
+                            </a>
+                    
+                            <a href=\"{$pdf}\">
+                                <button type=\"button\" class=\"btn btn-sm btn-circle btn-alt-secondary\" title=\"Print Out\">
+                                    <i class=\"fa fa-print\"></i>
+                                </button>
+                            </a>
+                    
+                            <a href=\"javascript:saveConfirmation2('{$cancel_send}')\">
+                                <button type=\"button\" class=\"btn btn-sm btn-circle btn-alt-danger\" title=\"Cancel\">
+                                    <i class=\"fa fa-ban\"></i>
+                                </button>
+                            </a>
+                    
+                            {$btnSendSpk}
+                        ";
+                    
                 default:
                     return "
                         <a href=\"{$view}\">

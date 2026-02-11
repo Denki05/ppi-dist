@@ -105,7 +105,7 @@ class CustomerOrderVariantTable extends Table
         });
 
         $table->addColumn('combined_month_year', function ($row) {
-            return $row->invoice_year . ' - ' . $row->invoice_month;
+            return $row->invoice_month . ' - ' . $row->invoice_year;
         });
 
         return $table->make(true);
