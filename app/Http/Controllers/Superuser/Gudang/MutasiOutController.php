@@ -14,6 +14,7 @@ use App\Entities\Master\ProductMinStock;
 use App\Entities\Master\Warehouse;
 use Yajra\DataTables\Facades\DataTables;
 use App\Repositories\CodeRepo;
+use PDF;
 use Validator;
 use Carbon\Carbon;
 use Auth;
@@ -250,4 +251,39 @@ class MutasiOutController extends Controller
         return view('superuser.gudang.mutasi_out._table_tab', compact('mutasi', 'tab'));
     }
 
+    public function print_pdf(Request $request, $id)
+    {
+        if (Auth::user()->is_superuser == 0) {
+            if (empty($this->access) || empty($this->access->user) || $this->access->can_print == 0) {
+                abort(403, 'Anda tidak punya akses');
+            }
+        }
+
+        $mutasi = MutasiOut::with('mutasiOutDetails.product_pack.packaging')
+            ->where('id', $id)
+            ->firstOrFail();
+
+        // BATAS PRINT (kecuali developer)
+        if ($mutasi->print_count >= 2 && auth()->id() != 1) {
+            abort(403, 'Dokumen ini sudah dicetak maksimal 2 kali.');
+        }
+
+        // UPDATE COUNTER PRINT
+        $mutasi->increment('print_count');
+
+        if (empty($mutasi->printed_at)) {
+            $mutasi->updated_by = auth()->id();
+            $mutasi->printed_at = now();
+            $mutasi->save();
+        }
+
+        $pdf = PDF::loadView(
+            'superuser.gudang.mutasi_out.print_pdf',
+            compact('mutasi')
+        )->setPaper('A5', 'landscape');
+
+        return response($pdf->output(), 200)
+            ->header('Content-Type', 'application/pdf')
+            ->header('Content-Disposition', 'inline; filename="mutasi-showroom-'.$mutasi->kode.'.pdf"');
+    }
 }

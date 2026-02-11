@@ -164,6 +164,7 @@ Route::group([
         Route::get('/refreshCounts', 'MutasiOutController@refreshCounts')->name('refreshCounts');
         Route::get('/{id}/detail', 'MutasiOutController@detail')->name('detail');
         Route::get('/mutasi_out/reload/{tab}', 'MutasiOutController@reloadTab')->name('mutasi_out.reloadTab');
+        Route::get('/print_pdf/{id}', 'MutasiOutController@print_pdf')->name('print_pdf');
     });
     Route::resource('mutasi_out', 'MutasiOutController');
 
@@ -225,6 +226,8 @@ Route::group([
         Route::post('step2Next', 'SjMutasiInternalController@step2Next')->name('step2Next');
         Route::post('step3Update', 'SjMutasiInternalController@step3Update')->name('step3Update');
         Route::get('refreshTabs','SjMutasiInternalController@refreshTabs')->name('refreshTabs');
+        Route::get('/table', 'SjMutasiInternalController@table')->name('table');
+
     Route::resource('sj_mutasi_internal', 'SjMutasiInternalController');
     });
 });

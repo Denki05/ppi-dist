@@ -14,11 +14,14 @@ class MutasiOut extends Model
         'date',
         'warehouse_from',
         'warehouse_to',
+        'print_count',
+        'printed_at',
         'note',
         'status',
         'status_checked',
         'status_barang',
         'created_by',
+        'updated_by',
         'acc_by',
         'acc_date'
     ];
@@ -81,5 +84,10 @@ class MutasiOut extends Model
     public function statusBarang()
     {
         return array_search($this->status_barang, self::STATUS_BARANG);
+    }
+
+    public function getDetailsAttribute()
+    {
+        return $this->mutasiOutDetails;
     }
 }

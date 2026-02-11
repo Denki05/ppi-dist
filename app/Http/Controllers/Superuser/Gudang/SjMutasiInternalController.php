@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Superuser\Gudang;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use App\Entities\Gudang\MutasiShowroom;
+use App\Entities\Gudang\MutasiOut;
 use App\Entities\Gudang\StockMove;
 use App\Repositories\CodeRepo;
 use App\Entities\Setting\UserMenu;
@@ -34,37 +35,60 @@ class SjMutasiInternalController extends Controller
         });
     }
 
-    public function index(Request $request)
+    public function index()
     {
-        if (Auth::user()->is_superuser == 0) {
-            if (empty($this->access) || empty($this->access->user) || $this->access->can_read == 0) {
-                return redirect()
-                    ->route('superuser.index')
-                    ->with('error', 'Anda tidak punya akses untuk membuka menu terkait');
-            }
+        return view($this->view . 'index');
+    }
+
+    public function table(Request $request)
+    {
+        $type = $request->type;
+
+        if ($type === 'showroom') {
+
+            $data['type'] = 'showroom';
+
+            $data['mutasiAktif'] = MutasiShowroom::where('status', 2)
+                ->where('status_barang', 0)
+                ->orderBy('tanggal', 'desc')
+                ->paginate(10);
+
+            $data['mutasiBelumDiambil'] = MutasiShowroom::where('status', 2)
+                ->where('status_barang', 1)
+                ->where('print_count', '>', 0)
+                ->orderBy('tanggal', 'desc')
+                ->paginate(10);
+
+            $data['mutasiSelesai'] = MutasiShowroom::where('status', 2)
+                ->where('status_barang', 2)
+                ->orderBy('tanggal', 'desc')
+                ->paginate(10);
+
+            return view('superuser.gudang.sj_mutasi_internal.partials.table_showroom', $data);
         }
 
-        // TAB AKTIF (PENDING)
-        $data['mutasiAktif'] = MutasiShowroom::where('status', 2)
-            ->where('status_barang', 0)
-            ->orderBy('tanggal', 'desc')
-            ->paginate(10, ['*'], 'aktif');
-        
-        // TAB BELUM DIAMBIL
-        $data['mutasiBelumDiambil'] = MutasiShowroom::where('status', 2)
-            ->where('status_barang', 1)
-            ->where('print_count', '>', 0)
-            ->orderBy('tanggal', 'desc')
-            ->paginate(10, ['*'], 'belum');
-        
-        // TAB SELESAI
-        $data['mutasiSelesai'] = MutasiShowroom::where('status', 2)
-            ->where('status_barang', 2)
-            ->orderBy('tanggal', 'desc')
-            ->paginate(10, ['*'], 'selesai');
+        if ($type === 'gudang') {
 
+            $data['type'] = 'gudang';
 
-        return view($this->view . "index", $data);
+            $data['mutasiAktif'] = MutasiOut::where('status', MutasiOut::STATUS['PUBLISH'])
+                ->where('status_barang', 0)
+                ->orderBy('date', 'desc')
+                ->paginate(10);
+
+            $data['mutasiBelumDiambil'] = MutasiOut::where('status', MutasiOut::STATUS['PUBLISH'])
+                ->where('status_barang', 1)
+                ->orderBy('date', 'desc')
+                ->paginate(10);
+
+            $data['mutasiSelesai'] = MutasiOut::where('status', MutasiOut::STATUS['ACC'])
+                ->orderBy('date', 'desc')
+                ->paginate(10);
+
+            return view('superuser.gudang.sj_mutasi_internal.partials.table_gudang', $data);
+        }
+
+        abort(404);
     }
     
     public function refreshTabs()
@@ -88,15 +112,22 @@ class SjMutasiInternalController extends Controller
         ]);
     }
 
-
-    public function show($id)
+    public function show(Request $request, $id)
     {
-        $mutasi = MutasiShowroom::with('details.product_packaging')
-            ->findOrFail($id);
+        $type = (string) $request->type ?? 'showroom';
+
+        if ($type == 'showroom') {
+            $mutasi = MutasiShowroom::with('details.product_packaging')->findOrFail($id);
+        } else {
+            $mutasi = MutasiOut::with('mutasiOutDetails.product_pack')->findOrFail($id);
+            
+            // Supaya Blade tetap pakai ->details
+            $mutasi->details = $mutasi->mutasiOutDetails;
+        }
 
         return view(
             'superuser.gudang.sj_mutasi_internal.partials._detailWrapper',
-            compact('mutasi')
+            compact('mutasi', 'type')
         );
     }
 
@@ -104,9 +135,23 @@ class SjMutasiInternalController extends Controller
     {
         DB::beginTransaction();
         try {
-            $mutasi = MutasiShowroom::with('details')
-                ->lockForUpdate()
-                ->findOrFail($request->mutasi_id);
+            $type = $request->type ?? 'showroom'; // default showroom
+
+            // dd($type);
+
+            if ($type === 'showroom') {
+                $mutasi = MutasiShowroom::with('details')
+                    ->lockForUpdate()
+                    ->findOrFail($request->mutasi_id);
+
+                $details = $mutasi->details;
+            } else { // gudang
+                $mutasi = MutasiOut::with('mutasiOutDetails')
+                    ->lockForUpdate()
+                    ->findOrFail($request->mutasi_id);
+
+                $details = $mutasi->mutasiOutDetails;
+            }
 
             // Validasi status
             if ($mutasi->status_checked == 0 && $mutasi->status_checked == 2) {
@@ -114,8 +159,8 @@ class SjMutasiInternalController extends Controller
             }
 
             $checkedIds = $request->items ?? [];
-            
-            $totalItem = $mutasi->details->count();
+
+            $totalItem = $details->count();
             $totalChecked = count($checkedIds);
 
             if ($totalChecked !== $totalItem) {
@@ -124,18 +169,27 @@ class SjMutasiInternalController extends Controller
                 );
             }
 
-            foreach ($mutasi->details as $detail) {
-
+            foreach ($details as $detail) {
                 if (in_array($detail->id, $checkedIds)) {
 
                     // Tandai checklist
                     $detail->is_checked = 1;
                     $detail->save();
 
-                    // POTONG STOK (TANPA LOG)
-                    DB::table('master_product_min_stocks')
-                        ->where('product_packaging_id', $detail->product_packaging_id)
-                        ->decrement('quantity', $detail->qty);
+                    // POTONG STOK
+                    $productId = $detail->product_packaging_id;
+
+                    if ($type === 'showroom') {
+                        $qty = (int) ($detail->qty ?? 0);
+                    } else { // gudang
+                        $qty = (int) ($detail->quantity ?? 0);
+                    }
+
+                    if ($qty > 0 && $productId) {
+                        DB::table('master_product_min_stocks')
+                            ->where('product_packaging_id', $productId)
+                            ->decrement('quantity', $qty);
+                    }
                 }
             }
 
@@ -159,6 +213,7 @@ class SjMutasiInternalController extends Controller
             ]);
 
         } catch (\Exception $e) {
+            dd($e);
             DB::rollBack();
             return response()->json([
                 'success' => false,
@@ -171,22 +226,36 @@ class SjMutasiInternalController extends Controller
     {
         DB::beginTransaction();
         try {
-            $mutasi = MutasiShowroom::with('details')
-                ->lockForUpdate()
-                ->findOrFail($request->mutasi_id);
+            
+            $type = $request->type ?? 'showroom'; // default showroom
+
+            if ($type === 'showroom') {
+                $mutasi = MutasiShowroom::with('details')
+                    ->lockForUpdate()
+                    ->findOrFail($request->mutasi_id);
+
+                $details = $mutasi->details;
+            } else { // gudang
+                $mutasi = MutasiOut::with('mutasiOutDetails')
+                    ->lockForUpdate()
+                    ->findOrFail($request->mutasi_id);
+
+                $details = $mutasi->mutasiOutDetails;
+            }
 
             if ($mutasi->status_checked != 1) {
                 throw new \Exception('Tidak bisa cancel');
             }
 
-            foreach ($mutasi->details as $detail) {
+            foreach ($details as $detail) {
 
                 if ($detail->is_checked == 1) {
 
                     // BALIKKAN STOK
+                    $quantity = $type === 'showroom' ? ($detail->qty ?? 0) : ($detail->quantity ?? 0);
                     DB::table('master_product_min_stocks')
                         ->where('product_packaging_id', $detail->product_packaging_id)
-                        ->increment('qty', $detail->qty);
+                        ->increment('quantity', $quantity);
 
                     $detail->is_checked = 0;
                     $detail->save();
@@ -212,6 +281,7 @@ class SjMutasiInternalController extends Controller
 
 
         } catch (\Exception $e) {
+            dd($e);
             DB::rollBack();
             return response()->json([
                 'success' => false,
@@ -224,20 +294,43 @@ class SjMutasiInternalController extends Controller
     {
         DB::beginTransaction();
         try {
-            $mutasi = MutasiShowroom::with('details')
-                ->lockForUpdate()
-                ->findOrFail($request->mutasi_id);
+
+            // dd($request->type);
+
+            $type = $request->type ?? 'showroom'; // default showroom
+
+            if ($type === 'showroom') {
+                $mutasi = MutasiShowroom::with('details')
+                    ->lockForUpdate()
+                    ->findOrFail($request->mutasi_id);
+
+                $details = $mutasi->details;
+            } else { // gudang
+                $mutasi = MutasiOut::with('mutasiOutDetails')
+                    ->lockForUpdate()
+                    ->findOrFail($request->mutasi_id);
+
+                $details = $mutasi->mutasiOutDetails;
+            }
 
             if ($mutasi->status_checked != 1) {
                 throw new \Exception('Status tidak valid');
             }
 
-            foreach ($mutasi->details as $detail) {
+            foreach ($details as $detail) {
                 if ($detail->is_checked) {
 
+                    $productId = $detail->product_packaging_id;
+
+                    if ($type === 'showroom') {
+                        $qty = (int) ($detail->qty ?? 0);
+                    } else { // gudang
+                        $qty = (int) ($detail->quantity ?? 0);
+                    }
+
                     DB::table('master_product_min_stocks')
-                        ->where('product_packaging_id', $detail->product_packaging_id)
-                        ->increment('quantity', $detail->qty);
+                        ->where('product_packaging_id', $productId)
+                        ->increment('quantity', $qty);
 
                     $detail->is_checked = 0;
                     $detail->save();
@@ -252,6 +345,7 @@ class SjMutasiInternalController extends Controller
             return response()->json(['success' => true]);
 
         } catch (\Exception $e) {
+            dd($e);
             DB::rollBack();
             return response()->json([
                 'success' => false,
@@ -263,8 +357,22 @@ class SjMutasiInternalController extends Controller
     public function step2Next(Request $request)
     {
         try {
+
+            $type = $request->type ?? 'showroom';
     
-            $mutasi = MutasiShowroom::findOrFail($request->mutasi_id);
+            if ($type === 'showroom') {
+                $mutasi = MutasiShowroom::with('details')
+                    ->lockForUpdate()
+                    ->findOrFail($request->mutasi_id);
+
+                $details = $mutasi->details;
+            } else { // gudang
+                $mutasi = MutasiOut::with('mutasiOutDetails')
+                    ->lockForUpdate()
+                    ->findOrFail($request->mutasi_id);
+
+                $details = $mutasi->mutasiOutDetails;
+            }
     
             /**
              * VALIDASI 1
@@ -281,7 +389,7 @@ class SjMutasiInternalController extends Controller
              * VALIDASI 2 (OPSIONAL TAPI AMAN)
              * Pastikan ada minimal 1 item yang dichecklist
              */
-            $checkedCount = $mutasi->details()
+            $checkedCount = $detials
                 ->where('is_checked', 1)
                 ->count();
     
@@ -311,7 +419,7 @@ class SjMutasiInternalController extends Controller
             ]);
     
         } catch (\Exception $e) {
-    
+            dd($e);
             return response()->json([
                 'success' => false,
                 'message' => 'Data mutasi tidak ditemukan'
@@ -320,14 +428,25 @@ class SjMutasiInternalController extends Controller
         }
     }
 
-
     public function step3Update(Request $request)
     {
         DB::beginTransaction();
         try {
-            $mutasi = MutasiShowroom::with('details')
-                ->lockForUpdate()
-                ->findOrFail($request->mutasi_id);
+            $type = $request->type ?? 'showroom'; // default showroom
+
+            if ($type === 'showroom') {
+                $mutasi = MutasiShowroom::with('details')
+                    ->lockForUpdate()
+                    ->findOrFail($request->mutasi_id);
+
+                $details = $mutasi->details;
+            } else { // gudang
+                $mutasi = MutasiOut::with('mutasiOutDetails')
+                    ->lockForUpdate()
+                    ->findOrFail($request->mutasi_id);
+
+                $details = $mutasi->mutasiOutDetails;
+            }
 
             $oldStatus = $mutasi->status_barang;
             $newStatus = (int) $request->status_barang;
@@ -343,27 +462,38 @@ class SjMutasiInternalController extends Controller
 
             // Update status mutasi
             $mutasi->status_barang = $newStatus;
+            if ($type === 'gudang') {
+                $mutasi->status = 3;
+            }
             $mutasi->save();
 
             // CATAT STOK MOVE HANYA JIKA FINAL DIAMBIL
             if ($newStatus === 2 && $oldStatus !== 2) {
-                foreach ($mutasi->details as $detail) {
+                foreach ($details as $detail) {
                     // Ambil balance terakhir
                     $lastStock = DB::table('gudang_move_stock')
                         ->where('product_packaging_id', $detail->product_packaging_id)
                         ->orderBy('created_at', 'desc')
                         ->first();
 
-                    $quantity_after_move = $lastStock ? $lastStock->stock_balance - $detail->qty : 0;
+                    $quantity = $type === 'showroom' ? $detail->qty : $detail->quantity;
+                    $quantity_after_move = $lastStock ? $lastStock->stock_balance - $quantity : 0;
 
                     StockMove::create([
-                        'code_transaction' => $mutasi->kode,
-                        'warehouse_id' => $mutasi->warehouse_from_id,
+                        'code_transaction' => $type === 'showroom' 
+                                    ? $mutasi->kode
+                                    : $mutasi->code,
+                        // 'warehouse_id' => $mutasi->warehouse_from_id,
+                        'warehouse_id' => $type === 'showroom' 
+                                    ? $mutasi->warehouse_from_id
+                                    : $mutasi->warehouse_from,
                         'product_packaging_id' => $detail->product_packaging_id,
                         'stock_in' => 0,
-                        'stock_out' => $detail->qty,
+                        'stock_out' => $quantity,
                         'stock_balance' => $quantity_after_move,
-                        'note' => 'Mutasi Showroom - DIAMBIL',
+                        'note' => $type === 'showroom' 
+                                    ? 'Mutasi Showroom - DIAMBIL'
+                                    : 'Mutasi Gudang - DIAMBIL',
                         'created_by' => Auth::id(),
                         'updated_by' => Auth::id(),
                     ]);

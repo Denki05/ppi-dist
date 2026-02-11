@@ -11,11 +11,19 @@
 
         {{-- ACTION PRINT --}}
         <div class="d-flex gap-2 mb-4">
-            <a href="{{ route('superuser.gudang.mutasi_showroom.print_pdf', $mutasi->id) }}"
-               target="_blank"
-               class="btn btn-outline-primary btn-sm">
-                <i class="bi bi-printer"></i> Print SJ
-            </a>
+            @if ($type === 'showroom')
+                <a href="{{ route('superuser.gudang.mutasi_showroom.print_pdf', $mutasi->id) }}"
+                target="_blank"
+                class="btn btn-outline-primary btn-sm">
+                    <i class="bi bi-printer"></i> Print SJ
+                </a>
+            @else
+                <a href="{{ route('superuser.gudang.mutasi_out.print_pdf', $mutasi->id) }}"
+                target="_blank"
+                class="btn btn-outline-primary btn-sm">
+                    <i class="bi bi-printer"></i> Print SJ
+                </a>
+            @endif
         </div>
 
         <hr>

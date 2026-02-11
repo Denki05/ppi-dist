@@ -25,7 +25,7 @@
 
     /* FRAME A */
     .frame-a {
-        flex: 0 0 470px; /* DITAMBAH */
+        flex: 0 0 250px; /* DITAMBAH */
         display: flex;
         flex-direction: column;
     }
@@ -110,7 +110,7 @@
         }
 
         .frame-a {
-            flex: 0 0 260px;
+            flex: 0 0 250px;
         }
     }
 </style>
@@ -123,182 +123,19 @@
             {{-- ================= FRAME A ================= --}}
             <div class="frame-a">
                 <div class="card">
-                    <div class="card-body p-2">
+                    <div class="card-body p-2 text-center">
 
-                        <!-- <div class="frame-title">
-                            Mutasi Showroom
+                        <!-- <div class="frame-title mb-2">
+                            Pilih Jenis Mutasi
                         </div> -->
 
-                        <div class="mutasi-tabs">
-                            <div class="tab-btn active" data-tab="aktif">
-                                Aktif (<span id="count-aktif">{{ $mutasiAktif->total() }}</span>)
-                            </div>
-                        
-                            <div class="tab-btn" data-tab="belum-diambil">
-                                Belum Diambil (<span id="count-belum">{{ $mutasiBelumDiambil->total() }}</span>)
-                            </div>
-                        
-                            <div class="tab-btn" data-tab="selesai">
-                                Selesai (<span id="count-selesai">{{ $mutasiSelesai->total() }}</span>)
-                            </div>
-                        </div>
+                        <button class="btn btn-outline-primary w-100 mb-2 text-left" id="btnMutasiShowroom">
+                            Mutasi Showroom
+                        </button>
 
-
-                        {{-- TAB AKTIF --}}
-                        <div id="tab-aktif" class="mutasi-tab-content">
-                            <div class="table-wrapper">
-                                <table class="table table-sm mutasi-table">
-                                    <thead>
-                                        <tr>
-                                            <th>#</th>
-                                            <th>Tanggal - Kode</th>
-                                            <th>Customer</th>
-                                            <th>Type</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        @forelse ($mutasiAktif as $row)
-                                           
-                                            <tr data-id="{{ $row->id }}">
-                                                <td>
-                                                    {{ $loop->iteration + $mutasiAktif->firstItem() - 1 }}
-                                                </td>
-                                                <td>
-                                                    {{ \Carbon\Carbon::parse($row->tanggal)->format('d/m/y') }}<br> 
-                                                    <span><strong>{{ $row->kode }}{{ optional($row->so)->code ? ' / '.optional($row->so)->code : '' }}</strong></span>
-                                                </td>
-                                                <td>
-                                                    {{ 
-                                                        optional($row->customer_other_address)->name
-                                                            ? optional($row->customer_other_address)->name . '  ' . optional($row->customer_other_address)->text_kota
-                                                            : 'SHOWROOM'
-                                                    }}
-                                                </td>
-                                                <td>
-                                                    @if($row->type == 5)
-                                                        PROMOSI
-                                                    @else
-                                                        {{ $row->type() }}
-                                                    @endif
-                                                </td>
-                                            </tr>
-                                        @empty
-                                            <tr>
-                                                <td colspan="4" class="text-muted text-center">
-                                                    Tidak ada data
-                                                </td>
-                                            </tr>
-                                        @endforelse
-                                    </tbody>
-                                </table>
-                            </div>
-
-                            <div class="mt-1">
-                                {{ $mutasiAktif->links() }}
-                            </div>
-                        </div>
-                        
-                        {{-- TAB BELUM DIAMBIL --}}
-                        <div id="tab-belum-diambil" class="mutasi-tab-content d-none">
-                            <div class="table-wrapper">
-                                <table class="table table-sm mutasi-table">
-                                    <thead>
-                                        <tr>
-                                            <th>#</th>
-                                            <th>Tanggal - Kode</th>
-                                            <th>Customer</th>
-                                            <th>Type</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        @forelse ($mutasiBelumDiambil as $row)
-                                            <tr data-id="{{ $row->id }}">
-                                                <td>
-                                                    {{ $loop->iteration + $mutasiBelumDiambil->firstItem() - 1 }}
-                                                </td>
-                                                <td>
-                                                    {{ \Carbon\Carbon::parse($row->tanggal)->format('d/m/y') }}<br> 
-                                                    <span><strong>{{ $row->kode }}{{ optional($row->so)->code ? ' / '.optional($row->so)->code : '' }}</strong></span>
-                                                </td>
-                                                <td>
-                                                    {{ 
-                                                        optional($row->customer_other_address)->name
-                                                            ? optional($row->customer_other_address)->name . '  ' . optional($row->customer_other_address)->text_kota
-                                                            : 'SHOWROOM'
-                                                    }}
-                                                </td>
-                                                <td>
-                                                    {{ $row->type == 5 ? 'PROMOSI' : $row->type() }}
-                                                </td>
-                                            </tr>
-                                        @empty
-                                            <tr>
-                                                <td colspan="4" class="text-muted text-center">
-                                                    Tidak ada data
-                                                </td>
-                                            </tr>
-                                        @endforelse
-                                    </tbody>
-                                </table>
-                            </div>
-                        
-                            <div class="mt-1">
-                                {{ $mutasiBelumDiambil->links() }}
-                            </div>
-                        </div>
-
-                        {{-- TAB SELESAI --}}
-                        <div id="tab-selesai" class="mutasi-tab-content d-none">
-                            <div class="table-wrapper">
-                                <table class="table table-sm mutasi-table">
-                                    <thead>
-                                        <tr>
-                                            <th>#</th>
-                                            <th>Tanggal - Kode</th>
-                                            <th>Customer</th>
-                                            <th>Type</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        @forelse ($mutasiSelesai as $row)
-                                            <tr class="text-muted" data-id="{{ $row->id }}">
-                                                <td>
-                                                    {{ $loop->iteration + $mutasiSelesai->firstItem() - 1 }}
-                                                </td>
-                                                <td>
-                                                    {{ \Carbon\Carbon::parse($row->tanggal)->format('d/m/y') }}<br> 
-                                                    <span><strong>{{ $row->kode }}{{ optional($row->so)->code ? ' / '.optional($row->so)->code : '' }}</strong></span>
-                                                </td>
-                                                <td>
-                                                    {{ 
-                                                        optional($row->customer_other_address)->name
-                                                            ? optional($row->customer_other_address)->name . '  ' . optional($row->customer_other_address)->text_kota
-                                                            : 'SHOWROOM'
-                                                    }}
-                                                </td>
-                                                <td>
-                                                    @if($row->type == 5)
-                                                        PROMOSI
-                                                    @else
-                                                        {{ $row->type() }}
-                                                    @endif
-                                                </td>
-                                            </tr>
-                                        @empty
-                                            <tr>
-                                                <td colspan="4" class="text-muted text-center">
-                                                    Tidak ada data
-                                                </td>
-                                            </tr>
-                                        @endforelse
-                                    </tbody>
-                                </table>
-                            </div>
-
-                            <div class="mt-1">
-                                {{ $mutasiSelesai->links() }}
-                            </div>
-                        </div>
+                        <button class="btn btn-outline-primary w-100 text-left" id="btnMutasiGudang">
+                            Mutasi Gudang Utama
+                        </button>
 
                     </div>
                 </div>
@@ -308,17 +145,19 @@
             <div class="frame-b">
                 <div class="card">
                     <div class="card-body">
-                        <div class="text-center text-muted mt-5">
-                            <i class="bi bi-inbox" style="font-size:32px;"></i>
-                            <h6 class="mt-2">Pilih mutasi dari tabel kiri</h6>
-                            <p class="mb-0">Detail akan ditampilkan di sini</p>
+                        {{-- INI TEMPAT TABLE + TAB --}}
+                        <div id="frameBContent"></div>
+                        {{-- INI KHUSUS DETAIL --}}
+                        <div id="frameBDetail" class="d-none">
+                            <div class="text-center text-muted mt-5">
+                                <i class="bi bi-inbox" style="font-size:32px;"></i>
+                                <h6 class="mt-2">Pilih mutasi dari tabel</h6>
+                            </div>
                         </div>
                     </div>
                 </div>
             </div>
-
         </div>
-
     </div>
 </div>
 @endsection
@@ -326,274 +165,343 @@
 @push('scripts')
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 <script>
-    $('.tab-btn').on('click', function () {
-        $('.tab-btn').removeClass('active');
-        $(this).addClass('active');
 
-        const tab = $(this).data('tab');
-        $('.mutasi-tab-content').addClass('d-none');
-        $('#tab-' + tab).removeClass('d-none');
+let CURRENT_MUTASI_TYPE = null;   // showroom | gudang
+let CURRENT_TAB = 'aktif';        // aktif | belum | selesai
 
-        resetFrameB(); // ⬅️ INI KUNCI UX
-    });
+/* =========================================================
+   LOAD MUTASI (SHOWROOM / GUDANG)
+========================================================= */
+$('#btnMutasiShowroom').on('click', function () {
+    CURRENT_MUTASI_TYPE = 'showroom';
+    loadMutasiTable('showroom');
+});
 
-    $(document).on('click', '.mutasi-table tbody tr', function () {
-        $('.mutasi-table tbody tr').removeClass('active');
-        $(this).addClass('active');
+$('#btnMutasiGudang').on('click', function () {
+    CURRENT_MUTASI_TYPE = 'gudang';
+    loadMutasiTable('gudang');
+});
 
-        const id = $(this).data('id');
+function loadMutasiTable(type) {
+    resetFrameB(); // 🔧 hanya reset detail
 
-        $('.frame-b .card-body').html(`
-            <div class="text-center text-muted mt-5">
-                <div class="spinner-border spinner-border-sm"></div>
-                <p class="mt-2 mb-0">Memuat detail...</p>
-            </div>
-        `);
+    $('#frameBContent').html(`
+        <div class="text-center py-5">
+            <div class="spinner-border"></div>
+            <p class="mt-2 mb-0">Memuat data...</p>
+        </div>
+    `);
 
-        $.get(
-            "{{ route('superuser.gudang.sj_mutasi_internal.show', ':id') }}"
-                .replace(':id', id),
-            function (html) {
-                $('.frame-b .card-body').html(html);
-            }
-        );
-    });
-
-    // SAVE STEP 1
-    $(document).on('submit', '#formStep1', function(e){
-        e.preventDefault();
-
-        let checkedCount = $('#formStep1 input[type="checkbox"]:checked').length;
-        let totalCount = $('#formStep1 input[type="checkbox"]').length;
-
-        if (checkedCount !== totalCount) {
-            Swal.fire({
-                icon: 'warning',
-                title: 'Checklist belum lengkap',
-                text: 'Semua produk dalam mutasi harus dicentang untuk melanjutkan.'
-            });
-            return;
+    $.get(
+        "{{ route('superuser.gudang.sj_mutasi_internal.table') }}",
+        { type: type },
+        function (html) {
+            $('#frameBContent').html(html);
         }
+    );
+}
+
+/* =========================================================
+   TAB MUTASI (AKTIF / BELUM / SELESAI)
+========================================================= */
+$(document).on('click', '.tab-btn', function (e) {
+    e.preventDefault();
+
+    $('.tab-btn').removeClass('active');
+    $(this).addClass('active');
+
+    CURRENT_TAB = $(this).data('tab'); // 🔥 SIMPAN TAB AKTIF
+
+    const tab = $(this).data('tab');
+    $('.mutasi-tab-content').addClass('d-none');
+    $('#tab-' + tab).removeClass('d-none');
+
+    resetFrameB(); // 🔧 TIDAK MERUSAK TAB
+});
+
+/* =========================================================
+   CLICK ROW MUTASI (LOAD DETAIL)
+========================================================= */
+$(document).on('click', '.mutasi-table tbody tr', function () {
+    $('.mutasi-table tbody tr').removeClass('active');
+    $(this).addClass('active');
+
+    const id = $(this).data('id');
+
+    $('#frameBDetail').html(`
+        <div class="text-center text-muted mt-5">
+            <div class="spinner-border spinner-border-sm"></div>
+            <p class="mt-2 mb-0">Memuat detail...</p>
+        </div>
+    `);
+
+    $.get(
+        "{{ route('superuser.gudang.sj_mutasi_internal.show', ':id') }}"
+            .replace(':id', id),
+        { type: CURRENT_MUTASI_TYPE }, // 🔥 kirim type
+        function (html) {
+            $('#frameBContent').addClass('d-none');
+            $('#frameBDetail').removeClass('d-none');
+            $('#frameBDetail').html(html);
+        }
+    );
+});
 
 
-        Swal.fire({
-            icon: 'question',
-            title: 'Konfirmasi',
-            text: `Anda akan memproses ${checkedCount} produk. Lanjutkan?`,
-            showCancelButton: true,
-            confirmButtonText: 'Ya, simpan',
-            cancelButtonText: 'Batal'
-        }).then((result) => {
-            if (result.isConfirmed) {
-                $.post(
-                    '{{ route("superuser.gudang.sj_mutasi_internal.step1Save") }}',
-                    $('#formStep1').serialize(),
-                    function(res){
-                        if(res.success){
-                            $('.frame-b .card-body').html(res.html);
-                        }
-                    }
-                );
-            }
-        });
-    });
+/* =========================================================
+   STEP 1 - SAVE
+========================================================= */
+$(document).on('submit', '#formStep1', function(e){
+    e.preventDefault();
 
-    $(document).on('click', '#cancelStep1', function(){
+    let checkedCount = $('#formStep1 input[type="checkbox"]:checked').length;
+    let totalCount = $('#formStep1 input[type="checkbox"]').length;
+
+    if (checkedCount !== totalCount) {
         Swal.fire({
             icon: 'warning',
-            title: 'Batalkan proses?',
-            text: 'Checklist akan dikosongkan.',
-            showCancelButton: true,
-            confirmButtonText: 'Ya, batalkan',
-            cancelButtonText: 'Tidak'
-        }).then((result) => {
-            if (result.isConfirmed) {
-                $.post(
-                    '{{ route("superuser.gudang.sj_mutasi_internal.step1Cancel") }}',
-                    {
-                        _token: '{{ csrf_token() }}',
-                        mutasi_id: $('input[name=mutasi_id]').val()
-                    },
-                    function(res){
-                        if(res.success){
-                            $('.frame-b .card-body').html(res.html);
-                        }
-                    }
-                );
-            }
+            title: 'Checklist belum lengkap',
+            text: 'Semua produk dalam mutasi harus dicentang untuk melanjutkan.'
         });
-    });
+        return;
+    }
 
-
-    $(document).on('click', '#cancelStep2', function () {
-        Swal.fire({
-            icon: 'warning',
-            title: 'Batalkan Step 2?',
-            text: 'Proses akan kembali ke Step 1.',
-            showCancelButton: true,
-            confirmButtonText: 'Ya, batalkan',
-            cancelButtonText: 'Tidak'
-        }).then((result) => {
-            if (result.isConfirmed) {
-                $.post(
-                    '{{ route("superuser.gudang.sj_mutasi_internal.step2Cancel") }}',
-                    {
-                        _token: '{{ csrf_token() }}',
-                        mutasi_id: $('input[name=mutasi_id]').val()
-                    },
-                    function () {
-                        $('.mutasi-table tr.active').click();
-                    }
-                );
-            }
-        });
-    });
-
-    // NEXT STEP 2
-    $(document).on('click', '#nextStep2', function () {
-        Swal.fire({
-            icon: 'question',
-            title: 'Lanjut ke Step 3?',
-            text: 'Pastikan data sudah benar sebelum melanjutkan.',
-            showCancelButton: true,
-            confirmButtonText: 'Ya, lanjut',
-            cancelButtonText: 'Batal'
-        }).then((result) => {
-    
-            if (!result.isConfirmed) return;
-    
+    Swal.fire({
+        icon: 'question',
+        title: 'Konfirmasi',
+        text: `Anda akan memproses ${checkedCount} produk. Lanjutkan?`,
+        showCancelButton: true,
+        confirmButtonText: 'Ya, simpan',
+        cancelButtonText: 'Batal'
+    }).then((result) => {
+        if (result.isConfirmed) {
             $.post(
-                '{{ route("superuser.gudang.sj_mutasi_internal.step2Next") }}',
+                '{{ route("superuser.gudang.sj_mutasi_internal.step1Save") }}',
+                $('#formStep1').serialize() + `&type=${CURRENT_MUTASI_TYPE}`, // 🔥 kirim type
+                function(res){
+                    if(res.success){
+                        $('#frameBDetail').html(res.html);
+                    }
+                }
+            );
+        }
+    });
+});
+
+/* =========================================================
+   STEP 1 - CANCEL
+========================================================= */
+$(document).on('click', '#cancelStep1', function(){
+    Swal.fire({
+        icon: 'warning',
+        title: 'Batalkan proses?',
+        text: 'Checklist akan dikosongkan.',
+        showCancelButton: true,
+        confirmButtonText: 'Ya, batalkan',
+        cancelButtonText: 'Tidak'
+    }).then((result) => {
+        if (result.isConfirmed) {
+            $.post(
+                '{{ route("superuser.gudang.sj_mutasi_internal.step1Cancel") }}',
                 {
                     _token: '{{ csrf_token() }}',
-                    mutasi_id: $('input[name=mutasi_id]').val()
+                    mutasi_id: $('input[name=mutasi_id]').val(),
+                    type: CURRENT_MUTASI_TYPE // 🔥 tambahkan type
+                },
+                function(res){
+                    if(res.success){
+                        $('#frameBDetail').html(res.html); // tetap pakai html baru
+                    }
                 }
-            )
-            .done(function (res) {
-                if (res.success) {
-                    // reload detail (masuk step 3)
-                    $('.mutasi-table tr.active').click();
-                }
-            })
-            .fail(function (xhr) {
-                Swal.fire({
-                    icon: 'warning',
-                    title: 'Tidak bisa lanjut',
-                    text: xhr.responseJSON?.message || 'Terjadi kesalahan'
-                });
-            });
-    
-        });
-    });
-
-
-    // SAVE STEP 3
-    $(document).on('click', '#saveStep3', function () {
-        let status = $('#status_barang').val();
-
-        if (!status) {
-            Swal.fire({
-                icon: 'warning',
-                title: 'Status belum dipilih',
-                text: 'Silakan pilih status barang terlebih dahulu.'
-            });
-            return;
+            );
         }
+    });
+});
 
-        Swal.fire({
-            icon: 'warning',
-            title: 'Proses seluruh mutasi?',
-            text: 'Aksi ini akan memproses SEMUA barang dalam satu kode mutasi.',
-            showCancelButton: true,
-            confirmButtonText: 'Ya, proses',
-            cancelButtonText: 'Batal'
-        }).then((result) => {
-
-            if (!result.isConfirmed) return;
-
-            Swal.fire({
-                title: 'Memproses...',
-                text: 'Mohon tunggu',
-                allowOutsideClick: false,
-                didOpen: () => {
-                    Swal.showLoading();
+/* =========================================================
+   STEP 2 - CANCEL
+========================================================= */
+$(document).on('click', '#cancelStep2', function () {
+    Swal.fire({
+        icon: 'warning',
+        title: 'Batalkan Step 2?',
+        text: 'Proses akan kembali ke Step 1.',
+        showCancelButton: true,
+        confirmButtonText: 'Ya, batalkan',
+        cancelButtonText: 'Tidak'
+    }).then((result) => {
+        if (result.isConfirmed) {
+            $.post(
+                '{{ route("superuser.gudang.sj_mutasi_internal.step2Cancel") }}',
+                {
+                    _token: '{{ csrf_token() }}',
+                    mutasi_id: $('input[name=mutasi_id]').val(),
+                    type: CURRENT_MUTASI_TYPE // 🔥 wajib dikirim
+                },
+                function () {
+                    $('.mutasi-table tr.active').trigger('click');
                 }
-            });
+            );
+        }
+    });
+});
 
-            $.post('{{ route("superuser.gudang.sj_mutasi_internal.step3Update") }}', {
+/* =========================================================
+   STEP 2 - NEXT
+========================================================= */
+$(document).on('click', '#nextStep2', function () {
+    Swal.fire({
+        icon: 'question',
+        title: 'Lanjut ke Step 3?',
+        text: 'Pastikan data sudah benar sebelum melanjutkan.',
+        showCancelButton: true,
+        confirmButtonText: 'Ya, lanjut',
+        cancelButtonText: 'Batal'
+    }).then((result) => {
+
+        if (!result.isConfirmed) return;
+
+        $.post(
+            '{{ route("superuser.gudang.sj_mutasi_internal.step2Next") }}',
+            {
                 _token: '{{ csrf_token() }}',
                 mutasi_id: $('input[name=mutasi_id]').val(),
-                status_barang: status
-            }, function (res) {
+                type: CURRENT_MUTASI_TYPE // 🔥 kirim type
+            }
+        ).done(function (res) {
+            if (res.success) {
+                const id = $('input[name=mutasi_id]').val();
+                $.get(
+                    "{{ route('superuser.gudang.sj_mutasi_internal.show', ':id') }}"
+                        .replace(':id', id),
+                    function (html) {
+                        $('#frameBDetail').html(html); // 🔧
+                    }
+                );
+            }
+        });
+    });
+});
 
-                Swal.close();
+/* =========================================================
+   STEP 3 - SAVE
+========================================================= */
+$(document).on('click', '#saveStep3', function () {
+    let status = $('#status_barang').val();
 
-                if(res.success && res.to_selesai){
-                    Swal.fire({
-                        icon: 'success',
-                        title: 'Berhasil',
-                        text: 'Mutasi telah selesai diproses.'
-                    });
-                
-                    refreshMutasiTabs(); // 🔥 INI
-                
-                    $('.tab-btn').removeClass('active');
-                    $('.tab-btn[data-tab="selesai"]').addClass('active');
-                    $('.mutasi-tab-content').addClass('d-none');
-                    $('#tab-selesai').removeClass('d-none');
-                
-                    $('#tab-selesai').load(location.href + ' #tab-selesai > *');
-                
-                    resetFrameB();
+    if (!status) {
+        Swal.fire({
+            icon: 'warning',
+            title: 'Status belum dipilih',
+            text: 'Silakan pilih status barang terlebih dahulu.'
+        });
+        return;
+    }
+
+    Swal.fire({
+        icon: 'warning',
+        title: 'Proses seluruh mutasi?',
+        text: 'Aksi ini akan memproses SEMUA barang dalam satu kode mutasi.',
+        showCancelButton: true,
+        confirmButtonText: 'Ya, proses',
+        cancelButtonText: 'Batal'
+    }).then((result) => {
+
+        if (!result.isConfirmed) return;
+
+        Swal.fire({
+            title: 'Memproses...',
+            allowOutsideClick: false,
+            didOpen: () => Swal.showLoading()
+        });
+
+        $.post('{{ route("superuser.gudang.sj_mutasi_internal.step3Update") }}', {
+            _token: '{{ csrf_token() }}',
+            mutasi_id: $('input[name=mutasi_id]').val(),
+            status_barang: status,
+            type: CURRENT_MUTASI_TYPE // 🔥 kirim type
+        }, function (res) {
+
+            Swal.close();
+
+            if(res.success && res.to_selesai){
+                Swal.fire({
+                    icon: 'success',
+                    title: 'Berhasil',
+                    text: 'Mutasi telah selesai diproses.'
+                });
+
+                refreshMutasiTabs();
+
+                // 🔥 reload tab asal
+                hotReloadTab(CURRENT_TAB);
+
+                // 🔥 reload tab tujuan
+                if (res.to_tab && res.to_tab !== CURRENT_TAB) {
+                    hotReloadTab(res.to_tab);
                 }
 
-            }).fail(function (err) {
-                Swal.fire({
-                    icon: 'error',
-                    title: 'Gagal',
-                    text: err.responseJSON?.message || 'Terjadi kesalahan'
-                });
-            });
+                $('.tab-btn').removeClass('active');
+                $('.tab-btn[data-tab="selesai"]').addClass('active');
+                $('.mutasi-tab-content').addClass('d-none');
+                $('#tab-selesai').removeClass('d-none');
+
+                resetFrameB();
+            }
         });
     });
+});
 
-    function toggleStep1Button() {
-        let checkedCount = $('#formStep1 input[type="checkbox"]:checked').length;
-        $('#btnStep1Submit').prop('disabled', checkedCount === 0);
-    }
+/* =========================================================
+   RESET DETAIL FRAME (AMAN)
+========================================================= */
+function resetFrameB() {
+    $('.mutasi-table tbody tr').removeClass('active');
 
-    // Saat halaman step 1 pertama kali dimuat
-    $(document).on('change', '#formStep1 input[type="checkbox"]', function () {
-        toggleStep1Button();
+    $('#frameBDetail').addClass('d-none').html(`
+        <div class="text-center text-muted mt-5">
+            <i class="bi bi-inbox" style="font-size:32px;"></i>
+            <h6 class="mt-2">Pilih mutasi dari tabel</h6>
+            <p class="mb-0">Detail akan ditampilkan di sini</p>
+        </div>
+    `);
+
+    $('#frameBContent').removeClass('d-none'); // 🔥 BALIK KE LIST
+}
+
+/* =========================================================
+   REFRESH TAB COUNT
+========================================================= */
+function refreshMutasiTabs() {
+    if(!CURRENT_MUTASI_TYPE) return;
+
+    $.get('{{ route("superuser.gudang.sj_mutasi_internal.refreshTabs") }}', { type: CURRENT_MUTASI_TYPE }, function (res) {
+        $('#count-aktif').text(res.aktif);
+        $('#count-belum').text(res.belum);
+        $('#count-selesai').text(res.selesai);
     });
+}
 
-    // Trigger juga saat step1 pertama kali di-render via ajax
-    $(document).on('shownStep1', function () {
-        toggleStep1Button();
-    });
+function hotReloadTab(tab) {
+    if (!CURRENT_MUTASI_TYPE || !tab) return;
 
-    function resetFrameB() {
-        $('.mutasi-table tbody tr').removeClass('active');
+    const container = $('#tab-' + tab);
 
-        $('.frame-b .card-body').html(`
-            <div class="text-center text-muted mt-5">
-                <i class="bi bi-inbox" style="font-size:32px;"></i>
-                <h6 class="mt-2">Pilih mutasi dari tabel kiri</h6>
-                <p class="mb-0">Detail akan ditampilkan di sini</p>
-            </div>
-        `);
-    }
+    container.html(`
+        <div class="text-center py-4 text-muted">
+            <div class="spinner-border spinner-border-sm"></div>
+            <p class="mt-2 mb-0">Memuat ulang data...</p>
+        </div>
+    `);
 
-    $(document).on('click', '.pagination a', function () {
-        resetFrameB();
-    });
-    
-    function refreshMutasiTabs() {
-        $.get('{{ route("superuser.gudang.sj_mutasi_internal.refreshTabs") }}', function (res) {
-            $('#count-aktif').text(res.aktif);
-            $('#count-belum').text(res.belum);
-            $('#count-selesai').text(res.selesai);
-        });
-    }
+    $.get(
+        "{{ route('superuser.gudang.sj_mutasi_internal.table') }}",
+        { type: CURRENT_MUTASI_TYPE },
+        function (html) {
+            const newContent = $(html).find('#tab-' + tab).html();
+            container.html(newContent);
+        }
+    );
+}
 </script>
 @endpush

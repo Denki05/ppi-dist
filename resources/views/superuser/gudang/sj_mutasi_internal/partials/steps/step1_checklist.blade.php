@@ -16,6 +16,7 @@
                         <tr>
                             <th width="30"></th>
                             <th>Produk</th>
+                            <th>Kemasan</th>
                             <th class="text-end">Qty</th>
                         </tr>
                     </thead>
@@ -24,19 +25,31 @@
                             <tr>
                                 <td>
                                     <input type="checkbox"
-                                           name="items[]"
-                                           value="{{ $d->id }}"
-                                           {{ $d->is_checked ? 'checked' : '' }}>
+                                        name="items[]"
+                                        value="{{ $d->id }}"
+                                        {{ $d->is_checked ? 'checked' : '' }}>
                                 </td>
                                 <td>
-                                    {{ $d->product_packaging->product->code }}
-                                    - {{ $d->product_packaging->product->name }}
+                                    @if(isset($d->product_packaging)) 
+                                        {{ $d->product_packaging->product->code }}
+                                        - {{ $d->product_packaging->product->name }}
+                                    @elseif(isset($d->product_pack)) 
+                                        {{ $d->product_pack->product->code ?? '-' }}
+                                        - {{ $d->product_pack->product->name ?? '-' }}
+                                    @endif
+                                </td>
+                                 <td>
+                                    @if(isset($d->product_packaging)) 
+                                        {{ $d->product_packaging->packaging->pack_name }}
+                                    @elseif(isset($d->product_pack)) 
+                                        {{ $d->product_pack->packaging->pack_name }}
+                                    @endif
                                 </td>
                                 <td class="text-end">
-                                    {{ $d->qty }}
+                                    {{ $type === 'showroom' ? $d->qty : $d->quantity }}
                                 </td>
                             </tr>
-                        @endforeach
+                            @endforeach
                     </tbody>
                 </table>
             </div>
