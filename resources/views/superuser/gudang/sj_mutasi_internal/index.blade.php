@@ -277,13 +277,33 @@ $(document).on('submit', '#formStep1', function(e){
         if (result.isConfirmed) {
             $.post(
                 '{{ route("superuser.gudang.sj_mutasi_internal.step1Save") }}',
-                $('#formStep1').serialize() + `&type=${CURRENT_MUTASI_TYPE}`, // 🔥 kirim type
-                function(res){
-                    if(res.success){
-                        $('#frameBDetail').html(res.html);
-                    }
+                $('#formStep1').serialize() + `&type=${CURRENT_MUTASI_TYPE}`,
+            )
+            .done(function(res){
+                if(res.success){
+                    $('#frameBDetail').html(res.html);
+
+                    Swal.fire({
+                        icon: 'success',
+                        title: 'Berhasil',
+                        text: 'Checklist berhasil disimpan.'
+                    });
                 }
-            );
+            })
+            .fail(function(xhr){
+
+                let message = 'Terjadi kesalahan sistem.';
+
+                if(xhr.responseJSON && xhr.responseJSON.message){
+                    message = xhr.responseJSON.message;
+                }
+
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Gagal',
+                    text: message
+                });
+            });
         }
     });
 });
@@ -341,7 +361,32 @@ $(document).on('click', '#cancelStep2', function () {
                 function () {
                     $('.mutasi-table tr.active').trigger('click');
                 }
-            );
+            )
+            .done(function(res){
+                if(res.success){
+                    $('#frameBDetail').html(res.html);
+
+                    Swal.fire({
+                        icon: 'success',
+                        title: 'Berhasil',
+                        text: 'Berhasil dicancel.'
+                    });
+                }
+            })
+            .fail(function(xhr){
+
+                let message = 'Terjadi kesalahan sistem.';
+
+                if(xhr.responseJSON && xhr.responseJSON.message){
+                    message = xhr.responseJSON.message;
+                }
+
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Gagal',
+                    text: message
+                });
+            });
         }
     });
 });
@@ -374,8 +419,9 @@ $(document).on('click', '#nextStep2', function () {
                 $.get(
                     "{{ route('superuser.gudang.sj_mutasi_internal.show', ':id') }}"
                         .replace(':id', id),
+                    { type: CURRENT_MUTASI_TYPE },
                     function (html) {
-                        $('#frameBDetail').html(html); // 🔧
+                        $('#frameBDetail').html(html);
                     }
                 );
             }

@@ -76,10 +76,14 @@ class SjMutasiInternalController extends Controller
                 ->orderBy('date', 'desc')
                 ->paginate(10);
 
-            $data['mutasiBelumDiambil'] = MutasiOut::where('status', MutasiOut::STATUS['PUBLISH'])
+            $data['mutasiBelumDiambil'] = MutasiOut::whereIn('status', [
+                    MutasiOut::STATUS['PUBLISH'],
+                    MutasiOut::STATUS['ACC']
+                ])
                 ->where('status_barang', 1)
                 ->orderBy('date', 'desc')
                 ->paginate(10);
+
 
             $data['mutasiSelesai'] = MutasiOut::where('status', MutasiOut::STATUS['ACC'])
                 ->orderBy('date', 'desc')
@@ -114,7 +118,7 @@ class SjMutasiInternalController extends Controller
 
     public function show(Request $request, $id)
     {
-        $type = (string) $request->type ?? 'showroom';
+        $type = $request->type ?? 'showroom';
 
         if ($type == 'showroom') {
             $mutasi = MutasiShowroom::with('details.product_packaging')->findOrFail($id);
@@ -204,7 +208,7 @@ class SjMutasiInternalController extends Controller
 
             $html = view(
                 'superuser.gudang.sj_mutasi_internal.partials._detailWrapper',
-                compact('mutasi')
+                compact('mutasi', 'type')
             )->render();
 
             return response()->json([
@@ -213,7 +217,6 @@ class SjMutasiInternalController extends Controller
             ]);
 
         } catch (\Exception $e) {
-            dd($e);
             DB::rollBack();
             return response()->json([
                 'success' => false,
@@ -295,8 +298,6 @@ class SjMutasiInternalController extends Controller
         DB::beginTransaction();
         try {
 
-            // dd($request->type);
-
             $type = $request->type ?? 'showroom'; // default showroom
 
             if ($type === 'showroom') {
@@ -345,7 +346,6 @@ class SjMutasiInternalController extends Controller
             return response()->json(['success' => true]);
 
         } catch (\Exception $e) {
-            dd($e);
             DB::rollBack();
             return response()->json([
                 'success' => false,
@@ -389,7 +389,7 @@ class SjMutasiInternalController extends Controller
              * VALIDASI 2 (OPSIONAL TAPI AMAN)
              * Pastikan ada minimal 1 item yang dichecklist
              */
-            $checkedCount = $detials
+            $checkedCount = $details
                 ->where('is_checked', 1)
                 ->count();
     
@@ -432,7 +432,7 @@ class SjMutasiInternalController extends Controller
     {
         DB::beginTransaction();
         try {
-            $type = $request->type ?? 'showroom'; // default showroom
+            $type = $request->type ?? 'showroom';
 
             if ($type === 'showroom') {
                 $mutasi = MutasiShowroom::with('details')
@@ -440,7 +440,7 @@ class SjMutasiInternalController extends Controller
                     ->findOrFail($request->mutasi_id);
 
                 $details = $mutasi->details;
-            } else { // gudang
+            } else {
                 $mutasi = MutasiOut::with('mutasiOutDetails')
                     ->lockForUpdate()
                     ->findOrFail($request->mutasi_id);
@@ -448,52 +448,81 @@ class SjMutasiInternalController extends Controller
                 $details = $mutasi->mutasiOutDetails;
             }
 
-            $oldStatus = $mutasi->status_barang;
+            $oldStatus = (int) $mutasi->status_barang;
             $newStatus = (int) $request->status_barang;
 
-            // Validasi transisi
-            if ($oldStatus == 3) {
+            // ==============================
+            // VALIDASI TRANSISI
+            // ==============================
+            if ($oldStatus == 2) {
                 throw new \Exception('Mutasi sudah DIAMBIL');
             }
 
-            if (in_array($oldStatus, [1]) && $newStatus != 2) {
+            if ($oldStatus == 1 && $newStatus != 2) {
                 throw new \Exception('Status hanya bisa diubah ke DIAMBIL');
             }
 
-            // Update status mutasi
+            // ==============================
+            // UPDATE STATUS BARANG
+            // ==============================
             $mutasi->status_barang = $newStatus;
+
+            // ==============================
+            // UPDATE STATUS HEADER
+            // ==============================
             if ($type === 'gudang') {
-                $mutasi->status = 3;
+
+                if ($newStatus === 1) {
+                    // Belum Diambil → tetap PUBLISH (2)
+                    $mutasi->status = 2;
+                }
+
+                if ($newStatus === 2) {
+                    // Sudah Diambil → ACC (3)
+                    $mutasi->status = 3;
+                }
             }
+
             $mutasi->save();
 
-            // CATAT STOK MOVE HANYA JIKA FINAL DIAMBIL
+            // ==============================
+            // CATAT STOCK MOVE HANYA JIKA DIAMBIL
+            // ==============================
             if ($newStatus === 2 && $oldStatus !== 2) {
+
                 foreach ($details as $detail) {
-                    // Ambil balance terakhir
+
+                    $productId = $detail->product_packaging_id;
+
                     $lastStock = DB::table('gudang_move_stock')
-                        ->where('product_packaging_id', $detail->product_packaging_id)
+                        ->where('product_packaging_id', $productId)
                         ->orderBy('created_at', 'desc')
                         ->first();
 
-                    $quantity = $type === 'showroom' ? $detail->qty : $detail->quantity;
-                    $quantity_after_move = $lastStock ? $lastStock->stock_balance - $quantity : 0;
+                    $quantity = $type === 'showroom'
+                        ? $detail->qty
+                        : $detail->quantity;
+
+                    $quantity_after_move = $lastStock
+                        ? $lastStock->stock_balance - $quantity
+                        : 0;
 
                     StockMove::create([
-                        'code_transaction' => $type === 'showroom' 
-                                    ? $mutasi->kode
-                                    : $mutasi->code,
-                        // 'warehouse_id' => $mutasi->warehouse_from_id,
-                        'warehouse_id' => $type === 'showroom' 
-                                    ? $mutasi->warehouse_from_id
-                                    : $mutasi->warehouse_from,
-                        'product_packaging_id' => $detail->product_packaging_id,
+                        'code_transaction' => $type === 'showroom'
+                            ? $mutasi->kode
+                            : $mutasi->code,
+
+                        'warehouse_id' => $type === 'showroom'
+                            ? $mutasi->warehouse_from_id
+                            : $mutasi->warehouse_from,
+
+                        'product_packaging_id' => $productId,
                         'stock_in' => 0,
                         'stock_out' => $quantity,
                         'stock_balance' => $quantity_after_move,
-                        'note' => $type === 'showroom' 
-                                    ? 'Mutasi Showroom - DIAMBIL'
-                                    : 'Mutasi Gudang - DIAMBIL',
+                        'note' => $type === 'showroom'
+                            ? 'Mutasi Showroom - DIAMBIL'
+                            : 'Mutasi Gudang - DIAMBIL',
                         'created_by' => Auth::id(),
                         'updated_by' => Auth::id(),
                     ]);
@@ -501,12 +530,14 @@ class SjMutasiInternalController extends Controller
             }
 
             DB::commit();
+
             return response()->json([
                 'success' => true,
-                'to_selesai' => true
+                'to_selesai' => $newStatus === 2
             ]);
 
         } catch (\Exception $e) {
+            dd($e);
             DB::rollBack();
             return response()->json([
                 'success' => false,
