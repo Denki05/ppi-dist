@@ -589,7 +589,7 @@ class SjMutasiInternalController extends Controller
 
             $query = MutasiShowroom::query();
 
-            $query->where('status', 'selesai'); // sesuaikan dengan status Anda
+            $query->where('status_barang', 2); // sesuaikan dengan status Anda
 
             if ($request->kode) {
                 $query->where('kode', 'like', '%'.$request->kode.'%');
@@ -623,7 +623,7 @@ class SjMutasiInternalController extends Controller
 
             $query = MutasiOut::query();
 
-            $query->where('status', 'selesai');
+            $query->where('status_barang', 2);
 
             if ($request->kode) {
                 $query->where('code', 'like', '%'.$request->kode.'%');

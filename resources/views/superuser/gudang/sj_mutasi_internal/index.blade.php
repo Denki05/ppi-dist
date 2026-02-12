@@ -115,91 +115,120 @@
         }
     }
 
-    .modal-content {
+    /* ================= MODAL FILTER CLEAN STYLE ================= */
+
+    .filter-modal {
         border-radius: 18px;
-    }
-
-    .modal-header {
-        padding-bottom: 0;
-    }
-
-    .modal-body {
-        padding-top: 10px;
-    }
-
-    .modal-footer {
-        padding-top: 0;
-    }
-
-    /* ================= MOBILE ADVANCE FILTER ================= */
-
-    #modalFilterSelesai .modal-content {
-        border-radius: 22px;
         border: none;
     }
 
-    #modalFilterSelesai .modal-header {
-        padding: 20px 20px 10px 20px;
+    .filter-modal .modal-header {
+        padding: 18px 20px;
+        border-bottom: 1px solid #f1f1f1;
     }
 
-    #modalFilterSelesai .modal-title {
+    .filter-modal .modal-title {
         font-size: 16px;
         font-weight: 600;
     }
 
-    #modalFilterSelesai .modal-body {
-        padding: 10px 20px 100px 20px;
+    .filter-modal .modal-body {
+        padding: 20px;
     }
 
-    #modalFilterSelesai .modal-footer {
-        bottom: 0;
-        background: #fff;
-        padding: 15px 20px 20px 20px;
+    .filter-modal .modal-footer {
+        padding: 16px 20px;
         border-top: 1px solid #f1f1f1;
     }
 
-    /* Section block */
-    .filter-section {
-        background: #f8f9fa;
-        border-radius: 16px;
-        padding: 14px;
-        margin-bottom: 16px;
+    /* Card-style field */
+    .filter-card {
+        margin-bottom: 18px;
     }
 
-    /* Label */
-    .filter-label {
+    .filter-card label {
         font-size: 12px;
+        font-weight: 500;
         color: #6c757d;
         margin-bottom: 6px;
         display: block;
     }
 
     /* Input style */
-    #modalFilterSelesai .form-control,
-    #modalFilterSelesai .select2-selection {
-        border-radius: 14px !important;
-        min-height: 48px;
-        border: 1px solid #e3e6ea;
+    .filter-modal .form-control,
+    .filter-modal .form-select,
+    .filter-modal .select2-selection {
+        border-radius: 12px !important;
+        min-height: 46px;
+        border: 1px solid #e5e7eb;
         font-size: 14px;
+        box-shadow: none !important;
     }
 
-    /* Select2 fix full width */
+    .filter-modal .form-control:focus,
+    .filter-modal .form-select:focus {
+        border-color: #0d6efd;
+        box-shadow: 0 0 0 2px rgba(13,110,253,0.15);
+    }
+
+    /* Select2 fix */
     .select2-container {
         width: 100% !important;
     }
 
-    /* Flatpickr modern look */
-    .flatpickr-input {
-        background: #fff !important;
+    /* Mobile fullscreen */
+    @media (max-width: 576px) {
+        .modal-dialog {
+            margin: 0;
+        }
+
+        .filter-modal {
+            border-radius: 0;
+            height: 100vh;
+        }
+
+        .filter-modal .modal-body {
+            overflow-y: auto;
+        }
     }
 
-    #modalFilterSelesai .modal-dialog {
-        max-width: 720px;
+    .filter-section {
+        padding: 15px;
+        background: #f8f9fb;
+        border-radius: 14px;
     }
 
-    #modalFilterSelesai .modal-content {
-        border-radius: 18px;
+    .section-label {
+        font-size: 12px;
+        font-weight: 600;
+        color: #6c757d;
+        margin-bottom: 6px;
+        display: block;
     }
+
+    .quick-date-wrapper {
+        display: flex;
+        gap: 8px;
+        flex-wrap: wrap;
+    }
+
+    .quick-date-btn {
+        border: 1px solid #dee2e6;
+        background: #fff;
+        padding: 6px 12px;
+        border-radius: 20px;
+        font-size: 12px;
+        cursor: pointer;
+        transition: all .2s;
+    }
+
+    .quick-date-btn:hover {
+        background: #0d6efd;
+        color: #fff;
+        border-color: #0d6efd;
+    }
+
+
 </style>
 
 <div class="container-fluid px-2">
@@ -254,102 +283,102 @@
 
 <!-- ================= MODAL FILTER SELESAI ================= -->
 <div class="modal fade" id="modalFilterSelesai" tabindex="-1">
-    <div class="modal-dialog modal-fullscreen-sm-down modal-dialog-scrollable">
-        <div class="modal-content">
+    <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable modal-md">
+        <div class="modal-content filter-modal">
 
-            <div class="modal-header border-0">
-                <h5 class="modal-title fw-semibold">Filter Mutasi Selesai</h5>
+            <div class="modal-header">
+                <h5 class="modal-title">Filter Mutasi</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
 
-            <div class="modal-body pt-2">
+            <div class="modal-body">
 
-                <div class="row g-3">
-
-                    <!-- KODE -->
-                    <div class="col-md-6">
-                        <label class="form-label small text-muted mb-1">
-                            Kode Mutasi
-                        </label>
+                <div class="modal-body">
+                    <!-- DATE RANGE + QUICK -->
+                    <div class="filter-section mb-4">
                         <input type="text"
-                            class="form-control rounded-3"
-                            id="filterKode"
-                            placeholder="Contoh: MS-0001">
-                    </div>
-
-                    <!-- DATE RANGE -->
-                    <div class="col-md-6">
-                        <label class="form-label small text-muted mb-1">
-                            Range Tanggal
-                        </label>
-                        <input type="text"
-                            class="form-control rounded-3"
+                            class="form-control mb-2"
                             id="filterDateRange"
                             placeholder="Pilih rentang tanggal">
-                    </div>
 
-                    <!-- SHOWROOM FILTER -->
-                    <div id="filterShowroomFields" class="col-12 row g-3 d-none">
-
-                        <div class="col-md-6">
-                            <label class="form-label small text-muted mb-1">
-                                Customer
-                            </label>
-                            <select class="form-select js-select2" id="filterCustomer">
-                                <option value="">Semua Customer</option>
-                                @foreach($customers ?? [] as $cust)
-                                    <option value="{{ $cust->id }}">
-                                        {{ $cust->name }} {{ $cust->text_kota ?? '' }}
-                                    </option>
-                                @endforeach
-                            </select>
-                        </div>
-
-                        <div class="col-md-6">
-                            <label class="form-label small text-muted mb-1">
-                                Type
-                            </label>
-                            <select class="form-select js-select2" id="filterType">
-                                <option value="">Semua Type</option>
-                                <option value="1">SHOWROOM</option>
-                                <option value="2">FREE PRODUCT</option>
-                                <option value="3">KLAIM</option>
-                                <option value="4">BUNDLING</option>
-                                <option value="5">PROMOSI</option>
-                            </select>
+                        <div class="quick-date-wrapper">
+                            <button type="button" class="quick-date-btn" data-range="today">Today</button>
+                            <button type="button" class="quick-date-btn" data-range="yesterday">Yesterday</button>
+                            <button type="button" class="quick-date-btn" data-range="7">Last 7 Days</button>
+                            <button type="button" class="quick-date-btn" data-range="30">Last 30 Days</button>
                         </div>
                     </div>
 
-                    <!-- GUDANG FILTER -->
-                    <div id="filterGudangFields" class="col-12 d-none">
-                        <label class="form-label small text-muted mb-1">
-                            Gudang Tujuan
-                        </label>
-                        <select class="form-select js-select2" id="filterGudangTujuan">
-                            <option value="">Semua Gudang</option>
-                            @foreach($warehouses ?? [] as $wh)
-                                <option value="{{ $wh->id }}">
-                                    {{ $wh->name }}
-                                </option>
-                            @endforeach
-                        </select>
+                    <!-- GRID FILTER -->
+                    <div class="row g-3">
+                        {{-- KODE --}}
+                        <div class="col-md-6">
+                            <div class="filter-card">
+                                <input type="text"
+                                    class="form-control"
+                                    id="filterKode" placeholder="Cari Kode Mutasi">
+                            </div>
+                        </div>
+
+                        {{-- TYPE (SHOWROOM ONLY) --}}
+                        <div class="col-md-6 showroom-only d-none">
+                            <div class="filter-card">
+                                <select class="form-select js-select2" id="filterType">
+                                    <option value="">Semua Type</option>
+                                    <option value="1">SHOWROOM</option>
+                                    <option value="2">FREE PRODUCT</option>
+                                    <option value="3">KLAIM</option>
+                                    <option value="4">BUNDLING</option>
+                                    <option value="5">PROMOSI</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        {{-- CUSTOMER FULL WIDTH --}}
+                        <div class="col-12 showroom-only d-none">
+                            <div class="filter-card">
+                                <select class="form-select js-select2" id="filterCustomer">
+                                    <option value="">Semua Customer</option>
+                                    @foreach($customers ?? [] as $cust)
+                                        <option value="{{ $cust->id }}">
+                                            {{ $cust->name }} {{ $cust->text_kota ?? '' }}
+                                        </option>
+                                    @endforeach
+                                </select>
+                            </div>
+                        </div>
+
+                        {{-- GUDANG --}}
+                        <div class="col-md-6 gudang-only d-none">
+                            <div class="filter-card">
+                                <select class="form-select js-select2" id="filterGudangTujuan">
+                                    <option value="">Semua Gudang</option>
+                                    @foreach($warehouses ?? [] as $wh)
+                                        <option value="{{ $wh->id }}">
+                                            {{ $wh->name }}
+                                        </option>
+                                    @endforeach
+                                </select>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
 
-            <div class="modal-footer pt-3">
+            <div class="modal-footer">
                 <button type="button"
-                        class="btn btn-light rounded-pill px-4"
+                        class="btn btn-outline-secondary"
                         id="resetFilter">
                     Reset
                 </button>
 
                 <button type="button"
-                        class="btn btn-primary rounded-pill px-4 ms-2"
+                        class="btn btn-primary"
                         id="applyFilter">
                     Terapkan
                 </button>
             </div>
+
         </div>
     </div>
 </div>
@@ -370,37 +399,45 @@ let filterModal = null;
 let dateRangePicker = null;
 
 $(document).ready(function () {
-    $('#modalFilterSelesai').on('shown.bs.modal', function () {
-        $('.js-select2').select2({
-            width: '100%',
-            dropdownParent: $('#modalFilterSelesai'),
-            placeholder: "Pilih opsi",
-            allowClear: true
-        });
-    });
-
+    // Inisialisasi modal
     filterModal = new bootstrap.Modal(
         document.getElementById('modalFilterSelesai')
     );
 
-    dateRangePicker = flatpickr("#filterDateRange", {
-        mode: "range",
-        dateFormat: "Y-m-d"
+    // Inisialisasi select2 saat modal shown
+    $('#modalFilterSelesai').on('shown.bs.modal', function () {
+        $('.js-select2').select2({
+            width: '100%',
+            dropdownParent: $('#modalFilterSelesai'),
+            allowClear: true
+        });
     });
 
+    // Inisialisasi flatpickr
+    if (!dateRangePicker) {
+        dateRangePicker = flatpickr("#filterDateRange", {
+            mode: "range",
+            dateFormat: "Y-m-d", 
+            allowInput: false,
+            altInput: true,      
+            altFormat: "d-m-Y",  
+            // Tambahkan ini agar saat clear benar-benar bersih
+            onClose: function(selectedDates, dateStr, instance) {
+                if (selectedDates.length === 1) {
+                    instance.setDate([selectedDates[0], selectedDates[0]], true);
+                }
+            }
+        });
+    }
 
+    // Load mutasi awal
     const activeBtn = $('.mutasi-type-btn.active').data('type');
-
     if (activeBtn) {
         CURRENT_MUTASI_TYPE = activeBtn;
         loadMutasiTable(activeBtn); // 🔥 penting supaya langsung load
     }
 });
 
-
-/* =========================================================
-   LOAD MUTASI (SHOWROOM / GUDANG)
-========================================================= */
 $(document).on('click', '.mutasi-type-btn', function () {
 
     // pindahkan active button
@@ -423,6 +460,13 @@ $(document).on('click', '.mutasi-type-btn', function () {
     loadMutasiTable(type);
 });
 
+// Fungsi format tanggal ke dd-mm-yyyy
+function formatDMY(date) {
+    const d = date.getDate().toString().padStart(2,'0');
+    const m = (date.getMonth()+1).toString().padStart(2,'0');
+    const y = date.getFullYear();
+    return `${d}-${m}-${y}`;
+}
 
 function loadMutasiTable(type) {
     resetFrameB(); // ðŸ”§ hanya reset detail
@@ -824,35 +868,33 @@ function hotReloadTab(tab) {
     );
 }
 
+/* =========================================================
+   APPLY FILTER
+========================================================= */
 $('#applyFilter').on('click', function () {
+    // Ambil semua value
+    let data = {
+        type: CURRENT_MUTASI_TYPE,
+        kode: $('#filterKode').val() || null,
+        customer_id: $('#filterCustomer').val() || null,
+        type_mutasi: $('#filterType').val() || null,
+        warehouse_to: $('#filterGudangTujuan').val() || null,
+        date_from: null,
+        date_to: null
+    };
 
-    let kode = $('#filterKode').val();
-    let dateRange = $('#filterDateRange').val();
-    let customer = $('#filterCustomer').val();
-    let typeMutasi = $('#filterType').val();
-    let gudangTujuan = $('#filterGudangTujuan').val();
-
-    let dateFrom = null;
-    let dateTo   = null;
-
-    if (dateRange) {
-        let dates = dateRange.split(" to ");
-        dateFrom = dates[0] ?? null;
-        dateTo   = dates[1] ?? dates[0];
+    // Ambil tanggal hanya jika ada yang dipilih di Flatpickr
+    if (dateRangePicker && dateRangePicker.selectedDates.length > 0) {
+        data.date_from = dateRangePicker.formatDate(dateRangePicker.selectedDates[0], "Y-m-d");
+        data.date_to = dateRangePicker.selectedDates[1] 
+            ? dateRangePicker.formatDate(dateRangePicker.selectedDates[1], "Y-m-d") 
+            : data.date_from;
     }
 
     $.ajax({
         url: "{{ route('superuser.gudang.sj_mutasi_internal.filterSelesai') }}",
         type: "GET",
-        data: {
-            kode: kode,
-            date_from: dateFrom,
-            date_to: dateTo,
-            customer_id: customer,
-            type_mutasi: typeMutasi,
-            warehouse_to: gudangTujuan,
-            type: CURRENT_MUTASI_TYPE
-        },
+        data: data, // Kirim objek data yang fleksibel
         success: function (response) {
             $('#tab-selesai').html(response);
             filterModal.hide();
@@ -879,16 +921,58 @@ $(document).on('click', '#btnAdvanceSearch', function () {
 
 function updateFilterFields() {
 
-    $('#filterShowroomFields').addClass('d-none');
-    $('#filterGudangFields').addClass('d-none');
+    $('.showroom-only').addClass('d-none');
+    $('.gudang-only').addClass('d-none');
 
     if (CURRENT_MUTASI_TYPE === 'showroom') {
-        $('#filterShowroomFields').removeClass('d-none');
+        $('.showroom-only').removeClass('d-none');
     }
 
     if (CURRENT_MUTASI_TYPE === 'gudang') {
-        $('#filterGudangFields').removeClass('d-none');
+        $('.gudang-only').removeClass('d-none');
     }
 }
+
+$(document).on('click', '.quick-date-btn', function (e) {
+    e.preventDefault(); // Mencegah modal tertutup atau reload jika tombol bertipe submit
+    
+    if (!dateRangePicker) return;
+
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    let start = new Date(today);
+    let end = new Date(today);
+
+    const range = $(this).data('range').toString();
+
+    switch(range) {
+        case 'today':
+            break;
+        case 'yesterday':
+            start.setDate(today.getDate() - 1);
+            end.setDate(today.getDate() - 1);
+            break;
+        case '7':
+            start.setDate(today.getDate() - 6);
+            break;
+        case '30':
+            start.setDate(today.getDate() - 29);
+            break;
+        default:
+            return;
+    }
+
+    // 1. Set tanggal langsung ke instance Flatpickr
+    // true di argumen kedua memerintahkan Flatpickr untuk mentrigger event 'Change'
+    dateRangePicker.setDate([start, end], true);
+
+    // 2. FORCE REFRESH (Penting jika altInput tidak mau update)
+    // Kita ambil string yang sudah diformat dari instance dan masukkan ke input manual jika perlu
+    const formattedDate = dateRangePicker.altInput.value;
+    if (formattedDate) {
+        $(dateRangePicker.altInput).val(formattedDate);
+    }
+});
 </script>
 @endpush
