@@ -227,6 +227,8 @@ Route::group([
         Route::post('step3Update', 'SjMutasiInternalController@step3Update')->name('step3Update');
         Route::get('refreshTabs','SjMutasiInternalController@refreshTabs')->name('refreshTabs');
         Route::get('/table', 'SjMutasiInternalController@table')->name('table');
+        Route::get('/filterSelesai', 'SjMutasiInternalController@filterSelesai')->name('filterSelesai');
+
 
     Route::resource('sj_mutasi_internal', 'SjMutasiInternalController');
     });

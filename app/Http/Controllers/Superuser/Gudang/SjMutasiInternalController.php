@@ -577,4 +577,67 @@ class SjMutasiInternalController extends Controller
             ], 422);
         }
     }
+
+    public function filterSelesai(Request $request)
+    {
+        $type = $request->type;
+
+        if ($type === 'gudang') {
+
+            $query = \App\Entities\Gudang\MutasiOut::query();
+            $fieldKode = 'code';
+            $fieldTanggal = 'date';
+
+        } else {
+
+            $query = \App\Entities\Gudang\MutasiShowroom::query();
+            $fieldKode = 'kode';
+            $fieldTanggal = 'tanggal';
+        }
+
+        // ========================
+        // WAJIB: HANYA STATUS SELESAI
+        // ========================
+        $query->where('status_barang', 2);
+
+        // ========================
+        // FILTER KODE
+        // ========================
+        if ($request->filled('kode')) {
+            $query->where($fieldKode, 'like', '%' . $request->kode . '%');
+        }
+
+        // ========================
+        // FILTER TANGGAL
+        // ========================
+        if ($request->filled('date_from')) {
+
+            $dateFrom = \Carbon\Carbon::parse($request->date_from)->format('Y-m-d');
+            $dateTo   = $request->date_to
+                ? \Carbon\Carbon::parse($request->date_to)->format('Y-m-d')
+                : $dateFrom;
+
+            $query->whereBetween($fieldTanggal, [$dateFrom, $dateTo]);
+        }
+
+        $data = $query->orderByDesc($fieldTanggal)->paginate(10);
+
+        if ($type === 'gudang') {
+            return view(
+                'superuser.gudang.sj_mutasi_internal.partials._table_gudang_rows',
+                [
+                    'rows' => $data,
+                    'muted' => true
+                ]
+            );
+        }
+
+        return view(
+            'superuser.gudang.sj_mutasi_internal.partials._table_showroom_rows',
+            [
+                'rows' => $data,
+                'muted' => true
+            ]
+        );
+    }
 }

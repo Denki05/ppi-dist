@@ -1,6 +1,7 @@
 @extends('superuser.app')
 
 @section('content')
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
 <style>
     body { background-color: #1f242a; }
 
@@ -113,6 +114,23 @@
             flex: 0 0 250px;
         }
     }
+
+    .modal-content {
+        border-radius: 18px;
+    }
+
+    .modal-header {
+        padding-bottom: 0;
+    }
+
+    .modal-body {
+        padding-top: 10px;
+    }
+
+    .modal-footer {
+        padding-top: 0;
+    }
+
 </style>
 
 <div class="container-fluid px-2">
@@ -164,16 +182,72 @@
         </div>
     </div>
 </div>
+
+<!-- ================= MODAL FILTER SELESAI ================= -->
+<div class="modal fade" id="modalFilterSelesai" tabindex="-1">
+    <div class="modal-dialog modal-fullscreen-sm-down modal-dialog-scrollable">
+        <div class="modal-content">
+
+            <div class="modal-header border-0">
+                <h5 class="modal-title fw-semibold">Filter Mutasi Selesai</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+
+            <div class="modal-body">
+
+                <div class="mb-4">
+                    <label class="form-label text-muted small">Kode Mutasi</label>
+                    <input type="text" class="form-control form-control-lg"
+                           id="filterKode"
+                           placeholder="Masukkan kode mutasi">
+                </div>
+
+                <div class="mb-4">
+                    <label class="form-label text-muted small">Range Tanggal</label>
+                    <input type="text"
+                           class="form-control form-control-lg"
+                           id="filterDateRange"
+                           placeholder="Pilih rentang tanggal">
+                </div>
+
+            </div>
+
+            <div class="modal-footer border-0">
+                <button type="button" class="btn btn-light flex-fill me-2" id="resetFilter">
+                    Reset
+                </button>
+
+                <button type="button" class="btn btn-primary flex-fill" id="applyFilter">
+                    Terapkan
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
 @endsection
 
 @push('scripts')
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<script src="{{ asset('assets/bootstrap/js/bootstrap.bundle.min.js') }}"></script>
+<script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
 <script>
 
 let CURRENT_MUTASI_TYPE = null;   // showroom | gudang
 let CURRENT_TAB = 'aktif';        // aktif | belum | selesai
 
+let filterModal = null;
+let dateRangePicker = null;
+
 $(document).ready(function () {
+    filterModal = new bootstrap.Modal(
+        document.getElementById('modalFilterSelesai')
+    );
+
+    dateRangePicker = flatpickr("#filterDateRange", {
+        mode: "range",
+        dateFormat: "Y-m-d"
+    });
+
 
     const activeBtn = $('.mutasi-type-btn.active').data('type');
 
@@ -225,6 +299,7 @@ function loadMutasiTable(type) {
         { type: type },
         function (html) {
             $('#frameBContent').html(html);
+            $('.filter-wrapper').hide();
         }
     );
 }
@@ -238,13 +313,21 @@ $(document).on('click', '.tab-btn', function (e) {
     $('.tab-btn').removeClass('active');
     $(this).addClass('active');
 
-    CURRENT_TAB = $(this).data('tab'); // ðŸ”¥ SIMPAN TAB AKTIF
+    CURRENT_TAB = $(this).data('tab');
 
-    const tab = $(this).data('tab');
+    const tab = CURRENT_TAB;
+
     $('.mutasi-tab-content').addClass('d-none');
     $('#tab-' + tab).removeClass('d-none');
 
-    resetFrameB(); // ðŸ”§ TIDAK MERUSAK TAB
+    // ===== CONTROL FILTER BUTTON DI SINI =====
+    if (tab === 'selesai') {
+        $('.filter-wrapper').fadeIn(150);
+    } else {
+        $('.filter-wrapper').hide();
+    }
+
+    resetFrameB();
 });
 
 /* =========================================================
@@ -600,5 +683,51 @@ function hotReloadTab(tab) {
         }
     );
 }
+
+$('#applyFilter').on('click', function () {
+
+    let kode = $('#filterKode').val();
+    let dateRange = $('#filterDateRange').val();
+
+    let dateFrom = null;
+    let dateTo   = null;
+
+    if (dateRange) {
+        let dates = dateRange.split(" to ");
+        dateFrom = dates[0] ?? null;
+        dateTo   = dates[1] ?? dates[0];
+    }
+
+    $.ajax({
+        url: "{{ route('superuser.gudang.sj_mutasi_internal.filterSelesai') }}",
+        type: "GET",
+        data: {
+            kode: kode,
+            date_from: dateFrom,
+            date_to: dateTo,
+            type: CURRENT_MUTASI_TYPE
+        },
+        success: function (response) {
+
+            $('#tab-selesai').html(response);
+
+            filterModal.hide();
+        }
+    });
+});
+
+$('#resetFilter').on('click', function () {
+    $('#filterKode').val('');
+    $('#filterDateRange').val('');
+
+    if (dateRangePicker) {
+        dateRangePicker.clear();
+    }
+});
+
+$(document).on('click', '#btnAdvanceSearch', function () {
+    filterModal.show();
+});
+
 </script>
 @endpush

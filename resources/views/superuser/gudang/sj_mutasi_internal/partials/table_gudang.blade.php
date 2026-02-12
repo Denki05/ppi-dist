@@ -1,17 +1,27 @@
 <div>
 
-    {{-- TABS --}}
-    <div class="mutasi-tabs mb-2">
-        <div class="tab-btn active" data-tab="aktif">
-            Aktif (<span id="count-aktif">{{ $mutasiAktif->total() }}</span>)
+    <div class="d-flex justify-content-between align-items-center mb-2">
+    
+        {{-- ================= TABS ================= --}}
+        <div class="mutasi-tabs d-flex gap-2">
+            <div class="tab-btn active" data-tab="aktif">
+                Aktif (<span id="count-aktif">{{ $mutasiAktif->total() }}</span>)
+            </div>
+
+            <div class="tab-btn" data-tab="belum-diambil">
+                Belum Diambil (<span id="count-belum">{{ $mutasiBelumDiambil->total() }}</span>)
+            </div>
+
+            <div class="tab-btn" data-tab="selesai">
+                Selesai (<span id="count-selesai">{{ $mutasiSelesai->total() }}</span>)
+            </div>
         </div>
 
-        <div class="tab-btn" data-tab="belum-diambil">
-            Belum Diambil (<span id="count-belum">{{ $mutasiBelumDiambil->total() }}</span>)
-        </div>
-
-        <div class="tab-btn" data-tab="selesai">
-            Selesai (<span id="count-selesai">{{ $mutasiSelesai->total() }}</span>)
+        {{-- ================= BUTTON FILTER ================= --}}
+        <div class="filter-wrapper" style="display:none;">
+            <button class="btn btn-outline-primary btn-sm" id="btnAdvanceSearch">
+                <i class="fas fa-filter"></i> Filter
+            </button>
         </div>
     </div>
 

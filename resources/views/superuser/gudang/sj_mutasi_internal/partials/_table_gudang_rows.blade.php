@@ -1,3 +1,7 @@
+@php
+    $muted = $muted ?? false;
+@endphp
+
 <div class="table-wrapper">
     <table class="table table-sm mutasi-table">
         <thead>
