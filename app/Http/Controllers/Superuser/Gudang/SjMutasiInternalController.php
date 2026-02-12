@@ -6,6 +6,8 @@ use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use App\Entities\Gudang\MutasiShowroom;
 use App\Entities\Gudang\MutasiOut;
+use App\Entities\Master\CustomerOtherAddress;
+use App\Entities\Master\Warehouse;
 use App\Entities\Gudang\StockMove;
 use App\Repositories\CodeRepo;
 use App\Entities\Setting\UserMenu;
@@ -37,7 +39,10 @@ class SjMutasiInternalController extends Controller
 
     public function index()
     {
-        return view($this->view . 'index');
+        $data['customers'] = CustomerOtherAddress::orderBy('name')->get();
+        $data['warehouses'] = Warehouse::orderBy('name')->where('status', 1)->get();
+
+        return view($this->view . 'index', $data);
     }
 
     public function table(Request $request)
@@ -580,64 +585,67 @@ class SjMutasiInternalController extends Controller
 
     public function filterSelesai(Request $request)
     {
-        $type = $request->type;
+        if ($request->type === 'showroom') {
 
-        if ($type === 'gudang') {
+            $query = MutasiShowroom::query();
 
-            $query = \App\Entities\Gudang\MutasiOut::query();
-            $fieldKode = 'code';
-            $fieldTanggal = 'date';
+            $query->where('status', 'selesai'); // sesuaikan dengan status Anda
 
-        } else {
+            if ($request->kode) {
+                $query->where('kode', 'like', '%'.$request->kode.'%');
+            }
 
-            $query = \App\Entities\Gudang\MutasiShowroom::query();
-            $fieldKode = 'kode';
-            $fieldTanggal = 'tanggal';
+            if ($request->date_from && $request->date_to) {
+                $query->whereBetween('tanggal', [
+                    $request->date_from,
+                    $request->date_to
+                ]);
+            }
+
+            if ($request->customer_id) {
+                $query->where('customer_other_address_id', $request->customer_id);
+            }
+
+            if ($request->type_mutasi) {
+                $query->where('type', $request->type_mutasi);
+            }
+
+            $rows = $query->latest('tanggal')->paginate(10);
+
+            return view('superuser.gudang.sj_mutasi_internal.partials._table_showroom_rows', [
+                'rows' => $rows,
+                'muted' => false
+            ]);
         }
 
-        // ========================
-        // WAJIB: HANYA STATUS SELESAI
-        // ========================
-        $query->where('status_barang', 2);
 
-        // ========================
-        // FILTER KODE
-        // ========================
-        if ($request->filled('kode')) {
-            $query->where($fieldKode, 'like', '%' . $request->kode . '%');
+        if ($request->type === 'gudang') {
+
+            $query = MutasiOut::query();
+
+            $query->where('status', 'selesai');
+
+            if ($request->kode) {
+                $query->where('code', 'like', '%'.$request->kode.'%');
+            }
+
+            if ($request->date_from && $request->date_to) {
+                $query->whereBetween('date', [
+                    $request->date_from,
+                    $request->date_to
+                ]);
+            }
+
+            if ($request->warehouse_to) {
+                $query->where('warehouse_to', $request->warehouse_to);
+            }
+
+            $rows = $query->latest('date')->paginate(10);
+
+            return view('superuser.gudang.sj_mutasi_internal.partials._table_gudang_rows', [
+                'rows' => $rows,
+                'muted' => false
+            ]);
         }
-
-        // ========================
-        // FILTER TANGGAL
-        // ========================
-        if ($request->filled('date_from')) {
-
-            $dateFrom = \Carbon\Carbon::parse($request->date_from)->format('Y-m-d');
-            $dateTo   = $request->date_to
-                ? \Carbon\Carbon::parse($request->date_to)->format('Y-m-d')
-                : $dateFrom;
-
-            $query->whereBetween($fieldTanggal, [$dateFrom, $dateTo]);
-        }
-
-        $data = $query->orderByDesc($fieldTanggal)->paginate(10);
-
-        if ($type === 'gudang') {
-            return view(
-                'superuser.gudang.sj_mutasi_internal.partials._table_gudang_rows',
-                [
-                    'rows' => $data,
-                    'muted' => true
-                ]
-            );
-        }
-
-        return view(
-            'superuser.gudang.sj_mutasi_internal.partials._table_showroom_rows',
-            [
-                'rows' => $data,
-                'muted' => true
-            ]
-        );
     }
 }

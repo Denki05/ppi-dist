@@ -131,6 +131,75 @@
         padding-top: 0;
     }
 
+    /* ================= MOBILE ADVANCE FILTER ================= */
+
+    #modalFilterSelesai .modal-content {
+        border-radius: 22px;
+        border: none;
+    }
+
+    #modalFilterSelesai .modal-header {
+        padding: 20px 20px 10px 20px;
+    }
+
+    #modalFilterSelesai .modal-title {
+        font-size: 16px;
+        font-weight: 600;
+    }
+
+    #modalFilterSelesai .modal-body {
+        padding: 10px 20px 100px 20px;
+    }
+
+    #modalFilterSelesai .modal-footer {
+        bottom: 0;
+        background: #fff;
+        padding: 15px 20px 20px 20px;
+        border-top: 1px solid #f1f1f1;
+    }
+
+    /* Section block */
+    .filter-section {
+        background: #f8f9fa;
+        border-radius: 16px;
+        padding: 14px;
+        margin-bottom: 16px;
+    }
+
+    /* Label */
+    .filter-label {
+        font-size: 12px;
+        color: #6c757d;
+        margin-bottom: 6px;
+        display: block;
+    }
+
+    /* Input style */
+    #modalFilterSelesai .form-control,
+    #modalFilterSelesai .select2-selection {
+        border-radius: 14px !important;
+        min-height: 48px;
+        border: 1px solid #e3e6ea;
+        font-size: 14px;
+    }
+
+    /* Select2 fix full width */
+    .select2-container {
+        width: 100% !important;
+    }
+
+    /* Flatpickr modern look */
+    .flatpickr-input {
+        background: #fff !important;
+    }
+
+    #modalFilterSelesai .modal-dialog {
+        max-width: 720px;
+    }
+
+    #modalFilterSelesai .modal-content {
+        border-radius: 18px;
+    }
 </style>
 
 <div class="container-fluid px-2">
@@ -193,31 +262,91 @@
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
 
-            <div class="modal-body">
+            <div class="modal-body pt-2">
 
-                <div class="mb-4">
-                    <label class="form-label text-muted small">Kode Mutasi</label>
-                    <input type="text" class="form-control form-control-lg"
-                           id="filterKode"
-                           placeholder="Masukkan kode mutasi">
+                <div class="row g-3">
+
+                    <!-- KODE -->
+                    <div class="col-md-6">
+                        <label class="form-label small text-muted mb-1">
+                            Kode Mutasi
+                        </label>
+                        <input type="text"
+                            class="form-control rounded-3"
+                            id="filterKode"
+                            placeholder="Contoh: MS-0001">
+                    </div>
+
+                    <!-- DATE RANGE -->
+                    <div class="col-md-6">
+                        <label class="form-label small text-muted mb-1">
+                            Range Tanggal
+                        </label>
+                        <input type="text"
+                            class="form-control rounded-3"
+                            id="filterDateRange"
+                            placeholder="Pilih rentang tanggal">
+                    </div>
+
+                    <!-- SHOWROOM FILTER -->
+                    <div id="filterShowroomFields" class="col-12 row g-3 d-none">
+
+                        <div class="col-md-6">
+                            <label class="form-label small text-muted mb-1">
+                                Customer
+                            </label>
+                            <select class="form-select js-select2" id="filterCustomer">
+                                <option value="">Semua Customer</option>
+                                @foreach($customers ?? [] as $cust)
+                                    <option value="{{ $cust->id }}">
+                                        {{ $cust->name }} {{ $cust->text_kota ?? '' }}
+                                    </option>
+                                @endforeach
+                            </select>
+                        </div>
+
+                        <div class="col-md-6">
+                            <label class="form-label small text-muted mb-1">
+                                Type
+                            </label>
+                            <select class="form-select js-select2" id="filterType">
+                                <option value="">Semua Type</option>
+                                <option value="1">SHOWROOM</option>
+                                <option value="2">FREE PRODUCT</option>
+                                <option value="3">KLAIM</option>
+                                <option value="4">BUNDLING</option>
+                                <option value="5">PROMOSI</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <!-- GUDANG FILTER -->
+                    <div id="filterGudangFields" class="col-12 d-none">
+                        <label class="form-label small text-muted mb-1">
+                            Gudang Tujuan
+                        </label>
+                        <select class="form-select js-select2" id="filterGudangTujuan">
+                            <option value="">Semua Gudang</option>
+                            @foreach($warehouses ?? [] as $wh)
+                                <option value="{{ $wh->id }}">
+                                    {{ $wh->name }}
+                                </option>
+                            @endforeach
+                        </select>
+                    </div>
                 </div>
-
-                <div class="mb-4">
-                    <label class="form-label text-muted small">Range Tanggal</label>
-                    <input type="text"
-                           class="form-control form-control-lg"
-                           id="filterDateRange"
-                           placeholder="Pilih rentang tanggal">
-                </div>
-
             </div>
 
-            <div class="modal-footer border-0">
-                <button type="button" class="btn btn-light flex-fill me-2" id="resetFilter">
+            <div class="modal-footer pt-3">
+                <button type="button"
+                        class="btn btn-light rounded-pill px-4"
+                        id="resetFilter">
                     Reset
                 </button>
 
-                <button type="button" class="btn btn-primary flex-fill" id="applyFilter">
+                <button type="button"
+                        class="btn btn-primary rounded-pill px-4 ms-2"
+                        id="applyFilter">
                     Terapkan
                 </button>
             </div>
@@ -225,6 +354,8 @@
     </div>
 </div>
 @endsection
+
+@include('superuser.asset.plugin.select2')
 
 @push('scripts')
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
@@ -239,6 +370,15 @@ let filterModal = null;
 let dateRangePicker = null;
 
 $(document).ready(function () {
+    $('#modalFilterSelesai').on('shown.bs.modal', function () {
+        $('.js-select2').select2({
+            width: '100%',
+            dropdownParent: $('#modalFilterSelesai'),
+            placeholder: "Pilih opsi",
+            allowClear: true
+        });
+    });
+
     filterModal = new bootstrap.Modal(
         document.getElementById('modalFilterSelesai')
     );
@@ -688,6 +828,9 @@ $('#applyFilter').on('click', function () {
 
     let kode = $('#filterKode').val();
     let dateRange = $('#filterDateRange').val();
+    let customer = $('#filterCustomer').val();
+    let typeMutasi = $('#filterType').val();
+    let gudangTujuan = $('#filterGudangTujuan').val();
 
     let dateFrom = null;
     let dateTo   = null;
@@ -705,12 +848,13 @@ $('#applyFilter').on('click', function () {
             kode: kode,
             date_from: dateFrom,
             date_to: dateTo,
+            customer_id: customer,
+            type_mutasi: typeMutasi,
+            warehouse_to: gudangTujuan,
             type: CURRENT_MUTASI_TYPE
         },
         success: function (response) {
-
             $('#tab-selesai').html(response);
-
             filterModal.hide();
         }
     });
@@ -719,6 +863,9 @@ $('#applyFilter').on('click', function () {
 $('#resetFilter').on('click', function () {
     $('#filterKode').val('');
     $('#filterDateRange').val('');
+    $('#filterCustomer').val('');
+    $('#filterType').val('');
+    $('#filterGudangTujuan').val('');
 
     if (dateRangePicker) {
         dateRangePicker.clear();
@@ -726,8 +873,22 @@ $('#resetFilter').on('click', function () {
 });
 
 $(document).on('click', '#btnAdvanceSearch', function () {
+    updateFilterFields();   // 🔥 tambahkan ini
     filterModal.show();
 });
 
+function updateFilterFields() {
+
+    $('#filterShowroomFields').addClass('d-none');
+    $('#filterGudangFields').addClass('d-none');
+
+    if (CURRENT_MUTASI_TYPE === 'showroom') {
+        $('#filterShowroomFields').removeClass('d-none');
+    }
+
+    if (CURRENT_MUTASI_TYPE === 'gudang') {
+        $('#filterGudangFields').removeClass('d-none');
+    }
+}
 </script>
 @endpush
