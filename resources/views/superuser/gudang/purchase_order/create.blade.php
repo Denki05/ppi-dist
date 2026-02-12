@@ -31,17 +31,6 @@
         </div>
       </div>
       <div class="form-group row">
-        <label class="col-md-3 col-form-label text-right" for="sub_type">Type <span class="text-danger">*</span></label>
-        <div class="col-md-7">
-          <select class="js-select2 form-control" id="sub_type" name="sub_type" data-placeholder="Select Type">
-            <option></option>
-            @foreach($sub_type as $type => $value)
-            <option value="{{ $value }}">{{ $type }}</option>
-            @endforeach
-          </select>
-        </div>
-      </div>
-      <div class="form-group row">
         <label class="col-md-3 col-form-label text-right" for="etd">ETD</span></label>
         <div class="col-md-7">
           <input type="date" class="form-control" id="etd" name="etd">
@@ -52,6 +41,16 @@
         <div class="col-md-7">
           <textarea class="form-control" name="note" id="note"></textarea>
         </div>
+      </div>
+
+      <div class="form-group row">
+          <label class="col-md-3 col-form-label text-right" for="auto_spk">Auto SPK</label>
+          <div class="col-md-7">
+              <input type="hidden" name="sub_type" value="0"> <!-- default 0 -->
+              <div class="form-check">
+                  <input type="checkbox" class="form-check-input" id="auto_spk" name="sub_type" value="1">
+              </div>
+          </div>
       </div>
       
       
