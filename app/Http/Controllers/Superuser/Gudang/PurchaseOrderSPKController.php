@@ -14,6 +14,8 @@ use App\Entities\Master\Packaging;
 use App\DataTables\Gudang\PurchaseOrderSPKTable;
 use App\Exports\Gudang\PurchaseOrderDetailImportTemplate;
 use App\Imports\Gudang\PurchaseOrderDetailImport;
+use App\Entities\Gudang\MutasiOut;
+use App\Entities\Gudang\MutasiOutDetail;
 use App\Entities\Master\Warehouse;
 use Auth;
 use COM;
@@ -133,7 +135,6 @@ class PurchaseOrderSPKController extends Controller
                 $purchase_order->warehouse_id = $request->warehouse;
                 $purchase_order->etd = $request->etd;
                 $purchase_order->type = 0;
-                $purchase_order->kategori = $request->kategori;
                 $purchase_order->note = $request->note;
                 $purchase_order->created_by = Auth::id();
 
@@ -387,7 +388,73 @@ class PurchaseOrderSPKController extends Controller
                 $purchase_order->status = PurchaseOrder::STATUS['ACC'];
 
                 if ($purchase_order->save()) {
+                     /**
+                     * ===============================
+                     * VALIDASI UNTUK CREATE MUTASI OUT
+                     * ===============================
+                     */
 
+                    if (
+                        is_null($purchase_order->ref_po_id) &&
+                        $purchase_order->count_send_spk == 0
+                    ){
+
+                        // Validasi kode mutasi belum pernah dipakai
+                        $existingMutasi = MutasiOut::where('code', $purchase_order->code)->first();
+
+                        if ($existingMutasi) {
+                            throw new \Exception('Kode Mutasi Out sudah digunakan sebelumnya.');
+                        }
+
+                        /**
+                         * ===============================
+                         * CREATE MUTASI OUT HEADER
+                         * ===============================
+                         */
+
+                        // AMBIL ID GUDANG ARAYA
+                        $warehouseAraya = Warehouse::where(function ($q) {
+                            $q->where('name', 'like', '%araya%');
+                        })
+                        ->orderBy('id') // jika mau konsisten ambil yang paling lama
+                        ->first();
+
+                        // dd($warehouseAraya);
+
+                        $mutasi = MutasiOut::create([
+                            'code'           => $purchase_order->code, // pakai kode PO
+                            'date'           => Carbon::now(),
+                            'warehouse_from' => $warehouseAraya->id,
+                            'warehouse_to'   => $purchase_order->warehouse_id ?? null, // sesuaikan
+                            'note'           => 'Auto generate dari SPK ' . $purchase_order->code,
+                            'status'         => MutasiOut::STATUS['PUBLISH'],
+                            'created_by'     => Auth::id(),
+                        ]);
+
+                        /**
+                         * ===============================
+                         * CREATE MUTASI OUT DETAIL
+                         * ===============================
+                         */
+
+                        foreach ($purchase_order->purchase_order_detail as $detail) {
+
+                            MutasiOutDetail::create([
+                                'mutasi_out_id'        => $mutasi->id,
+                                'product_packaging_id' => $detail->product_packaging_id,
+                                'quantity'             => $detail->quantity,
+                                'is_checked'           => 0,
+                            ]);
+                        }
+
+                        // ===============================
+                        // UPDATE PO → SET ref_mut_out_id
+                        // ===============================
+
+                        $purchase_order->ref_mut_out_id = $mutasi->id;
+                        $purchase_order->updated_by = Auth::id();
+                        $purchase_order->save();
+                    }
                     
                     DB::commit();
                     $response['redirect_to'] = route('superuser.gudang.purchase_order_spk.index');
@@ -492,18 +559,38 @@ class PurchaseOrderSPKController extends Controller
         }
         
         if ($request->ajax()) {
+
             $purchase_order = PurchaseOrder::find($id);
 
             if ($purchase_order === null) {
                 abort(404);
             }
 
+            // ===============================
+            // VALIDASI TIDAK BOLEH CANCEL
+            // ===============================
+            if (!is_null($purchase_order->ref_mut_out_id)) {
+
+                $response['notification'] = [
+                    'alert'   => 'block',
+                    'type'    => 'alert-warning',
+                    'header'  => 'Gagal',
+                    'content' => 'Tidak bisa di cancel karena sudah ada proses Checker logisitk',
+                ];
+
+                return $this->response(400, $response);
+            }
+
+            // ===============================
+            // PROSES CANCEL
+            // ===============================
             $purchase_order->acc_at = null;
             $purchase_order->acc_by = null;
             $purchase_order->updated_by = Auth::id();
             $purchase_order->status = PurchaseOrder::STATUS['DRAFT'];
 
             if ($purchase_order->save()) {
+
                 $response['redirect_to'] = route('superuser.gudang.purchase_order_spk.index');
                 return $this->response(200, $response);
             }

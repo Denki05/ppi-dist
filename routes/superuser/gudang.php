@@ -163,7 +163,7 @@ Route::group([
         Route::post('/{id}/publish', 'MutasiOutController@publish')->name('publish');
         Route::get('/refreshCounts', 'MutasiOutController@refreshCounts')->name('refreshCounts');
         Route::get('/{id}/detail', 'MutasiOutController@detail')->name('detail');
-        Route::get('/mutasi_out/reload/{tab}', 'MutasiOutController@reloadTab')->name('mutasi_out.reloadTab');
+        Route::get('/reloadTab', 'MutasiOutController@reloadTab')->name('reloadTab');
         Route::get('/print_pdf/{id}', 'MutasiOutController@print_pdf')->name('print_pdf');
     });
     Route::resource('mutasi_out', 'MutasiOutController');
@@ -218,6 +218,11 @@ Route::group([
     Route::resource('mutasi_showroom', 'MutasiShowroomController');
 
     Route::group(['as' => 'sj_mutasi_internal.', 'prefix' => '/sj_mutasi_internal'], function (){
+        // 🔥 TARUH DI PALING ATAS
+        Route::get('/file/{path}', 'SjMutasiInternalController@viewFile')
+            ->where('path', '.*')
+            ->name('viewFile');
+
         Route::get('/', 'SjMutasiInternalController@index')->name('index');
         Route::get('/show/{id}', 'SjMutasiInternalController@show')->name('show');
         Route::post('step1Save', 'SjMutasiInternalController@step1Save')->name('step1Save');
@@ -228,7 +233,6 @@ Route::group([
         Route::get('refreshTabs','SjMutasiInternalController@refreshTabs')->name('refreshTabs');
         Route::get('/table', 'SjMutasiInternalController@table')->name('table');
         Route::get('/filterSelesai', 'SjMutasiInternalController@filterSelesai')->name('filterSelesai');
-
 
     Route::resource('sj_mutasi_internal', 'SjMutasiInternalController');
     });

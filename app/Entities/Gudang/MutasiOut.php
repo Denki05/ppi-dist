@@ -20,6 +20,8 @@ class MutasiOut extends Model
         'status',
         'status_checked',
         'status_barang',
+        'image',
+        'taken_at',
         'created_by',
         'updated_by',
         'acc_by',

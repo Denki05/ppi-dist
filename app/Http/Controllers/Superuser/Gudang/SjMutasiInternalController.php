@@ -9,6 +9,7 @@ use App\Entities\Gudang\MutasiOut;
 use App\Entities\Master\CustomerOtherAddress;
 use App\Entities\Master\Warehouse;
 use App\Entities\Gudang\StockMove;
+use Illuminate\Support\Facades\Storage;
 use App\Repositories\CodeRepo;
 use App\Entities\Setting\UserMenu;
 use PDF;
@@ -146,26 +147,27 @@ class SjMutasiInternalController extends Controller
     public function show(Request $request, $id)
     {
         $type = $request->type;
-    
-        // Jika type tidak dikirim, deteksi dari database
+
         if (!$type) {
-            if (MutasiOut::where('id', $id)->exists()) {
-                $type = 'gudang';
-            } else {
-                $type = 'showroom';
-            }
+            abort(404, 'Type tidak ditemukan.');
         }
-    
+
         if ($type === 'showroom') {
+
             $mutasi = MutasiShowroom::with('details.product_packaging')
                 ->findOrFail($id);
-        } else {
+
+        } elseif ($type === 'gudang') {
+
             $mutasi = MutasiOut::with('mutasiOutDetails.product_pack')
                 ->findOrFail($id);
-    
+
             $mutasi->details = $mutasi->mutasiOutDetails;
+
+        } else {
+            abort(404);
         }
-    
+
         return view(
             'superuser.gudang.sj_mutasi_internal.partials._detailWrapper',
             compact('mutasi', 'type')
@@ -468,16 +470,33 @@ class SjMutasiInternalController extends Controller
     public function step3Update(Request $request)
     {
         DB::beginTransaction();
+
         try {
+
+            // ==============================
+            // VALIDASI AWAL
+            // ==============================
+            $request->validate([
+                'mutasi_id'     => 'required|integer',
+                'status_barang' => 'required|in:1,2',
+                'type'          => 'nullable|string'
+            ]);
+
             $type = $request->type ?? 'showroom';
 
+            // ==============================
+            // LOAD MODEL
+            // ==============================
             if ($type === 'showroom') {
+
                 $mutasi = MutasiShowroom::with('details')
                     ->lockForUpdate()
                     ->findOrFail($request->mutasi_id);
 
                 $details = $mutasi->details;
+
             } else {
+
                 $mutasi = MutasiOut::with('mutasiOutDetails')
                     ->lockForUpdate()
                     ->findOrFail($request->mutasi_id);
@@ -491,31 +510,64 @@ class SjMutasiInternalController extends Controller
             // ==============================
             // VALIDASI TRANSISI
             // ==============================
-            if ($oldStatus == 2) {
-                throw new \Exception('Mutasi sudah DIAMBIL');
+            if ($oldStatus === 2) {
+                throw new \Exception('Mutasi sudah DIAMBIL dan tidak bisa diubah.');
             }
 
-            if ($oldStatus == 1 && $newStatus != 2) {
-                throw new \Exception('Status hanya bisa diubah ke DIAMBIL');
+            if ($oldStatus === 1 && $newStatus !== 2) {
+                throw new \Exception('Status hanya bisa diubah ke DIAMBIL.');
             }
 
             // ==============================
-            // UPDATE STATUS BARANG
+            // VALIDASI IMAGE JIKA DIAMBIL
+            // ==============================
+            if ($newStatus === 2) {
+
+                $request->validate([
+                    'image' => 'required|image|mimes:jpg,jpeg,png|max:2048'
+                ]);
+            }
+
+            // ==============================
+            // SIMPAN IMAGE KE storage/app/public
+            // ==============================
+            if ($newStatus === 2 && $oldStatus !== 2 && $request->hasFile('image')) {
+
+                $folder = $type === 'showroom'
+                    ? 'mutasi_showroom'
+                    : 'mutasi_out';
+
+                $destinationPath = storage_path('app/public/' . $folder);
+
+                // Buat folder jika belum ada
+                if (!file_exists($destinationPath)) {
+                    mkdir($destinationPath, 0755, true);
+                }
+
+                $file = $request->file('image');
+
+                $filename = uniqid() . '_' . time() . '.' . $file->getClientOriginalExtension();
+
+                // Simpan file ke storage/app/public/{folder}
+                $file->move($destinationPath, $filename);
+
+                // Simpan relative path ke database
+                $mutasi->image = $folder . '/' . $filename;
+                $mutasi->taken_at = now();
+            }
+
+            // ==============================
+            // UPDATE STATUS
             // ==============================
             $mutasi->status_barang = $newStatus;
 
-            // ==============================
-            // UPDATE STATUS HEADER
-            // ==============================
             if ($type === 'gudang') {
 
                 if ($newStatus === 1) {
-                    // Belum Diambil → tetap PUBLISH (2)
                     $mutasi->status = 2;
                 }
 
                 if ($newStatus === 2) {
-                    // Sudah Diambil → ACC (3)
                     $mutasi->status = 3;
                 }
             }
@@ -523,7 +575,7 @@ class SjMutasiInternalController extends Controller
             $mutasi->save();
 
             // ==============================
-            // CATAT STOCK MOVE HANYA JIKA DIAMBIL
+            // STOCK MOVE
             // ==============================
             if ($newStatus === 2 && $oldStatus !== 2) {
 
@@ -533,16 +585,16 @@ class SjMutasiInternalController extends Controller
 
                     $lastStock = DB::table('gudang_move_stock')
                         ->where('product_packaging_id', $productId)
-                        ->orderBy('created_at', 'desc')
+                        ->orderByDesc('created_at')
+                        ->lockForUpdate()
                         ->first();
 
                     $quantity = $type === 'showroom'
                         ? $detail->qty
                         : $detail->quantity;
 
-                    $quantity_after_move = $lastStock
-                        ? $lastStock->stock_balance - $quantity
-                        : 0;
+                    $stockBefore = $lastStock ? $lastStock->stock_balance : 0;
+                    $stockAfter  = $stockBefore - $quantity;
 
                     StockMove::create([
                         'code_transaction' => $type === 'showroom'
@@ -556,7 +608,7 @@ class SjMutasiInternalController extends Controller
                         'product_packaging_id' => $productId,
                         'stock_in' => 0,
                         'stock_out' => $quantity,
-                        'stock_balance' => $quantity_after_move,
+                        'stock_balance' => $stockAfter,
                         'note' => $type === 'showroom'
                             ? 'Mutasi Showroom - DIAMBIL'
                             : 'Mutasi Gudang - DIAMBIL',
@@ -569,13 +621,14 @@ class SjMutasiInternalController extends Controller
             DB::commit();
 
             return response()->json([
-                'success' => true,
+                'success'    => true,
                 'to_selesai' => $newStatus === 2
             ]);
 
-        } catch (\Exception $e) {
-            dd($e);
+        } catch (\Throwable $e) {
+
             DB::rollBack();
+
             return response()->json([
                 'success' => false,
                 'message' => $e->getMessage()
@@ -647,5 +700,16 @@ class SjMutasiInternalController extends Controller
                 'muted' => false
             ]);
         }
+    }
+
+    public function viewFile($path)
+    {
+        $filePath = storage_path('app/public/' . $path);
+
+        if (!file_exists($filePath)) {
+            abort(404);
+        }
+
+        return response()->file($filePath);
     }
 }

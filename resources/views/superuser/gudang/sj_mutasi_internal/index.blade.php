@@ -382,6 +382,27 @@
         </div>
     </div>
 </div>
+
+<!-- MODAL BUKTI GAMBAR -->
+ <div class="modal fade" id="imageModal" tabindex="-1">
+        <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable modal-md">
+        <div class="modal-content">
+
+            <div class="modal-header">
+                <h5 class="modal-title">Bukti Barang Diambil</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+
+            <div class="modal-body text-center">
+                <img id="previewImage"
+                     src=""
+                     class="img-fluid rounded shadow-sm"
+                     style="max-height:70vh;">
+            </div>
+
+        </div>
+    </div>
+</div>
 @endsection
 
 @include('superuser.asset.plugin.select2')
@@ -730,12 +751,23 @@ $(document).on('click', '#nextStep2', function () {
 $(document).on('click', '#saveStep3', function () {
 
     let status = $('#status_barang').val();
+    let imageFile = $('#image')[0].files[0];
 
     if (!status) {
         Swal.fire({
             icon: 'warning',
             title: 'Status belum dipilih',
             text: 'Silakan pilih status barang terlebih dahulu.'
+        });
+        return;
+    }
+
+    // 🔴 VALIDASI WAJIB UPLOAD JIKA DIAMBIL
+    if (status == '2' && !imageFile) {
+        Swal.fire({
+            icon: 'warning',
+            title: 'Upload wajib',
+            text: 'Jika status DIAMBIL, wajib upload bukti gambar.'
         });
         return;
     }
@@ -757,64 +789,108 @@ $(document).on('click', '#saveStep3', function () {
             didOpen: () => Swal.showLoading()
         });
 
-        $.post('{{ route("superuser.gudang.sj_mutasi_internal.step3Update") }}', {
-            _token: '{{ csrf_token() }}',
-            mutasi_id: $('input[name=mutasi_id]').val(),
-            status_barang: status,
-            type: CURRENT_MUTASI_TYPE
-        })
-        .done(function (res) {
+        let formData = new FormData();
+        formData.append('_token', '{{ csrf_token() }}');
+        formData.append('mutasi_id', $('input[name=mutasi_id]').val());
+        formData.append('status_barang', status);
+        formData.append('type', CURRENT_MUTASI_TYPE);
 
-            Swal.close();
+        if (imageFile) {
+            formData.append('image', imageFile);
+        }
 
-            if(!res.success) return;
+        $.ajax({
+            url: '{{ route("superuser.gudang.sj_mutasi_internal.step3Update") }}',
+            method: 'POST',
+            data: formData,
+            processData: false,
+            contentType: false,
 
-            Swal.fire({
-                icon: 'success',
-                title: 'Berhasil',
-                text: 'Status mutasi berhasil diperbarui.'
-            });
+            success: function (res) {
 
-            refreshMutasiTabs();
+                Swal.close();
 
-            if (res.to_selesai) {
+                if(!res.success) return;
 
-                // PINDAH KE TAB SELESAI
-                hotReloadTab('selesai');
+                Swal.fire({
+                    icon: 'success',
+                    title: 'Berhasil',
+                    text: 'Status mutasi berhasil diperbarui.'
+                });
 
-                $('.tab-btn').removeClass('active');
-                $('.tab-btn[data-tab="selesai"]').addClass('active');
+                refreshMutasiTabs();
 
-                $('.mutasi-tab-content').addClass('d-none');
-                $('#tab-selesai').removeClass('d-none');
+                if (res.to_selesai) {
 
-                resetFrameB();
+                    hotReloadTab('selesai');
 
-            } else {
+                    $('.tab-btn').removeClass('active');
+                    $('.tab-btn[data-tab="selesai"]').addClass('active');
 
-                // TETAP DI TAB SAAT INI (BELUM DIAMBIL)
-                hotReloadTab(CURRENT_TAB);
-                resetFrameB();
+                    $('.mutasi-tab-content').addClass('d-none');
+                    $('#tab-selesai').removeClass('d-none');
+
+                    resetFrameB();
+
+                } else {
+
+                    hotReloadTab(CURRENT_TAB);
+                    resetFrameB();
+                }
+            },
+
+            error: function(xhr){
+
+                Swal.close();
+
+                let message = 'Terjadi kesalahan sistem.';
+                if(xhr.responseJSON && xhr.responseJSON.message){
+                    message = xhr.responseJSON.message;
+                }
+
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Gagal',
+                    text: message
+                });
             }
-        })
-        .fail(function(xhr){
-
-            Swal.close();
-
-            let message = 'Terjadi kesalahan sistem.';
-            if(xhr.responseJSON && xhr.responseJSON.message){
-                message = xhr.responseJSON.message;
-            }
-
-            Swal.fire({
-                icon: 'error',
-                title: 'Gagal',
-                text: message
-            });
         });
 
     });
 });
+
+$(document).on('change', '#status_barang', function () {
+
+    if ($(this).val() == '2') {
+        $('#uploadWrapper').removeClass('d-none');
+    } else {
+        $('#uploadWrapper').addClass('d-none');
+        $('#image').val('');
+    }
+
+});
+
+$(document).ready(function () {
+
+    function toggleUpload() {
+        if ($('#status_barang').val() == '2') {
+            $('#uploadWrapper').removeClass('d-none');
+        } else {
+            $('#uploadWrapper').addClass('d-none');
+            $('#image').val('');
+        }
+    }
+
+    // saat change
+    $(document).on('change', '#status_barang', function () {
+        toggleUpload();
+    });
+
+    // saat pertama kali load
+    toggleUpload();
+
+});
+
 
 /* =========================================================
    RESET DETAIL FRAME (AMAN)
@@ -973,6 +1049,17 @@ $(document).on('click', '.quick-date-btn', function (e) {
     if (formattedDate) {
         $(dateRangePicker.altInput).val(formattedDate);
     }
+});
+
+document.addEventListener('DOMContentLoaded', function () {
+    const imageModal = document.getElementById('imageModal');
+
+    imageModal.addEventListener('show.bs.modal', function (event) {
+        const button = event.relatedTarget;
+        const imageUrl = button.getAttribute('data-image');
+        const img = document.getElementById('previewImage');
+        img.src = imageUrl;
+    });
 });
 </script>
 @endpush

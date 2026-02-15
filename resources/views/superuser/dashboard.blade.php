@@ -58,49 +58,51 @@
 
                             <section id="content1" class="tab-content active">
                                 <input type="hidden" class="form-control" id="default_month" name="default_month" value="{{ $selectedMonthYear }}">
-                                <table class="datatableOmset table table-striped" id="datatableOmset">
-                                    <thead>
-                                        <tr>
-                                            <th>#</th>
-                                            <th>Date</th>
-                                            <th>Brand</th>
-                                            <th>Invoice</th>
-                                            <th>Customer</th>
-                                            <th>Cash</th>
-                                            <th>Tempo</th>
-                                            <th style="display:none;">TypeSO</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        @foreach ($progress as $row)
-                                            @php
-                                                $tipe = strtolower(trim($row->invoice_type ?? 'nonppn'));
-                                                $tipe = str_replace(' ', '', $tipe);
-                                            @endphp
-                                            <tr data-type-so="{{ $tipe }}">
-                                                <td>{{ $loop->iteration }}</td>
-                                                <td>{{ $row->so_date }}</td>
-                                                <td>{{ $row->invoice_brand }}</td>
-                                                <td>{{ $row->invoice_code }}</td>
-                                                <td>{{ $row->customer_name }} - {{ $row->customer_city }}</td>
-                                                <td>{{ number_format($row->invoice_cash, 0, ',', '.') }}</td>
-                                                <td>{{ number_format($row->invoice_tempo, 0, ',', '.') }}</td>
-                                                <td style="display:none;">{{ $tipe }}</td>
+                                <div class="table-responsive">
+                                    <table class="datatableOmset table table-striped" id="datatableOmset">
+                                        <thead>
+                                            <tr>
+                                                <th>#</th>
+                                                <th>Date</th>
+                                                <th>Brand</th>
+                                                <th>Invoice</th>
+                                                <th>Customer</th>
+                                                <th>Cash</th>
+                                                <th>Tempo</th>
+                                                <th style="display:none;">TypeSO</th>
                                             </tr>
-                                        @endforeach
-                                    </tbody>
-                                    <tfoot>
-                                        <tr>
-                                            <th colspan="5" style="text-align:right"></th>
-                                            <th id="totalInvoiceCash" style="text-align: center;"></th>
-                                            <th id="totalInvoiceTempo" style="text-align: center;"></th>
-                                        </tr>
-                                        <tr>
-                                            <th colspan="6" style="text-align:right"></th>
-                                            <th id="subTotal" style="text-align: center;"></th>
-                                        </tr>
-                                    </tfoot>
-                                </table>
+                                        </thead>
+                                        <tbody>
+                                            @foreach ($progress as $row)
+                                                @php
+                                                    $tipe = strtolower(trim($row->invoice_type ?? 'nonppn'));
+                                                    $tipe = str_replace(' ', '', $tipe);
+                                                @endphp
+                                                <tr data-type-so="{{ $tipe }}">
+                                                    <td>{{ $loop->iteration }}</td>
+                                                    <td>{{ $row->so_date }}</td>
+                                                    <td>{{ $row->invoice_brand }}</td>
+                                                    <td>{{ $row->invoice_code }}</td>
+                                                    <td>{{ $row->customer_name }} - {{ $row->customer_city }}</td>
+                                                    <td>{{ number_format($row->invoice_cash, 0, ',', '.') }}</td>
+                                                    <td>{{ number_format($row->invoice_tempo, 0, ',', '.') }}</td>
+                                                    <td style="display:none;">{{ $tipe }}</td>
+                                                </tr>
+                                            @endforeach
+                                        </tbody>
+                                        <tfoot>
+                                            <tr>
+                                                <th colspan="5" style="text-align:right"></th>
+                                                <th id="totalInvoiceCash" style="text-align: center;"></th>
+                                                <th id="totalInvoiceTempo" style="text-align: center;"></th>
+                                            </tr>
+                                            <tr>
+                                                <th colspan="6" style="text-align:right"></th>
+                                                <th id="subTotal" style="text-align: center;"></th>
+                                            </tr>
+                                        </tfoot>
+                                    </table>
+                                </div>
                             </section>
 
                             <section id="content2" class="tab-content">
@@ -108,9 +110,9 @@
                                     @csrf
                                     <div class="card">
                                         <div class="card-body py-2"> {{-- Memastikan padding vertikal konsisten --}}
-                                            <div class="d-flex justify-content-between align-items-end mb-4"> {{-- Container utama untuk filter (kiri) dan tombol (kanan) --}}
+                                            <div class="d-flex flex-wrap justify-content-between align-items-end mb-4"> {{-- Container utama untuk filter (kiri) dan tombol (kanan) --}}
                                                 {{-- KIRI: Grup Filter (Periode dan Tipe Laporan) --}}
-                                                <div class="d-flex align-items-end"> {{-- Menyusun Periode dan Tipe Laporan secara horizontal, sejajar di bagian bawah --}}
+                                                <div class="d-flex flex-wrap align-items-end gap-2"> {{-- Menyusun Periode dan Tipe Laporan secara horizontal, sejajar di bagian bawah --}}
                                                     {{-- Periode Group --}}
                                                     <div class="d-flex flex-column me-3">
                                                         <label class="form-label text-start mb-1">Periode:</label>
@@ -158,6 +160,7 @@
                                                     <div class="d-flex flex-column ms-3"> {{-- Membuat Label "Tipe Laporan" berada di atas inputannya --}}
                                                         <label for="report_type_tabulasi" class="form-label text-start mb-1">Tipe Laporan</label> {{-- Label Tipe Laporan, 'visually-hidden' dihapus --}}
                                                         <select class="form-control form-control-sm js-select2" name="report_type_tabulasi" id="report_type_tabulasi" style="min-width: 180px;">
+                                                            <option value="">Pilih Tipe</option>
                                                             <option value="brand">Market Brand</option>
                                                             <option value="zone">Zone</option>
                                                         </select>
@@ -167,7 +170,8 @@
                                                         <label for="report_officer" class="form-label text-start mb-1">Officer:</label>
                                                         <select class="form-control form-control-sm js-select2"
                                                                 name="report_officer" id="report_officer">
-                                                            <option value="All" selected>All</option>
+                                                            <option value="pilih_officer" selected>Pilih Officer</option>
+                                                            <option value="All">All</option>
                                                             <option value="Erick">Erick</option>
                                                             <option value="Lindy">Lindy</option>
                                                             <option value="Kumala">Kumala</option>
@@ -373,6 +377,98 @@
     .tab-content.active {
         display: block;
     }
+
+    /* --- BASIC RESPONSIVE LAYOUT --- */
+    .card-body {
+        width: 100%;
+        overflow-x: auto;
+    }
+
+    /* --- TAB LABEL: responsif & bisa scroll pada HP --- */
+    .tab-label {
+        padding: 8px 14px;
+        font-size: 14px;
+        white-space: nowrap;
+    }
+
+    /* Wrap tab */
+    main {
+        overflow-x: auto;
+        white-space: nowrap;
+    }
+
+    @media (max-width: 768px) {
+        main {
+            display: block;
+            white-space: normal; /* biarkan turun ke bawah */
+        }
+
+        .tab-label {
+            display: inline-block;
+            margin-bottom: 6px;
+        }
+
+        .tab-content {
+            padding: 15px !important;
+        }
+    }
+
+
+    /* --- TABLE RESPONSIVE --- */
+    table {
+        width: 100% !important;
+    }
+
+    .table-responsive {
+        width: 100%;
+        overflow-x: visible;
+    }
+
+    /* Datatable scroll HP */
+    #datatableOmset_wrapper {
+        overflow-x: visible;
+        width: 100%;
+    }
+
+
+    /* --- FILTERS & FORM RESPONSIVE --- */
+    @media (max-width: 768px) {
+        .d-flex.justify-content-between {
+            flex-direction: column;
+            align-items: stretch !important;
+            gap: 10px;
+        }
+
+        .d-flex.align-items-end {
+            flex-direction: column;
+            gap: 10px;
+            align-items: stretch !important;
+        }
+
+        .form-control, .form-select {
+            width: 100% !important;
+        }
+
+        .uniform-width {
+            min-width: 100% !important;
+        }
+
+        /* Button group jadi full width */
+        .btn-group {
+            width: 100%;
+            display: flex;
+            justify-content: space-between;
+        }
+        .btn-group .btn {
+            flex: 1;
+        }
+
+        /* iframe PDF otomatis menyesuaikan HP */
+        #iframePdf,
+        #iframeForecastPdf {
+            height: 500px !important;
+        }
+    }
 </style>
 
 <script>
@@ -414,7 +510,9 @@
         let form = $('#tabulasiForm');
         applyTabulasiMonthYearToForm();
 
+        const selectedReportType = $('#report_type_tabulasi').val();
         const selectedOfficer = $('#report_officer').val();
+        const selectedSalesman = $('#salesman_id_tabulasi').val();
         const startDate = $('#tabulasi_start_date').val();
         const endDate = $('#tabulasi_end_date').val();
 
@@ -422,17 +520,70 @@
             Swal.fire({
                 icon: 'error',
                 title: 'Validasi Gagal',
-                text: 'Periode harus dipilih',
+                text: 'Periode Laporan harus diisi.',
+                confirmButtonText: 'Oke'
             });
             return;
         }
 
+        let isOfficerMode = selectedOfficer && selectedOfficer !== "pilih_officer";
+        let isReportMode = selectedReportType && selectedReportType.trim() !== "";
+
+        // ❌ Dua-duanya dipilih → tidak valid
+        if (isOfficerMode && isReportMode) {
+            Swal.fire({
+                icon: 'warning',
+                title: 'Tidak Diizinkan',
+                text: 'Silakan pilih salah satu: Tipe Laporan ATAU Officer.',
+                confirmButtonText: 'Oke'
+            });
+            return;
+        }
+
+        // ❌ Dua-duanya kosong
+        if (!isOfficerMode && !isReportMode) {
+            Swal.fire({
+                icon: 'warning',
+                title: 'Belum Memilih Kriteria',
+                text: 'Silakan pilih Tipe Laporan atau Officer sebelum Export.',
+                confirmButtonText: 'Oke'
+            });
+            return;
+        }
+
+        $('#action_type_tabulasi_hidden').val(actionType);
+
         let formData = new FormData(form[0]);
-        formData.append('officer', selectedOfficer ?? 'All');
+        let url = "{{ route('superuser.report.customer_type_brand.exportReport') }}";
 
         if (actionType === 'export_register_pdf') {
 
-            let url = "{{ route('superuser.report.customer_type_brand.export_officer') }}";
+            formData.append('nominal', 1);
+            formData.append('action', 'print');
+
+            if (isReportMode) {
+                // ✅ Brand
+                if (selectedReportType === 'brand') {
+                    formData.append('type', 1);
+                }
+                // ✅ Zone
+                else if (selectedReportType === 'zone') {
+                    if (selectedSalesman && selectedSalesman !== '') {
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'Tidak Diizinkan',
+                            text: 'Export by Zone tidak dapat memilih Salesman.',
+                            confirmButtonText: 'Oke'
+                        });
+                        return;
+                    }
+                    formData.append('type', 2);
+                }
+            } else if (isOfficerMode) {
+                // ✅ Officer Mode
+                url = "{{ route('superuser.report.customer_type_brand.export_officer') }}";
+                formData.append('officer_name', selectedOfficer);
+            }
 
             $.ajax({
                 url: url,
@@ -445,30 +596,23 @@
                 },
                 beforeSend: function() {
                     Swal.fire({
-                        title: 'Memproses PDF Officer...',
+                        title: 'Membuat Laporan...',
+                        text: 'Mohon tunggu, sedang diolah.',
                         allowOutsideClick: false,
                         didOpen: () => Swal.showLoading()
                     });
                 },
                 success: function(response) {
                     Swal.close();
-
                     if (response.success && response.pdf_url) {
                         $('#iframePdf').attr('src', response.pdf_url);
                         $('#pdfDownloadLink').attr('href', response.pdf_url);
-
-                        Swal.fire({
-                            icon: 'success',
-                            title: 'Berhasil!',
-                            text: 'PDF Officer berhasil dibuat.',
-                            showConfirmButton: false,
-                            timer: 2000
-                        });
                     } else {
                         Swal.fire({
                             icon: 'error',
                             title: 'Gagal',
-                            text: response.error ?? 'Terjadi kesalahan.',
+                            text: response.error ?? 'Kesalahan server.',
+                            confirmButtonText: 'Oke'
                         });
                     }
                 },
@@ -476,28 +620,33 @@
                     Swal.close();
                     Swal.fire({
                         icon: 'error',
-                        title: 'Server Error',
-                        text: xhr.responseJSON?.message ?? 'Kesalahan pada server',
+                        title: 'Error Server',
+                        text: xhr.responseJSON?.message ?? 'Terjadi kesalahan server.',
+                        confirmButtonText: 'Oke'
                     });
-                    console.error('AJAX Error ->', xhr.responseText);
                 }
             });
 
         } else if (actionType === 'sync_register') {
+            applyTabulasiMonthYearToForm(); // pastikan form sudah diisi tanggalnya
 
-            // ✅ masih tetap arahkan ke laporan register untuk sinkronisasi
-            const selectedMonth = $('#tabulasi-month-select').val();
-            const selectedYear = $('#tabulasi-year-select').val();
-            const year = parseInt(selectedYear);
-            const month = parseInt(selectedMonth);
-            const lastDay = new Date(year, month, 0).getDate();
+            const startDate = $('#tabulasi_period_from').val();
+            const endDate = $('#tabulasi_period_to').val();
 
-            const start = `${year}-${selectedMonth}-01`;
-            const end = `${year}-${selectedMonth}-${lastDay}`;
+            if (!startDate || !endDate) {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Validasi Gagal',
+                    text: 'Periode harus diisi sebelum melakukan sync.',
+                    confirmButtonText: 'Oke'
+                });
+                return;
+            }
 
-            const baseUrl = "{{ route('superuser.report.customer_type_brand.postData') }}";
+            const url = "{{ route('superuser.report.customer_type_brand.postData') }}" + 
+                        `?period_from=${startDate}&period_to=${endDate}`;
 
-            window.location.href = baseUrl + '?period_from=' + start + '&period_to=' + end;
+            window.location.href = url;
         }
     }
 

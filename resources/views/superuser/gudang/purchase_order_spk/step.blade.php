@@ -110,11 +110,7 @@
       </div>
       @if ($purchase_order->status == $purchase_order::STATUS['DRAFT'])
       <div class="col-md-6 text-right">
-        <!-- @if( ($purchase_order->kategori == $purchase_order::KATEGORI['ORIGINAL_PACK']) && empty($purchase_order->ref_po_id) )
-            <button type="button" class="btn btn-primary" data-toggle="modal" data-target="#refPoModal">
-                Ref PO <i class="fa fa-sync ml-10"></i>
-            </button>
-        @endif -->
+        
         <a href="{{ route('superuser.gudang.purchase_order_spk.edit', $purchase_order->id) }}">
           <button type="button" class="btn bg-gd-sea border-0 text-white">
             Edit <i class="fa fa-pencil ml-10"></i>
@@ -127,11 +123,7 @@
         </a>
       </div>
       @else
-      <!-- @if( $purchase_order->kategori == $purchase_order::KATEGORI['ORIGINAL_PACK'] || empty($purchase_order->kategori) )
-          <button type="button" class="btn btn-primary" data-toggle="modal" data-target="#refPoModal">
-              Ref PO <i class="fa fa-sync ml-10"></i>
-          </button>
-      @endif -->
+      
       <div class="col-md-6 text-right">
         <a href="{{ route('superuser.gudang.purchase_order_spk.edit', $purchase_order->id) }}">
           <button type="button" class="btn bg-gd-sea border-0 text-white">

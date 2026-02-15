@@ -28,6 +28,20 @@
                 </select>
             </div>
 
+            <div class="mb-3 d-none" id="uploadWrapper">
+                <label class="form-label text-danger">
+                    Upload Bukti Barang Diambil (Wajib jika DIAMBIL)
+                </label>
+                <input type="file"
+                    class="form-control"
+                    id="image"
+                    name="image"
+                    accept="image/*">
+                <small class="text-muted">
+                    Format JPG / PNG, maksimal 2MB
+                </small>
+            </div>
+
             <div class="d-flex justify-content-end">
                 <button class="btn btn-primary" id="saveStep3">
                     Update Status
@@ -101,6 +115,18 @@
                             </table>
                         </div>
                     </div>
+
+                    @if($mutasi->image)
+                        <button 
+                            type="button"
+                            class="btn btn-outline-primary btn-sm mt-2"
+                            data-bs-toggle="modal"
+                            data-bs-target="#imageModal"
+                            data-image="{{ route('superuser.gudang.sj_mutasi_internal.viewFile', $mutasi->image) }}"
+                        >
+                            <i class="bi bi-image"></i> Lihat Bukti
+                        </button>
+                    @endif
                 </div>
             @else
                 {{-- TYPE INTERNAL / LAINNYA --}}
@@ -165,6 +191,18 @@
                             </table>
                         </div>
                     </div>
+
+                    @if($mutasi->image)
+                        <button 
+                            type="button"
+                            class="btn btn-outline-primary btn-sm mt-2"
+                            data-bs-toggle="modal"
+                            data-bs-target="#imageModal"
+                            data-image="{{ route('superuser.gudang.sj_mutasi_internal.viewFile', $mutasi->image) }}"
+                        >
+                            <i class="bi bi-image"></i> Lihat Bukti
+                        </button>
+                    @endif
                 </div>
             @endif
         @endif

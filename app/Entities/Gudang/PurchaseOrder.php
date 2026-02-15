@@ -14,6 +14,7 @@ class PurchaseOrder extends Model
         'warehouse_id', 
         'brand_lokal_id',
         'ref_po_id',
+        'ref_mut_out_id',
         'etd', 
         'note', 
         'edit_counter', 
@@ -40,10 +41,10 @@ class PurchaseOrder extends Model
         'PO' => 1,
     ];
 
-    const KATEGORI = [
-        'PRODUKSI_REPACK' => 0,
-        'ORIGINAL_PACK' => 1,
-    ];
+    // const KATEGORI = [
+    //     'PRODUKSI_REPACK' => 0,
+    //     'ORIGINAL_PACK' => 1,
+    // ];
 
     // const SUB_TYPE = [
     //     'SIRIE_NGINDEN' => 0,

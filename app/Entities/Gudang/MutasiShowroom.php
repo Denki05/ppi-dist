@@ -26,6 +26,8 @@ class MutasiShowroom extends Model
         'status',
         'status_checked',
         'status_barang',
+        'image',
+        'taken_at',
         'print_count',
         'printed_at',
         'created_by',
