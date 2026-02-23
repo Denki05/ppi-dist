@@ -15,6 +15,7 @@ class SalesOrder extends Model
     protected $table = "penjualan_so";
     protected $fillable =[
     	'so_code',
+        'is_proforma',
     	'code',
         'keep_code', 
     	'sales_id',
@@ -181,7 +182,7 @@ class SalesOrder extends Model
     }
 
     public function proforma(){
-    	return $this->hasMany('App\Entities\Penjualan\SoProforma','so_id');
+    	return $this->hasOne('App\Entities\Penjualan\SalesOrderProforma','so_id');
     }
 
     public function showroom_mutation()

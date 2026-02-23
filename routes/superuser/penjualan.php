@@ -24,7 +24,7 @@ Route::group([
         Route::get('/so_awal', 'SalesOrderController@index_awal')->name('index_awal');
         Route::get('/so_lanjutan', 'SalesOrderController@index_lanjutan')->name('index_lanjutan');
         Route::get('/so_mutasi', 'SalesOrderController@index_mutasi')->name('index_mutasi');
-        Route::get('/create/{step}/{member}/{brand}/{type}/{indent}/{approval}/{note}/{kurs}/{disc_percent}', 'SalesOrderController@create')->name('create');
+        Route::get('/create/{step}/{member}/{brand}/{type}/{indent}/{approval}/{note}/{kurs}/{disc_percent}/{is_proforma}', 'SalesOrderController@create')->name('create');
         Route::get('/{id}/edit/{step}', 'SalesOrderController@edit')->name('edit');
         Route::get('/{id}/detail', 'SalesOrderController@detail')->name('detail');
         Route::post('/{member}/store', 'SalesOrderController@store')->name('store');
@@ -79,7 +79,7 @@ Route::group([
         Route::post('/order', 'PackingOrderController@order')->name('order');
         Route::get('/ready/{id}', 'PackingOrderController@ready')->name('ready');
         Route::post('/packed', 'PackingOrderController@packed')->name('packed');
-        Route::get('/revisi/{id}', 'PackingOrderController@revisi')->name('revisi');
+        Route::post('/revisi/{id}', 'PackingOrderController@revisi')->name('revisi');
         Route::get('/{id}/select_so', 'PackingOrderController@select_so')->name('select_so');
         Route::post('/store_so', 'PackingOrderController@store_so')->name('store_so');
         Route::post('/destroy_item', 'PackingOrderController@destroy_item')->name('destroy_item');
@@ -112,6 +112,7 @@ Route::group([
         Route::get('/json', 'DeliveryOrderController@json')->name('json');
         Route::post('/unread_notif/{id}/{do}', 'DeliveryOrderController@unread_notif')->name('unread_notif');
         Route::get('/getNotifData', 'DeliveryOrderController@getNotifData')->name('getNotifData');
+        Route::post('/multi-cancel', 'DeliveryOrderController@multiCancel')->name('multi_cancel');
     });
 
     Route::group(['as' => 'delivery_order_mutation.', 'prefix' => '/delivery_order_mutation'], function () {

@@ -173,6 +173,19 @@
                   @endforeach
                 </select>
               </div>
+
+              <!-- PROFORMA FLAG -->
+              <div class="form-group" id="proforma-group" style="display:none;">
+                  <div class="custom-control custom-checkbox">
+                      <input type="checkbox" class="custom-control-input" 
+                            name="need_proforma" 
+                            id="need_proforma" 
+                            value="1">
+                      <label class="custom-control-label" for="need_proforma">
+                          <b>Butuh Proforma?</b>
+                      </label>
+                  </div>
+              </div>
             </div>
             <div class="col">
               <div class="form-group">
@@ -189,25 +202,25 @@
             <div class="row">
               <div class="col">
                 <div class="form-group">
-                  <label class="form-check form-check-inline">
-                  <input class="form-check-input" type="checkbox" name="approval_spv" id="approval_spv" value="1">
-                  <span class="form-label"><b>Approval </b> <span class="text-danger">*</span></span>
-                  </label>
-                </div>
-                <div class="form-group" id="kurs-group" style="display: none;">
-                  <span class="form-label"><b>Kurs </b> <span class="text-danger">*</span></span>
+                  <span class="form-label"><b>Kurs </b>
                   <!-- <input class="form-control" type="text" name="kurs" id="kurs"> -->
-                   <input class="form-control" type="text" name="kurs" id="kurs" pattern="^\d+$" title="Hanya angka tanpa titik/koma" placeholder="Masukkan angka bulat, contoh: 15500" required>
+                  <input class="form-control" type="text" name="kurs" id="kurs" pattern="^\d+$" title="Hanya angka tanpa titik/koma" placeholder="Masukkan angka bulat, contoh: 15500" required>
                 </div>
-                <div class="form-group" id="disc-percent-group" style="display: none;">
-                  <span class="form-label"><b>Disc % </b> <span class="text-danger">*</span></span>
+                <div class="form-group">
+                  <span class="form-label"><b>Disc % </b>
                   <input class="form-control" type="text" name="disc_percent" id="disc_percent">
+                </div>
+                <div class="form-group">
+                  <label class="form-check form-check-inline">
+                    <input class="form-check-input" type="checkbox" name="approval_spv" id="approval_spv" value="1">
+                    <span class="form-label"><b>Approval </b>
+                  </label>
                 </div>
               </div>
               <div class="col">
                 <div class="form-group">
-                  <span class="form-label"><b>Note </b> <span class="text-danger">*</span></span>
-                  <textarea class="form-control" name="note_so" id="editor" rows="4" col="10"></textarea>
+                  <span class="form-label"><b>Note </b>
+                  <textarea class="form-control" name="note" id="editor" rows="4" col="10"></textarea>
                   <br>
                   <a class="btn btn-info" id="test" href="javascript:void(0);" title="">click</a>
                 </div>
@@ -308,7 +321,7 @@
       const isChecked = this.checked;
       document.getElementById('kurs-group').style.display = isChecked ? 'block' : 'none';
       document.getElementById('disc-percent-group').style.display = isChecked ? 'block' : 'none';
-    });
+    });    
   });
 </script>
 <script type="text/javascript">
@@ -405,8 +418,11 @@
             var kurs = $('#kurs').val() || 1;
             var approval_spv = $('#approval_spv').is(':checked') ? 1 : 0;
             var disc_percent = $('#disc_percent').val() || 0;
+            var need_proforma = $('#need_proforma').is(':checked') ? 1 : 0;
 
-            var url = '{{ route('superuser.penjualan.sales_order.create',  [":step", ":member", ":brand", ":type", ":indent", ":approval", ":note", ":kurs", ":disc_percent"]) }}';
+            alert(need_proforma);
+
+            var url = '{{ route('superuser.penjualan.sales_order.create',  [":step", ":member", ":brand", ":type", ":indent", ":approval", ":note", ":kurs", ":disc_percent", ":need_proforma"]) }}';
             url = url.replace(':member', customer); 
             url = url.replace(':brand', merek); 
             url = url.replace(':type', type_so);
@@ -416,6 +432,7 @@
             url = url.replace(':kurs', kurs);
             url = url.replace(':note', encodeURIComponent(note));
             url = url.replace(':disc_percent', disc_percent);
+            url = url.replace(':need_proforma', need_proforma);
 
             $.ajax({
                 url: url,
@@ -429,14 +446,19 @@
         });
 
         $('#exampleModal').on('hidden.bs.modal', function (e) {
-          // Remove any data associated with the modal
-          $(this).removeData();
 
-          // Reset the form fields
+          $(this).removeData();
           $(this).find('form')[0].reset();
 
-          // Clear and reinitialize the Select2 elements
           $(this).find('.js-select2').val(null).trigger('change');
+
+          // TAMBAHAN
+          $('#proforma-group').hide();
+          $('#need_proforma').prop('checked', false);
+        });
+
+        $('#exampleModal').on('shown.bs.modal', function () {
+            $('#so_type').trigger('change');
         });
 
         $('a[href^="#"]').on('click', function(event) {
@@ -474,6 +496,35 @@
           text = text.concat(exp);
           document.getElementById('editor').value = text;
         }
+
+        // HANDLE PROFORMA BASED ON SO TYPE
+        $('#so_type').on('change', function () {
+
+            var type = $(this).val();
+            var group = $('#proforma-group');
+            var checkbox = $('#need_proforma');
+
+            if (!type) {
+                group.hide();
+                checkbox.prop('checked', false);
+                return;
+            }
+
+            var typeUpper = type.toUpperCase();
+
+            if (typeUpper === 'CASH') {
+                group.show();
+                checkbox.prop('checked', true);
+            } 
+            else if (typeUpper === 'TEMPO') {
+                group.show();
+                checkbox.prop('checked', false);
+            } 
+            else {
+                group.hide();
+                checkbox.prop('checked', false);
+            }
+        });
     })
 </script>
 @endpush

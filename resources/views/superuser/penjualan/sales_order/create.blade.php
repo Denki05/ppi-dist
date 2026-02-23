@@ -35,6 +35,7 @@
   <form id="frmCreate" action="#" data-type="POST" enctype="multipart/form-data">
   @csrf
     <input type="hidden" name="ajukankelanjutan" value="0">
+    <input type="hidden" name="need_proforma" value="{{ $is_proforma }}">
     <div class="row">
     <div class="col-4">
         <div class="block">

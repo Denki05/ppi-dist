@@ -294,54 +294,119 @@ class DeliveryOrderController extends Controller
 
     public function packed(Request $request)
     {
-        // Access
-        if(Auth::user()->is_superuser == 0){
-            if(empty($this->access) || empty($this->access->user) || $this->access->can_approve == 0){
-                return redirect()->route('superuser.index')->with('error','Anda tidak punya akses untuk membuka menu terkait');
+        if (Auth::user()->is_superuser == 0) {
+            if (empty($this->access) || empty($this->access->user) || $this->access->can_approve == 0) {
+                return redirect()->route('superuser.index')
+                    ->with('error', 'Anda tidak punya akses');
             }
         }
 
         DB::beginTransaction();
-        try{
+
+        try {
+
             $request->validate([
-                'id' => 'required'
+                'id' => 'required',
+                'confirmed_items' => 'required|array'
             ]);
-            $post = $request->all();
-            $result = PackingOrder::where('id',$post["id"])->first();
 
-            $do_cost = PackingOrderDetail::where('do_id', $result->id)->first();
+            $packing = PackingOrder::with('do_detail.product_pack')
+                ->findOrFail($request->id);
 
-            if($result->status == 1){
-                return redirect()->route('superuser.penjualan.packing_order.index')->with('error','Tidak bisa mengirim packing order yang masih baru dibuat');
-            }
-            if(count($result->do_detail) == 0){
-                return redirect()->route('superuser.penjualan.delivery_order.index')->with('error','Tidak ada item sama sekali');
-            }
-            if($do_cost->grand_total_idr == 0){
-                return redirect()->route('superuser.penjualan.delivery_order.index')->with('error','Harga didalam packing list belum di set');
+            if ($packing->status != 3) {
+                throw new \Exception('Status tidak valid untuk diproses.');
             }
 
-            $update = PackingOrder::where('id',$post["id"])->update(['status' => 4]);
-            
+            if ($packing->do_detail->count() == 0) {
+                throw new \Exception('Tidak ada item untuk diproses.');
+            }
+
+            // ======================================
+            // VALIDASI CHECKLIST (ANTI BYPASS JS)
+            // ======================================
+
+            $doItemIds = $packing->do_detail->pluck('id')->toArray();
+
+            $confirmedIds = collect($request->confirmed_items)
+                ->map(function ($id) {
+                    return (int) $id;
+                })
+                ->toArray();
+
+            if (count($doItemIds) !== count($confirmedIds)) {
+                throw new \Exception('Semua item harus dikonfirmasi sebelum diproses.');
+            }
+
+            foreach ($doItemIds as $id) {
+                if (!in_array($id, $confirmedIds)) {
+                    throw new \Exception('Checklist item tidak lengkap.');
+                }
+            }
+
+            // ======================================
+            // PROSES POTONG STOCK
+            // ======================================
+
+            foreach ($packing->do_detail as $item) {
+
+                $base_product_packaging_id = preg_replace('/_\d+$/', '', $item->product_packaging_id);
+
+                $stock = ProductMinStock::where('warehouse_id', $packing->warehouse_id)
+                    ->where('product_packaging_id', $base_product_packaging_id)
+                    ->lockForUpdate()
+                    ->first();
+
+                if (!$stock) {
+                    throw new \Exception('Stock tidak ditemukan.');
+                }
+
+                // --------------------------------------
+                // VALIDASI RESERVED CUKUP
+                // --------------------------------------
+
+                if ($stock->reserved_quantity < $item->qty) {
+                    throw new \Exception(
+                        "Reserved stock tidak mencukupi untuk produk {$item->product_pack->code}"
+                    );
+                }
+
+                // --------------------------------------
+                // LOGIKA MINUS TERKONTROL
+                // --------------------------------------
+
+                $current_qty = (int) $stock->quantity;
+                $new_qty     = $current_qty - $item->qty;
+
+                // Jika sudah minus dan minus akan makin dalam → tolak
+                if ($current_qty < 0 && $new_qty < $current_qty) {
+                    throw new \Exception(
+                        "Stock sudah minus dan tidak boleh ditambah minus untuk produk {$item->product_pack->code}"
+                    );
+                }
+
+                // --------------------------------------
+                // REAL DEDUCTION
+                // --------------------------------------
+
+                $stock->quantity -= $item->qty;
+                $stock->reserved_quantity -= $item->qty;
+                $stock->save();
+            }
+
+            $packing->update(['status' => 4]);
+
             DB::commit();
-            return redirect()->route('superuser.penjualan.delivery_order.index')->with('success','DO berhasil diubah ke Siap Kirim!');
 
-            // Create Invoice
-            // if ($result->type_transaction == 'TEMPO'){
-            //     $data = [
-            //         'code' => CodeRepo::generateInvoicing($result->do_code),
-            //         'do_id' => $result->id,
-            //         'customer_other_address_id' => $result->customer_other_address_id,
-            //         'grand_total_idr' => $do_cost->grand_total_idr,
-            //         'created_by' => Auth::id(),
-            //     ];
-                
-            //     $insert = Invoicing::create($data);
-            // }
-        }catch(\Throwable $e){
-            DD($e);
-            DB::rollback();
-            return redirect()->back()->with('error',$e->getMessage());
+            return redirect()
+                ->route('superuser.penjualan.delivery_order.index')
+                ->with('success', 'DO berhasil diubah ke Siap Kirim!');
+
+        } catch (\Throwable $e) {
+
+            DB::rollBack();
+
+            return redirect()->back()
+                ->with('error', $e->getMessage());
         }
     }
 
@@ -483,7 +548,7 @@ class DeliveryOrderController extends Controller
             $result_cost = PackingOrderDetail::where('do_id', $do_id)->firstOrFail();
             $get_do = PackingOrder::where('id', $do_id)->firstOrFail();
             $get_so = SalesOrder::where('id', $get_do->so_id)->firstOrFail();
-            $customer = CustomerOtherAddress::where('id', $result_cost->do_header->customer_other_address_id)->firstOrFail();
+            $customer = CustomerOtherAddress::where('id', $result_cost->do->customer_other_address_id)->firstOrFail();
 
             // Prepare update data
             $updateData = [
@@ -520,6 +585,56 @@ class DeliveryOrderController extends Controller
                 ]);
             }
             $detail_do->update(['status' => 6]);
+
+            // ======================================================
+            // INSERT STOCK MOVE (OUTBOUND - DO DELIVERED)
+            // ======================================================
+
+            $transactionCode = 'DO-' . $detail_do->do_code;
+
+            // 🔒 Lock DO row untuk cegah double click paralel
+            $lockedDo = PackingOrder::where('id', $detail_do->id)
+                ->lockForUpdate()
+                ->first();
+
+            // 🔒 Cegah double insert
+            $alreadyMoved = \App\Entities\Gudang\StockMove::where(
+                'code_transaction',
+                $transactionCode
+            )->exists();
+
+            if (!$alreadyMoved) {
+
+                $items = PackingOrderItem::where('do_id', $do_id)->get();
+
+                foreach ($items as $item) {
+
+                    $base_product_packaging_id = preg_replace('/_\d+$/', '', $item->product_packaging_id);
+
+                    // 🔒 Lock saldo terakhir per produk + gudang
+                    $lastMove = \App\Entities\Gudang\StockMove::where('warehouse_id', $detail_do->warehouse_id)
+                        ->where('product_packaging_id', $base_product_packaging_id)
+                        ->orderByDesc('id')
+                        ->lockForUpdate()
+                        ->first();
+
+                    $lastBalance = $lastMove ? $lastMove->stock_balance : 0;
+
+                    // ✔ Minus diperbolehkan
+                    $newBalance = $lastBalance - $item->qty;
+
+                    \App\Entities\Gudang\StockMove::create([
+                        'code_transaction' => $transactionCode,
+                        'warehouse_id' => $detail_do->warehouse_id,
+                        'product_packaging_id' => $base_product_packaging_id,
+                        'stock_in' => 0,
+                        'stock_out' => $item->qty,
+                        'stock_balance' => $newBalance,
+                        'note' => 'Delivery Order Delivered',
+                        'created_by' => auth()->id(),
+                    ]);
+                }
+            }
 
             // Update SalesOrder items and log
             $salesOrderItemDB = SalesOrderItem::where('so_id', $get_do->so_id)->where('kontrak', 1)->get();
@@ -563,6 +678,7 @@ class DeliveryOrderController extends Controller
             return redirect()->route('superuser.penjualan.delivery_order.index')->with('success','DO berhasil update resi!');
 
         } catch (\Throwable $e) {
+            dd($e);
             DB::rollback();
             $data_json["IsError"] = true;
             $data_json["Message"] = $e->getMessage();
@@ -997,5 +1113,87 @@ class DeliveryOrderController extends Controller
             'notifications' => $notifications,
             'notifCount' => $notifCount,
         ]);
+    }
+
+    public function multiCancel(Request $request)
+    {
+        DB::beginTransaction();
+
+        try {
+
+            $request->validate([
+                'ids' => 'required|array'
+            ]);
+
+            $doList = PackingOrder::with('do_detail')
+                ->whereIn('id', $request->ids)
+                ->lockForUpdate()
+                ->get();
+
+            foreach ($doList as $do) {
+
+                if ($do->status == 6) {
+                    throw new \Exception("DO {$do->do_code} sudah Delivered dan tidak bisa dicancel.");
+                }
+
+                // ===============================
+                // 5 → 4
+                // ===============================
+                if ($do->status == 5) {
+                    $do->update(['status' => 4]);
+                    continue;
+                }
+
+                // ===============================
+                // 4 → 3
+                // ===============================
+                if ($do->status == 4) {
+
+                    foreach ($do->do_detail as $item) {
+
+                        $base_product_packaging_id = preg_replace('/_\d+$/', '', $item->product_packaging_id);
+
+                        $stock = ProductMinStock::where('warehouse_id', $do->warehouse_id)
+                            ->where('product_packaging_id', $base_product_packaging_id)
+                            ->lockForUpdate()
+                            ->first();
+
+                        if (!$stock) {
+                            throw new \Exception("Stock tidak ditemukan untuk rollback.");
+                        }
+
+                        // 🔁 ROLLBACK DEDUCTION (kebalikan packed())
+                        $stock->quantity += $item->qty;
+                        $stock->reserved_quantity += $item->qty;
+                        $stock->save();
+                    }
+
+                    $do->update(['status' => 3]);
+                    continue;
+                }
+
+                // ===============================
+                // 3 → 2 (ROLLBACK STOCK)
+                // ===============================
+                if ($do->status == 3) {
+                    $do->update(['status' => 2]);
+                    continue;
+                }
+
+                throw new \Exception("Status DO {$do->do_code} tidak valid untuk cancel.");
+            }
+
+            DB::commit();
+
+            return redirect()->back()
+                ->with('success', 'Berhasil dikembalikan/cancel.');
+
+        } catch (\Throwable $e) {
+
+            DB::rollBack();
+
+            return redirect()->back()
+                ->with('error', $e->getMessage());
+        }
     }
 }

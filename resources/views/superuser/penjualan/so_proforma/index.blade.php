@@ -67,21 +67,25 @@
               </a>
             @endif
             @if($row->status == "ACTIVE")
+              @if(!empty($row->details_cost->grand_total_idr))
               <a href="javascript:saveConfirmation('{{ route('superuser.penjualan.so_proforma.acc', $row->id) }}')">
                 <button type="button" class="btn btn-sm btn-circle btn-alt-danger" title="Acc">
                     <i class="fa fa-check"></i>
                 </button>
               </a>
+              @endif
               <a href="{{ route('superuser.penjualan.so_proforma.edit', $row->id) }}">
                 <button type="button" class="btn btn-sm btn-circle btn-alt-danger" title="Edit">
                   <i class="fa fa-pencil"></i>
                 </button>
               </a>
+              @if(!empty($row->details_cost->grand_total_idr))
               <a href="{{ route('superuser.penjualan.so_proforma.print_so_proforma', $row->id) }}">
                 <button type="button" class="btn btn-sm btn-circle btn-alt-danger" title="Print">
                   <i class="fa fa-print" aria-hidden="true"></i>
                 </button>
               </a>
+              @endif
               <a href="javascript:deleteConfirmation('{{ route('superuser.penjualan.so_proforma.destroy', $row->id) }}')">
                 <button type="button" class="btn btn-sm btn-circle btn-alt-danger" title="Delete">
                   <i class="fa fa-trash"></i>

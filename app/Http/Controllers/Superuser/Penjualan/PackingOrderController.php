@@ -20,8 +20,9 @@ use App\Entities\Penjualan\PackingOrderItem;
 use App\Entities\Penjualan\PackingOrderDetail;
 use App\Entities\Penjualan\SalesOrder;
 use App\Entities\Penjualan\SalesOrderItem;
-use App\Entities\Penjualan\SoProforma;
-use App\Entities\Penjualan\SoProformaDetail;
+use App\Entities\Penjualan\SalesOrderProforma;
+use App\Entities\Penjualan\SalesOrderProformaDetails;
+use App\Entities\Penjualan\SalesOrderProformaItem;
 use App\DataTables\Penjualan\PackingOrderTable;
 use App\Notifications\DoNotification;
 use App\Entities\Setting\UserMenu;
@@ -900,9 +901,11 @@ class PackingOrderController extends Controller
     public function ready(Request $request, $id)
     {
         if ($request->ajax()) {
+
             if(Auth::user()->is_superuser == 0){
                 if(empty($this->access) || empty($this->access->user) || $this->access->can_approve == 0){
-                    return redirect()->route('superuser.index')->with('error','Anda tidak punya akses untuk membuka menu terkait');
+                    return redirect()->route('superuser.index')
+                        ->with('error','Anda tidak punya akses untuk membuka menu terkait');
                 }
             }
 
@@ -912,90 +915,45 @@ class PackingOrderController extends Controller
                 abort(404);
             }
 
-            // get so
-            $getSo = SalesOrder::where('id', $getDo->so_id)->first();
+            DB::beginTransaction();
 
-            // Potong Stock
-            $get_stock = 0;
-            $out_of_stock = false;
+            try {
 
-            // Loop through each product in the DO details
-            foreach($getDo->do_detail as $row => $value){
-                // Strip suffix (_1, _2, etc.) from product_packaging_id to get the base product packaging ID
-                $base_product_packaging_id = preg_replace('/_\d+$/', '', $value->product_packaging_id);
+                // Hanya ubah status menjadi DO (Logistik)
+                $getDo->status = 3; // status DO
+                $getDo->updated_by = Auth::id();
+                $getDo->save();
 
-                // Get stock for the base product packaging ID
-                $stock = ProductMinStock::where('warehouse_id', $getDo->warehouse_id)
-                                        ->where('product_packaging_id', $base_product_packaging_id) // Base ID
-                                        ->first();
-
-                // Check if stock is available
-                if ($stock) {
-                    $get_stock = $stock->quantity;
-
-                    if($get_stock <= $value->qty){
-                        $out_of_stock = true;
-                        $response['notification'] = [
-                            'alert' => 'notify',
-                            'type' => 'error',
-                            'content' => 'Stock, tidak mencukupi',
-                        ];
-            
-                        $response['redirect_to'] = route('superuser.penjualan.sales_order.index_lanjutan');
-                        return $this->response(500, $response);
-                    }
-
-                    // Update stock quantity after reducing the sold quantity
-                    $stock->quantity = $get_stock - $value->qty;
-                    $stock->save();
-
-                    // Log the stock movement
-                    $move = StockMove::where('product_packaging_id', $base_product_packaging_id) // Base ID
-                                    ->where('warehouse_id', $getDo->warehouse_id)
-                                    ->get();
-
-                    $move_in = $move->sum('stock_in');
-                    $move_out = $move->sum('stock_out');
-
-                    // Calculate remaining stock balance after transaction
-                    $sisa = $get_stock + $move_in - $move_out - $value->qty;
-
-                    // Insert stock movement record
-                    StockMove::create([
-                        'code_transaction' => $getDo->do_code,
-                        'warehouse_id' => $getDo->warehouse_id,
-                        'product_packaging_id' => $base_product_packaging_id, // Use base ID for the movement
-                        'stock_out' => $value->qty,
-                        'stock_balance' => $sisa,
-                        'created_by' => Auth::id()
-                    ]);
+                // Kirim notifikasi
+                $user = User::find(29);
+                if($user){
+                    $user->notify(new DoNotification($getDo));
                 }
-            }
 
-            $update = PackingOrder::where('id', $getDo->id)->update(['status' => 3]);
+                DB::commit();
 
-            $user = User::find(29);
-            $user->notify(new DoNotification($getDo));
-
-            if($update){
                 $response['notification'] = [
                     'alert' => 'notify',
                     'type' => 'success',
-                    'content' => 'Success',
+                    'content' => 'DO berhasil dinaikkan ke logistik.',
                 ];
-    
+
                 $response['redirect_to'] = route('superuser.penjualan.sales_order.index_lanjutan');
-                return $this->response(200, $response); 
-            }
-            else{
-                $response['notification'] = [
-                    'alert' => 'notify',
-                    'type' => 'error',
-                    'content' => 'Error',
-                ];
-    
-                $response['redirect_to'] = route('superuser.penjualan.sales_order.index_lanjutan');
+
                 return $this->response(200, $response);
+
+            } catch (\Exception $e) {
+
+                DB::rollBack();
+
+                $response['notification'] = [
+                    'alert' => 'block',
+                    'type' => 'alert-danger',
+                    'header' => 'Error',
+                    'content' => $e->getMessage(),
+                ];
+
+                return $this->response(500, $response);
             }
         }
     }
@@ -1107,55 +1065,154 @@ class PackingOrderController extends Controller
 
     public function revisi(Request $request, $id)
     {
-        if ($request->ajax()) {
-            if(Auth::user()->is_superuser == 0){
-                if(empty($this->access) || empty($this->access->user) || $this->access->can_approve == 0){
-                    return redirect()->route('superuser.index')->with('error','Anda tidak punya akses untuk membuka menu terkait');
-                }
-            }
+        if (!$request->ajax()) {
+            abort(404); // Hanya boleh AJAX
+        }
 
-            $result = PackingOrder::find($id);
-
-            if ($result === null) {
-                abort(404);
-            }
-
-            if($result->status == 2 OR $result->status == 3 OR $result->status == 4){
-                $update_so = SalesOrder::where('id', $result->so_id)->update(['status' => 2, 'count_rev' => 1, 'code' => null, 'keep_code' => $result->so->code]);
-        
-                $update_po = PackingOrder::where('id', $result->id)->update(['status' => 7]);
-        
-                $update_invocing = Invoicing::where('do_id', $request->id)->update(['status' => 3, 'updated_by' => Auth::id()]);
-
-                //Delete packing order item
-                $del_po_item = PackingOrderItem::where('do_id', $result->id)->delete();
-        
-                return redirect()->back()->with('success','SO Packed berhasil di kembalikan ke SO!');  
-            }elseif($result->status == 5 OR $result->status == 6){
-                return redirect()->back()->with('error','Gagal di Kembalikan status saat ini DO dalam proses KIRIM!');
-            }
-
-            if($update_po){
-                $response['notification'] = [
-                    'alert' => 'notify',
-                    'type' => 'success',
-                    'content' => 'Success',
-                ];
-    
-                $response['redirect_to'] = route('superuser.penjualan.sales_order.index_lanjutan');
-                return $this->response(200, $response); 
-            }
-            else{
-                $response['notification'] = [
-                    'alert' => 'notify',
-                    'type' => 'error',
-                    'content' => 'Error',
-                ];
-    
-                $response['redirect_to'] = route('superuser.penjualan.sales_order.index_lanjutan');
-                return $this->response(200, $response);
+        if(Auth::user()->is_superuser == 0){
+            if(empty($this->access) || empty($this->access->user) || $this->access->can_approve == 0){
+                return response()->json([
+                    'status' => 'error',
+                    'message' => 'Anda tidak punya akses untuk membuka menu terkait',
+                    'redirect' => route('superuser.index')
+                ]);
             }
         }
+
+        $result = PackingOrder::find($id);
+        if ($result === null) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Data Packing Order tidak ditemukan',
+            ]);
+        }
+
+        if(in_array($result->status, [2,3,4])){
+
+            DB::transaction(function () use ($result) {
+
+                $packing = PackingOrder::where('id', $result->id)
+                    ->lockForUpdate()
+                    ->first();
+
+                $items = PackingOrderItem::where('do_id', $packing->id)->get();
+
+                foreach ($items as $item) {
+
+                    $stock = ProductMinStock::where('warehouse_id', $packing->warehouse_id)
+                        ->where('product_packaging_id', $item->product_packaging_id)
+                        ->lockForUpdate()
+                        ->first();
+
+                    if (!$stock) {
+                        continue;
+                    }
+
+                    /*
+                    =====================================
+                    1️⃣ RELEASE RESERVED
+                    =====================================
+                    */
+                    $stock->reserved_quantity -= $item->qty;
+
+                    if ($stock->reserved_quantity < 0) {
+                        $stock->reserved_quantity = 0;
+                    }
+
+                    /*
+                    =====================================
+                    2️⃣ JIKA SUDAH PACKED → KEMBALIKAN QTY
+                    =====================================
+                    */
+                    if ($packing->status == 3) { // misal 3 = PACKED
+                        $stock->quantity += $item->qty;
+                    }
+
+                    $stock->save();
+                }
+
+                /*
+                =====================================
+                UPDATE STATUS
+                =====================================
+                */
+
+                $so = SalesOrder::where('id', $packing->so_id)
+                    ->lockForUpdate()
+                    ->first();
+
+                if ($so) {
+
+                    if ($so->is_proforma == 1) {
+
+                        /*
+                        =====================================
+                        PROFORMA CASE
+                        =====================================
+                        */
+
+                        $so->status = 1; // kembali active/edit
+                        $so->count_rev = 1;
+                        $so->code = null;
+                        $so->keep_code = $packing->so->code;
+                        $so->save();
+
+                        // update proforma
+                        $proforma = SalesOrderProforma::where('sales_order_id', $so->id)
+                            ->lockForUpdate()
+                            ->first();
+
+                        if ($proforma) {
+                            $proforma->so_lanjutan = 0;
+                            $proforma->status = 3; // revisi
+                            $proforma->save();
+                        }
+
+                    } else {
+
+                        /*
+                        =====================================
+                        SO NORMAL
+                        =====================================
+                        */
+
+                        $so->update([
+                            'status' => 2,
+                            'count_rev' => 1,
+                            'code' => null,
+                            'keep_code' => $packing->so->code
+                        ]);
+                    }
+                }
+
+                PackingOrder::where('id', $packing->id)
+                    ->update(['status' => 7]);
+
+                Invoicing::where('do_id', $packing->id)
+                    ->update([
+                        'status' => 3,
+                        'updated_by' => Auth::id()
+                    ]);
+
+                PackingOrderItem::where('do_id', $packing->id)->delete();
+            });
+
+            return response()->json([
+                'status' => 'success',
+                'message' => 'SO berhasil direvisi dan reserved dikembalikan!',
+                'redirect' => route('superuser.penjualan.sales_order.index_lanjutan')
+            ]);
+        } elseif(in_array($result->status, [5,6])){
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Gagal di kembalikan, status DO sedang dikirim!',
+            ]);
+        }
+
+        return response()->json([
+            'status' => 'error',
+            'message' => 'Tidak dapat memproses Revisi untuk data ini',
+        ]);
     }
 
     public function ajax_customer_detail(Request $request){

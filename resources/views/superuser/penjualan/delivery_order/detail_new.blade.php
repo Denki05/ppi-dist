@@ -21,6 +21,7 @@
     </button>
 </div>
 @endif
+
 @if($result->status == 3)
 <div class="card">
   <div class="card-header">
@@ -80,7 +81,7 @@
       <div class="row pt-30 mb-15">
         <div class="col-md-6">
           <a href="{{ route('superuser.penjualan.delivery_order.index') }}">
-            <button type="button" class="btn bg-gd-cherry border-0 text-white">
+            <button type="button" class="btn btn-warning">
               <i class="fa fa-arrow-left mr-10"></i> Back
             </button>
           </a>
@@ -112,14 +113,23 @@
                 <td>{{ $row->product_pack->code }} - {{$row->product_pack->name}}</td>
                 <td>{{$row->qty}}</td>
                 <td>{{$row->product_pack->packaging->pack_name}}</td>
-                <td><input type="checkbox" class="confirm-item" value="{{$row->id}}" /></td>
+                <td>
+                  <input type="checkbox" 
+                    class="confirm-item" 
+                    name="confirmed_items[]" 
+                    value="{{$row->id}}" />
+                </td>
               </tr>
             @endforeach
           </tbody>
         </table>
         <div class="form-group row">
-          <div class="col-6"></div>
-          <div class="col-12 text-right">
+          <div class="col-6">
+            <button type="button" class="btn btn-danger btn-cancel-step">
+                <i class="fa fa-undo"></i> Kembali ke Packing Order
+            </button>
+          </div>
+          <div class="col-6 text-right">
             <button type="button" class="btn btn-primary" onclick="konfirmasiBarang()">Save</button>
           </div>
         </div>
@@ -187,7 +197,7 @@
       <div class="row pt-30 mb-15">
         <div class="col-md-6">
           <a href="{{ route('superuser.penjualan.delivery_order.index') }}">
-            <button type="button" class="btn bg-gd-cherry border-0 text-white">
+            <button type="button" class="btn btn-warning">
               <i class="fa fa-arrow-left mr-10"></i> Back
             </button>
           </a>
@@ -220,8 +230,12 @@
       </div>
       <hr >
         <div class="form-group row">
-          <div class="col-6"></div>
-          <div class="col-12 text-right">
+          <div class="col-6">
+            <button type="button" class="btn btn-danger btn-cancel-step mr-2">
+                <i class="fa fa-undo"></i> Kembali ke Checker
+            </button>
+          </div>
+          <div class="col-6 text-right">
             <button type="button" class="btn btn-primary btn-delivery"><i class="fas fa-shipping-fast"></i> DELIVERING / BERANGKAT</button>
           </div>
         </div>
@@ -301,6 +315,9 @@
             <div class="form-group row">
               <div class="col-6">
                 <a href="{{route('superuser.penjualan.delivery_order.index')}}" class="btn btn-warning"><i class="fa fa-arrow-left"></i> Back</a>
+                <button type="button" class="btn btn-danger btn-cancel-step mr-2">
+                    <i class="fa fa-undo"></i> Kembali ke Siap Kirim
+                </button>
               </div>
               <div class="col-6 text-right">
                 @if($result->status===5)
@@ -323,6 +340,11 @@
 <form method="post" action="{{route('superuser.penjualan.delivery_order.sending')}}" id="frmUpdateStatus">
     @csrf
     <input type="hidden" name="id" value="{{$result->id}}">
+</form>
+
+<form method="post" action="{{ route('superuser.penjualan.delivery_order.multi_cancel') }}" id="frmCancelStep">
+    @csrf
+    <input type="hidden" name="ids[]" value="{{ $result->id }}">
 </form>
 @endsection
 
@@ -380,19 +402,39 @@
   })
 
   function konfirmasiBarang() {
-    if ($(".confirm-item").length === $(".confirm-item:checked").length) {
-      //changeStep(2);
-      if(confirm("Apakah anda yakin ingin mengubah status orderan ini menjadi packed?")){
+
+    let total = $(".confirm-item").length;
+    let checked = $(".confirm-item:checked").length;
+
+    if (total === 0) {
+        Swal.fire('Warning!', 'Tidak ada item untuk dikonfirmasi.', 'warning');
+        return;
+    }
+
+    if (checked !== total) {
+        Swal.fire(
+            'Warning!',
+            'Seluruh item harus dikonfirmasi terlebih dahulu.',
+            'warning'
+        );
+        return;
+    }
+
+    // Bersihkan input lama
+    $('#frmUpdateStatusPacked input[name="confirmed_items[]"]').remove();
+
+    // Tambahkan yang dicentang ke form
+    $(".confirm-item:checked").each(function() {
+        $('#frmUpdateStatusPacked').append(
+            '<input type="hidden" name="confirmed_items[]" value="'+$(this).val()+'">'
+        );
+    });
+
+    if (confirm("Apakah anda yakin ingin mengubah status orderan ini menjadi packed?")) {
         $('#frmUpdateStatusPacked').submit();
-      }
-    } else {
-      Swal.fire(
-                'Warning!',
-                "Seluruh item harus sudah dikonfirmasi packingnya sebelum diberangkatkan (pilih centang untuk masing masing item yang sudah dikonfirmasi)",
-                'warning'
-              );
     }
   }
+
 
   function changeStep(stepNumber) {
     $(".wizard .step").removeClass('active');
@@ -420,6 +462,23 @@
         
         reader.readAsDataURL(file);
     }
-}
+  }
+
+  $(document).on('click', '.btn-cancel-step', function () {
+
+      Swal.fire({
+          title: 'Yakin ingin membatalkan step ini?',
+          text: "Status akan diturunkan satu level.",
+          icon: 'warning',
+          showCancelButton: true,
+          confirmButtonText: 'Ya, Turunkan',
+          cancelButtonText: 'Batal'
+      }).then((result) => {
+          if (result.isConfirmed) {
+              $('#frmCancelStep').submit();
+          }
+      });
+
+  });
 </script>
 @endpush

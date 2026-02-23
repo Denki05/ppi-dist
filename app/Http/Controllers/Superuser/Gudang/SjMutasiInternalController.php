@@ -197,7 +197,8 @@ class SjMutasiInternalController extends Controller
             }
 
             // Validasi status
-            if ($mutasi->status_checked == 0 && $mutasi->status_checked == 2) {
+            // sebelumnya: if ($mutasi->status_checked == 0 && $mutasi->status_checked == 2)
+            if (in_array($mutasi->status_checked, [0,2])) {
                 throw new \Exception('Status tidak valid');
             }
 
@@ -222,13 +223,24 @@ class SjMutasiInternalController extends Controller
                     // POTONG STOK
                     $productId = $detail->product_packaging_id;
 
-                    if ($type === 'showroom') {
-                        $qty = (int) ($detail->qty ?? 0);
-                    } else { // gudang
-                        $qty = (int) ($detail->quantity ?? 0);
-                    }
+                    $qty = $type === 'showroom' ? (int)($detail->qty ?? 0) : (int)($detail->quantity ?? 0);
 
                     if ($qty > 0 && $productId) {
+
+                        $stock = DB::table('master_product_min_stocks')
+                            ->where('product_packaging_id', $productId)
+                            ->lockForUpdate()
+                            ->first();
+
+                        if (!$stock) {
+                            throw new \Exception("Stock untuk produk {$productId} tidak ditemukan");
+                        }
+
+                        if ($stock->quantity < $qty) {
+                            throw new \Exception("Stock tidak cukup untuk produk {$productId}. Saat ini: {$stock->quantity}, dibutuhkan: {$qty}");
+                        }
+
+                        // Potong stock
                         DB::table('master_product_min_stocks')
                             ->where('product_packaging_id', $productId)
                             ->decrement('quantity', $qty);
@@ -295,9 +307,16 @@ class SjMutasiInternalController extends Controller
 
                     // BALIKKAN STOK
                     $quantity = $type === 'showroom' ? ($detail->qty ?? 0) : ($detail->quantity ?? 0);
-                    DB::table('master_product_min_stocks')
+                    $stock = DB::table('master_product_min_stocks')
                         ->where('product_packaging_id', $detail->product_packaging_id)
-                        ->increment('quantity', $quantity);
+                        ->lockForUpdate()
+                        ->first();
+
+                    if ($stock) {
+                        DB::table('master_product_min_stocks')
+                            ->where('product_packaging_id', $detail->product_packaging_id)
+                            ->increment('quantity', $quantity);
+                    }
 
                     $detail->is_checked = 0;
                     $detail->save();

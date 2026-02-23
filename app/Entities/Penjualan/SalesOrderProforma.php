@@ -12,6 +12,7 @@ class SalesOrderProforma extends Model
 
     protected $table = "penjualan_so_proforma";
     protected $fillable = [
+        'so_id',
         'code',
         'customer_name', 
         'customer_address',
@@ -26,6 +27,7 @@ class SalesOrderProforma extends Model
         'note',
         'so_lanjutan',
         'status',
+        'transfer_verified',
         'customer_other_address_id', 
         'warehouse_id',
         'rekening_id', 
@@ -71,8 +73,13 @@ class SalesOrderProforma extends Model
         return $this->hasMany('App\Entities\Penjualan\SalesOrderProformaItem', 'so_proforma_id');
     }
 
-    public function details_cost(){
-        return $this->hasMany('App\Entities\Penjualan\SalesOrderProformaDetails', 'so_proforma_id');
+    public function details_cost()
+    {
+        return $this->hasOne(
+            \App\Entities\Penjualan\SalesOrderProformaDetails::class,
+            'so_proforma_id',
+            'id'
+        );
     }
 
     public function warehouse()
@@ -98,5 +105,10 @@ class SalesOrderProforma extends Model
             return $superuser->name ?? $superuser->username;
         }
         return null; // Return null if no superuser is found
+    }
+
+    public function salesOrder()
+    {
+        return $this->belongsTo('App\Entities\Penjualan\SalesOrder', 'so_id', 'id');
     }
 }
