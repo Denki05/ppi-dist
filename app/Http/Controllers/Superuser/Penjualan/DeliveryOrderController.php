@@ -1185,8 +1185,7 @@ class DeliveryOrderController extends Controller
 
             DB::commit();
 
-            return redirect()->back()
-                ->with('success', 'Berhasil dikembalikan/cancel.');
+            return redirect()->route('superuser.penjualan.delivery_order.index')->with('success','Berhasil dikembalikan / cancel.');
 
         } catch (\Throwable $e) {
 

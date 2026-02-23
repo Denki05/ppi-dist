@@ -194,24 +194,107 @@
                 <li class="nav-item dropdown">
                     <a class="nav-link dropdown-toggle" role="button" data-bs-toggle="dropdown"
                         aria-expanded="false">
-                        <i class="fa-solid fa-warehouse"></i> Gudang
+                        <i class="fa-solid fa-boxes-stacked"></i> Manajemen Barang
                     </a>
                     <ul class="dropdown-menu">
+
+                        {{-- ================= DOCUMENT ================= --}}
                         @if($superuser->can('superuser-manage') OR $superuser->division == "Admin" OR $superuser->division == "Management" OR $superuser->division == "Warehouse")
-                        <li><a class="dropdown-item" href="{{ route('superuser.penjualan.delivery_order.index') }}"><i class="fa-solid fa-truck"></i> Delivery Order (DO)</a></li>
-                        <li><a class="dropdown-item" href="{{ route('superuser.gudang.sj_mutasi_internal.index') }}"><i class="fa-solid fa-truck"></i> SJ Mutasi Internal</a></li>
-                        <li><a class="dropdown-item" href="{{ route('superuser.gudang.purchase_order_spk.index') }}"><i class="fa-solid fa-shop"></i> SPK</a></li>
-                        <li><a class="dropdown-item" href="{{ route('superuser.gudang.purchase_order.index') }}"><i class="fa-solid fa-shop"></i> Purchase order (PO)</a></li>
-                        <li><a class="dropdown-item" href="{{ route('superuser.gudang.receiving.index') }}"><i class="fa-solid fa-receipt"></i> Receiving</a></li>
-                        <li><a class="dropdown-item" href="{{ route('superuser.gudang.quality_control.index') }}"><i class="fa-solid fa-receipt"></i> Receiving - Transaksi</a></li>
-                        <li><a class="dropdown-item" href="{{ route('superuser.gudang.quality_control_2.index') }}"><i class="fa-solid fa-receipt"></i> Receiving - Komplain</a></li>
-                        <li><a class="dropdown-item" href="{{ route('superuser.gudang.mutasi_out.index') }}"><i class="fa-solid fa-warehouse"></i> Mutasi Gudang Utama</a></li>
+                        <li class="submenu submenu-md dropend">
+                            <a class="dropdown-item dropdown-toggle" href="#" data-bs-toggle="dropdown">
+                                <i class="fa-solid fa-file-lines"></i> Document
+                            </a>
+                            <ul class="dropdown-menu">
+                                <li>
+                                    <a class="dropdown-item" href="{{ route('superuser.gudang.purchase_order_spk.index') }}">
+                                        Order Industri (SPK)
+                                    </a>
+                                </li>
+                                <li>
+                                    <a class="dropdown-item" href="{{ route('superuser.gudang.purchase_order.index') }}">
+                                        Order Pusat (PO)
+                                    </a>
+                                </li>
+                                <li class="submenu submenu-md dropend">
+                                    <a class="dropdown-item dropdown-toggle" role="button"
+                                        data-bs-toggle="dropdown" aria-expanded="false">Mutasi</a>
+                                    <ul class="dropdown-menu">
+                                        <li>
+                                            <a class="dropdown-item" href="{{ route('superuser.gudang.mutasi_out.index') }}">
+                                                Gudang Utama
+                                            </a>
+                                        </li>
+                                        <li>
+                                            <a class="dropdown-item" href="{{ route('superuser.gudang.mutasi_showroom.index') }}">
+                                                Showroom
+                                            </a>
+                                        </li>
+                                    </ul>
+                                </li>
+                            </ul>
+                        </li>
                         @endif
-                        <li><a class="dropdown-item" href="{{ route('superuser.gudang.mutasi_showroom.index') }}"><i class="fa-solid fa-warehouse"></i> Mutasi Showroom</a></li>
-                        <li><a class="dropdown-item" href="{{ route('superuser.gudang.stock.index') }}"><i class="fa-solid fa-cubes"></i> Stock</a></li>
-                        @if($superuser->can('superuser-manage') OR $superuser->division == "Admin" OR $superuser->division == "Management" OR $superuser->division == "Warehouse")
-                        <li><a class="dropdown-item" href="{{ route('superuser.gudang.stock_adjustment.index') }}"><i class="fa-solid fa-sliders"></i> Stock Adjustment</a></li>
-                        @endif
+
+
+                        {{-- ================= WAREHOUSE ================= --}}
+                        <li class="submenu submenu-md dropend">
+                            <a class="dropdown-item dropdown-toggle" href="#" data-bs-toggle="dropdown">
+                                <i class="fa-solid fa-warehouse"></i> Warehouse
+                            </a>
+                            <ul class="dropdown-menu">
+                                @if($superuser->can('superuser-manage') OR $superuser->division == "Admin" OR $superuser->division == "Management" OR $superuser->division == "Warehouse")
+                                <li>
+                                    <a class="dropdown-item" href="{{ route('superuser.penjualan.delivery_order.index') }}">
+                                        Checker Transaksi (DO)
+                                    </a>
+                                </li>
+                                <li>
+                                    <a class="dropdown-item" href="{{ route('superuser.gudang.sj_mutasi_internal.index') }}">
+                                        Checker Mutasi
+                                    </a>
+                                </li>
+                                <li>
+                                    <a class="dropdown-item" href="{{ route('superuser.gudang.receiving.index') }}">
+                                        Receiving
+                                    </a>
+                                </li>
+                                <li>
+                                    <a class="dropdown-item" href="{{ route('superuser.gudang.quality_control.index') }}">
+                                        Receiving - Transaksi
+                                    </a>
+                                </li>
+                                <li>
+                                    <a class="dropdown-item" href="{{ route('superuser.gudang.quality_control_2.index') }}">
+                                        Receiving - Komplain
+                                    </a>
+                                </li>
+                                
+                                @endif
+                            </ul>
+                        </li>
+
+
+                        {{-- ================= INVENTORY ================= --}}
+                        <li class="submenu submenu-md dropend">
+                            <a class="dropdown-item dropdown-toggle" href="#" data-bs-toggle="dropdown">
+                                <i class="fa-solid fa-cubes"></i> Inventory
+                            </a>
+                            <ul class="dropdown-menu">
+                                <li>
+                                    <a class="dropdown-item" href="{{ route('superuser.gudang.stock.index') }}">
+                                        Stock
+                                    </a>
+                                </li>
+                                @if($superuser->can('superuser-manage') OR $superuser->division == "Admin" OR $superuser->division == "Management" OR $superuser->division == "Warehouse")
+                                <li>
+                                    <a class="dropdown-item" href="{{ route('superuser.gudang.stock_adjustment.index') }}">
+                                        Stock Adjustment
+                                    </a>
+                                </li>
+                                @endif
+                            </ul>
+                        </li>
+
                     </ul>
                 </li>
 
