@@ -583,49 +583,86 @@ class DeliveryOrderController extends Controller
             // ======================================================
             // INSERT STOCK MOVE (OUTBOUND - DO DELIVERED)
             // ======================================================
-
-            $transactionCode = 'DO-' . $detail_do->do_code;
-
+            
+            $transactionCode = 'SO-' . $detail_do->do_code;
+            
             // 🔒 Lock DO row untuk cegah double click paralel
             $lockedDo = PackingOrder::where('id', $detail_do->id)
                 ->lockForUpdate()
                 ->first();
-
-            // 🔒 Cegah double insert
+            
+            // 🔒 Cegah double insert per transaksi
             $alreadyMoved = \App\Entities\Gudang\StockMove::where(
                 'code_transaction',
                 $transactionCode
             )->exists();
-
+            
             if (!$alreadyMoved && !$isProforma) {
-
+            
                 $items = PackingOrderItem::where('do_id', $do_id)->get();
-
+            
                 foreach ($items as $item) {
-
+            
                     $base_product_packaging_id = preg_replace('/_\d+$/', '', $item->product_packaging_id);
-
-                    // 🔒 Lock saldo terakhir per produk + gudang
+            
+                    /*
+                    |--------------------------------------------------------------------------
+                    | LOCK & AMBIL SALDO TERAKHIR
+                    |--------------------------------------------------------------------------
+                    */
                     $lastMove = \App\Entities\Gudang\StockMove::where('warehouse_id', $detail_do->warehouse_id)
                         ->where('product_packaging_id', $base_product_packaging_id)
                         ->orderByDesc('id')
                         ->lockForUpdate()
                         ->first();
-
-                    $lastBalance = $lastMove ? $lastMove->stock_balance : 0;
-
-                    // ✔ Minus diperbolehkan
+            
+                    /*
+                    |--------------------------------------------------------------------------
+                    | JIKA BELUM ADA HISTORI → BUAT OPENING OTOMATIS
+                    |--------------------------------------------------------------------------
+                    */
+                    if (!$lastMove) {
+            
+                        $currentStock = \App\Entities\Master\ProductMinStock::where('warehouse_id', $detail_do->warehouse_id)
+                            ->where('product_packaging_id', $base_product_packaging_id)
+                            ->lockForUpdate()
+                            ->first();
+            
+                        $openingQty = $currentStock ? $currentStock->quantity : 0;
+            
+                        \App\Entities\Gudang\StockMove::create([
+                            'code_transaction'     => 'OPENING',
+                            'warehouse_id'         => $detail_do->warehouse_id,
+                            'product_packaging_id' => $base_product_packaging_id,
+                            'stock_in'             => $openingQty,
+                            'stock_out'            => 0,
+                            'stock_balance'        => $openingQty,
+                            'note'                 => 'Auto Opening Balance',
+                            'created_by'           => auth()->id(),
+                        ]);
+            
+                        $lastBalance = $openingQty;
+            
+                    } else {
+                        $lastBalance = $lastMove->stock_balance;
+                    }
+            
+                    /*
+                    |--------------------------------------------------------------------------
+                    | HITUNG SALDO BARU (MINUS DIPERBOLEHKAN SESUAI DESAIN)
+                    |--------------------------------------------------------------------------
+                    */
                     $newBalance = $lastBalance - $item->qty;
-
+            
                     \App\Entities\Gudang\StockMove::create([
-                        'code_transaction' => $transactionCode,
-                        'warehouse_id' => $detail_do->warehouse_id,
+                        'code_transaction'     => $transactionCode,
+                        'warehouse_id'         => $detail_do->warehouse_id,
                         'product_packaging_id' => $base_product_packaging_id,
-                        'stock_in' => 0,
-                        'stock_out' => $item->qty,
-                        'stock_balance' => $newBalance,
-                        'note' => 'Delivery Order Delivered',
-                        'created_by' => auth()->id(),
+                        'stock_in'             => 0,
+                        'stock_out'            => $item->qty,
+                        'stock_balance'        => $newBalance,
+                        'note'                 => $detail_do->member->name . ' ' . $detail_do->member->text_kota,
+                        'created_by'           => auth()->id(),
                     ]);
                 }
             }

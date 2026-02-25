@@ -22,7 +22,7 @@
                   <div class="form-row">
                     <div class="form-group col-md-6">
                       <label for="so_date">Tanggal Nota</label>
-                      <input type="date" name="so_date" class="form-control" value="{{ $results->so_date }}">
+                      <input type="date" name="so_date" class="form-control" value="{{ $results->so_date }}" required>
                     </div>
                     <div class="form-group col-md-6">
                       <label for="type_transaction">Type Transaksi</label>
@@ -33,7 +33,7 @@
                     <div class="form-row">
                       <div class="form-group col-md-6">
                         <label for="so_date">Warehouse</label>
-                        <select class="form-control js-select2" name="warehouse">
+                        <select class="form-control js-select2" name="warehouse" required>
                             <option value="">Pilih Gudang</option>    
                             @foreach($warehouse AS $row)
                             <option value="{{$row->id}}" {{ ($row->id == $results->warehouse_id ) ? 'selected' : '' }}>{{ $row->name }}</option>
@@ -42,7 +42,7 @@
                       </div>
                       <div class="form-group col-md-6">
                         <label for="so_date">Ekspedisi</label>
-                        <select class="form-control js-select2" name="vendor">
+                        <select class="form-control js-select2" name="vendor" required>
                               <option value="">Pilih vendor</option>    
                               @foreach($vendor AS $row)
                               <option value="{{$row->id}}" {{ ($row->id == $results->vendor_id ) ? 'selected' : '' }}>{{ $row->name }}</option>
@@ -75,7 +75,7 @@
                         </div>
                         <div class="form-group col-md-4">
                           <label for="note">Rekening <span class="text-danger">*</span></label>
-                          <select class="form-control js-select2" name="rekening">
+                          <select class="form-control js-select2" name="rekening" required>
                             <option value="">Pilih Rekening</option>
                             @foreach($rekening as $key)
                             <option value="{{$key->id}}">{{$key->name}} - {{$key->number_card}}</option>
@@ -172,7 +172,7 @@
                        
                         <div class="form-group col-md-6">
                           <label for="note">Sales Senior <span class="text-danger">*</span></label>
-                          <select class="form-control js-select2" name="sales_senior_id">
+                          <select class="form-control js-select2" name="sales_senior_id" required>
                                 <option value="">Pilih Sales Senior</option>
                                 @foreach(\App\Entities\Penjualan\SalesOrder::SALES_SENIOR as $sales_senior => $senior_value)
                                 <option value="{{ $senior_value }}" {{ ($senior_value == $results->sales_senior_id ) ? 'selected' : '' }}>{{ $sales_senior }}</option>
@@ -181,7 +181,7 @@
                         </div>
                         <div class="form-group col-md-6">
                           <label for="note">Sales <span class="text-danger">*</span></label>
-                          <select class="form-control js-select2" name="sales_id">
+                          <select class="form-control js-select2" name="sales_id" required>
                                 <option value="">Pilih Sales</option>
                                 @foreach(\App\Entities\Penjualan\SalesOrder::SALES as $sales => $sales_value)
                                 <option value="{{ $sales_value }}" {{ ($sales_value == $results->sales_id ) ? 'selected' : '' }}>{{ $sales }}</option>

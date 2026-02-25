@@ -31,6 +31,7 @@ use Validator;
 use Carbon\Carbon;
 use DB;
 use Auth;
+use PDF;
 
 class StockController extends Controller
 {
@@ -51,99 +52,106 @@ class StockController extends Controller
             return $next($request);
         });
     }
-
+    
     public function json(Request $request)
-    {
-        $warehouse = $request->warehouse_id;
-        if (!$warehouse) return ['data' => ''];
+{
+    $warehouse = $request->warehouse_id;
+    if (!$warehouse) return ['data' => ''];
 
-        $rows = ProductMinStock::with(['product_pack.product','product_pack.packaging'])
-            ->where('warehouse_id', $warehouse)
-            ->get();
+    // Ambil semua produk yang ada di warehouse
+    $rows = ProductMinStock::with(['product_pack.product','product_pack.packaging'])
+        ->where('warehouse_id', $warehouse)
+        ->get();
 
-        $totalQty       = 0;
-        $totalReserved  = 0;
-        $totalAvailable = 0;
+    $totalIn  = 0;
+    $totalOut = 0;
+    $totalStk = 0;
+    $dataRows = [];
 
-        $dataRows = [];
+    foreach ($rows as $row) {
+        $pack = $row->product_pack;
+        if (!$pack) continue;
 
-        foreach ($rows as $row) {
+        // Total stock_in dan stock_out dari StockMove
+        $stockMoves = StockMove::where('warehouse_id', $warehouse)
+            ->where('product_packaging_id', $pack->id);
 
-            $pack = $row->product_pack;
-            if (!$pack) continue;
+        $in  = (float) $stockMoves->sum('stock_in');
+        $out = (float) $stockMoves->sum('stock_out');
+        $stock = $in - $out;
 
-            $quantity  = (float) $row->quantity;
-            $reserved  = (float) ($row->reserved_quantity ?? 0);
-            $available = $quantity - $reserved;
+        $totalIn  += $in;
+        $totalOut += $out;
+        $totalStk += $stock;
 
-            $totalQty       += $quantity;
-            $totalReserved  += $reserved;
-            $totalAvailable += $available;
-
-            $dataRows[] = [
-                '<a href="'.route('superuser.gudang.stock.detail', [$warehouse, base64_encode($pack->id)]).'" target="_blank">'.$pack->code.'</a>',
-                $pack->name,
-                $pack->product->brand_name ?? '-',
-                $pack->packaging->pack_name ?? '-',
-                number_format($quantity, 2),
-                number_format($reserved, 2),
-                number_format($available, 2),
-            ];
-        }
-
-        return [
-            'data'            => $dataRows,
-            'total_stock'     => number_format($totalQty, 2),
-            'total_reserved'  => number_format($totalReserved, 2),
-            'total_available' => number_format($totalAvailable, 2),
+        $dataRows[] = [
+            '<a href="'.route('superuser.gudang.stock.detail', [$warehouse, base64_encode($pack->id)]).'" target="_blank">'.$pack->code.'</a>',
+            $pack->name,
+            $pack->product->brand_name ?? '-',
+            $pack->packaging->pack_name ?? '-',
+            number_format($in, 2),
+            number_format($out, 2),
+            number_format($stock, 2),
         ];
     }
+
+    return [
+        'data'        => $dataRows,
+        'total_in'    => number_format($totalIn, 2),
+        'total_out'   => number_format($totalOut, 2),
+        'total_stock' => number_format($totalStk, 2),
+    ];
+}
     
     // public function json(Request $request)
     // {
     //     $warehouse = $request->warehouse_id;
     //     if (!$warehouse) return ['data' => ''];
     
-    //     $rows = ProductMinStock::with(['product_pack.product', 'product_pack.packaging'])
+    //     $rows = ProductMinStock::with(['product_pack.product','product_pack.packaging'])
     //         ->where('warehouse_id', $warehouse)
     //         ->get();
     
-    //     $totalQty       = 0;
-    //     $totalReserved  = 0;
-    //     $totalAvailable = 0;
-    
+    //     $totalIn  = 0;
+    //     $totalOut = 0;
+    //     $totalStk = 0;
     //     $dataRows = [];
     
     //     foreach ($rows as $row) {
-    
     //         $pack = $row->product_pack;
-    
     //         if (!$pack) continue;
     
-    //         $quantity  = (float) $row->quantity;
-    //         $reserved  = (float) ($row->reserved_quantity ?? 0);
-    //         $available = $quantity - $reserved;
+    //         // Hitung total in dan out dari StockMove
+    //         $in  = StockMove::where('warehouse_id', $warehouse)
+    //                 ->where('product_packaging_id', $pack->id)
+    //                 ->sum('stock_in');
     
-    //         $totalQty       += $quantity;
-    //         $totalReserved  += $reserved;
-    //         $totalAvailable += $available;
+    //         $out = StockMove::where('warehouse_id', $warehouse)
+    //                 ->where('product_packaging_id', $pack->id)
+    //                 ->sum('stock_out');
+    
+    //         $stock = $in - $out; // saldo real saat ini
+    
+    //         $totalIn  += $in;
+    //         $totalOut += $out;
+    //         $totalStk += $stock;
     
     //         $dataRows[] = [
     //             '<a href="'.route('superuser.gudang.stock.detail', [$warehouse, base64_encode($pack->id)]).'" target="_blank">'.$pack->code.'</a>',
     //             $pack->name,
     //             $pack->product->brand_name ?? '-',
     //             $pack->packaging->pack_name ?? '-',
-    //             number_format($quantity, 2),
-    //             number_format($reserved, 2),
-    //             number_format($available, 2),
+    //             number_format($in, 2),
+    //             number_format($out, 2),
+    //             number_format($stock, 2),
     //         ];
     //     }
     
     //     return [
-    //         'data'            => $dataRows,
-    //         'total_stock'     => number_format($totalQty, 2),
-    //         'total_reserved'  => number_format($totalReserved, 2),
-    //         'total_available' => number_format($totalAvailable, 2),
+    //         'data'        => $dataRows,
+    //         'total_in'    => number_format($totalIn, 2),
+    //         'total_out'   => number_format($totalOut, 2),
+    //         'total_stock' => number_format($totalStk, 2),
     //     ];
     // }
 
@@ -401,34 +409,113 @@ class StockController extends Controller
         return Excel::download(new StockExport, $filename);
     }
 
-    public function import_template(Request $request)
+    public function import_template()
     {
-        $filename = 'stock-import-template.xlsx';
-        return Excel::download(new StockImportTemplate, $filename);
+        return Excel::download(
+            new StockImportTemplate,
+            'stock-opening-template.xlsx'
+        );
     }
 
     public function import(Request $request)
     {
         // Access
-        if(Auth::user()->is_superuser == 0){
-            if(empty($this->access) || empty($this->access->user) || $this->access->can_create == 0){
-                return redirect()->route('superuser.index')->with('error','Anda tidak punya akses untuk membuka menu terkait');
+        if (Auth::user()->is_superuser == 0) {
+            if (empty($this->access) || $this->access->can_create == 0) {
+                return redirect()
+                    ->route('superuser.index')
+                    ->with('error', 'Anda tidak punya akses');
             }
         }
-
-        $validator = Validator::make($request->all(), [
+    
+        $request->validate([
             'import_file' => 'required|file|mimes:xls,xlsx|max:2048',
         ]);
-
-        if ($validator->fails()) {
-            return redirect()->back()->withErrors($validator->errors()->all());
+    
+        // $import = new StockOpeningImport(
+        //     now()->format('Y-m-d'),
+        //     'GO LIVE OPENING STOCK'
+        // );
+    
+        // Excel::import($import, $request->file('import_file'));
+        
+        $import = new StockImport(
+            $request->warehouse_id,
+            now()
+        );
+        
+        Excel::import($import, $request->file('import_file'));
+    
+        return redirect()->back()->with([
+            'collect_success' => $import->success,
+            'collect_error'   => $import->error,
+        ]);
+    }
+    
+    public function printPdf(Request $request, $warehouse, $encoded)
+    {
+        $productId = base64_decode($encoded);
+    
+        $warehouse = Warehouse::findOrFail($warehouse);
+        $pack      = ProductPack::with(['product','packaging'])->findOrFail($productId);
+    
+        $startDate = $request->start_date
+            ? Carbon::parse($request->start_date)->startOfDay()
+            : null;
+    
+        $endDate   = $request->end_date
+            ? Carbon::parse($request->end_date)->endOfDay()
+            : null;
+    
+        $query = StockMove::where([
+                    ['warehouse_id', $warehouse->id],
+                    ['product_packaging_id', $productId]
+                ])
+                ->orderBy('created_at');
+    
+        // saldo awal sebelum tanggal filter
+        $openingBalance = 0;
+    
+        if ($startDate) {
+            $openingBalance = StockMove::where([
+                    ['warehouse_id', $warehouse->id],
+                    ['product_packaging_id', $productId]
+                ])
+                ->where('created_at', '<', $startDate)
+                ->selectRaw('SUM(stock_in - stock_out) as saldo')
+                ->value('saldo') ?? 0;
+    
+            $query->whereBetween('created_at', [$startDate, $endDate]);
         }
-
-        if ($validator->passes()) {
-            $import = new StockImport();
-            Excel::import($import, $request->import_file);
-
-            return redirect()->back()->with(['collect_success' => $import->success, 'collect_error' => $import->error]);
+    
+        $moves = $query->get();
+    
+        $balance = $openingBalance;
+        $collect = [];
+    
+        foreach ($moves as $m) {
+    
+            $balance += ($m->stock_in - $m->stock_out);
+    
+            $collect[] = [
+                'date'        => $m->created_at->format('d/m/Y H:i'),
+                'transaction' => $m->code_transaction,
+                'in'          => $m->stock_in ?: '',
+                'out'         => $m->stock_out ?: '',
+                'balance'     => number_format($balance, 2),
+                'description' => $m->note,
+            ];
         }
+    
+        $pdf = PDF::loadView('superuser.gudang.stock.print', [
+            'product'        => $pack,
+            'warehouse'      => $warehouse,
+            'collects'       => $collect,
+            'openingBalance' => $openingBalance,
+            'startDate'      => $startDate,
+            'endDate'        => $endDate,
+        ])->setPaper('A5', 'landscape');
+    
+        return $pdf->stream('Kartu-Stock-'.$pack->code.'.pdf');
     }
 }

@@ -290,7 +290,7 @@
             <div class="form-group row">
               <label class="col-md-2 col-form-label text-right" for="name">Ongkir (IDR)</label>
               <div class="col-md-4">
-                <input type="text" class="form-control" placeholder="Input Note" value="{{ $result->vendor->name }}" name="delivery_cost_note" {{$result->status == 6 ? 'readonly' : ''}} readonly>
+                <input type="text" class="form-control" placeholder="Input Note" value="{{ $result->vendor->name ?? '-' }}" name="delivery_cost_note" {{$result->status == 6 ? 'readonly' : ''}} readonly>
               </div>
               <div class="col-md-4">
                 <input type="text" class="form-control" value="{{ $result->do_detail_cost[0]->delivery_cost_idr ?? 0 }}" name="delivery_cost_idr" step="any" {{$result->status == 5  || $result->status == 6 ? 'readonly' : ''}}>
@@ -320,7 +320,7 @@
                 </button>
               </div>
               <div class="col-6 text-right">
-                @if($result->status===5)
+                @if($result->status==5)
                 <button type="button" class="btn btn-primary btn-delivered"><i class="fa fa-save"></i> Selesaikan</button>
                 @endif
               </div>

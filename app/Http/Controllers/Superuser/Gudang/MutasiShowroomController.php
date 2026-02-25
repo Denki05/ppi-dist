@@ -21,6 +21,8 @@ use Validator;
 use Carbon\Carbon;
 use Auth;
 use DB;
+use Illuminate\Validation\ValidationException;
+use Illuminate\Support\Facades\Log;
 
 class MutasiShowroomController extends Controller
 {
@@ -92,22 +94,22 @@ class MutasiShowroomController extends Controller
         $query->whereBetween('tanggal', [$startDate, $endDate]);
 
         // ================= FILTER STATUS =================
-        if ($request->filled('status')) {
+        // if ($request->filled('status')) {
 
-            if ($request->status === 'process') {
-                $query->whereIn('status', [
-                    MutasiShowroom::STATUS['ACTIVE'],
-                    MutasiShowroom::STATUS['PUBLISH'],
-                    MutasiShowroom::STATUS['SENT'],
-                ]);
-            }
+        //     if ($request->status === 'process') {
+        //         $query->whereIn('status', [
+        //             MutasiShowroom::STATUS['ACTIVE'],
+        //             MutasiShowroom::STATUS['PUBLISH'],
+        //             MutasiShowroom::STATUS['SENT'],
+        //         ]);
+        //     }
 
-            if ($request->status === 'settle') {
-                $query->whereIn('status', [
-                    MutasiShowroom::STATUS['SETTEL'],
-                ]);
-            }
-        }
+        //     if ($request->status === 'settle') {
+        //         $query->whereIn('status', [
+        //             MutasiShowroom::STATUS['SETTEL'],
+        //         ]);
+        //     }
+        // }
 
         $brands = DB::table('master_brand_lokal')
             ->whereIn('brand_name', ['GCF', 'Senses', 'PPI FF', 'PPI NON FF'])
@@ -115,7 +117,7 @@ class MutasiShowroomController extends Controller
             ->get();
 
         $types  = MutasiShowroom::TYPE;
-
+        
         $customer = CustomerOtherAddress::with('store')
             ->whereHas('store', function($query) {
                 $query->where('status', 1);
@@ -130,7 +132,7 @@ class MutasiShowroomController extends Controller
             'statusSelected'   => $request->status,
             'brands'           => $brands,
             'types'           => $types,
-            'customerAddresses' => $customer,
+            'customerAddresses' => $customer
         ];
 
         return view($this->view . 'partials._listPartial', $data);
@@ -204,7 +206,7 @@ class MutasiShowroomController extends Controller
                 ->leftJoin('master_warehouses', 'master_products_packaging.warehouse_id', '=', 'master_warehouses.id')
                 ->where('master_products.status', 1)
 
-                // âœ… filter brand hanya jika dikirim
+                // Ã¢Å“â€¦ filter brand hanya jika dikirim
                 ->when($brandName, function ($q) use ($brandName) {
                     $q->where('master_products.brand_name', $brandName);
                 })
@@ -240,41 +242,73 @@ class MutasiShowroomController extends Controller
 
     public function store(Request $request)
     {
-        $request->validate([
-            'type'        => 'required|in:1,2,3,4',
-            'brand_name'  => 'required|string',
-            'gudang_id'   => 'required|exists:master_warehouses,id',
-            'vendor_id'   => 'required|exists:master_vendors,id',
-            'items'       => 'required|array|min:1',
-            'items.*.product_id' => 'required|exists:master_products_packaging,id',
-            'items.*.qty'        => 'required|numeric|min:0.01',
-        ]);
-
-        if (MutasiShowroom::isEksternal($request->type)) {
-            $request->validate([
-                'customer_id' => 'required|exists:master_customer_other_addresses,id'
-            ]);
-        }
-
         DB::beginTransaction();
+    
         try {
-
-            $tanggal = Carbon::now();
-
+    
+            Log::info('[MUTASI] Incoming request', $request->all());
+    
+            // =========================
+            // VALIDASI
+            // =========================
+            try {
+                $request->validate([
+                    'type'                  => 'required|in:1,2,3,4',
+                    'brand_name'            => 'required|string',
+                    'gudang_id'             => 'required|exists:master_warehouses,id',
+                    'vendor_id'             => 'required|exists:master_vendors,id',
+                    'items'                 => 'required|array|min:1',
+                    'items.*.product_id'    => 'required|exists:master_products_packaging,id',
+                    'items.*.qty'           => 'required|numeric|min:0.01',
+                ]);
+    
+                if (MutasiShowroom::isEksternal($request->type)) {
+                    $request->validate([
+                        'customer_id' => 'required|exists:master_customer_other_addresses,id'
+                    ]);
+                }
+    
+            } catch (ValidationException $ve) {
+    
+                Log::error('[MUTASI][VALIDATION ERROR]', [
+                    'errors' => $ve->errors(),
+                    'input'  => $request->all(),
+                ]);
+    
+                throw $ve; // lempar ulang agar response tetap 422
+            }
+    
+            // =========================
+            // CREATE HEADER
+            // =========================
+            Log::info('[MUTASI] Generate kode start');
+    
+            $kode = CodeRepo::generateMutasiShowroom($request->type);
+    
+            Log::info('[MUTASI] Kode generated', ['kode' => $kode]);
+    
             $mutasi = MutasiShowroom::create([
-                'kode'                      => CodeRepo::generateMutasiShowroom($request->type),
+                'kode'                      => $kode,
                 'brand_name'                => $request->brand_name,
                 'type'                      => $request->type,
                 'warehouse_from_id'         => $request->gudang_id,
                 'warehouse_to_id'           => $request->vendor_id,
                 'customer_other_address_id' => $request->customer_id ?? null,
                 'so_id'                     => null,
-                'tanggal'                   => $tanggal,
+                'tanggal'                   => now(),
                 'status'                    => MutasiShowroom::STATUS['ACTIVE'],
                 'created_by'                => auth()->id(),
             ]);
-
-            foreach ($request->items as $item) {
+    
+            Log::info('[MUTASI] Header created', ['id' => $mutasi->id]);
+    
+            // =========================
+            // CREATE DETAIL
+            // =========================
+            foreach ($request->items as $i => $item) {
+    
+                Log::info("[MUTASI] Insert detail #{$i}", $item);
+    
                 MutasiShowroomDetail::create([
                     'penjualan_showroom_id' => $mutasi->id,
                     'product_packaging_id'  => $item['product_id'],
@@ -284,19 +318,27 @@ class MutasiShowroomController extends Controller
                     'note'                  => $item['note'] ?? null,
                 ]);
             }
-
+    
             DB::commit();
-
+    
+            Log::info('[MUTASI] Commit success', ['kode' => $kode]);
+    
             return response()->json([
                 'status'  => 'success',
                 'message' => 'Mutasi Showroom berhasil disimpan',
                 'data'    => $mutasi
             ]);
-
+    
         } catch (\Throwable $e) {
-            dd($e);
+    
             DB::rollBack();
-
+    
+            Log::critical('[MUTASI][ERROR]', [
+                'message' => $e->getMessage(),
+                'trace'   => $e->getTraceAsString(),
+                'input'   => $request->all(),
+            ]);
+    
             return response()->json([
                 'status'  => 'error',
                 'message' => 'Gagal menyimpan mutasi showroom',
@@ -307,9 +349,9 @@ class MutasiShowroomController extends Controller
 
     public function print_pdf(Request $request, $id)
     {
-        if (Auth::user()->is_superuser == 0) {
-            if (empty($this->access) || empty($this->access->user) || $this->access->can_print == 0) {
-                abort(403, 'Anda tidak punya akses');
+        if(Auth::user()->is_superuser == 0){
+            if(empty($this->access) || empty($this->access->user) || $this->access->can_print == 0){
+                return redirect()->route('superuser.index')->with('error','Anda tidak punya akses untuk membuka menu terkait');
             }
         }
 
@@ -331,14 +373,12 @@ class MutasiShowroomController extends Controller
             $mutasi->save();
         }
 
-        $pdf = PDF::loadView(
+        return PDF::loadView(
             'superuser.gudang.mutasi_showroom.print_pdf',
             compact('mutasi')
-        )->setPaper('A5', 'landscape');
-
-        return response($pdf->output(), 200)
-            ->header('Content-Type', 'application/pdf')
-            ->header('Content-Disposition', 'inline; filename="mutasi-showroom-'.$mutasi->kode.'.pdf"');
+        )
+        ->setPaper('A5', 'landscape')
+        ->stream('mutasi-showroom-' . $mutasi->kode . '.pdf');
     }
 
     public function publish(Request $request, $id)
@@ -786,7 +826,7 @@ class MutasiShowroomController extends Controller
 
     public function printInvoice($id)
     {
-        // 🔒 FINANCE GUARD
+        // ðŸ”’ FINANCE GUARD
         if (!$this->isFinance()) {
             return $this->denyPrintAccess();
         }
@@ -898,5 +938,16 @@ class MutasiShowroomController extends Controller
     })->toArray();
 
         return response()->json(['dataList' => $dataList]);
+    }
+
+    // Tambahkan printRequest mirip printInvoice
+    public function printRequest($id)
+    {
+        $mutasi = MutasiShowroom::with(['details.product_packaging.product', 'details.product_packaging.packaging', 'customer'])->findOrFail($id);
+
+        $pdf = PDF::loadView('superuser.gudang.mutasi_showroom.request_pdf', ['mutasi' => $mutasi])
+            ->setPaper('a4', 'portrait');
+
+        return $pdf->stream('Request-Mutasi-' . $mutasi->tanggal->format('Ymd') . '.pdf');
     }
 }

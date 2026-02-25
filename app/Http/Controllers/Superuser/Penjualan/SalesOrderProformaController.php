@@ -500,110 +500,151 @@ class SalesOrderProformaController extends Controller
         if (!$request->ajax()) {
             abort(400, 'Invalid request type.');
         }
-
+    
         DB::beginTransaction();
-
+    
         try {
-
+    
             /*
             |--------------------------------------------------------------------------
             | 1️⃣ LOCK & AMBIL PROFORMA
             |--------------------------------------------------------------------------
             */
-
+    
             $sales_proforma = SalesOrderProforma::with(['items','details_cost'])
                 ->lockForUpdate()
                 ->findOrFail($id);
-
-            // 🔒 Anti double ACC
+    
             if ($sales_proforma->status == 4) {
                 throw new \Exception("Proforma sudah pernah di-ACC.");
             }
-
+    
             /*
             |--------------------------------------------------------------------------
-            | 2️⃣ VALIDASI & POTONG STOCK (PALING AWAL)
+            | 🔹 PREPARE & GENERATE SO CODE (DIPINDAH KE ATAS)
             |--------------------------------------------------------------------------
             */
-
+    
+            $sales_order = SalesOrder::lockForUpdate()
+                ->findOrFail($sales_proforma->so_id);
+    
+            $sales_order->status = 4;
+            $sales_order->code = CodeRepo::generateSO();
+            $sales_order->payment_status = 1;
+            $sales_order->updated_by = Auth::id();
+            $sales_order->save();
+    
+            $transactionCode = 'SO-'. $sales_order->code;
+    
+            /*
+            |--------------------------------------------------------------------------
+            | 2️⃣ VALIDASI & POTONG STOCK
+            |--------------------------------------------------------------------------
+            */
+    
             foreach ($sales_proforma->items as $item) {
 
                 $stock = \App\Entities\Master\ProductMinStock::where('product_packaging_id', $item->product_packaging_id)
                     ->where('warehouse_id', $sales_proforma->warehouse_id)
                     ->lockForUpdate()
                     ->first();
-
+            
                 if (!$stock) {
                     throw new \Exception("Stock tidak ditemukan.");
                 }
-
-                // Tetap hormati reserved (karena SO normal pakai reserved)
+            
                 $available = $stock->quantity - ($stock->reserved_quantity ?? 0);
-
+            
                 if ($available < $item->qty) {
                     throw new \Exception("Stock tidak mencukupi.");
                 }
-
-                // Real deduction
-                $stock->quantity -= $item->qty;
-                $stock->save();
-
+            
                 /*
                 |--------------------------------------------------------------------------
-                | INSERT STOCK MOVE (ANTI DOUBLE)
+                | CEK APAKAH SUDAH ADA HISTORI STOCK MOVE
                 |--------------------------------------------------------------------------
                 */
-
-                $transactionCode = 'SO-' . $sales_proforma->so_id;
-
-                $alreadyMoved = \App\Entities\Gudang\StockMove::where(
-                    'code_transaction',
-                    $transactionCode
-                )
-                ->where('product_packaging_id', $item->product_packaging_id)
-                ->exists();
-
-                if (!$alreadyMoved) {
-
-                    $lastMove = \App\Entities\Gudang\StockMove::where('warehouse_id', $sales_proforma->warehouse_id)
-                        ->where('product_packaging_id', $item->product_packaging_id)
-                        ->orderByDesc('id')
-                        ->lockForUpdate()
-                        ->first();
-
-                    $lastBalance = $lastMove ? $lastMove->stock_balance : 0;
-                    $newBalance  = $lastBalance - $item->qty;
-
+                $lastMove = \App\Entities\Gudang\StockMove::where('warehouse_id', $sales_proforma->warehouse_id)
+                    ->where('product_packaging_id', $item->product_packaging_id)
+                    ->orderByDesc('id')
+                    ->lockForUpdate()
+                    ->first();
+            
+                /*
+                |--------------------------------------------------------------------------
+                | JIKA BELUM ADA HISTORI → BUAT OPENING OTOMATIS
+                |--------------------------------------------------------------------------
+                */
+                if (!$lastMove) {
+            
                     \App\Entities\Gudang\StockMove::create([
-                        'code_transaction'     => $transactionCode,
+                        'code_transaction'     => 'OPENING',
+                        'warehouse_id'         => $sales_proforma->warehouse_id,
+                        'product_packaging_id' => $item->product_packaging_id,
+                        'stock_in'             => $stock->quantity, // stok awal sebelum dikurangi
+                        'stock_out'            => 0,
+                        'stock_balance'        => $stock->quantity,
+                        'note'                 => 'Auto Opening Balance',
+                        'created_by'           => auth()->id(),
+                    ]);
+            
+                    $lastBalance = $stock->quantity;
+            
+                } else {
+                    $lastBalance = $lastMove->stock_balance;
+                }
+            
+                /*
+                |--------------------------------------------------------------------------
+                | CEK APAKAH SUDAH ADA MOVE UNTUK TRANSAKSI INI
+                |--------------------------------------------------------------------------
+                */
+                $alreadyMoved = \App\Entities\Gudang\StockMove::where('code_transaction', $transactionCode)
+                    ->where('product_packaging_id', $item->product_packaging_id)
+                    ->exists();
+            
+                if (!$alreadyMoved) {
+            
+                    $newBalance = $lastBalance - $item->qty;
+            
+                    \App\Entities\Gudang\StockMove::create([
+                        'code_transaction'     => $transactionCode, // jangan tambah SO- lagi
                         'warehouse_id'         => $sales_proforma->warehouse_id,
                         'product_packaging_id' => $item->product_packaging_id,
                         'stock_in'             => 0,
                         'stock_out'            => $item->qty,
                         'stock_balance'        => $newBalance,
-                        'note'                 => 'Proforma Approved',
+                        'note'                 => $sales_order->member->name . ' ' . $sales_order->member->text_kota,
                         'created_by'           => auth()->id(),
                     ]);
+            
+                    /*
+                    |--------------------------------------------------------------------------
+                    | KURANGI STOCK SETELAH MOVE DIBUAT
+                    |--------------------------------------------------------------------------
+                    */
+                    $stock->quantity -= $item->qty;
+                    $stock->save();
                 }
             }
-
+    
             /*
             |--------------------------------------------------------------------------
             | 3️⃣ HANDLE CUSTOMER (JIKA NON EXISTING)
             |--------------------------------------------------------------------------
             */
-
+    
             if ($sales_proforma->exsisting_customer == 0) {
-
+    
                 $duplicate = Customer::whereRaw('LOWER(name) = ?', 
                             [strtolower($sales_proforma->customer_name)])
                             ->where('status', Customer::STATUS['ACTIVE'])
                             ->exists();
-
+    
                 if ($duplicate) {
                     throw new \Exception("Duplicate store found");
                 }
-
+    
                 $customer = Customer::create([
                     'code'          => CodeRepo::generateCustomer(),
                     'name'          => $sales_proforma->customer_name,
@@ -615,7 +656,7 @@ class SalesOrderProformaController extends Controller
                     'kota'          => $sales_proforma->customer_city,
                     'status'        => Customer::STATUS['ACTIVE'],
                 ]);
-
+    
                 $otherAddress = CustomerOtherAddress::create([
                     'id'                => $customer->id.'.1',
                     'customer_id'       => $customer->id,
@@ -628,41 +669,27 @@ class SalesOrderProformaController extends Controller
                     'kota'              => $customer->kota,
                     'status'            => CustomerOtherAddress::STATUS['ACTIVE'],
                 ]);
-
+    
                 $sales_proforma->customer_other_address_id = $otherAddress->id;
             }
-
-            /*
-            |--------------------------------------------------------------------------
-            | 4️⃣ UPDATE SO
-            |--------------------------------------------------------------------------
-            */
-
-            $sales_order = SalesOrder::lockForUpdate()->findOrFail($sales_proforma->so_id);
-
-            $sales_order->status = 4;
-            $sales_order->code = CodeRepo::generateSO();
-            $sales_order->payment_status = 1;
-            $sales_order->updated_by = Auth::id();
-            $sales_order->save();
-
+    
             /*
             |--------------------------------------------------------------------------
             | 5️⃣ UPDATE PROFORMA
             |--------------------------------------------------------------------------
             */
-
+    
             $sales_proforma->status = 4;
             $sales_proforma->so_lanjutan = 1;
             $sales_proforma->updated_by = Auth::id();
             $sales_proforma->save();
-
+    
             /*
             |--------------------------------------------------------------------------
             | 6️⃣ CREATE PACKING ORDER
             |--------------------------------------------------------------------------
             */
-
+    
             $packingOrder = PackingOrder::create([
                 'code' => CodeRepo::generatePO(),
                 'do_code' => $sales_order->code,
@@ -678,17 +705,17 @@ class SalesOrderProformaController extends Controller
                 'created_by' => Auth::id(),
                 'so_id' => $sales_order->id,
             ]);
-
+    
             $do_id = $packingOrder->id;
-
+    
             /*
             |--------------------------------------------------------------------------
             | 7 COPY DETAIL COST
             |--------------------------------------------------------------------------
             */
-
+    
             if ($sales_proforma->details_cost) {
-
+    
                 PackingOrderDetail::create([
                     'do_id' => $do_id,
                     'discount_1' => $sales_proforma->details_cost->discount_1_percent,
@@ -703,19 +730,19 @@ class SalesOrderProformaController extends Controller
                     'grand_total_idr' => $sales_proforma->details_cost->grand_total_idr,
                 ]);
             }
-
+    
             /*
             |--------------------------------------------------------------------------
             | 8 COPY ITEMS
             |--------------------------------------------------------------------------
             */
-
+    
             foreach ($sales_proforma->items as $item) {
-
+    
                 $soItem = SalesOrderItem::where('so_id', $sales_order->id)
                     ->where('product_packaging_id', $item->product_packaging_id)
                     ->first();
-
+    
                 PackingOrderItem::create([
                     'product_packaging_id' => $item->product_packaging_id,
                     'do_id' => $do_id,
@@ -729,13 +756,13 @@ class SalesOrderProformaController extends Controller
                     'qty_worked' => $item->qty,
                 ]);
             }
-
+    
             /*
             |--------------------------------------------------------------------------
             | 8️⃣ CREATE INVOICE
             |--------------------------------------------------------------------------
             */
-
+    
             Invoicing::create([
                 'code'                      => $sales_order->code,
                 'do_id'                     => $packingOrder->id,
@@ -744,22 +771,21 @@ class SalesOrderProformaController extends Controller
                 'grand_total_idr'           => $sales_proforma->details_cost->grand_total_idr ?? 0,
                 'created_by'                => Auth::id(),
             ]);
-
+    
             DB::commit();
-
+    
             return response()->json([
                 'notification' => [
                     'alert' => 'notify',
                     'type'  => 'success',
                     'content' => 'ACC berhasil. SO lanjutan & DO telah dibuat.'
-                ],
-                'redirect_to' => route('superuser.penjualan.so_proforma.index')
+                ]
             ]);
-
+    
         } catch (\Throwable $e) {
-
+            dd($e);
             DB::rollBack();
-
+    
             return response()->json([
                 'notification' => [
                     'alert' => 'block',

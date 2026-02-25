@@ -22,12 +22,6 @@
 <div id="alert-block"></div>
 
 <div class="block">
-  <!-- <div class="block-content">
-    <a href="{{ route('superuser.penjualan.so_proforma.create') }}">
-      <button type="button" class="btn btn-outline-primary min-width-125">Create</button>
-    </a>
-  </div>
-  <hr class="my-20"> -->
   <div class="block-content block-content-full">
     <table id="datatable" class="table table-bordred table-striped" style="width:100%">
       <thead>
@@ -52,7 +46,7 @@
           <td>
             @if($row->exsisting_customer == 0)
               {{$row->customer_name}}
-            @elseif($row->exsisting_customer === 1)
+            @elseif($row->exsisting_customer == 1)
             {{$row->member->name}} {{ $row->member->text_kota }}
             @endif
           </td>
@@ -68,11 +62,12 @@
             @endif
             @if($row->status == "ACTIVE")
               @if(!empty($row->details_cost->grand_total_idr))
-              <a href="javascript:saveConfirmation('{{ route('superuser.penjualan.so_proforma.acc', $row->id) }}')">
-                <button type="button" class="btn btn-sm btn-circle btn-alt-danger" title="Acc">
-                    <i class="fa fa-check"></i>
-                </button>
-              </a>
+             <button type="button"
+                class="btn btn-sm btn-circle btn-alt-danger btn-approval"
+                data-url="{{ route('superuser.penjualan.so_proforma.acc', $row->id) }}"
+                title="Acc">
+                <i class="fa fa-check"></i>
+            </button>
               @endif
               <a href="{{ route('superuser.penjualan.so_proforma.edit', $row->id) }}">
                 <button type="button" class="btn btn-sm btn-circle btn-alt-danger" title="Edit">
@@ -106,6 +101,35 @@
                 </button>
               </a>
             @endif
+            
+            @if($row->status == "REVISI")
+              @if(!empty($row->details_cost->grand_total_idr))
+                 <button type="button"
+                    class="btn btn-sm btn-circle btn-alt-danger btn-approval"
+                    data-url="{{ route('superuser.penjualan.so_proforma.acc', $row->id) }}"
+                    title="Acc">
+                    <i class="fa fa-check"></i>
+                </button>
+              @endif
+              <a href="{{ route('superuser.penjualan.so_proforma.edit', $row->id) }}">
+                <button type="button" class="btn btn-sm btn-circle btn-alt-danger" title="Edit">
+                  <i class="fa fa-pencil"></i>
+                </button>
+              </a>
+              @if(!empty($row->details_cost->grand_total_idr))
+              <a href="{{ route('superuser.penjualan.so_proforma.print_so_proforma', $row->id) }}">
+                <button type="button" class="btn btn-sm btn-circle btn-alt-danger" title="Print">
+                  <i class="fa fa-print" aria-hidden="true"></i>
+                </button>
+              </a>
+              @endif
+              
+              <a href="javascript:deleteConfirmation('{{ route('superuser.penjualan.so_proforma.destroy', $row->id) }}')">
+                <button type="button" class="btn btn-sm btn-circle btn-alt-danger" title="Delete">
+                  <i class="fa fa-trash"></i>
+                </button>
+              </a>
+            @endif
           </td>
         </tr>
         @endforeach
@@ -119,7 +143,76 @@
 @include('superuser.asset.plugin.datatables')
 
 @push('scripts')
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 <script type="text/javascript">
     var table = $('#datatable').DataTable({});
+    
+    $(document).on('click', '.btn-approval', function () {
+
+        let button = $(this);
+        let url = button.data('url');
+    
+        Swal.fire({
+            title: 'Apakah Anda yakin?',
+            text: "SO akan diteruskan dan DO dibuat.",
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonText: 'Ya, lanjutkan',
+            cancelButtonText: 'Batal'
+        }).then((result) => {
+    
+            if (result.isConfirmed) {
+    
+                button.prop('disabled', true);
+    
+                $.ajax({
+                    url: url,
+                    type: "POST",
+                    data: {
+                        _token: "{{ csrf_token() }}"
+                    },
+                    beforeSend: function () {
+                        Swal.fire({
+                            title: 'Processing...',
+                            allowOutsideClick: false,
+                            didOpen: () => {
+                                Swal.showLoading();
+                            }
+                        });
+                    },
+                    success: function (response) {
+    
+                        Swal.fire({
+                            icon: 'success',
+                            title: 'Berhasil',
+                            text: response.notification.content,
+                            timer: 2000,
+                            showConfirmButton: false
+                        });
+    
+                        setTimeout(function () {
+                            location.reload();
+                        }, 2000);
+                    },
+                    error: function (xhr) {
+    
+                        button.prop('disabled', false);
+    
+                        let message = 'Terjadi kesalahan sistem';
+    
+                        if (xhr.responseJSON && xhr.responseJSON.notification) {
+                            message = xhr.responseJSON.notification.content;
+                        }
+    
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'Error',
+                            text: message
+                        });
+                    }
+                });
+            }
+        });
+    });
 </script>
 @endpush

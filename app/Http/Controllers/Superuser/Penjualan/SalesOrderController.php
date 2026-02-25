@@ -1434,52 +1434,101 @@ class SalesOrderController extends Controller
                             }
 
                             // CHECK STOCK & RESERVED QTY (NORMAL SO)
+                            // $base_product_packaging_id = preg_replace('/_\d+$/', '', $value["product_packaging_id"]);
+
+                            // $stock = ProductMinStock::where('warehouse_id', $request->origin_warehouse_id)
+                            //     ->where('product_packaging_id', $base_product_packaging_id)
+                            //     ->lockForUpdate()
+                            //     ->first();
+
+                            // if (!$stock) {
+                            //     throw new \Exception('Stock tidak ditemukan untuk salah satu produk.');
+                            // }
+
+                            // $quantity  = (int) $stock->quantity;
+                            // $reserved  = (int) ($stock->reserved_quantity ?? 0);
+
+                            // $current_available = $quantity - $reserved;
+                            // $new_available     = $current_available - $do_qty;
+
+                            // /*
+                            // ==================================================
+                            // CONTROL MINUS & RESERVE (SAFE VERSION)
+                            // ==================================================
+                            // */
+
+                            // // Jika stok sudah minus sebelumnya → tidak boleh tambah minus
+                            // if ($quantity < 0 && $new_available < $current_available) {
+                            //     throw new \Exception(
+                            //         "Stock sudah minus dan tidak boleh ditambah minus untuk produk {$value["product_packaging_id"]}"
+                            //     );
+                            // }
+
+                            // // Jika available cukup → reserve normal
+                            // if ($current_available >= $do_qty) {
+                            //     $stock->reserved_quantity += $do_qty;
+                            // }
+                            // // Jika benar-benar 0 dan belum pernah minus → izinkan minus pertama
+                            // elseif ($quantity == 0 && $reserved == 0) {
+                            //     $stock->reserved_quantity += $do_qty;
+                            // }
+                            // // Selain itu → tidak boleh
+                            // else {
+                            //     throw new \Exception(
+                            //         "Stock tidak mencukupi. Available: {$current_available}, Request: {$do_qty}"
+                            //     );
+                            // }
+
+                            // $stock->save();
+                            
                             $base_product_packaging_id = preg_replace('/_\d+$/', '', $value["product_packaging_id"]);
 
                             $stock = ProductMinStock::where('warehouse_id', $request->origin_warehouse_id)
                                 ->where('product_packaging_id', $base_product_packaging_id)
                                 ->lockForUpdate()
                                 ->first();
-
+                            
                             if (!$stock) {
                                 throw new \Exception('Stock tidak ditemukan untuk salah satu produk.');
                             }
-
-                            $quantity  = (int) $stock->quantity;
-                            $reserved  = (int) ($stock->reserved_quantity ?? 0);
-
+                            
+                            $quantity  = (float) $stock->quantity;
+                            $reserved  = (float) ($stock->reserved_quantity ?? 0);
+                            
                             $current_available = $quantity - $reserved;
                             $new_available     = $current_available - $do_qty;
-
+                            
                             /*
                             ==================================================
-                            CONTROL MINUS & RESERVE (SAFE VERSION)
+                            CONTROL MINUS & RESERVED QTY (CHECK ONLY)
                             ==================================================
                             */
-
-                            // Jika stok sudah minus sebelumnya → tidak boleh tambah minus
+                            
+                            // Stok sudah minus sebelumnya → tolak
                             if ($quantity < 0 && $new_available < $current_available) {
                                 throw new \Exception(
                                     "Stock sudah minus dan tidak boleh ditambah minus untuk produk {$value["product_packaging_id"]}"
                                 );
                             }
-
-                            // Jika available cukup → reserve normal
-                            if ($current_available >= $do_qty) {
+                            
+                            // Stok cukup → reserve normal
+                            elseif ($current_available >= $do_qty) {
                                 $stock->reserved_quantity += $do_qty;
                             }
-                            // Jika benar-benar 0 dan belum pernah minus → izinkan minus pertama
-                            elseif ($quantity == 0 && $reserved == 0) {
+                            
+                            // First-time minus (available >=0 tapi order melebihi available) → lolos, tetap isi reserved
+                            elseif ($current_available >= 0 && $new_available < 0) {
                                 $stock->reserved_quantity += $do_qty;
                             }
-                            // Selain itu → tidak boleh
+                            
+                            // Semua kasus lain → stock tidak mencukupi
                             else {
                                 throw new \Exception(
                                     "Stock tidak mencukupi. Available: {$current_available}, Request: {$do_qty}"
                                 );
                             }
-
-                            $stock->save();
+                            
+                            $stock->save(); // Hanya update reserved_quantity, quantity tetap utuh
         
                             if(empty($do_qty) && $rej_qty > 0){
                                 $updateSO = SalesOrderItem::where('id',$value["so_item_id"])->update([

@@ -15,6 +15,7 @@ Route::group([
         Route::get('/export_stock_db', 'StockController@export_stock_db')->name('export_stock_db');
         Route::get('/import_template', 'StockController@import_template')->name('import_template');
         Route::post('/import', 'StockController@import')->name('import');
+        Route::get('{warehouse_id}/detail/{product_id}/print', 'StockController@printPdf')->name('print');
     });
 
     Route::group(['as' => 'stock_adjustment.', 'prefix' => '/stock_adjustment'], function () {
@@ -31,7 +32,7 @@ Route::group([
         Route::get('{id}/unpublish', 'PurchaseOrderController@unpublish')->name('unpublish');
         Route::get('{id}/save_modify/{save_type}', 'PurchaseOrderController@save_modify')->name('save_modify');
         Route::get('{id}/acc', 'PurchaseOrderController@acc')->name('acc');
-        Route::get('{id}/print_pdf', 'PurchaseOrderController@print_pdf')->name('print_pdf');
+        Route::get('{id}/print_po_pdf', 'PurchaseOrderController@print_po_pdf')->name('print_po_pdf');
         Route::get('/import_template', 'PurchaseOrderController@import_template')->name('import_template');
         Route::post('/import/{id}', 'PurchaseOrderController@import')->name('import');
         Route::get('/search_sku', 'PurchaseOrderController@search_sku')->name('search_sku');
@@ -61,7 +62,7 @@ Route::group([
         Route::get('{id}/unpublish', 'PurchaseOrderSPKController@unpublish')->name('unpublish');
         Route::get('{id}/save_modify/{save_type}', 'PurchaseOrderSPKController@save_modify')->name('save_modify');
         Route::get('{id}/acc', 'PurchaseOrderSPKController@acc')->name('acc');
-        Route::get('{id}/print_pdf', 'PurchaseOrderSPKController@print_pdf')->name('print_pdf');
+        Route::get('{id}/print_spk_pdf', 'PurchaseOrderSPKController@print_spk_pdf')->name('print_spk_pdf');
         Route::get('/import_template', 'PurchaseOrderSPKController@import_template')->name('import_template');
         Route::post('/import/{id}', 'PurchaseOrderSPKController@import')->name('import');
         Route::get('/search_sku', 'PurchaseOrderSPKController@search_sku')->name('search_sku');
@@ -70,8 +71,6 @@ Route::group([
         Route::get('/{id}/send', 'PurchaseOrderSPKController@send')->name('send');
         Route::get('/summary', 'PurchaseOrderSPKController@summary')->name('summary');
         Route::get('/{id}/cancel_send', 'PurchaseOrderSPKController@cancel_send')->name('cancel_send');
-        Route::get('/listRefPo', 'PurchaseOrderSPKController@listRefPo')->name('listRefPo');
-        Route::post('/{id}/updateRefPo', 'PurchaseOrderSPKController@updateRefPo')->name('updateRefPo');
 
         Route::group(['as' => 'detail.'], function () {
             Route::get('{purchase_id}/detail/create', 'PurchaseOrderDetailSPKController@create')->name('create');
@@ -86,7 +85,7 @@ Route::group([
     Route::resource('purchase_order_spk', 'PurchaseOrderSPKController');
 
     // RECEIVING IN SIRIE
-    Route::group(['as' => 'receiving.', 'prefix' => '/receiving'], function (){
+    Route::group(['as' => 'receiving.', 'prefix' => '/receiving'], function () {
         Route::get('/step/{id}', 'ReceivingController@step')->name('step');
         Route::get('{id}/publish', 'ReceivingController@publish')->name('publish');
         Route::get('{id}/acc_ri', 'ReceivingController@acc_ri')->name('acc_ri');
@@ -116,6 +115,7 @@ Route::group([
                 Route::put('{id}/detail/{detail_id}/colly/{colly_id}', 'ReceivingDetailCollyController@update')->name('update');
                 Route::delete('{id}/detail/{detail_id}/colly/{colly_id}/delete', 'ReceivingDetailCollyController@destroy')->name('destroy');
             });
+
         });
     });
     Route::resource('receiving', 'ReceivingController');
@@ -155,19 +155,7 @@ Route::group([
         });
     });
     Route::resource('quality_control', 'QualityControlController');
-
-    Route::group(['as' => 'mutasi_out.', 'prefix' => '/mutasi_out'], function () {
-        Route::get('/data', 'MutasiOutController@data')->name('data');
-        Route::get('/search_sku', 'MutasiOutController@search_sku')->name('search_sku');
-        Route::post('{id}/acc', 'MutasiOutController@acc')->name('acc');
-        Route::post('/{id}/publish', 'MutasiOutController@publish')->name('publish');
-        Route::get('/refreshCounts', 'MutasiOutController@refreshCounts')->name('refreshCounts');
-        Route::get('/{id}/detail', 'MutasiOutController@detail')->name('detail');
-        Route::get('/reloadTab', 'MutasiOutController@reloadTab')->name('reloadTab');
-        Route::get('/print_pdf/{id}', 'MutasiOutController@print_pdf')->name('print_pdf');
-    });
-    Route::resource('mutasi_out', 'MutasiOutController');
-
+    
     Route::group(['as' => 'quality_control_2.', 'prefix' => '/quality_control_2'], function (){
         Route::post('store', 'QualityControl2Controller@store')->name('store');
         Route::get('brands', 'QualityControl2Controller@getBrands')->name('brands');
@@ -177,7 +165,7 @@ Route::group([
         Route::get('/create/pdf_sj/{data?}/{protect?}', 'QualityControl2Controller@pdf_sj_komplain')->name('pdf_sj_komplain');
     });
     Route::resource('quality_control_2', 'QualityControl2Controller');
-
+    
     Route::group(['as' => 'mutasi_showroom.', 'prefix' => '/mutasi_showroom'], function (){
         Route::get('/', 'MutasiShowroomController@index')->name('index');
 
@@ -213,16 +201,15 @@ Route::group([
 
         Route::get('mutasi_showroom/detail', 'MutasiShowroomController@detail')->name('detail');
         Route::get('mutasi_showroom/print_request/{id}', 'MutasiShowroomController@printRequest')->name('print_request');
-        Route::get('/print_pdf_sj/{id}', 'MutasiShowroomController@print_pdf_sj')->name('print_pdf_sj');
     });
     Route::resource('mutasi_showroom', 'MutasiShowroomController');
-
+    
     Route::group(['as' => 'sj_mutasi_internal.', 'prefix' => '/sj_mutasi_internal'], function (){
-        // 🔥 TARUH DI PALING ATAS
+        // ðŸ”¥ TARUH DI PALING ATAS
         Route::get('/file/{path}', 'SjMutasiInternalController@viewFile')
             ->where('path', '.*')
             ->name('viewFile');
-
+        
         Route::get('/', 'SjMutasiInternalController@index')->name('index');
         Route::get('/show/{id}', 'SjMutasiInternalController@show')->name('show');
         Route::post('step1Save', 'SjMutasiInternalController@step1Save')->name('step1Save');
@@ -234,6 +221,20 @@ Route::group([
         Route::get('/table', 'SjMutasiInternalController@table')->name('table');
         Route::get('/filterSelesai', 'SjMutasiInternalController@filterSelesai')->name('filterSelesai');
 
+
     Route::resource('sj_mutasi_internal', 'SjMutasiInternalController');
     });
+    
+    Route::group(['as' => 'mutasi_out.', 'prefix' => '/mutasi_out'], function () {
+        Route::get('/data', 'MutasiOutController@data')->name('data');
+        Route::get('/search_sku', 'MutasiOutController@search_sku')->name('search_sku');
+        Route::post('{id}/acc', 'MutasiOutController@acc')->name('acc');
+        Route::post('/{id}/publish', 'MutasiOutController@publish')->name('publish');
+        Route::get('/refreshCounts', 'MutasiOutController@refreshCounts')->name('refreshCounts');
+        Route::get('/{id}/detail', 'MutasiOutController@detail')->name('detail');
+        Route::get('/print_pdf/{id}', 'MutasiOutController@print_pdf')->name('print_pdf');
+        Route::get('/reloadTab', 'MutasiOutController@reloadTab')->name('reloadTab');
+
+    });
+    Route::resource('mutasi_out', 'MutasiOutController');
 });

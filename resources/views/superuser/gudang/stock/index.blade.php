@@ -19,7 +19,7 @@
 @endif
 
 @if(session()->has('collect_success') || session()->has('collect_error'))
-<div class="container">
+<div class="container mb-3">
   <div class="row">
     <div class="col pl-0">
       <div class="alert alert-success alert-dismissable" role="alert" style="max-height: 300px; overflow-y: auto;">
@@ -42,37 +42,80 @@
 @endif
 
 <div class="block">
-  
-  <div class="block-content block-content-full">
-    <div class="form-group row align-items-center">
-      <label class="col-md-2 col-form-label" for="warehouse">Warehouse <span class="text-danger">*</span></label>
-      <div class="col-md-4">
-          <select class="js-select2 form-control" id="warehouse" name="warehouse" data-placeholder="Select Warehouse">
-              <option></option>
-              @foreach($warehouses as $warehouse)
-              <option value="{{ $warehouse->id }}">{{ $warehouse->name }}</option>
-              @endforeach
-          </select>
+    <div class="block mb-3">
+      <div class="block-content block-content-full">
+        <div class="form-group row align-items-center">
+          <label class="col-md-2 col-form-label" for="warehouse">Gudang <span class="text-danger">*</span></label>
+          <div class="col-md-4">
+              <select class="js-select2 form-control" id="warehouse" name="warehouse" data-placeholder="Select Warehouse">
+                  <option value="">Pilih Gudang</option>
+                  @foreach($warehouses as $warehouse)
+                  <option value="{{ $warehouse->id }}">{{ $warehouse->name }}</option>
+                  @endforeach
+              </select>
+          </div>
+          <div class="col-md-6 text-right">
+            <button class="btn btn-success" data-toggle="modal" data-target="#modalImport">
+              <i class="fa fa-upload"></i> Import Stock
+            </button>
+            <a href="{{ route('superuser.gudang.stock.import_template') }}" class="btn btn-info">
+              <i class="fa fa-download"></i> Download Template
+            </a>
+          </div>
+        </div>
       </div>
     </div>
+    <div class="block-content block-content-full">
+        <table id="datatable" class="table table-striped">
+          <thead>
+            <tr>
+              <th class="text-center">kode</th>
+              <th class="text-center">Nama</th>
+              <th class="text-center">Merek</th>
+              <th class="text-center">Kemasan</th>
+              <th class="text-center">In</th>
+              <th class="text-center">Out</th>
+              <th class="text-center">Stock</th>
+            </tr>
+          </thead>
+          
+        </table>
+    </div>
 </div>
-  </div>
-  <div class="block-content block-content-full">
-    <table id="datatable" class="table table-striped">
-      <thead>
-        <tr>
-          <th class="text-center">kode</th>
-          <th class="text-center">Nama</th>
-          <th class="text-center">Merek</th>
-          <th class="text-center">Kemasan</th>
-          <th class="text-center">In</th>
-          <th class="text-center">Out</th>
-          <th class="text-center">Stock</th>
-        </tr>
-      </thead>
-      
-    </table>
-  </div>
+@endsection
+
+@section('modal')
+<!-- Modal Import -->
+<div class="modal fade" id="modalImport" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <form method="POST" action="{{ route('superuser.gudang.stock.import') }}" enctype="multipart/form-data" class="modal-content">
+            @csrf
+            <div class="modal-header">
+                <h5 class="modal-title">Import Stock</h5>
+                <button type="button" class="close" data-dismiss="modal">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label>Pilih Warehouse <span class="text-danger">*</span></label>
+                    <select class="js-select2 form-control" name="warehouse_id" required>
+                        <option></option>
+                        @foreach($warehouses as $warehouse)
+                        <option value="{{ $warehouse->id }}">{{ $warehouse->name }}</option>
+                        @endforeach
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Pilih File Excel <span class="text-danger">*</span></label>
+                    <input type="file" class="form-control" name="import_file" accept=".xls,.xlsx" required>
+                    <small class="form-text text-muted">Pastikan file sesuai template.</small>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="submit" class="btn btn-primary">Import</button>
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">Batal</button>
+            </div>
+        </form>
+    </div>
 </div>
 @endsection
 
@@ -214,6 +257,10 @@ $(document).ready(function() {
             });
         }
     });
+    
+    $('#warehouse').on('select2:select', function (e) {
+        table.ajax.reload();
+      });
 });
 </script>
 @endpush
