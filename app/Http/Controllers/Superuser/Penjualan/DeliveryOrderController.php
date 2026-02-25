@@ -310,8 +310,10 @@ class DeliveryOrderController extends Controller
                 'confirmed_items' => 'required|array'
             ]);
 
-            $packing = PackingOrder::with('do_detail.product_pack')
+            $packing = PackingOrder::with(['do_detail.product_pack','so'])
                 ->findOrFail($request->id);
+            
+            $isProforma = optional($packing->so)->is_proforma == 1;
 
             if ($packing->status != 3) {
                 throw new \Exception('Status tidak valid untuk diproses.');
@@ -347,50 +349,40 @@ class DeliveryOrderController extends Controller
             // PROSES POTONG STOCK
             // ======================================
 
-            foreach ($packing->do_detail as $item) {
+            if (!$isProforma) {
 
-                $base_product_packaging_id = preg_replace('/_\d+$/', '', $item->product_packaging_id);
-
-                $stock = ProductMinStock::where('warehouse_id', $packing->warehouse_id)
-                    ->where('product_packaging_id', $base_product_packaging_id)
-                    ->lockForUpdate()
-                    ->first();
-
-                if (!$stock) {
-                    throw new \Exception('Stock tidak ditemukan.');
+                foreach ($packing->do_detail as $item) {
+            
+                    $base_product_packaging_id = preg_replace('/_\d+$/', '', $item->product_packaging_id);
+            
+                    $stock = ProductMinStock::where('warehouse_id', $packing->warehouse_id)
+                        ->where('product_packaging_id', $base_product_packaging_id)
+                        ->lockForUpdate()
+                        ->first();
+            
+                    if (!$stock) {
+                        throw new \Exception('Stock tidak ditemukan.');
+                    }
+            
+                    if ($stock->reserved_quantity < $item->qty) {
+                        throw new \Exception(
+                            "Reserved stock tidak mencukupi untuk produk {$item->product_pack->code}"
+                        );
+                    }
+            
+                    $current_qty = (int) $stock->quantity;
+                    $new_qty     = $current_qty - $item->qty;
+            
+                    if ($current_qty < 0 && $new_qty < $current_qty) {
+                        throw new \Exception(
+                            "Stock sudah minus dan tidak boleh ditambah minus untuk produk {$item->product_pack->code}"
+                        );
+                    }
+            
+                    $stock->quantity -= $item->qty;
+                    $stock->reserved_quantity -= $item->qty;
+                    $stock->save();
                 }
-
-                // --------------------------------------
-                // VALIDASI RESERVED CUKUP
-                // --------------------------------------
-
-                if ($stock->reserved_quantity < $item->qty) {
-                    throw new \Exception(
-                        "Reserved stock tidak mencukupi untuk produk {$item->product_pack->code}"
-                    );
-                }
-
-                // --------------------------------------
-                // LOGIKA MINUS TERKONTROL
-                // --------------------------------------
-
-                $current_qty = (int) $stock->quantity;
-                $new_qty     = $current_qty - $item->qty;
-
-                // Jika sudah minus dan minus akan makin dalam → tolak
-                if ($current_qty < 0 && $new_qty < $current_qty) {
-                    throw new \Exception(
-                        "Stock sudah minus dan tidak boleh ditambah minus untuk produk {$item->product_pack->code}"
-                    );
-                }
-
-                // --------------------------------------
-                // REAL DEDUCTION
-                // --------------------------------------
-
-                $stock->quantity -= $item->qty;
-                $stock->reserved_quantity -= $item->qty;
-                $stock->save();
             }
 
             $packing->update(['status' => 4]);
@@ -447,6 +439,7 @@ class DeliveryOrderController extends Controller
             return redirect()->route('superuser.penjualan.delivery_order.index')->with('success','Delivery Order berhasil diubah ke delivery!');
             
         }catch(\Throwable $e){
+            dd($e);
             DB::rollback();
             return redirect()->back()->with('error',$e->getMessage());
         }
@@ -500,7 +493,7 @@ class DeliveryOrderController extends Controller
         return response()->json($data_json,200);
     }
 
-    public function sent(Request $request)
+   public function sent(Request $request)
     {
         // Initialize response data
         $data_json = [];
@@ -548,7 +541,8 @@ class DeliveryOrderController extends Controller
             $result_cost = PackingOrderDetail::where('do_id', $do_id)->firstOrFail();
             $get_do = PackingOrder::where('id', $do_id)->firstOrFail();
             $get_so = SalesOrder::where('id', $get_do->so_id)->firstOrFail();
-            $customer = CustomerOtherAddress::where('id', $result_cost->do->customer_other_address_id)->firstOrFail();
+            $customer = CustomerOtherAddress::where('id', $get_do->customer_other_address_id)->firstOrFail();
+            $isProforma = optional($get_do->so)->is_proforma == 1;
 
             // Prepare update data
             $updateData = [
@@ -603,7 +597,7 @@ class DeliveryOrderController extends Controller
                 $transactionCode
             )->exists();
 
-            if (!$alreadyMoved) {
+            if (!$alreadyMoved && !$isProforma) {
 
                 $items = PackingOrderItem::where('do_id', $do_id)->get();
 
@@ -1114,7 +1108,7 @@ class DeliveryOrderController extends Controller
             'notifCount' => $notifCount,
         ]);
     }
-
+    
     public function multiCancel(Request $request)
     {
         DB::beginTransaction();
@@ -1185,7 +1179,8 @@ class DeliveryOrderController extends Controller
 
             DB::commit();
 
-            return redirect()->route('superuser.penjualan.delivery_order.index')->with('success','Berhasil dikembalikan / cancel.');
+            return redirect()->back()
+                ->with('success', 'Berhasil dikembalikan/cancel.');
 
         } catch (\Throwable $e) {
 

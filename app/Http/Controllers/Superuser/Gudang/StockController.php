@@ -55,47 +55,97 @@ class StockController extends Controller
     public function json(Request $request)
     {
         $warehouse = $request->warehouse_id;
-        if (!$warehouse) return ['data'=>''];
+        if (!$warehouse) return ['data' => ''];
 
-        /* 1. tarik ringkasan in/out per produk */
-        $rows = StockMove::select(
-                    'product_packaging_id',
-                    DB::raw('SUM(stock_in)  as qty_in'),
-                    DB::raw('SUM(stock_out) as qty_out'),
-                    DB::raw('MAX(created_at) as last_tx')
-                )
-                ->where('warehouse_id', $warehouse)
-                ->groupBy('product_packaging_id')
-                ->get();
+        $rows = ProductMinStock::with(['product_pack.product','product_pack.packaging'])
+            ->where('warehouse_id', $warehouse)
+            ->get();
 
-        $totalIn = $totalOut = 0;
+        $totalQty       = 0;
+        $totalReserved  = 0;
+        $totalAvailable = 0;
+
         $dataRows = [];
 
-        foreach ($rows as $r) {
-            $pack   = ProductPack::with(['product','packaging'])->find($r->product_packaging_id);
-            $stock  = $r->qty_in - $r->qty_out;
+        foreach ($rows as $row) {
 
-            $totalIn  += $r->qty_in;
-            $totalOut += $r->qty_out;
+            $pack = $row->product_pack;
+            if (!$pack) continue;
+
+            $quantity  = (float) $row->quantity;
+            $reserved  = (float) ($row->reserved_quantity ?? 0);
+            $available = $quantity - $reserved;
+
+            $totalQty       += $quantity;
+            $totalReserved  += $reserved;
+            $totalAvailable += $available;
 
             $dataRows[] = [
                 '<a href="'.route('superuser.gudang.stock.detail', [$warehouse, base64_encode($pack->id)]).'" target="_blank">'.$pack->code.'</a>',
                 $pack->name,
                 $pack->product->brand_name ?? '-',
                 $pack->packaging->pack_name ?? '-',
-                number_format($r->qty_in, 2),
-                number_format($r->qty_out, 2),
-                number_format($stock, 2),
+                number_format($quantity, 2),
+                number_format($reserved, 2),
+                number_format($available, 2),
             ];
         }
 
         return [
-            'data'        => $dataRows,
-            'total_in'    => number_format($totalIn, 2),
-            'total_out'   => number_format($totalOut, 2),
-            'total_stock' => number_format($totalIn-$totalOut, 2),
+            'data'            => $dataRows,
+            'total_stock'     => number_format($totalQty, 2),
+            'total_reserved'  => number_format($totalReserved, 2),
+            'total_available' => number_format($totalAvailable, 2),
         ];
     }
+    
+    // public function json(Request $request)
+    // {
+    //     $warehouse = $request->warehouse_id;
+    //     if (!$warehouse) return ['data' => ''];
+    
+    //     $rows = ProductMinStock::with(['product_pack.product', 'product_pack.packaging'])
+    //         ->where('warehouse_id', $warehouse)
+    //         ->get();
+    
+    //     $totalQty       = 0;
+    //     $totalReserved  = 0;
+    //     $totalAvailable = 0;
+    
+    //     $dataRows = [];
+    
+    //     foreach ($rows as $row) {
+    
+    //         $pack = $row->product_pack;
+    
+    //         if (!$pack) continue;
+    
+    //         $quantity  = (float) $row->quantity;
+    //         $reserved  = (float) ($row->reserved_quantity ?? 0);
+    //         $available = $quantity - $reserved;
+    
+    //         $totalQty       += $quantity;
+    //         $totalReserved  += $reserved;
+    //         $totalAvailable += $available;
+    
+    //         $dataRows[] = [
+    //             '<a href="'.route('superuser.gudang.stock.detail', [$warehouse, base64_encode($pack->id)]).'" target="_blank">'.$pack->code.'</a>',
+    //             $pack->name,
+    //             $pack->product->brand_name ?? '-',
+    //             $pack->packaging->pack_name ?? '-',
+    //             number_format($quantity, 2),
+    //             number_format($reserved, 2),
+    //             number_format($available, 2),
+    //         ];
+    //     }
+    
+    //     return [
+    //         'data'            => $dataRows,
+    //         'total_stock'     => number_format($totalQty, 2),
+    //         'total_reserved'  => number_format($totalReserved, 2),
+    //         'total_available' => number_format($totalAvailable, 2),
+    //     ];
+    // }
 
     public function index()
     {
@@ -125,15 +175,26 @@ class StockController extends Controller
         $warehouse = Warehouse::findOrFail($warehouse);
         $pack      = ProductPack::with(['product','packaging'])->findOrFail($productId);
 
-        /* tarik seluruh move utk produk+gudang, urut naik */
         $moves = StockMove::where([
                     ['warehouse_id', $warehouse->id],
                     ['product_packaging_id', $productId]
-                 ])->orderBy('created_at')->get();
+                ])
+                ->orderBy('created_at')
+                ->get();
 
-        $balance = 0;  $collect = [];
+        // saldo real saat ini
+        $currentStock = ProductMinStock::where([
+                            ['warehouse_id', $warehouse->id],
+                            ['product_packaging_id', $productId]
+                        ])->first();
+
+        $realBalance = $currentStock ? $currentStock->quantity : 0;
+
+        $balance = 0;
+        $collect = [];
 
         foreach ($moves as $m) {
+
             $balance += ($m->stock_in - $m->stock_out);
 
             $collect[] = [
@@ -142,14 +203,15 @@ class StockController extends Controller
                 'in'          => $m->stock_in ?: '',
                 'out'         => $m->stock_out ?: '',
                 'balance'     => number_format($balance, 2),
-                'description' => $m->note,   // tambahkan kolom di tabel kalau ingin catatan
+                'description' => $m->note,
             ];
         }
 
         return view('superuser.gudang.stock.detail', [
-            'product'  => $pack,
-            'warehouse'=> $warehouse,
-            'collects' => $collect,
+            'product'     => $pack,
+            'warehouse'   => $warehouse,
+            'collects'    => $collect,
+            'real_balance'=> number_format($realBalance, 2)
         ]);
     }
 

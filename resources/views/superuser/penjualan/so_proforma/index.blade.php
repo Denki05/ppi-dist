@@ -22,12 +22,12 @@
 <div id="alert-block"></div>
 
 <div class="block">
-  <div class="block-content">
+  <!-- <div class="block-content">
     <a href="{{ route('superuser.penjualan.so_proforma.create') }}">
       <button type="button" class="btn btn-outline-primary min-width-125">Create</button>
     </a>
   </div>
-  <hr class="my-20">
+  <hr class="my-20"> -->
   <div class="block-content block-content-full">
     <table id="datatable" class="table table-bordred table-striped" style="width:100%">
       <thead>
@@ -96,12 +96,6 @@
               <a href="#">
                 <button type="button" class="btn btn-sm btn-circle btn-alt-danger" title="Show">
                   <i class="fa fa-eye"></i>
-                </button>
-              </a>
-             
-              <a href="javascript:saveConfirmation('{{ route('superuser.penjualan.so_proforma.approval_so', $row->id) }}')">
-                <button type="button" class="btn btn-sm btn-circle btn-alt-danger" title="Lanjutkan">
-                  <i class="fa fa-arrow-right"></i>
                 </button>
               </a>
             @endif

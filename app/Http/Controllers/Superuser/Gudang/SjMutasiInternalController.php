@@ -198,7 +198,7 @@ class SjMutasiInternalController extends Controller
 
             // Validasi status
             // sebelumnya: if ($mutasi->status_checked == 0 && $mutasi->status_checked == 2)
-            if (in_array($mutasi->status_checked, [0,2])) {
+            if ($mutasi->status_checked == 0 && $mutasi->status_checked == 2) {
                 throw new \Exception('Status tidak valid');
             }
 
@@ -268,6 +268,7 @@ class SjMutasiInternalController extends Controller
             ]);
 
         } catch (\Exception $e) {
+            dd($e);
             DB::rollBack();
             return response()->json([
                 'success' => false,
