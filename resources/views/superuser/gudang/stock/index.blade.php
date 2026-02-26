@@ -9,12 +9,11 @@ body{ background:#1f242a; font-family: "Segoe UI", Roboto, sans-serif; }
 .crm-wrapper{ max-width:1000px; margin:0 auto; height:calc(100vh - 90px); }
 .crm-card{ height:100%; border-radius:10px; border:none; box-shadow:0 4px 14px rgba(0,0,0,.08); }
 .crm-card .card-body{ padding:10px 14px; overflow-y:auto; }
-/* FORM & TABLE tetap sama seperti sebelumnya */
 .form-label{ font-size:12px; font-weight:600; margin-bottom:3px; }
 .form-control, .select2-container--default .select2-selection--single{ height:32px !important; font-size:13px; padding:4px 8px; }
-.table-responsive{ padding:0 !important; margin:0 !important; }
+.table-responsive{ padding:0 !important; margin:0 !important; max-height: calc(100vh - 260px); overflow-y: auto; overflow-x: hidden }
 #datatable{ width:100% !important; table-layout:fixed !important; border-collapse:collapse !important; margin:0 !important; font-size:14px; }
-#datatable thead th{ background:#f4f6f9; font-size:14px; font-weight:600; padding:4px 6px !important; border-bottom:1px solid #dfe3e8; text-transform:uppercase; letter-spacing:.3px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+#datatable thead th{ background:#f4f6f9; font-size:14px; font-weight:600; padding:4px 6px !important; border-bottom:1px solid #dfe3e8; text-transform:uppercase; letter-spacing:.3px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; position: sticky; top: 0; z-index: 5; background: #f4f6f9; }
 #datatable tbody td{ font-size:13.5px; padding:3px 6px !important; line-height:1.2 !important; border-bottom:1px solid #eef1f4; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; vertical-align:middle; }
 #datatable tbody tr{ height:30px; }
 #datatable tbody tr:hover{ background:#f8fafc; }
@@ -36,7 +35,40 @@ body{ background:#1f242a; font-family: "Segoe UI", Roboto, sans-serif; }
 .erp-pagination .page-info{ min-width:50px; text-align:center; }
 #datatable tbody td.text-end{ font-size:13px; font-weight:700; letter-spacing:.3px; }
 .text-danger-strong, .text-warning-strong, .text-success-strong{ font-size:13px; }
-#datatable th:nth-child(5), #datatable td:nth-child(5), #datatable th:nth-child(6), #datatable td:nth-child(6){ width:65px !important; text-align:right; }
+#datatable th:nth-child(5), #datatable td:nth-child(5), 
+#datatable th:nth-child(6), #datatable td:nth-child(6){ width:65px !important; text-align:right; }
+
+.ks-fixed-modal{
+    height: 75vh;
+    display: flex;
+    flex-direction: column;
+}
+
+.ks-fixed-modal .modal-body{
+    flex: 1;
+    overflow: hidden;
+}
+
+.ks-modal-body {
+    flex: 1;
+    overflow: hidden;
+}
+
+#ksDetailModal .modal-content {
+    height: 75vh;
+    display: flex;
+    flex-direction: column;
+}
+
+#ksDetailModal .modal-body {
+    flex: 1;
+    overflow: hidden;
+}
+
+/* ===== PERBAIKAN CENTER MODAL (TANPA MERUSAK STYLE LAIN) ===== */
+#ksDetailModal .modal-dialog {
+    max-width: 1200px;
+}
 </style>
 
 @if($errors->any())
@@ -108,21 +140,26 @@ body{ background:#1f242a; font-family: "Segoe UI", Roboto, sans-serif; }
 </div>
 
 <!-- Modal Detail KS di luar tabel -->
-<div class="modal fade" id="ksDetailModal" tabindex="-1" aria-labelledby="ksDetailModalLabel" aria-hidden="true">
-  <div class="modal-dialog modal-lg modal-dialog-scrollable" style="max-height: 90vh;">
+<div class="modal fade" id="ksDetailModal" tabindex="-1">
+  <div class="modal-dialog modal-xl modal-dialog-scrollable">
     <div class="modal-content">
       <div class="modal-header">
-        <h5 class="modal-title" id="ksDetailModalLabel">Detail Stock</h5>
-        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        <h5 class="modal-title">
+            Detail Stock 
+            <span id="modalProductInfo" class="ms-2 text-muted fw-normal"></span>
+        </h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
       </div>
-      <div class="modal-body" id="ksDetailContent">
+      <div class="modal-body ks-modal-body" id="ksDetailContent">
         <div class="text-center py-5">
-          <div class="spinner-border text-primary" role="status"></div>
+          <div class="spinner-border text-primary"></div>
         </div>
       </div>
     </div>
   </div>
 </div>
+
+
 @endsection
 
 @include('superuser.asset.plugin.swal2')
@@ -132,6 +169,9 @@ body{ background:#1f242a; font-family: "Segoe UI", Roboto, sans-serif; }
 
 @push('scripts')
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+<script src="https://cdn.datatables.net/buttons/2.4.2/js/dataTables.buttons.min.js"></script>
+<script src="https://cdn.datatables.net/buttons/2.4.2/js/buttons.html5.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
 <script>
 $(document).ready(function(){
     $('.js-select2').select2();
@@ -155,7 +195,21 @@ $(document).ready(function(){
             },
             dataSrc:'data'
         },
-        dom:'rtip',
+        dom:'Brt',
+        buttons:[
+            {
+                extend:'excelHtml5',
+                text:'<i class="fa fa-file-excel"></i>',
+                title:'Stock Monitoring',
+                className:'btn btn-success btn-sm',
+                exportOptions:{
+                    columns: ':visible',
+                    modifier:{
+                        page:'all'
+                    }
+                }
+            }
+        ],
         columns: [
           { data: 'no', width: '40px' },
           { data: 'product_name' },
@@ -167,44 +221,52 @@ $(document).ready(function(){
               className:'text-end', 
               width:'65px',
               render: function(data, type, row){
-                  return `<a href="#" class="ks-detail-link" data-encoded="${row.encoded_id}">${data}</a>`;
-              }
+                    return `
+                        <a href="#" 
+                           class="ks-detail-link"
+                           data-encoded="${row.encoded_id}"
+                           data-product="${row.product_name}"
+                           data-pack="${row.pack_name}">
+                           ${data}
+                        </a>`;
+                }
           },
         ],
-        pageLength:10,
+        paging: false,
+        // pageLength:12,
         lengthChange:false,
         autoWidth:false,
         scrollX:false,
         ordering:false,
-        pagingType:"simple",
-        language:{paginate:{previous:"<", next:">"}},
-        drawCallback: function(settings){
-            let api = this.api();
-            let pageInfo = api.page.info();
-            $('.dataTables_info').hide();
+        // pagingType:"simple",
+        // language:{paginate:{previous:"<", next:">"}},
+        // drawCallback: function(settings){
+        //     let api = this.api();
+        //     let pageInfo = api.page.info();
+        //     $('.dataTables_info').hide();
 
-            let current = pageInfo.page+1;
-            let total = pageInfo.pages;
+        //     let current = pageInfo.page+1;
+        //     let total = pageInfo.pages;
 
-            if($('#customPagination').length===0){
-                $('.dataTables_paginate').html(
-                    `<div id="customPagination" class="erp-pagination">
-                        <button class="first"><<</button>
-                        <button class="prev"><</button>
-                        <span class="page-info">${current}/${total}</span>
-                        <button class="next">></button>
-                        <button class="last">>></button>
-                    </div>`
-                );
-            } else {
-                $('.page-info').text(current+'/'+total);
-            }
+        //     if($('#customPagination').length===0){
+        //         $('.dataTables_paginate').html(
+        //             `<div id="customPagination" class="erp-pagination">
+        //                 <button class="first"><<</button>
+        //                 <button class="prev"><</button>
+        //                 <span class="page-info">${current}/${total}</span>
+        //                 <button class="next">></button>
+        //                 <button class="last">>></button>
+        //             </div>`
+        //         );
+        //     } else {
+        //         $('.page-info').text(current+'/'+total);
+        //     }
 
-            $('.first').off().on('click', function(){ api.page('first').draw('page'); });
-            $('.prev').off().on('click', function(){ api.page('previous').draw('page'); });
-            $('.next').off().on('click', function(){ api.page('next').draw('page'); });
-            $('.last').off().on('click', function(){ api.page('last').draw('page'); });
-        }
+        //     $('.first').off().on('click', function(){ api.page('first').draw('page'); });
+        //     $('.prev').off().on('click', function(){ api.page('previous').draw('page'); });
+        //     $('.next').off().on('click', function(){ api.page('next').draw('page'); });
+        //     $('.last').off().on('click', function(){ api.page('last').draw('page'); });
+        // }
     });
 
     function reloadTable(){
@@ -221,26 +283,36 @@ $(document).ready(function(){
 
     $('#datatable').on('click', '.ks-detail-link', function(e){
         e.preventDefault();
-        let encoded = $(this).data('encoded');
-        let warehouseId = $('#warehouse').val();
-
+    
+        let encoded      = $(this).data('encoded');
+        let warehouseId  = $('#warehouse').val();
+        let productName  = $(this).data('product');
+        let packName     = $(this).data('pack');
+    
         if(!warehouseId) return alert('Warehouse belum dipilih!');
-
-        // Tampilkan modal
+    
+        // Set header info
+        $('#modalProductInfo').html(
+            `: ${productName} / ${packName}`
+        );
+    
         let modal = new bootstrap.Modal(document.getElementById('ksDetailModal'));
-        $('#ksDetailContent').html('<div class="text-center py-5"><div class="spinner-border text-primary" role="status"></div></div>');
+    
+        $('#ksDetailContent').html(
+            '<div class="text-center py-5"><div class="spinner-border text-primary"></div></div>'
+        );
+    
         modal.show();
-
-        // AJAX ambil detail
+    
         let url = '{{ url("superuser/gudang/stock") }}' + warehouseId + '/detail/' + encoded;
-
+    
         $.ajax({
             url: url,
             type: 'GET',
             success: function(html){
                 $('#ksDetailContent').html(html);
             },
-            error: function(xhr){
+            error: function(){
                 $('#ksDetailContent').html('<div class="text-danger text-center p-3">Gagal memuat data</div>');
             }
         });

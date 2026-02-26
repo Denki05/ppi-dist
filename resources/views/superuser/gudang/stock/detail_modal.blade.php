@@ -17,14 +17,15 @@
         <div class="col-md-6 text-md-end">
             <a href="{{ route('superuser.gudang.stock.print', [$warehouse->id, base64_encode($product->id)]) }}" 
                target="_blank"
+               id="btnPrintPdf"
                class="btn btn-primary btn-sm">
                <i class="fas fa-print"></i> PDF
             </a>
         </div>
     </div>
 
-    <div class="card border-0 shadow-sm overflow-hidden">
-        <div class="table-responsive" style="max-height: 500px;">
+    <div class="card border-0 shadow-sm h-100 d-flex flex-column">
+        <div class="table-responsive ks-scroll-wrapper flex-grow-1">
             <table class="table table-hover align-middle mb-0" id="ksDetailTable">
                 <thead class="bg-primary text-white sticky-top">
                     <tr>
@@ -37,13 +38,24 @@
                     </tr>
                 </thead>
                 <tbody>
+                    @if(isset($openingBalance))
+                    <tr class="bg-light fw-bold">
+                        <td class="text-center">-</td>
+                        <td>Opening Balance</td>
+                        <td class="text-end">-</td>
+                        <td class="text-end">-</td>
+                        <td class="text-end text-primary">
+                            {{ $openingBalance }}
+                        </td>
+                        <td></td>
+                    </tr>
+                    @endif
                     @forelse($collects as $c)
                         <tr>
-                            <td class="ps-3 text-muted text-center" style="font-size: 0.85rem;">{{ $c['created_at'] }}</td>
-                            <td class="text-center">
-                                <span class="badge text-dark border {{ $c['in'] ? 'bg-success bg-opacity-10' : ($c['out'] ? 'bg-danger bg-opacity-10' : 'bg-light') }}">
-                                    {{ $c['transaction'] }}
-                                </span>
+                            <td class="ps-3 text-muted text-center">{{ $c['created_at'] }}</td>
+                            <td class="text-center transaksi-cell 
+                                {{ $c['in'] ? 'transaksi-masuk' : ($c['out'] ? 'transaksi-keluar' : 'transaksi-netral') }}">
+                                {{ $c['transaction'] }}
                             </td>
                             <td class="text-end text-success fw-semibold">{{ $c['in'] ?: '-' }}</td>
                             <td class="text-end text-danger fw-semibold">{{ $c['out'] ?: '-' }}</td>
@@ -93,27 +105,36 @@ $(document).ready(function(){
     }
 
     function attachChangeEvent(){
+
+        function updatePrintLink(month){
+            let baseUrl = '{{ route("superuser.gudang.stock.print", [$warehouse->id, base64_encode($product->id)]) }}';
+            $('#btnPrintPdf').attr('href', baseUrl + '?month=' + month);
+        }
+    
+        let initialMonth = $('#month_filter').val();
+        updatePrintLink(initialMonth);
+    
         $('#month_filter').off('change').on('change', function(){
-            loadKsDetail($(this).val());
+            let selectedMonth = $(this).val();
+            updatePrintLink(selectedMonth);
+            loadKsDetail(selectedMonth);
         });
     }
 
     function initDataTable(){
         let table = $('#ksDetailTable');
-        // Skip init jika hanya ada placeholder "Tidak ada data"
+    
         if( table.find('tbody tr').length === 0 || table.find('tbody tr td').length === 1 ){
             return;
         }
-
+    
         table.DataTable({
             destroy: true,
-            paging: false,
+            paging: false,     // ❗ matikan paging
             searching: false,
             ordering: false,
             info: false,
-            scrollY: '400px', // cukup tinggi tapi tidak glitch
-            scrollCollapse: true,
-            fixedHeader: false,
+            lengthChange: false,
             columnDefs: [
                 { targets: [2,3,4], className: 'text-end' }
             ]
@@ -129,7 +150,7 @@ $(document).ready(function(){
     .badge { font-size: 0.75rem; padding: 0.25em 0.4em; }
     #ksDetailTable thead th {
         font-weight: 600;
-        font-size: 0.8rem;
+        font-size: 0.9rem;
         text-transform: uppercase;
         letter-spacing: 0.5px;
         border: none;
@@ -142,4 +163,107 @@ $(document).ready(function(){
     .table-responsive::-webkit-scrollbar-thumb { background: #c1c1c1; border-radius: 10px; }
     .table-responsive::-webkit-scrollbar-track { background: #f1f1f1; }
     .sticky-top { z-index: 1020; background-color: #0d6efd !important; }
+    .ks-scroll-wrapper{
+        max-height: calc(75vh - 160px);
+        overflow-y: auto;
+    }
+    #ksDetailTable tbody td{
+        font-size: 0.9rem;
+    }
+    #ksDetailTable thead th {
+        font-weight: 600;
+        font-size: 1rem;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        border: none;
+        padding-top: 14px;
+        padding-bottom: 14px;
+    }
+    
+    #ksDetailTable tbody td{
+        font-size: 0.95rem;
+        padding-top: 6px !important;
+        padding-bottom: 6px !important;
+        vertical-align: middle;
+    }
+    
+    /* Transaksi diperbesar lagi agar dominan */
+    .transaksi-cell{
+        font-size: 1rem;
+        font-weight: 600;
+        letter-spacing: 0.2px;
+    }
+    
+    /* Warna tanpa badge */
+    .transaksi-masuk{
+        color: #198754;
+    }
+    
+    .transaksi-keluar{
+        color: #dc3545;
+    }
+    
+    .transaksi-netral{
+        color: #495057;
+    }
+    
+    #ksDetailTable tbody tr:hover {
+        background-color: transparent !important;
+    }
+    
+    .table-responsive::-webkit-scrollbar {
+        width: 6px;
+        height: 6px;
+    }
+    
+    .table-responsive::-webkit-scrollbar-thumb {
+        background: #c1c1c1;
+        border-radius: 10px;
+    }
+    
+    .table-responsive::-webkit-scrollbar-track {
+        background: #f1f1f1;
+    }
+    
+    .sticky-top {
+        z-index: 1020;
+        background-color: #0d6efd !important;
+    }
+    
+    .ks-scroll-wrapper{
+        height: 100%;
+        overflow-y: auto;
+    }
+    
+    .dataTables_wrapper .dataTables_paginate{
+        display:flex !important;
+        justify-content:center !important;
+        margin-top:12px;
+    }
+    
+    .ks-pagination{
+        display:flex;
+        align-items:center;
+        gap:8px;
+        font-size:13px;
+        font-weight:600;
+    }
+    
+    .ks-pagination button{
+        background:#f4f6f9;
+        border:1px solid #dfe3e8;
+        padding:3px 8px;
+        border-radius:4px;
+        cursor:pointer;
+        font-size:13px;
+    }
+    
+    .ks-pagination button:hover{
+        background:#e9eef5;
+    }
+    
+    .ks-pagination .page-info{
+        min-width:50px;
+        text-align:center;
+    }
 </style>

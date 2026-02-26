@@ -22,7 +22,8 @@
         .info-table {
             width: 100%;
             margin-bottom: 10px;
-            border: none;
+            border: none !important;
+            border-collapse: collapse !important;
         }
 
         .info-table td {
@@ -31,7 +32,7 @@
             vertical-align: top;
         }
 
-        .info-table .label {
+        .label {
             font-weight: bold;
         }
 
@@ -44,8 +45,6 @@
         th {
             background: #0d6efd;
             color: white;
-            font-weight: bold;
-            text-align: left;
             padding: 6px 8px;
             border: 1px solid #ccc;
         }
@@ -53,7 +52,6 @@
         td {
             border: 1px solid #ccc;
             padding: 5px 8px;
-            vertical-align: top;
         }
 
         tbody tr:nth-child(even) {
@@ -61,14 +59,13 @@
         }
 
         .text-right { text-align: right; }
-        .text-left  { text-align: left; }
         .footer-total {
             font-weight: bold;
             background-color: #e9ecef;
         }
 
-        .opening-balance {
-            font-style: italic;
+        .opening-row {
+            font-weight: bold;
             background-color: #f1f3f5;
         }
     </style>
@@ -83,14 +80,19 @@
 <table class="info-table">
     <tr>
         <td class="label" width="15%">Product</td>
-        <td width="35%">: {{ $product->code }} - {{ $product->name }} <br> / {{ $product->packaging->pack_name }}</td>
+        <td width="35%">
+            : {{ $product->code }} - {{ $product->product->name }} <br>
+            / {{ $product->packaging->pack_name }}
+        </td>
         <td class="label" width="15%">Warehouse</td>
         <td width="35%">: {{ $warehouse->name }}</td>
     </tr>
     <tr>
         <td class="label">Periode</td>
         <td>
-            : {{ $startDate ? $startDate->format('d/m/Y') : '-' }} - {{ $endDate ? $endDate->format('d/m/Y') : '-' }}
+            : {{ $startDate ? $startDate->format('d/m/Y') : '-' }}
+            -
+            {{ $endDate ? $endDate->format('d/m/Y') : '-' }}
         </td>
         <td class="label">Printed At</td>
         <td>: {{ now()->format('d/m/Y H:i') }}</td>
@@ -105,7 +107,7 @@
             <th width="10%" class="text-right">In</th>
             <th width="10%" class="text-right">Out</th>
             <th width="12%" class="text-right">Balance</th>
-            <th width="36%" class="text-center">Description</th>
+            <th width="30%">Description</th>
         </tr>
     </thead>
     <tbody>
@@ -116,30 +118,36 @@
             $lastBalance = $openingBalance;
         @endphp
 
-        <tr class="opening-balance">
-            <td colspan="4"><b>Opening Balance</b></td>
+        {{-- OPENING BALANCE --}}
+        <tr class="opening-row">
+            <td colspan="4">OPENING BALANCE</td>
             <td class="text-right">{{ number_format($openingBalance,2) }}</td>
             <td></td>
         </tr>
 
         @foreach($collects as $row)
             @php
-                $in  = $row['in'] ?: 0;
-                $out = $row['out'] ?: 0;
-                $totalIn += $in;
-                $totalOut += $out;
+                $totalIn += $row['in'];
+                $totalOut += $row['out'];
                 $lastBalance = $row['balance'];
             @endphp
             <tr>
                 <td>{{ $row['date'] }}</td>
                 <td>{{ $row['transaction'] }}</td>
-                <td class="text-right">{{ $in ? number_format($in,2) : 0 }}</td>
-                <td class="text-right">{{ $out ? number_format($out,2) : 0 }}</td>
-                <td class="text-right">{{ $row['balance'] }}</td>
-                <td class="text-center">{{ $row['description'] }}</td>
+                <td class="text-right">
+                    {{ $row['in'] ? number_format($row['in'],2) : '' }}
+                </td>
+                <td class="text-right">
+                    {{ $row['out'] ? number_format($row['out'],2) : '' }}
+                </td>
+                <td class="text-right">
+                    {{ number_format($row['balance'],2) }}
+                </td>
+                <td>{{ $row['description'] }}</td>
             </tr>
         @endforeach
 
+        {{-- TOTAL --}}
         <tr class="footer-total">
             <td colspan="2">TOTAL</td>
             <td class="text-right">{{ number_format($totalIn,2) }}</td>
@@ -147,6 +155,7 @@
             <td class="text-right">{{ number_format($lastBalance,2) }}</td>
             <td></td>
         </tr>
+
     </tbody>
 </table>
 
