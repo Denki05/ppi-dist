@@ -194,7 +194,7 @@
                 <li class="nav-item dropdown">
                     <a class="nav-link dropdown-toggle" role="button" data-bs-toggle="dropdown"
                         aria-expanded="false">
-                        <i class="fa-solid fa-boxes-stacked"></i> Manajemen Barang
+                        <i class="fa-solid fa-boxes-stacked"></i> Logistik
                     </a>
                     <ul class="dropdown-menu">
 

@@ -54,54 +54,77 @@ class StockController extends Controller
     }
     
     public function json(Request $request)
-{
-    $warehouse = $request->warehouse_id;
-    if (!$warehouse) return ['data' => ''];
+    {
+        $warehouse = $request->warehouse_id;
+        if (!$warehouse) return ['data' => []];
 
-    // Ambil semua produk yang ada di warehouse
-    $rows = ProductMinStock::with(['product_pack.product','product_pack.packaging'])
-        ->where('warehouse_id', $warehouse)
+        $brand = $request->brand;
+        $packaging = $request->packaging;
+        $productName = $request->product_name;
+
+        $rows = ProductMinStock::with([
+            'product_pack.product',
+            'product_pack.packaging'
+        ])->where('warehouse_id', $warehouse)
+        ->whereHas('product_pack.product')
+        ->when($brand, function($q) use ($brand) {
+            $q->whereHas('product_pack.product', function($q2) use ($brand) {
+                $q2->where('brand_name', $brand);
+            });
+        })
+        ->when($packaging, function($q) use ($packaging) {
+            $q->whereHas('product_pack.packaging', function($q2) use ($packaging) {
+                $q2->where('packaging_id', $packaging);
+            });
+        })
+        ->when($productName, function($q) use ($productName) {
+            $q->whereHas('product_pack.product', function($q2) use ($productName) {
+                $q2->where('name', 'like', "%$productName%");
+            });
+        })
         ->get();
 
-    $totalIn  = 0;
-    $totalOut = 0;
-    $totalStk = 0;
-    $dataRows = [];
+        $data = [];
+        $no = 1;
 
-    foreach ($rows as $row) {
-        $pack = $row->product_pack;
-        if (!$pack) continue;
+        foreach ($rows as $row) {
+            $pack = $row->product_pack;
+            if (!$pack || !$pack->product) continue;
+            $product = $pack->product;
 
-        // Total stock_in dan stock_out dari StockMove
-        $stockMoves = StockMove::where('warehouse_id', $warehouse)
-            ->where('product_packaging_id', $pack->id);
+            $stockQuery = StockMove::where('warehouse_id', $warehouse)
+                ->where('product_packaging_id', $pack->id);
 
-        $in  = (float) $stockMoves->sum('stock_in');
-        $out = (float) $stockMoves->sum('stock_out');
-        $stock = $in - $out;
+            $in  = (float) $stockQuery->sum('stock_in');
+            $out = (float) $stockQuery->sum('stock_out');
+            $stock = $in - $out;
 
-        $totalIn  += $in;
-        $totalOut += $out;
-        $totalStk += $stock;
+            $lastMove = (clone $stockQuery)->orderBy('created_at', 'desc')->first();
+            $ks = $lastMove ? (float) $lastMove->stock_balance : 0;
+            $minStock = (float) ($row->min_stock ?? 10);
 
-        $dataRows[] = [
-            '<a href="'.route('superuser.gudang.stock.detail', [$warehouse, base64_encode($pack->id)]).'" target="_blank">'.$pack->code.'</a>',
-            $pack->name,
-            $pack->product->brand_name ?? '-',
-            $pack->packaging->pack_name ?? '-',
-            number_format($in, 2),
-            number_format($out, 2),
-            number_format($stock, 2),
-        ];
+            $stockFormatted = number_format($stock,2);
+            if ($stock < 0) $stockFormatted = '<span class="text-danger-strong">'.$stockFormatted.'</span>';
+            elseif ($stock <= $minStock) $stockFormatted = '<span class="text-warning-strong">'.$stockFormatted.'</span>';
+
+            $ksFormatted = number_format($ks,2);
+            if ($ks < 0) $ksFormatted = '<span class="text-danger-strong">'.$ksFormatted.'</span>';
+            elseif ($ks <= $minStock) $ksFormatted = '<span class="text-warning-strong">'.$ksFormatted.'</span>';
+
+            $data[] = [
+                'no' => $no++,
+                'product_pack_id' => $pack->id,
+                'encoded_id' => base64_encode($pack->id), // <-- di sini
+                'product_name' => $pack->code.' - '.$product->name,
+                'brand_name' => $product->brand_name ?? '-',
+                'pack_name' => $pack->packaging->pack_name ?? '-',
+                'stock' => $stockFormatted,
+                'ks' => $ksFormatted,
+            ];
+        }
+
+        return ['data' => $data];
     }
-
-    return [
-        'data'        => $dataRows,
-        'total_in'    => number_format($totalIn, 2),
-        'total_out'   => number_format($totalOut, 2),
-        'total_stock' => number_format($totalStk, 2),
-    ];
-}
     
     // public function json(Request $request)
     // {
@@ -165,6 +188,8 @@ class StockController extends Controller
         }
 
         $data['warehouses'] = Warehouse::all();
+        $data['brands'] = DB::table('master_brand_lokal')->orderBy('brand_name')->get();
+        $data['packaging'] = DB::table('master_packaging')->orderBy('pack_name')->get();
 
         return view($this->view."index",$data);
     }
@@ -176,52 +201,74 @@ class StockController extends Controller
         return $datetime1 - $datetime2;
     }
 
-    public function detail($warehouse, $encoded)
-    {
+    public function detail(Request $request, $warehouse, $encoded)
+{
+    try {
         $productId = base64_decode($encoded);
+        $month     = $request->month ?? now()->format('Y-m');
+
+        // Pastikan format YYYY-MM
+        if(!preg_match('/^\d{4}-\d{2}$/', $month)){
+            $month = now()->format('Y-m');
+        }
 
         $warehouse = Warehouse::findOrFail($warehouse);
         $pack      = ProductPack::with(['product','packaging'])->findOrFail($productId);
 
-        $moves = StockMove::where([
-                    ['warehouse_id', $warehouse->id],
-                    ['product_packaging_id', $productId]
-                ])
-                ->orderBy('created_at')
-                ->get();
+        $date     = \Carbon\Carbon::parse($month . '-01');
+        $year     = $date->year;
+        $monthNum = $date->month;
 
-        // saldo real saat ini
+        $moves = StockMove::where('warehouse_id', $warehouse->id)
+                    ->where('product_packaging_id', $productId)
+                    ->whereYear('created_at', $year)
+                    ->whereMonth('created_at', $monthNum)
+                    ->orderBy('created_at', 'asc')
+                    ->get();
+
         $currentStock = ProductMinStock::where([
                             ['warehouse_id', $warehouse->id],
                             ['product_packaging_id', $productId]
                         ])->first();
-
+        
         $realBalance = $currentStock ? $currentStock->quantity : 0;
 
         $balance = 0;
         $collect = [];
-
         foreach ($moves as $m) {
-
             $balance += ($m->stock_in - $m->stock_out);
-
             $collect[] = [
                 'created_at'  => $m->created_at->format('d/m/Y H:i'),
                 'transaction' => $m->code_transaction,
-                'in'          => $m->stock_in ?: '',
-                'out'         => $m->stock_out ?: '',
+                'in'          => $m->stock_in ?: '-',
+                'out'         => $m->stock_out ?: '-',
                 'balance'     => number_format($balance, 2),
                 'description' => $m->note,
             ];
         }
 
-        return view('superuser.gudang.stock.detail', [
-            'product'     => $pack,
-            'warehouse'   => $warehouse,
-            'collects'    => $collect,
-            'real_balance'=> number_format($realBalance, 2)
+        // Selalu kembalikan view, bahkan jika $collect kosong
+        return view('superuser.gudang.stock.detail_modal', [
+            'product'      => $pack,
+            'warehouse'    => $warehouse,
+            'collects'     => $collect,
+            'real_balance' => number_format($realBalance, 2),
+            'month'        => $month,
+        ]);
+
+    } catch (\Exception $e) {
+        dd($e);
+        // Tangani error gracefully
+        return view('superuser.gudang.stock.detail_modal', [
+            'product'      => $pack ?? null,
+            'warehouse'    => $warehouse ?? null,
+            'collects'     => [],
+            'real_balance' => 0,
+            'month'        => $month ?? now()->format('Y-m'),
+            'error_msg'    => 'Tidak ada data untuk bulan ini atau terjadi kesalahan'
         ]);
     }
+}
 
     public function exportTransactions($warehouse, $startDate, $endDate)
     {

@@ -3,64 +3,73 @@
 <head>
     <style>
         body {
-            font-family: DejaVu Sans;
+            font-family: DejaVu Sans, sans-serif;
             font-size: 11px;
+            color: #333;
         }
 
         .header {
             text-align: center;
-            margin-bottom: 15px;
+            margin-bottom: 10px;
         }
 
         .title {
-            font-size: 16px;
+            font-size: 18px;
             font-weight: bold;
+            letter-spacing: 1px;
         }
 
         .info-table {
             width: 100%;
-            margin-bottom: 15px;
+            margin-bottom: 10px;
+            border: none;
         }
 
         .info-table td {
-            padding: 3px;
+            border: none !important;
+            padding: 3px 0;
+            vertical-align: top;
+        }
+
+        .info-table .label {
+            font-weight: bold;
         }
 
         table {
             width: 100%;
             border-collapse: collapse;
+            font-size: 10.5px;
         }
 
         th {
-            background: #f2f2f2;
+            background: #0d6efd;
+            color: white;
             font-weight: bold;
-        }
-
-        th, td {
-            border: 1px solid #555;
-            padding: 5px;
-        }
-
-        .text-right {
-            text-align: right;
-        }
-
-        .text-left {
             text-align: left;
+            padding: 6px 8px;
+            border: 1px solid #ccc;
         }
 
+        td {
+            border: 1px solid #ccc;
+            padding: 5px 8px;
+            vertical-align: top;
+        }
+
+        tbody tr:nth-child(even) {
+            background-color: #f9f9f9;
+        }
+
+        .text-right { text-align: right; }
+        .text-left  { text-align: left; }
         .footer-total {
             font-weight: bold;
-            background: #f9f9f9;
+            background-color: #e9ecef;
         }
-        
-        .info-table {
-            border: none;
-        }
-        
-        .info-table td {
-            border: none !important;
-            padding: 3px 0;
+
+        .opening-balance {
+            font-style: italic;
+            background-color: #f1f3f5;
         }
     </style>
 </head>
@@ -68,24 +77,22 @@
 
 <div class="header">
     <div class="title">KARTU STOCK</div>
+    <hr style="border:1px solid #0d6efd; margin: 5px 0 10px 0;">
 </div>
 
 <table class="info-table">
     <tr>
-        <td width="15%">Product</td>
+        <td class="label" width="15%">Product</td>
         <td width="35%">: {{ $product->code }} - {{ $product->name }} <br> / {{ $product->packaging->pack_name }}</td>
-        <td width="15%">Warehouse</td>
+        <td class="label" width="15%">Warehouse</td>
         <td width="35%">: {{ $warehouse->name }}</td>
     </tr>
     <tr>
-        <td>Periode</td>
+        <td class="label">Periode</td>
         <td>
-            :
-            {{ $startDate ? $startDate->format('d/m/Y') : '-' }}
-            -
-            {{ $endDate ? $endDate->format('d/m/Y') : '-' }}
+            : {{ $startDate ? $startDate->format('d/m/Y') : '-' }} - {{ $endDate ? $endDate->format('d/m/Y') : '-' }}
         </td>
-        <td>Printed At</td>
+        <td class="label">Printed At</td>
         <td>: {{ now()->format('d/m/Y H:i') }}</td>
     </tr>
 </table>
@@ -93,12 +100,12 @@
 <table>
     <thead>
         <tr>
-            <th width="15%">Date</th>
+            <th width="18%">Date</th>
             <th width="20%">Transaction</th>
-            <th width="10%">In</th>
-            <th width="10%">Out</th>
-            <th width="15%">Balance</th>
-            <th width="30%">Description</th>
+            <th width="10%" class="text-right">In</th>
+            <th width="10%" class="text-right">Out</th>
+            <th width="12%" class="text-right">Balance</th>
+            <th width="36%" class="text-center">Description</th>
         </tr>
     </thead>
     <tbody>
@@ -109,14 +116,13 @@
             $lastBalance = $openingBalance;
         @endphp
 
-        <tr>
-            <td colspan="4" class="text-left"><b>Opening Balance</b></td>
+        <tr class="opening-balance">
+            <td colspan="4"><b>Opening Balance</b></td>
             <td class="text-right">{{ number_format($openingBalance,2) }}</td>
             <td></td>
         </tr>
 
         @foreach($collects as $row)
-
             @php
                 $in  = $row['in'] ?: 0;
                 $out = $row['out'] ?: 0;
@@ -124,16 +130,14 @@
                 $totalOut += $out;
                 $lastBalance = $row['balance'];
             @endphp
-
             <tr>
                 <td>{{ $row['date'] }}</td>
                 <td>{{ $row['transaction'] }}</td>
-                <td class="text-right">{{ $in ? number_format($in,2) : '' }}</td>
-                <td class="text-right">{{ $out ? number_format($out,2) : '' }}</td>
+                <td class="text-right">{{ $in ? number_format($in,2) : 0 }}</td>
+                <td class="text-right">{{ $out ? number_format($out,2) : 0 }}</td>
                 <td class="text-right">{{ $row['balance'] }}</td>
-                <td class="text-left">{{ $row['description'] }}</td>
+                <td class="text-center">{{ $row['description'] }}</td>
             </tr>
-
         @endforeach
 
         <tr class="footer-total">
@@ -143,7 +147,6 @@
             <td class="text-right">{{ number_format($lastBalance,2) }}</td>
             <td></td>
         </tr>
-
     </tbody>
 </table>
 
