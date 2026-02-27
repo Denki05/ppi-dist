@@ -38,27 +38,15 @@
                     </tr>
                 </thead>
                 <tbody>
-                    @if(isset($openingBalance))
-                    <tr class="bg-light fw-bold">
-                        <td class="text-center">-</td>
-                        <td>Opening Balance</td>
-                        <td class="text-end">-</td>
-                        <td class="text-end">-</td>
-                        <td class="text-end text-primary">
-                            {{ $openingBalance }}
-                        </td>
-                        <td></td>
-                    </tr>
-                    @endif
                     @forelse($collects as $c)
                         <tr>
                             <td class="ps-3 text-muted text-center">{{ $c['created_at'] }}</td>
                             <td class="text-center transaksi-cell 
-                                {{ $c['in'] ? 'transaksi-masuk' : ($c['out'] ? 'transaksi-keluar' : 'transaksi-netral') }}">
+                                {{ $c['in'] && $c['in'] !== '-' ? 'transaksi-masuk' : ($c['out'] && $c['out'] !== '-' ? 'transaksi-keluar' : 'transaksi-netral') }}">
                                 {{ $c['transaction'] }}
                             </td>
-                            <td class="text-end text-success fw-semibold">{{ $c['in'] ?: '-' }}</td>
-                            <td class="text-end text-danger fw-semibold">{{ $c['out'] ?: '-' }}</td>
+                            <td class="text-end text-success fw-semibold">{{ $c['in'] !== '-' ? $c['in'] : '-' }}</td>
+                            <td class="text-end text-danger fw-semibold">{{ $c['out'] !== '-' ? $c['out'] : '-' }}</td>
                             <td class="text-end fw-bold">{{ $c['balance'] }}</td>
                             <td class="pe-3 small text-secondary">{{ $c['description'] ?: '-' }}</td>
                         </tr>

@@ -152,37 +152,77 @@ class StockController extends Controller
         return $datetime1 - $datetime2;
     }
 
-    public function detail(Request $request, $warehouse, $encoded)
+    public function detail(Request $request, $warehouseId, $encoded)
     {
         try {
             $productId = base64_decode($encoded);
             $month     = $request->month ?? now()->format('Y-m');
-    
-            if(!preg_match('/^\d{4}-\d{2}$/', $month)){
+
+            // Validasi format bulan
+            if (!preg_match('/^\d{4}-\d{2}$/', $month)) {
                 $month = now()->format('Y-m');
             }
-    
-            $warehouse = Warehouse::findOrFail($warehouse);
-            $pack      = ProductPack::with(['product','packaging'])->findOrFail($productId);
-    
+
+            $warehouse = Warehouse::findOrFail($warehouseId);
+            $pack      = ProductPack::with(['product', 'packaging'])->findOrFail($productId);
+
             $date      = \Carbon\Carbon::parse($month . '-01');
-            $year      = $date->year;
-            $monthNum  = $date->month;
-    
             $startDate = $date->copy()->startOfMonth();
             $endDate   = $date->copy()->endOfMonth();
-    
+
+            $collect = [];
+            $balance = 0;
+
             /*
             |--------------------------------------------------------------------------
-            | OPENING BALANCE (saldo sebelum bulan dipilih)
+            | CEK OPENING INJECT (hanya tampilkan sekali jika bulan sama)
             |--------------------------------------------------------------------------
             */
-            $openingBalance = StockMove::where('warehouse_id', $warehouse->id)
+            $openingInject = StockMove::where('warehouse_id', $warehouse->id)
                                 ->where('product_packaging_id', $productId)
-                                ->where('created_at', '<', $startDate)
-                                ->selectRaw('SUM(stock_in - stock_out) as saldo')
-                                ->value('saldo') ?? 0;
-    
+                                ->where('code_transaction', 'like', 'OPENING-%')
+                                ->orderBy('created_at', 'asc')
+                                ->first();
+
+            if ($openingInject && $openingInject->created_at->format('Y-m') === $month) {
+                // Tambahkan opening inject ke collect
+                $balance += ($openingInject->stock_in - $openingInject->stock_out);
+                $collect[] = [
+                    'created_at'  => $openingInject->created_at->format('d/m/Y H:i'),
+                    'transaction' => $openingInject->code_transaction,
+                    'in'          => $openingInject->stock_in,
+                    'out'         => 0,
+                    'balance'     => number_format($balance, 2),
+                    'description' => $openingInject->note,
+                ];
+                $openingBalance = $balance; // untuk tampilan row pertama
+            } else {
+                /*
+                |--------------------------------------------------------------------------
+                | AMBIL OPENING BALANCE BULAN LALU
+                |--------------------------------------------------------------------------
+                */
+                $openingBalancePrevMonth = StockMove::where('warehouse_id', $warehouse->id)
+                                            ->where('product_packaging_id', $productId)
+                                            ->where('created_at', '<', $startDate)
+                                            ->selectRaw('SUM(stock_in - stock_out) as saldo')
+                                            ->value('saldo') ?? 0;
+
+                if ($openingBalancePrevMonth > 0) {
+                    $balance += $openingBalancePrevMonth;
+                    $collect[] = [
+                        'created_at'  => '-', 
+                        'transaction' => 'Saldo Bulan Lalu',
+                        'in'          => '-',
+                        'out'         => '-',
+                        'balance'     => number_format($balance, 2),
+                        'description' => 'Saldo berjalan dari bulan sebelumnya',
+                    ];
+                }
+
+                $openingBalance = $balance;
+            }
+
             /*
             |--------------------------------------------------------------------------
             | TRANSAKSI BULAN INI
@@ -193,18 +233,14 @@ class StockController extends Controller
                         ->whereBetween('created_at', [$startDate, $endDate])
                         ->orderBy('created_at', 'asc')
                         ->get();
-    
-            /*
-            |--------------------------------------------------------------------------
-            | PERHITUNGAN SALDO BERJALAN
-            |--------------------------------------------------------------------------
-            */
-            $balance = $openingBalance; // mulai dari saldo awal
-            $collect = [];
-    
+
             foreach ($moves as $m) {
+                // skip jika ini row opening inject agar tidak double
+                if ($openingInject && $m->id === $openingInject->id) {
+                    continue;
+                }
+
                 $balance += ($m->stock_in - $m->stock_out);
-    
                 $collect[] = [
                     'created_at'  => $m->created_at->format('d/m/Y H:i'),
                     'transaction' => $m->code_transaction,
@@ -214,14 +250,14 @@ class StockController extends Controller
                     'description' => $m->note,
                 ];
             }
-    
+
             $currentStock = ProductMinStock::where([
-                                ['warehouse_id', $warehouse->id],
-                                ['product_packaging_id', $productId]
-                            ])->first();
-            
+                                    ['warehouse_id', $warehouse->id],
+                                    ['product_packaging_id', $productId]
+                                ])->first();
+
             $realBalance = $currentStock ? $currentStock->quantity : 0;
-    
+
             return view('superuser.gudang.stock.detail_modal', [
                 'product'        => $pack,
                 'warehouse'      => $warehouse,
@@ -230,9 +266,8 @@ class StockController extends Controller
                 'real_balance'   => number_format($realBalance, 2),
                 'month'          => $month,
             ]);
-    
+
         } catch (\Exception $e) {
-    
             return view('superuser.gudang.stock.detail_modal', [
                 'product'        => $pack ?? null,
                 'warehouse'      => $warehouse ?? null,
@@ -441,33 +476,23 @@ class StockController extends Controller
 
     public function import(Request $request)
     {
-        // Access
         if (Auth::user()->is_superuser == 0) {
             if (empty($this->access) || $this->access->can_create == 0) {
-                return redirect()
-                    ->route('superuser.index')
+                return redirect()->route('superuser.index')
                     ->with('error', 'Anda tidak punya akses');
             }
         }
-    
+
         $request->validate([
             'import_file' => 'required|file|mimes:xls,xlsx|max:2048',
         ]);
-    
-        // $import = new StockOpeningImport(
-        //     now()->format('Y-m-d'),
-        //     'GO LIVE OPENING STOCK'
-        // );
-    
-        // Excel::import($import, $request->file('import_file'));
-        
-        $import = new StockImport(
-            $request->warehouse_id,
-            now()
-        );
-        
+
+        // Tetapkan tanggal opening 31 Desember 2025
+        $openingDate = '2025-12-31';
+
+        $import = new StockImport($openingDate); // warehouse = 2 tetap hardcode
         Excel::import($import, $request->file('import_file'));
-    
+
         return redirect()->back()->with([
             'collect_success' => $import->success,
             'collect_error'   => $import->error,

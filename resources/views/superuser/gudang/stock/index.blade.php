@@ -71,6 +71,8 @@ body{ background:#1f242a; font-family: "Segoe UI", Roboto, sans-serif; }
 }
 </style>
 
+<div id="alert-block"></div>
+
 @if($errors->any())
 <div class="alert alert-danger alert-dismissable" role="alert">
   <button type="button" class="close" data-dismiss="alert" aria-label="Close"><span aria-hidden="true">×</span></button>
@@ -81,11 +83,57 @@ body{ background:#1f242a; font-family: "Segoe UI", Roboto, sans-serif; }
 </div>
 @endif
 
+@if(session()->has('collect_success') || session()->has('collect_error'))
+<div class="container">
+  <div class="row">
+    <div class="col pl-0">
+      @if(session()->has('collect_success'))
+      <div class="alert alert-success alert-dismissible fade show" role="alert" style="max-height:300px; overflow-y:auto;">
+        <h6>Successful Import</h6>
+        <div class="row">
+          @foreach(session()->get('collect_success') as $msg)
+            <div class="col-12 col-md-6">{{ $msg }}</div>
+          @endforeach
+        </div>
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+      </div>
+      @endif
+    </div>
+    <div class="col pr-0">
+      @if(session()->has('collect_error'))
+      <div class="alert alert-danger alert-dismissible fade show" role="alert" style="max-height:300px; overflow-y:auto;">
+        <h6>Failed Import</h6>
+        <div class="row">
+          @foreach(session()->get('collect_error') as $msg)
+            <div class="col-12 col-md-6">{{ $msg }}</div>
+          @endforeach
+        </div>
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+      </div>
+      @endif
+    </div>
+  </div>
+</div>
+@endif
+
 <div class="crm-wrapper">
     <div class="card crm-card">
         <div class="card-body">
 
-            <div class="mb-3"><h5 class="fw-bold mb-0">Stock Monitoring</h5></div>
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <h5 class="fw-bold mb-0">Stock Monitoring</h5>
+
+                <div class="d-flex gap-2">
+                    <a href="{{ route('superuser.gudang.stock.import_template') }}" 
+                    class="btn btn-success btn-sm">
+                        <i class="fa fa-file-excel"></i> Export Template
+                    </a>
+
+                    <button class="btn btn-primary btn-sm" data-bs-toggle="modal" data-bs-target="#importStockModal">
+                        <i class="fa fa-upload"></i> Import Stock
+                    </button>
+                </div>
+            </div>
 
             <!-- FILTER -->
             <div class="row align-items-end mb-3">
@@ -159,7 +207,42 @@ body{ background:#1f242a; font-family: "Segoe UI", Roboto, sans-serif; }
   </div>
 </div>
 
+<div class="modal fade" id="importStockModal" tabindex="-1">
+    <div class="modal-dialog">
+        <form action="{{ route('superuser.gudang.stock.import') }}" method="POST" enctype="multipart/form-data">
+            @csrf
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Import Stock Opening</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
 
+                <div class="modal-body">
+                    <p>Warehouse: <strong>Gudang Araya</strong></p>
+                    <input type="hidden" name="warehouse_id" value="2">
+
+                    <div class="mb-3">
+                        <label class="form-label">File Excel</label>
+                        <input type="file" 
+                               name="import_file" 
+                               class="form-control" 
+                               accept=".xls,.xlsx" 
+                               required>
+                        <small class="text-muted">
+                            Format harus sesuai template.
+                        </small>
+                    </div>
+                </div>
+
+                <div class="modal-footer">
+                    <button type="submit" class="btn btn-primary btn-sm">
+                        Import
+                    </button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
 @endsection
 
 @include('superuser.asset.plugin.swal2')
