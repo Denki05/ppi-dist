@@ -19,9 +19,9 @@
 @if(session('error') || session('success'))
 <div class="alert alert-{{ session('error') ? 'danger' : 'success' }} alert-dismissible fade show" role="alert">
     @if (session('error'))
-    <strong>Error!</strong> {!! session('error') !!}
+    <strong>Error!</strong> {{ session('error') }}
     @elseif (session('success'))
-    <strong>Berhasil!</strong> {!! session('success') !!}
+    <strong>Berhasil!</strong> {{ session('success') }}
     @endif
     <button type="button" class="close" data-dismiss="alert" aria-label="Close">
         <span aria-hidden="true">&times;</span>
@@ -163,6 +163,7 @@
                                                             <option value="">Pilih Tipe</option>
                                                             <option value="brand">Market Brand</option>
                                                             <option value="zone">Zone</option>
+                                                            <!-- <option value="officer">Officer</option> -->
                                                         </select>
                                                     </div>
 

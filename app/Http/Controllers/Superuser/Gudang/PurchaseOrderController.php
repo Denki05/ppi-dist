@@ -141,6 +141,7 @@ class PurchaseOrderController extends Controller
                 $purchase_order->code = $request->code;
                 $purchase_order->warehouse_id = $request->warehouse;
                 $purchase_order->type = 1;
+                $purchase_order->sub_type = $request->sub_type; // sekarang mengikuti checkbox Auto SPK
                 $purchase_order->etd = $request->etd;
                 $purchase_order->note = $request->note;
                 $purchase_order->created_by = Auth::id();

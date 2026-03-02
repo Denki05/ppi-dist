@@ -475,7 +475,7 @@ class ReportCustomerTypeBrandController extends Controller
         $baseReportPath = public_path('cr/report/management/report_customer_register/');
         $exportPath = $baseReportPath . "export\\";
 
-        $reportName = "officer_report_nominal_2.rpt";
+        $reportName = "officer_report_nominal_4.rpt";
         $fileName = "report-officer-";
 
         $my_report = $baseReportPath . $reportName;
@@ -508,13 +508,13 @@ class ReportCustomerTypeBrandController extends Controller
             $officerFilter = "";
             if (!empty($officer) && $officer !== 'All' && $officer !== 'pilih_officer') {
                 // Terapkan filter hanya jika nilai BUKAN 'All' atau 'pilih_officer' (atau string kosong)
-                $officerFilter = " AND {penjualan_do.officer}='$officer'";
+                $officerFilter = " AND {Command.officer}='$officer'";
             }
 
             // Konstruksi Record Selection Formula
             $creport->RecordSelectionFormula =
-                "({penjualan_so.so_date}>=#$start# AND " .
-                "{penjualan_so.so_date}<=#$end#)" .
+                "({Command.invoice_date}>=#$start# AND " .
+                "{Command.invoice_date}<=#$end#)" .
                 $officerFilter; 
             // ---------------------------------------------
 
@@ -541,7 +541,7 @@ class ReportCustomerTypeBrandController extends Controller
             return response()->json(['error' => 'File not generated'], 500);
 
         } catch (\Exception $e) {
-            // dd($e); // Hapus dd() di produksi
+           dd($e);
             Log::error('export_officer FAILED: ' . $e->getMessage());
             return response()->json(['error' => $e->getMessage()], 500);
         }

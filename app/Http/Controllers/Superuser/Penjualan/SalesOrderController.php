@@ -2104,8 +2104,8 @@ class SalesOrderController extends Controller
             $products = Product::query()
                 ->where('master_products.brand_name', $brand)
                 ->where('master_products.on_order', 1)
-                ->leftJoin('master_products_packaging', 'master_products.id', '=', 'master_products_packaging.product_id')
-                ->leftJoin('master_packaging', 'master_products_packaging.packaging_id', '=', 'master_packaging.id')
+                ->join('master_products_packaging', 'master_products.id', '=', 'master_products_packaging.product_id')
+                ->join('master_packaging', 'master_products_packaging.packaging_id', '=', 'master_packaging.id')
                 ->leftJoin('master_product_types', 'master_products_packaging.type_id', '=', 'master_product_types.id')
                 ->leftJoin('master_warehouses', 'master_products_packaging.warehouse_id', '=', 'master_warehouses.id')
                 ->select([
@@ -2129,6 +2129,10 @@ class SalesOrderController extends Controller
 
             // Format data secara langsung tanpa foreach (lebih cepat)
             $data = $products->map(function ($p) {
+                if (!$p->ProductCode || !$p->productName || !$p->productPackaging) {
+                    return null;
+                }
+            
                 return [
                     'id' => $p->id,
                     'code' => $p->ProductCode,
@@ -2139,7 +2143,7 @@ class SalesOrderController extends Controller
                     'warehouseName' => $p->warehouseName,
                     'typeName' => $p->typeName,
                 ];
-            });
+            })->filter()->values();            
 
             return response()->json([
                 'code' => 200,
