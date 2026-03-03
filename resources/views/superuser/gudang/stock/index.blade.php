@@ -71,6 +71,20 @@ body{ background:#1f242a; font-family: "Segoe UI", Roboto, sans-serif; }
 }
 </style>
 
+@if(session('success'))
+    <div class="alert alert-success alert-dismissible fade show">
+        {{ session('success') }}
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+@endif
+
+@if(session('error'))
+    <div class="alert alert-danger alert-dismissible fade show">
+        {{ session('error') }}
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+@endif
+
 <div id="alert-block"></div>
 
 @if($errors->any())
@@ -120,18 +134,77 @@ body{ background:#1f242a; font-family: "Segoe UI", Roboto, sans-serif; }
     <div class="card crm-card">
         <div class="card-body">
 
-            <div class="d-flex justify-content-between align-items-center mb-3">
-                <h5 class="fw-bold mb-0">Stock Monitoring</h5>
+            <div class="d-flex justify-content-between align-items-center flex-wrap gap-3 mb-3">
 
-                <div class="d-flex gap-2">
+                <!-- LEFT SECTION -->
+                <div class="d-flex align-items-center flex-wrap gap-3">
+
+                    <!-- Title -->
+                    <h5 class="fw-bold mb-0">Stock Monitoring</h5>
+
+                    <!-- Divider -->
+                    <div class="vr"></div>
+
+                    <!-- PROCESS BUTTON GROUP -->
+                    <div class="d-flex flex-wrap gap-2">
+
+                        <!-- Collect Stock In -->
+                        <form action="{{ route('superuser.gudang.stock.collectStockIn') }}" 
+                            method="POST"
+                            onsubmit="return confirm('Proses collect stock in akan dijalankan. Lanjutkan?')">
+                            @csrf
+                            <button type="submit" class="btn btn-warning btn-sm">
+                                <i class="fa fa-database me-1"></i> Collect Stock In
+                            </button>
+                        </form>
+
+                        <!-- Collect Stock Trans -->
+                        <form action="{{ route('superuser.gudang.stock.collectStockTrans') }}" 
+                            method="POST"
+                            onsubmit="return confirm('Proses collect stock transaksi akan dijalankan. Lanjutkan?')">
+                            @csrf
+                            <button type="submit" class="btn btn-danger btn-sm">
+                                <i class="fa fa-truck me-1"></i> Collect Stock Trans
+                            </button>
+                        </form>
+
+                        <!-- Collect Stock Out -->
+                        <button type="button"
+                                class="btn btn-info btn-sm"
+                                data-bs-toggle="modal"
+                                data-bs-target="#collectStockOutModal">
+                            <i class="fa fa-arrow-up me-1"></i> Collect Stock Out
+                        </button>
+
+                        <!-- Rebuild Stock -->
+                        <form action="{{ route('superuser.gudang.stock.rebuildStock') }}" 
+                            method="POST"
+                            onsubmit="return confirm('Proses rebuild stock akan menghitung ulang seluruh pergerakan. Lanjutkan?')">
+                            @csrf
+                            <button type="submit" class="btn btn-dark btn-sm">
+                                <i class="fa fa-sync me-1"></i> Rebuild Stock
+                            </button>
+                        </form>
+
+                    </div>
+                </div>
+
+                <!-- RIGHT SECTION -->
+                <div class="d-flex flex-wrap gap-2">
+
+                    <!-- Export Template -->
                     <a href="{{ route('superuser.gudang.stock.import_template') }}" 
                     class="btn btn-success btn-sm">
-                        <i class="fa fa-file-excel"></i> Export Template
+                        <i class="fa fa-file-excel me-1"></i> Export Template
                     </a>
 
-                    <button class="btn btn-primary btn-sm" data-bs-toggle="modal" data-bs-target="#importStockModal">
-                        <i class="fa fa-upload"></i> Import Stock
+                    <!-- Import Stock -->
+                    <button class="btn btn-primary btn-sm" 
+                            data-bs-toggle="modal" 
+                            data-bs-target="#importStockModal">
+                        <i class="fa fa-upload me-1"></i> Import Stock
                     </button>
+
                 </div>
             </div>
 
@@ -243,6 +316,64 @@ body{ background:#1f242a; font-family: "Segoe UI", Roboto, sans-serif; }
         </form>
     </div>
 </div>
+
+<!-- Modal Collect Stock Out -->
+<div class="modal fade" id="collectStockOutModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+
+            <div class="modal-header">
+                <h5 class="modal-title">Collect Stock Out</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+
+            <div class="modal-body">
+
+                <div class="d-grid gap-3">
+
+                    <!-- Proses dari Database -->
+                    <form action="{{ route('superuser.gudang.stock.collectStockOut') }}"
+                          method="POST"
+                          onsubmit="return confirm('Proses collect dari database akan dijalankan. Lanjutkan?')">
+                        @csrf
+                        <button type="submit" class="btn btn-warning w-100">
+                            <i class="fa fa-database"></i> Proses dari Database (SPK)
+                        </button>
+                    </form>
+
+                    <hr>
+
+                    <!-- Download Template -->
+                    <a href="{{ route('superuser.gudang.stock.import_template2') }}"
+                       class="btn btn-success w-100">
+                        <i class="fa fa-file-excel"></i> Download Template Excel
+                    </a>
+
+                    <!-- Import Excel -->
+                    <form action="{{ route('superuser.gudang.stock.import2') }}"
+                          method="POST"
+                          enctype="multipart/form-data">
+                        @csrf
+
+                        <div class="mb-2">
+                            <input type="file"
+                                   name="import_file"
+                                   class="form-control"
+                                   required>
+                        </div>
+
+                        <button type="submit" class="btn btn-primary w-100">
+                            <i class="fa fa-upload"></i> Import Stock Out
+                        </button>
+                    </form>
+
+                </div>
+
+            </div>
+
+        </div>
+    </div>
+</div>
 @endsection
 
 @include('superuser.asset.plugin.swal2')
@@ -278,7 +409,7 @@ $(document).ready(function(){
             },
             dataSrc:'data'
         },
-        dom:'Brt',
+        dom: '<"d-flex justify-content-between mb-2"B>rt',
         buttons:[
             {
                 extend:'excelHtml5',

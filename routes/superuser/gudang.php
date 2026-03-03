@@ -16,6 +16,12 @@ Route::group([
         Route::get('/import_template', 'StockController@import_template')->name('import_template');
         Route::post('/import', 'StockController@import')->name('import');
         Route::get('{warehouse_id}/detail/{product_id}/print', 'StockController@printPdf')->name('print');
+        Route::post('/collect-stock-in', 'StockController@collectStockIn')->name('collectStockIn');
+        Route::post('/collect-stock-trans', 'StockController@collectStockTrans')->name('collectStockTrans');
+        Route::post('/stock/collect-spk', 'StockController@collectStockOut')->name('collectStockOut');
+        Route::get('/import_template2', 'StockController@import_template2')->name('import_template2');
+        Route::post('/import2', 'StockController@import2')->name('import2');
+        Route::post('/rebuildStock', 'StockController@rebuildStock')->name('rebuildStock');
     });
 
     Route::group(['as' => 'stock_adjustment.', 'prefix' => '/stock_adjustment'], function () {

@@ -221,7 +221,7 @@ Route::group([
         Route::get('/destroy/{id}', 'SalesOrderProformaController@destroy')->name('destroy');
         Route::get('/getCustomer', 'SalesOrderProformaController@getCustomer')->name('getCustomer');
      });
-     Route::resource('so_proforma', 'SalesOrderProformaController');
+    Route::resource('so_proforma', 'SalesOrderProformaController');
 
     Route::group(['as' => 'migrasi_so.', 'prefix' => '/migrasi_so'], function () {
         Route::post('/import', 'MigrasiImportController@import')->name('import');

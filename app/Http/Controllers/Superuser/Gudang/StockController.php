@@ -12,10 +12,9 @@ use App\Entities\Penjualan\PackingOrder;
 use App\Entities\Penjualan\PackingOrderItem;
 use App\Entities\Penjualan\DeliveryOrderMutationItem;
 use App\Entities\Penjualan\SalesOrderItem;
-use App\Entities\Penjualan\CanvasingItem;
+use App\Entities\Gudang\PurchaseOrder;
 use App\Entities\Gudang\Receiving;
 use App\Entities\Gudang\ReceivingDetail;
-use App\Entities\Gudang\ReceivingDetailColly;
 use App\Entities\Gudang\StockMove;
 use App\Entities\Gudang\StockAdjustment;
 use App\Entities\Gudang\MonthEndBalance;
@@ -24,7 +23,10 @@ use Maatwebsite\Excel\Facades\Excel;
 use App\Exports\Gudang\StockTransactionExport;
 use App\Exports\Gudang\StockExport;
 use App\Exports\Gudang\StockImportTemplate;
+use App\Exports\Gudang\StockOutImportTemplate;
 use App\Imports\Gudang\StockImport;
+use App\Imports\Gudang\StockOutImport;
+use App\Services\StockRebuildService;
 use Illuminate\Support\Facades\Artisan;
 use App\Entities\Setting\UserMenu;
 use Validator;
@@ -35,19 +37,24 @@ use PDF;
 
 class StockController extends Controller
 {
-    public function __construct(){
+    protected $stockRebuildService;
+
+    public function __construct(StockRebuildService $stockRebuildService)
+    {
         $this->view = "superuser.gudang.stock.";
         $this->route = "superuser.gudang.stock";
         $this->user_menu = new UserMenu;
         $this->access = null;
+        $this->stockRebuildService = $stockRebuildService;
+
         $this->middleware(function ($request, $next) {
             $user = Auth::user();
             $access = $this->user_menu;
             $access = $access->where('user_id',$user->id)
-                             ->whereHas('menu',function($query2){
+                            ->whereHas('menu',function($query2){
                                 $query2->where('route_name',$this->route);
-                             })
-                             ->first();
+                            })
+                            ->first();
             $this->access = $access;
             return $next($request);
         });
@@ -58,68 +65,73 @@ class StockController extends Controller
         $warehouse = $request->warehouse_id;
         if (!$warehouse) return ['data' => []];
 
-        $brand = $request->brand;
-        $packaging = $request->packaging;
+        $brand       = $request->brand;
+        $packaging   = $request->packaging;
         $productName = $request->product_name;
 
         $rows = ProductMinStock::with([
-            'product_pack.product',
-            'product_pack.packaging'
-        ])->where('warehouse_id', $warehouse)
-        ->whereHas('product_pack.product')
-        ->when($brand, function($q) use ($brand) {
-            $q->whereHas('product_pack.product', function($q2) use ($brand) {
-                $q2->where('brand_name', $brand);
-            });
-        })
-        ->when($packaging, function($q) use ($packaging) {
-            $q->whereHas('product_pack.packaging', function($q2) use ($packaging) {
-                $q2->where('packaging_id', $packaging);
-            });
-        })
-        ->when($productName, function($q) use ($productName) {
-            $q->whereHas('product_pack.product', function($q2) use ($productName) {
-                $q2->where('name', 'like', "%$productName%");
-            });
-        })
-        ->get();
+                'product_pack.product',
+                'product_pack.packaging'
+            ])
+            ->where('warehouse_id', $warehouse)
+            ->when($brand, function ($q) use ($brand) {
+                $q->whereHas('product_pack.product', function ($q2) use ($brand) {
+                    $q2->where('brand_name', $brand);
+                });
+            })
+            ->when($packaging, function ($q) use ($packaging) {
+                $q->whereHas('product_pack', function ($q2) use ($packaging) {
+                    $q2->where('packaging_id', $packaging);
+                });
+            })
+            ->when($productName, function ($q) use ($productName) {
+                $q->whereHas('product_pack.product', function ($q2) use ($productName) {
+                    $q2->where('name', 'like', "%{$productName}%");
+                });
+            })
+            ->get();
 
         $data = [];
-        $no = 1;
+        $no   = 1;
 
         foreach ($rows as $row) {
+
             $pack = $row->product_pack;
             if (!$pack || !$pack->product) continue;
+
             $product = $pack->product;
 
-            $stockQuery = StockMove::where('warehouse_id', $warehouse)
-                ->where('product_packaging_id', $pack->id);
+            // STOCK → dari ProductMinStock.quantity
+            $stock = (float) ($row->quantity ?? 0);
 
-            $in  = (float) $stockQuery->sum('stock_in');
-            $out = (float) $stockQuery->sum('stock_out');
-            $stock = $in - $out;
+            // KS → dari StockMove terakhir
+            $lastMove = StockMove::where('warehouse_id', $warehouse)
+                ->where('product_packaging_id', $pack->id)
+                ->orderBy('created_at', 'desc')
+                ->orderBy('id', 'desc')
+                ->first();
 
-            $lastMove = (clone $stockQuery)->orderBy('created_at', 'desc')->first();
             $ks = $lastMove ? (float) $lastMove->stock_balance : 0;
-            $minStock = (float) ($row->min_stock ?? 10);
 
-            $stockFormatted = number_format($stock,2);
-            if ($stock < 0) $stockFormatted = '<span class="text-danger-strong">'.$stockFormatted.'</span>';
-            elseif ($stock <= $minStock) $stockFormatted = '<span class="text-warning-strong">'.$stockFormatted.'</span>';
+            $stockFormatted = number_format($stock, 2);
+            if ($stock < 0) {
+                $stockFormatted = '<span class="text-danger-strong">'.$stockFormatted.'</span>';
+            }
 
-            $ksFormatted = number_format($ks,2);
-            if ($ks < 0) $ksFormatted = '<span class="text-danger-strong">'.$ksFormatted.'</span>';
-            elseif ($ks <= $minStock) $ksFormatted = '<span class="text-warning-strong">'.$ksFormatted.'</span>';
+            $ksFormatted = number_format($ks, 2);
+            if ($ks < 0) {
+                $ksFormatted = '<span class="text-danger-strong">'.$ksFormatted.'</span>';
+            }
 
             $data[] = [
-                'no' => $no++,
+                'no'              => $no++,
                 'product_pack_id' => $pack->id,
-                'encoded_id' => base64_encode($pack->id), // <-- di sini
-                'product_name' => $pack->code.' - '.$product->name,
-                'brand_name' => $product->brand_name ?? '-',
-                'pack_name' => $pack->packaging->pack_name ?? '-',
-                'stock' => $stockFormatted,
-                'ks' => $ksFormatted,
+                'encoded_id'      => base64_encode($pack->id),
+                'product_name'    => $pack->code.' - '.$product->name,
+                'brand_name'      => $product->brand_name ?? '-',
+                'pack_name'       => $pack->packaging->pack_name ?? '-',
+                'stock'           => $stockFormatted,
+                'ks'              => $ksFormatted,
             ];
         }
 
@@ -590,5 +602,271 @@ class StockController extends Controller
         ])->setPaper('A5', 'landscape');
     
         return $pdf->stream('Kartu-Stock-'.$pack->code.'.pdf');
+    }
+
+    public function collectStockIn(Request $request)
+    {
+        $startDate = Carbon::create(2026, 1, 1)->startOfDay();
+        $endDate   = Carbon::create(2026, 2, 28)->endOfDay();
+
+        DB::beginTransaction();
+
+        try {
+
+            $this->clearTempIn($startDate, $endDate);
+
+            $this->collectFromReceivingInbound($startDate, $endDate);
+
+            // Jika nanti ada model lain tinggal tambah di sini:
+            // $this->collectFromReceivingReturn($startDate, $endDate);
+            // $this->collectFromAdjustment($startDate, $endDate);
+            // $this->collectFromTransferIn($startDate, $endDate);
+
+            DB::commit();
+
+            return redirect()
+                ->route('superuser.gudang.stock.index')
+                ->with('success', 'Collect stock in berhasil dijalankan.');
+
+        } catch (\Exception $e) {
+            // dd($e);
+            DB::rollBack();
+
+            return redirect()
+                ->route('superuser.gudang.stock.index')
+                ->with('error', 'Terjadi kesalahan: ' . $e->getMessage());
+        }
+    }
+
+    private function clearTempIn($startDate, $endDate)
+    {
+        DB::table('temp_in')
+            ->whereBetween('doc_date', [$startDate, $endDate])
+            ->delete();
+    }
+
+    private function collectFromReceivingInbound($startDate, $endDate)
+    {
+        Receiving::with('details')
+            ->where('status', Receiving::STATUS['ACC'])
+            ->where('type', Receiving::TYPE['INBOUND'])
+            ->whereBetween('acc_at', [$startDate, $endDate])
+            ->orderBy('acc_at', 'asc')
+            ->chunk(100, function ($receivings) {
+
+                foreach ($receivings as $receiving) {
+
+                    foreach ($receiving->details as $detail) {
+
+                        if ($detail->quantity_ri <= 0) {
+                            continue;
+                        }
+
+                        DB::table('temp_in')->insert([
+                            'doc_code'             => $receiving->code,
+                            'doc_type'             => 'RECEIVING',
+                            'doc_date'             => $receiving->created_at,
+                            'reference_id'         => $receiving->id,
+                            'product_packaging_id' => $detail->product_packaging_id,
+                            'quantity'             => $detail->quantity_ri,
+                            'warehouse_id'         => $receiving->warehouse_id,
+                            'created_at'           => now(),
+                            'updated_at'           => now(),
+                        ]);
+                    }
+                }
+            });
+    }
+
+    public function collectStockTrans(Request $request)
+    {
+        $startDate = Carbon::create(2026, 1, 1)->startOfDay();
+        $endDate   = Carbon::create(2026, 2, 28)->endOfDay();
+
+        DB::beginTransaction();
+
+        try {
+
+            $this->clearTempOut($startDate, $endDate);
+
+            $this->collectFromPackingOrder($startDate, $endDate);
+
+            DB::commit();
+
+            return redirect()
+                ->route('superuser.gudang.stock.index')
+                ->with('success', 'Collect stock transaction berhasil dijalankan.');
+
+        } catch (\Exception $e) {
+            dd($e);
+            DB::rollBack();
+
+            return redirect()
+                ->route('superuser.gudang.stock.index')
+                ->with('error', 'Terjadi kesalahan: ' . $e->getMessage());
+        }
+    }
+
+    private function clearTempOut($startDate, $endDate)
+    {
+        DB::table('temp_trans')
+            ->whereBetween('doc_date', [$startDate, $endDate])
+            ->delete();
+    }
+
+    private function collectFromPackingOrder($startDate, $endDate)
+    {
+        PackingOrder::with('do_detail')
+            ->where('status', 6)
+            ->whereBetween('created_at', [$startDate, $endDate])
+            ->orderBy('created_at', 'asc')
+            ->chunk(100, function ($orders) {
+
+                foreach ($orders as $order) {
+
+                    $warehouseId = $order->warehouse_id;
+
+                    if (!$warehouseId) {
+                        continue; // skip kalau kosong
+                    }
+
+                    foreach ($order->do_detail as $item) {
+
+                        if ($item->qty <= 0) {
+                            continue;
+                        }
+
+                        DB::table('temp_trans')->insert([
+                            'doc_code'             => $order->do_code,
+                            'doc_type'             => 'TRANSAKSI / NOTA',
+                            'doc_date'             => $order->created_at,
+                            'reference_id'         => $order->id,
+                            'product_packaging_id' => $item->product_packaging_id,
+                            'quantity'             => $item->qty,
+                            'warehouse_id'         => $warehouseId,
+                            'created_at'           => now(),
+                            'updated_at'           => now(),
+                        ]);
+                    }
+                }
+            });
+    }
+
+    public function collectStockOut()
+    {
+        DB::beginTransaction();
+        try {
+
+            $this->collectSPKStockOut();
+            DB::commit();
+            return back()->with('success', 'Collect SPK berhasil.');
+        } catch (\Exception $e) {
+            dd($e);
+            DB::rollBack();
+            return back()->with('error', $e->getMessage());
+        }
+    }
+
+    private function collectSPKStockOut()
+    {
+        $allowedCodes = [
+            'SPK26A001',
+            'SPK26A003',
+            'SPK26A005',
+            'SPK26A006',
+            'SPK26B001',
+            'SPK26B004',
+            'SPK26B005',
+        ];
+
+        PurchaseOrder::with('purchase_order_detail')
+            ->where('type', 0) // SPK
+            ->where('status', 4) // ACC / SENT
+            ->whereIn('code', $allowedCodes)
+            ->orderBy('created_at', 'asc')
+            ->chunk(100, function ($orders) {
+
+                foreach ($orders as $order) {
+
+                    if (!$order->warehouse_id) {
+                        continue;
+                    }
+
+                    foreach ($order->purchase_order_detail as $item) {
+
+                        if ($item->quantity <= 0) {
+                            continue;
+                        }
+
+                        DB::table('temp_out')->insert([
+                            'doc_code'             => $order->code,
+                            'doc_type'             => 'SPK',
+                            'doc_date'             => $order->created_at,
+                            'reference_id'         => $order->id,
+                            'product_packaging_id' => $item->product_packaging_id,
+                            'quantity'             => $item->quantity,
+                            'warehouse_id'         => 2, // hardcode ke gudang araya
+                            'source_type'          => 'SYSTEM',
+                            'created_at'           => now(),
+                            'updated_at'           => now(),
+                        ]);
+                    }
+                }
+            });
+    }
+
+    public function import_template2()
+    {
+        return Excel::download(
+            new StockOutImportTemplate,
+            'stock-out-template.xlsx'
+        );
+    }
+
+    public function import2(Request $request)
+    {
+        $request->validate([
+            'import_file' => 'required|file|mimes:xls,xlsx|max:2048',
+        ]);
+
+        $import = new StockOutImport();
+
+        Excel::import($import, $request->file('import_file'));
+
+        return redirect()->back()->with([
+            'collect_success' => $import->success,
+            'collect_error'   => $import->error,
+        ]);
+    }
+
+    public function rebuildStock()
+    {
+        if (Auth::user()->is_superuser == 0) {
+            if (empty($this->access) || $this->access->can_update == 0) {
+                return redirect()->route('superuser.index')
+                    ->with('error','Anda tidak punya akses untuk proses ini');
+            }
+        }
+
+        try {
+
+            DB::beginTransaction();
+
+            $this->stockRebuildService->process(); // transform + posting
+
+            DB::commit();
+
+            return redirect()
+                ->route($this->route . '.index')
+                ->with('success', 'Rebuild stock berhasil dijalankan.');
+
+        } catch (\Exception $e) {
+
+            DB::rollBack();
+
+            return redirect()
+                ->route($this->route . '.index')
+                ->with('error', 'Terjadi kesalahan: ' . $e->getMessage());
+        }
     }
 }

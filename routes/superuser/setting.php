@@ -14,7 +14,7 @@ Route::group([
         Route::post('/destroy', 'MenuController@destroy')->name('destroy');
     });
 
-    Route::group(['as' => 'api_keys.', 'prefix' => '/api_keys'], function () {
+    Route::group(['as' => '.', 'prefix' => '/api_keys'], function () {
         Route::get('/', 'ApiKeyController@index')->name('index');
         Route::get('/create', 'ApiKeyController@create')->name('create');
         Route::post('/store', 'ApiKeyController@store')->name('store');
