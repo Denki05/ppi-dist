@@ -73,4 +73,12 @@ Route::group([
         Route::get('/json2', 'CashbackController@json2')->name('json2');
     });
     Route::resource('cashback', 'CashbackController')->except(['create']);
+
+    Route::group(['as' => 'nota_kredit_finance.', 'prefix' => '/nota_kredit_finance'], function () {
+        Route::get('/', 'NotaKreditFinanceController@index')->name('index');
+        Route::post('/store', 'NotaKreditFinanceController@store')->name('store');
+        Route::get('/refund_page', 'NotaKreditFinanceController@refund_page')->name('refund_page');
+        Route::post('/upload_bukti_refund', 'NotaKreditFinanceController@upload_bukti_refund')->name('upload_bukti_refund');
+    });
+    Route::resource('nota_kredit_finance', 'NotaKreditFinanceController');
 });

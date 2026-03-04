@@ -14,6 +14,8 @@ use App\Entities\Master\Unit;
 use App\Entities\Master\Vendor;
 use App\Entities\Master\Warehouse;
 use App\Entities\Penjualan\SalesOrder;
+use App\Entities\Penjualan\SaleReturn;
+use App\Entities\Penjualan\SalesOrderProforma;
 use App\Entities\Penjualan\SalesOrderKontrak;
 use App\Entities\Penjualan\PackingOrder;
 use App\Entities\Penjualan\DeliveryOrderMutation;
@@ -24,7 +26,7 @@ use App\Entities\Gudang\StockAdjustment;
 use App\Entities\Gudang\Receiving;
 use App\Entities\Master\BrandLokal;
 use App\Entities\Gudang\PurchaseOrder;
-use App\Entities\Penjualan\SalesOrderProforma;
+use App\Entities\Gudang\MutasiShowroom;
 use DB;
 
 class CodeRepo
@@ -127,6 +129,27 @@ class CodeRepo
 
     }
 
+    // Generate code so awal ppn
+    public static function generateSoAwalPpn(){
+        $count = SalesOrder::withTrashed()
+                              ->where('status', '>', 0)
+                              ->where('type_so', 'ppn')
+                              ->whereYear('created_at',date('Y'))
+                              ->whereMonth('created_at',date('m'))
+                              ->get();
+                                   
+        if(count($count) > 0 ){
+            $count = count($count) + 1;
+
+            $code = 'SO-PPN-' .date('ym').sprintf('%03d', $count);
+        }
+        else{
+            $code = 'SO-PPN-' .date('ym').sprintf('%03d', 1);
+        }
+        return $code;
+
+    }
+
     // Generate CTG
     public static function generateCTG(){
         $count = Catalog::withTrashed()
@@ -150,7 +173,6 @@ class CodeRepo
     public static function generatePO(){
         return self::generate('PRE', PackingOrder::class);   
     }
-    
     public static function generateDO(){
         $count = PackingOrder::withTrashed()
                               ->where('status','>',1)
@@ -195,10 +217,9 @@ class CodeRepo
     }
     
     public static function generatePayable(){ 
-        $count = Payable::withTrashed()
-                              ->where('status','>', 0)
-                              ->whereYear('created_at', date('Y'))
-                              ->whereMonth('created_at', date('m'))
+        $count = Payable::where('status','>',1)
+                              ->whereYear('created_at',date('Y'))
+                              ->whereMonth('created_at',date('m'))
                               ->get();
                                    
         if(count($count) > 0 ){
@@ -209,8 +230,6 @@ class CodeRepo
         else{
             $code = 'PY' .date('my')."".sprintf('%03d', 1);
         }
-
-        // dd($code);
         return $code;
     }
 
@@ -229,8 +248,7 @@ class CodeRepo
         $yearMonth = $p1.$p2;
         $latestNumber = "";
 
-        $get_max = DB::table('penjualan_so')->where('code', 'LIKE', '%'.$yearMonth.'%')->where('deleted_at', null)->where('type_so', 'nonppn')->max('code');
-        // dd($get_max);
+        $get_max = DB::table('penjualan_so')->where('code', 'LIKE', '%'.$yearMonth.'%')->where('deleted_at', null)->max('code');
 
         if($get_max == 'false'){
             $latestNumber = $yearMonth . '001';
@@ -255,6 +273,29 @@ class CodeRepo
         $latestNumber = "";
 
         $get_max = DB::table('purchase_order')->where('code', 'LIKE', '%'.$yearMonth.'%')->where('deleted_at', null)->max('code');
+
+        if($get_max == 'false'){
+            $latestNumber = $yearMonth . '001';
+        }else{
+            $latestNumber = $get_max;
+            $id = (int) substr($latestNumber, strlen($yearMonth)) + 1;
+            $latestNumber = $yearMonth . str_pad($id, 3, 0, STR_PAD_LEFT);
+        }
+        return $latestNumber;
+    }
+
+    public static function generatePurchaseOrderSPK()
+    {
+        // $get_max = Purchaseorder::max('code');
+        $parts = explode('-', date("d-m-Y"));
+        $p1 = substr($parts[2], (strlen($parts[2]) - 2) );
+        $abjadMonth = array( '-', 'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L');
+        $p2 = $abjadMonth[date('n')];
+        $str_code = "SPK";
+        $yearMonth = $str_code.$p1.$p2;
+        $latestNumber = "";
+
+        $get_max = DB::table('purchase_order')->where('type', 0)->where('code', 'LIKE', '%'.$yearMonth.'%')->where('deleted_at', null)->max('code');
 
         if($get_max == 'false'){
             $latestNumber = $yearMonth . '001';
@@ -316,69 +357,28 @@ class CodeRepo
         return $latestNumber;
     }
 
-    // Generate code so awal ppn
-    public static function generateSoAwalPpn(){
-        $count = SalesOrder::withTrashed()
-                              ->where('status', '>', 0)
-                              ->where('type_so', 'ppn')
-                              ->whereYear('created_at',date('Y'))
-                              ->whereMonth('created_at',date('m'))
-                              ->get();
-                                   
-        if(count($count) > 0 ){
-            $count = count($count) + 1;
-
-            $code = 'SO-PPN-' .date('ym').sprintf('%03d', $count);
-        }
-        else{
-            $code = 'SO-PPN-' .date('ym').sprintf('%03d', 1);
-        }
-        return $code;
-
-    }
-
     public static function generateSoKontrak(){
-        $get_max_id = DB::table('penjualan_so_kontrak')->where('deleted_at', null)->max('id');
-     
-        if($get_max_id == null){
-             $latestNumber = '001';
-        }else{
-             $parts1 = explode('_', $get_max_id);
-             $parts2 = explode('.', $parts1[5]);
-            
-         
-             $get_code = $parts2[0];
-             $latestNumber = "";
- 
-             if($get_code == false){
-                     $latestNumber = '001';
-             }else{
-                     $latestNumber = $get_code;
-                     $id = (int) $latestNumber + 1;
-                     $latestNumber = str_pad($id, 3, 0, STR_PAD_LEFT);
-             }
-        }
- 
-        return $latestNumber;
-    }
+       $get_max_id = DB::table('penjualan_so_kontrak')->where('deleted_at', null)->max('id');
+    
+       if($get_max_id == null){
+            $latestNumber = '001';
+       }else{
+            $parts1 = explode('_', $get_max_id);
+            $parts2 = explode('.', $parts1[5]);
+        
+            $get_code = $parts2[0];
+            $latestNumber = "";
 
-    public static function generateSokontrakCode(){
-        $count = SalesOrderKontrak::withTrashed()
-                              ->where('status', '>', 0)
-                              ->whereYear('created_at',date('Y'))
-                              ->whereMonth('created_at',date('m'))
-                              ->get();
-                                   
-        if(count($count) > 0 ){
-            $count = count($count) + 1;
+            if($get_code == false){
+                    $latestNumber = '001';
+            }else{
+                    $latestNumber = $get_code;
+                    $id = (int) $latestNumber + 1;
+                    $latestNumber = str_pad($id, 3, 0, STR_PAD_LEFT);
+            }
+       }
 
-            $code = 'SO-KONTRAK-' .date('ym').sprintf('%03d', $count);
-        }
-        else{
-            $code = 'SO-KONTRAK-' .date('ym').sprintf('%03d', 1);
-        }
-        return $code;
-
+       return $latestNumber;
     }
 
     public static function generateSoProforma(){
@@ -399,26 +399,186 @@ class CodeRepo
         return $code;
     }
 
-    public static function generatePurchaseOrderSPK()
+    public static function generateReturCode()
     {
-        // $get_max = Purchaseorder::max('code');
-        $parts = explode('-', date("d-m-Y"));
-        $p1 = substr($parts[2], (strlen($parts[2]) - 2) );
-        $abjadMonth = array( '-', 'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L');
-        $p2 = $abjadMonth[date('n')];
-        $str_code = "SPK";
-        $yearMonth = $str_code.$p1.$p2;
-        $latestNumber = "";
-
-        $get_max = DB::table('purchase_order')->where('type', 0)->where('code', 'LIKE', '%'.$yearMonth.'%')->where('deleted_at', null)->max('code');
-
-        if($get_max == 'false'){
-            $latestNumber = $yearMonth . '001';
-        }else{
-            $latestNumber = $get_max;
-            $id = (int) substr($latestNumber, strlen($yearMonth)) + 1;
-            $latestNumber = $yearMonth . str_pad($id, 3, 0, STR_PAD_LEFT);
+        // Ambil tanggal sekarang
+        $day   = date('d');
+        $month = date('n'); // 1-12
+        $year  = date('Y');
+    
+        // Tahun: ambil 2 digit terakhir
+        $p1 = substr($year, -2);
+    
+        // Konversi bulan ke huruf
+        $abjadMonth = [ '-', 'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L'];
+        $p2 = $abjadMonth[$month];
+    
+        $yearMonth = $p1 . $p2; // contoh: 25H
+    
+        // Ambil kode terakhir bulan ini
+        $get_max = DB::table('penjualan_retur')
+            ->where('code', 'LIKE', 'R' . $yearMonth . '%')
+            ->whereNull('deleted_at')
+            ->max('code');
+    
+        if ($get_max === null) {
+            // Belum ada kode bulan ini
+            $latestNumber = 'R' . $yearMonth . '001';
+        } else {
+            // Ambil nomor urut dari kode terakhir
+            $id = (int) substr($get_max, strlen('R' . $yearMonth)) + 1;
+            $latestNumber = 'R' . $yearMonth . str_pad($id, 3, '0', STR_PAD_LEFT);
         }
+    
+        return $latestNumber;
+    }
+
+    public static function generateMutasiOutCode()
+    {
+        // Ambil tanggal sekarang
+        $day   = date('d');
+        $month = date('n'); // 1-12
+        $year  = date('Y');
+    
+        // Tahun: ambil 2 digit terakhir
+        $p1 = substr($year, -2);
+    
+        // Konversi bulan ke huruf
+        $abjadMonth = [ '-', 'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L'];
+        $p2 = $abjadMonth[$month];
+    
+        $yearMonth = $p1 . $p2; // contoh: 25H
+    
+        // Ambil kode terakhir bulan ini
+        $get_max = DB::table('gudang_mutasi_out')
+            ->where('code', 'LIKE', 'S' . $yearMonth . '%')
+            ->whereNull('deleted_at')
+            ->max('code');
+    
+        if ($get_max === null) {
+            // Belum ada kode bulan ini
+            $latestNumber = 'S' . $yearMonth . '001';
+        } else {
+            // Ambil nomor urut dari kode terakhir
+            $id = (int) substr($get_max, strlen('S' . $yearMonth)) + 1;
+            $latestNumber = 'S' . $yearMonth . str_pad($id, 3, '0', STR_PAD_LEFT);
+        }
+    
+        return $latestNumber;
+    }
+
+    public static function generateQualityControl2Code()
+    {
+        // Ambil tanggal sekarang
+        $day   = date('d');
+        $month = date('n'); // 1-12
+        $year  = date('Y');
+    
+        // Tahun: ambil 2 digit terakhir
+        $p1 = substr($year, -2);
+    
+        // Konversi bulan ke huruf
+        $abjadMonth = [ '-', 'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L'];
+        $p2 = $abjadMonth[$month];
+    
+        $yearMonth = $p1 . $p2; // contoh: 25H
+    
+        // Ambil kode terakhir bulan ini
+        $get_max = DB::table('receiving_komplain')
+            ->where('code', 'LIKE', 'RK' . $yearMonth . '%')
+            ->whereNull('deleted_at')
+            ->max('code');
+    
+        if ($get_max === null) {
+            // Belum ada kode bulan ini
+            $latestNumber = 'RK' . $yearMonth . '001';
+        } else {
+            // Ambil nomor urut dari kode terakhir
+            $id = (int) substr($get_max, strlen('RK' . $yearMonth)) + 1;
+            $latestNumber = 'RK' . $yearMonth . str_pad($id, 3, '0', STR_PAD_LEFT);
+        }
+    
+        return $latestNumber;
+    }
+
+    public static function generateMutasiShowroom(int $type) 
+    {
+        // ===============================
+        // FORMAT TANGGAL
+        // ===============================
+        $monthMap = ['-', 'A','B','C','D','E','F','G','H','I','J','K','L'];
+
+        $year  = date('y');              // 26
+        $month = $monthMap[date('n')];   // A
+        $ym    = $year . $month;         // 26A
+
+        // ===============================
+        // PREFIX BERDASARKAN TYPE
+        // ===============================
+        $prefix = MutasiShowroom::getKodePrefixByType($type);
+        $base   = $prefix . $ym;
+
+        // ===============================
+        // AMBIL KODE TERAKHIR (AMAN)
+        // ===============================
+        $lastCode = DB::table('penjualan_showroom')
+            ->where('kode', 'LIKE', $base . '%')
+            ->whereNull('deleted_at')
+            ->lockForUpdate()
+            ->max('kode');
+
+        if (!$lastCode) {
+            $number = 1;
+        } else {
+            preg_match('/(\d{3})(\/|$)/', $lastCode, $match);
+            $number = ((int)$match[1]) + 1;
+        }
+
+        // ===============================
+        // FINAL KODE
+        // ===============================
+        $kode = $base . str_pad($number, 3, '0', STR_PAD_LEFT);
+
+        if ($type === MutasiShowroom::TYPE_SYSTEM_FREE_SO) {
+            $kode;
+
+            // dd($kode);
+        }
+
+        return $kode;
+    }
+
+    public static function generateMutasiGudangutamaCode()
+    {
+        // Ambil tanggal sekarang
+        $day   = date('d');
+        $month = date('n'); // 1-12
+        $year  = date('Y');
+    
+        // Tahun: ambil 2 digit terakhir
+        $p1 = substr($year, -2);
+    
+        // Konversi bulan ke huruf
+        $abjadMonth = [ '-', 'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L'];
+        $p2 = $abjadMonth[$month];
+    
+        $yearMonth = $p1 . $p2; // contoh: 25H
+    
+        // Ambil kode terakhir bulan ini
+        $get_max = DB::table('gudang_mutasi_out')
+            ->where('code', 'LIKE', 'RS-' . $yearMonth . '%')
+            ->whereNull('deleted_at')
+            ->max('code');
+    
+        if ($get_max === null) {
+            // Belum ada kode bulan ini
+            $latestNumber = 'RS-' . $yearMonth . '001';
+        } else {
+            // Ambil nomor urut dari kode terakhir
+            $id = (int) substr($get_max, strlen('RS-' . $yearMonth)) + 1;
+            $latestNumber = 'RS-' . $yearMonth . str_pad($id, 3, '0', STR_PAD_LEFT);
+        }
+    
         return $latestNumber;
     }
 }

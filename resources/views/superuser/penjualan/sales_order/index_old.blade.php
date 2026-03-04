@@ -118,14 +118,13 @@
           </thead>
           <tbody>
             @foreach($table as $index => $row)
-              
                 <tr>
                   <td>{{ $loop->iteration }}</td>
                   <td><a href="{{route('superuser.penjualan.sales_order.detail',$row->id)}}">{{$row->so_code}}</a></td>
                   <td>{{ $row->code ?? '-' }}</td>
                   <td>{{ $row->brand_name ?? '-' }}</td>
                   <td>{{ $row->member->name }} {{ $row->member->text_kota }}</td>
-                  <td>{{ $row->so_sales() }} | {{ $row->so_sales_senior() }}</td>
+                  <td>{{ $row->sales() }} | {{ $row->sales_senior() }}</td>
                   <td>{{ $row->createdBySuperuser() }}</td>
                   <td><?= date('d-m-Y',strtotime($row->so_date)); ?></td>
                   <td>{{ $row->so_status()->scalar }}</td>
@@ -540,11 +539,11 @@
                         <div class="form-row">
                           <div class="form-group col-md-6">
                             <label for="invoice_date">Sales Senior</label>
-                            <input type="text" name="sales_senior_id" class="form-control" value="{{ $row->so_sales_senior() }}"  readonly>
+                            <input type="text" name="sales_senior_id" class="form-control" value="{{ $row->sales_senior() }}"  readonly>
                           </div>
                           <div class="form-group col-md-6">
                             <label for="invoice_code">Sales</label>
-                            <input type="text" class="form-control" id="sales_id"  value="{{ $row->so_sales() }}" readonly>
+                            <input type="text" class="form-control" id="sales_id"  value="{{ $row->sales() }}" readonly>
                           </div>
                         </div>
 
@@ -750,9 +749,7 @@
 
 @section('modal')
 
-@include('superuser.component.modal-manage-so', [
-  'export_url' => route('superuser.penjualan.sales_order.export')
-])
+
 
 @endsection
 

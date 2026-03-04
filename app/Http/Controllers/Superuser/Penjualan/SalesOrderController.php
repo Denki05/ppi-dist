@@ -38,6 +38,8 @@ use App\Helper\CustomHelper;
 use Spatie\PdfToImage\pdf;
 use App\DataTables\Penjualan\SalesOrderAwalTable;
 use App\DataTables\Penjualan\SalesOrderLanjutanTable;
+use App\Entities\Gudang\MutasiShowroom;
+use App\Entities\Gudang\MutasiShowroomDetail;
 use Illuminate\Support\Facades\Response;
 use Org_Heigl\Ghostscript\Ghostscript;
 use App\Helper\LogActivity;
@@ -298,7 +300,7 @@ class SalesOrderController extends Controller
      *
      * @return \Illuminate\Http\Response
      */
-    public function create(Request $request, $step, $member, $brand, $type, $indent, $approval, $note, $kurs, $disc_percent)
+    public function create(Request $request, $step, $member, $brand, $type, $indent, $approval, $note, $kurs, $disc_percent, $need_proforma)
     {
         // Access
         if(Auth::user()->is_superuser == 0){
@@ -322,7 +324,7 @@ class SalesOrderController extends Controller
         $idr_rate = is_numeric($kurs) ? (float) $kurs : 0;
         $disc = is_numeric($disc_percent) ? (float) $disc_percent : 0;
 
-        // dd($member); 
+        // dd($disc_percent);
 
         $data = [
             'other_address' => $other_address,
@@ -341,6 +343,7 @@ class SalesOrderController extends Controller
             'note_so' => $note_so,
             'idr_rate' => $idr_rate,
             'disc' => $disc,
+            'is_proforma' => $need_proforma,
         ];
         
         
@@ -391,6 +394,7 @@ class SalesOrderController extends Controller
                     $insert->idr_rate = $request->kurs;
                     $insert->catatan = $request->disc_percent;
                     $insert->note = $request->note_so;
+                    $insert->is_proforma = $request->need_proforma ?? 0;
                     $insert->created_by = Auth::id();
 
                     if($request->so_indent == "YES"){
@@ -506,6 +510,71 @@ class SalesOrderController extends Controller
                                         $pivot_kontrak->so_kontrak_item_id = $item_kontrak->id;
                                         $pivot_kontrak->save();
                                     }
+                                }
+                            }
+                        }
+
+                        /*
+                        |--------------------------------------------------------------------------
+                        | AUTO CREATE PROFORMA
+                        |--------------------------------------------------------------------------
+                        */
+                        if ($insert->is_proforma == 1 && $insert->type_transaction == 'CASH') {
+
+                            // Prevent double creation (safety layer)
+                            $existingProforma = SalesOrderProforma::where('so_id', $insert->id)->first();
+
+                            // Asumsi warehouse araya
+                            $warehouse = Warehouse::where('id', 2)->first();
+
+                            if (!$existingProforma) {
+
+                                $proforma = new SalesOrderProforma();
+                                $proforma->so_id = $insert->id;
+                                $proforma->code = CodeRepo::generateSoProforma(); // pastikan sudah ada
+                                $proforma->customer_name =  null;
+                                $proforma->customer_address =  null;
+                                $proforma->customer_region =  null;
+                                $proforma->customer_city =  null;
+                                $proforma->customer_phone =  null;
+                                $proforma->customer_owner =  null;
+                                $proforma->so_date = now();
+                                $proforma->so_brand_name = $insert->brand_name;
+                                $proforma->so_type_transaction = 0; // 0 = CASH
+                                $proforma->so_idr_rate = $insert->idr_rate;
+                                $proforma->note = $insert->note;
+                                $proforma->so_lanjutan = 0;
+                                $proforma->status = 1; // ACTIVE
+                                $proforma->transfer_verified = 0;
+                                $proforma->customer_other_address_id = $member;
+                                $proforma->warehouse_id = null;
+                                $proforma->rekening_id = null;
+                                $proforma->vendor_id = null;
+                                $proforma->sales_senior_id = null;
+                                $proforma->sales_id = null;
+                                $proforma->exsisting_customer = 1;
+                                $proforma->created_by = Auth::id();
+                                $proforma->save();
+
+                                /*
+                                |--------------------------------------------------------------------------
+                                | COPY ITEMS TO PROFORMA
+                                |--------------------------------------------------------------------------
+                                */
+                                $soItems = SalesOrderItem::where('so_id', $insert->id)->get();
+
+                                foreach ($soItems as $item) {
+
+                                    $proformaItem = new SalesOrderProformaItem();
+                                    $proformaItem->so_proforma_id = $proforma->id;
+                                    $proformaItem->product_packaging_id = $item->product_packaging_id;
+                                    $proformaItem->price = $item->price;
+                                    $proformaItem->qty = $item->qty;
+                                    $proformaItem->disc_usd = $item->disc_usd;
+                                    $proformaItem->packaging_id = $item->packaging_id;
+                                    $proformaItem->total_item = 0; // kalkulasi nanti di halaman proforma
+                                    $proformaItem->free_product = $item->free_product;
+                                    $proformaItem->save();
                                 }
                             }
                         }
@@ -1300,8 +1369,30 @@ class SalesOrderController extends Controller
                         $data = [];
                         $product = 0;
                         $out_of_stock = false;
+                        $mutasiItems = [];
                         foreach($request->repeater as $key => $value){
                             $result = SalesOrderItem::where('id', $value["so_item_id"])->first();
+                            
+                            if (!$result) {
+                                continue;
+                            }
+                        
+                            // free_product hanya sebagai FLAG
+                            $is_free_product = !empty($result->free_product) && (float)$result->free_product > 0;
+                        
+                            // dd($is_free_product);
+
+                            if ($is_free_product) {
+                                $real_qty = $value['so_qty'];
+                        
+                                if ($real_qty > 0) {
+                                    $mutasiItems[] = [
+                                        'product_packaging_id' => $result->product_packaging_id,
+                                        'qty'  => $real_qty,
+                                        'note' => 'Free product otomatis dari SO ' . $sales_order->code,
+                                    ];
+                                }
+                            }
 
                             $so_item_id = $value["so_item_id"];
                             $price = $value["price"];
@@ -1354,44 +1445,90 @@ class SalesOrderController extends Controller
                                 ]);
                             }
 
-                            // Check Stock
-                            // $stock = DB::table('master_product_min_stocks')
-                            //             ->where('warehouse_id', $request->origin_warehouse_id)
-                            //             ->where('product_packaging_id', $value["product_packaging_id"])
-                            //             ->first();
+                            // CHECK STOCK
                             
-                            // if($stock){
-                            //     if($stock->quantity < $do_qty){
-                            //         $out_of_stock = true;
-                            //         $product = $value["product_packaging_id"];
-                            //         break;
-                            //     }
-                            // }
+                            $base_product_packaging_id = preg_replace('/_\d+$/', '', $value["product_packaging_id"]);
 
-                             // Extract the base product-packaging ID (remove suffix like "_1", "_2")
-                             $base_product_packaging_id = preg_replace('/_\d+$/', '', $value["product_packaging_id"]);
-                             // dd($base_product_packaging_id);
-                             // dd($base_product_packaging_id);
- 
-                             // Check stock only for the primary variant (no suffix)
-                             $stock = DB::table('master_product_min_stocks')
-                                         ->where('warehouse_id', $request->origin_warehouse_id)
-                                         ->where('product_packaging_id', $base_product_packaging_id) // Only the base ID
-                                         ->first();
-
-                            if ($stock) {
-                                // Only check stock if do_qty is greater than 0
-                                if ($do_qty > 0 && ($stock->quantity < $do_qty || $stock->quantity < 0)) {
-                                    $out_of_stock = true;
-                                    $product = $value["product_packaging_id"];
-                                    break;
-                                }
+                            $stock = ProductMinStock::where('warehouse_id', $request->origin_warehouse_id)
+                                ->where('product_packaging_id', $base_product_packaging_id)
+                                ->lockForUpdate()
+                                ->first();
+                            
+                            if (!$stock) {
+                                throw new \Exception('Stock tidak ditemukan untuk salah satu produk.');
                             }
+                            
+                            $quantity  = (float) $stock->quantity;
+                            $reserved  = (float) ($stock->reserved_quantity ?? 0);
+                            
+                            $current_available = $quantity - $reserved;
+                            $new_available     = $current_available - $do_qty;
+                            
+                            /*
+                            ==================================================
+                            CONTROL MINUS & RESERVED QTY (MAX MINUS -10)
+                            ==================================================
+                            */
+
+                            $max_minus = -10;
+
+                            // Jika hasil akhir melebihi batas minus → tolak
+                            if ($new_available < $max_minus) {
+                                throw new \Exception(
+                                    "Stock minus melebihi batas (-10). Available setelah transaksi: {$new_available}"
+                                );
+                            }
+
+                            // Selama masih dalam batas → tetap reserve
+                            $stock->reserved_quantity += $do_qty;
+                            
+                            $stock->save(); // Hanya update reserved_quantity, quantity tetap utuh
         
                             if(empty($do_qty) && $rej_qty > 0){
                                 $updateSO = SalesOrderItem::where('id',$value["so_item_id"])->update([
                                     'qty_worked' => $do_qty
                                 ]);
+                            }
+                        }
+                        
+                        // ========================================
+                        // PROSES MUTASI SHOWROOM (FREE PRODUCT)
+                        // ========================================
+                        if (!empty($mutasiItems)) {
+                        
+                            // Pastikan tidak membuat mutasi kosong
+                            $mutasiItems = array_filter($mutasiItems, function ($item) {
+                                return isset($item['qty']) && $item['qty'] > 0;
+                            });
+                        
+                            if (!empty($mutasiItems)) {
+                        
+                                $mutasi = MutasiShowroom::create([
+                                    'kode' => CodeRepo::generateMutasiShowroom(MutasiShowroom::TYPE_SYSTEM_FREE_SO),
+                                    'brand_name'        => $sales_order->brand_name ?? '-',
+                                    'type'              => MutasiShowroom::TYPE_SYSTEM_FREE_SO, // hidden / system
+                                    'warehouse_from_id' => $request->origin_warehouse_id,
+                                    'warehouse_to_id'   => $sales_order->customer_id == 51
+                                                            ? 53
+                                                            : $sales_order->customer_id,
+                                    'customer_other_address_id' => $sales_order->customer_other_address_id ?? null,
+                                    'so_id'                     => $sales_order->id,
+                                    'tanggal'           => now(),
+                                    'status'            => MutasiShowroom::STATUS['ACTIVE'],
+                                    'note'              => 'Mutasi Free Product dari SO ' . $sales_order->code,
+                                    'created_by'        => Auth::id(),
+                                ]);
+                        
+                                foreach ($mutasiItems as $item) {
+                                    MutasiShowroomDetail::create([
+                                        'penjualan_showroom_id' => $mutasi->id,
+                                        'product_packaging_id'  => $item['product_packaging_id'],
+                                        'qty'                   => $item['qty'],
+                                        'price'                 => 0,
+                                        'total_price'           => 0,
+                                        'note'                  => $item['note'] ?? null,
+                                    ]);
+                                }
                             }
                         }
 
@@ -1400,41 +1537,24 @@ class SalesOrderController extends Controller
                             $errors[] =  'Not item sales order are ready';
                         }
 
-                        if($out_of_stock){
-                            $product_check = ProductPack::find($product);
-                            $errors[] = 'Out Of Stock! <b>'.$product_check->code.' - '.$product_check->name.'</b> Please contact Administrator';
-                            DB::rollback();
-                        }else{
-                            foreach ($data as $key => $value) {
-                                $insert = PackingOrderItem::create($data[$key]);
-                            }
+                        foreach ($data as $key => $value) {
+                            $insert = PackingOrderItem::create($data[$key]);
+                        }
 
-                            // Cetak Invoice disini
-                            // if(empty($packing_order->invoicing)){
-                            //     $data = [
-                            //         'code' => $sales_order->code,
-                            //         'do_id' => $packing_order->id,
-                            //         'customer_id' => $sales_order->customer_id,
-                            //         'customer_other_address_id' => $sales_order->customer_other_address_id,
-                            //         'grand_total_idr' => $packing_order_detail->grand_total_idr,
-                            //         'created_by' => Auth::id(),
-                            //     ];
+                        $invoice = Invoicing::where('do_id', $packing_order->id)
+                                        ->where('type', 1) // tambahkan filter type
+                                        ->first();
 
-                            //     $insert_invoice = Invoicing::create($data);
-                            // }
-
-                            $invoice = Invoicing::where('do_id', $packing_order->id)->first();
-
-                            if(!$invoice){
-                                Invoicing::create([
-                                    'code' => $sales_order->code,
-                                    'do_id' => $packing_order->id,
-                                    'customer_id' => $sales_order->customer_id,
-                                    'customer_other_address_id' => $sales_order->customer_other_address_id,
-                                    'grand_total_idr' => $packing_order_detail->grand_total_idr,
-                                    'created_by' => Auth::id(),
-                                ]);
-                            }
+                        if(!$invoice){
+                            Invoicing::create([
+                                'code' => $sales_order->code,
+                                'do_id' => $packing_order->id,
+                                'customer_id' => $sales_order->customer_id,
+                                'customer_other_address_id' => $sales_order->customer_other_address_id,
+                                'grand_total_idr' => $packing_order_detail->grand_total_idr,
+                                'type' => 1,
+                                'created_by' => Auth::id(),
+                            ]);
                         }
 
                         DB::commit();

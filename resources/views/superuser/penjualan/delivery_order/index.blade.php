@@ -2,18 +2,19 @@
 
 @section('content')
 <nav class="breadcrumb bg-white push">
-  <span class="breadcrumb-item">Gudang</span>
-  <span class="breadcrumb-item active">Delivery Order (DO)</span>
+  <span class="breadcrumb-item">Manajemen Barang</span>
+  <span class="breadcrumb-item active">Checker Transaksi</span>
 </nav>
-@if($errors->any())
-<div class="alert alert-danger alert-dismissable" role="alert">
-  <button type="button" class="close" data-dismiss="alert" aria-label="Close">
-      <span aria-hidden="true">×</span>
-  </button>
-  <h3 class="alert-heading font-size-h4 font-w400">Error</h3>
-  @foreach ($errors->all() as $error)
-  <p class="mb-0">{{ $error }}</p>
-  @endforeach
+@if(session('error') || session('success'))
+<div class="alert alert-{{ session('error') ? 'danger' : 'success' }} alert-dismissible fade show" role="alert">
+    @if (session('error'))
+    <strong>Error!</strong> {!! session('error') !!}
+    @elseif (session('success'))
+    <strong>Berhasil!</strong> {!! session('success') !!}
+    @endif
+    <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+        <span aria-hidden="true">&times;</span>
+    </button>
 </div>
 @endif
 
@@ -25,7 +26,7 @@
     <div class="col pl-0">
       <div class="alert alert-success alert-dismissable" role="alert" style="max-height: 300px; overflow-y: auto;">
         <h3 class="alert-heading font-size-h4 font-w400">Successful Import</h3>
-        //@foreach (session()->get('collect_success') as $msg)
+        @foreach (session()->get('collect_success') as $msg)
         <p class="mb-0">{{ $msg }}</p>
         @endforeach
       </div>
@@ -92,10 +93,6 @@
         <input type="radio" class="css-control-input" name="show-control" value="all">
         <span class="css-control-indicator"></span> DO Resi
       </label>
-      <label class="css-control css-control-warning css-radio">
-        <input type="radio" class="css-control-input" name="show-control" value="update">
-        <span class="css-control-indicator"></span> Update Resi
-      </label>
     </div>
   </div>
   <br>
@@ -128,10 +125,6 @@
 @include('superuser.asset.plugin.daterangepicker')
 <script type="text/javascript">
 $(document).ready(function() {
-  // setTimeout(function () { 
-  //     location.reload();
-  //   }, 60 * 1000);
-
   let datatableUrl = '{{ route('superuser.penjualan.delivery_order.json') }}';
   
   let showControl = $('input[type=radio][name=show-control]');
@@ -163,7 +156,7 @@ $(document).ready(function() {
   
   var table = $('#datatable').DataTable({
     processing: true,
-    serverSide: false,
+    serverSide: true,
     ajax: {
       "url": datatableUrl,
       "dataType": "json",

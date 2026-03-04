@@ -9,7 +9,7 @@
 
 <div class="block">
   <div class="block-header block-header-default">
-    <h3 class="block-title">SPK</h3>
+    <h3 class="block-title">Purchase Order (PPB)</h3>
   </div>
   <div class="block-content">
     <div class="row">

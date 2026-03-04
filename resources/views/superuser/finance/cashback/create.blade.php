@@ -140,9 +140,9 @@
                                     <tr>
                                         
                                         <input type="hidden" name="disc_usd[]" id="disc_usd" value="{{ $key->usd_disc }}">
-                                        <input type="hidden" name="disc_percent[]" id="disc_percent" value="{{ $invoice->do_detail_cost[0]->discount_1 }}">
-                                        <input type="hidden" name="disc_kemasan[]" id="disc_kemasan" value="{{ $invoice->do_detail_cost[0]->discount_2 }}">
-                                        <input type="hidden" name="disc_tambahan[]" id="disc_tambahan" value="{{ $invoice->do_detail_cost[0]->discount_idr }}">
+                                        <input type="hidden" name="disc_percent[]" id="disc_percent" value="{{ $invoice->do_detail_cost->discount_1 ?? 0 }}">
+                                        <input type="hidden" name="disc_kemasan[]" id="disc_kemasan" value="{{ $invoice->do_detail_cost->discount_2 }}">
+                                        <input type="hidden" name="disc_tambahan[]" id="disc_tambahan" value="{{ $invoice->do_detail_cost->discount_idr }}">
                                         <input type="hidden" name="product[]" value="{{ $key->product_packaging_id }}">
                                         <input type="hidden" name="free[]" value="{{ $key->so_item->free_product }}">
                                         <td>{{ $loop->iteration }}</td>

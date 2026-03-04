@@ -169,7 +169,7 @@
                     <div class="form-row">
                        
                         <div class="form-group col-md-6">
-                          <label for="note">PIC <span class="text-danger">*</span></label>
+                          <label for="note">Sales Senior <span class="text-danger">*</span></label>
                           <select class="form-control js-select2" name="sales_senior_id">
                             <option value="">Pilih Sales Senior</option>
                             @foreach(\App\Entities\Penjualan\SalesOrder::SALES_SENIOR as $sales_senior => $senior_value)
@@ -178,7 +178,7 @@
                           </select>
                         </div>
                         <div class="form-group col-md-6">
-                          <label for="note">Officer <span class="text-danger">*</span></label>
+                          <label for="note">Sales <span class="text-danger">*</span></label>
                           <select class="form-control js-select2" name="sales_id">
                             <option value="">Pilih Sales</option>
                             @foreach(\App\Entities\Penjualan\SalesOrder::SALES as $sales => $sales_value)
@@ -454,43 +454,14 @@
       table.row( $(this).parents('tr') ).remove().draw();
     });
 
-    $('#datatable tbody').on('click', '.input-gift', function (e) {
-        var priceInput = $(this).parents('tr').find('input[name="price[]"]');
-        var qtyInput = $(this).parents('tr').find('input[name="qty[]"]');
-        var discUsdInput = $(this).parents('tr').find('input[name="disc_usd[]"]');
-        var kurs = $("#idr_rate").val();
+    $('#datatable tbody').on( 'click', '.input-gift', function (e) {
+      if($(this).is(':checked')){
+        $(this).parents('tr').find('.input-free').val(1);
 
-        // Store original price in a data attribute
-        if ($(this).is(':checked')) {
-            // Store the original price before setting it to 0
-            var originalPrice = priceInput.val();
-            priceInput.data('original-price', originalPrice);
-            
-            // Set price to 0 and mark as free
-            priceInput.val(0);
-            $(this).parents('tr').find('.input-free').val(1);
-        } else {
-            // Restore the original price if unchecked
-            var originalPrice = priceInput.data('original-price');
-            priceInput.val(originalPrice);
-            $(this).parents('tr').find('.input-free').val(0);
-        }
-        
-        // Recalculate total
-        var price = parseFloat(priceInput.val());
-        var qty = parseFloat(qtyInput.val());
-        var discUsd = parseFloat(discUsdInput.val());
-        
-        // Prevent NaN values in case of empty inputs
-        price = isNaN(price) ? 0 : price;
-        qty = isNaN(qty) ? 0 : qty;
-        discUsd = isNaN(discUsd) ? 0 : discUsd;
-        
-        var total = ((price - discUsd) * qty) * parseFloat(kurs);
-        total = isNaN(total) ? 0 : total; // Prevent NaN in total
-        
-        $(this).parents('tr').find('input[name="total[]"]').val(total);
-        $(this).parents('tr').find('input[name="total[]"]').change(); // Trigger any dependent changes
+        $(this).parents('tr').find('input[name="price[]"]').val(0);
+      }else{
+        $(this).parents('tr').find('.input-free').val(0);
+      }
     });
 
     $('#disc_agen_percent').on('keyup', function(e) {

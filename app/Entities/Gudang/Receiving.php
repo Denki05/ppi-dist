@@ -8,6 +8,7 @@ use App\Entities\Finance\CBPaymentInvoiceDetail;
 use App\Entities\Master\SupplierCoa;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Facades\Auth;
+use App\Entities\Gudang\ReceivingDetail;
 
 
 class Receiving extends Model
@@ -15,25 +16,29 @@ class Receiving extends Model
     use SoftDeletes;
 
     protected $fillable = [
-        'code', 'warehouse_id', 'pbm_date', 'status', 'acc_by', 'acc_at', 'description', 'no_batch'
+        'code', 
+        'type',
+        'warehouse_id', 
+        'pbm_date', 
+        'status', 
+        'acc_by', 
+        'acc_at', 
+        'note', 
     ];
     protected $table = 'receiving';
 
     const STATUS = [
         'DELETED' => 0,
-        'ACTIVE' => 1,
-        'ACC' => 2
-    ];
-    
-    const TRANSACTION_TYPE = [
-        'Tunai' => 1,   
-        'Non Tunai' => 0,
+        'ACTIVE'  => 1,   // draft admin
+        'QC'      => 2,   // proses QC logistik
+        'READY'   => 3,   // semua qty QC OK, menunggu ACC
+        'ACC'     => 4,   // final
     ];
 
-    public function transaction_type()
-    {
-        return array_search($this->transaction_type, self::TRANSACTION_TYPE);
-    }
+    const TYPE = [
+        'INBOUND' => 0,
+        'RETURN'  => 1,
+    ];
 
     public function warehouse()
     {
@@ -42,14 +47,8 @@ class Receiving extends Model
 
     public function details()
     {
-        return $this->hasMany('App\Entities\Gudang\ReceivingDetail')->orderBy('created_at');
+        return $this->hasMany(ReceivingDetail::class);
     }
-    
-    public function price_format($value)
-    {
-        return number_format($value, 2, ".", ",");
-    }
-
 
     public function createdBySuperuser()
     {
@@ -69,4 +68,13 @@ class Receiving extends Model
         }
     }
 
+    public function status()
+    {
+        return array_search($this->status, self::STATUS);
+    }
+
+    public function type()
+    {
+        return array_search($this->type, self::TYPE);
+    }
 }

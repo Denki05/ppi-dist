@@ -1,97 +1,97 @@
 <style>
     /* Navbar with black background */
-    .navbar {
-        background-color: #343a40!important; /* Black background */
-        color: white !important; /* White text */
+.navbar {
+    background-color: #343a40!important; /* Black background */
+    color: white !important; /* White text */
+}
+
+.navbar .navbar-brand, 
+.navbar .nav-link, 
+.navbar .dropdown-item {
+    color: white !important; /* Make text white */
+}
+
+.navbar .navbar-toggler-icon {
+    background-color: white; /* White icon for the toggler */
+}
+
+/* Hover and active states for links */
+.navbar .nav-link:hover, 
+.navbar .nav-link:focus,
+.navbar .dropdown-item:hover,
+.navbar .dropdown-item:focus {
+    background-color: #444; /* Darker background on hover */
+    color: white !important; /* Ensure text stays white */
+}
+
+.navbar .dropdown-menu {
+    background-color: #343a40!important; /* Ensure dropdown has black background */
+}
+
+.navbar .dropdown-item:hover {
+    background-color: #555; /* Darken hover effect for dropdown items */
+}
+
+/* Adjust color of any borders or dividers to match the black theme */
+.dropdown-divider {
+    border-color: #333; /* Darken the divider line */
+}
+
+/* Profile and Notification dropdown aligned to the right */
+.navbar .navbar-nav.ml-auto {
+    margin-left: auto; /* Align navbar items to the right */
+}
+
+.navbar .dropdown-menu {
+    left: auto;
+    right: 0;
+}
+
+/* Customize profile and notification icons */
+.navbar .dropdown-menu .dropdown-item {
+    display: flex;
+    align-items: center;
+}
+
+/* Notification and profile icons */
+.navbar .dropdown-item i {
+    margin-right: 8px;
+}
+
+/* Center main menu items */
+.navbar .navbar-nav.centered {
+    margin-left: auto;
+    margin-right: auto;
+    text-align: center;
+}
+
+.navbar .navbar-nav.centered .nav-item {
+    margin: 0 15px; /* Add spacing between items */
+}
+
+@media (min-width: 768px) {
+    /* Profile and Notification icons on the right */
+    .navbar .ml-auto .nav-item {
+        margin-left: 20px;
     }
 
-    .navbar .navbar-brand, 
-    .navbar .nav-link, 
-    .navbar .dropdown-item {
-        color: white !important; /* Make text white */
-    }
-
-    .navbar .navbar-toggler-icon {
-        background-color: white; /* White icon for the toggler */
-    }
-
-    /* Hover and active states for links */
-    .navbar .nav-link:hover, 
-    .navbar .nav-link:focus,
-    .navbar .dropdown-item:hover,
-    .navbar .dropdown-item:focus {
-        background-color: #444; /* Darker background on hover */
-        color: white !important; /* Ensure text stays white */
-    }
-
-    .navbar .dropdown-menu {
-        background-color: #343a40!important; /* Ensure dropdown has black background */
-    }
-
-    .navbar .dropdown-item:hover {
-        background-color: #555; /* Darken hover effect for dropdown items */
-    }
-
-    /* Adjust color of any borders or dividers to match the black theme */
-    .dropdown-divider {
-        border-color: #333; /* Darken the divider line */
-    }
-
-    /* Profile and Notification dropdown aligned to the right */
-    .navbar .navbar-nav.ml-auto {
-        margin-left: auto; /* Align navbar items to the right */
-    }
-
-    .navbar .dropdown-menu {
-        left: auto;
-        right: 0;
-    }
-
-    /* Customize profile and notification icons */
-    .navbar .dropdown-menu .dropdown-item {
-        display: flex;
-        align-items: center;
-    }
-
-    /* Notification and profile icons */
-    .navbar .dropdown-item i {
-        margin-right: 8px;
-    }
-
-    /* Center main menu items */
+    /* Center the navbar items only on large screens */
     .navbar .navbar-nav.centered {
-        margin-left: auto;
-        margin-right: auto;
-        text-align: center;
+        display: flex;
+        justify-content: center;
+        flex-grow: 1;
     }
-
-    .navbar .navbar-nav.centered .nav-item {
-        margin: 0 15px; /* Add spacing between items */
-    }
-
-    @media (min-width: 768px) {
-        /* Profile and Notification icons on the right */
-        .navbar .ml-auto .nav-item {
-            margin-left: 20px;
-        }
-
-        /* Center the navbar items only on large screens */
-        .navbar .navbar-nav.centered {
-            display: flex;
-            justify-content: center;
-            flex-grow: 1;
-        }
-    }
+}
 </style>
 
 <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
   <div class="container-fluid">
-    <a class="navbar-brand" href="{{ route('superuser.index') }}">UNIFRA</a>
+    <a class="navbar-brand" href="#">UNIFRA</a>
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
       <span class="navbar-toggler-icon"></span>
     </button>
     <div class="collapse navbar-collapse" id="navbarNav">
-            <ul class="navbar-nav centered">
+    <ul class="navbar-nav centered">
                 <li class="nav-item active">
                     <a class="nav-link" href="{{ route('superuser.index') }}">
                         <i class="fa-solid fa-house"></i> Dashboard
@@ -145,7 +145,7 @@
                     <ul class="dropdown-menu">
                         <li><a class="dropdown-item" href="{{ route('superuser.finance.invoicing.index') }}"><i class="fa-solid fa-warehouse"></i> Invoice</a></li>
                         @if($superuser->can('superuser-manage') OR $superuser->division == "Admin" OR $superuser->division == "Management")
-                        <li><a class="dropdown-item" href="{{ route('superuser.penjualan.setting_price.index') }}"><i class="fa-solid fa-address-book"></i> Pengaturan Harga</a></li>
+                        <li><a class="dropdown-item" href="{{ route('superuser.master.contact.index') }}"><i class="fa-solid fa-address-book"></i> Pengaturan Harga</a></li>
                         @endif
                         <li class="submenu submenu-md dropend">
                             <a class="dropdown-item dropdown-toggle" role="button" data-bs-toggle="dropdown"
@@ -195,31 +195,124 @@
                                         </ul>
                                     </li>
                                 @endif
-
                             </ul>
                         </li>
+                        
+                        @if($superuser->can('superuser-manage') OR $superuser->division == "Admin" OR $superuser->division == "Management")
+                        <li><a class="dropdown-item" href="{{ route('superuser.penjualan.sale_return.index') }}"><i class="fa-solid fa-file-prescription"></i> Nota Kredit</a></li>
+                        @endif
                     </ul>
                 </li>
 
                 <!-- Gudang -->
+                @if($superuser->can('superuser-manage') OR $superuser->division == "Admin" OR $superuser->division == "Management" OR $superuser->division == "Warehouse")
                 <li class="nav-item dropdown">
                     <a class="nav-link dropdown-toggle" role="button" data-bs-toggle="dropdown"
                         aria-expanded="false">
-                        <i class="fa-solid fa-warehouse"></i> Gudang
+                        <i class="fa-solid fa-boxes-stacked"></i> Logistik
                     </a>
                     <ul class="dropdown-menu">
+
+                        {{-- ================= DOCUMENT ================= --}}
                         @if($superuser->can('superuser-manage') OR $superuser->division == "Admin" OR $superuser->division == "Management" OR $superuser->division == "Warehouse")
-                        <li><a class="dropdown-item" href="{{ route('superuser.penjualan.delivery_order.index') }}"><i class="fa-solid fa-truck"></i> Delivery Order (DO)</a></li>
-                        <li><a class="dropdown-item" href="{{ route('superuser.gudang.purchase_order_spk.index') }}"><i class="fa-solid fa-shop"></i> SPK</a></li>
-                        <li><a class="dropdown-item" href="{{ route('superuser.gudang.purchase_order.index') }}"><i class="fa-solid fa-shop"></i> Purchase order (PO)</a></li>
-                        <li><a class="dropdown-item" href="{{ route('superuser.gudang.receiving.index') }}"><i class="fa-solid fa-receipt"></i> Receiving</a></li>
+                        <li class="submenu submenu-md dropend">
+                            <a class="dropdown-item dropdown-toggle" href="#" data-bs-toggle="dropdown">
+                                <i class="fa-solid fa-file-lines"></i> Document
+                            </a>
+                            <ul class="dropdown-menu">
+                                <li>
+                                    <a class="dropdown-item" href="{{ route('superuser.gudang.purchase_order_spk.index') }}">
+                                        Order Industri (SPK)
+                                    </a>
+                                </li>
+                                <li>
+                                    <a class="dropdown-item" href="{{ route('superuser.gudang.purchase_order.index') }}">
+                                        Order Pusat (PO)
+                                    </a>
+                                </li>
+                                <li class="submenu submenu-md dropend">
+                                    <a class="dropdown-item dropdown-toggle" role="button"
+                                        data-bs-toggle="dropdown" aria-expanded="false">Mutasi</a>
+                                    <ul class="dropdown-menu">
+                                        <li>
+                                            <a class="dropdown-item" href="{{ route('superuser.gudang.mutasi_out.index') }}">
+                                                Gudang Utama
+                                            </a>
+                                        </li>
+                                        <li>
+                                            <a class="dropdown-item" href="{{ route('superuser.gudang.mutasi_showroom.index') }}">
+                                                Showroom
+                                            </a>
+                                        </li>
+                                    </ul>
+                                </li>
+                            </ul>
+                        </li>
                         @endif
-                        <li><a class="dropdown-item" href="{{ route('superuser.gudang.stock.index') }}"><i class="fa-solid fa-cubes"></i> Stock</a></li>
-                        @if($superuser->can('superuser-manage') OR $superuser->division == "Admin" OR $superuser->division == "Management" OR $superuser->division == "Warehouse")
-                        <li><a class="dropdown-item" href="{{ route('superuser.gudang.stock_adjustment.index') }}"><i class="fa-solid fa-sliders"></i> Stock Adjustment</a></li>
-                        @endif
+
+
+                        {{-- ================= WAREHOUSE ================= --}}
+                        <li class="submenu submenu-md dropend">
+                            <a class="dropdown-item dropdown-toggle" href="#" data-bs-toggle="dropdown">
+                                <i class="fa-solid fa-warehouse"></i> Warehouse
+                            </a>
+                            <ul class="dropdown-menu">
+                                @if($superuser->can('superuser-manage') OR $superuser->division == "Admin" OR $superuser->division == "Management" OR $superuser->division == "Warehouse")
+                                <li>
+                                    <a class="dropdown-item" href="{{ route('superuser.penjualan.delivery_order.index') }}">
+                                        Checker Transaksi (DO)
+                                    </a>
+                                </li>
+                                <li>
+                                    <a class="dropdown-item" href="{{ route('superuser.gudang.sj_mutasi_internal.index') }}">
+                                        Checker Mutasi
+                                    </a>
+                                </li>
+                                <li>
+                                    <a class="dropdown-item" href="{{ route('superuser.gudang.receiving.index') }}">
+                                        Receiving
+                                    </a>
+                                </li>
+                                <li>
+                                    <a class="dropdown-item" href="{{ route('superuser.gudang.quality_control.index') }}">
+                                        Receiving - Transaksi
+                                    </a>
+                                </li>
+                                <li>
+                                    <a class="dropdown-item" href="{{ route('superuser.gudang.quality_control_2.index') }}">
+                                        Receiving - Komplain
+                                    </a>
+                                </li>
+                                
+                                @endif
+                            </ul>
+                        </li>
+
+
+                        {{-- ================= INVENTORY ================= --}}
+                        <li class="submenu submenu-md dropend">
+                            <a class="dropdown-item dropdown-toggle" href="#" data-bs-toggle="dropdown">
+                                <i class="fa-solid fa-cubes"></i> Inventory
+                            </a>
+                            <ul class="dropdown-menu">
+                                @if($superuser->can('superuser-manage') OR $superuser->division == "Admin" OR $superuser->division == "Management" OR $superuser->division == "Warehouse")
+                                <li>
+                                    <a class="dropdown-item" href="{{ route('superuser.gudang.stock.index') }}">
+                                        Stock
+                                    </a>
+                                </li>
+                                <li>
+                                    <a class="dropdown-item" href="{{ route('superuser.gudang.stock_adjustment.index') }}">
+                                        Stock Adjustment
+                                    </a>
+                                </li>
+                                @endif
+                            </ul>
+                        </li>
+
                     </ul>
                 </li>
+                @endif
 
                 <!-- FAT -->
                 @if($superuser->can('superuser-manage') OR $superuser->division == "Admin" OR $superuser->division == "Management" OR $superuser->division == "Finance")
@@ -230,6 +323,8 @@
                     </a>
                     <ul class="dropdown-menu">
                         <li><a class="dropdown-item" href="{{ route('superuser.finance.payable.index') }}"><i class="fa-solid fa-credit-card"></i> Payment</a></li>
+                        <li><a class="dropdown-item" href="{{ route('superuser.finance.nota_kredit_finance.index') }}"><i class="fa-solid fa-file-prescription"></i> Nota TT</a></li>
+                        <li><a class="dropdown-item" href="{{ route('superuser.finance.nota_kredit_finance.refund_page') }}"><i class="fa-solid fa-file-prescription"></i> Refund</a></li>
                         <li><a class="dropdown-item" href="{{ route('superuser.finance.cashback.index') }}"><i class="fa-solid fa-code-branch"></i> Araya</a></li>
                         <!-- <li class="submenu submenu-md dropend">
                             <a class="dropdown-item dropdown-toggle" role="button" data-bs-toggle="dropdown"
@@ -237,7 +332,7 @@
                                 <i class="fa-solid fa-chart-simple"></i> Accounting
                             </a>
                             <ul class="dropdown-menu">
-                                <li class="submenu submenu-md dropend">
+                                <li class=s"ubmenu submenu-md dropend">
                                     <a class="dropdown-item dropdown-toggle" role="button"
                                         data-bs-toggle="dropdown" aria-expanded="false"><i class="fa-solid fa-code-branch"></i> Unifra</a>
                                     <ul class="dropdown-menu">
@@ -274,8 +369,6 @@
                                         <li><a class="dropdown-item" href="">Report</a></li>
                                     </ul>
                                 </li>
-
-                                <li><a class="dropdown-item" href="{{ route('superuser.report.customer_type_brand_uv.index') }}">Report Register UV</a></li>
                             </ul>
                         </li>
                     </ul>
@@ -305,7 +398,6 @@
                                     </ul>
                                 </li>
                                 <li><a class="dropdown-item" href="{{ route('superuser.report.revenue.index') }}"> Laporan Pendapatan</a></li>
-                                <!-- <li><a class="dropdown-item" href="{{ route('superuser.accounting.finance_simulation.page_report') }}"> Finance Simulation UV Report</a></li> -->
                             </ul>
                         </li>
                         <li class="submenu submenu-md dropend">
@@ -314,7 +406,6 @@
                                 <i class="fa-solid fa-coins"></i> Finance
                             </a>
                             <ul class="dropdown-menu">
-                                <!-- <li><a class="dropdown-item" href="{{ route('superuser.finance.cashback.pageReport') }}">Araya Report</a></li> -->
                                 <li class="submenu submenu-md dropend">
                                     <a class="dropdown-item dropdown-toggle" role="button"
                                         data-bs-toggle="dropdown" aria-expanded="false"><i class="fa-solid fa-code-branch"></i> Araya Report</a>
@@ -333,18 +424,17 @@
                         <li class="submenu submenu-md dropend">
                             <a class="dropdown-item dropdown-toggle" role="button" data-bs-toggle="dropdown"
                                 aria-expanded="false">
-                                <i class="fa-solid fa-file-import"></i> Penjualan
+                                <i class="fa-solid fa-file-import"></i> Operasional
                             </a>
                             <ul class="dropdown-menu">
                                 <li class="submenu submenu-md dropend">
                                     <a class="dropdown-item dropdown-toggle" role="button"
                                         data-bs-toggle="dropdown" aria-expanded="false">Customer</a>
                                     <ul class="dropdown-menu">
-                                        <li><a class="dropdown-item" href="{{ route('superuser.report.customer_order_variant_v2.index') }}">Customer - Produk</a></li>
+                                        <li><a class="dropdown-item" href="{{ route('superuser.report.customer_order_variant.index') }}">Customer - Produk</a></li>
                                         <li><a class="dropdown-item" href="{{ route('superuser.report.customer_order_variant.index') }}">Customer History</a></li>
                                         <li><a class="dropdown-item" href="{{ route('superuser.report.customer_type_zone.index') }}">Customer - Zoning</a></li>
-                                        <li><a class="dropdown-item" href="{{ route('superuser.report.summary_customer_product.index') }}">Summary Customer - Produk</a></li>
-                                        
+                                        <li><a class="dropdown-item" href="{{ route('superuser.report.sales.index') }}">Penjualan</a></li>
                                     </ul>
                                 </li>
                                 <li class="submenu submenu-md dropend">
@@ -354,31 +444,23 @@
                                         <li><a class="dropdown-item" href="{{ route('superuser.report.product_performance.index') }}">Produk - Customer</a></li>
                                         <li><a class="dropdown-item" href="{{ route('superuser.report.product_high_sell.index') }}">Produk Penjualan Tertinggi</a></li>
                                         @if($superuser->division == "Management" OR $superuser->division == "Developer")
-                                        <li><a class="dropdown-item" href="{{ route('superuser.master.product.pageReport') }}">Produk - Material</a></li>
+                                        <li><a class="dropdown-item" href="">Produk - Material</a></li>
                                         @endif
                                     </ul>
                                 </li>
-                                <!-- <li class="submenu submenu-md dropend">
-                                    <a class="dropdown-item dropdown-toggle" role="button"
-                                        data-bs-toggle="dropdown" aria-expanded="false">Sales</a>
-                                    <ul class="dropdown-menu">
-                                        
-                                    </ul>
-                                </li> -->
                             </ul>
                         </li>
                         @endif
 
-                        @if($superuser->division == "Developer")
-                        {{--<li class="submenu submenu-md dropend">
+                        @if($superuser->division == "Developer" OR $superuser->division == "Management")
+                        <li class="submenu submenu-md dropend">
                             <a class="dropdown-item dropdown-toggle" role="button" data-bs-toggle="dropdown"
                                 aria-expanded="false">
                                 <i class="fa-solid fa-file-import"></i> Management
                             </a>
                             <ul class="dropdown-menu">
-                                <li><a class="dropdown-item" href="{{ route('superuser.report.forecast_supplier.index') }}">Forecasting Principles</a></li>
-                                <li><a class="dropdown-item" href="{{ route('superuser.report.customer_type_brand.index') }}">Tabulasi</a></li>
-                                <li><a class="dropdown-item" href="{{ route('superuser.report.sales.index') }}">Omset Penjualan</a></li>
+                                <li><a class="dropdown-item" href="{{ route('superuser.report.forecast_supplier.index') }}">Forecasting Principle</a></li>
+                                <li><a class="dropdown-item" href="{{ route('superuser.report.customer_type_brand.index') }}">Register Customer</a></li>
                                 <li class="submenu submenu-md dropend">
                                     <a class="dropdown-item dropdown-toggle" role="button"
                                         data-bs-toggle="dropdown" aria-expanded="false">Penjualan Sales</a>
@@ -386,9 +468,10 @@
                                         <li><a class="dropdown-item" href="{{ route('superuser.report.employee_performance.index') }}">Omset Sales</a></li>
                                         <li><a class="dropdown-item" href="{{ route('superuser.report.employee_performance_product.index') }}">Kinerja Sales</a></li>
                                     </ul>
-                                </li>   
+                                </li>
+                                <li><a class="dropdown-item" href="{{ route('superuser.report.customer_type_brand_uv.index') }}">UV</a></li>
                             </ul>
-                        </li>--}}
+                        </li>
                         @endif
                     </ul>
                 </li>
@@ -424,7 +507,7 @@
                             <ul class="dropdown-menu">
                                 <li><a class="dropdown-item" href="{{ route('superuser.setting.menu.index') }}">Halaman</a></li>
                                 <li><a class="dropdown-item" href="{{ route('superuser.account.superuser.index') }}">Kegunaan</a></li>
-                                <!-- <li><a class="dropdown-item" href="{{ route('superuser.account.user.index') }}">Wilayah indonesia</a></li> -->
+                                <li><a class="dropdown-item" href="{{ route('superuser.account.user.index') }}">Wilayah indonesia</a></li>
                                 <li><a class="dropdown-item" href="{{ route('superuser.utility.settings.index') }}">Maintenance Mode</a></li>
                             </ul>
                         </li>
@@ -451,24 +534,19 @@
       <ul class="navbar-nav ml-auto"> <!-- ml-auto aligns to the right -->
         <!-- Notification Dropdown -->
         <li class="nav-item dropdown">
-            <a class="nav-link dropdown-toggle" href="#" id="notificationDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
-                <i class="bi bi-bell"></i> <span id="notifCount" class="badge badge-danger">{{ $notifCount > 0 ? $notifCount : '0' }}</span>
-            </a>
-            <div class="dropdown-menu dropdown-menu-right" aria-labelledby="notificationDropdown">
-                <div class="card" style="width: 45rem;">
-                    <div class="card-header d-flex justify-content-between align-items-center">
-                        <h3 class="card-title">Last updates</h3>
-                        <!-- Button for "Mark All as Read" -->
-                        <form action="{{ route('superuser.penjualan.notification.unread_all_notif') }}" method="POST" id="markAllAsReadForm">
-                            @csrf
-                            <button type="button" class="btn btn-link btn-sm" id="markAllAsReadBtn">Mark All as Read</button>
-                        </form>
-                    </div>
-                    <div class="list-group list-group-flush list-group-hoverable" id="notifList">
-                        <!-- Notifications will be dynamically loaded here -->
+          <a class="nav-link dropdown-toggle" href="#" id="notificationDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+            <i class="bi bi-bell"></i> <span class="badge badge-danger">{{ $notifCount > 0 ? $notifCount : '0' }}</span>
+          </a>
+          <div class="dropdown-menu dropdown-menu-right" aria-labelledby="notificationDropdown">
+                    <div class="card" style="width: 45rem;">
+                        <div class="card-header">
+                            <h3 class="card-title">Last updates</h3>
+                        </div>
+                        <div class="list-group list-group-flush list-group-hoverable" id="notifList">
+                              <!-- Notifications will be dynamically loaded here -->
+                        </div>
                     </div>
                 </div>
-            </div>
         </li>
 
         <!-- Profile Dropdown -->
@@ -541,12 +619,11 @@
                         var actionUrl;
 
                         if (notification.type === 'App\\Notifications\\DoNotification') {
+                            alertType = 'alert-success';
                             if (notifData.status === 2) {
-                                alertType = 'alert-success';
                                 notifType = 'New DO:';
                                 actionUrl = `/superuser/penjualan/notification/mark_as_read_do/${notification.id}/${notifData.id}`;
                             } else if (notifData.status === 6) {
-                                alertType = 'alert-info';
                                 notifType = 'DO Update Resi:';
                                 actionUrl = `/superuser/penjualan/notification/mark_as_read_only/${notification.id}`;
                             }
@@ -563,10 +640,6 @@
                                 notifType = 'New Payable:';
                             }
                             actionUrl = `/superuser/penjualan/notification/mark_as_read_payable/${notification.id}`;
-                        } else if (notification.type === 'App\\Notifications\\ReceivingNotification') {
-                            alertType = 'alert-info';
-                            notifType = 'Receiving Approved:';
-                            actionUrl = `/superuser/penjualan/notification/mark_as_read_only/${notification.id}`;
                         }
 
                         items.forEach(function(item) {
@@ -607,33 +680,11 @@
             }
         });
     }
-
+    
     // Reload notifications every 5 seconds
     setInterval(reloadNotifications, 5000);
 
     // Initial load
     reloadNotifications();
-
-    $(document).on('click', '#markAllAsReadBtn', function(e) {
-        e.preventDefault();
-
-        // Submit the form to mark all notifications as read
-        $.ajax({
-            url: '{{ route('superuser.penjualan.notification.unread_all_notif') }}', // URL diperbaiki
-            type: 'POST',
-            data: {
-                _token: '{{ csrf_token() }}'
-            },
-            success: function(response) {
-                // Reload notifications after success
-                alert('Semua notifikasi telah ditandai sebagai telah dibaca.');
-                reloadNotifications(); // Panggil fungsi reload untuk memperbarui daftar notifikasi
-            },
-            error: function(xhr) {
-                console.error('An error occurred:', xhr.responseText);
-                alert('Gagal menandai semua notifikasi sebagai telah dibaca.');
-            }
-        });
-    });
 </script>
 @endpush

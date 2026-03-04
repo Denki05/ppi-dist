@@ -4,7 +4,7 @@
 @section('content')
 <nav class="breadcrumb bg-white push">
   <span class="breadcrumb-item">Penjualan</span>
-  <a class="breadcrumb-item" href="#">Sales Order</a>
+  <a class="breadcrumb-item" href="{{ route('superuser.penjualan.sales_order.index_lanjutan') }}">Sales Order</a>
   <span class="breadcrumb-item active">Cancel DO {{ $result->do_code }}</span>
 </nav>
 <div id="alert-block"></div>

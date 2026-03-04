@@ -14,6 +14,8 @@ use App\Entities\Master\Packaging;
 use App\DataTables\Gudang\PurchaseOrderSPKTable;
 use App\Exports\Gudang\PurchaseOrderDetailImportTemplate;
 use App\Imports\Gudang\PurchaseOrderDetailImport;
+use App\Entities\Gudang\MutasiOut;
+use App\Entities\Gudang\MutasiOutDetail;
 use App\Entities\Master\Warehouse;
 use Auth;
 use COM;
@@ -181,7 +183,7 @@ class PurchaseOrderSPKController extends Controller
     public function edit($id)
     {
         if(Auth::user()->is_superuser == 0){
-            if(empty($this->access) || empty($this->access->user) || $this->access->can_update == 0){
+            if(empty($this->access) || empty($this->access->user) || $this->access->can_edit == 0){
                 return redirect()->route('superuser.index')->with('error','Anda tidak punya akses untuk membuka menu terkait');
             }
         }
@@ -228,7 +230,6 @@ class PurchaseOrderSPKController extends Controller
             if ($validator->passes()) {
                 $purchase_order->code = $request->code;
                 $purchase_order->warehouse_id = $request->warehouse;
-                $purchase_order->type = $request->type;
                 $purchase_order->etd = $request->etd;
                 $purchase_order->note = $request->note;
 
@@ -387,7 +388,73 @@ class PurchaseOrderSPKController extends Controller
                 $purchase_order->status = PurchaseOrder::STATUS['ACC'];
 
                 if ($purchase_order->save()) {
+                     /**
+                     * ===============================
+                     * VALIDASI UNTUK CREATE MUTASI OUT
+                     * ===============================
+                     */
 
+                    if (
+                        is_null($purchase_order->ref_po_id) &&
+                        $purchase_order->count_send_spk == 0
+                    ){
+
+                        // Validasi kode mutasi belum pernah dipakai
+                        $existingMutasi = MutasiOut::where('code', $purchase_order->code)->first();
+
+                        if ($existingMutasi) {
+                            throw new \Exception('Kode Mutasi Out sudah digunakan sebelumnya.');
+                        }
+
+                        /**
+                         * ===============================
+                         * CREATE MUTASI OUT HEADER
+                         * ===============================
+                         */
+
+                        // AMBIL ID GUDANG ARAYA
+                        $warehouseAraya = Warehouse::where(function ($q) {
+                            $q->where('name', 'like', '%araya%');
+                        })
+                        ->orderBy('id') // jika mau konsisten ambil yang paling lama
+                        ->first();
+
+                        // dd($warehouseAraya);
+
+                        $mutasi = MutasiOut::create([
+                            'code'           => $purchase_order->code, // pakai kode PO
+                            'date'           => Carbon::now(),
+                            'warehouse_from' => $warehouseAraya->id,
+                            'warehouse_to'   => $purchase_order->warehouse_id ?? null, // sesuaikan
+                            'note'           => 'Auto generate dari SPK ' . $purchase_order->code,
+                            'status'         => MutasiOut::STATUS['PUBLISH'],
+                            'created_by'     => Auth::id(),
+                        ]);
+
+                        /**
+                         * ===============================
+                         * CREATE MUTASI OUT DETAIL
+                         * ===============================
+                         */
+
+                        foreach ($purchase_order->purchase_order_detail as $detail) {
+
+                            MutasiOutDetail::create([
+                                'mutasi_out_id'        => $mutasi->id,
+                                'product_packaging_id' => $detail->product_packaging_id,
+                                'quantity'             => $detail->quantity,
+                                'is_checked'           => 0,
+                            ]);
+                        }
+
+                        // ===============================
+                        // UPDATE PO → SET ref_mut_out_id
+                        // ===============================
+
+                        $purchase_order->ref_mut_out_id = $mutasi->id;
+                        $purchase_order->updated_by = Auth::id();
+                        $purchase_order->save();
+                    }
                     
                     DB::commit();
                     $response['redirect_to'] = route('superuser.gudang.purchase_order_spk.index');
@@ -434,64 +501,29 @@ class PurchaseOrderSPKController extends Controller
 
     public function print_pdf($id)
     {
-        // Access
-        if(Auth::user()->is_superuser == 0){
-            if(empty($this->access) || empty($this->access->user) || $this->access->can_print == 0){
-                return redirect()->route('superuser.index')->with('error','Anda tidak punya akses untuk membuka menu terkait');
-            }
+        if (empty($id) || !is_numeric($id)) {
+            abort(404, 'PO ID tidak valid.');
         }
 
-        $result = PurchaseOrder::where('id', $id)->first();
-
-        $my_report = "C:\\xampp\\htdocs\\ppi-dist\public\\cr\\purchase_order\\po_rev.rpt"; 
-        $my_pdf = 'C:\\xampp\\htdocs\\ppi-dist\\public\\cr\\purchase_order\\export\\'.$result->code.'.pdf';
-
-        //- Variables - Server Information 
-        $my_server = "LOCAL_3"; 
-        $my_user = "root"; 
-        $my_password = ""; 
-        $my_database = "ppi-dist";
-        $COM_Object = "CrystalDesignRunTime.Application";
-
-         //-Create new COM object-depends on your Crystal Report version
-         $crapp= New COM($COM_Object) or die("Unable to Create Object");
-         $creport = $crapp->OpenReport($my_report,1); // call rpt report
-
-        //- Set database logon info - must have
-        $creport->Database->Tables(1)->SetLogOnInfo($my_server, $my_database, $my_user, $my_password);
-
-        //- field prompt or else report will hang - to get through
-        $creport->EnableParameterPrompting = FALSE;
-        $creport->RecordSelectionFormula = "{purchase_order.id}= $result->id";
-
-        //export to PDF process
-        $creport->ExportOptions->DiskFileName=$my_pdf; //export to pdf
-        $creport->ExportOptions->PDFExportAllPages=true;
-        $creport->ExportOptions->DestinationType=1; // export to file
-        $creport->ExportOptions->FormatType=31; // PDF type
-        $creport->Export(false);
-
-        //------ Release the variables ------
-        $creport = null;
-        $crapp = null;
-        $ObjectFactory = null;
-
-        $file = 'C:\\xampp\\htdocs\\ppi-dist\\public\\cr\\purchase_order\\export\\'.$result->code.'.pdf';
-
-        header("Content-Description: File Transfer"); 
-        header("Content-Type: application/octet-stream"); 
-        header("Content-Transfer-Encoding: Binary"); 
-        header("Content-Disposition: attachment; filename=\"". basename($file) ."\""); 
-        ob_clean();
-        flush();
-        readfile ($file);
-
-        if (file_exists($file)) {
-            unlink($file);
+        $result = PurchaseOrder::find($id);
+        if (!$result) {
+            abort(404, 'PO tidak ditemukan.');
         }
 
-        exit();
+        $data = [
+            'result' => $result,
+        ];
 
+        $pdf = PDF::loadView('superuser.gudang.purchase_order_spk.print_pdf', $data)
+                ->setPaper('a5', 'landscape');
+
+        $generate = false; // Ubah sesuai logika bisnis.
+
+        if ($generate) {
+            return $pdf->download("PO-{$result->code}.pdf");
+        }
+
+        return $pdf->stream("PO-{$result->code}.pdf");
     }
 
     public function import_template()
@@ -527,18 +559,38 @@ class PurchaseOrderSPKController extends Controller
         }
         
         if ($request->ajax()) {
+
             $purchase_order = PurchaseOrder::find($id);
 
             if ($purchase_order === null) {
                 abort(404);
             }
 
+            // ===============================
+            // VALIDASI TIDAK BOLEH CANCEL
+            // ===============================
+            if (!is_null($purchase_order->ref_mut_out_id)) {
+
+                $response['notification'] = [
+                    'alert'   => 'block',
+                    'type'    => 'alert-warning',
+                    'header'  => 'Gagal',
+                    'content' => 'Tidak bisa di cancel karena sudah ada proses Checker logisitk',
+                ];
+
+                return $this->response(400, $response);
+            }
+
+            // ===============================
+            // PROSES CANCEL
+            // ===============================
             $purchase_order->acc_at = null;
             $purchase_order->acc_by = null;
             $purchase_order->updated_by = Auth::id();
             $purchase_order->status = PurchaseOrder::STATUS['DRAFT'];
 
             if ($purchase_order->save()) {
+
                 $response['redirect_to'] = route('superuser.gudang.purchase_order_spk.index');
                 return $this->response(200, $response);
             }
@@ -669,5 +721,43 @@ class PurchaseOrderSPKController extends Controller
                 ]);
             }
         }
+    }
+
+    public function listRefPo(Request $request)
+    {
+        $query = PurchaseOrder::where('type', 1)
+            ->where('status', 4);
+
+        // tambahkan filter pencarian kalau ada parameter q
+        if ($request->has('q') && $request->q != '') {
+            $q = $request->q;
+            $query->where(function ($sub) use ($q) {
+                $sub->where('code', 'like', "%{$q}%")
+                    ->orWhere('id', 'like', "%{$q}%");
+            });
+        }
+
+        // kasih limit supaya tidak terlalu banyak hasil
+        $purchaseOrders = $query->limit(20)->get();
+
+        return response()->json($purchaseOrders);
+    }
+
+
+    public function updateRefPo(Request $request, $id)
+    {
+        $request->validate([
+            'ref_po_id' => 'required|exists:purchase_order,id',
+        ]);
+
+        $po = PurchaseOrder::findOrFail($id);
+        $po->ref_po_id = $request->ref_po_id;
+        $po->save();
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Ref PO berhasil diupdate',
+            'data'    => $po,
+        ]);
     }
 }

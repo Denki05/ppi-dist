@@ -643,15 +643,15 @@ class PurchaseOrderController extends Controller
                 abort(404);
             }
 
-            // if ($purchase_order->receiving_detail()->exists()) { 
-            //     return $this->response(400, [
-            //         'notification' => [
-            //             'alert'   => 'block',
-            //             'type'    => 'alert-danger',
-            //             'content' => 'PO tidak dapat dibatalkan karena sudah ada penerimaan yang terkait.',
-            //         ]
-            //     ]);
-            // }
+            if ($purchase_order->receiving_detail()->exists()) { 
+                return $this->response(400, [
+                    'notification' => [
+                        'alert'   => 'block',
+                        'type'    => 'alert-danger',
+                        'content' => 'PO tidak dapat dibatalkan karena sudah ada penerimaan yang terkait.',
+                    ]
+                ]);
+            }
 
             DB::beginTransaction();
             try {
@@ -677,7 +677,6 @@ class PurchaseOrderController extends Controller
                 ]);
 
             }catch (\Exception $e) {
-                dd($e);
                 DB::rollBack();
                 return $this->response(500, [
                     'notification' => [
@@ -785,7 +784,6 @@ class PurchaseOrderController extends Controller
             ]);
 
         } catch (\Throwable $e) {
-            dd($e);
             DB::rollBack();
             report($e);
 

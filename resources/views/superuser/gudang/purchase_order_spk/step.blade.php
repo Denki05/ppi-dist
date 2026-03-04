@@ -110,6 +110,7 @@
       </div>
       @if ($purchase_order->status == $purchase_order::STATUS['DRAFT'])
       <div class="col-md-6 text-right">
+        
         <a href="{{ route('superuser.gudang.purchase_order_spk.edit', $purchase_order->id) }}">
           <button type="button" class="btn bg-gd-sea border-0 text-white">
             Edit <i class="fa fa-pencil ml-10"></i>
@@ -122,6 +123,7 @@
         </a>
       </div>
       @else
+      
       <div class="col-md-6 text-right">
         <a href="{{ route('superuser.gudang.purchase_order_spk.edit', $purchase_order->id) }}">
           <button type="button" class="btn bg-gd-sea border-0 text-white">
@@ -210,6 +212,33 @@
   </div>
 </div>
 
+<!-- Modal Ref PO -->
+<div class="modal fade" id="refPoModal" tabindex="-1">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">Cari Ref PO</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <input type="text" id="searchRefPo" class="form-control mb-3" placeholder="Ketik kode / nama PO...">
+
+        <table class="table table-bordered" id="refPoTable">
+          <thead>
+            <tr>
+              <th>ID</th>
+              <th>Code</th>
+              <th>Aksi</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr><td colspan="3" class="text-center">Silakan ketik untuk mencari...</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
 @endsection
 
 @include('superuser.asset.plugin.datatables')
@@ -227,10 +256,84 @@
 @push('scripts')
 <script src="{{ asset('public/utility/superuser/js/form.js') }}"></script>
 <script type="text/javascript">
-  $(document).ready(function() {
+  $(document).ready(function () {
     $('.js-select2').select2()
 
     $('#datatable').DataTable();
-  });
+
+    // trigger pencarian ketika user ketik (debounce biar tidak terlalu sering request)
+    let typingTimer;
+    const typingDelay = 400; // ms
+
+    $('#searchRefPo').on('keyup', function () {
+        clearTimeout(typingTimer);
+        let keyword = $(this).val();
+
+        typingTimer = setTimeout(function () {
+            if (keyword.length >= 2) { // baru cari kalau minimal 2 huruf
+                loadRefPo(keyword);
+            } else {
+                $('#refPoTable tbody').html('<tr><td colspan="3" class="text-center">Ketik minimal 2 huruf...</td></tr>');
+            }
+        }, typingDelay);
+    });
+
+    function loadRefPo(keyword) {
+        $.ajax({
+            url: "{{ route('superuser.gudang.purchase_order_spk.listRefPo') }}",
+            type: "GET",
+            data: { q: keyword }, // kirim parameter pencarian
+            dataType: "json",
+            success: function (data) {
+                if (data.length === 0) {
+                    $('#refPoTable tbody').html('<tr><td colspan="3" class="text-center">Data tidak ditemukan</td></tr>');
+                    return;
+                }
+
+                let rows = '';
+                $.each(data, function (index, item) {
+                    rows += `
+                        <tr>
+                            <td>${item.id}</td>
+                            <td>${item.code ?? '-'}</td>
+                            <td>
+                                <button type="button" class="btn btn-sm btn-success selectRefPo" data-id="${item.id}">
+                                    Pilih
+                                </button>
+                            </td>
+                        </tr>
+                    `;
+                });
+                $('#refPoTable tbody').html(rows);
+            },
+            error: function () {
+                $('#refPoTable tbody').html('<tr><td colspan="3" class="text-center text-danger">Gagal memuat data</td></tr>');
+            }
+        });
+    }
+
+    // handle klik tombol pilih (sama seperti sebelumnya)
+    $(document).on('click', '.selectRefPo', function () {
+        let refPoId = $(this).data('id');
+        let currentPoId = "{{ $purchase_order->id }}";
+
+        $.ajax({
+            url: "{{ route('superuser.gudang.purchase_order_spk.updateRefPo', ':id') }}".replace(':id', currentPoId),
+            type: "POST",
+            data: {
+                _token: "{{ csrf_token() }}",
+                ref_po_id: refPoId
+            },
+            success: function (res) {
+                alert(res.message);
+                $('#refPoModal').modal('hide');
+                location.reload();
+            },
+            error: function () {
+                alert('Gagal update Ref PO');
+            }
+        });
+    });
+});
 </script>
 @endpush

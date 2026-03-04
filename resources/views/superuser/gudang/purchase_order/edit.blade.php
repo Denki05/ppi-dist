@@ -14,7 +14,6 @@
   <div class="block-content">
     <form class="ajax" data-action="{{ route('superuser.gudang.purchase_order.update', $purchase_order->id) }}" data-type="POST" enctype="multipart/form-data">
       <input type="hidden" name="_method" value="PUT">
-      <input type="hidden" name="type" value="1">
       <div class="form-group row">
         <label class="col-md-3 col-form-label text-right" for="code">PO Code <span class="text-danger">*</span></label>
         <div class="col-md-7">

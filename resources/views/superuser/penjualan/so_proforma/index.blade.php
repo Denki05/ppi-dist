@@ -22,18 +22,6 @@
 <div id="alert-block"></div>
 
 <div class="block">
-  <div class="block-content">
-  @if(session('is_from_agenda', false))
-    <button id="btn-back-agenda" class="btn btn-warning">
-      ← Kembali ke Daftar SO
-    </button>
-  @endif
-
-    <a href="{{ route('superuser.penjualan.so_proforma.create') }}">
-      <button type="button" class="btn btn-outline-primary min-width-125">Create</button>
-    </a>
-  </div>
-  <hr class="my-20">
   <div class="block-content block-content-full">
     <table id="datatable" class="table table-bordred table-striped" style="width:100%">
       <thead>
@@ -58,8 +46,8 @@
           <td>
             @if($row->exsisting_customer == 0)
               {{$row->customer_name}}
-            @elseif($row->exsisting_customer === 1)
-            {{$row->member->name ?? '-'}} {{ $row->member->text_kota ?? '-' }}
+            @elseif($row->exsisting_customer == 1)
+            {{$row->member->name}} {{ $row->member->text_kota }}
             @endif
           </td>
           <td>{{ $row->createdBySuperuser() }}</td>
@@ -73,21 +61,26 @@
               </a>
             @endif
             @if($row->status == "ACTIVE")
-              <a href="javascript:saveConfirmation('{{ route('superuser.penjualan.so_proforma.acc', $row->id) }}')">
-                <button type="button" class="btn btn-sm btn-circle btn-alt-danger" title="Acc">
-                    <i class="fa fa-check"></i>
-                </button>
-              </a>
+              @if(!empty($row->details_cost->grand_total_idr))
+             <button type="button"
+                class="btn btn-sm btn-circle btn-alt-danger btn-approval"
+                data-url="{{ route('superuser.penjualan.so_proforma.acc', $row->id) }}"
+                title="Acc">
+                <i class="fa fa-check"></i>
+            </button>
+              @endif
               <a href="{{ route('superuser.penjualan.so_proforma.edit', $row->id) }}">
                 <button type="button" class="btn btn-sm btn-circle btn-alt-danger" title="Edit">
                   <i class="fa fa-pencil"></i>
                 </button>
               </a>
+              @if(!empty($row->details_cost->grand_total_idr))
               <a href="{{ route('superuser.penjualan.so_proforma.print_so_proforma', $row->id) }}">
                 <button type="button" class="btn btn-sm btn-circle btn-alt-danger" title="Print">
                   <i class="fa fa-print" aria-hidden="true"></i>
                 </button>
               </a>
+              @endif
               <a href="javascript:deleteConfirmation('{{ route('superuser.penjualan.so_proforma.destroy', $row->id) }}')">
                 <button type="button" class="btn btn-sm btn-circle btn-alt-danger" title="Delete">
                   <i class="fa fa-trash"></i>
@@ -100,17 +93,40 @@
                   <i class="fa fa-eye"></i>
                 </button>
               </a>
-             
-              <a href="javascript:saveConfirmation('{{ route('superuser.penjualan.so_proforma.approval_so', $row->id) }}')">
-                <button type="button" class="btn btn-sm btn-circle btn-alt-danger" title="Lanjutkan">
-                  <i class="fa fa-arrow-right"></i>
-                </button>
-              </a>
             @endif
             @if($row->status == "LANJUTAN")
               <a href="{{ route('superuser.penjualan.so_proforma.show', $row->id) }}">
                 <button type="button" class="btn btn-sm btn-circle btn-alt-danger" title="Show">
                   <i class="fa fa-eye"></i>
+                </button>
+              </a>
+            @endif
+            
+            @if($row->status == "REVISI")
+              @if(!empty($row->details_cost->grand_total_idr))
+                 <button type="button"
+                    class="btn btn-sm btn-circle btn-alt-danger btn-approval"
+                    data-url="{{ route('superuser.penjualan.so_proforma.acc', $row->id) }}"
+                    title="Acc">
+                    <i class="fa fa-check"></i>
+                </button>
+              @endif
+              <a href="{{ route('superuser.penjualan.so_proforma.edit', $row->id) }}">
+                <button type="button" class="btn btn-sm btn-circle btn-alt-danger" title="Edit">
+                  <i class="fa fa-pencil"></i>
+                </button>
+              </a>
+              @if(!empty($row->details_cost->grand_total_idr))
+              <a href="{{ route('superuser.penjualan.so_proforma.print_so_proforma', $row->id) }}">
+                <button type="button" class="btn btn-sm btn-circle btn-alt-danger" title="Print">
+                  <i class="fa fa-print" aria-hidden="true"></i>
+                </button>
+              </a>
+              @endif
+              
+              <a href="javascript:deleteConfirmation('{{ route('superuser.penjualan.so_proforma.destroy', $row->id) }}')">
+                <button type="button" class="btn btn-sm btn-circle btn-alt-danger" title="Delete">
+                  <i class="fa fa-trash"></i>
                 </button>
               </a>
             @endif
@@ -127,22 +143,76 @@
 @include('superuser.asset.plugin.datatables')
 
 @push('scripts')
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 <script type="text/javascript">
     var table = $('#datatable').DataTable({});
+    
+    $(document).on('click', '.btn-approval', function () {
 
-    $(document).ready(function() {
-        @if(session('is_from_agenda', false))
-          $('#btn-back-agenda').on('click', function() {
-              window.location.href = "https://sys-af.lsfragrance.id/transaksi/sales_order/list";
-          });
-
-          // Cegah back browser
-          window.history.replaceState(null, null, window.location.href);
-          window.onpopstate = function(event) {
-              alert("Gunakan tombol Back di halaman ini, tidak bisa pakai back browser.");
-              history.pushState(null, null, window.location.href);
-          };
-        @endif
+        let button = $(this);
+        let url = button.data('url');
+    
+        Swal.fire({
+            title: 'Apakah Anda yakin?',
+            text: "SO akan diteruskan dan DO dibuat.",
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonText: 'Ya, lanjutkan',
+            cancelButtonText: 'Batal'
+        }).then((result) => {
+    
+            if (result.isConfirmed) {
+    
+                button.prop('disabled', true);
+    
+                $.ajax({
+                    url: url,
+                    type: "POST",
+                    data: {
+                        _token: "{{ csrf_token() }}"
+                    },
+                    beforeSend: function () {
+                        Swal.fire({
+                            title: 'Processing...',
+                            allowOutsideClick: false,
+                            didOpen: () => {
+                                Swal.showLoading();
+                            }
+                        });
+                    },
+                    success: function (response) {
+    
+                        Swal.fire({
+                            icon: 'success',
+                            title: 'Berhasil',
+                            text: response.notification.content,
+                            timer: 2000,
+                            showConfirmButton: false
+                        });
+    
+                        setTimeout(function () {
+                            location.reload();
+                        }, 2000);
+                    },
+                    error: function (xhr) {
+    
+                        button.prop('disabled', false);
+    
+                        let message = 'Terjadi kesalahan sistem';
+    
+                        if (xhr.responseJSON && xhr.responseJSON.notification) {
+                            message = xhr.responseJSON.notification.content;
+                        }
+    
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'Error',
+                            text: message
+                        });
+                    }
+                });
+            }
+        });
     });
 </script>
 @endpush

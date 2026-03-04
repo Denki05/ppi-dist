@@ -20,7 +20,12 @@ class SalesOrderProformaDetails extends Model
         'grand_total_idr',
     ];
 
-    public function so_proforma(){
-        return $this->belongsTo('App\Entities\Penjualan\SalesOrderproforma', 'so_proforma_id', 'id');
+    public function so_proforma()
+    {
+        return $this->belongsTo(
+            \App\Entities\Penjualan\SalesOrderProforma::class,
+            'so_proforma_id',
+            'id'
+        );
     }
 }

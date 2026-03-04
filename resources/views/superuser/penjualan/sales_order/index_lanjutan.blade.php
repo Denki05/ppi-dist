@@ -40,24 +40,24 @@
 @endif
 
 <h4 style="font-weight: bold;">#SALES ORDER LANJUTAN</h4>
-@role('Developer')
-  <a class="btn btn-primary" href="{{ route('superuser.penjualan.sales_order.updateBrandName') }}" role="button" title="Update Brand Invoice">
+@role('Developer', 'superuser')
+  <a class="btn btn-primary" href="{{ route('superuser.penjualan.sales_order.updateBrandName') }}" role="button">
     <i class="bi bi-cloud-upload"></i>
   </a>
   
-  <a class="btn btn-info" href="#" class="btn btn-sm btn-circle btn-alt-success" title="Update Header DO">
+  <a class="btn btn-info" href="{{ route('superuser.penjualan.packing_order.update_header_do') }}" class="btn btn-sm btn-circle btn-alt-success" title="Update Header DO">
     <i class="bi bi-arrow-repeat"></i>
   </a>
 
   <!-- Kalkulasi DO migrasi -->
-  <a class="btn btn-warning" href="{{ route('superuser.penjualan.migrasi_so.prosesKalkulasiDO') }}" class="btn btn-sm btn-circle btn-alt-success" title="Kalkulasi DO Migrasi">
+  <a class="btn btn-warning" href="{{ route('superuser.penjualan.migrasi_so.prosesKalkulasiDO') }}" class="btn btn-sm btn-circle btn-alt-success" title="Migrasi Data">
     <i class="bi bi-calculator"></i>
   </a>
 @endrole
 <br>
 <br>
-<main style="background:#fff">
-  
+
+<main style="background:#fff">  
   <input style="display: none;" id="tab1" type="radio" name="tabs" checked>
   <label style="padding: 15px 25px;" for="tab1">SO {{ $step_txt }}</label>
     
@@ -145,42 +145,57 @@
           </thead>
           <tbody>
             @foreach($packing_order as $index => $row)
-              @if($row->status == 2 && ($row->so->payment_status == 1 || in_array($row->type_transaction, ['TEMPO', 'COD', 'MARKETPLACE'])))
+              @if($row->status == 2 && in_array(optional($row->so)->payment_status, [0,1]))
                 <tr>
-                  <td>{{ $index + 1 }}</td>
-                  <td>{{ $row->code ?? '-' }}</td>
-                  <td>{{ $row->member->name ?? '-' }} {{ $row->member->text_kota ?? '' }}</td>
-                  <td>{{ \Carbon\Carbon::parse($row->created_at)->format('d-m-Y H:i:s') }}</td>
-                  <td>{{ $row->so->code }} / {{ $row->so->type_transaction }}</td>
-                  <td>
-                    <span class="badge badge-{{ $row->do_status()->class }}">
-                      <b>{{ $row->do_status()->msg }}</b>
-                    </span>
-                  </td>
-                  <td>
-                    <a href="javascript:saveConfirmation('{{ route('superuser.penjualan.packing_order.ready', $row->id) }}')" class="btn btn-success btn-sm btn-flat" data-id="{{ $row->id }}">
-                      <i class="fa fa-send"></i> Naik Ke DO
-                    </a>
-                    <a href="{{ route('superuser.penjualan.delivery_order.print_manifest', $row->id) }}" class="btn btn-info btn-sm btn-flat" data-id="{{ $row->id }}" target="_blank">
-                      <i class="fas fa-clipboard-list"></i> Print Manifest
-                    </a>
+                    <td>{{ $index + 1 }}</td>
+                    <td>{{ $row->code ?? '-' }}</td>
+                    <td>{{ $row->member->name ?? '-' }} {{ $row->member->text_kota ?? '' }}</td>
+                    <td>{{ optional($row->created_at)->format('d-m-Y H:i:s') ?? '-' }}</td>
+                    <td>{{ optional($row->so)->code ?? '-' }} / {{ $row->type_transaction }}</td>
+                    <td>
+                        @php
+                            $status = $row->do_status();
+                        @endphp
+                        <span class="badge badge-{{ $status->class ?? 'secondary' }}">
+                            <b>{{ $status->msg ?? '-' }}</b>
+                        </span>
+                    </td>
+                    <td>
+                        {{-- Naik Ke DO --}}
+                        @if(optional($row->so)->payment_status == 1 || in_array($row->type_transaction, ['TEMPO', 'COD', 'MARKETPLACE']))
+                            <a href="javascript:saveConfirmation('{{ route('superuser.penjualan.packing_order.ready', $row->id) }}')" 
+                              class="btn btn-success btn-sm btn-flat" data-id="{{ $row->id }}">
+                                <i class="fa fa-send"></i> Naik Ke DO
+                            </a>
+                        @endif
 
-                    @if(in_array($row->type_transaction, ['TEMPO', 'COD', 'MARKETPLACE']))
-                      <a href="javascript:saveConfirmation('{{ route('superuser.penjualan.packing_order.revisi', $row->id) }}')" class="btn btn-danger btn-sm btn-flat" data-id="{{ $row->id }}">
-                        <i class="fa fa-edit"></i> Revisi
-                      </a>
-                    @endif
+                        {{-- Print Manifest --}}
+                        @if(optional($row->so)->payment_status == 1 || in_array($row->type_transaction, ['TEMPO', 'COD', 'MARKETPLACE']))
+                            <a href="{{ route('superuser.penjualan.delivery_order.print_manifest', $row->id) }}" 
+                              class="btn btn-info btn-sm btn-flat" data-id="{{ $row->id }}" target="_blank">
+                                <i class="fas fa-clipboard-list"></i> Print Manifest
+                            </a>
+                        @endif
 
-                    @role('Developer')
-                      @if($row->type_transaction == 'CASH')
-                        <a href="javascript:saveConfirmation('{{ route('superuser.penjualan.packing_order.revisi', $row->id) }}')" class="btn btn-dark btn-sm btn-flat" data-id="{{ $row->id }}">
-                          <i class="fa fa-edit"></i> Revisi
-                        </a>
-                      @endif
-                    @endrole
-                  </td>
+                        {{-- Revisi --}}
+                        @if(in_array($row->type_transaction, ['TEMPO', 'COD', 'MARKETPLACE']))
+                            <button type="button" 
+                                        class="btn btn-dark btn-sm btn-flat btn-revisi" 
+                                        data-url="{{ route('superuser.penjualan.packing_order.revisi', $row->id) }}">
+                                    <i class="fa fa-edit"></i> Revisi
+                                </button>
+                        @elseif($row->type_transaction == 'CASH' && optional($row->so)->payment_status == 0)
+                            @role('Developer|Admin|Management')
+                                <button type="button" 
+                                        class="btn btn-dark btn-sm btn-flat btn-revisi" 
+                                        data-url="{{ route('superuser.penjualan.packing_order.revisi', $row->id) }}">
+                                    <i class="fa fa-edit"></i> Revisi
+                                </button>
+                            @endrole
+                        @endif
+                    </td>
                 </tr>
-              @endif
+            @endif
             @endforeach
           </tbody>
         </table>
@@ -212,7 +227,13 @@
                       <td>{{ $index+1 }}</td>
                       <td>{{$row->so->so_code}}</td>
                       <td>{{$row->do_code}}</td>
-                      <td>{{$row->member->name}} {{$row->member->text_kota}}</td>
+                      <td>
+                          @if($row->member)
+                              {{ $row->member->name }} {{ $row->member->text_kota }}
+                          @else
+                              <span class="text-danger">-</span>
+                          @endif
+                      </td>
                       <td><?= date('d-m-Y h:i:s',strtotime($row->created_at)); ?></td>
                       <td>{{$row->type_transaction}}</td>
                       <td>
@@ -266,14 +287,20 @@
                     <td>{{ $index + 1 }}</td>
                     <td>{{ $row->do_code }}</td>
                     <td>{{ $row->so->code ?? '-' }}</td>
-                    <td>{{ $row->member->name ?? '-' }} {{ $row->member->text_kota }}</td>
+                    <td>
+                        @if($row->member)
+                            {{ $row->member->name }} {{ $row->member->text_kota }}
+                        @else
+                            <span class="text-danger">-</span>
+                        @endif
+                    </td>
                     <td>{{ \Carbon\Carbon::parse($row->created_at)->format('d-m-Y h:i:s') }}</td>
                     <td>{{ $row->so->type_transaction ?? '-' }}</td>
                     <td>
                         @if((in_array($row->status, [5, 6]) || ($superuser->division == "Management" && $superuser->division == "Developer")))
                             <a href="javascript:void(0)" type="button" class="btn btn-danger opneModalDoCancel" data-id="{{ $row->id }}">Cancel DO</a>
                         @endif
-                        @if($row->status == 7 && $row->count_cancel == 1)
+                        @if($row->status == 7)
                             <a href="#" class="btn btn-info btn-sm btn-flat btn-frmdoedit" data-id="{{ $row->id }}"><i class="fa fa-edit"></i> Form Revisi</a>
                         @endif
                     </td>
@@ -446,6 +473,7 @@
 @include('superuser.asset.plugin.datatables')
 
 @push('scripts')
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script type="text/javascript">
         $(document).ready(function() {
           let datatableUrl = '{{ route('superuser.penjualan.sales_order.json_lanjutan') }}';
@@ -691,6 +719,47 @@
                           .addClass('alert-danger')
                           .text(xhr.responseJSON.message || 'Token tidak sah!')
                           .show();
+                  }
+              });
+            });
+
+            $(document).on('click', '.btn-revisi', function(e) {
+              e.preventDefault();
+              var url = $(this).data('url');
+
+              Swal.fire({
+                  title: 'Konfirmasi',
+                  text: "Apakah anda yakin ingin melakukan Revisi?",
+                  icon: 'warning',
+                  showCancelButton: true,
+                  confirmButtonColor: '#3085d6',
+                  cancelButtonColor: '#d33',
+                  confirmButtonText: 'Ya, Revisi!',
+                  cancelButtonText: 'Batal'
+              }).then((result) => {
+                  if(result.isConfirmed){
+                      $.ajax({
+                          url: url,
+                          type: 'POST', 
+                          data: {_token: '{{ csrf_token() }}'},
+                          success: function(res){
+                              Swal.fire({
+                                  icon: res.status === 'success' ? 'success' : 'error',
+                                  title: res.status === 'success' ? 'Berhasil' : 'Gagal',
+                                  text: res.message,
+                                  timer: 2000,
+                                  showConfirmButton: false
+                              }).then(() => {
+                                  if(res.redirect){
+                                      window.location.href = res.redirect;
+                                  }
+                              });
+                          },
+                          error: function(err){
+                              Swal.fire('Error', 'Terjadi kesalahan saat memproses request!', 'error');
+                              console.log(err);
+                          }
+                      });
                   }
               });
             });

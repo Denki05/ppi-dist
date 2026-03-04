@@ -9,7 +9,6 @@ use App\Entities\Gudang\PurchaseOrder;
 use App\Entities\Gudang\PurchaseOrderDetail;
 use App\Entities\Master\BrandLokal;
 use App\Entities\Master\Product;
-use App\Entities\Master\ProductPack;
 use Auth;
 use DB;
 use Validator;
@@ -138,7 +137,7 @@ class PurchaseOrderDetailController extends Controller
     public function edit($id, $detail)
     {
         if(Auth::user()->is_superuser == 0){
-            if(empty($this->access) || empty($this->access->user) || $this->access->can_update == 0){
+            if(empty($this->access) || empty($this->access->user) || $this->access->can_edit == 0){
                 return redirect()->route('superuser.index')->with('error','Anda tidak punya akses untuk membuka menu terkait');
             }
         }
@@ -157,6 +156,7 @@ class PurchaseOrderDetailController extends Controller
         if ($request->ajax()) {
             $validator = Validator::make($request->all(), [
                 'product_packaging_id' => 'required',
+                'packaging_id' => 'required|integer',
                 'quantity' => 'nullable|numeric',
                 
             ]);
@@ -179,12 +179,10 @@ class PurchaseOrderDetailController extends Controller
                 if ($purchase_order == null OR $purchase_order_detail == null) {
                     abort(404);
                 }
-
-                $get_packaging = ProductPack::where('id', $request->product_packaging_id)->first();
                 
                 $purchase_order_detail->product_packaging_id = $request->product_packaging_id;
                 $purchase_order_detail->quantity = $request->quantity;
-                $purchase_order_detail->packaging_id = $get_packaging->packaging_id;
+                $purchase_order_detail->packaging_id = $request->packaging_id;
                 $purchase_order_detail->note_produksi = $request->note_produksi;
                 $purchase_order_detail->note_repack = $request->note_repack;
 
@@ -268,9 +266,8 @@ class PurchaseOrderDetailController extends Controller
                 }
             })
             ->leftJoin('master_packaging', 'master_products_packaging.packaging_id', '=', 'master_packaging.id')
-            ->leftJoin('master_product_types', 'master_products_packaging.type_id', '=', 'master_product_types.id')
             ->selectRaw(
-                'master_packaging.id, master_packaging.pack_name, master_product_types.name'
+                'master_packaging.id, master_packaging.pack_name'
             )
             ->get();
             $data_json["IsError"] = FALSE;

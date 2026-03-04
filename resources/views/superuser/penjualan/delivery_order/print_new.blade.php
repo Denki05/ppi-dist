@@ -1,239 +1,243 @@
 <?php
-    $code = $result->do_code;
-    $sales = null;
-    foreach ($result->do_detail as $key => $row) {
-      $sales = $row->so_item->so->sales->name ?? null;
-    }
+  $idr_total = 0; 
+  $code = $result->code;
 ?>
-<!DOCTYPE html>
-<html>
-<head>
-  <title>Delivery Order</title>
-  <style type="text/css">
-    body{
-      color: #333;
-      font-family: Arial,sans-serif;
-      font-size: 12px;
-    }
-    .borderless td, .borderless th {
-        border: none;
-    }
-    .info td, .info th {
-        padding: 2px;
-        margin: 2px;
-        box-sizing: border-box;
-    }
-    .text-left {
-      text-align: left;
-    }
-    .uppercase {
-      text-transform: uppercase;
-    }
+<style type="text/css">
+  body {
+    color: #333;
+    font-family: Arial, sans-serif;
+    font-size: 12px;
+  }
+  table.borderless {
+    border-collapse: collapse;
+    border-spacing: 0;
+  }
+  .borderless td, .borderless th {
+    border: none;
+  }
+  .info td, .info th {
+    padding: 2px;
+    margin: 2px;
+    box-sizing: border-box;
+  }
+  .column-float {
+    float: left;
+    width: 50%;
+  }
+  .row-float {
+    position: relative;
+  }
+  .row-float:after {
+    content: "";
+    display: block;
+    clear: both;
+  }
+  table.table-data {
+    width: 100%;
+    border-collapse: collapse;
+    color: #333;
+  }
+  table.table-data th {
+    font-size: 12px;
+    background-color: #d3d3d3;
+  }
+  table.table-data td {
+    border: none;
+  }
+  table.table-data tbody {
+    text-align: center;
+    font-size: 12px;
+  }
+  @page {
+    margin-top: 0px;
+  }
+  .text-right {
+    text-align: right;
+  }
+  .text-left {
+    text-align: left;
+  }
+  .header {
+    width: 100%;
+    position: fixed;
+    z-index: 99999;
+    letter-spacing: 10px;
+    font-size: 150px;
+    font-weight: 800;
+    opacity: 0.3;
+    color: #404040;
+    text-transform: uppercase;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%) rotate(-20deg);
+    text-align: center;
+  }
+  .page-break {
+    page-break-after: always;
+  }
 
-    .column-float {
-      float: left;
-      width: 50%;
-    }
-    .row-float:after {
-      content: "";
-      display: block;
-      clear: both;
-    }
+  .clearfix::after {
+    content: "";
+    display: table;
+    clear: both;
+  }
+</style>
 
-    /*Table*/
-    table.table-data {
-      border-bottom: 1px solid #333;
-    }
-    .table-data th {
-      border: 1px solid #333;
-    }
-    table.table-data th{
-      font-size: 13px;
-      padding: 0 5px;
-    }
+@php
+  $limit = 12; // Limit items per page
+  $doDetails = $result->do_detail;
+  $doDetails = $doDetails->sortBy(function($row) {
+      return $row->product_pack->name ?? '';
+  });
+  $totalItems = $doDetails->count();
+  $totalPages = ceil($totalItems / $limit);
+@endphp
 
-    table.table-data {
-      width: 100%;
-      border-collapse: collapse;
-      color: #333;
-    }
-    table.table-data tbody{
-      text-align: center;
-      font-size: 12px;
-    }
-    table.table-data td {
-      padding: 0 5px;
-    }
+@php
+  $offset = 0; // Untuk menyimpan indeks awal di setiap halaman
+@endphp
 
-    @page{
-      margin-top: 15px;
-    }
-
-    /*Footer*/
-    #footer {
-      position: relative;
-      left: 0;
-      right: 0;
-      color: #aaa;
-      font-size: 11px;
-      margin-top: 15px !important;
-    }
-
-    #footer-fixed {
-      position: fixed;
-      left: 0;
-      right: 0;
-      color: #aaa;
-      font-size: 11px;
-      bottom: 0;
-    }
-    
-    .page-number:before {
-      content: '<?= $code; ?>' " | Page " counter(page);
-    }
-  </style>
-</head>
-<body>
-    <div class="row-float" style="margin-bottom: 20px !important;">
-      <div class="column-float note" style="width: 45%;">
-        <div style="height: 100px;">
-          <img src="<?= base_path('public/superuser_assets/media/master/company/'.$company->logo) ?>" style="width: 100%;height: 100%;">
-        </div>
-      </div>
-      <div class="column-float note" style="width: 25%;">
-      </div>
-      <div class="column-float" style="width: 25%;margin-top: 10px;">
-        <h3 style="margin: 0;padding: 0;margin-bottom: 5 !important;padding-bottom: 0 !important;" class="uppercase">Delivery Order</h3>
-        <h5 style="margin: 0;padding: 0;margin-bottom: 5 !important;padding-bottom: 0 !important;">{{$result->do_code}}</h5>
-        <h5 style="margin: 0;padding: 0;margin-bottom: 5 !important;padding-bottom: 0 !important;">Tanggal <?= date('d-m-Y',strtotime($result->created_at)); ?></h5>
-      </div>
-    </div>
-
-    <div class="row-float" style="margin-bottom: 15px !important;">
-      <div class="column-float" style="width: 50%;">
+@for ($page = 0; $page < $totalPages; $page++)
+<div>
+  <h2 style="text-align: center; margin: 0; padding: 0; margin-bottom: 5px;"><u>SURAT JALAN</u></h2>
+  
+  <div style="margin-bottom: 15px; font-size: 11px;">
+    <div class="row-float">
+      <div class="column-float" style="width: 40%; margin-top: 4px;">
         <table class="table borderless info" style="width: 100%;">
           <tbody>
             <tr>
-              <td style="width: 35% !important;"><strong>Pelanggan</strong></td>
-              <td style="width: 2% !important;">:</td>
-              <td style="width: 63% !important;">
-                <div style="word-wrap: break-word;">{{$result->customer->name ?? ''}}</div>
-              </td>
+                <td style="width: 35%;">Kode</td>
+                <td style="width: 2%;">:</td>
+                <td style="width: 63%;">{{ $result->do_code }}</td>
             </tr>
             <tr>
-              <td style="width: 35% !important;"><strong>Alamat</strong></td>
-              <td style="width: 2% !important;">:</td>
-              <td style="width: 63% !important;">
-                <div style="word-wrap: break-word;">{{$result->customer->address ?? ''}}</div>
-              </td>
+                <td style="width: 35%;">Tanggal</td>
+                <td style="width: 2%;">:</td>
+                <td style="width: 63%;">{{ $result->so->so_date }}</td>
             </tr>
             <tr>
-              <td style="width: 35% !important;"><strong>Telepon</strong></td>
-              <td style="width: 2% !important;">:</td>
-              <td style="width: 63% !important;">
-                <div style="word-wrap: break-word;">{{$result->customer->phone ?? ''}}</div>
-              </td>
+                <td style="width: 35%;">Ekspedisi</td>
+                <td style="width: 2%;">:</td>
+                <td style="width: 63%;">{{ $result->vendor->name }}</td>
             </tr>
           </tbody>
         </table>
       </div>
-      <div class="column-float" style="width: 50%;">
-        <table class="table borderless info" style="width: 100%">
-          <tbody>
-            <tr>
-              <td style="width: 35% !important;"><strong>Alamat Kirim</strong></td>
-              <td style="width: 2% !important;">:</td>
-              <td style="width: 63% !important;">
-                <div style="word-wrap: break-word;">{{$result->member->address ?? ''}}</div>
-              </td>
-            </tr>
-            <tr>
-              <td style="width: 35% !important;"><strong>Tanggal Kirim</strong></td>
-              <td style="width: 2% !important;">:</td>
-              <td style="width: 63% !important;">
-                <div style="word-wrap: break-word;"><?= date('d-m-Y',strtotime($result->date_sent)); ?></div>
-              </td>
-            </tr>
-          </tbody>
-        </table>
+      <div class="column-float" style="width: 60%;">
+          <table class="table borderless info" style="width: 100%;">
+            <tbody>
+              <tr>
+                <td style="width: 35%;"><b>Penerima</b></td>
+                <td style="width: 2%;">:</td>
+                <td style="width: 63%;"><b>{{ $result->member->name }} {{ $result->member->text_kota }} - {{ $result->member->contact_person }}</b></td>
+              </tr>
+              <tr>
+                <td style="width: 35%;">Alamat</td>
+                <td style="width: 2%;">:</td>
+                <td style="width: 63%;">
+                  {{ $result->member->address }}, 
+                  {{ $result->member->text_kelurahan }}
+                  {{ $result->member->text_kecamatan }}
+                  {{ $result->member->text_kota }}
+                  {{ $result->member->text_provinsi }}
+                </td>
+              </tr>
+              <tr>
+                <td style="width: 35%;">Telpon</td>
+                <td style="width: 2%;">:</td>
+                <td style="width: 63%;">{{ $result->member->phone }}</td>
+              </tr>
+            </tbody>
+          </table>
       </div>
     </div>
-
-    <div class="row" style="margin-bottom: 15px;">
-      <table style="width: 100%;" class="table-data">
+  </div>
+  
+    <table class="table-data" style="border: 1px solid black;">
         <thead>
-          <tr class="text-center">
-            <th style="width: 5%;">No</th>
-            <th style="width: 15%;">Kode</th>
-            <th style="width: 25%;">Deskripsi</th>
-            <th style="width: 10%;">Jumlah</th>
-            <th style="width: 10%;">Unit</th>
-            <th style="width: 25%;">Kemasan</th>
-            <th style="width: 15%;">Total</th>
-          </tr>
+        <tr>
+            <th style="border: 1px solid black;">No</th>
+            <th style="border: 1px solid black;">Barang</th>
+            <th style="border: 1px solid black;">Kemasan</th>
+            <th style="border: 1px solid black;">Qty</th>
+            <th style="border: 1px solid black;">Jumlah</th>
+        </tr>
         </thead>
         <tbody>
-          @php $number = 1; @endphp
-          @foreach($result->do_detail as $index => $row)
-            <tr>
-              <td>{{$number ?? ''}}</td>
-              <td class='text-left'>{{$row->product->code ?? ''}}</td>
-              <td class='text-left'>{{$row->product->name ?? ''}}</td>
-              <td>{{$row->qty}}</td>
-              <td>Kg</td>
-              <td>{{$row->packaging}}</td>
-              <td>
-                @if($row->packaging == 7)
-                Free
-                @else
-                <?php
-                  $total_packing = $row->qty / floatval($row->packaging_val()->scalar ?? 0);
-                ?>
-                {{$total_packing}}
-                @endif
-              </td>
-            </tr>
-            @php $number++; @endphp
-          @endforeach
+        @foreach ($doDetails->slice($page * $limit, $limit)->values() as $index => $row)
+        @php
+            // Nomor urut dihitung berdasarkan offset + index
+            $nomor_urut = $offset + $index + 1;
+
+            $jumlah = $row->qty / $row->packaging->pack_value;
+        @endphp
+        <tr>
+            <td style="border: 1px solid black;">{{ $nomor_urut }}</td>
+            <td style="border: 1px solid black;">{{ $row->product_pack->code }} - {{ $row->product_pack->name }}</td>
+            <td style="border: 1px solid black;">{{ $row->product_pack->packaging->pack_name }}</td>
+            <td style="border: 1px solid black;">{{ $row->qty }}</td>
+            <td style="border: 1px solid black;">{{ $jumlah }}</td>
+            
+        </tr>
+        @endforeach
         </tbody>
-      </table>
-    </div>
+    </table>
+</div>
 
-    <div class="row">
-      <div style="float: left;width: 25%;text-align: center;">
-        Admin
-        <br>
-        <br>
-        <br>
-        (....................)
-      </div>
-      <div style="float: left;width: 25%;text-align: center;">
-        Gudang
-        <br>
-        <br>
-        <br>
-        (....................)
-      </div>
-      <div style="float: left;width: 25%;text-align: center;">
-        Pengirim
-        <br>
-        <br>
-        <br>
-        (....................)
-      </div>
-      <div style="float: left;width: 25%;text-align: center;">
-        Penerima
-        <br>
-        <br>
-        <br>
-        (....................)
-      </div>
-      <div style="clear: both;"></div>
-    </div>
+@php
+  // Tambahkan jumlah item yang dirender di halaman ini ke offset
+  $offset += $doDetails->slice($page * $limit, $limit)->count();
+@endphp
 
-    <div id="footer-fixed">
+@if ($page < $totalPages - 1)
+<div class="page-break"></div>
+@endif
+@endfor
+
+<div>
+  <div style="font-size: 12px; position: absolute; bottom: 10px; width: 100%; margin-top: 30px;">
+    <div class="row-float clearfix" style="display: flex; justify-content: space-between;">
+
+      <div class="row-float" style="display: flex; justify-content: space-between; align-items: flex-start;">
+        
+        <div class="column-float" style="width: 20%; text-align: center;">
+            DIBUAT OLEH
+            <br><br><br><br>
+            .......................
+        </div>
+
+        <div class="column-float" style="width: 20%; text-align: center;">
+            GUDANG
+            <br><br><br><br>
+            .......................
+        </div>
+        
+        <!-- Bank Logo Column -->
+        <div class="column-float" style="width: 20%; text-align: center;">
+            PACKING
+            <br><br><br><br>
+            .......................
+        </div>
+        
+        <!-- Signature Column -->
+        <div class="column-float" style="width: 20%; text-align: center;">
+            SOPIR
+            <br><br><br><br>
+            .......................
+        </div>
+
+        <div class="column-float" style="width: 20%; text-align: center;">
+            PENERIMA
+            <br><br><br><br>
+            .......................
+        </div>
+
+      </div>
+    </div>
+    
+
+    <div id="footer">
       <div class="page-number"></div>
     </div>
-
-</body>
-</html>
+</div>

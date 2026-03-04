@@ -3,8 +3,8 @@
 @section('content')
 <nav class="breadcrumb bg-white push">
   <span class="breadcrumb-item">Gudang</span>
-  <span class="breadcrumb-item ">SPK</span>
-  <span class="breadcrumb-item active">Summary List SPK</span>
+  <span class="breadcrumb-item ">Purchase Order (PO)</span>
+  <span class="breadcrumb-item active">Summary List PO</span>
 </nav>
 
 @if($errors->any())
@@ -33,7 +33,7 @@
               <td class="text-center">VARIANT</td>
               <td class="text-center">KEMASAN</td>
               <td class="text-center">QUANTITY</td>
-              <td class="text-center">KODE SPK</td>
+              <td class="text-center">KODE PO</td>
             </tr>
           </thead>
           <tbody>
@@ -54,7 +54,7 @@
 
     <div class="row pt-30 mb-15">
       <div class="col-md-6">
-        <a href="{{ route('superuser.gudang.purchase_order_spk.index') }}">
+        <a href="{{ route('superuser.gudang.purchase_order.index') }}">
           <button type="button" class="btn bg-gd-cherry border-0 text-white">
             <i class="fa fa-arrow-left mr-10"></i> Back
           </button>

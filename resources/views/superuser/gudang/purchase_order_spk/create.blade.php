@@ -30,6 +30,16 @@
           </select>
         </div>
       </div>
+      <!-- <div class="form-group row">
+        <label class="col-md-3 col-form-label text-right" for="kategori">Kategori <span class="text-danger">*</span></label>
+        <div class="col-md-7">
+          <select class="js-select2 form-control" id="kategori" name="kategori" data-placeholder="Select Kategori">
+            <option></option>
+            <option value="0">REPACK / PRODUKSI</option>
+            <option value="1">ORIGINAL PACK</option>
+          </select>
+        </div>
+      </div> -->
       <div class="form-group row">
         <label class="col-md-3 col-form-label text-right" for="etd">ETD</span></label>
         <div class="col-md-7">

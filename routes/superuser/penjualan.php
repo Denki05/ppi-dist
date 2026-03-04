@@ -24,7 +24,7 @@ Route::group([
         Route::get('/so_awal', 'SalesOrderController@index_awal')->name('index_awal');
         Route::get('/so_lanjutan', 'SalesOrderController@index_lanjutan')->name('index_lanjutan');
         Route::get('/so_mutasi', 'SalesOrderController@index_mutasi')->name('index_mutasi');
-        Route::get('/create/{step}/{member}/{brand}/{type}/{indent}/{approval}/{note}/{kurs}/{disc_percent}', 'SalesOrderController@create')->name('create');
+        Route::get('/create/{step}/{member}/{brand}/{type}/{indent}/{approval}/{note}/{kurs}/{disc_percent}/{is_proforma}', 'SalesOrderController@create')->name('create');
         Route::get('/{id}/edit/{step}', 'SalesOrderController@edit')->name('edit');
         Route::get('/{id}/detail', 'SalesOrderController@detail')->name('detail');
         Route::post('/{member}/store', 'SalesOrderController@store')->name('store');
@@ -63,6 +63,7 @@ Route::group([
         Route::get('/data_so/{id}', 'SalesOrderController@data_so')->name('data_so');
         Route::post('/approvalMouSo/{id}', 'SalesOrderController@approvalMouSo')->name('approvalMouSo');
         Route::get('/viewSalesOrderDetail/{id}', 'SalesOrderController@viewSalesOrderDetail')->name('viewSalesOrderDetail');
+        Route::get('/migrasi_so', 'SalesOrderController@migrasi_so')->name('migrasi_so');
     });
 
     Route::group(['as' => 'packing_order.', 'prefix' => '/packing_order'], function () {
@@ -78,21 +79,16 @@ Route::group([
         Route::post('/order', 'PackingOrderController@order')->name('order');
         Route::get('/ready/{id}', 'PackingOrderController@ready')->name('ready');
         Route::post('/packed', 'PackingOrderController@packed')->name('packed');
-        Route::get('/revisi/{id}', 'PackingOrderController@revisi')->name('revisi');
-
+        Route::post('/revisi/{id}', 'PackingOrderController@revisi')->name('revisi');
         Route::get('/{id}/select_so', 'PackingOrderController@select_so')->name('select_so');
         Route::post('/store_so', 'PackingOrderController@store_so')->name('store_so');
-
         Route::post('/destroy_item', 'PackingOrderController@destroy_item')->name('destroy_item');
-
-
         Route::post('/update_cost', 'PackingOrderController@update_cost')->name('update_cost');
-
         Route::post('/ajax_customer_detail', 'PackingOrderController@ajax_customer_detail')->name('ajax_customer_detail');
         Route::post('/ajax_customer_other_address', 'PackingOrderController@ajax_customer_other_address')->name('ajax_customer_other_address');
         Route::post('/ajax_customer_other_address_detail', 'PackingOrderController@ajax_customer_other_address_detail')->name('ajax_customer_other_address_detail');
-
         Route::get('/{id}/print_proforma', 'PackingOrderController@print_proforma')->name('print_proforma');
+        Route::get('/update_header_do', 'PackingOrderController@update_header_do')->name('update_header_do');
     });
 
     Route::group(['as' => 'delivery_order.', 'prefix' => '/delivery_order'], function () {
@@ -116,6 +112,7 @@ Route::group([
         Route::get('/json', 'DeliveryOrderController@json')->name('json');
         Route::post('/unread_notif/{id}/{do}', 'DeliveryOrderController@unread_notif')->name('unread_notif');
         Route::get('/getNotifData', 'DeliveryOrderController@getNotifData')->name('getNotifData');
+        Route::post('/multi-cancel', 'DeliveryOrderController@multiCancel')->name('multi_cancel');
     });
 
     Route::group(['as' => 'delivery_order_mutation.', 'prefix' => '/delivery_order_mutation'], function () {
@@ -225,7 +222,7 @@ Route::group([
         Route::get('/destroy/{id}', 'SalesOrderProformaController@destroy')->name('destroy');
         Route::get('/getCustomer', 'SalesOrderProformaController@getCustomer')->name('getCustomer');
      });
-     Route::resource('so_proforma', 'SalesOrderProformaController');
+    Route::resource('so_proforma', 'SalesOrderProformaController');
 
     Route::group(['as' => 'migrasi_so.', 'prefix' => '/migrasi_so'], function () {
         Route::post('/import', 'MigrasiImportController@import')->name('import');
@@ -233,4 +230,21 @@ Route::group([
         Route::get('/prosesKalkulasiDO', 'MigrasiImportController@prosesKalkulasiDO')->name('prosesKalkulasiDO');
     });
     Route::resource('migrasi_so', 'MigrasiImportController');
+
+    Route::group(['as' => 'sale_return.', 'prefix' => '/sale_return'], function () {
+        Route::post('{id}/acc', 'SaleReturnController@acc')->name('acc');
+        Route::post('get_product', 'SaleReturnController@get_product')->name('get_product');
+        Route::get('/search_do', 'SaleReturnController@search_do')->name('search_do');
+        Route::get('/create/pdf/{data?}/{protect?}', 'SaleReturnController@pdf')->name('pdf');
+        Route::get('/create/pdf_tt/{data?}/{protect?}', 'SaleReturnController@pdf_tt')->name('pdf_tt');
+        Route::get('/create/pdf_sj/{data?}/{protect?}', 'SaleReturnController@pdf_sj')->name('pdf_sj');
+        Route::get('/create/pdf_tt_fat/{data?}/{protect?}', 'SaleReturnController@pdf_tt_fat')->name('pdf_tt_fat');
+        Route::get('/create/pdf_refund/{data?}/{protect?}', 'SaleReturnController@pdf_refund')->name('pdf_refund');
+        Route::get('/pdf-download/{id}', 'SaleReturnController@pdf_download')->name('pdf_download');
+        Route::post('{id}/update-do-new', 'SaleReturnController@updateDoNewId')->name('updateDoNewId');
+        Route::get('/mergePdf/{invoice}/{retur}', 'SaleReturnController@mergePdf')->name('mergePdf');
+        Route::post('/proses/{id}', 'SaleReturnController@proses')->name('proses');
+        Route::post('get-qc-by-do', 'SaleReturnController@getQcByDo')->name('get_qc_by_do');
+    });
+    Route::resource('sale_return', 'SaleReturnController');
 });

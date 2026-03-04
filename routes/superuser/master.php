@@ -174,6 +174,7 @@ Route::group([
     Route::resource('question', 'QuestionController');
 
     Route::group(['as' => 'contact.', 'prefix' => '/contact'], function () {
+        Route::get('/json', 'ContactController@json')->name('json');
         Route::get('/import_template', 'ContactController@import_template')->name('import_template');
         Route::post('/import/{id}', 'ContactController@import')->name('import');
         Route::get('/export', 'ContactController@export')->name('export');

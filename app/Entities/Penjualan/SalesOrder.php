@@ -4,14 +4,18 @@ namespace App\Entities\Penjualan;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use App\Entities\Penjualan\SalesOrderItem;
+use App\Entities\Account\Superuser;
 use App\Entities\Account\Superuser as AccountSuperuser;
 
 class SalesOrder extends Model
 {
 	use SoftDeletes;
+
     protected $table = "penjualan_so";
     protected $fillable =[
     	'so_code',
+        'is_proforma',
     	'code',
         'keep_code', 
     	'sales_id',
@@ -28,15 +32,13 @@ class SalesOrder extends Model
         'rekening_id',
         'type_so',
     	'idr_rate',
-    	'tl',
-    	'sales',
     	'status',
         'shipping_cost_buyer',
         'condition',
     	'payment_status',
         'catatan',
-        'note', 
-        'no_ducument_ppn', 
+        'note',
+        'no_ducument_ppn',
     	'so_for',
     	'so_indent',
         'indent_status', 
@@ -47,13 +49,17 @@ class SalesOrder extends Model
         'approval_mou_status',
     	'updated_by',
     	'created_by',
-    	'deleted_by'
+    	'deleted_by',
+        'created_at', 
+        'updated_at',
     ];
+
     const STATUS = [
     	1 => 'CASH',
     	2 => 'TEMPO',
     	3 => 'MARKETING'
     ];
+    
     const BRAND_TYPE = [
     	1 => 'Senses',
     	2 => 'GCF',
@@ -69,17 +75,10 @@ class SalesOrder extends Model
 
     const SALES = [
         'Lindy' => 1,
-        'Kumala' => 2,
+        'Alivi' => 2,
         'S.A' => 3,
         'Santi' => 4,
         'Eric' => 5,
-    ];
-
-    const SALES_REPORT = [
-        'S.A' => 3,
-        'Lindy' => 1,
-        'Eric' => 5,
-        'Santi' => 4,
     ];
     
     const STEP = [
@@ -125,7 +124,6 @@ class SalesOrder extends Model
     const REKENING = [
         0 => '4720 2369 88 - IRWAN LINAKSITA',
         1 => '7881 0374 95 - IDA ELISA',
-        2 => '4720 266 968 - PT. Premium Parfum Indonesia',
     ];
 
     const INDENT = [
@@ -140,16 +138,6 @@ class SalesOrder extends Model
         'COMPLETED' => 4,
     ];
 
-    public function customer(){
-    	return $this->BelongsTo('App\Entities\Master\Customer','customer_id','id');
-    }
-    public function member(){
-    	return $this->BelongsTo('App\Entities\Master\CustomerOtherAddress','customer_other_address_id','id');
-    }
-    public function customer_gudang(){
-    	return $this->BelongsTo('App\Entities\Master\Warehouse','destination_warehouse_id','id');
-    }
-    
     public function sales_senior()
     {
         return array_search($this->sales_senior_id, self::SALES_SENIOR);
@@ -160,6 +148,20 @@ class SalesOrder extends Model
         return array_search($this->sales_id, self::SALES);
     }
 
+    public function so_status()
+    {
+        return array_search($this->status, self::STEP);
+    }
+
+    public function customer(){
+    	return $this->BelongsTo('App\Entities\Master\Customer','customer_id','id');
+    }
+    public function member(){
+    	return $this->BelongsTo('App\Entities\Master\CustomerOtherAddress','customer_other_address_id','id');
+    }
+    public function customer_gudang(){
+    	return $this->BelongsTo('App\Entities\Master\Warehouse','destination_warehouse_id','id');
+    }
     public function origin_warehouse(){
         return $this->BelongsTo('App\Entities\Master\Warehouse','origin_warehouse_id','id');
     }
@@ -169,16 +171,29 @@ class SalesOrder extends Model
     public function vendor(){
         return $this->BelongsTo('App\Entities\Master\Vendor','vendor_id','id');
     }
-    public function so_detail(){
-    	return $this->hasMany('App\Entities\Penjualan\SalesOrderItem','so_id');
+
+    public function so_detail()
+    {
+        return $this->hasMany('App\Entities\Penjualan\SalesOrderItem', 'so_id', 'id');
     }
+
     public function do(){
         return $this->hasMany('App\Entities\Penjualan\PackingOrder', 'so_id', 'id');
     }
 
     public function proforma(){
-    	return $this->hasMany('App\Entities\Penjualan\SoProforma','so_id');
+    	return $this->hasOne('App\Entities\Penjualan\SalesOrderProforma','so_id');
     }
+
+    public function showroom_mutation()
+    {
+        return $this->hasOne(
+            'App\Entities\Gudang\MutasiShowroom',
+            'so_id',
+            'id'
+        );
+    }
+
     public function so_brand_type()
     {
         if (isset($this->brand_type)) {
@@ -187,10 +202,7 @@ class SalesOrder extends Model
             return null;
         }
     }
-    public function so_status()
-    {
-        return (object) self::STEP[$this->status];
-    }
+
 
     public function shipp_cost_buyer()
     {
@@ -216,16 +228,6 @@ class SalesOrder extends Model
     {
         return (object) self::COUNT_REV[$this->count_rev];
     }
-
-    public function so_sales()
-    {
-        return array_search($this->sales_id, self::SALES);
-    }
-
-    public function so_sales_senior()
-    {
-        return array_search($this->sales_senior_id, self::SALES_SENIOR);
-    }
     
     public function so_indent()
     {
@@ -248,9 +250,9 @@ class SalesOrder extends Model
 
     public function createdBySuperuser()
     {
-        $superuser = AccountSuperuser::find($this->created_by);
-        
-        if ($superuser) {
+        $superuser = Superuser::find($this->created_by);
+
+        if($superuser){
             return $superuser->name ?? $superuser->username;
         }
     }

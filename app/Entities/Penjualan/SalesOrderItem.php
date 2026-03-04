@@ -10,14 +10,14 @@ class SalesOrderItem extends Model
         protected $table = "penjualan_so_item";
         protected $fillable =[
         	'so_id',
-            'price', 
         	'product_packaging_id',
+            'price',
         	'qty',
             'disc_usd',
         	'qty_worked',
             'packaging_id',
             'free_product',
-            'kontrak', 
+            'kontrak',
             'kontrak_id', 
             'item_indent', 
         	'updated_by',
@@ -31,10 +31,11 @@ class SalesOrderItem extends Model
             'ACTIVE' => 1,
         ];
 
-        public function so(){
-        	return $this->BelongsTo('App\Entities\Penjualan\SalesOrder','so_id','id');
+        public function so()
+        {
+            return $this->belongsTo('App\Entities\Penjualan\SalesOrder', 'so_id', 'id');
         }
-
+        
         public function product_pack(){
         	return $this->BelongsTo('App\Entities\Master\ProductPack', 'product_packaging_id', 'id');
         }

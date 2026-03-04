@@ -19,6 +19,15 @@
           <input type="text" class="form-control" id="code" name="code" onkeyup="nospaces(this)">
         </div>
       </div>
+      <!--<div class="form-group row">-->
+      <!--  <label class="col-md-3 col-form-label text-right" for="type">Type <span class="text-danger">*</span></label>-->
+      <!--  <div class="col-md-7">-->
+      <!--    <select class="js-select2 form-control" id="type" name="type" data-placeholder="Select Type">-->
+      <!--      <option value="{{ \App\Entities\Gudang\Receiving::TYPE['INBOUND'] }}">Inbound</option>-->
+      <!--      <option value="{{ \App\Entities\Gudang\Receiving::TYPE['RETURN'] }}">Return</option>-->
+      <!--    </select>-->
+      <!--  </div>-->
+      <!--</div>-->
       <div class="form-group row">
         <label class="col-md-3 col-form-label text-right" for="warehouse">Warehouse <span class="text-danger">*</span></label>
         <div class="col-md-7">

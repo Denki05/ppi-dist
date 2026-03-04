@@ -17,67 +17,76 @@
     <form id="frmCreate" action="#" data-type="POST" enctype="multipart/form-data">
       @csrf
       <input type="hidden" name="purchase_id" value="{{$purchase_order->id}}">
-      <div class="form-group row">
-        <div class="col-md-4">
-        <label for="merek">Merek</label>
-          <select class="form-control js-select2 select-brand" name="merek" data-index="0">
+
+      <div class="card shadow-sm border mb-4" style="max-width: 500px;">
+        <div class="card-body p-3">
+          <h5 class="mb-3 font-weight-bold" style="font-size: 1rem;">Pilih Merek</h5>
+          <div class="form-group mb-2">
+            <label for="merek" style="font-size: 0.95rem;">Merek</label>
+            <select class="form-control js-select2 select-brand" name="merek" data-index="0" style="font-size: 0.95rem;">
               <option value="">Pilih Merek</option>
               @foreach($merek as $merek => $row)
               <option value="{{$row->brand_name}}">{{$row->brand_name}}</option>
               @endforeach
             </select>
-          <small id="emailHelp" class="form-text text-muted">*Choose a brand first</small>
+            <strong class="form-text text-danger" style="font-size: 0.85rem;">*Pilih merek terlebih dahulu sebelum memilih produk</strong>
+          </div>
         </div>
       </div>
-      <br>
-      <div class="row">
-        <div class="col-12 product-list">
-          <div class="row">
-            <div class="col-3">Product</div>
-            <div class="col-1">Qty</div>
-            <div class="col-2">Packaging</div>
-            <div class="col-2">Notes</div>
-            <div class="col-2">Cutomer</div>
-            <div class="col">Action</div>
+
+      <div class="card shadow-sm border mb-4">
+        <div class="card-body">
+          <h5 class="mb-3 font-weight-bold">Tambah Produk</h5>
+          <div class="form-row align-items-end">
+            <div class="form-group col-md-3">
+              <label>Produk</label>
+              <select class="form-control js-select2 select-product" name="product_packaging_id[]" data-index="0">
+                <option value="">Pilih Produk</option>
+              </select>
+            </div>
+            <div class="form-group col-md-1">
+              <label>Qty</label>
+              <input type="number" name="qty[]" class="form-control input-qty" data-index="0" placeholder="0" step="any">
+            </div>
+            <div class="form-group col-md-2">
+              <label>Kemasan</label>
+              <select name="packaging_id[]" class="form-control js-select2 select-packaging" data-index="0">
+                <option value="">Pilih Kemasan</option>
+              </select>
+            </div>
+            <div class="form-group col-md-2">
+              <label>Catatan Produksi</label>
+              <input type="text" name="note_produksi[]" class="form-control note_produksi" data-index="0" placeholder="Catatan...">
+            </div>
+            <div class="form-group col-md-2">
+              <label>Catatan Repack</label>
+              <input type="text" name="note_repack[]" class="form-control note_repack" data-index="0" placeholder="Catatan...">
+            </div>
+            <div class="form-group col-md-2 text-right">
+              <button type="button" id="buttonAddProduct" class="btn btn-success">
+                <i class="fa fa-plus"></i> Tambah
+              </button>
+            </div>
           </div>
 
-          <div class="row mt-10 product-row">
-            <div class="col-3">
-              <select class="form-control js-select2 select-product" name="product_packaging_id[]" data-index="0">
-                <option value="">Select product</option>
-              </select>
-            </div>
-            <div class="col-1">
-              <input type="number" name="qty[]" class="form-control input-qty" data-index="0" step="any">
-            </div>
-            <div class="col-2">
-              <select name="packaging_id[]" class="form-control js-select2 select-packaging" data-index="0">
-                <option value="">Select packaging</option>
-              </select>
-            </div>
-            <div class="col-2">
-              <input type="text" name="note_produksi[]" class="form-control note_produksi" data-index="0" step="any">
-            </div>
-            <div class="col-2">
-              <input type="text" name="note_repack[]" class="form-control note_repack" data-index="0" step="any">
-            </div>
-            <div class="col"><button type="button" id="buttonAddProduct" class="btn btn-primary"><em class="fa fa-plus"></em></button></div>
-            </div>
-            <hr />
+          <hr class="mt-4" />
 
+          <div class="product-list mt-3"></div>
         </div>
       </div>
-     
+
       <div class="form-group row pt-30">
         <div class="col-md-6">
           <a href="{{ route('superuser.gudang.purchase_order.step', $purchase_order->id) }}">
-            <button type="button" class="btn bg-gd-cherry border-0 text-white">
-              <i class="fa fa-arrow-left mr-10"></i> Back
+            <button type="button" class="btn btn-danger">
+              <i class="fa fa-arrow-left mr-2"></i> Kembali
             </button>
           </a>
         </div>
         <div class="col-md-6 text-right">
-          <button class="btn btn-primary btn-md btn-simpan" type="button"><i class="fa fa-save"></i> Submit</button>
+          <button class="btn btn-primary btn-md btn-simpan" type="button">
+            <i class="fa fa-save mr-1"></i> Simpan
+          </button>
         </div>
       </div>
     </form>

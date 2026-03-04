@@ -4,31 +4,40 @@
 
 @if ( $receiving->status() == $receiving::STATUS['ACTIVE'] )
   <nav class="breadcrumb bg-white push">
-    <span class="breadcrumb-item">Purchasing</span>
+    <span class="breadcrumb-item">Gudang</span>
     <span class="breadcrumb-item">Receiving</span>
     <span class="breadcrumb-item">New</span>
     <span class="breadcrumb-item active">Add Detail</span>
   </nav>
 @else
   <nav class="breadcrumb bg-white push">
-    <span class="breadcrumb-item">Purchasing</span>
+    <span class="breadcrumb-item">Gudang</span>
     <span class="breadcrumb-item">Receiving</span>
     <span class="breadcrumb-item">{{ $receiving->code }}</span>
     <span class="breadcrumb-item active">Edit Detail</span>
   </nav>
 @endif
 
-@if($errors->any())
+@if(session()->has('message'))
+<div class="alert alert-success alert-dismissable" role="alert">
+  <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+      <span aria-hidden="true">×</span>
+  </button>
+  <h3 class="alert-heading font-size-h4 font-w400">Success</h3>
+  <p class="mb-0">{{ session('message') }}</p>
+</div>
+@endif
+
+@if(session()->has('error'))
 <div class="alert alert-danger alert-dismissable" role="alert">
   <button type="button" class="close" data-dismiss="alert" aria-label="Close">
       <span aria-hidden="true">×</span>
   </button>
   <h3 class="alert-heading font-size-h4 font-w400">Error</h3>
-  @foreach ($errors->all() as $error)
-  <p class="mb-0">{{ $error }}</p>
-  @endforeach
+  <p class="mb-0">{{ session('error') }}</p>
 </div>
 @endif
+
 <div id="alert-block"></div>
 
 @if(session()->has('collect_success') || session()->has('collect_error'))
@@ -54,17 +63,6 @@
 </div>
 @endif
 
-@if(session()->has('message'))
-<div class="alert alert-success alert-dismissable" role="alert">
-  <button type="button" class="close" data-dismiss="alert" aria-label="Close">
-      <span aria-hidden="true">×</span>
-  </button>
-  <h3 class="alert-heading font-size-h4 font-w400">Success</h3>
-  <p class="mb-0">{{ session()->get('message') }}</p>
-</div>
-@endif
-
-
 <div class="block">
   <div class="block-header block-header-default">
     <h3 class="block-title">New Receiving</h3>
@@ -88,12 +86,6 @@
         <div class="form-control-plaintext">{{ $receiving->pbm_date ? date('d/m/Y', strtotime($receiving->pbm_date)) : '' }}</div>
       </div>
     </div>
-    {{--<div class="row">
-      <label class="col-md-3 col-form-label text-right">No container</label>
-      <div class="col-md-7">
-        <div class="form-control-plaintext">{{ $receiving->no_container }}</div>
-      </div>
-    </div>--}}
     <div class="row">
       <label class="col-md-3 col-form-label text-right">Note</label>
       <div class="col-md-7">
@@ -109,135 +101,284 @@
 
     <div class="row pt-30 mb-15">
       <div class="col-md-6">
+        <a href="{{ route('superuser.gudang.receiving.index') }}">
+          <button type="button" class="btn bg-gd-cherry border-0 text-white">
+            <i class="fa fa-arrow-left mr-10"></i> Back
+          </button>
+        </a>
       </div>
-
       <div class="col-md-6 text-right">
+        @php
+            use App\Entities\Gudang\Receiving as RI;
+            $role = $superuser->division;           // singkat
+        @endphp
 
-        <a href="{{ route('superuser.gudang.receiving.edit', $receiving->id) }}">
-          <button type="button" class="btn bg-gd-sea border-0 text-white">
-            Edit <i class="fa fa-pencil ml-10"></i>
-          </button>
-        </a>
-        <a href="javascript:deleteConfirmation('{{ route('superuser.gudang.receiving.destroy', $receiving->id) }}', true)">
-          <button type="button" class="btn bg-gd-pulse border-0 text-white">
-            Delete <i class="fa fa-trash ml-10"></i>
-          </button>
-        </a>
-        <a href="javascript:saveConfirmation2('{{ route('superuser.gudang.receiving.publish', $receiving->id) }}')">
-          <button type="button" class="btn bg-gd-leaf border-0 text-white">
-            ACC <i class="fa fa-check ml-10"></i>
-          </button>
-        </a>
+        {{-- 1. Draft (ACTIVE) – tombol Edit/Publish/Delete hanya utk Admin & Developer --}}
+        @if($receiving->status == \App\Entities\Gudang\Receiving::STATUS['ACTIVE']
+            && in_array($role, ['Admin','Developer']))
+            <a href="{{ route('superuser.gudang.receiving.edit', $receiving->id) }}">
+                <button type="button" class="btn bg-gd-sea border-0 text-white">
+                    Edit <i class="fa fa-pencil ml-10"></i>
+                </button>
+            </a>
+
+            <a href="{{ route('superuser.gudang.receiving.publish', $receiving->id) }}">
+              <button type="button" class="btn bg-gd-leaf border-0 text-white">
+                Publish to QC <i class="fa fa-check ml-10"></i>
+              </button>
+            </a>
+
+            <a href="javascript:deleteConfirmation('{{ route('superuser.gudang.receiving.destroy', $receiving->id) }}', true)">
+                <button type="button" class="btn bg-gd-pulse border-0 text-white">
+                    Delete <i class="fa fa-trash ml-10"></i>
+                </button>
+            </a>
+
+        {{-- 2. Tahap QC – tombol Finish QC hanya utk Warehouse --}}
+        @elseif($receiving->status == \App\Entities\Gudang\Receiving::STATUS['QC'] && in_array($role, ['Warehouse','Developer']))
+            <a href="{{ route('superuser.gudang.receiving.publish', $receiving->id) }}">
+              <button type="button" class="btn bg-gd-leaf border-0 text-white">
+                Publish to Ready <i class="fa fa-check ml-10"></i>
+              </button>
+            </a>
+
+        {{-- 3. Tahap ACC --}}
+        @elseif($receiving->status == \App\Entities\Gudang\Receiving::STATUS['READY'] && in_array($role, ['Admin','Developer']))
+            <a href="javascript:saveConfirmation2('{{ route('superuser.gudang.receiving.acc_ri', $receiving->id) }}')">
+                <button type="button" class="btn bg-gd-leaf border-0 text-white" title="ACC">
+                  ACC <i class="fa fa-check"></i>
+                </button>
+            </a>
+        @endif
       </div>
     </div>
   </div>
 </div>
-
 <div class="block">
+  @if(in_array($role, ['Admin','Developer', 'Warehouse', 'Management']) && in_array($receiving->status, [
+    \App\Entities\Gudang\Receiving::STATUS['ACTIVE'],
+    \App\Entities\Gudang\Receiving::STATUS['READY'],
+    \App\Entities\Gudang\Receiving::STATUS['ACC']
+  ]))
   <div class="block-header block-header-default">
     <h3 class="block-title">Add Detail ({{ $receiving->details->count() }})</h3>
-
-    <button type="button" class="btn btn-outline-info mr-10 min-width-125 pull-right" data-toggle="modal" data-target="#modal-manage">Import</button>
-
+    @if(in_array($role, ['Admin','Developer', 'Management']))
     <a href="{{ route('superuser.gudang.receiving.detail.create', [$receiving->id]) }}">
       <button type="button" class="btn btn-outline-primary min-width-125 pull-right">Create</button>
     </a>
+    @endif
   </div>
   <div class="block-content">
     <table id="datatable" class="table table-striped">
+      @if($receiving->type == 1)
+        <thead>
+          <tr>
+            <th class="text-center">#</th>
+            <th class="text-center">Product</th>
+            <th class="text-center">Qty Retur</th>
+            <th class="text-center">Note</th>
+            <th class="text-center">Action</th>
+          </tr>
+        </thead>
+        <tbody>
+          @foreach($receiving->details as $detail)
+          <tr>
+            <td class="text-center">{{ $loop->iteration }}</td>
+            <td class="text-center">{{ $detail->product_pack->code }} - <b>{{ $detail->product_pack->name }}</b> - {{$detail->product_pack->packaging->pack_name}}</td>
+            <td class="text-center">{{ $detail->quantity_po }}</td>
+            <td class="text-center">{{ $detail->note }}</td>
+            <td class="text-center">
+              @if(in_array($role, ['Admin','Developer', 'Management']))
+                <a href="javascript:deleteConfirmation('{{ route('superuser.gudang.receiving.detail.destroy', [$receiving->id, $detail->id]) }}')">
+                  <button type="button" class="btn btn-sm btn-circle btn-alt-danger" title="Delete Detail">
+                    <i class="fa fa-trash"></i>
+                  </button>
+                </a>
+              @endif
+            </td>
+          </tr>
+          @endforeach
+      @else
+        <thead>
+          <tr>
+            <th class="text-center">#</th>
+            <th class="text-center">Product</th>
+            <th class="text-center">Quantity RI</th>
+            <th class="text-center">Quantity QC</th>
+            <th class="text-center">Kurang Kirim</th>
+            <th class="text-center">NO BATCH</th>
+            <th class="text-center">Note</th>
+            <th class="text-center">Action</th>
+          </tr>
+        </thead>
+        <tbody>
+          @foreach($receiving->details as $detail)
+          <tr>
+            <td class="text-center">{{ $loop->iteration }}</td>
+            <td class="text-center">{{ $detail->product_pack->code }} - <b>{{ $detail->product_pack->name }}</b> - {{$detail->product_pack->packaging->pack_name}}</td>
+            <td class="text-center">{{ $detail->quantity_po }}</td>
+            <td class="text-center">{{ $detail->quantity_ri ?? '-' }}</td>
+            <td class="text-center">{{ $detail->selisih ?? '-' }}</td>
+            <td class="text-center">{{ $detail->no_batch ?? '-'}}</td>
+            <td class="text-center">{{ $detail->note }}</td>
+            <td class="text-center">
+              @if(in_array($role, ['Admin','Developer', 'Management']))
+                <a href="javascript:deleteConfirmation('{{ route('superuser.gudang.receiving.detail.destroy', [$receiving->id, $detail->id]) }}')">
+                  <button type="button" class="btn btn-sm btn-circle btn-alt-danger" title="Delete Detail">
+                    <i class="fa fa-trash"></i>
+                  </button>
+                </a>
+              @endif
+            </td>
+          </tr>
+          @endforeach
+        </tbody>
+      @endif
+    </table>
+  </div>
+
+  @elseif($receiving->status == \App\Entities\Gudang\Receiving::STATUS['QC'])
+  <div class="block-content">
+    <table id="datatable_qc" class="table table-striped">
       <thead>
         <tr>
           <th class="text-center">#</th>
-          <th class="text-center">PO Number</th>
           <th class="text-center">Product</th>
-          
-          <th class="text-center">PO Quantity</th>
-          <th class="text-center">RI Quantity</th>
-          <th class="text-center">Sisa Quantity</th>
-          <th class="text-center">Colly Quantity</th>
-          <th class="text-center">NO BATCH</th>
-          <th class="text-center">Note</th>
+          <th class="text-center">Quantity</th>
+          <th class="text-center">Status Qc</th>
           <th class="text-center">Action</th>
         </tr>
       </thead>
       <tbody>
+        @if(in_array($role, ['Warehouse','Developer']))
+        <div class="mb-3">
+        <button type="button"
+                  class="btn btn-sm btn-outline-primary btn-add-qc-global">
+            <i class="fa fa-plus"></i> Tambah QC
+          </button>
+        </div>
+        @endif
         @foreach($receiving->details as $detail)
-        <tr>
-          <td class="text-center">{{ $loop->iteration }}</td>
-          <td class="text-center">{{ $detail->purchase_order->code }}</td>
-          <td class="text-center">{{ $detail->product_pack->code }} - <b>{{ $detail->product_pack->name }}</b> - {{$detail->product_pack->packaging->pack_name}}</td>
-          <td class="text-center">{{ $receiving->price_format($detail->quantity) }}</td>
-          <td class="text-center">{{ $receiving->price_format($detail->total_quantity_ri) }}{{ $detail->total_reject_ri($detail->id) ? ' [RE '.$receiving->price_format($detail->total_reject_ri($detail->id)).']' : '' }}</td>
-          <td class="text-center">{{ $detail->quantity - $detail->total_quantity_ri }}</td>
-          <td class="text-center">{{ $receiving->price_format($detail->total_quantity_colly) }}{{ $detail->total_reject_colly($detail->id) ? ' [RE '.$receiving->price_format($detail->total_reject_colly($detail->id)).']' : '' }}</td>
-          <td class="text-center">{{ $detail->no_batch ?? '-'}}</td>
-          <td class="text-center">{{ $detail->note }}</td>
-          <td class="text-center" style="white-space: nowrap;">
-            <a href="{{ route('superuser.gudang.receiving.detail.edit', [$receiving->id, $detail->id]) }}">
-              <button type="button" class="btn btn-sm btn-circle btn-alt-warning" title="Edit Note">
-                <i class="fa fa-pencil"></i>
-              </button>
-            </a>
-            @if(is_null($detail->colly))
-              <a href="javascript:void(0)" type="button" class="btn btn-sm btn-circle btn-alt-info openModal" data-id="{{$receiving->id}}" data-detail-id="{{$detail->id}}"><i class="fa fa-plus"></i></a> 
-            @endif
-            <a href="javascript:deleteConfirmation('{{ route('superuser.gudang.receiving.detail.destroy', [$receiving->id, $detail->id]) }}')">
-              <button type="button" class="btn btn-sm btn-circle btn-alt-danger" title="Delete">
-                  <i class="fa fa-times"></i>
-              </button>
-            </a>
-          </td>
-        </tr>
+          @foreach($detail->qcLogs as $qc)
+            <tr>
+              <td class="text-center">{{ $loop->iteration }}</td>
+              <td class="text-center">{{ $detail->product_pack->code }} - <b>{{ $detail->product_pack->name }}</b> - {{$detail->product_pack->packaging->pack_name}}</td>
+              <td class="text-center">{{ $qc->qty_qc }}</td>
+              <td class="text-center">{{ $qc->status_qc() }}</td>
+              <td class="text-center">
+                @if($qc->is_sellable && $qc->is_approved == 0 && in_array($role, ['Admin','Developer']))
+                    <a href="javascript:saveConfirmation2('{{ route('superuser.gudang.receiving.detail.approveQc', $qc->id) }}')">
+                      <button type="button" class="btn btn-sm btn-circle btn-alt-warning" title="Approve QC Saleable">
+                        <i class="fa fa-check"></i>
+                      </button>
+                    </a>
+                @endif
+
+                @if(in_array($role, ['Warehouse','Developer']))
+                  <a href="javascript:void(0);" onclick="deleteQc('{{ route('superuser.gudang.receiving.detail.destroyQc', $qc->id) }}')">
+                    <button type="button" class="btn btn-sm btn-outline-danger" title="Hapus Log QC">
+                      <i class="fa fa-trash"></i>
+                    </button>
+                  </a>
+                @endif
+              </td>
+            </tr>
+          @endforeach
         @endforeach
       </tbody>
     </table>
   </div>
-</div>
+ @endif
 
-<!-- Modal -->
-<div class="modal fade" id="appointmentModal" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true">
-    <div class="modal-dialog" role="document">
-      <div class="alert alert-success alert-dismissible fade show" role="alert" style="display:none;">
-        <strong>Success!</strong> add quantity RI!.
-        <button type="button" class="close" data-dismiss="alert" aria-label="Close">
-          <span aria-hidden="true">&times;</span>
-        </button>
-      </div>
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title" id="exampleModalLabel">Add Quantity RI</h5>
-                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-                <span aria-hidden="true">&times;</span>
-                </button>
-            </div>
-
-            <div class="modal-body">
-                <form id="myForm" method="POST" role="form" enctype="multipart/form-data" novalidate>
-                  @csrf
-                    <input type="hidden" class="form-control" id="colly" name="colly" value="1">
-                    <div class="mb-3">
-                        <label>Quantity RI</label>
-                        <input type="number" class="form-control" id="ri" name="ri" step="any">
-                    </div>
-                    <div class="mb-3">
-                        <label>No Batch</label>
-                        <input type="text" class="form-control" id="batch" name="batch" step="any">
-                    </div>
-                    <input type="hidden" id="receivingID" />
-                    <input type="hidden" id="detailID" />
-                    <button type="submit" class="btn btn-info">Save</button>
-                    <button type="button" class="btn btn-danger" data-bs-dismiss="modal">Close</button>
-                </form>
-            </div>
+<!-- Modal QC Partial -->
+<div class="modal fade" id="modalQcPartial" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-md">
+    <form id="formQcPartial" method="POST" class="needs-validation" novalidate>
+      @csrf
+      <div class="modal-content">
+        <div class="modal-header bg-primary text-white">
+          <h5 class="modal-title">
+            <i class="fa fa-check-circle mr-2"></i>Tambah QC Partial
+          </h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close">
+            <span aria-hidden="true">&times;</span>
+          </button>
         </div>
-    </div>
+
+        <div class="modal-body pb-0">
+          {{-- ▼ PILIH PRODUK --}}
+          <div class="form-group">
+            <label class="font-weight-bold" for="detail_id">Produk</label>
+            <select name="detail_id" id="detail_id" class="form-control select2" required>
+              <option value="">-- Pilih Produk --</option>
+              {{-- Opsi akan di-*render* dari JavaScript --}}
+            </select>
+          </div>
+
+          <script>
+            const productOptions = {!! json_encode(
+              $receiving->details->map(function($d) {
+                return [
+                  'id' => $d->id,
+                  'code' => $d->product_pack->code,
+                  'name' => $d->product_pack->name,
+                  'pack' => optional($d->product_pack->packaging)->pack_name,
+                  'po' => (float) $d->quantity_po,
+                  'qc' => (float) $d->qcLogs->sum('qty_qc'),
+                  'sisa' => (float) $d->quantity_po - (float) $d->qcLogs->sum('qty_qc'),
+                ];
+              })
+            ) !!};
+          </script>
+
+          {{-- ▼ JUMLAH QC --}}
+          <div class="form-group">
+            <label class="font-weight-bold" for="qty_qc">Jumlah QC (kg)</label>
+            <input type="number" min="0.1" step="0.1" name="qty_qc" id="qty_qc"
+                   class="form-control" placeholder="Contoh: 10.5" required>
+          </div>
+
+          {{-- ▼ STATUS QC --}}
+          <div class="form-group">
+            <label class="font-weight-bold" for="status_qc">Status QC</label>
+            <select name="status_qc" id="status_qc" class="form-control select2" required>
+              <option value="">-- Pilih Status --</option>
+              <option value="OK">OK</option>
+              <option value="NOT OK">NOT OK</option>
+            </select>
+          </div>
+
+          @if($receiving->type == 0)
+          {{-- ▼ SALEABLE --}}
+          <div class="form-group mb-3">
+            <div class="form-check">
+              <input type="checkbox" id="is_sellable_checkbox" class="form-check-input">
+              <label class="form-check-label font-weight-bold" for="is_sellable_checkbox">
+                Langsung bisa dijual <small class="text-muted">(saleable)</small>
+              </label>
+            </div>
+            <input type="hidden" name="is_sellable" id="is_sellable" value="0">
+          </div>
+          @endif
+        </div>
+
+        <div class="modal-footer border-top-0 pt-0">
+          <button type="submit" class="btn btn-primary">
+            <i class="fa fa-save mr-1"></i> Simpan
+          </button>
+          <button type="button" class="btn btn-danger" data-bs-dismiss="modal">
+            <i class="fa fa-times mr-1"></i> Tutup
+          </button>
+        </div>
+      </div>
+    </form>
+  </div>
 </div>
 
 @endsection
 
 @include('superuser.asset.plugin.datatables')
 @include('superuser.asset.plugin.magnific-popup')
-@include('superuser.asset.plugin.swal2')
 
 @section('modal')
   @include('superuser.component.modal-manage-receiving-detail', [
@@ -249,48 +390,117 @@
 
 @push('scripts')
 <script src="{{ asset('utility/superuser/js/form.js') }}"></script>
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<script>
+function deleteQc(url) {
+    if (confirm("Apakah Anda yakin ingin menghapus data QC ini?")) {
+        $.ajax({
+            url: url,
+            type: 'GET', // Gunakan POST/DELETE jika lebih aman
+            dataType: 'json',
+            success: function(response) {
+                if (response.status === 'success') {
+                    alert(response.message);
+                    location.reload(); // atau datatable.ajax.reload() jika pakai datatables
+                } else {
+                    alert(response.message);
+                }
+            },
+            error: function(xhr) {
+                alert(xhr.responseJSON.message || 'Terjadi kesalahan saat menghapus data QC.');
+            }
+        });
+    }
+}
+</script>
+
 <script type="text/javascript">
-  $(document).ready(function() {
-    $('#datatable').DataTable({
-      scrollX: true
-    })
-  })
+$(document).ready(function () {
+  $('#datatable').DataTable({});
+  $('#datatable_qc').DataTable({});
+  $('.select2').select2({ width: '100%' });
 
-  $(document).on('click', '.openModal', function () {
-    var id = $(this).data('id');
-    var detail = $(this).data('detail-id');
-    $('#receivingID').val(id);
-    $('#detailID').val(detail);
-    $('#appointmentModal').modal('show');
-  })
+  // Tombol tambah QC
+  $('.btn-add-qc-global').on('click', function () {
+    filterSelectOptions();
+    $('#modalQcPartial').modal('show');
+  });
 
-  $('#myForm').on('submit', function (e) {
-      e.preventDefault(); // prevent the form submit
-      var id = $('#receivingID').val();
-      var detail = $('#detailID').val();
-      var url = '{{ route("superuser.gudang.receiving.detail.colly.store", [":id",":detail_id"]) }}';
-      url = url.replace(':id', id);
-      url = url.replace(':detail_id', detail);
-      var AlertMsg = $('div[role="alert"]');
+  // Checkbox is_sellable
+  $('#is_sellable_checkbox').on('change', function () {
+    $('#is_sellable').val(this.checked ? 1 : 0);
+  });
 
-      var formData = new FormData(this); 
-      $.ajax({
-          url: url,
-          type: 'POST',
-          headers: {'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')},
-          data: formData,
-          contentType: false,
-          processData: false,
-          success: function (response) {
-            $(AlertMsg).show();
-            setTimeout(function () {
-                    $('#myModal').modal({ show: true });
-                    setTimeout(function () {
-                        window.location.reload(1);
-                    }, 800);
-            }, 800);
-          }
-      });
+  // Filter opsi select detail_id (hanya yang belum selesai QC)
+  function filterSelectOptions() {
+    const $select = $('#detail_id');
+    $select.empty();
+    $select.append(`<option value="">-- Pilih Produk --</option>`);
+
+    let count = 0;
+    productOptions.forEach(p => {
+      if (p.qc < p.po) {
+        const displayText = `${p.code} - ${p.name} / ${p.pack} (Remaind : ${p.sisa.toFixed(2)} kg)`;
+        $select.append(`<option value="${p.id}">${displayText}</option>`);
+        count++;
+      }
     });
+
+    $select.val(null).trigger('change');
+
+    if (count === 0) {
+      Swal.fire('Info', 'Semua produk sudah selesai QC.', 'info');
+      $('#modalQcPartial').modal('hide');
+    }
+  }
+
+  // Submit form QC
+  $('#formQcPartial').on('submit', function (e) {
+    e.preventDefault();
+
+    const detailId = $('#detail_id').val();
+    if (!detailId) {
+      return Swal.fire('Oops', 'Produk harus dipilih', 'warning');
+    }
+
+    let url = '{{ route("superuser.gudang.receiving.detail.qty_qc", ":detail") }}';
+    url = url.replace(':detail', detailId);
+
+    $.post(url, $(this).serialize())
+      .done(() => {
+        Swal.fire('Berhasil', 'Data QC tersimpan', 'success')
+          .then(() => location.reload());
+      })
+      .fail(xhr => {
+        if (xhr.responseJSON && xhr.responseJSON.notification) {
+          const notif = xhr.responseJSON.notification;
+          const content = Array.isArray(notif.content)
+            ? notif.content.join('<br>')
+            : notif.content;
+
+          Swal.fire({
+            icon: notif.type.includes('danger') ? 'error' : 'warning',
+            title: notif.header || 'Gagal',
+            html: content,
+          });
+        } else {
+          Swal.fire('Gagal', 'Terjadi kesalahan pada server', 'error');
+        }
+      });
+  });
+
+  $(function() {
+    $('#modalQcPartial').on('hidden.bs.modal', function () {
+      // Reset form fields
+      $('#formQcPartial')[0].reset();
+      // Reset select2 fields
+      $('#detail_id').val('').trigger('change');
+      $('#status_qc').val('').trigger('change');
+      // Uncheck checkbox and reset hidden input
+      $('#is_sellable_checkbox').prop('checked', false);
+      $('#is_sellable').val(0);
+    });
+  });
+});
 </script>
 @endpush

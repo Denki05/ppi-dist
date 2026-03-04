@@ -66,6 +66,7 @@
 @endsection
 
 @include('superuser.asset.plugin.datatables')
+@include('superuser.asset.plugin.datatables-button')
 
 @push('scripts')
 <script type="text/javascript">
@@ -75,7 +76,6 @@ $(document).ready(function() {
     // paging: false,
     searching: false,
     sorting: false,
-    dom: '<"row"<"col-sm-2"l><"col-sm-10 text-left"B>> <"row"<"col-sm-12"rt>> <"row"<"col-sm-12 col-md-6"i><"col-sm-12 col-md-6"p>>',
   });
 });
 </script>

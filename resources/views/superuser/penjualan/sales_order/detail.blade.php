@@ -25,24 +25,17 @@
       <input type="hidden" name="id" value="{{$result->id}}">
       <div class="row">
         <div class="col-12">
-          <h5>#Data Pesanan {{$result->code}}</h5>
-          <br>
-          <div class="form-group row">
-            <label class="col-md-2 col-form-label text-right" for="name">Kode Nota</label>
-            <div class="col-md-8">
-              <input type="text" class="form-control" value="{{$result->code}}" readonly>
-            </div>
-          </div>
+          <h5>#Data Pesanan {{ $result->code }}</h5>
           <div class="form-group row">
             <label class="col-md-2 col-form-label text-right" for="name">Sales Senior</label>
             <div class="col-md-8">
-              <input type="text" class="form-control" value="{{$result->so_sales_senior() ?? ''}}" readonly>
+              <input type="text" class="form-control" value="{{$result->sales_senior() ?? ''}}" readonly>
             </div>
           </div>
           <div class="form-group row">
             <label class="col-md-2 col-form-label text-right" for="name">Sales </label>
             <div class="col-md-8">
-              <input type="text" class="form-control" value="{{$result->so_sales() ?? ''}}" readonly>
+              <input type="text" class="form-control" value="{{$result->sales() ?? ''}}" readonly>
             </div>
           </div>
           <div class="form-group row">

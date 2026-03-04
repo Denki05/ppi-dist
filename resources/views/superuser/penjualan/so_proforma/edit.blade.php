@@ -12,118 +12,119 @@
 <form class="ajax" data-action="{{ route('superuser.penjualan.so_proforma.update', $results->id) }}" data-type="POST" enctype="multipart/form-data">
   <input type="hidden" name="_method" value="PUT">
   <input type="hidden" name="ids_delete" value="">
-
-  <div class="row">
-    <div class="col-6">
-              <div class="block">
-                  <div class="block-header block-header-default">
+    <div class="row">
+        <div class="col-6">
+            <div class="block">
+                <div class="block-header block-header-default">
                   <h3 class="block-title">#Detail Nota</h3>
-                  </div>
-                  <div class="block-content">
-                    <div class="form-row">
-                        <div class="form-group col-md-6">
-                          <label for="so_date">Tanggal Nota</label>
-                          <input type="date" name="so_date" class="form-control" value="{{ $results->so_date }}">
-                        </div>
-                        <div class="form-group col-md-6">
-                          <label for="type_transaction">Type Transaksi</label>
-                          <input type="text" name="type_transaction" class="form-control" value="{{ \App\Entities\Penjualan\SalesOrderProforma::TYPE_TRANSACTION['0'] }}" readonly>
-                        </div>
+                </div>
+                <div class="block-content">
+                  <div class="form-row">
+                    <div class="form-group col-md-6">
+                      <label for="so_date">Tanggal Nota</label>
+                      <input type="date" name="so_date" class="form-control" value="{{ $results->so_date }}" required>
                     </div>
+                    <div class="form-group col-md-6">
+                      <label for="type_transaction">Type Transaksi</label>
+                      <input type="text" name="type_transaction" class="form-control" value="{{ \App\Entities\Penjualan\SalesOrderProforma::TYPE_TRANSACTION['0'] }}" readonly>
+                    </div>
+                  </div>
 
                     <div class="form-row">
-                        <div class="form-group col-md-6">
-                          <label for="so_date">Warehouse</label>
-                          <select class="form-control js-select2" name="warehouse">
-                              <option value="">Pilih Gudang</option>    
-                              @foreach($warehouse AS $row)
-                              <option value="{{$row->id}}" {{ ($row->id == $results->warehouse_id ) ? 'selected' : '' }}>{{ $row->name }}</option>
-                              @endforeach
-                          </select>
-                        </div>
-                        <div class="form-group col-md-6">
-                          <label for="so_date">Vendor</label>
-                          <select class="form-control js-select2" name="vendor">
+                      <div class="form-group col-md-6">
+                        <label for="so_date">Warehouse</label>
+                        <select class="form-control js-select2" name="warehouse" required>
+                            <option value="">Pilih Gudang</option>    
+                            @foreach($warehouse AS $row)
+                            <option value="{{$row->id}}" {{ ($row->id == $results->warehouse_id ) ? 'selected' : '' }}>{{ $row->name }}</option>
+                            @endforeach
+                        </select>
+                      </div>
+                      <div class="form-group col-md-6">
+                        <label for="so_date">Ekspedisi</label>
+                        <select class="form-control js-select2" name="vendor" required>
                               <option value="">Pilih vendor</option>    
                               @foreach($vendor AS $row)
                               <option value="{{$row->id}}" {{ ($row->id == $results->vendor_id ) ? 'selected' : '' }}>{{ $row->name }}</option>
                               @endforeach
-                          </select>
-                        </div>
-                    </div>
-
-                    <div class="form-row">
-                        <div class="form-group col-md-6">
-                          <label for="note">Note</label>
-                          <input type="text" class="form-control" name="note" value="{{ $results->note }}">
-                        </div>
-                    </div>
+                        </select>
+                      </div>
                   </div>
-              </div>
-              <div class="row">
-                  <div class="col">
+                    <div class="form-row">
+                      <div class="form-group col-md-6">
+                          <label for="type_transaction">Note</label>
+                          <input type="text" name="note" class="form-control">
+                        </div>
+                      </div>
+                </div>
+            </div>
+            <div class="row">
+                <div class="col">
                   <div class="block">
-                      <div class="block-content">
-                      <div class="form-row">
-                        
-                          <div class="form-group col-md-4">
-                          <label for="note">Brand <span class="text-danger">*</span></label>
-                          <select class="form-control js-select2" name="so_brand_name" id="so_brand_name">
+                    <div class="block-content">
+                    <div class="form-row">
+                       
+                        <div class="form-group col-md-4">
+                        <label for="note">Brand <span class="text-danger">*</span></label>
+                        <select class="form-control js-select2" name="so_brand_name" id="so_brand_name">
                               <option value="">Pilih Brand</option>
                               @foreach($brand AS $row)
                               <option value="{{ $row->brand_name }}" {{ ($row->brand_name == $results->so_brand_name ) ? 'selected' : '' }}>{{ $row->brand_name }}</option>
                               @endforeach
                           </select>
-                          </div>
-                          <div class="form-group col-md-4">
-                            <label for="note">Rekening <span class="text-danger">*</span></label>
-                            <select class="form-control js-select2" name="rekening">
-                              <option value="">Pilih Rekening</option>
-                              @foreach($rekening as $key)
-                              <option value="{{$key->id}}" {{ ($key->id == $results->rekening_id ) ? 'selected' : '' }}>{{$key->name}} - {{$key->number_card}}</option>
-                              @endforeach
-                            </select>
-                          </div>
-                          <div class="form-group col-md-4">
-                              <label for="customer_area">Kurs <span class="text-danger">*</span></label>
-                              <input type="text" name="idr_rate" id="idr_rate"  class="form-control" value="{{ $results->so_idr_rate }}">
-                          </div>
-                      </div>
-                      </div>
-                  </div>
-                  </div>
-              </div>
-          </div>
+                        </div>
+                        <div class="form-group col-md-4">
+                          <label for="note">Rekening <span class="text-danger">*</span></label>
+                          <select class="form-control js-select2" name="rekening" required>
+                            <option value="">Pilih Rekening</option>
+                            @foreach($rekening as $key)
+                            <option value="{{$key->id}}">{{$key->name}} - {{$key->number_card}}</option>
+                            @endforeach
+                          </select>
+                        </div>
+                        <div class="form-group col-md-4">
+                          <label for="idr_rate">Kurs <span class="text-danger">*</span></label>
+                          <input type="text" name="idr_rate" id="idr_rate"  class="form-control" value="{{ $results->so_idr_rate }}">
+                        </div> 
+                    </div>
+                    </div>
+                </div>
+                </div>
+            </div>
+        </div>
 
-          <div class="col-6">
+        <div class="col-6">
             <div class="block">
-              <div class="block-header block-header-default">
-                <h3 class="block-title">#Detail Customer</h3>
-              </div>
-              <div class="block-content">
-                  <div class="form-row">
-                          <div class="form-group col-md-6">
-                              <label for="customer_name">Customer</label>
-                              @if($results->exsisting_customer == 0)
+                <div class="block-header block-header-default">
+                    <h3 class="block-title">#Detail Customer</h3>
+                </div>
+                <div class="block-content">
+                    <div class="form-row">
+                      <div class="form-group col-md-6">
+                          <label for="inputField">Customer</label>
+                          @if($results->exsisting_customer == 0)
                                 <input type="text" class="form-control" name="customer" value="{{ $results->customer_name ?? '-' }}">
-                              @else
-                              <input type="text" class="form-control" value="{{ $results->member->name }} {{$results->member->text_kota}}" readonly>
+                          @else
+                              <input type="text" class="form-control" value="{{ optional($results->member)->name }} {{ optional($results->member)->text_kota }}" readonly>
                               <input type="hidden" class="form-control" name="customer" value="{{ $results->customer_other_address_id }}">
-                              @endif
-                          </div>
-                          <div class="form-group col-md-6">
-                              <label for="customer_address">Alamat Kirim</label>
-                              @if($results->exsisting_customer == 0)
-                              <input type="text" class="form-control" name="customer_address" value="{{ $results->customer_address }}">
-                              @else
-                              <input type="text" class="form-control" value="{{ $results->member->address }}"readonly>
-                              @endif
-                            </div>
+                          @endif
                       </div>
-                      <div class="form-row">
-                          <div class="form-group col-md-6">
-                              <label for="customer_region">Provinsi</label>
-                              @if($results->exsisting_customer == 0)
+
+
+                        <div class="form-group col-md-6">
+                            <label for="note">Alamat Kirim</label>
+                            @if($results->exsisting_customer == 0)
+                              <input type="text" class="form-control" name="customer_address" value="{{ $results->customer_address }}" readonly>
+                            @else
+                              <input type="text" class="form-control" value="{{ optional($results->member)->address }}" readonly>
+                            @endif
+                        </div>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group col-md-6">
+                            <label for="customer_region">Provinsi</label>
+                            @if($results->exsisting_customer == 0)
                               <select class="form-control js-select2" name="customer_region" id="customer_region">
                                   <option value="">Pilih Provinsi</option>
                                   @foreach($provinsi AS $row)
@@ -131,11 +132,12 @@
                                   @endforeach
                               </select>
                               @else
-                              <input type="text" class="form-control" value="{{ $results->member->text_provinsi }}" readonly>
+                              <input type="text" class="form-control" value="{{ optional($results->member)->text_provinsi }}" readonly>
                               @endif
-                          </div>
-                          <div class="form-group col-md-6">
-                              @php
+                        </div>
+                        <div class="form-group col-md-6">
+                            <label for="customer_city">Kota</label>
+                            @php
                                   $city = DB::table('kabupaten')->where('city_id', $results->customer_city)->first();
                               @endphp
                               <label for="customer_city">Kota</label>
@@ -144,79 +146,59 @@
                                   <option value="{{ $results->customer_city }}">{{ $city->city_name }}</option>
                               </select>
                               @else
-                              <input type="text" class="form-control" value="{{ $results->member->text_kota }}" readonly>
+                              <input type="text" class="form-control" value="{{ optional($results->member)->text_kota }}" readonly>
                               @endif
-                          </div>
-                      </div>
+                        </div>
+                    </div>
 
-                      <div class="form-row">
+                    <div class="form-row">
                           <div class="form-group col-md-6">
                               <label for="customer_phone">Phone</label>
-                              <!-- <input type="number" class="form-control" name="customer_phone" value="{{ $results->member->phone ?? '' }}" readonly> -->
-                              @if($results->exsisting_customer == 0)
-                              <input type="text" class="form-control" name="customer_phone" value="{{ $results->customer_phone }}" >
-                              @else
-                              <input type="text" class="form-control" value="{{ $results->member->phone }}" >
-                              @endif
+                              <input type="number" class="form-control" name="customer_phone" value="{{ optional($results->member)->phone }}" readonly>
                           </div>
                           <div class="form-group col-md-6">
                               <label for="customer_owner">Contact Person</label>
-                              <!-- <input type="text" class="form-control" name="customer_owner" value="{{ $results->member->contact_person ?? ''}}" readonly> -->
-                              @if($results->exsisting_customer == 0)
-                              <input type="text" class="form-control" name="customer_owner" value="{{ $results->customer_owner }}" >
-                              @else
-                              <input type="text" class="form-control" value="{{ $results->member->contact_person }}" >
-                              @endif
+                              <input type="text" class="form-control" name="customer_owner" value="{{ optional($results->member)->contact_person }}" readonly>
                           </div>
-                      </div>
-              </div>
-          </div>
+                    </div>
+                </div>
+            </div>
 
-                <div class="row">
-                  <div class="col">
-                    <div class="block">
-                      <div class="block-content">
-                          <div class="form-row">
-                            <div class="form-group col-md-4">
-                              <label for="note">Sales Senior <span class="text-danger">*</span></label>
-                              <select class="form-control js-select2" name="sales_senior_id">
+            <div class="row">
+                <div class="col">
+                <div class="block">
+                    <div class="block-content">
+                    <div class="form-row">
+                       
+                        <div class="form-group col-md-6">
+                          <label for="note">Sales Senior <span class="text-danger">*</span></label>
+                          <select class="form-control js-select2" name="sales_senior_id" required>
                                 <option value="">Pilih Sales Senior</option>
                                 @foreach(\App\Entities\Penjualan\SalesOrder::SALES_SENIOR as $sales_senior => $senior_value)
                                 <option value="{{ $senior_value }}" {{ ($senior_value == $results->sales_senior_id ) ? 'selected' : '' }}>{{ $sales_senior }}</option>
                                 @endforeach
-                              </select>
-                            </div>
-                            <div class="form-group col-md-4">
-                              <label for="note">Sales <span class="text-danger">*</span></label>
-                              <select class="form-control js-select2" name="sales_id">
+                          </select>
+                        </div>
+                        <div class="form-group col-md-6">
+                          <label for="note">Sales <span class="text-danger">*</span></label>
+                          <select class="form-control js-select2" name="sales_id" required>
                                 <option value="">Pilih Sales</option>
                                 @foreach(\App\Entities\Penjualan\SalesOrder::SALES as $sales => $sales_value)
                                 <option value="{{ $sales_value }}" {{ ($sales_value == $results->sales_id ) ? 'selected' : '' }}>{{ $sales }}</option>
                                 @endforeach
-                              </select>
-                          </div>
-                          <!-- <div class="form-group col-md-4">
-                            <label for="customer_area">Disc Cash <span class="text-danger">*</span></label>
-                            <select class="form-control js-select2 base_disc" id="base_id" onkeyup="countGetUsd()">
-                              <option value="0">0</option>
-                              <option value="2">$2</option>
-                              <option value="4">$4</option>
-                            </select>
-                          </div> -->
+                          </select>
                         </div>
-                      </div>
-                  </div>
+                    </div>
+                    </div>
                 </div>
+                </div>
+        </div>
     </div>
-  </div>
-  <div class="row">
+
+    <div class="row">
       <div class="block">
         <div class="block-header block-header-default">
           <h3 class="block-title">Add Product</h3>
-          <!-- <button type="button" id="btn_call" class="btn btn-warning">
-                <i class="fas fa-calculator  pr-2" aria-hidden="true" ></i> Call
-          </button> -->
-
           <a href="#" class="row-add">
             <button type="button" class="btn bg-gd-sea border-0 text-white">
               <i class="fa fa-plus mr-10"></i> Row
@@ -242,7 +224,7 @@
                 <tr>
                   <td>{{ $loop->iteration }}</td>
                   <td>
-                    <input type="checkbox" class="form-check-input input-gift" 
+                    <input type="checkbox" class="form-check-input input-gift" id="free_product" 
                     value="{{$item->free_product}}" name="free_product[]" 
                     {{ $item->free_product ? 'checked' : '' }}>
                   </td>
@@ -251,10 +233,10 @@
                       <option value="{{ $item->product_packaging_id }}">{{ $item->productPack->code }} - {{ $item->productPack->name }} / {{ $item->packaging->pack_name }}</option>
                     </select>
                   </td>
-                  <td><input type="number" class="form-control" name="qty[]" value="{{ number_format($item->qty, 2) }}" required step="0.01" min="0"><input type="hidden" name="packaging[]" value="{{ $item->packaging_id }}"><input type="hidden" class="form-control" name="edit[]" value="{{ $item->id }}"></td>
-                  <td><input type="number" class="form-control"  name="price[]" value="{{ $item->price }}" required></td>
-                  <td><input type="number" class="form-control"  name="disc_usd[]" value="{{ $item->disc_usd }}" required></td>
-                  <td><input type="number" class="form-control" id="total_item" name="total[]" readonly value="{{ $item->total_item }}"></td>
+                  <td><input type="number" class="form-control" name="qty[]" value="{{ $item->qty }}" required step="0.01" min="0"><input type="hidden" name="packaging[]" value="{{ $item->packaging_id }}"><input type="hidden" class="form-control" name="edit[]" value="{{ $item->id }}"></td>
+                  <td><input type="number" class="form-control" name="price[]" value="{{ $item->price }}" required></td>
+                  <td><input type="number" class="form-control" name="disc_usd[]" value="{{ $item->disc_usd }}" required></td>
+                  <td><input type="number" class="form-control" name="total[]" readonly value="{{ $item->total_item }}"></td>
                   <td><a href="#" class="row-delete"><button type="button" class="btn btn-sm btn-circle btn-alt-danger" title="Delete"><i class="fa fa-trash"></i></button></a></td>
                 </tr>
               @endforeach
@@ -266,56 +248,56 @@
             <div class="form-group row justify-content-end">
               <label class="col-md-3 col-form-label text-right" for="subtotal">IDR Sub Total</label>
               <div class="col-md-2">
-                <input type="text" class="form-control" id="subtotal" name="subtotal" placeholder="{{$results->details_cost[0]->purchase_total_idr}}" readonly>
+                <input type="text" class="form-control" id="subtotal" name="subtotal" readonly value="{{ $detailsCost->purchase_total_idr ?? 0 }}">
               </div>
             </div>
             <div class="form-group row justify-content-end">
               <label class="col-md-1 col-form-label">Disc %</label>
               <div class="col-md-1">
-                <input type="text" class="form-control" id="disc_agen_percent" name="disc_agen_percent" placeholder="{{ $results->details_cost[0]->discount_1_percent }}">
+                <input type="text" class="form-control" id="disc_agen_percent" name="disc_agen_percent" value="{{ $detailsCost->discount_1_percent ?? 0 }}">
               </div>
               <div class="col-sm-2">
-                <input type="text" readonly class="form-control" id="disc_agen_idr" name="disc_agen_idr" placeholder="{{ $results->details_cost[0]->discount_1 }}">
+                <input type="text" readonly class="form-control" id="disc_agen_idr" name="disc_agen_idr" value="{{ $detailsCost->discount_1 ?? 0 }}">
               </div>
             </div>
             <div class="form-group row justify-content-end">
               <label class="col-md-1 col-form-label">Disc Kemasan</label>
               <div class="col-md-1">
-                <input type="text" class="form-control" id="disc_kemasan_percent" name="disc_kemasan_percent" placeholder="{{ $results->details_cost[0]->discount_2_percent }}">
+                <input type="text" class="form-control" id="disc_kemasan_percent" name="disc_kemasan_percent" value="{{ $detailsCost->discount_1_percent ?? 0 }}">
               </div>
               <div class="col-sm-2">
-                <input type="text" readonly class="form-control" id="disc_kemasan_idr" name="disc_kemasan_idr" placeholder="{{ $results->details_cost[0]->discount_2 }}">
+                <input type="text" readonly class="form-control" id="disc_kemasan_idr" name="disc_kemasan_idr" value="{{ $detailsCost->discount_2 ?? 0 }}">
               </div>
             </div>
             <div class="form-group row justify-content-end">
               <label class="col-md-3 col-form-label text-right" for="disc_tambahan_idr">Disc IDR</label>
               <div class="col-md-2">
-                <input type="text" class="form-control" id="disc_tambahan_idr" name="disc_tambahan_idr" placeholder="{{ $results->details_cost[0]->discount_idr }}">
+                <input type="text" class="form-control" id="disc_tambahan_idr" name="disc_tambahan_idr" value="{{ $detailsCost->discount_idr ?? 0 }}">
               </div>
             </div>
             <div class="form-group row justify-content-end">
               <label class="col-md-3 col-form-label text-right" for="voucher_idr">Voucher</label>
               <div class="col-md-2">
-                <input type="text" class="form-control" id="voucher_idr" name="voucher_idr" placeholder="{{ $results->details_cost[0]->voucher_idr }}">
+                <input type="text" class="form-control" id="voucher_idr" name="voucher_idr" value="{{ $detailsCost->voucher_idr ?? 0 }}">
               </div>
             </div>
             <div class="form-group row justify-content-end">
               <label class="col-md-3 col-form-label text-right" for="voucher_idr">Ongkir</label>
               <div class="col-md-2">
-                <input type="text" class="form-control" id="delivery_cost_idr" name="delivery_cost_idr" placeholder="{{ $results->details_cost[0]->delivery_cost_idr }}">
+                <input type="text" class="form-control" id="delivery_cost_idr" name="delivery_cost_idr" value="{{ $detailsCost->delivery_cost_idr ?? 0 }}">
               </div>
             </div>
             <div class="form-group row justify-content-end">
               <label class="col-md-3 col-form-label text-right" for="grand_total">IDR Total</label>
               <div class="col-md-2">
-                <input type="text" class="form-control" id="grand_total" name="grand_total" readonly>
+                <input type="text" class="form-control" id="grand_total" name="grand_total" readonly value="{{ $detailsCost->grand_total_idr ?? 0 }}">
               </div>
             </div>
           </div>
         </div>
       </div>
     </div>
-
+    
     <div class="row pt-30 mb-15">
           <div class="col-md-6">
             <a href="{{ route('superuser.penjualan.so_proforma.index') }}">
@@ -325,15 +307,12 @@
             </a>
           </div>
           <div class="col-md-6 text-right">
-            
-
             <button type="submit" class="btn btn-primary">
                 <i class="fa fa-save  pr-2" aria-hidden="true" ></i> Save
             </button>
           </div>
-      </div>
+        </div>
 </form>
-
 @endsection
 
 @include('superuser.asset.plugin.select2')
@@ -406,7 +385,7 @@
       if($('#so_brand_name').val()) {
         table.row.add([
                       counter,
-                      '<input type="checkbox" class="form-check-input input-gift" id="gift" name="gift"><input class="form-control input-free" type="hidden" value="0" name="free_product[]">',
+                      '<input type="checkbox" class="form-check-input input-gift" id="gift" name="gift"><input class="form-control input-free" type="hidden" id="free_product" value="0" name="free_product[]">',
                       '<select class="js-select2 form-control js-ajax" id="sku['+counter+']" name="sku[]" data-placeholder="Select SKU" style="width:100%" required></select>',
                       '<input type="number" style="text-align: center;" class="form-control" name="qty[]" readonly required step="0.01" min="0"><input type="hidden" class="form-control packaging" name="packaging[]"><input type="hidden" class="form-control" name="edit[]" value="">',
                       '<input type="number" style="text-align: center;" class="form-control" name="price[]" readonly required>',
@@ -451,32 +430,27 @@
     };
 
     $('#datatable tbody').on( 'keyup', 'input[name="qty[]"]', function (e) {
-      var priceInput = $(this).parents('tr').find('input[name="price[]"]');
+      var price = $(this).parents('tr').find('input[name="price[]"]').val();
       var disc_usd = $(this).parents('tr').find('input[name="disc_usd[]"]').val();
       var kurs = $("#idr_rate").val();
-      var isFree = $(this).parents('tr').find('.input-free').val(); // Check if product is free
       
-      var price = isFree == 1 ? 0 : priceInput.val(); // Set price to 0 if free
-
       var total = parseFloat(((price - disc_usd) * $(this).val()) * kurs);
 
       $(this).parents('tr').find('input[name="total[]"]').val(total);
       $(this).parents('tr').find('input[name="total[]"]').change();
+
     });
 
-
     $('#datatable tbody').on( 'keyup', 'input[name="disc_usd[]"]', function (e) {
-      var priceInput = $(this).parents('tr').find('input[name="price[]"]');
+      var price = $(this).parents('tr').find('input[name="price[]"]').val();
       var qty = $(this).parents('tr').find('input[name="qty[]"]').val();
       var kurs = $("#idr_rate").val();
-      var isFree = $(this).parents('tr').find('.input-free').val(); // Check if product is free
-      
-      var price = isFree == 1 ? 0 : priceInput.val(); // Set price to 0 if free
 
       var total = parseFloat(((price - $(this).val()) * qty) * kurs);
 
       $(this).parents('tr').find('input[name="total[]"]').val(total);
       $(this).parents('tr').find('input[name="total[]"]').change();
+
     });
 
     $('#datatable tbody').on( 'change', 'input[name="total[]"]', function (e) {
@@ -511,43 +485,14 @@
 
     });
 
-    $('#datatable tbody').on('click', '.input-gift', function (e) {
-        var priceInput = $(this).parents('tr').find('input[name="price[]"]');
-        var qtyInput = $(this).parents('tr').find('input[name="qty[]"]');
-        var discUsdInput = $(this).parents('tr').find('input[name="disc_usd[]"]');
-        var kurs = $("#idr_rate").val();
+    $('#datatable tbody').on( 'click', '.input-gift', function (e) {
+      if($(this).is(':checked')){
+        $(this).parents('tr').find('.input-free').val(1);
 
-        // Store original price in a data attribute
-        if ($(this).is(':checked')) {
-            // Store the original price before setting it to 0
-            var originalPrice = priceInput.val();
-            priceInput.data('original-price', originalPrice);
-            
-            // Set price to 0 and mark as free
-            priceInput.val(0);
-            $(this).parents('tr').find('.input-free').val(1);
-        } else {
-            // Restore the original price if unchecked
-            var originalPrice = priceInput.data('original-price');
-            priceInput.val(originalPrice);
-            $(this).parents('tr').find('.input-free').val(0);
-        }
-        
-        // Recalculate total
-        var price = parseFloat(priceInput.val());
-        var qty = parseFloat(qtyInput.val());
-        var discUsd = parseFloat(discUsdInput.val());
-        
-        // Prevent NaN values in case of empty inputs
-        price = isNaN(price) ? 0 : price;
-        qty = isNaN(qty) ? 0 : qty;
-        discUsd = isNaN(discUsd) ? 0 : discUsd;
-        
-        var total = ((price - discUsd) * qty) * parseFloat(kurs);
-        total = isNaN(total) ? 0 : total; // Prevent NaN in total
-        
-        $(this).parents('tr').find('input[name="total[]"]').val(total);
-        $(this).parents('tr').find('input[name="total[]"]').change(); // Trigger any dependent changes
+        $(this).parents('tr').find('input[name="price[]"]').val(0)
+      }else{
+        $(this).parents('tr').find('.input-free').val(0);
+      }
     });
 
     $('#disc_agen_percent').on('keyup', function(e) {
@@ -559,7 +504,7 @@
         $('input[name="disc_agen_idr"]').val(amount);
         grandtotal();
       }else{
-        $('input[name="disc_agen_idr').val(0);
+        $('input[name="disc_agen_idr"]').val(0);
         grandtotal();
       }
     });
@@ -603,48 +548,6 @@
 
       $('#grand_total').val(grandtotal);
     }
-
-    $('#btn_call').on('click', function(e) {
-      // Get the total items as a number
-      var subtotal = 0;
-      var totalItems = parseInt($('#total_item').val());
-
-      // Validate the input
-      if (isNaN(totalItems)) {
-          // Handle invalid input (e.g., display an error message)
-          console.error('Invalid input for total items.');
-          return;
-      }
-
-      // Calculate the subtotal
-      subtotal += totalItems;
-
-      // Set the subtotal value in the input field
-      $('#subtotal').val(subtotal);
-    });
-
-    $(document).ready(function() {
-        // Create an empty array to store values
-        var values = [];
-
-        // Populate the array with values from the DataTable
-        $('#datatable tbody tr').each(function() {
-            var value = $('input[name="total[]"]').val() // Assuming the value is in the first column
-            values.push(parseInt(value));
-        });
-
-        // Attach a click event to the button
-        $('#btn_call').click(function() {
-            // Calculate the sum of the values in the array
-            var sum = values.reduce(function(accumulator, currentValue) {
-                return accumulator + currentValue;
-            }, 0);
-
-            // Display the result in the paragraph element
-            // $('#result').text("The sum is: " + sum);
-            $('#subtotal').val(sum);
-        });
-    });
   });
 </script>
 @endpush

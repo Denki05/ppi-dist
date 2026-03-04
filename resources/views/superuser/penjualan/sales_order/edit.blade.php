@@ -64,8 +64,13 @@
               </div>
 
               <div class="form-group col-md-6">
-                <label for="catatan">Disc %</label>
-                <input class="form-control" type="number" name="catatan" value="{{ $result->catatan }}">
+                <label for="disc">Disc %</label>
+                @if($result->approval_mou == 1)
+                  <input type="hidden" name="catatan" value="{{ $result->catatan }}">
+                  <input class="form-control" type="number" value="{{ $result->catatan }}" readonly>
+                @else
+                  <input class="form-control" type="number" name="catatan" value="{{ $result->catatan }}" step="any">
+                @endif
               </div>
               <input type="hidden" id="idr_rate" name="idr_rate" value="{{ $result->idr_rate }}">
             </div>
@@ -146,7 +151,8 @@
                           <input type="hidden" name="packaging[]" value="{{ $detail->packaging_id }}">
                           <input type="hidden" name="free_product[]" value="{{ $detail->free_product }}">
                           <input type="hidden" name="so_kontrak_value[]" value="{{ $detail->kontrak }}">
-                          <input type="hidden" name="kontrak_new[]" value="1">
+                          <input type="hidden" name="kontrak_id[]" value="{{ $detail->kontrak_id }}">
+                          <input type="hidden" name="kontrak_new[]" value="0">
                           <span class="name">{{ $detail->product_pack->code }} - {{ $detail->product_pack->name }} - {{ $detail->product_pack->packaging->pack_name }}</span>
                       </td>
                       <td><input type="number" style="text-align: center;" class="form-control" name="price[]" required value="{{ $detail->price }}" readonly></td>
@@ -353,7 +359,7 @@
           table.row.add([
                       counter,
                       makeselect,
-                      '<input type="number" class="form-control" name="price[]" required step="any" readonly><input type="hidden" class="form-control packaging" name="packaging[]"><input type="hidden" class="form-control" name="so_kontrak_value[]" value="0">',
+                      '<input type="number" class="form-control" name="price[]" required step="any" readonly><input type="hidden" class="form-control packaging" name="packaging[]"><input type="hidden" class="form-control" name="so_kontrak_value[]" value="0"><input type="hidden" class="form-control" name="kontrak_id[]">',
                       '<input type="text" class="form-control" name="qty[]" required step="any">',
                       '<input type="number" class="form-control" name="disc[]">',
                       '<input type="checkbox" class="form-check-input input-gift" id="gift" name="gift"><input class="form-control input-free" type="hidden" id="free_product" value="0" name="free_product[]">',
@@ -366,7 +372,7 @@
           makeselect = '<select class="js-select2 form-control js-ajax-kontrak" id="sku['+counter+']" name="sku[]" data-placeholder="Select Product" style="width:100%" required><option></option>';
 
           $.map( product_kontrak, function( val, i ) {
-            makeselect += '<option value="'+ val['product_id'] +'" data-name="'+ val['product_name'] +'" data-code="'+ val['product_code'] +'" data-price="'+ val['product_price'] +'" data-packaging="'+ val['packaging_id'] +'" data-disc="'+ val['product_disc'] + '">'+ val['product_code'] + ' - ' + val['product_name'] + ' - ' + val['packaging_name']  +'</option>';
+            makeselect += '<option value="'+ val['product_id'] +'" data-kontrak="'+ val['kontrak_id'] +'" data-name="'+ val['product_name'] +'" data-code="'+ val['product_code'] +'" data-price="'+ val['product_price'] +'" data-packaging="'+ val['packaging_id'] +'" data-disc="'+ val['product_disc'] + '">'+ val['product_code'] + ' - ' + val['product_name'] + ' - ' + val['packaging_name']  +'</option>';
           });
 
           makeselect += '</select>';
@@ -374,7 +380,7 @@
           table.row.add([
                     counter,
                     makeselect,
-                    '<input type="number" class="form-control" name="price[]" style="text-align: center;" readonly><input type="hidden" class="form-control packaging" name="packaging[]"><input type="hidden" class="form-control" value="0" name="kontrak_new[]"><input type="hidden" class="form-control" name="so_kontrak_value[]" value="1">',
+                    '<input type="number" class="form-control" name="price[]" style="text-align: center;" readonly><input type="hidden" class="form-control packaging" name="packaging[]"><input type="hidden" class="form-control" value="1" name="kontrak_new[]"><input type="hidden" class="form-control" name="so_kontrak_value[]" value="1"><input type="hidden" class="form-control" name="kontrak_id[]">',
                     '<input type="number" class="form-control noscroll" name="qty[]" style="text-align: center;" required>',
                     '<input type="number" class="form-control noscroll usd_disc" style="text-align: center;" name="disc[]">',
                     '<input type="checkbox" class="form-check-input input-gift" id="gift" name="gift" disabled><input class="form-control input-free" type="hidden" id="free_product" value="0" name="free_product[]">',
@@ -406,6 +412,9 @@
       $(".js-ajax-kontrak").select2();
 
       $('.js-ajax-kontrak').on('select2:select', function (e) {
+        var kontrak = $(this).find(':selected').data('kontrak');
+        $(this).parents('tr').find('input[name="kontrak_so_id[]"]').val(kontrak);
+
         var price = $(this).find(':selected').data('price');
         $(this).parents('tr').find('input[name="price[]"]').val(price);
 

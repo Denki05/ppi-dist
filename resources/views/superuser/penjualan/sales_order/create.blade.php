@@ -35,6 +35,7 @@
   <form id="frmCreate" action="#" data-type="POST" enctype="multipart/form-data">
   @csrf
     <input type="hidden" name="ajukankelanjutan" value="0">
+    <input type="hidden" name="need_proforma" value="{{ $is_proforma }}">
     <div class="row">
     <div class="col-4">
         <div class="block">
@@ -82,12 +83,22 @@
               <div class="col col-md-5">
                 <div class="form-row">
                   <div class="form-group col-md-4">
-                    <span class="form-label"><b>Kurs </b>
+                    <span class="form-label"><b>Kurs </b> <span class="text-danger">*</span></span>
                     <input class="form-control" type="text" name="kurs" id="kurs" value="{{ $idr_rate }}" readonly>
                   </div>
 
                   <div class="form-group col-md-4">
-                    <span class="form-label"><b>Approval </b> 
+                    <span class="form-label"><b>Disc % </b>
+                    @if($approval_mou == 0)
+                    <input class="form-control" type="text" name="disc_percent" id="disc_percent" value="{{ $disc }}" readonly>
+                    @else
+                    <input class="form-control" type="text" name="disc_percent" id="disc_percent" required>
+                    @endif
+                  </div>
+                </div>
+                <div class="form-row">
+                  <div class="form-group col-md-8">
+                    <span class="form-label"><b>Approval </b> <span class="text-danger">*</span></span>
                     <?php 
                       if($approval_mou == 0){
                         $approval = "NO";
@@ -97,12 +108,6 @@
                     ?>
                     <input class="form-control" type="text" name="approvalText" id="approvalText" value="{{ $approval }}" readonly>
                     <input type="hidden" name="approval" id="approval" value="{{ $approval_mou }}">
-                  </div>
-                </div>
-                <div class="form-row">
-                  <div class="form-group col-md-4">
-                    <span class="form-label"><b>Disc % </b>
-                    <input class="form-control" type="text" name="disc_percent" id="disc_percent" value="{{ $disc }}" readonly>
                   </div>
                 </div>
               </div>
@@ -166,27 +171,6 @@
         </div>
       </div>
     </div>
-
-    <!-- <div class="modal fade bd-example-modal-lg" id="exampleModal" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true">
-      <div class="modal-dialog" role="document">
-        <div class="modal-content">
-          <div class="modal-header">
-            <h5 class="modal-title" id="exampleModalLabel">#Add Note</h5>
-            <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-              <span aria-hidden="true">&times;</span>
-            </button>
-          </div>
-          <div class="modal-body">
-            <textarea class="form-control" name="note" id="editor" rows="4" col="10"></textarea>
-            <br>
-            <a class="btn btn-info" id="test" href="javascript:void(0);" title="">click</a>
-          </div>
-          <div class="modal-footer">
-          
-          </div>
-        </div>
-      </div>
-    </div> -->
 
     <div class="modal fade" id="addSoKontrak" aria-labelledby="exampleModalLabel" aria-hidden="true">
       <div class="modal-dialog">
@@ -350,53 +334,32 @@
     var counter = 1;
 
     $.ajax({
-    url: '{{ route('superuser.penjualan.sales_order.get_product_pack') }}',
-    type: 'POST',
-    cache: false,
-    dataType: 'json',
-    data: {
-        id: $('#brand_name').val(),
-        _token: "{{ csrf_token() }}"
-    },
-    beforeSend: function() {
-        // Tambahkan loading state agar user tahu proses berjalan
-        $('.js-ajax').html('<option>Loading data produk...</option>');
-    },
-    success: function(json) {
-      if (json.code === 200) {
-          product_data = json.data; // tanpa const!
-            let makeselect = '';
+      url: '{{ route('superuser.penjualan.sales_order.get_product_pack') }}',
+        data: {id:$('#brand_name').val() , _token: "{{csrf_token()}}"},
+        type: 'POST',
+        cache: false,
+        dataType: 'json',
+        success: function(json) {
+          if (json.code == 200) {
+            product_data = json.data;
 
-            // Gunakan satu loop saja
-            $.each(product_data, function(i, val) {
-                let labelText = `${val['code']} - ${val['name']} - ${val['packName']} - ${val['typeName'] ?? val['warehouseName']}`;
+            $.each( product_data, function( key, value ) {
+                var makeselect;
+                $.map( product_data, function( val, i ) {
+                  if(val['typeName'] === null){
+                    makeselect += '<option value="'+ val['id'] +'" data-name="'+ val['name'] +'" data-packname="'+ val['packName'] +'" data-price="'+ val['price'] +'" data-packid="'+ val['packID']+'">'+ val['code'] + ' - ' + val['name'] + ' - ' + val['packName'] + ' - '+ val['warehouseName'] +'</option>';
+                  } else {
+                    makeselect += '<option value="'+ val['id'] +'" data-name="'+ val['name'] +'" data-packname="'+ val['packName'] +'" data-price="'+ val['price'] +'" data-packid="'+ val['packID']+'">'+ val['code'] + ' - ' + val['name'] + ' - ' + val['packName'] + ' - '+ val['typeName'] +'</option>';
+                  }
+                });
 
-                makeselect += `
-                    <option value="${val['id']}"
-                        data-name="${val['name']}"
-                        data-packname="${val['packName']}"
-                        data-price="${val['price']}"
-                        data-packid="${val['packID']}">
-                        ${labelText}
-                    </option>`;
+
+                $('.js-ajax').append(makeselect);
+                initailizeSelect2();
             });
-
-            // Kosongkan dan tambahkan data baru
-            $('.js-ajax').empty().append(makeselect);
-
-            // Re-initialize Select2
-            initializeSelect2();
-
-        } else {
-            $('.js-ajax').html('<option>Tidak ada produk ditemukan</option>');
+          }
         }
-    },
-    error: function(xhr, status, error) {
-        console.error('❌ AJAX Error:', error);
-        $('.js-ajax').html('<option>Gagal memuat data produk</option>');
-    }
-});
-
+      });
 
     $('a.row-add').on( 'click', function (e) {
       e.preventDefault();
@@ -428,7 +391,7 @@
                       '<a href="#" class="row-delete"><button type="button" class="btn btn-sm btn-circle btn-alt-danger" title="Delete"><i class="fa fa-trash"></i></button></a>'
                     ]).draw( false );
                     
-                    initializeSelect2();
+                    initailizeSelect2();
           counter++;
 
         }else{
@@ -458,7 +421,7 @@
       
     });
 
-    function initializeSelect2() {
+    function initailizeSelect2(){
       $(".js-ajax").select2();
 
       $('.js-ajax').on('select2:select', function (e) {
@@ -468,7 +431,8 @@
         var pack = $(this).find(':selected').data('packid');
         $(this).parents('tr').find('input[name="packaging[]"]').val(pack);
       });
-    }
+
+    };
 
     function initailizeSelectKontrak2(){
       $(".js-ajax-kontrak").select2();
@@ -504,37 +468,6 @@
         $(this).parents('tr').find('.input-free').val(0);
       }
     });
-
-    $("#test").on("click",function(e){
-      e.preventDefault();
-      addListItem();
-    });
-
-    function addListItem() {
-      var text = document.getElementById('editor').value;
-      var listNumberRegex = /^[0-9]+(?=\.)/gm;
-      var existingNums = [];
-      var num;
-     
-      while ((num = listNumberRegex.exec(text)) !== null) {
-        existingNums.push(num);
-      }
-      
-      existingNums.sort();
-
-      var addListItemNum;
-      if (existingNums.length > 0) {
-       
-        addListItemNum = parseInt(existingNums[existingNums.length - 1], 10) + 1;
-      } else {
-      
-        addListItemNum = 1;
-      } 
-
-      var exp = '\n' + addListItemNum + '.\xa0';
-      text = text.concat(exp);
-      document.getElementById('editor').value = text;
-    }
   })
 </script>
 @endpush
