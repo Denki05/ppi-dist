@@ -585,7 +585,7 @@ class DeliveryOrderController extends Controller
             // INSERT STOCK MOVE (OUTBOUND - DO DELIVERED)
             // ======================================================
             
-            $transactionCode = 'SO-' . $detail_do->do_code;
+            $transactionCode = $detail_do->do_code;
             
             // 🔒 Lock DO row untuk cegah double click paralel
             $lockedDo = PackingOrder::where('id', $detail_do->id)

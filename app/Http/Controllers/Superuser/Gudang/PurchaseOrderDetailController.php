@@ -137,7 +137,7 @@ class PurchaseOrderDetailController extends Controller
     public function edit($id, $detail)
     {
         if(Auth::user()->is_superuser == 0){
-            if(empty($this->access) || empty($this->access->user) || $this->access->can_edit == 0){
+            if(empty($this->access) || empty($this->access->user) || $this->access->can_update == 0){
                 return redirect()->route('superuser.index')->with('error','Anda tidak punya akses untuk membuka menu terkait');
             }
         }
@@ -156,7 +156,6 @@ class PurchaseOrderDetailController extends Controller
         if ($request->ajax()) {
             $validator = Validator::make($request->all(), [
                 'product_packaging_id' => 'required',
-                'packaging_id' => 'required|integer',
                 'quantity' => 'nullable|numeric',
                 
             ]);

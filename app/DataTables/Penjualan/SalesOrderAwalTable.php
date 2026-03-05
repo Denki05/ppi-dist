@@ -31,6 +31,7 @@ class SalesOrderAwalTable extends Table
             ->select(
                 'penjualan_so.id AS id', 
                 'penjualan_so.so_code AS so_code', 
+                'penjualan_so.is_proforma AS is_proforma', 
                 'penjualan_so.code AS code', 
                 'penjualan_so.brand_name AS nota_brand', 
                 'penjualan_so.approval_mou AS approval_mou', 
@@ -51,21 +52,21 @@ class SalesOrderAwalTable extends Table
                 DB::raw('
                     CASE 
                         WHEN penjualan_so.sales_id = 1 THEN "Lindy"
-                        WHEN penjualan_so.sales_id = 2 THEN "Kumala"
+                        WHEN penjualan_so.sales_id = 2 THEN "Alivi"
                         WHEN penjualan_so.sales_id = 3 THEN "S.A"
                         WHEN penjualan_so.sales_id = 4 THEN "Santi"
-                        WHEN penjualan_so.sales_id = 5 THEN "Erick"
+                        WHEN penjualan_so.sales_id = 5 THEN "Eric"
                         ELSE "-"
                     END AS sales
                 '),
                 DB::raw('
                     CASE 
                         WHEN penjualan_so.created_by = 26 THEN "Lindy"
-                        WHEN penjualan_so.created_by = 38 THEN "Kumala"
+                        WHEN penjualan_so.created_by = 38 THEN "Alivi"
                         WHEN penjualan_so.created_by = 32 THEN "Nia"
                         WHEN penjualan_so.created_by = 33 THEN "Putri"
                         WHEN penjualan_so.created_by = 34 THEN "Santi"
-                        WHEN penjualan_so.created_by = 35 THEN "Erick"
+                        WHEN penjualan_so.created_by = 35 THEN "Eric"
                         WHEN penjualan_so.created_by = 1 THEN "Dev"
                         ELSE "-"
                     END AS so_created_by
@@ -121,16 +122,41 @@ class SalesOrderAwalTable extends Table
         });
 
         $table->addColumn('action', function ($model) {
-            $revisi = route('superuser.penjualan.sales_order.edit', [$model->id, $step = 1]);
-            $lanjutkan = route('superuser.penjualan.sales_order.lanjutkan', $model->id);
-            $delete = route('superuser.penjualan.sales_order.destroy', $model->id);
-            $print_so = route('superuser.penjualan.sales_order.print_so', $model->id);
-        
+
+            $revisi     = route('superuser.penjualan.sales_order.edit', [$model->id, $step = 1]);
+            $lanjutkan  = route('superuser.penjualan.sales_order.lanjutkan', $model->id);
+            $delete     = route('superuser.penjualan.sales_order.destroy', $model->id);
+            $print_so   = route('superuser.penjualan.sales_order.print_so', $model->id);
+
             $buttons = '';
-        
+
+            /*
+            |--------------------------------------------------------------------------
+            | PRIORITY CHECK: SO AWAL + PROFORMA
+            |--------------------------------------------------------------------------
+            */
+            if ($model->status_so === 'AWAL' && $model->is_proforma == 1) {
+
+                $buttons .= "
+                    <a href=\"{$print_so}\">
+                        <button type=\"button\" class=\"btn btn-sm btn-circle btn-alt-info\" title=\"Print SO\">
+                            <i class=\"fa fa-print\"></i>
+                        </button>
+                    </a>
+                ";
+
+                return $buttons;
+            }
+
+            /*
+            |--------------------------------------------------------------------------
+            | NORMAL AWAL
+            |--------------------------------------------------------------------------
+            */
             if ($model->status_so === 'AWAL') {
+
                 if ($model->approval_mou == "YES" && $model->approval_mou_status != "APPROVED") {
-                    // jika ada permintaan approval
+
                     $buttons .= "
                         <a href=\"{$print_so}\">
                             <button type=\"button\" class=\"btn btn-sm btn-circle btn-alt-info\" title=\"Print SO\">
@@ -138,27 +164,28 @@ class SalesOrderAwalTable extends Table
                             </button>
                         </a>
                     ";
+
                 } else {
-                    // jka ada permintaan approval dan sudah di approve
+
                     $buttons .= "
                         <a href=\"{$revisi}\">
                             <button type=\"button\" class=\"btn btn-sm btn-circle btn-alt-warning\" title=\"Revisi\">
                                 <i class=\"fa fa-pencil\"></i>
                             </button>
                         </a>
-        
+
                         <a href=\"javascript:saveConfirmation('{$lanjutkan}')\">
                             <button type=\"button\" class=\"btn btn-sm btn-circle btn-alt-success\" title=\"Lanjutkan\">
                                 <i class=\"fa fa-check\"></i>
                             </button>
                         </a>
-        
+
                         <a href=\"javascript:saveConfirmation('{$delete}')\">
                             <button type=\"button\" class=\"btn btn-sm btn-circle btn-alt-danger\" title=\"Delete\">
                                 <i class=\"fa fa-trash\"></i>
                             </button>
                         </a>
-        
+
                         <a href=\"{$print_so}\">
                             <button type=\"button\" class=\"btn btn-sm btn-circle btn-alt-info\" title=\"Print SO\">
                                 <i class=\"fa fa-print\"></i>
@@ -166,33 +193,39 @@ class SalesOrderAwalTable extends Table
                         </a>
                     ";
                 }
-            } elseif ($model->status_so === 'REVISI') {
+            }
+
+            elseif ($model->status_so === 'REVISI') {
+
                 $buttons .= "
                     <a href=\"{$revisi}\">
                         <button type=\"button\" class=\"btn btn-sm btn-circle btn-alt-warning\" title=\"Revisi\">
                             <i class=\"fa fa-pencil\"></i>
                         </button>
                     </a>
-        
+
                     <a href=\"javascript:saveConfirmation('{$lanjutkan}')\">
                         <button type=\"button\" class=\"btn btn-sm btn-circle btn-alt-success\" title=\"Lanjutkan\">
                             <i class=\"fa fa-check\"></i>
                         </button>
                     </a>
-        
+
                     <a href=\"javascript:saveConfirmation('{$delete}')\">
                         <button type=\"button\" class=\"btn btn-sm btn-circle btn-alt-danger\" title=\"Delete\">
                             <i class=\"fa fa-trash\"></i>
                         </button>
                     </a>
-        
+
                     <a href=\"{$print_so}\">
                         <button type=\"button\" class=\"btn btn-sm btn-circle btn-alt-info\" title=\"Print SO\">
                             <i class=\"fa fa-print\"></i>
                         </button>
                     </a>
                 ";
-            } elseif (in_array($model->status_so, ['TUTUP', 'LANJUTAN'])) {
+            }
+
+            elseif (in_array($model->status_so, ['TUTUP', 'LANJUTAN'])) {
+
                 $buttons .= "
                     <a href=\"{$print_so}\">
                         <button type=\"button\" class=\"btn btn-sm btn-circle btn-alt-info\" title=\"Print SO\">
@@ -201,9 +234,9 @@ class SalesOrderAwalTable extends Table
                     </a>
                 ";
             }
-        
+
             return $buttons;
-        });        
+        });     
 
         return $table->make(true);
     }

@@ -15,6 +15,8 @@ use App\Entities\Penjualan\PackingOrderDetail;
 use App\Entities\Penjualan\SoProforma;
 use App\Entities\Penjualan\SoProformaDetail;
 use App\Entities\Penjualan\DeliveryOrderMutationItem;
+use App\Entities\Penjualan\SalesOrderProforma;
+use App\Entities\Penjualan\SalesOrderProformaItem;
 use App\Entities\Finance\Invoicing;
 use App\Entities\Master\Customer;
 use App\Entities\Master\CustomerCategory;
@@ -1466,21 +1468,33 @@ class SalesOrderController extends Controller
                             
                             /*
                             ==================================================
-                            CONTROL MINUS & RESERVED QTY (MAX MINUS -10)
+                            CONTROL MINUS & RESERVED QTY (CHECK ONLY)
                             ==================================================
                             */
-
-                            $max_minus = -10;
-
-                            // Jika hasil akhir melebihi batas minus → tolak
-                            if ($new_available < $max_minus) {
+                            
+                            // Stok sudah minus sebelumnya → tolak
+                            if ($quantity < 0 && $new_available < $current_available) {
                                 throw new \Exception(
-                                    "Stock minus melebihi batas (-10). Available setelah transaksi: {$new_available}"
+                                    "Stock sudah minus dan tidak boleh ditambah minus untuk produk {$value["product_packaging_id"]}"
                                 );
                             }
-
-                            // Selama masih dalam batas → tetap reserve
-                            $stock->reserved_quantity += $do_qty;
+                            
+                            // Stok cukup → reserve normal
+                            elseif ($current_available >= $do_qty) {
+                                $stock->reserved_quantity += $do_qty;
+                            }
+                            
+                            // First-time minus (available >=0 tapi order melebihi available) → lolos, tetap isi reserved
+                            elseif ($current_available >= 0 && $new_available < 0) {
+                                $stock->reserved_quantity += $do_qty;
+                            }
+                            
+                            // Semua kasus lain → stock tidak mencukupi
+                            else {
+                                throw new \Exception(
+                                    "Stock tidak mencukupi. Available: {$current_available}, Request: {$do_qty}"
+                                );
+                            }
                             
                             $stock->save(); // Hanya update reserved_quantity, quantity tetap utuh
         

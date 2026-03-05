@@ -1,7 +1,6 @@
 @extends('superuser.app')
 
 @section('content')
-<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
 
 <style>
 /* ===== STYLE SAMPAI SEKARANG TIDAK DIUBAH ===== */
@@ -403,7 +402,6 @@ body{ background:#1f242a; font-family: "Segoe UI", Roboto, sans-serif; }
 @include('superuser.asset.plugin.select2')
 
 @push('scripts')
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
 <script src="https://cdn.datatables.net/buttons/2.4.2/js/dataTables.buttons.min.js"></script>
 <script src="https://cdn.datatables.net/buttons/2.4.2/js/buttons.html5.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>

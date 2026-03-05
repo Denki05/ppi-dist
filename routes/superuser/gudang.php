@@ -38,7 +38,7 @@ Route::group([
         Route::get('{id}/unpublish', 'PurchaseOrderController@unpublish')->name('unpublish');
         Route::get('{id}/save_modify/{save_type}', 'PurchaseOrderController@save_modify')->name('save_modify');
         Route::get('{id}/acc', 'PurchaseOrderController@acc')->name('acc');
-        Route::get('{id}/print_po_pdf', 'PurchaseOrderController@print_po_pdf')->name('print_po_pdf');
+        Route::get('{id}/print_pdf', 'PurchaseOrderController@print_pdf')->name('print_pdf');
         Route::get('/import_template', 'PurchaseOrderController@import_template')->name('import_template');
         Route::post('/import/{id}', 'PurchaseOrderController@import')->name('import');
         Route::get('/search_sku', 'PurchaseOrderController@search_sku')->name('search_sku');
@@ -64,12 +64,13 @@ Route::group([
 
     // SPK
     Route::group(['as' => 'purchase_order_spk.', 'prefix' => '/purchase_order_spk'], function () {
+        Route::get('/json', 'PurchaseOrderSPKController@json')->name('json');
         Route::get('/step/{id}', 'PurchaseOrderSPKController@step')->name('step');
         Route::get('{id}/publish', 'PurchaseOrderSPKController@publish')->name('publish');
         Route::get('{id}/unpublish', 'PurchaseOrderSPKController@unpublish')->name('unpublish');
         Route::get('{id}/save_modify/{save_type}', 'PurchaseOrderSPKController@save_modify')->name('save_modify');
         Route::get('{id}/acc', 'PurchaseOrderSPKController@acc')->name('acc');
-        Route::get('{id}/print_spk_pdf', 'PurchaseOrderSPKController@print_spk_pdf')->name('print_spk_pdf');
+        Route::get('{id}/print_pdf', 'PurchaseOrderSPKController@print_pdf')->name('print_pdf');
         Route::get('/import_template', 'PurchaseOrderSPKController@import_template')->name('import_template');
         Route::post('/import/{id}', 'PurchaseOrderSPKController@import')->name('import');
         Route::get('/search_sku', 'PurchaseOrderSPKController@search_sku')->name('search_sku');

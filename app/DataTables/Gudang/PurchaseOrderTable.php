@@ -65,7 +65,7 @@ class PurchaseOrderTable extends Table
             $edit = route('superuser.gudang.purchase_order.step', $model);
             $destroy = route('superuser.gudang.purchase_order.destroy', $model);
             $acc = route('superuser.gudang.purchase_order.acc', $model);
-            $pdf = route('superuser.gudang.purchase_order.print_po_pdf', $model);
+            $pdf = route('superuser.gudang.purchase_order.print_pdf', $model);
             $cancel_acc = route('superuser.gudang.purchase_order.cancel_acc', $model);
             $sent = route('superuser.gudang.purchase_order.send', $model);
             $cancel_send = route('superuser.gudang.purchase_order.cancel_send', $model);
