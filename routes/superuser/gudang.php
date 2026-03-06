@@ -211,6 +211,7 @@ Route::group([
 
         Route::get('mutasi_showroom/detail', 'MutasiShowroomController@detail')->name('detail');
         Route::get('mutasi_showroom/print_request/{id}', 'MutasiShowroomController@printRequest')->name('print_request');
+        Route::post('/generateFreeSO', 'MutasiShowroomController@generateFreeSO')->name('generateFreeSO');
     });
     Route::resource('mutasi_showroom', 'MutasiShowroomController');
     

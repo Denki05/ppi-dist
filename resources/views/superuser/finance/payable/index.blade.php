@@ -427,6 +427,18 @@
         });
 
         $('#selectCustomer').on('change', function(){
+
+            // reset draft data saat ganti customer
+            draftData = {
+                _token: $('meta[name="csrf-token"]').attr("content"),
+                customer_id: null,
+                pay_date: null,
+                note: null,
+                repeater: []
+            };
+
+            $("#settelBtn").prop("disabled", true);
+
             let customerId = $(this).val();
 
             $('#detail_invoice_id').val('');
@@ -571,6 +583,13 @@
             let invoiceId = $('#detail_invoice_id').val();
             let note = $('#note').val();
             let paymentAmount = cleanRupiah($('#payment_amount').val());
+
+            // VALIDASI TAMBAHAN
+            if (draftData.customer_id && draftData.customer_id != customerId) {
+                alert("Customer tidak boleh berubah sebelum Settle.");
+                return;
+            }
+
             let isBalanced = $('#balance_checkbox').is(':checked');
             let totalTagihan = cleanRupiah($('#detail_invoice_total').val());
             let saldoSisa = cleanRupiah($('#saldo_sisa').val());

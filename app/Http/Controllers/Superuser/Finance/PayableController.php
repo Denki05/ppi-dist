@@ -200,6 +200,16 @@ class PayableController extends Controller
                 if (isset($value["payable"])) {
                     $input_payable = floatval(str_replace(".", "", $value["payable"]));
                     $get_invoice = Invoicing::find($value["invoice_id"]);
+
+                    // VALIDASI CUSTOMER
+                    if ($get_invoice->customer_id != $post['customer_id']) {
+                        DB::rollBack();
+                        return response()->json([
+                            'success' => false,
+                            'message' => "Invoice {$get_invoice->code} tidak sesuai customer"
+                        ], 400);
+                    }
+
                     $is_balanced = filter_var($value["is_balanced"], FILTER_VALIDATE_BOOLEAN);
 
                     if (!$get_invoice) {

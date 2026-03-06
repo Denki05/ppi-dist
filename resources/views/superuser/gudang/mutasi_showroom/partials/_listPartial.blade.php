@@ -405,14 +405,31 @@
         </div>
     </div>
 
-    {{-- KANAN: Tombol Create --}}
+    {{-- KANAN: Tombol Action --}}
     @if($canCreate)
+
+    <div class="d-flex align-items-center gap-2">
+
+        {{-- Generate Free SO --}}
+        @role('Developer')
+        <!-- <button id="btnGenerateFreeSO"
+                class="btn btn-sm btn-warning"
+                data-bs-toggle="tooltip"
+                title="Generate Free Product SO">
+            <i class="bi bi-lightning-charge"></i>
+        </button> -->
+        @endrole
+
+        {{-- Create Mutasi --}}
         <button id="btnCreateMutasi"
                 class="btn btn-sm btn-primary"
                 data-bs-toggle="tooltip"
                 title="Create Mutasi">
             <i class="bi bi-plus-lg"></i>
         </button>
+
+    </div>
+
     @endif
 </div>
 
@@ -1069,5 +1086,37 @@
                 });
             });
         }
+
+        $(document).on('click', '#btnGenerateFreeSO', function(){
+
+            Swal.fire({
+                title: 'Generate Mutasi Free SO?',
+                text: "Mutasi showroom dari free product SO akan dibuat.",
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonText: 'Generate'
+            }).then((result) => {
+
+                if(result.isConfirmed){
+
+                    $.post("{{ route('superuser.gudang.mutasi_showroom.generateFreeSO') }}", {
+                        _token: "{{ csrf_token() }}"
+                    }, function(res){
+
+                        Swal.fire('Sukses', res.message, 'success');
+
+                        location.reload();
+
+                    }).fail(function(){
+
+                        Swal.fire('Error','Gagal generate data','error');
+
+                    });
+
+                }
+
+            });
+
+            });
     });
 </script>
