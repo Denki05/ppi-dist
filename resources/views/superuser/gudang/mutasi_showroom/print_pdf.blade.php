@@ -93,7 +93,10 @@ table.data-table {
 }
 
 .signature-label {
-    margin-bottom: 40px;
+    margin-bottom: 65px;   /* ruang tanda tangan lebih tinggi */
+    font-size: 14px;
+    font-weight: bold;
+    letter-spacing: 0.3px;
 }
 
 .signature-line {
@@ -212,15 +215,15 @@ table.data-table {
     <table class="signature-table">
         <tr>
             <td width="33%">
-                <div class="signature-label">Dibuat Oleh,</div>
+                <div class="signature-label">DIBUAT OLEH,</div>
                 <div class="signature-line"></div>
             </td>
             <td width="33%">
-                <div class="signature-label">Gudang,</div>
+                <div class="signature-label">GUDANG,</div>
                 <div class="signature-line"></div>
             </td>
             <td width="33%">
-                <div class="signature-label">Diterima,</div>
+                <div class="signature-label">DITERIMA,</div>
                 <div class="signature-line"></div>
             </td>
         </tr>

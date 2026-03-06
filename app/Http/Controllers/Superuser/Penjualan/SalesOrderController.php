@@ -1528,7 +1528,9 @@ class SalesOrderController extends Controller
                                     'customer_other_address_id' => $sales_order->customer_other_address_id ?? null,
                                     'so_id'                     => $sales_order->id,
                                     'tanggal'           => now(),
-                                    'status'            => MutasiShowroom::STATUS['ACTIVE'],
+                                    'status'            => MutasiShowroom::STATUS['SETTLE'],
+                                    'status_checked'    => MutasiShowroom::STATUS_CHECKED['CHECKED'],
+                                    'status_barang'    => MutasiShowroom::STATUS_BARANG['DIAMBIL'],
                                     'note'              => 'Mutasi Free Product dari SO ' . $sales_order->code,
                                     'created_by'        => Auth::id(),
                                 ]);

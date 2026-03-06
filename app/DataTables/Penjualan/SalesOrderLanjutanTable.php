@@ -85,46 +85,64 @@ class SalesOrderLanjutanTable extends Table
         });
 
         $table->addColumn('action', function (SalesOrder $model) {
+
             $kerjakan = route('superuser.penjualan.sales_order.edit', [$model->id, $step = 2]);
             $destroy = route('superuser.penjualan.sales_order.destroy_lanjutan', $model->id);
             $revisi = route('superuser.penjualan.sales_order.kembali', $model->id);
             $detail = route('superuser.penjualan.sales_order.detail', $model->id);
-
+        
+            $printManifest = route('superuser.penjualan.delivery_order.print_manifest', $model->id);
+        
+            $btnCash = '';
+        
+            if(strtoupper($model->so_transaction) == 'CASH'){
+                $btnCash = "
+                    <a href=\"{$printManifest}\" target=\"_blank\">
+                        <button type=\"button\" class=\"btn btn-sm btn-circle btn-alt-info\" title=\"Print Manifest\">
+                            <i class=\"fas fa-clipboard-list\"></i>
+                        </button>
+                    </a>
+                ";
+            }
+        
             switch ($model->status_so) {
-                case $model->status_so == "LANJUTAN":
+        
+                case "LANJUTAN":
+        
                     return "
                         <button type=\"button\" class=\"btn btn-sm btn-circle btn-alt-primary btn-view\" data-toggle=\"modal\" data-target=\"#modalViewSo\" data-id=\"{$model->id}\" title=\"Show SO\">
                             <i class=\"fa fa-eye\"></i>
                         </button>
-
+        
                         <a href=\"{$kerjakan}\">
-                            <button type=\"button\" class=\"btn btn-sm btn-circle btn-alt-success\" title=\"Lanjutkan\">
+                            <button type=\"button\" class=\"btn btn-sm btn-circle btn-alt-success\" title=\"ACC\">
                                 <i class=\"fa fa-check\"></i>
                             </button>
                         </a>
-
+        
                         <a href=\"javascript:saveConfirmation('{$revisi}')\">
                             <button type=\"button\" class=\"btn btn-sm btn-circle btn-alt-warning\" title=\"Revisi\">
                                 <i class=\"fa fa-times\"></i>
                             </button>
                         </a>
-
+        
                         <a href=\"javascript:saveConfirmation('{$destroy}')\">
                             <button type=\"button\" class=\"btn btn-sm btn-circle btn-alt-danger\" title=\"Delete\">
                                 <i class=\"fa fa-trash\"></i>
                             </button>
                         </a>
-
-
                     ";
-
-                case $model->status_so == "TUTUP":
+        
+                case "TUTUP":
+        
                     return "
                         <a href=\"{$detail}\">
                             <button type=\"button\" class=\"btn btn-sm btn-circle btn-alt-info\" title=\"Detail\">
                                 <i class=\"fa fa-eye\"></i>
                             </button>
                         </a>
+        
+                        {$btnCash}
                     ";
             }
         });

@@ -298,7 +298,7 @@
                 </li>
 
                 <!-- Gudang -->
-                @if($superuser->can('superuser-manage') OR $superuser->division == "Admin" OR $superuser->division == "Management" OR $superuser->division == "Warehouse")
+                @if($superuser->can('superuser-manage') OR $superuser->division == "Admin" OR $superuser->division == "Management" OR $superuser->division == "Warehouse"  OR $superuser->division == "Finance")
                 <li class="nav-item dropdown">
                     <a class="nav-link dropdown-toggle" role="button" data-bs-toggle="dropdown"
                         aria-expanded="false">
@@ -307,7 +307,14 @@
                     <ul class="dropdown-menu">
 
                         {{-- ================= DOCUMENT ================= --}}
-                        @if($superuser->can('superuser-manage') OR $superuser->division == "Admin" OR $superuser->division == "Management" OR $superuser->division == "Warehouse")
+                        @if(
+                            ($superuser->can('superuser-manage') 
+                            OR $superuser->division == "Admin" 
+                            OR $superuser->division == "Management" 
+                            OR $superuser->division == "Warehouse" 
+                            OR $superuser->division == "Finance")
+                            AND $superuser->id != 29
+                        )
                         <li class="submenu submenu-md dropend">
                             <a class="dropdown-item dropdown-toggle" href="#" data-bs-toggle="dropdown">
                                 <i class="fa-solid fa-file-lines"></i> Document
@@ -350,7 +357,7 @@
                                 <i class="fa-solid fa-warehouse"></i> Warehouse
                             </a>
                             <ul class="dropdown-menu">
-                                @if($superuser->can('superuser-manage') OR $superuser->division == "Admin" OR $superuser->division == "Management" OR $superuser->division == "Warehouse")
+                                @if($superuser->can('superuser-manage') OR $superuser->division == "Admin" OR $superuser->division == "Management" OR $superuser->division == "Warehouse" OR $superuser->division == "Finance")
                                 <li>
                                     <a class="dropdown-item" href="{{ route('superuser.penjualan.delivery_order.index') }}">
                                         Checker Transaksi (DO)
@@ -388,7 +395,7 @@
                                 <i class="fa-solid fa-cubes"></i> Inventory
                             </a>
                             <ul class="dropdown-menu">
-                                @if($superuser->can('superuser-manage') OR $superuser->division == "Admin" OR $superuser->division == "Management" OR $superuser->division == "Warehouse")
+                                @if($superuser->can('superuser-manage') OR $superuser->division == "Admin" OR $superuser->division == "Management" OR $superuser->division == "Warehouse" OR $superuser->division == "Finance")
                                 <li>
                                     <a class="dropdown-item" href="{{ route('superuser.gudang.stock.index') }}">
                                         Stock

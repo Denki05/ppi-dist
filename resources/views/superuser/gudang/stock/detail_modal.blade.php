@@ -8,179 +8,206 @@
 
 <div id="modal-content-wrapper">
 
-    {{-- HEADER FILTER --}}
-    <div class="row align-items-center mb-3">
+<div class="row align-items-center mb-3">
 
-        <div class="col-md-6 mb-2 mb-md-0 d-flex align-items-center">
-            <label for="month_filter" class="form-label mb-0 font-weight-bold text-secondary mr-3">
-                Periode:
-            </label>
+<div class="col-md-6 mb-2 mb-md-0 d-flex align-items-center">
+<label class="form-label mb-0 font-weight-bold text-secondary mr-3">
+Periode:
+</label>
 
-            <div class="input-group input-group-sm" style="max-width:200px;">
-                <div class="input-group-prepend">
-                    <span class="input-group-text bg-white">
-                        <i class="fas fa-calendar-alt"></i>
-                    </span>
-                </div>
-                <input type="month" 
-                       class="form-control" 
-                       id="month_filter" 
-                       value="{{ $month }}">
-            </div>
-        </div>
+<div class="input-group input-group-sm" style="max-width:200px;">
+<div class="input-group-prepend">
+<span class="input-group-text bg-white">
+<i class="fas fa-calendar-alt"></i>
+</span>
+</div>
 
-        <div class="col-md-6 text-md-right">
-            <a href="{{ route('superuser.gudang.stock.print', [$warehouse->id, base64_encode($product->id)]) }}" 
-               target="_blank"
-               id="btnPrintPdf"
-               class="btn btn-primary btn-sm">
-               <i class="fas fa-print"></i> PDF
-            </a>
-        </div>
+<input type="month"
+class="form-control"
+id="month_filter"
+value="{{ $month }}">
+</div>
+</div>
 
-    </div>
+<div class="col-md-6 text-md-right">
 
-    {{-- TABLE CARD --}}
-    <div class="card border-0 shadow-sm h-100 d-flex flex-column">
+<a href="{{ route('superuser.gudang.stock.print', [$warehouse->id, base64_encode($product->id)]) }}"
+target="_blank"
+id="btnPrintPdf"
+class="btn btn-primary btn-sm">
 
-        <div class="table-responsive ks-scroll-wrapper flex-grow-1">
+<i class="fas fa-print"></i> PDF
+</a>
 
-            <table class="table table-hover align-middle mb-0" id="ksDetailTable">
+</div>
+</div>
 
-                <thead>
-                    <tr>
-                        <th class="text-center" style="width:150px;">Tanggal</th>
-                        <th class="text-center" style="width:100px;">Transaksi</th>
-                        <th class="text-right" style="width:80px;">Masuk</th>
-                        <th class="text-right" style="width:80px;">Keluar</th>
-                        <th class="text-right" style="width:80px;">Saldo</th>
-                        <th class="text-center" style="width:220px;">Keterangan</th>
-                    </tr>
-                </thead>
+<div class="card border-0 shadow-sm h-100 d-flex flex-column">
 
-                <tbody>
-                    @forelse($collects as $c)
-                        <tr>
-                            <td class="text-muted text-center">
-                                {{ $c['created_at'] }}
-                            </td>
+<div class="table-responsive ks-scroll-wrapper flex-grow-1">
 
-                            <td class="text-center transaksi-cell
-                                {{ $c['in'] && $c['in'] !== '-' ? 'transaksi-masuk' : ($c['out'] && $c['out'] !== '-' ? 'transaksi-keluar' : 'transaksi-netral') }}">
-                                {{ $c['transaction'] }}
-                            </td>
+<table class="table table-hover align-middle mb-0" id="ksDetailTable">
 
-                            <td class="text-right text-success font-weight-bold">
-                                {{ $c['in'] !== '-' ? $c['in'] : '-' }}
-                            </td>
+<thead>
+<tr>
+<th class="text-center" style="width:150px;">Tanggal</th>
+<th class="text-center" style="width:100px;">Transaksi</th>
+<th class="text-right" style="width:80px;">Masuk</th>
+<th class="text-right" style="width:80px;">Keluar</th>
+<th class="text-right" style="width:80px;">Saldo</th>
+<th class="text-center" style="width:220px;">Keterangan</th>
+</tr>
+</thead>
 
-                            <td class="text-right text-danger font-weight-bold">
-                                {{ $c['out'] !== '-' ? $c['out'] : '-' }}
-                            </td>
+<tbody>
 
-                            <td class="text-right font-weight-bold">
-                                {{ $c['balance'] }}
-                            </td>
+@foreach($collects as $c)
 
-                            <td class="small text-secondary text-center">
-                                {{ $c['description'] ?: '-' }}
-                            </td>
-                        </tr>
-                    @empty
-                        <tr>
-                            <td colspan="6" class="text-center py-5 text-muted small">
-                                <i class="fas fa-info-circle fa-2x mb-2"></i>
-                                <div>Tidak ada data transaksi pada periode ini.</div>
-                            </td>
-                        </tr>
-                    @endforelse
-                </tbody>
+<tr>
 
-            </table>
-        </div>
-    </div>
+<td class="text-muted text-center">
+{{ $c['created_at'] }}
+</td>
+
+<td class="text-center transaksi-cell
+{{ $c['in'] && $c['in'] !== '-' ? 'transaksi-masuk' : ($c['out'] && $c['out'] !== '-' ? 'transaksi-keluar' : 'transaksi-netral') }}">
+{{ $c['transaction'] }}
+</td>
+
+<td class="text-right text-success font-weight-bold">
+{{ $c['in'] !== '-' ? $c['in'] : '-' }}
+</td>
+
+<td class="text-right text-danger font-weight-bold">
+{{ $c['out'] !== '-' ? $c['out'] : '-' }}
+</td>
+
+<td class="text-right font-weight-bold">
+{{ $c['balance'] }}
+</td>
+
+<td class="small text-secondary text-center">
+{{ $c['description'] ?: '-' }}
+</td>
+
+</tr>
+
+@endforeach
+
+</tbody>
+</table>
+
+</div>
+</div>
+
 </div>
 
 <script>
+
 $(document).ready(function(){
 
-    function loadKsDetail(month){
+function loadKsDetail(month){
 
-        let warehouseId = '{{ $warehouse->id }}';
-        let productEncoded = encodeURIComponent('{{ base64_encode($product->id) }}');
+let warehouseId = '{{ $warehouse->id }}';
+let productEncoded = encodeURIComponent('{{ base64_encode($product->id) }}');
 
-        $('#ksDetailTable tbody').html(
-            '<tr><td colspan="6" class="text-center py-4">' +
-            '<i class="fas fa-spinner fa-spin"></i> Memproses...' +
-            '</td></tr>'
-        );
+$('#ksDetailTable tbody').html(
+'<tr><td colspan="6" class="text-center py-4">' +
+'<i class="fas fa-spinner fa-spin"></i> Memproses...' +
+'</td></tr>'
+);
 
-        $.ajax({
-            url: '/superuser/gudang/stock/' + warehouseId + '/detail/' + productEncoded,
-            type: 'GET',
-            data: { month: month },
-            dataType: 'html',
-            success: function(response){
+$.ajax({
 
-                let wrapped = $('<div>').append(response);
-                let newContent = wrapped.find('#modal-content-wrapper').html();
+url: '/superuser/gudang/stock/' + warehouseId + '/detail/' + productEncoded,
+type: 'GET',
+data: { month: month },
+dataType: 'html',
 
-                $('#modal-content-wrapper').html(newContent);
+success: function(response){
 
-                attachChangeEvent();
-                initDataTable();
-            },
-            error: function(){
-                $('#ksDetailTable tbody').html(
-                    '<tr><td colspan="6" class="text-center text-danger py-4 small">' +
-                    'Terjadi kesalahan sistem' +
-                    '</td></tr>'
-                );
-            }
-        });
-    }
+let wrapped = $('<div>').append(response);
+let newContent = wrapped.find('#modal-content-wrapper').html();
 
-    function attachChangeEvent(){
+$('#modal-content-wrapper').empty().html(newContent);
 
-        function updatePrintLink(month){
-            let baseUrl = '{{ route("superuser.gudang.stock.print", [$warehouse->id, base64_encode($product->id)]) }}';
-            $('#btnPrintPdf').attr('href', baseUrl + '?month=' + month);
-        }
+attachChangeEvent();
+initDataTable();
+},
 
-        let initialMonth = $('#month_filter').val();
-        updatePrintLink(initialMonth);
+error: function(){
 
-        $('#month_filter').off('change').on('change', function(){
-            let selectedMonth = $(this).val();
-            updatePrintLink(selectedMonth);
-            loadKsDetail(selectedMonth);
-        });
-    }
+$('#ksDetailTable tbody').html(
+'<tr><td colspan="6" class="text-center text-danger py-4 small">' +
+'Terjadi kesalahan sistem' +
+'</td></tr>'
+);
 
-    function initDataTable(){
+}
 
-        let table = $('#ksDetailTable');
-
-        if(table.find('tbody tr').length === 0){
-            return;
-        }
-
-        table.DataTable({
-            destroy: true,
-            paging: false,
-            searching: false,
-            ordering: false,
-            info: false,
-            lengthChange: false,
-            columnDefs: [
-                { targets: [2,3,4], className: 'text-right' }
-            ]
-        });
-    }
-
-    attachChangeEvent();
-    initDataTable();
 });
+
+}
+
+function attachChangeEvent(){
+
+function updatePrintLink(month){
+
+let baseUrl = '{{ route("superuser.gudang.stock.print", [$warehouse->id, base64_encode($product->id)]) }}';
+
+$('#btnPrintPdf').attr('href', baseUrl + '?month=' + month);
+
+}
+
+let initialMonth = $('#month_filter').val();
+
+updatePrintLink(initialMonth);
+
+$('#month_filter').off('change').on('change', function(){
+
+let selectedMonth = $(this).val();
+
+updatePrintLink(selectedMonth);
+
+loadKsDetail(selectedMonth);
+
+});
+
+}
+
+function initDataTable(){
+
+if ($.fn.DataTable.isDataTable('#ksDetailTable')) {
+
+$('#ksDetailTable').DataTable().destroy();
+
+}
+
+$('#ksDetailTable').DataTable({
+
+paging:false,
+searching:false,
+ordering:false,
+info:false,
+lengthChange:false,
+
+language:{
+emptyTable:"Tidak ada data transaksi pada periode ini"
+},
+
+columnDefs:[
+{ targets:[2,3,4], className:'text-right' }
+]
+
+});
+
+}
+
+attachChangeEvent();
+initDataTable();
+
+});
+
 </script>
 
 <style>

@@ -229,11 +229,18 @@ class SjMutasiInternalController extends Controller
                     // POTONG STOK
                     $productId = $detail->product_packaging_id;
 
-                    $qty = $type === 'showroom' ? (int)($detail->qty ?? 0) : (int)($detail->quantity ?? 0);
+                    // dd($productId);
+
+                    // $qty = $type === 'showroom' ? (int)($detail->qty ?? 0) : (int)($detail->quantity ?? 0);
+                    $qty = $type === 'showroom'
+                        ? (float)($detail->qty ?? 0)
+                        : (float)($detail->quantity ?? 0);
                     
                     $warehouseId = $type === 'showroom'
                         ? $mutasi->warehouse_from_id
                         : $mutasi->warehouse_from;
+
+                    // dd($qty);
 
                     if ($qty > 0 && $productId) {
 

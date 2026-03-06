@@ -217,7 +217,7 @@ Route::group([
         Route::get('/search_sku', 'SalesOrderProformaController@search_sku')->name('search_sku');
         Route::put('/update/{id}', 'SalesOrderProformaController@update')->name('update');
         Route::get('/print_so_proforma/{id}', 'SalesOrderProformaController@print_so_proforma')->name('print_so_proforma');
-        Route::get('/acc/{id}', 'SalesOrderProformaController@acc')->name('acc');
+        Route::post('/acc/{id}', 'SalesOrderProformaController@acc')->name('acc');
         Route::get('/approval_so/{id}', 'SalesOrderProformaController@approval_so')->name('approval_so');
         Route::get('/destroy/{id}', 'SalesOrderProformaController@destroy')->name('destroy');
         Route::get('/getCustomer', 'SalesOrderProformaController@getCustomer')->name('getCustomer');

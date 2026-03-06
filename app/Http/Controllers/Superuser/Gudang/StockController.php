@@ -61,82 +61,82 @@ class StockController extends Controller
     }
     
     public function json(Request $request)
-{
-    $warehouse = $request->warehouse_id;
-    if (!$warehouse) return ['data' => []];
+    {
+        $warehouse = $request->warehouse_id;
+        if (!$warehouse) return ['data' => []];
 
-    $brand       = $request->brand;
-    $packaging   = $request->packaging;
-    $productName = $request->product_name;
+        $brand       = $request->brand;
+        $packaging   = $request->packaging;
+        $productName = $request->product_name;
 
-    $rows = ProductMinStock::with([
-            'product_pack.product',
-            'product_pack.packaging'
-        ])
-        ->where('warehouse_id', $warehouse)
-        ->when($brand, function ($q) use ($brand) {
-            $q->whereHas('product_pack.product', function ($q2) use ($brand) {
-                $q2->where('brand_name', $brand);
-            });
-        })
-        ->when($packaging, function ($q) use ($packaging) {
-            $q->whereHas('product_pack', function ($q2) use ($packaging) {
-                $q2->where('packaging_id', $packaging);
-            });
-        })
-        ->when($productName, function ($q) use ($productName) {
-            $q->whereHas('product_pack.product', function ($q2) use ($productName) {
-                $q2->where('name', 'like', "%{$productName}%");
-            });
-        })
-        ->get();
+        $rows = ProductMinStock::with([
+                'product_pack.product',
+                'product_pack.packaging'
+            ])
+            ->where('warehouse_id', $warehouse)
+            ->when($brand, function ($q) use ($brand) {
+                $q->whereHas('product_pack.product', function ($q2) use ($brand) {
+                    $q2->where('brand_name', $brand);
+                });
+            })
+            ->when($packaging, function ($q) use ($packaging) {
+                $q->whereHas('product_pack', function ($q2) use ($packaging) {
+                    $q2->where('packaging_id', $packaging);
+                });
+            })
+            ->when($productName, function ($q) use ($productName) {
+                $q->whereHas('product_pack.product', function ($q2) use ($productName) {
+                    $q2->where('name', 'like', "%{$productName}%");
+                });
+            })
+            ->get();
 
-    $data = [];
-    $no   = 1;
+        $data = [];
+        $no   = 1;
 
-    foreach ($rows as $row) {
+        foreach ($rows as $row) {
 
-        $pack = $row->product_pack;
-        if (!$pack || !$pack->product) continue;
+            $pack = $row->product_pack;
+            if (!$pack || !$pack->product) continue;
 
-        $product = $pack->product;
+            $product = $pack->product;
 
-        // STOCK → dari ProductMinStock.quantity
-        $stock = (float) ($row->quantity ?? 0);
+            // STOCK → dari ProductMinStock.quantity
+            $stock = (float) ($row->quantity ?? 0);
 
-        // KS → dari StockMove terakhir
-        $lastMove = StockMove::where('warehouse_id', $warehouse)
-            ->where('product_packaging_id', $pack->id)
-            ->orderBy('created_at', 'desc')
-            ->orderBy('id', 'desc')
-            ->first();
+            // KS → dari StockMove terakhir
+            $lastMove = StockMove::where('warehouse_id', $warehouse)
+                ->where('product_packaging_id', $pack->id)
+                ->orderBy('created_at', 'desc')
+                ->orderBy('id', 'desc')
+                ->first();
 
-        $ks = $lastMove ? (float) $lastMove->stock_balance : 0;
+            $ks = $lastMove ? (float) $lastMove->stock_balance : 0;
 
-        $stockFormatted = number_format($stock, 2);
-        if ($stock < 0) {
-            $stockFormatted = '<span class="text-danger-strong">'.$stockFormatted.'</span>';
+            $stockFormatted = number_format($stock, 2);
+            if ($stock < 0) {
+                $stockFormatted = '<span class="text-danger-strong">'.$stockFormatted.'</span>';
+            }
+
+            $ksFormatted = number_format($ks, 2);
+            if ($ks < 0) {
+                $ksFormatted = '<span class="text-danger-strong">'.$ksFormatted.'</span>';
+            }
+
+            $data[] = [
+                'no'              => $no++,
+                'product_pack_id' => $pack->id,
+                'encoded_id'      => base64_encode($pack->id),
+                'product_name'    => $pack->code.' - '.$product->name,
+                'brand_name'      => $product->brand_name ?? '-',
+                'pack_name'       => $pack->packaging->pack_name ?? '-',
+                'stock'           => $stockFormatted,
+                'ks'              => $ksFormatted,
+            ];
         }
 
-        $ksFormatted = number_format($ks, 2);
-        if ($ks < 0) {
-            $ksFormatted = '<span class="text-danger-strong">'.$ksFormatted.'</span>';
-        }
-
-        $data[] = [
-            'no'              => $no++,
-            'product_pack_id' => $pack->id,
-            'encoded_id'      => base64_encode($pack->id),
-            'product_name'    => $pack->code.' - '.$product->name,
-            'brand_name'      => $product->brand_name ?? '-',
-            'pack_name'       => $pack->packaging->pack_name ?? '-',
-            'stock'           => $stockFormatted,
-            'ks'              => $ksFormatted,
-        ];
+        return ['data' => $data];
     }
-
-    return ['data' => $data];
-}
 
     public function index()
     {

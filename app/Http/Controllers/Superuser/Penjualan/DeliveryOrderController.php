@@ -865,72 +865,102 @@ class DeliveryOrderController extends Controller
 
     public function print_manifest(Request $request, $id)
     {
-        if(Auth::user()->is_superuser == 0){
-            if(empty($this->access) || empty($this->access->user) || $this->access->can_print == 0){
-                return redirect()->route('superuser.index')->with('error','Anda tidak punya akses untuk membuka menu terkait');
+        // =========================
+        // CEK AKSES USER
+        // =========================
+        if (Auth::user()->is_superuser == 0) {
+            if (empty($this->access) || empty($this->access->user) || $this->access->can_print == 0) {
+                return redirect()->route('superuser.index')
+                    ->with('error', 'Anda tidak punya akses untuk membuka menu terkait');
             }
         }
 
-        $result = PackingOrder::find($id);
+        try {
 
-        if ($result === null){
-            abort(404);
-        }
+            // =========================
+            // CARI SO
+            // =========================
+            $so = DB::table('penjualan_so')->where('id', $id)->first();
 
-        $result->print_count = + 1;
-        $result->save();
+            if ($so) {
+                $result = PackingOrder::where('so_id', $so->id)->first();
+            } else {
+                $result = PackingOrder::where('id', $id)->first();
+            }
 
-        DB::beginTransaction();
-        try{
-            $my_report = "C:\\xampp\\htdocs\\ppi-dist\public\\cr\\packing_plan\\packing_plan_rev.rpt"; 
-            $my_pdf = 'C:\\xampp\\htdocs\\ppi-dist\\public\\cr\\packing_plan\\export\\'.$result->code.'.pdf';
+            if (!$result) {
+                abort(404);
+            }
 
-            $my_server = "LOCAL"; 
-            $my_user = "root"; 
-            $my_password = ""; 
-            $my_database = "ppi-dist";
+            // =========================
+            // UPDATE PRINT COUNT
+            // =========================
+            $result->increment('print_count');
+
+            // =========================
+            // PATH CRYSTAL REPORT
+            // =========================
+            $reportPath = "C:\\xampp\\htdocs\\ppi-dist\\public\\cr\\packing_plan\\packing_plan_rev.rpt";
+            $exportPath = "C:\\xampp\\htdocs\\ppi-dist\\public\\cr\\packing_plan\\export\\";
+            $pdfFile = $exportPath . $result->code . ".pdf";
+
+            // =========================
+            // DATABASE CONFIG
+            // =========================
+            $server = "LOCAL";
+            $database = "ppi-dist";
+            $username = "root";
+            $password = "";
+
             $COM_Object = "CrystalDesignRunTime.Application";
 
-            //-Create new COM object-depends on your Crystal Report version
-            $crapp= New COM($COM_Object) or die("Unable to Create Object");
-            $creport = $crapp->OpenReport($my_report,1); // call rpt report
+            // =========================
+            // LOAD CRYSTAL REPORT
+            // =========================
+            $crapp = new COM($COM_Object) or die("Unable to Create Object");
 
-            //- Set database logon info - must have
-            $creport->Database->Tables(1)->SetLogOnInfo($my_server, $my_database, $my_user, $my_password);
+            $creport = $crapp->OpenReport($reportPath, 1);
 
-            //- field prompt or else report will hang - to get through
-            $creport->EnableParameterPrompting = FALSE;
-            $creport->RecordSelectionFormula = "{penjualan_do.id}= $result->id";
+            $creport->Database->Tables(1)->SetLogOnInfo(
+                $server,
+                $database,
+                $username,
+                $password
+            );
 
+            $creport->EnableParameterPrompting = false;
 
-            //export to PDF process
-            $creport->ExportOptions->DiskFileName=$my_pdf; //export to pdf
-            $creport->ExportOptions->PDFExportAllPages=true;
-            $creport->ExportOptions->DestinationType=1; // export to file
-            $creport->ExportOptions->FormatType=31; // PDF type
+            $creport->RecordSelectionFormula = "{penjualan_do.id}= " . $result->id;
+
+            // =========================
+            // EXPORT PDF
+            // =========================
+            $creport->ExportOptions->DiskFileName = $pdfFile;
+            $creport->ExportOptions->PDFExportAllPages = true;
+            $creport->ExportOptions->DestinationType = 1;
+            $creport->ExportOptions->FormatType = 31;
+
             $creport->Export(false);
 
-            //------ Release the variables ------
+            // =========================
+            // RELEASE OBJECT
+            // =========================
             $creport = null;
             $crapp = null;
-            $ObjectFactory = null;
 
-            $file = 'C:\\xampp\\htdocs\\ppi-dist\\public\\cr\\packing_plan\\export\\'.$result->code.'.pdf';
+            // =========================
+            // DOWNLOAD FILE
+            // =========================
+            if (!file_exists($pdfFile)) {
+                abort(404, 'File PDF tidak ditemukan');
+            }
 
-            header("Content-Description: File Transfer"); 
-            header("Content-Type: application/octet-stream"); 
-            header("Content-Transfer-Encoding: Binary"); 
-            header("Content-Disposition: attachment; filename=\"". basename($file) ."\""); 
-            ob_clean();
-            flush();
-            readfile ($file);
-            exit();
+            return response()->download($pdfFile, $result->code . '.pdf');
 
-            DB::commit();
-            return redirect()->route('superuser.penjualan.delivery_order.detail', $result->id)->with('success','Berhasil Print Manifest!');
-        }catch(\Throwable $e){
-            DB::rollback();
-            return redirect()->back()->with('error',$e->getMessage());
+        } catch (\Throwable $e) {
+
+            return redirect()->back()->with('error', $e->getMessage());
+
         }
     }
 

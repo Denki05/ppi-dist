@@ -532,6 +532,9 @@ class SalesOrderProformaController extends Controller
             $sales_order->code = CodeRepo::generateSO();
             $sales_order->payment_status = 1;
             $sales_order->updated_by = Auth::id();
+            $sales_order->so_date = $sales_proforma->so_date ?? null ;
+            $sales_order->sales_id = $sales_proforma->sales_id ?? null ;
+            $sales_order->sales_senior_id = $sales_proforma->sales_senior_id ?? null ;
             $sales_order->save();
     
             $transactionCode = 'SO-'. $sales_order->code;

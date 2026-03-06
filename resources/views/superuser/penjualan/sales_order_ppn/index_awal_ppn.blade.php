@@ -124,7 +124,7 @@
                   <td>{{ $row->member->name }} {{ $row->member->text_kota }}</td>
                   <td>{{ $row->so_sales() }} | {{ $row->so_sales_senior() }}</td>
                   <td><?= date('d-m-Y',strtotime($row->created_at)); ?></td>
-                  <td>{{ $row->so_status()->scalar }}</td>
+                  <td>{{ $row->so_status() }}</td>
                   <td>
                       @if($row->status == 1 OR $row->status == 3)
                         <a href="{{route('superuser.penjualan.sales_order_ppn.edit_ppn', ['id'=>$row->id, 'step'=>1])}}" class="btn btn-primary btn-sm btn-flat"><i class="fa fa-edit"></i> {{ $row->status === 1 ? 'Edit' : 'Revisi' }}</a>

@@ -160,22 +160,22 @@
                 <input type="text" name="discount_1" class="form-control count" value="{{$result->do_detail_cost[0]->discount_1 ?? 0}}" readonly>
               </div>
               <div class="col-4">
-                <input type="text" name="discount_1_idr" class="form-control count" value="{{number_format($result->do_detail_cost[0]->discount_1_idr ,0,',','.')}}" readonly>
+                <input type="text" name="discount_1_idr" class="form-control count" value="{{number_format($result->do_detail_cost->discount_1_idr ,0,',','.')}}" readonly>
               </div>
             </div>
             <div class="form-group row">
               <label class="col-md-2 col-form-label text-right">Disc Kemasan %</label>
               <div class="col-2">
-                <input type="text" name="discount_2" class="form-control count" value="{{$result->do_detail_cost[0]->discount_2 ?? 0}}" readonly>
+                <input type="text" name="discount_2" class="form-control count" value="{{$result->do_detail_cost->discount_2 ?? 0}}" readonly>
               </div>
               <div class="col-4">
-                <input type="text" name="discount_2_idr" class="form-control count" value="{{number_format($result->do_detail_cost[0]->discount_2_idr ,0,',','.')}}" readonly>
+                <input type="text" name="discount_2_idr" class="form-control count" value="{{number_format($result->do_detail_cost->discount_2_idr ,0,',','.')}}" readonly>
               </div>
             </div>
             <div class="form-group row">
               <label class="col-md-2 col-form-label text-right">Discount IDR</label>
               <div class="col-md-8">
-                <input type="text" name="discount_idr" class="form-control count" value="{{number_format($result->do_detail_cost[0]->discount_idr ?? 0,0,',','.')}}" readonly>
+                <input type="text" name="discount_idr" class="form-control count" value="{{number_format($result->do_detail_cost->discount_idr ?? 0,0,',','.')}}" readonly>
               </div>
             </div>
             <!-- <div class="form-group row">
@@ -187,13 +187,13 @@
             <div class="form-group row">
               <label class="col-md-2 col-form-label text-right">PPN</label>
               <div class="col-md-8">
-                <input type="text" name="ppn" class="form-control" readonly value="{{number_format($result->do_detail_cost[0]->ppn ?? 0,0,',','.')}}">
+                <input type="text" name="ppn" class="form-control" readonly value="{{number_format($result->do_detail_cost->ppn ?? 0,0,',','.')}}">
               </div>
             </div>
             <div class="form-group row">
               <label class="col-md-2 col-form-label text-right"> Voucher (IDR)</label>
               <div class="col-md-8">
-                <input type="text" name="voucher_idr" class="form-control count" value="{{number_format($result->do_detail_cost[0]->voucher_idr ?? 0,0,',','.')}}" readonly>
+                <input type="text" name="voucher_idr" class="form-control count" value="{{number_format($result->do_detail_cost->voucher_idr ?? 0,0,',','.')}}" readonly>
               </div>
             </div>
             <!-- <div class="form-group row">
@@ -205,31 +205,31 @@
             <div class="form-group row">
               <label class="col-md-2 col-form-label text-right"> Purchase Total (IDR)</label>
               <div class="col-md-8">
-                <input type="text" name="purchase_total_idr" class="form-control" readonly value="{{number_format($result->do_detail_cost[0]->purchase_total_idr ?? 0,0,',','.')}}">
+                <input type="text" name="purchase_total_idr" class="form-control" readonly value="{{number_format($result->do_detail_cost->purchase_total_idr ?? 0,0,',','.')}}">
               </div>
             </div>
             <div class="form-group row">
               <label class="col-md-2 col-form-label text-right"> Delivery Cost (IDR)</label>
               <div class="col-md-4">
-                <input type="text" name="delivery_cost_note" class="form-control"  value="{{$result->do_detail_cost[0]->delivery_cost_note ?? 0}}" readonly>
+                <input type="text" name="delivery_cost_note" class="form-control"  value="{{$result->do_detail_cost->delivery_cost_note ?? 0}}" readonly>
               </div>
               <div class="col-md-4">
-                <input type="text" name="delivery_cost_idr" class="form-control"  value="{{number_format($result->do_detail_cost[0]->delivery_cost_idr ?? 0,0,',','.')}}" readonly>
+                <input type="text" name="delivery_cost_idr" class="form-control"  value="{{number_format($result->do_detail_cost->delivery_cost_idr ?? 0,0,',','.')}}" readonly>
               </div>
             </div>
             <div class="form-group row">
               <label class="col-md-2 col-form-label text-right"> Other Cost (IDR)</label>
               <div class="col-md-4">
-                <input type="text" name="other_cost_note" class="form-control" value="{{$result->do_detail_cost[0]->other_cost_note ?? 0}}" readonly>
+                <input type="text" name="other_cost_note" class="form-control" value="{{$result->do_detail_cost->other_cost_note ?? 0}}" readonly>
               </div>
               <div class="col-md-4">
-                <input type="text" name="other_cost_idr" class="form-control" value="{{number_format($result->do_detail_cost[0]->other_cost_idr ?? 0,0,',','.')}}" readonly>
+                <input type="text" name="other_cost_idr" class="form-control" value="{{number_format($result->do_detail_cost->other_cost_idr ?? 0,0,',','.')}}" readonly>
               </div>
             </div>
             <div class="form-group row">
               <label class="col-md-2 col-form-label text-right"> Grand Total (IDR)</label>
               <div class="col-md-8">
-                <input type="text" name="grand_total_idr" class="form-control" readonly value="{{number_format($result->do_detail_cost[0]->grand_total_idr ?? 0,0,',','.')}}">
+                <input type="text" name="grand_total_idr" class="form-control" readonly value="{{number_format($result->do_detail_cost->grand_total_idr ?? 0,0,',','.')}}">
               </div>
             </div>
           </div>
