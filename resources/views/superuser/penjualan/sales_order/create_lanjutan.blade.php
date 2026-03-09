@@ -2,29 +2,52 @@
 
 @section('content')
 
-@if($errors->any())
-<div class="alert alert-danger alert-dismissable" role="alert">
-  <button type="button" class="close" data-dismiss="alert" aria-label="Close">
-      <span aria-hidden="true">×</span>
-  </button>
-  <h3 class="alert-heading font-size-h4 font-w400">Error</h3>
-  @foreach ($errors->all() as $error)
-  <p class="mb-0">{{ $error }}</p>
-  @endforeach
+{{-- Pesan Error --}}
+@php
+    $allErrors = collect([]);
+    if($errors->any()){
+        $allErrors = $allErrors->merge($errors->all());
+    }
+    if(session('errors') && count(session('errors')) > 0){
+        $allErrors = $allErrors->merge(session('errors'));
+    }
+@endphp
+
+@if($allErrors->count() > 0)
+<div class="alert alert-danger alert-dismissible fade show" role="alert">
+    <h5 class="alert-heading">Error</h5>
+    <ul class="mb-0">
+        @foreach($allErrors->unique() as $error)
+            <li>{{ $error }}</li>
+        @endforeach
+    </ul>
+    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+</div>
+@endif
+
+{{-- Pesan Warning --}}
+@if(session('warnings') && count(session('warnings')) > 0)
+<div class="alert alert-warning alert-dismissible fade show" role="alert">
+    <h5 class="alert-heading">Warning</h5>
+    <ul class="mb-0">
+        @foreach(session('warnings') as $warning)
+            <li>{{ $warning }}</li>
+        @endforeach
+    </ul>
+    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+</div>
+@endif
+
+{{-- Pesan Sukses --}}
+@if(session()->has('message'))
+<div class="alert alert-success alert-dismissible fade show" role="alert">
+    <h5 class="alert-heading">Success</h5>
+    <p class="mb-0">{{ session('message') }}</p>
+    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
 </div>
 @endif
 
 <div id="alert-block"></div>
-
-@if(session()->has('message'))
-<div class="alert alert-success alert-dismissable" role="alert">
-  <button type="button" class="close" data-dismiss="alert" aria-label="Close">
-      <span aria-hidden="true">×</span>
-  </button>
-  <h3 class="alert-heading font-size-h4 font-w400">Success</h3>
-  <p class="mb-0">{{ session()->get('message') }}</p>
-</div>
-@endif
 
 <form class="ajax" data-action="{{ route('superuser.penjualan.sales_order.tutup_so' ) }}" data-type="POST" enctype="multipart/form-data">
 @csrf

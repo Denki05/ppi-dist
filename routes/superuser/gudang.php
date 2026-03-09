@@ -79,6 +79,8 @@ Route::group([
         Route::get('/{id}/send', 'PurchaseOrderSPKController@send')->name('send');
         Route::get('/summary', 'PurchaseOrderSPKController@summary')->name('summary');
         Route::get('/{id}/cancel_send', 'PurchaseOrderSPKController@cancel_send')->name('cancel_send');
+        Route::get('/listRefPo', 'PurchaseOrderSPKController@listRefPo')->name('listRefPo');
+        Route::post('/updateRefPo', 'PurchaseOrderSPKController@updateRefPo')->name('updateRefPo');
 
         Route::group(['as' => 'detail.'], function () {
             Route::get('{purchase_id}/detail/create', 'PurchaseOrderDetailSPKController@create')->name('create');

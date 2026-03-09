@@ -181,8 +181,10 @@
   $offset += $doDetails->slice($page * $limit, $limit)->count();
 @endphp
 
-@if ($page < $totalPages - 1)
-<div class="page-break"></div>
+@if ($page == $totalPages - 1 && !empty($result->note))
+<div style="margin-top:8px; font-size:11px;">
+    <b>Note :</b> {{ $result->note ?? '-' }}
+</div>
 @endif
 @endfor
 

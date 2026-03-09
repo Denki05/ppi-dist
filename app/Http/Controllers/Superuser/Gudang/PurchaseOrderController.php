@@ -893,7 +893,7 @@ class PurchaseOrderController extends Controller
             'warehouse_id' => $po->warehouse_id,
             'type'         => PurchaseOrder::TYPE['SPK'],
             'etd'          => $po->etd,
-            'note'         => 'Generate from PO ' . $po->code,
+            'note'         => $po->note ?? null,
             'ref_po_id'    => $po->id,
             'created_by'   => Auth::id(),
             'status'       => PurchaseOrder::STATUS['ACC'],
