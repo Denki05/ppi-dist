@@ -133,4 +133,9 @@ class ProductPack extends Model
     {
         return $this->hasMany('App\Entities\Master\ProductFinance', 'id')->latest()->first();
     }
+
+    public function min_stock()
+    {
+        return $this->hasMany('App\Entities\Master\ProductMinStock', 'product_packaging_id', 'id');
+    }
 }

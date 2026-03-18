@@ -16,6 +16,7 @@ class SalesOrder extends Model
     protected $fillable =[
     	'so_code',
         'is_proforma',
+        'status_proforma',
     	'code',
         'keep_code', 
     	'sales_id',
@@ -66,7 +67,7 @@ class SalesOrder extends Model
     	3 => 'PPI',
     	4 => 'LONGDA'
     ];
-
+    
     const SALES_SENIOR = [
         'Ivan' => 1,
         'Nia' => 2,
@@ -75,7 +76,7 @@ class SalesOrder extends Model
 
     const SALES = [
         'Lindy' => 1,
-        'Alivi' => 2,
+        'Kumala' => 2,
         'S.A' => 3,
         'Santi' => 4,
         'Eric' => 5,
@@ -138,14 +139,21 @@ class SalesOrder extends Model
         'COMPLETED' => 4,
     ];
 
-    public function sales_senior()
+    const STATUS_PROFORMA = [
+        1 => 'AKTIF',
+        2 => 'TERBUAT',
+        3 => 'SIAP',
+        4 => 'TUTUP',
+    ];
+
+    public function so_sales_senior()
     {
-        return array_search($this->sales_senior_id, self::SALES_SENIOR);
+        return self::SALES_SENIOR[$this->sales_senior_id] ?? '-';
     }
 
-    public function sales()
+    public function so_sales()
     {
-        return array_search($this->sales_id, self::SALES);
+        return self::SALES[$this->sales_id] ?? '-';
     }
 
     public function so_status()
@@ -255,5 +263,10 @@ class SalesOrder extends Model
         if($superuser){
             return $superuser->name ?? $superuser->username;
         }
+    }
+
+    public function so_status_proforma()
+    {
+        return array_search($this->status_proforma, self::STATUS_PROFORMA);
     }
 }

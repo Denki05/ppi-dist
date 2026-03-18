@@ -26,7 +26,7 @@
                     </div>
                     <div class="form-group col-md-6">
                       <label for="type_transaction">Type Transaksi</label>
-                      <input type="text" name="type_transaction" class="form-control" value="{{ \App\Entities\Penjualan\SalesOrderProforma::TYPE_TRANSACTION['0'] }}" readonly>
+                      <input type="text" name="type_transaction" class="form-control" value="{{ $results->so_type_transaction }}" readonly>
                     </div>
                   </div>
 
@@ -224,9 +224,11 @@
                 <tr>
                   <td>{{ $loop->iteration }}</td>
                   <td>
-                    <input type="checkbox" class="form-check-input input-gift" id="free_product" 
-                    value="{{$item->free_product}}" name="free_product[]" 
-                    {{ $item->free_product ? 'checked' : '' }}>
+                    <input type="checkbox"
+                      class="form-check-input input-gift"
+                      name="free_product[]"
+                      value="1"
+                      {{ $item->free_product ? 'checked' : '' }} disabled>
                   </td>
                   <td>
                     <select class="js-select2 form-control js-ajax" id="sku[{{ $loop->iteration }}]" name="sku[]" data-placeholder="Select SKU" style="width:100%" required>
@@ -234,7 +236,14 @@
                     </select>
                   </td>
                   <td><input type="number" class="form-control" name="qty[]" value="{{ $item->qty }}" required step="0.01" min="0"><input type="hidden" name="packaging[]" value="{{ $item->packaging_id }}"><input type="hidden" class="form-control" name="edit[]" value="{{ $item->id }}"></td>
-                  <td><input type="number" class="form-control" name="price[]" value="{{ $item->price }}" required></td>
+                  <td>
+                    <input type="number"
+                      class="form-control price-input"
+                      name="price[]"
+                      value="{{ $item->free_product ? 0 : $item->price }}"
+                      {{ $item->free_product ? 'readonly' : '' }}
+                      required>
+                  </td>
                   <td><input type="number" class="form-control" name="disc_usd[]" value="{{ $item->disc_usd }}" required></td>
                   <td><input type="number" class="form-control" name="total[]" readonly value="{{ $item->total_item }}"></td>
                   <td><a href="#" class="row-delete"><button type="button" class="btn btn-sm btn-circle btn-alt-danger" title="Delete"><i class="fa fa-trash"></i></button></a></td>
@@ -548,6 +557,23 @@
 
       $('#grand_total').val(grandtotal);
     }
+
+    $(document).on('change', '.input-gift', function () {
+
+        let row = $(this).closest('tr');
+        let priceInput = row.find('input[name="price[]"]');
+
+        if ($(this).is(':checked')) {
+
+            priceInput.val(0);
+            priceInput.prop('readonly', true);
+
+        } else {
+
+            priceInput.prop('readonly', false);
+
+        }
+    });
   });
 </script>
 @endpush

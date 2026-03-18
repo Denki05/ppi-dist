@@ -16,6 +16,7 @@ use App\Entities\Master\ProductMinStock;
 use App\Services\BrandPriceCalculator;
 use App\Entities\Setting\UserMenu;
 use App\Repositories\CodeRepo;
+use App\Services\MutasiShowroomFreeSOService;
 use PDF;
 use Validator;
 use Carbon\Carbon;
@@ -949,5 +950,20 @@ class MutasiShowroomController extends Controller
             ->setPaper('a4', 'portrait');
 
         return $pdf->stream('Request-Mutasi-' . $mutasi->tanggal->format('Ymd') . '.pdf');
+    }
+
+    public function generateFreeSO()
+    {
+        $service = new MutasiShowroomFreeSOService();
+
+        $created = $service->generate(
+            '2026-01-01',
+            '2026-02-28'
+        );
+
+        return response()->json([
+            'status' => true,
+            'message' => $created . ' mutasi berhasil dibuat'
+        ]);
     }
 }

@@ -117,7 +117,7 @@
             <tr>
               <td>Tanggal</td>
               <td>:</td>
-              <td>{{ date('d-m-Y', strtotime($result->do->created_at)) }}</td>
+              <td>{{ date('d-m-Y', strtotime($result->do->so->so_date)) }}</td>
             </tr>
             <tr>
               <td>Jatuh Tempo</td>
@@ -127,7 +127,7 @@
             <tr>
               <td>Sales</td>
               <td>:</td>
-              <td>{{ $result->do->so->sales() }}</td>
+              <td>{{ $result->do->so->so_sales() }}</td>
             </tr>
           </tbody>
         </table>

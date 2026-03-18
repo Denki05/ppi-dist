@@ -174,39 +174,30 @@ Route::group([
     
     Route::group(['as' => 'mutasi_showroom.', 'prefix' => '/mutasi_showroom'], function (){
         Route::get('/', 'MutasiShowroomController@index')->name('index');
-
         // AJAX partial
         Route::get('/list-partial', 'MutasiShowroomController@listPartial')->name('list_partial');
         Route::get('/create-partial', 'MutasiShowroomController@createPartial')->name('create_partial');
         Route::get('/show-partial/{id}', 'MutasiShowroomController@showPartial')->name('show_partial');
         Route::get('/update-list-partial', 'MutasiShowroomController@updateListPartial')->name('update_list_partial');
         Route::get('/get-product-pack', 'MutasiShowroomController@get_product_pack')->name('get_product_pack');
-
         Route::post('/store', 'MutasiShowroomController@store')->name('store');
-
         Route::get('/print_pdf/{id}', 'MutasiShowroomController@print_pdf')->name('print_pdf');
         Route::post('/{id}/publish', 'MutasiShowroomController@publish')->name('publish');
         Route::post('/{id}/sent', 'MutasiShowroomController@sent')->name('sent');
-
         Route::post('/update_price', 'MutasiShowroomController@updatePrice')->name('update_price');
-        
         Route::get('/done', 'MutasiShowroomController@doneIndex')->name('done_index');
         Route::get('/done/data', 'MutasiShowroomController@doneData')->name('done.data');
         Route::get('/print-invoice/{id}', 'MutasiShowroomController@printInvoice')
             ->name('print_invoice');
-
         Route::post('settlePrices', 'MutasiShowroomController@settlePrices')->name('settle_prices');
-
         Route::get('/mutasi-showroom/{kode}/items', 'MutasiShowroomController@getItemsByKode')->name('mutasi_showroom.items');
-
         Route::get('/create/mode-1', 'MutasiShowroomController@createMode1')
             ->name('create_mode1');
-
         Route::get('/create/mode-2', 'MutasiShowroomController@createMode2')
             ->name('create_mode2');
-
         Route::get('mutasi_showroom/detail', 'MutasiShowroomController@detail')->name('detail');
         Route::get('mutasi_showroom/print_request/{id}', 'MutasiShowroomController@printRequest')->name('print_request');
+        Route::post('/generateFreeSO', 'MutasiShowroomController@generateFreeSO')->name('generateFreeSO');
     });
     Route::resource('mutasi_showroom', 'MutasiShowroomController');
     

@@ -1,32 +1,54 @@
 @extends('superuser.app')
 
 @section('content')
+{{-- Pesan Error --}}
+@php
+    $allErrors = collect([]);
+    if($errors->any()){
+        $allErrors = $allErrors->merge($errors->all());
+    }
+    if(session('errors') && count(session('errors')) > 0){
+        $allErrors = $allErrors->merge(session('errors'));
+    }
+@endphp
 
-@if($errors->any())
-<div class="alert alert-danger alert-dismissable" role="alert">
-  <button type="button" class="close" data-dismiss="alert" aria-label="Close">
-      <span aria-hidden="true">×</span>
-  </button>
-  <h3 class="alert-heading font-size-h4 font-w400">Error</h3>
-  @foreach ($errors->all() as $error)
-  <p class="mb-0">{{ $error }}</p>
-  @endforeach
+@if($allErrors->count() > 0)
+<div class="alert alert-danger alert-dismissible fade show" role="alert">
+    <h5 class="alert-heading">Error</h5>
+    <ul class="mb-0">
+        @foreach($allErrors->unique() as $error)
+            <li>{{ $error }}</li>
+        @endforeach
+    </ul>
+    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+</div>
+@endif
+
+{{-- Pesan Warning --}}
+@if(session('warnings') && count(session('warnings')) > 0)
+<div class="alert alert-warning alert-dismissible fade show" role="alert">
+    <h5 class="alert-heading">Warning</h5>
+    <ul class="mb-0">
+        @foreach(session('warnings') as $warning)
+            <li>{{ $warning }}</li>
+        @endforeach
+    </ul>
+    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+</div>
+@endif
+
+{{-- Pesan Sukses --}}
+@if(session()->has('message'))
+<div class="alert alert-success alert-dismissible fade show" role="alert">
+    <h5 class="alert-heading">Success</h5>
+    <p class="mb-0">{{ session('message') }}</p>
+    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
 </div>
 @endif
 
 <div id="alert-block"></div>
 
-@if(session()->has('message'))
-<div class="alert alert-success alert-dismissable" role="alert">
-  <button type="button" class="close" data-dismiss="alert" aria-label="Close">
-      <span aria-hidden="true">×</span>
-  </button>
-  <h3 class="alert-heading font-size-h4 font-w400">Success</h3>
-  <p class="mb-0">{{ session()->get('message') }}</p>
-</div>
-@endif
-
-<form class="ajax" data-action="{{ route('superuser.penjualan.sales_order.tutup_so' ) }}" data-type="POST" enctype="multipart/form-data">
+<form class="ajax" data-action="{{ route('superuser.penjualan.sales_order.tutup_so' ) }}" data-type="POST" enctype="multipart/form-data" id="formSO">
 @csrf
   <input type="hidden" name="id" value="{{$result->id}}">
   <input type="hidden" name="step" value="{{$step}}">
@@ -177,10 +199,10 @@
                 @if($step == 2)
                 <div class="form-group col-md-4">
                   <label for="customer_area">Disc Cash <span class="text-danger">*</span></label>
-                  <select class="form-control js-select2 base_disc" id="base_id" onkeyup="countGetUsd()">
-                    <option value="0">0</option>
-                    <option value="2">$2</option>
-                    <option value="4">$4</option>
+                  <select class="form-control js-select2 base_disc" id="base_id">
+                      <option value="0">0</option>
+                      <option value="2">$2</option>
+                      <option value="4">$4</option>
                   </select>
                 </div>
                 @endif
@@ -195,6 +217,11 @@
   <div class="row">
             <aside class="col-lg-9">
                 <div class="card border-0">
+
+                    <button type="button" class="btn btn-warning mb-2" id="btn_add_product" style="width: 20%;">
+                      <i class="fas fa-plus"></i> Tambah / Edit List
+                    </button>
+
                     <div class="table-responsive">
                         <table class="table table-hover" id="datatables" style="white-space:nowrap;width:100%;">
                             <thead class="text-muted">
@@ -202,68 +229,24 @@
                                     <th class="block" style="width:auto"></th>
                                     <th class="block" style="width:auto">#</th>
                                     <th class="block" style="width:10%">Product</th>
-                                    <th class="block" style="width:auto">Qty</th>
-                                    <th class="block" style="width:5%">In Stock</th>
-                                    <th class="block" style="width:15%">Harga</th>
+                                    <th class="block" style="width:auto">Stock</th>
+                                    <th class="block" style="width:auto">Stock <br> Order</th>
+                                    <th class="block" style="width:4%">In <br> Stock</th>
+                                    <th class="block" style="width:20%">Harga</th>
                                     <th class="block" style="width:auto">Free</th>
                                     <th class="block" style="width:20%">Kemasan</th>
-                                    <th class="block" style="width:2%">Disc (USD)</th>
+                                    <th class="block" style="width:2%">Disc <br> (USD)</th>
                                     <th class="block" style="width:30%">Total</th>
                                 </tr>
                             </thead>
-                            <tbody>
-                              @if(count($result->so_detail) <= 0)
-                                <tr>
-                                  <td colspan="13" align="center">Data tidak ditemukan</td>
-                                </tr>
-                              @endif
-                              @if(count($result->so_detail) > 0)
-                                @foreach($result->so_detail as $index => $detail)
-                                  <tr class="index{{$index}}" data-index="{{$index}}">
-                                    <input type="hidden" name="repeater[{{$index}}][product_packaging_id]" value="{{$detail->product_packaging_id}}">
-                                    <input type="hidden" name="repeater[{{$index}}][so_qty]" value="{{$detail->qty}}">
-                                    <input type="hidden" name="repeater[{{$index}}][so_item_id]" value="{{$detail->id}}">
-
-                                    <td>
-                                      <div class="form-check">
-                                          <input class="form-check-input position-static" type="checkbox" name="repeater[{{$index}}][indentProduct]" id="indentProduct" value="1" data-id="{{ $detail->id }}" data-product="{{ $detail->product_packaging_id }}">
-                                        </div>
-                                    </td>
-                                    <td>{{ $loop->iteration }}</td>
-                                    <td>{{ $detail->product_pack->code }} - <b>{{ $detail->product_pack->name }}</b> - {{$detail->product_pack->warehouse->name}}</td>
-                                    <td>{{$detail->qty}}</td>
-                                    <td>
-                                      <input type="number" name="repeater[{{$index}}][do_qty]" class="form-control count" data-index="{{$index}}" value="{{$detail->qty}}" step="any">
-                                    </td>
-                                    <td>
-                                      @if($detail->kontrak == 0)
-                                        <input type="text" name="repeater[{{$index}}][price]" class="form-control price" value="@if ($detail->free_product == 1) 0 @elseif ($detail->price == 0) {{ $detail->product_pack->price }} @else {{ $detail->price }} @endif">
-                                      @else
-                                        <input type="text" name="repeater[{{$index}}][price]" class="form-control price" value="@if ($detail->free_product == 1) 0 @elseif ($detail->price == 0) {{ $detail->product_pack->price }} @else {{ $detail->price }} @endif" readonly>
-                                      @endif
-                                    <!-- <input type="text" name="repeater[{{$index}}][price]" class="form-control price" value="@if($detail->free_product == 1) 0 @else {{$detail->product_pack->price}} @endif">   -->
-                                    
-                                    </td>
-                                    <td>
-                                      <input class="form-check-input free-count" type="checkbox" value="{{$detail->free_product}}" name="repeater[{{$index}}][free_product]" @if($detail->free_product == 1) checked=checked @endif disabled>
-                                    </td>
-                                    <td>
-                                      <input type="text" name="kemasan" class="form-control text-center" readonly value="{{$detail->product_pack->packaging->pack_name ?? ''}}">
-                                      <input type="hidden" name="repeater[{{$index}}][packaging]" class="form-control" readonly value="{{$detail->product_pack->packaging->id ?? ''}}">
-                                    </td>
-                                    <td>
-                                      <input type="text" name="repeater[{{$index}}][usd_disc]" class="form-control count count-disc" data-index="{{$index}}" step="any" onchange="countGetUsd()" placeholder="{{$detail->disc_usd}}" />
-                                    </td>
-                                    <td>
-                                      <input type="text" name="repeater[{{$index}}][total]" class="form-control " readonly>
-                                    </td>
-                                  </tr>
-                                @endforeach
-                              @endif
+                            <tbody id="product-list-body">
+                              <tr>
+                                <td colspan="11" align="center">Klik tombol “Tambah Produk” untuk mulai kalkulasi</td>
+                              </tr>
                             </tbody>
                             <tfoot>
                               <tr class="row-footer-subtotal">
-                                <td colspan="8" class="text-right">
+                                <td colspan="10" class="text-right">
                                   <b>Subtotal</b>
                                 </td>
                                 <td class="text-right">
@@ -326,7 +309,7 @@
                         </div>
                       </div>
                       <button type="button" class="btn btn-warning" id="btn_call"><i class="fas fa-calculator pr-2" aria-hidden="true"></i>calculated</button>
-                      <button type="submit" class="btn btn-primary" id="save_form"><i class="fa fa-save  pr-2" aria-hidden="true" ></i> Save</button>
+                      <button type="submit" id="btn_save_so" class="btn btn-primary"><i class="fa fa-save  pr-2" aria-hidden="true" ></i> Save</button>
                     </div>
                 </div>
             </aside>
@@ -348,10 +331,88 @@
         </div>
 </form>
 
+<!-- Modal Kalkulasi Produk (Full List) -->
+<div class="modal fade" id="productCalcModal" tabindex="-1" role="dialog" aria-labelledby="productCalcModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-xl modal-dialog-scrollable" role="document">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="productCalcModalLabel">Kalkulasi Produk</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <div class="table-responsive">
+          <table class="table table-bordered" id="modal-product-table">
+            <thead>
+              <tr>
+                <th></th>
+                <th>#</th>
+                <th>Product</th>
+                <th>Stock</th>
+                <th>Stock<br>Order</th>
+                <th>In<br>Stock</th>
+                <th>Harga</th>
+                <th>Free</th>
+                <th>Kemasan</th>
+                <th>Disc USD</th>
+                <th>Total</th>
+              </tr>
+            </thead>
+            <tbody>
+              @foreach($result->so_detail as $index => $detail)
+              @php
+                  $price = $detail->price > 0 ? $detail->price : $detail->product_pack->price;
+                  $stock = optional($detail->product_pack->min_stock->first())->quantity ?? 0;
+                  $usdDisc = $detail->disc_usd ?? 0;
+              @endphp
+              <tr data-index="{{$index}}">
+                <input type="hidden" id="product_packaging_id" name="repeater[{{$index}}][product_packaging_id]" value="{{$detail->product_packaging_id}}">
+                <input type="hidden" id="so_qty" name="repeater[{{$index}}][so_qty]" value="{{$detail->qty}}">
+                <input type="hidden" id="so_item_id" name="repeater[{{$index}}][so_item_id]" value="{{$detail->id}}">
+                <input type="hidden" id="kemasan_id" name="repeater[{{$index}}][packaging]" value="{{$detail->product_pack->packaging->id}}">
+                <input type="hidden" id="productName" name="repeater[{{$index}}][product_name]" value="{{$detail->product_pack->name}}">
+                <input type="hidden" id="productKode" name="repeater[{{$index}}][product_code]" value="{{$detail->product_pack->code}}">
+                <input type="hidden" id="packName" name="repeater[{{$index}}][pack_name]" value="{{$detail->product_pack->packaging->pack_name}}">
+
+                <td><input type="checkbox" class="minus-check" {{$detail->qty > $stock ? 'checked' : ''}}></td>
+                <td>{{$index+1}}</td>
+                <td>{{$detail->product_pack->code}} - {{$detail->product_pack->name}}</td>
+                <td class="stock-value">{{$stock}}</td>
+                <td class="stock-order2">{{$detail->qty}}</td>
+                <td>
+                  <input type="number"
+                      class="form-control qty"
+                      value="{{$detail->qty}}"
+                      min="0"
+                      max="{{$detail->qty}}">
+                </td>
+                <td>
+                  <input type="text" class="form-control price" value="{{ $detail->free_product == 1 ? 0 : $price }}">
+                </td>
+                <td>
+                  <input class="form-check-input free-count" type="checkbox" value="{{$detail->free_product}}" name="repeater[{{$index}}][free_product]" @if($detail->free_product == 1) checked=checked @endif disabled>
+                </td>
+                <td>{{ $detail->product_pack->packaging->pack_name }}</td>
+                <td>
+                  <input type="text"
+                    class="form-control disc_usd"
+                    placeholder="{{ $detail->disc_usd }}">
+                </td>
+                <td><input type="text" class="form-control total" readonly></td>
+              </tr>
+              @endforeach
+            </tbody>
+          </table>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" id="modal_save" class="btn btn-primary">Simpan</button>
+      </div>
+    </div>
+  </div>
+</div>
 @endsection
 
 <!-- Modal balik ke so awal + catatan -->
-
 <div class="modal fade" id="exampleModal" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true">
   <div class="modal-dialog" role="document">
     <div class="modal-content">
@@ -390,39 +451,79 @@
 
     $('.js-select2').select2();
 
-    $('#datatables').DataTable({
-      paging: false,
-      searching: false,
-      info: false,
-      scrollY: '430px',
-      scrollCollapse: true,
-    });
+    $('.base_disc').on('input change', function () {
+      let baseDisc = parseFloat($(this).val()) || 0;
 
-    $('.base_disc').on('change', function () {
-      countGetUsd();
-    })
+      $('#product-list-body tr').each(function(){
+          let row = $(this);
+          let index = row.data('index');
+          let freeProduct = row.find('input[name="repeater['+index+'][free_product]"]').is(':checked');
 
-    function countGetUsd() {
-      $('tbody tr').each(function (index, e) {
-        let baseDisc = $('.base_disc').val();
-        let freeProduct = $('tr.index' + index + '').find('input[name="repeater[' + index + '][free_product]"]').val();
+          if(freeProduct){
+              row.find('input[name="repeater['+index+'][usd_disc]"]').val(0);
+          }else{
+              row.find('input[name="repeater['+index+'][usd_disc]"]').val(baseDisc);
+          }
 
-        if (freeProduct == 1) {
-          $('tr.index' + index + '').find('input[name="repeater[' + index + '][usd_disc]"]').val(0);
-        } else {
-          $('tr.index' + index + '').find('input[name="repeater[' + index + '][usd_disc]"]').val(baseDisc);
-        }
-
-        count_per_item(index);
+          // hitung ulang per item
+          count_per_item(index);
       });
 
-      // Panggil kalkulasi disc agen setelah semua item dihitung
+      // hitung ulang subtotal
+      sub_total_item();
+      hitungDiscAgen();
+      subtotal();
+    });
+
+    function countGetUsd() {
+
+      let baseDisc = $('.base_disc').val();
+
+      if(baseDisc === '0' || baseDisc === null){
+          // jika disc cash belum dipilih, jangan override disc
+          return;
+      }
+
+      baseDisc = parseFloat(baseDisc) || 0;
+
+      // UPDATE MODAL TABLE
+      $('#modal-product-table tbody tr').each(function(){
+
+          let row = $(this);
+          let freeProduct = row.find('.free-count').is(':checked');
+
+          if(freeProduct){
+              row.find('.disc_usd').val(0);
+          }else{
+              row.find('.disc_usd').val(baseDisc);
+          }
+
+      });
+
+      recalcModalTable();
+
+      // UPDATE MAIN TABLE
+      $('#product-list-body tr').each(function(index){
+
+          let row = $(this);
+          let freeProduct = row.find('input[name="repeater['+index+'][free_product]"]').val();
+
+          if(freeProduct == 1){
+              row.find('input[name="repeater['+index+'][usd_disc]"]').val(0);
+          }else{
+              row.find('input[name="repeater['+index+'][usd_disc]"]').val(baseDisc);
+          }
+
+          count_per_item(index);
+      });
+
       hitungDiscAgen();
     }
 
     $(document).on('keyup','.count',function(){
-      let index = $(this).attr('data-index');
-      count_per_item(index);
+        let index = $(this).data('index');
+        count_per_item(index);
+        checkStock(index);
     });
 
     function count_per_item(indx){
@@ -460,26 +561,82 @@
       sub_total_item();
     }
 
+    // CHEKC STOCK HIGHLIGHT
+    function checkStock(index){
+        let row = $('tr.index'+index);
+        let stock = parseFloat(row.find('.stock-value').text());
+
+        let qty = parseFloat(
+            row.find('input[name="repeater['+index+'][do_qty]"]').val()
+        );
+
+        if(isNaN(stock)) stock = 0;
+        if(isNaN(qty)) qty = 0;
+
+        let stockCell = row.find('.stock-value');
+
+        stockCell.removeClass('text-danger text-warning fw-bold');
+
+        if(stock === 0){
+            stockCell.addClass('text-warning fw-bold');
+        }
+
+        if(qty > stock){
+            stockCell.addClass('text-danger fw-bold');
+        }
+    }
+
+    function validateMinus(){
+        let valid = true;
+        $('#product-list-body tr').each(function(){
+            let row = $(this);
+            let stock = parseFloat(row.find('.stock-value').text());
+            let qty = parseFloat(row.find('.count').val());
+            let minusChecked = row.find('.minus-check').is(':checked');
+
+            if(isNaN(stock)) stock = 0;
+            if(isNaN(qty)) qty = 0;
+
+            if(qty > stock && !minusChecked){
+                valid = false;
+                row.addClass('table-danger');
+            }else{
+                row.removeClass('table-danger');
+            }
+        });
+        return valid;
+    }
+
     function sub_total_item() {
+
       let total = 0;
 
-      $('tbody tr').each(function (index, e) {
-        let sub_total = $('tr.index' + index + '').find('input[name="repeater[' + index + '][total]"]').val();
-        sub_total = parseFloat(sub_total.split('.').join(''));
-        if (isNaN(sub_total)) sub_total = 0;
-        total += sub_total;
+      $('#product-list-body tr').each(function(){
+          let sub_total = $(this).find('input[name$="[total]"]').val();
+          if(sub_total){
+              sub_total = parseFloat(sub_total.split('.').join(''));
+          }else{
+              sub_total = 0;
+          }
+          if(isNaN(sub_total)) sub_total = 0;
+          total += sub_total;
       });
 
       $('input[name="sub_total_item"]').val(formatRupiah(total));
 
-      // Panggil ulang hitung diskon setelah subtotal selesai
       hitungDiscAgen();
     }
 
     // Hitung diskon agen berdasarkan input atau otomatis
     function hitungDiscAgen() {
       let discPercent = parseFloat($('#disc_agen_percent').val());
-      let subTotalItem = parseFloat($('input[name="sub_total_item"]').val().split('.').join(''));
+      let subTotalItem = $('input[name="sub_total_item"]').val();
+
+      if(subTotalItem){
+          subTotalItem = parseFloat(subTotalItem.split('.').join(''));
+      }else{
+          subTotalItem = 0;
+      }
 
       if (isNaN(discPercent)) discPercent = 0;
       if (isNaN(subTotalItem)) subTotalItem = 0;
@@ -582,11 +739,275 @@
       ).join('');
     }
 
-    // $(document).on('click', '#indentProduct', function() {
-    //   var so_detail_id = $(this).data('id');
-    //   var product_id = $(this).data('product');
-    //   var val = $(this).val();
-    // })
+    $('tbody tr').each(function(index){
+      checkStock(index);
+    });
+
+    $('#formSO').on('submit', function(e){
+      if(!validateMinus()){
+
+          e.preventDefault();
+          e.stopImmediatePropagation();
+
+          Swal.fire({
+              icon:'warning',
+              title:'Stock Minus',
+              text:'Qty melebihi stock. Centang minus product terlebih dahulu.'
+          });
+
+          return false;
+      }
+    });
+
+    $('#btn_add_product').on('click', function() {
+      let modal = new bootstrap.Modal(document.getElementById('productCalcModal'));
+      modal.show();
+      countGetUsd();  
+      recalcModalTable();
+    });
+
+    // Hitung total per row di modal
+    function recalcModalTable(){
+        let kurs = parseFloat($('#idr_rate').val());
+        if(isNaN(kurs)) kurs = 1;
+
+        $('#modal-product-table tbody tr').each(function(){
+
+            let row = $(this);
+
+            let qty = parseFloat(row.find('.qty').val()) || 0;
+            let price = parseFloat(row.find('.price').val()) || 0;
+            let disc = row.find('.disc_usd').val();
+
+            if(disc === '' || disc === null){
+                disc = row.find('.disc_usd').attr('placeholder');
+            }
+
+            disc = parseFloat(disc) || 0;
+
+            let stock = parseFloat(row.find('.stock-value').text()) || 0;
+            let minusChecked = row.find('.minus-check').is(':checked');
+
+            let freeProduct = row.find('.free-count').is(':checked');
+
+            if(freeProduct){
+
+                price = 0;
+                disc = 0;
+
+                row.find('.price').val(0).prop('readonly', true);
+                row.find('.disc_usd').val(0).prop('readonly', true);
+
+            }else{
+
+                row.find('.price').prop('readonly', false);
+                row.find('.disc_usd').prop('readonly', false);
+
+            }
+
+            let totalDisc = disc * qty;
+            let total = ((qty * price) - totalDisc) * kurs;
+
+            row.find('.total').val(total.toLocaleString('id-ID'));
+
+            if(qty > stock && !minusChecked){
+                row.addClass('table-danger');
+            }else{
+                row.removeClass('table-danger');
+            }
+        });
+    }
+
+    // Bind input changes untuk update total di modal
+    $(document).on('input', '#modal-product-table .qty, #modal-product-table .price, #modal-product-table .disc_usd', function() {
+        let row = $(this).closest('tr');
+        let soQty = parseFloat(row.find('#so_qty').val());
+        let qty = parseFloat(row.find('.qty').val());
+
+        if(qty > soQty){
+            Swal.fire({
+                icon:'warning',
+                title:'Qty melebihi order',
+                text:'Qty tidak boleh lebih dari '+soQty
+            });
+            row.find('.qty').val(soQty);
+        }
+        recalcModalTable();
+    });
+
+    // Save modal → update tabel utama
+    $('#modal_save').on('click', function() {
+
+        let minusWarning = false;
+
+        $('#modal-product-table tbody tr').each(function(){
+
+            let row = $(this);
+
+            let stock = parseFloat(row.find('.stock-value').text());
+            let qty = parseFloat(row.find('.qty').val());
+            let minusChecked = row.find('.minus-check').is(':checked');
+
+            if(qty > stock && !minusChecked){
+                minusWarning = true;
+            }
+
+        });
+
+        if(minusWarning){
+            Swal.fire({
+                icon: 'warning',
+                title: 'Stock Minus',
+                text: 'Ada qty melebihi stock. Centang minus product jika ingin melanjutkan.',
+            });
+            return;
+        }
+
+        let tbodyMain = $('#product-list-body');
+        tbodyMain.empty();
+
+        $('#modal-product-table tbody tr').each(function(index) {
+
+            let row = $(this);
+
+            let productText = row.find('td:nth-child(3)').text();
+            let kemasan = row.find('td:nth-child(9)').text();
+
+            let productPackagingId = row.find('#product_packaging_id').val();
+            let soItemID = row.find('#so_item_id').val();
+            let kemasanID = row.find('#kemasan_id').val();
+            let productCode = row.find('#productKode').val();
+            let productName = row.find('#productName').val();
+            let packName = row.find('#packName').val();
+
+            let freeProduct = row.find('.free-count').is(':checked') ? 1 : 0;
+            let stock = row.find('.stock-value').text();
+
+            let qty = parseFloat(row.find('.qty').val()) || 0;
+            let price = parseFloat(row.find('.price').val()) || 0;
+            let usdDisc = parseFloat(row.find('.disc_usd').val()) || 0;
+
+            let minusChecked = row.find('.minus-check').is(':checked') ? 1 : 0;
+
+            let kurs = $('#idr_rate').val();
+            if(isNaN(kurs)) kurs = 1;
+
+            let total = ((qty * price) - (qty * usdDisc)) * kurs;
+
+            let html = `
+            <tr class="index${index}" data-index="${index}">
+
+            <input type="hidden" name="repeater[${index}][product_packaging_id]" value="${productPackagingId}">
+            <input type="hidden" name="repeater[${index}][so_qty]" value="${qty}">
+            <input type="hidden" name="repeater[${index}][so_item_id]" value="${soItemID}">
+
+            <td>
+                <div class="form-check">
+                    <input class="form-check-input minus-check"
+                    type="checkbox"
+                    name="repeater[${index}][minusProduct]"
+                    value="1"
+                    ${minusChecked ? 'checked' : ''}>
+                </div>
+            </td>
+
+            <td>${index+1}</td>
+
+            <td>${productCode} - ${productName}</td>
+
+            <td class="stock-value">${stock}</td>
+
+            <td>${qty}</td>
+
+            <td>
+                <input type="number"
+                name="repeater[${index}][do_qty]"
+                class="form-control count"
+                data-index="${index}"
+                value="${qty}" step="any" readonly>
+            </td>
+
+            <td>
+                <input type="text"
+                name="repeater[${index}][price]"
+                class="form-control price text-center"
+                value="${price}" readonly>
+            </td>
+
+            <td>
+                <input class="form-check-input free-count"
+                type="checkbox"
+                value="1"
+                name="repeater[${index}][free_product]"
+                ${freeProduct ? 'checked' : ''}
+                disabled>
+            </td>
+
+            <td>
+                <input type="text"
+                name="kemasan"
+                class="form-control text-center"
+                readonly value="${packName}">
+                <input type="hidden"
+                name="repeater[${index}][packaging]"
+                value="${kemasanID}">
+            </td>
+
+            <td>
+                <input type="text"
+                name="repeater[${index}][usd_disc]"
+                class="form-control count count-disc text-center"
+                data-index="${index}"
+                value="${usdDisc}" readonly>
+            </td>
+
+            <td>
+                <input type="text"
+                name="repeater[${index}][total]"
+                class="form-control"
+                readonly value="${formatRupiah(total)}">
+            </td>
+
+            </tr>
+            `;
+
+            tbodyMain.append(html);
+
+            checkStock(index);
+            count_per_item(index);
+        });
+
+        sub_total_item();
+
+        bootstrap.Modal.getInstance(
+            document.getElementById('productCalcModal')
+        ).hide();
+    });
+
+    $(document).on('keyup change','.count',function(){
+
+        let index = $(this).data('index');
+
+        count_per_item(index);
+
+        checkStock(index);
+
+    });
+
+    $('#btn_save_so').on('click', function(e){
+      if(!validateMinus()){
+
+          e.preventDefault();
+
+          Swal.fire({
+              icon:'warning',
+              title:'Stock Minus',
+              text:'Qty melebihi stock. Centang minus product terlebih dahulu.'
+          });
+
+          return false;
+      }
+    });
   })
 </script>
 @endpush

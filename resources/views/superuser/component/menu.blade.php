@@ -82,6 +82,99 @@
         flex-grow: 1;
     }
 }
+
+/* ===============================
+   Notification Dropdown Modern
+================================= */
+
+.notification-wrapper .notification-badge {
+    position: absolute;
+    top: 2px;
+    right: 2px;
+    min-width: 18px;
+    height: 18px;
+    padding: 0 5px;
+    font-size: 11px;
+    font-weight: 600;
+    border-radius: 50px;
+    background: #ff3b30;
+    color: #fff;
+    display: none;
+    align-items: center;
+    justify-content: center;
+}
+
+.notification-wrapper .notification-badge.show {
+    display: inline-flex;
+}
+
+.notification-dropdown {
+    width: 380px;
+    border-radius: 14px;
+    padding: 0;
+    border: none;
+    box-shadow: 0 10px 40px rgba(0,0,0,0.15);
+    overflow: hidden;
+}
+
+.notification-header {
+    padding: 14px 16px;
+    background: #fff;
+    border-bottom: 1px solid #eee;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.notification-sub {
+    font-size: 12px;
+    color: #888;
+}
+
+.notification-body {
+    max-height: 420px;
+    overflow-y: auto;
+    background: #fafafa;
+}
+
+.notification-footer {
+    padding: 10px;
+    background: #fff;
+    border-top: 1px solid #eee;
+}
+
+.notification-item {
+    padding: 14px 16px;
+    border-bottom: 1px solid #eee;
+    background: #fff;
+    transition: all 0.2s ease;
+    cursor: pointer;
+}
+
+.notification-item:hover {
+    background: #f4f6f9;
+}
+
+.notification-item.unread {
+    background: #eef5ff;
+}
+
+.notification-title {
+    font-size: 14px;
+    font-weight: 600;
+}
+
+.notification-text {
+    font-size: 13px;
+    color: #666;
+    margin-top: 3px;
+}
+
+.notification-time {
+    font-size: 11px;
+    color: #999;
+    margin-top: 6px;
+}
 </style>
 
 <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
@@ -173,24 +266,39 @@
                                         @endif
                                     </ul>
                                 </li>
-                                @if($superuser->can('superuser-manage') OR $superuser->division == "Admin" OR $superuser->division == "Management")
-                                <li class="submenu submenu-md dropend">
-                                    <a class="dropdown-item dropdown-toggle" role="button"
-                                        data-bs-toggle="dropdown" aria-expanded="false"><i class="fa-solid fa-file-invoice"></i> PPN</a>
-                                    <ul class="dropdown-menu">
-                                        <li><a class="dropdown-item" href="{{ route('superuser.penjualan.sales_order_ppn.index_ppn_awal') }}"><i class="fa-solid fa-arrow-up-wide-short"></i> Awal</a></li>
-                                        <li><a class="dropdown-item" href="{{ route('superuser.penjualan.sales_order_ppn.index_ppn_lanjutan') }}"><i class="fa-solid fa-arrow-down-wide-short"></i> Lanjutan</a></li>
-                                    </ul>
-                                </li>
+                                @if(
+                                    $superuser->can('superuser-manage') || 
+                                    $superuser->division == "Admin" || 
+                                    $superuser->division == "Management" || 
+                                    $superuser->id == 38 ||
+                                    $superuser->id == 35
+                                )
+                                    <li class="submenu submenu-md dropend">
+                                        <a class="dropdown-item dropdown-toggle" role="button"
+                                            data-bs-toggle="dropdown" aria-expanded="false"><i class="fa-solid fa-file-invoice"></i> PPN</a>
+                                        <ul class="dropdown-menu">
+                                            <li><a class="dropdown-item" href="{{ route('superuser.penjualan.sales_order_ppn.index_ppn_awal') }}"><i class="fa-solid fa-arrow-up-wide-short"></i> Awal</a></li>
+                                            @if(
+                                                $superuser->can('superuser-manage') || 
+                                                $superuser->division == "Admin" || 
+                                                $superuser->division == "Management"
+                                            )
+                                            <li><a class="dropdown-item" href="{{ route('superuser.penjualan.sales_order_ppn.index_ppn_lanjutan') }}"><i class="fa-solid fa-arrow-down-wide-short"></i> Lanjutan</a></li>
+                                            @endif
+                                        </ul>
+                                    </li>
                                 @endif
                             </ul>
                         </li>
-
+                        
+                        @if($superuser->can('superuser-manage') OR $superuser->division == "Admin" OR $superuser->division == "Management")
                         <li><a class="dropdown-item" href="{{ route('superuser.penjualan.sale_return.index') }}"><i class="fa-solid fa-file-prescription"></i> Nota Kredit</a></li>
+                        @endif
                     </ul>
                 </li>
 
                 <!-- Gudang -->
+                @if($superuser->can('superuser-manage') OR $superuser->division == "Admin" OR $superuser->division == "Management" OR $superuser->division == "Warehouse")
                 <li class="nav-item dropdown">
                     <a class="nav-link dropdown-toggle" role="button" data-bs-toggle="dropdown"
                         aria-expanded="false">
@@ -280,12 +388,12 @@
                                 <i class="fa-solid fa-cubes"></i> Inventory
                             </a>
                             <ul class="dropdown-menu">
+                                @if($superuser->can('superuser-manage') OR $superuser->division == "Admin" OR $superuser->division == "Management" OR $superuser->division == "Warehouse")
                                 <li>
                                     <a class="dropdown-item" href="{{ route('superuser.gudang.stock.index') }}">
                                         Stock
                                     </a>
                                 </li>
-                                @if($superuser->can('superuser-manage') OR $superuser->division == "Admin" OR $superuser->division == "Management" OR $superuser->division == "Warehouse")
                                 <li>
                                     <a class="dropdown-item" href="{{ route('superuser.gudang.stock_adjustment.index') }}">
                                         Stock Adjustment
@@ -297,6 +405,7 @@
 
                     </ul>
                 </li>
+                @endif
 
                 <!-- FAT -->
                 @if($superuser->can('superuser-manage') OR $superuser->division == "Admin" OR $superuser->division == "Management" OR $superuser->division == "Finance")
@@ -490,11 +599,9 @@
                             </a>
                             <ul class="dropdown-menu">
                                 <li><a class="dropdown-item" href="{{ route('superuser.setting.menu.index') }}">Halaman</a></li>
-                                <li><a class="dropdown-item" href="{{ route('superuser.setting.api_keys.index') }}">API</a></li>
                                 <li><a class="dropdown-item" href="{{ route('superuser.account.superuser.index') }}">Kegunaan</a></li>
                                 <li><a class="dropdown-item" href="{{ route('superuser.account.user.index') }}">Wilayah indonesia</a></li>
                                 <li><a class="dropdown-item" href="{{ route('superuser.utility.settings.index') }}">Maintenance Mode</a></li>
-                                <li><a class="dropdown-item" href="{{ route('superuser.utility.settings.emails.create') }}">Emails</a></li>
                             </ul>
                         </li>
                         @endrole
@@ -519,20 +626,44 @@
             </ul>
       <ul class="navbar-nav ml-auto"> <!-- ml-auto aligns to the right -->
         <!-- Notification Dropdown -->
-        <li class="nav-item dropdown">
-          <a class="nav-link dropdown-toggle" href="#" id="notificationDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
-            <i class="bi bi-bell"></i> <span class="badge badge-danger">{{ $notifCount > 0 ? $notifCount : '0' }}</span>
-          </a>
-          <div class="dropdown-menu dropdown-menu-right" aria-labelledby="notificationDropdown">
-                    <div class="card" style="width: 45rem;">
-                        <div class="card-header">
-                            <h3 class="card-title">Last updates</h3>
-                        </div>
-                        <div class="list-group list-group-flush list-group-hoverable" id="notifList">
-                              <!-- Notifications will be dynamically loaded here -->
+        <li class="nav-item dropdown notification-wrapper">
+            <a class="nav-link position-relative" href="#" id="notificationDropdown"
+            role="button" data-bs-toggle="dropdown" aria-expanded="false">
+
+                <i class="bi bi-bell fs-5"></i>
+
+                <span id="notifCount"
+                    class="notification-badge {{ $notifCount > 0 ? 'show' : '' }}">
+                    {{ $notifCount > 99 ? '99+' : $notifCount }}
+                </span>
+            </a>
+
+            <div class="dropdown-menu dropdown-menu-end notification-dropdown"
+                aria-labelledby="notificationDropdown">
+
+                <div class="notification-header">
+                    <div>
+                        <strong>Notifications</strong>
+                        <div class="notification-sub">
+                            <span id="notifHeaderCount">{{ $notifCount }}</span> unread
                         </div>
                     </div>
+
+                    <button type="button"
+                            class="btn btn-sm btn-link text-decoration-none"
+                            id="markAllAsReadBtn">
+                        Mark all
+                    </button>
                 </div>
+
+                <div id="notifList" class="notification-body">
+                    <!-- Loaded via AJAX -->
+                </div>
+
+                <div class="notification-footer text-center">
+                    <a href="#" class="text-muted small">View All</a>
+                </div>
+            </div>
         </li>
 
         <!-- Profile Dropdown -->
@@ -551,126 +682,231 @@
 </nav>
 
 @push('scripts')
-<script type="text/javascript">
+<script>
+(function () {
+
+    let notifInterval = null;
+    let currentRequest = null;
+
+    /* ================================
+       SUBMENU AUTO COLLAPSE
+    ================================= */
     const autoCollapseSubmenu = (event) => {
-    if (event.target.matches('li.submenu>a.dropdown-item.dropdown-toggle')) {
-        // prevent parent dropdown menu from collapsing on click
+
+        if (!event.target.matches('li.submenu>a.dropdown-item.dropdown-toggle')) return;
+
         event.stopPropagation();
-        // find parent navbar element
+
         const navbar = event.target.closest('nav.navbar');
-        // get the target submenu (the ul.dropdown-menu sibling of the clicked item)
-        targetSubmenu = event.target.parentElement.querySelector('ul.dropdown-menu');
-        // find any open submenu items
-        // set class and aria attributes to closed unless element is clicked element or direct ancestor
-        if (targetSubmenu) {
-            navbar.querySelectorAll('li.submenu>ul.dropdown-menu.show').forEach((subMenu) => {
+        const targetSubmenu = event.target.parentElement.querySelector('ul.dropdown-menu');
+
+        if (!targetSubmenu) return;
+
+        navbar.querySelectorAll('li.submenu>ul.dropdown-menu.show')
+            .forEach((subMenu) => {
+
                 if (!subMenu.contains(targetSubmenu)) {
-                    // dropdown toggle link - remove 'show' class, set aria-expanded to fale
+
                     subMenu.classList.remove('show');
-                    // Get the sibling ul.dropdown-menu
-                    const dropDownToggle = subMenu.parentElement.querySelector('a[aria-expanded="true"].dropdown-item.dropdown-toggle');
-                    if (dropDownToggle) {
-                        // Remove the 'show' class
-                        dropDownToggle.classList.remove('show');
-                        dropDownToggle.setAttribute('aria-expanded', 'false');
+
+                    const toggle = subMenu.parentElement
+                        .querySelector('a[aria-expanded="true"].dropdown-item.dropdown-toggle');
+
+                    if (toggle) {
+                        toggle.classList.remove('show');
+                        toggle.setAttribute('aria-expanded', 'false');
                     }
                 }
             });
-        };
-        }
     };
 
-    document.querySelectorAll('nav.navbar').forEach((navbar) => {
-        navbar.addEventListener('click', autoCollapseSubmenu);
-    });
+    document.querySelectorAll('nav.navbar')
+        .forEach(navbar => navbar.addEventListener('click', autoCollapseSubmenu));
+
+
+    /* ================================
+       NOTIFICATION CORE
+    ================================= */
+
+    function buildNotificationItem(notification) {
+
+        let notifData;
+
+        try {
+            notifData = JSON.parse(notification.data);
+        } catch (e) {
+            console.error('Invalid notification data', notification);
+            return '';
+        }
+
+        const items = (notifData.code || 'No code').split(',');
+
+        let config = {
+            title: 'Notification',
+            icon: 'bi-bell',
+            url: '#'
+        };
+
+        if (notification.type.includes('DoNotification')) {
+            config = {
+                title: 'Delivery Order',
+                icon: 'bi-truck',
+                url: `/superuser/penjualan/notification/mark_as_read_do/${notification.id}/${notifData.id}`
+            };
+        }
+        else if (notification.type.includes('SoNotification')) {
+            config = {
+                title: 'Sales Order',
+                icon: 'bi-cart',
+                url: `/superuser/penjualan/notification/mark_as_read_so/${notification.id}/${notifData.id}`
+            };
+        }
+        else if (notification.type.includes('PayableNotification')) {
+            config = {
+                title: 'Payment',
+                icon: 'bi-credit-card',
+                url: `/superuser/penjualan/notification/mark_as_read_payable/${notification.id}`
+            };
+        }
+        else if (notification.type.includes('ReceivingNotification')) {
+            config = {
+                title: 'Receiving',
+                icon: 'bi-box-seam',
+                url: `/superuser/penjualan/notification/mark_as_read_only/${notification.id}`
+            };
+        }
+
+        return items.map(item => `
+            <div class="notification-item unread" data-url="${config.url}">
+                <div class="d-flex align-items-start gap-2">
+                    <i class="bi ${config.icon} fs-5 text-primary"></i>
+                    <div class="flex-grow-1">
+                        <div class="notification-title">
+                            ${config.title} - ${item.trim()}
+                        </div>
+                        <div class="notification-text">
+                            ${notifData.customer ?? ''} (${notifData.customer_kota ?? ''})
+                        </div>
+                        <div class="notification-time">
+                            ${new Date(notification.created_at).toLocaleString()}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `).join('');
+    }
+
+
+    function updateBadge(count) {
+
+        $('#notifCount')
+            .text(count > 99 ? '99+' : count)
+            .toggleClass('show', count > 0);
+
+        $('#notifHeaderCount').text(count);
+    }
+
 
     function reloadNotifications() {
-        $.ajax({
+
+        if (currentRequest) {
+            currentRequest.abort(); // prevent overlapping
+        }
+
+        currentRequest = $.ajax({
             url: '{{ route('superuser.penjualan.notification.getNotifData') }}',
             type: 'GET',
-            success: function(response) {
-                // Update notification count
-                $('#notifCount').text(response.notifCount > 0 ? response.notifCount : '0');
+            dataType: 'json'
+        });
 
-                // Update notification list
-                var notifications = response.notifications;
-                var notifHtml = '';
+        currentRequest.done(function (response) {
 
-                if (notifications.length > 0) {
-                    notifications.forEach(function(notification) {
-                        var notifData = JSON.parse(notification.data);
-                        var items = (notifData.code || 'No code').split(',');
-                        var alertType;
-                        var notifType;
-                        var actionUrl;
+            updateBadge(response.notifCount);
 
-                        if (notification.type === 'App\\Notifications\\DoNotification') {
-                            alertType = 'alert-success';
-                            if (notifData.status === 2) {
-                                notifType = 'New DO:';
-                                actionUrl = `/superuser/penjualan/notification/mark_as_read_do/${notification.id}/${notifData.id}`;
-                            } else if (notifData.status === 6) {
-                                notifType = 'DO Update Resi:';
-                                actionUrl = `/superuser/penjualan/notification/mark_as_read_only/${notification.id}`;
-                            }
-                        } else if (notification.type === 'App\\Notifications\\SoNotification') {
-                            alertType = 'alert-info';
-                            notifType = 'New SO:';
-                            actionUrl = `/superuser/penjualan/notification/mark_as_read_so/${notification.id}/${notifData.id}`;
-                        } else if (notification.type === 'App\\Notifications\\PayableNotification') {
-                            if (notifData.status === 2) {
-                                alertType = 'alert-success';
-                                notifType = 'Approved Payable:';
-                            } else {
-                                alertType = 'alert-warning';
-                                notifType = 'New Payable:';
-                            }
-                            actionUrl = `/superuser/penjualan/notification/mark_as_read_payable/${notification.id}`;
-                        }
+            const notifications = response.notifications || [];
 
-                        items.forEach(function(item) {
-                            notifHtml += `
-                                <div class="list-group-item">
-                                    <div class="row align-items-center">
-                                        <div class="col-auto">
-                                            <span class="status-dot status-dot-animated bg-red d-block"></span>
-                                        </div>
-                                        <div class="col text-truncate">
-                                            <div class="alert ${alertType}" role="alert">
-                                                [${new Date(notifData.created_at).toLocaleDateString()}] Customer ${notifData.customer} (${notifData.customer_kota}) ${notifType} <b>${item}</b>
-                                                <form action="${actionUrl}" method="POST">
-                                                    <input type="hidden" name="_token" value="{{ csrf_token() }}">
-                                                    <button type="submit" class="btn btn-link">Process</button>
-                                                </form>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>`;
-                        });
-                    });
-                } else {
-                    notifHtml = `
-                        <div class="list-group-item">
-                            <div class="row align-items-center">
-                                <div class="col text-truncate">
-                                    <span class="text-body d-block">No notifications</span>
-                                </div>
-                            </div>
-                        </div>`;
-                }
-
-                $('#notifList').html(notifHtml);
-            },
-            error: function(xhr) {
-                console.error('An error occurred:', xhr.responseText);
+            if (!notifications.length) {
+                $('#notifList').html(`
+                    <div class="notification-item text-center text-muted">
+                        No new notifications
+                    </div>
+                `);
+                return;
             }
+
+            const html = notifications.map(buildNotificationItem).join('');
+            $('#notifList').html(html);
+
+        }).fail(function (xhr, status) {
+
+            if (status !== 'abort') {
+                console.error('Notification error:', xhr.responseText);
+            }
+
+        }).always(function () {
+            currentRequest = null;
         });
     }
-    
-    // Reload notifications every 5 seconds
-    setInterval(reloadNotifications, 5000);
 
-    // Initial load
+
+    /* ================================
+       EVENT BINDING (NO INLINE CLICK)
+    ================================= */
+
+    $(document).on('click', '.notification-item', function () {
+        const url = $(this).data('url');
+        if (url) window.location.href = url;
+    });
+
+
+    $(document).on('click', '#markAllAsReadBtn', function (e) {
+
+        e.preventDefault();
+
+        $.post(
+            '{{ route('superuser.penjualan.notification.unread_all_notif') }}',
+            { _token: '{{ csrf_token() }}' }
+        )
+        .done(function () {
+            reloadNotifications();
+        })
+        .fail(function (xhr) {
+            console.error('Mark all error:', xhr.responseText);
+        });
+    });
+
+
+    /* ================================
+       SMART POLLING
+    ================================= */
+
+    function startPolling() {
+        if (!notifInterval) {
+            notifInterval = setInterval(reloadNotifications, 10000);
+        }
+    }
+
+    function stopPolling() {
+        if (notifInterval) {
+            clearInterval(notifInterval);
+            notifInterval = null;
+        }
+    }
+
+    // Stop polling when tab not active
+    document.addEventListener('visibilitychange', function () {
+        if (document.hidden) {
+            stopPolling();
+        } else {
+            reloadNotifications();
+            startPolling();
+        }
+    });
+
+    // Init
     reloadNotifications();
+    startPolling();
+
+})();
 </script>
 @endpush

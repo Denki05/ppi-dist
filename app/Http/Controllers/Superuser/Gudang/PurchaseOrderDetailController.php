@@ -156,7 +156,6 @@ class PurchaseOrderDetailController extends Controller
         if ($request->ajax()) {
             $validator = Validator::make($request->all(), [
                 'product_packaging_id' => 'required',
-                'packaging_id' => 'required|integer',
                 'quantity' => 'nullable|numeric',
                 
             ]);

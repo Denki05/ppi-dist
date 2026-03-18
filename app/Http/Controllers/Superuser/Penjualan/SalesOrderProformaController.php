@@ -19,6 +19,8 @@ use App\Entities\Master\Product;
 use App\Entities\Master\ProductPack;
 use App\Entities\Master\Customer;
 use App\Entities\Master\CustomerOtherAddress;
+use App\Entities\Gudang\MutasiShowroom;
+use App\Entities\Gudang\MutasiShowroomDetail;
 use App\Entities\Master\Vendor;
 use App\Models\Province;
 use App\Models\Regency;
@@ -29,6 +31,7 @@ use Validator;
 use Auth;
 use COM;
 use DB;
+use PDF;
 
 class SalesOrderProformaController extends Controller
 {
@@ -68,17 +71,40 @@ class SalesOrderProformaController extends Controller
         return ['results' => $products];
     }
 
-    public function index(Request $request)
+    public function index()
     {
-        if(Auth::user()->is_superuser == 0){
-            if(empty($this->access) || empty($this->access->user) || $this->access->can_read == 0){
-                return redirect()->route('superuser.index')->with('error','Anda tidak punya akses untuk membuka menu terkait');
-            }
-        }
+        $aktif = SalesOrderProforma::with('salesOrder.member')
+            ->whereHas('salesOrder', function ($q) {
+                $q->where('status_proforma', 1);
+            })->get();
 
-        $data['results'] = SalesOrderProforma::orderBy('created_at', 'DESC')->get();
+        $terbuat = SalesOrderProforma::with('salesOrder.member')
+            ->whereHas('salesOrder', function ($q) {
+                $q->where('status_proforma', 2);
+            })->get();
 
-        return view($this->view . "index", $data);
+
+        $siap = SalesOrderProforma::with('salesOrder.member')
+            ->whereHas('salesOrder', function ($q) {
+                $q->where('status_proforma', 3);
+            })->get();
+
+        $tutup = SalesOrderProforma::with('salesOrder.member')
+            ->whereHas('salesOrder', function ($q) {
+                $q->where('status_proforma', 4);
+            })->get();
+
+        return view('superuser.penjualan.so_proforma.index', [
+            'aktif' => $aktif,
+            'terbuat' => $terbuat,
+            'siap' => $siap,
+            'tutup' => $tutup,
+
+            'count_aktif' => $aktif->count(),
+            'count_terbuat' => $terbuat->count(),
+            'count_siap' => $siap->count(),
+            'count_tutup' => $tutup->count(),
+        ]);
     }
 
     public function create(Request $request)
@@ -418,6 +444,11 @@ class SalesOrderProformaController extends Controller
                 SalesOrderProformaItem::whereIn('id', $ids)->delete();
             }
 
+            // ===== UPDATE STATUS PROFORMA =====
+            $sales_order = SalesOrder::find($sales_proforma->so_id);
+            $sales_order->status_proforma = 2;
+            $sales_order->save();
+
             // ===== ITEMS =====
             if ($request->sku) {
 
@@ -529,102 +560,128 @@ class SalesOrderProformaController extends Controller
                 ->findOrFail($sales_proforma->so_id);
     
             $sales_order->status = 4;
+            $sales_order->status_proforma = 4;
             $sales_order->code = CodeRepo::generateSO();
-            $sales_order->payment_status = 1;
+            $sales_order->payment_status = 0; // cek apakah status nya 
             $sales_order->updated_by = Auth::id();
+            $sales_order->so_date = $sales_proforma->so_date ?? null ;
+            $sales_order->sales_id = $sales_proforma->sales_id ?? null ;
+            $sales_order->sales_senior_id = $sales_proforma->sales_senior_id ?? null ;
+            $sales_order->rekening = $sales_proforma->rekening_id;
+            $sales_order->origin_warehouse_id = $sales_proforma->warehouse_id;
+            $sales_order->ekspedisi_id = $sales_proforma->vendor_id ?? null;
             $sales_order->save();
     
-            $transactionCode = 'SO-'. $sales_order->code;
+            $transactionCode = $sales_order->code;
     
             /*
             |--------------------------------------------------------------------------
-            | 2️⃣ VALIDASI & POTONG STOCK
+            | 2️⃣ VALIDASI & RESERVED STOCK (TANPA POTONG STOCK)
             |--------------------------------------------------------------------------
             */
-    
+
+            $warnings = [];
+            $mutasiItems = []; // untuk free product mutasi showroom
+
             foreach ($sales_proforma->items as $item) {
 
-                $stock = \App\Entities\Master\ProductMinStock::where('product_packaging_id', $item->product_packaging_id)
-                    ->where('warehouse_id', $sales_proforma->warehouse_id)
-                    ->lockForUpdate()
-                    ->first();
-            
-                if (!$stock) {
-                    throw new \Exception("Stock tidak ditemukan.");
+                $retry = 0;
+                $maxRetry = 5;
+                $stockUpdated = false;
+
+                while ($retry < $maxRetry) {
+
+                    try {
+
+                        DB::beginTransaction();
+
+                        $stock = \App\Entities\Master\ProductMinStock::where('warehouse_id', $sales_proforma->warehouse_id)
+                            ->where('product_packaging_id', $item->product_packaging_id)
+                            ->lockForUpdate()
+                            ->first();
+
+                        /*
+                        |--------------------------------------------------------------------------
+                        | JIKA STOCK BELUM ADA → BUAT
+                        |--------------------------------------------------------------------------
+                        */
+
+                        if (!$stock) {
+
+                            $stock = \App\Entities\Master\ProductMinStock::create([
+                                'warehouse_id' => $sales_proforma->warehouse_id,
+                                'product_packaging_id' => $item->product_packaging_id,
+                                'quantity' => 0,
+                                'reserved_quantity' => 0
+                            ]);
+
+                            $stock = \App\Entities\Master\ProductMinStock::where('id', $stock->id)
+                                ->lockForUpdate()
+                                ->first();
+                        }
+
+                        $current_reserved = (float) ($stock->reserved_quantity ?? 0);
+                        $quantity = (float) ($stock->quantity ?? 0);
+
+                        $available = $quantity - $current_reserved;
+                        $new_available = $available - $item->qty;
+
+                        /*
+                        |--------------------------------------------------------------------------
+                        | VALIDASI STOCK
+                        |--------------------------------------------------------------------------
+                        */
+
+                        if ($available >= $item->qty) {
+
+                            // stok cukup
+                            $stock->reserved_quantity = $current_reserved + $item->qty;
+
+                        } elseif ($available >= 0 && $new_available < 0) {
+
+                            // minus pertama kali
+                            $stock->reserved_quantity = $current_reserved + $item->qty;
+
+                            $warnings[] = "Stock packaging ID {$item->product_packaging_id} akan minus nantinya!";
+
+                        } else {
+
+                            // sudah minus sebelumnya
+                            throw new \Exception(
+                                "Stock packaging ID {$item->product_packaging_id} sudah minus sebelumnya. ".
+                                "Available: {$available}, Request: {$item->qty}"
+                            );
+                        }
+
+                        $stock->save();
+
+                        DB::commit();
+
+                        $stockUpdated = true;
+
+                        break;
+
+                    } catch (\Illuminate\Database\QueryException $e) {
+
+                        DB::rollBack();
+
+                        $retry++;
+
+                        usleep(200000); // retry 0.2 detik
+
+                    } catch (\Exception $e) {
+
+                        DB::rollBack();
+
+                        throw $e;
+                    }
                 }
-            
-                $available = $stock->quantity - ($stock->reserved_quantity ?? 0);
-            
-                if ($available < $item->qty) {
-                    throw new \Exception("Stock tidak mencukupi.");
-                }
-            
-                /*
-                |--------------------------------------------------------------------------
-                | CEK APAKAH SUDAH ADA HISTORI STOCK MOVE
-                |--------------------------------------------------------------------------
-                */
-                $lastMove = \App\Entities\Gudang\StockMove::where('warehouse_id', $sales_proforma->warehouse_id)
-                    ->where('product_packaging_id', $item->product_packaging_id)
-                    ->orderByDesc('id')
-                    ->lockForUpdate()
-                    ->first();
-            
-                /*
-                |--------------------------------------------------------------------------
-                | JIKA BELUM ADA HISTORI → BUAT OPENING OTOMATIS
-                |--------------------------------------------------------------------------
-                */
-                if (!$lastMove) {
-            
-                    \App\Entities\Gudang\StockMove::create([
-                        'code_transaction'     => 'OPENING',
-                        'warehouse_id'         => $sales_proforma->warehouse_id,
-                        'product_packaging_id' => $item->product_packaging_id,
-                        'stock_in'             => $stock->quantity, // stok awal sebelum dikurangi
-                        'stock_out'            => 0,
-                        'stock_balance'        => $stock->quantity,
-                        'note'                 => 'Auto Opening Balance',
-                        'created_by'           => auth()->id(),
-                    ]);
-            
-                    $lastBalance = $stock->quantity;
-            
-                } else {
-                    $lastBalance = $lastMove->stock_balance;
-                }
-            
-                /*
-                |--------------------------------------------------------------------------
-                | CEK APAKAH SUDAH ADA MOVE UNTUK TRANSAKSI INI
-                |--------------------------------------------------------------------------
-                */
-                $alreadyMoved = \App\Entities\Gudang\StockMove::where('code_transaction', $transactionCode)
-                    ->where('product_packaging_id', $item->product_packaging_id)
-                    ->exists();
-            
-                if (!$alreadyMoved) {
-            
-                    $newBalance = $lastBalance - $item->qty;
-            
-                    \App\Entities\Gudang\StockMove::create([
-                        'code_transaction'     => $transactionCode, // jangan tambah SO- lagi
-                        'warehouse_id'         => $sales_proforma->warehouse_id,
-                        'product_packaging_id' => $item->product_packaging_id,
-                        'stock_in'             => 0,
-                        'stock_out'            => $item->qty,
-                        'stock_balance'        => $newBalance,
-                        'note'                 => $sales_order->member->name . ' ' . $sales_order->member->text_kota,
-                        'created_by'           => auth()->id(),
-                    ]);
-            
-                    /*
-                    |--------------------------------------------------------------------------
-                    | KURANGI STOCK SETELAH MOVE DIBUAT
-                    |--------------------------------------------------------------------------
-                    */
-                    $stock->quantity -= $item->qty;
-                    $stock->save();
+
+                if (!$stockUpdated) {
+
+                    throw new \Exception(
+                        "Gagal update stock packaging {$item->product_packaging_id} setelah retry {$maxRetry}x"
+                    );
                 }
             }
     
@@ -742,6 +799,20 @@ class SalesOrderProformaController extends Controller
                 $soItem = SalesOrderItem::where('so_id', $sales_order->id)
                     ->where('product_packaging_id', $item->product_packaging_id)
                     ->first();
+
+                $is_free_product = !empty($soItem->free_product) && (float)$soItem->free_product > 0;
+
+                if ($is_free_product) {
+                    
+                    if ($item->qty > 0) {
+                    
+                        $mutasiItems[] = [
+                            'product_packaging_id' => $item->product_packaging_id,
+                            'qty'  => $item->qty,
+                            'note' => 'Free product otomatis dari SO ' . $sales_order->code,
+                        ];
+                    }
+                }
     
                 PackingOrderItem::create([
                     'product_packaging_id' => $item->product_packaging_id,
@@ -755,6 +826,53 @@ class SalesOrderProformaController extends Controller
                     'created_by' => Auth::id(),
                     'qty_worked' => $item->qty,
                 ]);
+            }
+
+            /*
+            |--------------------------------------------------------------------------
+            | MUTASI SHOWROOM FREE PRODUCT
+            |--------------------------------------------------------------------------
+            */
+
+            if (!empty($mutasiItems)) {
+
+                $mutasiItems = array_filter($mutasiItems, function ($item) {
+                    return isset($item['qty']) && $item['qty'] > 0;
+                });
+
+                if (!empty($mutasiItems)) {
+
+                    $mutasi = MutasiShowroom::create([
+                        'kode' => CodeRepo::generateMutasiShowroom(MutasiShowroom::TYPE_SYSTEM_FREE_SO),
+                        'brand_name' => $sales_order->brand_name ?? '-',
+                        'type' => MutasiShowroom::TYPE_SYSTEM_FREE_SO,
+                        'warehouse_from_id' => $sales_proforma->warehouse_id,
+                        'warehouse_to_id' => $sales_order->customer_id == 51
+                                                ? 53
+                                                : $sales_order->customer_id,
+                        'customer_other_address_id' => $sales_proforma->customer_other_address_id ?? null,
+                        'so_id' => $sales_order->id,
+                        'tanggal' => now(),
+                        'status' => MutasiShowroom::STATUS['SETTLE'],
+                        'status_checked' => MutasiShowroom::STATUS_CHECKED['CHECKED'],
+                        'status_barang' => MutasiShowroom::STATUS_BARANG['DIAMBIL'],
+                        'note' => 'Mutasi Free Product dari SO ' . $sales_order->code,
+                        'created_by' => Auth::id(),
+                    ]);
+
+                    foreach ($mutasiItems as $item) {
+
+                        MutasiShowroomDetail::create([
+                            'penjualan_showroom_id' => $mutasi->id,
+                            'product_packaging_id' => $item['product_packaging_id'],
+                            'qty' => $item['qty'],
+                            'price' => 0,
+                            'total_price' => 0,
+                            'note' => $item['note'] ?? null,
+                        ]);
+
+                    }
+                }
             }
     
             /*
@@ -775,24 +893,16 @@ class SalesOrderProformaController extends Controller
             DB::commit();
     
             return response()->json([
-                'notification' => [
-                    'alert' => 'notify',
-                    'type'  => 'success',
-                    'content' => 'ACC berhasil. SO lanjutan & DO telah dibuat.'
-                ]
+                'success' => true,
+                'message' => 'ACC berhasil. SO lanjutan & DO telah dibuat.'
             ]);
     
         } catch (\Throwable $e) {
-            dd($e);
             DB::rollBack();
     
             return response()->json([
-                'notification' => [
-                    'alert' => 'block',
-                    'type' => 'alert-danger',
-                    'header' => 'Error',
-                    'content' => $e->getMessage()
-                ]
+                'success' => false,
+                'message' => $e->getMessage()
             ], 500);
         }
     }
@@ -1111,26 +1221,103 @@ class SalesOrderProformaController extends Controller
     // }
 
     public function destroy(Request $request, $id)
-    {   
-        if ($request->ajax()) {
-            if(Auth::user()->is_superuser == 0){
-                if(empty($this->access) || empty($this->access->user) || $this->access->can_delete == 0){
-                    abort(405);
+    {
+        if (!$request->ajax()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Invalid request'
+            ], 400);
+        }
+
+        DB::beginTransaction();
+
+        try {
+
+            // cek permission
+            if (Auth::user()->is_superuser == 0) {
+                if (empty($this->access) || empty($this->access->user) || $this->access->can_delete == 0) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'Anda tidak memiliki akses.'
+                    ], 403);
                 }
             }
 
-            $sales_proforma = SalesOrderProforma::find($id);
+            $sales_proforma = SalesOrderProforma::with(['items','details_cost'])
+                ->find($id);
 
-            if ($sales_proforma === null) {
-                abort(404);
+            if (!$sales_proforma) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Proforma tidak ditemukan.'
+                ], 404);
             }
 
-            $sales_proforma->status = 0;
-            $sales_proforma->deleted_by = Auth::id();
-            if ($sales_proforma->save()) {
-                $response['redirect_to'] = route('superuser.penjualan.so_proforma.index');
-                return $this->response(200, $response);
+            /*
+            |--------------------------------------------------------------------------
+            | CEK JIKA SUDAH DIPROSES
+            |--------------------------------------------------------------------------
+            */
+
+            if ($sales_proforma->so_lanjutan == 1 || $sales_proforma->status == 4) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Proforma sudah diproses dan tidak bisa dihapus.'
+                ]);
             }
+
+            /*
+            |--------------------------------------------------------------------------
+            | RESET SALES ORDER
+            |--------------------------------------------------------------------------
+            */
+
+            $sales_order = SalesOrder::find($sales_proforma->so_id);
+
+            if ($sales_order) {
+                $sales_order->is_proforma = 1;
+                $sales_order->status_proforma = 0;
+                $sales_order->updated_by = Auth::id();
+                $sales_order->save();
+            }
+
+            /*
+            |--------------------------------------------------------------------------
+            | HAPUS RELASI PROFORMA
+            |--------------------------------------------------------------------------
+            */
+
+            if ($sales_proforma->items) {
+                $sales_proforma->items()->delete();
+            }
+
+            if ($sales_proforma->details_cost) {
+                $sales_proforma->details_cost()->delete();
+            }
+
+            /*
+            |--------------------------------------------------------------------------
+            | HARD DELETE PROFORMA
+            |--------------------------------------------------------------------------
+            */
+
+            $sales_proforma->delete();
+
+            DB::commit();
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Proforma berhasil dihapus.'
+            ]);
+
+        } catch (\Throwable $e) {
+            dd($e);
+            DB::rollBack();
+
+            return response()->json([
+                'success' => false,
+                'message' => $e->getMessage()
+            ], 500);
         }
     }
 
@@ -1215,4 +1402,180 @@ class SalesOrderProformaController extends Controller
         return ['results' => $results];
     }
 
+    public function rollbackProforma($so_id)
+    {
+        DB::beginTransaction();
+
+        try {
+            $sales_order = SalesOrder::find($so_id);
+            if (!$sales_order) {
+                throw new \Exception("Sales Order tidak ditemukan");
+            }
+
+            $proforma = SalesOrderProforma::where('so_id', $sales_order->id)->first();
+
+            $deleted_items = 0;
+            $deleted_header = 0;
+
+            if ($proforma) {
+                $deleted_items = SalesOrderProformaItem::where('so_proforma_id', $proforma->id)->delete();
+                $deleted_header = $proforma->delete();
+            }
+
+            $sales_order->status_proforma = 0;
+            $sales_order->save();
+
+            DB::commit();
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Proforma berhasil dirollback',
+                'deleted_items' => $deleted_items,
+                'deleted_header' => $deleted_header
+            ]);
+
+        } catch (\Exception $e) {
+            DB::rollBack();
+            \Log::error($e);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Gagal rollback proforma: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    public function statusSiap($id)
+    {
+        DB::beginTransaction();
+
+        try {
+            $so_proforma = SalesOrderProforma::find($id);
+            if (!$so_proforma) {
+                throw new \Exception("Sales Order Proforma tidak ditemukan");
+            }
+
+            $sales_order = SalesOrder::find($so_proforma->so_id);
+            if (!$sales_order) {
+                throw new \Exception("Sales Order tidak ditemukan");
+            }   
+
+            $sales_order->status_proforma = 3;
+            $sales_order->save();
+
+            DB::commit();
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Proforma berhasil diupdate ke status siap',
+            ]);
+
+        } catch (\Exception $e) {
+            DB::rollBack();
+            \Log::error($e);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Gagal update status proforma: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    public function MultiCancel($id)
+    {
+        DB::beginTransaction();
+
+        try {
+            $so_proforma = SalesOrderProforma::find($id);
+            if (!$so_proforma) {
+                throw new \Exception("Sales Order Proforma tidak ditemukan");
+            }
+
+            $sales_order = SalesOrder::find($so_proforma->so_id);
+            if (!$sales_order) {
+                throw new \Exception("Sales Order tidak ditemukan");
+            }   
+
+            if ($sales_order->status_proforma == 1) {
+                $sales_order->status_proforma = 0;
+                $sales_order->save();
+            } elseif ($sales_order->status_proforma == 2) { 
+                $sales_order->status_proforma = 1;
+                $sales_order->save();
+            } elseif ($sales_order->status_proforma == 3) {
+                $sales_order->status_proforma = 2;
+                $sales_order->save();
+            }
+
+            DB::commit();
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Proforma berhasil diupdate ke status cancel',
+            ]);
+
+        } catch (\Exception $e) {
+            DB::rollBack();
+            \Log::error($e);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Gagal update status proforma: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    public function printProforma($id)
+    {
+    
+        $so = SalesOrderProforma::with([
+            'items.productPack.product',
+            'items.packaging',
+            'details_cost'
+        ])->findOrFail($id);
+    
+        // ambil grand total dari detail cost
+        $grandTotal = $so->details_cost->grand_total_idr ?? 0;
+    
+        // ubah ke terbilang
+        $terbilang = trim($this->terbilang($grandTotal));
+    
+        $pdf = PDF::loadView(
+            'superuser.penjualan.so_proforma.pdf_proforma',
+            [
+                'so' => $so,
+                'terbilang' => $terbilang
+            ]
+        )->setPaper('A5','landscape');
+    
+        return $pdf->stream('proforma-'.$so->code.'.pdf');
+    
+    }
+    
+    private function terbilang($angka)
+    {
+        $angka = abs($angka);
+    
+        $huruf = ["","Satu","Dua","Tiga","Empat","Lima","Enam","Tujuh","Delapan","Sembilan","Sepuluh","Sebelas"];
+    
+        if ($angka < 12) {
+            return " ".$huruf[$angka];
+        } elseif ($angka < 20) {
+            return $this->terbilang($angka - 10)." Belas";
+        } elseif ($angka < 100) {
+            return $this->terbilang($angka / 10)." Puluh".$this->terbilang($angka % 10);
+        } elseif ($angka < 200) {
+            return " Seratus".$this->terbilang($angka - 100);
+        } elseif ($angka < 1000) {
+            return $this->terbilang($angka / 100)." Ratus".$this->terbilang($angka % 100);
+        } elseif ($angka < 2000) {
+            return " Seribu".$this->terbilang($angka - 1000);
+        } elseif ($angka < 1000000) {
+            return $this->terbilang($angka / 1000)." Ribu".$this->terbilang($angka % 1000);
+        } elseif ($angka < 1000000000) {
+            return $this->terbilang($angka / 1000000)." Juta".$this->terbilang($angka % 1000000);
+        }
+    
+        return "";
+    }
 }

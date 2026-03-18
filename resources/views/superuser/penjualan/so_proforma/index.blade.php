@@ -1,141 +1,54 @@
 @extends('superuser.app')
 
 @section('content')
-<nav class="breadcrumb bg-white push">
-  <span class="breadcrumb-item">Sales Order</span>
-  <span class="breadcrumb-item active">Proforma</span>
-</nav>
+<div class="crm-wrapper">
 
-@if(session('error') || session('success'))
-<div class="alert alert-{{ session('error') ? 'danger' : 'success' }} alert-dismissible fade show" role="alert">
-    @if (session('error'))
-    <strong>Error!</strong> {!! session('error') !!}
-    @elseif (session('success'))
-    <strong>Berhasil!</strong> {!! session('success') !!}
-    @endif
-    <button type="button" class="close" data-dismiss="alert" aria-label="Close">
-        <span aria-hidden="true">&times;</span>
-    </button>
-</div>
-@endif
+    <div class="card">
+        <div class="card-body">
 
-<div id="alert-block"></div>
+            {{-- TAB HEADER --}}
+            <div class="workflow-tabs">
 
-<div class="block">
-  <div class="block-content block-content-full">
-    <table id="datatable" class="table table-bordred table-striped" style="width:100%">
-      <thead>
-        <tr>
-          <th>#</th>
-          <th>Created at</th>
-          <th>Code</th>
-          <th>Brand</th>
-          <th>Customer</th>
-          <th>Created By</th>
-          <th>Status</th>
-          <th>Action</th>
-        </tr>
-      </thead>
-      <tbody>
-        @foreach($results AS $row)
-        <tr>
-          <td>{{ $loop->iteration }}</td>
-          <td>{{ $row->created_at }}</td>
-          <td>{{ $row->code }}</td>
-          <td>{{ $row->so_brand_name }}</td>
-          <td>
-            @if($row->exsisting_customer == 0)
-              {{$row->customer_name}}
-            @elseif($row->exsisting_customer == 1)
-            {{$row->member->name}} {{ $row->member->text_kota }}
-            @endif
-          </td>
-          <td>{{ $row->createdBySuperuser() }}</td>
-          <td>{{ $row->status }}</td>
-          <td>
-            @if($row->status == "DELETED")
-              <a href="{{ route('superuser.penjualan.so_proforma.show', $row->id) }}">
-                <button type="button" class="btn btn-sm btn-circle btn-alt-danger" title="Show">
-                  <i class="fa fa-eye"></i>
+                <button class="menu-tab active workflow-tab" data-target="tab-aktif">
+                    Aktif <span class="badge bg-light text-dark">{{ $count_aktif }}</span>
                 </button>
-              </a>
-            @endif
-            @if($row->status == "ACTIVE")
-              @if(!empty($row->details_cost->grand_total_idr))
-             <button type="button"
-                class="btn btn-sm btn-circle btn-alt-danger btn-approval"
-                data-url="{{ route('superuser.penjualan.so_proforma.acc', $row->id) }}"
-                title="Acc">
-                <i class="fa fa-check"></i>
-            </button>
-              @endif
-              <a href="{{ route('superuser.penjualan.so_proforma.edit', $row->id) }}">
-                <button type="button" class="btn btn-sm btn-circle btn-alt-danger" title="Edit">
-                  <i class="fa fa-pencil"></i>
+
+                <button class="menu-tab workflow-tab" data-target="tab-terbuat">
+                    Terbuat <span class="badge bg-light text-dark">{{ $count_terbuat }}</span>
                 </button>
-              </a>
-              @if(!empty($row->details_cost->grand_total_idr))
-              <a href="{{ route('superuser.penjualan.so_proforma.print_so_proforma', $row->id) }}">
-                <button type="button" class="btn btn-sm btn-circle btn-alt-danger" title="Print">
-                  <i class="fa fa-print" aria-hidden="true"></i>
+
+                <button class="menu-tab workflow-tab" data-target="tab-siap">
+                    Siap <span class="badge bg-light text-dark">{{ $count_siap }}</span>
                 </button>
-              </a>
-              @endif
-              <a href="javascript:deleteConfirmation('{{ route('superuser.penjualan.so_proforma.destroy', $row->id) }}')">
-                <button type="button" class="btn btn-sm btn-circle btn-alt-danger" title="Delete">
-                  <i class="fa fa-trash"></i>
+
+                <button class="menu-tab workflow-tab" data-target="tab-tutup">
+                    Tutup <span class="badge bg-light text-dark">{{ $count_tutup }}</span>
                 </button>
-              </a>
-            @endif
-            @if($row->status == "ACC")
-              <a href="#">
-                <button type="button" class="btn btn-sm btn-circle btn-alt-danger" title="Show">
-                  <i class="fa fa-eye"></i>
-                </button>
-              </a>
-            @endif
-            @if($row->status == "LANJUTAN")
-              <a href="{{ route('superuser.penjualan.so_proforma.show', $row->id) }}">
-                <button type="button" class="btn btn-sm btn-circle btn-alt-danger" title="Show">
-                  <i class="fa fa-eye"></i>
-                </button>
-              </a>
-            @endif
-            
-            @if($row->status == "REVISI")
-              @if(!empty($row->details_cost->grand_total_idr))
-                 <button type="button"
-                    class="btn btn-sm btn-circle btn-alt-danger btn-approval"
-                    data-url="{{ route('superuser.penjualan.so_proforma.acc', $row->id) }}"
-                    title="Acc">
-                    <i class="fa fa-check"></i>
-                </button>
-              @endif
-              <a href="{{ route('superuser.penjualan.so_proforma.edit', $row->id) }}">
-                <button type="button" class="btn btn-sm btn-circle btn-alt-danger" title="Edit">
-                  <i class="fa fa-pencil"></i>
-                </button>
-              </a>
-              @if(!empty($row->details_cost->grand_total_idr))
-              <a href="{{ route('superuser.penjualan.so_proforma.print_so_proforma', $row->id) }}">
-                <button type="button" class="btn btn-sm btn-circle btn-alt-danger" title="Print">
-                  <i class="fa fa-print" aria-hidden="true"></i>
-                </button>
-              </a>
-              @endif
-              
-              <a href="javascript:deleteConfirmation('{{ route('superuser.penjualan.so_proforma.destroy', $row->id) }}')">
-                <button type="button" class="btn btn-sm btn-circle btn-alt-danger" title="Delete">
-                  <i class="fa fa-trash"></i>
-                </button>
-              </a>
-            @endif
-          </td>
-        </tr>
-        @endforeach
-      </tbody>
-    </table>
-  </div>
+
+            </div>
+
+            <hr>
+
+            {{-- TAB CONTENT --}}
+            <div id="tab-aktif" class="workflow-content">
+                @include('superuser.penjualan.so_proforma.tab_aktif')
+            </div>
+
+            <div id="tab-terbuat" class="workflow-content d-none">
+                @include('superuser.penjualan.so_proforma.tab_terbuat')
+            </div>
+
+            <div id="tab-siap" class="workflow-content d-none">
+                @include('superuser.penjualan.so_proforma.tab_siap')
+            </div>
+
+            <div id="tab-tutup" class="workflow-content d-none">
+                @include('superuser.penjualan.so_proforma.tab_tutup')
+            </div>
+
+        </div>
+    </div>
+
 </div>
 @endsection
 
@@ -143,76 +56,371 @@
 @include('superuser.asset.plugin.datatables')
 
 @push('scripts')
-<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-<script type="text/javascript">
-    var table = $('#datatable').DataTable({});
-    
-    $(document).on('click', '.btn-approval', function () {
 
+<style>
+.crm-wrapper{
+    max-width:1100px;
+    margin:auto;
+}
+
+.workflow-tabs{
+    display:flex;
+    gap:10px;
+    margin-bottom:10px;
+}
+
+.menu-tab{
+    border:1px solid #dce1e7;
+    background:#fff;
+    padding:8px 16px;
+    border-radius:20px;
+    font-weight:500;
+}
+
+.menu-tab.active{
+    background:#4c6ef5;
+    color:white;
+}
+
+.menu-tab .badge{
+    margin-left:6px;
+}
+
+.workflow-tabs .list-group-item{
+  font-weight:500;
+  border-radius:6px;
+  margin-bottom:5px;
+}
+
+.workflow-tabs .list-group-item.active{
+  background:#4c6ef5;
+  border-color:#4c6ef5;
+  color:white;
+}
+
+.crm-wrapper{
+    max-width:1100px;
+    margin:auto;
+    height:calc(100vh - 120px);
+}
+
+.crm-row{
+    display:flex;
+    gap:10px;
+    height:100%;
+}
+
+.frame-a{
+    flex:0 0 200px;
+}
+
+.frame-b{
+    flex:1;
+}
+
+.menu-btn{
+    width:100%;
+    margin-bottom:8px;
+    border-radius:10px;
+    padding:10px;
+    border:1px solid #dce1e7;
+    background:#fff;
+    font-weight:500;
+    text-align:left;
+}
+
+.menu-btn.active{
+    background:#4c6ef5;
+    color:white;
+}
+
+.frame-b .card{
+    border-radius:16px;
+}
+
+.frame-b .card-body{
+    overflow-y:auto;
+}
+</style>
+
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<script>
+    $('.datatable').DataTable({
+        pageLength:25
+    })
+
+    $('a[data-toggle="tab"]').on('shown.bs.tab', function () {
+        $.fn.dataTable.tables({ visible: true, api: true }).columns.adjust();
+    })
+
+    $(document).on('click','.workflow-tab',function(){
+        let target = $(this).data('target');
+
+        $('.workflow-content').addClass('d-none');
+        $('#'+target).removeClass('d-none');
+
+        $('.workflow-tab').removeClass('active');
+        $(this).addClass('active');
+    });
+
+    $(document).on('click', '.btn-status-siap', function() {
+
+        let id = $(this).data('id');
         let button = $(this);
-        let url = button.data('url');
-    
+
         Swal.fire({
             title: 'Apakah Anda yakin?',
-            text: "SO akan diteruskan dan DO dibuat.",
+            text: "Sales Order Proforma akan diupdate ke status Siap!",
             icon: 'warning',
             showCancelButton: true,
-            confirmButtonText: 'Ya, lanjutkan',
-            cancelButtonText: 'Batal'
+            confirmButtonText: 'Ya, update!',
+            cancelButtonText: 'Batal',
         }).then((result) => {
-    
             if (result.isConfirmed) {
-    
-                button.prop('disabled', true);
-    
+
                 $.ajax({
-                    url: url,
-                    type: "POST",
+                    url: '/superuser/penjualan/so_proforma/statusSiap/' + id,
+                    type: 'POST',
                     data: {
-                        _token: "{{ csrf_token() }}"
+                        _token: '{{ csrf_token() }}'
                     },
-                    beforeSend: function () {
-                        Swal.fire({
-                            title: 'Processing...',
-                            allowOutsideClick: false,
-                            didOpen: () => {
-                                Swal.showLoading();
-                            }
-                        });
-                    },
-                    success: function (response) {
-    
-                        Swal.fire({
-                            icon: 'success',
-                            title: 'Berhasil',
-                            text: response.notification.content,
-                            timer: 2000,
-                            showConfirmButton: false
-                        });
-    
-                        setTimeout(function () {
+                    success: function(res) {
+                        if (res.success) {
+                            Swal.fire(
+                                'Berhasil!',
+                                res.message,
+                                'success'
+                            );
+                            // optional: reload datatable atau refresh tab
                             location.reload();
-                        }, 2000);
-                    },
-                    error: function (xhr) {
-    
-                        button.prop('disabled', false);
-    
-                        let message = 'Terjadi kesalahan sistem';
-    
-                        if (xhr.responseJSON && xhr.responseJSON.notification) {
-                            message = xhr.responseJSON.notification.content;
+                        } else {
+                            Swal.fire(
+                                'Gagal!',
+                                res.message,
+                                'error'
+                            );
                         }
-    
-                        Swal.fire({
-                            icon: 'error',
-                            title: 'Error',
-                            text: message
-                        });
+                    },
+                    error: function(xhr) {
+                        Swal.fire(
+                            'Gagal!',
+                            xhr.responseJSON?.message || 'Terjadi kesalahan',
+                            'error'
+                        );
                     }
                 });
+
             }
         });
+
+    });
+
+    $(document).on('click', '.btn-status-acc', function() {
+
+        let id = $(this).data('id');
+        let button = $(this);
+
+        Swal.fire({
+            title: 'Apakah Anda yakin?',
+            text: "Sales Order Proforma akan diupdate ke status ACC!",
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonText: 'Ya, update!',
+            cancelButtonText: 'Batal',
+        }).then((result) => {
+            if (result.isConfirmed) {
+
+                $.ajax({
+                    url: '/superuser/penjualan/so_proforma/acc/' + id,
+                    type: 'POST',
+                    data: {
+                        _token: '{{ csrf_token() }}'
+                    },
+                    success: function(res) {
+                        if (res.success) {
+                            Swal.fire(
+                                'Berhasil!',
+                                res.message,
+                                'success'
+                            );
+                            // optional: reload datatable atau refresh tab
+                            location.reload();
+                        } else {
+                            Swal.fire(
+                                'Gagal!',
+                                res.message,
+                                'error'
+                            );
+                        }
+                    },
+                    error: function(xhr) {
+                        Swal.fire(
+                            'Gagal!',
+                            xhr.responseJSON?.message || 'Terjadi kesalahan',
+                            'error'
+                        );
+                    }
+                });
+
+            }
+        });
+
+    });
+
+    $(document).on('click', '.btn-status-cancel', function() {
+
+        let id = $(this).data('id');
+        let button = $(this);
+
+        Swal.fire({
+            title: 'Apakah Anda yakin?',
+            text: "Sales Order Proforma akan diupdate ke status Cancel!",
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonText: 'Ya, update!',
+            cancelButtonText: 'Batal',
+        }).then((result) => {
+            if (result.isConfirmed) {
+
+                $.ajax({
+                    url: '/superuser/penjualan/so_proforma/MultiCancel/' + id,
+                    type: 'POST',
+                    data: {
+                        _token: '{{ csrf_token() }}'
+                    },
+                    success: function(res) {
+                        if (res.success) {
+                            Swal.fire(
+                                'Berhasil!',
+                                res.message,
+                                'success'
+                            );
+                            // optional: reload datatable atau refresh tab
+                            location.reload();
+                        } else {
+                            Swal.fire(
+                                'Gagal!',
+                                res.message,
+                                'error'
+                            );
+                        }
+                    },
+                    error: function(xhr) {
+                        Swal.fire(
+                            'Gagal!',
+                            xhr.responseJSON?.message || 'Terjadi kesalahan',
+                            'error'
+                        );
+                    }
+                });
+
+            }
+        });
+
+    });
+
+    $(document).on('click', '.btn-status-rollback', function() {
+
+        let id = $(this).data('id');
+        let button = $(this);
+
+        Swal.fire({
+            title: 'Apakah Anda yakin?',
+            text: "Sales Order Proforma akan diupdate ke SO AWAL!",
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonText: 'Ya, update!',
+            cancelButtonText: 'Batal',
+        }).then((result) => {
+            if (result.isConfirmed) {
+
+                $.ajax({
+                    url: '/superuser/penjualan/so_proforma/rollbackProforma/' + id,
+                    type: 'POST',
+                    data: {
+                        _token: '{{ csrf_token() }}'
+                    },
+                    success: function(res) {
+                        if (res.success) {
+                            Swal.fire(
+                                'Berhasil!',
+                                res.message,
+                                'success'
+                            );
+                            // optional: reload datatable atau refresh tab
+                            location.reload();
+                        } else {
+                            Swal.fire(
+                                'Gagal!',
+                                res.message,
+                                'error'
+                            );
+                        }
+                    },
+                    error: function(xhr) {
+                        Swal.fire(
+                            'Gagal!',
+                            xhr.responseJSON?.message || 'Terjadi kesalahan',
+                            'error'
+                        );
+                    }
+                });
+
+            }
+        });
+
+    });
+
+    $(document).on('click', '.btn-delete-proforma', function () {
+
+        let id = $(this).data('id');
+
+        Swal.fire({
+            title: 'Apakah Anda yakin?',
+            text: "Data Proforma akan dihapus!",
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonText: 'Ya, hapus!',
+            cancelButtonText: 'Batal',
+        }).then((result) => {
+
+            if (result.isConfirmed) {
+
+                $.ajax({
+                    url: '/superuser/penjualan/so_proforma/destroy/' + id,
+                    type: 'DELETE',
+                    data: {
+                        _token: '{{ csrf_token() }}'
+                    },
+                    success: function(res) {
+
+                        Swal.fire(
+                            'Berhasil!',
+                            'Proforma berhasil dihapus.',
+                            'success'
+                        );
+
+                        setTimeout(function(){
+                            location.reload();
+                        }, 1000);
+
+                    },
+                    error: function(xhr) {
+
+                        let msg = 'Terjadi kesalahan';
+
+                        if (xhr.responseJSON && xhr.responseJSON.message) {
+                            msg = xhr.responseJSON.message;
+                        }
+
+                        Swal.fire('Gagal!', msg, 'error');
+                    }
+                });
+
+            }
+
+        });
+
     });
 </script>
 @endpush

@@ -15,8 +15,6 @@ use App\Entities\Penjualan\PackingOrderDetail;
 use App\Entities\Penjualan\SoProforma;
 use App\Entities\Penjualan\SoProformaDetail;
 use App\Entities\Penjualan\DeliveryOrderMutationItem;
-use App\Entities\Gudang\MutasiShowroom;
-use App\Entities\Gudang\MutasiShowroomDetail;
 use App\Entities\Penjualan\SalesOrderProforma;
 use App\Entities\Penjualan\SalesOrderProformaItem;
 use App\Entities\Finance\Invoicing;
@@ -39,8 +37,11 @@ use App\Entities\Setting\UserMenu;
 use App\Entities\Account\User;
 use App\Repositories\CodeRepo;
 use App\Helper\CustomHelper;
+use Spatie\PdfToImage\pdf;
 use App\DataTables\Penjualan\SalesOrderAwalTable;
 use App\DataTables\Penjualan\SalesOrderLanjutanTable;
+use App\Entities\Gudang\MutasiShowroom;
+use App\Entities\Gudang\MutasiShowroomDetail;
 use Illuminate\Support\Facades\Response;
 use Org_Heigl\Ghostscript\Ghostscript;
 use App\Helper\LogActivity;
@@ -54,7 +55,6 @@ use DB;
 use COM;
 use Carbon;
 use Excel;
-use PDF;
 
 class SalesOrderController extends Controller
 {
@@ -157,6 +157,8 @@ class SalesOrderController extends Controller
             }
         }
 
+        $session = session('is_from_agenda', false);
+
         $search = $request->input('search');
         $so_for = $request->input('so_for');
         $customer_other_address_id = $request->input('customer_other_address_id');
@@ -164,6 +166,17 @@ class SalesOrderController extends Controller
 
         $customers = Customer::get();
         $brand = BrandLokal::get();
+
+        // Filter brand berdasarkan division
+        $userDivision = Auth::user()->division;
+        if(!in_array($userDivision, ['Admin', 'Developer', 'Management'])){
+            // Jika bukan Admin/Developer/Management, hanya tampilkan brand tertentu
+            $allowedBrands = ['GCF', 'Senses', 'PPI FF', 'PPI NON FF'];
+            $brand = $brand->filter(function($b) use ($allowedBrands){
+                return in_array($b->brand_name, $allowedBrands);
+            });
+        }
+
         $packing_order = PackingOrder::get();
         
         // Filter addresses based on user access
@@ -178,6 +191,7 @@ class SalesOrderController extends Controller
             'brand' => $brand,
             'step' => $step,
             'step_txt' => SalesOrder::STEP[$step] ?? '',
+            'session' => $session,
         ];
 
         return view($this->view . "index_awal", $data);
@@ -312,7 +326,7 @@ class SalesOrderController extends Controller
         $idr_rate = is_numeric($kurs) ? (float) $kurs : 0;
         $disc = is_numeric($disc_percent) ? (float) $disc_percent : 0;
 
-        // dd($member);
+        // dd($disc_percent);
 
         $data = [
             'other_address' => $other_address,
@@ -453,7 +467,7 @@ class SalesOrderController extends Controller
                                     $insertDetail->product_packaging_id = $baseProductPackagingId;
                                     $insertDetail->price = $request->price[$key];
                                     $insertDetail->qty = $request->qty[$key];
-                                    $insertDetail->disc_usd = $request->disc[$key];
+                                    $insertDetail->disc_usd = $request->disc[$key] ?? 0;
                                     $insertDetail->packaging_id = $request->packaging[$key];
                                     $insertDetail->free_product = $request->free_product[$key];
                                     $insertDetail->created_by = Auth::id();
@@ -498,71 +512,6 @@ class SalesOrderController extends Controller
                                         $pivot_kontrak->so_kontrak_item_id = $item_kontrak->id;
                                         $pivot_kontrak->save();
                                     }
-                                }
-                            }
-                        }
-
-                        /*
-                        |--------------------------------------------------------------------------
-                        | AUTO CREATE PROFORMA
-                        |--------------------------------------------------------------------------
-                        */
-                        if ($insert->is_proforma == 1 && $insert->type_transaction == 'CASH') {
-
-                            // Prevent double creation (safety layer)
-                            $existingProforma = SalesOrderProforma::where('so_id', $insert->id)->first();
-
-                            // Asumsi warehouse araya
-                            $warehouse = Warehouse::where('id', 2)->first();
-
-                            if (!$existingProforma) {
-
-                                $proforma = new SalesOrderProforma();
-                                $proforma->so_id = $insert->id;
-                                $proforma->code = CodeRepo::generateSoProforma(); // pastikan sudah ada
-                                $proforma->customer_name =  null;
-                                $proforma->customer_address =  null;
-                                $proforma->customer_region =  null;
-                                $proforma->customer_city =  null;
-                                $proforma->customer_phone =  null;
-                                $proforma->customer_owner =  null;
-                                $proforma->so_date = now();
-                                $proforma->so_brand_name = $insert->brand_name;
-                                $proforma->so_type_transaction = 0; // 0 = CASH
-                                $proforma->so_idr_rate = $insert->idr_rate;
-                                $proforma->note = $insert->note;
-                                $proforma->so_lanjutan = 0;
-                                $proforma->status = 1; // ACTIVE
-                                $proforma->transfer_verified = 0;
-                                $proforma->customer_other_address_id = $member;
-                                $proforma->warehouse_id = null;
-                                $proforma->rekening_id = null;
-                                $proforma->vendor_id = null;
-                                $proforma->sales_senior_id = null;
-                                $proforma->sales_id = null;
-                                $proforma->exsisting_customer = 1;
-                                $proforma->created_by = Auth::id();
-                                $proforma->save();
-
-                                /*
-                                |--------------------------------------------------------------------------
-                                | COPY ITEMS TO PROFORMA
-                                |--------------------------------------------------------------------------
-                                */
-                                $soItems = SalesOrderItem::where('so_id', $insert->id)->get();
-
-                                foreach ($soItems as $item) {
-
-                                    $proformaItem = new SalesOrderProformaItem();
-                                    $proformaItem->so_proforma_id = $proforma->id;
-                                    $proformaItem->product_packaging_id = $item->product_packaging_id;
-                                    $proformaItem->price = $item->price;
-                                    $proformaItem->qty = $item->qty;
-                                    $proformaItem->disc_usd = $item->disc_usd;
-                                    $proformaItem->packaging_id = $item->packaging_id;
-                                    $proformaItem->total_item = 0; // kalkulasi nanti di halaman proforma
-                                    $proformaItem->free_product = $item->free_product;
-                                    $proformaItem->save();
                                 }
                             }
                         }
@@ -871,7 +820,7 @@ class SalesOrderController extends Controller
                                 $insertDetail->product_packaging_id =  $post["sku"][$i];
                                 $insertDetail->price =  $post["price"][$i];
                                 $insertDetail->qty = $post["qty"][$i];
-                                $insertDetail->disc_usd = $post["disc"][$i];
+                                $insertDetail->disc_usd = $post["disc"][$i] ?? 0;
                                 $insertDetail->packaging_id = $post["packaging"][$i];
                                 $insertDetail->kontrak = $post["so_kontrak_value"][$i];
                                 $insertDetail->free_product = $post["free_product"][$i];
@@ -995,12 +944,48 @@ class SalesOrderController extends Controller
         return response()->json($data_json,200);
     }
 
+    // public function lanjutkan(Request $request, $id)
+    // {
+    //     if ($request->ajax()) {
+    //         if(Auth::user()->is_superuser == 0){
+    //             if(empty($this->access) || empty($this->access->user) || $this->access->can_approve == 0){
+    //                 return redirect()->route('superuser.index')->with('error','Anda tidak punya akses untuk membuka menu terkait');
+    //             }
+    //         }
+
+    //         $sales_order = SalesOrder::find($id);
+
+    //         if ($sales_order === null) {
+    //             abort(404);
+    //         }
+
+    //         $sales_order->status = 2;
+
+    //         if($sales_order->save()) {
+    //             $user = User::find(33);
+    //             $user->notify(new SoNotification($sales_order));
+
+    //             $response['notification'] = [
+    //                 'alert' => 'notify',
+    //                 'type' => 'success',
+    //                 'content' => 'Success',
+    //             ];
+    
+    //             $response['redirect_to'] = route('superuser.penjualan.sales_order.index_awal');
+    //             return $this->response(200, $response);
+    //         }
+            
+    //     }
+    // }
+
     public function lanjutkan(Request $request, $id)
     {
         if ($request->ajax()) {
+
             if(Auth::user()->is_superuser == 0){
                 if(empty($this->access) || empty($this->access->user) || $this->access->can_approve == 0){
-                    return redirect()->route('superuser.index')->with('error','Anda tidak punya akses untuk membuka menu terkait');
+                    return redirect()->route('superuser.index')
+                        ->with('error','Anda tidak punya akses untuk membuka menu terkait');
                 }
             }
 
@@ -1010,22 +995,134 @@ class SalesOrderController extends Controller
                 abort(404);
             }
 
-            $sales_order->status = 2;
+            DB::beginTransaction();
 
-            if($sales_order->save()) {
-                $user = User::find(33);
-                $user->notify(new SoNotification($sales_order));
+            try {
+
+                /*
+                |--------------------------------------------------------------------------
+                | CASE PROFORMA
+                |--------------------------------------------------------------------------
+                */
+                if ($sales_order->is_proforma == 1 && $sales_order->status_proforma == 0) {
+
+                    $sales_order->status_proforma = 1;
+                    $sales_order->status = 1;
+                    $sales_order->save();
+
+                    /*
+                    |--------------------------------------------------------------------------
+                    | AUTO CREATE PROFORMA (COPY DARI STORE)
+                    |--------------------------------------------------------------------------
+                    */
+
+                    if (in_array($sales_order->type_transaction, ['CASH', 'TEMPO'])) {
+
+                        $existingProforma = SalesOrderProforma::where('so_id', $sales_order->id)->first();
+
+                        $warehouse = Warehouse::where('id', 2)->first();
+
+                        if (!$existingProforma) {
+
+                            $proforma = new SalesOrderProforma();
+                            $proforma->so_id = $sales_order->id;
+                            $proforma->code = CodeRepo::generateSoProforma();
+                            $proforma->customer_name = null;
+                            $proforma->customer_address = null;
+                            $proforma->customer_region = null;
+                            $proforma->customer_city = null;
+                            $proforma->customer_phone = null;
+                            $proforma->customer_owner = null;
+                            $proforma->so_date = null;
+                            $proforma->so_brand_name = $sales_order->brand_name;
+
+                            if ($sales_order->type_transaction === 1) {
+                                $proforma->so_type_transaction = 0;
+                            } elseif ($sales_order->type_transaction === 2){
+                                $proforma->so_type_transaction = 1;
+                            }
+
+                            $proforma->so_idr_rate = $sales_order->idr_rate;
+                            $proforma->note = $sales_order->note;
+                            $proforma->so_lanjutan = 0;
+                            $proforma->status = 1;
+                            $proforma->transfer_verified = 0;
+                            $proforma->customer_other_address_id = $sales_order->customer_other_address_id;
+                            $proforma->warehouse_id = null;
+                            $proforma->rekening_id = null;
+                            $proforma->vendor_id = null;
+                            $proforma->sales_senior_id = null;
+                            $proforma->sales_id = null;
+                            $proforma->exsisting_customer = 1;
+                            $proforma->created_by = Auth::id();
+                            $proforma->save();
+
+                            /*
+                            |--------------------------------------------------------------------------
+                            | COPY ITEMS
+                            |--------------------------------------------------------------------------
+                            */
+
+                            $soItems = SalesOrderItem::where('so_id', $sales_order->id)->get();
+
+                            foreach ($soItems as $item) {
+
+                                $proformaItem = new SalesOrderProformaItem();
+                                $proformaItem->so_proforma_id = $proforma->id;
+                                $proformaItem->product_packaging_id = $item->product_packaging_id;
+                                $proformaItem->price = $item->price;
+                                $proformaItem->qty = $item->qty;
+                                $proformaItem->disc_usd = $item->disc_usd;
+                                $proformaItem->packaging_id = $item->packaging_id;
+                                $proformaItem->total_item = 0;
+                                $proformaItem->free_product = $item->free_product;
+                                $proformaItem->save();
+                            }
+                        }
+                    }
+
+                } 
+                else {
+
+                    /*
+                    |--------------------------------------------------------------------------
+                    | SO NORMAL
+                    |--------------------------------------------------------------------------
+                    */
+
+                    $sales_order->status = 2;
+                    $sales_order->save();
+
+                    $user = User::find(33);
+                    $user->notify(new SoNotification($sales_order));
+                }
+
+                DB::commit();
 
                 $response['notification'] = [
                     'alert' => 'notify',
                     'type' => 'success',
                     'content' => 'Success',
                 ];
-    
+
                 $response['redirect_to'] = route('superuser.penjualan.sales_order.index_awal');
+
                 return $this->response(200, $response);
+
+            } catch (\Exception $e) {
+
+                DB::rollBack();
+                Log::error($e);
+
+                return $this->response(500, [
+                    'notification' => [
+                        'alert' => 'block',
+                        'type' => 'alert-danger',
+                        'header' => 'Error',
+                        'content' => 'Terjadi kesalahan sistem'
+                    ]
+                ]);
             }
-            
         }
     }
 
@@ -1263,6 +1360,7 @@ class SalesOrderController extends Controller
             DB::beginTransaction();
             try{
                 $errors = [];
+                $warnings = []; // <-- tambahkan ini
                 
                 $sales_order = SalesOrder::find($request->id);
 
@@ -1433,102 +1531,153 @@ class SalesOrderController extends Controller
                                 ]);
                             }
 
-                            // CHECK STOCK & RESERVED QTY (NORMAL SO)
-                            // $base_product_packaging_id = preg_replace('/_\d+$/', '', $value["product_packaging_id"]);
+                            // CHECK STOCK
+                            
+                            $base_product_packaging_id = preg_replace('/_\d+$/', '', $value["product_packaging_id"]);
+
+                            $productName = DB::table('master_products_packaging')
+                                            ->where('id', $base_product_packaging_id)
+                                            ->first();
 
                             // $stock = ProductMinStock::where('warehouse_id', $request->origin_warehouse_id)
                             //     ->where('product_packaging_id', $base_product_packaging_id)
                             //     ->lockForUpdate()
                             //     ->first();
-
+                            
                             // if (!$stock) {
                             //     throw new \Exception('Stock tidak ditemukan untuk salah satu produk.');
                             // }
-
-                            // $quantity  = (int) $stock->quantity;
-                            // $reserved  = (int) ($stock->reserved_quantity ?? 0);
-
+                            
+                            // $quantity  = (float) $stock->quantity;
+                            // $reserved  = (float) ($stock->reserved_quantity ?? 0);
+                            
                             // $current_available = $quantity - $reserved;
                             // $new_available     = $current_available - $do_qty;
-
+                            
                             // /*
                             // ==================================================
-                            // CONTROL MINUS & RESERVE (SAFE VERSION)
+                            // CONTROL MINUS & RESERVED QTY (CHECK ONLY)
                             // ==================================================
                             // */
-
-                            // // Jika stok sudah minus sebelumnya → tidak boleh tambah minus
+                            
+                            // // Stok sudah minus sebelumnya → tolak
                             // if ($quantity < 0 && $new_available < $current_available) {
                             //     throw new \Exception(
                             //         "Stock sudah minus dan tidak boleh ditambah minus untuk produk {$value["product_packaging_id"]}"
                             //     );
                             // }
-
-                            // // Jika available cukup → reserve normal
-                            // if ($current_available >= $do_qty) {
+                            
+                            // // Stok cukup → reserve normal
+                            // elseif ($current_available >= $do_qty) {
                             //     $stock->reserved_quantity += $do_qty;
                             // }
-                            // // Jika benar-benar 0 dan belum pernah minus → izinkan minus pertama
-                            // elseif ($quantity == 0 && $reserved == 0) {
+                            
+                            // // First-time minus (available >=0 tapi order melebihi available) → lolos, tetap isi reserved
+                            // elseif ($current_available >= 0 && $new_available < 0) {
                             //     $stock->reserved_quantity += $do_qty;
                             // }
-                            // // Selain itu → tidak boleh
+                            
+                            // // Semua kasus lain → stock tidak mencukupi
                             // else {
                             //     throw new \Exception(
                             //         "Stock tidak mencukupi. Available: {$current_available}, Request: {$do_qty}"
                             //     );
                             // }
-
-                            // $stock->save();
                             
-                            $base_product_packaging_id = preg_replace('/_\d+$/', '', $value["product_packaging_id"]);
+                            // $stock->save(); // Hanya update reserved_quantity, quantity tetap utuh
 
-                            $stock = ProductMinStock::where('warehouse_id', $request->origin_warehouse_id)
-                                ->where('product_packaging_id', $base_product_packaging_id)
-                                ->lockForUpdate()
-                                ->first();
-                            
-                            if (!$stock) {
-                                throw new \Exception('Stock tidak ditemukan untuk salah satu produk.');
+                            $retry = 0;
+                            $maxRetry = 5;
+                            $stockUpdated = false;
+
+                            while ($retry < $maxRetry) {
+                                try {
+                                    DB::beginTransaction();
+
+                                    $stock = ProductMinStock::where('warehouse_id', $request->origin_warehouse_id)
+                                        ->where('product_packaging_id', $base_product_packaging_id)
+                                        ->lockForUpdate()
+                                        ->first();
+
+                                    // jika stock belum ada → buat
+                                    if (!$stock) {
+
+                                        $stock = ProductMinStock::create([
+                                            'warehouse_id' => $request->origin_warehouse_id,
+                                            'product_packaging_id' => $base_product_packaging_id,
+                                            'quantity' => 0,
+                                            'reserved_quantity' => 0
+                                        ]);
+
+                                        // lock ulang setelah create
+                                        $stock = ProductMinStock::where('id', $stock->id)
+                                            ->lockForUpdate()
+                                            ->first();
+                                    }
+
+                                    $current_reserved = (float) ($stock->reserved_quantity ?? 0);
+                                    $quantity = (float) ($stock->quantity ?? 0);
+
+                                    $available = $quantity - $current_reserved;
+                                    $new_available = $available - $do_qty;
+
+                                    $allowMinus = !empty($value['minusProduct']);
+
+                                    // ===== LOGIC VALIDASI =====
+                                    if ($available >= $do_qty) {
+
+                                        // stok cukup
+                                        $stock->reserved_quantity = $current_reserved + $do_qty;
+
+                                    } elseif ($available >= 0 && $new_available < 0) {
+
+                                        if (!$allowMinus) {
+                                            throw new \Exception(
+                                                "Stock '{$productName->name}' tidak cukup. ".
+                                                "Available: {$available}, Request: {$do_qty}"
+                                            );
+                                        }
+
+                                        // minus pertama kali
+                                        $stock->reserved_quantity = $current_reserved + $do_qty;
+                                        $warnings[] = "Stock '{$productName->name}' akan minus nantinya!";
+
+                                    } else {
+
+                                        if (!$allowMinus) {
+                                            throw new \Exception(
+                                                "Stock '{$productName->name}' sudah minus sebelumnya. ".
+                                                "Available: {$available}, Request: {$do_qty}"
+                                            );
+                                        }
+
+                                        // tetap izinkan minus
+                                        $stock->reserved_quantity = $current_reserved + $do_qty;
+                                        $warnings[] = "Stock '{$productName->name}' tetap minus (existing minus)";
+                                    }
+
+                                    $stock->save();
+
+                                    DB::commit();
+
+                                    $stockUpdated = true;
+                                    break;
+
+                                } catch (\Illuminate\Database\QueryException $e) {
+                                    DB::rollBack();
+                                    $retry++;
+                                    usleep(200000); // 0.2 detik
+                                } catch (\Exception $e) {
+                                    DB::rollBack();
+                                    throw $e;
+                                }
                             }
-                            
-                            $quantity  = (float) $stock->quantity;
-                            $reserved  = (float) ($stock->reserved_quantity ?? 0);
-                            
-                            $current_available = $quantity - $reserved;
-                            $new_available     = $current_available - $do_qty;
-                            
-                            /*
-                            ==================================================
-                            CONTROL MINUS & RESERVED QTY (CHECK ONLY)
-                            ==================================================
-                            */
-                            
-                            // Stok sudah minus sebelumnya → tolak
-                            if ($quantity < 0 && $new_available < $current_available) {
+
+                            if (!$stockUpdated) {
                                 throw new \Exception(
-                                    "Stock sudah minus dan tidak boleh ditambah minus untuk produk {$value["product_packaging_id"]}"
+                                    "Gagal update stock untuk produk {$productName->name} setelah retry {$maxRetry}x"
                                 );
                             }
-                            
-                            // Stok cukup → reserve normal
-                            elseif ($current_available >= $do_qty) {
-                                $stock->reserved_quantity += $do_qty;
-                            }
-                            
-                            // First-time minus (available >=0 tapi order melebihi available) → lolos, tetap isi reserved
-                            elseif ($current_available >= 0 && $new_available < 0) {
-                                $stock->reserved_quantity += $do_qty;
-                            }
-                            
-                            // Semua kasus lain → stock tidak mencukupi
-                            else {
-                                throw new \Exception(
-                                    "Stock tidak mencukupi. Available: {$current_available}, Request: {$do_qty}"
-                                );
-                            }
-                            
-                            $stock->save(); // Hanya update reserved_quantity, quantity tetap utuh
         
                             if(empty($do_qty) && $rej_qty > 0){
                                 $updateSO = SalesOrderItem::where('id',$value["so_item_id"])->update([
@@ -1560,7 +1709,9 @@ class SalesOrderController extends Controller
                                     'customer_other_address_id' => $sales_order->customer_other_address_id ?? null,
                                     'so_id'                     => $sales_order->id,
                                     'tanggal'           => now(),
-                                    'status'            => MutasiShowroom::STATUS['ACTIVE'],
+                                    'status'            => MutasiShowroom::STATUS['SETTLE'],
+                                    'status_checked'    => MutasiShowroom::STATUS_CHECKED['CHECKED'],
+                                    'status_barang'    => MutasiShowroom::STATUS_BARANG['DIAMBIL'],
                                     'note'              => 'Mutasi Free Product dari SO ' . $sales_order->code,
                                     'created_by'        => Auth::id(),
                                 ]);
@@ -1598,7 +1749,7 @@ class SalesOrderController extends Controller
                                 'customer_id' => $sales_order->customer_id,
                                 'customer_other_address_id' => $sales_order->customer_other_address_id,
                                 'grand_total_idr' => $packing_order_detail->grand_total_idr,
-                                'type' => 1,
+                                'type' => 0,
                                 'created_by' => Auth::id(),
                             ]);
                         }
@@ -1837,17 +1988,25 @@ class SalesOrderController extends Controller
                     }
                 }
 
-            }catch (\Exception $e) {
+            } catch (\Exception $e) {
                 dd($e);
                 DB::rollback();
-                $response['notification'] = [
-                    'alert' => 'block',
-                    'type' => 'alert-danger',
-                    'header' => 'Error',
-                    'content' => $errors,
-                ];
-
-                return $this->response(400, $response);
+    
+                // Masukkan pesan exception ke errors
+                $errors[] = $e->getMessage();
+    
+                if ($request->ajax()) {
+                    $response['notification'] = [
+                        'alert' => 'block',
+                        'type' => 'alert-danger',
+                        'header' => 'Error',
+                        'content' => $errors,
+                    ];
+                    return $this->response(400, $response);
+                }
+    
+                // Jika non-AJAX, redirect ke halaman sebelumnya
+                return redirect()->back()->with('errors', $errors);
             }
         }
     }
@@ -2213,46 +2372,121 @@ class SalesOrderController extends Controller
         return ['results' => $results];
     }
 
+    // public function get_product_pack(Request $request)
+    // {
+    //     if ($request->ajax()) {
+    //             $data = [];
+                
+    //             $product = Product::where('master_products.brand_name', $request->id)
+    //                     // ->where('master_products.status', 1)
+    //                     ->where('master_products.on_order', 1)
+    //                     ->leftJoin('master_products_packaging', 'master_products.id', '=', 'master_products_packaging.product_id')
+    //                     ->leftJoin('master_packaging', 'master_products_packaging.packaging_id', '=', 'master_packaging.id')
+    //                     ->leftJoin('master_product_types', 'master_products_packaging.type_id', '=', 'master_product_types.id')
+    //                     ->leftJoin('master_warehouses', 'master_products_packaging.warehouse_id', '=', 'master_warehouses.id')
+    //                     ->select('master_products_packaging.id as id' ,
+    //                                 'master_products_packaging.code as ProductCode', 
+    //                                 'master_products_packaging.name as productName', 
+    //                                 'master_products_packaging.price as productPrice', 
+    //                                 'master_packaging.id as  productPackagingID', 
+    //                                 'master_packaging.pack_name as productPackaging', 
+    //                                 'master_warehouses.name as warehouseName',
+    //                                 'master_product_types.name as typeName',
+    //                     )
+    //                     ->get();
+
+    //             foreach($product as $key){
+    //                 $data[] = [
+    //                     'id' => $key->id,
+    //                     'code' => $key->ProductCode,
+    //                     'name' => $key->productName,
+    //                     'price' => $key->productPrice,
+    //                     'packName' => $key->productPackaging,
+    //                     'packID' => $key->productPackagingID,
+    //                     'warehouseName' => $key->warehouseName,
+    //                     'typeName' => $key->typeName,
+    //                 ];
+    //             }
+
+    //             return response()->json(['code' => 200, 'data' => $data]);
+    //     }
+    // }
+
     public function get_product_pack(Request $request)
     {
-        if ($request->ajax()) {
-                $data = [];
-                
-                $product = Product::where('master_products.brand_name', $request->id)
-                        ->where('master_products.status', 1)
-                        ->leftJoin('master_products_packaging', 'master_products.id', '=', 'master_products_packaging.product_id')
-                        ->leftJoin('master_packaging', 'master_products_packaging.packaging_id', '=', 'master_packaging.id')
-                        ->leftJoin('master_product_types', 'master_products_packaging.type_id', '=', 'master_product_types.id')
-                        ->leftJoin('master_warehouses', 'master_products_packaging.warehouse_id', '=', 'master_warehouses.id')
-                        ->select('master_products_packaging.id as id' ,
-                                    'master_products_packaging.code as ProductCode', 
-                                    'master_products_packaging.name as productName', 
-                                    'master_products_packaging.price as productPrice', 
-                                    'master_packaging.id as  productPackagingID', 
-                                    'master_packaging.pack_name as productPackaging', 
-                                    'master_warehouses.name as warehouseName',
-                                    'master_product_types.name as typeName',
-                        )
-                        ->get();
+        if (!$request->ajax()) {
+            abort(403, 'Unauthorized');
+        }
 
-                foreach($product as $key){
-                    $data[] = [
-                        'id' => $key->id,
-                        'code' => $key->ProductCode,
-                        'name' => $key->productName,
-                        'price' => $key->productPrice,
-                        'packName' => $key->productPackaging,
-                        'packID' => $key->productPackagingID,
-                        'warehouseName' => $key->warehouseName,
-                        'typeName' => $key->typeName,
-                    ];
+        try {
+            // Validasi input dasar
+            $brand = $request->id;
+            if (!$brand) {
+                return response()->json(['code' => 400, 'message' => 'Brand tidak valid']);
+            }
+
+            // Gunakan select eksplisit + eager loading minimalis
+            $products = Product::query()
+                ->where('master_products.brand_name', $brand)
+                ->where('master_products.on_order', 1)
+                ->join('master_products_packaging', 'master_products.id', '=', 'master_products_packaging.product_id')
+                ->join('master_packaging', 'master_products_packaging.packaging_id', '=', 'master_packaging.id')
+                ->leftJoin('master_product_types', 'master_products_packaging.type_id', '=', 'master_product_types.id')
+                ->leftJoin('master_warehouses', 'master_products_packaging.warehouse_id', '=', 'master_warehouses.id')
+                ->select([
+                    'master_products_packaging.id as id',
+                    'master_products_packaging.code as ProductCode',
+                    'master_products_packaging.name as productName',
+                    'master_products_packaging.price as productPrice',
+                    'master_packaging.id as productPackagingID',
+                    'master_packaging.pack_name as productPackaging',
+                    'master_warehouses.name as warehouseName',
+                    'master_product_types.name as typeName',
+                ])
+                ->orderBy('master_products_packaging.code')
+                ->limit(500) // ✅ batasi data agar cepat dikirim
+                ->get();
+
+            // Jika tidak ada hasil
+            if ($products->isEmpty()) {
+                return response()->json(['code' => 204, 'message' => 'Produk tidak ditemukan']);
+            }
+
+            // Format data secara langsung tanpa foreach (lebih cepat)
+            $data = $products->map(function ($p) {
+                if (!$p->ProductCode || !$p->productName || !$p->productPackaging) {
+                    return null;
                 }
+            
+                return [
+                    'id' => $p->id,
+                    'code' => $p->ProductCode,
+                    'name' => $p->productName,
+                    'price' => $p->productPrice,
+                    'packName' => $p->productPackaging,
+                    'packID' => $p->productPackagingID,
+                    'warehouseName' => $p->warehouseName,
+                    'typeName' => $p->typeName,
+                ];
+            })->filter()->values();            
 
-                return response()->json(['code' => 200, 'data' => $data]);
+            return response()->json([
+                'code' => 200,
+                'data' => $data,
+                'count' => $data->count(),
+            ]);
+
+        } catch (\Exception $e) {
+            // Tangani jika query gagal
+            return response()->json([
+                'code' => 500,
+                'message' => 'Terjadi kesalahan saat mengambil data.',
+                'error' => $e->getMessage(),
+            ]);
         }
     }
 
-    public function print_so_old($so_id)
+    public function print_so($so_id)
     {
         if(Auth::user()->is_superuser == 0){
             if(empty($this->access) || empty($this->access->user) || $this->access->can_print == 0){
@@ -2311,35 +2545,6 @@ class SalesOrderController extends Controller
         $imagick->writeImages($imgSavePath, true); 
 
         return response()->file($imgSavePath);
-    }
-    
-    public function print_so($so_id)
-    {
-        // Access
-        if(Auth::user()->is_superuser == 0){
-            if(empty($this->access) || empty($this->access->user) || $this->access->can_print == 0){
-                return redirect()->route('superuser.index')->with('error','Anda tidak punya akses untuk membuka menu terkait');
-            }
-        }
-
-        $result = SalesOrder::where('id',$so_id)->first();
-        $company = Company::first();
-        if(empty($result)){
-            abort(404);
-        }
-
-        $data = [
-            'result' => $result,
-            'company' => $company
-        ];
-
-        // $pdf = PDF::loadview($this->view."print_pdf",$data)->setPaper('a5','landscape');
-        // return $pdf->stream($result->code ?? '');
-        $pdf = PDF::loadview($this->view."print_pdf",$data)->setPaper('a5','landscape');
-
-        return response($pdf->output(), 200)
-            ->header('Content-Type', 'application/pdf')
-            ->header('Content-Disposition', 'inline; filename="so-awal-'.$result->code.'.pdf"');
     }
 
     public function updateBrandName(Request $request)

@@ -169,14 +169,6 @@
                             </a>
                         @endif
 
-                        {{-- Print Manifest --}}
-                        @if(optional($row->so)->payment_status == 1 || in_array($row->type_transaction, ['TEMPO', 'COD', 'MARKETPLACE']))
-                            <a href="{{ route('superuser.penjualan.delivery_order.print_manifest', $row->id) }}" 
-                              class="btn btn-info btn-sm btn-flat" data-id="{{ $row->id }}" target="_blank">
-                                <i class="fas fa-clipboard-list"></i> Print Manifest
-                            </a>
-                        @endif
-
                         {{-- Revisi --}}
                         @if(in_array($row->type_transaction, ['TEMPO', 'COD', 'MARKETPLACE']))
                             <button type="button" 
@@ -473,6 +465,7 @@
 @include('superuser.asset.plugin.datatables')
 
 @push('scripts')
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script type="text/javascript">
         $(document).ready(function() {
           let datatableUrl = '{{ route('superuser.penjualan.sales_order.json_lanjutan') }}';

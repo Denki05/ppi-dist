@@ -111,6 +111,8 @@ class StockController extends Controller
                 ->orderBy('id', 'desc')
                 ->first();
 
+            // dd($lastMove);
+
             $ks = $lastMove ? (float) $lastMove->stock_balance : 0;
 
             $stockFormatted = number_format($stock, 2);
@@ -134,6 +136,8 @@ class StockController extends Controller
                 'ks'              => $ksFormatted,
             ];
         }
+
+        // dd($data);
 
         return ['data' => $data];
     }
@@ -607,7 +611,7 @@ class StockController extends Controller
     public function collectStockIn(Request $request)
     {
         $startDate = Carbon::create(2026, 1, 1)->startOfDay();
-        $endDate   = Carbon::create(2026, 2, 28)->endOfDay();
+        $endDate   = Carbon::create(2026, 3, 16)->endOfDay();
 
         DB::beginTransaction();
 
@@ -681,7 +685,7 @@ class StockController extends Controller
     public function collectStockTrans(Request $request)
     {
         $startDate = Carbon::create(2026, 1, 1)->startOfDay();
-        $endDate   = Carbon::create(2026, 2, 28)->endOfDay();
+        $endDate   = Carbon::create(2026, 3, 16)->endOfDay();
 
         DB::beginTransaction();
 
@@ -698,7 +702,7 @@ class StockController extends Controller
                 ->with('success', 'Collect stock transaction berhasil dijalankan.');
 
         } catch (\Exception $e) {
-            dd($e);
+            // dd($e);
             DB::rollBack();
 
             return redirect()
@@ -761,7 +765,7 @@ class StockController extends Controller
             DB::commit();
             return back()->with('success', 'Collect SPK berhasil.');
         } catch (\Exception $e) {
-            dd($e);
+            // dd($e);
             DB::rollBack();
             return back()->with('error', $e->getMessage());
         }

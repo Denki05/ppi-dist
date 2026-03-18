@@ -376,44 +376,88 @@ class PurchaseOrderController extends Controller
         }
     }
 
+    // public function acc(Request $request, $id)
+    // {
+    //     if ($request->ajax()) {
+    //         if(Auth::user()->is_superuser == 0){
+    //             if(empty($this->access) || empty($this->access->user) || $this->access->can_approve == 0){
+    //                 return redirect()->route('superuser.index')->with('error','Anda tidak punya akses untuk membuka menu terkait');
+    //             }
+    //         }
+
+    //         $purchase_order = PurchaseOrder::find($id);
+
+    //         if ($purchase_order === null) {
+    //             abort(404);
+    //         }
+
+    //         DB::beginTransaction();
+    //         try{
+
+    //             $purchase_order->acc_by = Auth::id();
+    //             $purchase_order->acc_at = Carbon::now()->toDateTimeString();
+    //             $purchase_order->status = PurchaseOrder::STATUS['ACC'];
+
+    //             if ($purchase_order->save()) {
+    //                 DB::commit();
+    //                 LogActivity::addToLog('ACC PO: ' . $purchase_order->code);
+    //                 $response['redirect_to'] = route('superuser.gudang.purchase_order.index');
+    //                 return $this->response(200, $response);
+    //             }
+    //         }catch (\Exception $e) {
+    //             DB::rollback();
+    //             $response['notification'] = [
+    //                 'alert' => 'block',
+    //                 'type' => 'alert-danger',
+    //                 'header' => 'Error',
+    //                 'content' => $failed,
+    //             ];
+    
+    //             return $this->response(400, $response);
+    //         }
+    //     }
+    // }
+
     public function acc(Request $request, $id)
     {
         if ($request->ajax()) {
-            if(Auth::user()->is_superuser == 0){
-                if(empty($this->access) || empty($this->access->user) || $this->access->can_approve == 0){
-                    return redirect()->route('superuser.index')->with('error','Anda tidak punya akses untuk membuka menu terkait');
-                }
-            }
 
-            $purchase_order = PurchaseOrder::find($id);
-
-            if ($purchase_order === null) {
-                abort(404);
-            }
+            $purchase_order = PurchaseOrder::with('purchase_order_detail')->findOrFail($id);
 
             DB::beginTransaction();
-            try{
+            try {
 
                 $purchase_order->acc_by = Auth::id();
-                $purchase_order->acc_at = Carbon::now()->toDateTimeString();
+                $purchase_order->acc_at = now();
                 $purchase_order->status = PurchaseOrder::STATUS['ACC'];
+                $purchase_order->save();
 
-                if ($purchase_order->save()) {
-                    DB::commit();
-                    LogActivity::addToLog('ACC PO: ' . $purchase_order->code);
-                    $response['redirect_to'] = route('superuser.gudang.purchase_order.index');
-                    return $this->response(200, $response);
+                // AUTO GENERATE SPK jika memenuhi syarat
+                $spk = $this->generateSpkFromPo($purchase_order);
+
+                DB::commit();
+
+                LogActivity::addToLog('ACC PO: ' . $purchase_order->code);
+
+                if ($spk) {
+                    LogActivity::addToLog("Auto Generate SPK {$spk->code}");
                 }
-            }catch (\Exception $e) {
-                DB::rollback();
-                $response['notification'] = [
-                    'alert' => 'block',
-                    'type' => 'alert-danger',
-                    'header' => 'Error',
-                    'content' => $failed,
-                ];
-    
-                return $this->response(400, $response);
+
+                return $this->response(200, [
+                    'redirect_to' => route('superuser.gudang.purchase_order.index')
+                ]);
+
+            } catch (\Throwable $e) {
+                DB::rollBack();
+                report($e);
+
+                return $this->response(500, [
+                    'notification' => [
+                        'alert' => 'block',
+                        'type' => 'alert-danger',
+                        'content' => ['Gagal ACC dan generate SPK']
+                    ]
+                ]);
             }
         }
     }
@@ -530,29 +574,68 @@ class PurchaseOrderController extends Controller
         }
     }
     
+    // public function cancel_acc(Request $request, $id)
+    // {
+    //     if(Auth::user()->is_superuser == 0){
+    //         if(empty($this->access) || empty($this->access->user) || $this->access->can_approve == 0){
+    //             abort(405);
+    //         }
+    //     }
+        
+    //     if ($request->ajax()) {
+    //         $purchase_order = PurchaseOrder::find($id);
+
+    //         if ($purchase_order === null) {
+    //             abort(404);
+    //         }
+
+    //         $purchase_order->acc_at = null;
+    //         $purchase_order->acc_by = null;
+    //         $purchase_order->updated_by = Auth::id();
+    //         $purchase_order->status = PurchaseOrder::STATUS['DRAFT'];
+
+    //         if ($purchase_order->save()) {
+    //             $response['redirect_to'] = route('superuser.gudang.purchase_order.index');
+    //             return $this->response(200, $response);
+    //         }
+    //     }
+    // }
+
     public function cancel_acc(Request $request, $id)
     {
-        if(Auth::user()->is_superuser == 0){
-            if(empty($this->access) || empty($this->access->user) || $this->access->can_approve == 0){
-                abort(405);
-            }
-        }
-        
         if ($request->ajax()) {
-            $purchase_order = PurchaseOrder::find($id);
 
-            if ($purchase_order === null) {
-                abort(404);
-            }
+            DB::beginTransaction();
+            try {
 
-            $purchase_order->acc_at = null;
-            $purchase_order->acc_by = null;
-            $purchase_order->updated_by = Auth::id();
-            $purchase_order->status = PurchaseOrder::STATUS['DRAFT'];
+                $po = PurchaseOrder::findOrFail($id);
 
-            if ($purchase_order->save()) {
-                $response['redirect_to'] = route('superuser.gudang.purchase_order.index');
-                return $this->response(200, $response);
+                $po->update([
+                    'acc_at' => null,
+                    'acc_by' => null,
+                    'status' => PurchaseOrder::STATUS['DRAFT'],
+                    'updated_by' => Auth::id(),
+                    'count_send_spk' => 0
+                ]);
+
+                $spk = PurchaseOrder::where('ref_po_id', $po->id)->first();
+
+                if ($spk) {
+                    if ($spk->status == PurchaseOrder::STATUS['ACC']) {
+                        PurchaseOrderDetail::where('po_id', $spk->id)->delete();
+                        $spk->delete();
+                    }
+                }
+
+                DB::commit();
+
+                return $this->response(200, [
+                    'redirect_to' => route('superuser.gudang.purchase_order.index')
+                ]);
+
+            } catch (\Throwable $e) {
+                DB::rollBack();
+                report($e);
             }
         }
     }
@@ -689,111 +772,151 @@ class PurchaseOrderController extends Controller
         }
     }
 
-    public function send_spk(Request $request, $id)
+    // public function send_spk(Request $request, $id)
+    // {
+    //     if (!$request->ajax()) {
+    //         abort(403);
+    //     }
+
+    //     $po = PurchaseOrder::with('purchase_order_detail')->lockForUpdate()->findOrFail($id);
+
+    //     /** =====================
+    //      *  VALIDASI
+    //      *  ===================== */
+    //     if ($po->type != PurchaseOrder::TYPE['PO']) {
+    //         return $this->response(400, ['message' => 'Invalid PO type']);
+    //     }
+
+    //     if ($po->sub_type != PurchaseOrder::SUB_TYPE['INDUSTRI']) {
+    //         return $this->response(400, ['message' => 'PO bukan industri']);
+    //     }
+
+    //     if ($po->status != PurchaseOrder::STATUS['SENT']) {
+    //         return $this->response(400, ['message' => 'PO belum berstatus SENT']);
+    //     }
+
+    //     if ((int) $po->count_send_spk === 1) {
+    //         return $this->response(400, ['message' => 'SPK sudah pernah dikirim']);
+    //     }
+
+    //     if ($po->purchase_order_detail->isEmpty()) {
+    //         return $this->response(400, ['message' => 'Detail PO masih kosong']);
+    //     }
+
+    //     // Double safety
+    //     if (PurchaseOrder::where('ref_po_id', $po->id)->exists()) {
+    //         return $this->response(400, ['message' => 'SPK sudah pernah dibuat']);
+    //     }
+
+    //     DB::beginTransaction();
+    //     try {
+
+    //         /** =====================
+    //          *  CREATE SPK
+    //          *  ===================== */
+    //         $spk = PurchaseOrder::create([
+    //             'code'         => CodeRepo::generatePurchaseOrderSPK(),
+    //             'warehouse_id' => $po->warehouse_id,
+    //             'type'         => PurchaseOrder::TYPE['SPK'],
+    //             'etd'          => $po->etd,
+    //             'note'         => 'Generate from PO ' . $po->code,
+    //             'ref_po_id'    => $po->id,
+    //             'created_by'   => Auth::id(),
+    //             'status'       => PurchaseOrder::STATUS['ACC'],
+    //         ]);
+
+    //         /** =====================
+    //          *  DUPLIKASI DETAIL
+    //          *  ===================== */
+    //         foreach ($po->purchase_order_detail as $detail) {
+    //             PurchaseOrderDetail::create([
+    //                 'po_id'                 => $spk->id,
+    //                 'brand_lokal_id'        => $detail->brand_lokal_id,
+    //                 'product_packaging_id'  => $detail->product_packaging_id,
+    //                 'quantity'              => $detail->quantity,
+    //                 'packaging_id'          => $detail->packaging_id,
+    //                 'note_produksi'         => $detail->note_produksi,
+    //                 'note_repack'           => $detail->note_repack,
+    //                 'created_by'            => Auth::id(),
+    //             ]);
+    //         }
+
+    //         /** =====================
+    //          *  UPDATE FLAG PO
+    //          *  ===================== */
+    //         $po->update([
+    //             'count_send_spk' => 1,
+    //             'updated_by'     => Auth::id(),
+    //         ]);
+
+    //         DB::commit();
+
+    //         LogActivity::addToLog(
+    //             "Generate SPK {$spk->code} from PO {$po->code}"
+    //         );
+
+    //         return $this->response(200, [
+    //             'notification' => [
+    //                 'alert' => 'notify',
+    //                 'type' => 'success',
+    //                 'content' => 'SPK berhasil dibuat dan langsung ACC',
+    //             ],
+    //             'redirect_to' => route(
+    //                 'superuser.gudang.purchase_order.index'
+    //             ),
+    //         ]);
+
+    //     } catch (\Throwable $e) {
+    //         DB::rollBack();
+    //         report($e);
+
+    //         return $this->response(500, [
+    //             'notification' => [
+    //                 'alert' => 'block',
+    //                 'type' => 'alert-danger',
+    //                 'content' => ['Gagal generate SPK'],
+    //             ]
+    //         ]);
+    //     }
+    // }
+
+    private function generateSpkFromPo(PurchaseOrder $po)
     {
-        if (!$request->ajax()) {
-            abort(403);
-        }
+        // Validasi internal (tanpa response)
+        if ($po->type != PurchaseOrder::TYPE['PO']) return null;
+        if ($po->sub_type != PurchaseOrder::SUB_TYPE['INDUSTRI']) return null;
+        if ($po->purchase_order_detail->isEmpty()) return null;
+        if (PurchaseOrder::where('ref_po_id', $po->id)->exists()) return null;
 
-        $po = PurchaseOrder::with('purchase_order_detail')->lockForUpdate()->findOrFail($id);
+        $spk = PurchaseOrder::create([
+            'code'         => CodeRepo::generatePurchaseOrderSPK(),
+            'warehouse_id' => $po->warehouse_id,
+            'type'         => PurchaseOrder::TYPE['SPK'],
+            'etd'          => $po->etd,
+            'note'         => 'Generate from PO ' . $po->code,
+            'ref_po_id'    => $po->id,
+            'created_by'   => Auth::id(),
+            'status'       => PurchaseOrder::STATUS['ACC'],
+        ]);
 
-        /** =====================
-         *  VALIDASI
-         *  ===================== */
-        if ($po->type != PurchaseOrder::TYPE['PO']) {
-            return $this->response(400, ['message' => 'Invalid PO type']);
-        }
-
-        if ($po->sub_type != PurchaseOrder::SUB_TYPE['INDUSTRI']) {
-            return $this->response(400, ['message' => 'PO bukan industri']);
-        }
-
-        if ($po->status != PurchaseOrder::STATUS['SENT']) {
-            return $this->response(400, ['message' => 'PO belum berstatus SENT']);
-        }
-
-        if ((int) $po->count_send_spk === 1) {
-            return $this->response(400, ['message' => 'SPK sudah pernah dikirim']);
-        }
-
-        if ($po->purchase_order_detail->isEmpty()) {
-            return $this->response(400, ['message' => 'Detail PO masih kosong']);
-        }
-
-        // Double safety
-        if (PurchaseOrder::where('ref_po_id', $po->id)->exists()) {
-            return $this->response(400, ['message' => 'SPK sudah pernah dibuat']);
-        }
-
-        DB::beginTransaction();
-        try {
-
-            /** =====================
-             *  CREATE SPK
-             *  ===================== */
-            $spk = PurchaseOrder::create([
-                'code'         => CodeRepo::generatePurchaseOrderSPK(),
-                'warehouse_id' => $po->warehouse_id,
-                'type'         => PurchaseOrder::TYPE['SPK'],
-                'etd'          => $po->etd,
-                'note'         => 'Generate from PO ' . $po->code,
-                'ref_po_id'    => $po->id,
-                'created_by'   => Auth::id(),
-                'status'       => PurchaseOrder::STATUS['ACC'],
-            ]);
-
-            /** =====================
-             *  DUPLIKASI DETAIL
-             *  ===================== */
-            foreach ($po->purchase_order_detail as $detail) {
-                PurchaseOrderDetail::create([
-                    'po_id'                 => $spk->id,
-                    'brand_lokal_id'        => $detail->brand_lokal_id,
-                    'product_packaging_id'  => $detail->product_packaging_id,
-                    'quantity'              => $detail->quantity,
-                    'packaging_id'          => $detail->packaging_id,
-                    'note_produksi'         => $detail->note_produksi,
-                    'note_repack'           => $detail->note_repack,
-                    'created_by'            => Auth::id(),
-                ]);
-            }
-
-            /** =====================
-             *  UPDATE FLAG PO
-             *  ===================== */
-            $po->update([
-                'count_send_spk' => 1,
-                'updated_by'     => Auth::id(),
-            ]);
-
-            DB::commit();
-
-            LogActivity::addToLog(
-                "Generate SPK {$spk->code} from PO {$po->code}"
-            );
-
-            return $this->response(200, [
-                'notification' => [
-                    'alert' => 'notify',
-                    'type' => 'success',
-                    'content' => 'SPK berhasil dibuat dan langsung ACC',
-                ],
-                'redirect_to' => route(
-                    'superuser.gudang.purchase_order.index'
-                ),
-            ]);
-
-        } catch (\Throwable $e) {
-            DB::rollBack();
-            report($e);
-
-            return $this->response(500, [
-                'notification' => [
-                    'alert' => 'block',
-                    'type' => 'alert-danger',
-                    'content' => ['Gagal generate SPK'],
-                ]
+        foreach ($po->purchase_order_detail as $detail) {
+            PurchaseOrderDetail::create([
+                'po_id'                => $spk->id,
+                'brand_lokal_id'       => $detail->brand_lokal_id,
+                'product_packaging_id' => $detail->product_packaging_id,
+                'quantity'             => $detail->quantity,
+                'packaging_id'         => $detail->packaging_id,
+                'note_produksi'        => $detail->note_produksi,
+                'note_repack'          => $detail->note_repack,
+                'created_by'           => Auth::id(),
             ]);
         }
+
+        $po->update([
+            'count_send_spk' => 1,
+            'updated_by'     => Auth::id(),
+        ]);
+
+        return $spk;
     }
 }

@@ -180,6 +180,7 @@ Route::group([
 
     Route::group(['as' => 'sales_order_kontrak.', 'prefix' => '/sales_order_kontrak'], function () {
         Route::get('/index', 'SalesOrderKontrakController@index')->name('index');
+        Route::get('/json', 'SalesOrderKontrakController@json')->name('json');
         Route::get('/get_brand', 'SalesOrderKontrakController@get_brand')->name('get_brand');
         Route::post('/get_product', 'SalesOrderKontrakController@get_product')->name('get_product');
         Route::post('/get_packaging', 'SalesOrderKontrakController@get_packaging')->name('get_packaging');
@@ -216,10 +217,14 @@ Route::group([
         Route::get('/search_sku', 'SalesOrderProformaController@search_sku')->name('search_sku');
         Route::put('/update/{id}', 'SalesOrderProformaController@update')->name('update');
         Route::get('/print_so_proforma/{id}', 'SalesOrderProformaController@print_so_proforma')->name('print_so_proforma');
-        Route::get('/acc/{id}', 'SalesOrderProformaController@acc')->name('acc');
+        Route::post('/acc/{id}', 'SalesOrderProformaController@acc')->name('acc');
         Route::get('/approval_so/{id}', 'SalesOrderProformaController@approval_so')->name('approval_so');
-        Route::get('/destroy/{id}', 'SalesOrderProformaController@destroy')->name('destroy');
+        Route::delete('/destroy/{id}', 'SalesOrderProformaController@destroy')->name('destroy');
         Route::get('/getCustomer', 'SalesOrderProformaController@getCustomer')->name('getCustomer');
+        Route::post('/rollbackProforma/{so_id}', 'SalesOrderProformaController@rollbackProforma')->name('rollbackProforma');
+        Route::post('/statusSiap/{id}', 'SalesOrderProformaController@statusSiap')->name('statusSiap');
+        Route::post('/MultiCancel/{id}', 'SalesOrderProformaController@MultiCancel')->name('MultiCancel');
+        Route::get('/printProforma/{id}', 'SalesOrderProformaController@printProforma')->name('printProforma');
      });
     Route::resource('so_proforma', 'SalesOrderProformaController');
 
@@ -227,7 +232,7 @@ Route::group([
         Route::post('/import', 'MigrasiImportController@import')->name('import');
         Route::get('/prosesMigrasi', 'MigrasiImportController@prosesMigrasi')->name('prosesMigrasi');
         Route::get('/prosesKalkulasiDO', 'MigrasiImportController@prosesKalkulasiDO')->name('prosesKalkulasiDO');
-     });
+    });
     Route::resource('migrasi_so', 'MigrasiImportController');
 
     Route::group(['as' => 'sale_return.', 'prefix' => '/sale_return'], function () {
