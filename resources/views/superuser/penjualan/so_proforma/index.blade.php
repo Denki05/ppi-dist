@@ -81,6 +81,14 @@
                 </button>
               </a>
               @endif
+              @if($row->so_id)
+                <button type="button"
+                    class="btn btn-sm btn-circle btn-alt-warning btn-rollback"
+                    data-url="{{ route('superuser.penjualan.so_proforma.rollbackProforma', $row->so_id) }}"
+                    title="Kembalikan ke SO Awal">
+                    <i class="fa fa-undo"></i>
+                </button>
+              @endif
               <a href="javascript:deleteConfirmation('{{ route('superuser.penjualan.so_proforma.destroy', $row->id) }}')">
                 <button type="button" class="btn btn-sm btn-circle btn-alt-danger" title="Delete">
                   <i class="fa fa-trash"></i>
@@ -123,7 +131,14 @@
                 </button>
               </a>
               @endif
-              
+              @if($row->so_id)
+                <button type="button"
+                    class="btn btn-sm btn-circle btn-alt-warning btn-rollback"
+                    data-url="{{ route('superuser.penjualan.so_proforma.rollbackProforma', $row->so_id) }}"
+                    title="Kembalikan ke SO Awal">
+                    <i class="fa fa-undo"></i>
+                </button>
+              @endif
               <a href="javascript:deleteConfirmation('{{ route('superuser.penjualan.so_proforma.destroy', $row->id) }}')">
                 <button type="button" class="btn btn-sm btn-circle btn-alt-danger" title="Delete">
                   <i class="fa fa-trash"></i>
@@ -195,24 +210,98 @@
                         }, 2000);
                     },
                     error: function (xhr) {
-    
+
                         button.prop('disabled', false);
-    
+
                         let message = 'Terjadi kesalahan sistem';
-    
-                        if (xhr.responseJSON && xhr.responseJSON.notification) {
-                            message = xhr.responseJSON.notification.content;
+
+                        if (xhr.responseJSON) {
+
+                            if (xhr.responseJSON.notification) {
+                                message = xhr.responseJSON.notification.content;
+
+                                if (xhr.responseJSON.notification.file) {
+                                    message += "\n\nFile : " + xhr.responseJSON.notification.file;
+                                    message += "\nLine : " + xhr.responseJSON.notification.line;
+                                }
+                            }
+
+                            if (xhr.responseJSON.message) {
+                                message = xhr.responseJSON.message;
+                            }
                         }
-    
+
                         Swal.fire({
                             icon: 'error',
                             title: 'Error',
                             text: message
                         });
-                    }
+                        }
                 });
             }
         });
     });
+
+    $(document).on('click', '.btn-rollback', function () {
+
+let button = $(this);
+let url = button.data('url');
+
+Swal.fire({
+    title: 'Kembalikan ke SO Awal?',
+    text: "Proforma akan dihapus dan SO kembali ke tahap awal.",
+    icon: 'warning',
+    showCancelButton: true,
+    confirmButtonText: 'Ya, kembalikan',
+    cancelButtonText: 'Batal'
+}).then((result) => {
+
+    if (result.isConfirmed) {
+
+        button.prop('disabled', true);
+
+        $.ajax({
+            url: url,
+            type: "POST",
+            data: {
+                _token: "{{ csrf_token() }}"
+            },
+            beforeSend: function () {
+                Swal.fire({
+                    title: 'Processing...',
+                    allowOutsideClick: false,
+                    didOpen: () => {
+                        Swal.showLoading();
+                    }
+                });
+            },
+            success: function (response) {
+
+                Swal.fire({
+                    icon: 'success',
+                    title: 'Berhasil',
+                    text: response.notification.content,
+                    timer: 2000,
+                    showConfirmButton: false
+                });
+
+                setTimeout(function () {
+                    location.reload();
+                }, 2000);
+            },
+            error: function () {
+
+                button.prop('disabled', false);
+
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Error',
+                    text: 'Terjadi kesalahan sistem'
+                });
+            }
+        });
+    }
+});
+});
 </script>
 @endpush

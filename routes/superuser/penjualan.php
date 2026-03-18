@@ -221,6 +221,7 @@ Route::group([
         Route::get('/approval_so/{id}', 'SalesOrderProformaController@approval_so')->name('approval_so');
         Route::get('/destroy/{id}', 'SalesOrderProformaController@destroy')->name('destroy');
         Route::get('/getCustomer', 'SalesOrderProformaController@getCustomer')->name('getCustomer');
+        Route::post('/rollbackProforma/{so_id}', 'SalesOrderProformaController@rollbackProforma')->name('rollbackProforma');
      });
     Route::resource('so_proforma', 'SalesOrderProformaController');
 

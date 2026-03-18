@@ -28,6 +28,7 @@ use App\Entities\Gudang\StockMove;
 use App\Entities\Setting\UserMenu;
 use App\Entities\Account\User;
 use App\Notifications\DoNotification;
+use Illuminate\Support\Facades\Log;
 use App\Repositories\CodeRepo;
 use Illuminate\Support\Collection;
 use Validator;
@@ -383,6 +384,21 @@ class DeliveryOrderController extends Controller
                     $stock->quantity -= $item->qty;
                     $stock->reserved_quantity -= $item->qty;
                     $stock->save();
+
+                    // Log::info('Stock dipotong saat DO Packed', [
+                    //     'do_code' => $packing->code,
+                    //     'packing_id' => $packing->id,
+                    //     'warehouse_id' => $packing->warehouse_id,
+                    //     'product_packaging_id' => $base_product_packaging_id,
+                    //     'product_name' => $item->product_pack->name ?? null,
+                    //     'qty_out' => $item->qty,
+                    //     // 'stock_before' => $before_qty,
+                    //     'stock_after' => $stock->quantity,
+                    //     'reserved_before' => $before_reserved,
+                    //     'reserved_after' => $stock->reserved_quantity,
+                    //     'user_id' => Auth::id(),
+                    //     'timestamp' => now()->toDateTimeString()
+                    // ]);
                 }
             }
 

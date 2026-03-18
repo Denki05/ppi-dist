@@ -24,6 +24,7 @@
   @csrf
   <input type="hidden" name="id" value="{{$result->id}}">
   <input type="hidden" name="step" value="{{$step}}">
+  <input type="hidden" name="idr_rate" value="{{ $result->idr_rate }}">
     
     <div class="row">
       <div class="col-6">

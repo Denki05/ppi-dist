@@ -1064,141 +1064,141 @@ class PackingOrderController extends Controller
     }
 
     public function revisi(Request $request, $id)
-{
-    if (!$request->ajax()) {
-        abort(404);
-    }
-
-    if (Auth::user()->is_superuser == 0) {
-        if (empty($this->access) || empty($this->access->user) || $this->access->can_approve == 0) {
-            return response()->json([
-                'status' => 'error',
-                'message' => 'Anda tidak punya akses untuk membuka menu terkait',
-                'redirect' => route('superuser.index')
-            ]);
-        }
-    }
-
-    try {
-
-        $result = PackingOrder::find($id);
-
-        if (!$result) {
-            return response()->json([
-                'status' => 'error',
-                'message' => 'Data Packing Order tidak ditemukan',
-            ]);
+    {
+        if (!$request->ajax()) {
+            abort(404);
         }
 
-        if (in_array($result->status, [2,3,4])) {
+        if (Auth::user()->is_superuser == 0) {
+            if (empty($this->access) || empty($this->access->user) || $this->access->can_approve == 0) {
+                return response()->json([
+                    'status' => 'error',
+                    'message' => 'Anda tidak punya akses untuk membuka menu terkait',
+                    'redirect' => route('superuser.index')
+                ]);
+            }
+        }
 
-            DB::transaction(function () use ($result) {
+        try {
 
-                $packing = PackingOrder::where('id', $result->id)
-                    ->lockForUpdate()
-                    ->firstOrFail();
+            $result = PackingOrder::find($id);
 
-                $items = PackingOrderItem::where('do_id', $packing->id)->get();
+            if (!$result) {
+                return response()->json([
+                    'status' => 'error',
+                    'message' => 'Data Packing Order tidak ditemukan',
+                ]);
+            }
 
-                foreach ($items as $item) {
+            if (in_array($result->status, [2,3,4])) {
 
-                    $stock = ProductMinStock::where('warehouse_id', $packing->warehouse_id)
-                        ->where('product_packaging_id', $item->product_packaging_id)
+                DB::transaction(function () use ($result) {
+
+                    $packing = PackingOrder::where('id', $result->id)
                         ->lockForUpdate()
-                        ->first();
+                        ->firstOrFail();
 
-                    if (!$stock) continue;
+                    $items = PackingOrderItem::where('do_id', $packing->id)->get();
 
-                    // Release reserved
-                    $stock->reserved_quantity -= $item->qty;
-                    if ($stock->reserved_quantity < 0) $stock->reserved_quantity = 0;
+                    foreach ($items as $item) {
 
-                    // Kembalikan qty jika packed
-                    if ($packing->status == 3) {
-                        $stock->quantity += $item->qty;
-                    }
-
-                    $stock->save();
-                }
-
-                $so = SalesOrder::where('id', $packing->so_id)->lockForUpdate()->first();
-
-                if ($so) {
-                    $packingSoCode = optional($packing->so)->code;
-
-                    if ($so->is_proforma == 1) {
-                        $so->status = 1;
-                        $so->count_rev = 1;
-                        $so->code = null;
-                        $so->keep_code = $packingSoCode;
-                        $so->save();
-
-                        $proforma = SalesOrderProforma::where('so_id', $so->id)
+                        $stock = ProductMinStock::where('warehouse_id', $packing->warehouse_id)
+                            ->where('product_packaging_id', $item->product_packaging_id)
                             ->lockForUpdate()
                             ->first();
 
-                        if ($proforma) {
-                            $proforma->so_lanjutan = 0;
-                            $proforma->status = 3;
-                            $proforma->save();
+                        if (!$stock) continue;
+
+                        // Release reserved
+                        $stock->reserved_quantity -= $item->qty;
+                        if ($stock->reserved_quantity < 0) $stock->reserved_quantity = 0;
+
+                        // Kembalikan qty jika packed
+                        if ($packing->status == 3) {
+                            $stock->quantity += $item->qty;
                         }
 
-                    } else {
-                        $so->update([
-                            'status' => 2,
-                            'count_rev' => 1,
-                            'code' => null,
-                            'keep_code' => $packingSoCode
-                        ]);
+                        $stock->save();
                     }
-                }
 
-                PackingOrder::where('id', $packing->id)->update(['status' => 7]);
+                    $so = SalesOrder::where('id', $packing->so_id)->lockForUpdate()->first();
 
-                Invoicing::where('do_id', $packing->id)
-                    ->update([
-                        'status' => 3,
-                        'updated_by' => Auth::id()
-                    ]);
+                    if ($so) {
+                        $packingSoCode = optional($packing->so)->code;
 
-                PackingOrderItem::where('do_id', $packing->id)->delete();
-            });
+                        if ($so->is_proforma == 1) {
+                            $so->status = 1;
+                            $so->count_rev = 1;
+                            $so->code = null;
+                            $so->keep_code = $packingSoCode;
+                            $so->save();
 
-            return response()->json([
-                'status' => 'success',
-                'message' => 'SO berhasil direvisi dan reserved dikembalikan!',
-                'redirect' => route('superuser.penjualan.sales_order.index_lanjutan')
-            ]);
-        }
+                            $proforma = SalesOrderProforma::where('so_id', $so->id)
+                                ->lockForUpdate()
+                                ->first();
 
-        if (in_array($result->status, [5,6])) {
+                            if ($proforma) {
+                                $proforma->so_lanjutan = 0;
+                                $proforma->status = 3;
+                                $proforma->save();
+                            }
+
+                        } else {
+                            $so->update([
+                                'status' => 2,
+                                'count_rev' => 1,
+                                'code' => null,
+                                'keep_code' => $packingSoCode
+                            ]);
+                        }
+                    }
+
+                    PackingOrder::where('id', $packing->id)->update(['status' => 7]);
+
+                    Invoicing::where('do_id', $packing->id)
+                        ->update([
+                            'status' => 3,
+                            'updated_by' => Auth::id()
+                        ]);
+
+                    PackingOrderItem::where('do_id', $packing->id)->delete();
+                });
+
+                return response()->json([
+                    'status' => 'success',
+                    'message' => 'SO berhasil direvisi dan reserved dikembalikan!',
+                    'redirect' => route('superuser.penjualan.sales_order.index_lanjutan')
+                ]);
+            }
+
+            if (in_array($result->status, [5,6])) {
+                return response()->json([
+                    'status' => 'error',
+                    'message' => 'Gagal di kembalikan, status DO sedang dikirim!',
+                ]);
+            }
+
             return response()->json([
                 'status' => 'error',
-                'message' => 'Gagal di kembalikan, status DO sedang dikirim!',
+                'message' => 'Tidak dapat memproses Revisi untuk data ini',
             ]);
+
+        } catch (\Throwable $e) {
+
+            \Log::error('Error Revisi Packing Order', [
+                'id' => $id,
+                'message' => $e->getMessage(),
+                'line' => $e->getLine(),
+                'file' => $e->getFile(),
+                'trace' => $e->getTraceAsString(),
+            ]);
+
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Terjadi kesalahan saat proses revisi. Silakan cek log.'
+            ], 500);
         }
-
-        return response()->json([
-            'status' => 'error',
-            'message' => 'Tidak dapat memproses Revisi untuk data ini',
-        ]);
-
-    } catch (\Throwable $e) {
-
-        \Log::error('Error Revisi Packing Order', [
-            'id' => $id,
-            'message' => $e->getMessage(),
-            'line' => $e->getLine(),
-            'file' => $e->getFile(),
-            'trace' => $e->getTraceAsString(),
-        ]);
-
-        return response()->json([
-            'status' => 'error',
-            'message' => 'Terjadi kesalahan saat proses revisi. Silakan cek log.'
-        ], 500);
     }
-}
 
     public function ajax_customer_detail(Request $request){
         $data_json = [];

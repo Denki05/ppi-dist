@@ -26,7 +26,7 @@
                     </div>
                     <div class="form-group col-md-6">
                       <label for="type_transaction">Type Transaksi</label>
-                      <input type="text" name="type_transaction" class="form-control" value="{{ \App\Entities\Penjualan\SalesOrderProforma::TYPE_TRANSACTION['0'] }}" readonly>
+                      <input type="text" name="type_transaction" class="form-control" value="{{ $results->status_type }}" readonly>
                     </div>
                   </div>
 

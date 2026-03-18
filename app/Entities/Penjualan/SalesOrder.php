@@ -16,6 +16,7 @@ class SalesOrder extends Model
     protected $fillable =[
     	'so_code',
         'is_proforma',
+        'status_proforma',
     	'code',
         'keep_code', 
     	'sales_id',

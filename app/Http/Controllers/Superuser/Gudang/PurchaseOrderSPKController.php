@@ -426,7 +426,7 @@ class PurchaseOrderSPKController extends Controller
                             'date'           => Carbon::now(),
                             'warehouse_from' => $warehouseAraya->id,
                             'warehouse_to'   => $purchase_order->warehouse_id ?? null, // sesuaikan
-                            'note'           => 'Auto generate dari SPK ' . $purchase_order->code,
+                            'note'           => $purchase_order->note ?? null,
                             'status'         => MutasiOut::STATUS['PUBLISH'],
                             'created_by'     => Auth::id(),
                         ]);

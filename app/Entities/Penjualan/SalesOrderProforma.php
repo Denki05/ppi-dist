@@ -54,8 +54,8 @@ class SalesOrderProforma extends Model
     ];
 
     const TYPE_TRANSACTION = [
-        0 => 'CASH',
-        1 => 'TEMPO'
+        1 => 'CASH',
+        0 => 'TEMPO'
     ];
 
     public function getSoLanjutanAttribute()
@@ -110,5 +110,10 @@ class SalesOrderProforma extends Model
     public function salesOrder()
     {
         return $this->belongsTo('App\Entities\Penjualan\SalesOrder', 'so_id', 'id');
+    }
+
+    public function getStatusTypeAttribute()
+    {
+        return self::TYPE_TRANSACTION[$this->attributes['so_type_transaction']] ?? null;
     }
 }

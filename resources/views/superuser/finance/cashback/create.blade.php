@@ -259,6 +259,24 @@
                 let cashback = parseFloat($(this).find('input[name="cashback[]"]').val()) || 0;
                 let free = parseFloat($(this).find('input[name="free[]"]').val()) || 0;
 
+                // let product_id = $(this).find('input[name="product[]"]').val();
+
+                // if (product_id == '10868-4') {
+                //     console.log("DEBUG PRODUCT 10868-4");
+                //     console.log({
+                //         product_id: product_id,
+                //         price: price,
+                //         disc_usd: disc_usd,
+                //         kurs: kurs,
+                //         qty: qty,
+                //         discount_percent: discount_percent,
+                //         discount_kemasan: discount_kemasan,
+                //         discount_tambahan: discount_tambahan,
+                //         cashback: cashback,
+                //         free: free
+                //     });
+                // }
+
                 // Determine if the additional discount should be applied
                 let disc_tambahan_idr_item = 0;
                 if (!isFirstDiscountApplied && free != 1) {
