@@ -240,4 +240,6 @@ return [
         'PDF' => Barryvdh\DomPDF\Facade::class,  // Add this line
     ],
 
+    'api_key' => env('API_KEY'),
+
 ];

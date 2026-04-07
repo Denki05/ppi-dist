@@ -1377,7 +1377,10 @@ class SalesOrderController extends Controller
                         $errors[] = 'Rekening tidak boleh kosong!';
                     }
                     
-                    $sales_order->code = CodeRepo::generateSO();
+                    // $sales_order->code = CodeRepo::generateSO();
+                    if (empty($sales_order->code)) {
+                        $sales_order->code = CodeRepo::generateSO();
+                    }
                     $sales_order->origin_warehouse_id = $request->origin_warehouse_id;
                     $sales_order->sales_senior_id = $request->sales_senior_id;
                     $sales_order->sales_id = $request->sales_id;

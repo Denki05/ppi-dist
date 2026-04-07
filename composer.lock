@@ -623,23 +623,23 @@
         },
         {
             "name": "consoletvs/charts",
-            "version": "6.8.0",
+            "version": "6.9.0",
             "source": {
                 "type": "git",
                 "url": "https://github.com/ConsoleTVs/Charts.git",
-                "reference": "5bc74e6a57fb5d4a9b04a3059d40488875480b9d"
+                "reference": "7f8a39703ad70cac1b471b27275d2ffc4494e7e5"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/ConsoleTVs/Charts/zipball/5bc74e6a57fb5d4a9b04a3059d40488875480b9d",
-                "reference": "5bc74e6a57fb5d4a9b04a3059d40488875480b9d",
+                "url": "https://api.github.com/repos/ConsoleTVs/Charts/zipball/7f8a39703ad70cac1b471b27275d2ffc4494e7e5",
+                "reference": "7f8a39703ad70cac1b471b27275d2ffc4494e7e5",
                 "shasum": ""
             },
             "require": {
                 "balping/json-raw-encoder": "^1.0",
-                "illuminate/console": "^5.0|^6.0|^7.0|^8.0|^9.0|^10.0|^11.0|^12.0",
-                "illuminate/support": "^5.0|^6.0|^7.0|^8.0|^9.0|^10.0|^11.0|^12.0",
-                "php": ">=7.0"
+                "illuminate/console": ">=5.6",
+                "illuminate/support": ">=5.6",
+                "php": ">=7.1"
             },
             "type": "library",
             "extra": {
@@ -667,7 +667,7 @@
             "description": "The laravel charting package",
             "support": {
                 "issues": "https://github.com/ConsoleTVs/Charts/issues",
-                "source": "https://github.com/ConsoleTVs/Charts/tree/6.8.0"
+                "source": "https://github.com/ConsoleTVs/Charts/tree/6.9.0"
             },
             "funding": [
                 {
@@ -675,7 +675,7 @@
                     "type": "patreon"
                 }
             ],
-            "time": "2025-02-24T15:17:19+00:00"
+            "time": "2026-03-18T15:06:07+00:00"
         },
         {
             "name": "cornford/googlmapper",
@@ -5174,16 +5174,16 @@
         },
         {
             "name": "phpseclib/phpseclib",
-            "version": "3.0.49",
+            "version": "3.0.50",
             "source": {
                 "type": "git",
                 "url": "https://github.com/phpseclib/phpseclib.git",
-                "reference": "6233a1e12584754e6b5daa69fe1289b47775c1b9"
+                "reference": "aa6ad8321ed103dc3624fb600a25b66ebf78ec7b"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/phpseclib/phpseclib/zipball/6233a1e12584754e6b5daa69fe1289b47775c1b9",
-                "reference": "6233a1e12584754e6b5daa69fe1289b47775c1b9",
+                "url": "https://api.github.com/repos/phpseclib/phpseclib/zipball/aa6ad8321ed103dc3624fb600a25b66ebf78ec7b",
+                "reference": "aa6ad8321ed103dc3624fb600a25b66ebf78ec7b",
                 "shasum": ""
             },
             "require": {
@@ -5264,7 +5264,7 @@
             ],
             "support": {
                 "issues": "https://github.com/phpseclib/phpseclib/issues",
-                "source": "https://github.com/phpseclib/phpseclib/tree/3.0.49"
+                "source": "https://github.com/phpseclib/phpseclib/tree/3.0.50"
             },
             "funding": [
                 {
@@ -5280,7 +5280,7 @@
                     "type": "tidelift"
                 }
             ],
-            "time": "2026-01-27T09:17:28+00:00"
+            "time": "2026-03-19T02:57:58+00:00"
         },
         {
             "name": "pragmarx/google2fa",
@@ -9631,25 +9631,25 @@
         },
         {
             "name": "creativeorange/gravatar",
-            "version": "v1.0.25",
+            "version": "v1.0.26",
             "source": {
                 "type": "git",
                 "url": "https://github.com/brainpink/gravatar.git",
-                "reference": "21ba6cbe125d57965c58468047ea29dfa822b4d3"
+                "reference": "3789de373029c8f8b94e0f880e3dc2ac36eac918"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/brainpink/gravatar/zipball/21ba6cbe125d57965c58468047ea29dfa822b4d3",
-                "reference": "21ba6cbe125d57965c58468047ea29dfa822b4d3",
+                "url": "https://api.github.com/repos/brainpink/gravatar/zipball/3789de373029c8f8b94e0f880e3dc2ac36eac918",
+                "reference": "3789de373029c8f8b94e0f880e3dc2ac36eac918",
                 "shasum": ""
             },
             "require": {
-                "illuminate/support": "^5|^6|^7|^8|^9|^10.0|^11.0|^12.0",
+                "illuminate/support": "^5|^6|^7|^8|^9|^10.0|^11.0|^12.0|^13.0",
                 "php": ">=5.4.0"
             },
             "require-dev": {
                 "nunomaduro/larastan": "^0.6.2|^2.4",
-                "orchestra/testbench": "^5.4|^8.0|^9.0|^10.0",
+                "orchestra/testbench": "^5.4|^8.0|^9.0|^10.0|^11.0",
                 "php": ">=7.2"
             },
             "type": "library",
@@ -9688,9 +9688,9 @@
             ],
             "support": {
                 "issues": "https://github.com/brainpink/gravatar/issues",
-                "source": "https://github.com/brainpink/gravatar/tree/v1.0.25"
+                "source": "https://github.com/brainpink/gravatar/tree/v1.0.26"
             },
-            "time": "2025-02-22T19:11:54+00:00"
+            "time": "2026-03-20T23:47:31+00:00"
         },
         {
             "name": "doctrine/instantiator",
@@ -11862,6 +11862,6 @@
     "platform": {
         "php": "^7.2"
     },
-    "platform-dev": {},
+    "platform-dev": [],
     "plugin-api-version": "2.6.0"
 }
