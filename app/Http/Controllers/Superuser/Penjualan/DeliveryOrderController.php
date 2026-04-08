@@ -31,6 +31,7 @@ use App\Notifications\DoNotification;
 use Illuminate\Support\Facades\Log;
 use App\Repositories\CodeRepo;
 use Illuminate\Support\Collection;
+use GuzzleHttp\Client;
 use Validator;
 use App\Helper\LogActivity;
 use PDF;
