@@ -715,6 +715,71 @@ class DeliveryOrderController extends Controller
             // Commit transaction
             DB::commit();
 
+            // === Kirim data invoice + file PDF ke Agenda ===
+            try {
+                if ($get_inv && $customer && $detail_do) {
+
+                    // Cek apakah tipe transaksi TEMPO
+                    if (($detail_do->type_transaction ?? null) !== 'TEMPO') {
+                        Log::info('⚠️ Invoice bukan TEMPO, dilewati: ' . ($detail_do->do_code ?? $get_inv->code));
+                        return; // atau continue jika ini di loop
+                    }
+
+                    $payload = [
+                        'pic'          => $customer->store->pic ?? '-',
+                        'customer'     => $customer->name ?? 'Unknown',
+                        'invoice_code' => $get_inv->invoice_code ?? $get_inv->code ?? '-',
+                        'amount'       => $get_inv->grand_total_idr ?? 0,
+                        'customer_id'  => $customer->id,
+                    ];
+
+                    // Lokasi file PDF hasil export Crystal Report
+                    $pdfPath = "C:\\xampp\\htdocs\\ppi-dist\\public\\cr\\invoice\\export\\" . ($get_inv->invoice_code ?? $get_inv->code) . "-FULL.pdf";
+
+                    $multipart = [];
+                    foreach ($payload as $key => $value) {
+                        $multipart[] = [
+                            'name'     => $key,
+                            'contents' => $value,
+                        ];
+                    }
+
+                    // Jika file PDF ada, kirimkan bersamaan
+                    if (file_exists($pdfPath)) {
+                        $multipart[] = [
+                            'name'     => 'pdf_invoice',
+                            'contents' => fopen($pdfPath, 'r'),
+                            'filename' => basename($pdfPath),
+                        ];
+                    } else {
+                        Log::warning("⚠️ File PDF invoice tidak ditemukan: " . $pdfPath);
+                    }
+
+                    $client = new \GuzzleHttp\Client();
+                    $response = $client->post(env('AGENDA_URL'), [
+                        'headers' => [
+                            'Authorization' => 'Bearer ' . env('AGENDA_TOKEN'),
+                            'Accept'        => 'application/json',
+                        ],
+                        'multipart' => $multipart,
+                        'timeout'   => 15,
+                    ]);
+
+                    $result = json_decode($response->getBody(), true);
+
+                    Log::info('✅ Invoice + PDF sent to Agenda', [
+                        'payload'  => $payload,
+                        'pdf'      => basename($pdfPath),
+                        'response' => $result,
+                    ]);
+                } else {
+                    Log::warning('⚠️ Invoice or Customer not found for DO ID: ' . $do_id);
+                }
+            } catch (\Exception $ex) {
+                dd($ex);
+                Log::error('❌ Gagal kirim data + PDF invoice ke Agenda: ' . $ex->getMessage());
+            }
+
             $userIds = [32, 36];
             $users = User::whereIn('id', $userIds)->get();
 

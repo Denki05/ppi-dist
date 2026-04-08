@@ -5,213 +5,183 @@
 <title>SURAT JALAN MUTASI BARANG</title>
 
 <style>
-@page {
-    size: A5 landscape;
-    margin: 18px 25px;
-}
+    @page {
+        size: A5 landscape;
+        margin: 18px 25px 120px 25px; /* Margin bawah besar untuk tempat footer */
+    }
 
-body {
-    font-family: Arial, Helvetica, sans-serif;
-    font-size: 10px;
-    color: #000;
-    line-height: 1.4;
-}
+    body {
+        font-family: Arial, Helvetica, sans-serif;
+        font-size: 10px;
+        color: #000;
+        line-height: 1.4;
+    }
 
-/* ================= HEADER ================= */
-.header {
-    padding: 10px 12px;
-    margin-bottom: 10px;
-}
+    /* Memaksa ganti halaman */
+    .page-break {
+        page-break-after: always;
+    }
 
-.header-title {
-    text-align: right;
-    font-size: 16px;
-    font-weight: bold;
-    letter-spacing: 0.5px;
-    margin-bottom: 8px;
-    text-transform: uppercase;
-}
+    /* ================= HEADER ================= */
+    .header {
+        padding: 5px 12px;
+        margin-bottom: 5px;
+    }
 
-.header-table {
-    width: 100%;
-    border-collapse: collapse;
-    border-top: 1px solid #000;
-    border-bottom: 1px solid #000;
-}
+    .header-title {
+        text-align: right;
+        font-size: 16px;
+        font-weight: bold;
+        text-transform: uppercase;
+        margin-bottom: 5px;
+    }
 
-.header-table td {
-    padding: 4px 0;
-    vertical-align: top;
-    border: none; /* pastikan td tidak punya border */
-}
+    .header-table {
+        width: 100%;
+        border-collapse: collapse;
+        border-top: 1px solid #000;
+        border-bottom: 1px solid #000;
+    }
 
-.label {
-    width: 70px;
-    font-weight: bold;
-}
+    .label {
+        width: 70px;
+        font-weight: bold;
+    }
 
-/* ================= TABLE ================= */
-table.data-table {
-    width: 100%;
-    border-collapse: collapse;
-    margin-top: 8px;
-}
+    /* ================= TABLE ================= */
+    table.data-table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-top: 8px;
+    }
 
-.data-table th,
-.data-table td {
-    border: 1px solid #000;
-    padding: 6px 5px;
-}
+    .data-table th,
+    .data-table td {
+        border: 1px solid #000;
+        padding: 3px 4px; /* Kurangi padding dari 5px ke 3px */
+        font-size: 11px;
+    }
 
-.data-table th {
-    background: #f5f5f5;
-    font-weight: bold;
-    text-transform: uppercase;
-    text-align: center;
-}
+    .data-table th {
+        background: #f5f5f5;
+        font-weight: bold;
+        text-transform: uppercase;
+        text-align: center;
+    }
 
-.data-table td {
-    vertical-align: middle;
-}
+    .text-center { text-align: center; }
+    .text-right  { text-align: right; }
 
-.text-center { text-align: center; }
-.text-right  { text-align: right; }
-.text-left   { text-align: left; }
+    /* ================= FOOTER SIGNATURE ================= */
+    .footer-signature {
+        position: fixed;
+        bottom: -20px; /* Posisi di margin bawah @page */
+        left: 0;
+        right: 0;
+        width: 100%;
+    }
 
-/* ================= SIGNATURE ================= */
-.signature-table {
-    width: 100%;
-    margin-top: 30px;
-    border-collapse: collapse;
-    page-break-inside: avoid;
-}
+    .signature-table {
+        width: 100%;
+        border-collapse: collapse;
+    }
 
-.signature-table td {
-    text-align: center;
-    vertical-align: top;
-    font-size: 10px;
-}
+    .signature-table td {
+        text-align: center;
+        vertical-align: top;
+    }
 
-.signature-label {
-    margin-bottom: 65px;   /* ruang tanda tangan lebih tinggi */
-    font-size: 14px;
-    font-weight: bold;
-    letter-spacing: 0.3px;
-}
+    .signature-label {
+        margin-bottom: 50px; 
+        font-size: 12px;
+        font-weight: bold;
+    }
 
-.signature-line {
-    border-top: 1px solid #000;
-    width: 80%;
-    margin: 0 auto 4px auto;
-}
-
-.signature-note {
-    margin-top: 15px;
-    font-size: 10px;
-}
-
-@page {
-    size: A5 landscape;
-    margin: 18px 25px 90px 25px; /* tambah bottom margin */
-}
-
-/* FOOTER SIGNATURE */
-.footer-signature {
-    position: fixed;
-    bottom: 30px;
-    left: 25px;
-    right: 25px;
-}
+    .signature-line {
+        border-top: 1px solid #000;
+        width: 70%;
+        margin: 0 auto;
+    }
 </style>
 </head>
 
 <body>
 
-<!-- ================= HEADER ================= -->
-<div class="header">
-    <div class="header-title">SURAT JALAN MUTASI BARANG</div>
+@php
+    // Ubah chunk menjadi 10 menyesuaikan batas area fisik A5
+    $chunkSize = 10;
+    $chunks = $mutasi->details->chunk($chunkSize);
+    $totalChunks = count($chunks);
+@endphp
 
-    <table class="header-table">
-        <tr>
-            <!-- KOLOM KIRI -->
-            <td style="width: 50%;">
-                <table width="100%" cellspacing="0" cellpadding="0" style="font-size: 12px;">
-                    <tr>
-                        <td class="label">Kepada</td>
-                        <td>: {{ $mutasi->customer_other_address->name ?? 'SHOWROOM' }}</td>
-                    </tr>
-                    <tr>
-                        <td class="label">Alamat</td>
-                        <td>: {{ $mutasi->customer_other_address->address ?? 'SURABAYA' }}</td>
-                    </tr>
-                    <tr>
-                        <td class="label">Telp</td>
-                        <td>: {{ $mutasi->customer_other_address->phone ?? '-' }}</td>
-                    </tr>
-                </table>
-            </td>
+@foreach($chunks as $index => $chunk)
+    <div class="header">
+        <div class="header-title">SURAT JALAN MUTASI BARANG</div>
+        <table class="header-table">
+            <tr>
+                <td style="width: 50%; padding: 4px 0;">
+                    <table width="100%" style="font-size: 11px;">
+                        <tr><td class="label">Kepada</td><td>: {{ $mutasi->customer_other_address->name ?? 'SHOWROOM' }}</td></tr>
+                        <tr><td class="label">Alamat</td><td>: {{ $mutasi->customer_other_address->address ?? 'SURABAYA' }}</td></tr>
+                        <tr><td class="label">Telp</td><td>: {{ $mutasi->customer_other_address->phone ?? '-' }}</td></tr>
+                    </table>
+                </td>
+                <td style="width: 50%; padding: 4px 0;">
+                    <table width="100%" style="font-size: 11px;">
+                        <tr><td class="label">Brand</td><td>: {{ $mutasi->brand_name }}</td></tr>
+                        <tr><td class="label">Kode</td><td>: {{ $mutasi->kode }}{{ optional($mutasi->so)->code ? ' / '.optional($mutasi->so)->code : '' }}</td></tr>
+                        <tr><td class="label">Tanggal</td><td>: {{ $mutasi->tanggal->format('d-m-Y') }}</td></tr>
+                    </table>
+                </td>
+            </tr>
+        </table>
+    </div>
 
-            <!-- KOLOM KANAN -->
-            <td style="width: 50%;">
-                <table width="100%" cellspacing="0" cellpadding="0" style="font-size: 12px;">
-                    <tr>
-                        <td class="label">Brand</td>
-                        <td>: {{ $mutasi->brand_name }}</td>
-                    </tr>
-                    <tr>
-                        <td class="label">Kode</td>
-                        <td>: {{ $mutasi->kode }}{{ optional($mutasi->so)->code ? ' / '.optional($mutasi->so)->code : '' }}</td>
-                    </tr>
-                    <tr>
-                        <td class="label">Tanggal</td>
-                        <td>: {{ $mutasi->tanggal->format('d-m-Y') }}</td>
-                    </tr>
-                </table>
-            </td>
-        </tr>
+    <table class="data-table">
+        <thead>
+            <tr>
+                <th width="30">No</th>
+                <th>Kode Barang</th>
+                <th>Nama Barang</th>
+                <th width="60">Qty(KG)</th>
+                <th width="140">Kemasan</th>
+            </tr>
+        </thead>
+        <tbody>
+            {{-- Hapus $i as key, gunakan $loop->iteration untuk penomoran --}}
+            @foreach($chunk as $row)
+                <tr>
+                    <td class="text-center">{{ ($index * $chunkSize) + $loop->iteration }}</td>
+                    <td class="text-center">{{ $row->product_packaging->code }}</td>
+                    <td>{{ $row->product_packaging->name }}</td>
+                    <td class="text-right">{{ number_format($row->qty, 2) }}</td>
+                    <td class="text-center">{{ $row->product_packaging->packaging->pack_name }}</td>
+                </tr>
+            @endforeach
+            
+            {{-- Pengecekan sisa row kosong dinamis menggunakan $chunkSize --}}
+            @for($emptyRow = count($chunk); $emptyRow < $chunkSize; $emptyRow++)
+                <tr>
+                    <td class="text-center">&nbsp;</td>
+                    <td>&nbsp;</td>
+                    <td>&nbsp;</td>
+                    <td>&nbsp;</td>
+                    <td>&nbsp;</td>
+                </tr>
+            @endfor
+        </tbody>
     </table>
-</div>
 
-<!-- ================= TABLE ================= -->
-<table class="data-table">
-    <thead>
-        <tr>
-            <th width="30">No</th>
-            <th class="text-center">Kode Barang</th>
-            <th class="text-center">Nama Barang</th>
-            <th width="60">Qty(KG)</th>
-            <th width="140">Kemasan</th>
-        </tr>
-    </thead>
-    <tbody>
-        @forelse($mutasi->details as $i => $row)
-            <tr>
-                <td class="text-center" style="font-size: 12px;">{{ $i + 1 }}</td>
-                <td class="text-center" style="font-size: 12px;">
-                    {{ $row->product_packaging->code }}
-                </td>
-                <td class="text-center" style="font-size: 12px;">
-                    {{ $row->product_packaging->name }}
-                </td>
-                <td class="text-right" style="font-size: 12px;">
-                    {{ number_format($row->qty, 2) }}
-                </td>
-                <td class="text-center" style="font-size: 12px;">
-                    {{ $row->product_packaging->packaging->pack_name }}
-                </td>
-                
-            </tr>
-        @empty
-            <tr>
-                <td colspan="4" class="text-center">Tidak ada data</td>
-            </tr>
-        @endforelse
-    </tbody>
-</table>
+    <div style="text-align: right; font-size: 8px; margin-top: 5px;">
+        Halaman {{ $index + 1 }} dari {{ $totalChunks }}
+    </div>
 
-<!-- ================= FOOTER SIGNATURE ================= -->
+    @if (!$loop->last)
+        <div class="page-break"></div>
+    @endif
+@endforeach
+
 <div class="footer-signature">
-
     <table class="signature-table">
         <tr>
             <td width="33%">
@@ -229,5 +199,6 @@ table.data-table {
         </tr>
     </table>
 </div>
+
 </body>
 </html>

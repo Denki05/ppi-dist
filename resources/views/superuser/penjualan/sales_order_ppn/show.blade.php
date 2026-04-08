@@ -57,11 +57,11 @@ $subtotal = 0;
           <div class="form-row">
             <div class="form-group col-md-6">
               <label for="so_date">Sales Senior</label>
-              <input type="text" name="type_transaction" class="form-control" value="{{ $result->sales_senior() }}" readonly>
+              <input type="text" name="type_transaction" class="form-control" value="{{ $result->so_sales_senior() }}" readonly>
             </div>
             <div class="form-group col-md-6">
               <label for="type_transaction">Sales</label>
-              <input type="text" name="type_transaction" class="form-control" value="{{ $result->sales() }}" readonly>
+              <input type="text" name="type_transaction" class="form-control" value="{{ $result->so_sales() }}" readonly>
             </div>
           </div>
 
@@ -211,22 +211,37 @@ $subtotal = 0;
       <aside class="col-lg-3">
         <div class="card border-0">
           <div class="card-body">
-            <?php 
-              foreach($result->do as $row){
-                foreach($row->do_detail_cost as $key => $value){
-                  $discount_percent = $value->discount_1;
-                  $discount_percent_idr = $value->discount_1_idr;
-                  $discount_kemasan_percent = $value->discount_2;
-                  $discount_kemasan_idr = $value->discount_2_idr;
-                  $discount_idr = $value->discount_idr;
-                  $voucher_idr = $value->voucher_idr;
-                  $ppn_percent = $value->ppn_percent;
-                  $ppn_idr = $value->ppn_idr;
-                  $ongkir = $value->delivery_cost_idr;
-                  $grand_total = $value->grand_total_idr;
+          @php 
+            $discount_percent = 0;
+            $discount_percent_idr = 0;
+            $discount_kemasan_percent = 0;
+            $discount_kemasan_idr = 0;
+            $discount_idr = 0;
+            $voucher_idr = 0;
+            $ppn_percent = 0;
+            $ppn_idr = 0;
+            $ongkir = 0;
+            $grand_total = 0;
+
+            foreach($result->do as $row){
+                if($row->do_detail_cost){
+                    $value = $row->do_detail_cost;
+
+                    $discount_percent = $value->discount_1 ?? 0;
+                    $discount_percent_idr = $value->discount_1_idr ?? 0;
+                    $discount_kemasan_percent = $value->discount_2 ?? 0;
+                    $discount_kemasan_idr = $value->discount_2_idr ?? 0;
+                    $discount_idr = $value->discount_idr ?? 0;
+                    $voucher_idr = $value->voucher_idr ?? 0;
+                    $ppn_percent = $value->ppn_percent ?? 0;
+                    $ppn_idr = $value->ppn_idr ?? 0;
+                    $ongkir = $value->delivery_cost_idr ?? 0;
+                    $grand_total = $value->grand_total_idr ?? 0;
+
+                    break; // ambil DO pertama saja
                 }
-              }
-            ?>
+            }
+        @endphp
             <div class="form-group row">
               <label class="col-sm-4 col-form-label">Disc %</label>
               <div class="col-sm-3">

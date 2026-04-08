@@ -481,12 +481,63 @@ class MutasiShowroomController extends Controller
         ]);
     }
 
+    // public function updateListPartial(Request $request)
+    // {
+    //     $items = MutasiShowroomDetail::whereHas('mutasi_showroom', function ($q) use ($request) {
+
+    //             $q->where('status', MutasiShowroom::STATUS['PUBLISH'])
+    //             ->where('type', '!=', 3);
+
+    //             if ($request->filled('start_date') && $request->filled('end_date')) {
+    //                 $q->whereBetween('tanggal', [
+    //                     $request->start_date,
+    //                     $request->end_date
+    //                 ]);
+    //             }
+    //         })
+    //         ->where(function ($q) {
+    //             $q->where('price_usd', 0)
+    //             ->orWhere('total_price', 0);
+    //         })
+    //         ->with([
+    //             'product_packaging.product:id,code,name',
+    //             'mutasi_showroom:id,kode,tanggal,brand_name,status',
+    //         ])
+    //         ->get();
+
+    //     /**
+    //      * GROUPING
+    //      * BRAND -> KODE MUTASI
+    //      */
+    //     $data['groups'] = $items
+    //         ->groupBy(function ($item) {
+    //             return $item->mutasi_showroom->brand_name;
+    //         })
+    //         ->map(function ($brandGroup) {
+    //             return $brandGroup->groupBy(function ($item) {
+    //                 return $item->mutasi_showroom->kode;
+    //             });
+    //         });
+
+    //     return view($this->view.'partials.update_list_partial', $data);
+    // }
+
     public function updateListPartial(Request $request)
     {
         $items = MutasiShowroomDetail::whereHas('mutasi_showroom', function ($q) use ($request) {
-
-                $q->where('status', MutasiShowroom::STATUS['PUBLISH'])
-                ->where('type', '!=', 3);
+                
+                $q->where(function ($sub) {
+                    // Panggil yang PUBLISH (Biasa)
+                    $sub->where(function ($q1) {
+                        $q1->where('status', \App\Entities\Gudang\MutasiShowroom::STATUS['PUBLISH'])
+                           ->where('type', '!=', 3);
+                    })
+                    // ATAU Panggil yang SETTLE tapi khusus tipe Promosi (Tipe 5)
+                    ->orWhere(function ($q2) {
+                        $q2->where('status', \App\Entities\Gudang\MutasiShowroom::STATUS['SETTLE'])
+                           ->where('type', \App\Entities\Gudang\MutasiShowroom::TYPE_SYSTEM_FREE_SO);
+                    });
+                });
 
                 if ($request->filled('start_date') && $request->filled('end_date')) {
                     $q->whereBetween('tanggal', [
@@ -497,18 +548,17 @@ class MutasiShowroomController extends Controller
             })
             ->where(function ($q) {
                 $q->where('price_usd', 0)
-                ->orWhere('total_price', 0);
+                  ->orWhere('total_price', 0)
+                  ->orWhereHas('mutasi_showroom', function ($sq) {
+                      $sq->where('type', \App\Entities\Gudang\MutasiShowroom::TYPE_SYSTEM_FREE_SO);
+                  });
             })
             ->with([
                 'product_packaging.product:id,code,name',
-                'mutasi_showroom:id,kode,tanggal,brand_name,status',
+                'mutasi_showroom:id,kode,tanggal,brand_name,status,type',
             ])
             ->get();
 
-        /**
-         * GROUPING
-         * BRAND -> KODE MUTASI
-         */
         $data['groups'] = $items
             ->groupBy(function ($item) {
                 return $item->mutasi_showroom->brand_name;
@@ -538,7 +588,8 @@ class MutasiShowroomController extends Controller
 
             DB::transaction(function () use ($items) {
 
-                $processedKode = [];
+                $processedKodeBaru = [];     // Untuk Mutasi Biasa/Baru (Publish -> Settle)
+                $processedKodeReSettle = []; // Untuk Mutasi Promosi (Settle -> Settle Final)
 
                 foreach ($items as $kode => $details) {
 
@@ -586,18 +637,21 @@ class MutasiShowroomController extends Controller
                             'total_price' => $priceIdr * $detail->qty,
                         ]);
 
-                        $processedKode[] = $mutasi->kode;
+                        // --- PENGELOMPOKAN STATUS ---
+                        if ($mutasi->status == MutasiShowroom::STATUS['PUBLISH']) {
+                            // Ini dokumen reguler (atau promosi awal) yang baru pertama kali di-Settle
+                            $processedKodeBaru[] = $mutasi->kode;
+                        } else if ($mutasi->status == MutasiShowroom::STATUS['SETTLE'] && $mutasi->type == MutasiShowroom::TYPE_SYSTEM_FREE_SO) {
+                            // Ini dokumen promosi yang sedang di-update harga finalnya
+                            $processedKodeReSettle[] = $mutasi->kode;
+                        }
                     }
                 }
 
-                // if (!empty($processedKode)) {
-                //     MutasiShowroom::whereIn('kode', array_unique($processedKode))
-                //         ->update(['status' => MutasiShowroom::STATUS['ACC']]);
-                // }
+                // --- EKSEKUSI 1: MUTASI BARU (PUBLISH -> SETTLE) ---
+                if (!empty($processedKodeBaru)) {
 
-                if (!empty($processedKode)) {
-
-                    $kodeUnik = array_values(array_unique($processedKode));
+                    $kodeUnik = array_values(array_unique($processedKodeBaru));
 
                     MutasiShowroomHistory::create([
                         'tanggal'      => now(),
@@ -612,6 +666,26 @@ class MutasiShowroomController extends Controller
                         ->update(['status' => MutasiShowroom::STATUS['SETTLE']]);
                 }
 
+                // --- EKSEKUSI 2: MUTASI PROMOSI (RE-SETTLE HARGA FINAL) ---
+                if (!empty($processedKodeReSettle)) {
+                    
+                    $kodeUnikReSettle = array_values(array_unique($processedKodeReSettle));
+                    
+                    // Buat History Baru agar bisa dicetak ulang dengan harga final
+                    MutasiShowroomHistory::create([
+                        'tanggal'      => now(),
+                        'kode_mutasi'  => implode(',', $kodeUnikReSettle),
+                        'total_mutasi' => count($kodeUnikReSettle),
+                        'status'       => 1, // settled / ready print
+                        'printed_at'   => null,
+                        'printed_by'   => null,
+                    ]);
+
+                    // Langsung naikkan statusnya ke 4 (SETTLE_FINAL) agar hilang dari antrean update harga
+                    MutasiShowroom::whereIn('kode', $kodeUnikReSettle)
+                        ->update(['status' => MutasiShowroom::STATUS['SETTLE_FINAL']]);
+                }
+
             });
 
             return response()->json([
@@ -620,7 +694,7 @@ class MutasiShowroomController extends Controller
             ]);
 
         } catch (\Throwable $e) {
-            dd($e);
+            // Hapus dd($e) di production agar pesan JSON Error dari AJAX tetap muncul dengan rapi
             \Log::error('Settle Mutasi Gagal', [
                 'error' => $e->getMessage(),
                 'trace' => $e->getTraceAsString()

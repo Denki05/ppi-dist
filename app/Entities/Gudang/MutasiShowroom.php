@@ -38,7 +38,8 @@ class MutasiShowroom extends Model
         'DELETED'   => 0,
         'ACTIVE'    => 1, // Setelah admin input
         'PUBLISH'   => 2, // Setelah staff finance ubah status dan cetak dokumen
-        'SETTLE'      => 3,
+        'SETTLE'    => 3,
+        'SETTLE_FINAL' => 4, // TAMBAHAN: Settle Tahap 2 Khusus Promosi / Update Harga
     ];
 
     const TYPE = [

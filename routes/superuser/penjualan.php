@@ -19,7 +19,7 @@ Route::group([
         Route::get('/sync_price', 'SettingPriceController@sync_price')->name('sync_price');
     });
 
-    Route::group(['as' => 'sales_order.', 'prfix' => '/sales_order'], function () {
+    Route::group(['as' => 'sales_order.', 'prefix' => '/sales_order'], function () {
         // Route::get('/index', 'SalesOrderController@index')->name('index');
         Route::get('/so_awal', 'SalesOrderController@index_awal')->name('index_awal');
         Route::get('/so_lanjutan', 'SalesOrderController@index_lanjutan')->name('index_lanjutan');
@@ -219,9 +219,12 @@ Route::group([
         Route::get('/print_so_proforma/{id}', 'SalesOrderProformaController@print_so_proforma')->name('print_so_proforma');
         Route::post('/acc/{id}', 'SalesOrderProformaController@acc')->name('acc');
         Route::get('/approval_so/{id}', 'SalesOrderProformaController@approval_so')->name('approval_so');
-        Route::get('/destroy/{id}', 'SalesOrderProformaController@destroy')->name('destroy');
+        Route::delete('/destroy/{id}', 'SalesOrderProformaController@destroy')->name('destroy');
         Route::get('/getCustomer', 'SalesOrderProformaController@getCustomer')->name('getCustomer');
         Route::post('/rollbackProforma/{so_id}', 'SalesOrderProformaController@rollbackProforma')->name('rollbackProforma');
+        Route::post('/statusSiap/{id}', 'SalesOrderProformaController@statusSiap')->name('statusSiap');
+        Route::post('/MultiCancel/{id}', 'SalesOrderProformaController@MultiCancel')->name('MultiCancel');
+        Route::get('/printProforma/{id}', 'SalesOrderProformaController@printProforma')->name('printProforma');
      });
     Route::resource('so_proforma', 'SalesOrderProformaController');
 

@@ -4,6 +4,7 @@ use Illuminate\Http\Request;
 use App\Http\Controllers\ApiCustomerController;
 use App\Http\Controllers\ApiInvoiceController;
 use App\Http\Controllers\ReportRequestController;
+use App\Http\Controllers\ProductAssetsController;
 
 /*
 |--------------------------------------------------------------------------
@@ -31,3 +32,6 @@ Route::get('/customers/search', [ApiCustomerController::class, 'getApiFileDoctor
 
 // Request Report
 Route::post('/request/report', [ReportRequestController::class, 'handle']);
+
+// PRODUCT & ASSETS
+Route::get('product-assets', [ProductAssetsController::class, 'index']);

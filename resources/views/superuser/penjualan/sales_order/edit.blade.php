@@ -20,7 +20,7 @@
 @endif
 
 @if($step == 1)
-  <form id="frmEditSOMaster" method="post" enctype="multipart/form-data">
+<form id="frmEditSOMaster" method="post" action="{{ route('superuser.penjualan.sales_order.update') }}" enctype="multipart/form-data">
   @csrf
   <input type="hidden" name="id" value="{{$result->id}}">
   <input type="hidden" name="step" value="{{$step}}">
@@ -145,7 +145,7 @@
                 </thead>
                 <tbody>
                   @foreach ($result->so_detail as $detail)
-                    <tr id="list-body">
+                    <tr class="list-body" data-row="{{ $loop->index }}">
                       <td>{{ $loop->iteration }}</td>
                       <td>
                           <input type="hidden" name="sku[]" value="{{ $detail->product_packaging_id }}">
@@ -154,10 +154,13 @@
                           <input type="hidden" name="so_kontrak_value[]" value="{{ $detail->kontrak }}">
                           <input type="hidden" name="kontrak_id[]" value="{{ $detail->kontrak_id }}">
                           <input type="hidden" name="kontrak_new[]" value="0">
+                          <input type="hidden" name="item_id[]" value="{{ $detail->id }}">
                           <span class="name">{{ $detail->product_pack->code }} - {{ $detail->product_pack->name }} - {{ $detail->product_pack->packaging->pack_name }}</span>
                       </td>
                       <td><input type="number" style="text-align: center;" class="form-control" name="price[]" required value="{{ $detail->price }}" readonly></td>
-                      <td><input type="number" style="text-align: center;" class="form-control" name="qty[]" required value="{{ $detail->qty }}" step="any"></td>
+                      <td>
+                        <input type="number" class="form-control input-qty" name="qty[]" value="{{ $detail->qty }}" step="any">
+                      </td>
                       <td><input type="text" style="text-align: center;" class="form-control" name="disc[]" value="{{ $detail->disc_usd }}"></td>
                       <td>
                         @if($detail->free_product == 0)
@@ -304,6 +307,7 @@
         paging: false,
         bInfo : false,
         searching: false,
+        ordering: false,
         columns: [
           {name: 'counter', "visible": true, width: "5%"},
           {name: 'sku', orderable: false, width: "35%"},
@@ -401,10 +405,10 @@
       $('.js-ajax').on('select2:select', function (e) {
         var price = $(this).find(':selected').data('price');
         // $(this).parents('tr').find('.price').text('$'+price);
-        $(this).parents('tr').find('input[name="price[]"]').val(price);
+        $(this).closest('tr').find('input[name="price[]"]').val(price);
 
         var pack = $(this).find(':selected').data('packid');
-        $(this).parents('tr').find('input[name="packaging[]"]').val(pack);
+        $(this).closest('tr').find('input[name="packaging[]"]').val(pack);
       });
 
     };
@@ -414,22 +418,22 @@
 
       $('.js-ajax-kontrak').on('select2:select', function (e) {
         var kontrak = $(this).find(':selected').data('kontrak');
-        $(this).parents('tr').find('input[name="kontrak_so_id[]"]').val(kontrak);
+        $(this).closest('tr').find('input[name="kontrak_so_id[]"]').val(kontrak);
 
         var price = $(this).find(':selected').data('price');
-        $(this).parents('tr').find('input[name="price[]"]').val(price);
+        $(this).closest('tr').find('input[name="price[]"]').val(price);
 
         var disc = $(this).find(':selected').data('disc');
-        $(this).parents('tr').find('.usd_disc').val(disc);
+        $(this).closest('tr').find('.usd_disc').val(disc);
 
         var pack = $(this).find(':selected').data('packaging');
-        $(this).parents('tr').find('input[name="packaging[]"]').val(pack);
+        $(this).closest('tr').find('input[name="packaging[]"]').val(pack);
       });
     }
 
     $('#datatable tbody').on( 'click', '.row-delete', function (e) {
       e.preventDefault();
-      table.row( $(this).parents('tr') ).remove().draw();
+      table.row( $(this).closest('tr') ).remove().draw();
 
       if(typeof $('input[name="id[]"]').val() == 'undefined') {
         $('#submit-table').prop('disabled', true);
@@ -438,9 +442,9 @@
 
     $('#datatable tbody').on( 'click', '.input-gift', function (e) {
       if($(this).is(':checked')){
-        $(this).parents('tr').find('.input-free').val(1);
+        $(this).closest('tr').find('.input-free').val(1);
       }else{
-        $(this).parents('tr').find('.input-free').val(0);
+        $(this).closest('tr').find('.input-free').val(0);
       }
     });
 
@@ -460,38 +464,60 @@
 
     });
 
-    $(document).on('submit','#frmEditSOMaster',function(e){
+   // PERBAIKAN 2: Implementasi Sweet Alert Sebelum & Sesudah Save (Versi Lama)
+   $(document).on('submit','#frmEditSOMaster',function(e){
       e.preventDefault();
-      if(confirm("Apakah anda yakin ingin mengubah sales order ini ? ?")){
-        let _form = $('#frmEditSOMaster');
-        $.ajax({
-          url : '{{route('superuser.penjualan.sales_order.update')}}',
-          method : "POST",
-          data : $('#frmEditSOMaster').serializeArray(),
-          dataType : "JSON",
-          beforeSend : function(){
-            $('#frmEditSOMaster').find('button[type="submit"]').html('Loading...');
-          },
-          success : function(resp){
-            if(resp.IsError == true){
-              showToast('danger',resp.Message);
-            }
-            else{
-              Swal.fire(
-                'Success!',
-                resp.Message,
-                'success'
-              ).then((result) => {
+      let _form = $(this);
+
+      // SweetAlert Konfirmasi Sebelum Save
+      Swal.fire({
+        title: 'Konfirmasi',
+        text: "Apakah anda yakin ingin mengubah sales order ini?",
+        type: 'warning', // ⬅️ UBAH 'icon' MENJADI 'type' DI SINI
+        showCancelButton: true,
+        confirmButtonColor: '#3085d6',
+        cancelButtonColor: '#d33',
+        confirmButtonText: 'Ya, Ubah!',
+        cancelButtonText: 'Batal'
+      }).then((result) => {
+        
+        // Cek apakah tombol konfirmasi diklik (pada versi sangat lama kadang menggunakan result.value)
+        if (result.value || result.isConfirmed) { 
+          $.ajax({
+            url : '{{route("superuser.penjualan.sales_order.update")}}',
+            method : "POST",
+            data : new FormData(_form[0]), 
+            processData: false,
+            contentType: false,
+            dataType : "JSON",
+            beforeSend : function(){
+              _form.find('button[type="submit"]').html('<i class="fa fa-spinner fa-spin"></i> Loading...').prop('disabled', true);
+            },
+            success : function(resp){
+              if(resp.IsError == true){
+                // Menampilkan error
+                Swal.fire('Error!', resp.Message, 'error'); // shorthand form biasanya aman di semua versi
+              }
+              else{
+                // SweetAlert Berhasil Sesudah Save
+                Swal.fire(
+                  'Success!',
+                  resp.Message,
+                  'success'
+                ).then((result) => {
                   location.reload();
-              })
-              
+                });
+              }
+            },
+            error: function(xhr) {
+               Swal.fire('Error!', 'Terjadi kesalahan pada sistem/server.', 'error');
+            },
+            complete : function(){
+              _form.find('button[type="submit"]').html('<i class="fa fa-save"></i> Save').prop('disabled', false);
             }
-          },
-          complete : function(){
-            $('#frmEditSOMaster').find('button[type="submit"]').html('<i class="fa fa-save"> Save</i>');
-          }
-        })
-      }
+          });
+        }
+      });
     });
 
     $("#test").on("click",function(e){

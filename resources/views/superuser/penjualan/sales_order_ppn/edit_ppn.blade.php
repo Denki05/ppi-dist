@@ -147,21 +147,21 @@
               </thead>
               <tbody>
                 @foreach($result->so_detail as $detail)
-                    <tr>
-                        <td>{{ $loop->iteration }}</td>
-                        <td>
-                          <input type="hidden" name="sku[]" value="{{ $detail->product_packaging_id }}">
-                          <input type="hidden" name="packaging[]" value="{{ $detail->packaging_id }}">
-                          <span class="name">{{ $detail->product_pack->code }} - {{ $detail->product_pack->name }} - {{ $detail->product_pack->packaging->pack_name }}</span>
-                      </td>
-                      <td>
+                <tr>
+                    <td>{{ $loop->iteration }}</td>
+                    <td>
+                        <input type="hidden" name="sku[]" value="{{ $detail->product_packaging_id }}">
+                        <input type="hidden" name="packaging[]" value="{{ $detail->packaging_id }}">
+                        <span class="name">{{ $detail->product_pack->code }} - {{ $detail->product_pack->name }} - {{ $detail->product_pack->packaging->pack_name }}</span>
+                    </td>
+                    <td>
                         <span class="name">{{ $detail->product_pack->price }}</span>
                         <input type="hidden" name="price[]" value="{{ $detail->product_pack->price }}">
-                      </td>
-                      <td><input type="number" class="form-control" name="qty[]" required value="{{ $detail->qty }}" step="any"></td>
-                      <td><input type="text" class="form-control" name="disc[]" value="{{ $detail->disc_usd }}"></td>
-                      <td><a href="#" class="row-delete"><button type="button" class="btn btn-sm btn-circle btn-alt-danger" title="Delete"><i class="fa fa-trash"></i></button></a></td>
-                    </tr>
+                    </td>
+                    <td><input type="number" class="form-control" name="qty[]" required value="{{ $detail->qty }}" step="any"></td>
+                    <td><input type="text" class="form-control" name="disc[]" value="{{ $detail->disc_usd }}"></td>
+                    <td><a href="#" class="row-delete"><button type="button" class="btn btn-sm btn-circle btn-alt-danger" title="Delete"><i class="fa fa-trash"></i></button></a></td>
+                </tr>
                 @endforeach
               </tbody>
             </table>
@@ -218,14 +218,44 @@
   $(document).ready(function () {
     $('.js-select2').select2();
 
+    // Variable global untuk menyimpan list produk
+    var product_data = new Object();
+    // Counter dilanjutkan dari jumlah baris yang ada di tabel saat ini
+    var counter = $('#datatables tbody tr').length + 1;
+
+    // --- FUNGSI BARU: Ambil Produk Berdasarkan Brand ---
+    function fetchProductByBrand(brandID) {
+      if (brandID) {
+        $.ajax({
+          url: '{{ route('superuser.penjualan.sales_order_ppn.get_product_pack') }}',
+          data: {id: brandID, _token: "{{csrf_token()}}"},
+          type: 'POST',
+          cache: false,
+          dataType: 'json',
+          success: function(json) {
+            if (json.code == 200) {
+              product_data = json.data;
+            }
+          }
+        });
+      }
+    }
+
+    // --- AUTO FETCH SAAT LOAD ---
+    // Langsung ambil data produk jika Brand sudah terisi (saat revisi/edit)
+    if($('#brand_name').val()) {
+      fetchProductByBrand($('#brand_name').val());
+    }
+
     $(document).on('change','#customer_name',function(){
       let val = $(this).val();
       if(val != ""){
         customer_address(val);
       }else{
-        $('$customer_address').val("");
-        $('$customer_city').val("");
-        $('$customer_area').val("");
+        // Perbaikan selector dari $('$id') ke $('#id')
+        $('#customer_address').val("");
+        $('#customer_city').val("");
+        $('#customer_area').val("");
       }
     })
 
@@ -241,7 +271,6 @@
             showToast('danger',resp.Message);
           }
           else{
-            // $('textarea[name="address"]').val(resp.Data.address);
             $('#customer_address').val(resp.Data.address);
             $('#customer_city').val(resp.Data.text_kota);
             $('#customer_area').val(resp.Data.text_provinsi);
@@ -268,8 +297,6 @@
       },
     });
 
-    var product_data = new Object();
-
     var table = $('#datatables').DataTable({
         paging: false,
         bInfo : false,
@@ -285,14 +312,12 @@
         'order' : [[0,'desc']]
     })
 
-    var counter = 1;
-
     $('a.row-add').on( 'click', function (e) {
       e.preventDefault();
       if($('#brand_name').val()) {
         $('#submit-table').prop('disabled', false);
         
-        makeselect = '<select class="js-select2 form-control js-ajax" id="sku['+counter+']" name="sku[]" data-placeholder="Select Product" style="width:100%" required><option></option>';
+        var makeselect = '<select class="js-select2 form-control js-ajax" id="sku['+counter+']" name="sku[]" data-placeholder="Select Product" style="width:100%" required><option></option>';
         
         $.map( product_data, function( val, i ) {
           makeselect += '<option value="'+ val['id'] +'" data-name="'+ val['name'] +'" data-packname="'+ val['packName'] +'" data-price="'+ val['price'] +'" data-packid="'+ val['packID']+'">'+ val['code'] + ' - ' + val['name'] + ' - ' + val['packName'] + ' - '+ val['warehouseName'] +'</option>';
@@ -301,65 +326,44 @@
         makeselect += '</select>';
 
         table.row.add([
-                    counter,
-                    makeselect,
-                    '<span class="price"></span><input type="hidden" class="form-control packaging" name="packaging[]">',
-                    '<input type="number" class="form-control" name="qty[]" required>',
-                    '<input type="number" class="form-control" name="disc[]">',
-                    '<a href="#" class="row-delete"><button type="button" class="btn btn-sm btn-circle btn-alt-danger" title="Delete"><i class="fa fa-trash"></i></button></a>'
-                  ]).draw( false );
+            counter,
+            makeselect,
+            // Tambahkan input hidden price di sini agar terbaca di Controller
+            '<span class="price"></span><input type="hidden" class="price-input" name="price[]"><input type="hidden" class="packaging" name="packaging[]">',
+            '<input type="number" class="form-control" name="qty[]" step="any" required>',
+            '<input type="number" class="form-control" name="disc[]" value="0">',
+            '<a href="#" class="row-delete"><button type="button" class="btn btn-sm btn-circle btn-alt-danger" title="Delete"><i class="fa fa-trash"></i></button></a>'
+        ]).draw( false );
                   
-                  initailizeSelect2();
+        initailizeSelect2();
         counter++;
+      } else {
+        alert('Silahkan pilih Brand terlebih dahulu');
       }
-      
     });
 
     function initailizeSelect2(){
-      $(".js-ajax").select2();
-
-      $('.js-ajax').on('select2:select', function (e) {
-        var price = $(this).find(':selected').data('price');
-        $(this).parents('tr').find('.price').text('$'+price);
-
-        var pack = $(this).find(':selected').data('packid');
-        $(this).parents('tr').find('input[name="packaging[]"]').val(pack);
-      });
-
+        $(".js-ajax").select2();
+        $('.js-ajax').off('select2:select').on('select2:select', function (e) {
+            var price = $(this).find(':selected').data('price');
+            var pack = $(this).find(':selected').data('packid');
+            
+            // Isi text span dan juga input hidden
+            $(this).parents('tr').find('.price').text('$' + price);
+            $(this).parents('tr').find('.price-input').val(price); // Isi value price
+            $(this).parents('tr').find('input[name="packaging[]"]').val(pack);
+        });
     };
 
     $('#datatables tbody').on( 'click', '.row-delete', function (e) {
       e.preventDefault();
       table.row( $(this).parents('tr') ).remove().draw();
-
-      if(typeof $('input[name="id[]"]').val() == 'undefined') {
-        $('#submit-table').prop('disabled', true);
-      }
     });
 
-    $('#datatables tbody').on( 'click', '.input-gift', function (e) {
-      if($(this).is(':checked')){
-        $(this).parents('tr').find('.input-free').val(1);
-      }else{
-        $(this).parents('tr').find('.input-free').val(0);
-      }
-    });
-
+    // Menghapus table.clear() agar data lama tidak hilang saat ganti/pilih brand
     $('#brand_name').on('select2:select', function (e) {
-      table.clear().draw();
-
-      $.ajax({
-        url: '{{ route('superuser.penjualan.sales_order_ppn.get_product_pack') }}',
-        data: {id:$(this).val() , _token: "{{csrf_token()}}"},
-        type: 'POST',
-        cache: false,
-        dataType: 'json',
-        success: function(json) {
-          if (json.code == 200) {
-            product_data = json.data;
-          }
-        }
-      });
+      // table.clear().draw(); // Baris ini dihapus agar row lama tetap ada
+      fetchProductByBrand($(this).val());
     });
 
     $("#test").on("click",function(e){
@@ -372,28 +376,13 @@
       var listNumberRegex = /^[0-9]+(?=\.)/gm;
       var existingNums = [];
       var num;
-     
       while ((num = listNumberRegex.exec(text)) !== null) {
-        existingNums.push(num);
+        existingNums.push(parseInt(num[0]));
       }
-      
-      
-      existingNums.sort();
-
-      
-    
-      var addListItemNum;
-      if (existingNums.length > 0) {
-       
-        addListItemNum = parseInt(existingNums[existingNums.length - 1], 10) + 1;
-      } else {
-      
-        addListItemNum = 1;
-      } 
-
-      var exp = '\n' + addListItemNum + '.\xa0';
-      text = text.concat(exp);
-      document.getElementById('editor').value = text;
+      existingNums.sort(function(a, b){return a-b});
+      var addListItemNum = (existingNums.length > 0) ? existingNums[existingNums.length - 1] + 1 : 1;
+      var exp = (text == "" ? "" : "\n") + addListItemNum + '.\xa0';
+      document.getElementById('editor').value = text + exp;
     }
   })
 </script>

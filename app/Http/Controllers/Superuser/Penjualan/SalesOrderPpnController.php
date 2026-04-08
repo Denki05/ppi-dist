@@ -371,99 +371,99 @@ class SalesOrderPpnController extends Controller
     {
         if ($request->ajax()) {
             DB::beginTransaction();
-            try{
-
+            try {
                 $step = $request->step;
                 $errors = [];
+                $sku_check = []; // Array untuk menampung SKU yang sudah diproses (cek duplikat)
 
                 $sales_order_ppn = SalesOrder::find($id);
 
-                if($sales_order_ppn == null){
-                    abort(404);
+                if ($sales_order_ppn == null) {
+                    return $this->response(404, ['message' => 'Data tidak ditemukan']);
                 }
 
+                // Update Header Sales Order
                 $sales_order_ppn->sales_senior_id = $request->sales_senior_id;
-                $sales_order_ppn->sales_id = $request->sales_id;
+                $sales_order_ppn->sales_id        = $request->sales_id;
                 $sales_order_ppn->type_transaction = $request->type_transaction;
-                $sales_order_ppn->no_ducument_ppn = $request->no_document;
-                $sales_order_ppn->brand_name = $request->brand_name;
-                $sales_order_ppn->idr_rate = 1;
-                $sales_order_ppn->note = $request->note;
-                $sales_order_ppn->updated_by = Auth::id();
-                $sales_order_ppn->status = $step;
-                if($sales_order_ppn->save()){
-                    $update_item = SalesOrderItem::where('so_id',   $sales_order_ppn->id)->update(['status' => 0]);
-                    $deleted_item = SalesOrderItem::where('so_id',  $sales_order_ppn->id)->delete();
+                $sales_order_ppn->no_ducument_ppn  = $request->no_document;
+                $sales_order_ppn->brand_name      = $request->brand_name;
+                $sales_order_ppn->idr_rate        = 1;
+                $sales_order_ppn->note            = $request->note;
+                $sales_order_ppn->updated_by      = Auth::id();
+                $sales_order_ppn->status          = $step;
 
-                    if($request->sku) {
-                        foreach($request->sku as $key => $value){
-                            if($request->sku[$key]) {
+                if ($sales_order_ppn->save()) {
+                    // Hapus detail lama untuk digantikan dengan yang baru (Re-insert)
+                    SalesOrderItem::where('so_id', $sales_order_ppn->id)->delete();
 
-                                $duplicate_product = [];
-                                $duplicate = false;
-                                $listItem[] = [
-                                    'sku' => $request->sku[$key],
-                                ];
-
-                                foreach($listItem as $row => $value){
-                                    if(in_array($value, $duplicate_product)) {
-                                        $duplicate = true;
-                                        break;
-                                    } else {
-                                        array_push($duplicate_product, $value);
-                                    }
-    
-                                    // dd($value); 
+                    if ($request->has('sku') && is_array($request->sku)) {
+                        foreach ($request->sku as $key => $sku_id) {
+                            // Pastikan SKU tidak kosong
+                            if (!empty($sku_id)) {
+                                
+                                // Cek Duplikat di tingkat Input
+                                if (in_array($sku_id, $sku_check)) {
+                                    $errors[] = "Item dengan ID Produk {$sku_id} terinput ganda!";
+                                    continue; 
                                 }
+                                $sku_check[] = $sku_id;
 
-                                if($duplicate){
-                                   $errors[] = 'Item sudah ada!';
-                                }else{
-                                    $sales_khusus_detail = new SalesOrderItem;
-                                    $sales_khusus_detail->so_id = $sales_order_ppn->id;
-                                    $sales_khusus_detail->product_packaging_id = $request->sku[$key];
-                                    $sales_khusus_detail->packaging_id = $request->packaging[$key];
-                                    $sales_khusus_detail->qty = $request->qty[$key];
-                                    $sales_khusus_detail->price = $request->price[$key];
-                                    $sales_khusus_detail->disc_usd = $request->disc[$key] ?? 0.00;
-                                    $sales_khusus_detail->created_by = Auth::id();
-                                    $sales_khusus_detail->save();
-                                }
+                                // Ambil data pendukung berdasarkan index ($key)
+                                // Menggunakan null coalescing (??) untuk mencegah Undefined Offset
+                                $packaging_id = $request->packaging[$key] ?? null;
+                                $qty          = $request->qty[$key] ?? 0;
+                                $price        = $request->price[$key] ?? 0;
+                                $disc         = $request->disc[$key] ?? 0;
+
+                                // Simpan Detail Baru
+                                $sales_khusus_detail = new SalesOrderItem;
+                                $sales_khusus_detail->so_id                = $sales_order_ppn->id;
+                                $sales_khusus_detail->product_packaging_id = $sku_id;
+                                $sales_khusus_detail->packaging_id         = $packaging_id;
+                                $sales_khusus_detail->qty                  = $qty;
+                                $sales_khusus_detail->price                = $price;
+                                $sales_khusus_detail->disc_usd             = $disc;
+                                $sales_khusus_detail->status               = 1; // Sesuaikan status default detail
+                                $sales_khusus_detail->created_by           = Auth::id();
+                                $sales_khusus_detail->save();
                             }
                         }
                     }
                 }
-                DB::commit();
-                LogActivity::addToLog('Updated SO-PPN: ' . $sales_order_ppn->so_code);
-                if($errors){
+
+                // Jika ada error duplikat, batalkan semua transaksi
+                if (!empty($errors)) {
+                    DB::rollback();
                     $response['notification'] = [
                         'alert' => 'block',
                         'type' => 'alert-danger',
-                        'header' => 'Error',
+                        'header' => 'Error Validasi',
                         'content' => $errors,
                     ];
-    
                     return $this->response(400, $response);
-                }else{
-                    $response['notification'] = [
-                        'alert' => 'notify',
-                        'type' => 'success',
-                        'content' => 'Success',
-                    ];
-    
-                    $response['redirect_to'] = route('superuser.penjualan.sales_order_ppn.index_ppn_awal');
-                    return $this->response(200, $response);
                 }
-            }catch (\Exception $e) {
-                dd($e);
+
+                DB::commit();
+                LogActivity::addToLog('Updated SO-PPN: ' . $sales_order_ppn->so_code);
+
+                $response['notification'] = [
+                    'alert' => 'notify',
+                    'type' => 'success',
+                    'content' => 'Data berhasil diperbarui',
+                ];
+                $response['redirect_to'] = route('superuser.penjualan.sales_order_ppn.index_ppn_awal');
+                
+                return $this->response(200, $response);
+
+            } catch (\Exception $e) {
                 DB::rollback();
                 $response['notification'] = [
                     'alert' => 'block',
                     'type' => 'alert-danger',
-                    'header' => 'Error',
-                    'content' => $errors,
+                    'header' => 'System Error',
+                    'content' => $e->getMessage(),
                 ];
-
                 return $this->response(400, $response);
             }
         }

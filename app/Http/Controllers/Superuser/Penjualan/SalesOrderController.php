@@ -789,6 +789,7 @@ class SalesOrderController extends Controller
                     $update_item = SalesOrderItem::where('so_id', $post["id"])->update(['status' => 0]);
                     $deleted_item = SalesOrderItem::where('so_id', $post["id"])->delete();
                     if (sizeof($post["sku"]) > 0) {
+                        $listItem = [];
                         for ($i = 0; $i < sizeof($post["sku"]); $i++) {
                             // dd($post["so_kontrak"][$i]);
 
@@ -1377,7 +1378,11 @@ class SalesOrderController extends Controller
                         $errors[] = 'Rekening tidak boleh kosong!';
                     }
                     
-                    $sales_order->code = CodeRepo::generateSO();
+                    // $sales_order->code = CodeRepo::generateSO();
+                    if (empty($sales_order->code)) {
+                        $sales_order->code = CodeRepo::generateSO();
+                    }
+                    // dd($sales_order->code);
                     $sales_order->origin_warehouse_id = $request->origin_warehouse_id;
                     $sales_order->sales_senior_id = $request->sales_senior_id;
                     $sales_order->sales_id = $request->sales_id;
