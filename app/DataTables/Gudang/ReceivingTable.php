@@ -95,6 +95,11 @@ class ReceivingTable extends Table
                                 <i class=\"fa fa-pencil\"></i>
                             </button>
                         </a>
+                        <a href=\"{$cancel}\">
+                            <button type=\"button\" class=\"btn btn-sm btn-circle btn-alt-warning\" title=\"Cancel\">
+                                <i class=\"fa fa-times\"></i>
+                            </button>
+                        </a>
                     ";
                     break;
 

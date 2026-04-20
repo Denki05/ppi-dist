@@ -77,6 +77,7 @@ Route::group([
     Route::resource('product_category', 'ProductCategoryController');
 
     Route::group(['as' => 'product_type.', 'prefix' => '/product_type'], function () {
+        Route::get('/json', 'ProductTypeController@json')->name('json');
         Route::get('/import_template', 'ProductTypeController@import_template')->name('import_template');
         Route::post('/import', 'ProductTypeController@import')->name('import');
         Route::get('/export', 'ProductTypeController@export')->name('export');
@@ -149,6 +150,7 @@ Route::group([
     Route::resource('customer_type', 'CustomerTypeController');
 
     Route::group(['as' => 'brand_reference.', 'prefix' => '/brand_reference'], function () {
+        Route::get('/json', 'BrandReferenceController@json')->name('json');
         Route::get('/import_template', 'BrandReferenceController@import_template')->name('import_template');
         Route::post('/import', 'BrandReferenceController@import')->name('import');
         Route::get('/export', 'BrandReferenceController@export')->name('export');
@@ -156,6 +158,7 @@ Route::group([
     Route::resource('brand_reference', 'BrandReferenceController');
 
     Route::group(['as' => 'sub_brand_reference.', 'prefix' => '/sub_brand_reference'], function () {
+        Route::get('/json', 'SubBrandReferenceController@json')->name('json');
         Route::get('/import_template', 'SubBrandReferenceController@import_template')->name('import_template');
         // Route::post('/import', 'SubBrandReferenceController@import')->name('import');
         Route::post('/import/{id}', 'SubBrandReferenceController@import')->name('import');

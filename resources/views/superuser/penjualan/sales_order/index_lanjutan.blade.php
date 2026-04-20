@@ -706,10 +706,11 @@
                       }, 800);
                   },
                   error: function (xhr, status, error) {
-                      $('#alert-message') // Assuming this is the alert message div
+                      console.log(xhr.responseText); // WAJIB
+                      $('#alert-message')
                           .removeClass('alert-success')
                           .addClass('alert-danger')
-                          .text(xhr.responseJSON.message || 'Token tidak sah!')
+                          .text(xhr.responseJSON?.message || 'Terjadi error')
                           .show();
                   }
               });

@@ -231,13 +231,13 @@ class PayableController extends Controller
                         ], 400);
                     }
 
-                    if ($input_payable > $sisa && !$is_balanced) {
-                        DB::rollBack();
-                        return response()->json([
-                            'success' => false,
-                            'message' => "Jumlah pembayaran melebihi saldo untuk Invoice {$get_invoice->code}"
-                        ], 400);
-                    }
+                    // if ($input_payable > $sisa && !$is_balanced) {
+                    //     DB::rollBack();
+                    //     return response()->json([
+                    //         'success' => false,
+                    //         'message' => "Jumlah pembayaran melebihi saldo untuk Invoice {$get_invoice->code}"
+                    //     ], 400);
+                    // }
 
                     if ($is_balanced) {
                         $input_payable = $sisa;

@@ -532,54 +532,34 @@ class ReceivingController extends Controller
 
     public function cancel(Request $request, $id)
     {
-        if ($request->ajax()) {
-            if(Auth::user()->is_superuser == 0){
-                if(empty($this->access) || empty($this->access->user) || $this->access->can_update == 0){
-                    abort(405);
-                }
+        if(Auth::user()->is_superuser == 0){
+            if(empty($this->access) || empty($this->access->user) || $this->access->can_update == 0){
+                abort(405);
+            }
+        }
+
+        DB::beginTransaction();
+
+        try {
+            $receiving = Receiving::with('details.qcLogs')->findOrFail($id);
+
+            $hasQcLogs = $receiving->details->pluck('qcLogs')->flatten()->isNotEmpty();
+            if ($hasQcLogs) {
+                return redirect()->back()->with('error', 'Receiving tidak bisa dibatalkan karena sudah ada item QC.');
             }
 
-            DB::beginTransaction();
+            $receiving->status = Receiving::STATUS['ACTIVE'];
+            $receiving->save();
 
-            try {
-                $receiving = Receiving::with('details.qcLogs')->findOrFail($id);
+            DB::commit();
 
-                // Cek apakah ada log QC
-                $hasQcLogs = $receiving->details->pluck('qcLogs')->flatten()->isNotEmpty();
-                if ($hasQcLogs) {
-                    // return response()->json(['status' => 'error', 'message' => 'Receiving tidak bisa dibatalkan karena sudah ada item QC.']);
-                    return $this->response(400, [
-                            'notification' => [
-                                'alert'   => 'block',
-                                'type'    => 'alert-danger',
-                                'content' => 'Receiving tidak bisa dibatalkan karena sudah ada item QC.'
-                            ]
-                    ]);
-                }
+            return redirect()->route('superuser.gudang.receiving.index')
+                ->with('success', 'Receiving berhasil dibatalkan');
 
-                $receiving->status = Receiving::STATUS['ACTIVE'];
-                $receiving->save();
+        } catch (\Exception $e) {
+            DB::rollBack();
 
-                DB::commit();
-
-                return $this->response(200, [
-                    'notification' => [
-                        'alert'   => 'notify',
-                        'type'    => 'success',
-                        'content' => 'Receiving berhasil di batalkan'
-                    ],
-                    'redirect_to' => route('superuser.gudang.receiving.index')
-                ]);
-            } catch (\Exception $e) {
-                DB::rollBack();
-                return $this->response(500, [
-                    'notification' => [
-                        'alert'   => 'notify',
-                        'type'    => 'error',
-                        'content' => 'Terjadi kesalahan: ' . $e->getMessage()
-                    ]
-                ]);
-            }
+            return redirect()->back()->with('error', 'Terjadi kesalahan: ' . $e->getMessage());
         }
     }
 }

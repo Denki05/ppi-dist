@@ -26,7 +26,7 @@ class PackingOrder extends Model
         'vendor_id',
     	'idr_rate',
     	'status',
-		'prev_status',
+		'prev_sataus',
 		'count_cancel',
 		'status_mitra',
     	'type_transaction',

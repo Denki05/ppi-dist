@@ -22,11 +22,13 @@
                   <div class="form-row">
                     <div class="form-group col-md-6">
                       <label for="so_date">Tanggal Nota</label>
-                      <input type="date" name="so_date" class="form-control" value="{{ $results->so_date }}" required>
+                      <input type="date" name="so_date" class="form-control"
+                      value="{{ $results->so_date ? \Carbon\Carbon::parse($results->so_date)->format('Y-m-d') : '' }}" required>
                     </div>
                     <div class="form-group col-md-6">
                       <label for="type_transaction">Type Transaksi</label>
-                      <input type="text" name="type_transaction" class="form-control" value="{{ $results->status_type }}" readonly>
+                      <input type="text" name="type_transaction" class="form-control" 
+                        value="{{ $results->status_type }}" readonly>
                     </div>
                   </div>
 
@@ -36,24 +38,28 @@
                         <select class="form-control js-select2" name="warehouse" required>
                             <option value="">Pilih Gudang</option>    
                             @foreach($warehouse AS $row)
-                            <option value="{{$row->id}}" {{ ($row->id == $results->warehouse_id ) ? 'selected' : '' }}>{{ $row->name }}</option>
+                            <option value="{{$row->id}}" {{ $row->id == $results->warehouse_id ? 'selected' : '' }}>
+                                {{ $row->name }}
+                            </option>
                             @endforeach
                         </select>
                       </div>
                       <div class="form-group col-md-6">
                         <label for="so_date">Ekspedisi</label>
                         <select class="form-control js-select2" name="vendor" required>
-                              <option value="">Pilih vendor</option>    
-                              @foreach($vendor AS $row)
-                              <option value="{{$row->id}}" {{ ($row->id == $results->vendor_id ) ? 'selected' : '' }}>{{ $row->name }}</option>
-                              @endforeach
+                            <option value="">Pilih vendor</option>    
+                            @foreach($vendor AS $row)
+                            <option value="{{$row->id}}" {{ $row->id == $results->vendor_id ? 'selected' : '' }}>
+                                {{ $row->name }}
+                            </option>
+                            @endforeach
                         </select>
                       </div>
                   </div>
                     <div class="form-row">
                       <div class="form-group col-md-6">
                           <label for="type_transaction">Note</label>
-                          <input type="text" name="note" class="form-control">
+                          <input type="text" name="note" class="form-control" value="{{ $results->note }}">
                         </div>
                       </div>
                 </div>
@@ -67,24 +73,31 @@
                         <div class="form-group col-md-4">
                         <label for="note">Brand <span class="text-danger">*</span></label>
                         <select class="form-control js-select2" name="so_brand_name" id="so_brand_name">
-                              <option value="">Pilih Brand</option>
-                              @foreach($brand AS $row)
-                              <option value="{{ $row->brand_name }}" {{ ($row->brand_name == $results->so_brand_name ) ? 'selected' : '' }}>{{ $row->brand_name }}</option>
-                              @endforeach
-                          </select>
+                            <option value="">Pilih Brand</option>
+                            @foreach($brand AS $row)
+                            <option value="{{ $row->brand_name }}" 
+                                {{ $row->brand_name == $results->so_brand_name ? 'selected' : '' }}>
+                                {{ $row->brand_name }}
+                            </option>
+                            @endforeach
+                        </select>
                         </div>
                         <div class="form-group col-md-4">
                           <label for="note">Rekening <span class="text-danger">*</span></label>
                           <select class="form-control js-select2" name="rekening" required>
-                            <option value="">Pilih Rekening</option>
-                            @foreach($rekening as $key)
-                            <option value="{{$key->id}}">{{$key->name}} - {{$key->number_card}}</option>
-                            @endforeach
+                              <option value="">Pilih Rekening</option>
+                              @foreach($rekening as $key)
+                              <option value="{{$key->id}}" 
+                                  {{ $key->id == $results->rekening_id ? 'selected' : '' }}>
+                                  {{$key->name}} - {{$key->number_card}}
+                              </option>
+                              @endforeach
                           </select>
                         </div>
                         <div class="form-group col-md-4">
                           <label for="idr_rate">Kurs <span class="text-danger">*</span></label>
-                          <input type="text" name="idr_rate" id="idr_rate"  class="form-control" value="{{ $results->so_idr_rate }}">
+                          <input type="text" name="idr_rate" id="idr_rate" class="form-control" 
+                            value="{{ $results->so_idr_rate }}">
                         </div> 
                     </div>
                     </div>

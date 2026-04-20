@@ -511,7 +511,7 @@ class DeliveryOrderController extends Controller
         return response()->json($data_json,200);
     }
 
-   public function sent(Request $request)
+    public function sent(Request $request)
     {
         // Initialize response data
         $data_json = [];
@@ -721,63 +721,67 @@ class DeliveryOrderController extends Controller
                 if ($get_inv && $customer && $detail_do) {
 
                     // Cek apakah tipe transaksi TEMPO
-                    if (($detail_do->type_transaction ?? null) !== 'TEMPO') {
-                        Log::info('⚠️ Invoice bukan TEMPO, dilewati: ' . ($detail_do->do_code ?? $get_inv->code));
-                        return; // atau continue jika ini di loop
-                    }
+                    if (($detail_do->type_transaction ?? null) === 'TEMPO') {
 
-                    $payload = [
-                        'pic'          => $customer->store->pic ?? '-',
-                        'customer'     => $customer->name ?? 'Unknown',
-                        'invoice_code' => $get_inv->invoice_code ?? $get_inv->code ?? '-',
-                        'amount'       => $get_inv->grand_total_idr ?? 0,
-                        'customer_id'  => $customer->id,
-                    ];
-
-                    // Lokasi file PDF hasil export Crystal Report
-                    $pdfPath = "C:\\xampp\\htdocs\\ppi-dist\\public\\cr\\invoice\\export\\" . ($get_inv->invoice_code ?? $get_inv->code) . "-FULL.pdf";
-
-                    $multipart = [];
-                    foreach ($payload as $key => $value) {
-                        $multipart[] = [
-                            'name'     => $key,
-                            'contents' => $value,
+                        $payload = [
+                            'pic'          => $customer->store->pic ?? '-',
+                            'customer'     => $customer->name ?? 'Unknown',
+                            'invoice_code' => $get_inv->invoice_code ?? $get_inv->code ?? '-',
+                            // Pastikan dicasting ke string untuk menghindari error multipart Guzzle
+                            'amount'       => (string) ($get_inv->grand_total_idr ?? 0), 
+                            'customer_id'  => (string) $customer->id,
                         ];
-                    }
 
-                    // Jika file PDF ada, kirimkan bersamaan
-                    if (file_exists($pdfPath)) {
-                        $multipart[] = [
-                            'name'     => 'pdf_invoice',
-                            'contents' => fopen($pdfPath, 'r'),
-                            'filename' => basename($pdfPath),
-                        ];
+                        // Lokasi file PDF hasil export Crystal Report
+                        $pdfPath = "C:\\xampp\\htdocs\\ppi-dist\\public\\cr\\invoice\\export\\" . ($get_inv->invoice_code ?? $get_inv->code) . "-FULL.pdf";
+
+                        $multipart = [];
+                        foreach ($payload as $key => $value) {
+                            $multipart[] = [
+                                'name'     => $key,
+                                'contents' => $value,
+                            ];
+                        }
+
+                        // Jika file PDF ada, kirimkan bersamaan
+                        if (file_exists($pdfPath)) {
+                            $multipart[] = [
+                                'name'     => 'pdf_invoice',
+                                'contents' => fopen($pdfPath, 'r'),
+                                'filename' => basename($pdfPath),
+                            ];
+                        } else {
+                            Log::warning("⚠️ File PDF invoice tidak ditemukan: " . $pdfPath);
+                        }
+
+                        $client = new \GuzzleHttp\Client();
+                        $response = $client->post(env('AGENDA_URL'), [
+                            'headers' => [
+                                'Authorization' => 'Bearer ' . env('AGENDA_TOKEN'),
+                                'Accept'        => 'application/json',
+                            ],
+                            'multipart' => $multipart,
+                            'timeout'   => 15,
+                        ]);
+
+                        $result = json_decode($response->getBody(), true);
+
+                        Log::info('✅ Invoice + PDF sent to Agenda', [
+                            'payload'  => $payload,
+                            'pdf'      => basename($pdfPath),
+                            'response' => $result,
+                        ]);
+
                     } else {
-                        Log::warning("⚠️ File PDF invoice tidak ditemukan: " . $pdfPath);
+                        // Log jika bukan tempo, aplikasi akan lanjut ke baris di bawah blok try-catch
+                        Log::info('⚠️ Invoice bukan TEMPO, dilewati: ' . ($detail_do->do_code ?? $get_inv->code));
                     }
 
-                    $client = new \GuzzleHttp\Client();
-                    $response = $client->post(env('AGENDA_URL'), [
-                        'headers' => [
-                            'Authorization' => 'Bearer ' . env('AGENDA_TOKEN'),
-                            'Accept'        => 'application/json',
-                        ],
-                        'multipart' => $multipart,
-                        'timeout'   => 15,
-                    ]);
-
-                    $result = json_decode($response->getBody(), true);
-
-                    Log::info('✅ Invoice + PDF sent to Agenda', [
-                        'payload'  => $payload,
-                        'pdf'      => basename($pdfPath),
-                        'response' => $result,
-                    ]);
                 } else {
                     Log::warning('⚠️ Invoice or Customer not found for DO ID: ' . $do_id);
                 }
             } catch (\Exception $ex) {
-                dd($ex);
+                // dd($ex); <-- Dihapus agar jika API down, transaksi tetap jalan (hanya log error yang tercatat)
                 Log::error('❌ Gagal kirim data + PDF invoice ke Agenda: ' . $ex->getMessage());
             }
 
@@ -1059,9 +1063,16 @@ class DeliveryOrderController extends Controller
 
         try {
 
-            $do = PackingOrder::with(['items', 'member'])
+            // $do = PackingOrder::with(['do_detail', 'member'])
+            //     ->lockForUpdate()
+            //     ->findOrFail($id);
+            $do = PackingOrder::select('penjualan_do.*', 'coa.name', 'coa.text_kota')
+                ->leftJoin('master_customer_other_addresses as coa', function ($join) {
+                    $join->on(DB::raw('CAST(penjualan_do.customer_other_address_id AS UNSIGNED)'), '=', 'coa.id');
+                })
+                ->where('penjualan_do.id', $id)
                 ->lockForUpdate()
-                ->findOrFail($id);
+                ->firstOrFail();
 
             if ($do->cashback_status == 1) {
                 return response()->json([
@@ -1084,9 +1095,9 @@ class DeliveryOrderController extends Controller
             $isSent = $do->status == 6;
 
             // Format note yang digunakan saat insert StockMove
-            $notePattern = $do->do_code . ' - ' . $do->member->name . ' ' . $do->member->text_kota;
+            $notePattern = $do->do_code . ' - ' . $do->name . ' ' . $do->text_kota;
 
-            foreach ($do->items as $item) {
+            foreach ($do->do_detail as $item) {
 
                 $stock = ProductMinStock::where('warehouse_id', $do->warehouse_id)
                     ->where('product_packaging_id', $item->product_packaging_id)
@@ -1125,8 +1136,8 @@ class DeliveryOrderController extends Controller
             }
 
             // Simpan status lama
-            if ($do->prev_status === null) {
-                $do->prev_status = $do->status;
+            if ($do->prev_sataus === null) {
+                $do->prev_sataus = $do->status;
             }
 
             // Lalu ubah ke cancel
@@ -1142,12 +1153,9 @@ class DeliveryOrderController extends Controller
             ], 200);
 
         } catch (\Throwable $e) {
-
-            DB::rollBack();
-            \Log::error('Cancel DO Error: ' . $e->getMessage());
-
             return response()->json([
-                'message' => 'Terjadi kesalahan sistem.'
+                'message' => $e->getMessage(),
+                'line' => $e->getLine(),
             ], 500);
         }
     }
@@ -1189,7 +1197,7 @@ class DeliveryOrderController extends Controller
 
         try {
             // Ambil DO dan detail
-            $do = PackingOrder::with('items')->lockForUpdate()->findOrFail($request->id);
+            $do = PackingOrder::with(['do_detail','member'])->lockForUpdate()->findOrFail($request->id);
             $do_detail = PackingOrderDetail::lockForUpdate()->findOrFail($request->cost_id);
 
             if ($do->count_cancel == 0) {
@@ -1239,16 +1247,24 @@ class DeliveryOrderController extends Controller
             // -------------------------------
             // 3️⃣ Handle Stock dan StockMove sesuai prev_status
             // -------------------------------
-            $prevStatus = $do->prev_status;
+            $prevStatus = $do->prev_sataus;
             if (!$prevStatus) {
                 throw new \Exception("Prev status tidak ditemukan.");
             }
 
-            $notePattern = $do->do_code . ' - ' . $do->member->name . ' ' . $do->member->text_kota;
+            $member = CustomerOtherAddress::where('id', $do->customer_other_address_id)->first();
 
-            foreach ($do->items as $item) {
+            if (!$member) {
+                throw new \Exception('Member tidak ditemukan.');
+            }
+
+            $notePattern = $do->do_code . ' - ' . $member->name . ' ' . $member->text_kota;
+
+            // dd($request->warehouse_id);
+
+            foreach ($do->do_detail  as $item) {
                 $stock = ProductMinStock::lockForUpdate()
-                    ->where('warehouse_id', $do->warehouse_id)
+                    ->where('warehouse_id', $request->warehouse_id)
                     ->where('product_packaging_id', $item->product_packaging_id)
                     ->first();
 

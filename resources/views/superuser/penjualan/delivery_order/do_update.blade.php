@@ -24,7 +24,7 @@
 <form class="ajax" data-action="{{ route('superuser.penjualan.delivery_order.do_update') }}" data-type="POST" enctype="multipart/form-data">
   @csrf
   <input type="hidden" name="id" value="{{$result->id}}">
-  <input type="hidden" name="cost_id" value="{{$result->do_detail_cost[0]->id}}">
+  <input type="hidden" name="cost_id" value="{{ optional($result->do_detail_cost)->id }}">
 
   <div class="row">
     <div class="col-6">
@@ -46,14 +46,20 @@
 
           <div class="form-row">
             <div class="form-group col-md-6">
-              <label for="warehouse_id">Gudang <span class="text-danger">*</span></label>
-              <select class="form-control js-select2" style="font-size: 9pt;" name="warehouse_id" disabled>
-                <option value="">Pilih Gudang</option>
-                @foreach($warehouse as $index => $row)
-                <option style="font-size: 10pt;" value="{{$row->id}}" @if($result->warehouse_id == $row->id) selected @endif>{{$row->name}}</option>
-                @endforeach
-              </select>
-            </div>
+                <label for="warehouse_id">Gudang <span class="text-danger">*</span></label>
+
+                <select class="form-control js-select2" style="font-size: 9pt;" disabled>
+                  <option value="">Pilih Gudang</option>
+                  @foreach($warehouse as $index => $row)
+                    <option value="{{$row->id}}" @if($result->warehouse_id == $row->id) selected @endif>
+                      {{$row->name}}
+                    </option>
+                  @endforeach
+                </select>
+
+                <!-- WAJIB TAMBAH INI -->
+                <input type="hidden" name="warehouse_id" value="{{ $result->warehouse_id }}">
+              </div>
             <div class="form-group col-md-6">
               <label for="type_transaction">Eksepdisi <span class="text-danger">*</span></label>
               <select class="form-control js-select2" name="ekspedisi">
