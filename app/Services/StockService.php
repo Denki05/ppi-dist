@@ -140,4 +140,62 @@ class StockService
             return true;
         }, 5); // <-- Otomatis retry 5x jika deadlock
     }
+    
+    /**
+     * 6. FUNGSI RELEASE BOOKING STOK (DIPANGGIL SAAT TUTUP SO / BARANG REJECT)
+     * Hanya mengurangi reserved_quantity karena barang batal dikirim.
+     */
+    public function releaseReservedStock($warehouseId, $productId, $qty)
+    {
+        return DB::transaction(function () use ($warehouseId, $productId, $qty) {
+            $stock = ProductMinStock::where('warehouse_id', $warehouseId)
+                ->where('product_packaging_id', $productId)
+                ->lockForUpdate()
+                ->first();
+
+            if ($stock) {
+                // Lepaskan kuota booking dengan aman
+                if ($stock->reserved_quantity >= $qty) {
+                    $stock->reserved_quantity -= $qty;
+                } else {
+                    $stock->reserved_quantity = 0;
+                }
+                $stock->save();
+            }
+            return true;
+        });
+    }
+
+    /**
+     * 7. FUNGSI CANCEL / REVISI DO
+     * Tahu persis kapan harus mengembalikan Fisik Rak atau sekadar melepas Booking.
+     */
+    public function cancelDoRevisi($warehouseId, $productId, $qty, $isProforma, $doStatus)
+    {
+        return DB::transaction(function () use ($warehouseId, $productId, $qty, $isProforma, $doStatus) {
+            $stock = ProductMinStock::where('warehouse_id', $warehouseId)
+                ->where('product_packaging_id', $productId)->lockForUpdate()->first();
+
+            if ($stock) {
+                // ATURAN CERDAS 1 PINTU:
+                // - Jika Proforma: Fisik SUDAH PASTI terpotong di ACC, wajib dikembalikan!
+                // - Jika Normal SO: Fisik terpotong JIKA status DO >= 3 (Sudah dipacking).
+                $isPhysicalCut = $isProforma || in_array($doStatus, [3, 4]);
+
+                if ($isPhysicalCut) {
+                    $stock->quantity += $qty; // Kembalikan fisik ke rak
+                } else {
+                    // Jika fisik belum terpotong (DO Normal masih Draft/Status 2), 
+                    // maka yang ter-booking hanya reserved_quantity. Lepaskan itu!
+                    if ($stock->reserved_quantity >= $qty) {
+                        $stock->reserved_quantity -= $qty;
+                    } else {
+                        $stock->reserved_quantity = 0;
+                    }
+                }
+                $stock->save();
+            }
+            return true;
+        });
+    }
 }
