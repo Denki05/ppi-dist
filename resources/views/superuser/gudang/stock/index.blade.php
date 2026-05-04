@@ -1,7 +1,6 @@
 @extends('superuser.app')
 
 @section('content')
-<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
 
 <style>
 /* ===== STYLE SAMPAI SEKARANG TIDAK DIUBAH ===== */
@@ -69,6 +68,25 @@ body{ background:#1f242a; font-family: "Segoe UI", Roboto, sans-serif; }
 #ksDetailModal .modal-dialog {
     max-width: 1200px;
 }
+
+/* ===== Compact Action Toolbar ===== */
+.action-toolbar .btn{
+    padding: 4px 10px;
+    font-size: 12px;
+    border-radius: 6px;
+    font-weight: 600;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.action-toolbar form{
+    margin: 0;
+}
+
+.action-toolbar .btn i{
+    font-size: 11px;
+}
 </style>
 
 @if(session('success'))
@@ -134,6 +152,7 @@ body{ background:#1f242a; font-family: "Segoe UI", Roboto, sans-serif; }
     <div class="card crm-card">
         <div class="card-body">
 
+            @role('Developer|SuperAdmin', 'superuser')
             <div class="d-flex justify-content-between align-items-center flex-wrap gap-3 mb-3">
 
                 <!-- LEFT SECTION -->
@@ -146,7 +165,7 @@ body{ background:#1f242a; font-family: "Segoe UI", Roboto, sans-serif; }
                     <div class="vr"></div>
 
                     <!-- PROCESS BUTTON GROUP -->
-                    <div class="d-flex flex-wrap gap-2">
+                    <div class="d-flex align-items-center flex-wrap gap-2 action-toolbar">
 
                         <!-- Collect Stock In -->
                         <form action="{{ route('superuser.gudang.stock.collectStockIn') }}" 
@@ -190,7 +209,7 @@ body{ background:#1f242a; font-family: "Segoe UI", Roboto, sans-serif; }
                 </div>
 
                 <!-- RIGHT SECTION -->
-                <div class="d-flex flex-wrap gap-2">
+                <div class="d-flex align-items-center flex-wrap gap-2 action-toolbar">
 
                     <!-- Export Template -->
                     <a href="{{ route('superuser.gudang.stock.import_template') }}" 
@@ -207,6 +226,7 @@ body{ background:#1f242a; font-family: "Segoe UI", Roboto, sans-serif; }
 
                 </div>
             </div>
+            @endrole
 
             <!-- FILTER -->
             <div class="row align-items-end mb-3">
@@ -382,7 +402,6 @@ body{ background:#1f242a; font-family: "Segoe UI", Roboto, sans-serif; }
 @include('superuser.asset.plugin.select2')
 
 @push('scripts')
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
 <script src="https://cdn.datatables.net/buttons/2.4.2/js/dataTables.buttons.min.js"></script>
 <script src="https://cdn.datatables.net/buttons/2.4.2/js/buttons.html5.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>

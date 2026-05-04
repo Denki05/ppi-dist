@@ -5174,16 +5174,16 @@
         },
         {
             "name": "phpseclib/phpseclib",
-            "version": "3.0.50",
+            "version": "3.0.52",
             "source": {
                 "type": "git",
                 "url": "https://github.com/phpseclib/phpseclib.git",
-                "reference": "aa6ad8321ed103dc3624fb600a25b66ebf78ec7b"
+                "reference": "2adaefc83df2ec548558307690f376dd7d4f4fce"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/phpseclib/phpseclib/zipball/aa6ad8321ed103dc3624fb600a25b66ebf78ec7b",
-                "reference": "aa6ad8321ed103dc3624fb600a25b66ebf78ec7b",
+                "url": "https://api.github.com/repos/phpseclib/phpseclib/zipball/2adaefc83df2ec548558307690f376dd7d4f4fce",
+                "reference": "2adaefc83df2ec548558307690f376dd7d4f4fce",
                 "shasum": ""
             },
             "require": {
@@ -5264,7 +5264,7 @@
             ],
             "support": {
                 "issues": "https://github.com/phpseclib/phpseclib/issues",
-                "source": "https://github.com/phpseclib/phpseclib/tree/3.0.50"
+                "source": "https://github.com/phpseclib/phpseclib/tree/3.0.52"
             },
             "funding": [
                 {
@@ -5280,7 +5280,7 @@
                     "type": "tidelift"
                 }
             ],
-            "time": "2026-03-19T02:57:58+00:00"
+            "time": "2026-04-27T07:02:15+00:00"
         },
         {
             "name": "pragmarx/google2fa",
@@ -6604,16 +6604,16 @@
         },
         {
             "name": "studio-42/elfinder",
-            "version": "2.1.66",
+            "version": "2.1.67",
             "source": {
                 "type": "git",
                 "url": "https://github.com/Studio-42/elFinder.git",
-                "reference": "78488951e44d69e8b9e4e849f8268df408632a6c"
+                "reference": "5e463d1384972dffcb736ad3c94f35af10656ca2"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/Studio-42/elFinder/zipball/78488951e44d69e8b9e4e849f8268df408632a6c",
-                "reference": "78488951e44d69e8b9e4e849f8268df408632a6c",
+                "url": "https://api.github.com/repos/Studio-42/elFinder/zipball/5e463d1384972dffcb736ad3c94f35af10656ca2",
+                "reference": "5e463d1384972dffcb736ad3c94f35af10656ca2",
                 "shasum": ""
             },
             "require": {
@@ -6660,7 +6660,7 @@
             "homepage": "http://elfinder.org",
             "support": {
                 "issues": "https://github.com/Studio-42/elFinder/issues",
-                "source": "https://github.com/Studio-42/elFinder/tree/2.1.66"
+                "source": "https://github.com/Studio-42/elFinder/tree/2.1.67"
             },
             "funding": [
                 {
@@ -6668,7 +6668,7 @@
                     "type": "github"
                 }
             ],
-            "time": "2025-08-28T11:51:22+00:00"
+            "time": "2026-04-17T03:02:32+00:00"
         },
         {
             "name": "swiftmailer/swiftmailer",
@@ -7759,16 +7759,16 @@
         },
         {
             "name": "symfony/polyfill-ctype",
-            "version": "v1.33.0",
+            "version": "v1.37.0",
             "source": {
                 "type": "git",
                 "url": "https://github.com/symfony/polyfill-ctype.git",
-                "reference": "a3cc8b044a6ea513310cbd48ef7333b384945638"
+                "reference": "141046a8f9477948ff284fa65be2095baafb94f2"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/symfony/polyfill-ctype/zipball/a3cc8b044a6ea513310cbd48ef7333b384945638",
-                "reference": "a3cc8b044a6ea513310cbd48ef7333b384945638",
+                "url": "https://api.github.com/repos/symfony/polyfill-ctype/zipball/141046a8f9477948ff284fa65be2095baafb94f2",
+                "reference": "141046a8f9477948ff284fa65be2095baafb94f2",
                 "shasum": ""
             },
             "require": {
@@ -7818,7 +7818,7 @@
                 "portable"
             ],
             "support": {
-                "source": "https://github.com/symfony/polyfill-ctype/tree/v1.33.0"
+                "source": "https://github.com/symfony/polyfill-ctype/tree/v1.37.0"
             },
             "funding": [
                 {
@@ -7838,20 +7838,20 @@
                     "type": "tidelift"
                 }
             ],
-            "time": "2024-09-09T11:45:10+00:00"
+            "time": "2026-04-10T16:19:22+00:00"
         },
         {
             "name": "symfony/polyfill-iconv",
-            "version": "v1.33.0",
+            "version": "v1.37.0",
             "source": {
                 "type": "git",
                 "url": "https://github.com/symfony/polyfill-iconv.git",
-                "reference": "5f3b930437ae03ae5dff61269024d8ea1b3774aa"
+                "reference": "2c5729fd241b4b22f6e4b436bc3354a4f262df57"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/symfony/polyfill-iconv/zipball/5f3b930437ae03ae5dff61269024d8ea1b3774aa",
-                "reference": "5f3b930437ae03ae5dff61269024d8ea1b3774aa",
+                "url": "https://api.github.com/repos/symfony/polyfill-iconv/zipball/2c5729fd241b4b22f6e4b436bc3354a4f262df57",
+                "reference": "2c5729fd241b4b22f6e4b436bc3354a4f262df57",
                 "shasum": ""
             },
             "require": {
@@ -7902,7 +7902,7 @@
                 "shim"
             ],
             "support": {
-                "source": "https://github.com/symfony/polyfill-iconv/tree/v1.33.0"
+                "source": "https://github.com/symfony/polyfill-iconv/tree/v1.37.0"
             },
             "funding": [
                 {
@@ -7922,11 +7922,11 @@
                     "type": "tidelift"
                 }
             ],
-            "time": "2024-09-17T14:58:18+00:00"
+            "time": "2026-04-10T16:19:22+00:00"
         },
         {
             "name": "symfony/polyfill-intl-idn",
-            "version": "v1.33.0",
+            "version": "v1.37.0",
             "source": {
                 "type": "git",
                 "url": "https://github.com/symfony/polyfill-intl-idn.git",
@@ -7989,7 +7989,7 @@
                 "shim"
             ],
             "support": {
-                "source": "https://github.com/symfony/polyfill-intl-idn/tree/v1.33.0"
+                "source": "https://github.com/symfony/polyfill-intl-idn/tree/v1.37.0"
             },
             "funding": [
                 {
@@ -8013,7 +8013,7 @@
         },
         {
             "name": "symfony/polyfill-intl-normalizer",
-            "version": "v1.33.0",
+            "version": "v1.37.0",
             "source": {
                 "type": "git",
                 "url": "https://github.com/symfony/polyfill-intl-normalizer.git",
@@ -8074,7 +8074,7 @@
                 "shim"
             ],
             "support": {
-                "source": "https://github.com/symfony/polyfill-intl-normalizer/tree/v1.33.0"
+                "source": "https://github.com/symfony/polyfill-intl-normalizer/tree/v1.37.0"
             },
             "funding": [
                 {
@@ -8098,16 +8098,16 @@
         },
         {
             "name": "symfony/polyfill-mbstring",
-            "version": "v1.33.0",
+            "version": "v1.37.0",
             "source": {
                 "type": "git",
                 "url": "https://github.com/symfony/polyfill-mbstring.git",
-                "reference": "6d857f4d76bd4b343eac26d6b539585d2bc56493"
+                "reference": "6a21eb99c6973357967f6ce3708cd55a6bec6315"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/symfony/polyfill-mbstring/zipball/6d857f4d76bd4b343eac26d6b539585d2bc56493",
-                "reference": "6d857f4d76bd4b343eac26d6b539585d2bc56493",
+                "url": "https://api.github.com/repos/symfony/polyfill-mbstring/zipball/6a21eb99c6973357967f6ce3708cd55a6bec6315",
+                "reference": "6a21eb99c6973357967f6ce3708cd55a6bec6315",
                 "shasum": ""
             },
             "require": {
@@ -8159,7 +8159,7 @@
                 "shim"
             ],
             "support": {
-                "source": "https://github.com/symfony/polyfill-mbstring/tree/v1.33.0"
+                "source": "https://github.com/symfony/polyfill-mbstring/tree/v1.37.0"
             },
             "funding": [
                 {
@@ -8179,7 +8179,7 @@
                     "type": "tidelift"
                 }
             ],
-            "time": "2024-12-23T08:48:59+00:00"
+            "time": "2026-04-10T17:25:58+00:00"
         },
         {
             "name": "symfony/polyfill-php72",
@@ -8248,7 +8248,7 @@
         },
         {
             "name": "symfony/polyfill-php73",
-            "version": "v1.33.0",
+            "version": "v1.37.0",
             "source": {
                 "type": "git",
                 "url": "https://github.com/symfony/polyfill-php73.git",
@@ -8304,7 +8304,7 @@
                 "shim"
             ],
             "support": {
-                "source": "https://github.com/symfony/polyfill-php73/tree/v1.33.0"
+                "source": "https://github.com/symfony/polyfill-php73/tree/v1.37.0"
             },
             "funding": [
                 {
@@ -8328,16 +8328,16 @@
         },
         {
             "name": "symfony/polyfill-php80",
-            "version": "v1.33.0",
+            "version": "v1.37.0",
             "source": {
                 "type": "git",
                 "url": "https://github.com/symfony/polyfill-php80.git",
-                "reference": "0cc9dd0f17f61d8131e7df6b84bd344899fe2608"
+                "reference": "dfb55726c3a76ea3b6459fcfda1ec2d80a682411"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/symfony/polyfill-php80/zipball/0cc9dd0f17f61d8131e7df6b84bd344899fe2608",
-                "reference": "0cc9dd0f17f61d8131e7df6b84bd344899fe2608",
+                "url": "https://api.github.com/repos/symfony/polyfill-php80/zipball/dfb55726c3a76ea3b6459fcfda1ec2d80a682411",
+                "reference": "dfb55726c3a76ea3b6459fcfda1ec2d80a682411",
                 "shasum": ""
             },
             "require": {
@@ -8388,7 +8388,7 @@
                 "shim"
             ],
             "support": {
-                "source": "https://github.com/symfony/polyfill-php80/tree/v1.33.0"
+                "source": "https://github.com/symfony/polyfill-php80/tree/v1.37.0"
             },
             "funding": [
                 {
@@ -8408,7 +8408,7 @@
                     "type": "tidelift"
                 }
             ],
-            "time": "2025-01-02T08:10:11+00:00"
+            "time": "2026-04-10T16:19:22+00:00"
         },
         {
             "name": "symfony/process",
@@ -8977,21 +8977,27 @@
         },
         {
             "name": "tecnickcom/tcpdf",
-            "version": "6.11.2",
+            "version": "6.11.3",
             "source": {
                 "type": "git",
                 "url": "https://github.com/tecnickcom/TCPDF.git",
-                "reference": "e1e2ade18e574e963473f53271591edd8c0033ec"
+                "reference": "b18f6119161019916c5bb07cb8da5205ae5c1b63"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/tecnickcom/TCPDF/zipball/e1e2ade18e574e963473f53271591edd8c0033ec",
-                "reference": "e1e2ade18e574e963473f53271591edd8c0033ec",
+                "url": "https://api.github.com/repos/tecnickcom/TCPDF/zipball/b18f6119161019916c5bb07cb8da5205ae5c1b63",
+                "reference": "b18f6119161019916c5bb07cb8da5205ae5c1b63",
                 "shasum": ""
             },
             "require": {
                 "ext-curl": "*",
                 "php": ">=7.1.0"
+            },
+            "suggest": {
+                "ext-gd": "Enables additional image handling in some workflows.",
+                "ext-imagick": "Enables additional image format support when available.",
+                "ext-zlib": "Recommended for compressed streams and related features.",
+                "tecnickcom/tc-lib-pdf": "Modern replacement for TCPDF for new projects."
             },
             "type": "library",
             "autoload": {
@@ -9023,8 +9029,8 @@
                     "role": "lead"
                 }
             ],
-            "description": "TCPDF is a PHP class for generating PDF documents and barcodes.",
-            "homepage": "http://www.tcpdf.org/",
+            "description": "Deprecated legacy PDF engine for PHP. For new projects use tecnickcom/tc-lib-pdf.",
+            "homepage": "https://tcpdf.org",
             "keywords": [
                 "PDFD32000-2008",
                 "TCPDF",
@@ -9036,15 +9042,15 @@
             ],
             "support": {
                 "issues": "https://github.com/tecnickcom/TCPDF/issues",
-                "source": "https://github.com/tecnickcom/TCPDF/tree/6.11.2"
+                "source": "https://github.com/tecnickcom/TCPDF"
             },
             "funding": [
                 {
                     "url": "https://www.paypal.com/donate/?hosted_button_id=NZUEC5XS8MFBJ",
-                    "type": "custom"
+                    "type": "paypal"
                 }
             ],
-            "time": "2026-03-03T08:58:10+00:00"
+            "time": "2026-04-21T17:00:18+00:00"
         },
         {
             "name": "tijsverkoyen/css-to-inline-styles",
@@ -11862,6 +11868,6 @@
     "platform": {
         "php": "^7.2"
     },
-    "platform-dev": [],
+    "platform-dev": {},
     "plugin-api-version": "2.6.0"
 }

@@ -28,8 +28,10 @@ use App\Entities\Gudang\StockMove;
 use App\Entities\Setting\UserMenu;
 use App\Entities\Account\User;
 use App\Notifications\DoNotification;
+use Illuminate\Support\Facades\Log;
 use App\Repositories\CodeRepo;
 use Illuminate\Support\Collection;
+use GuzzleHttp\Client;
 use Validator;
 use App\Helper\LogActivity;
 use PDF;
@@ -354,6 +356,7 @@ class DeliveryOrderController extends Controller
                 foreach ($packing->do_detail as $item) {
             
                     $base_product_packaging_id = preg_replace('/_\d+$/', '', $item->product_packaging_id);
+                    
             
                     $stock = ProductMinStock::where('warehouse_id', $packing->warehouse_id)
                         ->where('product_packaging_id', $base_product_packaging_id)
@@ -366,7 +369,7 @@ class DeliveryOrderController extends Controller
             
                     if ($stock->reserved_quantity < $item->qty) {
                         throw new \Exception(
-                            "Reserved stock tidak mencukupi untuk produk {$item->product_pack->code}"
+                            "Reserved stock tidak mencukupi untuk produk {$item->product_pack->name}"
                         );
                     }
             
@@ -382,6 +385,21 @@ class DeliveryOrderController extends Controller
                     $stock->quantity -= $item->qty;
                     $stock->reserved_quantity -= $item->qty;
                     $stock->save();
+
+                    // Log::info('Stock dipotong saat DO Packed', [
+                    //     'do_code' => $packing->code,
+                    //     'packing_id' => $packing->id,
+                    //     'warehouse_id' => $packing->warehouse_id,
+                    //     'product_packaging_id' => $base_product_packaging_id,
+                    //     'product_name' => $item->product_pack->name ?? null,
+                    //     'qty_out' => $item->qty,
+                    //     // 'stock_before' => $before_qty,
+                    //     'stock_after' => $stock->quantity,
+                    //     'reserved_before' => $before_reserved,
+                    //     'reserved_after' => $stock->reserved_quantity,
+                    //     'user_id' => Auth::id(),
+                    //     'timestamp' => now()->toDateTimeString()
+                    // ]);
                 }
             }
 
@@ -584,7 +602,7 @@ class DeliveryOrderController extends Controller
             // INSERT STOCK MOVE (OUTBOUND - DO DELIVERED)
             // ======================================================
             
-            $transactionCode = 'SO-' . $detail_do->do_code;
+            $transactionCode = $detail_do->do_code;
             
             // 🔒 Lock DO row untuk cegah double click paralel
             $lockedDo = PackingOrder::where('id', $detail_do->id)
@@ -697,6 +715,75 @@ class DeliveryOrderController extends Controller
 
             // Commit transaction
             DB::commit();
+
+            // === Kirim data invoice + file PDF ke Agenda ===
+            try {
+                if ($get_inv && $customer && $detail_do) {
+
+                    // Cek apakah tipe transaksi TEMPO
+                    if (($detail_do->type_transaction ?? null) === 'TEMPO') {
+
+                        $payload = [
+                            'pic'          => $customer->store->pic ?? '-',
+                            'customer'     => $customer->name ?? 'Unknown',
+                            'invoice_code' => $get_inv->invoice_code ?? $get_inv->code ?? '-',
+                            // Pastikan dicasting ke string untuk menghindari error multipart Guzzle
+                            'amount'       => (string) ($get_inv->grand_total_idr ?? 0), 
+                            'customer_id'  => (string) $customer->id,
+                        ];
+
+                        // Lokasi file PDF hasil export Crystal Report
+                        $pdfPath = "C:\\xampp\\htdocs\\ppi-dist\\public\\cr\\invoice\\export\\" . ($get_inv->invoice_code ?? $get_inv->code) . "-FULL.pdf";
+
+                        $multipart = [];
+                        foreach ($payload as $key => $value) {
+                            $multipart[] = [
+                                'name'     => $key,
+                                'contents' => $value,
+                            ];
+                        }
+
+                        // Jika file PDF ada, kirimkan bersamaan
+                        if (file_exists($pdfPath)) {
+                            $multipart[] = [
+                                'name'     => 'pdf_invoice',
+                                'contents' => fopen($pdfPath, 'r'),
+                                'filename' => basename($pdfPath),
+                            ];
+                        } else {
+                            Log::warning("⚠️ File PDF invoice tidak ditemukan: " . $pdfPath);
+                        }
+
+                        $client = new \GuzzleHttp\Client();
+                        $response = $client->post(env('AGENDA_URL'), [
+                            'headers' => [
+                                'Authorization' => 'Bearer ' . env('AGENDA_TOKEN'),
+                                'Accept'        => 'application/json',
+                            ],
+                            'multipart' => $multipart,
+                            'timeout'   => 15,
+                        ]);
+
+                        $result = json_decode($response->getBody(), true);
+
+                        Log::info('✅ Invoice + PDF sent to Agenda', [
+                            'payload'  => $payload,
+                            'pdf'      => basename($pdfPath),
+                            'response' => $result,
+                        ]);
+
+                    } else {
+                        // Log jika bukan tempo, aplikasi akan lanjut ke baris di bawah blok try-catch
+                        Log::info('⚠️ Invoice bukan TEMPO, dilewati: ' . ($detail_do->do_code ?? $get_inv->code));
+                    }
+
+                } else {
+                    Log::warning('⚠️ Invoice or Customer not found for DO ID: ' . $do_id);
+                }
+            } catch (\Exception $ex) {
+                // dd($ex); <-- Dihapus agar jika API down, transaksi tetap jalan (hanya log error yang tercatat)
+                Log::error('❌ Gagal kirim data + PDF invoice ke Agenda: ' . $ex->getMessage());
+            }
 
             $userIds = [32, 36];
             $users = User::whereIn('id', $userIds)->get();
@@ -864,72 +951,102 @@ class DeliveryOrderController extends Controller
 
     public function print_manifest(Request $request, $id)
     {
-        if(Auth::user()->is_superuser == 0){
-            if(empty($this->access) || empty($this->access->user) || $this->access->can_print == 0){
-                return redirect()->route('superuser.index')->with('error','Anda tidak punya akses untuk membuka menu terkait');
+        // =========================
+        // CEK AKSES USER
+        // =========================
+        if (Auth::user()->is_superuser == 0) {
+            if (empty($this->access) || empty($this->access->user) || $this->access->can_print == 0) {
+                return redirect()->route('superuser.index')
+                    ->with('error', 'Anda tidak punya akses untuk membuka menu terkait');
             }
         }
 
-        $result = PackingOrder::find($id);
+        try {
 
-        if ($result === null){
-            abort(404);
-        }
+            // =========================
+            // CARI SO
+            // =========================
+            $so = DB::table('penjualan_so')->where('id', $id)->first();
 
-        $result->print_count = + 1;
-        $result->save();
+            if ($so) {
+                $result = PackingOrder::where('so_id', $so->id)->first();
+            } else {
+                $result = PackingOrder::where('id', $id)->first();
+            }
 
-        DB::beginTransaction();
-        try{
-            $my_report = "C:\\xampp\\htdocs\\ppi-dist\public\\cr\\packing_plan\\packing_plan_rev.rpt"; 
-            $my_pdf = 'C:\\xampp\\htdocs\\ppi-dist\\public\\cr\\packing_plan\\export\\'.$result->code.'.pdf';
+            if (!$result) {
+                abort(404);
+            }
 
-            $my_server = "LOCAL"; 
-            $my_user = "root"; 
-            $my_password = ""; 
-            $my_database = "ppi-dist";
+            // =========================
+            // UPDATE PRINT COUNT
+            // =========================
+            $result->increment('print_count');
+
+            // =========================
+            // PATH CRYSTAL REPORT
+            // =========================
+            $reportPath = "C:\\xampp\\htdocs\\ppi-dist\\public\\cr\\packing_plan\\packing_plan_rev.rpt";
+            $exportPath = "C:\\xampp\\htdocs\\ppi-dist\\public\\cr\\packing_plan\\export\\";
+            $pdfFile = $exportPath . $result->code . ".pdf";
+
+            // =========================
+            // DATABASE CONFIG
+            // =========================
+            $server = "LOCAL";
+            $database = "ppi-dist";
+            $username = "root";
+            $password = "";
+
             $COM_Object = "CrystalDesignRunTime.Application";
 
-            //-Create new COM object-depends on your Crystal Report version
-            $crapp= New COM($COM_Object) or die("Unable to Create Object");
-            $creport = $crapp->OpenReport($my_report,1); // call rpt report
+            // =========================
+            // LOAD CRYSTAL REPORT
+            // =========================
+            $crapp = new COM($COM_Object) or die("Unable to Create Object");
 
-            //- Set database logon info - must have
-            $creport->Database->Tables(1)->SetLogOnInfo($my_server, $my_database, $my_user, $my_password);
+            $creport = $crapp->OpenReport($reportPath, 1);
 
-            //- field prompt or else report will hang - to get through
-            $creport->EnableParameterPrompting = FALSE;
-            $creport->RecordSelectionFormula = "{penjualan_do.id}= $result->id";
+            $creport->Database->Tables(1)->SetLogOnInfo(
+                $server,
+                $database,
+                $username,
+                $password
+            );
 
+            $creport->EnableParameterPrompting = false;
 
-            //export to PDF process
-            $creport->ExportOptions->DiskFileName=$my_pdf; //export to pdf
-            $creport->ExportOptions->PDFExportAllPages=true;
-            $creport->ExportOptions->DestinationType=1; // export to file
-            $creport->ExportOptions->FormatType=31; // PDF type
+            $creport->RecordSelectionFormula = "{penjualan_do.id}= " . $result->id;
+
+            // =========================
+            // EXPORT PDF
+            // =========================
+            $creport->ExportOptions->DiskFileName = $pdfFile;
+            $creport->ExportOptions->PDFExportAllPages = true;
+            $creport->ExportOptions->DestinationType = 1;
+            $creport->ExportOptions->FormatType = 31;
+
             $creport->Export(false);
 
-            //------ Release the variables ------
+            // =========================
+            // RELEASE OBJECT
+            // =========================
             $creport = null;
             $crapp = null;
-            $ObjectFactory = null;
 
-            $file = 'C:\\xampp\\htdocs\\ppi-dist\\public\\cr\\packing_plan\\export\\'.$result->code.'.pdf';
+            // =========================
+            // DOWNLOAD FILE
+            // =========================
+            if (!file_exists($pdfFile)) {
+                abort(404, 'File PDF tidak ditemukan');
+            }
 
-            header("Content-Description: File Transfer"); 
-            header("Content-Type: application/octet-stream"); 
-            header("Content-Transfer-Encoding: Binary"); 
-            header("Content-Disposition: attachment; filename=\"". basename($file) ."\""); 
-            ob_clean();
-            flush();
-            readfile ($file);
-            exit();
+            return response()->download($pdfFile, $result->code . '.pdf');
 
-            DB::commit();
-            return redirect()->route('superuser.penjualan.delivery_order.detail', $result->id)->with('success','Berhasil Print Manifest!');
-        }catch(\Throwable $e){
-            DB::rollback();
-            return redirect()->back()->with('error',$e->getMessage());
+        } catch (\Throwable $e) {
+
+            return redirect()->back()->with('error', $e->getMessage());
+
         }
     }
 
@@ -946,9 +1063,16 @@ class DeliveryOrderController extends Controller
 
         try {
 
-            $do = PackingOrder::with(['items', 'member'])
+            // $do = PackingOrder::with(['do_detail', 'member'])
+            //     ->lockForUpdate()
+            //     ->findOrFail($id);
+            $do = PackingOrder::select('penjualan_do.*', 'coa.name', 'coa.text_kota')
+                ->leftJoin('master_customer_other_addresses as coa', function ($join) {
+                    $join->on(DB::raw('CAST(penjualan_do.customer_other_address_id AS UNSIGNED)'), '=', 'coa.id');
+                })
+                ->where('penjualan_do.id', $id)
                 ->lockForUpdate()
-                ->findOrFail($id);
+                ->firstOrFail();
 
             if ($do->cashback_status == 1) {
                 return response()->json([
@@ -971,9 +1095,9 @@ class DeliveryOrderController extends Controller
             $isSent = $do->status == 6;
 
             // Format note yang digunakan saat insert StockMove
-            $notePattern = $do->do_code . ' - ' . $do->member->name . ' ' . $do->member->text_kota;
+            $notePattern = $do->do_code . ' - ' . $do->name . ' ' . $do->text_kota;
 
-            foreach ($do->items as $item) {
+            foreach ($do->do_detail as $item) {
 
                 $stock = ProductMinStock::where('warehouse_id', $do->warehouse_id)
                     ->where('product_packaging_id', $item->product_packaging_id)
@@ -1012,8 +1136,8 @@ class DeliveryOrderController extends Controller
             }
 
             // Simpan status lama
-            if ($do->prev_status === null) {
-                $do->prev_status = $do->status;
+            if ($do->prev_sataus === null) {
+                $do->prev_sataus = $do->status;
             }
 
             // Lalu ubah ke cancel
@@ -1029,12 +1153,9 @@ class DeliveryOrderController extends Controller
             ], 200);
 
         } catch (\Throwable $e) {
-
-            DB::rollBack();
-            \Log::error('Cancel DO Error: ' . $e->getMessage());
-
             return response()->json([
-                'message' => 'Terjadi kesalahan sistem.'
+                'message' => $e->getMessage(),
+                'line' => $e->getLine(),
             ], 500);
         }
     }
@@ -1076,7 +1197,7 @@ class DeliveryOrderController extends Controller
 
         try {
             // Ambil DO dan detail
-            $do = PackingOrder::with('items')->lockForUpdate()->findOrFail($request->id);
+            $do = PackingOrder::with(['do_detail','member'])->lockForUpdate()->findOrFail($request->id);
             $do_detail = PackingOrderDetail::lockForUpdate()->findOrFail($request->cost_id);
 
             if ($do->count_cancel == 0) {
@@ -1126,16 +1247,24 @@ class DeliveryOrderController extends Controller
             // -------------------------------
             // 3️⃣ Handle Stock dan StockMove sesuai prev_status
             // -------------------------------
-            $prevStatus = $do->prev_status;
+            $prevStatus = $do->prev_sataus;
             if (!$prevStatus) {
                 throw new \Exception("Prev status tidak ditemukan.");
             }
 
-            $notePattern = $do->do_code . ' - ' . $do->member->name . ' ' . $do->member->text_kota;
+            $member = CustomerOtherAddress::where('id', $do->customer_other_address_id)->first();
 
-            foreach ($do->items as $item) {
+            if (!$member) {
+                throw new \Exception('Member tidak ditemukan.');
+            }
+
+            $notePattern = $do->do_code . ' - ' . $member->name . ' ' . $member->text_kota;
+
+            // dd($request->warehouse_id);
+
+            foreach ($do->do_detail  as $item) {
                 $stock = ProductMinStock::lockForUpdate()
-                    ->where('warehouse_id', $do->warehouse_id)
+                    ->where('warehouse_id', $request->warehouse_id)
                     ->where('product_packaging_id', $item->product_packaging_id)
                     ->first();
 

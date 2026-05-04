@@ -644,7 +644,7 @@ class SjMutasiInternalController extends Controller
                         ? $detail->qty
                         : $detail->quantity;
                 
-                    // ðŸ”’ Lock saldo terakhir per warehouse + produk
+                    // Lock saldo terakhir per warehouse + produk
                     $lastMove = StockMove::where('warehouse_id', $warehouseId)
                         ->where('product_packaging_id', $productId)
                         ->orderByDesc('id')

@@ -34,6 +34,8 @@ use Carbon\Carbon;
 use DB;
 use Auth;
 use PDF;
+use App\Services\StockService;
+use Illuminate\Support\Facades\Log; // Untuk mencatat error jika ada
 
 class StockController extends Controller
 {
@@ -611,7 +613,7 @@ class StockController extends Controller
     public function collectStockIn(Request $request)
     {
         $startDate = Carbon::create(2026, 1, 1)->startOfDay();
-        $endDate   = Carbon::create(2026, 3, 16)->endOfDay();
+        $endDate   = Carbon::create(2026, 5, 2)->endOfDay();
 
         DB::beginTransaction();
 
@@ -685,7 +687,7 @@ class StockController extends Controller
     public function collectStockTrans(Request $request)
     {
         $startDate = Carbon::create(2026, 1, 1)->startOfDay();
-        $endDate   = Carbon::create(2026, 3, 16)->endOfDay();
+        $endDate   = Carbon::create(2026, 5, 2)->endOfDay();
 
         DB::beginTransaction();
 
@@ -756,51 +758,48 @@ class StockController extends Controller
             });
     }
 
-    public function collectStockOut()
+    public function collectStockOut(Request $request)
     {
+        // Sesuaikan tanggal batas Rebuild
+        $startDate = \Carbon\Carbon::create(2026, 1, 1)->startOfDay();
+        $endDate   = \Carbon\Carbon::create(2026, 5, 2)->endOfDay();
+
         DB::beginTransaction();
         try {
+            // Opsional: Anda bisa menambahkan fungsi clearTempOut($startDate, $endDate) 
+            // di sini jika ingin mereset keranjang temp_out sebelum diisi.
 
-            $this->collectSPKStockOut();
+            $this->collectSPKStockOut($startDate, $endDate);
+            $this->collectFromMutasiShowroom($startDate, $endDate);
+            $this->collectFromMutasiOut($startDate, $endDate);
+
             DB::commit();
-            return back()->with('success', 'Collect SPK berhasil.');
+            return back()->with('success', 'Collect SPK, Mutasi Showroom, dan Mutasi Out berhasil dikumpulkan.');
         } catch (\Exception $e) {
-            // dd($e);
             DB::rollBack();
             return back()->with('error', $e->getMessage());
         }
     }
 
-    private function collectSPKStockOut()
+    private function collectSPKStockOut($startDate, $endDate)
     {
         $allowedCodes = [
-            'SPK26A001',
-            'SPK26A003',
-            'SPK26A005',
-            'SPK26A006',
-            'SPK26B001',
-            'SPK26B004',
-            'SPK26B005',
+            'SPK26A001', 'SPK26A003', 'SPK26A005', 'SPK26A006',
+            'SPK26B001', 'SPK26B004', 'SPK26B005',
         ];
 
         PurchaseOrder::with('purchase_order_detail')
             ->where('type', 0) // SPK
             ->where('status', 4) // ACC / SENT
             ->whereIn('code', $allowedCodes)
+            ->whereBetween('created_at', [$startDate, $endDate]) // Filter Waktu
             ->orderBy('created_at', 'asc')
             ->chunk(100, function ($orders) {
-
                 foreach ($orders as $order) {
-
-                    if (!$order->warehouse_id) {
-                        continue;
-                    }
+                    if (!$order->warehouse_id) continue;
 
                     foreach ($order->purchase_order_detail as $item) {
-
-                        if ($item->quantity <= 0) {
-                            continue;
-                        }
+                        if ($item->quantity <= 0) continue;
 
                         DB::table('temp_out')->insert([
                             'doc_code'             => $order->code,
@@ -810,6 +809,73 @@ class StockController extends Controller
                             'product_packaging_id' => $item->product_packaging_id,
                             'quantity'             => $item->quantity,
                             'warehouse_id'         => 2, // hardcode ke gudang araya
+                            'source_type'          => 'SYSTEM',
+                            'created_at'           => now(),
+                            'updated_at'           => now(),
+                        ]);
+                    }
+                }
+            });
+    }
+
+    private function collectFromMutasiShowroom($startDate, $endDate)
+    {
+        // Menggunakan kombinasi status: PUBLISH(2), CHECKED(1), dan DIAMBIL(2)
+        \App\Entities\Gudang\MutasiShowroom::with('details')
+            ->where('status', 2)           // Status: PUBLISH
+            ->where('status_checked', 1)   // Status Checked: CHECKED
+            ->where('status_barang', 2)    // Status Barang: DIAMBIL
+            ->where('type', '!=', 5)       // Kecualikan tipe otomatis dari SO
+            ->whereBetween('created_at', [$startDate, $endDate])
+            ->orderBy('created_at', 'asc')
+            ->chunk(100, function ($mutasis) {
+                foreach ($mutasis as $mutasi) {
+                    // Pastikan gudang asal ada sebagai referensi pemotongan stok
+                    if (!$mutasi->warehouse_from_id) continue;
+
+                    foreach ($mutasi->details as $item) {
+                        if ($item->qty <= 0) continue;
+
+                        DB::table('temp_out')->insert([
+                            'doc_code'             => $mutasi->kode,
+                            'doc_type'             => 'MUTASI SHOWROOM',
+                            'doc_date'             => $mutasi->tanggal ?? $mutasi->created_at,
+                            'reference_id'         => $mutasi->id,
+                            'product_packaging_id' => $item->product_packaging_id,
+                            'quantity'             => $item->qty,
+                            'warehouse_id'         => $mutasi->warehouse_from_id, // Potong stok gudang asal
+                            'source_type'          => 'SYSTEM',
+                            'created_at'           => now(),
+                            'updated_at'           => now(),
+                        ]);
+                    }
+                }
+            });
+    }
+
+    private function collectFromMutasiOut($startDate, $endDate)
+    {
+        // Pastikan model MutasiOut sudah di-use di atas controller
+        \App\Entities\Gudang\MutasiOut::with('mutasiOutDetails')
+            ->where('status', 3) // ACC
+            ->whereBetween('created_at', [$startDate, $endDate])
+            ->orderBy('created_at', 'asc')
+            ->chunk(100, function ($mutasis) {
+                foreach ($mutasis as $mutasi) {
+                    // Cek gudang asal
+                    if (!$mutasi->warehouse_from) continue;
+
+                    foreach ($mutasi->mutasiOutDetails as $item) {
+                        if ($item->quantity <= 0) continue;
+
+                        DB::table('temp_out')->insert([
+                            'doc_code'             => $mutasi->code,
+                            'doc_type'             => 'MUTASI OUT',
+                            'doc_date'             => $mutasi->date ?? $mutasi->created_at,
+                            'reference_id'         => $mutasi->id,
+                            'product_packaging_id' => $item->product_packaging_id,
+                            'quantity'             => $item->quantity,
+                            'warehouse_id'         => $mutasi->warehouse_from, // Potong stok gudang asal
                             'source_type'          => 'SYSTEM',
                             'created_at'           => now(),
                             'updated_at'           => now(),
