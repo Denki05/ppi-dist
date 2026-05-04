@@ -598,18 +598,20 @@ class SalesOrderProformaController extends Controller
 
                 // Jika stok tidak cukup, batalkan ACC!
                 if ($available < $item->qty) {
-                    throw new \Exception("STOK TIDAK MENCUKUPI! Produk ID {$item->product_packaging_id} hanya tersedia {$available}, namun Anda membutuhkan {$item->qty}. Harap periksa fisik/kartu stok Anda.");
-                }
+                    
+                    // 1. Ambil detail produk (Hapus suffix _1 dll jika ada)
+                    $base_product_id = preg_replace('/_\d+$/', '', $item->product_packaging_id);
+                    $productDetail = DB::table('master_products_packaging')
+                                        ->where('id', $base_product_id)
+                                        ->first();
+                    
+                    // 2. Format tampilan: Kode - Nama (atau ID jika tidak ketemu)
+                    $productDisplay = $productDetail 
+                        ? ($productDetail->code . ' - ' . $productDetail->name) 
+                        : "ID " . $item->product_packaging_id;
 
-                // B. Langsung Potong Fisik Rak! (Bypass Reserved)
-                try {
-                    $stockService->deductPhysicalStock(
-                        $sales_proforma->warehouse_id, 
-                        $item->product_packaging_id, 
-                        $item->qty
-                    );
-                } catch (\Exception $e) {
-                    throw new \Exception("Gagal memotong stok fisik: " . $e->getMessage());
+                    // 3. Lempar error dengan nama yang jelas
+                    throw new \Exception("STOK TIDAK MENCUKUPI! Produk {$productDisplay} hanya tersedia {$available}, namun Anda membutuhkan {$item->qty}. Harap periksa fisik/kartu stok Anda.");
                 }
             }
     
@@ -856,7 +858,6 @@ class SalesOrderProformaController extends Controller
             ]);
     
         } catch (\Throwable $e) {
-            dd($e);
             DB::rollBack();
     
             return response()->json([

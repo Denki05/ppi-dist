@@ -230,35 +230,29 @@
         }).then((result) => {
             if (result.isConfirmed) {
 
+                
+                
                 $.ajax({
                     url: '/superuser/penjualan/so_proforma/acc/' + id,
                     type: 'POST',
-                    data: {
-                        _token: '{{ csrf_token() }}'
-                    },
-                    success: function(res) {
-                        if (res.success) {
-                            Swal.fire(
-                                'Berhasil!',
-                                res.message,
-                                'success'
-                            );
-                            // optional: reload datatable atau refresh tab
-                            location.reload();
-                        } else {
-                            Swal.fire(
-                                'Gagal!',
-                                res.message,
-                                'error'
-                            );
+                    data: { _token: '{{ csrf_token() }}' },
+                    success: function(response) {
+                        if(response.success) {
+                            Swal.fire('Berhasil!', response.message, 'success')
+                            .then(() => location.reload());
                         }
                     },
                     error: function(xhr) {
-                        Swal.fire(
-                            'Gagal!',
-                            xhr.responseJSON?.message || 'Terjadi kesalahan',
-                            'error'
-                        );
+                        // Ambil pesan error dari Exception Laravel tadi
+                        let errorMsg = xhr.responseJSON ? xhr.responseJSON.message : "Terjadi kesalahan sistem.";
+                        
+                        // Tampilkan sebagai SweetAlert
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'Gagal ACC Proforma',
+                            text: errorMsg,
+                            confirmButtonText: 'Tutup'
+                        });
                     }
                 });
 
@@ -274,7 +268,7 @@
 
         Swal.fire({
             title: 'Apakah Anda yakin?',
-            text: "Sales Order Proforma akan diupdate ke status Cancel!",
+            text: "Sales Order Proforma akan diupdate ke status Sebelumnya!",
             icon: 'warning',
             showCancelButton: true,
             confirmButtonText: 'Ya, update!',
