@@ -228,34 +228,12 @@ class SjMutasiInternalController extends Controller
 
                     // POTONG STOK
                     $productId = $detail->product_packaging_id;
-
                     $qty = $type === 'showroom' ? (int)($detail->qty ?? 0) : (int)($detail->quantity ?? 0);
-                    
-                    $warehouseId = $type === 'showroom'
-                        ? $mutasi->warehouse_from_id
-                        : $mutasi->warehouse_from;
+                    $warehouseId = $type === 'showroom' ? $mutasi->warehouse_from_id : $mutasi->warehouse_from;
 
                     if ($qty > 0 && $productId) {
-
-                        $stock = DB::table('master_product_min_stocks')
-                            ->where('product_packaging_id', $productId)
-                            ->where('warehouse_id', $warehouseId)
-                            ->lockForUpdate()
-                            ->first();
-
-                        if (!$stock) {
-                            throw new \Exception("Stock untuk produk {$productId} tidak ditemukan");
-                        }
-
-                        if ($stock->quantity < $qty) {
-                            throw new \Exception("Stock tidak cukup untuk produk {$productId}. Saat ini: {$stock->quantity}, dibutuhkan: {$qty}");
-                        }
-
-                        // Potong stock
-                        DB::table('master_product_min_stocks')
-                            ->where('product_packaging_id', $productId)
-                            ->where('warehouse_id', $warehouseId)
-                            ->decrement('quantity', $qty);
+                        $stockService = new StockService();
+                        $stockService->deductPhysicalStock($warehouseId, $productId, $qty);
                     }
                 }
             }
@@ -343,11 +321,18 @@ class SjMutasiInternalController extends Controller
                             );
                         }
     
-                        // kembalikan stok
-                        DB::table('master_product_min_stocks')
-                            ->where('product_packaging_id', $detail->product_packaging_id)
-                            ->where('warehouse_id', $warehouseId)
-                            ->increment('quantity', $quantity);
+                        // Kembalikan stok VIA 1 PINTU
+                        $stockService = new StockService();
+                        $docCode = $type === 'showroom' ? $mutasi->kode : $mutasi->code;
+                        
+                        $stockService->executeSmartCancel(
+                            $warehouseId, 
+                            $detail->product_packaging_id, 
+                            $quantity, 
+                            $mutasi->status_barang, // Otomatis tidak mencetak jurnal karena status bukan 6
+                            $docCode, 
+                            "Batal Checklist Item Mutasi"
+                        );
                     }
     
                     // reset checklist
@@ -421,9 +406,18 @@ class SjMutasiInternalController extends Controller
                         $qty = (int) ($detail->quantity ?? 0);
                     }
 
-                    DB::table('master_product_min_stocks')
-                        ->where('product_packaging_id', $productId)
-                        ->increment('quantity', $qty);
+                    // Kembalikan stok VIA 1 PINTU
+                        $stockService = new StockService();
+                        $docCode = $type === 'showroom' ? $mutasi->kode : $mutasi->code;
+                        
+                        $stockService->executeSmartCancel(
+                            $warehouseId, 
+                            $detail->product_packaging_id, 
+                            $quantity, 
+                            $mutasi->status_barang, // Otomatis tidak mencetak jurnal karena status bukan 6
+                            $docCode, 
+                            "Batal Checklist Item Mutasi"
+                        );
 
                     $detail->is_checked = 0;
                     $detail->save();
@@ -628,78 +622,21 @@ class SjMutasiInternalController extends Controller
             $mutasi->save();
 
             // ==============================
-            // STOCK MOVE
+            // STOCK MOVE VIA 1 PINTU
             // ==============================
             if ($newStatus === 2 && $oldStatus !== 2) {
+                $stockService = new StockService();
 
                 foreach ($details as $detail) {
-
                     $productId = $detail->product_packaging_id;
-                
-                    $warehouseId = $type === 'showroom'
-                        ? $mutasi->warehouse_from_id
-                        : $mutasi->warehouse_from;
-                
-                    $quantity = $type === 'showroom'
-                        ? $detail->qty
-                        : $detail->quantity;
-                
-                    // Lock saldo terakhir per warehouse + produk
-                    $lastMove = StockMove::where('warehouse_id', $warehouseId)
-                        ->where('product_packaging_id', $productId)
-                        ->orderByDesc('id')
-                        ->lockForUpdate()
-                        ->first();
-                
-                    /*
-                    |--------------------------------------------------------------------------
-                    | AUTO OPENING JIKA BELUM ADA HISTORI
-                    |--------------------------------------------------------------------------
-                    */
-                    if (!$lastMove) {
-                
-                        $currentStock = DB::table('master_product_min_stocks')
-                            ->where('warehouse_id', $warehouseId)
-                            ->where('product_packaging_id', $productId)
-                            ->lockForUpdate()
-                            ->first();
-                
-                        $openingQty = $currentStock ? $currentStock->quantity : 0;
-                
-                        StockMove::create([
-                            'code_transaction'     => 'OPENING',
-                            'warehouse_id'         => $warehouseId,
-                            'product_packaging_id' => $productId,
-                            'stock_in'             => $openingQty,
-                            'stock_out'            => 0,
-                            'stock_balance'        => $openingQty,
-                            'note'                 => 'Auto Opening Balance',
-                            'created_by'           => Auth::id(),
-                        ]);
-                
-                        $lastBalance = $openingQty;
-                
-                    } else {
-                        $lastBalance = $lastMove->stock_balance;
-                    }
-                
-                    $newBalance = $lastBalance - $quantity;
-                
-                    StockMove::create([
-                        'code_transaction'     => $type === 'showroom'
-                            ? $mutasi->kode
-                            : $mutasi->code,
-                        'warehouse_id'         => $warehouseId,
-                        'product_packaging_id' => $productId,
-                        'stock_in'             => 0,
-                        'stock_out'            => $quantity,
-                        'stock_balance'        => $newBalance,
-                        'note' => $type === 'showroom'
-                            ? 'Mutasi Showroom - DIAMBIL'
-                            : 'Mutasi Out - ' . ($mutasi->warehouse_to_attribute->name ?? '-') . ' - DIAMBIL',
-                        'created_by'           => Auth::id(),
-                        'updated_by'           => Auth::id(),
-                    ]);
+                    $warehouseId = $type === 'showroom' ? $mutasi->warehouse_from_id : $mutasi->warehouse_from;
+                    $quantity = $type === 'showroom' ? $detail->qty : $detail->quantity;
+
+                    $docCode = $type === 'showroom' ? $mutasi->kode : $mutasi->code;
+                    $note = $type === 'showroom' ? 'Mutasi Showroom - DIAMBIL' : 'Mutasi Out - ' . ($mutasi->warehouse_to_attribute->name ?? '-') . ' - DIAMBIL';
+
+                    // Fisik sudah dipotong di Step 1, di sini HANYA cetak kartu stok
+                    $stockService->recordAdministrativeLog($warehouseId, $productId, $quantity, $docCode, $note);
                 }
             }
 

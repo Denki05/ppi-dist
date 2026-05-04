@@ -28,6 +28,7 @@ use App\Notifications\DoNotification;
 use App\Entities\Setting\UserMenu;
 use App\Entities\Account\User;
 use App\Repositories\CodeRepo;
+use App\Services\StockService;
 use Auth;
 use DB;
 use PDF;
@@ -1109,16 +1110,23 @@ class PackingOrderController extends Controller
 
                         if (!$stock) continue;
 
-                        // Release reserved
-                        $stock->reserved_quantity -= $item->qty;
-                        if ($stock->reserved_quantity < 0) $stock->reserved_quantity = 0;
-
-                        // Kembalikan qty jika packed
-                        if ($packing->status == 3) {
-                            $stock->quantity += $item->qty;
+                        // =====================================
+                        // KEMBALIKAN STOK REVISI (VIA 1 PINTU)
+                        // =====================================
+                        $so = SalesOrder::where('id', $packing->so_id)->lockForUpdate()->first();
+                        $isProforma = ($so && $so->is_proforma == 1);
+                        $stockService = new \App\Services\StockService();
+    
+                        foreach ($items as $item) {
+                            // Fungsi ini otomatis tahu kapan harus kembali fisik vs lepas booking!
+                            $stockService->cancelDoRevisi(
+                                $packing->warehouse_id, 
+                                $item->product_packaging_id, 
+                                $item->qty, 
+                                $isProforma, 
+                                $packing->status
+                            );
                         }
-
-                        $stock->save();
                     }
 
                     $so = SalesOrder::where('id', $packing->so_id)->lockForUpdate()->first();
@@ -1131,7 +1139,6 @@ class PackingOrderController extends Controller
                             $so->count_rev = 1;
                             $so->code = null;
                             $so->keep_code = $packingSoCode;
-                            $so->status_proforma = 3;
                             $so->save();
 
                             $proforma = SalesOrderProforma::where('so_id', $so->id)

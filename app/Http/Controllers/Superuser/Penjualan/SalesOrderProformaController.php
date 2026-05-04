@@ -21,6 +21,7 @@ use App\Entities\Master\Customer;
 use App\Entities\Master\CustomerOtherAddress;
 use App\Entities\Gudang\MutasiShowroom;
 use App\Entities\Gudang\MutasiShowroomDetail;
+use App\Services\StockService;
 use App\Entities\Master\Vendor;
 use App\Models\Province;
 use App\Models\Regency;
@@ -576,112 +577,39 @@ class SalesOrderProformaController extends Controller
     
             /*
             |--------------------------------------------------------------------------
-            | 2️⃣ VALIDASI & RESERVED STOCK (TANPA POTONG STOCK)
+            | 2️⃣ VALIDASI KETAT & POTONG STOK LANGSUNG (PROFORMA RULE)
             |--------------------------------------------------------------------------
             */
 
             $warnings = [];
             $mutasiItems = []; // untuk free product mutasi showroom
+            $stockService = new \App\Services\StockService(); // Panggil 1 Pintu
 
             foreach ($sales_proforma->items as $item) {
 
-                $retry = 0;
-                $maxRetry = 5;
-                $stockUpdated = false;
+                // A. Pengecekan Ketersediaan Stok (Strict Check)
+                $stock = \App\Entities\Master\ProductMinStock::where('warehouse_id', $sales_proforma->warehouse_id)
+                    ->where('product_packaging_id', $item->product_packaging_id)
+                    ->first();
 
-                while ($retry < $maxRetry) {
+                $currentQty = $stock ? (float) $stock->quantity : 0;
+                $currentReserved = $stock ? (float) $stock->reserved_quantity : 0;
+                $available = $currentQty - $currentReserved;
 
-                    try {
-
-                        DB::beginTransaction();
-
-                        $stock = \App\Entities\Master\ProductMinStock::where('warehouse_id', $sales_proforma->warehouse_id)
-                            ->where('product_packaging_id', $item->product_packaging_id)
-                            ->lockForUpdate()
-                            ->first();
-
-                        /*
-                        |--------------------------------------------------------------------------
-                        | JIKA STOCK BELUM ADA → BUAT
-                        |--------------------------------------------------------------------------
-                        */
-
-                        if (!$stock) {
-
-                            $stock = \App\Entities\Master\ProductMinStock::create([
-                                'warehouse_id' => $sales_proforma->warehouse_id,
-                                'product_packaging_id' => $item->product_packaging_id,
-                                'quantity' => 0,
-                                'reserved_quantity' => 0
-                            ]);
-
-                            $stock = \App\Entities\Master\ProductMinStock::where('id', $stock->id)
-                                ->lockForUpdate()
-                                ->first();
-                        }
-
-                        $current_reserved = (float) ($stock->reserved_quantity ?? 0);
-                        $quantity = (float) ($stock->quantity ?? 0);
-
-                        $available = $quantity - $current_reserved;
-                        $new_available = $available - $item->qty;
-
-                        /*
-                        |--------------------------------------------------------------------------
-                        | VALIDASI STOCK
-                        |--------------------------------------------------------------------------
-                        */
-
-                        if ($available >= $item->qty) {
-
-                            // stok cukup
-                            $stock->reserved_quantity = $current_reserved + $item->qty;
-
-                        } elseif ($available >= 0 && $new_available < 0) {
-
-                            // minus pertama kali
-                            $stock->reserved_quantity = $current_reserved + $item->qty;
-
-                            $warnings[] = "Stock packaging ID {$item->product_packaging_id} akan minus nantinya!";
-
-                        } else {
-
-                            // sudah minus sebelumnya
-                            throw new \Exception(
-                                "Stock packaging ID {$item->product_packaging_id} sudah minus sebelumnya. ".
-                                "Available: {$available}, Request: {$item->qty}"
-                            );
-                        }
-
-                        $stock->save();
-
-                        DB::commit();
-
-                        $stockUpdated = true;
-
-                        break;
-
-                    } catch (\Illuminate\Database\QueryException $e) {
-
-                        DB::rollBack();
-
-                        $retry++;
-
-                        usleep(200000); // retry 0.2 detik
-
-                    } catch (\Exception $e) {
-
-                        DB::rollBack();
-
-                        throw $e;
-                    }
+                // Jika stok tidak cukup, batalkan ACC!
+                if ($available < $item->qty) {
+                    throw new \Exception("STOK TIDAK MENCUKUPI! Produk ID {$item->product_packaging_id} hanya tersedia {$available}, namun Anda membutuhkan {$item->qty}. Harap periksa fisik/kartu stok Anda.");
                 }
 
-                if (!$stockUpdated) {
-
-                    throw new \Exception(
-                        "Gagal update stock packaging {$item->product_packaging_id} setelah retry {$maxRetry}x"
+                // B. Langsung Potong Fisik Rak! (Bypass Reserved)
+                try {
+                    $stockService->deductPhysicalStock(
+                        $sales_proforma->warehouse_id, 
+                        $item->product_packaging_id, 
+                        $item->qty
                     );
+                } catch (\Exception $e) {
+                    throw new \Exception("Gagal memotong stok fisik: " . $e->getMessage());
                 }
             }
     
@@ -755,7 +683,7 @@ class SalesOrderProformaController extends Controller
                 'customer_other_address_id' => $sales_proforma->customer_other_address_id,
                 'vendor_id' => $sales_proforma->vendor_id,
                 'idr_rate' => $sales_proforma->so_idr_rate,
-                'type_transaction' => $sales_proforma->so_type_transaction,
+                'type_transaction' => optional($sales_proforma->salesOrder)->type_transaction,
                 'count_cancel' => 0,
                 'status' => 2,
                 'note' => $sales_proforma->note,
@@ -860,6 +788,19 @@ class SalesOrderProformaController extends Controller
                         'created_by' => Auth::id(),
                     ]);
 
+                    // foreach ($mutasiItems as $item) {
+
+                    //     MutasiShowroomDetail::create([
+                    //         'penjualan_showroom_id' => $mutasi->id,
+                    //         'product_packaging_id' => $item['product_packaging_id'],
+                    //         'qty' => $item['qty'],
+                    //         'price' => 0,
+                    //         'total_price' => 0,
+                    //         'note' => $item['note'] ?? null,
+                    //     ]);
+
+                    // }
+                    
                     foreach ($mutasiItems as $item) {
 
                         MutasiShowroomDetail::create([
@@ -871,6 +812,23 @@ class SalesOrderProformaController extends Controller
                             'note' => $item['note'] ?? null,
                         ]);
 
+                        // ==========================================
+                        // TUTUP KEBOCORAN: CETAK LOG KARTU STOK SAJA
+                        // ==========================================
+                        $docCode = $mutasi->kode;
+                        $note = 'Mutasi Free Product dari SO ' . $sales_order->code;
+
+                        // ❌ BAGIAN INI SAYA HAPUS KARENA FISIK SUDAH DIPOTONG DI TAHAP 2 (ATAS)
+                        // $stockService->deductPhysicalStock( ... ); 
+
+                        // ✅ CUKUP PANGGIL PENCETAKAN KARTU STOK SAJA:
+                        $stockService->recordAdministrativeLog(
+                            $mutasi->warehouse_from_id, 
+                            $item['product_packaging_id'], 
+                            $item['qty'], 
+                            $docCode, 
+                            $note
+                        );
                     }
                 }
             }
@@ -898,6 +856,7 @@ class SalesOrderProformaController extends Controller
             ]);
     
         } catch (\Throwable $e) {
+            dd($e);
             DB::rollBack();
     
             return response()->json([

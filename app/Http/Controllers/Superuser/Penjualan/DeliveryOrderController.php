@@ -28,10 +28,9 @@ use App\Entities\Gudang\StockMove;
 use App\Entities\Setting\UserMenu;
 use App\Entities\Account\User;
 use App\Notifications\DoNotification;
-use Illuminate\Support\Facades\Log;
+use App\Services\StockService;
 use App\Repositories\CodeRepo;
 use Illuminate\Support\Collection;
-use GuzzleHttp\Client;
 use Validator;
 use App\Helper\LogActivity;
 use PDF;
@@ -347,59 +346,13 @@ class DeliveryOrderController extends Controller
                 }
             }
 
-            // ======================================
-            // PROSES POTONG STOCK
-            // ======================================
-
             if (!$isProforma) {
-
+                $stockService = new StockService();
+                
                 foreach ($packing->do_detail as $item) {
-            
                     $base_product_packaging_id = preg_replace('/_\d+$/', '', $item->product_packaging_id);
-                    
-            
-                    $stock = ProductMinStock::where('warehouse_id', $packing->warehouse_id)
-                        ->where('product_packaging_id', $base_product_packaging_id)
-                        ->lockForUpdate()
-                        ->first();
-            
-                    if (!$stock) {
-                        throw new \Exception('Stock tidak ditemukan.');
-                    }
-            
-                    if ($stock->reserved_quantity < $item->qty) {
-                        throw new \Exception(
-                            "Reserved stock tidak mencukupi untuk produk {$item->product_pack->name}"
-                        );
-                    }
-            
-                    $current_qty = (int) $stock->quantity;
-                    $new_qty     = $current_qty - $item->qty;
-            
-                    if ($current_qty < 0 && $new_qty < $current_qty) {
-                        throw new \Exception(
-                            "Stock sudah minus dan tidak boleh ditambah minus untuk produk {$item->product_pack->code}"
-                        );
-                    }
-            
-                    $stock->quantity -= $item->qty;
-                    $stock->reserved_quantity -= $item->qty;
-                    $stock->save();
-
-                    // Log::info('Stock dipotong saat DO Packed', [
-                    //     'do_code' => $packing->code,
-                    //     'packing_id' => $packing->id,
-                    //     'warehouse_id' => $packing->warehouse_id,
-                    //     'product_packaging_id' => $base_product_packaging_id,
-                    //     'product_name' => $item->product_pack->name ?? null,
-                    //     'qty_out' => $item->qty,
-                    //     // 'stock_before' => $before_qty,
-                    //     'stock_after' => $stock->quantity,
-                    //     'reserved_before' => $before_reserved,
-                    //     'reserved_after' => $stock->reserved_quantity,
-                    //     'user_id' => Auth::id(),
-                    //     'timestamp' => now()->toDateTimeString()
-                    // ]);
+                    // Langsung potong quantity fisik & reserved
+                    $stockService->deductPhysicalStock($packing->warehouse_id, $base_product_packaging_id, $item->qty);
                 }
             }
 
@@ -511,7 +464,7 @@ class DeliveryOrderController extends Controller
         return response()->json($data_json,200);
     }
 
-    public function sent(Request $request)
+   public function sent(Request $request)
     {
         // Initialize response data
         $data_json = [];
@@ -603,85 +556,20 @@ class DeliveryOrderController extends Controller
             // ======================================================
             
             $transactionCode = $detail_do->do_code;
+            $lockedDo = PackingOrder::where('id', $detail_do->id)->lockForUpdate()->first();
+            $alreadyMoved = \App\Entities\Gudang\StockMove::where('code_transaction', $transactionCode)->exists();
             
-            // 🔒 Lock DO row untuk cegah double click paralel
-            $lockedDo = PackingOrder::where('id', $detail_do->id)
-                ->lockForUpdate()
-                ->first();
-            
-            // 🔒 Cegah double insert per transaksi
-            $alreadyMoved = \App\Entities\Gudang\StockMove::where(
-                'code_transaction',
-                $transactionCode
-            )->exists();
-            
-            if (!$alreadyMoved && !$isProforma) {
-            
+            // HAPUS !$isProforma AGAR SEMUA JENIS DO DICETAK KARTU STOKNYA
+            if (!$alreadyMoved) { 
+                $stockService = new StockService();
                 $items = PackingOrderItem::where('do_id', $do_id)->get();
             
                 foreach ($items as $item) {
-            
                     $base_product_packaging_id = preg_replace('/_\d+$/', '', $item->product_packaging_id);
+                    $note = $detail_do->do_code . ' - ' . $detail_do->member->name . ' ' . $detail_do->member->text_kota;
             
-                    /*
-                    |--------------------------------------------------------------------------
-                    | LOCK & AMBIL SALDO TERAKHIR
-                    |--------------------------------------------------------------------------
-                    */
-                    $lastMove = \App\Entities\Gudang\StockMove::where('warehouse_id', $detail_do->warehouse_id)
-                        ->where('product_packaging_id', $base_product_packaging_id)
-                        ->orderByDesc('id')
-                        ->lockForUpdate()
-                        ->first();
-            
-                    /*
-                    |--------------------------------------------------------------------------
-                    | JIKA BELUM ADA HISTORI → BUAT OPENING OTOMATIS
-                    |--------------------------------------------------------------------------
-                    */
-                    if (!$lastMove) {
-            
-                        $currentStock = \App\Entities\Master\ProductMinStock::where('warehouse_id', $detail_do->warehouse_id)
-                            ->where('product_packaging_id', $base_product_packaging_id)
-                            ->lockForUpdate()
-                            ->first();
-            
-                        $openingQty = $currentStock ? $currentStock->quantity : 0;
-            
-                        \App\Entities\Gudang\StockMove::create([
-                            'code_transaction'     => 'OPENING',
-                            'warehouse_id'         => $detail_do->warehouse_id,
-                            'product_packaging_id' => $base_product_packaging_id,
-                            'stock_in'             => $openingQty,
-                            'stock_out'            => 0,
-                            'stock_balance'        => $openingQty,
-                            'note'                 => 'Auto Opening Balance',
-                            'created_by'           => auth()->id(),
-                        ]);
-            
-                        $lastBalance = $openingQty;
-            
-                    } else {
-                        $lastBalance = $lastMove->stock_balance;
-                    }
-            
-                    /*
-                    |--------------------------------------------------------------------------
-                    | HITUNG SALDO BARU (MINUS DIPERBOLEHKAN SESUAI DESAIN)
-                    |--------------------------------------------------------------------------
-                    */
-                    $newBalance = $lastBalance - $item->qty;
-            
-                    \App\Entities\Gudang\StockMove::create([
-                        'code_transaction'     => $transactionCode,
-                        'warehouse_id'         => $detail_do->warehouse_id,
-                        'product_packaging_id' => $base_product_packaging_id,
-                        'stock_in'             => 0,
-                        'stock_out'            => $item->qty,
-                        'stock_balance'        => $newBalance,
-                        'note'                 => $detail_do->do_code . ' - ' . $detail_do->member->name . ' ' . $detail_do->member->text_kota,
-                        'created_by'           => auth()->id(),
-                    ]);
+                    // Hanya cetak kartu stok, karena fisik sudah dipotong saat Checker(Packed) / ACC(Proforma)
+                    $stockService->recordAdministrativeLog($detail_do->warehouse_id, $base_product_packaging_id, $item->qty, $transactionCode, $note);
                 }
             }
 
@@ -715,75 +603,6 @@ class DeliveryOrderController extends Controller
 
             // Commit transaction
             DB::commit();
-
-            // === Kirim data invoice + file PDF ke Agenda ===
-            try {
-                if ($get_inv && $customer && $detail_do) {
-
-                    // Cek apakah tipe transaksi TEMPO
-                    if (($detail_do->type_transaction ?? null) === 'TEMPO') {
-
-                        $payload = [
-                            'pic'          => $customer->store->pic ?? '-',
-                            'customer'     => $customer->name ?? 'Unknown',
-                            'invoice_code' => $get_inv->invoice_code ?? $get_inv->code ?? '-',
-                            // Pastikan dicasting ke string untuk menghindari error multipart Guzzle
-                            'amount'       => (string) ($get_inv->grand_total_idr ?? 0), 
-                            'customer_id'  => (string) $customer->id,
-                        ];
-
-                        // Lokasi file PDF hasil export Crystal Report
-                        $pdfPath = "C:\\xampp\\htdocs\\ppi-dist\\public\\cr\\invoice\\export\\" . ($get_inv->invoice_code ?? $get_inv->code) . "-FULL.pdf";
-
-                        $multipart = [];
-                        foreach ($payload as $key => $value) {
-                            $multipart[] = [
-                                'name'     => $key,
-                                'contents' => $value,
-                            ];
-                        }
-
-                        // Jika file PDF ada, kirimkan bersamaan
-                        if (file_exists($pdfPath)) {
-                            $multipart[] = [
-                                'name'     => 'pdf_invoice',
-                                'contents' => fopen($pdfPath, 'r'),
-                                'filename' => basename($pdfPath),
-                            ];
-                        } else {
-                            Log::warning("⚠️ File PDF invoice tidak ditemukan: " . $pdfPath);
-                        }
-
-                        $client = new \GuzzleHttp\Client();
-                        $response = $client->post(env('AGENDA_URL'), [
-                            'headers' => [
-                                'Authorization' => 'Bearer ' . env('AGENDA_TOKEN'),
-                                'Accept'        => 'application/json',
-                            ],
-                            'multipart' => $multipart,
-                            'timeout'   => 15,
-                        ]);
-
-                        $result = json_decode($response->getBody(), true);
-
-                        Log::info('✅ Invoice + PDF sent to Agenda', [
-                            'payload'  => $payload,
-                            'pdf'      => basename($pdfPath),
-                            'response' => $result,
-                        ]);
-
-                    } else {
-                        // Log jika bukan tempo, aplikasi akan lanjut ke baris di bawah blok try-catch
-                        Log::info('⚠️ Invoice bukan TEMPO, dilewati: ' . ($detail_do->do_code ?? $get_inv->code));
-                    }
-
-                } else {
-                    Log::warning('⚠️ Invoice or Customer not found for DO ID: ' . $do_id);
-                }
-            } catch (\Exception $ex) {
-                // dd($ex); <-- Dihapus agar jika API down, transaksi tetap jalan (hanya log error yang tercatat)
-                Log::error('❌ Gagal kirim data + PDF invoice ke Agenda: ' . $ex->getMessage());
-            }
 
             $userIds = [32, 36];
             $users = User::whereIn('id', $userIds)->get();
@@ -951,102 +770,72 @@ class DeliveryOrderController extends Controller
 
     public function print_manifest(Request $request, $id)
     {
-        // =========================
-        // CEK AKSES USER
-        // =========================
-        if (Auth::user()->is_superuser == 0) {
-            if (empty($this->access) || empty($this->access->user) || $this->access->can_print == 0) {
-                return redirect()->route('superuser.index')
-                    ->with('error', 'Anda tidak punya akses untuk membuka menu terkait');
+        if(Auth::user()->is_superuser == 0){
+            if(empty($this->access) || empty($this->access->user) || $this->access->can_print == 0){
+                return redirect()->route('superuser.index')->with('error','Anda tidak punya akses untuk membuka menu terkait');
             }
         }
 
-        try {
+        $result = PackingOrder::find($id);
 
-            // =========================
-            // CARI SO
-            // =========================
-            $so = DB::table('penjualan_so')->where('id', $id)->first();
+        if ($result === null){
+            abort(404);
+        }
 
-            if ($so) {
-                $result = PackingOrder::where('so_id', $so->id)->first();
-            } else {
-                $result = PackingOrder::where('id', $id)->first();
-            }
+        $result->print_count = + 1;
+        $result->save();
 
-            if (!$result) {
-                abort(404);
-            }
+        DB::beginTransaction();
+        try{
+            $my_report = "C:\\xampp\\htdocs\\ppi-dist\public\\cr\\packing_plan\\packing_plan_rev.rpt"; 
+            $my_pdf = 'C:\\xampp\\htdocs\\ppi-dist\\public\\cr\\packing_plan\\export\\'.$result->code.'.pdf';
 
-            // =========================
-            // UPDATE PRINT COUNT
-            // =========================
-            $result->increment('print_count');
-
-            // =========================
-            // PATH CRYSTAL REPORT
-            // =========================
-            $reportPath = "C:\\xampp\\htdocs\\ppi-dist\\public\\cr\\packing_plan\\packing_plan_rev.rpt";
-            $exportPath = "C:\\xampp\\htdocs\\ppi-dist\\public\\cr\\packing_plan\\export\\";
-            $pdfFile = $exportPath . $result->code . ".pdf";
-
-            // =========================
-            // DATABASE CONFIG
-            // =========================
-            $server = "LOCAL";
-            $database = "ppi-dist";
-            $username = "root";
-            $password = "";
-
+            $my_server = "LOCAL"; 
+            $my_user = "root"; 
+            $my_password = ""; 
+            $my_database = "ppi-dist";
             $COM_Object = "CrystalDesignRunTime.Application";
 
-            // =========================
-            // LOAD CRYSTAL REPORT
-            // =========================
-            $crapp = new COM($COM_Object) or die("Unable to Create Object");
+            //-Create new COM object-depends on your Crystal Report version
+            $crapp= New COM($COM_Object) or die("Unable to Create Object");
+            $creport = $crapp->OpenReport($my_report,1); // call rpt report
 
-            $creport = $crapp->OpenReport($reportPath, 1);
+            //- Set database logon info - must have
+            $creport->Database->Tables(1)->SetLogOnInfo($my_server, $my_database, $my_user, $my_password);
 
-            $creport->Database->Tables(1)->SetLogOnInfo(
-                $server,
-                $database,
-                $username,
-                $password
-            );
+            //- field prompt or else report will hang - to get through
+            $creport->EnableParameterPrompting = FALSE;
+            $creport->RecordSelectionFormula = "{penjualan_do.id}= $result->id";
 
-            $creport->EnableParameterPrompting = false;
 
-            $creport->RecordSelectionFormula = "{penjualan_do.id}= " . $result->id;
-
-            // =========================
-            // EXPORT PDF
-            // =========================
-            $creport->ExportOptions->DiskFileName = $pdfFile;
-            $creport->ExportOptions->PDFExportAllPages = true;
-            $creport->ExportOptions->DestinationType = 1;
-            $creport->ExportOptions->FormatType = 31;
-
+            //export to PDF process
+            $creport->ExportOptions->DiskFileName=$my_pdf; //export to pdf
+            $creport->ExportOptions->PDFExportAllPages=true;
+            $creport->ExportOptions->DestinationType=1; // export to file
+            $creport->ExportOptions->FormatType=31; // PDF type
             $creport->Export(false);
 
-            // =========================
-            // RELEASE OBJECT
-            // =========================
+            //------ Release the variables ------
             $creport = null;
             $crapp = null;
+            $ObjectFactory = null;
 
-            // =========================
-            // DOWNLOAD FILE
-            // =========================
-            if (!file_exists($pdfFile)) {
-                abort(404, 'File PDF tidak ditemukan');
-            }
+            $file = 'C:\\xampp\\htdocs\\ppi-dist\\public\\cr\\packing_plan\\export\\'.$result->code.'.pdf';
 
-            return response()->download($pdfFile, $result->code . '.pdf');
+            header("Content-Description: File Transfer"); 
+            header("Content-Type: application/octet-stream"); 
+            header("Content-Transfer-Encoding: Binary"); 
+            header("Content-Disposition: attachment; filename=\"". basename($file) ."\""); 
+            ob_clean();
+            flush();
+            readfile ($file);
+            exit();
 
-        } catch (\Throwable $e) {
-
-            return redirect()->back()->with('error', $e->getMessage());
-
+            DB::commit();
+            return redirect()->route('superuser.penjualan.delivery_order.detail', $result->id)->with('success','Berhasil Print Manifest!');
+        }catch(\Throwable $e){
+            DB::rollback();
+            return redirect()->back()->with('error',$e->getMessage());
         }
     }
 
@@ -1094,45 +883,17 @@ class DeliveryOrderController extends Controller
 
             $isSent = $do->status == 6;
 
-            // Format note yang digunakan saat insert StockMove
             $notePattern = $do->do_code . ' - ' . $do->name . ' ' . $do->text_kota;
+            $stockService = new StockService();
 
             foreach ($do->do_detail as $item) {
-
-                $stock = ProductMinStock::where('warehouse_id', $do->warehouse_id)
-                    ->where('product_packaging_id', $item->product_packaging_id)
-                    ->lockForUpdate()
-                    ->first();
-
-                if (!$stock) {
-                    throw new \Exception('Stock tidak ditemukan.');
-                }
-
-                /*
-                |--------------------------------------------------------------------------
-                | Restore quantity saja
-                |--------------------------------------------------------------------------
-                */
-                $stock->quantity += $item->qty;
-                $stock->save();
-
-                /*
-                |--------------------------------------------------------------------------
-                | Jika sudah SENT → hapus StockMove berdasarkan note
-                |--------------------------------------------------------------------------
-                */
-                if ($isSent) {
-
-                    $stockMoves = StockMove::where('warehouse_id', $do->warehouse_id)
-                        ->where('product_packaging_id', $item->product_packaging_id)
-                        ->where('note', $notePattern)
-                        ->lockForUpdate()
-                        ->get();
-
-                    foreach ($stockMoves as $move) {
-                        $move->delete();
-                    }
-                }
+                $baseId = preg_replace('/_\d+$/', '', $item->product_packaging_id);
+                
+                // Smart Cancel: Tahu kapan harus bikin jurnal pembalik, dan kapan cuma retur fisik
+                $stockService->executeSmartCancel(
+                    $do->warehouse_id, $baseId, $item->qty, 
+                    $do->status, $do->do_code, "Retur Batal DO - " . $notePattern
+                );
             }
 
             // Simpan status lama
@@ -1189,192 +950,114 @@ class DeliveryOrderController extends Controller
 
     public function do_update(Request $request)
     {
-        if (!$request->ajax()) {
-            abort(404);
-        }
+        if ($request->ajax()) {
+            DB::beginTransaction();
+            try {
+                $do = PackingOrder::findOrFail($request->id);
+                $do_detail = PackingOrderDetail::findOrFail($request->cost_id);
 
-        DB::beginTransaction();
-
-        try {
-            // Ambil DO dan detail
-            $do = PackingOrder::with(['do_detail','member'])->lockForUpdate()->findOrFail($request->id);
-            $do_detail = PackingOrderDetail::lockForUpdate()->findOrFail($request->cost_id);
-
-            if ($do->count_cancel == 0) {
-                return response()->json(['failed' => 'DO belum di-cancel']);
-            }
-
-            if (empty($request->idr_rate)) {
-                return response()->json(['failed' => 'Kurs IDR tidak boleh kosong']);
-            }
-
-            // -------------------------------
-            // 1️⃣ Update Header
-            // -------------------------------
-            $do->warehouse_id = $request->warehouse_id;
-            $do->idr_rate = $request->idr_rate;
-            $do->status = $do->prev_status; // Kembalikan ke status sebelum cancel
-            $do->updated_by = Auth::id();
-            $do->save();
-
-            // -------------------------------
-            // 2️⃣ Update Item
-            // -------------------------------
-            foreach ($request->repeater as $item) {
-                $poItem = PackingOrderItem::lockForUpdate()->find($item['do_item_id']);
-                if (!$poItem) continue;
-
-                $usd_disc = floatval($item['usd_disc']);
-                $qty = floatval($item['do_qty']);
-                $price = floatval($item['price']);
-                $percent_disc = floatval($poItem->percent_disc);
-
-                $total_disc = $percent_disc > 0
-                    ? ($usd_disc + (($price - $usd_disc) * $percent_disc / 100)) * $qty
-                    : $usd_disc * $qty;
-
-                $total = ($price * $qty) - $total_disc;
-
-                $poItem->update([
-                    'usd_disc' => $usd_disc,
-                    'qty' => $qty,
-                    'total_disc' => $total_disc,
-                    'total' => $total,
-                    'price' => $price,
-                ]);
-            }
-
-            // -------------------------------
-            // 3️⃣ Handle Stock dan StockMove sesuai prev_status
-            // -------------------------------
-            $prevStatus = $do->prev_sataus;
-            if (!$prevStatus) {
-                throw new \Exception("Prev status tidak ditemukan.");
-            }
-
-            $member = CustomerOtherAddress::where('id', $do->customer_other_address_id)->first();
-
-            if (!$member) {
-                throw new \Exception('Member tidak ditemukan.');
-            }
-
-            $notePattern = $do->do_code . ' - ' . $member->name . ' ' . $member->text_kota;
-
-            // dd($request->warehouse_id);
-
-            foreach ($do->do_detail  as $item) {
-                $stock = ProductMinStock::lockForUpdate()
-                    ->where('warehouse_id', $request->warehouse_id)
-                    ->where('product_packaging_id', $item->product_packaging_id)
-                    ->first();
-
-                if (!$stock) {
-                    throw new \Exception('Stock tidak ditemukan untuk product_packaging_id: ' . $item->product_packaging_id);
+                if ($do->count_cancel == 0) {
+                    return response()->json(['failed' => 'DO belum di-cancel']);
                 }
 
-                // Potong stok sesuai qty
-                if ($stock->quantity < $item->qty) {
-                    throw new \Exception("Stok tidak cukup untuk produk {$item->product_packaging_id}");
+                if (empty($request->idr_rate)) {
+                    return response()->json(['failed' => 'Kurs IDR tidak boleh kosong']);
                 }
-                $stock->quantity -= $item->qty;
-                $stock->save();
 
-                // Jika prev_status == 6 → buat StockMove
-                if ($prevStatus == 6) {
-                    StockMove::create([
-                        'warehouse_id' => $do->warehouse_id,
-                        'product_packaging_id' => $item->product_packaging_id,
-                        'qty' => $item->qty,
-                        'type' => 'out',
-                        'note' => $notePattern,
-                        'doc_date' => now(),
-                        'reference_id' => $do->id,
-                        'reference_type' => 'DO',
-                        'created_by' => Auth::id(),
+                $do->warehouse_id = $request->warehouse_id;
+                $do->idr_rate = $request->idr_rate;
+                $do->status = $do_detail->status_resi == 1 ? 6 : 4;
+                $do->updated_by = Auth::id();
+                $do->save();
+
+                foreach ($request->repeater as $item) {
+                    $poItem = PackingOrderItem::find($item['do_item_id']);
+                    if (!$poItem) continue;
+
+                    $usd_disc = floatval($item['usd_disc']);
+                    $qty = floatval($item['do_qty']);
+                    $price = floatval($item['price']);
+                    $percent_disc = floatval($poItem->percent_disc);
+
+                    $total_disc = $percent_disc > 0
+                        ? ($usd_disc + (($price - $usd_disc) * $percent_disc / 100)) * $qty
+                        : $usd_disc * $qty;
+
+                    $total = ($price * $qty) - $total_disc;
+
+                    $poItem->update([
+                        'usd_disc' => $usd_disc,
+                        'qty' => $qty,
+                        'total_disc' => $total_disc,
+                        'total' => $total,
+                        'price' => $price,
                     ]);
                 }
-            }
 
-            // -------------------------------
-            // 4️⃣ Recalculate Total IDR
-            // -------------------------------
-            $items = PackingOrderItem::where('do_id', $do->id)->get();
-            $rate = $do->idr_rate;
+                // Hitung total IDR
+                $items = PackingOrderItem::where('do_id', $request->id)->get();
+                $rate = $do->idr_rate;
+                $idr_total = $items->sum(function ($i) use ($rate) {
+                    return ceil((($i->price * $rate) * $i->qty) - ($i->total_disc * $rate));
+                });
 
-            $idr_total = $items->sum(function ($i) use ($rate) {
-                return ceil((($i->price * $rate) * $i->qty) - ($i->total_disc * $rate));
-            });
+                $disc1 = floatval($request->disc_agen_percent) / 100;
+                $disc2 = floatval($request->disc_kemasan_percent) / 100;
+                $disc_idr = intval(str_replace('.', '', $request->disc_tambahan_idr));
+                $voucher = intval(str_replace('.', '', $request->voucher_idr));
+                $delivery = intval(str_replace('.', '', $request->delivery_cost_idr));
+                $other = intval(str_replace('.', '', $request->resi_ongkir));
 
-            $disc1 = floatval($request->disc_agen_percent) / 100;
-            $disc2 = floatval($request->disc_kemasan_percent) / 100;
+                $total_disc_idr = ceil(($idr_total * $disc1) + (($idr_total - ($idr_total * $disc1)) * $disc2) + $disc_idr);
+                $purchase_total_idr = ceil($idr_total - $total_disc_idr - $voucher);
+                $grand_total_idr = ceil($purchase_total_idr + $delivery + $other);
 
-            $disc_idr = intval(str_replace('.', '', $request->disc_tambahan_idr));
-            $voucher = intval(str_replace('.', '', $request->voucher_idr));
-            $delivery = intval(str_replace('.', '', $request->delivery_cost_idr));
-            $other = intval(str_replace('.', '', $request->resi_ongkir));
+                if ($total_disc_idr > $grand_total_idr) {
+                    return response()->json(['failed' => 'Total diskon melebihi total belanja']);
+                }
 
-            $total_disc_idr = ceil(
-                ($idr_total * $disc1) +
-                (($idr_total - ($idr_total * $disc1)) * $disc2) +
-                $disc_idr
-            );
+                // Update Detail DO
+                $do_detail->update([
+                    'discount_1' => $request->disc_agen_percent,
+                    'discount_1_idr' => $request->disc_agen_idr,
+                    'discount_2' => $request->disc_kemasan_percent,
+                    'discount_2_idr' => $request->disc_kemasan_idr,
+                    'discount_idr' => $disc_idr,
+                    'total_discount_idr' => $total_disc_idr,
+                    'voucher_idr' => $voucher,
+                    'purchase_total_idr' => $purchase_total_idr,
+                    'delivery_cost_idr' => $delivery,
+                    'other_cost_idr' => $other,
+                    'grand_total_idr' => $grand_total_idr,
+                    'updated_by' => Auth::id(),
+                ]);
 
-            $purchase_total_idr = ceil($idr_total - $total_disc_idr - $voucher);
-            $grand_total_idr = ceil($purchase_total_idr + $delivery + $other);
+                if ($do->invoicing && $do->invoicing->grand_total_idr != $grand_total_idr) {
+                    $do->invoicing->update([
+                        'grand_total_idr' => $grand_total_idr
+                    ]);
+                }
 
-            if ($total_disc_idr > $idr_total) {
+                DB::commit();
+                    return $this->response(200, [
+                        'notification' => [
+                            'alert' => 'notify',
+                            'type' => 'success',
+                            'content' => 'Success, DO berhasil di update',
+                        ],
+                        'redirect_to' => route('superuser.penjualan.sales_order.index_lanjutan'),
+                    ]);
+
+            } catch (\Exception $e) {
+                DB::rollBack();
+                \Log::error("DO Update Error: " . $e->getMessage());
                 return response()->json([
-                    'failed' => 'Total diskon melebihi total belanja'
+                    'notification' => [
+                        'type' => 'error',
+                        'content' => 'Terjadi kesalahan: ' . $e->getMessage(),
+                    ]
                 ]);
             }
-
-            // -------------------------------
-            // 5️⃣ Update Detail DO
-            // -------------------------------
-            $do_detail->update([
-                'discount_1' => $request->disc_agen_percent,
-                'discount_1_idr' => $request->disc_agen_idr,
-                'discount_2' => $request->disc_kemasan_percent,
-                'discount_2_idr' => $request->disc_kemasan_idr,
-                'discount_idr' => $disc_idr,
-                'total_discount_idr' => $total_disc_idr,
-                'voucher_idr' => $voucher,
-                'purchase_total_idr' => $purchase_total_idr,
-                'delivery_cost_idr' => $delivery,
-                'other_cost_idr' => $other,
-                'grand_total_idr' => $grand_total_idr,
-                'updated_by' => Auth::id(),
-            ]);
-
-            // -------------------------------
-            // 6️⃣ Sync Invoice
-            // -------------------------------
-            if ($do->invoicing && $do->invoicing->grand_total_idr != $grand_total_idr) {
-                $do->invoicing->update([
-                    'grand_total_idr' => $grand_total_idr
-                ]);
-            }
-
-            DB::commit();
-
-            return $this->response(200, [
-                'notification' => [
-                    'alert' => 'notify',
-                    'type' => 'success',
-                    'content' => 'Success, DO berhasil di update',
-                ],
-                'redirect_to' => route('superuser.penjualan.sales_order.index_lanjutan'),
-            ]);
-
-        } catch (\Exception $e) {
-            DB::rollBack();
-            \Log::error("DO Update Error: " . $e->getMessage());
-            return response()->json([
-                'notification' => [
-                    'type' => 'error',
-                    'content' => 'Terjadi kesalahan: ' . $e->getMessage(),
-                ]
-            ]);
         }
     }
 

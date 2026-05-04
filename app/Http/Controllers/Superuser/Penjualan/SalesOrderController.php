@@ -1534,146 +1534,35 @@ class SalesOrderController extends Controller
                                 ]);
                             }
 
-                            // CHECK STOCK
-                            
+                            // ======================================
+                            // CHECK STOCK & RESERVE (VIA 1 PINTU)
+                            // ======================================
+                            $stockService = new \App\Services\StockService();
                             $base_product_packaging_id = preg_replace('/_\d+$/', '', $value["product_packaging_id"]);
-
-                            $productName = DB::table('master_products_packaging')
-                                            ->where('id', $base_product_packaging_id)
-                                            ->first();
-
-                            // $stock = ProductMinStock::where('warehouse_id', $request->origin_warehouse_id)
-                            //     ->where('product_packaging_id', $base_product_packaging_id)
-                            //     ->lockForUpdate()
-                            //     ->first();
                             
-                            // if (!$stock) {
-                            //     throw new \Exception('Stock tidak ditemukan untuk salah satu produk.');
-                            // }
-                            
-                            // $quantity  = (float) $stock->quantity;
-                            // $reserved  = (float) ($stock->reserved_quantity ?? 0);
-                            
-                            // $current_available = $quantity - $reserved;
-                            // $new_available     = $current_available - $do_qty;
-                            
-                            // /*
-                            // ==================================================
-                            // CONTROL MINUS & RESERVED QTY (CHECK ONLY)
-                            // ==================================================
-                            // */
-                            
-                            // // Stok sudah minus sebelumnya → tolak
-                            // if ($quantity < 0 && $new_available < $current_available) {
-                            //     throw new \Exception(
-                            //         "Stock sudah minus dan tidak boleh ditambah minus untuk produk {$value["product_packaging_id"]}"
-                            //     );
-                            // }
-                            
-                            // // Stok cukup → reserve normal
-                            // elseif ($current_available >= $do_qty) {
-                            //     $stock->reserved_quantity += $do_qty;
-                            // }
-                            
-                            // // First-time minus (available >=0 tapi order melebihi available) → lolos, tetap isi reserved
-                            // elseif ($current_available >= 0 && $new_available < 0) {
-                            //     $stock->reserved_quantity += $do_qty;
-                            // }
-                            
-                            // // Semua kasus lain → stock tidak mencukupi
-                            // else {
-                            //     throw new \Exception(
-                            //         "Stock tidak mencukupi. Available: {$current_available}, Request: {$do_qty}"
-                            //     );
-                            // }
-                            
-                            // $stock->save(); // Hanya update reserved_quantity, quantity tetap utuh
+                            $allowMinus = !empty($value['minusProduct']);
 
-                            $retry = 0;
-                            $maxRetry = 5;
-                            $stockUpdated = false;
-
-                            while ($retry < $maxRetry) {
-                                try {
-                                    DB::beginTransaction();
-
-                                    $stock = ProductMinStock::where('warehouse_id', $request->origin_warehouse_id)
-                                        ->where('product_packaging_id', $base_product_packaging_id)
-                                        ->lockForUpdate()
-                                        ->first();
-
-                                    // jika stock belum ada → buat
-                                    if (!$stock) {
-
-                                        $stock = ProductMinStock::create([
-                                            'warehouse_id' => $request->origin_warehouse_id,
-                                            'product_packaging_id' => $base_product_packaging_id,
-                                            'quantity' => 0,
-                                            'reserved_quantity' => 0
-                                        ]);
-
-                                        // lock ulang setelah create
-                                        $stock = ProductMinStock::where('id', $stock->id)
-                                            ->lockForUpdate()
-                                            ->first();
-                                    }
-
-                                    $current_reserved = (float) ($stock->reserved_quantity ?? 0);
-                                    $quantity = (float) ($stock->quantity ?? 0);
-
-                                    $available = $quantity - $current_reserved;
-                                    $new_available = $available - $do_qty;
-
-                                    $allowMinus = !empty($value['minusProduct']);
-
-                                    // ===== LOGIC VALIDASI =====
-                                    if ($available >= $do_qty) {
-
-                                        // stok cukup
-                                        $stock->reserved_quantity = $current_reserved + $do_qty;
-
-                                    } elseif ($available >= 0 && $new_available < 0) {
-
-                                        if (!$allowMinus) {
-                                            throw new \Exception(
-                                                "Stock '{$productName->name}' tidak cukup. ".
-                                                "Available: {$available}, Request: {$do_qty}"
-                                            );
-                                        }
-
-                                        // minus pertama kali
-                                        $stock->reserved_quantity = $current_reserved + $do_qty;
-                                        $warnings[] = "Stock '{$productName->name}' akan minus nantinya!";
-
-                                    } else {
-
-                                        if (!$allowMinus) {
-                                            throw new \Exception(
-                                                "Stock '{$productName->name}' sudah minus sebelumnya. ".
-                                                "Available: {$available}, Request: {$do_qty}"
-                                            );
-                                        }
-
-                                        // tetap izinkan minus
-                                        $stock->reserved_quantity = $current_reserved + $do_qty;
-                                        $warnings[] = "Stock '{$productName->name}' tetap minus (existing minus)";
-                                    }
-
-                                    $stock->save();
-
-                                    DB::commit();
-
-                                    $stockUpdated = true;
-                                    break;
-
-                                } catch (\Illuminate\Database\QueryException $e) {
-                                    DB::rollBack();
-                                    $retry++;
-                                    usleep(200000); // 0.2 detik
-                                } catch (\Exception $e) {
-                                    DB::rollBack();
-                                    throw $e;
+                            try {
+                                // 1. Booking Stok untuk yang akan di-DO-kan (do_qty)
+                                if ($do_qty > 0) {
+                                    $stockService->reserveStock(
+                                        $request->origin_warehouse_id, 
+                                        $base_product_packaging_id, 
+                                        $do_qty
+                                    );
                                 }
+
+                                // 2. Lepaskan/Release Booking untuk qty yang DIBATALKAN / REJECT
+                                if ($rej_qty > 0) {
+                                    $stockService->releaseReservedStock(
+                                        $request->origin_warehouse_id, 
+                                        $base_product_packaging_id, 
+                                        $rej_qty
+                                    );
+                                }
+
+                            } catch (\Exception $e) {
+                                throw new \Exception("Gagal update stock 1 Pintu: " . $e->getMessage());
                             }
 
                             if (!$stockUpdated) {
@@ -1728,6 +1617,14 @@ class SalesOrderController extends Controller
                                         'total_price'           => 0,
                                         'note'                  => $item['note'] ?? null,
                                     ]);
+                                    
+                                    // Sisipkan ini di dalam foreach ($mutasiItems as $item) { ... }
+                                    $docCode = $mutasi->kode;
+                                    $note = 'Mutasi Free Product (Tutup SO) ' . $sales_order->code;
+    
+                                    // Potong Fisik & Cetak Kartu Stok (Karena Tutup SO Normal = Fisik belum dipotong)
+                                    $stockService->deductPhysicalStock($request->origin_warehouse_id, $item['product_packaging_id'], $item['qty']);
+                                    $stockService->recordAdministrativeLog($request->origin_warehouse_id, $item['product_packaging_id'], $item['qty'], $docCode, $note);
                                 }
                             }
                         }
@@ -1778,7 +1675,7 @@ class SalesOrderController extends Controller
                             return $this->response(200, $response);
                         }
                     }
-                }elseif($sales_order->count_rev == 1){
+                } elseif($sales_order->count_rev == 1) {
                     if($request->origin_warehouse_id == null){
                         $errors[] = 'Warehouse tidak boleh kosong!';
                     }
@@ -1801,14 +1698,6 @@ class SalesOrderController extends Controller
                     $sales_order->count_rev = 0;
                     $sales_order->updated_by = Auth::id();
 
-                    if($request->origin_warehouse_id == null){
-                        $errors[] = 'Warehouse tidak boleh kosong!';
-                    }
-
-                    if($request->rekening == null){
-                        $errors[] = 'Rekening tidak boleh kosong!';
-                    }
-
                     $valuePoDetail = [];
                     if($sales_order->save()){
                         
@@ -1823,7 +1712,6 @@ class SalesOrderController extends Controller
                             }
 
                             $result = SalesOrderItem::where('id',$value["so_item_id"])->first();
-                           
 
                             $jumlahitem = $jumlahitem + 1;
 
@@ -1835,7 +1723,6 @@ class SalesOrderController extends Controller
                             $usd_disc = $value["usd_disc"];
                             $percent_disc = 0;
                             $total_discount = 0;
-
 
                             if($value["so_item_id"] == null){
                                 $errors[] = 'SO Item ID tidak boleh kosong';
@@ -1885,6 +1772,100 @@ class SalesOrderController extends Controller
                                 $updateSO = SalesOrderItem::where('id',$value["so_item_id"])->update([
                                     'qty_worked' => $do_qty
                                 ]);
+                            }
+
+                            // ======================================
+                            // CHECK STOCK & RESERVE (VIA 1 PINTU) REV 1
+                            // ======================================
+                            $stockService = new \App\Services\StockService();
+                            $base_product_packaging_id = preg_replace('/_\d+$/', '', $value["product_packaging_id"]);
+                            
+                            try {
+                                // Booking stok untuk QTY yang jadi di-DO-kan
+                                if ($do_qty > 0) {
+                                    $stockService->reserveStock(
+                                        $request->origin_warehouse_id, 
+                                        $base_product_packaging_id, 
+                                        $do_qty
+                                    );
+                                }
+
+                                // Lepas stok untuk QTY yang direject / dibatalkan
+                                if ($rej_qty > 0) {
+                                    $stockService->releaseReservedStock(
+                                        $request->origin_warehouse_id, 
+                                        $base_product_packaging_id, 
+                                        $rej_qty
+                                    );
+                                }
+                            } catch (\Exception $e) {
+                                throw new \Exception("Gagal update stock 1 Pintu (Rev 1): " . $e->getMessage());
+                            }
+
+                            // Cek Flag Free Product
+                            $is_free_product = !empty($result->free_product) && (float)$result->free_product > 0;
+                            $mutasiItems = [];
+                            
+                            if ($is_free_product) {
+                                $real_qty = $value['so_qty'];
+                        
+                                if ($real_qty > 0) {
+                                    $mutasiItems[] = [
+                                        'product_packaging_id' => $result->product_packaging_id,
+                                        'qty'  => $real_qty,
+                                        'note' => 'Free product otomatis dari SO (Rev 1) ' . $sales_order->code,
+                                    ];
+                                }
+                            }
+
+                            // ========================================
+                            // PROSES MUTASI SHOWROOM (FREE PRODUCT)
+                            // ========================================
+                            if (!empty($mutasiItems)) {
+                        
+                                // Pastikan tidak membuat mutasi kosong
+                                $mutasiItems = array_filter($mutasiItems, function ($item) {
+                                    return isset($item['qty']) && $item['qty'] > 0;
+                                });
+                        
+                                if (!empty($mutasiItems)) {
+                        
+                                    $mutasi = MutasiShowroom::create([
+                                        'kode' => CodeRepo::generateMutasiShowroom(MutasiShowroom::TYPE_SYSTEM_FREE_SO),
+                                        'brand_name'        => $sales_order->brand_name ?? '-',
+                                        'type'              => MutasiShowroom::TYPE_SYSTEM_FREE_SO,
+                                        'warehouse_from_id' => $request->origin_warehouse_id,
+                                        'warehouse_to_id'   => $sales_order->customer_id == 51 ? 53 : $sales_order->customer_id,
+                                        'customer_other_address_id' => $sales_order->customer_other_address_id ?? null,
+                                        'so_id'                     => $sales_order->id,
+                                        'tanggal'           => now(),
+                                        'status'            => MutasiShowroom::STATUS['SETTLE'],
+                                        'status_checked'    => MutasiShowroom::STATUS_CHECKED['CHECKED'],
+                                        'status_barang'     => MutasiShowroom::STATUS_BARANG['DIAMBIL'],
+                                        'note'              => 'Mutasi Free Product dari SO (Rev 1) ' . $sales_order->code,
+                                        'created_by'        => Auth::id(),
+                                    ]);
+                        
+                                    foreach ($mutasiItems as $item) {
+                                        MutasiShowroomDetail::create([
+                                            'penjualan_showroom_id' => $mutasi->id,
+                                            'product_packaging_id'  => $item['product_packaging_id'],
+                                            'qty'                   => $item['qty'],
+                                            'price'                 => 0,
+                                            'total_price'           => 0,
+                                            'note'                  => $item['note'] ?? null,
+                                        ]);
+
+                                        // ==========================================
+                                        // TUTUP KEBOCORAN FREE PRODUCT (REV 1)
+                                        // ==========================================
+                                        $docCode = $mutasi->kode;
+                                        $note = 'Mutasi Free Product (Tutup SO Rev 1) ' . $sales_order->code;
+
+                                        $stockService->deductPhysicalStock($request->origin_warehouse_id, $item['product_packaging_id'], $item['qty']);
+                                        $stockService->recordAdministrativeLog($request->origin_warehouse_id, $item['product_packaging_id'], $item['qty'], $docCode, $note);
+                                    }
+                                }
                             }
                         }
     
