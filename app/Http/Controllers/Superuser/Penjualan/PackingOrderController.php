@@ -29,6 +29,8 @@ use App\Entities\Setting\UserMenu;
 use App\Entities\Account\User;
 use App\Repositories\CodeRepo;
 use App\Services\StockService;
+use App\Entities\Gudang\MutasiShowroom;
+use App\Entities\Gudang\MutasiShowroomDetail;
 use Auth;
 use DB;
 use PDF;
@@ -1081,7 +1083,6 @@ class PackingOrderController extends Controller
         }
 
         try {
-
             $result = PackingOrder::find($id);
 
             if (!$result) {
@@ -1099,46 +1100,90 @@ class PackingOrderController extends Controller
                         ->lockForUpdate()
                         ->firstOrFail();
 
+                    $so = SalesOrder::where('id', $packing->so_id)
+                        ->lockForUpdate()
+                        ->first();
+
+                    $isProforma = ($so && $so->status_proforma == 4);
+                    $stockService = new \App\Services\StockService();
+
+                    /*
+                    |--------------------------------------------------------------------------
+                    | 1️⃣ TRACKING FREE PRODUCT + RESTORE STOK (AMAN UNTUK PROFORMA & NORMAL)
+                    |--------------------------------------------------------------------------
+                    */
+                    if ($so) {
+                        $mutasiShowrooms = \App\Entities\Gudang\MutasiShowroom::where('so_id', $so->id)
+                            ->where('type', \App\Entities\Gudang\MutasiShowroom::TYPE_SYSTEM_FREE_SO)
+                            ->lockForUpdate()
+                            ->get();
+
+                        foreach ($mutasiShowrooms as $mutasi) {
+                            $mutasiDetails = \App\Entities\Gudang\MutasiShowroomDetail::where('penjualan_showroom_id', $mutasi->id)->get();
+
+                            foreach ($mutasiDetails as $md) {
+                                // 🔥 KUNCI AMAN: Gunakan cancelDoRevisi. 
+                                // Jika ini Proforma, dia otomatis mengembalikan Fisik + Hapus Reserved.
+                                // Jika ini SO Normal Draft, dia otomatis hanya Hapus Reserved.
+                                $stockService->cancelDoRevisi(
+                                    $mutasi->warehouse_from_id, 
+                                    $md->product_packaging_id, 
+                                    (float) $md->qty,
+                                    $isProforma, 
+                                    $packing->status
+                                );
+                            }
+
+                            // 🧹 Hapus log & mutasi
+                            \App\Entities\Gudang\StockMove::where('code_transaction', $mutasi->kode)->delete();
+                            \App\Entities\Gudang\MutasiShowroomDetail::where('penjualan_showroom_id', $mutasi->id)->delete();
+                            $mutasi->delete();
+                        }
+                    }
+
+                    /*
+                    |--------------------------------------------------------------------------
+                    | 2️⃣ KEMBALIKAN STOK ORDER NORMAL (PO ITEM)
+                    |--------------------------------------------------------------------------
+                    */
                     $items = PackingOrderItem::where('do_id', $packing->id)->get();
 
                     foreach ($items as $item) {
+                        // 🚨 Array $freeProducts dan logika "continue/skip" DIHAPUS TOTAL!
+                        // Kita proses semua pesanan berbayar apa adanya.
 
-                        $stock = ProductMinStock::where('warehouse_id', $packing->warehouse_id)
+                        $stock = \App\Entities\Master\ProductMinStock::where('warehouse_id', $packing->warehouse_id)
                             ->where('product_packaging_id', $item->product_packaging_id)
                             ->lockForUpdate()
                             ->first();
 
                         if (!$stock) continue;
 
-                        // =====================================
-                        // KEMBALIKAN STOK REVISI (VIA 1 PINTU)
-                        // =====================================
-                        $so = SalesOrder::where('id', $packing->so_id)->lockForUpdate()->first();
-                        $isProforma = ($so && $so->is_proforma == 1);
-                        $stockService = new \App\Services\StockService();
-    
-                        foreach ($items as $item) {
-                            // Fungsi ini otomatis tahu kapan harus kembali fisik vs lepas booking!
-                            $stockService->cancelDoRevisi(
-                                $packing->warehouse_id, 
-                                $item->product_packaging_id, 
-                                $item->qty, 
-                                $isProforma, 
-                                $packing->status
-                            );
-                        }
+                        $stockService->cancelDoRevisi(
+                            $packing->warehouse_id,
+                            $item->product_packaging_id,
+                            (float) $item->qty,
+                            $isProforma,
+                            $packing->status
+                        );
                     }
 
-                    $so = SalesOrder::where('id', $packing->so_id)->lockForUpdate()->first();
-
+                    /*
+                    |--------------------------------------------------------------------------
+                    | 3️⃣ UPDATE STATUS SO & PROFORMA
+                    |--------------------------------------------------------------------------
+                    */
                     if ($so) {
+
                         $packingSoCode = optional($packing->so)->code;
 
-                        if ($so->is_proforma == 1) {
+                        if ($so->status_proforma == 4) {
+
                             $so->status = 1;
                             $so->count_rev = 1;
                             $so->code = null;
                             $so->keep_code = $packingSoCode;
+                            $so->status_proforma = 2;
                             $so->save();
 
                             $proforma = SalesOrderProforma::where('so_id', $so->id)
@@ -1147,11 +1192,12 @@ class PackingOrderController extends Controller
 
                             if ($proforma) {
                                 $proforma->so_lanjutan = 0;
-                                $proforma->status = 3;
+                                $proforma->status = 2;
                                 $proforma->save();
                             }
 
                         } else {
+
                             $so->update([
                                 'status' => 2,
                                 'count_rev' => 1,
@@ -1161,6 +1207,11 @@ class PackingOrderController extends Controller
                         }
                     }
 
+                    /*
+                    |--------------------------------------------------------------------------
+                    | 4️⃣ FINAL UPDATE
+                    |--------------------------------------------------------------------------
+                    */
                     PackingOrder::where('id', $packing->id)->update(['status' => 7]);
 
                     Invoicing::where('do_id', $packing->id)
@@ -1174,7 +1225,7 @@ class PackingOrderController extends Controller
 
                 return response()->json([
                     'status' => 'success',
-                    'message' => 'SO berhasil direvisi dan reserved dikembalikan!',
+                    'message' => 'SO berhasil direvisi dan stok kembali normal!',
                     'redirect' => route('superuser.penjualan.sales_order.index_lanjutan')
                 ]);
             }

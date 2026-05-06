@@ -532,218 +532,200 @@ class SalesOrderProformaController extends Controller
         if (!$request->ajax()) {
             abort(400, 'Invalid request type.');
         }
-    
+
         DB::beginTransaction();
-    
+
         try {
-    
-            /*
-            |--------------------------------------------------------------------------
-            | 1️⃣ LOCK & AMBIL PROFORMA
-            |--------------------------------------------------------------------------
-            */
-    
+
+            // =========================================================
+            // 1. LOCK DATA
+            // =========================================================
             $sales_proforma = SalesOrderProforma::with(['items','details_cost'])
                 ->lockForUpdate()
                 ->findOrFail($id);
-    
+
             if ($sales_proforma->status == 4) {
                 throw new \Exception("Proforma sudah pernah di-ACC.");
             }
-    
-            /*
-            |--------------------------------------------------------------------------
-            | 🔹 PREPARE & GENERATE SO CODE (DIPINDAH KE ATAS)
-            |--------------------------------------------------------------------------
-            */
-    
+
             $sales_order = SalesOrder::lockForUpdate()
                 ->findOrFail($sales_proforma->so_id);
-    
+
             $sales_order->status = 4;
             $sales_order->status_proforma = 4;
-            $sales_order->code = CodeRepo::generateSO();
-            $sales_order->payment_status = 0; // cek apakah status nya 
+            // Jika ada revisi, gunakan keep_code agar nomor DO tetap konsisten untuk audit
+            if ($sales_order->count_rev > 0 && $sales_order->keep_code) {
+                $sales_order->code = $sales_order->keep_code;
+            } else {
+                $sales_order->code = CodeRepo::generateSO();
+            }
+            $sales_order->payment_status = 0; 
             $sales_order->updated_by = Auth::id();
-            $sales_order->so_date = $sales_proforma->so_date ?? null ;
-            $sales_order->sales_id = $sales_proforma->sales_id ?? null ;
-            $sales_order->sales_senior_id = $sales_proforma->sales_senior_id ?? null ;
+            $sales_order->so_date = $sales_proforma->so_date ?? null;
+            $sales_order->sales_id = $sales_proforma->sales_id ?? null;
+            $sales_order->sales_senior_id = $sales_proforma->sales_senior_id ?? null;
             $sales_order->rekening = $sales_proforma->rekening_id;
             $sales_order->origin_warehouse_id = $sales_proforma->warehouse_id;
             $sales_order->ekspedisi_id = $sales_proforma->vendor_id ?? null;
             $sales_order->save();
-    
-            $transactionCode = $sales_order->code;
-    
-            /*
-            |--------------------------------------------------------------------------
-            | 2️⃣ VALIDASI KETAT & POTONG STOK LANGSUNG (PROFORMA RULE)
-            |--------------------------------------------------------------------------
-            */
 
-            $warnings = [];
-            $mutasiItems = []; // untuk free product mutasi showroom
-            $stockService = new \App\Services\StockService(); // Panggil 1 Pintu
+            $stockService = new \App\Services\StockService();
+
+            // =========================================================
+            // 2. LOOP ITEM (MAIN + FREE TRACKING)
+            // =========================================================
+            $mutasiItemsToCreate = [];
+            $remainingFreeTracker = [];
 
             foreach ($sales_proforma->items as $item) {
+                $pid = $item->product_packaging_id;
+                $qty_baris = round($item->qty, 2);
 
-                // A. Pengecekan Ketersediaan Stok (Strict Check)
-                $stock = \App\Entities\Master\ProductMinStock::where('warehouse_id', $sales_proforma->warehouse_id)
-                    ->where('product_packaging_id', $item->product_packaging_id)
+                $soItem = SalesOrderItem::where('so_id', $sales_proforma->so_id)
+                    ->where('product_packaging_id', $pid)
                     ->first();
 
-                $currentQty = $stock ? (float) $stock->quantity : 0;
-                $currentReserved = $stock ? (float) $stock->reserved_quantity : 0;
+                $free_qty = 0;
+                if ($soItem) {
+                    if (!isset($remainingTracker[$soItem->id])) {
+                        $remainingTracker[$soItem->id] = round($soItem->free_product, 2);
+                    }
+                    $available_free = $remainingTracker[$soItem->id];
+                    if ($available_free > 0) {
+                        $free_qty = min($qty_baris, $available_free);
+                        $remainingTracker[$soItem->id] -= $free_qty;
+                    }
+                }
+                $main_qty = round($qty_baris - $free_qty, 2);
+
+                // Validasi Stok
+                $stock = \App\Entities\Master\ProductMinStock::where('warehouse_id', $sales_proforma->warehouse_id)
+                    ->where('product_packaging_id', $pid)
+                    ->lockForUpdate()
+                    ->first();
+
+                $currentQty = $stock ? (float)$stock->quantity : 0;
+                $currentReserved = $stock ? (float)$stock->reserved_quantity : 0;
                 $available = $currentQty - $currentReserved;
 
-                // Jika stok tidak cukup, batalkan ACC!
-                if ($available < $item->qty) {
-                    
-                    // 1. Ambil detail produk (Hapus suffix _1 dll jika ada)
-                    $base_product_id = preg_replace('/_\d+$/', '', $item->product_packaging_id);
-                    $productDetail = DB::table('master_products_packaging')
-                                        ->where('id', $base_product_id)
-                                        ->first();
-                    
-                    // 2. Format tampilan: Kode - Nama (atau ID jika tidak ketemu)
-                    $productDisplay = $productDetail 
-                        ? ($productDetail->code . ' - ' . $productDetail->name) 
-                        : "ID " . $item->product_packaging_id;
+                if ($available < $qty_baris) {
+                    throw new \Exception("STOK TIDAK MENCUKUPI untuk product ID {$pid}. Available: {$available}, Need: {$qty_baris}");
+                }
 
-                    // 3. Lempar error dengan nama yang jelas
-                    throw new \Exception("STOK TIDAK MENCUKUPI! Produk {$productDisplay} hanya tersedia {$available}, namun Anda membutuhkan {$item->qty}. Harap periksa fisik/kartu stok Anda.");
+                if ($main_qty > 0) {
+                    $stockService->deductPhysicalStock($sales_proforma->warehouse_id, $pid, $main_qty);
+                }
+                
+                if ($free_qty > 0) {
+                    $mutasiItemsToCreate[$pid] = ($mutasiItemsToCreate[$pid] ?? 0) + $free_qty;
                 }
             }
-    
-            /*
-            |--------------------------------------------------------------------------
-            | 3️⃣ HANDLE CUSTOMER (JIKA NON EXISTING)
-            |--------------------------------------------------------------------------
-            */
-    
-            if ($sales_proforma->exsisting_customer == 0) {
-    
-                $duplicate = Customer::whereRaw('LOWER(name) = ?', 
-                            [strtolower($sales_proforma->customer_name)])
-                            ->where('status', Customer::STATUS['ACTIVE'])
-                            ->exists();
-    
-                if ($duplicate) {
-                    throw new \Exception("Duplicate store found");
+
+            // Potong Free
+            foreach ($mutasiItemsToCreate as $pid => $totalFree) {
+                if ($totalFree > 0) {
+                    $stockService->deductPhysicalStock($sales_proforma->warehouse_id, $pid, round($totalFree, 2));
                 }
-    
+            }
+
+            // Customer Baru / Lama
+            if ($sales_proforma->exsisting_customer == 0) {
+                $duplicate = Customer::whereRaw('LOWER(name) = ?', [strtolower($sales_proforma->customer_name)])
+                    ->where('status', Customer::STATUS['ACTIVE'])->exists();
+                if ($duplicate) throw new \Exception("Duplicate store found");
+
                 $customer = Customer::create([
-                    'code'          => CodeRepo::generateCustomer(),
-                    'name'          => $sales_proforma->customer_name,
-                    'count_member'  => 1,
-                    'phone'         => $sales_proforma->customer_phone,
-                    'address'       => $sales_proforma->customer_address,
-                    'owner_name'    => $sales_proforma->customer_owner,
-                    'provinsi'      => $sales_proforma->customer_region,
-                    'kota'          => $sales_proforma->customer_city,
-                    'status'        => Customer::STATUS['ACTIVE'],
+                    'code' => CodeRepo::generateCustomer(),
+                    'name' => $sales_proforma->customer_name,
+                    'count_member' => 1,
+                    'phone' => $sales_proforma->customer_phone,
+                    'address' => $sales_proforma->customer_address,
+                    'owner_name' => $sales_proforma->customer_owner,
+                    'provinsi' => $sales_proforma->customer_region,
+                    'kota' => $sales_proforma->customer_city,
+                    'status' => Customer::STATUS['ACTIVE'],
                 ]);
-    
+
                 $otherAddress = CustomerOtherAddress::create([
-                    'id'                => $customer->id.'.1',
-                    'customer_id'       => $customer->id,
-                    'member_default'    => 1,
-                    'name'              => $customer->name,
-                    'contact_person'    => $customer->owner_name,
-                    'phone'             => $customer->phone,
-                    'address'           => $customer->address,
-                    'provinsi'          => $customer->provinsi,
-                    'kota'              => $customer->kota,
-                    'status'            => CustomerOtherAddress::STATUS['ACTIVE'],
+                    'id' => $customer->id.'.1',
+                    'customer_id' => $customer->id,
+                    'member_default' => 1,
+                    'name' => $customer->name,
+                    'contact_person' => $customer->owner_name,
+                    'phone' => $customer->phone,
+                    'address' => $customer->address,
+                    'provinsi' => $customer->provinsi,
+                    'kota' => $customer->kota,
+                    'status' => CustomerOtherAddress::STATUS['ACTIVE'],
                 ]);
-    
                 $sales_proforma->customer_other_address_id = $otherAddress->id;
             }
-    
-            /*
-            |--------------------------------------------------------------------------
-            | 5️⃣ UPDATE PROFORMA
-            |--------------------------------------------------------------------------
-            */
-    
+
             $sales_proforma->status = 4;
             $sales_proforma->so_lanjutan = 1;
             $sales_proforma->updated_by = Auth::id();
             $sales_proforma->save();
-    
-            /*
-            |--------------------------------------------------------------------------
-            | 6️⃣ CREATE PACKING ORDER
-            |--------------------------------------------------------------------------
-            */
-    
-            $packingOrder = PackingOrder::create([
-                'code' => CodeRepo::generatePO(),
-                'do_code' => $sales_order->code,
-                'warehouse_id' => $sales_proforma->warehouse_id,
-                'customer_id' => $sales_order->customer_id,
-                'customer_other_address_id' => $sales_proforma->customer_other_address_id,
-                'vendor_id' => $sales_proforma->vendor_id,
-                'idr_rate' => $sales_proforma->so_idr_rate,
-                'type_transaction' => optional($sales_proforma->salesOrder)->type_transaction,
-                'count_cancel' => 0,
-                'status' => 2,
-                'note' => $sales_proforma->note,
-                'created_by' => Auth::id(),
-                'so_id' => $sales_order->id,
-            ]);
-    
-            $do_id = $packingOrder->id;
-    
-            /*
-            |--------------------------------------------------------------------------
-            | 7 COPY DETAIL COST
-            |--------------------------------------------------------------------------
-            */
-    
-            if ($sales_proforma->details_cost) {
-    
-                PackingOrderDetail::create([
-                    'do_id' => $do_id,
-                    'discount_1' => $sales_proforma->details_cost->discount_1_percent,
-                    'discount_2' => $sales_proforma->details_cost->discount_2_percent,
-                    'discount_1_idr' => $sales_proforma->details_cost->discount_1,
-                    'discount_2_idr' => $sales_proforma->details_cost->discount_2,
-                    'discount_idr' => $sales_proforma->details_cost->discount_idr,
-                    'voucher_idr' => $sales_proforma->details_cost->voucher_idr,
-                    'purchase_total_idr' => $sales_proforma->details_cost->purchase_total_idr,
-                    'delivery_cost_idr' => $sales_proforma->details_cost->delivery_cost_idr,
-                    'status_resi' => 0,
-                    'grand_total_idr' => $sales_proforma->details_cost->grand_total_idr,
+
+            // Cek PO sebelumnya yang pernah direvisi / dicancel
+            $packingOrder = PackingOrder::where('so_id', $sales_order->id)
+                ->where('status', 7) // Status 7 = Batal/Revisi
+                ->orderBy('id', 'desc')
+                ->first();
+
+            if ($packingOrder) {
+                // Recycle PO Lama
+                $packingOrder->status = 2;
+                $packingOrder->warehouse_id = $sales_proforma->warehouse_id;
+                $packingOrder->note = $sales_proforma->note;
+                $packingOrder->created_by = Auth::id();
+                $packingOrder->save();
+                
+                // Hapus Packing Item yang lama agar tidak duplikat
+                PackingOrderItem::where('do_id', $packingOrder->id)->delete();
+            } else {
+                // Buat PO Baru
+                $packingOrder = PackingOrder::create([
+                    'code' => CodeRepo::generatePO(),
+                    'do_code' => $sales_order->code,
+                    'warehouse_id' => $sales_proforma->warehouse_id,
+                    'customer_id' => $sales_order->customer_id,
+                    'customer_other_address_id' => $sales_proforma->customer_other_address_id,
+                    'vendor_id' => $sales_proforma->vendor_id,
+                    'idr_rate' => $sales_proforma->so_idr_rate,
+                    'type_transaction' => optional($sales_proforma->salesOrder)->type_transaction,
+                    'count_cancel' => 0,
+                    'status' => 2,
+                    'note' => $sales_proforma->note,
+                    'created_by' => Auth::id(),
+                    'so_id' => $sales_order->id,
                 ]);
             }
-    
-            /*
-            |--------------------------------------------------------------------------
-            | 8 COPY ITEMS
-            |--------------------------------------------------------------------------
-            */
-    
+
+            $do_id = $packingOrder->id;
+
+            if ($sales_proforma->details_cost) {
+                PackingOrderDetail::updateOrCreate(
+                    ['do_id' => $do_id],
+                    [
+                        'do_id' => $do_id,
+                        'discount_1' => $sales_proforma->details_cost->discount_1_percent,
+                        'discount_2' => $sales_proforma->details_cost->discount_2_percent,
+                        'discount_1_idr' => $sales_proforma->details_cost->discount_1,
+                        'discount_2_idr' => $sales_proforma->details_cost->discount_2,
+                        'discount_idr' => $sales_proforma->details_cost->discount_idr,
+                        'voucher_idr' => $sales_proforma->details_cost->voucher_idr,
+                        'purchase_total_idr' => $sales_proforma->details_cost->purchase_total_idr,
+                        'delivery_cost_idr' => $sales_proforma->details_cost->delivery_cost_idr,
+                        'status_resi' => 0,
+                        'grand_total_idr' => $sales_proforma->details_cost->grand_total_idr,
+                    ]
+                );
+            }
+
             foreach ($sales_proforma->items as $item) {
-    
                 $soItem = SalesOrderItem::where('so_id', $sales_order->id)
-                    ->where('product_packaging_id', $item->product_packaging_id)
-                    ->first();
+                    ->where('product_packaging_id', $item->product_packaging_id)->first(); 
 
-                $is_free_product = !empty($soItem->free_product) && (float)$soItem->free_product > 0;
-
-                if ($is_free_product) {
-                    
-                    if ($item->qty > 0) {
-                    
-                        $mutasiItems[] = [
-                            'product_packaging_id' => $item->product_packaging_id,
-                            'qty'  => $item->qty,
-                            'note' => 'Free product otomatis dari SO ' . $sales_order->code,
-                        ];
-                    }
-                }
-    
                 PackingOrderItem::create([
                     'product_packaging_id' => $item->product_packaging_id,
                     'do_id' => $do_id,
@@ -758,427 +740,60 @@ class SalesOrderProformaController extends Controller
                 ]);
             }
 
-            /*
-            |--------------------------------------------------------------------------
-            | MUTASI SHOWROOM FREE PRODUCT
-            |--------------------------------------------------------------------------
-            */
+            // Log Mutasi
+            if (!empty($mutasiItemsToCreate)) {
+                $mutasi = MutasiShowroom::create([
+                    'kode' => CodeRepo::generateMutasiShowroom(MutasiShowroom::TYPE_SYSTEM_FREE_SO),
+                    'brand_name' => $sales_order->brand_name ?? '-',
+                    'type' => MutasiShowroom::TYPE_SYSTEM_FREE_SO,
+                    'warehouse_from_id' => $sales_proforma->warehouse_id,
+                    'warehouse_to_id' => $sales_order->customer_id,
+                    'so_id' => $sales_order->id,
+                    'tanggal' => now(),
+                    'status' => 1,
+                    'note' => 'Mutasi Free Product (LOG ONLY)',
+                    'created_by' => Auth::id(),
+                ]);
 
-            if (!empty($mutasiItems)) {
-
-                $mutasiItems = array_filter($mutasiItems, function ($item) {
-                    return isset($item['qty']) && $item['qty'] > 0;
-                });
-
-                if (!empty($mutasiItems)) {
-
-                    $mutasi = MutasiShowroom::create([
-                        'kode' => CodeRepo::generateMutasiShowroom(MutasiShowroom::TYPE_SYSTEM_FREE_SO),
-                        'brand_name' => $sales_order->brand_name ?? '-',
-                        'type' => MutasiShowroom::TYPE_SYSTEM_FREE_SO,
-                        'warehouse_from_id' => $sales_proforma->warehouse_id,
-                        'warehouse_to_id' => $sales_order->customer_id == 51
-                                                ? 53
-                                                : $sales_order->customer_id,
-                        'customer_other_address_id' => $sales_proforma->customer_other_address_id ?? null,
-                        'so_id' => $sales_order->id,
-                        'tanggal' => now(),
-                        'status' => MutasiShowroom::STATUS['SETTLE'],
-                        'status_checked' => MutasiShowroom::STATUS_CHECKED['CHECKED'],
-                        'status_barang' => MutasiShowroom::STATUS_BARANG['DIAMBIL'],
-                        'note' => 'Mutasi Free Product dari SO ' . $sales_order->code,
-                        'created_by' => Auth::id(),
+                foreach ($mutasiItemsToCreate as $pid => $totalFree) {
+                    MutasiShowroomDetail::create([
+                        'penjualan_showroom_id' => $mutasi->id,
+                        'product_packaging_id' => $pid,
+                        'qty' => $totalFree,
+                        'price' => 0,
+                        'total_price' => 0,
                     ]);
-
-                    // foreach ($mutasiItems as $item) {
-
-                    //     MutasiShowroomDetail::create([
-                    //         'penjualan_showroom_id' => $mutasi->id,
-                    //         'product_packaging_id' => $item['product_packaging_id'],
-                    //         'qty' => $item['qty'],
-                    //         'price' => 0,
-                    //         'total_price' => 0,
-                    //         'note' => $item['note'] ?? null,
-                    //     ]);
-
-                    // }
-                    
-                    foreach ($mutasiItems as $item) {
-
-                        MutasiShowroomDetail::create([
-                            'penjualan_showroom_id' => $mutasi->id,
-                            'product_packaging_id' => $item['product_packaging_id'],
-                            'qty' => $item['qty'],
-                            'price' => 0,
-                            'total_price' => 0,
-                            'note' => $item['note'] ?? null,
-                        ]);
-
-                        // ==========================================
-                        // TUTUP KEBOCORAN: CETAK LOG KARTU STOK SAJA
-                        // ==========================================
-                        $docCode = $mutasi->kode;
-                        $note = 'Mutasi Free Product dari SO ' . $sales_order->code;
-
-                        // ❌ BAGIAN INI SAYA HAPUS KARENA FISIK SUDAH DIPOTONG DI TAHAP 2 (ATAS)
-                        // $stockService->deductPhysicalStock( ... ); 
-
-                        // ✅ CUKUP PANGGIL PENCETAKAN KARTU STOK SAJA:
-                        $stockService->recordAdministrativeLog(
-                            $mutasi->warehouse_from_id, 
-                            $item['product_packaging_id'], 
-                            $item['qty'], 
-                            $docCode, 
-                            $note
-                        );
-                    }
                 }
             }
-    
-            /*
-            |--------------------------------------------------------------------------
-            | 8️⃣ CREATE INVOICE
-            |--------------------------------------------------------------------------
-            */
-    
-            Invoicing::create([
-                'code'                      => $sales_order->code,
-                'do_id'                     => $packingOrder->id,
-                'customer_id'               => $sales_order->customer_id,
-                'customer_other_address_id' => $sales_proforma->customer_other_address_id,
-                'grand_total_idr'           => $sales_proforma->details_cost->grand_total_idr ?? 0,
-                'created_by'                => Auth::id(),
-            ]);
-    
+
+            // Invoice
+            Invoicing::updateOrCreate(
+                ['code' => $sales_order->code, 'do_id' => $do_id],
+                [
+                    'customer_id' => $sales_order->customer_id,
+                    'customer_other_address_id' => $sales_proforma->customer_other_address_id,
+                    'grand_total_idr' => $sales_proforma->details_cost->grand_total_idr ?? 0,
+                    'created_by' => Auth::id(),
+                    'status' => 1
+                ]
+            );
+
             DB::commit();
-    
+
             return response()->json([
                 'success' => true,
-                'message' => 'ACC berhasil. SO lanjutan & DO telah dibuat.'
+                'message' => 'ACC berhasil. DO & PO direcycle, stok aman.'
             ]);
-    
+
         } catch (\Throwable $e) {
             DB::rollBack();
-    
+
             return response()->json([
                 'success' => false,
                 'message' => $e->getMessage()
             ], 500);
         }
     }
-
-    // public function acc(Request $request, $id)
-    // {
-    //     if ($request->ajax()) {
-    //         // Find the sales proforma order by ID
-    //         $sales_proforma = SalesOrderProforma::find($id);
-
-    //         // Abort if not found
-    //         if ($sales_proforma == null) {
-    //             abort(404);
-    //         }
-
-    //         if($sales_proforma->exsisting_customer  == 0){
-    //             // Update the sales proforma
-    //             $sales_proforma->updated_by = Auth::id();
-    //             $sales_proforma->status = 2;
-
-    //             if ($sales_proforma->save()) {
-    //                 // Check for duplicate store names
-    //                 $input_name = $sales_proforma->customer_name;
-
-    //                 $customer = DB::table('master_customers')
-    //                         ->selectRaw('id, name, kota, category_id, status')
-    //                         ->where('status', Customer::STATUS["ACTIVE"])
-    //                         ->get();
-
-    //                 $duplicateFound = false;
-
-    //                 if ($customer) {
-    //                     foreach ($customer as $cust) {
-    //                         if (strtolower($cust->name) == strtolower($input_name)) {
-    //                             $duplicateFound = true;
-    //                             break;
-    //                         }
-    //                     }
-    //                 }
-
-    //                 if ($duplicateFound) {
-    //                     // Return error response if duplicate is found
-    //                     $response['notification'] = [
-    //                         'alert' => 'block',
-    //                         'type' => 'alert-danger',
-    //                         'header' => 'Error',
-    //                         'content' => "Duplicate store found",
-    //                     ];
-
-    //                     return $this->response(400, $response);
-    //                 } else {
-    //                     // Create new customer
-    //                     $customer = new Customer;
-    //                     $customer->code = CodeRepo::generateCustomer();
-    //                     $customer->name = $sales_proforma->customer_name;
-    //                     $customer->count_member = 1;
-    //                     $customer->phone = $sales_proforma->customer_phone;
-    //                     $customer->address = $sales_proforma->customer_address;
-    //                     $customer->owner_name = $sales_proforma->customer_owner;
-    //                     $customer->provinsi = $sales_proforma->customer_region;
-    //                     $customer->kota = $sales_proforma->customer_city;
-    //                     $customer->status = Customer::STATUS['ACTIVE'];
-    //                     $customer->save();
-
-    //                     // Create customer's other address
-    //                     $other_address = new CustomerOtherAddress;
-    //                     $other_address->id = $customer->id . '.' . $customer->count_member;
-    //                     $other_address->customer_id = $customer->id;
-    //                     $other_address->member_default = 1;
-    //                     $other_address->name = $customer->name;
-    //                     $other_address->contact_person = $customer->owner_name;
-    //                     $other_address->phone = $customer->phone;
-    //                     $other_address->address = $customer->address;
-    //                     $other_address->provinsi = $customer->provinsi;
-    //                     $other_address->kota = $customer->kota;
-    //                     $other_address->status = CustomerOtherAddress::STATUS['ACTIVE'];
-    //                     $other_address->save();
-
-    //                     // update member ID in proforma
-    //                     $update_proforma = SalesOrderProforma::where('id', $sales_proforma->id)->update([
-    //                         'customer_other_address_id' => $other_address->id
-    //                     ]);
-    //                 }
-
-    //                 DB::commit();
-
-    //                 // Return success response
-    //                 $response['notification'] = [
-    //                     'alert' => 'notify',
-    //                     'type' => 'success',
-    //                     'content' => 'Success',
-    //                 ];
-
-    //                 $response['redirect_to'] = route('superuser.penjualan.so_proforma.index');
-
-    //                 return $this->response(200, $response);
-    //             }
-    //         }elseif($sales_proforma->exsisting_customer == 1){
-    //             // Update the sales proforma
-    //             $sales_proforma->updated_by = Auth::id();
-    //             $sales_proforma->status = 2;
-    //             if ($sales_proforma->save()) {
-    //                 DB::commit();
-    //                 // Return success response
-    //                 $response['notification'] = [
-    //                     'alert' => 'notify',
-    //                     'type' => 'success',
-    //                     'content' => 'Success',
-    //                 ];
-
-    //                 $response['redirect_to'] = route('superuser.penjualan.so_proforma.index');
-
-    //                 return $this->response(200, $response);
-    //             }
-    //         }
-    //     }
-    // }
-
-    // public function approval_so(Request $request, $id)
-    // {
-    //     if (!$request->ajax()) {
-    //         abort(400, 'Invalid request type.');
-    //     }
-
-    //     if (
-    //         Auth::user()->is_superuser == 0 &&
-    //         (empty($this->access) || empty($this->access->user) || $this->access->can_approve == 0)
-    //     ) {
-    //         abort(405, 'Unauthorized action.');
-    //     }
-
-    //     $sales_proforma = SalesOrderProforma::with(['items', 'details_cost'])->find($id);
-    //     if (!$sales_proforma) {
-    //         abort(404, 'Sales Order Proforma not found.');
-    //     }
-
-    //     // Prevent double approval
-    //     if ($sales_proforma->status == 4) {
-    //         abort(400, 'Proforma sudah pernah di approve.');
-    //     }
-
-    //     $sales_order = SalesOrder::find($sales_proforma->so_id);
-    //     if (!$sales_order) {
-    //         abort(404, 'SO awal tidak ditemukan.');
-    //     }
-
-    //     DB::beginTransaction();
-
-    //     try {
-
-    //         /*
-    //         |--------------------------------------------------------------------------
-    //         | 1️⃣ VALIDASI + RESERVE STOCK
-    //         |--------------------------------------------------------------------------
-    //         */
-    //         foreach ($sales_proforma->items as $item) {
-
-    //             $stock = \App\Entities\Master\ProductMinStock::where('product_packaging_id', $item->product_packaging_id)
-    //                 ->where('warehouse_id', $sales_proforma->warehouse_id)
-    //                 ->lockForUpdate()
-    //                 ->first();
-
-    //             if (!$stock) {
-    //                 throw new \Exception('Stock tidak ditemukan untuk salah satu produk.');
-    //             }
-
-    //             $available = $stock->quantity - ($stock->reserved_quantity ?? 0);
-
-    //             if ($available < $item->qty) {
-    //                 throw new \Exception('Stock tersedia tidak mencukupi untuk produk tertentu.');
-    //             }
-
-    //             // 🔒 RESERVE STOCK
-    //             $stock->reserved_quantity += $item->qty;
-    //             $stock->save();
-    //         }
-
-
-    //         /*
-    //         |--------------------------------------------------------------------------
-    //         | 2️⃣ UPDATE SO AWAL (JADI TUTUP)
-    //         |--------------------------------------------------------------------------
-    //         */
-    //         $sales_order->status = 4;
-    //         $sales_order->code = CodeRepo::generateSO();
-    //         $sales_order->origin_warehouse_id = $request->warehouse_id ?? $sales_order->origin_warehouse_id;
-    //         $sales_order->rekening = $request->rekening_id ?? $sales_proforma->rekening_id;
-    //         $sales_order->sales_senior_id = $request->sales_senior_id ?? $sales_order->sales_senior_id;
-    //         $sales_order->sales_id = $request->sales_id ?? $sales_order->sales_id;
-    //         $sales_order->ekspedisi_id = $request->vendor_id ?? $sales_order->ekspedisi_id;
-    //         $sales_order->so_date = $request->so_date ?? now();
-    //         $sales_order->payment_status = 1;
-    //         $sales_order->updated_by = Auth::id();
-    //         $sales_order->save();
-
-    //         /*
-    //         |--------------------------------------------------------------------------
-    //         | 3️⃣ UPDATE PROFORMA
-    //         |--------------------------------------------------------------------------
-    //         */
-    //         $sales_proforma->status = 4;
-    //         $sales_proforma->so_lanjutan = 1;
-    //         $sales_proforma->updated_by = Auth::id();
-    //         $sales_proforma->save();
-
-    //         /*
-    //         |--------------------------------------------------------------------------
-    //         | 4️⃣ CREATE PACKING ORDER
-    //         |--------------------------------------------------------------------------
-    //         */
-    //         $packingOrder = PackingOrder::create([
-    //             'code' => CodeRepo::generatePO(),
-    //             'do_code' => $sales_order->code,
-    //             'warehouse_id' => $sales_proforma->warehouse_id,
-    //             'customer_id' => $sales_order->customer_id,
-    //             'customer_other_address_id' => $sales_proforma->customer_other_address_id,
-    //             'vendor_id' => $sales_proforma->vendor_id,
-    //             'idr_rate' => $sales_proforma->so_idr_rate,
-    //             'type_transaction' => $sales_proforma->so_type_transaction,
-    //             'count_cancel' => 0,
-    //             'status' => 2,
-    //             'note' => $sales_proforma->note,
-    //             'created_by' => Auth::id(),
-    //             'so_id' => $sales_order->id,
-    //         ]);
-
-    //         $do_id = $packingOrder->id;
-
-    //         /*
-    //         |--------------------------------------------------------------------------
-    //         | 5️⃣ COPY DETAIL COST
-    //         |--------------------------------------------------------------------------
-    //         */
-    //         if ($sales_proforma->details_cost) {
-
-    //             PackingOrderDetail::create([
-    //                 'do_id' => $do_id,
-    //                 'discount_1' => $sales_proforma->details_cost->discount_1_percent,
-    //                 'discount_2' => $sales_proforma->details_cost->discount_2_percent,
-    //                 'discount_1_idr' => $sales_proforma->details_cost->discount_1,
-    //                 'discount_2_idr' => $sales_proforma->details_cost->discount_2,
-    //                 'discount_idr' => $sales_proforma->details_cost->discount_idr,
-    //                 'voucher_idr' => $sales_proforma->details_cost->voucher_idr,
-    //                 'purchase_total_idr' => $sales_proforma->details_cost->purchase_total_idr,
-    //                 'delivery_cost_idr' => $sales_proforma->details_cost->delivery_cost_idr,
-    //                 'status_resi' => 0,
-    //                 'grand_total_idr' => $sales_proforma->details_cost->grand_total_idr,
-    //             ]);
-    //         }
-
-    //         /*
-    //         |--------------------------------------------------------------------------
-    //         | 6️⃣ COPY ITEMS
-    //         |--------------------------------------------------------------------------
-    //         */
-    //         foreach ($sales_proforma->items as $item) {
-
-    //             $soItem = SalesOrderItem::where('so_id', $sales_order->id)
-    //                 ->where('product_packaging_id', $item->product_packaging_id)
-    //                 ->first();
-
-    //             PackingOrderItem::create([
-    //                 'product_packaging_id' => $item->product_packaging_id,
-    //                 'do_id' => $do_id,
-    //                 'so_item_id' => $soItem->id ?? null,
-    //                 'qty' => $item->qty,
-    //                 'price' => $item->price,
-    //                 'usd_disc' => $item->disc_usd,
-    //                 'packaging_id' => $item->packaging_id,
-    //                 'total' => ($item->price - $item->disc_usd) * $item->qty,
-    //                 'created_by' => Auth::id(),
-    //                 'qty_worked' => $item->qty,
-    //             ]);
-    //         }
-
-    //         /*
-    //         |--------------------------------------------------------------------------
-    //         | 7️⃣ CREATE INVOICE
-    //         |--------------------------------------------------------------------------
-    //         */
-    //         Invoicing::create([
-    //             'code' => $sales_order->code,
-    //             'do_id' => $do_id,
-    //             'customer_id' => $sales_order->customer_id,
-    //             'customer_other_address_id' => $sales_proforma->customer_other_address_id,
-    //             'grand_total_idr' => $sales_proforma->details_cost->grand_total_idr ?? 0,
-    //             'created_by' => Auth::id(),
-    //         ]);
-
-    //         DB::commit();
-
-    //         return response()->json([
-    //             'notification' => [
-    //                 'alert' => 'notify',
-    //                 'type' => 'success',
-    //                 'content' => 'SO berhasil diteruskan dan DO dibuat.'
-    //             ],
-    //             'redirect_to' => route('superuser.penjualan.so_proforma.index')
-    //         ]);
-
-    //     } catch (\Exception $e) {
-
-    //         DB::rollBack();
-
-    //         Log::error('Approval SO failed: ' . $e->getMessage());
-
-    //         return response()->json([
-    //             'notification' => [
-    //                 'alert' => 'block',
-    //                 'type' => 'alert-danger',
-    //                 'header' => 'Error',
-    //                 'content' => $e->getMessage()
-    //             ]
-    //         ], 500);
-    //     }
-    // }
 
     public function destroy(Request $request, $id)
     {

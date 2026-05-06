@@ -194,7 +194,7 @@
                                 <td>
                                     {{ $code->code ?? '-' }}
                                 </td>
-                                <td>{{ $p->customer->name }} {{ $p->customer->text_kota }}</td>
+                                <td>{{ $p->customer->name ?? '-' }} {{ $p->customer->text_kota ?? '-' }}</td>
                                 <td>{{ number_format($p->total, 0, ',', '.') }}</td>
                                 <td>{{ $p->status() }}</td>
                                 <td>

@@ -563,13 +563,36 @@ class DeliveryOrderController extends Controller
             if (!$alreadyMoved) { 
                 $stockService = new StockService();
                 $items = PackingOrderItem::where('do_id', $do_id)->get();
-            
+
+                // ======================================
+                // 🔥 GROUPING PRODUCT (GABUNG FREE + NON FREE)
+                // ======================================
+                $grouped = [];
+
                 foreach ($items as $item) {
-                    $base_product_packaging_id = preg_replace('/_\d+$/', '', $item->product_packaging_id);
-                    $note = $detail_do->do_code . ' - ' . $detail_do->member->name . ' ' . $detail_do->member->text_kota;
+                    $pid = preg_replace('/_\d+$/', '', $item->product_packaging_id);
+
+                    if (!isset($grouped[$pid])) {
+                        $grouped[$pid] = 0;
+                    }
+
+                    $grouped[$pid] += (float) $item->qty;
+                }
             
-                    // Hanya cetak kartu stok, karena fisik sudah dipotong saat Checker(Packed) / ACC(Proforma)
-                    $stockService->recordAdministrativeLog($detail_do->warehouse_id, $base_product_packaging_id, $item->qty, $transactionCode, $note);
+                // ======================================
+                // 🧾 INSERT STOCK MOVE (SUDAH DIGABUNG)
+                // ======================================
+                foreach ($grouped as $pid => $totalQty) {
+
+                    $note = $detail_do->do_code . ' - ' . $detail_do->member->name . ' ' . $detail_do->member->text_kota;
+
+                    $stockService->recordAdministrativeLog(
+                        $detail_do->warehouse_id,
+                        $pid,
+                        round($totalQty, 2),
+                        $transactionCode,
+                        $note
+                    );
                 }
             }
 
@@ -887,12 +910,22 @@ class DeliveryOrderController extends Controller
             $stockService = new StockService();
 
             foreach ($do->do_detail as $item) {
-                $baseId = preg_replace('/_\d+$/', '', $item->product_packaging_id);
-                
-                // Smart Cancel: Tahu kapan harus bikin jurnal pembalik, dan kapan cuma retur fisik
-                $stockService->executeSmartCancel(
-                    $do->warehouse_id, $baseId, $item->qty, 
-                    $do->status, $do->do_code, "Retur Batal DO - " . $notePattern
+
+                $base_id = preg_replace('/_\d+$/', '', $item->product_packaging_id);
+
+                // 🔥 pakai base_id, bukan original id
+                $freeQty = $freeMap[$base_id] ?? 0;
+
+                $normalQty = (float)$item->qty - (float)$freeQty;
+
+                if ($normalQty <= 0) {
+                    continue;
+                }
+
+                $stockService->undoDeductPhysicalStock(
+                    $do->warehouse_id,
+                    $base_id,
+                    $normalQty
                 );
             }
 
@@ -1103,17 +1136,16 @@ class DeliveryOrderController extends Controller
     public function multiCancel(Request $request)
     {
         DB::beginTransaction();
-
         try {
-
-            $request->validate([
-                'ids' => 'required|array'
-            ]);
+            $request->validate(['ids' => 'required|array']);
 
             $doList = PackingOrder::with('do_detail')
                 ->whereIn('id', $request->ids)
                 ->lockForUpdate()
                 ->get();
+
+            // 🟢 INISIALISASI SERVICE
+            $stockService = new \App\Services\StockService();
 
             foreach ($doList as $do) {
 
@@ -1130,27 +1162,64 @@ class DeliveryOrderController extends Controller
                 }
 
                 // ===============================
-                // 4 → 3
+                // 4 → 3 (MUNDUR DARI PACKED KE CHECKER)
                 // ===============================
                 if ($do->status == 4) {
 
+                    // ===============================
+                    // 🔥 AMBIL DATA FREE PRODUCT
+                    // ===============================
+                    [$freeMap, $mutasiShowrooms] = $this->getFreeQtyMap($do->so_id);
+
+                    // ===============================
+                    // 1️⃣ UNDO FREE PRODUCT (MUTASI)
+                    // ===============================
+                    foreach ($mutasiShowrooms as $mutasi) {
+
+                        $mutasiDetails = \App\Entities\Gudang\MutasiShowroomDetail::where('penjualan_showroom_id', $mutasi->id)->get();
+
+                        foreach ($mutasiDetails as $md) {
+
+                            $stockService->undoDeductPhysicalStock(
+                                $mutasi->warehouse_from_id,
+                                $md->product_packaging_id,
+                                (float)$md->qty
+                            );
+                        }
+                    }
+
+                    // ===============================
+                    // 2️⃣ UNDO BARANG NORMAL (DO)
+                    // ===============================
+                    // 🔥 GROUP TOTAL DO QTY PER PRODUCT
+                    $doQtyMap = [];
+
                     foreach ($do->do_detail as $item) {
+                        $base_id = preg_replace('/_\d+$/', '', $item->product_packaging_id);
 
-                        $base_product_packaging_id = preg_replace('/_\d+$/', '', $item->product_packaging_id);
-
-                        $stock = ProductMinStock::where('warehouse_id', $do->warehouse_id)
-                            ->where('product_packaging_id', $base_product_packaging_id)
-                            ->lockForUpdate()
-                            ->first();
-
-                        if (!$stock) {
-                            throw new \Exception("Stock tidak ditemukan untuk rollback.");
+                        if (!isset($doQtyMap[$base_id])) {
+                            $doQtyMap[$base_id] = 0;
                         }
 
-                        // 🔁 ROLLBACK DEDUCTION (kebalikan packed())
-                        $stock->quantity += $item->qty;
-                        $stock->reserved_quantity += $item->qty;
-                        $stock->save();
+                        $doQtyMap[$base_id] += (float)$item->qty;
+                    }
+
+                    // 🔥 HITUNG NORMAL = DO - FREE (PER PRODUCT, BUKAN PER ROW)
+                    foreach ($doQtyMap as $base_id => $totalDoQty) {
+
+                        $freeQty = $freeMap[$base_id] ?? 0;
+
+                        $normalQty = $totalDoQty - $freeQty;
+
+                        if ($normalQty <= 0) {
+                            continue;
+                        }
+
+                        $stockService->undoDeductPhysicalStock(
+                            $do->warehouse_id,
+                            $base_id,
+                            $normalQty
+                        );
                     }
 
                     $do->update(['status' => 3]);
@@ -1158,7 +1227,7 @@ class DeliveryOrderController extends Controller
                 }
 
                 // ===============================
-                // 3 → 2 (ROLLBACK STOCK)
+                // 3 → 2 
                 // ===============================
                 if ($do->status == 3) {
                     $do->update(['status' => 2]);
@@ -1169,16 +1238,48 @@ class DeliveryOrderController extends Controller
             }
 
             DB::commit();
-
-            return redirect()->back()
-                ->with('success', 'Berhasil dikembalikan/cancel.');
+            return redirect()->back()->with('success', 'Berhasil dikembalikan/cancel.');
 
         } catch (\Throwable $e) {
-
             DB::rollBack();
-
-            return redirect()->back()
-                ->with('error', $e->getMessage());
+            return redirect()->back()->with('error', $e->getMessage());
         }
+    }
+
+    private function getFreeQtyMap($so_id)
+    {
+        $map = [];
+
+        $mutasiShowrooms = \App\Entities\Gudang\MutasiShowroom::where('so_id', $so_id)
+            ->where('type', \App\Entities\Gudang\MutasiShowroom::TYPE_SYSTEM_FREE_SO)
+            ->whereNull('deleted_at') // 🔥 safety jika soft delete
+            ->get();
+
+        foreach ($mutasiShowrooms as $mutasi) {
+
+            $details = \App\Entities\Gudang\MutasiShowroomDetail::where('penjualan_showroom_id', $mutasi->id)
+                ->get();
+
+            foreach ($details as $md) {
+
+                // 🔥 NORMALISASI PRODUCT ID (WAJIB)
+                $base_id = preg_replace('/_\d+$/', '', $md->product_packaging_id);
+
+                // 🔥 VALIDASI AMAN (hindari null/0 aneh)
+                $qty = (float) $md->qty;
+
+                if ($qty <= 0) {
+                    continue;
+                }
+
+                // 🔥 AGREGASI TOTAL FREE PER PRODUCT
+                $map[$base_id] = ($map[$base_id] ?? 0) + $qty;
+            }
+        }
+
+        return [
+            $map, 
+            $mutasiShowrooms
+        ];
     }
 }

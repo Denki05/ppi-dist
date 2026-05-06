@@ -752,6 +752,10 @@ $(document).on('click', '#saveStep3', function () {
 
     let status = $('#status_barang').val();
     let imageFile = $('#image')[0].files[0];
+    
+    // Pastikan mutasi_id dan tipe tidak kosong
+    let mutasiId = $('input[name=mutasi_id]').val();
+    let type = CURRENT_MUTASI_TYPE;
 
     if (!status) {
         Swal.fire({
@@ -762,7 +766,7 @@ $(document).on('click', '#saveStep3', function () {
         return;
     }
 
-    // 🔴 VALIDASI WAJIB UPLOAD JIKA DIAMBIL
+    // Validasi wajib upload jika DIAMBIL
     if (status == '2' && !imageFile) {
         Swal.fire({
             icon: 'warning',
@@ -790,10 +794,9 @@ $(document).on('click', '#saveStep3', function () {
         });
 
         let formData = new FormData();
-        formData.append('_token', '{{ csrf_token() }}');
-        formData.append('mutasi_id', $('input[name=mutasi_id]').val());
+        formData.append('mutasi_id', mutasiId);
         formData.append('status_barang', status);
-        formData.append('type', CURRENT_MUTASI_TYPE);
+        formData.append('type', type);
 
         if (imageFile) {
             formData.append('image', imageFile);
@@ -805,9 +808,10 @@ $(document).on('click', '#saveStep3', function () {
             data: formData,
             processData: false,
             contentType: false,
-
+            headers: {
+                'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content') // 🔹 Mencegah error 419 / 422 mismatch
+            },
             success: function (res) {
-
                 Swal.close();
 
                 if(!res.success) return;
@@ -821,7 +825,6 @@ $(document).on('click', '#saveStep3', function () {
                 refreshMutasiTabs();
 
                 if (res.to_selesai) {
-
                     hotReloadTab('selesai');
 
                     $('.tab-btn').removeClass('active');
@@ -833,14 +836,12 @@ $(document).on('click', '#saveStep3', function () {
                     resetFrameB();
 
                 } else {
-
                     hotReloadTab(CURRENT_TAB);
                     resetFrameB();
                 }
             },
 
             error: function(xhr){
-
                 Swal.close();
 
                 let message = 'Terjadi kesalahan sistem.';
@@ -855,7 +856,6 @@ $(document).on('click', '#saveStep3', function () {
                 });
             }
         });
-
     });
 });
 

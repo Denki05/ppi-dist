@@ -613,7 +613,7 @@ class StockController extends Controller
     public function collectStockIn(Request $request)
     {
         $startDate = Carbon::create(2026, 1, 1)->startOfDay();
-        $endDate   = Carbon::create(2026, 5, 2)->endOfDay();
+        $endDate   = Carbon::create(2026, 5, 4)->endOfDay();
 
         DB::beginTransaction();
 
@@ -687,7 +687,7 @@ class StockController extends Controller
     public function collectStockTrans(Request $request)
     {
         $startDate = Carbon::create(2026, 1, 1)->startOfDay();
-        $endDate   = Carbon::create(2026, 5, 2)->endOfDay();
+        $endDate   = Carbon::create(2026, 5, 4)->endOfDay();
 
         DB::beginTransaction();
 
@@ -762,7 +762,7 @@ class StockController extends Controller
     {
         // Sesuaikan tanggal batas Rebuild
         $startDate = \Carbon\Carbon::create(2026, 1, 1)->startOfDay();
-        $endDate   = \Carbon\Carbon::create(2026, 5, 2)->endOfDay();
+        $endDate   = \Carbon\Carbon::create(2026, 5, 4)->endOfDay();
 
         DB::beginTransaction();
         try {

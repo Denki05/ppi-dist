@@ -100,13 +100,12 @@ class StockService
     }
     
     /**
-     * 5. FUNGSI BOOKING STOK (DIPANGGIL SAAT ACC PROFORMA)
+     * 5. FUNGSI BOOKING STOK (DIPANGGIL SAAT ACC PROFORMA / TUTUP SO)
      * Hanya menambah reserved_quantity, tidak memotong fisik.
+     * Menggunakan logika SMART MINUS.
      */
     public function reserveStock($warehouseId, $productId, $qty)
     {
-        // Angka 5 di bawah ini adalah fitur bawaan Laravel untuk mengulang (retry) 
-        // transaksi hingga 5 kali jika terjadi deadlock database.
         return DB::transaction(function () use ($warehouseId, $productId, $qty) {
             $stock = ProductMinStock::where('warehouse_id', $warehouseId)
                 ->where('product_packaging_id', $productId)
@@ -124,21 +123,29 @@ class StockService
 
             $current_reserved = (float) $stock->reserved_quantity;
             $quantity = (float) $stock->quantity;
-            
-            $available = $quantity - $current_reserved;
-            $new_available = $available - $qty;
 
-            if ($available >= $qty) {
-                $stock->reserved_quantity = $current_reserved + $qty;
-            } elseif ($available >= 0 && $new_available < 0) {
-                $stock->reserved_quantity = $current_reserved + $qty;
-            } else {
-                throw new \Exception("Stock packaging ID {$productId} sudah minus sebelumnya. Available: {$available}, Request: {$qty}");
+            // 1. Hitung sisa stok yang benar-benar bisa di-booking
+            $available = $quantity - $current_reserved;
+
+            // 2. Jika fisik rak dari awal memang sudah minus (bug/selisih opname), tolak!
+            if ($quantity < 0) {
+                throw new \Exception("Stok fisik sudah minus. Product ID: {$productId}");
             }
 
+            // 3. ATURAN SMART MINUS
+            // Jika sisa stok SEBELUM order ini masuk sudah minus, TOLAK!
+            // Ini memastikan stok tidak bertambah minus berkali-kali.
+            if ($available < 0) {
+                throw new \Exception("Stock untuk product {$productId} sedang kosong / minus (Sisa: {$available}). Harap tunggu restock.");
+            }
+
+            // Jika lolos dari validasi di atas, orderan ini diizinkan lewat
+            // meskipun akan membuat sisa stok (available) menjadi negatif.
+            $stock->reserved_quantity = $current_reserved + $qty;
+            
             $stock->save();
             return true;
-        }, 5); // <-- Otomatis retry 5x jika deadlock
+        }, 5); 
     }
     
     /**
@@ -195,6 +202,41 @@ class StockService
                 }
                 $stock->save();
             }
+            return true;
+        });
+    }
+
+    public function undoDeductPhysicalStock($warehouseId, $productId, $qty)
+    {
+        return DB::transaction(function () use ($warehouseId, $productId, $qty) {
+
+            $stock = ProductMinStock::where('warehouse_id', $warehouseId)
+                ->where('product_packaging_id', $productId)
+                ->lockForUpdate()
+                ->first();
+
+            if (!$stock) {
+                $stock = ProductMinStock::create([
+                    'warehouse_id' => $warehouseId,
+                    'product_packaging_id' => $productId,
+                    'quantity' => 0,
+                    'reserved_quantity' => 0
+                ]);
+            }
+
+            $qty = (float)$qty;
+
+            // 🔁 restore fisik
+            $stock->quantity += $qty;
+
+            // 🔁 restore reserved (dengan batas)
+            $stock->reserved_quantity = min(
+                $stock->quantity,
+                (float)$stock->reserved_quantity + $qty
+            );
+
+            $stock->save();
+
             return true;
         });
     }
