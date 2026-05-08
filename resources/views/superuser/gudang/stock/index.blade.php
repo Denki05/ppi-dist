@@ -230,7 +230,10 @@ body{ background:#1f242a; font-family: "Segoe UI", Roboto, sans-serif; }
 
             <!-- FILTER -->
             <div class="row align-items-end mb-3">
-                <div class="col-md-3">
+                <div class="col-md-2">
+                    <input type="month" class="form-control" id="month_filter">
+                </div>
+                <div class="col-md-2">
                     <select class="js-select2 form-control" id="warehouse">
                         <option value="">Pilih Gudang</option>
                         @foreach($warehouses as $warehouse)
@@ -238,7 +241,7 @@ body{ background:#1f242a; font-family: "Segoe UI", Roboto, sans-serif; }
                         @endforeach
                     </select>
                 </div>
-                <div class="col-md-3">
+                <div class="col-md-2">
                     <select class="js-select2 form-control" id="brand" disabled>
                         <option value="">Pilih Brand</option>
                         @foreach($brands as $brand)
@@ -246,7 +249,7 @@ body{ background:#1f242a; font-family: "Segoe UI", Roboto, sans-serif; }
                         @endforeach
                     </select>
                 </div>
-                <div class="col-md-3">
+                <div class="col-md-2">
                     <select class="js-select2 form-control" id="packaging" disabled>
                         <option value="">Pilih Packaging</option>
                         @foreach($packaging as $pack)
@@ -254,7 +257,7 @@ body{ background:#1f242a; font-family: "Segoe UI", Roboto, sans-serif; }
                         @endforeach
                     </select>
                 </div>
-                <div class="col-md-3">
+                <div class="col-md-2">
                     <input type="text" class="form-control" id="product_name" placeholder="Nama Product" disabled>
                 </div>
             </div>
@@ -423,7 +426,8 @@ $(document).ready(function(){
                     warehouse_id: warehouseId,
                     brand: $('#brand').val(),
                     packaging: $('#packaging').val(),
-                    product_name: $('#product_name').val()
+                    product_name: $('#product_name').val(),
+                    month: $('#month_filter').val()
                 };
             },
             dataSrc:'data'
@@ -502,17 +506,34 @@ $(document).ready(function(){
         // }
     });
 
+    // function reloadTable(){
+    //     if($('#warehouse').val()){
+    //         table.ajax.reload(null,false);
+    //     }
+    // }
+
+    let reloadTimeout = null;
+
     function reloadTable(){
-        if($('#warehouse').val()){
+        if(!$('#warehouse').val()) return;
+
+        clearTimeout(reloadTimeout);
+
+        reloadTimeout = setTimeout(function(){
             table.ajax.reload(null,false);
-        }
+        }, 200); // delay kecil biar smooth
     }
 
     $('#warehouse').on('select2:select', function(e){
         $('#brand,#packaging,#product_name').prop('disabled', false);
         reloadTable();
     });
+    
     $('#brand,#packaging,#product_name').on('change', reloadTable);
+
+    $('#month_filter').on('change', function(){
+        reloadTable();
+    });
 
     $('#datatable').on('click', '.ks-detail-link', function(e){
         e.preventDefault();
@@ -537,8 +558,21 @@ $(document).ready(function(){
     
         modal.show();
     
-        let url = '{{ url("superuser/gudang/stock") }}' + warehouseId + '/detail/' + encoded;
-    
+        // let url = '{{ url("superuser/gudang/stock") }}' + warehouseId + '/detail/' + encoded;
+        let month = $('#month_filter').val();
+
+        let url = '{{ url("superuser/gudang/stock") }}' 
+                + warehouseId + '/detail/' + encoded;
+
+        // =======================
+        // SYNC FILTER KE MODAL
+        // =======================
+        if(month){
+            url += '?month=' + month + '&lock=1';
+        }else{
+            url += '?lock=0';
+        }
+        
         $.ajax({
             url: url,
             type: 'GET',

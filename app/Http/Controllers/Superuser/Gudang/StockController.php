@@ -34,8 +34,6 @@ use Carbon\Carbon;
 use DB;
 use Auth;
 use PDF;
-use App\Services\StockService;
-use Illuminate\Support\Facades\Log; // Untuk mencatat error jika ada
 
 class StockController extends Controller
 {
@@ -70,6 +68,7 @@ class StockController extends Controller
         $brand       = $request->brand;
         $packaging   = $request->packaging;
         $productName = $request->product_name;
+        $month       = $request->month;
 
         $rows = ProductMinStock::with([
                 'product_pack.product',
@@ -103,20 +102,61 @@ class StockController extends Controller
 
             $product = $pack->product;
 
-            // STOCK → dari ProductMinStock.quantity
-            $stock = (float) ($row->quantity ?? 0);
+            $stock = 0;
+            $ks    = 0;
 
-            // KS → dari StockMove terakhir
-            $lastMove = StockMove::where('warehouse_id', $warehouse)
-                ->where('product_packaging_id', $pack->id)
-                ->orderBy('created_at', 'desc')
-                ->orderBy('id', 'desc')
-                ->first();
+            /*
+            |--------------------------------------------------
+            | MODE REPORT (ADA FILTER BULAN)
+            |--------------------------------------------------
+            */
+            if ($month) {
 
-            // dd($lastMove);
+                try {
+                    $date  = \Carbon\Carbon::createFromFormat('Y-m', $month);
+                    $end   = $date->copy()->endOfMonth();
 
-            $ks = $lastMove ? (float) $lastMove->stock_balance : 0;
+                    // HITUNG STOCK BERDASARKAN HISTORI (StockMove)
+                    $stock = StockMove::where('warehouse_id', $warehouse)
+                        ->where('product_packaging_id', $pack->id)
+                        ->where('created_at', '<=', $end)
+                        ->selectRaw('SUM(stock_in - stock_out) as saldo')
+                        ->value('saldo') ?? 0;
 
+                    // KS DISAMAKAN AGAR TIDAK ADA SELISIH
+                    $ks = $stock;
+
+                } catch (\Exception $e) {
+                    $stock = 0;
+                    $ks    = 0;
+                }
+
+            } else {
+
+                /*
+                |--------------------------------------------------
+                | MODE REALTIME (DEFAULT)
+                |--------------------------------------------------
+                */
+
+                // STOCK REALTIME
+                $stock = (float) ($row->quantity ?? 0);
+
+                // KS DARI LAST MOVEMENT
+                $lastMove = StockMove::where('warehouse_id', $warehouse)
+                    ->where('product_packaging_id', $pack->id)
+                    ->orderBy('created_at', 'desc')
+                    ->orderBy('id', 'desc')
+                    ->first();
+
+                $ks = $lastMove ? (float) $lastMove->stock_balance : 0;
+            }
+
+            /*
+            |--------------------------------------------------
+            | FORMATTING
+            |--------------------------------------------------
+            */
             $stockFormatted = number_format($stock, 2);
             if ($stock < 0) {
                 $stockFormatted = '<span class="text-danger-strong">'.$stockFormatted.'</span>';
@@ -138,8 +178,6 @@ class StockController extends Controller
                 'ks'              => $ksFormatted,
             ];
         }
-
-        // dd($data);
 
         return ['data' => $data];
     }
@@ -174,91 +212,68 @@ class StockController extends Controller
     {
         try {
             $productId = base64_decode($encoded);
-            $month     = $request->month ?? now()->format('Y-m');
+            $month     = $request->month;
+            $lock      = $request->lock;
 
-            // Validasi format bulan
-            if (!preg_match('/^\d{4}-\d{2}$/', $month)) {
+            // =========================
+            // VALIDASI MONTH
+            // =========================
+            if (!$month || !preg_match('/^\d{4}-\d{2}$/', $month)) {
                 $month = now()->format('Y-m');
             }
 
             $warehouse = Warehouse::findOrFail($warehouseId);
             $pack      = ProductPack::with(['product', 'packaging'])->findOrFail($productId);
 
-            $date      = \Carbon\Carbon::parse($month . '-01');
-            $startDate = $date->copy()->startOfMonth();
-            $endDate   = $date->copy()->endOfMonth();
+            $date      = \Carbon\Carbon::createFromFormat('Y-m', $month);
+            $startDate = $date->copy()->startOfMonth()->startOfDay();
+            $endDate   = $date->copy()->endOfMonth()->endOfDay();
 
             $collect = [];
             $balance = 0;
 
             /*
             |--------------------------------------------------------------------------
-            | CEK OPENING INJECT (hanya tampilkan sekali jika bulan sama)
+            | OPENING BALANCE (SEBELUM BULAN)
             |--------------------------------------------------------------------------
             */
-            $openingInject = StockMove::where('warehouse_id', $warehouse->id)
-                                ->where('product_packaging_id', $productId)
-                                ->where('code_transaction', 'like', 'OPENING-%')
-                                ->orderBy('created_at', 'asc')
-                                ->first();
+            $openingBalancePrevMonth = StockMove::where('warehouse_id', $warehouse->id)
+                ->where('product_packaging_id', $productId)
+                ->where('created_at', '<', $startDate)
+                ->selectRaw('SUM(stock_in - stock_out) as saldo')
+                ->value('saldo') ?? 0;
 
-            if ($openingInject && $openingInject->created_at->format('Y-m') === $month) {
-                // Tambahkan opening inject ke collect
-                $balance += ($openingInject->stock_in - $openingInject->stock_out);
+            if ($openingBalancePrevMonth != 0) {
+                $balance += $openingBalancePrevMonth;
+
                 $collect[] = [
-                    'created_at'  => $openingInject->created_at->format('d/m/Y H:i'),
-                    'transaction' => $openingInject->code_transaction,
-                    'in'          => $openingInject->stock_in,
-                    'out'         => 0,
+                    'created_at'  => '-',
+                    'transaction' => 'Saldo Awal Bulan',
+                    'in'          => '-',
+                    'out'         => '-',
                     'balance'     => number_format($balance, 2),
-                    'description' => $openingInject->note,
+                    'description' => 'Akumulasi saldo sebelum bulan dipilih',
                 ];
-                $openingBalance = $balance; // untuk tampilan row pertama
-            } else {
-                /*
-                |--------------------------------------------------------------------------
-                | AMBIL OPENING BALANCE BULAN LALU
-                |--------------------------------------------------------------------------
-                */
-                $openingBalancePrevMonth = StockMove::where('warehouse_id', $warehouse->id)
-                                            ->where('product_packaging_id', $productId)
-                                            ->where('created_at', '<', $startDate)
-                                            ->selectRaw('SUM(stock_in - stock_out) as saldo')
-                                            ->value('saldo') ?? 0;
-
-                if ($openingBalancePrevMonth > 0) {
-                    $balance += $openingBalancePrevMonth;
-                    $collect[] = [
-                        'created_at'  => '-', 
-                        'transaction' => 'Saldo Bulan Lalu',
-                        'in'          => '-',
-                        'out'         => '-',
-                        'balance'     => number_format($balance, 2),
-                        'description' => 'Saldo berjalan dari bulan sebelumnya',
-                    ];
-                }
-
-                $openingBalance = $balance;
             }
+
+            $openingBalance = $balance;
 
             /*
             |--------------------------------------------------------------------------
-            | TRANSAKSI BULAN INI
+            | TRANSAKSI DALAM BULAN
             |--------------------------------------------------------------------------
             */
             $moves = StockMove::where('warehouse_id', $warehouse->id)
-                        ->where('product_packaging_id', $productId)
-                        ->whereBetween('created_at', [$startDate, $endDate])
-                        ->orderBy('created_at', 'asc')
-                        ->get();
+                ->where('product_packaging_id', $productId)
+                ->whereBetween('created_at', [$startDate, $endDate])
+                ->orderBy('created_at', 'asc')
+                ->orderBy('id', 'asc')
+                ->get();
 
             foreach ($moves as $m) {
-                // skip jika ini row opening inject agar tidak double
-                if ($openingInject && $m->id === $openingInject->id) {
-                    continue;
-                }
 
                 $balance += ($m->stock_in - $m->stock_out);
+
                 $collect[] = [
                     'created_at'  => $m->created_at->format('d/m/Y H:i'),
                     'transaction' => $m->code_transaction,
@@ -269,10 +284,15 @@ class StockController extends Controller
                 ];
             }
 
+            /*
+            |--------------------------------------------------------------------------
+            | REAL STOCK (SAAT INI)
+            |--------------------------------------------------------------------------
+            */
             $currentStock = ProductMinStock::where([
-                                    ['warehouse_id', $warehouse->id],
-                                    ['product_packaging_id', $productId]
-                                ])->first();
+                ['warehouse_id', $warehouse->id],
+                ['product_packaging_id', $productId]
+            ])->first();
 
             $realBalance = $currentStock ? $currentStock->quantity : 0;
 
@@ -283,16 +303,19 @@ class StockController extends Controller
                 'openingBalance' => number_format($openingBalance, 2),
                 'real_balance'   => number_format($realBalance, 2),
                 'month'          => $month,
+                'lock'           => $lock // 🔥 penting untuk step 3 blade
             ]);
 
         } catch (\Exception $e) {
+
             return view('superuser.gudang.stock.detail_modal', [
-                'product'        => $pack ?? null,
-                'warehouse'      => $warehouse ?? null,
+                'product'        => null,
+                'warehouse'      => null,
                 'collects'       => [],
                 'openingBalance' => 0,
                 'real_balance'   => 0,
-                'month'          => $month ?? now()->format('Y-m'),
+                'month'          => now()->format('Y-m'),
+                'lock'           => 0,
                 'error_msg'      => 'Tidak ada data untuk bulan ini atau terjadi kesalahan'
             ]);
         }
@@ -613,7 +636,7 @@ class StockController extends Controller
     public function collectStockIn(Request $request)
     {
         $startDate = Carbon::create(2026, 1, 1)->startOfDay();
-        $endDate   = Carbon::create(2026, 5, 4)->endOfDay();
+        $endDate   = Carbon::create(2026, 3, 2)->endOfDay();
 
         DB::beginTransaction();
 
@@ -687,7 +710,7 @@ class StockController extends Controller
     public function collectStockTrans(Request $request)
     {
         $startDate = Carbon::create(2026, 1, 1)->startOfDay();
-        $endDate   = Carbon::create(2026, 5, 4)->endOfDay();
+        $endDate   = Carbon::create(2026, 3, 2)->endOfDay();
 
         DB::beginTransaction();
 
@@ -704,7 +727,7 @@ class StockController extends Controller
                 ->with('success', 'Collect stock transaction berhasil dijalankan.');
 
         } catch (\Exception $e) {
-            // dd($e);
+            dd($e);
             DB::rollBack();
 
             return redirect()
@@ -758,48 +781,51 @@ class StockController extends Controller
             });
     }
 
-    public function collectStockOut(Request $request)
+    public function collectStockOut()
     {
-        // Sesuaikan tanggal batas Rebuild
-        $startDate = \Carbon\Carbon::create(2026, 1, 1)->startOfDay();
-        $endDate   = \Carbon\Carbon::create(2026, 5, 4)->endOfDay();
-
         DB::beginTransaction();
         try {
-            // Opsional: Anda bisa menambahkan fungsi clearTempOut($startDate, $endDate) 
-            // di sini jika ingin mereset keranjang temp_out sebelum diisi.
 
-            $this->collectSPKStockOut($startDate, $endDate);
-            $this->collectFromMutasiShowroom($startDate, $endDate);
-            $this->collectFromMutasiOut($startDate, $endDate);
-
+            $this->collectSPKStockOut();
             DB::commit();
-            return back()->with('success', 'Collect SPK, Mutasi Showroom, dan Mutasi Out berhasil dikumpulkan.');
+            return back()->with('success', 'Collect SPK berhasil.');
         } catch (\Exception $e) {
+            dd($e);
             DB::rollBack();
             return back()->with('error', $e->getMessage());
         }
     }
 
-    private function collectSPKStockOut($startDate, $endDate)
+    private function collectSPKStockOut()
     {
         $allowedCodes = [
-            'SPK26A001', 'SPK26A003', 'SPK26A005', 'SPK26A006',
-            'SPK26B001', 'SPK26B004', 'SPK26B005',
+            'SPK26A001',
+            'SPK26A003',
+            'SPK26A005',
+            'SPK26A006',
+            'SPK26B001',
+            'SPK26B004',
+            'SPK26B005',
         ];
 
         PurchaseOrder::with('purchase_order_detail')
             ->where('type', 0) // SPK
             ->where('status', 4) // ACC / SENT
             ->whereIn('code', $allowedCodes)
-            ->whereBetween('created_at', [$startDate, $endDate]) // Filter Waktu
             ->orderBy('created_at', 'asc')
             ->chunk(100, function ($orders) {
+
                 foreach ($orders as $order) {
-                    if (!$order->warehouse_id) continue;
+
+                    if (!$order->warehouse_id) {
+                        continue;
+                    }
 
                     foreach ($order->purchase_order_detail as $item) {
-                        if ($item->quantity <= 0) continue;
+
+                        if ($item->quantity <= 0) {
+                            continue;
+                        }
 
                         DB::table('temp_out')->insert([
                             'doc_code'             => $order->code,
@@ -809,73 +835,6 @@ class StockController extends Controller
                             'product_packaging_id' => $item->product_packaging_id,
                             'quantity'             => $item->quantity,
                             'warehouse_id'         => 2, // hardcode ke gudang araya
-                            'source_type'          => 'SYSTEM',
-                            'created_at'           => now(),
-                            'updated_at'           => now(),
-                        ]);
-                    }
-                }
-            });
-    }
-
-    private function collectFromMutasiShowroom($startDate, $endDate)
-    {
-        // Menggunakan kombinasi status: PUBLISH(2), CHECKED(1), dan DIAMBIL(2)
-        \App\Entities\Gudang\MutasiShowroom::with('details')
-            ->where('status', 2)           // Status: PUBLISH
-            ->where('status_checked', 1)   // Status Checked: CHECKED
-            ->where('status_barang', 2)    // Status Barang: DIAMBIL
-            ->where('type', '!=', 5)       // Kecualikan tipe otomatis dari SO
-            ->whereBetween('created_at', [$startDate, $endDate])
-            ->orderBy('created_at', 'asc')
-            ->chunk(100, function ($mutasis) {
-                foreach ($mutasis as $mutasi) {
-                    // Pastikan gudang asal ada sebagai referensi pemotongan stok
-                    if (!$mutasi->warehouse_from_id) continue;
-
-                    foreach ($mutasi->details as $item) {
-                        if ($item->qty <= 0) continue;
-
-                        DB::table('temp_out')->insert([
-                            'doc_code'             => $mutasi->kode,
-                            'doc_type'             => 'MUTASI SHOWROOM',
-                            'doc_date'             => $mutasi->tanggal ?? $mutasi->created_at,
-                            'reference_id'         => $mutasi->id,
-                            'product_packaging_id' => $item->product_packaging_id,
-                            'quantity'             => $item->qty,
-                            'warehouse_id'         => $mutasi->warehouse_from_id, // Potong stok gudang asal
-                            'source_type'          => 'SYSTEM',
-                            'created_at'           => now(),
-                            'updated_at'           => now(),
-                        ]);
-                    }
-                }
-            });
-    }
-
-    private function collectFromMutasiOut($startDate, $endDate)
-    {
-        // Pastikan model MutasiOut sudah di-use di atas controller
-        \App\Entities\Gudang\MutasiOut::with('mutasiOutDetails')
-            ->where('status', 3) // ACC
-            ->whereBetween('created_at', [$startDate, $endDate])
-            ->orderBy('created_at', 'asc')
-            ->chunk(100, function ($mutasis) {
-                foreach ($mutasis as $mutasi) {
-                    // Cek gudang asal
-                    if (!$mutasi->warehouse_from) continue;
-
-                    foreach ($mutasi->mutasiOutDetails as $item) {
-                        if ($item->quantity <= 0) continue;
-
-                        DB::table('temp_out')->insert([
-                            'doc_code'             => $mutasi->code,
-                            'doc_type'             => 'MUTASI OUT',
-                            'doc_date'             => $mutasi->date ?? $mutasi->created_at,
-                            'reference_id'         => $mutasi->id,
-                            'product_packaging_id' => $item->product_packaging_id,
-                            'quantity'             => $item->quantity,
-                            'warehouse_id'         => $mutasi->warehouse_from, // Potong stok gudang asal
                             'source_type'          => 'SYSTEM',
                             'created_at'           => now(),
                             'updated_at'           => now(),

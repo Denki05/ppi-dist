@@ -527,105 +527,81 @@ class MutasiShowroomController extends Controller
         if (!$this->isFinance()) {
             return response()->json(['message' => 'Unauthorized'], 403);
         }
-
+    
         $items = $request->input('items', []);
-
+    
         if (empty($items)) {
             return response()->json(['message' => 'Data kosong'], 422);
         }
-
+    
         try {
-
             DB::transaction(function () use ($items) {
-
                 $processedKode = [];
-
+    
                 foreach ($items as $kode => $details) {
-
                     foreach ($details as $detailId => $data) {
-
+    
                         $detail = MutasiShowroomDetail::with('mutasi_showroom')
                             ->where('id', $detailId)
                             ->lockForUpdate()
                             ->first();
-
-                        if (!$detail) {
-                            continue;
-                        }
-
+    
+                        if (!$detail) continue;
+    
                         $mutasi = $detail->mutasi_showroom;
-
-                        $plUsd       = (float) ($data['pl_usd'] ?? 0);
-                        $discAwal    = (float) ($data['disc_awal'] ?? 0);
-                        $discPercent = (float) ($data['disc_percent'] ?? 0);
-                        $discAkhir   = (float) ($data['disc_akhir'] ?? 0);
-                        $kurs        = (float) ($data['kurs'] ?? 0);
-
-                        if ($plUsd <= 0 || $kurs <= 0) {
-                            continue;
-                        }
-
+                        $plUsd  = (float) ($data['pl_usd'] ?? 0);
+                        $kurs   = (float) ($data['kurs']   ?? 0);
+    
+                        if ($plUsd <= 0 || $kurs <= 0) continue;
+    
                         // set kurs sekali per mutasi
                         if ((float) $mutasi->kurs === 0.0) {
                             $mutasi->update(['kurs' => $kurs]);
                         }
-
+    
+                        // hitung netto USD via service
                         $priceUsd = BrandPriceCalculator::calculateUsd(
                             $mutasi->brand_name,
-                            $plUsd,
-                            $discAwal,
-                            $discPercent,
-                            $discAkhir
+                            $plUsd
                         );
-
+    
                         $priceIdr = $priceUsd * $mutasi->kurs;
-
+    
                         $detail->update([
                             'price_usd'   => $priceUsd,
                             'price_idr'   => $priceIdr,
                             'total_price' => $priceIdr * $detail->qty,
                         ]);
-
+    
                         $processedKode[] = $mutasi->kode;
                     }
                 }
-
-                // if (!empty($processedKode)) {
-                //     MutasiShowroom::whereIn('kode', array_unique($processedKode))
-                //         ->update(['status' => MutasiShowroom::STATUS['ACC']]);
-                // }
-
+    
                 if (!empty($processedKode)) {
-
                     $kodeUnik = array_values(array_unique($processedKode));
-
+    
                     MutasiShowroomHistory::create([
                         'tanggal'      => now(),
                         'kode_mutasi'  => implode(',', $kodeUnik),
                         'total_mutasi' => count($kodeUnik),
-                        'status'       => 1, // settled / ready print
+                        'status'       => 1,
                         'printed_at'   => null,
                         'printed_by'   => null,
                     ]);
-
+    
                     MutasiShowroom::whereIn('kode', $kodeUnik)
                         ->update(['status' => MutasiShowroom::STATUS['SETTLE']]);
                 }
-
             });
-
-            return response()->json([
-                'success' => true,
-                'message' => 'Settle berhasil'
-            ]);
-
+    
+            return response()->json(['success' => true, 'message' => 'Settle berhasil']);
+    
         } catch (\Throwable $e) {
-            dd($e);
             \Log::error('Settle Mutasi Gagal', [
                 'error' => $e->getMessage(),
                 'trace' => $e->getTraceAsString()
             ]);
-
+    
             return response()->json([
                 'success' => false,
                 'message' => 'Terjadi kesalahan saat settle'

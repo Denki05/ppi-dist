@@ -25,7 +25,8 @@ Periode:
 <input type="month"
 class="form-control"
 id="month_filter"
-value="{{ $month }}">
+value="{{ $month }}"
+{{ $lock ? 'disabled' : '' }}>
 </div>
 </div>
 
