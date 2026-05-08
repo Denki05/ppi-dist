@@ -746,7 +746,7 @@ class StockController extends Controller
     private function collectFromPackingOrder($startDate, $endDate)
     {
         PackingOrder::with('do_detail')
-            ->where('status', 6)
+            ->whereIn('status', [5, 6])
             ->whereBetween('created_at', [$startDate, $endDate])
             ->orderBy('created_at', 'asc')
             ->chunk(100, function ($orders) {
