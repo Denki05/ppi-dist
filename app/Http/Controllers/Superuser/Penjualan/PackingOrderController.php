@@ -1170,6 +1170,21 @@ class PackingOrderController extends Controller
 
                     /*
                     |--------------------------------------------------------------------------
+                    | 2.5️⃣ BATALKAN LOG RESERVED STOCK ( do_stock_deduction_logs )
+                    |--------------------------------------------------------------------------
+                    */
+                    // ✅ UPDATE BARU: Menonaktifkan log antrean potong fisik agar tidak dibaca lagi
+                    DB::table('do_stock_deduction_logs')
+                        ->where('do_id', $packing->id)
+                        ->where('status', 1) // Cari yang masih berstatus Aktif
+                        ->update([
+                            'status' => 0, // 0 = Batal / Direvisi
+                            'note' => 'Dibatalkan karena Revisi DO/PO',
+                            'updated_at' => now()
+                        ]);
+
+                    /*
+                    |--------------------------------------------------------------------------
                     | 3️⃣ UPDATE STATUS SO & PROFORMA
                     |--------------------------------------------------------------------------
                     */
@@ -1183,7 +1198,7 @@ class PackingOrderController extends Controller
                             $so->count_rev = 1;
                             $so->code = null;
                             $so->keep_code = $packingSoCode;
-                            $so->status_proforma = 2;
+                            $so->status_proforma = 2; // ✅ Mengembalikan status proforma agar bisa direvisi ulang
                             $so->save();
 
                             $proforma = SalesOrderProforma::where('so_id', $so->id)
@@ -1192,7 +1207,7 @@ class PackingOrderController extends Controller
 
                             if ($proforma) {
                                 $proforma->so_lanjutan = 0;
-                                $proforma->status = 2;
+                                $proforma->status = 2; // ✅ Status dikembalikan ke revisi
                                 $proforma->save();
                             }
 

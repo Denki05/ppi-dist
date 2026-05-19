@@ -529,36 +529,32 @@ class SalesOrderProformaController extends Controller
     
     public function acc(Request $request, $id)
     {
-        if (!$request->ajax()) {
-            abort(400, 'Invalid request type.');
-        }
-
+        if (!$request->ajax()) abort(400, 'Invalid request type.');
+    
         DB::beginTransaction();
-
+    
         try {
-
-            // =========================================================
-            // 1. LOCK DATA
-            // =========================================================
-            $sales_proforma = SalesOrderProforma::with(['items','details_cost'])
-                ->lockForUpdate()
-                ->findOrFail($id);
-
+            $sales_proforma = SalesOrderProforma::with(['items', 'details_cost'])
+                ->lockForUpdate()->findOrFail($id);
+    
             if ($sales_proforma->status == 4) {
                 throw new \Exception("Proforma sudah pernah di-ACC.");
             }
-
-            $sales_order = SalesOrder::lockForUpdate()
-                ->findOrFail($sales_proforma->so_id);
-
+    
+            $sales_order = SalesOrder::lockForUpdate()->findOrFail($sales_proforma->so_id);
+            $stockService = new \App\Services\StockService();
+    
+            /*
+            |--------------------------------------------------------------------------
+            | 1. UPDATE SALES ORDER
+            |--------------------------------------------------------------------------
+            */
             $sales_order->status = 4;
             $sales_order->status_proforma = 4;
-            // Jika ada revisi, gunakan keep_code agar nomor DO tetap konsisten untuk audit
-            if ($sales_order->count_rev > 0 && $sales_order->keep_code) {
-                $sales_order->code = $sales_order->keep_code;
-            } else {
-                $sales_order->code = CodeRepo::generateSO();
-            }
+            $sales_order->code = ($sales_order->count_rev > 0 && $sales_order->keep_code) 
+                                 ? $sales_order->keep_code 
+                                 : CodeRepo::generateSO();
+                                 
             $sales_order->payment_status = 0; 
             $sales_order->updated_by = Auth::id();
             $sales_order->so_date = $sales_proforma->so_date ?? null;
@@ -568,72 +564,52 @@ class SalesOrderProformaController extends Controller
             $sales_order->origin_warehouse_id = $sales_proforma->warehouse_id;
             $sales_order->ekspedisi_id = $sales_proforma->vendor_id ?? null;
             $sales_order->save();
-
-            $stockService = new \App\Services\StockService();
-
-            // =========================================================
-            // 2. LOOP ITEM (MAIN + FREE TRACKING)
-            // =========================================================
-            $mutasiItemsToCreate = [];
-            $remainingFreeTracker = [];
+    
+            /*
+            |--------------------------------------------------------------------------
+            | 2. VALIDASI & BOOKING RESERVED STOCK (Serta Siapkan Array Logs)
+            |--------------------------------------------------------------------------
+            */
+            $stockLogs = []; // ✅ Siapkan array untuk menampung log stock
 
             foreach ($sales_proforma->items as $item) {
-                $pid = $item->product_packaging_id;
-                $qty_baris = round($item->qty, 2);
+                // Hilangkan suffix jika ada (_1, _2, dst) agar konsisten dengan stock
+                $base_product_packaging_id = preg_replace('/_\d+$/', '', $item->product_packaging_id);
 
-                $soItem = SalesOrderItem::where('so_id', $sales_proforma->so_id)
-                    ->where('product_packaging_id', $pid)
-                    ->first();
+                // reserveStock sudah memiliki mekanisme lockForUpdate, validasi minus, 
+                // dan retry otomatis (DB::transaction 5) bawaan dari StockService.
+                $stockService->reserveStock(
+                    $sales_proforma->warehouse_id, 
+                    $base_product_packaging_id, 
+                    $item->qty
+                );
 
-                $free_qty = 0;
-                if ($soItem) {
-                    if (!isset($remainingTracker[$soItem->id])) {
-                        $remainingTracker[$soItem->id] = round($soItem->free_product, 2);
-                    }
-                    $available_free = $remainingTracker[$soItem->id];
-                    if ($available_free > 0) {
-                        $free_qty = min($qty_baris, $available_free);
-                        $remainingTracker[$soItem->id] -= $free_qty;
-                    }
-                }
-                $main_qty = round($qty_baris - $free_qty, 2);
-
-                // Validasi Stok
-                $stock = \App\Entities\Master\ProductMinStock::where('warehouse_id', $sales_proforma->warehouse_id)
-                    ->where('product_packaging_id', $pid)
-                    ->lockForUpdate()
-                    ->first();
-
-                $currentQty = $stock ? (float)$stock->quantity : 0;
-                $currentReserved = $stock ? (float)$stock->reserved_quantity : 0;
-                $available = $currentQty - $currentReserved;
-
-                if ($available < $qty_baris) {
-                    throw new \Exception("STOK TIDAK MENCUKUPI untuk product ID {$pid}. Available: {$available}, Need: {$qty_baris}");
-                }
-
-                if ($main_qty > 0) {
-                    $stockService->deductPhysicalStock($sales_proforma->warehouse_id, $pid, $main_qty);
-                }
-                
-                if ($free_qty > 0) {
-                    $mutasiItemsToCreate[$pid] = ($mutasiItemsToCreate[$pid] ?? 0) + $free_qty;
+                // ✅ Simpan data log sementara (do_id masih null, akan diisi nanti)
+                if ($item->qty > 0) {
+                    $stockLogs[] = [
+                        'do_id'                => null, 
+                        'warehouse_id'         => $sales_proforma->warehouse_id,
+                        'product_packaging_id' => $base_product_packaging_id,
+                        'qty'                  => $item->qty,
+                        'status'               => 1, // Status aktif (1)
+                        'note'                 => 'Logs Stock Proforma ACC',
+                        'created_at'           => now(),
+                        'updated_at'           => now(),
+                    ];
                 }
             }
-
-            // Potong Free
-            foreach ($mutasiItemsToCreate as $pid => $totalFree) {
-                if ($totalFree > 0) {
-                    $stockService->deductPhysicalStock($sales_proforma->warehouse_id, $pid, round($totalFree, 2));
-                }
-            }
-
-            // Customer Baru / Lama
+    
+            /*
+            |--------------------------------------------------------------------------
+            | 3. HANDLE CUSTOMER BARU
+            |--------------------------------------------------------------------------
+            */
             if ($sales_proforma->exsisting_customer == 0) {
                 $duplicate = Customer::whereRaw('LOWER(name) = ?', [strtolower($sales_proforma->customer_name)])
                     ->where('status', Customer::STATUS['ACTIVE'])->exists();
+    
                 if ($duplicate) throw new \Exception("Duplicate store found");
-
+    
                 $customer = Customer::create([
                     'code' => CodeRepo::generateCustomer(),
                     'name' => $sales_proforma->customer_name,
@@ -645,7 +621,7 @@ class SalesOrderProformaController extends Controller
                     'kota' => $sales_proforma->customer_city,
                     'status' => Customer::STATUS['ACTIVE'],
                 ]);
-
+    
                 $otherAddress = CustomerOtherAddress::create([
                     'id' => $customer->id.'.1',
                     'customer_id' => $customer->id,
@@ -660,30 +636,29 @@ class SalesOrderProformaController extends Controller
                 ]);
                 $sales_proforma->customer_other_address_id = $otherAddress->id;
             }
-
+    
+            /*
+            |--------------------------------------------------------------------------
+            | 4. UPDATE PROFORMA & PO RECYCLE
+            |--------------------------------------------------------------------------
+            */
             $sales_proforma->status = 4;
             $sales_proforma->so_lanjutan = 1;
             $sales_proforma->updated_by = Auth::id();
             $sales_proforma->save();
-
-            // Cek PO sebelumnya yang pernah direvisi / dicancel
+    
             $packingOrder = PackingOrder::where('so_id', $sales_order->id)
-                ->where('status', 7) // Status 7 = Batal/Revisi
-                ->orderBy('id', 'desc')
-                ->first();
-
+                ->where('status', 7)->orderBy('id', 'desc')->first();
+    
             if ($packingOrder) {
-                // Recycle PO Lama
-                $packingOrder->status = 2;
-                $packingOrder->warehouse_id = $sales_proforma->warehouse_id;
-                $packingOrder->note = $sales_proforma->note;
-                $packingOrder->created_by = Auth::id();
-                $packingOrder->save();
-                
-                // Hapus Packing Item yang lama agar tidak duplikat
+                $packingOrder->update([
+                    'status' => 2,
+                    'warehouse_id' => $sales_proforma->warehouse_id,
+                    'note' => $sales_proforma->note,
+                    'created_by' => Auth::id()
+                ]);
                 PackingOrderItem::where('do_id', $packingOrder->id)->delete();
             } else {
-                // Buat PO Baru
                 $packingOrder = PackingOrder::create([
                     'code' => CodeRepo::generatePO(),
                     'do_code' => $sales_order->code,
@@ -700,32 +675,52 @@ class SalesOrderProformaController extends Controller
                     'so_id' => $sales_order->id,
                 ]);
             }
-
+    
             $do_id = $packingOrder->id;
 
-            if ($sales_proforma->details_cost) {
-                PackingOrderDetail::updateOrCreate(
-                    ['do_id' => $do_id],
-                    [
-                        'do_id' => $do_id,
-                        'discount_1' => $sales_proforma->details_cost->discount_1_percent,
-                        'discount_2' => $sales_proforma->details_cost->discount_2_percent,
-                        'discount_1_idr' => $sales_proforma->details_cost->discount_1,
-                        'discount_2_idr' => $sales_proforma->details_cost->discount_2,
-                        'discount_idr' => $sales_proforma->details_cost->discount_idr,
-                        'voucher_idr' => $sales_proforma->details_cost->voucher_idr,
-                        'purchase_total_idr' => $sales_proforma->details_cost->purchase_total_idr,
-                        'delivery_cost_idr' => $sales_proforma->details_cost->delivery_cost_idr,
-                        'status_resi' => 0,
-                        'grand_total_idr' => $sales_proforma->details_cost->grand_total_idr,
-                    ]
-                );
+            // ✅ SELESAIKAN INSERT LOG STOCK DI SINI
+            // Setelah $do_id berhasil didapatkan dari PO, kita masukkan ke dalam array $stockLogs lalu di-insert
+            if (!empty($stockLogs)) {
+                foreach ($stockLogs as &$log) {
+                    $log['do_id'] = $do_id;
+                }
+                DB::table('do_stock_deduction_logs')->insert($stockLogs);
             }
-
+    
+            if ($sales_proforma->details_cost) {
+                PackingOrderDetail::updateOrCreate(['do_id' => $do_id], [
+                    'discount_1' => $sales_proforma->details_cost->discount_1_percent,
+                    'discount_2' => $sales_proforma->details_cost->discount_2_percent,
+                    'discount_1_idr' => $sales_proforma->details_cost->discount_1,
+                    'discount_2_idr' => $sales_proforma->details_cost->discount_2,
+                    'discount_idr' => $sales_proforma->details_cost->discount_idr,
+                    'voucher_idr' => $sales_proforma->details_cost->voucher_idr,
+                    'purchase_total_idr' => $sales_proforma->details_cost->purchase_total_idr,
+                    'delivery_cost_idr' => $sales_proforma->details_cost->delivery_cost_idr,
+                    'status_resi' => 0,
+                    'grand_total_idr' => $sales_proforma->details_cost->grand_total_idr,
+                ]);
+            }
+    
+            /*
+            |--------------------------------------------------------------------------
+            | 5. COPY ITEMS & MUTASI FREE PRODUCT (LOG)
+            |--------------------------------------------------------------------------
+            */
+            $mutasiItems = [];
+    
             foreach ($sales_proforma->items as $item) {
                 $soItem = SalesOrderItem::where('so_id', $sales_order->id)
                     ->where('product_packaging_id', $item->product_packaging_id)->first(); 
-
+    
+                $is_free_product = !empty($soItem->free_product) && (float)$soItem->free_product > 0;
+                if ($is_free_product && $item->qty > 0) {
+                    $mutasiItems[] = [
+                        'product_packaging_id' => $item->product_packaging_id,
+                        'qty' => $item->qty,
+                    ];
+                }
+    
                 PackingOrderItem::create([
                     'product_packaging_id' => $item->product_packaging_id,
                     'do_id' => $do_id,
@@ -739,34 +734,35 @@ class SalesOrderProformaController extends Controller
                     'qty_worked' => $item->qty,
                 ]);
             }
-
-            // Log Mutasi
-            if (!empty($mutasiItemsToCreate)) {
+    
+            if (!empty($mutasiItems)) {
                 $mutasi = MutasiShowroom::create([
                     'kode' => CodeRepo::generateMutasiShowroom(MutasiShowroom::TYPE_SYSTEM_FREE_SO),
                     'brand_name' => $sales_order->brand_name ?? '-',
                     'type' => MutasiShowroom::TYPE_SYSTEM_FREE_SO,
                     'warehouse_from_id' => $sales_proforma->warehouse_id,
-                    'warehouse_to_id' => $sales_order->customer_id,
+                    'warehouse_to_id' => $sales_order->customer_id == 51 ? 53 : $sales_order->customer_id,
+                    'customer_other_address_id' => $sales_proforma->customer_other_address_id ?? null,
                     'so_id' => $sales_order->id,
                     'tanggal' => now(),
-                    'status' => 1,
-                    'note' => 'Mutasi Free Product (LOG ONLY)',
+                    'status' => MutasiShowroom::STATUS['SETTLE'],
+                    'status_checked' => MutasiShowroom::STATUS_CHECKED['CHECKED'],
+                    'status_barang' => MutasiShowroom::STATUS_BARANG['DIAMBIL'],
+                    'note' => 'Mutasi Free Product dari SO ' . $sales_order->code,
                     'created_by' => Auth::id(),
                 ]);
-
-                foreach ($mutasiItemsToCreate as $pid => $totalFree) {
+    
+                foreach ($mutasiItems as $mItem) {
                     MutasiShowroomDetail::create([
                         'penjualan_showroom_id' => $mutasi->id,
-                        'product_packaging_id' => $pid,
-                        'qty' => $totalFree,
-                        'price' => 0,
-                        'total_price' => 0,
+                        'product_packaging_id' => $mItem['product_packaging_id'],
+                        'qty' => $mItem['qty'],
+                        'price' => 0, 'total_price' => 0,
+                        'note' => 'Free product otomatis dari SO ' . $sales_order->code,
                     ]);
                 }
             }
-
-            // Invoice
+    
             Invoicing::updateOrCreate(
                 ['code' => $sales_order->code, 'do_id' => $do_id],
                 [
@@ -777,24 +773,23 @@ class SalesOrderProformaController extends Controller
                     'status' => 1
                 ]
             );
-
+    
             DB::commit();
-
+    
             return response()->json([
                 'success' => true,
-                'message' => 'ACC berhasil. DO & PO direcycle, stok aman.'
+                'message' => 'ACC berhasil. DO & PO direcycle, stok masuk antrean reserved (Log terbuat).'
             ]);
-
+    
         } catch (\Throwable $e) {
             DB::rollBack();
-
             return response()->json([
                 'success' => false,
                 'message' => $e->getMessage()
             ], 500);
         }
     }
-
+    
     public function destroy(Request $request, $id)
     {
         if (!$request->ajax()) {

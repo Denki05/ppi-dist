@@ -1462,6 +1462,7 @@ class SalesOrderController extends Controller
 
                         $data = [];
                         $mutasiItems = [];
+                        $stockLogs = []; // ✅ Siapkan array untuk log
                         
                         foreach($request->repeater as $key => $value){
                             $result = SalesOrderItem::where('id', $value["so_item_id"])->first();
@@ -1492,6 +1493,18 @@ class SalesOrderController extends Controller
                                         $qtyToReserve
                                     );
                                 }
+
+                                // ✅ Catat data log menggunakan do_id dari $packing_order
+                                $stockLogs[] = [
+                                    'do_id'                => $packing_order->id, // <- Diambil dari atas
+                                    'warehouse_id'         => $request->origin_warehouse_id,
+                                    'product_packaging_id' => $base_product_packaging_id,
+                                    'qty'                  => $qtyToReserve,
+                                    'status'               => 1, // Set status aktif
+                                    'note'                 => 'Logs Stock', // Opsional jika field note ada
+                                    'created_at'           => now(),
+                                    'updated_at'           => now(),
+                                ];
 
                                 // Lepas antrean reject HANYA untuk barang berbayar
                                 if (!$is_free_product && $rej_qty > 0) {
@@ -1636,6 +1649,11 @@ class SalesOrderController extends Controller
                             ]);
                         }
 
+                        // ✅ Insert log ke database SEBELUM commit
+                        if (!empty($stockLogs)) {
+                            DB::table('do_stock_deduction_logs')->insert($stockLogs);
+                        }
+
                         DB::commit();
                         if($errors) {
                             $response['notification'] = [
@@ -1683,6 +1701,7 @@ class SalesOrderController extends Controller
                         $jumlahitem = 0;
                         $data = [];
                         $mutasiItems = []; // Siapkan array untuk menampung Mutasi
+                        $stockLogsRev = []; // ✅ Tambahkan ini untuk menampung log reserve stock revisi
 
                         $get_po = PackingOrder::where('so_id', $sales_order->id)->first();
 
@@ -1713,6 +1732,18 @@ class SalesOrderController extends Controller
                                         $qtyToReserve
                                     );
                                 }
+
+                                // ✅ Catat data log menggunakan do_id dari $get_po
+                                $stockLogsRev[] = [
+                                    'do_id'                => $get_po->id, 
+                                    'warehouse_id'         => $request->origin_warehouse_id,
+                                    'product_packaging_id' => $base_product_packaging_id,
+                                    'qty'                  => $qtyToReserve,
+                                    'status'               => 1, // ✅ Ubah ke angka 1 agar konsisten
+                                    'note'                 => 'Logs Stock Sales Order', // Opsional
+                                    'created_at'           => now(),
+                                    'updated_at'           => now(),
+                                ];
 
                                 // Lepas antrean reject HANYA untuk barang berbayar
                                 if (!$is_free_product && $rej_qty > 0) {
@@ -1915,6 +1946,11 @@ class SalesOrderController extends Controller
                             ];
 
                             $update_invoice = Invoicing::where('do_id', $get_po->id)->update($data);
+                        }
+
+                        // ✅ Insert log ke database SEBELUM commit
+                        if (!empty($stockLogsRev)) {
+                            DB::table('do_stock_deduction_logs')->insert($stockLogsRev);
                         }
 
                         DB::commit();

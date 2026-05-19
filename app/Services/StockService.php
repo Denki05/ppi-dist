@@ -30,18 +30,34 @@ class StockService
     }
 
     // 2. CETAK LOG ADMINISTRASI (DIPANGGIL: DO Sent & Mutasi Step 3)
-    public function recordAdministrativeLog($warehouseId, $productId, $qty, $transactionCode, $note)
-    {
-        return DB::transaction(function () use ($warehouseId, $productId, $qty, $transactionCode, $note) {
+    public function recordAdministrativeLog(
+        $warehouseId, 
+        $productId, 
+        $qty, 
+        $transactionCode, 
+        $note,
+        $transactionDate = null  // ✅ TAMBAHAN PARAMETER
+    ) {
+        return DB::transaction(function () use ($warehouseId, $productId, $qty, $transactionCode, $note, $transactionDate) {
             $stock = ProductMinStock::where('warehouse_id', $warehouseId)
-                ->where('product_packaging_id', $productId)->lockForUpdate()->first();
-
-            StockMove::create([
-                'code_transaction' => $transactionCode, 'warehouse_id' => $warehouseId,
-                'product_packaging_id' => $productId, 'stock_in' => 0, 'stock_out' => $qty,
-                'stock_balance' => $stock ? $stock->quantity : 0,
-                'note' => $note, 'created_by' => auth()->id() ?? 1,
+                ->where('product_packaging_id', $productId)
+                ->lockForUpdate()
+                ->first();
+    
+            // ✅ Gunakan insert() agar bisa override created_at
+            StockMove::insert([
+                'code_transaction'     => $transactionCode,
+                'warehouse_id'         => $warehouseId,
+                'product_packaging_id' => $productId,
+                'stock_in'             => 0,
+                'stock_out'            => $qty,
+                'stock_balance'        => $stock ? $stock->quantity : 0,
+                'note'                 => $note,
+                'created_by'           => auth()->id() ?? 1,
+                'created_at'           => $transactionDate ?? now(), // ✅ backdate jika lintas bulan
+                'updated_at'           => now(),
             ]);
+    
             return true;
         });
     }
@@ -175,7 +191,6 @@ class StockService
 
     /**
      * 7. FUNGSI CANCEL / REVISI DO
-     * Tahu persis kapan harus mengembalikan Fisik Rak atau sekadar melepas Booking.
      */
     public function cancelDoRevisi($warehouseId, $productId, $qty, $isProforma, $doStatus)
     {
@@ -184,16 +199,17 @@ class StockService
                 ->where('product_packaging_id', $productId)->lockForUpdate()->first();
 
             if ($stock) {
-                // ATURAN CERDAS 1 PINTU:
-                // - Jika Proforma: Fisik SUDAH PASTI terpotong di ACC, wajib dikembalikan!
-                // - Jika Normal SO: Fisik terpotong JIKA status DO >= 3 (Sudah dipacking).
-                $isPhysicalCut = $isProforma || in_array($doStatus, [3, 4]);
+                // UPDATE ATURAN BARU:
+                // Proforma sekarang sama dengan SO Normal. Pemotongan fisik HANYA terjadi di checker.
+                // Jadi, fisik rak dikembalikan HANYA JIKA DO sudah masuk tahap packing/checker (Status 3 / 4).
+                $isPhysicalCut = in_array($doStatus, [3, 4]);
 
                 if ($isPhysicalCut) {
-                    $stock->quantity += $qty; // Kembalikan fisik ke rak
+                    // Kembalikan fisik ke rak
+                    $stock->quantity += $qty; 
                 } else {
-                    // Jika fisik belum terpotong (DO Normal masih Draft/Status 2), 
-                    // maka yang ter-booking hanya reserved_quantity. Lepaskan itu!
+                    // Jika fisik belum terpotong (DO masih Draft/List PO Status 2), 
+                    // maka yang ter-booking hanya reserved_quantity. Lepaskan booking-nya!
                     if ($stock->reserved_quantity >= $qty) {
                         $stock->reserved_quantity -= $qty;
                     } else {

@@ -346,13 +346,43 @@ class DeliveryOrderController extends Controller
                 }
             }
 
+            // ======================================
+            // VALIDASI LOGS & POTONG STOK FISIK
+            // ======================================
             if (!$isProforma) {
-                $stockService = new StockService();
+                $stockService = new \App\Services\StockService();
                 
+                // ✅ 1. KELOMPOKKAN QTY CHECKER PER PRODUK
+                $checkerQtys = [];
                 foreach ($packing->do_detail as $item) {
-                    $base_product_packaging_id = preg_replace('/_\d+$/', '', $item->product_packaging_id);
-                    // Langsung potong quantity fisik & reserved
-                    $stockService->deductPhysicalStock($packing->warehouse_id, $base_product_packaging_id, $item->qty);
+                    $base_id = preg_replace('/_\d+$/', '', $item->product_packaging_id);
+                    
+                    if (!isset($checkerQtys[$base_id])) {
+                        $checkerQtys[$base_id] = 0;
+                    }
+                    $checkerQtys[$base_id] += $item->qty; // Jumlahkan semua baris dengan produk yang sama
+                }
+
+                // ✅ 2. VALIDASI TOTAL CHECKER VS TOTAL LOGS
+                foreach ($checkerQtys as $base_id => $totalCheckerQty) {
+                    // Ambil total kuota di log untuk produk ini
+                    $logQty = DB::table('do_stock_deduction_logs')
+                        ->where('do_id', $packing->id)
+                        ->where('product_packaging_id', $base_id)
+                        ->where('status', 1) 
+                        ->sum('qty');
+
+                    // Validasi: Qty GABUNGAN dari Checker tidak boleh melebihi kuota di Log
+                    if ((float)$totalCheckerQty > (float)$logQty) {
+                        throw new \Exception("Gagal: Total Qty Checker untuk produk {$base_id} ({$totalCheckerQty}) melebihi kuota Pesanan di Log ({$logQty}).");
+                    }
+                }
+
+                // ✅ 3. JIKA SEMUA VALID, LANGSUNG POTONG FISIK
+                foreach ($packing->do_detail as $item) {
+                    $base_id = preg_replace('/_\d+$/', '', $item->product_packaging_id);
+                    // Potong fisik sesuai input checker per baris
+                    $stockService->deductPhysicalStock($packing->warehouse_id, $base_id, $item->qty);
                 }
             }
 
@@ -465,7 +495,7 @@ class DeliveryOrderController extends Controller
     }
 
    public function sent(Request $request)
-    {
+   {
         // Initialize response data
         $data_json = [];
 
@@ -494,6 +524,18 @@ class DeliveryOrderController extends Controller
         try {
             $post = $request->all();
             $do_id = $post["do_id"];
+
+            // ======================================================
+            // ✅ VALIDASI STATUS LOG AKTIF SEBELUM UPDATE RESI
+            // ======================================================
+            $activeLogExists = DB::table('do_stock_deduction_logs')
+                ->where('do_id', $do_id)
+                ->where('status', 1) // 1 = Active
+                ->exists();
+
+            if (!$activeLogExists) {
+                throw new \Exception('Update resi ditolak: Tidak ditemukan log kuota pesanan yang aktif. Dokumen ini kemungkinan sedang ditarik kembali ke SO.');
+            }
 
             // Handle image upload
             $data = [];
@@ -560,38 +602,55 @@ class DeliveryOrderController extends Controller
             $alreadyMoved = \App\Entities\Gudang\StockMove::where('code_transaction', $transactionCode)->exists();
             
             // HAPUS !$isProforma AGAR SEMUA JENIS DO DICETAK KARTU STOKNYA
-            if (!$alreadyMoved) { 
+            if (!$alreadyMoved) {
                 $stockService = new StockService();
                 $items = PackingOrderItem::where('do_id', $do_id)->get();
-
-                // ======================================
-                // 🔥 GROUPING PRODUCT (GABUNG FREE + NON FREE)
-                // ======================================
+            
+                // ✅ DETEKSI LINTAS BULAN
+                // Gunakan tanggal SO sebagai acuan transaksi bisnis
+                $soDate    = \Carbon\Carbon::parse($get_so->so_date);
+                $now       = now();
+                $isCrossMonth = $soDate->format('Y-m') !== $now->format('Y-m');
+            
+                // Jika lintas bulan → pakai akhir hari tanggal SO, bukan now()
+                // Ini memastikan kartu stock masuk ke bulan yang benar
+                $transactionDate = $isCrossMonth
+                    ? $soDate->copy()->endOfDay()   // contoh: 2026-03-31 23:59:59
+                    : $now;
+            
+                // ✅ LOG jika backdate terjadi (untuk audit trail)
+                if ($isCrossMonth) {
+                    \Illuminate\Support\Facades\Log::info('⚠️ StockMove backdate terdeteksi', [
+                        'do_code'          => $transactionCode,
+                        'so_date'          => $soDate->toDateString(),
+                        'update_resi_date' => $now->toDateString(),
+                        'backdate_to'      => $transactionDate->toDateTimeString(),
+                    ]);
+                }
+            
+                // GROUPING PRODUCT (GABUNG FREE + NON FREE)
                 $grouped = [];
-
                 foreach ($items as $item) {
                     $pid = preg_replace('/_\d+$/', '', $item->product_packaging_id);
-
                     if (!isset($grouped[$pid])) {
                         $grouped[$pid] = 0;
                     }
-
                     $grouped[$pid] += (float) $item->qty;
                 }
             
-                // ======================================
-                // 🧾 INSERT STOCK MOVE (SUDAH DIGABUNG)
-                // ======================================
+                // INSERT STOCK MOVE (SUDAH DIGABUNG)
                 foreach ($grouped as $pid => $totalQty) {
-
-                    $note = $detail_do->do_code . ' - ' . $detail_do->member->name . ' ' . $detail_do->member->text_kota;
-
+                    $note = $detail_do->do_code . ' - ' 
+                          . $detail_do->member->name . ' ' 
+                          . $detail_do->member->text_kota;
+            
                     $stockService->recordAdministrativeLog(
                         $detail_do->warehouse_id,
                         $pid,
                         round($totalQty, 2),
                         $transactionCode,
-                        $note
+                        $note,
+                        $transactionDate  // ✅ kirim tanggal yang sudah divalidasi
                     );
                 }
             }
@@ -624,8 +683,89 @@ class DeliveryOrderController extends Controller
                 }
             }
 
+            // ======================================================
+            // ✅ TUNTASKAN LOGS KE STATUS 2 (DONE)
+            // ======================================================
+            DB::table('do_stock_deduction_logs')
+                ->where('do_id', $do_id)
+                ->where('status', 1)
+                ->update([
+                    'status' => 2, // 2 = Done
+                    'note' => 'Selesai (Update Resi)',
+                    'updated_at' => now()
+                ]);
+
             // Commit transaction
             DB::commit();
+
+            // === Kirim data invoice + file PDF ke Agenda ===
+            // try {
+            //     if ($get_inv && $customer && $detail_do) {
+
+            //         // Cek apakah tipe transaksi TEMPO
+            //         if (($detail_do->type_transaction ?? null) === 'TEMPO') {
+
+            //             $payload = [
+            //                 'pic'          => $customer->store->pic ?? '-',
+            //                 'customer'     => $customer->name ?? 'Unknown',
+            //                 'invoice_code' => $get_inv->invoice_code ?? $get_inv->code ?? '-',
+            //                 // Pastikan dicasting ke string untuk menghindari error multipart Guzzle
+            //                 'amount'       => (string) ($get_inv->grand_total_idr ?? 0), 
+            //                 'customer_id'  => (string) $customer->id,
+            //             ];
+
+            //             // Lokasi file PDF hasil export Crystal Report
+            //             $pdfPath = "C:\\xampp\\htdocs\\ppi-dist\\public\\cr\\invoice\\export\\" . ($get_inv->invoice_code ?? $get_inv->code) . "-FULL.pdf";
+
+            //             $multipart = [];
+            //             foreach ($payload as $key => $value) {
+            //                 $multipart[] = [
+            //                     'name'     => $key,
+            //                     'contents' => $value,
+            //                 ];
+            //             }
+
+            //             // Jika file PDF ada, kirimkan bersamaan
+            //             if (file_exists($pdfPath)) {
+            //                 $multipart[] = [
+            //                     'name'     => 'pdf_invoice',
+            //                     'contents' => fopen($pdfPath, 'r'),
+            //                     'filename' => basename($pdfPath),
+            //                 ];
+            //             } else {
+            //                 Log::warning("⚠️ File PDF invoice tidak ditemukan: " . $pdfPath);
+            //             }
+
+            //             $client = new \GuzzleHttp\Client();
+            //             $response = $client->post(env('AGENDA_URL'), [
+            //                 'headers' => [
+            //                     'Authorization' => 'Bearer ' . env('AGENDA_TOKEN'),
+            //                     'Accept'        => 'application/json',
+            //                 ],
+            //                 'multipart' => $multipart,
+            //                 'timeout'   => 15,
+            //             ]);
+
+            //             $result = json_decode($response->getBody(), true);
+
+            //             Log::info('✅ Invoice + PDF sent to Agenda', [
+            //                 'payload'  => $payload,
+            //                 'pdf'      => basename($pdfPath),
+            //                 'response' => $result,
+            //             ]);
+
+            //         } else {
+            //             // Log jika bukan tempo, aplikasi akan lanjut ke baris di bawah blok try-catch
+            //             Log::info('⚠️ Invoice bukan TEMPO, dilewati: ' . ($detail_do->do_code ?? $get_inv->code));
+            //         }
+
+            //     } else {
+            //         Log::warning('⚠️ Invoice or Customer not found for DO ID: ' . $do_id);
+            //     }
+            // } catch (\Exception $ex) {
+            //     // dd($ex); <-- Dihapus agar jika API down, transaksi tetap jalan (hanya log error yang tercatat)
+            //     Log::error('❌ Gagal kirim data + PDF invoice ke Agenda: ' . $ex->getMessage());
+            // }
 
             $userIds = [32, 36];
             $users = User::whereIn('id', $userIds)->get();
@@ -1136,150 +1276,71 @@ class DeliveryOrderController extends Controller
     public function multiCancel(Request $request)
     {
         DB::beginTransaction();
+        
         try {
             $request->validate(['ids' => 'required|array']);
-
+    
             $doList = PackingOrder::with('do_detail')
                 ->whereIn('id', $request->ids)
                 ->lockForUpdate()
                 ->get();
-
-            // 🟢 INISIALISASI SERVICE
+    
             $stockService = new \App\Services\StockService();
-
+    
             foreach ($doList as $do) {
-
+    
                 if ($do->status == 6) {
                     throw new \Exception("DO {$do->do_code} sudah Delivered dan tidak bisa dicancel.");
                 }
-
+    
                 // ===============================
-                // 5 → 4
+                // 5 â†’ 4 (Mundur dari Siap Kirim ke Packed)
                 // ===============================
                 if ($do->status == 5) {
                     $do->update(['status' => 4]);
                     continue;
                 }
-
+    
                 // ===============================
-                // 4 → 3 (MUNDUR DARI PACKED KE CHECKER)
+                // 4 â†’ 3 (MUNDUR DARI PACKED KE CHECKER)
                 // ===============================
                 if ($do->status == 4) {
-
-                    // ===============================
-                    // 🔥 AMBIL DATA FREE PRODUCT
-                    // ===============================
-                    [$freeMap, $mutasiShowrooms] = $this->getFreeQtyMap($do->so_id);
-
-                    // ===============================
-                    // 1️⃣ UNDO FREE PRODUCT (MUTASI)
-                    // ===============================
-                    foreach ($mutasiShowrooms as $mutasi) {
-
-                        $mutasiDetails = \App\Entities\Gudang\MutasiShowroomDetail::where('penjualan_showroom_id', $mutasi->id)->get();
-
-                        foreach ($mutasiDetails as $md) {
-
-                            $stockService->undoDeductPhysicalStock(
-                                $mutasi->warehouse_from_id,
-                                $md->product_packaging_id,
-                                (float)$md->qty
-                            );
-                        }
-                    }
-
-                    // ===============================
-                    // 2️⃣ UNDO BARANG NORMAL (DO)
-                    // ===============================
-                    // 🔥 GROUP TOTAL DO QTY PER PRODUCT
-                    $doQtyMap = [];
-
+                    
+                    // Cukup loop dari do_detail karena packed() juga memotong berdasarkan do_detail.
+                    // undoDeductPhysicalStock otomatis akan:
+                    // 1. Mengembalikan stok fisik (+ quantity)
+                    // 2. Mengembalikan status booking (+ reserved_quantity)
                     foreach ($do->do_detail as $item) {
                         $base_id = preg_replace('/_\d+$/', '', $item->product_packaging_id);
-
-                        if (!isset($doQtyMap[$base_id])) {
-                            $doQtyMap[$base_id] = 0;
-                        }
-
-                        $doQtyMap[$base_id] += (float)$item->qty;
-                    }
-
-                    // 🔥 HITUNG NORMAL = DO - FREE (PER PRODUCT, BUKAN PER ROW)
-                    foreach ($doQtyMap as $base_id => $totalDoQty) {
-
-                        $freeQty = $freeMap[$base_id] ?? 0;
-
-                        $normalQty = $totalDoQty - $freeQty;
-
-                        if ($normalQty <= 0) {
-                            continue;
-                        }
-
+    
                         $stockService->undoDeductPhysicalStock(
                             $do->warehouse_id,
                             $base_id,
-                            $normalQty
+                            (float)$item->qty
                         );
                     }
-
+    
                     $do->update(['status' => 3]);
                     continue;
                 }
-
+    
                 // ===============================
-                // 3 → 2 
+                // 3 â†’ 2 (Mundur dari Checker ke Draft)
                 // ===============================
                 if ($do->status == 3) {
                     $do->update(['status' => 2]);
                     continue;
                 }
-
+    
                 throw new \Exception("Status DO {$do->do_code} tidak valid untuk cancel.");
             }
-
+    
             DB::commit();
             return redirect()->back()->with('success', 'Berhasil dikembalikan/cancel.');
-
+    
         } catch (\Throwable $e) {
             DB::rollBack();
             return redirect()->back()->with('error', $e->getMessage());
         }
-    }
-
-    private function getFreeQtyMap($so_id)
-    {
-        $map = [];
-
-        $mutasiShowrooms = \App\Entities\Gudang\MutasiShowroom::where('so_id', $so_id)
-            ->where('type', \App\Entities\Gudang\MutasiShowroom::TYPE_SYSTEM_FREE_SO)
-            ->whereNull('deleted_at') // 🔥 safety jika soft delete
-            ->get();
-
-        foreach ($mutasiShowrooms as $mutasi) {
-
-            $details = \App\Entities\Gudang\MutasiShowroomDetail::where('penjualan_showroom_id', $mutasi->id)
-                ->get();
-
-            foreach ($details as $md) {
-
-                // 🔥 NORMALISASI PRODUCT ID (WAJIB)
-                $base_id = preg_replace('/_\d+$/', '', $md->product_packaging_id);
-
-                // 🔥 VALIDASI AMAN (hindari null/0 aneh)
-                $qty = (float) $md->qty;
-
-                if ($qty <= 0) {
-                    continue;
-                }
-
-                // 🔥 AGREGASI TOTAL FREE PER PRODUCT
-                $map[$base_id] = ($map[$base_id] ?? 0) + $qty;
-            }
-        }
-
-        return [
-            $map, 
-            $mutasiShowrooms
-        ];
     }
 }
