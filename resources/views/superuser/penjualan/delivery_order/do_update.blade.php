@@ -24,7 +24,7 @@
 <form class="ajax" data-action="{{ route('superuser.penjualan.delivery_order.do_update') }}" data-type="POST" enctype="multipart/form-data">
   @csrf
   <input type="hidden" name="id" value="{{$result->id}}">
-  <input type="hidden" name="cost_id" value="{{$result->do_detail_cost[0]->id}}">
+  <input type="hidden" name="cost_id" value="{{$result->do_detail_cost->id}}">
 
   <div class="row">
     <div class="col-6">

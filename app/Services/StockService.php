@@ -11,6 +11,15 @@ class StockService
     // 1. POTONG FISIK RAK (DIPANGGIL: DO Packed & Mutasi Step 1)
     public function deductPhysicalStock($warehouseId, $productId, $qty)
     {
+        // Tambahkan validasi keamanan
+        if (empty($warehouseId) || empty($productId)) {
+            \Log::error("Gagal deduct stok: Warehouse ID atau Product ID kosong.", [
+                'warehouse_id' => $warehouseId,
+                'product_id' => $productId
+            ]);
+            throw new \Exception("Data stok tidak lengkap (Warehouse/Product ID kosong).");
+        }
+
         return DB::transaction(function () use ($warehouseId, $productId, $qty) {
             $stock = ProductMinStock::where('warehouse_id', $warehouseId)
                 ->where('product_packaging_id', $productId)->lockForUpdate()->first();
@@ -43,6 +52,12 @@ class StockService
                 ->where('product_packaging_id', $productId)
                 ->lockForUpdate()
                 ->first();
+
+            // ✅ Get current balance
+            $currentBalance = $stock ? $stock->quantity : 0;
+
+            // ✅ Calculate new balance setelah transaksi
+            $newBalance = $currentBalance - $qty;
     
             // ✅ Gunakan insert() agar bisa override created_at
             StockMove::insert([
@@ -51,7 +66,7 @@ class StockService
                 'product_packaging_id' => $productId,
                 'stock_in'             => 0,
                 'stock_out'            => $qty,
-                'stock_balance'        => $stock ? $stock->quantity : 0,
+                'stock_balance'        => $newBalance,
                 'note'                 => $note,
                 'created_by'           => auth()->id() ?? 1,
                 'created_at'           => $transactionDate ?? now(), // ✅ backdate jika lintas bulan
@@ -80,11 +95,16 @@ class StockService
             $stock->save();
 
             StockMove::insert([
-                'code_transaction' => $transactionCode, 'warehouse_id' => $warehouseId,
-                'product_packaging_id' => $productId, 'stock_in' => ($type === 'IN') ? $qty : 0,
-                'stock_out' => ($type === 'OUT') ? $qty : 0, 'stock_balance' => $stock->quantity,
-                'note' => $note, 'created_by' => auth()->id() ?? 1,
-                'created_at' => $historicalDate, 'updated_at' => now(),
+                'code_transaction' => $transactionCode, 
+                'warehouse_id' => $warehouseId,
+                'product_packaging_id' => $productId, 
+                'stock_in' => ($type === 'IN') ? $qty : 0,
+                'stock_out' => ($type === 'OUT') ? $qty : 0, 
+                'stock_balance' => $stock->quantity,
+                'note' => $note, 
+                'created_by' => auth()->id() ?? 1,
+                'created_at' => $historicalDate, 
+                'updated_at' => now(),
             ]);
             return true;
         });

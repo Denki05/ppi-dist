@@ -571,9 +571,11 @@ class SjMutasiInternalController extends Controller
             $mutasi->save();
 
             // ==============================
-            // STOCK MOVE
+            // RECORD ADMINISTRATIVE LOG - Pakai StockService
             // ==============================
             if ($newStatus === 2 && $oldStatus !== 2) {
+                $stockService = app(\App\Services\StockService::class);
+
                 foreach ($details as $detail) {
                     $productId = $detail->product_packaging_id;
                     
@@ -590,41 +592,14 @@ class SjMutasiInternalController extends Controller
                         ? 'Mutasi Showroom - DIAMBIL'
                         : 'Mutasi Out - ' . ($mutasi->warehouse_to_attribute->name ?? '-') . ' - DIAMBIL';
 
-                    // 🔒 Ambil Opening Balance atau data saat ini
-                    $lastMove = \App\Entities\Gudang\StockMove::where('warehouse_id', $warehouseId)
-                        ->where('product_packaging_id', $productId)
-                        ->orderByDesc('id')
-                        ->lockForUpdate()
-                        ->first();
-
-                    if (!$lastMove) {
-                        $currentStock = DB::table('master_product_min_stocks')
-                            ->where('warehouse_id', $warehouseId)
-                            ->where('product_packaging_id', $productId)
-                            ->lockForUpdate()
-                            ->first();
-
-                        $openingQty = $currentStock ? $currentStock->quantity : 0;
-
-                        \App\Entities\Gudang\StockMove::create([
-                            'code_transaction'     => 'OPENING',
-                            'warehouse_id'         => $warehouseId,
-                            'product_packaging_id' => $productId,
-                            'stock_in'             => $openingQty,
-                            'stock_out'            => 0,
-                            'stock_balance'        => $openingQty,
-                            'note'                 => 'Auto Opening Balance',
-                            'created_by'           => Auth::id(),
-                        ]);
-                    }
-
-                    $stockService = app(\App\Services\StockService::class);
+                    // ✅ Gunakan StockService
                     $stockService->recordAdministrativeLog(
                         $warehouseId,
                         $productId,
                         $quantity,
                         $transactionCode,
-                        $note
+                        $note,
+                        now()
                     );
                 }
             }

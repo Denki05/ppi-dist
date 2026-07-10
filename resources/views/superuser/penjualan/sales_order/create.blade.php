@@ -37,7 +37,7 @@
     <input type="hidden" name="ajukankelanjutan" value="0">
     <input type="hidden" name="need_proforma" value="{{ $is_proforma }}">
     <div class="row">
-    <div class="col-4">
+    <div class="col-12 col-lg-4">
         <div class="block">
           <div class="block-content">
             <div class="form-row">
@@ -76,20 +76,20 @@
         </div>
       </div>
 
-      <div class="col-8">
+      <div class="col-12 col-lg-8">
         <div class="block">
           <div class="block-content">
             <div class="row">
-              <div class="col col-md-5">
+              <div class="col-12 col-md-6">
                 <div class="form-row">
-                  <div class="form-group col-md-4">
+                  <div class="form-group col-12 col-sm-6">
                     <span class="form-label"><b>Kurs </b> <span class="text-danger">*</span></span>
                     <input class="form-control" type="text" name="kurs" id="kurs" value="{{ $idr_rate }}" readonly>
                   </div>
 
-                  <div class="form-group col-md-4">
+                  <div class="form-group col-12 col-sm-6">
                     <span class="form-label"><b>Disc % </b>
-                    @if($approval_mou == 1)
+                    @if($approval_mou == 0)
                     <input class="form-control" type="text" name="disc_percent" id="disc_percent" value="{{ $disc }}" readonly>
                     @else
                     <input class="form-control" type="text" name="disc_percent" id="disc_percent" required>
@@ -97,7 +97,7 @@
                   </div>
                 </div>
                 <div class="form-row">
-                  <div class="form-group col-md-8">
+                  <div class="form-group col-12">
                     <span class="form-label"><b>Approval </b> <span class="text-danger">*</span></span>
                     <?php 
                       if($approval_mou == 0){
@@ -111,7 +111,7 @@
                   </div>
                 </div>
               </div>
-              <div class="col col-md-6">
+              <div class="col-12 col-md-6">
                 <div class="form-group">
                   <span class="form-label"><b>Note </b> <span class="text-danger">*</span></span>
                   <textarea class="form-control" name="note_so" id="editor" rows="4" col="10" readonly>{{ $note_so }}</textarea>
@@ -135,6 +135,7 @@
             </a>
           </div>
           <div class="block-content">
+            <div class="table-responsive">
             <table id="datatables" class="table table-striped">
               <thead>
                 <tr>
@@ -151,6 +152,7 @@
               <tbody>
               </tbody>
             </table>
+            </div>
           </div>
           <br>
         </div>
@@ -213,6 +215,19 @@
 
 @endsection
 
+@push('styles')
+<style>
+  @media (max-width: 991.98px) {
+    #datatables {
+      min-width: 900px;
+    }
+    .select2-container {
+      min-width: 180px;
+    }
+  }
+</style>
+@endpush
+
 @include('superuser.asset.plugin.select2')
 @include('superuser.asset.plugin.swal2')
 @include('superuser.asset.plugin.datatables')
@@ -222,7 +237,7 @@
 <script type="text/javascript">
   $(document).ready(function () {
 
-    $('.js-select2').select2();
+    $('.js-select2').not('.js-select2-kontrak').select2();
 
     $(document).on('click','.btn-simpan',function(){
       $('#frmCreate').find('input[name="ajukankelanjutan"]').val(0);
@@ -281,7 +296,8 @@
     })
 
     $(".js-select2-kontrak").select2({
-      
+      dropdownParent: $('#addSoKontrak'),
+      width: '100%',
       ajax: {
         url: '{{ route('superuser.penjualan.sales_order.search_kontrak', [$other_address->id, $merek->brand_name]) }}',
         dataType: 'json',
@@ -344,18 +360,13 @@
             product_data = json.data;
 
             $.each( product_data, function( key, value ) {
-                var makeselect;
-                $.map( product_data, function( val, i ) {
-                  if(val['typeName'] === null){
-                    makeselect += '<option value="'+ val['id'] +'" data-name="'+ val['name'] +'" data-packname="'+ val['packName'] +'" data-price="'+ val['price'] +'" data-packid="'+ val['packID']+'">'+ val['code'] + ' - ' + val['name'] + ' - ' + val['packName'] + ' - '+ val['warehouseName'] +'</option>';
-                  } else {
-                    makeselect += '<option value="'+ val['id'] +'" data-name="'+ val['name'] +'" data-packname="'+ val['packName'] +'" data-price="'+ val['price'] +'" data-packid="'+ val['packID']+'">'+ val['code'] + ' - ' + val['name'] + ' - ' + val['packName'] + ' - '+ val['typeName'] +'</option>';
-                  }
-                });
-
-
-                $('.js-ajax').append(makeselect);
-                initailizeSelect2();
+              var makeselect = '<option></option>';
+              $.map(product_data, function(val, i) {
+                  var label = val['code'] + ' - ' + val['name'] + ' - ' + val['packName'] + ' - ' + (val['typeName'] ?? val['warehouseName']);
+                  makeselect += '<option value="'+ val['id'] +'" data-name="'+ val['name'] +'" data-packname="'+ val['packName'] +'" data-price="'+ val['price'] +'" data-packid="'+ val['packID']+'">'+ label +'</option>';
+              });
+              // Tidak perlu append ke DOM di sini, cukup simpan di variable product_data
+              initailizeSelect2(); // Cukup 1x
             });
           }
         }
