@@ -36,6 +36,8 @@ use PDF;
 use COM;
 use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Response;
+use GuzzleHttp\Client; // <-- WAJIB TAMBAHKAN INI
+use GuzzleHttp\Exception\RequestException;
 
 class ProductController extends Controller
 {
@@ -77,7 +79,7 @@ class ProductController extends Controller
 
         $data['product'] = Product::distinct()->get(['code', 'name']);
         // $data['brand_lokal'] = BrandLokal::get();
-        $data['brand_lokal'] = BrandLokal::whereIn('brand_name', ['GCF', 'Senses'])->get();
+        $data['brand_lokal'] = BrandLokal::get();
         $data['kategori'] = ProductCategory::get();
 
         return view('superuser.master.product.index', $data);
@@ -115,202 +117,205 @@ class ProductController extends Controller
             $failed = "";
 
             $validator = Validator::make($request->all(), [
-                'brand_name' => 'required',
-                'searah' => 'required|integer',
-                'category' => 'required|integer',
-                'name' => 'required|string',
-                'code' => 'required|string',
+                'brand_name'    => 'required',
+                'searah'        => 'required|integer',
+                'category'      => 'required|integer',
+                'name'          => 'required|string',
+                'code'          => 'required|string',
                 'selling_price' => 'nullable|numeric|min:0',
-                'description' => 'nullable|string',
-                'note' => 'nullable|string',
+                'description'   => 'nullable|string',
+                'note'          => 'nullable|string',
             ]);
 
             if ($validator->fails()) {
                 $response['notification'] = [
-                    'alert' => 'block',
-                    'type' => 'alert-danger',
-                    'header' => 'Error',
+                    'alert'   => 'block',
+                    'type'    => 'alert-danger',
+                    'header'  => 'Error',
                     'content' => $validator->errors()->all(),
                 ];
-  
                 return $this->response(400, $response);
             }
 
             if ($validator->passes()) {
                 DB::beginTransaction();
 
-                try{
+                try {
 
-                    if($request->brand_name == "Senses"){
+                    if ($request->brand_name == "Senses") {
+
                         $code = explode(" ", $request->code);
-    
+
                         $product = new Product;
-                        $product->id = $code[1];
-                        $product->code = $request->code;
-                        $product->brand_name = $request->brand_name;
+                        $product->id                     = $code[1];
+                        $product->code                   = $request->code;
+                        $product->brand_name             = $request->brand_name;
                         $product->sub_brand_reference_id = $request->searah;
-                        $product->category_id = $request->category;
-                        // $product->type_id = $request->type;
-                        $product->vendor_id = $request->factory;
-                        $product->vendor_optional_id = $request->optional_factory;
-    
-                        $product->name = $request->name;
-                        $product->material_code = $request->material_code;
-                        $product->material_name = $request->material_name;
+                        $product->category_id            = $request->category;
+                        $product->vendor_id              = $request->factory;
+                        $product->vendor_optional_id     = $request->optional_factory;
+                        $product->name                   = $request->name;
+                        $product->material_code          = $request->material_code;
+                        $product->material_name          = $request->material_name;
                         $product->material_code_optional = $request->material_code_optional;
                         $product->material_name_optional = $request->material_name_optional;
-                        $product->alias = $request->alias;
-                        $product->buying_price = $request->buying_price ?? 0;
-                        $product->selling_price = $request->selling_price;
-                        $product->description = $request->description;
-                        $product->note = $request->note;
-                        $product->gender = $request->gender;
-                        $product->ratio = $request->ratio;
-    
+                        $product->alias                  = $request->alias;
+                        $product->buying_price           = $request->buying_price ?? 0;
+                        $product->selling_price          = $request->selling_price;
+                        $product->description            = $request->description;
+                        $product->note                   = $request->note;
+                        $product->gender                 = $request->gender;
+                        $product->ratio                  = $request->ratio;
+
                         if (!empty($request->file('image'))) {
                             $product->image = UploadMedia::image($request->file('image'), Product::$directory_image);
                         }
-    
                         if (!empty($request->file('image_hd'))) {
                             $product->image_hd = UploadMedia::image($request->file('image_hd'), Product::$directory_image);
                         }
-    
+
                         $product->status = Product::STATUS['ACTIVE'];
-    
+
                         if ($product->save()) {
+                            $warehouse        = Warehouse::where('name', 'Gudang Araya')->first();
+                            $packagingsSynced = [];
 
-                            $warehouse = Warehouse::where('name', 'Gudang Araya')->first();
+                            foreach ($request->packaging as $row => $val) {
+                                $child_product                   = new ProductPack;
+                                $child_product->id               = $product->id . '-' . $val;
+                                $child_product->product_id       = $product->id;
+                                $child_product->warehouse_id     = $warehouse->id;
+                                $child_product->packaging_id     = $val;
+                                $child_product->material_code    = $request->material_code;
+                                $child_product->material_name    = $request->material_name;
+                                $child_product->code             = $request->code;
+                                $child_product->name             = $request->name;
+                                $child_product->price            = $request->selling_price;
+                                $child_product->stock            = 0;
+                                $child_product->gender           = $request->gender;
+                                $child_product->note             = $request->note;
+                                $child_product->status           = ProductPack::STATUS['ACTIVE'];
+                                $child_product->save();
 
-                            foreach($request->packaging as $row => $val){
-                                    $child_product = new ProductPack;
-                                    $child_product->id = $product->id.'-'.$val;
-                                    $child_product->product_id = $product->id;
-                                    $child_product->warehouse_id = $warehouse->id;
-                                    $child_product->packaging_id = $val;
-                                    $child_product->material_code = $request->material_code;
-                                    $child_product->material_name = $request->material_name;
-                                    $child_product->code = $request->code;
-                                    $child_product->name = $request->name;
-                                    $child_product->price = $request->selling_price;
-                                    $child_product->stock = 0;
-                                    $child_product->gender = $request->gender;
-                                    $child_product->note = $request->note;
-                                    $child_product->status = ProductPack::STATUS['ACTIVE'];
-                                    $child_product->save();
+                                $min_stock                          = new ProductMinStock;
+                                $min_stock->product_packaging_id    = $child_product->id;
+                                $min_stock->warehouse_id            = $warehouse->id;
+                                $min_stock->unit_id                 = 1;
+                                $min_stock->quantity                = 0;
+                                $min_stock->selling_price           = $child_product->price;
+                                $min_stock->save();
 
-                                    $min_stock = new ProductMinStock;
-                                    $min_stock->product_packaging_id = $child_product->id;
-                                    $min_stock->warehouse_id = $warehouse->id;
-                                    $min_stock->unit_id = 1;
-                                    $min_stock->quantity = 0;
-                                    $min_stock->selling_price = $child_product->price;
-                                    $min_stock->save();
+                                $packagingsSynced[] = [
+                                    'id'           => $child_product->id,
+                                    'warehouse_id' => $warehouse->id,
+                                    'packaging_id' => $val,
+                                ];
                             }
+
+                            // SYNC CRM
+                            $this->syncToCrm($product, $request->searah, $packagingsSynced);
                         }
-                    }else{
-                        // $get_product = Product::where('id', $request->code)->first();
+
+                    } else {
+
                         $idExists = Product::where('id', $request->code)->exists();
 
                         $product = new Product;
+                        $newId   = $idExists
+                            ? $request->code . '/' . (Product::where('id', 'like', $request->code . '%')->count() + 1)
+                            : $request->code;
 
-                        // check existing ID product
-                        if ($idExists) {
-                            $newId = $request->code . '/' . (Product::where('id', 'like', $request->code . '%')->count() + 1);
-                        } else {
-                            $newId = $request->code;
-                        }
-
-                        $product->id = $newId;
-                        $product->code = $request->code;
-                        $product->brand_name = $request->brand_name;
+                        $product->id                     = $newId;
+                        $product->code                   = $request->code;
+                        $product->brand_name             = $request->brand_name;
                         $product->sub_brand_reference_id = $request->searah;
-                        $product->category_id = $request->category;
-                        // $product->type_id = $request->type;
-                        $product->vendor_id = $request->factory;
-                        $product->vendor_optional_id = $request->factory2;
-    
-                        $product->name = $request->name;
-                        $product->material_code = $request->material_code;
-                        $product->material_name = $request->material_name;
+                        $product->category_id            = $request->category;
+                        $product->vendor_id              = $request->factory;
+                        $product->vendor_optional_id     = $request->factory2;
+                        $product->name                   = $request->name;
+                        $product->material_code          = $request->material_code;
+                        $product->material_name          = $request->material_name;
                         $product->material_code_optional = $request->material_code_optional;
                         $product->material_name_optional = $request->material_name_optional;
-                        $product->alias = $request->alias;
-                        $product->buying_price = $request->buying_price ?? 0;
-                        $product->selling_price = $request->selling_price;
-                        $product->description = $request->description;
-                        $product->note = $request->note;
-                        $product->gender = $request->gender;
-    
-                        $product->ratio = $request->ratio;
-    
+                        $product->alias                  = $request->alias;
+                        $product->buying_price           = $request->buying_price ?? 0;
+                        $product->selling_price          = $request->selling_price;
+                        $product->description            = $request->description;
+                        $product->note                   = $request->note;
+                        $product->gender                 = $request->gender;
+                        $product->ratio                  = $request->ratio;
+
                         if (!empty($request->file('image'))) {
                             $product->image = UploadMedia::image($request->file('image'), Product::$directory_image);
                         }
-    
                         if (!empty($request->file('image_hd'))) {
                             $product->image_hd = UploadMedia::image($request->file('image_hd'), Product::$directory_image);
                         }
-    
-                        $product->status = Product::STATUS['ACTIVE'];
-    
-                        if ($product->save()) {
-    
-                            $warehouse = Warehouse::where('name', 'Gudang Araya')->first();
 
-                            foreach($request->packaging as $row => $val){
-                                    $child_product = new ProductPack;
-                                    $child_product->id = $product->id.'-'.$val;
-                                    $child_product->product_id = $product->id;
-                                    $child_product->warehouse_id = $warehouse->id;
-                                    $child_product->packaging_id = $val;
-                                    $child_product->material_code = $request->material_code;
-                                    $child_product->material_name = $request->material_name;
-                                    $child_product->code = $request->code;
-                                    $child_product->name = $request->name;
-                                    $child_product->price = $request->selling_price;
-                                    $child_product->stock = 0;
-                                    $child_product->gender = $request->gender;
-                                    $child_product->note = $request->note;
-                                    $child_product->status = ProductPack::STATUS['ACTIVE'];
-                                    $child_product->save();
-    
-                                    $min_stock = new ProductMinStock;
-                                    $min_stock->product_packaging_id = $child_product->id;
-                                    $min_stock->warehouse_id = $warehouse->id;
-                                    $min_stock->unit_id = 1;
-                                    $min_stock->quantity = 0;
-                                    $min_stock->selling_price = $child_product->price;
-                                    $min_stock->save();
+                        $product->status = Product::STATUS['ACTIVE'];
+
+                        if ($product->save()) {
+                            $warehouse        = Warehouse::where('name', 'Gudang Araya')->first();
+                            $packagingsSynced = [];
+
+                            foreach ($request->packaging as $row => $val) {
+                                $child_product                   = new ProductPack;
+                                $child_product->id               = $product->id . '-' . $val;
+                                $child_product->product_id       = $product->id;
+                                $child_product->warehouse_id     = $warehouse->id;
+                                $child_product->packaging_id     = $val;
+                                $child_product->material_code    = $request->material_code;
+                                $child_product->material_name    = $request->material_name;
+                                $child_product->code             = $request->code;
+                                $child_product->name             = $request->name;
+                                $child_product->price            = $request->selling_price;
+                                $child_product->stock            = 0;
+                                $child_product->gender           = $request->gender;
+                                $child_product->note             = $request->note;
+                                $child_product->status           = ProductPack::STATUS['ACTIVE'];
+                                $child_product->save();
+
+                                $min_stock                          = new ProductMinStock;
+                                $min_stock->product_packaging_id    = $child_product->id;
+                                $min_stock->warehouse_id            = $warehouse->id;
+                                $min_stock->unit_id                 = 1;
+                                $min_stock->quantity                = 0;
+                                $min_stock->selling_price           = $child_product->price;
+                                $min_stock->save();
+
+                                $packagingsSynced[] = [
+                                    'id'           => $child_product->id,
+                                    'warehouse_id' => $warehouse->id,
+                                    'packaging_id' => $val,
+                                ];
                             }
+
+                            // SYNC CRM
+                            $this->syncToCrm($product, $request->searah, $packagingsSynced);
                         }
                     }
 
                     DB::commit();
 
                     $response['notification'] = [
-                        'alert' => 'notify',
-                        'type' => 'success',
+                        'alert'   => 'notify',
+                        'type'    => 'success',
                         'content' => 'Success',
                     ];
-
                     $response['redirect_to'] = route('superuser.master.product.index');
 
                     return $this->response(200, $response);
 
-                }catch (\Exception $e) {
-                    DD($e);
+                } catch (\Exception $e) {
                     DB::rollback();
                     $response['notification'] = [
-                        'alert' => 'block',
-                        'type' => 'alert-danger',
-                        'header' => 'Error',
+                        'alert'   => 'block',
+                        'type'    => 'alert-danger',
+                        'header'  => 'Error',
                         'content' => "Internal Server Error",
                     ];
-
                     return $this->response(400, $response);
                 }
-
-                
             }
         }
     }
@@ -361,8 +366,7 @@ class ProductController extends Controller
     public function update(Request $request, $id)
     {
         if ($request->ajax()) {
-            $decode = base64_decode($id);
-
+            $decode  = base64_decode($id);
             $product = Product::find($decode);
 
             if ($product == null) {
@@ -370,94 +374,96 @@ class ProductController extends Controller
             }
 
             $validator = Validator::make($request->all(), [
-                'brand_name' => 'required|string',
-                'searah' => 'required|integer',
-                'category' => 'required|integer',
-
-                'code' => 'required|string',
-                'name' => 'required|string',
+                'brand_name'    => 'required|string',
+                'searah'        => 'required|integer',
+                'category'      => 'required|integer',
+                'code'          => 'required|string',
+                'name'          => 'required|string',
                 'material_code' => 'required|string',
                 'material_name' => 'required|string',
-                // 'alias' => 'required|string',
-                // 'buying_price' => 'nullable|numeric|min:0',
                 'selling_price' => 'nullable|numeric|min:0',
-                // 'description' => 'nullable|string',
-                'note' => 'nullable|string',
-
-                // 'default_quantity' => 'required|numeric',
-                // 'default_unit' => 'required|integer',
-                // 'ratio' => 'required|string',
-                // 'default_warehouse' => 'required|integer',
-
-                'image' => 'nullable|image|mimes:jpeg,png,jpg|max:2048',
-                'image_hd' => 'nullable|image|mimes:jpeg,png,jpg|max:2048',
+                'note'          => 'nullable|string',
+                'image'         => 'nullable|image|mimes:jpeg,png,jpg|max:2048',
+                'image_hd'      => 'nullable|image|mimes:jpeg,png,jpg|max:2048',
             ]);
 
             if ($validator->fails()) {
                 $response['notification'] = [
-                    'alert' => 'block',
-                    'type' => 'alert-danger',
-                    'header' => 'Error',
+                    'alert'   => 'block',
+                    'type'    => 'alert-danger',
+                    'header'  => 'Error',
                     'content' => $validator->errors()->all(),
                 ];
-  
                 return $this->response(400, $response);
             }
 
             if ($validator->passes()) {
                 DB::beginTransaction();
 
-                $product->brand_name = $request->brand_name;
-                $product->sub_brand_reference_id = $request->searah;
-                $product->category_id = $request->category;
+                try {
 
-                $product->code = $request->code;
-                $product->name = $request->name;
-                $product->material_code = $request->material_code;
-                $product->material_name = $request->material_name;
-                $product->alias = $request->alias;
-                $product->buying_price = $request->buying_price ?? 0;
-                $product->selling_price = $request->selling_price;
-                $product->description = $request->description;
-                $product->gender = $request->gender;
-                $product->note = $request->note;
+                    $product->brand_name             = $request->brand_name;
+                    $product->sub_brand_reference_id = $request->searah;
+                    $product->category_id            = $request->category;
+                    $product->code                   = $request->code;
+                    $product->name                   = $request->name;
+                    $product->material_code          = $request->material_code;
+                    $product->material_name          = $request->material_name;
+                    $product->alias                  = $request->alias;
+                    $product->buying_price           = $request->buying_price ?? 0;
+                    $product->selling_price          = $request->selling_price;
+                    $product->description            = $request->description;
+                    $product->gender                 = $request->gender;
+                    $product->note                   = $request->note;
+                    $product->default_quantity       = $request->default_quantity ?? null;
+                    $product->ratio                  = $request->ratio;
 
-                $product->default_quantity = $request->default_quantity ?? null;
-                $product->ratio = $request->ratio;
-                // $product->default_unit_id = $request->default_unit ?? 1;
-                // $product->default_warehouse_id = $request->default_warehouse ?? null;
-
-                if (!empty($request->file('image'))) {
-                    if (is_file_exists(Product::$directory_image.$product->image)) {
-                        remove_file(Product::$directory_image.$product->image);
+                    if (!empty($request->file('image'))) {
+                        if (is_file_exists(Product::$directory_image . $product->image)) {
+                            remove_file(Product::$directory_image . $product->image);
+                        }
+                        $product->image = UploadMedia::image($request->file('image'), Product::$directory_image);
                     }
-                    $product->image = UploadMedia::image($request->file('image'), Product::$directory_image);
-                }
 
-                if (!empty($request->file('image_hd'))) {
-                    if (is_file_exists(Product::$directory_image.$product->image_hd)) {
-                        remove_file(Product::$directory_image.$product->image_hd);
+                    if (!empty($request->file('image_hd'))) {
+                        if (is_file_exists(Product::$directory_image . $product->image_hd)) {
+                            remove_file(Product::$directory_image . $product->image_hd);
+                        }
+                        $product->image_hd = UploadMedia::image($request->file('image_hd'), Product::$directory_image);
                     }
-                    $product->image_hd = UploadMedia::image($request->file('image_hd'), Product::$directory_image);
-                }
 
-                if ($product->save()) {
-                        // $update_stock = ProductMinStock::where('product_id', $product->id)
-                        //                     ->update([
-                        //                         'warehouse_id' => $product->default_warehouse_id
-                        //                     ]);
+                    if ($product->save()) {
 
-                    DB::commit();
+                        // Ambil old_path dari product_assets sebelum di-update
+                        $productAsset = DB::table('product_assets')
+                                            ->where('product_id', $product->id)
+                                            ->first();
+                        $oldPath = $productAsset->base_path ?? null;
 
+                        // Sync update ke CRM
+                        $this->syncUpdateToCrm($product, $request->searah, $oldPath);
+
+                        DB::commit();
+
+                        $response['notification'] = [
+                            'alert'   => 'notify',
+                            'type'    => 'success',
+                            'content' => 'Success',
+                        ];
+                        $response['redirect_to'] = route('superuser.master.product.index');
+
+                        return $this->response(200, $response);
+                    }
+
+                } catch (\Exception $e) {
+                    DB::rollback();
                     $response['notification'] = [
-                        'alert' => 'notify',
-                        'type' => 'success',
-                        'content' => 'Success',
+                        'alert'   => 'block',
+                        'type'    => 'alert-danger',
+                        'header'  => 'Error',
+                        'content' => "Internal Server Error",
                     ];
-
-                    $response['redirect_to'] = route('superuser.master.product.index');
-
-                    return $this->response(200, $response);
+                    return $this->response(400, $response);
                 }
             }
         }
@@ -1208,5 +1214,178 @@ class ProductController extends Controller
                 ], 500);
             }
         }
+    }
+
+    // -------------------------------------------------------
+    // Helper: Sync store ke CRM
+    // -------------------------------------------------------
+    private function syncToCrm($product, $searahId, $packagingsSynced)
+    {
+        $subBrand        = \App\Entities\Master\SubBrandReference::with('brand_reference')->find($searahId);
+        
+        // Fix 1: ganti nullsafe operator (?->) untuk kompatibilitas PHP 7.x
+        $fragranticaName = ($subBrand && $subBrand->brand_reference) ? $subBrand->brand_reference->name : '';
+        $searahName      = $subBrand ? $subBrand->name : '';
+
+        \Log::info('Product data sebelum sync', [
+            'product_id'  => $product->id,
+            'category_id' => $product->category_id,
+            'brand_name'  => $product->brand_name,
+        ]);
+
+        $client   = new \GuzzleHttp\Client();
+        $crmBase  = env('CRM_BASE_URL', 'https://drive.lssoft88.xyz/api');
+        $apiKey   = env('CRM_API_KEY', 'rahasia-project-a-123');
+        $basePath = null;
+
+        // 1. Buat folder di CRM storage
+        try {
+            $resFolder    = $client->request('POST', "{$crmBase}/folders/create", [
+                'headers'     => ['API-KEY' => $apiKey, 'Accept' => 'application/json'],
+                'form_params' => [
+                    'brand'             => $product->brand_name,
+                    'fragrantica_brand' => $fragranticaName,
+                    'searah'            => $searahName,
+                    'variant_name'      => $product->name,
+                ],
+                'verify' => false,
+            ]);
+            $folderResult = json_decode($resFolder->getBody()->getContents(), true);
+            \Log::info('CRM createFolders response', $folderResult ?? []);
+
+            if (isset($folderResult['success']) && $folderResult['success']) {
+                $basePath = $folderResult['path'];
+            }
+        } catch (\Exception $e) {
+            \Log::error('CRM createFolders error: ' . $e->getMessage());
+        }
+
+        // 2. Sync product ke DB CRM
+        try {
+            $resCrm = $client->request('POST', "{$crmBase}/products/store", [
+                'headers' => ['API-KEY' => $apiKey, 'Accept' => 'application/json'],
+                'json'    => [
+                    'product_id'             => $product->id,
+                    'code'                   => $product->code,
+                    'brand_name'             => $product->brand_name,
+                    'sub_brand_reference_id' => $product->sub_brand_reference_id,
+                    'category_id'            => $product->category_id ?? 0, // Fix 2: fallback jika null
+                    'vendor_id'              => $product->vendor_id,
+                    'vendor_optional_id'     => $product->vendor_optional_id,
+                    'name'                   => $product->name,
+                    'material_code'          => $product->material_code,
+                    'material_name'          => $product->material_name,
+                    'material_code_optional' => $product->material_code_optional,
+                    'material_name_optional' => $product->material_name_optional,
+                    'alias'                  => $product->alias,
+                    'buying_price'           => $product->buying_price,
+                    'selling_price'          => $product->selling_price,
+                    'description'            => $product->description,
+                    'note'                   => $product->note,
+                    'gender'                 => $product->gender,
+                    'ratio'                  => $product->ratio,
+                    'packagings'             => $packagingsSynced,
+                ],
+                'verify' => false,
+            ]);
+
+            $crmResult = json_decode($resCrm->getBody()->getContents(), true);
+            \Log::info('CRM storeProduct response', $crmResult ?? []);
+
+        } catch (\Exception $e) {
+            \Log::error('CRM storeProduct error: ' . $e->getMessage());
+        }
+
+        // 3. Insert product_assets (tetap insert meski CRM gagal)
+        DB::table('product_assets')->insert([
+            'product_id'   => $product->id,
+            'product_code' => $product->code,
+            'product_name' => $product->name,
+            'merek'        => $product->brand_name,
+            'brand'        => $fragranticaName,
+            'searah'       => $searahName,
+            'base_path'    => $basePath,
+            'created_at'   => now(),
+            'updated_at'   => now(),
+        ]);
+    }
+
+    // -------------------------------------------------------
+    // Helper: Sync update ke CRM
+    // -------------------------------------------------------
+    private function syncUpdateToCrm($product, $searahId, $oldPath)
+    {
+        $subBrand        = \App\Entities\Master\SubBrandReference::with('brand_reference')->find($searahId);
+        $fragranticaName = $subBrand->brand_reference->name ?? '';
+        $searahName      = $subBrand->name ?? '';
+
+        $client  = new \GuzzleHttp\Client();
+        $crmBase = env('CRM_BASE_URL', 'https://drive.lssoft88.xyz/api');
+        $apiKey  = env('CRM_API_KEY', 'rahasia-project-a-123');
+        $newPath = null;
+
+        // 1. Rename/update folder di CRM storage
+        try {
+            $resFolder    = $client->request('POST', "{$crmBase}/folders/update", [
+                'headers'     => ['API-KEY' => $apiKey, 'Accept' => 'application/json'],
+                'form_params' => [
+                    'old_path'          => $oldPath,
+                    'brand'             => $product->brand_name,
+                    'fragrantica_brand' => $fragranticaName,
+                    'searah'            => $searahName,
+                    'variant_name'      => $product->name,
+                ],
+                'verify'      => false,
+            ]);
+            $folderResult = json_decode($resFolder->getBody()->getContents(), true);
+
+            if (isset($folderResult['success']) && $folderResult['success']) {
+                $newPath = $folderResult['path'];
+            }
+        } catch (\Exception $e) {
+            // Gagal rename folder — lanjut saja
+        }
+
+        // 2. Sync update product ke DB CRM
+        try {
+            $client->request('POST', "{$crmBase}/products/update", [
+                'headers' => ['API-KEY' => $apiKey, 'Accept' => 'application/json'],
+                'json'    => [
+                    'product_id'             => $product->id,
+                    'code'                   => $product->code,
+                    'brand_name'             => $product->brand_name,
+                    'sub_brand_reference_id' => $product->sub_brand_reference_id,
+                    'category_id'            => $product->category_id,
+                    'name'                   => $product->name,
+                    'material_code'          => $product->material_code,
+                    'material_name'          => $product->material_name,
+                    'material_code_optional' => $product->material_code_optional,
+                    'material_name_optional' => $product->material_name_optional,
+                    'alias'                  => $product->alias,
+                    'buying_price'           => $product->buying_price,
+                    'selling_price'          => $product->selling_price,
+                    'description'            => $product->description,
+                    'note'                   => $product->note,
+                    'gender'                 => $product->gender,
+                    'ratio'                  => $product->ratio,
+                ],
+                'verify'  => false,
+            ]);
+        } catch (\Exception $e) {
+            // Gagal sync update ke CRM — lanjut saja
+        }
+
+        // 3. Update product_assets
+        DB::table('product_assets')
+            ->where('product_id', $product->id)
+            ->update([
+                'product_code' => $product->code,
+                'product_name' => $product->name,
+                'merek'        => $product->brand_name,
+                'brand'        => $fragranticaName,
+                'searah'       => $searahName,
+                'base_path'    => $newPath ?? $oldPath, // Tetap pakai oldPath jika API gagal
+                'updated_at'   => now(),
+            ]);
     }
 }

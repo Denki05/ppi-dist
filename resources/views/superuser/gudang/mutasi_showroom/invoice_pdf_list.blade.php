@@ -237,7 +237,7 @@
                         <tr class="item-row">
                             <td class="text-center">{{ $loop->iteration }}</td>
                             <td class="text-center">
-                                <b>{{ $row->product_packaging->product->code ?? '-' }} - {{ $row->product_packaging->product->code ?? '-' }}</b>
+                                <b>{{ $row->product_packaging->product->code ?? '-' }} - {{ $row->product_packaging->product->name ?? '-' }}</b>
                             </td>
                             <td class="text-center">{{ $row->qty }}</td>
                             <td class="text-right">{{ number_format($row->price_usd, 2, ',', '.') }}</td>

@@ -58,6 +58,10 @@
         <button type="button" class="btn btn-outline-info min-width-125">Summary</button>
       </a>
 
+      <a href="{{route('superuser.gudang.purchase_order.export')}}">
+        <button type="button" class="btn btn-outline-primary min-width-125">Export</button>
+      </a>
+
       <hr class="my-20">
 
       <div class="row mb-30">

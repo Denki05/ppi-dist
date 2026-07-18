@@ -56,8 +56,6 @@ class ProductTable extends Table
         ->join('master_product_categories', 'master_product_categories.id', '=', 'master_products.category_id')
         ->get();
 
-        // dd($model);
-
         return $model;
     }
 

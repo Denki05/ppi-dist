@@ -45,13 +45,13 @@
     <div class="block">
       <div class="block-content block-content-full">
       <div class="form-group row">
-      <div class="col-md-9">
+      <div class="col-12 col-md-9">
         <h4 style="font-weight: bold;">#SALES ORDER {{ $step_txt }}</h4>
         <div class="block">
           <div class="block-content">
             <div class="form-group row">
-              <label class="col-md-2 col-form-label text-left" for="customer_name">Customer :</label>
-              <div class="col-md-4">
+              <label class="col-12 col-md-2 col-form-label text-left" for="customer_name">Customer :</label>
+              <div class="col-12 col-md-4 mb-2 mb-md-0">
                 <select class="form-control js-select2" id="customer_name" name="customer_name" data-placeholder="Cari Customer">
                   <option value="">All</option>
                   @foreach($other_address as $key)
@@ -59,8 +59,8 @@
                   @endforeach
                 </select>
               </div>
-              <label class="col-md-2 col-form-label text-left" for="status_so">Status :</label>
-              <div class="col-md-4">
+              <label class="col-12 col-md-2 col-form-label text-left" for="status_so">Status :</label>
+              <div class="col-12 col-md-4">
                 <select class="form-control js-select2" name="status_so" id="status_so">
                   <option value="">Pilih Status</option>
                   <option value="AWAL">AWAL</option>
@@ -72,15 +72,12 @@
           </div>
         </div>
       </div>
-      <div class="col-md-3">
+      <div class="col-12 col-md-3">
         <div class="block">
           <div class="block-content">
             <div class="form-group row">
-              <div class="col-md-12 text-center">
-                <!-- <a href="#" id="btn-filter" class="btn bg-gd-corporate border-0 text-white pl-50 pr-50">
-                  Filter <i class="fa fa-search ml-10"></i>
-                </a> -->
-                <button class="btn bg-gd-corporate border-0 text-white pl-50 pr-50" id="btn-filter"><i class="fa fa-search ml-10"></i></button>
+              <div class="col-12 text-center">
+                <button class="btn bg-gd-corporate border-0 text-white pl-50 pr-50 w-100" id="btn-filter"><i class="fa fa-search ml-10"></i> <span class="d-inline d-md-none">Filter</span></button>
               </div>
             </div>
           </div>
@@ -88,20 +85,22 @@
       </div>
     </div>
 
-        <button type="button" class="btn btn-primary" data-toggle="modal" data-target="#exampleModal">
-          <i class="fa fa-plus mr-10"></i> Add SO
-        </button>
+        <div class="d-flex flex-wrap" style="gap:8px;">
+          <button type="button" class="btn btn-primary" data-toggle="modal" data-target="#exampleModal">
+            <i class="fa fa-plus mr-10"></i> Add SO
+          </button>
 
-        @if($superuser->division == "Admin" OR $superuser->division == "Management" OR $superuser->division == "Developer")
-          <button type="button" class="btn btn-outline-info ml-10" data-toggle="modal" data-target="#modal-manage">Export</button>
-        @endif
+          @if($superuser->division == "Admin" OR $superuser->division == "Management" OR $superuser->division == "Developer")
+            <button type="button" class="btn btn-outline-info" data-toggle="modal" data-target="#modal-manage">Export</button>
+          @endif
 
-        <!-- import migrasi SO -->
-        <button type="button" class="btn btn-outline-info ml-10" data-toggle="modal" data-target="#modal-manage">Manage</button>
+          <!-- import migrasi SO -->
+          <button type="button" class="btn btn-outline-info" data-toggle="modal" data-target="#modal-manage">Manage</button>
 
-        <a href="{{ route('superuser.penjualan.migrasi_so.prosesMigrasi') }}" class="btn btn-outline-info ml-10">Migrasi SO</a>
+          <a href="{{ route('superuser.penjualan.migrasi_so.prosesMigrasi') }}" class="btn btn-outline-info">Migrasi SO</a>
+        </div>
         <br>
-        <br>
+        <div class="table-responsive">
         <table class="table table-bordred table-striped" style="width:100%" id="sales_order_awal">
           <thead>
             <th>#</th>
@@ -121,6 +120,8 @@
             
           </tbody>
         </table>
+        </div>
+      </div>
     </div>
   </div>
 </div>
@@ -139,7 +140,7 @@
         <form id="formAddSO">
           @csrf
           <div class="row">
-            <div class="col">
+            <div class="col-12 col-md-6">
               <div class="form-group">
                 <span class="form-label"><b>Customer </b> <span class="text-danger">*</span></span>
                 <select class="js-select2 form-control account_member" id="account_member" name="member_name" style="width:100%;" data-placeholder="Cari Customer" required>
@@ -150,7 +151,7 @@
                 </select>
               </div>
             </div>
-            <div class="col">
+            <div class="col-12 col-md-6">
               <div class="form-group">
                 <span class="form-label"><b>Brand </b> <span class="text-danger">*</span></span>
                 <select class="js-select2 form-control" id="merek_ppi" name="brand_name" style="width:100%;" data-placeholder="Pilih Brand" required>
@@ -163,7 +164,7 @@
             </div>
           </div>
           <div class="row">
-            <div class="col">
+            <div class="col-12 col-md-6">
               <div class="form-group">
                 <span class="form-label"><b>Type Transaksi </b> <span class="text-danger">*</span></span>
                 <select class="form-control js-select2" name="so_type" id="so_type" style="width:100%;" required>
@@ -187,7 +188,7 @@
                   </div>
               </div>
             </div>
-            <div class="col">
+            <div class="col-12 col-md-6">
               <div class="form-group">
                 <span class="form-label"><b>Indent </b> <span class="text-danger">*</span></span>
                 <select class="form-control js-select2" name="so_indent" id="indent_so" style="width:100%;" required>
@@ -200,7 +201,7 @@
           </div>
 
             <div class="row">
-              <div class="col">
+              <div class="col-12 col-md-6">
                 <div class="form-group">
                   <span class="form-label"><b>Kurs </b>
                   <!-- <input class="form-control" type="text" name="kurs" id="kurs"> -->
@@ -217,7 +218,7 @@
                   </label>
                 </div>
               </div>
-              <div class="col">
+              <div class="col-12 col-md-6">
                 <div class="form-group">
                   <span class="form-label"><b>Note </b>
                   <textarea class="form-control" name="note" id="editor" rows="4" col="10"></textarea>
@@ -247,7 +248,7 @@
         </div>
         <div class="block-content pb-20">
           <div class="row">
-            <div class="col-md-6">
+            <div class="col-12 col-md-6">
               <span class="font-size-h5">Import</span>
               <p>
                 Import your data with the template provided below.<br>
@@ -286,7 +287,7 @@
                 </button>
               </form>
             </div>
-            <div class="col-md-6">
+            <div class="col-12 col-md-6">
               <span class="font-size-h5">Export</span>
               <p>Export this data to excel-like format</p>
               <a href="{{ $export_url ?? '' }}">
@@ -308,6 +309,37 @@
 </div>
 
 @endsection
+
+@push('styles')
+<style>
+  /* === Responsive untuk HP === */
+  @media (max-width: 767.98px) {
+    #sales_order_awal {
+      white-space: nowrap;
+    }
+    .modal-dialog.modal-lg {
+      max-width: 100%;
+      margin: 0.5rem;
+    }
+    .dataTables_wrapper .dataTables_length,
+    .dataTables_wrapper .dataTables_filter,
+    .dataTables_wrapper .dataTables_info,
+    .dataTables_wrapper .dataTables_paginate {
+      text-align: left !important;
+      float: none !important;
+      width: 100%;
+      margin-bottom: 10px;
+    }
+    .modal-footer {
+      flex-wrap: wrap;
+    }
+    .modal-footer .btn {
+      width: 100%;
+      margin: 4px 0 !important;
+    }
+  }
+</style>
+@endpush
 
 @include('superuser.asset.plugin.select2')
 @include('superuser.asset.plugin.swal2')
@@ -385,6 +417,14 @@
         })
 
         $('.js-select2').select2();
+
+        // Select2 di dalam modal Add SO butuh dropdownParent supaya search box berfungsi
+        $('#exampleModal .js-select2').each(function () {
+          $(this).select2({
+            dropdownParent: $('#exampleModal'),
+            width: '100%'
+          });
+        });
 
         $('#addSO').on('click', function (e) {
           e.preventDefault();                 // cegah anchor

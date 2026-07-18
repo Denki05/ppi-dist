@@ -3,6 +3,9 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
+use App\Entities\Master\ProductPack;
+use Illuminate\Support\Facades\Log;
+use DB;
 
 class ReportRequestController extends Controller
 {
@@ -19,42 +22,46 @@ class ReportRequestController extends Controller
         try {
             $type = $r->type;
             $sub  = $r->sub;
-
-            // Load konfigurasi report sesuai type + sub
+    
+            // ⬅️ TAMBAHAN DEBUG: lihat RAW payload yang diterima dari frontend
+            \Log::info('[DEBUG REPORT] Raw request payload', [
+                'type'      => $r->type,
+                'sub'       => $r->sub,
+                'officer'   => $r->officer,
+                'officer_type' => gettype($r->officer),
+                'brands'    => $r->brands,
+                'varians'   => $r->varians,
+                'customers' => $r->customers,
+                'start'     => $r->start,
+                'end'       => $r->end,
+            ]);
+    
             $config = $this->loadReportConfig($type, $sub);
-
             $rptPath = public_path($this->baseReportPath . $config['file']);
-
-            // Output PDF
+    
             $pdfFileName = "{$sub}_" . time() . ".pdf";
             $pdfOutputPath = $this->exportBasePath . '\\' . $pdfFileName;
             if (!file_exists($this->exportBasePath)) {
                 mkdir($this->exportBasePath, 0777, true);
             }
-
-            // Jalankan Crystal Report
-            $this->runCrystalCom(
-                $rptPath,
-                $pdfOutputPath,
-                $r,
-                $config
-            );
-
+    
+            $this->runCrystalCom($rptPath, $pdfOutputPath, $r, $config);
+    
             if (!file_exists($pdfOutputPath)) {
                 throw new \Exception("PDF gagal dibuat. COM error.");
             }
-
+    
             $pdfBinary = file_get_contents($pdfOutputPath);
             $pdfBase64 = base64_encode($pdfBinary);
             @unlink($pdfOutputPath);
-
+    
             return response()->json([
                 'status' => true,
                 'pdf_base64' => $pdfBase64
             ]);
-
+    
         } catch (\Exception $e) {
-
+            \Log::error('[DEBUG REPORT] Exception: ' . $e->getMessage());
             return response()->json([
                 'status'  => false,
                 'message' => $e->getMessage()
@@ -70,44 +77,50 @@ class ReportRequestController extends Controller
     private function loadReportConfig($type, $sub)
     {
         $map = [
-
             // ================================
-            // GROUP: PENJUALAN (baru)
+            // GROUP: PENJUALAN
             // ================================
-            'target' => [ // Menggunakan 'target' untuk konsistensi JS
+            'target' => [
+                // ============================================
+                // V1: Report PIC - Varian - Customer
+                // ============================================
+                'v1' => [
+                    'file'           => 'sales_performence_v2.rpt',
+                    'date_field'     => '{penjualan_so1.so_date}',
+                    'officer_field'  => '{master_customer_other_addresses1.officer}',
+                    'brand_field'    => '{master_products.brand_name}',
+                    'varian_field'   => '{master_products.id}',
+                    'customer_field' => '{master_customer_other_addresses1.id}',
+                    'uses_command'   => false,
+                    'needs_officer'  => true,
+                ],
 
-                'customer_market_brand' => [ // BARU: Penjualan -> Customer -> Market Brand
-                    'file' => 'officer_report_nominal_3.rpt',
-                    'date_field' => '{Command.invoice_date}',
-                    // ⬇️ UBAH BARIS INI (Asumsi officer_report_nominal_3.rpt menggunakan field 'officer' yang berasal dari view Anda)
-                    'officer_field' => '{Command.officer}', 
-                    // ⬆️ UBAH BARIS INI
-                    'uses_command' => false,
-                    'needs_officer' => true,
+                // ============================================
+                // V2: Report PIC - Customer - Varian
+                // ============================================
+                'v2' => [
+                    'file'           => 'sales_performence_v3.rpt',
+                    'date_field'     => '{penjualan_so1.so_date}', 
+                    'officer_field'  => '{master_customer_other_addresses1.officer}',
+                    'brand_field'    => '{master_products.brand_name}',
+                    'varian_field'   => '{master_products.id}',
+                    'customer_field' => '{master_customer_other_addresses1.id}',
+                    'uses_command'   => false, // Ubah jadi true jika RPT pakai SQL Command
+                    'needs_officer'  => true,
                 ],
-                
-                'customer_pic_customer_varian' => [ // BARU: Penjualan -> Customer -> PIC
-                 'file' => 'sales_performence_v3.rpt',
-                 'date_field' => '{penjualan_so1.so_date}',
-                 'officer_field' => '{master_customer_other_addresses1.officer}',
-                 'uses_command' => false,
-                 'needs_officer' => true,
-                 ],
-                
-                'varian_pic_varian_customer' => [ // BARU: Penjualan -> Varian -> PIC: Varian - Customer
-                 'file' => 'sales_performence_v2.rpt',
-                 'date_field' => '{penjualan_so1.so_date}',
-                 'officer_field' => '{master_customer_other_addresses1.officer}',
-                 'uses_command' => false,
-                 'needs_officer' => true,
-                ],
-                
-                'varian_pic_varian_pic' => [ // BARU: Penjualan -> Varian -> PIC: Varian - PIC
-                 'file'  => 'sales_performence_v4.rpt',
-                 'date_field' => '{penjualan_so1.so_date}',
-                 'officer_field' => '{master_customer_other_addresses1.officer}',
-                 'uses_command' => false,
-                 'needs_officer' => true,
+
+                // ============================================
+                // V3: Report PIC - Varian - PIC
+                // ============================================
+                'v3' => [
+                    'file'           => 'sales_performence_v4.rpt',
+                    'date_field'     => '{penjualan_so1.so_date}',
+                    'officer_field'  => '{master_customer_other_addresses1.officer}',
+                    'brand_field'    => '{master_products.brand_name}',
+                    'varian_field'   => '{master_products.id}',
+                    'customer_field' => '', 
+                    'uses_command'   => false,
+                    'needs_officer'  => true,
                 ],
             ],
 
@@ -191,8 +204,6 @@ class ReportRequestController extends Controller
                     'needs_officer' => true,
                 ],
             ],
-
-           
         ];
 
         if (!isset($map[$type][$sub])) {
@@ -209,127 +220,210 @@ class ReportRequestController extends Controller
      */
     private function runCrystalCom($rptPath, $outputPath, Request $r, $config)
     {
+        // 1. Cek COM sedini mungkin
         if (!class_exists('COM')) {
+            \Log::error('[DEBUG REPORT] PHP COM tidak aktif atau tidak terinstall.');
             throw new \Exception("PHP COM tidak aktif.");
         }
-
+    
         $start = $r->start;
         $end   = $r->end;
-        $ao    = $r->ao ?? null;
+        $ao    = $r->officer ?? null;
 
+        \Log::info('[DEBUG REPORT] Masuk ke runCrystalCom. Path: ' . $rptPath);
+
+        // TAMBAHKAN VALIDASI INI:
+        if (!empty($config['needs_officer']) && (empty($ao) || $ao === 'null')) {
+            throw new \Exception("Gagal Memproses: Account Officer (AO) belum terpilih atau tidak terbaca oleh sistem.");
+        }
+    
+        // ⬅️ TAMBAHAN DEBUG: cek nilai $ao tepat setelah diambil dari request
+        \Log::info('[DEBUG REPORT] Officer value in runCrystalCom', [
+            'ao_raw'     => $ao,
+            'ao_type'    => gettype($ao),
+            'ao_is_array'=> is_array($ao),
+            'needs_officer_config' => $config['needs_officer'] ?? null,
+            'officer_field_config' => $config['officer_field'] ?? null,
+        ]);
+    
         $startDt = date('Y-m-d', strtotime($start));
         $endDt   = date('Y-m-d', strtotime($end));
 
+        // ============================================================
+        // ✅ MAPPING ALIAS OFFICER
+        // Harus SELALU disinkronkan dengan formula rename/grouping yang
+        // ada di file .rpt (Crystal Report), contoh formula display:
+        //   If {master_customer_other_addresses1.officer} = "Nia" Then "Kantor"
+        // Setiap kali ada formula rename baru di RPT manapun (mis. untuk
+        // officer lain seperti "Kumala"), tambahkan alias-nya di sini juga.
+        // ============================================================
+        $officerAliasMap = [
+            'Kantor' => ['Kantor', 'Nia'],
+            // 'AliasLain' => ['AliasLain', 'nilai_asli_di_db'],
+        ];
+    
         try {
             $crapp = new \COM("CrystalDesignRunTime.Application");
             $creport = $crapp->OpenReport($rptPath, 1);
+    
+            \Log::info('[DEBUG REPORT] Report berhasil dibuka.');
 
-            // -----------------------------
-            // 1. LOGIN DATABASE
-            // -----------------------------
+            // Database setup
             if (empty($config['uses_command'])) {
                 foreach ($creport->Database->Tables as $table) {
-                    $table->SetLogOnInfo(
-                        "LOCAL_3",
-                        "ppi_araya",
-                        "root",
-                        ""
-                    );
+                    $table->SetLogOnInfo("LOCAL_3", "ppi_araya", "root", "");
                 }
             }
+    
+            // ============================================================
+            // INJECT PARAMETER (PEMBERSIHAN NAMA & LOOP TUNGGAL)
+            // ============================================================
+            $paramCount = $creport->ParameterFields->Count;
+            \Log::info("[DEBUG REPORT] Jumlah Parameter terdeteksi: " . $paramCount);
 
-            // -----------------------------
-            // 2. SET PARAMETER DINAMIS
-            // -----------------------------
-            foreach ($creport->ParameterFields as $param) {
-                $paramName = strtolower($param->Name);
-                switch ($paramName) {
+            for ($i = 1; $i <= $paramCount; $i++) {
+                $param = $creport->ParameterFields->Item($i); 
+                
+                // 1. BERSIHKAN NAMA: Hilangkan {? } supaya tinggal 'start_date' atau 'start'
+                $cleanName = strtolower(preg_replace('/[^a-zA-Z0-9_]/', '', $param->Name));
+                
+                \Log::info("[DEBUG REPORT] Memproses Parameter #{$i}: '{$param->Name}' (dibersihkan jadi: '{$cleanName}')");
+
+                switch ($cleanName) {
+                    
+                    // ── PARAMETER TANGGAL (SEMUA VARIANT) ──
                     case 'start':
-                        $param->SetCurrentValue(new \DateTime($start));
+                    case 'start_date':
+                    case 'tgl_awal':
+                        $valStart = date('d-m-Y', strtotime($start));
+                        $param->SetCurrentValue($valStart);
+                        \Log::info("[DEBUG REPORT] ---> Berhasil Set Param Start: {$valStart}");
                         break;
+                    
                     case 'end':
-                        $param->SetCurrentValue(new \DateTime($end));
+                    case 'end_date':
+                    case 'tgl_akhir':
+                        $valEnd = date('d-m-Y', strtotime($end));
+                        $param->SetCurrentValue($valEnd);
+                        \Log::info("[DEBUG REPORT] ---> Berhasil Set Param End: {$valEnd}");
                         break;
-                    case 'periode_start':  // jika formula menggunakan nama ini
+
+                    // ── PARAMETER PERIODE (UNTUK TAMPILAN HEADER) ──
+                    // Menangani parameter 2 dan 3 yang tadi Anda sebutkan
+                    case 'periodestart': // Sesuaikan jika di RPT namanya 'periode_start'
+                    case 'periode_start':
                         $param->SetCurrentValue(date('d-m-Y', strtotime($start)));
                         break;
+                    case 'periodeend':
                     case 'periode_end':
                         $param->SetCurrentValue(date('d-m-Y', strtotime($end)));
                         break;
+
+                    // ── PARAMETER OFFICER ──
                     case 'officer':
-                        if (!empty($ao) && $ao !== 'all' && $ao !== 'pilih_officer') {
-                            $param->SetCurrentValue($ao);
+                    case 'officersearch':
+                        $officerParamVal = is_array($ao) ? (count($ao) > 0 ? $ao[0] : '') : $ao;
+                        if (!empty($officerParamVal) && $officerParamVal !== 'all') {
+                            $param->SetCurrentValue($officerParamVal);
+                            \Log::info("[DEBUG REPORT] ---> Berhasil Set Param Officer: {$officerParamVal}");
                         }
                         break;
                 }
             }
-
+    
             $creport->EnableParameterPrompting = false;
-
-            // ==============================
-            // SET DISPLAY DATE (HEADER REPORT)
-            // ==============================
-            if (!empty($config['display_date_param'])) {
-
-                $creport->ParameterFields(2)->SetCurrentValue(
-                    date('d-m-Y', strtotime($start))
-                );
-
-                $creport->ParameterFields(3)->SetCurrentValue(
-                    date('d-m-Y', strtotime($end))
-                );
-            }
-
-
-           
-            // ==============================
-            // RECORD SELECTION FORMULA
-            // ==============================
-
+    
+            // if (!empty($config['display_date_param'])) {
+            //     $creport->ParameterFields(2)->SetCurrentValue(date('d-m-Y', strtotime($start)));
+            //     $creport->ParameterFields(3)->SetCurrentValue(date('d-m-Y', strtotime($end)));
+            // }
+    
             if (!empty($config['force_date_formula'])) {
-
-                // MENIRU FUNCTION LAMA (TERBUKTI STABIL)
+    
                 $creport->RecordSelectionFormula =
                     "{$config['date_field']}>=#$start# AND {$config['date_field']}<=#$end#";
-
+    
             } elseif (!empty($config['date_field'])) {
+    
+                $formula = "({$config['date_field']} >= #$startDt# AND {$config['date_field']} <= #$endDt#)";
+    
+                if (!empty($config['needs_officer']) && !empty($config['officer_field']) && !empty($ao)) {
+                    $officers = is_array($ao) ? $ao : [$ao];
+                    if (!in_array('all', $officers) && !in_array('pilih_officer', $officers)) {
 
-                $formula =
-                    "({$config['date_field']} >= #$startDt# AND {$config['date_field']} <= #$endDt#)";
+                        // ✅ FIX: perluas daftar officer dengan alias-nya supaya
+                        // filter konsisten dengan formula rename di Crystal Report.
+                        // Tanpa ini, memilih "Kantor" hanya menyaring baris yang
+                        // field officer-nya literal "Kantor", padahal RPT juga
+                        // me-rename baris "Nia" jadi tampil sebagai "Kantor".
+                        $expandedOfficers = [];
+                        foreach ($officers as $off) {
+                            if (isset($officerAliasMap[$off])) {
+                                $expandedOfficers = array_merge($expandedOfficers, $officerAliasMap[$off]);
+                            } else {
+                                $expandedOfficers[] = $off;
+                            }
+                        }
+                        $expandedOfficers = array_unique($expandedOfficers);
 
-                if (
-                    !empty($config['needs_officer']) &&
-                    !empty($config['officer_field']) &&
-                    !empty($ao) &&
-                    $ao !== 'all' &&
-                    $ao !== 'pilih_officer'
-                ) {
-                    $formula .= " AND {$config['officer_field']} = '$ao'";
+                        \Log::info('[DEBUG REPORT] Officer setelah expand alias', [
+                            'original' => $officers,
+                            'expanded' => $expandedOfficers,
+                        ]);
+
+                        $officerList = implode("', '", $expandedOfficers);
+                        $formula .= " AND {$config['officer_field']} IN ['$officerList']";
+                    }
                 }
-
+    
+                if (!empty($r->brands) && is_array($r->brands) && !in_array('all', $r->brands) && !empty($config['brand_field'])) {
+                    $brandList = implode("', '", $r->brands);
+                    $formula .= " AND {$config['brand_field']} IN ['$brandList']";
+                }
+    
+                if (!empty($r->varians) && is_array($r->varians) && !in_array('all', $r->varians) && !empty($config['varian_field'])) {
+                    $varianList = implode("', '", $r->varians);
+                    $formula .= " AND {$config['varian_field']} IN ['$varianList']";
+                }
+    
+                if (!empty($r->customers) && is_array($r->customers) && !in_array('all', $r->customers) && !empty($config['customer_field'])) {
+                    $customerList = implode("', '", $r->customers);
+                    $formula .= " AND {$config['customer_field']} IN ['$customerList']";
+                }
+    
+                // ⬅️ TAMBAHAN DEBUG: INI YANG PALING PENTING — formula final yang dieksekusi
+                \Log::info('[DEBUG REPORT] FINAL FORMULA sebelum dikirim ke Crystal Report', [
+                    'formula' => $formula,
+                ]);
+    
                 $creport->RecordSelectionFormula = $formula;
             }
-
-
-
-            // -----------------------------
-            // 4. EXPORT PDF
-            // -----------------------------
+    
             $creport->ExportOptions->DiskFileName = $outputPath;
             $creport->ExportOptions->DestinationType = 1;
             $creport->ExportOptions->FormatType = 31;
             $creport->Export(false);
-
+    
             $creport = null;
             $crapp = null;
-
+    
         } catch (\Exception $e) {
-            DD($e);
             if (isset($creport)) $creport = null;
             if (isset($crapp)) $crapp = null;
             throw $e;
         }
-
     }
 
+    public function getProductPack()
+    {
+        $results = DB::table('master_products')
+            ->select(
+                'id',
+                'code AS product_code',
+                'name AS product_name',
+                'brand_name'   // ⬅️ TAMBAHAN: dibutuhkan untuk filter dependency Brand -> Varian di frontend
+            )
+            ->get();
+        return response()->json($results);
+    }
 }

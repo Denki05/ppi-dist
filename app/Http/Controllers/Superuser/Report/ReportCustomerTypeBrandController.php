@@ -76,21 +76,33 @@ class ReportCustomerTypeBrandController extends Controller
     public function postData(Request $request)
     {
         try {
-            // Mengambil rentang tanggal dari query string (GET request)
             $start = $request->query('period_from');
-            $end = $request->query('period_to');
-
-            // $currentYear = 2024;
+            $end   = $request->query('period_to');
 
             if (!$start || !$end) {
                 return redirect()->back()->with('error', 'Error: Rentang tanggal harus diisi.');
             }
 
-            // Memastikan format tanggal sesuai untuk query database
             $startDate = Carbon::parse($start)->startOfDay();
-            $endDate = Carbon::parse($end)->endOfDay();
+            $endDate   = Carbon::parse($end)->endOfDay();
 
-            // dd($startDate, $endDate);
+            // ==========================================================
+            // Sub-query: hitung ulang subtotal_item per DO dari item asli
+            // subtotal_item = SUM((price - usd_disc) * qty) * idr_rate
+            // ==========================================================
+            $subtotalSub = DB::table('penjualan_do_item')
+                ->join('penjualan_do', 'penjualan_do.id', '=', 'penjualan_do_item.do_id')
+                ->select(
+                    'penjualan_do_item.do_id',
+                    DB::raw('SUM((penjualan_do_item.price - penjualan_do_item.usd_disc) * penjualan_do_item.qty) * MAX(penjualan_do.idr_rate) AS subtotal_item')
+                )
+                ->groupBy('penjualan_do_item.do_id');
+
+            $logSummary = [
+                'total'     => 0,
+                'mismatch'  => 0,
+                'matched'   => 0,
+            ];
 
             DB::table('penjualan_do')
                 ->leftJoin('penjualan_do_details', 'penjualan_do_details.do_id', '=', 'penjualan_do.id')
@@ -99,6 +111,9 @@ class ReportCustomerTypeBrandController extends Controller
                 ->leftJoin('master_customer_other_addresses', 'penjualan_do.customer_other_address_id', '=', 'master_customer_other_addresses.id')
                 ->leftJoin('master_customers', 'master_customer_other_addresses.customer_id', '=', 'master_customers.id')
                 ->leftJoin('master_customer_categories', 'master_customers.category_id', '=', 'master_customer_categories.id')
+                ->joinSub($subtotalSub, 'calc', function ($join) {
+                    $join->on('calc.do_id', '=', 'penjualan_do.id');
+                })
                 ->select(
                     DB::raw('SUM(penjualan_do_item.qty) AS invoice_qty'),
                     'master_customers.id AS customerID',
@@ -112,29 +127,79 @@ class ReportCustomerTypeBrandController extends Controller
                     'penjualan_so.so_date AS invoice_date',
                     'penjualan_so.brand_name AS invoice_brand',
                     'penjualan_so.type_so AS invoice_type',
-                    'penjualan_do_details.purchase_total_idr AS invoice_purchase',
-                    'penjualan_do_details.grand_total_idr AS grand_total_idr',
                     'penjualan_do_details.delivery_cost_idr AS invoice_delivery_order_cost',
+                    'penjualan_do_details.discount_1_idr AS discount_1_idr',
+                    'penjualan_do_details.discount_2_idr AS discount_2_idr',
                     'penjualan_do_details.discount_idr AS discount_idr',
-                    'penjualan_do_details.ppn_idr AS ppn_idr'
+                    'penjualan_do_details.voucher_idr AS voucher_idr',
+                    'penjualan_do_details.ppn_idr AS ppn_idr',
+                    'penjualan_do_details.purchase_total_idr AS old_purchase_total_idr',
+                    'penjualan_do_details.grand_total_idr AS old_grand_total_idr',
+                    DB::raw('MAX(calc.subtotal_item) AS subtotal_item')
                 )
                 ->where('penjualan_do.status', 6)
                 ->whereBetween('penjualan_so.so_date', [$startDate, $endDate])
-                // ->whereYear('penjualan_so.so_date', $currentYear)
                 ->where(function ($query) {
                     $query->where('master_customers.status', 1)
                         ->orWhere('master_customers.existence', 1);
                 })
                 ->groupBy('penjualan_do.do_code')
                 ->orderBy('penjualan_do.do_code')
-                ->chunk(100, function ($results) {
+                ->chunk(100, function ($results) use (&$logSummary) {
                     foreach ($results as $row) {
-                        // Define the attributes to find or create
-                        $attributes = [
-                            'invoice_code' => $row->invoice_code,
-                        ];
 
-                        // Define the values to be set or updated
+                        // ===== Hitung ulang persis seperti pembuatan invoice =====
+                        $subtotal_item = $row->subtotal_item ?? 0;
+                        $discount_1    = $row->discount_1_idr ?? 0;
+                        $discount_2    = $row->discount_2_idr ?? 0;
+                        $discount_tbh  = $row->discount_idr ?? 0;
+                        $voucher       = $row->voucher_idr ?? 0;
+                        $ppn           = $row->ppn_idr ?? 0;       // hanya untuk info/log, TIDAK ikut dihitung
+                        $delivery      = $row->invoice_delivery_order_cost ?? 0;
+
+                        // purchase_total: TANPA PPN sama sekali
+                        $purchase_total = $subtotal_item
+                            - $discount_1
+                            - $discount_2
+                            - $discount_tbh
+                            - $voucher;
+
+                        // grand_total: hanya untuk log pembanding, TIDAK disimpan ke report
+                        $grand_total = $purchase_total + $ppn + $delivery;
+
+                        // ===== Bandingkan dengan nilai lama yang tersimpan =====
+                        $old_purchase = $row->old_purchase_total_idr ?? 0;
+                        $old_grand    = $row->old_grand_total_idr ?? 0;
+
+                        $selisih_purchase = round($purchase_total - $old_purchase, 2);
+                        $selisih_grand    = round($grand_total - $old_grand, 2);
+
+                        $isMismatch = (abs($selisih_purchase) > 1 || abs($selisih_grand) > 1);
+
+                        $logSummary['total']++;
+                        $isMismatch ? $logSummary['mismatch']++ : $logSummary['matched']++;
+
+                        // ===== Log detail per nota =====
+                        Log::channel('single')->info('[POST DATA] ' . $row->invoice_code, [
+                            'subtotal_item'      => $subtotal_item,
+                            'discount_1_idr'     => $discount_1,
+                            'discount_2_idr'     => $discount_2,
+                            'discount_idr'       => $discount_tbh,
+                            'voucher_idr'        => $voucher,
+                            'ppn_idr'            => $ppn,
+                            'delivery_cost_idr'  => $delivery,
+                            'purchase_total_NEW' => round($purchase_total, 2),
+                            'purchase_total_OLD' => $old_purchase,
+                            'selisih_purchase'   => $selisih_purchase,
+                            'grand_total_NEW'    => round($grand_total, 2),
+                            'grand_total_OLD'    => $old_grand,
+                            'selisih_grand'      => $selisih_grand,
+                            'status'             => $isMismatch ? 'MISMATCH' : 'OK',
+                        ]);
+
+                        // ===== Simpan ke report (hanya invoice_purchase, TANPA PPN) =====
+                        $attributes = ['invoice_code' => $row->invoice_code];
+
                         $values = [
                             'customer_id'                   => $row->customerID,
                             'other_address_id'              => $row->otherAddressID,
@@ -147,53 +212,26 @@ class ReportCustomerTypeBrandController extends Controller
                             'invoice_brand'                 => $row->invoice_brand,
                             'invoice_type'                  => $row->invoice_type,
                             'invoice_qty'                   => $row->invoice_qty ?? 0,
-                            'invoice_purchase'              => $row->invoice_purchase,
-                            'invoice_delivery_order_cost'   => $row->invoice_delivery_order_cost ?? 0,
+                            'invoice_purchase'               => round($purchase_total, 2),
+                            'invoice_delivery_order_cost'   => $delivery,
                             'created_at'                    => now(),
-                            'updated_at'                    => now()
+                            'updated_at'                    => now(),
                         ];
 
-                        // perhitungan ulang untuk pengecekan hasil valid purchase
-                        // $penjualan_do = DB::table('penjualan_do')
-                        // ->where('do_code', $row->invoice_code)
-                        // ->first();
-
-                        // if ($penjualan_do) {
-                        //     $penjualan_do_details = DB::table('penjualan_do_details')
-                        //         ->where('do_id', $penjualan_do->id)
-                        //         ->first();
-
-                        //     $penjualan_do_items = DB::table('penjualan_do_item')
-                        //         ->where('do_id', $penjualan_do->id)
-                        //         ->get();
-
-                        //     if ($penjualan_do_details && $penjualan_do_items->isNotEmpty()) {
-                        //         $subtotal_item = $penjualan_do_items->sum(function ($item) use ($penjualan_do) {
-                        //             return (($item->price - $item->usd_disc) * $item->qty) * $penjualan_do->idr_rate;
-                        //         });
-
-                        //         $purchase_total = $subtotal_item
-                        //             - ($penjualan_do_details->discount_1_idr ?? 0)
-                        //             - ($penjualan_do_details->discount_2_idr ?? 0)
-                        //             - ($penjualan_do_details->discount_idr ?? 0)
-                        //             - ($penjualan_do_details->voucher_idr ?? 0)
-                        //             - ($penjualan_do_details->ppn_idr ?? 0);
-
-                        //         if (abs($values['invoice_purchase'] - $purchase_total) > 2) {
-                        //             throw new Exception("Mismatch in purchase total for DO code: {$row->invoice_code}. Calculated: {$purchase_total}, Expected: {$values['invoice_purchase']}");
-                        //         }
-                        //     }
-                        // }
-
-                        // handle jika data sudah ada
                         $report = CustomerTypeBrandReports::firstOrNew($attributes);
                         $report->fill($values);
                         $report->save();
                     }
                 });
-            return redirect()->back()->with('message', 'Berhasil Sync data!');
+
+            // ===== Ringkasan akhir =====
+            Log::channel('single')->info('[POST DATA] SUMMARY', $logSummary);
+
+            return redirect()->back()->with(
+                'message',
+                "Berhasil Sync data! Total: {$logSummary['total']}, Cocok: {$logSummary['matched']}, Selisih: {$logSummary['mismatch']}. Cek storage/logs/laravel.log untuk detail."
+            );
         } catch (\Exception $e) {
-            dd($e);
             Log::error('Sync data failed: ' . $e->getMessage());
             return redirect()->back()->with('error', 'Error: ' . $e->getMessage());
         }

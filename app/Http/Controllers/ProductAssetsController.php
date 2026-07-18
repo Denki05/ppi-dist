@@ -14,36 +14,40 @@ class ProductAssetsController extends Controller
             // =========================
             // PARAMETER
             // =========================
-            $limit = (int) $request->get('limit', 50);
-            $page  = (int) $request->get('page', 1);
+            $limit = max(1, (int) $request->get('limit', 50));
+            $page  = max(1, (int) $request->get('page', 1));
 
             $offset = ($page - 1) * $limit;
 
             // =========================
             // QUERY
             // =========================
-            $query = DB::table('product_assets');
+            $query = DB::table('product_assets')
+                ->join('master_products', 'master_products.id', '=', 'product_assets.product_id')
+                ->where('master_products.status', 1)      // 1 = ACTIVE
+                ->where('master_products.on_order', 1)    // 1 = ORDER
+                ->select('product_assets.*');
 
             // filter opsional yang sudah ada
             if ($request->has('brand')) {
-                $query->where('brand', $request->brand);
+                $query->where('product_assets.brand', $request->brand);
             }
 
             if ($request->has('merek')) {
-                $query->where('merek', $request->merek);
+                $query->where('product_assets.merek', $request->merek);
             }
 
             if ($request->has('product_code')) {
-                $query->where('product_code', $request->product_code);
+                $query->where('product_assets.product_code', $request->product_code);
             }
 
             // 👇👇👇 INI TAMBAHANNYA AGAR VARIANT/PRODUCT_NAME TERFILTER 👇👇👇
             if ($request->has('searah')) {
-                $query->where('searah', $request->searah);
+                $query->where('product_assets.searah', $request->searah);
             }
 
             if ($request->has('product_name')) {
-                $query->where('product_name', $request->product_name);
+                $query->where('product_assets.product_name', $request->product_name);
             }
             // 👆👆👆 ======================================================= 👆👆👆
 
@@ -56,7 +60,7 @@ class ProductAssetsController extends Controller
             // DATA
             // =========================
             $data = $query
-                ->orderBy('updated_at', 'desc')
+                ->orderBy('product_assets.updated_at', 'desc')
                 ->offset($offset)
                 ->limit($limit)
                 ->get();

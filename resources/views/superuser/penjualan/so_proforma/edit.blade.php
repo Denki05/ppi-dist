@@ -28,7 +28,7 @@
                     <div class="form-group col-md-6">
                       <label for="type_transaction">Type Transaksi</label>
                       <input type="text" name="type_transaction" class="form-control" 
-                        value="{{ $results->status_type }}" readonly>
+                        value="{{ $results->getStatusTypeAttribute() }}" readonly>
                     </div>
                   </div>
 
@@ -58,7 +58,7 @@
                   </div>
                     <div class="form-row">
                       <div class="form-group col-md-6">
-                          <label for="type_transaction">Note</label>
+                          <label for="note">Note</label>
                           <input type="text" name="note" class="form-control" value="{{ $results->note }}">
                         </div>
                       </div>

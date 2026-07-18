@@ -304,10 +304,10 @@
                       <div class="form-group row">
                         <label class="col-sm-4 col-form-label">Disc %</label>
                         <div class="col-sm-3">
-                        @if($result->approval_mou == 1)
+                          @if($result->approval_mou == 1)
                             <input type="text" class="form-control" id="disc_agen_percent" name="disc_agen_percent" value="{{ $result->catatan }}" readonly>
                           @else
-                            <input type="text" class="form-control" id="disc_agen_percent" name="disc_agen_percent" placeholder="{{ $result->catatan }}" required>
+                            <input type="text" class="form-control" id="disc_agen_percent" name="disc_agen_percent" value="{{ $result->catatan }}" placeholder="{{ $result->catatan }}" required>
                           @endif
                         </div>
                         <div class="col-sm-5">

@@ -29,13 +29,13 @@
           <div class="form-group row">
             <label class="col-md-2 col-form-label text-right" for="name">Sales Senior</label>
             <div class="col-md-8">
-              <input type="text" class="form-control" value="{{$result->sales_senior() ?? ''}}" readonly>
+              <input type="text" class="form-control" value="{{$result->so_sales_senior() ?? ''}}" readonly>
             </div>
           </div>
           <div class="form-group row">
             <label class="col-md-2 col-form-label text-right" for="name">Sales </label>
             <div class="col-md-8">
-              <input type="text" class="form-control" value="{{$result->sales() ?? ''}}" readonly>
+              <input type="text" class="form-control" value="{{$result->so_sales() ?? ''}}" readonly>
             </div>
           </div>
           <div class="form-group row">

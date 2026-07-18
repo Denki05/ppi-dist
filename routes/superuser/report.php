@@ -9,6 +9,7 @@ Route::group([
 
     Route::group(['as' => 'sales.', 'prefix' => '/sales'], function () {
         Route::get('/', 'ReportSalesController@index')->name('index');
+        Route::get('/json', 'ReportSalesController@json')->name('json');
         Route::post('/export', 'ReportSalesController@export')->name('export');
         Route::post('/print_report', 'ReportSalesController@print_report')->name('print_report');
     });

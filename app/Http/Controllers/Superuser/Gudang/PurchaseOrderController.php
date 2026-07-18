@@ -239,7 +239,7 @@ class PurchaseOrderController extends Controller
             if ($validator->passes()) {
                 $purchase_order->code = $request->code;
                 $purchase_order->warehouse_id = $request->warehouse;
-                $purchase_order->type = $request->type;
+                $purchase_order->type = 1;
                 $purchase_order->etd = $request->etd;
                 $purchase_order->note = $request->note;
 
@@ -726,15 +726,15 @@ class PurchaseOrderController extends Controller
                 abort(404);
             }
 
-            if ($purchase_order->receiving_detail()->exists()) { 
-                return $this->response(400, [
-                    'notification' => [
-                        'alert'   => 'block',
-                        'type'    => 'alert-danger',
-                        'content' => 'PO tidak dapat dibatalkan karena sudah ada penerimaan yang terkait.',
-                    ]
-                ]);
-            }
+            // if ($purchase_order->receiving_detail()->exists()) { 
+            //     return $this->response(400, [
+            //         'notification' => [
+            //             'alert'   => 'block',
+            //             'type'    => 'alert-danger',
+            //             'content' => 'PO tidak dapat dibatalkan karena sudah ada penerimaan yang terkait.',
+            //         ]
+            //     ]);
+            // }
 
             DB::beginTransaction();
             try {

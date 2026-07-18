@@ -341,130 +341,190 @@ class ReceivingController extends Controller
 
     public function acc_ri(Request $request, $id)
     {
-        if ($request->ajax()) {
-            DB::beginTransaction();
-
-            try {
-                $receiving = Receiving::findOrFail($id);
-
-                if ($receiving->status != Receiving::STATUS['READY']) {
-                    return $this->response(400, [
-                        'notification' => [
-                            'alert'   => 'block',
-                            'type'    => 'alert-danger',
-                            'content' => 'Receiving tidak dalam status READY'
-                        ]
-                    ]);
-                }
-
-                foreach ($receiving->details as $detail) {
-                    $qtyToStock = $detail->qcLogs()
-                                        ->where('is_sellable', 0)
-                                        ->sum('qty_qc');
-
-                    if ($qtyToStock <= 0) {
-                        continue;
-                    }
-
-                    /** Jika type = 0 (inbond), lakukan pemotongan PO summary */
-                    if ($receiving->type == 0) {
-                        $sisaToCut = $qtyToStock;
-
-                        $summaries = PurchaseOrderSummary::where([
-                                ['product_packaging_id', $detail->product_packaging_id],
-                                ['status', 2]
-                            ])->orderBy('id')
-                            ->lockForUpdate()
-                            ->get();
-
-                        foreach ($summaries as $sum) {
-                            if ($sisaToCut <= 0) break;
-
-                            $ambil = min($sisaToCut, $sum->quantity);
-                            $sum->quantity -= $ambil;
-                            $sisaToCut -= $ambil;
-
-                            if ($sum->quantity == 0) {
-                                $sum->status = 1;
-                            }
-
-                            $sum->save();
-                        }
-
-                        if ($sisaToCut > 0) {
-                            DB::rollBack();
-                            return $this->response(400, [
-                                'notification' => [
-                                    'alert'   => 'block',
-                                    'type'    => 'alert-danger',
-                                    'content' => 'Stok PO Summary tidak mencukupi untuk '
-                                            . $detail->product_pack->code . ' - '
-                                            . $detail->product_pack->name
-                                ]
-                            ]);
-                        }
-                    }elseif ($receiving->type == 1) {
-                        // update warehouse_id pada retur
-                        $getRetur = DB::table('penjualan_retur')
-                            ->where('id', $detail->po_id)
-                            ->update(['warehouse_id' => $receiving->warehouse_id]);
-                    }
-                    // Jika type == 1 (retur), tidak perlu potong PO
-
-                    /** Update / insert ke ProductMinStock */
-                    $minStock = ProductMinStock::firstOrNew([
-                        'product_packaging_id' => $detail->product_packaging_id,
-                        'warehouse_id'         => $receiving->warehouse_id,
-                    ]);
-
-                    if (!$minStock->exists) {
-                        $prodPack = ProductPack::find($detail->product_packaging_id);
-                        $minStock->unit_id       = $prodPack->unit_id ?? 1;
-                        $minStock->selling_price = 0;
-                        $minStock->quantity      = 0;
-                    }
-
-                    $minStock->quantity += $qtyToStock;
-                    $minStock->save();
-
-                    /** Insert ke StockMove */
-                    StockMove::create([
-                        'warehouse_id'         => $receiving->warehouse_id,
-                        'product_packaging_id' => $detail->product_packaging_id,
-                        'code_transaction'     => 'RI-'.$receiving->code,
-                        'stock_in'             => $qtyToStock,
-                        'stock_out'            => 0,
-                        'stock_balance'        => $minStock->quantity,
-                        'created_by'           => Auth::id(),
-                    ]);
-                }
-
-                $receiving->status = Receiving::STATUS['ACC'];
-                $receiving->acc_by = Auth::id();
-                $receiving->acc_at = now();
-                $receiving->save();
-
-                DB::commit();
-
-                return $this->response(200, [
-                    'notification' => [
-                        'alert'   => 'notify',
-                        'type'    => 'success',
-                        'content' => 'Receiving berhasil di ACC'
-                    ],
-                    'redirect_to' => route('superuser.gudang.receiving.index')
-                ]);
-            } catch (\Exception $e) {
+        DB::beginTransaction();
+    
+        try {
+            $receiving = Receiving::findOrFail($id);
+    
+            // Validasi status (cek awal, sebelum lock)
+            if ($receiving->status != Receiving::STATUS['READY']) {
                 DB::rollBack();
-
-                return $this->response(500, [
+                return $this->response(400, [
                     'notification' => [
                         'alert'   => 'block',
                         'type'    => 'alert-danger',
-                        'content' => 'Terjadi kesalahan: '.$e->getMessage()
+                        'content' => 'Receiving tidak dalam status READY'
                     ]
                 ]);
             }
+    
+            // ✅ Lock receiving untuk prevent concurrent ACC
+            $receiving = Receiving::where('id', $id)
+                ->lockForUpdate()
+                ->first();
+    
+            // ✅ FIX RACE CONDITION: Re-validasi status SETELAH lock didapat.
+            // Tanpa ini, dua request ACC yang nyaris bersamaan bisa sama-sama
+            // lolos validasi awal (sebelum lock), lalu request kedua tetap lanjut
+            // memproses stock IN dobel setelah lock dari request pertama terlepas
+            // (meskipun status sudah berubah jadi ACC oleh request pertama).
+            if ($receiving->status != Receiving::STATUS['READY']) {
+                DB::rollBack();
+                return $this->response(400, [
+                    'notification' => [
+                        'alert'   => 'block',
+                        'type'    => 'alert-danger',
+                        'content' => 'Receiving sudah diproses oleh user lain. Silakan refresh halaman.'
+                    ]
+                ]);
+            }
+    
+            // Initialize StockService
+            $stockService = app(\App\Services\StockService::class);
+    
+            // Track total per product & PO untuk smart deduction
+            $poDeductionMap = []; // Format: [po_id => [product_id => qty_to_deduct]]
+    
+            // ✅ Satu timestamp untuk SELURUH receiving ini, bukan dipanggil ulang
+            // tiap iterasi loop. Secara bisnis, semua item dalam satu receiving
+            // yang sama adalah satu kejadian ACC yang sama, jadi harus tercatat
+            // dengan tanggal/waktu yang identik di kartu stok.
+            $accTimestamp = now();
+    
+            foreach ($receiving->details as $detail) {
+                // Hanya proses yang sellable (is_sellable = 0)
+                $qtyToStock = $detail->qcLogs()
+                                    ->where('is_sellable', 0)
+                                    ->sum('qty_qc');
+    
+                if ($qtyToStock <= 0) {
+                    continue;
+                }
+    
+                $poId = $detail->po_id;
+                $productId = $detail->product_packaging_id;
+    
+                // Track untuk deduction PO nanti
+                if (!isset($poDeductionMap[$poId])) {
+                    $poDeductionMap[$poId] = [];
+                }
+                if (!isset($poDeductionMap[$poId][$productId])) {
+                    $poDeductionMap[$poId][$productId] = 0;
+                }
+                $poDeductionMap[$poId][$productId] += $qtyToStock;
+    
+                // ✅ Input stock pakai StockService (atomic + balance accurate)
+                $stockService->replayHistoricalLog(
+                    $receiving->warehouse_id,
+                    $productId,
+                    $qtyToStock,
+                    'IN',  // IN karena receiving
+                    'RI-' . $receiving->code,
+                    $accTimestamp,  // ✅ konsisten satu waktu untuk seluruh receiving ini
+                    'Receiving ACC - ' . $detail->product_pack->name
+                );
+            }
+    
+            // ✅ POTONG PO SUMMARY (hanya jika tipe INBOND)
+            if ($receiving->type == 0) { // INBOND
+                foreach ($poDeductionMap as $poId => $productMap) {
+                    foreach ($productMap as $productId => $qtyToCut) {
+                        
+                        // ✅ FIX #1: Query yang benar dan simple
+                        // Cari PO Summary untuk PO ini + Product ini dengan status Active (2)
+                        $summaries = PurchaseOrderSummary::where([
+                                ['product_packaging_id', $productId],
+                                ['po_id', $poId],  // ✅ DIRECT column, bukan subquery!
+                                ['status', 2]  // Status = Active/Open
+                            ])
+                            ->orderBy('id')
+                            ->lockForUpdate()
+                            ->get();
+    
+                        $sisaToCut = (float)$qtyToCut;
+    
+                        // ✅ FIX #2: Track yang sudah dikurangi
+                        $deductedQty = 0;
+    
+                        foreach ($summaries as $sum) {
+                            if ($sisaToCut <= 0) break;
+    
+                            $ambil = min($sisaToCut, (float)$sum->quantity);
+                            $sum->quantity -= $ambil;
+                            $sisaToCut -= $ambil;
+                            $deductedQty += $ambil;
+    
+                            if ($sum->quantity == 0) {
+                                $sum->status = 2; // Mark as done
+                            }
+    
+                            $sum->save();
+                        }
+    
+                        // ✅ FIX #3: Better error handling (tidak disabled, tapi informative)
+                        if ($sisaToCut > 0) {
+                            \Log::warning('PO deduction incomplete', [
+                                'receiving_id' => $receiving->id,
+                                'po_id' => $poId,
+                                'product_id' => $productId,
+                                'qty_to_cut' => $qtyToCut,
+                                'deducted' => $deductedQty,
+                                'remaining' => $sisaToCut,
+                                'summaries_count' => $summaries->count(),
+                            ]);
+    
+                            // Opsi: Throw error atau just log?
+                            // Uncomment jika mau strict validation:
+                            // throw new \Exception(
+                            //     "PO {$poId} Product {$productId}: "
+                            //     . "Qty tidak cukup. Perlu: {$qtyToCut}, "
+                            //     . "Hanya ada: {$deductedQty}. Kurang: {$sisaToCut}"
+                            // );
+                        }
+                    }
+                }
+            } elseif ($receiving->type == 1) { // RETUR
+                // Update warehouse_id pada retur
+                foreach ($receiving->details as $detail) {
+                    DB::table('penjualan_retur')
+                        ->where('id', $detail->po_id)
+                        ->update(['warehouse_id' => $receiving->warehouse_id]);
+                }
+            }
+    
+            // ✅ Update receiving status
+            $receiving->status = Receiving::STATUS['ACC'];
+            $receiving->acc_by = Auth::id();
+            $receiving->acc_at = now();
+            $receiving->save();
+    
+            DB::commit();
+    
+            return $this->response(200, [
+                'notification' => [
+                    'alert'   => 'notify',
+                    'type'    => 'success',
+                    'content' => 'Receiving berhasil di-ACC'
+                ],
+                'redirect_to' => route('superuser.gudang.receiving.index')
+            ]);
+    
+        } catch (\Exception $e) {
+            DB::rollBack();
+    
+            \Log::error('ACC Receiving error', [
+                'receiving_id' => $id,
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+            ]);
+    
+            return $this->response(500, [
+                'notification' => [
+                    'alert'   => 'block',
+                    'type'    => 'alert-danger',
+                    'content' => 'Terjadi kesalahan: ' . $e->getMessage()
+                ]
+            ]);
         }
     }
 

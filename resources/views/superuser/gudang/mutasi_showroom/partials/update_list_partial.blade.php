@@ -34,7 +34,7 @@
         top: 0;
         z-index: 1050;
         background: #fff;
-        padding: 2px 0;
+        padding: 2px 0;              /* DIPERKECIL */
         border-bottom: 1px solid #e5e7eb;
     }
     .brand-total-qty {
@@ -42,9 +42,14 @@
         padding: 4px 8px;
         letter-spacing: 0.3px;
     }
+
+
+
 </style>
 
 <div id="update-price-wrapper">
+    <!-- <h5 class="mb-2">Update Harga Produk</h5> -->
+
     {{-- KURS GLOBAL --}}
     <div class="row mb-2 sticky-kalkulasi align-items-center gx-2">
         <div class="col-md-2 text-end fw-semibold">
@@ -58,6 +63,7 @@
         </div>
 
         <div class="col-md-3 d-flex gap-2">
+            <!-- KALKULASI GLOBAL DIHILANGKAN -->
             <button class="btn btn-sm btn-success px-3" id="btnSettle" disabled>
                 Settle
             </button>
@@ -82,6 +88,7 @@
                     <span class="brand-total-qty badge bg-secondary fw-semibold">
                         Total Qty: {{ number_format($totalQtyBrand, 2, ',', '.') }}
                     </span>
+
                     <span class="toggle-icon">▸</span>
                 </div>
             </div>
@@ -102,7 +109,14 @@
                                         <th width="70">Price</th>
                                         <th width="60">Disc Awal</th>
                                         <th width="55">Disc %</th>
-                                        <th width="75">Disc Akhir</th>
+                                        <th width="60">
+                                            Disc Akhir
+                                            @if($brand == 'GCF')
+                                                <small class="text-muted">(%)</small>
+                                            @else
+                                                <small class="text-muted">($)</small>
+                                            @endif
+                                        </th>
                                         <th width="75">Netto</th>
                                         <th width="90">Sub Total</th>
                                     </tr>
@@ -110,40 +124,25 @@
                                 <tbody>
                                     @foreach($items as $i)
                                     @php
-                                        $disc_awal = 0; $disc_percent = 0; $disc_akhir = 0;
-                                        $price_base = $i->product_packaging->price;
-                                        $price = 0;
-
-                                        if(strtoupper($brand) == 'SENSES') { 
-                                            $disc_awal = 2; 
-                                            $disc_percent = 20; 
-                                            $disc_akhir = 1.5; // Ini nominal USD
-                                            
-                                            $step1 = $price_base - $disc_awal;
-                                            $diskonPersen = $step1 * ($disc_percent / 100);
-                                            $price = $step1 - $diskonPersen - $disc_akhir;
-                                        } 
-                                        elseif(strtoupper($brand) == 'GCF') { 
-                                            $disc_awal = 2; 
-                                            $disc_percent = 10; 
-                                            $disc_akhir = 6; // Nilai 6 untuk GCF
-                                            
-                                            $step1 = $price_base - $disc_awal;
-                                            $baseDiskon = $price_base - ($price_base * ($disc_percent / 100));
-                                            
-                                            // Baca $disc_akhir sebagai persentase
-                                            $diskonAkhir = $baseDiskon * ($disc_akhir / 100); 
-                                            $price = $step1 - $diskonAkhir;
-                                        } 
-                                        else {
-                                            $step1 = $price_base - $disc_awal;
-                                            $price = $step1 - ($step1 * ($disc_percent / 100)) - $disc_akhir;
+                                        $disc_awal       = 0;
+                                        $disc_percent    = 0;
+                                        $disc_akhir      = 0;
+                                        $disc_akhir_type = 'fixed';
+                                    
+                                        if ($brand == 'Senses') {
+                                            $disc_awal       = 2;
+                                            $disc_percent    = 20;
+                                            $disc_akhir      = 1.5;
+                                            $disc_akhir_type = 'fixed';    // nominal USD
                                         }
-
-                                        $price = max($price, 0);
-                                        $subtotal = $price * $i->qty; 
+                                        if ($brand == 'GCF') {
+                                            $disc_awal       = 2;
+                                            $disc_percent    = 10;
+                                            $disc_akhir      = 6;
+                                            $disc_akhir_type = 'percent';  // persen dari sisa harga
+                                        }
                                     @endphp
-                                    <tr data-id="{{ $i->id }}">
+                                    <tr data-id="{{ $i->id }}" data-disc-akhir-type="{{ $disc_akhir_type }}">
                                         <td class="product-cell">
                                             {{ $i->product_packaging->code }} - {{ $i->product_packaging->name }}
                                         </td>
@@ -172,18 +171,16 @@
                                         </td>
 
                                         <td>
-                                            <div class="input-group input-group-sm">
-                                                <input type="number" step="0.01"
-                                                    class="form-control disc_akhir text-center bg-light px-1"
-                                                    value="{{ $disc_akhir }}">
-                                                <span class="input-group-text px-1" style="font-size: 0.75rem;">
-                                                    {{ strtoupper($brand) == 'GCF' ? '%' : '$' }}
-                                                </span>
-                                            </div>
+                                            <input type="number"
+                                                class="form-control form-control-sm disc_akhir text-center bg-light"
+                                                value="{{ $disc_akhir }}"
+                                                >
                                         </td>
 
-                                        <td class="text-end netto">{{ number_format($price, 2) }}</td>
+                                        <!-- NETTO (USD) -->
+                                        <td class="text-end netto">0.00</td>
 
+                                        <!-- SUBTOTAL (IDR) -->
                                         <td class="text-end subtotal">0</td>
                                     </tr>
                                     @endforeach
@@ -233,44 +230,31 @@ function updateSettleButton(){
 }
 
 /* ===================== PER HITUNGAN ===================== */
-function calculateRow(row){
-    let qty = parseFloat(row.find('.qty').text()) || 0;
-    let pl  = parseFloat(row.find('.pl_usd').val()) || 0;
-    let da  = parseFloat(row.find('.disc_awal').val()) || 0;
-    let dp  = parseFloat(row.find('.disc_percent').val()) || 0;
-    let dak = parseFloat(row.find('.disc_akhir').val()) || 0;
+function calculateRow(row) {
+    let qty           = parseFloat(row.find('.qty').text()) || 0;
+    let pl            = parseFloat(row.find('.pl_usd').val()) || 0;
+    let da            = parseFloat(row.find('.disc_awal').val()) || 0;
+    let dp            = parseFloat(row.find('.disc_percent').val()) || 0;
+    let dak           = parseFloat(row.find('.disc_akhir').val()) || 0;
+    let discAkhirType = row.data('disc-akhir-type') || 'fixed';
 
-    let brandName = row.closest('.card').find('.brand-header span:first').text().trim().toUpperCase();
+    // Step 1: kurangi disc awal nominal
+    let price = pl - da;
 
-    let price = 0;
+    // Step 2: kurangi disc percent (10% atau 20%)
+    price = price - (price * dp / 100);
 
-    if (brandName === 'SENSES') {
-        // (PL - 2) - 20% - dak(1.5)
-        let step1 = pl - da;
-        let diskonPersen = step1 * (dp / 100);
-        price = step1 - diskonPersen - dak;
-        
-    } else if (brandName === 'GCF') {
-        // (PL - 2) - ((PL - (PL * 10%)) * dak(6%))
-        let step1 = pl - da;
-        let baseDiskon = pl - (pl * (dp / 100));
-        let diskonAkhir = baseDiskon * (dak / 100); // dak dibaca sebagai persentase
-        
-        price = step1 - diskonAkhir;
-        
+    // Step 3: disc akhir — beda per brand
+    if (discAkhirType === 'percent') {
+        price = price - (price * dak / 100);  // GCF   : kurangi 6% dari sisa
     } else {
-        // Default brand lain
-        let step1 = pl - da;
-        price = step1 - (step1 * (dp / 100)) - dak;
+        price = price - dak;                  // Senses : kurangi $1.5 nominal
     }
 
     price = Math.max(price, 0);
     row.find('.netto').text(price.toFixed(2));
 
-    return {
-        netto: price,
-        subtotalUsd: price * qty
-    };
+    return { netto: price, subtotalUsd: price * qty };
 }
 
 function recalcGroup(card){
@@ -295,12 +279,9 @@ function recalcGroup(card){
         totalIdr += subIdr;
 
         items[id] = {
-            kurs: kurs,
-            pl_usd: parseFloat(row.find('.pl_usd').val()) || 0,
-            disc_awal: parseFloat(row.find('.disc_awal').val()) || 0,
-            disc_percent: parseFloat(row.find('.disc_percent').val()) || 0,
-            disc_akhir: parseFloat(row.find('.disc_akhir').val()) || 0,
-            netto: result.netto
+            kurs   : kurs,
+            pl_usd : parseFloat(row.find('.pl_usd').val()) || 0,
+            // disc tidak dikirim ke server, sudah hardcode di BrandPriceCalculator
         };
     });
 
@@ -454,6 +435,7 @@ $(document).ready(function(){
     });
 
     $(document).on('click', '#btnCancelUpdate', function () {
+
         // Aktifkan menu PROSES
         $('.menu-btn').removeClass('active');
         $('.menu-btn[data-menu="process"]').addClass('active');

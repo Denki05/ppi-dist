@@ -269,48 +269,122 @@
                   }
                 },
                 {
-                    extend: 'pdf',
-                    text: '<i class="fa fa-file-pdf-o"></i>',
-                    orientation: 'landscape',  // Set landscape orientation
-                    title: 'Piutang Faktur',
-                    exportOptions: {
-                        modifier: {
-                            page: 'all' // Export all data
-                        }
-                    },
-                    customize: function(doc) {
-                        // Set table header style
-                        doc.content[1].table.widths = [
-                            '15%', '20%', '15%', '15%', '15%', '15%', '10%', '10%'
-                        ];
+    extend: 'pdf',
+    text: '<i class="fa fa-file-pdf-o"></i>',
+    orientation: 'landscape',
+    title: 'Piutang Faktur',
+    exportOptions: {
+        modifier: { page: 'all' }
+    },
+    customize: function(doc) {
+        var tableBody = doc.content[1].table.body;
 
-                        doc.pageMargins = [20, 20, 20, 20]; // Set margins [left, top, right, bottom]
+        // Ambil jumlah kolom dari baris header (row index 0) secara dinamis
+        var colCount = tableBody[0].length;
 
-                        doc.styles.tableHeader = {
-                            bold: true,
-                            fontSize: 12,
-                            color: 'white',
-                            fillColor: 'black',
-                            alignment: 'center'
-                        };
+        // Set widths sesuai colCount yang sebenarnya
+        var widths = [];
+        for (var i = 0; i < colCount; i++) {
+            widths.push('*');
+        }
+        doc.content[1].table.widths = widths;
 
-                        // Center-align the body rows
-                        var tableBody = doc.content[1].table.body;
-                        for (var i = 1; i < tableBody.length; i++) {
-                            for (var j = 0; j < tableBody[i].length; j++) {
-                                tableBody[i][j].alignment = 'center';
-                            }
-                        }
+        doc.pageMargins = [20, 20, 20, 20];
 
-                        doc.styles.tableBody = {
-                            fontSize: 10,
-                            alignment: 'center'
-                        };
+        doc.styles.tableHeader = {
+            bold: true,
+            fontSize: 10,
+            color: 'white',
+            fillColor: '#343a40',
+            alignment: 'center'
+        };
 
-                        // Make the first row the header
-                        doc.content[1].table.headerRows = 1;
-                    }
-                }
+        doc.content[1].table.headerRows = 1;
+
+        // --- Helper parse & format Rupiah ---
+        function parseRupiah(str) {
+            if (!str) return 0;
+            return parseFloat(
+                String(str)
+                    .replace(/Rp\.\s*/g, '')
+                    .replace(/\./g, '')
+                    .replace(',', '.')
+            ) || 0;
+        }
+
+        function formatRupiah(num) {
+            return 'Rp. ' + num.toLocaleString('id-ID', {
+                minimumFractionDigits: 2,
+                maximumFractionDigits: 2
+            });
+        }
+
+        // --- Hitung total, skip baris header (i=0) dan baris rowGroup ---
+        var totalNilaiFaktur = 0;
+        var totalHutangAsing = 0;
+
+        // Index kolom nilai_faktur & hutang_asing di hasil export (col-0 hidden)
+        // No.Faktur=0, Tgl=1, Jatuh Tempo=2, Nilai Faktur=3, Hutang=4, Tempo=5, Status=6
+        var idxNilai  = 4;
+        var idxHutang = 5;
+
+        for (var i = 1; i < tableBody.length; i++) {
+            var row = tableBody[i];
+
+            // Lewati baris rowGroup (jumlah sel < colCount atau sel pertama ada colspan)
+            if (!row || row.length < colCount || (row[0] && row[0].colSpan > 1)) {
+                continue;
+            }
+
+            totalNilaiFaktur += parseRupiah(row[idxNilai] ? row[idxNilai].text : 0);
+            totalHutangAsing += parseRupiah(row[idxHutang] ? row[idxHutang].text : 0);
+
+            // Center-align setiap sel data
+            for (var j = 0; j < row.length; j++) {
+                row[j].alignment = (j >= idxNilai) ? 'right' : 'left';
+                row[j].fontSize = 9;
+            }
+        }
+
+        // --- Baris TOTAL ---
+        var totalRow = [];
+
+        for (var k = 0; k < colCount; k++) {
+            if (k === 0) {
+                totalRow.push({
+                    text: 'TOTAL',
+                    bold: true,
+                    colSpan: idxNilai,
+                    alignment: 'right',
+                    fillColor: '#bfbfbf',
+                    fontSize: 9
+                });
+            } else if (k < idxNilai) {
+                totalRow.push({}); // placeholder colSpan
+            } else if (k === idxNilai) {
+                totalRow.push({
+                    text: formatRupiah(totalNilaiFaktur),
+                    bold: true,
+                    alignment: 'right',
+                    fillColor: '#bfbfbf',
+                    fontSize: 9
+                });
+            } else if (k === idxHutang) {
+                totalRow.push({
+                    text: formatRupiah(totalHutangAsing),
+                    bold: true,
+                    alignment: 'right',
+                    fillColor: '#bfbfbf',
+                    fontSize: 9
+                });
+            } else {
+                totalRow.push({ text: '', fillColor: '#bfbfbf' });
+            }
+        }
+
+        tableBody.push(totalRow);
+    }
+}
             ]
         });
 

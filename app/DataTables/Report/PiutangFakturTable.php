@@ -37,21 +37,78 @@ class PiutangFakturTable extends Table
             'master_customer_other_addresses.name AS customer_name',
             'master_customer_other_addresses.text_kota AS customer_kota',
             'finance_invoicing.code AS no_faktur',
+
+            // ✅ FINAL FIX: subquery item * kurs - diskon + ongkir
             DB::raw('
-                CASE
-                    WHEN (penjualan_do_details.grand_total_idr = 
-                        (COALESCE(penjualan_do_details.purchase_total_idr,0) + COALESCE(penjualan_do_details.delivery_cost_idr,0)))
-                    THEN penjualan_do_details.grand_total_idr
-                    ELSE (penjualan_do_details.purchase_total_idr + penjualan_do_details.delivery_cost_idr)
-                END AS nilai_faktur
+                ROUND(
+                    (
+                        (
+                            SELECT COALESCE(SUM(doi.total * penjualan_do.idr_rate), 0)
+                            FROM penjualan_do_item doi
+                            WHERE doi.do_id = penjualan_do.id
+                        )
+                        - COALESCE(penjualan_do_details.discount_1_idr, 0)
+                        - COALESCE(penjualan_do_details.discount_2_idr, 0)
+                        - COALESCE(penjualan_do_details.discount_idr, 0)
+                        + (
+                            CASE
+                                WHEN penjualan_so.so_date >= \'2025-01-01\'
+                                THEN COALESCE(penjualan_do_details.delivery_cost_idr, 0)
+                                ELSE 0
+                            END
+                        )
+                    )
+                ,0) AS nilai_faktur
             '),
+
             'penjualan_do_details.delivery_cost_idr AS ongkos_kirim',
             'penjualan_so.so_date AS tanggal_faktur',
             'master_customers.tempo_limit AS tempo_limit',
-            DB::raw('IFNULL(SUM(finance_payable_detail.total), 0) AS pembayaran'),
+            DB::raw('
+            (
+                SELECT COALESCE(SUM(fpd.total),0)
+                FROM finance_payable_detail fpd
+                INNER JOIN finance_payable fp 
+                    ON fp.id = fpd.payable_id
+                WHERE fpd.invoice_id = finance_invoicing.id
+                AND fpd.deleted_at IS NULL
+                AND fp.deleted_at IS NULL
+                AND fp.status IN (1,2)
+            ) AS pembayaran
+            '),
+
+            // ✅ FINAL FIX: status_faktur ikut formula yang sama
             DB::raw('
                 CASE
-                    WHEN penjualan_do_details.grand_total_idr - IFNULL(SUM(finance_payable_detail.total), 0) <= 0 THEN "PAID"
+                    WHEN (
+                        ROUND(
+                            (
+                                (
+                                    SELECT COALESCE(SUM(doi.total * penjualan_do.idr_rate), 0)
+                                    FROM penjualan_do_item doi
+                                    WHERE doi.do_id = penjualan_do.id
+                                )
+                                - COALESCE(penjualan_do_details.discount_1_idr, 0)
+                                - COALESCE(penjualan_do_details.discount_2_idr, 0)
+                                - COALESCE(penjualan_do_details.discount_idr, 0)
+                                + (
+                                    CASE
+                                        WHEN penjualan_so.so_date >= \'2025-01-01\'
+                                        THEN COALESCE(penjualan_do_details.delivery_cost_idr, 0)
+                                        ELSE 0
+                                    END
+                                )
+                            )
+                        ,0)
+                        - (
+                            SELECT COALESCE(SUM(fpd.total), 0)
+                            FROM finance_payable_detail fpd
+                            INNER JOIN finance_payable fp 
+                                ON fp.id = fpd.payable_id
+                            WHERE fpd.invoice_id = finance_invoicing.id
+                        )
+                    ) <= 100
+                    THEN "PAID"
                     ELSE "UNPAID"
                 END AS status_faktur
             ')
@@ -62,8 +119,21 @@ class PiutangFakturTable extends Table
         })
         ->where('penjualan_so.type_so', 'nonppn')
         ->groupBy('finance_invoicing.id')
-        ->having('status_faktur', 'UNPAID')
-        ->get();
+        ->havingRaw('
+            (
+                nilai_faktur - pembayaran
+            ) > 100
+
+            AND NOT (
+                ABS(
+                    (nilai_faktur - pembayaran)
+                    - COALESCE(penjualan_do_details.delivery_cost_idr,0)
+                ) <= 100
+            )
+            ')
+            ->orderBy('master_customer_other_addresses.name', 'ASC') 
+            ->orderBy('finance_invoicing.code', 'ASC')
+            ->get();
 
     return $model;
 }

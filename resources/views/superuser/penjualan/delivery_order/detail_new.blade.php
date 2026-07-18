@@ -209,6 +209,8 @@
         </div>
         <div class="col-md-6 text-right">
           @if($result->count_cancel == 0)
+              
+
               <a href="{{ route('superuser.penjualan.delivery_order.print', $result->id) }}"
                 class="btn btn-info btn-sm btn-flat"
                 target="_blank">

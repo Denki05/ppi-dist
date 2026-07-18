@@ -29,6 +29,7 @@ use App\Imports\Gudang\StockOutImport;
 use App\Services\StockRebuildService;
 use Illuminate\Support\Facades\Artisan;
 use App\Entities\Setting\UserMenu;
+use App\Entities\Gudang\StockAuditLog;
 use Validator;
 use Carbon\Carbon;
 use DB;
@@ -607,7 +608,7 @@ class StockController extends Controller
     public function collectStockIn(Request $request)
     {
         $startDate = Carbon::create(2026, 1, 1)->startOfDay();
-        $endDate   = Carbon::create(2026, 3, 2)->endOfDay();
+        $endDate   = Carbon::create(2026, 5, 7)->endOfDay();
 
         DB::beginTransaction();
 
@@ -681,7 +682,7 @@ class StockController extends Controller
     public function collectStockTrans(Request $request)
     {
         $startDate = Carbon::create(2026, 1, 1)->startOfDay();
-        $endDate   = Carbon::create(2026, 3, 2)->endOfDay();
+        $endDate   = Carbon::create(2026, 5, 7)->endOfDay();
 
         DB::beginTransaction();
 
@@ -698,7 +699,7 @@ class StockController extends Controller
                 ->with('success', 'Collect stock transaction berhasil dijalankan.');
 
         } catch (\Exception $e) {
-            dd($e);
+            // dd($e);
             DB::rollBack();
 
             return redirect()
@@ -752,51 +753,48 @@ class StockController extends Controller
             });
     }
 
-    public function collectStockOut()
+    public function collectStockOut(Request $request)
     {
+        // Sesuaikan tanggal batas Rebuild
+        $startDate = \Carbon\Carbon::create(2026, 1, 1)->startOfDay();
+        $endDate   = \Carbon\Carbon::create(2026, 5, 7)->endOfDay();
+
         DB::beginTransaction();
         try {
+            // Opsional: Anda bisa menambahkan fungsi clearTempOut($startDate, $endDate) 
+            // di sini jika ingin mereset keranjang temp_out sebelum diisi.
 
-            $this->collectSPKStockOut();
+            $this->collectSPKStockOut($startDate, $endDate);
+            $this->collectFromMutasiShowroom($startDate, $endDate);
+            $this->collectFromMutasiOut($startDate, $endDate);
+
             DB::commit();
-            return back()->with('success', 'Collect SPK berhasil.');
+            return back()->with('success', 'Collect SPK, Mutasi Showroom, dan Mutasi Out berhasil dikumpulkan.');
         } catch (\Exception $e) {
-            dd($e);
             DB::rollBack();
             return back()->with('error', $e->getMessage());
         }
     }
 
-    private function collectSPKStockOut()
+    private function collectSPKStockOut($startDate, $endDate)
     {
         $allowedCodes = [
-            'SPK26A001',
-            'SPK26A003',
-            'SPK26A005',
-            'SPK26A006',
-            'SPK26B001',
-            'SPK26B004',
-            'SPK26B005',
+            'SPK26A001', 'SPK26A003', 'SPK26A005', 'SPK26A006',
+            'SPK26B001', 'SPK26B004', 'SPK26B005',
         ];
 
         PurchaseOrder::with('purchase_order_detail')
             ->where('type', 0) // SPK
             ->where('status', 4) // ACC / SENT
             ->whereIn('code', $allowedCodes)
+            ->whereBetween('created_at', [$startDate, $endDate]) // Filter Waktu
             ->orderBy('created_at', 'asc')
             ->chunk(100, function ($orders) {
-
                 foreach ($orders as $order) {
-
-                    if (!$order->warehouse_id) {
-                        continue;
-                    }
+                    if (!$order->warehouse_id) continue;
 
                     foreach ($order->purchase_order_detail as $item) {
-
-                        if ($item->quantity <= 0) {
-                            continue;
-                        }
+                        if ($item->quantity <= 0) continue;
 
                         DB::table('temp_out')->insert([
                             'doc_code'             => $order->code,
@@ -806,6 +804,73 @@ class StockController extends Controller
                             'product_packaging_id' => $item->product_packaging_id,
                             'quantity'             => $item->quantity,
                             'warehouse_id'         => 2, // hardcode ke gudang araya
+                            'source_type'          => 'SYSTEM',
+                            'created_at'           => now(),
+                            'updated_at'           => now(),
+                        ]);
+                    }
+                }
+            });
+    }
+
+    private function collectFromMutasiShowroom($startDate, $endDate)
+    {
+        // Menggunakan kombinasi status: PUBLISH(2), CHECKED(1), dan DIAMBIL(2)
+        \App\Entities\Gudang\MutasiShowroom::with('details')
+            ->where('status', 2)           // Status: PUBLISH
+            ->where('status_checked', 1)   // Status Checked: CHECKED
+            ->where('status_barang', 2)    // Status Barang: DIAMBIL
+            ->where('type', '!=', 5)       // Kecualikan tipe otomatis dari SO
+            ->whereBetween('created_at', [$startDate, $endDate])
+            ->orderBy('created_at', 'asc')
+            ->chunk(100, function ($mutasis) {
+                foreach ($mutasis as $mutasi) {
+                    // Pastikan gudang asal ada sebagai referensi pemotongan stok
+                    if (!$mutasi->warehouse_from_id) continue;
+
+                    foreach ($mutasi->details as $item) {
+                        if ($item->qty <= 0) continue;
+
+                        DB::table('temp_out')->insert([
+                            'doc_code'             => $mutasi->kode,
+                            'doc_type'             => 'MUTASI SHOWROOM',
+                            'doc_date'             => $mutasi->tanggal ?? $mutasi->created_at,
+                            'reference_id'         => $mutasi->id,
+                            'product_packaging_id' => $item->product_packaging_id,
+                            'quantity'             => $item->qty,
+                            'warehouse_id'         => $mutasi->warehouse_from_id, // Potong stok gudang asal
+                            'source_type'          => 'SYSTEM',
+                            'created_at'           => now(),
+                            'updated_at'           => now(),
+                        ]);
+                    }
+                }
+            });
+    }
+
+    private function collectFromMutasiOut($startDate, $endDate)
+    {
+        // Pastikan model MutasiOut sudah di-use di atas controller
+        \App\Entities\Gudang\MutasiOut::with('mutasiOutDetails')
+            ->where('status', 3) // ACC
+            ->whereBetween('created_at', [$startDate, $endDate])
+            ->orderBy('created_at', 'asc')
+            ->chunk(100, function ($mutasis) {
+                foreach ($mutasis as $mutasi) {
+                    // Cek gudang asal
+                    if (!$mutasi->warehouse_from) continue;
+
+                    foreach ($mutasi->mutasiOutDetails as $item) {
+                        if ($item->quantity <= 0) continue;
+
+                        DB::table('temp_out')->insert([
+                            'doc_code'             => $mutasi->code,
+                            'doc_type'             => 'MUTASI OUT',
+                            'doc_date'             => $mutasi->date ?? $mutasi->created_at,
+                            'reference_id'         => $mutasi->id,
+                            'product_packaging_id' => $item->product_packaging_id,
+                            'quantity'             => $item->quantity,
+                            'warehouse_id'         => $mutasi->warehouse_from, // Potong stok gudang asal
                             'source_type'          => 'SYSTEM',
                             'created_at'           => now(),
                             'updated_at'           => now(),
@@ -868,5 +933,223 @@ class StockController extends Controller
                 ->route($this->route . '.index')
                 ->with('error', 'Terjadi kesalahan: ' . $e->getMessage());
         }
+    }
+
+    public function auditProducts(Request $request)
+    {
+        $warehouseId = $request->warehouse_id;
+        if (!$warehouseId) return response()->json(['data' => []]);
+     
+        // Ambil product packaging yang pernah ada di audit log warehouse ini
+        $products = StockAuditLog::query()
+            ->where('warehouse_id', $warehouseId)
+            ->whereNull('deleted_at')
+            ->select('product_packaging_id')
+            ->distinct()
+            ->with(['productPackaging.product', 'productPackaging.packaging'])
+            ->get()
+            ->map(function ($row) {
+                $pack = $row->productPackaging;
+                if (!$pack) return null;
+     
+                $productName = optional(optional($pack)->product)->name ?? 'Unknown';
+                $packName    = optional(optional($pack)->packaging)->pack_name ?? '';
+     
+                return [
+                    'id'    => $pack->id,
+                    'label' => $pack->code . ' - ' . $productName . ' (' . $packName . ')',
+                ];
+            })
+            ->filter()
+            ->values();
+     
+        return response()->json(['data' => $products]);
+    }
+    
+    public function auditLogJson(Request $request)
+    {
+        $warehouseId = $request->warehouse_id;
+        if (!$warehouseId) return response()->json(['data' => [], 'totals' => []]);
+
+        $query = StockAuditLog::query()
+            ->where('warehouse_id', $warehouseId)
+            ->whereNull('deleted_at')
+            ->whereIn('status', [1, 3])
+            ->with([
+                'productPackaging.product', 
+                'productPackaging.packaging',
+                'penjualanDo.customer', 
+                'penjualanDo.member'
+            ]);
+
+        if ($request->filled('product_id')) {
+            $query->where('product_packaging_id', $request->product_id);
+        }
+        if ($request->filled('status')) {
+            $query->where('status', $request->status);
+        }
+        if ($request->filled('date_from')) {
+            $query->whereDate('created_at', '>=', $request->date_from);
+        }
+        if ($request->filled('date_to')) {
+            $query->whereDate('created_at', '<=', $request->date_to);
+        }
+
+        $rows = $query->orderByDesc('created_at')->orderByDesc('id')->get();
+
+        // Setup Totals sesuai JS
+        $totalQty      = 0;
+        $countNonaktif = 0;
+        $countAktif    = 0;
+        $countDone     = 0;
+        $countInfo     = 0;
+
+        $data = $rows->map(function ($row) use (&$totalQty, &$countAktif, &$countInfo) {
+
+            $pack        = $row->productPackaging;
+            $productName = optional(optional($pack)->product)->name ?? 'Unknown';
+            $packName    = optional(optional($pack)->packaging)->pack_name ?? '';
+            $code        = optional($pack)->code ?? '';
+        
+            $qty = (float) $row->qty;
+            $totalQty += $qty;
+        
+            if ($row->status == '1') $countAktif++;
+            if ($row->status == '3') $countInfo++;
+
+            // AMBIL DATA DO, CUSTOMER, DAN KOTA
+            $do           = $row->penjualanDo;
+            $do_code      = optional($do)->do_code;
+            
+            // Coba ambil nama dari relasi customer, kalau kosong coba dari member
+            $customer_name = optional(optional($do)->customer)->name 
+                             ?? optional(optional($do)->member)->name 
+                             ?? 'Unknown Customer';
+                            
+            // 1. Coba ambil text_kota dari relasi member (CustomerOtherAddress)
+            $text_kota = optional(optional($do)->member)->text_kota;
+
+            // 2. Jika di member kosong, coba ambil dari relasi customer utama
+            if (empty($text_kota)) {
+                $text_kota = optional(optional($do)->customer)->text_kota 
+                             ?? optional(optional($do)->customer)->kota 
+                             ?? '';
+            }
+
+            // 3. DEBUGGING: Jika masih kosong juga, kita paksa isi dengan teks peringatan
+            // Tujuannya agar Anda bisa melihat di UI bahwa masalahnya ada di database, bukan di kodingan.
+            if (empty($text_kota)) {
+                $text_kota = 'Kota Blm Diset'; 
+            }
+
+            return [
+                'id'                   => $row->id,
+                'do_id'                => $row->do_id,
+                'warehouse_id'         => $row->warehouse_id,
+                'product_packaging_id' => $row->product_packaging_id,
+                'product_label'        => trim($code . ' - ' . $productName . ' / ' . $packName, ' -/'),
+                'qty'                  => number_format($qty, 2, '.', ''),
+                'note'                 => $row->note,
+                'status'               => $row->status,
+                
+                // Masukkan variabel DO Code, Customer, & Kota ke dalam response array
+                'do_code'              => $do_code,
+                'customer_name'        => $customer_name,
+                'text_kota'            => $text_kota,
+
+                'created_at'           => $row->created_at ? $row->created_at->format('Y-m-d H:i') : null,
+                'updated_at'           => $row->updated_at ? $row->updated_at->format('Y-m-d H:i') : null,
+            ];
+        });
+
+        return response()->json([
+            'data' => $data,
+            'totals' => [
+                'total_qty'   => number_format($totalQty, 2, '.', ''),
+                'count_aktif' => $countAktif,
+                'count_info'  => $countInfo,
+            ],
+        ]);
+    }
+    
+    public function auditLogExport(Request $request)
+    {
+        $warehouseId = $request->warehouse_id;
+        if (!$warehouseId) abort(400, 'Warehouse tidak ditemukan');
+
+        $query = StockAuditLog::query()
+            ->where('warehouse_id', $warehouseId)
+            ->whereNull('deleted_at')
+            ->where('status', 1)
+            ->with([
+                'productPackaging.product', 
+                'productPackaging.packaging',
+                'penjualanDo.customer', 
+                'penjualanDo.member'
+            ]);
+
+        if ($request->filled('product_id'))  $query->where('product_packaging_id', $request->product_id);
+        if ($request->filled('status'))      $query->where('status', $request->status);
+        if ($request->filled('date_from'))   $query->whereDate('created_at', '>=', $request->date_from);
+        if ($request->filled('date_to'))     $query->whereDate('created_at', '<=', $request->date_to);
+
+        $rows = $query->orderByDesc('created_at')->get();
+
+        // Siapkan Data
+        $data = [];
+        $tipeExport = $request->get('type', 'invoice'); 
+        
+        foreach ($rows as $row) {
+            $pack         = $row->productPackaging;
+            $productName  = optional(optional($pack)->product)->name ?? '';
+            $packName     = optional(optional($pack)->packaging)->pack_name ?? '';
+            $code         = optional($pack)->code ?? '';
+            $productLabel = trim($code . ' - ' . $productName . ' / ' . $packName, ' -/');
+
+            $do            = $row->penjualanDo;
+            $do_code = optional($do)->do_code ?? ('DO-' . $row->do_id);
+
+            // paksa excel baca sebagai text
+            $do_code = '="' . trim($do_code) . '"';
+            $customer_name = optional(optional($do)->customer)->name ?? optional(optional($do)->member)->name ?? '-';
+            $text_kota     = optional(optional($do)->member)->text_kota;
+            if (empty($text_kota)) {
+                $text_kota = optional(optional($do)->customer)->text_kota ?? optional(optional($do)->customer)->kota ?? '';
+            }
+            $customerLabel = $customer_name . ($text_kota ? ' - ' . $text_kota : '');
+
+            $detail = [
+                'time'   => $row->created_at ? $row->created_at->format('Y-m-d H:i:s') : '',
+                'qty'    => number_format((float) $row->qty, 2, ',', '.'),
+                'status' => $row->status,
+                'note'   => $row->note ?? '',
+                'cust'   => $customerLabel
+            ];
+
+            if ($tipeExport === 'invoice') {
+                $data[$do_code][$productLabel][] = $detail;
+            } else {
+                $data[$productLabel][$do_code][] = $detail;
+            }
+        }
+
+        $statusLabel = [0 => 'Nonaktif (Batal)', 1 => 'Aktif', 2 => 'DONE (Selesai)', 3 => 'INFO (Revisi)'];
+        $colspan = ($tipeExport === 'product') ? 5 : 4;
+        $format  = $request->get('format', 'excel');
+
+        // Handle PDF Export
+        if ($format === 'pdf') {
+            $pdf = \PDF::loadView('superuser.gudang.stock.audit_logs', compact('data', 'tipeExport', 'statusLabel', 'colspan'))
+                    ->setPaper('a4', 'landscape');
+            return $pdf->download('Audit_Log_' . date('YmdHis') . '.pdf');
+        }
+
+        // Handle Excel Export
+        if ($format === 'excel') {
+            header("Content-type: application/vnd.ms-excel");
+            header("Content-Disposition: attachment; filename=\"Audit_Log_" . date('YmdHis') . ".xls\"");
+        }
+
+        return view('superuser.gudang.stock.audit_logs', compact('data', 'tipeExport', 'statusLabel', 'colspan'));
     }
 }

@@ -141,8 +141,10 @@ class StockRebuildService
     */
     public function posting()
     {
-        DB::transaction(function () {
+        // Panggil Petugas 1 Pintu kita
+        $stockService = new \App\Services\StockService();
 
+        DB::transaction(function () use ($stockService) {
             $rows = DB::table('stock_transform')
                 ->where('is_posted', 0)
                 ->orderBy('doc_date')
@@ -151,66 +153,70 @@ class StockRebuildService
                 ->get();
 
             foreach ($rows as $row) {
+                // 1. Tentukan ini barang Masuk atau Keluar
+                $type = ($row->qty_in > 0) ? 'IN' : 'OUT';
+                
+                // 2. Ambil angkanya (pilih yang bukan 0)
+                $qty = ($type === 'IN') ? $row->qty_in : $row->qty_out;
 
+                // 3. Format tanggal kejadian masa lalu
                 $docDateTime = date('Y-m-d H:i:s', strtotime($row->doc_date));
 
-                $master = DB::table('master_product_min_stocks')
-                    ->where('warehouse_id', $row->warehouse_id)
-                    ->where('product_packaging_id', $row->product_packaging_id)
-                    ->lockForUpdate()
-                    ->first();
+                // 4. KETOK 1 PINTU: Masukkan ke Mesin Waktu!
+                $stockService->replayHistoricalLog(
+                    $row->warehouse_id,
+                    $row->product_packaging_id,
+                    $qty,
+                    $type,
+                    $row->doc_code,
+                    $docDateTime,
+                    $this->generateCustomNote($row) // <--- UBAH BAGIAN INI
+                );
 
-                if (!$master) {
-                    $masterId = DB::table('master_product_min_stocks')
-                        ->insertGetId([
-                            'warehouse_id'         => $row->warehouse_id,
-                            'product_packaging_id' => $row->product_packaging_id,
-                            'quantity'             => 0,
-                            'created_at'           => $docDateTime,
-                            'updated_at'           => $docDateTime,
-                        ]);
-
-                    $master = DB::table('master_product_min_stocks')
-                        ->where('id', $masterId)
-                        ->first();
-                }
-
-                $saldoAwal  = (float) $master->quantity;
-                $saldoAkhir = $saldoAwal + $row->qty_in - $row->qty_out;
-
-                if ($saldoAkhir < 0) {
-                    Log::warning(
-                        "Stock minus detected | Product: {$row->product_packaging_id} | Warehouse: {$row->warehouse_id} | Date: {$row->doc_date} | Saldo: {$saldoAkhir}"
-                    );
-                }
-
-                DB::table('master_product_min_stocks')
-                    ->where('id', $master->id)
-                    ->update([
-                        'quantity'   => $saldoAkhir,
-                        'updated_at' => $docDateTime
-                    ]);
-
-                DB::table('gudang_move_stock')->insert([
-                    'warehouse_id'         => $row->warehouse_id,
-                    'product_packaging_id' => $row->product_packaging_id,
-                    'code_transaction'     => $row->doc_code,
-                    'stock_in'             => $row->qty_in,
-                    'stock_out'            => $row->qty_out,
-                    'stock_balance'        => $saldoAkhir,
-                    'note'                 => $row->doc_type,
-                    'created_at'           => $docDateTime,
-                    'updated_at'           => $docDateTime,
-                ]);
-
+                // 5. Tandai bahwa dokumen ini sudah beres diposting
                 DB::table('stock_transform')
                     ->where('id', $row->id)
                     ->update([
                         'is_posted'  => 1,
-                        'updated_at' => $docDateTime
+                        'updated_at' => now()
                     ]);
             }
         });
+    }
+
+    public function recalculateReservedQuantity()
+    {
+        // 1. Sapu bersih (Nol-kan) semua reserved_quantity peninggalan masa lalu
+        DB::table('master_product_min_stocks')->update(['reserved_quantity' => 0]);
+
+        // 2. Tarik HANYA data yang sesuai aturan: SO Status 4 DAN DO Status 3
+        $activePackingOrders = \App\Entities\Penjualan\PackingOrder::with('do_detail')
+            ->whereHas('so', function ($query) {
+                // Pastikan relasi ke SalesOrder (penjualan_so) bernama 'so'
+                $query->where('status', 4); 
+            })
+            ->where('status', 3) // DO Status 3
+            ->get();
+
+        // 3. Hitung ulang dan kembalikan kuota booking-nya
+        foreach ($activePackingOrders as $po) {
+            // Pastikan gudang asal ada
+            if (!$po->warehouse_id) continue;
+
+            foreach ($po->do_detail as $item) {
+                // Bersihkan kode produk (jika ada suffix seperti _1, _2)
+                $baseId = preg_replace('/_\d+$/', '', $item->product_packaging_id);
+
+                $stock = \App\Entities\Master\ProductMinStock::where('warehouse_id', $po->warehouse_id)
+                    ->where('product_packaging_id', $baseId)
+                    ->first();
+
+                if ($stock) {
+                    $stock->reserved_quantity += $item->qty;
+                    $stock->save();
+                }
+            }
+        }
     }
 
     /*
@@ -222,5 +228,71 @@ class StockRebuildService
     {
         $this->transform();
         $this->posting();
+
+        // Panggil perapihan kuota booking di paling akhir!
+        $this->recalculateReservedQuantity();
+    }
+
+    /*
+    |--------------------------------------------------------------------------
+    | Helper: Generate Custom Note
+    |--------------------------------------------------------------------------
+    */
+    private function generateCustomNote($row)
+    {
+        $type = $row->doc_type;
+        $code = $row->doc_code;
+        
+        // dd($type, $code);
+    
+        if ($type === 'TRANSAKSI / NOTA') {
+
+            $tempRow = DB::table('temp_trans')->find($row->reference_id);
+        
+            $po = null;
+        
+            if ($tempRow) {
+                $po = \App\Entities\Penjualan\PackingOrder::find($tempRow->reference_id);
+            }
+        
+            if (!$po) {
+                $po = \App\Entities\Penjualan\PackingOrder::where('do_code', $code)
+                    ->orWhere('code', $code)
+                    ->first();
+            }
+        
+            $customerDesc = '';
+        
+            if ($po) {
+                // ✅ Query manual karena customer_other_address_id varchar "37.1"
+                // Eloquent gagal match karena type mismatch dengan id integer
+                $member = \App\Entities\Master\CustomerOtherAddress::whereRaw(
+                    'CAST(id AS CHAR) = ?', 
+                    [$po->customer_other_address_id]
+                )->first();
+        
+                if ($member) {
+                    $customerDesc = $member->name . ' ' . $member->text_kota;
+                }
+            }
+            
+            // dd($customerDesc);
+        
+            return $code . ' - ' . ($customerDesc ?: 'Customer Unknown');
+        }
+    
+        if ($type === 'RECEIVING') {
+            return $code . ' - RECEIVING';
+        }
+    
+        if ($type === 'MUTASI SHOWROOM') {
+            return 'Mutasi Showroom - DIAMBIL';
+        }
+    
+        if ($type === 'MUTASI OUT') {
+            return 'Mutasi Gudang - DIAMBIL';
+        }
+    
+        return $code . ' - ' . $type;
     }
 }

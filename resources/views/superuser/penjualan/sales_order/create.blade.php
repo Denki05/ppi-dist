@@ -344,18 +344,13 @@
             product_data = json.data;
 
             $.each( product_data, function( key, value ) {
-                var makeselect;
-                $.map( product_data, function( val, i ) {
-                  if(val['typeName'] === null){
-                    makeselect += '<option value="'+ val['id'] +'" data-name="'+ val['name'] +'" data-packname="'+ val['packName'] +'" data-price="'+ val['price'] +'" data-packid="'+ val['packID']+'">'+ val['code'] + ' - ' + val['name'] + ' - ' + val['packName'] + ' - '+ val['warehouseName'] +'</option>';
-                  } else {
-                    makeselect += '<option value="'+ val['id'] +'" data-name="'+ val['name'] +'" data-packname="'+ val['packName'] +'" data-price="'+ val['price'] +'" data-packid="'+ val['packID']+'">'+ val['code'] + ' - ' + val['name'] + ' - ' + val['packName'] + ' - '+ val['typeName'] +'</option>';
-                  }
-                });
-
-
-                $('.js-ajax').append(makeselect);
-                initailizeSelect2();
+              var makeselect = '<option></option>';
+              $.map(product_data, function(val, i) {
+                  var label = val['code'] + ' - ' + val['name'] + ' - ' + val['packName'] + ' - ' + (val['typeName'] ?? val['warehouseName']);
+                  makeselect += '<option value="'+ val['id'] +'" data-name="'+ val['name'] +'" data-packname="'+ val['packName'] +'" data-price="'+ val['price'] +'" data-packid="'+ val['packID']+'">'+ label +'</option>';
+              });
+              // Tidak perlu append ke DOM di sini, cukup simpan di variable product_data
+              initailizeSelect2(); // Cukup 1x
             });
           }
         }

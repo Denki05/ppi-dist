@@ -53,9 +53,11 @@ class SalesOrderProforma extends Model
         1 => 'YES'
     ];
 
-    const TYPE_TRANSACTION = [
-        1 => 'CASH',
-        0 => 'TEMPO'
+    const SO_TYPE_TRANSACTION = [
+    	1 => 'CASH',
+        2 => 'TEMPO',
+        3 => 'MARKETPLACE',
+        4 => 'COD',
     ];
 
     public function getSoLanjutanAttribute()
@@ -65,7 +67,9 @@ class SalesOrderProforma extends Model
 
     public function getSoTypeTransactionAttribute()
     {
-        return self::TYPE_TRANSACTION[$this->attributes['so_type_transaction']];
+        $value = $this->attributes['so_type_transaction'] ?? null;
+
+        return self::SO_TYPE_TRANSACTION[$value] ?? null;
     }
 
     public function items()
@@ -114,6 +118,6 @@ class SalesOrderProforma extends Model
 
     public function getStatusTypeAttribute()
     {
-        return self::TYPE_TRANSACTION[$this->attributes['so_type_transaction']] ?? null;
+        return self::SO_TYPE_TRANSACTION[$this->attributes['so_type_transaction']] ?? null;
     }
 }

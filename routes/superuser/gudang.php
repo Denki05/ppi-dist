@@ -22,6 +22,11 @@ Route::group([
         Route::get('/import_template2', 'StockController@import_template2')->name('import_template2');
         Route::post('/import2', 'StockController@import2')->name('import2');
         Route::post('/rebuildStock', 'StockController@rebuildStock')->name('rebuildStock');
+
+        // ✅ TAMBAHKAN 3 BARIS INI
+        Route::get('/audit-products',   'StockController@auditProducts')->name('auditProducts');
+        Route::get('/audit-log-json',   'StockController@auditLogJson')->name('auditLogJson');
+        Route::get('/audit-log-export', 'StockController@auditLogExport')->name('auditLogExport');
     });
 
     Route::group(['as' => 'stock_adjustment.', 'prefix' => '/stock_adjustment'], function () {

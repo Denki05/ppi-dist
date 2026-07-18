@@ -577,129 +577,81 @@ class MutasiShowroomController extends Controller
         if (!$this->isFinance()) {
             return response()->json(['message' => 'Unauthorized'], 403);
         }
-
+    
         $items = $request->input('items', []);
-
+    
         if (empty($items)) {
             return response()->json(['message' => 'Data kosong'], 422);
         }
-
+    
         try {
-
             DB::transaction(function () use ($items) {
-
-                $processedKodeBaru = [];     // Untuk Mutasi Biasa/Baru (Publish -> Settle)
-                $processedKodeReSettle = []; // Untuk Mutasi Promosi (Settle -> Settle Final)
-
+                $processedKode = [];
+    
                 foreach ($items as $kode => $details) {
-
                     foreach ($details as $detailId => $data) {
-
+    
                         $detail = MutasiShowroomDetail::with('mutasi_showroom')
                             ->where('id', $detailId)
                             ->lockForUpdate()
                             ->first();
-
-                        if (!$detail) {
-                            continue;
-                        }
-
+    
+                        if (!$detail) continue;
+    
                         $mutasi = $detail->mutasi_showroom;
-
-                        $plUsd       = (float) ($data['pl_usd'] ?? 0);
-                        $discAwal    = (float) ($data['disc_awal'] ?? 0);
-                        $discPercent = (float) ($data['disc_percent'] ?? 0);
-                        $discAkhir   = (float) ($data['disc_akhir'] ?? 0);
-                        $kurs        = (float) ($data['kurs'] ?? 0);
-
-                        if ($plUsd <= 0 || $kurs <= 0) {
-                            continue;
-                        }
-
+                        $plUsd  = (float) ($data['pl_usd'] ?? 0);
+                        $kurs   = (float) ($data['kurs']   ?? 0);
+    
+                        if ($plUsd <= 0 || $kurs <= 0) continue;
+    
                         // set kurs sekali per mutasi
                         if ((float) $mutasi->kurs === 0.0) {
                             $mutasi->update(['kurs' => $kurs]);
                         }
-
+    
+                        // hitung netto USD via service
                         $priceUsd = BrandPriceCalculator::calculateUsd(
                             $mutasi->brand_name,
-                            $plUsd,
-                            $discAwal,
-                            $discPercent,
-                            $discAkhir
+                            $plUsd
                         );
-
+    
                         $priceIdr = $priceUsd * $mutasi->kurs;
-
+    
                         $detail->update([
                             'price_usd'   => $priceUsd,
                             'price_idr'   => $priceIdr,
                             'total_price' => $priceIdr * $detail->qty,
                         ]);
-
-                        // --- PENGELOMPOKAN STATUS ---
-                        if ($mutasi->status == MutasiShowroom::STATUS['PUBLISH']) {
-                            // Ini dokumen reguler (atau promosi awal) yang baru pertama kali di-Settle
-                            $processedKodeBaru[] = $mutasi->kode;
-                        } else if ($mutasi->status == MutasiShowroom::STATUS['SETTLE'] && $mutasi->type == MutasiShowroom::TYPE_SYSTEM_FREE_SO) {
-                            // Ini dokumen promosi yang sedang di-update harga finalnya
-                            $processedKodeReSettle[] = $mutasi->kode;
-                        }
+    
+                        $processedKode[] = $mutasi->kode;
                     }
                 }
-
-                // --- EKSEKUSI 1: MUTASI BARU (PUBLISH -> SETTLE) ---
-                if (!empty($processedKodeBaru)) {
-
-                    $kodeUnik = array_values(array_unique($processedKodeBaru));
-
+    
+                if (!empty($processedKode)) {
+                    $kodeUnik = array_values(array_unique($processedKode));
+    
                     MutasiShowroomHistory::create([
                         'tanggal'      => now(),
                         'kode_mutasi'  => implode(',', $kodeUnik),
                         'total_mutasi' => count($kodeUnik),
-                        'status'       => 1, // settled / ready print
+                        'status'       => 1,
                         'printed_at'   => null,
                         'printed_by'   => null,
                     ]);
-
+    
                     MutasiShowroom::whereIn('kode', $kodeUnik)
                         ->update(['status' => MutasiShowroom::STATUS['SETTLE']]);
                 }
-
-                // --- EKSEKUSI 2: MUTASI PROMOSI (RE-SETTLE HARGA FINAL) ---
-                if (!empty($processedKodeReSettle)) {
-                    
-                    $kodeUnikReSettle = array_values(array_unique($processedKodeReSettle));
-                    
-                    // Buat History Baru agar bisa dicetak ulang dengan harga final
-                    MutasiShowroomHistory::create([
-                        'tanggal'      => now(),
-                        'kode_mutasi'  => implode(',', $kodeUnikReSettle),
-                        'total_mutasi' => count($kodeUnikReSettle),
-                        'status'       => 1, // settled / ready print
-                        'printed_at'   => null,
-                        'printed_by'   => null,
-                    ]);
-
-                    // Langsung naikkan statusnya ke 4 (SETTLE_FINAL) agar hilang dari antrean update harga
-                    MutasiShowroom::whereIn('kode', $kodeUnikReSettle)
-                        ->update(['status' => MutasiShowroom::STATUS['SETTLE_FINAL']]);
-                }
-
             });
-
-            return response()->json([
-                'success' => true,
-                'message' => 'Settle berhasil'
-            ]);
-
+    
+            return response()->json(['success' => true, 'message' => 'Settle berhasil']);
+    
         } catch (\Throwable $e) {
-            // Hapus dd($e) di production agar pesan JSON Error dari AJAX tetap muncul dengan rapi
             \Log::error('Settle Mutasi Gagal', [
                 'error' => $e->getMessage(),
                 'trace' => $e->getTraceAsString()
             ]);
-
+    
             return response()->json([
                 'success' => false,
                 'message' => 'Terjadi kesalahan saat settle'

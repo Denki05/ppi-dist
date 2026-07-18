@@ -270,6 +270,13 @@
 @include('superuser.asset.plugin.select2')
 
 @push('scripts')
+<link rel="stylesheet" href="https://cdn.datatables.net/buttons/2.4.2/css/buttons.dataTables.min.css">
+
+<script src="https://cdn.datatables.net/buttons/2.4.2/js/dataTables.buttons.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+<script src="https://cdn.datatables.net/buttons/2.4.2/js/buttons.html5.min.js"></script>
+<script src="https://cdn.datatables.net/buttons/2.4.2/js/buttons.print.min.js"></script>
+
 <style>
     table.table-custom th,
     table.table-custom td {
@@ -294,12 +301,14 @@ $(document).ready(function() {
         },
         processing: true,
         serverSide: false,
+
         ajax: {
             "url": datatableUrl,
             "dataType": "json",
             "type": "GET",
             "data":{ _token: "{{csrf_token()}}" }
         },
+
         columns: [
             {data: 'code', name: 'master_products.code', width: "100px"},
             {data: 'brand_name', name: 'master_products.brand_name', width: "150px"},
@@ -309,7 +318,24 @@ $(document).ready(function() {
             {data: 'status', width: "150px"},
             {data: 'action', width: "100px"},
         ],
-        autoWidth: false
+
+        autoWidth: false,
+
+        dom: 'Bfrtip',
+
+        buttons: [
+            {
+                extend: 'excelHtml5',
+                text: '<i class="fa fa-file-excel-o"></i> Export Excel',
+                className: 'btn btn-success mb-3',
+
+                title: 'Product_List_' + new Date().toISOString().slice(0,10),
+
+                exportOptions: {
+                    columns: [0,1,2,3,4,5] // action tidak ikut
+                }
+            }
+        ]
     });
 
     $('#btn-filter').on('click', function(e) {
