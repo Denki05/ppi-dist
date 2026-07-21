@@ -97,4 +97,13 @@ Route::group([
         Route::get('/', 'ReportEmployeePerformanceProductController@index')->name('index');
     });
     Route::resource('employee_performance_product', 'ReportEmployeePerformanceProductController');
+
+    Route::group(['as' => 'variant_year.', 'prefix' => '/variant_year'], function () {
+        Route::get('/', 'ReportVariantYearController@index')->name('index');
+        Route::post('/sync', 'ReportVariantYearController@syncData')->name('sync');
+        Route::post('/remove', 'ReportVariantYearController@removeDt')->name('remove');
+        Route::get('/export/excel', 'ReportVariantYearController@exportExcel')->name('export_excel');
+        Route::get('/export/pdf', 'ReportVariantYearController@exportPdf')->name('export_pdf');
+    });
+    Route::resource('variant_year', 'ReportVariantYearController');
 });

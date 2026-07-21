@@ -212,6 +212,32 @@
                                     <input type="hidden" name="action" id="tabulasi_action_param">
                                     <input type="hidden" name="action_type_tabulasi" id="action_type_tabulasi_hidden">
                                 </form>
+
+                                <!-- REPORT VARIANT YEAR -->
+                                <div class="card mt-4 border-primary">
+                                    <div class="card-header bg-light d-flex align-items-center justify-content-between">
+                                        <h5 class="mb-0"><i class="fa fa-cubes"></i> Report Variant Year (Bahan Baku)</h5>
+                                    </div>
+                                    <div class="card-body py-3">
+                                        <p class="text-muted mb-2" style="font-size: 13px;">
+                                            Sync otomatis dari tanggal transaksi paling awal sampai hari ini.
+                                        </p>
+                                        <form action="{{ route('superuser.report.variant_year.sync') }}" method="POST" class="d-inline">
+                                            @csrf
+                                            <button type="submit" class="btn btn-primary btn-sm">
+                                                <i class="fa fa-sync"></i> Sync Data
+                                            </button>
+                                        </form>
+
+                                        <a href="{{ route('superuser.report.variant_year.export_excel') }}" class="btn btn-success btn-sm">
+                                            <i class="fa fa-file-excel-o"></i> Export Excel
+                                        </a>
+
+                                        <a href="{{ route('superuser.report.variant_year.export_pdf') }}" class="btn btn-danger btn-sm">
+                                            <i class="fa fa-file-pdf-o"></i> Export PDF
+                                        </a>
+                                    </div>
+                                </div>
                             </section>
 
                             <section id="content3" class="tab-content">

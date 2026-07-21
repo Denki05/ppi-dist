@@ -22,7 +22,9 @@ class DeliveryOrdersTable extends Table
               $model = PackingOrder::select(
                 'id', 
                 'do_code', 
+                'code',
                 'customer_other_address_id', 
+                'print_count',
                 DB::raw('
                     CASE 
                         WHEN status = 3 THEN "READY"
@@ -43,7 +45,9 @@ class DeliveryOrdersTable extends Table
                 $model = PackingOrder::select(
                     'id', 
                     'do_code', 
+                    'code',
                     'customer_other_address_id', 
+                    'print_count',
                     DB::raw('
                         CASE 
                             WHEN status = 3 THEN "READY"
@@ -64,7 +68,9 @@ class DeliveryOrdersTable extends Table
                 $model = PackingOrder::select(
                     'id', 
                     'do_code', 
+                    'code',
                     'customer_other_address_id', 
+                    'print_count',
                     DB::raw('
                         CASE 
                             WHEN status = 3 THEN "READY"
@@ -82,11 +88,37 @@ class DeliveryOrdersTable extends Table
                       $model = $model->whereDate("created_at", ">=", $request->from)->whereDate("created_at", "<=", $request->to);
                   }
               break;
+            case 'history':
+                $model = PackingOrder::select(
+                    'id', 
+                    'do_code', 
+                    'code',
+                    'customer_other_address_id', 
+                    'date_sent',
+                    'updated_at',
+                    DB::raw('
+                        CASE 
+                            WHEN status = 3 THEN "READY"
+                            WHEN status = 4 THEN "PACKED"
+                            WHEN status = 5 THEN "DELIVERING"
+                            WHEN status = 6 THEN "DELIVERED"
+                            ELSE "-"
+                        END AS status
+                    '),
+                    'created_at')
+                    ->where('status', 6);
+
+                  if($request->from??false){
+                      $model = $model->whereDate("created_at", ">=", $request->from)->whereDate("created_at", "<=", $request->to);
+                  }
+              break;
             default:
             $model = PackingOrder::select(
                 'id', 
                 'do_code', 
+                'code',
                 'customer_other_address_id', 
+                'print_count',
                 DB::raw('
                     CASE 
                         WHEN status = 3 THEN "READY"
@@ -140,14 +172,41 @@ class DeliveryOrdersTable extends Table
             ];
         });
 
+        $table->editColumn('date_sent', function (PackingOrder $model) {
+            if (empty($model->date_sent)) {
+                return '-';
+            }
+            return Carbon::parse($model->date_sent)->format('j F Y');
+        });
+
         $table->addColumn('action', function (PackingOrder $model) {
             $kerjakan = route('superuser.penjualan.delivery_order.detail', $model->id);
-            // $print_sj = route('superuser.penjualan.delivery_order.detail', $model->id);
-            // $update_resi = route('superuser.penjualan.delivery_order.detail', $model->id);
+            $print_manifest = route('superuser.penjualan.delivery_order.print_manifest', $model->id);
 
             switch ($model->status) {
                 case $model->status == "READY":
+                    // Belum pernah print SPK -> tombol Kerjakan dikunci,
+                    // arahkan dulu ke tombol Print SPK.
+                    if ((int) $model->print_count === 0) {
+                        return "
+                            <a href=\"{$print_manifest}\" target=\"_blank\">
+                                <button type=\"button\" class=\"btn btn-warning btn-sm btn-flat\" title=\"Print SPK dulu\">
+                                    <i class=\"fas fa-print\"></i> Print SPK
+                                </button>
+                            </a>
+                            <button type=\"button\" class=\"btn btn-secondary btn-sm btn-flat\" title=\"Print SPK dulu sebelum bisa dikerjakan\" disabled>
+                                <i class=\"fas fa-box\"></i>
+                            </button>
+                        ";
+                    }
+
+                    // Sudah pernah print SPK -> tombol Kerjakan aktif.
                     return "
+                        <a href=\"{$print_manifest}\" target=\"_blank\">
+                            <button type=\"button\" class=\"btn btn-outline-secondary btn-sm btn-flat\" title=\"Print Ulang SPK\">
+                                <i class=\"fas fa-print\"></i>
+                            </button>
+                        </a>
                         <a href=\"{$kerjakan}\">
                             <button type=\"button\" class=\"btn btn-primary btn-sm btn-flat\" title=\"Kerjakan\">
                                 <i class=\"fas fa-box\"></i>
@@ -159,7 +218,7 @@ class DeliveryOrdersTable extends Table
                     return "
                         <a href=\"{$kerjakan}\">
                             <button type=\"button\" class=\"btn btn-primary btn-sm btn-flat\" title=\"Surat Jalan\">
-                                <i class=\"fas fa-shipping-timed\"></i>
+                                <i class=\"fa fa-check\"></i>
                             </button>
                         </a>
                     ";
@@ -169,6 +228,15 @@ class DeliveryOrdersTable extends Table
                         <a href=\"{$kerjakan}\">
                             <button type=\"button\" class=\"btn btn-primary btn-sm btn-flat\" title=\"Update Resi\">
                                 <i class=\"fas fa-money\"></i>
+                            </button>
+                        </a>
+                    ";
+
+                case $model->status == "DELIVERED":
+                    return "
+                        <a href=\"{$kerjakan}\">
+                            <button type=\"button\" class=\"btn btn-outline-secondary btn-sm btn-flat\" title=\"Lihat Detail\">
+                                <i class=\"fas fa-eye\"></i>
                             </button>
                         </a>
                     ";

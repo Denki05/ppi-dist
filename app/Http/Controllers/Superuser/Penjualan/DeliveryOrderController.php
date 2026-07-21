@@ -66,7 +66,20 @@ class DeliveryOrderController extends Controller
 
     public function json(Request $request, DeliveryOrdersTable $datatable)
     {
-        return $datatable->with('show', $request->show)->build($request);
+        $show = $request->show;
+
+        if (Auth::user()->is_superuser == 0) {
+            if ($this->isChecker() && !$this->isSpvGudang()) {
+                $show = 'default';
+            } elseif ($this->isSpvGudang() && !$this->isChecker()) {
+                // TAMBAHKAN 'default' di dalam array in_array() ini
+                if (!in_array($show, ['default', 'acc', 'all', 'history'])) {
+                    $show = 'default'; // Jadikan List SPK sebagai tab default saat pertama buka
+                }
+            }
+        }
+
+        return $datatable->with('show', $show)->build($request);
     }
 
     private function isSpvGudang()
@@ -157,6 +170,8 @@ class DeliveryOrderController extends Controller
             'table' => $table,
             'customer' => $customer,
             'packing' => $packing,
+            'isSpvGudang' => $this->isSpvGudang(),
+            'isChecker' => $this->isChecker(),
         ];
         return view($this->view."index",$data);
     }
@@ -895,67 +910,47 @@ class DeliveryOrderController extends Controller
             }
         }
 
-        $result = PackingOrder::find($id);
+        $result = PackingOrder::where('id', $id)
+            ->first();
 
         if ($result === null){
             abort(404);
         }
 
-        $result->print_count = + 1;
+        $result->print_count = ($result->print_count ?? 0) + 1;
         $result->save();
 
-        DB::beginTransaction();
-        try{
-            $my_report = "C:\\xampp\\htdocs\\ppi-dist\public\\cr\\packing_plan\\packing_plan_rev.rpt"; 
-            $my_pdf = 'C:\\xampp\\htdocs\\ppi-dist\\public\\cr\\packing_plan\\export\\'.$result->code.'.pdf';
+        // Satu baris per varian packaging (TIDAK digabung), karena Unit/Kemasan/Jumlah
+        // beda-beda per varian sesuai contoh PDF (PRE00206).
+        $items = $result->do_detail->map(function ($item) {
+            $packValue = $item->product_pack->packaging->pack_value ?? 1;
+            $packName = $item->product_pack->packaging->pack_name ?? 1;
+            return [
+                'sku'     => $item->product_pack->code ?? '-',
+                'name'    => $item->product_pack->name ?? '-',
+                'qty'     => (float) $item->qty,
+                // TODO: sesuaikan nama field unit dasar produk kalau bukan ini
+                // (contoh PDF nunjukin "Kg" - field ini perlu dicek ke model ProductPack).
+                'unit'    => $item->product_pack->packaging->unit->abbreviation ?? '-',
+                'kemasan' => $packName,
+                'jumlah'  => $packValue > 0 ? $item->qty / $packValue : 0,
+            ];
+        })->values();
 
-            $my_server = "LOCAL"; 
-            $my_user = "root"; 
-            $my_password = ""; 
-            $my_database = "ppi-dist";
-            $COM_Object = "CrystalDesignRunTime.Application";
+        $data = [
+            'delivery_order'   => $result,
+            'warehouse_code'   => $result->warehouse->code ?? ($result->warehouse->name ?? '-'),
+            'customer_name'    => $result->member->name ?? '-',
+            'customer_city'    => $result->member->text_kota ?? '-',
+            'customer_address' => $result->member->address ?? '-',
+            'ekspedisi'        => $result->vendor->name ?? '-',
+            'items'            => $items,
+        ];
 
-            //-Create new COM object-depends on your Crystal Report version
-            $crapp= New COM($COM_Object) or die("Unable to Create Object");
-            $creport = $crapp->OpenReport($my_report,1); // call rpt report
+        $pdf = PDF::loadView($this->view.'print_manifest_pdf', $data);
+        $pdf->setPaper('a5', 'portrait');
 
-            //- Set database logon info - must have
-            $creport->Database->Tables(1)->SetLogOnInfo($my_server, $my_database, $my_user, $my_password);
-
-            //- field prompt or else report will hang - to get through
-            $creport->EnableParameterPrompting = FALSE;
-            $creport->RecordSelectionFormula = "{penjualan_do.id}= $result->id";
-
-
-            //export to PDF process
-            $creport->ExportOptions->DiskFileName=$my_pdf; //export to pdf
-            $creport->ExportOptions->PDFExportAllPages=true;
-            $creport->ExportOptions->DestinationType=1; // export to file
-            $creport->ExportOptions->FormatType=31; // PDF type
-            $creport->Export(false);
-
-            //------ Release the variables ------
-            $creport = null;
-            $crapp = null;
-            $ObjectFactory = null;
-
-            $file = 'C:\\xampp\\htdocs\\ppi-dist\\public\\cr\\packing_plan\\export\\'.$result->code.'.pdf';
-
-            header("Content-Description: File Transfer"); 
-            header("Content-Type: application/octet-stream"); 
-            header("Content-Transfer-Encoding: Binary"); 
-            header("Content-Disposition: attachment; filename=\"". basename($file) ."\""); 
-            ob_clean();
-            flush();
-            readfile ($file);
-            exit();
-
-            DB::commit();
-            return redirect()->route('superuser.penjualan.delivery_order.detail', $result->id)->with('success','Berhasil Print Manifest!');
-        }catch(\Throwable $e){
-            DB::rollback();
-            return redirect()->back()->with('error',$e->getMessage());
-        }
+        return $pdf->stream('PackingPlan-'.$result->do_code.'.pdf');
     }
 
     public function cancel_proses(Request $request)

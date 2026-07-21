@@ -37,6 +37,7 @@
         "org_heigl/ghostscript": "^2.3",
         "php-http/guzzle6-adapter": "^2.0",
         "php-http/message": "^1.8",
+        "phpoffice/phpspreadsheet": "^1.25",
         "pragmarx/google2fa": "^8.0",
         "pusher/pusher-php-server": "~3.0",
         "recca0120/terminal": "^1.8",

@@ -79,6 +79,8 @@ class Kernel extends HttpKernel
 
         // api key
         'verify.apikey' => \App\Http\Middleware\VerifyApiKey::class,
+
+        'picker.auth' => \App\Http\Middleware\PickerApiAuth::class,
     ];
 
     /**
