@@ -36,4 +36,11 @@ return [
         'whatsapp_from' => env('TWILIO_PHONE_NUMBER')
     ],
 
+    'ao_api' => [
+        'key' => env('AO_API_KEY'),
+        // Superuser fallback untuk created_by kalau pic_username tidak ketemu.
+        // ASUMSI: ganti dengan ID superuser yang memang layak jadi "pencipta" SO dari API.
+        'default_superuser_id' => env('AO_API_DEFAULT_SUPERUSER_ID', 1),
+    ],
+
 ];

@@ -140,6 +140,7 @@
         <form id="formAddSO">
           @csrf
           <div class="row">
+            <!-- KOLOM KIRI: Customer, Type Transaksi, Kurs & Disc %, Approval, Indent -->
             <div class="col-12 col-md-6">
               <div class="form-group">
                 <span class="form-label"><b>Customer </b> <span class="text-danger">*</span></span>
@@ -150,7 +151,59 @@
                   @endforeach
                 </select>
               </div>
+
+              <div class="form-row align-items-end">
+                <div class="form-group col-8">
+                  <span class="form-label"><b>Type Transaksi </b> <span class="text-danger">*</span></span>
+                  <select class="form-control js-select2" name="so_type" id="so_type" style="width:100%;" required>
+                    <option value="">Pilih Transaksi Type </option>
+                    @foreach(App\Entities\Penjualan\SalesOrder::TYPE_TRANSACTION as $row => $value)
+                    <option value="{{$value}}">{{$value}}</option>
+                    @endforeach
+                  </select>
+                </div>
+                <div class="form-group col-4" id="proforma-group" style="display:none;">
+                  <div class="custom-control custom-checkbox">
+                      <input type="checkbox" class="custom-control-input" 
+                            name="need_proforma" 
+                            id="need_proforma" 
+                            value="1">
+                      <label class="custom-control-label" for="need_proforma">
+                          <b>Butuh Proforma?</b>
+                      </label>
+                  </div>
+                </div>
+              </div>
+
+              <div class="form-row">
+                <div class="form-group col-6">
+                  <span class="form-label"><b>Kurs </b></span>
+                  <input class="form-control" type="text" name="kurs" id="kurs" inputmode="numeric" placeholder="cth: 15.500" required>
+                </div>
+                <div class="form-group col-6">
+                  <span class="form-label"><b>Disc % </b></span>
+                  <input class="form-control" type="text" name="disc_percent" id="disc_percent">
+                </div>
+              </div>
+
+              <div class="form-group">
+                <span class="form-label"><b>Indent </b> <span class="text-danger">*</span></span>
+                <select class="form-control js-select2" name="so_indent" id="indent_so" style="width:100%;" required>
+                  <option value="">Pilih status indent</option>
+                  <option value="0">NO</option>
+                  <option value="1">YES</option>
+                </select>
+              </div>
+
+              <div class="form-group">
+                <label class="form-check form-check-inline mb-0">
+                  <input class="form-check-input" type="checkbox" name="approval_spv" id="approval_spv" value="1">
+                  <span class="form-label"><b>Approval </b></span>
+                </label>
+              </div>
             </div>
+
+            <!-- KOLOM KANAN: Brand, Packaging/Kemasan, Note -->
             <div class="col-12 col-md-6">
               <div class="form-group">
                 <span class="form-label"><b>Brand </b> <span class="text-danger">*</span></span>
@@ -161,74 +214,25 @@
                   @endforeach
                 </select>
               </div>
-            </div>
-          </div>
-          <div class="row">
-            <div class="col-12 col-md-6">
+
               <div class="form-group">
-                <span class="form-label"><b>Type Transaksi </b> <span class="text-danger">*</span></span>
-                <select class="form-control js-select2" name="so_type" id="so_type" style="width:100%;" required>
-                  <option value="">Pilih Transaksi Type </option>
-                  @foreach(App\Entities\Penjualan\SalesOrder::TYPE_TRANSACTION as $row => $value)
-                  <option value="{{$value}}">{{$value}}</option>
+                <span class="form-label"><b>Kemasan </b> <span class="text-danger">*</span></span>
+                <select class="js-select2 form-control" id="packaging_id" name="packaging_id" style="width:100%;" data-placeholder="Pilih Kemasan" required>
+                  <option value="">Pilih Kemasan</option>
+                  @foreach($packaging as $row)
+                  <option value="{{$row->id}}">{{$row->pack_name}}</option>
                   @endforeach
                 </select>
               </div>
 
-              <!-- PROFORMA FLAG -->
-              <div class="form-group" id="proforma-group" style="display:none;">
-                  <div class="custom-control custom-checkbox">
-                      <input type="checkbox" class="custom-control-input" 
-                            name="need_proforma" 
-                            id="need_proforma" 
-                            value="1">
-                      <label class="custom-control-label" for="need_proforma">
-                          <b>Butuh Proforma?</b>
-                      </label>
-                  </div>
-              </div>
-            </div>
-            <div class="col-12 col-md-6">
               <div class="form-group">
-                <span class="form-label"><b>Indent </b> <span class="text-danger">*</span></span>
-                <select class="form-control js-select2" name="so_indent" id="indent_so" style="width:100%;" required>
-                  <option value="">Pilih status indent</option>
-                  <option value="0">NO</option>
-                  <option value="1">YES</option>
-                </select>
+                <span class="form-label"><b>Note </b></span>
+                <textarea class="form-control" name="note" id="editor" rows="4" col="10"></textarea>
+                <br>
+                <a class="btn btn-info" id="test" href="javascript:void(0);" title="">click</a>
               </div>
             </div>
           </div>
-
-            <div class="row">
-              <div class="col-12 col-md-6">
-                <div class="form-group">
-                  <span class="form-label"><b>Kurs </b>
-                  <!-- <input class="form-control" type="text" name="kurs" id="kurs"> -->
-                  <input class="form-control" type="text" name="kurs" id="kurs" pattern="^\d+$" title="Hanya angka tanpa titik/koma" placeholder="Masukkan angka bulat, contoh: 15500" required>
-                </div>
-                <div class="form-group">
-                  <span class="form-label"><b>Disc % </b>
-                  <input class="form-control" type="text" name="disc_percent" id="disc_percent">
-                </div>
-                <div class="form-group">
-                  <label class="form-check form-check-inline">
-                    <input class="form-check-input" type="checkbox" name="approval_spv" id="approval_spv" value="1">
-                    <span class="form-label"><b>Approval </b>
-                  </label>
-                </div>
-              </div>
-              <div class="col-12 col-md-6">
-                <div class="form-group">
-                  <span class="form-label"><b>Note </b>
-                  <textarea class="form-control" name="note" id="editor" rows="4" col="10"></textarea>
-                  <br>
-                  <a class="btn btn-info" id="test" href="javascript:void(0);" title="">click</a>
-                </div>
-              </div>
-            </div>
-          
-      </div>
       <div class="modal-footer">
         <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
         <a href="#" id="addSO" class="btn btn-primary btn-lg active" role="button" aria-pressed="true">Add</a>
@@ -418,6 +422,19 @@
 
         $('.js-select2').select2();
 
+        function formatRibuan(angka) {
+          var numberString = angka.replace(/[^\d]/g, '');
+          if (!numberString) return '';
+          return numberString.replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+        }
+
+        $(document).on('input', '#kurs', function () {
+          var cursorFromEnd = this.value.length - this.selectionStart;
+          this.value = formatRibuan(this.value);
+          var newPos = this.value.length - cursorFromEnd;
+          this.setSelectionRange(newPos, newPos);
+        });
+
         // Select2 di dalam modal Add SO butuh dropdownParent supaya search box berfungsi
         $('#exampleModal .js-select2').each(function () {
           $(this).select2({
@@ -427,21 +444,15 @@
         });
 
         $('#addSO').on('click', function (e) {
-          e.preventDefault();                 // cegah anchor
+          e.preventDefault();
           const form = document.getElementById('formAddSO');
 
-          if (!form.checkValidity()) {        // validasi HTML5
-            form.reportValidity();            // munculkan pesan bawaan
-            return;                           // batalkan AJAX
+          if (!form.checkValidity()) {
+            form.reportValidity();
+            return;
           }
 
-          var kurs = $('#kurs').val() || 1;
-
-          if (kurs.includes('.') || kurs.includes(',')) {
-              alert('Input "Kurs" tidak boleh mengandung titik atau koma. Masukkan angka bulat saja, contoh: 15500');
-              $('#kurs').focus();
-              return;
-          }
+          var kurs = ($('#kurs').val() || '').replace(/\./g, '') || '1';
 
           if (!/^\d+$/.test(kurs)) {
               alert('Input "Kurs" hanya boleh berupa angka bulat positif.');
@@ -449,40 +460,46 @@
               return;
           }
 
-            var customer = $('#account_member').val();
-            var merek = $('#merek_ppi').val();
-            var type_so = $('#so_type').val();
-            var indent_so = $('#indent_so').val();
-            var step_so = 1;
-            var note = $('#editor').val() || '-';
-            var kurs = $('#kurs').val() || 1;
-            var approval_spv = $('#approval_spv').is(':checked') ? 1 : 0;
-            var disc_percent = $('#disc_percent').val() || 0;
-            var need_proforma = $('#need_proforma').is(':checked') ? 1 : 0;
+          var customer = $('#account_member').val();
+          var merek = $('#merek_ppi').val();
+          var type_so = $('#so_type').val();
+          var indent_so = $('#indent_so').val();
+          var step_so = 1;
+          var note = $('#editor').val() || '-';
+          var approval_spv = $('#approval_spv').is(':checked') ? 1 : 0;
+          var disc_percent = $('#disc_percent').val() || 0;
+          var need_proforma = $('#need_proforma').is(':checked') ? 1 : 0;
+          var packaging_id = $('#packaging_id').val() || '';
 
-            // alert(need_proforma);
+          // Validasi tambahan: kemasan wajib dipilih
+          if (!packaging_id) {
+            Swal.fire('Perhatian', 'Kemasan wajib dipilih sebelum melanjutkan.', 'warning');
+            $('#packaging_id').select2('open');
+            return;
+          }
 
-            var url = '{{ route('superuser.penjualan.sales_order.create',  [":step", ":member", ":brand", ":type", ":indent", ":approval", ":note", ":kurs", ":disc_percent", ":need_proforma"]) }}';
-            url = url.replace(':member', customer); 
-            url = url.replace(':brand', merek); 
-            url = url.replace(':type', type_so);
-            url = url.replace(':indent', indent_so);
-            url = url.replace(':step', step_so);
-            url = url.replace(':approval', approval_spv);
-            url = url.replace(':kurs', kurs);
-            url = url.replace(':note', encodeURIComponent(note));
-            url = url.replace(':disc_percent', disc_percent);
-            url = url.replace(':need_proforma', need_proforma);
+          var url = '{{ route('superuser.penjualan.sales_order.create',  [":step", ":member", ":brand", ":type", ":indent", ":approval", ":note", ":kurs", ":disc_percent", ":need_proforma", ":packaging"]) }}';
+          url = url.replace(':member', customer);
+          url = url.replace(':brand', merek);
+          url = url.replace(':type', type_so);
+          url = url.replace(':indent', indent_so);
+          url = url.replace(':step', step_so);
+          url = url.replace(':approval', approval_spv);
+          url = url.replace(':kurs', kurs);
+          url = url.replace(':note', encodeURIComponent(note));
+          url = url.replace(':disc_percent', disc_percent);
+          url = url.replace(':need_proforma', need_proforma);
+          url = url.replace(':packaging', packaging_id); // <-- TAMBAHAN INI
 
-            $.ajax({
-                url: url,
-                type: 'GET',
-                headers: {'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')},
-                success:function(data)
-                {
+          $.ajax({
+              url: url,
+              type: 'GET',
+              headers: {'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')},
+              success:function(data)
+              {
                 window.location.href = url;
-                }
-            });
+              }
+          });
         });
 
         $('#exampleModal').on('hidden.bs.modal', function (e) {
@@ -539,32 +556,27 @@
 
         // HANDLE PROFORMA BASED ON SO TYPE
         $('#so_type').on('change', function () {
+          var type = $(this).val();
+          var group = $('#proforma-group');
+          var checkbox = $('#need_proforma');
 
-            var type = $(this).val();
-            var group = $('#proforma-group');
-            var checkbox = $('#need_proforma');
-
-            if (!type) {
-                group.hide();
-                checkbox.prop('checked', false);
-                return;
-            }
-
-            var typeUpper = type.toUpperCase();
-
-            if (typeUpper === 'CASH') {
-                group.show();
-                checkbox.prop('checked', true);
-            } 
-            else if (typeUpper === 'TEMPO') {
-                group.show();
-                checkbox.prop('checked', false);
-            } 
-            else {
-                group.hide();
-                checkbox.prop('checked', false);
-            }
-        });
+          if (!type) {
+              group.hide();
+              checkbox.prop('checked', false);
+              return;
+          }
+          var typeUpper = type.toUpperCase();
+          if (typeUpper === 'CASH') {
+              group.show();
+              checkbox.prop('checked', true);
+          } else if (typeUpper === 'TEMPO') {
+              group.show();
+              checkbox.prop('checked', false);
+          } else {
+              group.hide();
+              checkbox.prop('checked', false);
+          }
+      });
     })
 </script>
 @endpush

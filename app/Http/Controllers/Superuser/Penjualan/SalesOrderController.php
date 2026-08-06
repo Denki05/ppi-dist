@@ -178,6 +178,7 @@ class SalesOrderController extends Controller
         }
 
         $packing_order = PackingOrder::get();
+        $packaging = Packaging::where('status', Packaging::STATUS['ACTIVE'])->orderBy('pack_name')->get();
         
         // Filter addresses based on user access
         $filtered_other_address = CustomerOtherAddress::get()->filter(function($address) {
@@ -186,8 +187,9 @@ class SalesOrderController extends Controller
 
         $data = [
             'customers' => $customers,
-            'other_address' => $filtered_other_address, // Use filtered addresses
+            'other_address' => $filtered_other_address,
             'packing_order' => $packing_order,
+            'packaging' => $packaging,
             'brand' => $brand,
             'step' => $step,
             'step_txt' => SalesOrder::STEP[$step] ?? '',
@@ -302,7 +304,7 @@ class SalesOrderController extends Controller
      *
      * @return \Illuminate\Http\Response
      */
-    public function create(Request $request, $step, $member, $brand, $type, $indent, $approval, $note, $kurs, $disc_percent, $need_proforma)
+    public function create(Request $request, $step, $member, $brand, $type, $indent, $approval, $note, $kurs, $disc_percent, $need_proforma, $packaging = null)
     {
         // Access
         if(Auth::user()->is_superuser == 0){
@@ -326,7 +328,9 @@ class SalesOrderController extends Controller
         $idr_rate = is_numeric($kurs) ? (float) $kurs : 0;
         $disc = is_numeric($disc_percent) ? (float) $disc_percent : 0;
 
-        // dd($disc_percent);
+        $selected_packaging = (!empty($packaging) && is_numeric($packaging))
+            ? Packaging::find($packaging)
+            : null;
 
         $data = [
             'other_address' => $other_address,
@@ -346,9 +350,9 @@ class SalesOrderController extends Controller
             'idr_rate' => $idr_rate,
             'disc' => $disc,
             'is_proforma' => $need_proforma,
+            'selected_packaging' => $selected_packaging, // <-- TAMBAHAN INI
         ];
-        
-        
+
         return view($this->view."create",$data);
     }
 
@@ -393,7 +397,7 @@ class SalesOrderController extends Controller
                     $insert->so_date = null;
                     $insert->type_so = 'nonppn';
                     $insert->approval_mou = $request->approval;
-                    $insert->idr_rate = $request->kurs;
+                    $insert->idr_rate = str_replace(',', '.', $request->kurs);
                     $insert->catatan = $request->disc_percent;
                     $insert->note = $request->note_so;
                     $insert->is_proforma = $request->need_proforma ?? 0;
@@ -2353,51 +2357,11 @@ class SalesOrderController extends Controller
         return ['results' => $results];
     }
 
-    // public function get_product_pack(Request $request)
-    // {
-    //     if ($request->ajax()) {
-    //             $data = [];
-                
-    //             $product = Product::where('master_products.brand_name', $request->id)
-    //                     // ->where('master_products.status', 1)
-    //                     ->where('master_products.on_order', 1)
-    //                     ->leftJoin('master_products_packaging', 'master_products.id', '=', 'master_products_packaging.product_id')
-    //                     ->leftJoin('master_packaging', 'master_products_packaging.packaging_id', '=', 'master_packaging.id')
-    //                     ->leftJoin('master_product_types', 'master_products_packaging.type_id', '=', 'master_product_types.id')
-    //                     ->leftJoin('master_warehouses', 'master_products_packaging.warehouse_id', '=', 'master_warehouses.id')
-    //                     ->select('master_products_packaging.id as id' ,
-    //                                 'master_products_packaging.code as ProductCode', 
-    //                                 'master_products_packaging.name as productName', 
-    //                                 'master_products_packaging.price as productPrice', 
-    //                                 'master_packaging.id as  productPackagingID', 
-    //                                 'master_packaging.pack_name as productPackaging', 
-    //                                 'master_warehouses.name as warehouseName',
-    //                                 'master_product_types.name as typeName',
-    //                     )
-    //                     ->get();
-
-    //             foreach($product as $key){
-    //                 $data[] = [
-    //                     'id' => $key->id,
-    //                     'code' => $key->ProductCode,
-    //                     'name' => $key->productName,
-    //                     'price' => $key->productPrice,
-    //                     'packName' => $key->productPackaging,
-    //                     'packID' => $key->productPackagingID,
-    //                     'warehouseName' => $key->warehouseName,
-    //                     'typeName' => $key->typeName,
-    //                 ];
-    //             }
-
-    //             return response()->json(['code' => 200, 'data' => $data]);
-    //     }
-    // }
-
     public function get_product_pack(Request $request)
     {
         if (!$request->ajax()) {
             abort(403, 'Unauthorized');
-        }
+        }   
 
         try {
             // Validasi input dasar
@@ -2405,6 +2369,9 @@ class SalesOrderController extends Controller
             if (!$brand) {
                 return response()->json(['code' => 400, 'message' => 'Brand tidak valid']);
             }
+
+            // Opsional: filter berdasarkan packaging/kemasan yang sudah dipilih di popup Add SO
+            $packagingId = $request->packaging_id;
 
             // Gunakan select eksplisit + eager loading minimalis
             $products = Product::query()
@@ -2414,6 +2381,9 @@ class SalesOrderController extends Controller
                 ->join('master_packaging', 'master_products_packaging.packaging_id', '=', 'master_packaging.id')
                 ->leftJoin('master_product_types', 'master_products_packaging.type_id', '=', 'master_product_types.id')
                 ->leftJoin('master_warehouses', 'master_products_packaging.warehouse_id', '=', 'master_warehouses.id')
+                ->when(!empty($packagingId), function ($query) use ($packagingId) {
+                    $query->where('master_packaging.id', $packagingId);
+                })
                 ->select([
                     'master_products_packaging.id as id',
                     'master_products_packaging.code as ProductCode',

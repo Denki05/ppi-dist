@@ -37,16 +37,16 @@
     <input type="hidden" name="ajukankelanjutan" value="0">
     <input type="hidden" name="need_proforma" value="{{ $is_proforma }}">
     <div class="row">
-    <div class="col-12 col-lg-4">
+      <div class="col-4">
         <div class="block">
           <div class="block-content">
             <div class="form-row">
-              <div class="form-group col-md-4">
+              <div class="form-group col-md">
                 <label for="note">Type Transaksi</label>
                 <input type="text" class="form-control" value="{{ $type_transaction }}" name="type_transaction" readonly>
               </div>
 
-              <div class="form-group col-md-4">
+              <div class="form-group col-md">
                 <label for="note">Indent</label>
                 <?php 
                   $indent_type = $type_indent;
@@ -61,33 +61,36 @@
             </div>
 
             <div class="form-row">
-              <div class="form-group col-md-4">
+              <div class="form-group col-md">
                 <label for="note">Brand</label>
                 <input type="text" class="form-control" value="{{ $merek->brand_name }}" name="brand_name" id="brand_name" readonly>
               </div>
-              <div class="form-group col-md-4">
-                <label for="note">Kontrak</label>
-                <button type="button" class="btn btn-primary" data-toggle="modal" data-target="#addSoKontrak">
-                  <i class="fa fa-search" aria-hidden="true"></i> Kontrak
-                </button>
+              <div class="form-group col-md">
+                <label for="note">Kemasan</label>
+                <input type="text" class="form-control bg-light" value="{{ $selected_packaging->pack_name ?? '-' }}" readonly>
+                <input type="hidden" name="packaging_id" id="packaging_id" value="{{ $selected_packaging->id ?? '' }}">
+                @if(empty($selected_packaging))
+                  <small class="text-danger">Kemasan belum terdefinisi — kembali dan pilih kemasan terlebih dahulu.</small>
+                @endif
               </div>
             </div>
           </div>
         </div>
       </div>
 
-      <div class="col-12 col-lg-8">
+      <div class="col-8">
         <div class="block">
           <div class="block-content">
             <div class="row">
-              <div class="col-12 col-md-6">
+              <div class="col col-md-5">
                 <div class="form-row">
-                  <div class="form-group col-12 col-sm-6">
+                  <div class="form-group col-md-4">
                     <span class="form-label"><b>Kurs </b> <span class="text-danger">*</span></span>
-                    <input class="form-control" type="text" name="kurs" id="kurs" value="{{ $idr_rate }}" readonly>
+                    <input class="form-control" type="text" id="kurs_display" value="{{ number_format((float) $idr_rate, 2, ',', '.') }}" readonly>
+                    <input type="hidden" name="kurs" id="kurs" value="{{ number_format((float) $idr_rate, 2, ',', '') }}">
                   </div>
 
-                  <div class="form-group col-12 col-sm-6">
+                  <div class="form-group col-md-4">
                     <span class="form-label"><b>Disc % </b>
                     @if($approval_mou == 0)
                     <input class="form-control" type="text" name="disc_percent" id="disc_percent" value="{{ $disc }}" readonly>
@@ -97,7 +100,7 @@
                   </div>
                 </div>
                 <div class="form-row">
-                  <div class="form-group col-12">
+                  <div class="form-group col-md-8">
                     <span class="form-label"><b>Approval </b> <span class="text-danger">*</span></span>
                     <?php 
                       if($approval_mou == 0){
@@ -111,7 +114,7 @@
                   </div>
                 </div>
               </div>
-              <div class="col-12 col-md-6">
+              <div class="col col-md-6">
                 <div class="form-group">
                   <span class="form-label"><b>Note </b> <span class="text-danger">*</span></span>
                   <textarea class="form-control" name="note_so" id="editor" rows="4" col="10" readonly>{{ $note_so }}</textarea>
@@ -126,22 +129,33 @@
     <div class="row">
       <div class="col">
         <div class="block">
-          <div class="block-header">
-            <h2 class="block-title">#Add Product</h2>
-            <a href="#" class="row-add" data-id="0">
-              <button type="button" class="btn bg-gd-sea border-0 text-white">
-                <i class="fa fa-plus mr-10"></i> Row
+          <div class="block-header d-flex align-items-center justify-content-between flex-wrap" style="gap:8px;">
+            <h2 class="block-title mb-0">#Add Product</h2>
+            <div class="d-flex flex-wrap" style="gap:8px;">
+              <a href="#" class="row-add" data-id="0">
+                <button type="button" class="btn bg-gd-sea border-0 text-white">
+                  <i class="fa fa-plus mr-10"></i> Row
+                </button>
+              </a>
+              <button type="button" class="btn btn-primary" data-toggle="modal" data-target="#addSoKontrak">
+                <i class="fa fa-search mr-10" aria-hidden="true"></i> Kontrak
               </button>
-            </a>
+            </div>
           </div>
           <div class="block-content">
-            <div class="table-responsive">
+            <div id="loading-produk" class="text-center py-15" style="display:none;">
+              <i class="fa fa-spinner fa-spin fa-2x text-primary"></i>
+              <p class="mt-10 mb-0 text-muted">Memuat daftar produk...</p>
+            </div>
+            <div id="produk-empty-alert" class="alert alert-warning" style="display:none;"></div>
+
             <table id="datatables" class="table table-striped">
               <thead>
                 <tr>
                   <th class="text-center">Counter</th>
                   <th class="text-center">#</th>
                   <th class="text-center">Produk</th>
+                  <th class="text-center">Kemasan</th>
                   <th class="text-center">Price</th>
                   <th class="text-center">Qty</th>
                   <th class="text-center">Disc</th>
@@ -152,7 +166,6 @@
               <tbody>
               </tbody>
             </table>
-            </div>
           </div>
           <br>
         </div>
@@ -215,19 +228,6 @@
 
 @endsection
 
-@push('styles')
-<style>
-  @media (max-width: 991.98px) {
-    #datatables {
-      min-width: 900px;
-    }
-    .select2-container {
-      min-width: 180px;
-    }
-  }
-</style>
-@endpush
-
 @include('superuser.asset.plugin.select2')
 @include('superuser.asset.plugin.swal2')
 @include('superuser.asset.plugin.datatables')
@@ -237,7 +237,7 @@
 <script type="text/javascript">
   $(document).ready(function () {
 
-    $('.js-select2').not('.js-select2-kontrak').select2();
+    $('.js-select2').select2();
 
     $(document).on('click','.btn-simpan',function(){
       $('#frmCreate').find('input[name="ajukankelanjutan"]').val(0);
@@ -251,6 +251,12 @@
 
     $(document).on('submit','#frmCreate',function(e){
       e.preventDefault();
+
+      if (table.rows().count() === 0) {
+        Swal.fire('Perhatian', 'Tambahkan minimal 1 produk sebelum menyimpan SO.', 'warning');
+        return;
+      }
+
       if(confirm("Apakah anda yakin ingin menambakan sales order ini ?")){
         let _form = $('#frmCreate');
         $.ajax({
@@ -260,7 +266,7 @@
           data : $('#frmCreate').serializeArray(),
           dataType : "JSON",
           beforeSend : function(){
-            $('button[type="submit"]').html('Loading...');
+            $('.btn-simpan, .btn-simpan-dan-ajukan-ke-lanjutan').prop('disabled', true).html('<i class="fa fa-spinner fa-spin"></i> Menyimpan...');
           },
           success : function(resp){
             if(resp.IsError == true){
@@ -289,15 +295,15 @@
             );
           },
           complete : function(){
-            $('button[type="submit"]').html('<i class="fa fa-save"> Save</i>');
+            $('.btn-simpan').prop('disabled', false).html('<i class="fa fa-save"></i> Simpan');
+            $('.btn-simpan-dan-ajukan-ke-lanjutan').prop('disabled', false).html('<i class="fa fa-save"></i> Simpan dan ajukan ke Lanjutan');
           }
         })
       }
     })
 
     $(".js-select2-kontrak").select2({
-      dropdownParent: $('#addSoKontrak'),
-      width: '100%',
+      
       ajax: {
         url: '{{ route('superuser.penjualan.sales_order.search_kontrak', [$other_address->id, $merek->brand_name]) }}',
         dataType: 'json',
@@ -329,6 +335,7 @@
 
     var product_data = new Object();
     var product_kontrak = new Object();
+    var isProductLoading = false;
 
     var table = $('#datatables').DataTable({
         paging: false,
@@ -338,6 +345,7 @@
           {name: 'counter', "visible": false},
           {name: 'checkbox', orderable: false, width: "5%"},
           {name: 'sku', orderable: false, width: "40%"},
+          {name: 'kemasan', orderable: false, searcable: false, width: "15%"},
           {name: 'price', orderable: false, searcable: false, width: "10%"},
           {name: 'qty', orderable: false, searcable: false, width: "10%"},
           {name: 'disc', orderable: false, searcable: false, width: "10%"},
@@ -349,32 +357,58 @@
 
     var counter = 1;
 
-    $.ajax({
-      url: '{{ route('superuser.penjualan.sales_order.get_product_pack') }}',
-        data: {id:$('#brand_name').val() , _token: "{{csrf_token()}}"},
+    function loadProductList() {
+      isProductLoading = true;
+      $('#loading-produk').show();
+      $('#produk-empty-alert').hide();
+      $('a.row-add, #addModalKontrak').prop('disabled', true);
+
+      $.ajax({
+        url: '{{ route('superuser.penjualan.sales_order.get_product_pack') }}',
+        data: {
+          id: $('#brand_name').val(),
+          packaging_id: $('#packaging_id').val(),
+          _token: "{{csrf_token()}}"
+        },
         type: 'POST',
         cache: false,
         dataType: 'json',
         success: function(json) {
           if (json.code == 200) {
             product_data = json.data;
-
-            $.each( product_data, function( key, value ) {
-              var makeselect = '<option></option>';
-              $.map(product_data, function(val, i) {
-                  var label = val['code'] + ' - ' + val['name'] + ' - ' + val['packName'] + ' - ' + (val['typeName'] ?? val['warehouseName']);
-                  makeselect += '<option value="'+ val['id'] +'" data-name="'+ val['name'] +'" data-packname="'+ val['packName'] +'" data-price="'+ val['price'] +'" data-packid="'+ val['packID']+'">'+ label +'</option>';
-              });
-              // Tidak perlu append ke DOM di sini, cukup simpan di variable product_data
-              initailizeSelect2(); // Cukup 1x
-            });
+          } else {
+            product_data = {};
+            $('#produk-empty-alert')
+              .text('Tidak ada produk yang cocok dengan Brand & Kemasan ini.')
+              .show();
           }
+        },
+        error: function() {
+          Swal.fire('Error', 'Gagal memuat daftar produk. Coba muat ulang halaman.', 'error');
+        },
+        complete: function() {
+          isProductLoading = false;
+          $('#loading-produk').hide();
+          $('a.row-add, #addModalKontrak').prop('disabled', false);
         }
       });
+    }
+
+    loadProductList();
 
     $('a.row-add').on( 'click', function (e) {
       e.preventDefault();
       var typeAdd = $(this).data('id');
+
+      if (isProductLoading) {
+        Swal.fire('Tunggu', 'Daftar produk masih dimuat, coba lagi sebentar.', 'info');
+        return;
+      }
+      if ($.isEmptyObject(product_data)) {
+        Swal.fire('Perhatian', 'Tidak ada produk untuk Brand & Kemasan ini.', 'warning');
+        return;
+      }
+
       if($('#brand_name').val()) {
         if(typeAdd == 0){
           
@@ -382,19 +416,20 @@
         
           $.map( product_data, function( val, i ) {
             if(val['typeName'] === null){
-              makeselect += '<option value="'+ val['id'] +'" data-name="'+ val['name'] +'" data-packname="'+ val['packName'] +'" data-price="'+ val['price'] +'" data-packid="'+ val['packID']+'">'+ val['code'] + ' - ' + val['name'] + ' - ' + val['packName'] + ' - '+ val['warehouseName'] +'</option>';
+              makeselect += '<option value="'+ val['id'] +'" data-name="'+ val['name'] +'" data-packname="'+ val['packName'] +'" data-price="'+ val['price'] +'" data-packid="'+ val['packID']+'">'+ val['code'] + ' - ' + val['name'] + '</option>';
             } else {
-              makeselect += '<option value="'+ val['id'] +'" data-name="'+ val['name'] +'" data-packname="'+ val['packName'] +'" data-price="'+ val['price'] +'" data-packid="'+ val['packID']+'">'+ val['code'] + ' - ' + val['name'] + ' - ' + val['packName'] + ' - '+ val['typeName'] +'</option>';
+              makeselect += '<option value="'+ val['id'] +'" data-name="'+ val['name'] +'" data-packname="'+ val['packName'] +'" data-price="'+ val['price'] +'" data-packid="'+ val['packID']+'">'+ val['code'] + ' - ' + val['name'] + '</option>';
             }
             
           });
 
           makeselect += '</select>';
 
-          table.row.add([
+                    table.row.add([
                       counter,
                       '<input class="form-check-input" type="checkbox" value="0" name="check_kontrak" id="check_kontrak" disabled><input type="hidden" class="form-control" value="0" name="value_kontrak[]">',
                       makeselect,
+                      '<input type="text" class="form-control packaging-name-display" value="" disabled>',
                       '<input type="number" class="form-control" name="price[]" style="text-align: center;"><input type="hidden" class="form-control packaging" name="packaging[]">',
                       '<input type="number" class="form-control" name="qty[]" style="text-align: center;" required>',
                       '<input type="number" class="form-control" name="disc[]" style="text-align: center;">',
@@ -409,16 +444,17 @@
           makeselect = '<select class="js-select2 form-control js-ajax-kontrak" id="sku['+counter+']" name="sku[]" data-placeholder="Select Product" style="width:100%" required><option></option>';
 
           $.map( product_kontrak, function( val, i ) {
-            makeselect += '<option value="'+ val['product_id'] +'" data-kontrak="'+ val['kontrak_id'] +'" data-name="'+ val['product_name'] +'" data-code="'+ val['product_code'] +'" data-price="'+ val['product_price'] +'" data-packaging="'+ val['packaging_id'] +'" data-disc="'+ val['product_disc'] + '">'+ val['product_code'] + ' - ' + val['product_name'] + ' - ' + val['packaging_name']  +'</option>';
+            makeselect += '<option value="'+ val['product_id'] +'" data-kontrak="'+ val['kontrak_id'] +'" data-name="'+ val['product_name'] +'" data-code="'+ val['product_code'] +'" data-price="'+ val['product_price'] +'" data-packaging="'+ val['packaging_id'] +'" data-packname="'+ val['packaging_name'] +'" data-disc="'+ val['product_disc'] + '">'+ val['product_code'] + ' - ' + val['product_name'] + ' - ' + val['packaging_name']  +'</option>';
           });
 
           makeselect += '</select>';
 
-          table.row.add([
-                    counter,
-                    '<input class="form-check-input" type="checkbox" value="1" name="check_kontrak" id="check_kontrak" disabled checked><input type="hidden" class="form-control" value="1" name="value_kontrak[]"><input type="hidden" class="form-control" name="kontrak_so_id[]">',
-                    makeselect,
-                    '<input type="number" class="form-control" name="price[]" style="text-align: center;" readonly><input type="hidden" class="form-control packaging" name="packaging[]">',
+                table.row.add([
+                  counter,
+                  '<input class="form-check-input" type="checkbox" value="1" name="check_kontrak" id="check_kontrak" disabled checked><input type="hidden" class="form-control" value="1" name="value_kontrak[]"><input type="hidden" class="form-control" name="kontrak_so_id[]">',
+                  makeselect,
+                  '<input type="text" class="form-control packaging-name-display" value="" disabled>',
+                  '<input type="number" class="form-control" name="price[]" style="text-align: center;" readonly><input type="hidden" class="form-control packaging" name="packaging[]">',
                     '<input type="number" class="form-control noscroll" name="qty[]" style="text-align: center;" required>',
                     '<input type="number" class="form-control noscroll usd_disc" style="text-align: center;" name="disc[]">',
                     '<input type="checkbox" class="form-check-input input-gift" id="gift" name="gift" disabled><input class="form-control input-free" type="hidden" id="free_product" value="0" name="free_product[]">',
@@ -441,6 +477,9 @@
 
         var pack = $(this).find(':selected').data('packid');
         $(this).parents('tr').find('input[name="packaging[]"]').val(pack);
+
+        var packName = $(this).find(':selected').data('packname');
+        $(this).parents('tr').find('.packaging-name-display').val(packName);
       });
 
     };
@@ -460,16 +499,32 @@
 
         var pack = $(this).find(':selected').data('packaging');
         $(this).parents('tr').find('input[name="packaging[]"]').val(pack);
+
+        var packName = $(this).find(':selected').data('packname');
+        $(this).parents('tr').find('.packaging-name-display').val(packName);
       });
     }
 
     $('#datatables tbody').on( 'click', '.row-delete', function (e) {
       e.preventDefault();
-      table.row( $(this).parents('tr') ).remove().draw();
+      var $row = $(this).parents('tr');
 
-      if(typeof $('input[name="id[]"]').val() == 'undefined') {
-        $('#submit-table').prop('disabled', true);
-      }
+      Swal.fire({
+        title: 'Hapus baris ini?',
+        text: 'Data produk pada baris ini akan dihapus dari SO.',
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonText: 'Ya, hapus',
+        cancelButtonText: 'Batal'
+      }).then((result) => {
+        if (result.isConfirmed) {
+          table.row($row).remove().draw();
+
+          if(typeof $('input[name="id[]"]').val() == 'undefined') {
+            $('#submit-table').prop('disabled', true);
+          }
+        }
+      });
     });
 
     $('#datatables tbody').on( 'click', '.input-gift', function (e) {
