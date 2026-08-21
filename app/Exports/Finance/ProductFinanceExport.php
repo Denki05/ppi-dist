@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Exports\Master;
+namespace App\Exports\Finance;
 
 use App\Entities\Master\Product;
 use App\Entities\Master\ProductPack;

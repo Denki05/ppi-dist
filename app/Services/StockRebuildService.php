@@ -295,4 +295,292 @@ class StockRebuildService
     
         return $code . ' - ' . $type;
     }
+
+    /*
+    |--------------------------------------------------------------------------
+    | REBUILD PER VARIANT (Selective, full-history, delete + rewrite)
+    |--------------------------------------------------------------------------
+    | Beda dengan process() global: scoped ke product_packaging_id tertentu,
+    | baca LANGSUNG dari tabel sumber (bukan lewat temp_in/out/trans),
+    | hapus stock_move lama (KECUALI baris OPENING-%), lalu tulis ulang
+    | secara kronologis dari SELURUH histori (tanpa batas tanggal).
+    |--------------------------------------------------------------------------
+    */
+    public function rebuildForVariants(array $productPackagingIds, $warehouseId)
+    {
+        $productPackagingIds = array_values(array_unique($productPackagingIds));
+
+        if (empty($productPackagingIds) || !$warehouseId) {
+            throw new \Exception('Variant dan Warehouse wajib dipilih.');
+        }
+
+        $summary = [];
+
+        DB::transaction(function () use ($productPackagingIds, $warehouseId, &$summary) {
+
+            $stockService = new \App\Services\StockService();
+
+            foreach ($productPackagingIds as $productId) {
+
+                // 1. Hapus stock_move lama, KECUALI baris OPENING (saldo awal manual, tidak punya sumber)
+                DB::table('stock_move')
+                    ->where('warehouse_id', $warehouseId)
+                    ->where('product_packaging_id', $productId)
+                    ->where('code_transaction', 'not like', 'OPENING-%')
+                    ->delete();
+
+                // 2. Kumpulkan SELURUH histori transaksi utk variant ini dari semua sumber
+                $collected = $this->collectAllHistoryForVariant($productId, $warehouseId);
+
+                // 3. Urutkan kronologis (tanggal, lalu reference_id sbg tie-breaker stabil)
+                usort($collected, function ($a, $b) {
+                    $dateA = strtotime($a['doc_date']);
+                    $dateB = strtotime($b['doc_date']);
+                    if ($dateA === $dateB) {
+                        return $a['reference_id'] <=> $b['reference_id'];
+                    }
+                    return $dateA <=> $dateB;
+                });
+
+                // 4. Tulis ulang satu per satu lewat "1 pintu" StockService
+                //    (otomatis nyambung ke saldo OPENING yang dipertahankan di stock_move)
+                foreach ($collected as $row) {
+                    $stockService->replayHistoricalLog(
+                        $warehouseId,
+                        $productId,
+                        $row['qty'],
+                        $row['type'], // 'IN' / 'OUT'
+                        $row['doc_code'],
+                        date('Y-m-d H:i:s', strtotime($row['doc_date'])),
+                        $row['note']
+                    );
+                }
+
+                // 5. Set quantity fisik = saldo TERAKHIR stock_move (sumber kebenaran tunggal)
+                $lastBalance = DB::table('stock_move')
+                    ->where('warehouse_id', $warehouseId)
+                    ->where('product_packaging_id', $productId)
+                    ->orderBy('created_at', 'desc')
+                    ->orderBy('id', 'desc')
+                    ->value('stock_balance');
+
+                \App\Entities\Master\ProductMinStock::updateOrCreate(
+                    ['warehouse_id' => $warehouseId, 'product_packaging_id' => $productId],
+                    ['quantity' => $lastBalance ?? 0]
+                );
+
+                $summary[$productId] = count($collected);
+            }
+
+            // 6. Reset & hitung ulang reserved_quantity KHUSUS variant-variant ini saja
+            $this->recalculateReservedQuantityForVariants($productPackagingIds, $warehouseId);
+        });
+
+        return $summary;
+    }
+
+    /*
+    |--------------------------------------------------------------------------
+    | Kumpulkan seluruh histori (all-time) untuk 1 variant dari semua sumber
+    |--------------------------------------------------------------------------
+    */
+    private function collectAllHistoryForVariant($productId, $warehouseId)
+    {
+        $rows = [];
+
+        // === A. RECEIVING (INBOUND & RETUR) — status ACC ===
+        \App\Entities\Gudang\Receiving::with('details')
+            ->where('warehouse_id', $warehouseId)
+            ->where('status', \App\Entities\Gudang\Receiving::STATUS['ACC'])
+            ->whereHas('details', function ($q) use ($productId) {
+                $q->where('product_packaging_id', $productId)->where('quantity_ri', '>', 0);
+            })
+            ->chunk(100, function ($receivings) use ($productId, &$rows) {
+                foreach ($receivings as $receiving) {
+                    foreach ($receiving->details as $detail) {
+                        if ($detail->product_packaging_id != $productId || $detail->quantity_ri <= 0) continue;
+
+                        $rows[] = [
+                            'type'         => 'IN',
+                            'qty'          => (float) $detail->quantity_ri,
+                            'doc_code'     => 'RI-' . $receiving->code,
+                            'doc_date'     => $receiving->acc_at ?? $receiving->created_at,
+                            'note'         => 'Receiving ACC - ' . ($detail->product_pack->name ?? $receiving->code),
+                            'reference_id' => $receiving->id,
+                        ];
+                    }
+                }
+            });
+
+        // === B. STOCK ADJUSTMENT (gudang_stock_adjustment) — IN (plus) & OUT (min) ===
+        \App\Entities\Gudang\StockAdjustment::where('warehouse_id', $warehouseId)
+            ->where('product_packaging_id', $productId)
+            ->chunk(100, function ($adjustments) use (&$rows) {
+                foreach ($adjustments as $adj) {
+                    if ((float) $adj->plus > 0) {
+                        $rows[] = [
+                            'type'         => 'IN',
+                            'qty'          => (float) $adj->plus,
+                            'doc_code'     => 'ADJ-' . $adj->code,
+                            'doc_date'     => $adj->created_at,
+                            'note'         => 'Stock Adjustment - ' . ($adj->note ?? $adj->code),
+                            'reference_id' => $adj->id,
+                        ];
+                    }
+                    if ((float) $adj->min > 0) {
+                        $rows[] = [
+                            'type'         => 'OUT',
+                            'qty'          => (float) $adj->min,
+                            'doc_code'     => 'ADJ-' . $adj->code,
+                            'doc_date'     => $adj->created_at,
+                            'note'         => 'Stock Adjustment - ' . ($adj->note ?? $adj->code),
+                            'reference_id' => $adj->id,
+                        ];
+                    }
+                }
+            });
+
+        // === C. SPK STOCK OUT — SEMUA (tanpa whitelist), tetap hardcode warehouse Araya (id 2)
+        //     mengikuti aturan bisnis yang sama seperti collectSPKStockOut() di StockController.
+        if ((int) $warehouseId === 2) {
+            \App\Entities\Gudang\PurchaseOrder::with('purchase_order_detail')
+                ->where('type', 0)   // SPK
+                ->where('status', 4) // ACC / SENT
+                ->whereHas('purchase_order_detail', function ($q) use ($productId) {
+                    $q->where('product_packaging_id', $productId)->where('quantity', '>', 0);
+                })
+                ->chunk(100, function ($orders) use ($productId, &$rows) {
+                    foreach ($orders as $order) {
+                        foreach ($order->purchase_order_detail as $item) {
+                            if ($item->product_packaging_id != $productId || $item->quantity <= 0) continue;
+
+                            $rows[] = [
+                                'type'         => 'OUT',
+                                'qty'          => (float) $item->quantity,
+                                'doc_code'     => $order->code,
+                                'doc_date'     => $order->created_at,
+                                'note'         => $order->code . ' - SPK',
+                                'reference_id' => $order->id,
+                            ];
+                        }
+                    }
+                });
+        }
+
+        // === D. MUTASI SHOWROOM — OUT dari warehouse asal ===
+        \App\Entities\Gudang\MutasiShowroom::with('details')
+            ->where('warehouse_from_id', $warehouseId)
+            ->where('status', 2)
+            ->where('status_checked', 1)
+            ->where('status_barang', 2)
+            ->where('type', '!=', 5)
+            ->whereHas('details', function ($q) use ($productId) {
+                $q->where('product_packaging_id', $productId)->where('qty', '>', 0);
+            })
+            ->chunk(100, function ($mutasis) use ($productId, &$rows) {
+                foreach ($mutasis as $mutasi) {
+                    foreach ($mutasi->details as $item) {
+                        if ($item->product_packaging_id != $productId || $item->qty <= 0) continue;
+
+                        $rows[] = [
+                            'type'         => 'OUT',
+                            'qty'          => (float) $item->qty,
+                            'doc_code'     => $mutasi->kode,
+                            'doc_date'     => $mutasi->tanggal ?? $mutasi->created_at,
+                            'note'         => 'Mutasi Showroom - DIAMBIL',
+                            'reference_id' => $mutasi->id,
+                        ];
+                    }
+                }
+            });
+
+        // === E. MUTASI OUT — OUT dari warehouse asal ===
+        \App\Entities\Gudang\MutasiOut::with('mutasiOutDetails')
+            ->where('warehouse_from', $warehouseId)
+            ->where('status', 3)
+            ->whereHas('mutasiOutDetails', function ($q) use ($productId) {
+                $q->where('product_packaging_id', $productId)->where('quantity', '>', 0);
+            })
+            ->chunk(100, function ($mutasis) use ($productId, &$rows) {
+                foreach ($mutasis as $mutasi) {
+                    foreach ($mutasi->mutasiOutDetails as $item) {
+                        if ($item->product_packaging_id != $productId || $item->quantity <= 0) continue;
+
+                        $rows[] = [
+                            'type'         => 'OUT',
+                            'qty'          => (float) $item->quantity,
+                            'doc_code'     => $mutasi->code,
+                            'doc_date'     => $mutasi->date ?? $mutasi->created_at,
+                            'note'         => 'Mutasi Gudang - DIAMBIL',
+                            'reference_id' => $mutasi->id,
+                        ];
+                    }
+                }
+            });
+
+        // === F. PACKING ORDER (DO / Nota Jual) — OUT ===
+        \App\Entities\Penjualan\PackingOrder::with('do_detail')
+            ->where('warehouse_id', $warehouseId)
+            ->where('status', 6)
+            ->whereHas('do_detail', function ($q) use ($productId) {
+                $q->where('product_packaging_id', $productId)->where('qty', '>', 0);
+            })
+            ->chunk(100, function ($orders) use ($productId, &$rows) {
+                foreach ($orders as $order) {
+                    foreach ($order->do_detail as $item) {
+                        if ($item->product_packaging_id != $productId || $item->qty <= 0) continue;
+
+                        $rows[] = [
+                            'type'         => 'OUT',
+                            'qty'          => (float) $item->qty,
+                            'doc_code'     => $order->do_code,
+                            'doc_date'     => $order->created_at,
+                            'note'         => $order->do_code . ' - TRANSAKSI / NOTA',
+                            'reference_id' => $order->id,
+                        ];
+                    }
+                }
+            });
+
+        return $rows;
+    }
+
+    /*
+    |--------------------------------------------------------------------------
+    | Reset & hitung ulang reserved_quantity KHUSUS variant-variant terpilih
+    |--------------------------------------------------------------------------
+    */
+    private function recalculateReservedQuantityForVariants(array $productPackagingIds, $warehouseId)
+    {
+        \App\Entities\Master\ProductMinStock::where('warehouse_id', $warehouseId)
+            ->whereIn('product_packaging_id', $productPackagingIds)
+            ->update(['reserved_quantity' => 0]);
+
+        $activePackingOrders = \App\Entities\Penjualan\PackingOrder::with('do_detail')
+            ->where('warehouse_id', $warehouseId)
+            ->whereHas('so', function ($query) {
+                $query->where('status', 4);
+            })
+            ->where('status', 3)
+            ->get();
+
+        foreach ($activePackingOrders as $po) {
+            if (!$po->warehouse_id) continue;
+
+            foreach ($po->do_detail as $item) {
+                $baseId = preg_replace('/_\d+$/', '', $item->product_packaging_id);
+
+                if (!in_array($baseId, $productPackagingIds)) continue;
+
+                $stock = \App\Entities\Master\ProductMinStock::where('warehouse_id', $po->warehouse_id)
+                    ->where('product_packaging_id', $baseId)
+                    ->first();
+
+                if ($stock) {
+                    $stock->reserved_quantity += $item->qty;
+                    $stock->save();
+                }
+            }
+        }
+    }
 }

@@ -687,11 +687,26 @@
                         $('#invoice_table tbody tr').removeClass('selected-row');
                         $('#balance_checkbox').prop('checked', false).prop('disabled', true);
                     } else {
-                        alert('Terjadi kesalahan: ' + res.message);
+                        // Backend gagal validasi -> TIDAK ADA data yang tersimpan (semua batal).
+                        // Beri tahu user dengan jelas invoice mana yang bermasalah,
+                        // supaya dia bisa perbaiki draft sebelum coba Settle lagi.
+                        alert(
+                            'Penyimpanan DIBATALKAN, tidak ada data yang tersimpan.\n\n' +
+                            'Alasan: ' + res.message + '\n\n' +
+                            'Silakan periksa invoice yang bermasalah, lalu klik Settle lagi.'
+                        );
+                        // draftData SENGAJA tidak direset di sini, supaya user
+                        // masih bisa lihat/koreksi antrian yang sudah diproses,
+                        // TAPI ingatkan bahwa belum ada yang tersimpan di server.
                     }
                 },
                 error: function (xhr) {
-                    alert("Terjadi kesalahan saat menyimpan!");
+                    let msg = 'Terjadi kesalahan saat menyimpan!';
+                    try {
+                        let json = JSON.parse(xhr.responseText);
+                        if (json.message) msg += '\n\nDetail: ' + json.message;
+                    } catch (e) {}
+                    alert(msg + '\n\nData BELUM tersimpan, silakan coba Settle lagi.');
                     console.error(xhr.responseText);
                 }
             });

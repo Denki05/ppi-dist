@@ -96,6 +96,7 @@
                       <th>Hutang(Asing)</th>
                       <th>Tempo</th>
                       <th>Status Faktur</th>
+                      <th>Officer</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -145,6 +146,7 @@
             columns: [
                 { data: 'account_customer' },
                 { data: 'no_faktur' },
+                
                 {
                     data: 'tanggal_faktur',
                     render: {
@@ -189,6 +191,7 @@
                 },
                 { data: 'diff_days' },
                 { data: 'status_faktur' },
+                { data: 'officer' },
             ],
             order: [[0, 'asc'], [1, 'asc']],
             rowGroup: {
@@ -213,7 +216,7 @@
                       .append('<td colspan="2" style="background-color: #bfbfbf;"></td>')
                       .append(`<td style="font-weight:bold; background:#bfbfbf;">${rupiah(totalNilaiFaktur)}</td>`)
                       .append(`<td style="font-weight:bold; background:#bfbfbf;">${rupiah(totalHutangAsing)}</td>`)
-                      .append('<td colspan="3" style="background-color: #bfbfbf;"></td>');
+                      .append('<td colspan="4" style="background-color: #bfbfbf;"></td>');
                 }
             },
             columnDefs: [

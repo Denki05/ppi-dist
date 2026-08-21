@@ -23,6 +23,9 @@ Route::group([
         Route::post('/import2', 'StockController@import2')->name('import2');
         Route::post('/rebuildStock', 'StockController@rebuildStock')->name('rebuildStock');
 
+        Route::post('/rebuild-variants', 'StockController@rebuildForVariants')->name('rebuildVariants');
+        Route::get('/search-products', 'StockController@searchProducts')->name('searchProducts');
+
         // ✅ TAMBAHKAN 3 BARIS INI
         Route::get('/audit-products',   'StockController@auditProducts')->name('auditProducts');
         Route::get('/audit-log-json',   'StockController@auditLogJson')->name('auditLogJson');

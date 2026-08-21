@@ -417,6 +417,7 @@ class ProductController extends Controller
                     $product->note                   = $request->note;
                     $product->default_quantity       = $request->default_quantity ?? null;
                     $product->ratio                  = $request->ratio;
+                    $product->vendor_id                 = $request->factory;
 
                     if (!empty($request->file('image'))) {
                         if (is_file_exists(Product::$directory_image . $product->image)) {

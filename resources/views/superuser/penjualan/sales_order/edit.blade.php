@@ -501,11 +501,11 @@
               else{
                 // SweetAlert Berhasil Sesudah Save
                 Swal.fire(
-                  'Success!',
-                  resp.Message,
-                  'success'
-                ).then((result) => {
-                  location.reload();
+                    'Success!',
+                    resp.Message,
+                    'success'
+                ).then(() => {
+                    window.location.href = "{{ route('superuser.penjualan.sales_order.index_' . strtolower($step_txt)) }}";
                 });
               }
             },

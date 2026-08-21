@@ -169,22 +169,16 @@ class SalesOrderController extends Controller
 
         // Filter brand berdasarkan division
         $userDivision = Auth::user()->division;
-        $userId = Auth::id();
-
-        $fullAccessUsers = [35];
-
-        if (
-            !in_array($userDivision, ['Admin', 'Developer', 'Management'])
-            && !in_array($userId, $fullAccessUsers)
-        ) {
+        if(!in_array($userDivision, ['Admin', 'Developer', 'Management'])){
+            // Jika bukan Admin/Developer/Management, hanya tampilkan brand tertentu
             $allowedBrands = ['GCF', 'Senses', 'PPI FF', 'PPI NON FF'];
-
-            $brand = $brand->filter(function ($b) use ($allowedBrands) {
+            $brand = $brand->filter(function($b) use ($allowedBrands){
                 return in_array($b->brand_name, $allowedBrands);
             });
         }
 
         $packing_order = PackingOrder::get();
+        $packaging = Packaging::where('status', Packaging::STATUS['ACTIVE'])->orderBy('pack_name')->get();
         
         // Filter addresses based on user access
         $filtered_other_address = CustomerOtherAddress::get()->filter(function($address) {
@@ -193,8 +187,9 @@ class SalesOrderController extends Controller
 
         $data = [
             'customers' => $customers,
-            'other_address' => $filtered_other_address, // Use filtered addresses
+            'other_address' => $filtered_other_address,
             'packing_order' => $packing_order,
+            'packaging' => $packaging,
             'brand' => $brand,
             'step' => $step,
             'step_txt' => SalesOrder::STEP[$step] ?? '',
@@ -309,7 +304,7 @@ class SalesOrderController extends Controller
      *
      * @return \Illuminate\Http\Response
      */
-    public function create(Request $request, $step, $member, $brand, $type, $indent, $approval, $note, $kurs, $disc_percent, $need_proforma)
+    public function create(Request $request, $step, $member, $brand, $type, $indent, $approval, $note, $kurs, $disc_percent, $need_proforma, $packaging = null)
     {
         // Access
         if(Auth::user()->is_superuser == 0){
@@ -333,7 +328,9 @@ class SalesOrderController extends Controller
         $idr_rate = is_numeric($kurs) ? (float) $kurs : 0;
         $disc = is_numeric($disc_percent) ? (float) $disc_percent : 0;
 
-        // dd($disc_percent);
+        $selected_packaging = (!empty($packaging) && is_numeric($packaging))
+            ? Packaging::find($packaging)
+            : null;
 
         $data = [
             'other_address' => $other_address,
@@ -353,9 +350,9 @@ class SalesOrderController extends Controller
             'idr_rate' => $idr_rate,
             'disc' => $disc,
             'is_proforma' => $need_proforma,
+            'selected_packaging' => $selected_packaging, // <-- TAMBAHAN INI
         ];
-        
-        
+
         return view($this->view."create",$data);
     }
 
@@ -400,7 +397,7 @@ class SalesOrderController extends Controller
                     $insert->so_date = null;
                     $insert->type_so = 'nonppn';
                     $insert->approval_mou = $request->approval;
-                    $insert->idr_rate = $request->kurs;
+                    $insert->idr_rate = str_replace(',', '.', $request->kurs);
                     $insert->catatan = $request->disc_percent;
                     $insert->note = $request->note_so;
                     $insert->is_proforma = $request->need_proforma ?? 0;
@@ -1447,12 +1444,17 @@ class SalesOrderController extends Controller
                         $discount_kemasan_idr = str_replace('.', '', $discount_kemasan_idr);
                         $sub_total = str_replace('.', '', $sub_total);
                         $grand_total_idr = str_replace('.', '', $grand_total_idr);
-                        
+
                         // ubah decimal koma ke titik
                         $discount_agen_idr = str_replace(',', '.', $discount_agen_idr);
                         $discount_kemasan_idr = str_replace(',', '.', $discount_kemasan_idr);
                         $sub_total = str_replace(',', '.', $sub_total);
                         $grand_total_idr = str_replace(',', '.', $grand_total_idr);
+
+                        // ✅ Tambahan: bersihkan field yang sebelumnya masih raw
+                        $disc_tambahan_idr = $this->cleanCurrency($request->disc_tambahan_idr);
+                        $voucher_idr = $this->cleanCurrency($request->voucher_idr);
+                        $delivery_cost_idr = $this->cleanCurrency($request->delivery_cost_idr);
 
                         $packing_order_detail = new PackingOrderDetail;
                         $packing_order_detail->do_id = $packing_order->id;
@@ -1460,11 +1462,11 @@ class SalesOrderController extends Controller
                         $packing_order_detail->discount_1_idr = $discount_agen_idr;
                         $packing_order_detail->discount_2 = $request->disc_kemasan_percent;
                         $packing_order_detail->discount_2_idr = $discount_kemasan_idr;
-                        $packing_order_detail->discount_idr = $request->disc_tambahan_idr;
-                        $packing_order_detail->voucher_idr = $request->voucher_idr;
+                        $packing_order_detail->discount_idr = $disc_tambahan_idr;
+                        $packing_order_detail->voucher_idr = $voucher_idr;
                         $packing_order_detail->purchase_total_idr = $sub_total;
                         if($sales_order->shipping_cost_buyer == 0){
-                            $packing_order_detail->delivery_cost_idr = $request->delivery_cost_idr;
+                            $packing_order_detail->delivery_cost_idr = $delivery_cost_idr;
                         }elseif($sales_order->shipping_cost_buyer == 1){
                             $packing_order_detail->delivery_cost_idr = 0;
                         }
@@ -1895,7 +1897,6 @@ class SalesOrderController extends Controller
                         // definisi hasil penjumlahan di view
                         $discount_agen_idr = $request->disc_agen_idr;
                         $discount_kemasan_idr = $request->disc_kemasan_idr;
-                        $disc_tambahan_idr = $request->disc_tambahan_idr;
                         $sub_total = $request->subtotal_2;
                         $grand_total_idr = $request->grand_total_idr;
 
@@ -1904,12 +1905,17 @@ class SalesOrderController extends Controller
                         $discount_kemasan_idr = str_replace('.', '', $discount_kemasan_idr);
                         $sub_total = str_replace('.', '', $sub_total);
                         $grand_total_idr = str_replace('.', '', $grand_total_idr);
-                        
+
                         // ubah decimal koma ke titik
                         $discount_agen_idr = str_replace(',', '.', $discount_agen_idr);
                         $discount_kemasan_idr = str_replace(',', '.', $discount_kemasan_idr);
                         $sub_total = str_replace(',', '.', $sub_total);
                         $grand_total_idr = str_replace(',', '.', $grand_total_idr);
+
+                        // ✅ Tambahan: bersihkan field yang sebelumnya masih raw
+                        $disc_tambahan_idr = $this->cleanCurrency($request->disc_tambahan_idr);
+                        $voucher_idr = $this->cleanCurrency($request->voucher_idr);
+                        $delivery_cost_idr = $this->cleanCurrency($request->delivery_cost_idr);
         
                         $valuePoDetail[] = [
                             'discount_1' => $request->disc_agen_percent,
@@ -1917,9 +1923,9 @@ class SalesOrderController extends Controller
                             'discount_1_idr' => $discount_agen_idr,
                             'discount_2_idr' => $discount_kemasan_idr,
                             'discount_idr' => $disc_tambahan_idr,
-                            'voucher_idr' => $request->voucher_idr,
+                            'voucher_idr' => $voucher_idr,
                             'purchase_total_idr' => $sub_total,
-                            'delivery_cost_idr' => $request->delivery_cost_idr,
+                            'delivery_cost_idr' => $delivery_cost_idr,
                             'other_cost_idr' => $request->resi_ongkir ?? 0,
                             'grand_total_idr' => $grand_total_idr,
                             'updated_by' => Auth::id(),
@@ -2411,7 +2417,7 @@ class SalesOrderController extends Controller
     {
         if (!$request->ajax()) {
             abort(403, 'Unauthorized');
-        }
+        }   
 
         try {
             // Validasi input dasar
@@ -2419,6 +2425,9 @@ class SalesOrderController extends Controller
             if (!$brand) {
                 return response()->json(['code' => 400, 'message' => 'Brand tidak valid']);
             }
+
+            // Opsional: filter berdasarkan packaging/kemasan yang sudah dipilih di popup Add SO
+            $packagingId = $request->packaging_id;
 
             // Gunakan select eksplisit + eager loading minimalis
             $products = Product::query()
@@ -2428,6 +2437,9 @@ class SalesOrderController extends Controller
                 ->join('master_packaging', 'master_products_packaging.packaging_id', '=', 'master_packaging.id')
                 ->leftJoin('master_product_types', 'master_products_packaging.type_id', '=', 'master_product_types.id')
                 ->leftJoin('master_warehouses', 'master_products_packaging.warehouse_id', '=', 'master_warehouses.id')
+                ->when(!empty($packagingId), function ($query) use ($packagingId) {
+                    $query->where('master_packaging.id', $packagingId);
+                })
                 ->select([
                     'master_products_packaging.id as id',
                     'master_products_packaging.code as ProductCode',
@@ -2810,5 +2822,19 @@ class SalesOrderController extends Controller
         ];
 
         return response()->json($data);
+    }
+
+    /**
+     * Membersihkan format angka dari input (titik ribuan -> hilang, koma desimal -> titik)
+     * agar aman disimpan ke kolom decimal.
+     */
+    private function cleanCurrency($value)
+    {
+        if ($value === null || $value === '') {
+            return 0;
+        }
+        $value = str_replace('.', '', $value);   // buang titik ribuan
+        $value = str_replace(',', '.', $value);  // koma jadi titik desimal
+        return $value;
     }
 }

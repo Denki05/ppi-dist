@@ -134,7 +134,7 @@
             { data: 'grand_total_idr', render: $.fn.dataTable.render.number('.', ',', 2, 'Rp. '), searchable: false },
             { data: 'action' },
         ],
-        order: [[0, 'desc']],
+        order: [[2, 'desc']],
         pageLength: 10,
     });
 

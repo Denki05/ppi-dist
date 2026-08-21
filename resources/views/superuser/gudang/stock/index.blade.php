@@ -265,28 +265,54 @@ body{ background:#1f242a; font-family: "Segoe UI", Roboto, sans-serif; }
         @role('Developer|SuperAdmin', 'superuser', 'admin')
         <div class="d-flex justify-content-between align-items-center flex-wrap gap-3 mb-3 border-top pt-3">
             
-            <div class="d-flex align-items-center flex-wrap gap-3">
-                <div class="d-flex align-items-center flex-wrap gap-2 action-toolbar">
-                    
-                    <form action="{{ route('superuser.gudang.stock.collectStockIn') }}" method="POST" onsubmit="return confirm('Proses collect stock in akan dijalankan. Lanjutkan?')">
-                        @csrf
-                        <button type="submit" class="btn btn-warning btn-sm"><i class="fa fa-database me-1"></i> Collect Stock In</button>
-                    </form>
+        <div class="d-flex align-items-center flex-wrap gap-2 action-toolbar">
 
-                    <form action="{{ route('superuser.gudang.stock.collectStockTrans') }}" method="POST" onsubmit="return confirm('Proses collect stock transaksi akan dijalankan. Lanjutkan?')">
-                        @csrf
-                        <button type="submit" class="btn btn-danger btn-sm"><i class="fa fa-truck me-1"></i> Collect Stock Trans</button>
-                    </form>
+            {{-- Grup: Collect --}}
+            <div class="btn-group">
+                <button type="button" class="btn btn-warning btn-sm dropdown-toggle" data-bs-toggle="dropdown">
+                    <i class="fa fa-database me-1"></i> Collect
+                </button>
+                <ul class="dropdown-menu">
+                    <li>
+                        <form action="{{ route('superuser.gudang.stock.collectStockIn') }}" method="POST" onsubmit="return confirm('Proses collect stock in akan dijalankan. Lanjutkan?')">
+                            @csrf
+                            <button type="submit" class="dropdown-item"><i class="fa fa-arrow-down me-1"></i> Collect Stock In</button>
+                        </form>
+                    </li>
+                    <li>
+                        <form action="{{ route('superuser.gudang.stock.collectStockTrans') }}" method="POST" onsubmit="return confirm('Proses collect stock transaksi akan dijalankan. Lanjutkan?')">
+                            @csrf
+                            <button type="submit" class="dropdown-item"><i class="fa fa-truck me-1"></i> Collect Stock Trans</button>
+                        </form>
+                    </li>
+                    <li>
+                        <button type="button" class="dropdown-item" data-bs-toggle="modal" data-bs-target="#collectStockOutModal">
+                            <i class="fa fa-arrow-up me-1"></i> Collect Stock Out
+                        </button>
+                    </li>
+                </ul>
+            </div>
 
-                    <button type="button" class="btn btn-info btn-sm" data-bs-toggle="modal" data-bs-target="#collectStockOutModal">
-                        <i class="fa fa-arrow-up me-1"></i> Collect Stock Out
-                    </button>
+            {{-- Grup: Rebuild --}}
+            <div class="btn-group">
+                <button type="button" class="btn btn-dark btn-sm dropdown-toggle" data-bs-toggle="dropdown">
+                    <i class="fa fa-sync me-1"></i> Rebuild
+                </button>
+                <ul class="dropdown-menu">
+                    <li>
+                        <form action="{{ route('superuser.gudang.stock.rebuildStock') }}" method="POST" onsubmit="return confirm('Proses rebuild stock akan menghitung ulang seluruh pergerakan. Lanjutkan?')">
+                            @csrf
+                            <button type="submit" class="dropdown-item"><i class="fa fa-sync me-1"></i> Rebuild Stock (Global)</button>
+                        </form>
+                    </li>
+                    <li>
+                        <button type="button" class="dropdown-item" data-bs-toggle="modal" data-bs-target="#rebuildVariantModal">
+                            <i class="fa fa-crosshairs me-1"></i> Rebuild Per Variant
+                        </button>
+                    </li>
+                </ul>
+            </div>
 
-                    <form action="{{ route('superuser.gudang.stock.rebuildStock') }}" method="POST" onsubmit="return confirm('Proses rebuild stock akan menghitung ulang seluruh pergerakan. Lanjutkan?')">
-                        @csrf
-                        <button type="submit" class="btn btn-dark btn-sm"><i class="fa fa-sync me-1"></i> Rebuild Stock</button>
-                    </form>
-                </div>
             </div>
 
             <div class="d-flex align-items-center flex-wrap gap-2 action-toolbar">
@@ -576,6 +602,46 @@ body{ background:#1f242a; font-family: "Segoe UI", Roboto, sans-serif; }
         </div>
       </div>
 
+    </div>
+  </div>
+</div>
+
+<!-- ====================== MODAL: REBUILD PER VARIANT (v2 - select2 pick-list) ====================== -->
+<div class="modal fade" id="rebuildVariantModal" tabindex="-1">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <form action="{{ route('superuser.gudang.stock.rebuildVariants') }}" method="POST"
+            onsubmit="return confirm('Stock Move variant terpilih akan DIHAPUS (kecuali saldo OPENING) lalu ditulis ulang dari seluruh histori transaksi. Lanjutkan?')">
+        @csrf
+        <div class="modal-header">
+          <h5 class="modal-title">Rebuild Stock Per Variant</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+          <div class="mb-3">
+            <label class="form-label">Warehouse</label>
+            <select id="rebuildWarehouse" class="form-control" required>
+              <option value="">Pilih Gudang</option>
+              @foreach($warehouses as $warehouse)
+                <option value="{{ $warehouse->id }}">{{ $warehouse->name }}</option>
+              @endforeach
+            </select>
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Variant / Product (bisa pilih lebih dari 1)</label>
+            <select name="product_ids[]" id="rebuildProducts" class="form-control" multiple required>
+            </select>
+            <small class="text-muted">Pilih gudang dulu untuk memuat daftar variant.</small>
+          </div>
+          <small class="text-muted d-block mt-2">
+            Baris <code>OPENING-%</code> di kartu stok akan dipertahankan. Semua baris lain akan dihapus lalu ditulis ulang dari Receiving, Stock Adjustment, SPK, Mutasi Showroom, Mutasi Out, dan Packing Order.
+          </small>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
+          <button type="submit" class="btn btn-dark">Jalankan Rebuild</button>
+        </div>
+      </form>
     </div>
   </div>
 </div>
@@ -980,6 +1046,40 @@ window.exportReport = function(format) {
     });
     window.location.href = '{{ route("superuser.gudang.stock.auditLogExport") }}?' + params;
 };
+
+function loadRebuildProducts(warehouseId) {
+        var $select = $('#rebuildProducts');
+ 
+        // Reset dulu
+        $select.empty();
+ 
+        if (!warehouseId) return;
+ 
+        $.get("{{ route('superuser.gudang.stock.searchProducts') }}", { warehouse_id: warehouseId })
+            .done(function (res) {
+                (res.results || []).forEach(function (item) {
+                    $select.append(new Option(item.text, item.id, false, false));
+                });
+                $select.trigger('change');
+            });
+    }
+ 
+    // Init select2 sekali saja (mode PILIH dari list, bukan ketik ke server)
+    $('#rebuildProducts').select2({
+        dropdownParent: $('#rebuildVariantModal'),
+        multiple: true,
+        placeholder: 'Pilih satu atau beberapa variant...',
+        width: '100%'
+    });
+ 
+    $('#rebuildWarehouse').on('change', function () {
+        loadRebuildProducts($(this).val());
+    });
+ 
+    $('#rebuildVariantModal').on('hidden.bs.modal', function () {
+        $('#rebuildWarehouse').val('').trigger('change');
+        $('#rebuildProducts').empty().trigger('change');
+    });
 
 })();
 

@@ -54,7 +54,7 @@ class StockService
             // tanggal transaksi ini (bukan ProductMinStock.quantity).
             $lastBalance = StockMove::where('warehouse_id', $warehouseId)
                 ->where('product_packaging_id', $productId)
-                ->where('created_at', '<', $effectiveDate)
+                ->where('created_at', '<=', $effectiveDate)
                 ->orderBy('created_at', 'desc')
                 ->orderBy('id', 'desc')
                 ->value('stock_balance');
@@ -137,7 +137,7 @@ class StockService
             // SEBELUM tanggal transaksi ini (bukan ProductMinStock.quantity).
             $lastBalance = StockMove::where('warehouse_id', $warehouseId)
                 ->where('product_packaging_id', $productId)
-                ->where('created_at', '<', $effectiveDate)
+                ->where('created_at', '<=', $effectiveDate)
                 ->orderBy('created_at', 'desc')
                 ->orderBy('id', 'desc')
                 ->value('stock_balance');

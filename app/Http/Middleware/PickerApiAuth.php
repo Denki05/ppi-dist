@@ -3,7 +3,7 @@
 namespace App\Http\Middleware;
 
 use Closure;
-// Path ini sudah diperbaiki sesuai dengan struktur project Anda
+use Illuminate\Support\Facades\Auth; // <-- PENTING: Tambahkan ini
 use App\Entities\Account\Superuser; 
 
 class PickerApiAuth
@@ -20,6 +20,9 @@ class PickerApiAuth
                 'message' => 'Unauthorized. Token tidak valid atau sesi telah habis.'
             ], 401);
         }
+
+        // PENTING: Daftarkan user ke sistem Auth agar bisa dibaca oleh Model/Controller!
+        Auth::guard('superuser')->setUser($user);
 
         return $next($request);
     }

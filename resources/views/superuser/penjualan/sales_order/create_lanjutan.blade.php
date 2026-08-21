@@ -191,9 +191,11 @@
                 <div class="form-group col-md-4">
                   <label for="customer_area">Kurs <span class="text-danger">*</span></label>
                   @if($result->approval_mou == 1)
-                    <input type="text" name="idr_rate" id="idr_rate"  class="form-control" value="{{ $result->idr_rate }}" readonly>
+                    <input type="text" id="idr_rate_display" class="form-control" value="{{ number_format((float) $result->idr_rate, 0, ',', '.') }}" readonly>
+                    <input type="hidden" name="idr_rate" id="idr_rate" value="{{ $result->idr_rate }}">
                   @else
-                    <input type="text" name="idr_rate" id="idr_rate"  class="form-control" value="{{ $result->idr_rate }}">
+                    <input type="text" id="idr_rate_display" class="form-control" value="{{ number_format((float) $result->idr_rate, 0, ',', '.') }}" placeholder="cth: 18.050">
+                    <input type="hidden" name="idr_rate" id="idr_rate" value="{{ $result->idr_rate }}">
                   @endif    
                 </div>
                 @endif
@@ -423,7 +425,7 @@
 
     $('.base_disc').on('change', function () {
       countGetUsd();
-    })
+    });
 
     function countGetUsd() {
       $('tbody tr').each(function (index, e) {
@@ -439,47 +441,40 @@
         count_per_item(index);
       });
 
-      // Panggil kalkulasi disc agen setelah semua item dihitung
       hitungDiscAgen();
     }
 
-    $(document).on('keyup','.count',function(){
+    $(document).on('keyup', '.count', function() {
       let index = $(this).attr('data-index');
       count_per_item(index);
     });
 
-    function count_per_item(indx){
+    function count_per_item(indx) {
       let index = indx;
-      let price = parseFloat($('tr.index'+index+'').find('input[name="repeater['+index+'][price]"]').val()); 
-      let do_qty = parseFloat($('tr.index'+index+'').find('input[name="repeater['+index+'][do_qty]"]').val()); 
-      let so_qty = parseFloat($('tr.index'+index+'').find('input[name="repeater['+index+'][so_qty]"]').val()); 
-      let val_usd_disc = parseFloat($('tr.index'+index+'').find('input[name="repeater['+index+'][usd_disc]"]').val());
-      let val_percent_disc = parseFloat($('tr.index'+index+'').find('input[name="repeater['+index+'][percent_disc]"]').val());
-      let kurs = $('#idr_rate').val();
+      let price = parseFloat($('tr.index' + index + '').find('input[name="repeater[' + index + '][price]"]').val());
+      let do_qty = parseFloat($('tr.index' + index + '').find('input[name="repeater[' + index + '][do_qty]"]').val());
+      let so_qty = parseFloat($('tr.index' + index + '').find('input[name="repeater[' + index + '][so_qty]"]').val());
+      let val_usd_disc = parseFloat($('tr.index' + index + '').find('input[name="repeater[' + index + '][usd_disc]"]').val());
+      let val_percent_disc = parseFloat($('tr.index' + index + '').find('input[name="repeater[' + index + '][percent_disc]"]').val());
+      let kurs = parseFloat($('#idr_rate').val());
 
-      if(isNaN(val_usd_disc)){
-        val_usd_disc = 0;
-      }
-      
-      if(isNaN(val_percent_disc)){
-        val_percent_disc = 0;
-      }
+      if (isNaN(kurs)) kurs = 0;
+      if (isNaN(val_usd_disc)) val_usd_disc = 0;
+      if (isNaN(val_percent_disc)) val_percent_disc = 0;
+      if (isNaN(price)) price = 0;
+      if (isNaN(do_qty)) do_qty = 0;
 
-      let total_disc = (val_usd_disc + ((price - val_usd_disc) * (val_percent_disc/100))) * do_qty;
-        
-      let sub_total  = parseFloat((do_qty * price) - total_disc) * kurs;
+      let total_disc = (val_usd_disc + ((price - val_usd_disc) * (val_percent_disc / 100))) * do_qty;
 
-      if(isNaN(total_disc)){
-        total_disc = 0;
-      }
+      let sub_total = (do_qty * price) - total_disc;
+      sub_total = sub_total * kurs;
 
-      if(isNaN(sub_total)){
-        sub_total = 0;
-      }
+      if (isNaN(total_disc)) total_disc = 0;
+      if (isNaN(sub_total)) sub_total = 0;
 
-      $('tr.index'+index+'').find('input[name="repeater['+index+'][total_disc]"]').val(total_disc);
-      $('tr.index'+index+'').find('input[name="repeater['+index+'][total]"]').val(formatRupiah(sub_total));
-      
+      $('tr.index' + index + '').find('input[name="repeater[' + index + '][total_disc]"]').val(total_disc);
+      $('tr.index' + index + '').find('input[name="repeater[' + index + '][total]"]').val(formatNumber(sub_total));
+
       sub_total_item();
     }
 
@@ -488,128 +483,131 @@
 
       $('tbody tr').each(function (index, e) {
         let sub_total = $('tr.index' + index + '').find('input[name="repeater[' + index + '][total]"]').val();
-        sub_total = parseFloat(sub_total.split('.').join(''));
+        sub_total = sub_total ? parseFloat(sub_total.split('.').join('')) : 0;
         if (isNaN(sub_total)) sub_total = 0;
         total += sub_total;
       });
 
-      $('input[name="sub_total_item"]').val(formatRupiah(total));
+      $('input[name="sub_total_item"]').val(formatNumber(total));
 
-      // Panggil ulang hitung diskon setelah subtotal selesai
       hitungDiscAgen();
     }
 
-    // Hitung diskon agen berdasarkan input atau otomatis
     function hitungDiscAgen() {
       let discPercent = parseFloat($('#disc_agen_percent').val());
-      let subTotalItem = parseFloat($('input[name="sub_total_item"]').val().split('.').join(''));
+      let subTotalItemRaw = $('input[name="sub_total_item"]').val();
+      let subTotalItem = subTotalItemRaw ? parseFloat(subTotalItemRaw.split('.').join('')) : 0;
 
       if (isNaN(discPercent)) discPercent = 0;
       if (isNaN(subTotalItem)) subTotalItem = 0;
 
       let result = (subTotalItem * discPercent) / 100;
 
-      $('#disc_agen_idr').val(formatRupiah(result)); // Format IDR
-      subtotal(); // Lanjutkan perhitungan subtotal akhir
+      $('#disc_agen_idr').val(formatNumber(result));
+      subtotal();
     }
 
     $('#disc_agen_percent').on('keyup change', function () {
       hitungDiscAgen();
     });
 
-    $('#disc_kemasan_percent').on('input', function(e){
-          if($(this).val() != ''){
-              let sub_total_item = $('input[name="sub_total_item"]').val();
-              let disc_percent = $('input[name="disc_agen_idr"]').val();
+    $('#disc_kemasan_percent').on('input', function (e) {
+      if ($(this).val() != '') {
+        let sub_total_item_raw = $('input[name="sub_total_item"]').val();
+        let disc_percent_raw = $('input[name="disc_agen_idr"]').val();
 
-              sub_total_item = parseFloat(sub_total_item.split('.').join(''));
-              disc_percent = parseFloat(disc_percent.split('.').join(''));
+        let sub_total_item = sub_total_item_raw ? parseFloat(sub_total_item_raw.split('.').join('')) : 0;
+        let disc_percent = disc_percent_raw ? parseFloat(disc_percent_raw.split('.').join('')) : 0;
 
-              let subAfterDiscPercent = sub_total_item - disc_percent;
+        if (isNaN(sub_total_item)) sub_total_item = 0;
+        if (isNaN(disc_percent)) disc_percent = 0;
 
-              var amount = subAfterDiscPercent * $(this).val() / 100;
-              $('#disc_kemasan_idr').val(formatRupiah(amount));
-          }else{
-              $('#disc_kemasan_idr').val(0);
-          }
-          subtotal();
+        let subAfterDiscPercent = sub_total_item - disc_percent;
+
+        let amount = subAfterDiscPercent * $(this).val() / 100;
+        $('#disc_kemasan_idr').val(formatNumber(amount));
+      } else {
+        $('#disc_kemasan_idr').val('');
+      }
+      subtotal();
     });
 
-    function subtotal(){
-      let sub_total = $('#sub_total_item').val();
-      let disc_agen = $('#disc_agen_idr').val();
-      let dics_kemasan = $('#disc_kemasan_idr').val();
+    function subtotal() {
+      let sub_total_raw = $('#sub_total_item').val();
+      let disc_agen_raw = $('#disc_agen_idr').val();
+      let dics_kemasan_raw = $('#disc_kemasan_idr').val();
 
-      sub_total = parseFloat(sub_total.split('.').join(''));
-      disc_agen = parseFloat(disc_agen.split('.').join(''));
-      dics_kemasan = parseFloat(dics_kemasan.split('.').join(''));
+      let sub_total = sub_total_raw ? parseFloat(sub_total_raw.split('.').join('')) : 0;
+      let disc_agen = disc_agen_raw ? parseFloat(disc_agen_raw.split('.').join('')) : 0;
+      let dics_kemasan = dics_kemasan_raw ? parseFloat(dics_kemasan_raw.split('.').join('')) : 0;
 
-      if(isNaN(sub_total)){
-        sub_total = 0;
-      }
-
-      if(isNaN(disc_agen)){
-        disc_agen = 0;
-      }
-
-      if(isNaN(dics_kemasan)){
-        dics_kemasan = 0;
-      }
+      if (isNaN(sub_total)) sub_total = 0;
+      if (isNaN(disc_agen)) disc_agen = 0;
+      if (isNaN(dics_kemasan)) dics_kemasan = 0;
 
       let sub_total_before = sub_total - disc_agen - dics_kemasan;
 
-      // alert(sub_total_before);
-
-      $('#subtotal_2').val(formatRupiah(sub_total_before));
-    };
-
-    $('#shipping_cost_buyer').change(function(){
-        $('input[name="delivery_cost_idr"]').val(($(this).is(':checked')) ? "0" : "");
-    });
-
-    $(document).on('click', '#btn_call', function(e) {
-      let subtotal_before = $('#subtotal_2').val();
-      let disc_tambahan = $('#disc_tambahan_idr').val();
-      let voucher_idr = $('#voucher_idr').val();
-      let ongkir = $('#delivery_cost_idr').val();
-
-      subtotal_before = parseFloat(subtotal_before.split('.').join(''));
-      disc_tambahan = parseFloat(disc_tambahan);
-      voucher_idr = parseFloat(voucher_idr);
-      ongkir = parseFloat(ongkir);
-
-      if(isNaN(disc_tambahan)){
-        disc_tambahan = 0;
-      }
-
-      if(isNaN(voucher_idr)){
-        voucher_idr = 0;
-      }
-
-      if(isNaN(ongkir)){
-        ongkir = 0;
-      }
-     
-
-      let grand_total_idr = subtotal_before - disc_tambahan -  voucher_idr + ongkir;
-
-      $('#grand_total_idr').val(formatRupiah(grand_total_idr));
-    });
-    
-
-    function formatRupiah(money) {
-      return new Intl.NumberFormat('id-ID',
-        { style: 'currency', currency: 'IDR' }
-      ).formatToParts(money).map(
-        p => p.type != 'literal' && p.type != 'currency' ? p.value : ''
-      ).join('');
+      $('#subtotal_2').val(formatNumber(sub_total_before));
     }
 
-    // $(document).on('click', '#indentProduct', function() {
-    //   var so_detail_id = $(this).data('id');
-    //   var product_id = $(this).data('product');
-    //   var val = $(this).val();
-    // })
+    $('#shipping_cost_buyer').change(function () {
+      $('input[name="delivery_cost_idr"]').val(($(this).is(':checked')) ? "0" : "");
+    });
+
+    $(document).on('click', '#btn_call', function (e) {
+      let subtotal_before_raw = $('#subtotal_2').val();
+      let disc_tambahan_raw = $('#disc_tambahan_idr').val();
+      let voucher_idr_raw = $('#voucher_idr').val();
+      let ongkir_raw = $('#delivery_cost_idr').val();
+
+      let subtotal_before = subtotal_before_raw ? parseFloat(subtotal_before_raw.split('.').join('')) : 0;
+      let disc_tambahan = disc_tambahan_raw ? parseFloat(disc_tambahan_raw.split('.').join('')) : 0;
+      let voucher_idr = voucher_idr_raw ? parseFloat(voucher_idr_raw.split('.').join('')) : 0;
+      let ongkir = ongkir_raw ? parseFloat(ongkir_raw.split('.').join('')) : 0;
+
+      if (isNaN(subtotal_before)) subtotal_before = 0;
+      if (isNaN(disc_tambahan)) disc_tambahan = 0;
+      if (isNaN(voucher_idr)) voucher_idr = 0;
+      if (isNaN(ongkir)) ongkir = 0;
+
+      let grand_total_idr = subtotal_before - disc_tambahan - voucher_idr + ongkir;
+
+      $('#grand_total_idr').val(formatNumber(grand_total_idr));
+    });
+
+    // ============================================================
+    // Fungsi untuk OUTPUT DISPLAY (total, diskon, grand total, dll)
+    // Membulatkan ke bilangan bulat agar tidak ada desimal
+    // ============================================================
+    function formatNumber(angka) {
+      var rounded = Math.round(parseFloat(String(angka)));
+      var numberString = String(rounded).replace(/[^\d]/g, '');
+      if (!numberString) return '';
+      return numberString.replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+    }
+
+    // ============================================================
+    // Fungsi untuk INPUT KURS yang sedang diketik user
+    // Hanya menambah titik ribuan, TIDAK membulatkan
+    // ============================================================
+    function formatInputKurs(inputValue) {
+      var numberString = inputValue.replace(/[^\d]/g, '');
+      if (!numberString) return '';
+      return numberString.replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+    }
+
+    $(document).on('input', '#idr_rate_display', function () {
+      var cursorFromEnd = this.value.length - this.selectionStart;
+      this.value = formatInputKurs(this.value);
+      var newPos = this.value.length - cursorFromEnd;
+      this.setSelectionRange(newPos, newPos);
+
+      // Sinkron ke hidden field (angka bersih tanpa titik)
+      $('#idr_rate').val(this.value.replace(/\./g, ''));
+
+      // Trigger ulang kalkulasi semua baris supaya total ikut update pakai kurs baru
+      countGetUsd();
+    });
   })
 </script>
 @endpush

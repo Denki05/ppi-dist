@@ -507,84 +507,125 @@
         $('#tabulasi_period_to').val(endDate);
     }
 
+    function showProgressBar(title, text = 'Mohon tunggu, sedang diproses...') {
+        let progress = 0;
+        
+        // HTML dengan CSS Animation untuk efek garis berjalan (striped animation)
+        const htmlContent = `
+            <style>
+                @keyframes progress-bar-stripes {
+                    from { background-position: 1rem 0; }
+                    to { background-position: 0 0; }
+                }
+                .progress-animated {
+                    display: flex;
+                    height: 100%;
+                    background-image: linear-gradient(45deg,rgba(255,255,255,.15) 25%,transparent 25%,transparent 50%,rgba(255,255,255,.15) 50%,rgba(255,255,255,.15) 75%,transparent 75%,transparent);
+                    background-size: 1rem 1rem;
+                    animation: progress-bar-stripes 1s linear infinite;
+                }
+            </style>
+            <div id="swal-custom-container" style="text-align: center; padding: 10px;">
+                <div style="margin-bottom: 15px; font-weight: 500; color: #333;">${text}</div>
+                <div style="width: 100%; background-color: #e9ecef; border-radius: 20px; height: 25px; overflow: hidden; border: 1px solid #ddd; box-shadow: inset 0 1px 3px rgba(0,0,0,0.1);">
+                    <div id="swal-progress-bar" class="progress-animated" style="width: 0%; background-color: #28a745; transition: width 0.3s ease; display: flex; align-items: center; justify-content: center; color: white; font-weight: bold; font-size: 13px;">
+                        0%
+                    </div>
+                </div>
+                <div style="margin-top: 10px; font-size: 11px; color: #666;">Jangan tutup halaman ini sampai proses selesai</div>
+            </div>
+        `;
+
+        Swal.fire({
+            title: title,
+            html: htmlContent,
+            allowOutsideClick: false,
+            showConfirmButton: false,
+            didOpen: () => {
+                const progressBar = document.getElementById('swal-progress-bar');
+                
+                // Interval sangat cepat (100ms) agar pergerakan terlihat sangat halus (smooth)
+                const interval = setInterval(() => {
+                    if (progress < 98) {
+                        // Logika: Progress naik lebih cepat di awal, lalu melambat saat mendekati 98%
+                        let increment = 0;
+                        if (progress < 30) increment = Math.random() * 2;      // Cepat di awal
+                        else if (progress < 70) increment = Math.random() * 1; // Sedang
+                        else increment = Math.random() * 0.3;                 // Melambat di akhir
+                        
+                        progress = Math.min(98, progress + increment);
+                        
+                        if (progressBar) {
+                            progressBar.style.width = progress + '%';
+                            progressBar.innerText = Math.round(progress) + '%';
+                        }
+                    }
+                }, 150); 
+                
+                window._swalProgressInterval = interval;
+            },
+            willClose: () => {
+                if (window._swalProgressInterval) clearInterval(window._swalProgressInterval);
+            }
+        });
+
+        return {
+            finish: () => {
+                if (window._swalProgressInterval) clearInterval(window._swalProgressInterval);
+                const progressBar = document.getElementById('swal-progress-bar');
+                if (progressBar) {
+                    progressBar.style.width = '100%';
+                    progressBar.innerText = '100%';
+                    progressBar.style.backgroundColor = '#28a745';
+                }
+                setTimeout(() => Swal.close(), 800);
+            },
+            error: (msg) => {
+                if (window._swalProgressInterval) clearInterval(window._swalProgressInterval);
+                Swal.fire({ icon: 'error', title: 'Gagal', text: msg || 'Terjadi kesalahan' });
+            }
+        };
+    }
+
     function submitTabulasiForm(actionType) {
         let form = $('#tabulasiForm');
         applyTabulasiMonthYearToForm();
 
         const selectedReportType = $('#report_type_tabulasi').val();
         const selectedOfficer = $('#report_officer').val();
-        const selectedSalesman = $('#salesman_id_tabulasi').val();
         const startDate = $('#tabulasi_start_date').val();
         const endDate = $('#tabulasi_end_date').val();
 
         if (!startDate || !endDate) {
-            Swal.fire({
-                icon: 'error',
-                title: 'Validasi Gagal',
-                text: 'Periode Laporan harus diisi.',
-                confirmButtonText: 'Oke'
-            });
+            Swal.fire({ icon: 'error', title: 'Validasi Gagal', text: 'Periode Laporan harus diisi.' });
             return;
         }
 
         let isOfficerMode = selectedOfficer && selectedOfficer !== "pilih_officer";
         let isReportMode = selectedReportType && selectedReportType.trim() !== "";
 
-        // ❌ Dua-duanya dipilih → tidak valid
-        if (isOfficerMode && isReportMode) {
-            Swal.fire({
-                icon: 'warning',
-                title: 'Tidak Diizinkan',
-                text: 'Silakan pilih salah satu: Tipe Laporan ATAU Officer.',
-                confirmButtonText: 'Oke'
-            });
-            return;
-        }
-
-        // ❌ Dua-duanya kosong
-        if (!isOfficerMode && !isReportMode) {
-            Swal.fire({
-                icon: 'warning',
-                title: 'Belum Memilih Kriteria',
-                text: 'Silakan pilih Tipe Laporan atau Officer sebelum Export.',
-                confirmButtonText: 'Oke'
-            });
+        if ((isOfficerMode && isReportMode) || (!isOfficerMode && !isReportMode)) {
+            Swal.fire({ icon: 'warning', title: 'Perhatian', text: 'Silakan pilih salah satu: Tipe Laporan ATAU Officer.' });
             return;
         }
 
         $('#action_type_tabulasi_hidden').val(actionType);
-
         let formData = new FormData(form[0]);
-        let url = "{{ route('superuser.report.customer_type_brand.exportReport') }}";
 
         if (actionType === 'export_register_pdf') {
-
+            let url = "{{ route('superuser.report.customer_type_brand.exportReport') }}";
             formData.append('nominal', 1);
             formData.append('action', 'print');
 
             if (isReportMode) {
-                // ✅ Brand
-                if (selectedReportType === 'brand') {
-                    formData.append('type', 1);
-                }
-                // ✅ Zone
-                else if (selectedReportType === 'zone') {
-                    if (selectedSalesman && selectedSalesman !== '') {
-                        Swal.fire({
-                            icon: 'error',
-                            title: 'Tidak Diizinkan',
-                            text: 'Export by Zone tidak dapat memilih Salesman.',
-                            confirmButtonText: 'Oke'
-                        });
-                        return;
-                    }
-                    formData.append('type', 2);
-                }
+                if (selectedReportType === 'brand') formData.append('type', 1);
+                else if (selectedReportType === 'zone') formData.append('type', 2);
             } else if (isOfficerMode) {
-                // ✅ Officer Mode
                 url = "{{ route('superuser.report.customer_type_brand.export_officer') }}";
                 formData.append('officer_name', selectedOfficer);
             }
+
+            let loader = showProgressBar('Export PDF', 'Sedang memproses dokumen...');
 
             $.ajax({
                 url: url,
@@ -592,62 +633,39 @@
                 data: formData,
                 processData: false,
                 contentType: false,
-                headers: {
-                    'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
-                },
-                beforeSend: function() {
-                    Swal.fire({
-                        title: 'Membuat Laporan...',
-                        text: 'Mohon tunggu, sedang diolah.',
-                        allowOutsideClick: false,
-                        didOpen: () => Swal.showLoading()
-                    });
-                },
+                headers: { 'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content') },
                 success: function(response) {
-                    Swal.close();
                     if (response.success && response.pdf_url) {
+                        loader.finish();
                         $('#iframePdf').attr('src', response.pdf_url);
                         $('#pdfDownloadLink').attr('href', response.pdf_url);
                     } else {
-                        Swal.fire({
-                            icon: 'error',
-                            title: 'Gagal',
-                            text: response.error ?? 'Kesalahan server.',
-                            confirmButtonText: 'Oke'
-                        });
+                        loader.error(response.error);
                     }
                 },
-                error: function(xhr) {
-                    Swal.close();
-                    Swal.fire({
-                        icon: 'error',
-                        title: 'Error Server',
-                        text: xhr.responseJSON?.message ?? 'Terjadi kesalahan server.',
-                        confirmButtonText: 'Oke'
-                    });
-                }
+                error: function() { loader.error('Gagal menghubungi server'); }
             });
 
         } else if (actionType === 'sync_register') {
-            applyTabulasiMonthYearToForm(); // pastikan form sudah diisi tanggalnya
-
-            const startDate = $('#tabulasi_period_from').val();
-            const endDate = $('#tabulasi_period_to').val();
-
-            if (!startDate || !endDate) {
-                Swal.fire({
-                    icon: 'error',
-                    title: 'Validasi Gagal',
-                    text: 'Periode harus diisi sebelum melakukan sync.',
-                    confirmButtonText: 'Oke'
-                });
-                return;
-            }
-
-            const url = "{{ route('superuser.report.customer_type_brand.postData') }}" + 
-                        `?period_from=${startDate}&period_to=${endDate}`;
-
-            window.location.href = url;
+            let loader = showProgressBar('Sinkronisasi Data', 'Menghubungkan ke server...');
+            
+            $.ajax({
+                url: "{{ route('superuser.report.customer_type_brand.postData') }}",
+                type: 'GET',
+                data: {
+                    period_from: $('#tabulasi_period_from').val(),
+                    period_to: $('#tabulasi_period_to').val()
+                },
+                success: function() {
+                    loader.finish();
+                    setTimeout(() => {
+                        Swal.fire({ icon: 'success', title: 'Berhasil', text: 'Data telah diperbarui.' }).then(() => {
+                            location.reload();
+                        });
+                    }, 1000);
+                },
+                error: function() { loader.error('Gagal melakukan sinkronisasi'); }
+            });
         }
     }
 

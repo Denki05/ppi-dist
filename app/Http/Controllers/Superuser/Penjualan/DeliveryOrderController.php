@@ -71,6 +71,16 @@ class DeliveryOrderController extends Controller
         return $datatable->with('show', $request->show)->build($request);
     }
 
+    private function isSpvGudang()
+    {
+        return in_array((string) Auth::id(), config('logistik.spv_gudang_user_ids'));
+    }
+
+    private function isChecker()
+    {
+        return in_array((string) Auth::id(), config('logistik.checker_user_ids'));
+    }
+
     public function index(Request $request)
     {
         // Access
@@ -213,7 +223,9 @@ class DeliveryOrderController extends Controller
         }
         $data = [
             'result' => $result,
-            'ekspedisi' => $ekspedisi
+            'ekspedisi' => $ekspedisi,
+            'isSpvGudang' => $this->isSpvGudang(),
+            'isChecker' => $this->isChecker(),
         ];
         return view($this->view."detail_new",$data);
     }
@@ -980,103 +992,53 @@ class DeliveryOrderController extends Controller
 
     public function print_manifest(Request $request, $id)
     {
-        // =========================
-        // CEK AKSES USER
-        // =========================
-        if (Auth::user()->is_superuser == 0) {
-            if (empty($this->access) || empty($this->access->user) || $this->access->can_print == 0) {
-                return redirect()->route('superuser.index')
-                    ->with('error', 'Anda tidak punya akses untuk membuka menu terkait');
+        if(Auth::user()->is_superuser == 0){
+            if(empty($this->access) || empty($this->access->user) || $this->access->can_print == 0){
+                return redirect()->route('superuser.index')->with('error','Anda tidak punya akses untuk membuka menu terkait');
             }
         }
 
-        try {
+        $result = PackingOrder::where('id', $id)
+            ->first();
 
-            // =========================
-            // CARI SO
-            // =========================
-            $so = DB::table('penjualan_so')->where('id', $id)->first();
-
-            if ($so) {
-                $result = PackingOrder::where('so_id', $so->id)->first();
-            } else {
-                $result = PackingOrder::where('id', $id)->first();
-            }
-
-            if (!$result) {
-                abort(404);
-            }
-
-            // =========================
-            // UPDATE PRINT COUNT
-            // =========================
-            $result->increment('print_count');
-
-            // =========================
-            // PATH CRYSTAL REPORT
-            // =========================
-            $reportPath = "C:\\xampp\\htdocs\\ppi-dist\\public\\cr\\packing_plan\\packing_plan_rev.rpt";
-            $exportPath = "C:\\xampp\\htdocs\\ppi-dist\\public\\cr\\packing_plan\\export\\";
-            $pdfFile = $exportPath . $result->code . ".pdf";
-
-            // =========================
-            // DATABASE CONFIG
-            // =========================
-            $server = "LOCAL";
-            $database = "ppi-dist";
-            $username = "root";
-            $password = "";
-
-            $COM_Object = "CrystalDesignRunTime.Application";
-
-            // =========================
-            // LOAD CRYSTAL REPORT
-            // =========================
-            $crapp = new COM($COM_Object) or die("Unable to Create Object");
-
-            $creport = $crapp->OpenReport($reportPath, 1);
-
-            $creport->Database->Tables(1)->SetLogOnInfo(
-                $server,
-                $database,
-                $username,
-                $password
-            );
-
-            $creport->EnableParameterPrompting = false;
-
-            $creport->RecordSelectionFormula = "{penjualan_do.id}= " . $result->id;
-
-            // =========================
-            // EXPORT PDF
-            // =========================
-            $creport->ExportOptions->DiskFileName = $pdfFile;
-            $creport->ExportOptions->PDFExportAllPages = true;
-            $creport->ExportOptions->DestinationType = 1;
-            $creport->ExportOptions->FormatType = 31;
-
-            $creport->Export(false);
-
-            // =========================
-            // RELEASE OBJECT
-            // =========================
-            $creport = null;
-            $crapp = null;
-
-            // =========================
-            // DOWNLOAD FILE
-            // =========================
-            if (!file_exists($pdfFile)) {
-                abort(404, 'File PDF tidak ditemukan');
-            }
-
-            return response()->download($pdfFile, $result->code . '.pdf');
-
-        } catch (\Throwable $e) {
-
-            return redirect()->back()->with('error', $e->getMessage());
-
+        if ($result === null){
+            abort(404);
         }
+
+        $result->print_count = ($result->print_count ?? 0) + 1;
+        $result->save();
+
+        // Satu baris per varian packaging (TIDAK digabung), karena Unit/Kemasan/Jumlah
+        // beda-beda per varian sesuai contoh PDF (PRE00206).
+        $items = $result->do_detail->map(function ($item) {
+            $packValue = $item->product_pack->packaging->pack_value ?? 1;
+            $packName = $item->product_pack->packaging->pack_name ?? 1;
+            return [
+                'sku'     => $item->product_pack->code ?? '-',
+                'name'    => $item->product_pack->name ?? '-',
+                'qty'     => (float) $item->qty,
+                // TODO: sesuaikan nama field unit dasar produk kalau bukan ini
+                // (contoh PDF nunjukin "Kg" - field ini perlu dicek ke model ProductPack).
+                'unit'    => $item->product_pack->packaging->unit->abbreviation ?? '-',
+                'kemasan' => $packName,
+                'jumlah'  => $packValue > 0 ? $item->qty / $packValue : 0,
+            ];
+        })->values();
+
+        $data = [
+            'delivery_order'   => $result,
+            'warehouse_code'   => $result->warehouse->code ?? ($result->warehouse->name ?? '-'),
+            'customer_name'    => $result->member->name ?? '-',
+            'customer_city'    => $result->member->text_kota ?? '-',
+            'customer_address' => $result->member->address ?? '-',
+            'ekspedisi'        => $result->vendor->name ?? '-',
+            'items'            => $items,
+        ];
+
+        $pdf = PDF::loadView($this->view.'print_manifest_pdf', $data);
+        $pdf->setPaper('a5', 'portrait');
+
+        return $pdf->stream('PackingPlan-'.$result->do_code.'.pdf');
     }
 
     public function cancel_proses(Request $request)

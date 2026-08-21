@@ -46,10 +46,11 @@ Route::get('product-assets', [ProductAssetsController::class, 'index']);
 */
 // Rute publik untuk login
 Route::post('picker/login', [PickerApiController::class, 'login']);
-
-// Rute yang dilindungi Token (menggunakan custom middleware 'picker.auth' kita)
+ 
+// Rute yang dilindungi Token
 Route::group(['middleware' => 'picker.auth', 'prefix' => 'picker'], function () {
     Route::get('tasks/ready', [PickerApiController::class, 'getReadyTasks']);
-    // Nanti rute update status akan diletakkan di sini:
-    // Route::post('tasks/{id}/pack', [PickerApiController::class, 'submitPack']);
+    Route::get('tasks/{id}', [PickerApiController::class, 'getTaskDetail']);
+    Route::post('tasks/{id}/pack', [PickerApiController::class, 'packTask']);
+    Route::get('tasks/{id}/label', [PickerApiController::class, 'printLabel']);
 });

@@ -1152,4 +1152,74 @@ class StockController extends Controller
 
         return view('superuser.gudang.stock.audit_logs', compact('data', 'tipeExport', 'statusLabel', 'colspan'));
     }
+
+    public function rebuildVariants(Request $request)
+    {
+        if (Auth::user()->is_superuser == 0) {
+            if (empty($this->access) || $this->access->can_update == 0) {
+                return redirect()->route('superuser.index')
+                    ->with('error', 'Anda tidak punya akses untuk proses ini');
+            }
+        }
+
+        $validator = Validator::make($request->all(), [
+            'warehouse_id'   => 'required|integer',
+            'product_ids'    => 'required|array|min:1',
+            'product_ids.*'  => 'required',
+        ]);
+
+        if ($validator->fails()) {
+            return redirect()
+                ->route($this->route . '.index')
+                ->with('error', $validator->errors()->first());
+        }
+
+        try {
+            $summary = $this->stockRebuildService->rebuildForVariants(
+                $request->product_ids,
+                $request->warehouse_id
+            );
+
+            $totalTx = array_sum($summary);
+            $totalProduk = count($summary);
+
+            return redirect()
+                ->route($this->route . '.index')
+                ->with('success', "Rebuild per-variant berhasil: {$totalProduk} produk, {$totalTx} transaksi ditulis ulang.");
+
+        } catch (\Exception $e) {
+            return redirect()
+                ->route($this->route . '.index')
+                ->with('error', 'Terjadi kesalahan: ' . $e->getMessage());
+        }
+    }
+
+    public function searchProducts(Request $request)
+    {
+        $term = $request->term;
+
+        $query = ProductPack::with(['product', 'packaging']);
+
+        if ($term) {
+            $query->where(function ($q) use ($term) {
+                $q->where('code', 'like', "%{$term}%")
+                  ->orWhereHas('product', function ($q2) use ($term) {
+                      $q2->where('name', 'like', "%{$term}%");
+                  });
+            });
+        }
+
+        $products = $query->orderBy('code')->limit(1000)->get()
+            ->map(function ($pack) {
+                $productName = optional($pack->product)->name ?? 'Unknown';
+                $packName    = optional($pack->packaging)->pack_name ?? '';
+
+                return [
+                    'id'   => $pack->id,
+                    'text' => trim($pack->code . ' - ' . $productName . ' (' . $packName . ')', ' -()'),
+                ];
+            });
+
+        return response()->json(['results' => $products]);
+    }
 }

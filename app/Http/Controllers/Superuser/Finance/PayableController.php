@@ -175,138 +175,148 @@ class PayableController extends Controller
     {
         $post = $request->all();
 
+        $validator = Validator::make($post, [
+            'customer_id' => 'required|exists:master_customers,id',
+            'pay_date' => 'required|date',
+            'repeater' => 'required|array',
+            'repeater.*.invoice_id' => 'required|exists:finance_invoicing,id',
+            'repeater.*.payable' => 'required|numeric',
+            'repeater.*.is_balanced' => 'nullable|boolean',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Gagal memproses pembayaran. Periksa kembali data yang diinput.',
+                'errors' => $validator->errors()
+            ], 422);
+        }
+
         DB::beginTransaction();
         try {
-            $validator = Validator::make($post, [
-                'customer_id' => 'required|exists:master_customers,id',
-                'pay_date' => 'required|date',
-                'repeater' => 'required|array',
-                'repeater.*.invoice_id' => 'required|exists:finance_invoicing,id',
-                'repeater.*.payable' => 'required|numeric',
-                'repeater.*.is_balanced' => 'nullable|boolean',
-            ]);
-
-            if ($validator->fails()) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Gagal memproses pembayaran. Periksa kembali data yang diinput.',
-                    'errors' => $validator->errors()
-                ], 422);
-            }
-
-            $totalPayable = 0;
+            // =========================================================
+            // FASE 1: VALIDASI SEMUA INVOICE DULU, TANPA INSERT APAPUN
+            // Kalau ada 1 saja yang gagal, batalkan SEMUA sebelum ada
+            // data yang tersimpan / dihitung.
+            // =========================================================
+            $validated_items = [];
 
             foreach ($post["repeater"] as $value) {
-                if (isset($value["payable"])) {
-                    $input_payable = floatval(str_replace(".", "", $value["payable"]));
-                    $get_invoice = Invoicing::find($value["invoice_id"]);
-
-                    // VALIDASI CUSTOMER
-                    if ($get_invoice->customer_id != $post['customer_id']) {
-                        DB::rollBack();
-                        return response()->json([
-                            'success' => false,
-                            'message' => "Invoice {$get_invoice->code} tidak sesuai customer"
-                        ], 400);
-                    }
-
-                    $is_balanced = filter_var($value["is_balanced"], FILTER_VALIDATE_BOOLEAN);
-
-                    if (!$get_invoice) {
-                        DB::rollBack();
-                        return response()->json([
-                            'success' => false,
-                            'message' => "Invoice ID {$value['invoice_id']} tidak ditemukan"
-                        ], 404);
-                    }
-
-                    $payable_detail = $get_invoice->payable_detail->sum('total');
-                    $sisa = $get_invoice->grand_total_idr - $payable_detail;
-
-                    if ($sisa <= 0) {
-                        DB::rollBack();
-                        return response()->json([
-                            'success' => false,
-                            'message' => "Invoice {$get_invoice->code} sudah lunas"
-                        ], 400);
-                    }
-
-                    // if ($input_payable > $sisa && !$is_balanced) {
-                    //     DB::rollBack();
-                    //     return response()->json([
-                    //         'success' => false,
-                    //         'message' => "Jumlah pembayaran melebihi saldo untuk Invoice {$get_invoice->code}"
-                    //     ], 400);
-                    // }
-
-                    if ($is_balanced) {
-                        $input_payable = $sisa;
-                    }
-
-                    // 🔹 Buat Payable header baru per invoice
-                    $payable = Payable::create([
-                        'code' => CodeRepo::generatePayable(),
-                        'customer_id' => $post['customer_id'],
-                        'pay_date' => Carbon::parse($post['pay_date']),
-                        'note' => $post['note'] ?? null,
-                        'status' => 2,
-                        'created_by' => Auth::id(),
-                        'total' => $input_payable,
-                    ]);
-
-                    // 🔹 Simpan detail
-                    PayableDetail::create([
-                        'payable_id' => $payable->id,
-                        'invoice_id' => $value["invoice_id"],
-                        'total' => $input_payable,
-                        'prev_account_receivable' => $sisa,
-                        'remaining_account_receivable' => $is_balanced ? 0 : ($sisa - $input_payable),
-                        'created_by' => Auth::id(),
-                    ]);
-
-                    $totalPayable += $input_payable;
-
-                    // update status sales_order
-                    $total_bayar = $get_invoice->payable_detail->sum('total') + $input_payable;
-
-                    $sisa_update = $get_invoice->grand_total_idr - $total_bayar;
-
-                    // Tentukan status pembayaran
-                    if ($sisa_update <= 0) {
-                        $payment_status = 1; // Lunas
-                    } else {
-                        $payment_status = 0; // Belum lunas
-                    }
-
-                    // Update status pembayaran di SalesOrder
-                    if ($get_invoice->do && $get_invoice->do->so_id) {
-                        SalesOrder::where('id', $get_invoice->do->so_id)
-                            ->update(['payment_status' => $payment_status]);
-                    }
-
-                    // 🔹 Insert history
-                    PayableHistory::create([
-                        'payable_id' => $payable->id,
-                        'do_id' => $get_invoice->do_id,
-                        'invoice_id' => $get_invoice->id,
-                        'invoice_code' => $get_invoice->code,
-                        'payable_code' => $payable->code,
-                        'customer_other_address_id' => $get_invoice->customer_other_address_id,
-                        'acc_by' => Auth::id(),
-                        'created_by' => $payable->created_by,
-                    ]);
+                if (!isset($value["payable"])) {
+                    continue;
                 }
+
+                // Lock baris invoice supaya tidak ada race condition antar
+                // user yang settle invoice yang sama secara bersamaan.
+                $get_invoice = Invoicing::where('id', $value["invoice_id"])
+                    ->lockForUpdate()
+                    ->first();
+
+                if (!$get_invoice) {
+                    DB::rollBack();
+                    return response()->json([
+                        'success' => false,
+                        'message' => "Invoice ID {$value['invoice_id']} tidak ditemukan"
+                    ], 404);
+                }
+
+                if ($get_invoice->customer_id != $post['customer_id']) {
+                    DB::rollBack();
+                    return response()->json([
+                        'success' => false,
+                        'message' => "Invoice {$get_invoice->code} tidak sesuai customer"
+                    ], 400);
+                }
+
+                $input_payable = floatval(str_replace(".", "", $value["payable"]));
+                $is_balanced = filter_var($value["is_balanced"], FILTER_VALIDATE_BOOLEAN);
+
+                $payable_detail_sum = $get_invoice->payable_detail->sum('total');
+                $sisa = $get_invoice->grand_total_idr - $payable_detail_sum;
+
+                if ($sisa <= 0) {
+                    DB::rollBack();
+                    return response()->json([
+                        'success' => false,
+                        'message' => "Invoice {$get_invoice->code} sudah lunas, tidak bisa diproses lagi"
+                    ], 400);
+                }
+
+                if ($is_balanced) {
+                    $input_payable = $sisa;
+                }
+
+                $validated_items[] = [
+                    'invoice'       => $get_invoice,
+                    'input_payable' => $input_payable,
+                    'is_balanced'   => $is_balanced,
+                    'sisa'          => $sisa,
+                ];
             }
 
-            if ($totalPayable == 0) {
-                DB::rollback();
+            if (empty($validated_items)) {
+                DB::rollBack();
                 return response()->json([
                     'success' => false,
                     'message' => "Tidak bisa melakukan payable. Tidak ada payable yang diinput."
                 ], 400);
             }
 
-            $payable->update(['total' => $totalPayable]);
+            // =========================================================
+            // FASE 2: SEMUA VALID -> BARU INSERT SATU-SATU
+            // =========================================================
+            $totalPayable = 0;
+
+            foreach ($validated_items as $item) {
+                $get_invoice   = $item['invoice'];
+                $input_payable = $item['input_payable'];
+                $is_balanced   = $item['is_balanced'];
+                $sisa          = $item['sisa'];
+
+                $payable = Payable::create([
+                    'code' => CodeRepo::generatePayable(),
+                    'customer_id' => $post['customer_id'],
+                    'pay_date' => Carbon::parse($post['pay_date']),
+                    'note' => $post['note'] ?? null,
+                    'status' => 2,
+                    'created_by' => Auth::id(),
+                    'total' => $input_payable,
+                ]);
+
+                PayableDetail::create([
+                    'payable_id' => $payable->id,
+                    'invoice_id' => $get_invoice->id,
+                    'total' => $input_payable,
+                    'prev_account_receivable' => $sisa,
+                    'remaining_account_receivable' => $is_balanced ? 0 : ($sisa - $input_payable),
+                    'created_by' => Auth::id(),
+                ]);
+
+                $totalPayable += $input_payable;
+
+                $total_bayar = $get_invoice->payable_detail->sum('total') + $input_payable;
+                $sisa_update = $get_invoice->grand_total_idr - $total_bayar;
+                $payment_status = $sisa_update <= 0 ? 1 : 0;
+
+                if ($get_invoice->do && $get_invoice->do->so_id) {
+                    SalesOrder::where('id', $get_invoice->do->so_id)
+                        ->update(['payment_status' => $payment_status]);
+                }
+
+                PayableHistory::create([
+                    'payable_id' => $payable->id,
+                    'do_id' => $get_invoice->do_id,
+                    'invoice_id' => $get_invoice->id,
+                    'invoice_code' => $get_invoice->code,
+                    'payable_code' => $payable->code,
+                    'customer_other_address_id' => $get_invoice->customer_other_address_id,
+                    'acc_by' => Auth::id(),
+                    'created_by' => $payable->created_by,
+                ]);
+
+                // Catatan: TIDAK ADA lagi $payable->update(['total' => $totalPayable])
+                // di luar loop. Tiap payable header sudah benar dari create() di atas.
+            }
 
             DB::commit();
 

@@ -17,6 +17,7 @@ use App\Imports\Gudang\PurchaseOrderDetailImport;
 use App\Entities\Gudang\MutasiOut;
 use App\Entities\Gudang\MutasiOutDetail;
 use App\Entities\Master\Warehouse;
+use Illuminate\Support\Facades\Log;
 use Auth;
 use COM;
 use DB;
@@ -553,14 +554,31 @@ class PurchaseOrderSPKController extends Controller
     
     public function cancel_acc(Request $request, $id)
     {
-        if(Auth::user()->is_superuser == 0){
-            if(empty($this->access) || empty($this->access->user) || $this->access->can_approve == 0){
+        try {
+
+            // ===============================
+            // VALIDASI ACCESS
+            // ===============================
+            if (Auth::user()->is_superuser == 0) {
+                if (
+                    empty($this->access) ||
+                    empty($this->access->user) ||
+                    $this->access->can_approve == 0
+                ) {
+                    abort(405);
+                }
+            }
+
+            // ===============================
+            // VALIDASI AJAX
+            // ===============================
+            if (!$request->ajax()) {
                 abort(405);
             }
-        }
-        
-        if ($request->ajax()) {
 
+            // ===============================
+            // CARI PURCHASE ORDER
+            // ===============================
             $purchase_order = PurchaseOrder::find($id);
 
             if ($purchase_order === null) {
@@ -576,7 +594,7 @@ class PurchaseOrderSPKController extends Controller
                     'alert'   => 'block',
                     'type'    => 'alert-warning',
                     'header'  => 'Gagal',
-                    'content' => 'Tidak bisa di cancel karena sudah ada proses Checker logisitk',
+                    'content' => 'Tidak bisa di cancel karena sudah ada proses Checker logistik',
                 ];
 
                 return $this->response(400, $response);
@@ -592,9 +610,49 @@ class PurchaseOrderSPKController extends Controller
 
             if ($purchase_order->save()) {
 
-                $response['redirect_to'] = route('superuser.gudang.purchase_order_spk.index');
+                $response['redirect_to'] = route(
+                    'superuser.gudang.purchase_order_spk.index'
+                );
+
                 return $this->response(200, $response);
             }
+
+            // ===============================
+            // JIKA SAVE GAGAL
+            // ===============================
+            $response['notification'] = [
+                'alert'   => 'block',
+                'type'    => 'alert-danger',
+                'header'  => 'Gagal',
+                'content' => 'Data Purchase Order gagal di cancel.',
+            ];
+
+            return $this->response(500, $response);
+
+        } catch (\Exception $e) {
+
+            // ===============================
+            // LOG ERROR
+            // ===============================
+            \Log::error('Gagal cancel approval Purchase Order', [
+                'purchase_order_id' => $id,
+                'user_id'            => Auth::id(),
+                'message'            => $e->getMessage(),
+                'file'               => $e->getFile(),
+                'line'               => $e->getLine(),
+            ]);
+
+            // ===============================
+            // RESPONSE ERROR
+            // ===============================
+            $response['notification'] = [
+                'alert'   => 'block',
+                'type'    => 'alert-danger',
+                'header'  => 'Terjadi Kesalahan',
+                'content' => 'Terjadi kesalahan saat membatalkan approval Purchase Order.',
+            ];
+
+            return $this->response(500, $response);
         }
     }
 

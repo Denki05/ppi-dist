@@ -36,6 +36,7 @@ class PiutangFakturTable extends Table
         ->select(
             'master_customer_other_addresses.name AS customer_name',
             'master_customer_other_addresses.text_kota AS customer_kota',
+            'master_customer_other_addresses.officer AS officer',
             'finance_invoicing.code AS no_faktur',
 
             // ✅ FINAL FIX: subquery item * kurs - diskon + ongkir
@@ -151,6 +152,10 @@ class PiutangFakturTable extends Table
 
         $table->addColumn('account_customer', function (Invoicing $model) {
             return $model->customer_name . ' ' . $model->customer_kota;
+        });
+
+        $table->editColumn('officer', function (Invoicing $model) {
+            return strtolower(trim($model->officer)) === 'nia' ? 'Kantor' : $model->officer;
         });
 
         $table->editColumn('tanggal_faktur', function (Invoicing $model) {

@@ -25,7 +25,7 @@ class ProductAssetsController extends Controller
             $query = DB::table('product_assets')
                 ->join('master_products', 'master_products.id', '=', 'product_assets.product_id')
                 ->where('master_products.status', 1)      // 1 = ACTIVE
-                ->where('master_products.on_order', 1)    // 1 = ORDER
+                // ->where('master_products.on_order', 1)
                 ->select('product_assets.*');
 
             // filter opsional yang sudah ada
@@ -60,7 +60,7 @@ class ProductAssetsController extends Controller
             // DATA
             // =========================
             $data = $query
-                ->orderBy('product_assets.updated_at', 'desc')
+                ->orderByRaw('COALESCE(product_assets.updated_at, product_assets.created_at) desc')
                 ->offset($offset)
                 ->limit($limit)
                 ->get();
