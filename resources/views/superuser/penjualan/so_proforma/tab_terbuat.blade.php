@@ -36,9 +36,11 @@
                 </button>
             </a>
 
-            <a href="{{ route('superuser.penjualan.so_proforma.printProforma', $row->id) }}">
+            <a href="{{ route('superuser.penjualan.so_proforma.print_so_proforma', $row->id) }}" 
+            target="_blank" 
+            rel="noopener noreferrer">
                 <button type="button" class="btn btn-sm btn-circle btn-alt-danger" title="Print proforma">
-                  <i class="fa fa-print"></i>
+                    <i class="fa fa-print"></i>
                 </button>
             </a>
 

@@ -49,6 +49,11 @@
 
 <div id="alert-block"></div>
 
+<div id="page-loading-overlay" style="position:fixed;inset:0;background:rgba(255,255,255,0.85);z-index:9999;display:flex;flex-direction:column;align-items:center;justify-content:center;">
+  <div class="spinner-border text-primary" role="status" style="width:3rem;height:3rem;"></div>
+  <p class="mt-15" style="font-weight:600;">Harap tunggu sebentar, sedang kalkulasi perhitungan...</p>
+</div>
+
 <form class="ajax" data-action="{{ route('superuser.penjualan.sales_order.tutup_so' ) }}" data-type="POST" enctype="multipart/form-data">
 @csrf
   <input type="hidden" name="id" value="{{$result->id}}">
@@ -202,10 +207,10 @@
                 @if($step == 2)
                 <div class="form-group col-md-4">
                   <label for="customer_area">Disc Cash <span class="text-danger">*</span></label>
-                  <select class="form-control js-select2 base_disc" id="base_id" onkeyup="countGetUsd()">
-                    <option value="0">0</option>
-                    <option value="2">$2</option>
-                    <option value="4">$4</option>
+                  <select class="form-control js-select2 base_disc" id="base_id">
+                    <option value="0" {{ $result->disc_usd == 0 ? 'selected' : '' }}>$0</option>
+                    <option value="2" {{ $result->disc_usd == 2 ? 'selected' : '' }}>$2</option>
+                    <option value="4" {{ $result->disc_usd == 4 ? 'selected' : '' }}>$4</option>
                   </select>
                 </div>
                 @endif
@@ -277,7 +282,7 @@
                                       <input type="hidden" name="repeater[{{$index}}][packaging]" class="form-control" readonly value="{{$detail->product_pack->packaging->id ?? ''}}">
                                     </td>
                                     <td>
-                                      <input type="text" name="repeater[{{$index}}][usd_disc]" class="form-control count count-disc" data-index="{{$index}}" step="any" onchange="countGetUsd()" placeholder="{{$detail->disc_usd}}" />
+                                        <input type="number" name="repeater[{{$index}}][usd_disc]" class="form-control count count-disc" data-index="{{$index}}" step="any" value="{{ $detail->disc_usd }}" />
                                     </td>
                                     <td>
                                       <input type="text" name="repeater[{{$index}}][total]" class="form-control " readonly>
@@ -307,9 +312,9 @@
                         <label class="col-sm-4 col-form-label">Disc %</label>
                         <div class="col-sm-3">
                           @if($result->approval_mou == 1)
-                            <input type="text" class="form-control" id="disc_agen_percent" name="disc_agen_percent" value="{{ $result->catatan }}" readonly>
+                            <input type="text" class="form-control" id="disc_agen_percent" name="disc_agen_percent" value="{{ $result->disc_percent ?? 0 }}" readonly>
                           @else
-                            <input type="text" class="form-control" id="disc_agen_percent" name="disc_agen_percent" value="{{ $result->catatan }}" placeholder="{{ $result->catatan }}" required>
+                            <input type="text" class="form-control" id="disc_agen_percent" name="disc_agen_percent" value="{{ $result->disc_percent ?? 0 }}" placeholder="{{ $result->disc_percent ?? 0 }}" required>
                           @endif
                         </div>
                         <div class="col-sm-5">
@@ -319,7 +324,7 @@
                       <div class="form-group row">
                         <label class="col-sm-4 col-form-label">Disc Kemasan</label>
                         <div class="col-sm-3">
-                          <input type="text" class="form-control" id="disc_kemasan_percent" name="disc_kemasan_percent">
+                          <input type="text" class="form-control" id="disc_kemasan_percent" name="disc_kemasan_percent" value="{{ $result->disc_kemasan ?? 0 }}">
                         </div>
                         <div class="col-sm-5">
                           <input type="text" readonly class="form-control" id="disc_kemasan_idr" name="disc_kemasan_idr">
@@ -328,7 +333,7 @@
                       <div class="form-group row">
                         <label class="col-sm-4 col-form-label">Disc IDR</label>
                         <div class="col-sm-8">
-                          <input type="text" class="form-control" id="disc_tambahan_idr" name="disc_tambahan_idr">
+                          <input type="text" class="form-control" id="disc_tambahan_idr" name="disc_tambahan_idr" value="{{ number_format((float)($result->disc_idr ?? 0), 0, ',', '.') }}">
                         </div>
                       </div>
                       <div class="form-group row">
@@ -350,8 +355,16 @@
                           <input type="hidden" class="form-control" name="subtotal_2" id="subtotal_2">
                         </div>
                       </div>
-                      <button type="button" class="btn btn-warning" id="btn_call"><i class="fas fa-calculator pr-2" aria-hidden="true"></i>calculated</button>
-                      <button type="submit" class="btn btn-primary" id="save_form"><i class="fa fa-save  pr-2" aria-hidden="true" ></i> Save</button>
+
+                      <div class="mt-3">
+                          <button type="button" class="btn btn-warning mb-2" id="btn_call">
+                            <i class="fas fa-calculator pr-2" aria-hidden="true"></i> Calculated
+                          </button>
+
+                          <button type="submit" class="btn btn-primary mb-2" id="save_form">
+                            <i class="fa fa-save pr-2" aria-hidden="true"></i> Save
+                          </button>
+                      </div>
                     </div>
                 </div>
             </aside>
@@ -423,31 +436,74 @@
       scrollCollapse: true,
     });
 
-    $('.base_disc').on('change', function () {
-      countGetUsd();
-    });
-
-    function countGetUsd() {
+    function initLoadCalculate() {
+      // 1. Hitung total per item saat halaman pertama kali diload
       $('tbody tr').each(function (index, e) {
-        let baseDisc = $('.base_disc').val();
+        count_per_item(index);
+      });
+
+      // 2. Jika nilai diskon kosong, set default ke 0
+      $('#disc_agen_percent, #disc_kemasan_percent, #disc_tambahan_idr, #voucher_idr, #delivery_cost_idr').each(function () {
+        if ($(this).val() === '') $(this).val('0');
+      });
+
+      // 3. Picu kalkulasi grand total
+      hitungDiscAgen();
+    }
+
+    initLoadCalculate();
+
+    setTimeout(function () {
+      $('#page-loading-overlay').fadeOut(200);
+    }, 300);
+
+    $('.base_disc').on('change', function () {
+      let baseDisc = $(this).val(); // Tangkap nilai diskon dari dropdown (0, 2, atau 4)
+
+      $('tbody tr').each(function (index, e) {
         let freeProduct = $('tr.index' + index + '').find('input[name="repeater[' + index + '][free_product]"]').val();
 
+        // Timpa nilai diskon di tabel, KECUALI untuk produk gratis
         if (freeProduct == 1) {
           $('tr.index' + index + '').find('input[name="repeater[' + index + '][usd_disc]"]').val(0);
         } else {
           $('tr.index' + index + '').find('input[name="repeater[' + index + '][usd_disc]"]').val(baseDisc);
         }
 
+        // Hitung ulang baris tersebut
         count_per_item(index);
       });
 
+      // Lanjutkan hitung total bawah
       hitungDiscAgen();
-    }
-
-    $(document).on('keyup', '.count', function() {
-      let index = $(this).attr('data-index');
-      count_per_item(index);
     });
+
+    $(document).on('keyup change', '.count', function() {
+      let index = $(this).attr('data-index');
+      count_per_item(index); // Langsung hitung ulang baris tersebut tanpa mereset baris lain
+    });
+
+    // function countGetUsd() {
+    //   $('tbody tr').each(function (index, e) {
+    //     let baseDisc = $('.base_disc').val();
+    //     let freeProduct = $('tr.index' + index + '').find('input[name="repeater[' + index + '][free_product]"]').val();
+
+    //     if (freeProduct == 1) {
+    //       $('tr.index' + index + '').find('input[name="repeater[' + index + '][usd_disc]"]').val(0);
+    //     } else {
+    //       $('tr.index' + index + '').find('input[name="repeater[' + index + '][usd_disc]"]').val(baseDisc);
+    //     }
+
+    //     count_per_item(index);
+    //   });
+
+    //   hitungDiscAgen();
+    // }
+
+    // $(document).on('keyup', '.count', function() {
+    //   let index = $(this).attr('data-index');
+    //   count_per_item(index);
+    // });
 
     function count_per_item(indx) {
       let index = indx;
@@ -493,6 +549,9 @@
       hitungDiscAgen();
     }
 
+    // ==========================================
+    // 1. FUNGSI HITUNG DISC AGEN
+    // ==========================================
     function hitungDiscAgen() {
       let discPercent = parseFloat($('#disc_agen_percent').val());
       let subTotalItemRaw = $('input[name="sub_total_item"]').val();
@@ -504,11 +563,51 @@
       let result = (subTotalItem * discPercent) / 100;
 
       $('#disc_agen_idr').val(formatNumber(result));
+      
+      // SETELAH DISC AGEN DIHITUNG, LANJUT HITUNG DISC KEMASAN (Efek Domino)
+      hitungDiscKemasan();
+    }
+
+    // ==========================================
+    // 2. FUNGSI HITUNG DISC KEMASAN (BARU)
+    // ==========================================
+    function hitungDiscKemasan() {
+      let percentVal = $('#disc_kemasan_percent').val();
+      
+      if (percentVal !== '') {
+        let sub_total_item_raw = $('input[name="sub_total_item"]').val();
+        let disc_agen_raw = $('#disc_agen_idr').val();
+
+        let sub_total_item = sub_total_item_raw ? parseFloat(sub_total_item_raw.split('.').join('')) : 0;
+        let disc_agen_idr = disc_agen_raw ? parseFloat(disc_agen_raw.split('.').join('')) : 0;
+        let disc_kemasan_percent = parseFloat(percentVal);
+
+        if (isNaN(sub_total_item)) sub_total_item = 0;
+        if (isNaN(disc_agen_idr)) disc_agen_idr = 0;
+        if (isNaN(disc_kemasan_percent)) disc_kemasan_percent = 0;
+
+        // Aturan: Disc Kemasan dihitung dari (Subtotal - Disc Agen IDR)
+        let subAfterDiscAgen = sub_total_item - disc_agen_idr;
+        let amount = (subAfterDiscAgen * disc_kemasan_percent) / 100;
+        
+        $('#disc_kemasan_idr').val(formatNumber(amount));
+      } else {
+        $('#disc_kemasan_idr').val('0'); // Set 0 agar aman di database
+      }
+      
+      // SETELAH DISC KEMASAN DIHITUNG, LANJUT HITUNG SUBTOTAL & GRAND TOTAL
       subtotal();
     }
 
+    // ==========================================
+    // 3. EVENT LISTENER KETIKA KASIR MENGETIK
+    // ==========================================
     $('#disc_agen_percent').on('keyup change', function () {
       hitungDiscAgen();
+    });
+
+    $('#disc_kemasan_percent').on('keyup change input', function () {
+      hitungDiscKemasan();
     });
 
     $('#disc_kemasan_percent').on('input', function (e) {
@@ -548,13 +647,14 @@
       let sub_total_before = sub_total - disc_agen - dics_kemasan;
 
       $('#subtotal_2').val(formatNumber(sub_total_before));
+      hitungGrandTotal();
     }
 
     $('#shipping_cost_buyer').change(function () {
       $('input[name="delivery_cost_idr"]').val(($(this).is(':checked')) ? "0" : "");
     });
 
-    $(document).on('click', '#btn_call', function (e) {
+    function hitungGrandTotal() {
       let subtotal_before_raw = $('#subtotal_2').val();
       let disc_tambahan_raw = $('#disc_tambahan_idr').val();
       let voucher_idr_raw = $('#voucher_idr').val();
@@ -573,6 +673,26 @@
       let grand_total_idr = subtotal_before - disc_tambahan - voucher_idr + ongkir;
 
       $('#grand_total_idr').val(formatNumber(grand_total_idr));
+    }
+
+    $(document).on('click', '#btn_call', function (e) {
+      hitungGrandTotal();
+    });
+
+    // Live update dan Format Rupiah Otomatis saat user mengetik
+    $(document).on('input', '#disc_tambahan_idr, #voucher_idr, #delivery_cost_idr', function () {
+      // Format angka dengan titik
+      var cursorFromEnd = this.value.length - this.selectionStart;
+      this.value = formatInputKurs(this.value);
+      var newPos = this.value.length - cursorFromEnd;
+      
+      // Jaga posisi kursor agar tidak melompat ke belakang
+      if(this.selectionStart) {
+          this.setSelectionRange(newPos, newPos);
+      }
+      
+      // Jalankan kalkulasi
+      hitungGrandTotal();
     });
 
     // ============================================================
@@ -605,8 +725,10 @@
       // Sinkron ke hidden field (angka bersih tanpa titik)
       $('#idr_rate').val(this.value.replace(/\./g, ''));
 
-      // Trigger ulang kalkulasi semua baris supaya total ikut update pakai kurs baru
-      countGetUsd();
+      // Hitung ulang semua baris TANPA merubah angka diskon yang sudah diketik manual
+      $('tbody tr').each(function (index, e) {
+        count_per_item(index);
+      });
     });
   })
 </script>

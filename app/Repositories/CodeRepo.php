@@ -239,25 +239,56 @@ class CodeRepo
     }
 
     // Generate SO code
+    // public static function generateSO()
+    // {
+    //     $parts = explode('-', date("d-m-Y"));
+    //     $p1 = substr($parts[2], (strlen($parts[2]) - 1) );
+    //     $abjadMonth = array( '-', 'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L');
+    //     $p2 = $abjadMonth[date('n')];
+    //     $yearMonth = $p1.$p2;
+    //     $latestNumber = "";
+
+    //     $get_max = DB::table('penjualan_so')->where('code', 'LIKE', '%'.$yearMonth.'%')->where('deleted_at', null)->max('code');
+
+    //     if($get_max == 'false'){
+    //         $latestNumber = $yearMonth . '001';
+    //     }else{
+    //         $latestNumber = $get_max;
+    //         $id = (int) substr($latestNumber, strlen($yearMonth)) + 1;
+    //         $latestNumber = $yearMonth . str_pad($id, 3, 0, STR_PAD_LEFT);
+    //     }
+    //     return $latestNumber;
+    // }
     public static function generateSO()
     {
-        $parts = explode('-', date("d-m-Y"));
-        $p1 = substr($parts[2], (strlen($parts[2]) - 1) );
-        $abjadMonth = array( '-', 'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L');
-        $p2 = $abjadMonth[date('n')];
+        // dd([
+        //     'yearMonth' => $yearMonth,
+        //     'get_max' => $get_max
+        // ]);
+
+        $year = date("Y");
+        $month = date("n");
+
+        $p1 = substr($year, -1);
+        $abjadMonth = ['-', 'A','B','C','D','E','F','G','H','I','J','K','L'];
+        $p2 = $abjadMonth[$month];
+
         $yearMonth = $p1.$p2;
-        $latestNumber = "";
 
-        $get_max = DB::table('penjualan_so')->where('code', 'LIKE', '%'.$yearMonth.'%')->where('deleted_at', null)->max('code');
+        $last = DB::table('penjualan_so')
+            ->where('code', 'LIKE', $yearMonth.'%') // FIXED
+            ->whereNull('deleted_at')
+            ->orderByRaw('CAST(SUBSTRING(code, '.(strlen($yearMonth)+1).') AS UNSIGNED) DESC')
+            ->first();
 
-        if($get_max == 'false'){
-            $latestNumber = $yearMonth . '001';
-        }else{
-            $latestNumber = $get_max;
-            $id = (int) substr($latestNumber, strlen($yearMonth)) + 1;
-            $latestNumber = $yearMonth . str_pad($id, 3, 0, STR_PAD_LEFT);
+        if (!$last) {
+            return $yearMonth.'001';
         }
-        return $latestNumber;
+
+        $lastNumber = (int) substr($last->code, strlen($yearMonth));
+        $nextNumber = $lastNumber + 1;
+
+        return $yearMonth . str_pad($nextNumber, 3, '0', STR_PAD_LEFT);
     }
 
     // Generate PO code

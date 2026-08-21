@@ -48,6 +48,7 @@ class DeliveryOrdersTable extends Table
                     'code',
                     'customer_other_address_id', 
                     'print_count',
+                    'is_kurs_hold',
                     DB::raw('
                         CASE 
                             WHEN status = 3 THEN "READY"
@@ -71,6 +72,8 @@ class DeliveryOrdersTable extends Table
                     'code',
                     'customer_other_address_id', 
                     'print_count',
+                    'void_status',
+                    'type_transaction',
                     DB::raw('
                         CASE 
                             WHEN status = 3 THEN "READY"
@@ -215,6 +218,14 @@ class DeliveryOrdersTable extends Table
                     ";
 
                 case $model->status == "PACKED":
+                    if ((bool) $model->is_kurs_hold) {
+                        return "
+                            <button type=\"button\" class=\"btn btn-warning btn-sm btn-flat btn-kurs-blocked\"
+                                title=\"Kurs belum di-set\" data-code=\"{$model->do_code}\">
+                                <i class=\"fa fa-exclamation-triangle\"></i>
+                            </button>
+                        ";
+                    }
                     return "
                         <a href=\"{$kerjakan}\">
                             <button type=\"button\" class=\"btn btn-primary btn-sm btn-flat\" title=\"Surat Jalan\">
@@ -224,6 +235,31 @@ class DeliveryOrdersTable extends Table
                     ";
 
                 case $model->status == "DELIVERING":
+                    if ((bool) $model->void_status) {
+                        return "
+                            <button type=\"button\" class=\"btn btn-outline-danger btn-sm btn-flat btn-void-blocked\"
+                                title=\"Sedang pengajuan void\" data-code=\"{$model->do_code}\">
+                                <i class=\"fa fa-ban\"></i>
+                            </button>
+                        ";
+                    }
+
+                    if ($model->type_transaction == 'CASH') {
+                        $invoicing = $model->invoicing;
+                        $hasPayment = $invoicing
+                            ? \App\Entities\Finance\PayableDetail::where('invoice_id', $invoicing->id)->exists()
+                            : false;
+
+                        if (!$hasPayment) {
+                            return "
+                                <button type=\"button\" class=\"btn btn-outline-warning btn-sm btn-flat btn-payment-blocked\"
+                                    title=\"Pembayaran CASH belum tercatat\" data-code=\"{$model->do_code}\">
+                                    <i class=\"fa fa-money-bill-alt\"></i>
+                                </button>
+                            ";
+                        }
+                    }
+
                     return "
                         <a href=\"{$kerjakan}\">
                             <button type=\"button\" class=\"btn btn-primary btn-sm btn-flat\" title=\"Update Resi\">

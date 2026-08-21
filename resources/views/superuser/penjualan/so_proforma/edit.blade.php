@@ -95,10 +95,11 @@
                           </select>
                         </div>
                         <div class="form-group col-md-4">
-                          <label for="idr_rate">Kurs <span class="text-danger">*</span></label>
-                          <input type="text" name="idr_rate" id="idr_rate" class="form-control" 
-                            value="{{ $results->so_idr_rate }}">
-                        </div> 
+                          <label for="idr_rate_display">Kurs <span class="text-danger">*</span></label>
+                          <input type="text" id="idr_rate_display" class="form-control"
+                            value="{{ number_format((float) $results->so_idr_rate, 2, ',', '.') }}" placeholder="cth: 18.050">
+                          <input type="hidden" name="idr_rate" id="idr_rate" value="{{ $results->so_idr_rate }}">
+                        </div>
                     </div>
                     </div>
                 </div>
@@ -225,8 +226,8 @@
                 <th class="text-center">Counter</th>
                 <th class="text-center">Free</th>
                 <th class="text-center">Select Product</th>
-                <th class="text-center">Qty</th>
                 <th class="text-center">Price</th>
+                <th class="text-center">Qty</th>
                 <th class="text-center">Disc</th>
                 <th class="text-center">Total</th>
                 <th class="text-center">Action</th>
@@ -246,10 +247,10 @@
                       <option value="{{ $item->product_packaging_id }}">{{ $item->productPack->code }} - {{ $item->productPack->name }} / {{ $item->packaging->pack_name }}</option>
                     </select>
                   </td>
-                  <td><input type="number" class="form-control" name="qty[]" value="{{ $item->qty }}" required step="0.01" min="0"><input type="hidden" name="packaging[]" value="{{ $item->packaging_id }}"><input type="hidden" class="form-control" name="edit[]" value="{{ $item->id }}"></td>
-                  <td><input type="number" class="form-control" name="price[]" value="{{ $item->price }}" required></td>
-                  <td><input type="number" class="form-control" name="disc_usd[]" value="{{ $item->disc_usd }}" required></td>
-                  <td><input type="number" class="form-control" name="total[]" readonly value="{{ $item->total_item }}"></td>
+                  <td><input type="number" class="form-control text-center" name="price[]" value="{{ $item->free_product ? 0 : $item->price }}" readonly required></td>
+                  <td><input type="number" class="form-control text-center" name="qty[]" value="{{ $item->qty }}" required step="0.01" min="0"><input type="hidden" name="packaging[]" value="{{ $item->packaging_id }}"><input type="hidden" class="form-control" name="edit[]" value="{{ $item->id }}"></td>
+                  <td><input type="number" class="form-control text-center" name="disc_usd[]" value="{{ $item->disc_usd }}" required></td>
+                  <td><input type="text" class="form-control text-center" name="total[]" readonly value="{{ number_format((float) $item->total_item, 2, ',', '.') }}"></td>
                   <td><a href="#" class="row-delete"><button type="button" class="btn btn-sm btn-circle btn-alt-danger" title="Delete"><i class="fa fa-trash"></i></button></a></td>
                 </tr>
               @endforeach
@@ -261,16 +262,16 @@
             <div class="form-group row justify-content-end">
               <label class="col-md-3 col-form-label text-right" for="subtotal">IDR Sub Total</label>
               <div class="col-md-2">
-                <input type="text" class="form-control" id="subtotal" name="subtotal" readonly value="{{ $detailsCost->purchase_total_idr ?? 0 }}">
+                <input type="text" class="form-control" id="subtotal" name="subtotal" readonly value="{{ number_format((float) ($detailsCost->purchase_total_idr ?? 0), 2, ',', '.') }}">
               </div>
             </div>
             <div class="form-group row justify-content-end">
               <label class="col-md-1 col-form-label">Disc %</label>
               <div class="col-md-1">
-                <input type="text" class="form-control" id="disc_agen_percent" name="disc_agen_percent" value="{{ $detailsCost->discount_1_percent ?? 0 }}">
+                <input type="text" class="form-control" id="disc_agen_percent" name="disc_agen_percent" value="{{ $detailsCost->discount_1_percent ?? $results->salesOrder->catatan }}">
               </div>
               <div class="col-sm-2">
-                <input type="text" readonly class="form-control" id="disc_agen_idr" name="disc_agen_idr" value="{{ $detailsCost->discount_1 ?? 0 }}">
+                <input type="text" readonly class="form-control" id="disc_agen_idr" name="disc_agen_idr" value="{{ number_format((float) ($detailsCost->discount_1 ?? 0), 2, ',', '.') }}">
               </div>
             </div>
             <div class="form-group row justify-content-end">
@@ -279,31 +280,31 @@
                 <input type="text" class="form-control" id="disc_kemasan_percent" name="disc_kemasan_percent" value="{{ $detailsCost->discount_1_percent ?? 0 }}">
               </div>
               <div class="col-sm-2">
-                <input type="text" readonly class="form-control" id="disc_kemasan_idr" name="disc_kemasan_idr" value="{{ $detailsCost->discount_2 ?? 0 }}">
+                <input type="text" readonly class="form-control" id="disc_kemasan_idr" name="disc_kemasan_idr" value="{{ number_format((float) ($detailsCost->discount_2 ?? 0), 2, ',', '.') }}">
               </div>
             </div>
             <div class="form-group row justify-content-end">
               <label class="col-md-3 col-form-label text-right" for="disc_tambahan_idr">Disc IDR</label>
               <div class="col-md-2">
-                <input type="text" class="form-control" id="disc_tambahan_idr" name="disc_tambahan_idr" value="{{ $detailsCost->discount_idr ?? 0 }}">
+                <input type="text" class="form-control" id="disc_tambahan_idr" name="disc_tambahan_idr" value="{{ number_format((float) ($detailsCost->discount_idr ?? 0), 2, ',', '.') }}">
               </div>
             </div>
             <div class="form-group row justify-content-end">
               <label class="col-md-3 col-form-label text-right" for="voucher_idr">Voucher</label>
               <div class="col-md-2">
-                <input type="text" class="form-control" id="voucher_idr" name="voucher_idr" value="{{ $detailsCost->voucher_idr ?? 0 }}">
+                <input type="text" class="form-control" id="voucher_idr" name="voucher_idr" value="{{ number_format((float) ($detailsCost->voucher_idr ?? 0), 2, ',', '.') }}">
               </div>
             </div>
             <div class="form-group row justify-content-end">
               <label class="col-md-3 col-form-label text-right" for="voucher_idr">Ongkir</label>
               <div class="col-md-2">
-                <input type="text" class="form-control" id="delivery_cost_idr" name="delivery_cost_idr" value="{{ $detailsCost->delivery_cost_idr ?? 0 }}">
+                <input type="text" class="form-control" id="delivery_cost_idr" name="delivery_cost_idr" value="{{ number_format((float) ($detailsCost->delivery_cost_idr ?? 0), 2, ',', '.') }}">
               </div>
             </div>
             <div class="form-group row justify-content-end">
               <label class="col-md-3 col-form-label text-right" for="grand_total">IDR Total</label>
               <div class="col-md-2">
-                <input type="text" class="form-control" id="grand_total" name="grand_total" readonly value="{{ $detailsCost->grand_total_idr ?? 0 }}">
+                <input type="text" class="form-control" id="grand_total" name="grand_total" readonly value="{{ number_format((float) ($detailsCost->grand_total_idr ?? 0), 2, ',', '.') }}">
               </div>
             </div>
           </div>
@@ -337,6 +338,12 @@
 <script type="text/javascript">
   $(document).ready(function () {
     $('.js-select2').select2()
+
+    var userInteracted = false;
+
+    $(document).on('focus keydown paste', '#idr_rate_display, input[name="qty[]"], input[name="disc_usd[]"], #disc_agen_percent, #disc_kemasan_percent, #disc_tambahan_idr, #voucher_idr, #delivery_cost_idr', function () {
+      userInteracted = true;
+    });
 
     $('#customer_region').on('change', function(){
         let prov_id = $('#customer_region').val();
@@ -400,10 +407,10 @@
                       counter,
                       '<input type="checkbox" class="form-check-input input-gift" id="gift" name="gift"><input class="form-control input-free" type="hidden" id="free_product" value="0" name="free_product[]">',
                       '<select class="js-select2 form-control js-ajax" id="sku['+counter+']" name="sku[]" data-placeholder="Select SKU" style="width:100%" required></select>',
-                      '<input type="number" style="text-align: center;" class="form-control" name="qty[]" readonly required step="0.01" min="0"><input type="hidden" class="form-control packaging" name="packaging[]"><input type="hidden" class="form-control" name="edit[]" value="">',
                       '<input type="number" style="text-align: center;" class="form-control" name="price[]" readonly required>',
+                      '<input type="number" style="text-align: center;" class="form-control" name="qty[]" readonly required step="0.01" min="0"><input type="hidden" class="form-control packaging" name="packaging[]"><input type="hidden" class="form-control" name="edit[]" value="">',
                       '<input type="number" style="text-align: center;" class="form-control" name="disc_usd[]" required>',
-                      '<input type="number" style="text-align: center;" class="form-control" name="total[]" readonly>',
+                      '<input type="text" style="text-align: center;" class="form-control" name="total[]" readonly>',
                       '<a href="#" class="row-delete"><button type="button" class="btn btn-sm btn-circle btn-alt-danger" title="Delete"><i class="fa fa-trash"></i></button></a>'
                     ]).draw( false );
                     initailizeSelect2();
@@ -433,51 +440,104 @@
         $(this).parents('tr').find('.name').text(name);
         $(this).parents('tr').find('input[name="qty[]"]').removeAttr('readonly');
 
-        var price = e.params.data.product_price;
-        $(this).parents('tr').find('input[name="price[]"]').val(price);
+        var $row = $(this).parents('tr');
+        var isFree = $row.find('.input-gift').is(':checked');
+
+        var price = isFree ? 0 : e.params.data.product_price;
+        $row.find('input[name="price[]"]').val(price);
 
         var kemasan = e.params.data.IdKemasan;
-        $(this).parents('tr').find('input[name="packaging[]"]').val(kemasan);
+        $row.find('input[name="packaging[]"]').val(kemasan);
       });
 
     };
 
-    $('#datatable tbody').on( 'keyup', 'input[name="qty[]"]', function (e) {
-      var price = $(this).parents('tr').find('input[name="price[]"]').val();
-      var disc_usd = $(this).parents('tr').find('input[name="disc_usd[]"]').val();
-      var kurs = $("#idr_rate").val();
-      
-      var total = parseFloat(((price - disc_usd) * $(this).val()) * kurs);
-
-      $(this).parents('tr').find('input[name="total[]"]').val(total);
-      $(this).parents('tr').find('input[name="total[]"]').change();
-
-    });
-
-    $('#datatable tbody').on( 'keyup', 'input[name="disc_usd[]"]', function (e) {
-      var price = $(this).parents('tr').find('input[name="price[]"]').val();
-      var qty = $(this).parents('tr').find('input[name="qty[]"]').val();
-      var kurs = $("#idr_rate").val();
-
-      var total = parseFloat(((price - $(this).val()) * qty) * kurs);
-
-      $(this).parents('tr').find('input[name="total[]"]').val(total);
-      $(this).parents('tr').find('input[name="total[]"]').change();
-
-    });
-
-    $('#datatable tbody').on( 'change', 'input[name="total[]"]', function (e) {
-      var subtotal = 0;
-      $('input[name="total[]"]').each(function(){
-        subtotal += Number($(this).val());
+    // ============================================================
+    // Helper format - dicontek langsung dari create_lanjutan.blade.php
+    // supaya kelakuannya sama persis di seluruh app.
+    // ============================================================
+    function formatNumber(angka) {
+      var num = parseFloat(String(angka));
+      if (isNaN(num)) return '';
+      return num.toLocaleString('id-ID', {
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2
       });
-      $('#subtotal').val(subtotal);
+    }
+
+    function formatInputKurs(inputValue) {
+      // pisahkan bagian desimal (setelah koma terakhir) dari bagian bulat
+      var parts = String(inputValue).split(',');
+      var integerPart = parts[0].replace(/[^\d]/g, '');
+      var decimalPart = parts.length > 1 ? parts[1].replace(/[^\d]/g, '').substring(0, 2) : '';
+
+      if (!integerPart) return '';
+
+      integerPart = integerPart.replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+
+      return parts.length > 1 ? integerPart + ',' + decimalPart : integerPart;
+    }
+
+    // Ambil angka bersih dari field yang sudah diformat titik ribuan
+    function clean(val) {
+      if (val === null || val === undefined || val === '') return 0;
+      var s = String(val).replace(/\./g, '').replace(',', '.');
+      var n = parseFloat(s);
+      return isNaN(n) ? 0 : n;
+    }
+
+    $(document).on('input', '#idr_rate_display', function () {
+      var cursorFromEnd = this.value.length - this.selectionStart;
+      this.value = formatInputKurs(this.value);
+      var newPos = this.value.length - cursorFromEnd;
+      this.setSelectionRange(newPos, newPos);
+
+      // Sinkron ke hidden field (angka bersih tanpa titik)
+      $('#idr_rate').val(this.value.replace(/\./g, ''));
+
+      // Trigger ulang kalkulasi semua baris supaya total ikut update pakai kurs baru
+      $('input[name="qty[]"]').each(function () {
+        var $row = $(this).parents('tr');
+        recalcRow($row);
+      });
+    });
+
+    function recalcRow($row) {
+      if (!userInteracted) return;
+
+      var price = parseFloat($row.find('input[name="price[]"]').val()) || 0;
+      var qty = parseFloat($row.find('input[name="qty[]"]').val()) || 0;
+      var discUsd = parseFloat($row.find('input[name="disc_usd[]"]').val()) || 0;
+      var kurs = clean($('#idr_rate').val());
+
+      var total = ((price - discUsd) * qty) * kurs;
+
+      $row.find('input[name="total[]"]').val(formatNumber(total));
+      $row.find('input[name="total[]"]').change();
+    }
+
+    $('#datatable tbody').on('keyup', 'input[name="qty[]"]', function (e) {
+      recalcRow($(this).parents('tr'));
+    });
+
+    $('#datatable tbody').on('keyup', 'input[name="disc_usd[]"]', function (e) {
+      recalcRow($(this).parents('tr'));
+    });
+
+    $('#datatable tbody').on('change', 'input[name="total[]"]', function (e) {
+      var subtotal = 0;
+      $('input[name="total[]"]').each(function () {
+        subtotal += clean($(this).val());
+      });
+      $('#subtotal').val(formatNumber(subtotal));
 
       grandtotal();
     });
 
-    $('#datatable tbody').on( 'click', '.row-delete', function (e) {
+    $('#datatable tbody').on('click', '.row-delete', function (e) {
       e.preventDefault();
+
+      userInteracted = true;
 
       parent = $(this).parents('tr');
       edit = parent.find('input[name="edit[]"]').val();
@@ -487,53 +547,58 @@
       }
 
       table.row( $(this).parents('tr') ).remove().draw();
-      
+
       var subtotal = 0;
-      $('input[name="total[]"]').each(function(){
-        subtotal += Number($(this).val());
+      $('input[name="total[]"]').each(function () {
+        subtotal += clean($(this).val());
       });
-      $('#subtotal').val(subtotal);
+      $('#subtotal').val(formatNumber(subtotal));
 
       grandtotal();
 
     });
 
     $('#datatable tbody').on( 'click', '.input-gift', function (e) {
-      if($(this).is(':checked')){
-        $(this).parents('tr').find('.input-free').val(1);
+      userInteracted = true;
+      var $row = $(this).parents('tr');
 
-        $(this).parents('tr').find('input[name="price[]"]').val(0)
+      if($(this).is(':checked')){
+        $row.find('.input-free').val(1);
+        $row.find('input[name="price[]"]').val(0);
+        $row.find('input[name="disc_usd[]"]').val(0);
       }else{
-        $(this).parents('tr').find('.input-free').val(0);
+        $row.find('.input-free').val(0);
       }
+
+      recalcRow($row);
     });
 
     $('#disc_agen_percent').on('keyup', function(e) {
       if($(this).val() != ''){
-        let subtotal = $("#subtotal").val()
+        let subtotal = clean($("#subtotal").val());
 
         let amount = subtotal * $(this).val() / 100;
 
-        $('input[name="disc_agen_idr"]').val(amount);
+        $('input[name="disc_agen_idr"]').val(formatNumber(amount));
         grandtotal();
       }else{
-        $('input[name="disc_agen_idr"]').val(0);
+        $('input[name="disc_agen_idr"]').val(formatNumber(0));
         grandtotal();
       }
     });
 
     $('#disc_kemasan_percent').on('input', function(e){
       if($(this).val() != ''){
-        let subtotal = $("#subtotal").val()
-        let disc_percent = $('input[name="disc_agen_idr"]').val();
+        let subtotal = clean($("#subtotal").val());
+        let disc_percent = clean($('input[name="disc_agen_idr"]').val());
 
         let subAfterDiscPercent = subtotal - disc_percent;
 
         var amount = subAfterDiscPercent * $(this).val() / 100;
-        $('#disc_kemasan_idr').val(amount);
+        $('#disc_kemasan_idr').val(formatNumber(amount));
         grandtotal();
       }else{
-        $('#disc_kemasan_idr').val(0);
+        $('#disc_kemasan_idr').val(formatNumber(0));
         grandtotal();
       }
     });
@@ -551,15 +616,17 @@
     });
 
     function grandtotal() {
-      var subtotal = Number($('#subtotal').val());
-      var disc_percent = Number($('#disc_agen_idr').val());
-      var disc_kemasan = Number($('#disc_kemasan_idr').val());
-      var disc_idr = Number($('#disc_tambahan_idr').val());
-      var voucher = Number($('#voucher_idr').val());
-      var ongkir = Number($('#delivery_cost_idr').val());
+      if (!userInteracted) return;
+      
+      var subtotal = clean($('#subtotal').val());
+      var disc_percent = clean($('#disc_agen_idr').val());
+      var disc_kemasan = clean($('#disc_kemasan_idr').val());
+      var disc_idr = clean($('#disc_tambahan_idr').val());
+      var voucher = clean($('#voucher_idr').val());
+      var ongkir = clean($('#delivery_cost_idr').val());
       var grandtotal = subtotal - disc_percent - disc_kemasan - disc_idr - voucher + ongkir;
 
-      $('#grand_total').val(grandtotal);
+      $('#grand_total').val(formatNumber(grandtotal));
     }
   });
 </script>

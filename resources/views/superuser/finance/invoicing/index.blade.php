@@ -178,7 +178,7 @@
               { data: 'action' },
           ],
           order: [
-              [0, 'desc']
+              [2, 'desc']
           ],
           pageLength: 10,
           lengthMenu: [

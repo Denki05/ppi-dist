@@ -25,8 +25,11 @@ class PackingOrder extends Model
         'ekspedisi_id',
         'vendor_id',
     	'idr_rate',
+		'is_kurs_hold',
+		'has_payment',
     	'status',
-		'prev_status',
+		'void_status',
+		'prev_sataus',
 		'count_cancel',
 		'status_mitra',
     	'type_transaction',
@@ -87,6 +90,10 @@ class PackingOrder extends Model
 		7 => [
     		'class' => 'warning',
     		'msg' => 'Revisi'
+    	],
+		8 => [
+    		'class' => 'dark',
+    		'msg' => 'Void'
     	],
     ];
 

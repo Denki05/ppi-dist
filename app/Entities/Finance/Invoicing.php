@@ -29,6 +29,7 @@ class Invoicing extends Model
         'DELETED' => 2,
         'REVISI' => 3,
         'PENDING' => 4,
+        'VOID' => 5,
     ];
 
     const TYPE = [

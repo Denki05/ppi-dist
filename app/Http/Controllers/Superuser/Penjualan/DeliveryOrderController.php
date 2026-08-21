@@ -28,9 +28,11 @@ use App\Entities\Gudang\StockMove;
 use App\Entities\Setting\UserMenu;
 use App\Entities\Account\User;
 use App\Notifications\DoNotification;
-use App\Services\StockService;
+use Illuminate\Support\Facades\Log;
 use App\Repositories\CodeRepo;
 use Illuminate\Support\Collection;
+use App\Services\StockService;
+use GuzzleHttp\Client;
 use Validator;
 use App\Helper\LogActivity;
 use PDF;
@@ -66,20 +68,7 @@ class DeliveryOrderController extends Controller
 
     public function json(Request $request, DeliveryOrdersTable $datatable)
     {
-        $show = $request->show;
-
-        if (Auth::user()->is_superuser == 0) {
-            if ($this->isChecker() && !$this->isSpvGudang()) {
-                $show = 'default';
-            } elseif ($this->isSpvGudang() && !$this->isChecker()) {
-                // TAMBAHKAN 'default' di dalam array in_array() ini
-                if (!in_array($show, ['default', 'acc', 'all', 'history'])) {
-                    $show = 'default'; // Jadikan List SPK sebagai tab default saat pertama buka
-                }
-            }
-        }
-
-        return $datatable->with('show', $show)->build($request);
+        return $datatable->with('show', $request->show)->build($request);
     }
 
     private function isSpvGudang()
@@ -170,8 +159,6 @@ class DeliveryOrderController extends Controller
             'table' => $table,
             'customer' => $customer,
             'packing' => $packing,
-            'isSpvGudang' => $this->isSpvGudang(),
-            'isChecker' => $this->isChecker(),
         ];
         return view($this->view."index",$data);
     }
@@ -327,10 +314,6 @@ class DeliveryOrderController extends Controller
                 return redirect()->route('superuser.index')
                     ->with('error', 'Anda tidak punya akses');
             }
-            if (!$this->isChecker()) {
-                return redirect()->route('superuser.index')
-                    ->with('error', 'Aksi ini khusus untuk Checker.');
-            }
         }
 
         DB::beginTransaction();
@@ -344,8 +327,6 @@ class DeliveryOrderController extends Controller
 
             $packing = PackingOrder::with(['do_detail.product_pack','so'])
                 ->findOrFail($request->id);
-            
-            $isProforma = optional($packing->so)->is_proforma == 1;
 
             if ($packing->status != 3) {
                 throw new \Exception('Status tidak valid untuk diproses.');
@@ -378,46 +359,58 @@ class DeliveryOrderController extends Controller
             }
 
             // ======================================
-            // VALIDASI LOGS & POTONG STOK FISIK
+            // VALIDASI LOGS (memastikan checker tidak konfirmasi melebihi kuota reserved).
+            // CATATAN: potong fisik TIDAK dilakukan di sini lagi — dipindah ke sending()
+            // (status 4 -> 5 / DELIVERING). Jadi kalau DO masih status 4 dan di-revisi,
+            // stok fisik belum pernah kepotong -> cukup lepas reserved, tidak perlu restore fisik.
             // ======================================
-            if (!$isProforma) {
-                $stockService = new \App\Services\StockService();
-                
-                // ✅ 1. KELOMPOKKAN QTY CHECKER PER PRODUK
-                $checkerQtys = [];
-                foreach ($packing->do_detail as $item) {
-                    $base_id = preg_replace('/_\d+$/', '', $item->product_packaging_id);
-                    
-                    if (!isset($checkerQtys[$base_id])) {
-                        $checkerQtys[$base_id] = 0;
-                    }
-                    $checkerQtys[$base_id] += $item->qty; // Jumlahkan semua baris dengan produk yang sama
+            $checkerQtys = [];
+
+            foreach ($packing->do_detail as $item) {
+
+                $base_id = preg_replace('/_\d+$/', '', $item->product_packaging_id);
+
+                if (!isset($checkerQtys[$base_id])) {
+                    $checkerQtys[$base_id] = 0;
                 }
 
-                // ✅ 2. VALIDASI TOTAL CHECKER VS TOTAL LOGS
-                foreach ($checkerQtys as $base_id => $totalCheckerQty) {
-                    // Ambil total kuota di log untuk produk ini
-                    $logQty = DB::table('do_stock_deduction_logs')
-                        ->where('do_id', $packing->id)
-                        ->where('product_packaging_id', $base_id)
-                        ->where('status', 1) 
-                        ->sum('qty');
+                $checkerQtys[$base_id] += $item->qty;
+            }
 
-                    // Validasi: Qty GABUNGAN dari Checker tidak boleh melebihi kuota di Log
-                    if ((float)$totalCheckerQty > (float)$logQty) {
-                        throw new \Exception("Gagal: Total Qty Checker untuk produk {$base_id} ({$totalCheckerQty}) melebihi kuota Pesanan di Log ({$logQty}).");
-                    }
-                }
+            foreach ($checkerQtys as $base_id => $totalCheckerQty) {
 
-                // ✅ 3. JIKA SEMUA VALID, LANGSUNG POTONG FISIK
-                foreach ($packing->do_detail as $item) {
-                    $base_id = preg_replace('/_\d+$/', '', $item->product_packaging_id);
-                    // Potong fisik sesuai input checker per baris
-                    $stockService->deductPhysicalStock($packing->warehouse_id, $base_id, $item->qty);
+                $logQty = DB::table('do_stock_deduction_logs')
+                    ->where('do_id', $packing->id)
+                    ->where('product_packaging_id', $base_id)
+                    ->where('status', 1)
+                    ->sum('qty');
+
+                if ((float)$totalCheckerQty > (float)$logQty) {
+                    throw new \Exception(
+                        "Gagal: Total Qty Checker untuk produk {$base_id} ({$totalCheckerQty}) melebihi kuota Pesanan di Log ({$logQty})."
+                    );
                 }
             }
 
-            $packing->update(['status' => 4]);
+            // ======================================
+            // CEK KURS: kalau belum valid, DO tetap lanjut ke status 4,
+            // tapi ditandai is_kurs_hold supaya diblokir sebelum Surat Jalan.
+            // ======================================
+            $isKursHold = empty($packing->idr_rate) || (float) $packing->idr_rate <= 1;
+
+            $packing->update([
+                'status' => 4,
+                'is_kurs_hold' => $isKursHold,
+            ]);
+
+            // ======================================
+            // BUAT INVOICE DI SINI kalau kurs sudah valid (>1).
+            // Kalau masih hold, invoice BELUM dibuat -> nanti dibuat otomatis
+            // saat admin update kurs lewat SO Progress (lihat update_kurs()).
+            // ======================================
+            if (!$isKursHold) {
+                $this->createInvoiceIfNeeded($packing->id);
+            }
 
             DB::commit();
 
@@ -426,12 +419,47 @@ class DeliveryOrderController extends Controller
                 ->with('success', 'DO berhasil diubah ke Siap Kirim!');
 
         } catch (\Throwable $e) {
-
             DB::rollBack();
-
             return redirect()->back()
                 ->with('error', $e->getMessage());
         }
+    }
+
+    /**
+     * Buat invoice untuk DO ini kalau belum ada, pakai grand_total_idr
+     * yang sudah tersimpan di PackingOrderDetail (sama seperti perhitungan
+     * di tutup_so() / reset_cost_if_change_idr_rate()).
+     * Kalau invoice sudah ada, cukup sinkronkan grand_total_idr-nya.
+     */
+    private function createInvoiceIfNeeded($do_id)
+    {
+        $packing = PackingOrder::where('id', $do_id)->first();
+        $detail  = PackingOrderDetail::where('do_id', $do_id)->first();
+
+        if (!$packing || !$detail) {
+            return;
+        }
+
+        $existing = Invoicing::where('do_id', $do_id)->first();
+
+        if ($existing) {
+            if ($existing->grand_total_idr != $detail->grand_total_idr) {
+                $existing->update([
+                    'grand_total_idr' => $detail->grand_total_idr,
+                ]);
+            }
+            return;
+        }
+
+        Invoicing::create([
+            'code' => $packing->do_code,
+            'do_id' => $packing->id,
+            'customer_id' => $packing->customer_id,
+            'customer_other_address_id' => $packing->customer_other_address_id,
+            'grand_total_idr' => $detail->grand_total_idr,
+            'type' => 0,
+            'created_by' => Auth::id(),
+        ]);
     }
 
     public function sending(Request $request)
@@ -441,9 +469,6 @@ class DeliveryOrderController extends Controller
             if(empty($this->access) || empty($this->access->user) || $this->access->can_approve == 0){
                 return redirect()->route('superuser.index')->with('error','Anda tidak punya akses untuk membuka menu terkait');
             }
-            if (!$this->isSpvGudang()) {
-                return redirect()->route('superuser.index')->with('error','Aksi ini khusus untuk SPV Gudang.');
-            }
         }
 
         DB::beginTransaction();
@@ -452,12 +477,8 @@ class DeliveryOrderController extends Controller
                 'id' => 'required'
             ]);
             $post = $request->all();
-            $result = PackingOrder::where('id',$post["id"])->first();
+            $result = PackingOrder::with('do_detail')->where('id',$post["id"])->first();
             $do_cost = PackingOrderDetail::where('do_id', $result->id)->first();
-
-            PackingOrder::where('id',$result->id)->update([
-                'date_sent' => date('Y-m-d')
-            ]);
 
             if($result->status == 1){
                 return redirect()->route('superuser.penjualan.packing_order.index')->with('error','Tidak bisa mengirim packing order yang masih baru dibuat');
@@ -468,13 +489,38 @@ class DeliveryOrderController extends Controller
             if($do_cost->grand_total_idr == 0){
                 return redirect()->route('superuser.penjualan.delivery_order.index')->with('error','Harga didalam packing list belum di set');
             }
-            $update = PackingOrder::where('id',$post["id"])->update(['status' => 5]);
+
+            // ======================================
+            // GUARD KURS: jangan sampai lanjut ke Delivering kalau kurs masih belum valid.
+            // (Safety net server-side, selain guard di klik "Surat Jalan" pada list.)
+            // ======================================
+            if($result->is_kurs_hold || empty($result->idr_rate) || (float) $result->idr_rate <= 1){
+                return redirect()->route('superuser.penjualan.delivery_order.index')->with('error','Kurs IDR belum di-set / masih 0-1. Silakan update kurs terlebih dahulu di SO Progress.');
+            }
+
+            // ======================================
+            // POTONG FISIK STOK DI SINI (dipindah dari packed()) — momen "save setelah cetak SJ".
+            // ======================================
+            $stockService = new \App\Services\StockService();
+
+            foreach ($result->do_detail as $item) {
+                $base_id = preg_replace('/_\d+$/', '', $item->product_packaging_id);
+                $stockService->deductPhysicalStock(
+                    $result->warehouse_id,
+                    $base_id,
+                    $item->qty
+                );
+            }
+
+            PackingOrder::where('id',$result->id)->update([
+                'date_sent' => date('Y-m-d'),
+                'status' => 5
+            ]);
 
             DB::commit();
             return redirect()->route('superuser.penjualan.delivery_order.index')->with('success','Delivery Order berhasil diubah ke delivery!');
             
         }catch(\Throwable $e){
-            dd($e);
             DB::rollback();
             return redirect()->back()->with('error',$e->getMessage());
         }
@@ -551,11 +597,6 @@ class DeliveryOrderController extends Controller
                 $data_json["Message"] = 'Anda tidak punya akses untuk membuka menu terkait';
                 return response()->json($data_json, 200);
             }
-            if (!$this->isSpvGudang()) {
-                $data_json["IsError"] = true;
-                $data_json["Message"] = 'Aksi ini khusus untuk SPV Gudang.';
-                return response()->json($data_json, 200);
-            }
         }
 
         // Begin transaction
@@ -574,6 +615,13 @@ class DeliveryOrderController extends Controller
                 DB::rollBack();
                 return redirect()->route('superuser.penjualan.delivery_order.index')
                                  ->with('success','DO sudah berhasil update resi sebelumnya!');
+            }
+
+            // ======================================================
+            // ⚠️ WARNING: DO ini sedang dalam pengajuan void
+            // ======================================================
+            if ($get_do->void_status == 1) {
+                throw new \Exception('Pengajuan void pada kode ini sedang berlangsung! Mohon koordinasi dengan Finance sebelum melanjutkan Update Resi.');
             }
 
             // ======================================================
@@ -902,6 +950,114 @@ class DeliveryOrderController extends Controller
         exit();
     }
 
+    Public function print_label_unboxing(Request $request)
+    {
+        if(Auth::user()->is_superuser == 0){
+            if(empty($this->access) || empty($this->access->user) || $this->access->can_print == 0){
+                return redirect()->route('superuser.index')->with('error','Anda tidak punya akses untuk membuka menu terkait');
+            }
+        }
+
+        $my_report = "C:\\xampp\\htdocs\\ppi-dist\public\\cr\\do\\label_unboxing.rpt"; 
+        $my_pdf = 'C:\\xampp\\htdocs\\ppi-dist\\public\\cr\\do\\export\\LabelUnboxing-'.'.pdf';
+
+        $my_server = "LOCAL"; 
+        $my_user = "root"; 
+        $my_password = ""; 
+        $my_database = "ppi-dist";
+        $COM_Object = "CrystalDesignRunTime.Application";
+
+
+        //-Create new COM object-depends on your Crystal Report version
+        $crapp= New COM($COM_Object) or die("Unable to Create Object");
+        $creport = $crapp->OpenReport($my_report,1); // call rpt report
+
+        //- Set database logon info - must have
+        $creport->Database->Tables(1)->SetLogOnInfo($my_server, $my_database, $my_user, $my_password);
+
+        //- field prompt or else report will hang - to get through
+        $creport->EnableParameterPrompting = FALSE;
+        // $creport->RecordSelectionFormula = "{penjualan_do.id}= $result->id";
+
+
+        //export to PDF process
+        $creport->ExportOptions->DiskFileName=$my_pdf; //export to pdf
+        $creport->ExportOptions->PDFExportAllPages=true;
+        $creport->ExportOptions->DestinationType=1; // export to file
+        $creport->ExportOptions->FormatType=31; // PDF type
+        $creport->Export(false);
+
+        //------ Release the variables ------
+        $creport = null;
+        $crapp = null;
+        $ObjectFactory = null;
+
+        $file = 'C:\\xampp\\htdocs\\ppi-dist\\public\\cr\\do\\export\\LabelUnboxing-'.'.pdf';
+
+        header("Content-Description: File Transfer"); 
+        header("Content-Type: application/octet-stream"); 
+        header("Content-Transfer-Encoding: Binary"); 
+        header("Content-Disposition: attachment; filename=\"". basename($file) ."\""); 
+        ob_clean();
+        flush();
+        readfile ($file);
+        exit();
+    }
+
+    Public function print_label_unboxing2(Request $request)
+    {
+        if(Auth::user()->is_superuser == 0){
+            if(empty($this->access) || empty($this->access->user) || $this->access->can_print == 0){
+                return redirect()->route('superuser.index')->with('error','Anda tidak punya akses untuk membuka menu terkait');
+            }
+        }
+
+        $my_report = "C:\\xampp\\htdocs\\ppi-dist\public\\cr\\do\\label_unboxing2.rpt"; 
+        $my_pdf = 'C:\\xampp\\htdocs\\ppi-dist\\public\\cr\\do\\export\\LabelUnboxing2-'.'.pdf';
+
+        $my_server = "LOCAL"; 
+        $my_user = "root"; 
+        $my_password = ""; 
+        $my_database = "ppi-dist";
+        $COM_Object = "CrystalDesignRunTime.Application";
+
+
+        //-Create new COM object-depends on your Crystal Report version
+        $crapp= New COM($COM_Object) or die("Unable to Create Object");
+        $creport = $crapp->OpenReport($my_report,1); // call rpt report
+
+        //- Set database logon info - must have
+        $creport->Database->Tables(1)->SetLogOnInfo($my_server, $my_database, $my_user, $my_password);
+
+        //- field prompt or else report will hang - to get through
+        $creport->EnableParameterPrompting = FALSE;
+        // $creport->RecordSelectionFormula = "{penjualan_do.id}= $result->id";
+
+
+        //export to PDF process
+        $creport->ExportOptions->DiskFileName=$my_pdf; //export to pdf
+        $creport->ExportOptions->PDFExportAllPages=true;
+        $creport->ExportOptions->DestinationType=1; // export to file
+        $creport->ExportOptions->FormatType=31; // PDF type
+        $creport->Export(false);
+
+        //------ Release the variables ------
+        $creport = null;
+        $crapp = null;
+        $ObjectFactory = null;
+
+        $file = 'C:\\xampp\\htdocs\\ppi-dist\\public\\cr\\do\\export\\LabelUnboxing-'.'.pdf';
+
+        header("Content-Description: File Transfer"); 
+        header("Content-Type: application/octet-stream"); 
+        header("Content-Transfer-Encoding: Binary"); 
+        header("Content-Disposition: attachment; filename=\"". basename($file) ."\""); 
+        ob_clean();
+        flush();
+        readfile ($file);
+        exit();
+    }
+
     public function print_manifest(Request $request, $id)
     {
         if(Auth::user()->is_superuser == 0){
@@ -1177,18 +1333,9 @@ class DeliveryOrderController extends Controller
                 $stockService = new \App\Services\StockService();
 
                 // 1. Potong kembali fisik stok ke rak berdasarkan Qty Baru (hasil editan)
-                // Pastikan warehouse_id yang dikirim adalah milik $do atau input request
-                $targetWarehouseId = $do->warehouse_id;
-
-                if (!$targetWarehouseId) {
-                    throw new \Exception("Gagal update stok: Warehouse ID tidak ditemukan pada data DO.");
-                }
-
                 foreach ($items as $item) {
                     $base_id = preg_replace('/_\d+$/', '', $item->product_packaging_id);
-                    
-                    // Kirim $targetWarehouseId yang sudah dipastikan tidak null
-                    $stockService->deductPhysicalStock($targetWarehouseId, $base_id, $item->qty);
+                    $stockService->deductPhysicalStock($do->warehouse_id, $base_id, $item->qty);
                 }
 
                 // 2. Jika statusnya diset langsung ke 6 (Delivered / Update Resi)

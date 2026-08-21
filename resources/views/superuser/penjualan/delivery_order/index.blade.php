@@ -554,6 +554,7 @@
   .status-pill-ready      { background: #f1f3f5; color: #495057; }
   .status-pill-packed     { background: #fff3bf; color: #995c00; }
   .status-pill-delivering { background: #edf2ff; color: #3b5bdb; }
+  .status-pill-void { background: #fef2f2; color: #dc2626; }
   .status-pill-delivered  { background: #ebfbee; color: #2b8a3e; }
   .status-pill-default    { background: #f1f3f5; color: #868e96; }
 
@@ -738,7 +739,10 @@ $(document).ready(function() {
     'DELIVERED':  'delivered'
   };
 
-  function statusBadge(text) {
+  function statusBadge(text, isVoid) {
+    if (isVoid) {
+      return '<span class="status-pill status-pill-void"><i class="fa fa-ban"></i> Pengajuan Void</span>';
+    }
     let cls = statusMap[text] || 'default';
     return '<span class="status-pill status-pill-' + cls + '">' + (text || '-') + '</span>';
   }
@@ -759,7 +763,7 @@ $(document).ready(function() {
         '  <div class="do-card-code">' + (row.do_code || row.code || '-') + '</div>' +
         '  <div class="do-card-date">' + (row.created_at ? row.created_at.display : '-') + '</div>' +
         '  <div class="do-card-customer">' + (row.customer_other_address_id || '-') + '</div>' +
-        '  <div class="do-card-status">' + statusBadge(row.status) + '</div>' +
+        '  <div class="do-card-status">' + statusBadge(row.status, row.void_status == 1) + '</div>' +
         '  <div class="do-card-actions">' + (row.action || '') + '</div>' +
         '</div>';
       $list.append(card);
@@ -879,4 +883,34 @@ $(document).ready(function() {
 });
 </script>
 @endif
+
+<script>
+$(document).on('click', '.btn-kurs-blocked', function () {
+    Swal.fire({
+        icon: 'warning',
+        title: 'Kurs Belum Diset',
+        text: 'DO ' + $(this).data('code') + ' belum bisa diproses ke Surat Jalan karena kurs IDR belum di-set (masih 0/1). Silakan update kurs terlebih dahulu di halaman SO Progress.',
+        confirmButtonText: 'Mengerti'
+    });
+});
+
+$(document).on('click', '.btn-payment-blocked', function () {
+    Swal.fire({
+        icon: 'warning',
+        title: 'Pembayaran Belum Tercatat',
+        text: 'DO ' + $(this).data('code') + ' adalah transaksi CASH dan belum ada catatan pembayaran (Payable) untuk invoice ini. Konfirmasi/catat pembayarannya dulu sebelum Update Resi.',
+        confirmButtonText: 'Mengerti'
+    });
+});
+
+$(document).on('click', '.btn-void-blocked', function () {
+    Swal.fire({
+        icon: 'warning',
+        title: 'Sedang Pengajuan Void',
+        text: 'DO ' + $(this).data('code') + ' sedang diajukan void dan menunggu approval Finance. Update Resi tidak bisa dilakukan sampai pengajuan ini selesai diproses.',
+        confirmButtonText: 'Mengerti'
+    });
+});
+</script>
+
 @endpush

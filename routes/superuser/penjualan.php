@@ -24,7 +24,7 @@ Route::group([
         Route::get('/so_awal', 'SalesOrderController@index_awal')->name('index_awal');
         Route::get('/so_lanjutan', 'SalesOrderController@index_lanjutan')->name('index_lanjutan');
         Route::get('/so_mutasi', 'SalesOrderController@index_mutasi')->name('index_mutasi');
-        Route::get('/create/{step}/{member}/{brand}/{type}/{indent}/{approval}/{note}/{kurs}/{disc_percent}/{is_proforma}/{packaging?}', 'SalesOrderController@create')->name('create');
+        Route::get('/create/{step}/{member}/{brand}/{type}/{indent}/{approval}/{note}/{kurs}/{disc_percent}/{disc_idr}/{disc_usd}/{disc_kemasan}/{is_proforma}/{packaging?}', 'SalesOrderController@create')->name('create');
         Route::get('/{id}/edit/{step}', 'SalesOrderController@edit')->name('edit');
         Route::get('/{id}/detail', 'SalesOrderController@detail')->name('detail');
         Route::post('/{member}/store', 'SalesOrderController@store')->name('store');
@@ -64,6 +64,9 @@ Route::group([
         Route::post('/approvalMouSo/{id}', 'SalesOrderController@approvalMouSo')->name('approvalMouSo');
         Route::get('/viewSalesOrderDetail/{id}', 'SalesOrderController@viewSalesOrderDetail')->name('viewSalesOrderDetail');
         Route::get('/migrasi_so', 'SalesOrderController@migrasi_so')->name('migrasi_so');
+
+        Route::get('/so-progress-partial', 'SalesOrderController@so_progress_partial')->name('so_progress_partial');
+        Route::get('/sales_estimate_pdf/{id}', 'SalesOrderController@sales_estimate_pdf')->name('sales_estimate_pdf');
     });
 
     Route::group(['as' => 'packing_order.', 'prefix' => '/packing_order'], function () {
@@ -89,6 +92,11 @@ Route::group([
         Route::post('/ajax_customer_other_address_detail', 'PackingOrderController@ajax_customer_other_address_detail')->name('ajax_customer_other_address_detail');
         Route::get('/{id}/print_proforma', 'PackingOrderController@print_proforma')->name('print_proforma');
         Route::get('/update_header_do', 'PackingOrderController@update_header_do')->name('update_header_do');
+
+        Route::post('/revisi-dari-logistik/{id}', 'PackingOrderController@revisi_dari_logistik')->name('revisi_dari_logistik');
+        Route::post('/update-kurs', 'PackingOrderController@update_kurs')->name('update_kurs');
+        Route::post('/ajukan-void/{id}', 'PackingOrderController@ajukan_void')->name('ajukan_void');
+        Route::post('/confirmed_payment/{id}', 'PackingOrderController@confirmed_payment')->name('confirmed_payment');
     });
 
     Route::group(['as' => 'delivery_order.', 'prefix' => '/delivery_order'], function () {

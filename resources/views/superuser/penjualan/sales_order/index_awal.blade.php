@@ -158,7 +158,7 @@
                   <select class="form-control js-select2" name="so_type" id="so_type" style="width:100%;" required>
                     <option value="">Pilih Transaksi Type </option>
                     @foreach(App\Entities\Penjualan\SalesOrder::TYPE_TRANSACTION as $row => $value)
-                    <option value="{{$value}}">{{$value}}</option>
+                    <option value="{{$row}}">{{$row}}</option>
                     @endforeach
                   </select>
                 </div>
@@ -169,7 +169,7 @@
                             id="need_proforma" 
                             value="1">
                       <label class="custom-control-label" for="need_proforma">
-                          <b>Butuh Proforma?</b>
+                          <b>Estimate?</b>
                       </label>
                   </div>
                 </div>
@@ -181,8 +181,27 @@
                   <input class="form-control" type="text" name="kurs" id="kurs" inputmode="numeric" placeholder="cth: 15.500" required>
                 </div>
                 <div class="form-group col-6">
+                  <span class="form-label"><b>Disc Cash/USD </b></span>
+                  <select class="form-control js-select2" name="disc_usd" id="disc_usd" data-placeholder="Pilih Diskon" style="width: 100%;">
+                      <option value="0">0</option>
+                      <option value="2">2</option>
+                      <option value="4">4</option>
+                  </select>
+                </div>
+              </div>
+
+              <div class="form-row">
+                <div class="form-group col-4">
                   <span class="form-label"><b>Disc % </b></span>
-                  <input class="form-control" type="text" name="disc_percent" id="disc_percent">
+                  <input class="form-control" type="number" step="any" name="disc_percent" id="disc_percent" placeholder="0">
+                </div>
+                <div class="form-group col-4">
+                  <span class="form-label"><b>Disc Kemasan </b></span>
+                  <input class="form-control" type="number" step="any" name="disc_kemasan" id="disc_kemasan" placeholder="0">
+                </div>
+                <div class="form-group col-4">
+                  <span class="form-label"><b>Disc IDR </b></span>
+                  <input class="form-control" type="number" step="any" name="disc_idr" id="disc_idr" placeholder="0">
                 </div>
               </div>
 
@@ -362,6 +381,8 @@
 </script>
 <script type="text/javascript">
     $(document).ready(function() {
+      $('.js-select2').select2();
+
       let datatableUrl = '{{ route('superuser.penjualan.sales_order.json_awal') }}';
       let firstDatatableUrl = datatableUrl + '?status_so=all' + '&customer_name=all';
 
@@ -467,18 +488,25 @@
           var step_so = 1;
           var note = $('#editor').val() || '-';
           var approval_spv = $('#approval_spv').is(':checked') ? 1 : 0;
+          
+          // Tangkap 4 Inputan Diskon
           var disc_percent = $('#disc_percent').val() || 0;
+          var disc_idr = $('#disc_idr').val() || 0;
+          var disc_usd = $('#disc_usd').val() || 0;
+          var disc_kemasan = $('#disc_kemasan').val() || 0;
+          
           var need_proforma = $('#need_proforma').is(':checked') ? 1 : 0;
           var packaging_id = $('#packaging_id').val() || '';
 
-          // Validasi tambahan: kemasan wajib dipilih
           if (!packaging_id) {
             Swal.fire('Perhatian', 'Kemasan wajib dipilih sebelum melanjutkan.', 'warning');
             $('#packaging_id').select2('open');
             return;
           }
 
-          var url = '{{ route('superuser.penjualan.sales_order.create',  [":step", ":member", ":brand", ":type", ":indent", ":approval", ":note", ":kurs", ":disc_percent", ":need_proforma", ":packaging"]) }}';
+          // Update template URL route (tambahkan 3 parameter baru)
+          var url = '{{ route('superuser.penjualan.sales_order.create',  [":step", ":member", ":brand", ":type", ":indent", ":approval", ":note", ":kurs", ":disc_percent", ":disc_idr", ":disc_usd", ":disc_kemasan", ":need_proforma", ":packaging"]) }}';
+          
           url = url.replace(':member', customer);
           url = url.replace(':brand', merek);
           url = url.replace(':type', type_so);
@@ -488,8 +516,11 @@
           url = url.replace(':kurs', kurs);
           url = url.replace(':note', encodeURIComponent(note));
           url = url.replace(':disc_percent', disc_percent);
+          url = url.replace(':disc_idr', disc_idr);
+          url = url.replace(':disc_usd', disc_usd);
+          url = url.replace(':disc_kemasan', disc_kemasan);
           url = url.replace(':need_proforma', need_proforma);
-          url = url.replace(':packaging', packaging_id); // <-- TAMBAHAN INI
+          url = url.replace(':packaging', packaging_id);
 
           $.ajax({
               url: url,

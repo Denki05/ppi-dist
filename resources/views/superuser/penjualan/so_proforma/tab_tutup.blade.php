@@ -25,7 +25,7 @@
         <td>{{ $loop->iteration }}</td>
         <td>{{ $row->code }}</td>
         <td>{{ $row->member->name ?? '-' }} {{ $row->member->text_kota ?? '-' }}</td>
-        <td>{{ number_format($row->details_cost->grand_total_idr,2,',','.') }}</td>
+        <td>{{ number_format(optional($row->details_cost)->grand_total_idr ?? 0, 2, ',', '.') }}</td>
         <td>
             <span class="badge bg-success">
                 Selesai

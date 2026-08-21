@@ -87,6 +87,97 @@ body{ background:#1f242a; font-family: "Segoe UI", Roboto, sans-serif; }
 .action-toolbar .btn i{
     font-size: 11px;
 }
+
+/* ── Tombol Audit Log ─────────────────────────────────── */
+.btn-teal { background: #0f766e; border-color: #0f766e; color: #fff; }
+.btn-teal:hover { background: #0d6560; color: #fff; }
+
+/* ── Tab bar ──────────────────────────────────────────── */
+.al-tab-btn {
+    padding: 8px 20px; font-size: 13px; font-weight: 600;
+    border: none; background: none; cursor: pointer;
+    color: #64748b; border-bottom: 2px solid transparent;
+    transition: all .2s ease;
+}
+.al-tab-btn.active { color: #0f766e; border-bottom-color: #0f766e; }
+.al-tab-btn:hover:not(.active) { color: #334155; background: #f8fafc; border-radius: 4px 4px 0 0; }
+
+/* ── Accordion rows ───────────────────────────────────── */
+.al-group-row {
+    display: flex; align-items: center; gap: 10px;
+    padding: 10px 16px; 
+    background: #f1f5f9; /* Level 1: Lebih gelap untuk kesan Header */
+    border-bottom: 1px solid #cbd5e1; /* Garis pemisah lebih tegas */
+    cursor: pointer; user-select: none;
+    transition: background-color .2s;
+}
+.al-group-row:hover { background: #e2e8f0; }
+
+.al-sub-row {
+    display: flex; align-items: center; gap: 10px;
+    padding: 8px 16px 8px 36px; 
+    background: #f8fafc; /* Level 2: Lebih terang */
+    border-bottom: 1px dashed #e2e8f0; /* Garis putus-putus untuk child group */
+    cursor: pointer; user-select: none;
+    transition: background-color .2s;
+}
+.al-sub-row:hover { background: #f1f5f9; }
+
+.al-detail-row {
+    display: flex; align-items: center; gap: 10px;
+    padding: 8px 16px 8px 58px; /* Level 3: Indentasi lebih dalam masuk ke dalam */
+    background: #ffffff; /* Detail murni putih agar mencolok */
+    border-bottom: 1px solid #f1f5f9;
+    font-size: 12px; color: #475569;
+    transition: background-color .15s;
+}
+.al-detail-row:hover { background: #f8fafc; } /* Tambahan efek hover di baris detail */
+
+/* ── Accordion elements ───────────────────────────────── */
+.al-chev { font-size: 11px; color: #94a3b8; width: 12px; flex-shrink: 0; transition: transform .2s ease; }
+.al-chev.open { transform: rotate(90deg); color: #0f766e; } /* Icon panah berubah warna kehijauan saat buka */
+.al-group-title { font-size: 13px; font-weight: 700; color: #0f172a; flex: 1; letter-spacing: 0.2px; }
+.al-sub-title { font-size: 12px; font-weight: 600; color: #334155; flex: 1; }
+
+.al-badge {
+    font-size: 10px; padding: 2px 8px; border-radius: 12px;
+    font-weight: 600; background: #e0f2fe; color: #0369a1; white-space: nowrap;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+}
+.al-meta { font-size: 11px; color: #64748b; white-space: nowrap; }
+.al-dot { width: 6px; height: 6px; border-radius: 50%; background: #cbd5e1; flex-shrink: 0; }
+.al-time { color: #64748b; white-space: nowrap; min-width: 115px; font-size: 11.5px; font-family: monospace; }
+.al-qty { font-weight: 700; min-width: 80px; text-align: right; font-size: 12.5px; color: #0f172a; }
+.al-note { color: #64748b; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; flex: 1; font-size: 11.5px; font-style: italic; }
+.al-cust { font-size: 11.5px; color: #334155; white-space: nowrap; font-weight: 500; }
+
+/* ── Status badges ────────────────────────────────────── */
+.al-st { 
+    font-size: 10px; padding: 2px 8px; border-radius: 12px; 
+    font-weight: 600; white-space: nowrap; 
+    box-shadow: 0 1px 2px rgba(0,0,0,0.05); /* Sedikit efek 3D / Timbul */
+}
+.al-st-0 { background: #f1f5f9; color: #475569; border: 1px solid #e2e8f0; }
+.al-st-1 { background: #d1fae5; color: #065f46; border: 1px solid #a7f3d0; }
+.al-st-2 { background: #dbeafe; color: #1d4ed8; border: 1px solid #bfdbfe; }
+.al-st-3 { background: #fef3c7; color: #92400e; border: 1px solid #fde68a; }
+
+/* ── Detail Header (Label Kolom) ──────────────────────── */
+.al-detail-header {
+    display: flex; align-items: center; gap: 10px;
+    padding: 6px 16px 6px 58px; /* Indentasi sama dengan .al-detail-row */
+    background: #f8fafc;
+    border-top: 1px solid #e2e8f0;
+    border-bottom: 2px solid #e2e8f0;
+    font-size: 11px; font-weight: 700; color: #64748b; text-transform: uppercase;
+}
+.al-dh-time { min-width: 115px; }
+.al-dh-qty { min-width: 80px; text-align: right; }
+.al-dh-status { width: 80px; text-align: center; } /* Sesuaikan lebar badge */
+.al-dh-note { flex: 1; }
+.al-dh-cust { min-width: 150px; } /* Khusus By Product */
+
+
 </style>
 
 @if(session('success'))
@@ -152,88 +243,92 @@ body{ background:#1f242a; font-family: "Segoe UI", Roboto, sans-serif; }
     <div class="card crm-card">
         <div class="card-body">
 
-            @role('Developer|SuperAdmin', 'superuser')
-            <div class="d-flex justify-content-between align-items-center flex-wrap gap-3 mb-3">
+        {{-- 1. Bagian yang BISA DILIHAT semua user (Audit Log & Title) --}}
+        <div class="d-flex justify-content-between align-items-center flex-wrap gap-3 mb-3">
+            
+            <div class="d-flex align-items-center flex-wrap gap-3">
+                <h5 class="fw-bold mb-0">Stock Monitoring</h5>
+            </div>
 
-                <!-- LEFT SECTION -->
-                <div class="d-flex align-items-center flex-wrap gap-3">
+            <div class="d-flex align-items-center flex-wrap gap-2 action-toolbar">
+                <button class="btn btn-sm" 
+                        id="btnOpenAuditLog"
+                        data-bs-toggle="modal"
+                        data-bs-target="#auditLogModal"
+                        style="background:#0f766e; color:#fff; font-size:12px; border-radius:6px; font-weight:600; padding:4px 10px; display:inline-flex; align-items:center; gap:4px;">
+                    <i class="fa fa-history"></i> Audit Log
+                </button>
+            </div>
+        </div>
 
-                    <!-- Title -->
-                    <h5 class="fw-bold mb-0">Stock Monitoring</h5>
+        {{-- 2. Bagian yang HANYA BISA DILIHAT Admin (Aksi Admin) --}}
+        @role('Developer|SuperAdmin', 'superuser', 'admin')
+        <div class="d-flex justify-content-between align-items-center flex-wrap gap-3 mb-3 border-top pt-3">
+            
+        <div class="d-flex align-items-center flex-wrap gap-2 action-toolbar">
 
-                    <!-- Divider -->
-                    <div class="vr"></div>
-
-                    <!-- PROCESS BUTTON GROUP -->
-                    <div class="d-flex align-items-center flex-wrap gap-2 action-toolbar">
-
-                        <!-- Collect Stock In -->
-                        <form action="{{ route('superuser.gudang.stock.collectStockIn') }}" 
-                            method="POST"
-                            onsubmit="return confirm('Proses collect stock in akan dijalankan. Lanjutkan?')">
+            {{-- Grup: Collect --}}
+            <div class="btn-group">
+                <button type="button" class="btn btn-warning btn-sm dropdown-toggle" data-bs-toggle="dropdown">
+                    <i class="fa fa-database me-1"></i> Collect
+                </button>
+                <ul class="dropdown-menu">
+                    <li>
+                        <form action="{{ route('superuser.gudang.stock.collectStockIn') }}" method="POST" onsubmit="return confirm('Proses collect stock in akan dijalankan. Lanjutkan?')">
                             @csrf
-                            <button type="submit" class="btn btn-warning btn-sm">
-                                <i class="fa fa-database me-1"></i> Collect Stock In
-                            </button>
+                            <button type="submit" class="dropdown-item"><i class="fa fa-arrow-down me-1"></i> Collect Stock In</button>
                         </form>
-
-                        <!-- Collect Stock Trans -->
-                        <form action="{{ route('superuser.gudang.stock.collectStockTrans') }}" 
-                            method="POST"
-                            onsubmit="return confirm('Proses collect stock transaksi akan dijalankan. Lanjutkan?')">
+                    </li>
+                    <li>
+                        <form action="{{ route('superuser.gudang.stock.collectStockTrans') }}" method="POST" onsubmit="return confirm('Proses collect stock transaksi akan dijalankan. Lanjutkan?')">
                             @csrf
-                            <button type="submit" class="btn btn-danger btn-sm">
-                                <i class="fa fa-truck me-1"></i> Collect Stock Trans
-                            </button>
+                            <button type="submit" class="dropdown-item"><i class="fa fa-truck me-1"></i> Collect Stock Trans</button>
                         </form>
-
-                        <!-- Collect Stock Out -->
-                        <button type="button"
-                                class="btn btn-info btn-sm"
-                                data-bs-toggle="modal"
-                                data-bs-target="#collectStockOutModal">
+                    </li>
+                    <li>
+                        <button type="button" class="dropdown-item" data-bs-toggle="modal" data-bs-target="#collectStockOutModal">
                             <i class="fa fa-arrow-up me-1"></i> Collect Stock Out
                         </button>
-
-                        <!-- Rebuild Stock -->
-                        <form action="{{ route('superuser.gudang.stock.rebuildStock') }}" 
-                            method="POST"
-                            onsubmit="return confirm('Proses rebuild stock akan menghitung ulang seluruh pergerakan. Lanjutkan?')">
-                            @csrf
-                            <button type="submit" class="btn btn-dark btn-sm">
-                                <i class="fa fa-sync me-1"></i> Rebuild Stock
-                            </button>
-                        </form>
-
-                    </div>
-                </div>
-
-                <!-- RIGHT SECTION -->
-                <div class="d-flex align-items-center flex-wrap gap-2 action-toolbar">
-
-                    <!-- Export Template -->
-                    <a href="{{ route('superuser.gudang.stock.import_template') }}" 
-                    class="btn btn-success btn-sm">
-                        <i class="fa fa-file-excel me-1"></i> Export Template
-                    </a>
-
-                    <!-- Import Stock -->
-                    <button class="btn btn-primary btn-sm" 
-                            data-bs-toggle="modal" 
-                            data-bs-target="#importStockModal">
-                        <i class="fa fa-upload me-1"></i> Import Stock
-                    </button>
-
-                </div>
+                    </li>
+                </ul>
             </div>
-            @endrole
+
+            {{-- Grup: Rebuild --}}
+            <div class="btn-group">
+                <button type="button" class="btn btn-dark btn-sm dropdown-toggle" data-bs-toggle="dropdown">
+                    <i class="fa fa-sync me-1"></i> Rebuild
+                </button>
+                <ul class="dropdown-menu">
+                    <li>
+                        <form action="{{ route('superuser.gudang.stock.rebuildStock') }}" method="POST" onsubmit="return confirm('Proses rebuild stock akan menghitung ulang seluruh pergerakan. Lanjutkan?')">
+                            @csrf
+                            <button type="submit" class="dropdown-item"><i class="fa fa-sync me-1"></i> Rebuild Stock (Global)</button>
+                        </form>
+                    </li>
+                    <li>
+                        <button type="button" class="dropdown-item" data-bs-toggle="modal" data-bs-target="#rebuildVariantModal">
+                            <i class="fa fa-crosshairs me-1"></i> Rebuild Per Variant
+                        </button>
+                    </li>
+                </ul>
+            </div>
+
+            </div>
+
+            <div class="d-flex align-items-center flex-wrap gap-2 action-toolbar">
+                <a href="{{ route('superuser.gudang.stock.import_template') }}" class="btn btn-success btn-sm">
+                    <i class="fa fa-file-excel me-1"></i> Export Template
+                </a>
+                <button class="btn btn-primary btn-sm" data-bs-toggle="modal" data-bs-target="#importStockModal">
+                    <i class="fa fa-upload me-1"></i> Import Stock
+                </button>
+            </div>
+        </div>
+        @endrole
 
             <!-- FILTER -->
             <div class="row align-items-end mb-3">
-                <div class="col-md-2">
-                    <input type="month" class="form-control" id="month_filter">
-                </div>
-                <div class="col-md-2">
+                <div class="col-md-3">
                     <select class="js-select2 form-control" id="warehouse">
                         <option value="">Pilih Gudang</option>
                         @foreach($warehouses as $warehouse)
@@ -241,7 +336,7 @@ body{ background:#1f242a; font-family: "Segoe UI", Roboto, sans-serif; }
                         @endforeach
                     </select>
                 </div>
-                <div class="col-md-2">
+                <div class="col-md-3">
                     <select class="js-select2 form-control" id="brand" disabled>
                         <option value="">Pilih Brand</option>
                         @foreach($brands as $brand)
@@ -249,7 +344,7 @@ body{ background:#1f242a; font-family: "Segoe UI", Roboto, sans-serif; }
                         @endforeach
                     </select>
                 </div>
-                <div class="col-md-2">
+                <div class="col-md-3">
                     <select class="js-select2 form-control" id="packaging" disabled>
                         <option value="">Pilih Packaging</option>
                         @foreach($packaging as $pack)
@@ -257,7 +352,7 @@ body{ background:#1f242a; font-family: "Segoe UI", Roboto, sans-serif; }
                         @endforeach
                     </select>
                 </div>
-                <div class="col-md-2">
+                <div class="col-md-3">
                     <input type="text" class="form-control" id="product_name" placeholder="Nama Product" disabled>
                 </div>
             </div>
@@ -397,6 +492,159 @@ body{ background:#1f242a; font-family: "Segoe UI", Roboto, sans-serif; }
         </div>
     </div>
 </div>
+
+
+<!-- ✅ MODAL AUDIT LOG -->
+<div class="modal fade" id="auditLogModal" tabindex="-1">
+  <div class="modal-dialog modal-xl modal-dialog-scrollable">
+    <div class="modal-content" style="height:82vh; display:flex; flex-direction:column;">
+
+      {{-- HEADER --}}
+      <div class="modal-header" style="background:#0f766e; padding:10px 16px; flex-shrink:0;">
+        <h5 class="modal-title text-white" style="font-size:14px;">
+          <i class="fa fa-history me-2"></i>Audit Log Stock
+          <span id="auditLogWarehouseLabel"
+                class="ms-2 badge"
+                style="background:rgba(255,255,255,.2); font-size:11px; font-weight:400;"></span>
+        </h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+      </div>
+
+      {{-- FILTER --}}
+      <div style="flex:0 0 auto; padding:8px 14px; background:#f8fafc; border-bottom:1px solid #e5e7eb;">
+        <div class="row align-items-end g-2">
+
+          <div class="col-auto">
+            <label class="form-label">Gudang</label>
+            <input type="text" class="form-control form-control-sm" id="auditWarehouseDisplay"
+                   readonly style="background:#e9ecef; width:130px; font-size:12px; height:28px;">
+            <input type="hidden" id="auditWarehouseId">
+          </div>
+
+          <div class="col-auto">
+            <label class="form-label">Product</label>
+            <select class="form-control form-control-sm" id="auditProductId"
+                    style="width:210px; font-size:12px; height:28px;">
+              <option value="">-- Semua Product --</option>
+            </select>
+          </div>
+
+          <div class="col-auto">
+            <label class="form-label">Dari</label>
+            <input type="date" class="form-control form-control-sm" id="auditDateFrom"
+                   style="width:125px; font-size:12px; height:28px;">
+          </div>
+
+          <div class="col-auto">
+            <label class="form-label">Sampai</label>
+            <input type="date" class="form-control form-control-sm" id="auditDateTo"
+                   style="width:125px; font-size:12px; height:28px;">
+          </div>
+
+          <!-- <div class="col-auto">
+            <label class="form-label">Status</label>
+            <select class="form-control form-control-sm" id="auditStatus"
+                    style="width:120px; font-size:12px; height:28px;">
+              <option value="">Semua</option>
+              <option value="0">Nonaktif</option>
+              <option value="1">Aktif</option>
+            </select>
+          </div> -->
+
+          <div class="col-auto d-flex align-items-end gap-1">
+            <button id="btnAuditFilter" class="btn btn-sm"
+                    style="background:#0f766e; color:#fff; height:28px; font-size:12px; padding:0 12px;">
+              <i class="fa fa-search"></i> Filter
+            </button>
+            <button id="btnAuditReset" class="btn btn-sm btn-secondary"
+                    style="height:28px; font-size:12px; padding:0 8px;" title="Reset filter">
+              <i class="fa fa-undo"></i>
+            </button>
+          </div>
+
+        </div>
+      </div>
+
+      {{-- SUMMARY --}}
+      <div style="flex:0 0 auto; padding:5px 14px; background:#f0fdf4; border-bottom:1px solid #dcfce7;
+                  display:flex; gap:16px; font-size:11.5px; align-items:center; flex-wrap:wrap;">
+       
+        <span style="color:#065f46;">Aktif: <strong id="auditCountAktif" style="color:#065f46;">0</strong></span>
+        {{-- Ganti bagian button Export di Modal Summary --}}
+        <div style="margin-left:auto; display:flex; gap:6px;">
+            <button type="button" class="btn btn-sm btn-success" onclick="exportReport('excel')">
+                <i class="fa fa-file-excel me-1"></i>Excel
+            </button>
+            <button type="button" class="btn btn-sm btn-danger" onclick="exportReport('pdf')">
+                <i class="fa fa-file-pdf me-1"></i>PDF
+            </button>
+        </div>
+      </div>
+
+      {{-- TABS --}}
+      <div style="flex:0 0 auto; display:flex; border-bottom:1px solid #e5e7eb;
+                  background:#fff; padding:0 14px;">
+        <button class="al-tab-btn active" id="alTabInvoiceBtn"
+                onclick="switchAuditTab('invoice', this)">
+          <i class="fa fa-file-invoice me-1"></i>By Invoice
+        </button>
+        <button class="al-tab-btn" id="alTabProductBtn"
+                onclick="switchAuditTab('product', this)">
+          <i class="fa fa-boxes me-1"></i>By Product
+        </button>
+      </div>
+
+      {{-- CONTENT AREA --}}
+      <div style="flex:1; overflow-y:auto;" id="auditLogContent">
+        <div class="text-center py-5 text-muted">
+          <i class="fa fa-database fa-2x d-block mb-2"></i>
+          <small>Pilih gudang di halaman utama, lalu klik tombol Audit Log</small>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<!-- ====================== MODAL: REBUILD PER VARIANT (v2 - select2 pick-list) ====================== -->
+<div class="modal fade" id="rebuildVariantModal" tabindex="-1">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <form action="{{ route('superuser.gudang.stock.rebuildVariants') }}" method="POST"
+            onsubmit="return confirm('Stock Move variant terpilih akan DIHAPUS (kecuali saldo OPENING) lalu ditulis ulang dari seluruh histori transaksi. Lanjutkan?')">
+        @csrf
+        <div class="modal-header">
+          <h5 class="modal-title">Rebuild Stock Per Variant</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+          <div class="mb-3">
+            <label class="form-label">Warehouse</label>
+            <select id="rebuildWarehouse" class="form-control" required>
+              <option value="">Pilih Gudang</option>
+              @foreach($warehouses as $warehouse)
+                <option value="{{ $warehouse->id }}">{{ $warehouse->name }}</option>
+              @endforeach
+            </select>
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Variant / Product (bisa pilih lebih dari 1)</label>
+            <select name="product_ids[]" id="rebuildProducts" class="form-control" multiple required>
+            </select>
+            <small class="text-muted">Pilih gudang dulu untuk memuat daftar variant.</small>
+          </div>
+          <small class="text-muted d-block mt-2">
+            Baris <code>OPENING-%</code> di kartu stok akan dipertahankan. Semua baris lain akan dihapus lalu ditulis ulang dari Receiving, Stock Adjustment, SPK, Mutasi Showroom, Mutasi Out, dan Packing Order.
+          </small>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
+          <button type="submit" class="btn btn-dark">Jalankan Rebuild</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
 @endsection
 
 @include('superuser.asset.plugin.swal2')
@@ -409,6 +657,432 @@ body{ background:#1f242a; font-family: "Segoe UI", Roboto, sans-serif; }
 <script src="https://cdn.datatables.net/buttons/2.4.2/js/buttons.html5.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
 <script>
+// =============================================
+// AUDIT LOG
+// =============================================
+// =============================================
+// AUDIT LOG
+// =============================================
+(function () {
+
+// ── State ────────────────────────────────────────────────────
+let _auditData  = [];
+let _activeTab  = 'invoice';
+
+// ── Status config ────────────────────────────────────────────
+const ST = {
+    0: { label: 'Nonaktif',    cls: 'al-st-0' },
+    1: { label: 'Aktif',       cls: 'al-st-1' },
+    2: { label: 'Done',        cls: 'al-st-2' },
+    3: { label: 'Info/Revisi', cls: 'al-st-3' },
+};
+
+// ── Helpers ──────────────────────────────────────────────────
+function stBadge(status) {
+    let s = ST[status] ?? { label: status, cls: 'al-st-0' };
+    return `<span class="al-st ${s.cls}">${s.label}</span>`;
+}
+
+function fmtQty(qty) {
+    return parseFloat(qty).toLocaleString('id-ID', { minimumFractionDigits: 2 });
+}
+
+function escHtml(str) {
+    if (!str) return '';
+    return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;');
+}
+
+// ── Toggle accordion ─────────────────────────────────────────
+window.alToggle = function (id) {
+    let el   = document.getElementById(id);
+    let chev = document.getElementById('chev_' + id);
+    if (!el) return;
+    let open = el.style.display !== 'none';
+    el.style.display = open ? 'none' : 'block';
+    if (chev) chev.classList.toggle('open', !open);
+};
+
+// ── Switch tab ───────────────────────────────────────────────
+window.switchAuditTab = function (name, btn) {
+    _activeTab = name;
+    document.querySelectorAll('.al-tab-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    renderContent();
+};
+
+// ── Render dispatcher ────────────────────────────────────────
+function renderContent() {
+    if (!_auditData.length) {
+        $('#auditLogContent').html(
+            '<div class="text-center py-5 text-muted">' +
+            '<i class="fa fa-inbox fa-2x d-block mb-2"></i>' +
+            '<small>Tidak ada data ditemukan</small></div>'
+        );
+        return;
+    }
+    if (_activeTab === 'invoice') renderByInvoice();
+    else renderByProduct();
+}
+
+// ── RENDER: By Invoice ───────────────────────────────────────
+function renderByInvoice() {
+    let groups = {};
+    _auditData.forEach(function (row) {
+        let gKey = row.do_id ?? 'no_do';
+        if (!groups[gKey]) {
+            groups[gKey] = {
+                do_code  : row.do_code ?? ('DO-' + row.do_id),
+                date     : row.created_at ? row.created_at.substring(0, 10) : '',
+                products : {}
+            };
+        }
+        let pKey = row.product_packaging_id ?? 'no_pkg';
+        if (!groups[gKey].products[pKey]) {
+            groups[gKey].products[pKey] = { label: row.product_label, logs: [] };
+        }
+        groups[gKey].products[pKey].logs.push(row);
+    });
+
+    let html = '';
+    let gi   = 0;
+
+    Object.entries(groups).forEach(function ([doId, group]) {
+        let gId      = 'gi_' + gi;
+        let prodKeys = Object.keys(group.products);
+        let totalQty = 0;
+        prodKeys.forEach(function (pk) {
+            group.products[pk].logs.forEach(function (r) { totalQty += parseFloat(r.qty); });
+        });
+
+        html += `
+        <div class="al-group-row" onclick="alToggle('${gId}')">
+            <span class="al-chev open" id="chev_${gId}">▶</span>
+            <span class="al-group-title">${escHtml(group.do_code)}</span>
+            <span class="al-badge">${prodKeys.length} produk</span>
+            <span class="al-meta">${group.date}</span>
+            <span class="al-meta" style="color:#065f46;font-weight:700;">${fmtQty(totalQty)}</span>
+        </div>
+        <div id="${gId}">`;
+
+        let si = 0;
+        Object.entries(group.products).forEach(function ([pkgId, prod]) {
+            let sId = gId + '_s' + si;
+            html += `
+            <div class="al-sub-row" onclick="alToggle('${sId}')">
+                <span class="al-chev open" id="chev_${sId}">▶</span>
+                <span class="al-sub-title">${escHtml(prod.label)}</span>
+                <span class="al-meta">${prod.logs.length} log</span>
+            </div>
+            <div id="${sId}">`;
+
+            // 👇 INJEKSI HEADER (BY INVOICE) 👇
+            if (prod.logs.length > 0) {
+                html += `
+                <div class="al-detail-header">
+                    <div style="width:6px; flex-shrink:0;"></div>
+                    <div style="min-width:115px;">WAKTU</div>
+                    <div style="min-width:80px; text-align:right;">QTY</div>
+                    <div style="width:80px; text-align:center;">STATUS</div>
+                    <div style="flex:1;">CATATAN</div>
+                </div>`;
+            }
+
+            prod.logs.forEach(function (row) {
+                html += `
+                <div class="al-detail-row">
+                    <span class="al-dot"></span>
+                    <span class="al-time" style="min-width:115px;">${row.created_at ?? '—'}</span>
+                    <span class="al-qty" style="min-width:80px;">${fmtQty(row.qty)}</span>
+                    <span style="width:80px; text-align:center;">${stBadge(row.status)}</span>
+                    <span class="al-note" title="${escHtml(row.note)}">${escHtml(row.note) || '—'}</span>
+                </div>`;
+            });
+
+            html += `</div>`;
+            si++;
+        });
+
+        html += `</div>`;
+        gi++;
+    });
+
+    $('#auditLogContent').html(html || '<div class="text-center py-4 text-muted"><small>Tidak ada data</small></div>');
+}
+
+// ── RENDER: By Product ───────────────────────────────────────
+function renderByProduct() {
+    let groups = {};
+    _auditData.forEach(function (row) {
+        let gKey = row.product_packaging_id ?? 'no_pkg';
+        if (!groups[gKey]) {
+            groups[gKey] = { label: row.product_label, invoices: {} };
+        }
+        let iKey = row.do_id ?? 'no_do';
+        if (!groups[gKey].invoices[iKey]) {
+            groups[gKey].invoices[iKey] = {
+                do_code: row.do_code ?? ('DO-' + row.do_id),
+                logs   : []
+            };
+        }
+        groups[gKey].invoices[iKey].logs.push(row);
+    });
+
+    let html = '';
+    let gi   = 0;
+
+    Object.entries(groups).forEach(function ([pkgId, group]) {
+        let gId     = 'gp_' + gi;
+        let invKeys = Object.keys(group.invoices);
+        let netQty  = 0;
+        invKeys.forEach(function (ik) {
+            group.invoices[ik].logs.forEach(function (r) { netQty += parseFloat(r.qty); });
+        });
+
+        html += `
+        <div class="al-group-row" onclick="alToggle('${gId}')">
+            <span class="al-chev open" id="chev_${gId}">▶</span>
+            <span class="al-group-title">${escHtml(group.label)}</span>
+            <span class="al-badge">${invKeys.length} invoice</span>
+            <span class="al-meta" style="color:#065f46;font-weight:700;">net ${fmtQty(netQty)}</span>
+        </div>
+        <div id="${gId}">`;
+
+        let si = 0;
+        Object.entries(group.invoices).forEach(function ([doId, inv]) {
+            let sId = gId + '_s' + si;
+            html += `
+            <div class="al-sub-row" onclick="alToggle('${sId}')">
+                <span class="al-chev open" id="chev_${sId}">▶</span>
+                <span class="al-sub-title">${escHtml(inv.do_code)}</span>
+                <span class="al-meta">${inv.logs.length} log</span>
+            </div>
+            <div id="${sId}">`;
+
+            // 👇 INJEKSI HEADER (BY PRODUCT) 👇
+            if (inv.logs.length > 0) {
+                html += `
+                <div class="al-detail-header">
+                    <div style="width:6px; flex-shrink:0;"></div>
+                    <div style="min-width:115px;">WAKTU</div>
+                    <div style="min-width:80px; text-align:right;">QTY</div>
+                    <div style="flex:1;">CUSTOMER</div>
+                    <div style="width:80px; text-align:center;">STATUS</div>
+                    <div style="flex:1;">CATATAN</div>
+                </div>`;
+            }
+
+            inv.logs.forEach(function (row) {
+                let cust = escHtml(row.customer_name ?? '—');
+                let kota = row.text_kota
+                    ? ' <em style="color:#9ca3af;font-style:normal;">· ' + escHtml(row.text_kota) + '</em>'
+                    : '';
+                html += `
+                <div class="al-detail-row">
+                    <span class="al-dot"></span>
+                    <span class="al-time" style="min-width:115px;">${row.created_at ?? '—'}</span>
+                    <span class="al-qty" style="min-width:80px;">${fmtQty(row.qty)}</span>
+                    <span class="al-cust" style="flex:1; overflow:hidden; text-overflow:ellipsis;">${cust}${kota}</span>
+                    <span style="width:80px; text-align:center;">${stBadge(row.status)}</span>
+                    <span class="al-note" title="${escHtml(row.note)}">${escHtml(row.note) || '—'}</span>
+                </div>`;
+            });
+
+            html += `</div>`;
+            si++;
+        });
+
+        html += `</div>`;
+        gi++;
+    });
+
+    $('#auditLogContent').html(html || '<div class="text-center py-4 text-muted"><small>Tidak ada data</small></div>');
+}
+
+// ── Load product dropdown ─────────────────────────────────────
+function loadAuditProducts(warehouseId) {
+    // Reset Select2
+    $('#auditProductId').val(null).trigger('change');
+    $('#auditProductId').html('<option value="">-- Semua Product --</option>');
+    
+    if (!warehouseId) return;
+
+    $.get('{{ route("superuser.gudang.stock.auditProducts") }}',
+        { warehouse_id: warehouseId },
+        function (res) {
+            $.each(res.data || [], function (i, item) {
+                $('#auditProductId').append(
+                    '<option value="' + item.id + '">' + item.label + '</option>'
+                );
+            });
+            // Update Select2 setelah data ditambahkan
+            $('#auditProductId').trigger('change');
+        }
+    );
+}
+
+// ── Load audit data ───────────────────────────────────────────
+function loadAuditLog() {
+    let warehouseId = $('#auditWarehouseId').val();
+    if (!warehouseId) {
+        alert('Pilih gudang di halaman utama terlebih dahulu!');
+        return;
+    }
+
+    $('#auditLogContent').html(
+        '<div class="text-center py-5">' +
+        '<div class="spinner-border" style="color:#0f766e;"></div>' +
+        '<p class="mt-2" style="font-size:12px;color:#6b7280;">Memuat data...</p>' +
+        '</div>'
+    );
+
+    $.get('{{ route("superuser.gudang.stock.auditLogJson") }}', {
+        warehouse_id: warehouseId,
+        product_id  : $('#auditProductId').val(),
+        date_from   : $('#auditDateFrom').val(),
+        date_to     : $('#auditDateTo').val(),
+        status      : $('#auditStatus').val(),
+    }, function (res) {
+
+        _auditData   = res.data   || [];
+        let totals   = res.totals || {};
+
+        // Update summary
+        $('#auditTotalRecord').text(_auditData.length.toLocaleString('id-ID'));
+        $('#auditTotalQty').text(
+            parseFloat(totals.total_qty || 0).toLocaleString('id-ID', { minimumFractionDigits: 2 })
+        );
+        $('#auditCountNonaktif').text(totals.count_nonaktif ?? 0);
+        $('#auditCountAktif').text(totals.count_aktif ?? 0);
+        $('#auditCountDone').text(totals.count_done ?? 0);
+        $('#auditCountInfo').text(totals.count_info ?? 0);
+
+        renderContent();
+
+    }).fail(function () {
+        $('#auditLogContent').html(
+            '<div class="text-danger text-center p-4">' +
+            '<i class="fa fa-exclamation-triangle me-1"></i>Gagal memuat data. Cek koneksi atau route.</div>'
+        );
+    });
+}
+
+// ── Modal open → sync warehouse otomatis ──────────────────────
+$('#auditLogModal').on('show.bs.modal', function () {
+    let warehouseId   = $('#warehouse').val();
+    let warehouseText = $('#warehouse option:selected').text().trim();
+
+    // Inisialisasi Select2 untuk Product & Status di dalam modal
+    $('#auditProductId').select2({
+        dropdownParent: $('#auditLogModal'), // Penting agar Select2 muncul di atas modal
+        placeholder: "-- Semua Product --",
+        allowClear: true,
+        width: '210px'
+    });
+
+    $('#auditStatus').select2({
+        dropdownParent: $('#auditLogModal'),
+        width: '120px',
+        minimumResultsForSearch: -1 // Menyembunyikan search box untuk status yang sedikit opsinya
+    });
+
+    if (warehouseId) {
+        $('#auditWarehouseId').val(warehouseId);
+        $('#auditWarehouseDisplay').val(warehouseText);
+        $('#auditLogWarehouseLabel').text('🏭 ' + warehouseText);
+        loadAuditProducts(warehouseId);
+        loadAuditLog();
+    } else {
+        $('#auditWarehouseDisplay').val('');
+        $('#auditLogWarehouseLabel').text('⚠ Belum ada gudang dipilih');
+    }
+});
+
+// ── Reset modal state saat ditutup ────────────────────────────
+$('#auditLogModal').on('hidden.bs.modal', function () {
+    _auditData  = [];
+    _activeTab  = 'invoice';
+    document.querySelectorAll('.al-tab-btn').forEach(b => b.classList.remove('active'));
+    document.getElementById('alTabInvoiceBtn')?.classList.add('active');
+});
+
+// ── Event: Filter ─────────────────────────────────────────────
+$('#btnAuditFilter').on('click', loadAuditLog);
+
+// ── Event: Reset ──────────────────────────────────────────────
+$('#btnAuditReset').on('click', function () {
+    $('#auditProductId').val('').trigger('change'); // Tambahkan .trigger('change')
+    $('#auditDateFrom, #auditDateTo').val('');
+    $('#auditStatus').val('').trigger('change');     // Tambahkan .trigger('change')
+    loadAuditLog();
+});
+
+// ── Event: Export ───────────────────────────────────────
+$('#btnAuditExcel').on('click', function () {
+    let params = $.param({
+        warehouse_id: $('#auditWarehouseId').val(),
+        product_id  : $('#auditProductId').val(),
+        date_from   : $('#auditDateFrom').val(),
+        date_to     : $('#auditDateTo').val(),
+        status      : $('#auditStatus').val(),
+        type        : _activeTab, // 'invoice' atau 'product' (Membaca tab yang sedang aktif)
+        format      : 'excel'     // Memicu download Excel di Controller
+    });
+    window.location.href = '{{ route("superuser.gudang.stock.auditLogExport") }}?' + params;
+});
+
+window.exportReport = function(format) {
+    let params = $.param({
+        warehouse_id: $('#auditWarehouseId').val(),
+        product_id  : $('#auditProductId').val(),
+        date_from   : $('#auditDateFrom').val(),
+        date_to     : $('#auditDateTo').val(),
+        status      : $('#auditStatus').val(),
+        type        : _activeTab,
+        format      : format
+    });
+    window.location.href = '{{ route("superuser.gudang.stock.auditLogExport") }}?' + params;
+};
+
+function loadRebuildProducts(warehouseId) {
+        var $select = $('#rebuildProducts');
+ 
+        // Reset dulu
+        $select.empty();
+ 
+        if (!warehouseId) return;
+ 
+        $.get("{{ route('superuser.gudang.stock.searchProducts') }}", { warehouse_id: warehouseId })
+            .done(function (res) {
+                (res.results || []).forEach(function (item) {
+                    $select.append(new Option(item.text, item.id, false, false));
+                });
+                $select.trigger('change');
+            });
+    }
+ 
+    // Init select2 sekali saja (mode PILIH dari list, bukan ketik ke server)
+    $('#rebuildProducts').select2({
+        dropdownParent: $('#rebuildVariantModal'),
+        multiple: true,
+        placeholder: 'Pilih satu atau beberapa variant...',
+        width: '100%'
+    });
+ 
+    $('#rebuildWarehouse').on('change', function () {
+        loadRebuildProducts($(this).val());
+    });
+ 
+    $('#rebuildVariantModal').on('hidden.bs.modal', function () {
+        $('#rebuildWarehouse').val('').trigger('change');
+        $('#rebuildProducts').empty().trigger('change');
+    });
+
+})();
+
 $(document).ready(function(){
     $('.js-select2').select2();
     let datatableUrl = '{{ route("superuser.gudang.stock.json") }}';
@@ -426,8 +1100,7 @@ $(document).ready(function(){
                     warehouse_id: warehouseId,
                     brand: $('#brand').val(),
                     packaging: $('#packaging').val(),
-                    product_name: $('#product_name').val(),
-                    month: $('#month_filter').val()
+                    product_name: $('#product_name').val()
                 };
             },
             dataSrc:'data'
@@ -506,34 +1179,17 @@ $(document).ready(function(){
         // }
     });
 
-    // function reloadTable(){
-    //     if($('#warehouse').val()){
-    //         table.ajax.reload(null,false);
-    //     }
-    // }
-
-    let reloadTimeout = null;
-
     function reloadTable(){
-        if(!$('#warehouse').val()) return;
-
-        clearTimeout(reloadTimeout);
-
-        reloadTimeout = setTimeout(function(){
+        if($('#warehouse').val()){
             table.ajax.reload(null,false);
-        }, 200); // delay kecil biar smooth
+        }
     }
 
     $('#warehouse').on('select2:select', function(e){
         $('#brand,#packaging,#product_name').prop('disabled', false);
         reloadTable();
     });
-    
     $('#brand,#packaging,#product_name').on('change', reloadTable);
-
-    $('#month_filter').on('change', function(){
-        reloadTable();
-    });
 
     $('#datatable').on('click', '.ks-detail-link', function(e){
         e.preventDefault();
@@ -558,21 +1214,8 @@ $(document).ready(function(){
     
         modal.show();
     
-        // let url = '{{ url("superuser/gudang/stock") }}' + warehouseId + '/detail/' + encoded;
-        let month = $('#month_filter').val();
-
-        let url = '{{ url("superuser/gudang/stock") }}' 
-                + warehouseId + '/detail/' + encoded;
-
-        // =======================
-        // SYNC FILTER KE MODAL
-        // =======================
-        if(month){
-            url += '?month=' + month + '&lock=1';
-        }else{
-            url += '?lock=0';
-        }
-        
+        let url = '{{ url("superuser/gudang/stock") }}' + warehouseId + '/detail/' + encoded;
+    
         $.ajax({
             url: url,
             type: 'GET',

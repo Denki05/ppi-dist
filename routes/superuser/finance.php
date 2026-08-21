@@ -1,6 +1,6 @@
 <?php
 
-use App\Htpp\Controllers\Superuser\Finance\PayableController;
+use App\Http\Controllers\Superuser\Finance\PayableController;
 
 Route::group([
     'middleware' => ['auth:superuser'],
@@ -86,4 +86,12 @@ Route::group([
         Route::post('/upload_bukti_refund', 'NotaKreditFinanceController@upload_bukti_refund')->name('upload_bukti_refund');
     });
     Route::resource('nota_kredit_finance', 'NotaKreditFinanceController');
+
+    Route::group(['as' => 'void.', 'prefix' => '/void'], function () {
+        Route::get('/', 'FinanceVoidController@index')->name('index');
+        Route::get('/history', 'FinanceVoidController@history')->name('history');
+        Route::get('/{do_id}/print-invoice', 'FinanceVoidController@printVoided')->name('print_invoice');
+        Route::post('/{id}/approve', 'FinanceVoidController@approve')->name('approve');
+        Route::post('/{id}/reject', 'FinanceVoidController@reject')->name('reject');
+    });
 });

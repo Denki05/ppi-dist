@@ -98,74 +98,44 @@
                 <div class="block-content">
                     <div class="form-row">
                         <div class="form-group col-md-6">
-                            @if($results->exsisting_customer == 1)
-                            <label for="customer_name">Customer</label>
-                            <input type="text" name="customer_name" class="form-control" readonly value="{{ $results->member->name ?? '-' }} {{ $results->member->text_kota ?? '-' }}">
-                            @else
                             <label for="customer_name">Customer</label>
                             <input type="text" name="customer_name" class="form-control" readonly value="{{ $results->customer_name }}">
-                            @endif
                         </div>
                         <div class="form-group col-md-6">
-                            @if($results->exsisting_customer == 1)
-                            <label for="customer_address">Alamat Kirim</label>
-                            <input type="text" class="form-control" name="customer_address" readonly value="{{ $results->member->address ?? '-' }}">
-                            @else
                             <label for="customer_address">Alamat Kirim</label>
                             <input type="text" class="form-control" name="customer_address" readonly value="{{ $results->customer_address }}">
-                            @endif
                         </div>
                     </div>
 
                     <div class="form-row">
                         <div class="form-group col-md-6">
-                            @if($results->exsisting_customer == 1)
-                            <label for="customer_region">Provinsi</label>
-                            <input type="text" class="form-control" name="customer_region" readonly value="{{ $results->member->text_provinsi ?? '-' }}">
-                            @else
-                            @php
-                                $provinsi = DB::table('provinsi')->where('prov_id', $results->customer_region)->first();
-                            @endphp
                             <label for="customer_region">Provinsi</label>
                             <select class="form-control js-select2" name="customer_region" id="customer_region" disabled>
-                                <option value="{{ $results->customer_region }}">{{ $provinsi->prov_name ?? '-' }}</option> 
+                                <option value="">Pilih Provinsi</option>
+                                @foreach($provinsi AS $row)
+                                <option value="{{ $row->prov_id }}" {{ ($row->prov_id == $results->customer_region ) ? 'selected' : '' }}>{{ $row->prov_name }}</option>
+                                @endforeach
                             </select>
-                            @endif
                         </div>
                         <div class="form-group col-md-6">
-                            @if($results->exsisting_customer == 1)
-                            <label for="customer_city">Kota</label>
-                            <input type="text" class="form-control" name="customer_city" readonly value="{{ $results->member->text_kota ?? '-' }}">
-                            @else
                             @php
                                 $city = DB::table('kabupaten')->where('city_id', $results->customer_city)->first();
                             @endphp
                             <label for="customer_city">Kota</label>
                             <select class="form-control js-select2" name="customer_city" id="customer_city" disabled>
-                                <option value="{{ $results->customer_city }}">{{ $city->city_name ?? '-' }}</option>
+                                <option value="{{ $results->customer_city }}">{{ $city->city_name }}</option>
                             </select>
-                            @endif
                         </div>
                     </div>
 
                     <div class="form-row">
                         <div class="form-group col-md-6">
-                            @if($results->exsisting_customer == 1)
-                            <label for="customer_phone">Phone</label>
-                            <input type="number" class="form-control" name="customer_phone" readonly value="{{ $results->member->phone ?? '-' }}">
-                            @else
                             <label for="customer_phone">Phone</label>
                             <input type="number" class="form-control" name="customer_phone" readonly value="{{ $results->customer_phone }}">
-                            @endif
                         </div>
                         <div class="form-group col-md-6">
-                            @if($results->exsisting_customer == 1)
-                            <label for="customer_owner">Contact Person</label>
-                            <input type="text" class="form-control" name="customer_owner" readonly value="{{ $results->member->phone ?? '-' }}">
-                            @else
                             <label for="customer_owner">Contact Person</label>
                             <input type="text" class="form-control" name="customer_owner" readonly value="{{ $results->customer_owner }}">
-                            @endif
                         </div>
                     </div>
                 </div>
@@ -177,11 +147,11 @@
       <div class="block">
         <div class="block-header block-header-default">
           <h3 class="block-title">Add Product</h3>
-          <!-- <a href="#" class="row-add">
+          <a href="#" class="row-add">
             <button type="button" class="btn bg-gd-sea border-0 text-white">
               <i class="fa fa-plus mr-10"></i> Row
             </button>
-          </a> -->
+          </a>
         </div>
         <div class="block-content">
           <table id="datatable" class="table table-striped">
@@ -220,49 +190,49 @@
             <div class="form-group row justify-content-end">
               <label class="col-md-3 col-form-label text-right" for="subtotal">IDR Sub Total</label>
               <div class="col-md-2">
-                <input type="text" class="form-control" id="subtotal" name="subtotal" readonly value="{{ $results->details_cost->purchase_total_idr }}">
+                <input type="text" class="form-control" id="subtotal" name="subtotal" readonly value="{{ $results->details_cost[0]->purchase_total_idr }}">
               </div>
             </div>
             <div class="form-group row justify-content-end">
               <label class="col-md-1 col-form-label">Disc %</label>
               <div class="col-md-1">
-                <input type="text" class="form-control" id="disc_agen_percent" name="disc_agen_percent" readonly value="{{ $results->details_cost->discount_1_percent }}">
+                <input type="text" class="form-control" id="disc_agen_percent" name="disc_agen_percent" readonly value="{{ $results->details_cost[0]->discount_1_percent }}">
               </div>
               <div class="col-sm-2">
-                <input type="text" readonly class="form-control" id="disc_agen_idr" name="disc_agen_idr" readonly value="{{ $results->details_cost->discount_1 }}">
+                <input type="text" readonly class="form-control" id="disc_agen_idr" name="disc_agen_idr" readonly value="{{ $results->details_cost[0]->discount_1 }}">
               </div>
             </div>
             <div class="form-group row justify-content-end">
               <label class="col-md-1 col-form-label">Disc Kemasan</label>
               <div class="col-md-1">
-                <input type="text" class="form-control" id="disc_kemasan_percent" name="disc_kemasan_percent" readonly value="{{ $results->details_cost->discount_2_percent }}">
+                <input type="text" class="form-control" id="disc_kemasan_percent" name="disc_kemasan_percent" readonly value="{{ $results->details_cost[0]->discount_2_percent }}">
               </div>
               <div class="col-sm-2">
-                <input type="text" readonly class="form-control" id="disc_kemasan_idr" name="disc_kemasan_idr" readonly value="{{ $results->details_cost->discount_2 }}">
+                <input type="text" readonly class="form-control" id="disc_kemasan_idr" name="disc_kemasan_idr" readonly value="{{ $results->details_cost[0]->discount_2 }}">
               </div>
             </div>
             <div class="form-group row justify-content-end">
               <label class="col-md-3 col-form-label text-right" for="disc_tambahan_idr">Disc IDR</label>
               <div class="col-md-2">
-                <input type="text" class="form-control" id="disc_tambahan_idr" name="disc_tambahan_idr" readonly value="{{ $results->details_cost->discount_idr }}">
+                <input type="text" class="form-control" id="disc_tambahan_idr" name="disc_tambahan_idr" readonly value="{{ $results->details_cost[0]->discount_idr }}">
               </div>
             </div>
             <div class="form-group row justify-content-end">
               <label class="col-md-3 col-form-label text-right" for="voucher_idr">Voucher</label>
               <div class="col-md-2">
-                <input type="text" class="form-control" id="voucher_idr" name="voucher_idr" readonly value="{{ $results->details_cost->voucher_idr }}">
+                <input type="text" class="form-control" id="voucher_idr" name="voucher_idr" readonly value="{{ $results->details_cost[0]->voucher_idr }}">
               </div>
             </div>
             <div class="form-group row justify-content-end">
               <label class="col-md-3 col-form-label text-right" for="voucher_idr">Ongkir</label>
               <div class="col-md-2">
-                <input type="text" class="form-control" id="delivery_cost_idr" name="delivery_cost_idr" readonly value="{{ $results->details_cost->delivery_cost_idr }}">
+                <input type="text" class="form-control" id="delivery_cost_idr" name="delivery_cost_idr" readonly value="{{ $results->details_cost[0]->delivery_cost_idr }}">
               </div>
             </div>
             <div class="form-group row justify-content-end">
               <label class="col-md-3 col-form-label text-right" for="grand_total">IDR Total</label>
               <div class="col-md-2">
-                <input type="text" class="form-control" id="grand_total" name="grand_total" readonly value="{{ $results->details_cost->grand_total_idr }}">
+                <input type="text" class="form-control" id="grand_total" name="grand_total" readonly value="{{ $results->details_cost[0]->grand_total_idr }}">
               </div>
             </div>
           </div>

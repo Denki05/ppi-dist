@@ -270,9 +270,9 @@
 
   <div class="do-canvas-header">
     <div class="do-canvas-title">
-      <a href="{{ route('superuser.penjualan.delivery_order.index') }}" class="btn btn-light btn-sm" style="border-radius:8px;">
+      {{--<a href="{{ route('superuser.penjualan.delivery_order.index') }}" class="btn btn-light btn-sm" style="border-radius:8px;">
         <i class="fa fa-arrow-left"></i>
-      </a>
+      </a>--}}
       <div>
         <h4>{{ $result->do_code ?: $result->code }}</h4>
         <small>DO Proses &middot; fallback checker/picker</small>
@@ -302,29 +302,15 @@
     </div>
   </div>
 
-  @if(in_array($result->type_transaction, ['TEMPO','COD','MARKETPLACE']))
-  <div class="do-toolbar">
-    <span style="font-size:12.5px; color:#868e96; font-weight:600;">
-      <i class="fa fa-print"></i> Dokumen
-    </span>
-    <div class="do-toolbar-actions">
-      <a href="{{ route('superuser.penjualan.delivery_order.print_manifest', $result->id) }}"
-        class="btn btn-outline-info" data-id="{{ $result->id }}" target="_blank">
-          <i class="fas fa-clipboard-list"></i> Print Manifest
-      </a>
-    </div>
-  </div>
-  @endif
-
   <div class="do-canvas-body" style="padding-top:14px;">
     <table class="do-confirm-table">
       <thead>
         <tr>
-          <th>No</th>
-          <th>Nama Barang</th>
-          <th>Jumlah</th>
-          <th>Packaging</th>
-          <th>
+          <th class="text-center">No</th>
+          <th class="text-center">Nama Barang</th>
+          <th class="text-center">Jumlah</th>
+          <th class="text-center">Packaging</th>
+          <th class="text-center">
             Cek <input type="checkbox" class="check-all-confirm-item" onclick="$('.confirm-item').prop('checked', $(this).prop('checked'))" />
           </th>
         </tr>
@@ -352,9 +338,9 @@
   </div>
 
   <div class="do-footer">
-    <button type="button" class="btn btn-outline-danger" id="btnCancelToDraft">
-      <i class="fa fa-undo"></i> Kembali ke Packing Order
-    </button>
+    <a href="{{ route('superuser.penjualan.delivery_order.index') }}" class="btn btn-danger btn-sm" style="border-radius:8px;">
+      <i class="fa fa-arrow-left"></i> Back
+    </a>
     <button type="button" class="btn btn-primary" onclick="konfirmasiBarang()">
       <i class="fa fa-save"></i> Save
     </button>
@@ -377,9 +363,9 @@
 
   <div class="do-canvas-header">
     <div class="do-canvas-title">
-      <a href="{{ route('superuser.penjualan.delivery_order.index') }}" class="btn btn-light btn-sm" style="border-radius:8px;">
+      {{--<a href="{{ route('superuser.penjualan.delivery_order.index') }}" class="btn btn-light btn-sm" style="border-radius:8px;">
         <i class="fa fa-arrow-left"></i>
-      </a>
+      </a>--}}
       <div>
         <h4>{{ $result->do_code ?: $result->code }}</h4>
         <small>DO Siap Kirim</small>
@@ -419,12 +405,12 @@
           class="btn btn-outline-info" target="_blank">
             <i class="fa fa-file-o"></i> Print DO
         </a>
-        @if(isset($result->so) && isset($result->so->showroom_mutation))
+        {{--@if(isset($result->so) && isset($result->so->showroom_mutation))
           <a href="{{ route('superuser.gudang.mutasi_showroom.print_pdf', $result->so->showroom_mutation->id) }}"
             class="btn btn-outline-secondary" target="_blank">
               <i class="fa fa-file-o"></i> Print SJ Internal
           </a>
-        @endif
+        @endif--}}
       @elseif($result->count_cancel == 1)
         <a href="{{ route('superuser.penjualan.delivery_order.print', $result->id) }}"
           class="btn btn-outline-info" target="_blank">
@@ -435,9 +421,9 @@
   </div>
 
   <div class="do-footer">
-    <button type="button" class="btn btn-outline-danger btn-cancel-step">
-      <i class="fa fa-undo"></i> Kembali ke Checker
-    </button>
+    <a href="{{ route('superuser.penjualan.delivery_order.index') }}" class="btn btn-danger btn-sm" style="border-radius:8px;">
+      <i class="fa fa-arrow-left"></i> Back
+    </a>
     <button type="button" class="btn btn-primary btn-delivery">
       <i class="fas fa-shipping-fast"></i> DELIVERING / BERANGKAT
     </button>
@@ -460,9 +446,9 @@
 
   <div class="do-canvas-header">
     <div class="do-canvas-title">
-      <a href="{{ route('superuser.penjualan.delivery_order.index') }}" class="btn btn-light btn-sm" style="border-radius:8px;">
+      {{--<a href="{{ route('superuser.penjualan.delivery_order.index') }}" class="btn btn-light btn-sm" style="border-radius:8px;">
         <i class="fa fa-arrow-left"></i>
-      </a>
+      </a>--}}
       <div>
         <h4>{{ $result->do_code }}</h4>
         <small>Update Resi</small>
@@ -550,12 +536,9 @@
 
   <div class="do-footer">
     <div style="display:flex; gap:8px;">
-      <a href="{{route('superuser.penjualan.delivery_order.index')}}" class="btn btn-outline-warning">
+      <a href="{{route('superuser.penjualan.delivery_order.index')}}" class="btn btn-outline-danger">
         <i class="fa fa-arrow-left"></i> Back
       </a>
-      <button type="button" class="btn btn-outline-danger btn-cancel-step">
-        <i class="fa fa-undo"></i> Kembali ke Siap Kirim
-      </button>
     </div>
     @if($result->status==5)
     <button type="button" class="btn btn-primary btn-delivered">
@@ -581,9 +564,9 @@
 
   <div class="do-canvas-header">
     <div class="do-canvas-title">
-      <a href="{{ route('superuser.penjualan.delivery_order.index') }}" class="btn btn-light btn-sm" style="border-radius:8px;">
+      {{--<a href="{{ route('superuser.penjualan.delivery_order.index') }}" class="btn btn-light btn-sm" style="border-radius:8px;">
         <i class="fa fa-arrow-left"></i>
-      </a>
+      </a>--}}
       <div>
         <h4>{{ $result->do_code }}</h4>
         <small>History Update Resi</small>
@@ -649,9 +632,9 @@
     <a href="{{ route('superuser.penjualan.delivery_order.index') }}" class="btn btn-outline-warning">
       <i class="fa fa-arrow-left"></i> Kembali ke List
     </a>
-    <a href="{{ route('superuser.penjualan.delivery_order.print', $result->id) }}" class="btn btn-outline-info" target="_blank">
+    {{--<a href="{{ route('superuser.penjualan.delivery_order.print', $result->id) }}" class="btn btn-outline-info" target="_blank">
       <i class="fa fa-file-o"></i> Print DO
-    </a>
+    </a>--}}
   </div>
 
 </div>

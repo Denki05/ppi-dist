@@ -82,25 +82,17 @@
         <div class="block">
           <div class="block-content">
             <div class="row">
-              <div class="col col-md-5">
+              <div class="col col-md-7">
                 <div class="form-row">
-                  <div class="form-group col-md-4">
+                  
+                  <!-- Baris 1: Kurs, Approval, Disc % -->
+                  <div class="form-group col-md-4 mb-2">
                     <span class="form-label"><b>Kurs </b> <span class="text-danger">*</span></span>
                     <input class="form-control" type="text" id="kurs_display" value="{{ number_format((float) $idr_rate, 2, ',', '.') }}" readonly>
                     <input type="hidden" name="kurs" id="kurs" value="{{ number_format((float) $idr_rate, 2, ',', '') }}">
                   </div>
 
-                  <div class="form-group col-md-4">
-                    <span class="form-label"><b>Disc % </b>
-                    @if($approval_mou == 0)
-                    <input class="form-control" type="text" name="disc_percent" id="disc_percent" value="{{ $disc }}" readonly>
-                    @else
-                    <input class="form-control" type="text" name="disc_percent" id="disc_percent" required>
-                    @endif
-                  </div>
-                </div>
-                <div class="form-row">
-                  <div class="form-group col-md-8">
+                  <div class="form-group col-md-4 mb-2">
                     <span class="form-label"><b>Approval </b> <span class="text-danger">*</span></span>
                     <?php 
                       if($approval_mou == 0){
@@ -112,10 +104,40 @@
                     <input class="form-control" type="text" name="approvalText" id="approvalText" value="{{ $approval }}" readonly>
                     <input type="hidden" name="approval" id="approval" value="{{ $approval_mou }}">
                   </div>
+
+                  <div class="form-group col-md-4 mb-2">
+                    <span class="form-label"><b>Disc USD </b></span>
+                    <select class="form-control js-select2 global-disc" name="global_disc_usd" id="global_disc_usd" style="width: 100%;">
+                        <option value="0" {{ $disc_usd == 0 ? 'selected' : '' }}>0</option>
+                        <option value="2" {{ $disc_usd == 2 ? 'selected' : '' }}>2</option>
+                        <option value="4" {{ $disc_usd == 4 ? 'selected' : '' }}>4</option>
+                    </select>
+                  </div>
+
+                  <div class="form-group col-md-4 mb-2">
+                    <span class="form-label"><b>Disc (%) </b></span>
+                    @if($approval_mou == 0)
+                    <input class="form-control" type="number" step="any" min="0" max="100" name="disc_percent" id="disc_percent" value="{{ $disc }}" placeholder="0">
+                    @else
+                    <input class="form-control" type="number" step="any" min="0" max="100" name="disc_percent" id="disc_percent" placeholder="0" required>
+                    @endif
+                  </div>
+
+                  <div class="form-group col-md-4 mb-2">
+                    <span class="form-label"><b>Disc Kemasan (%) </b></span>
+                    <input class="form-control global-disc" type="number" step="any" min="0" max="100" name="global_disc_kemasan" id="global_disc_kemasan" value="{{ $disc_kemasan }}" placeholder="0">
+                  </div>
+
+                  <div class="form-group col-md-4 mb-2">
+                    <span class="form-label"><b>Disc IDR </b></span>
+                    <input class="form-control global-disc" type="number" step="any" name="global_disc_idr" id="global_disc_idr" value="{{ $disc_idr }}">
+                  </div>
+
+                  
+
                 </div>
               </div>
-              <div class="col col-md-6">
-                <div class="form-group">
+              <div class="col col-md-5"> <div class="form-group">
                   <span class="form-label"><b>Note </b> <span class="text-danger">*</span></span>
                   <textarea class="form-control" name="note_so" id="editor" rows="4" col="10" readonly>{{ $note_so }}</textarea>
                 </div>
@@ -409,6 +431,9 @@
         return;
       }
 
+      // TANGKAP NILAI DISKON GLOBAL USD
+      var globalDiscUsd = $('#global_disc_usd').val() || 0;
+
       if($('#brand_name').val()) {
         if(typeAdd == 0){
           
@@ -420,7 +445,6 @@
             } else {
               makeselect += '<option value="'+ val['id'] +'" data-name="'+ val['name'] +'" data-packname="'+ val['packName'] +'" data-price="'+ val['price'] +'" data-packid="'+ val['packID']+'">'+ val['code'] + ' - ' + val['name'] + '</option>';
             }
-            
           });
 
           makeselect += '</select>';
@@ -429,10 +453,11 @@
                       counter,
                       '<input class="form-check-input" type="checkbox" value="0" name="check_kontrak" id="check_kontrak" disabled><input type="hidden" class="form-control" value="0" name="value_kontrak[]">',
                       makeselect,
-                      '<input type="text" class="form-control packaging-name-display" value="" disabled>',
+                      '<input type="text" class="form-control packaging-name-display text-center" value="" disabled>',
                       '<input type="number" class="form-control" name="price[]" style="text-align: center;"><input type="hidden" class="form-control packaging" name="packaging[]">',
                       '<input type="number" class="form-control" name="qty[]" style="text-align: center;" required>',
-                      '<input type="number" class="form-control" name="disc[]" style="text-align: center;">',
+                      // UPDATE DISINI: Set value = globalDiscUsd dan tambahkan readonly
+                      '<input type="number" class="form-control" name="disc[]" style="text-align: center;" value="'+ globalDiscUsd +'" readonly>',
                       '<input type="checkbox" class="form-check-input input-gift" id="gift" name="gift"><input class="form-control input-free" type="hidden" id="free_product" value="0" name="free_product[]">',
                       '<a href="#" class="row-delete"><button type="button" class="btn btn-sm btn-circle btn-alt-danger" title="Delete"><i class="fa fa-trash"></i></button></a>'
                     ]).draw( false );
@@ -456,7 +481,8 @@
                   '<input type="text" class="form-control packaging-name-display" value="" disabled>',
                   '<input type="number" class="form-control" name="price[]" style="text-align: center;" readonly><input type="hidden" class="form-control packaging" name="packaging[]">',
                     '<input type="number" class="form-control noscroll" name="qty[]" style="text-align: center;" required>',
-                    '<input type="number" class="form-control noscroll usd_disc" style="text-align: center;" name="disc[]">',
+                    // UPDATE DISINI JUGA: Tambahkan readonly pada kontrak agar tidak bisa diedit manual
+                    '<input type="number" class="form-control noscroll usd_disc" style="text-align: center;" name="disc[]" readonly>',
                     '<input type="checkbox" class="form-check-input input-gift" id="gift" name="gift" disabled><input class="form-control input-free" type="hidden" id="free_product" value="0" name="free_product[]">',
                     '<a href="#" class="row-delete"><button type="button" class="btn btn-sm btn-circle btn-alt-danger" title="Delete"><i class="fa fa-trash"></i></button></a>'
                   ]).draw( false );
@@ -527,12 +553,39 @@
       });
     });
 
-    $('#datatables tbody').on( 'click', '.input-gift', function (e) {
+    $('#datatables tbody').on( 'change', '.input-gift', function (e) {
+      var $row = $(this).parents('tr');
+      // Tangkap ulang nilai diskon global USD saat ini
+      var globalDiscUsd = $('#global_disc_usd').val() || 0;
+      
       if($(this).is(':checked')){
-        $(this).parents('tr').find('.input-free').val(1);
-      }else{
-        $(this).parents('tr').find('.input-free').val(0);
+        // Jika dicentang (Free Product)
+        $row.find('.input-free').val(1);
+        $row.find('input[name="disc[]"]').val(0); // Nol-kan diskon
+        $row.addClass('table-success'); 
+      } else {
+        // Jika batal dicentang (Bukan Free Product)
+        $row.find('.input-free').val(0);
+        $row.find('input[name="disc[]"]').val(globalDiscUsd); // Kembalikan ke nilai diskon global modal popup
+        $row.removeClass('table-success');
       }
+      // Catatan: Tidak perlu lagi mengubah .prop('readonly') karena dari awal saat tambah baris sudah di-set readonly permanen.
+    });
+
+    // DETEKSI PERUBAHAN DISKON GLOBAL
+    $('#global_disc_usd').on('change', function() {
+        var nilaiBaru = $(this).val();
+
+        // Looping ke semua baris di dalam tabel
+        $('#datatables tbody tr').each(function() {
+            var $row = $(this);
+            var isFree = $row.find('.input-gift').is(':checked'); // Cek apakah barang ini gratis
+            
+            // Jika BUKAN barang gratis, update nilai diskonnya
+            if (!isFree) {
+                $row.find('input[name="disc[]"]').val(nilaiBaru);
+            }
+        });
     });
   })
 </script>

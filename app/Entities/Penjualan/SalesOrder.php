@@ -42,6 +42,12 @@ class SalesOrder extends Model
         'no_ducument_ppn',
     	'so_for',
     	'so_indent',
+        // --- FIELD DISKON GLOBAL SEBAGAI INFORMASI ---
+        'disc_percent',
+        'disc_idr',
+        'disc_usd',
+        'disc_kemasan',
+        // ---------------------------------------------
         'indent_status', 
         'count_rev',
         'approval_mou',
@@ -89,6 +95,7 @@ class SalesOrder extends Model
         4 => 'TUTUP',
         5 => 'HOLD',
         6 => 'INDENT',
+        7 => 'VOID',
     	9 => 'MUTASI',
     ];
 
@@ -100,16 +107,17 @@ class SalesOrder extends Model
     ];
 
     const TYPE_TRANSACTION = [
-    	1 => 'CASH',
-        2 => 'TEMPO',
-        3 => 'MARKETPLACE',
-        4 => 'COD',
+        'CASH' => 1,
+        'TEMPO' => 2,
+        'MARKETPLACE' => 3,
+        'COD' => 4,
     ];
 
     const CONDITION = [
     	0 => 'DELETED',
     	1 => 'ACTIVED',
         2 => 'HOLD',
+        3 => 'VOID',
     ];
 
     const COUNT_REV = [
@@ -144,6 +152,7 @@ class SalesOrder extends Model
         2 => 'TERBUAT',
         3 => 'SIAP',
         4 => 'TUTUP',
+        5 => 'VOID',
     ];
 
     public function so_sales_senior()
@@ -268,5 +277,10 @@ class SalesOrder extends Model
     public function so_status_proforma()
     {
         return array_search($this->status_proforma, self::STATUS_PROFORMA);
+    }
+
+    public function so_type_transaction()
+    {
+        return self::TYPE_TRANSACTION[$this->type_transaction];
     }
 }

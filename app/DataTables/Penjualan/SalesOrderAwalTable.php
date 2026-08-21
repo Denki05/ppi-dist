@@ -41,6 +41,7 @@ class SalesOrderAwalTable extends Table
                 'penjualan_so.created_at AS so_created_at', 
                 'penjualan_so.is_proforma AS is_proforma',
                 'penjualan_so.status_proforma AS status_proforma',
+                'penjualan_so.idr_rate AS idr_rate', // <--- TAMBAHKAN BARIS INI
                 DB::raw('
                     CASE 
                         WHEN penjualan_so.status = 1 THEN "AWAL"
@@ -177,8 +178,33 @@ class SalesOrderAwalTable extends Table
             $lanjutkan = route('superuser.penjualan.sales_order.lanjutkan', $model->id);
             $delete = route('superuser.penjualan.sales_order.destroy', $model->id);
             $print_so = route('superuser.penjualan.sales_order.print_so', $model->id);
+            $estimate_pdf = route('superuser.penjualan.sales_order.sales_estimate_pdf', $model->id);
         
             $buttons = '';
+
+            // -----------------------------------------------------------
+            // LOGIKA WARNING KURS: Jika kosong atau <= 1 cegah cetak PDF
+            // -----------------------------------------------------------
+            $btn_estimate = "";
+            if ($model->is_proforma == 1) {
+                if (empty($model->idr_rate) || (float) $model->idr_rate <= 1) {
+                    $btn_estimate = "
+                        <a href=\"javascript:void(0);\" onclick=\"Swal.fire('Peringatan!', 'Kurs belum di setting silahkan edit SO anda', 'warning');\">
+                            <button type=\"button\" class=\"btn btn-sm btn-circle btn-alt-primary\" title=\"Print Sales Estimate (Cetak Sebelum Lanjut)\">
+                                <i class=\"fa fa-file-pdf-o\"></i>
+                            </button>
+                        </a>
+                    ";
+                } else {
+                    $btn_estimate = "
+                        <a href=\"{$estimate_pdf}\" target=\"_blank\">
+                            <button type=\"button\" class=\"btn btn-sm btn-circle btn-alt-primary\" title=\"Print Sales Estimate (Cetak Sebelum Lanjut)\">
+                                <i class=\"fa fa-file-pdf-o\"></i>
+                            </button>
+                        </a>
+                    ";
+                }
+            }
 
             /*
             |--------------------------------------------------------------------------
@@ -187,10 +213,8 @@ class SalesOrderAwalTable extends Table
             */
 
             if ($model->status_so === 'AWAL' && $model->is_proforma == 1) {
-
                 // PROFORMA SUDAH DIBUAT
                 if (in_array($model->status_proforma, [1, 2, 3, 4])) {
-
                     $buttons .= "
                         <a href=\"{$print_so}\">
                             <button type=\"button\" class=\"btn btn-sm btn-circle btn-alt-info\" title=\"Print SO\">
@@ -198,16 +222,14 @@ class SalesOrderAwalTable extends Table
                             </button>
                         </a>
                     ";
-
                     return $buttons;
                 }
-
-                // PROFORMA BELUM DIBUAT → tampilkan semua tombol
             }
         
             if ($model->status_so === 'AWAL') {
                 if ($model->approval_mou == "YES" && $model->approval_mou_status != "APPROVED") {
-                    // jika ada permintaan approval
+                    
+                    // JIKA BUTUH APPROVAL: Print SO Dulu, lalu Estimate
                     $buttons .= "
                         <a href=\"{$print_so}\">
                             <button type=\"button\" class=\"btn btn-sm btn-circle btn-alt-info\" title=\"Print SO\">
@@ -215,8 +237,11 @@ class SalesOrderAwalTable extends Table
                             </button>
                         </a>
                     ";
+                    $buttons .= $btn_estimate;
+
                 } else {
-                    // jka ada permintaan approval dan sudah di approve
+                    
+                    // NORMAL / APPROVED: Revisi, Lanjut, Delete, Print SO
                     $buttons .= "
                         <a href=\"{$revisi}\">
                             <button type=\"button\" class=\"btn btn-sm btn-circle btn-alt-warning\" title=\"Revisi\">
@@ -235,13 +260,16 @@ class SalesOrderAwalTable extends Table
                                 <i class=\"fa fa-trash\"></i>
                             </button>
                         </a>
-        
+
                         <a href=\"{$print_so}\">
                             <button type=\"button\" class=\"btn btn-sm btn-circle btn-alt-info\" title=\"Print SO\">
                                 <i class=\"fa fa-print\"></i>
                             </button>
                         </a>
                     ";
+                    
+                    // Tombol Estimate ditaruh terakhir
+                    $buttons .= $btn_estimate;
                 }
             } elseif ($model->status_so === 'REVISI') {
                 $buttons .= "
@@ -262,13 +290,16 @@ class SalesOrderAwalTable extends Table
                             <i class=\"fa fa-trash\"></i>
                         </button>
                     </a>
-        
+
                     <a href=\"{$print_so}\">
                         <button type=\"button\" class=\"btn btn-sm btn-circle btn-alt-info\" title=\"Print SO\">
                             <i class=\"fa fa-print\"></i>
                         </button>
                     </a>
                 ";
+
+                $buttons .= $btn_estimate;
+
             } elseif (in_array($model->status_so, ['TUTUP', 'LANJUTAN'])) {
                 $buttons .= "
                     <a href=\"{$print_so}\">
@@ -280,7 +311,7 @@ class SalesOrderAwalTable extends Table
             }
         
             return $buttons;
-        });        
+        });     
 
         return $table->make(true);
     }

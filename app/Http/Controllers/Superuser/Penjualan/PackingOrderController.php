@@ -28,9 +28,7 @@ use App\Notifications\DoNotification;
 use App\Entities\Setting\UserMenu;
 use App\Entities\Account\User;
 use App\Repositories\CodeRepo;
-use App\Services\StockService;
-use App\Entities\Gudang\MutasiShowroom;
-use App\Entities\Gudang\MutasiShowroomDetail;
+use Illuminate\Support\Facades\Log;
 use Auth;
 use DB;
 use PDF;
@@ -918,12 +916,55 @@ class PackingOrderController extends Controller
                 abort(404);
             }
 
+            // Guard tambahan - jangan hanya andalkan blade menyembunyikan tombol
+            if ($getDo->type_transaction == 'CASH') {
+                if (!$getDo || $getDo->has_payment != 1) {
+                    return response()->json([
+                        'status' => 'error',
+                        'message' => 'DO CASH ini belum dikonfirmasi pembayarannya. Konfirmasi dulu sebelum naik ke logistik.',
+                    ]);
+                }
+            }
+
             DB::beginTransaction();
-
             try {
+                $hasActiveLog = DB::table('do_stock_deduction_logs')
+                    ->where('do_id', $getDo->id)
+                    ->where('status', 1)
+                    ->exists();
 
-                // Hanya ubah status menjadi DO (Logistik)
-                $getDo->status = 3; // status DO
+                // Kalau tidak ada log aktif (DO ini sempat direvisi & kembali ke List Queue),
+                // catat ULANG log-nya - TANPA reserveStock() lagi, karena reserved_quantity
+                // di ProductMinStock memang tidak pernah dilepas untuk kasus ini
+                if (!$hasActiveLog) {
+                    $qtys = [];
+                    foreach ($getDo->do_detail as $item) {
+                        $base_id = preg_replace('/_\d+$/', '', $item->product_packaging_id);
+                        $qtys[$base_id] = ($qtys[$base_id] ?? 0) + (float) $item->qty;
+                    }
+
+                    $newLogs = [];
+                    foreach ($qtys as $base_id => $qty) {
+                        if ($qty > 0) {
+                            $newLogs[] = [
+                                'do_id' => $getDo->id,
+                                'warehouse_id' => $getDo->warehouse_id,
+                                'product_packaging_id' => $base_id,
+                                'qty' => $qty,
+                                'status' => 1,
+                                'note' => 'Dicatat ulang - DO diproses kembali dari List Queue (reservasi tidak berubah)',
+                                'created_at' => now(),
+                                'updated_at' => now(),
+                            ];
+                        }
+                    }
+
+                    if (!empty($newLogs)) {
+                        DB::table('do_stock_deduction_logs')->insert($newLogs);
+                    }
+                }
+
+                $getDo->status = 3;
                 $getDo->updated_by = Auth::id();
                 $getDo->save();
 
@@ -1411,7 +1452,8 @@ class PackingOrderController extends Controller
         exit();
     }
 
-    private function reset_cost_if_change_idr_rate($do_id,$idr_rate){
+    private function reset_cost_if_change_idr_rate($do_id,$idr_rate)
+    {
         $do = PackingOrder::where('id',$do_id)->first();
         $result = PackingOrderDetail::where('do_id',$do_id)->first();
 
@@ -1426,10 +1468,14 @@ class PackingOrderController extends Controller
         $discount_2 = floatval($result->discount_2) / 100;
         $discount_idr = ($result->discount_idr);
 
+        // ✅ TAMBAHAN: hitung ulang nominal IDR dari masing-masing diskon persentase
+        $discount_1_idr = ceil($idr_total * $discount_1);
+        $discount_2_idr = ceil(($idr_total - $discount_1_idr) * $discount_2);
+
         $total_discount_idr = ceil(( $idr_total * $discount_1 ) + (($idr_total - ($idr_total * $discount_1)) * $discount_2) + $discount_idr);
 
-        if($result->ppn > 0){
-            $ppn = ceil(($idr_total - $total_discount_idr ) * (10/100));
+        if($result->ppn_percent > 0){
+            $ppn = ceil(($idr_total - $total_discount_idr ) * ($result->ppn_percent / 100));
         }
         else{
             $ppn = 0;
@@ -1443,7 +1489,9 @@ class PackingOrderController extends Controller
         $grand_total_idr = ceil($purchase_total_idr + $delivery_cost_idr + $other_cost_idr);
 
         $data = [
-            'ppn' => $ppn,
+            'discount_1_idr' => $discount_1_idr,      // ✅ ditambahkan
+            'discount_2_idr' => $discount_2_idr,      // ✅ ditambahkan
+            'ppn_idr' => $ppn,
             'total_discount_idr' => trim(htmlentities($total_discount_idr)),
             'purchase_total_idr' => trim(htmlentities($purchase_total_idr)),
             'grand_total_idr' => trim(htmlentities($grand_total_idr)),
@@ -1453,13 +1501,14 @@ class PackingOrderController extends Controller
         $update = PackingOrderDetail::where('do_id',$do_id)->update($data);
         return true;        
     }
+
     public function reset_cost($id){
       $data = [
           'discount_1' => 0,
           'discount_2' => 0,
           'discount_idr' => 0,
           'total_discount_idr' => 0,
-          'ppn' => 0,
+          'ppn_idr' => 0,
           'voucher_idr' => 0,
           'cashback_idr' => 0,
           'purchase_total_idr' => 0,
@@ -1531,6 +1580,312 @@ class PackingOrderController extends Controller
         } catch (\Exception $e) {
             DB::rollBack();
             return redirect()->back()->with('error', 'Gagal insert data: ' . $e->getMessage());
+        }
+    }
+
+    public function revisi_dari_logistik(Request $request, $id)
+    {
+        if (!$request->ajax()) {
+            abort(404);
+        }
+
+        if (Auth::user()->is_superuser == 0) {
+            if (empty($this->access) || empty($this->access->user) || $this->access->can_approve == 0) {
+                return response()->json([
+                    'status' => 'error',
+                    'message' => 'Anda tidak punya akses untuk membuka menu terkait',
+                ]);
+            }
+        }
+
+        try {
+            $packing = PackingOrder::find($id);
+
+            if (!$packing) {
+                return response()->json([
+                    'status' => 'error',
+                    'message' => 'Data DO tidak ditemukan',
+                ]);
+            }
+
+            if (!in_array($packing->status, [3, 4])) {
+                return response()->json([
+                    'status' => 'error',
+                    'message' => 'DO ini tidak dalam status yang bisa direvisi dari sini.',
+                ]);
+            }
+
+            DB::transaction(function () use ($packing) {
+                $packing = PackingOrder::where('id', $packing->id)->lockForUpdate()->firstOrFail();
+
+                // HANYA flip status log jadi 0 - JANGAN panggil releaseReservedStock()
+                // karena reserved di ProductMinStock sengaja dipertahankan sampai
+                // benar-benar dikembalikan ke SO Lanjutan
+                $affected = DB::table('do_stock_deduction_logs')
+                    ->where('do_id', $packing->id)
+                    ->where('status', 1)
+                    ->update([
+                        'status' => 0,
+                        'note' => 'Dibatalkan sementara - DO kembali ke List Queue (revisi status ' . $packing->status . ') oleh ' . (Auth::user()->name ?? 'Admin'),
+                        'updated_at' => now(),
+                    ]);
+
+                // Invoice batal kalau sudah sempat terbentuk - soft delete (bukan
+                // forceDelete) supaya jejak audit & kode tidak hilang, konsisten
+                // dengan alur Void.
+                Invoicing::where('do_id', $packing->id)->delete();
+
+                // Kalau DO ini asalnya dari Proforma (CASH), kembalikan juga status
+                // Proforma-nya supaya bisa diedit ulang - sama seperti yang sudah
+                // ada di revisi() lama, disamakan di sini.
+                $so = SalesOrder::find($packing->so_id);
+                if ($so && $so->status_proforma == 4) {
+                    $so->status_proforma = 2; // Mengembalikan status proforma agar bisa direvisi ulang
+                    $so->save();
+
+                    $proforma = SalesOrderProforma::where('so_id', $so->id)->first();
+                    if ($proforma) {
+                        $proforma->so_lanjutan = 0;
+                        $proforma->status = 2;
+                        $proforma->save();
+                    }
+                }
+
+                $packing->update(['status' => 2]);
+            });
+
+            return response()->json([
+                'status' => 'success',
+                'message' => 'DO berhasil ditarik kembali ke List Queue.',
+                'redirect' => route('superuser.penjualan.sales_order.index_lanjutan'),
+            ]);
+
+        } catch (\Exception $e) {
+            return response()->json([
+                'status' => 'error',
+                'message' => $e->getMessage(),
+            ]);
+        }
+    }
+
+    public function update_kurs(Request $request)
+    {
+        if (!$request->ajax()) {
+            abort(404);
+        }
+
+        if (Auth::user()->is_superuser == 0) {
+            if (empty($this->access) || empty($this->access->user) || $this->access->can_approve == 0) {
+                return response()->json([
+                    'status' => 'error',
+                    'message' => 'Anda tidak punya akses untuk membuka menu terkait',
+                ]);
+            }
+        }
+
+        $request->validate([
+            'ids' => 'required',
+            'idr_rate' => 'required',
+        ]);
+
+        $idrRate = (float) str_replace('.', '', str_replace(',', '.', $request->idr_rate));
+
+        if ($idrRate <= 1) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Kurs harus lebih dari Rp 1 agar dianggap valid.',
+            ]);
+        }
+
+        $ids = is_array($request->ids) ? $request->ids : explode(',', $request->ids);
+        $ids = array_filter(array_map('trim', $ids));
+
+        if (empty($ids)) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Tidak ada DO yang dipilih.',
+            ]);
+        }
+
+        try {
+            DB::transaction(function () use ($ids, $idrRate) {
+                foreach ($ids as $id) {
+                    $packing = PackingOrder::where('id', $id)->lockForUpdate()->first();
+                    if (!$packing) continue;
+
+                    $packing->idr_rate = $idrRate;
+                    $packing->is_kurs_hold = false;
+                    $packing->save();
+
+                    // Hitung ulang idr_total, diskon, ppn, dsb pakai kurs baru
+                    $this->reset_cost_if_change_idr_rate($packing->id, $idrRate);
+
+                    // Kurs baru valid & DO sudah di tahap Packed (status 4) -> buat/sinkronkan invoice
+                    if ((int) $packing->status >= 4) {
+                        $this->createInvoiceIfNeeded($packing->id);
+                    }
+                }
+            });
+
+            return response()->json([
+                'status' => 'success',
+                'message' => count($ids) > 1
+                    ? count($ids) . ' DO berhasil diupdate kurs-nya.'
+                    : 'Kurs DO berhasil diupdate.',
+            ]);
+        } catch (\Throwable $e) {
+            // dd($e);
+            return response()->json([
+                'status' => 'error',
+                'message' => $e->getMessage(),
+            ]);
+        }
+    }
+
+    /**
+     * Buat invoice untuk DO ini kalau belum ada, pakai grand_total_idr
+     * yang sudah tersimpan di PackingOrderDetail. Kalau sudah ada, sinkronkan
+     * grand_total_idr-nya saja.
+     */
+    private function createInvoiceIfNeeded($do_id)
+    {
+        $packing = PackingOrder::where('id', $do_id)->first();
+        $detail  = PackingOrderDetail::where('do_id', $do_id)->first();
+
+        if (!$packing || !$detail) {
+            return;
+        }
+
+        $existing = Invoicing::where('do_id', $do_id)->first();
+
+        if ($existing) {
+            if ($existing->grand_total_idr != $detail->grand_total_idr) {
+                $existing->update([
+                    'grand_total_idr' => $detail->grand_total_idr,
+                ]);
+            }
+            return;
+        }
+
+        Invoicing::create([
+            'code' => $packing->do_code,
+            'do_id' => $packing->id,
+            'customer_id' => $packing->customer_id,
+            'customer_other_address_id' => $packing->customer_other_address_id,
+            'grand_total_idr' => $detail->grand_total_idr,
+            'type' => 0,
+            'created_by' => Auth::id(),
+        ]);
+    }
+
+    public function ajukan_void(Request $request, $id)
+    {
+        if (!$request->ajax()) {
+            abort(404);
+        }
+
+        if (Auth::user()->is_superuser == 0) {
+            if (empty($this->access) || empty($this->access->user) || $this->access->can_approve == 0) {
+                return response()->json([
+                    'status' => 'error',
+                    'message' => 'Anda tidak punya akses untuk membuka menu terkait',
+                ]);
+            }
+        }
+
+        $request->validate([
+            'reason' => 'required|string|min:5',
+        ]);
+
+        try {
+            $packing = PackingOrder::find($id);
+
+            if (!$packing) {
+                return response()->json([
+                    'status' => 'error',
+                    'message' => 'Data DO tidak ditemukan',
+                ]);
+            }
+
+            if ((int) $packing->status !== 5) {
+                return response()->json([
+                    'status' => 'error',
+                    'message' => 'Pengajuan void hanya bisa dilakukan untuk DO berstatus Delivering (status 5).',
+                ]);
+            }
+
+            if (!empty($packing->void_status)) {
+                return response()->json([
+                    'status' => 'error',
+                    'message' => 'DO ini sudah pernah diajukan void sebelumnya.',
+                ]);
+            }
+
+            DB::transaction(function () use ($packing, $request) {
+                DB::table('do_void_requests')->insert([
+                    'do_id' => $packing->id,
+                    'so_id' => $packing->so_id,
+                    'requested_by' => Auth::id(),
+                    'requested_at' => now(),
+                    'request_reason' => trim(htmlentities($request->reason)),
+                    'status' => 1, // 1 = pending
+                    'created_at' => now(),
+                    'updated_at' => now(),
+                ]);
+
+                $packing->update(['void_status' => 1]); // 1 = pending
+            });
+
+            return response()->json([
+                'status' => 'success',
+                'message' => 'Pengajuan void berhasil dikirim, menunggu approval dari Finance.',
+            ]);
+
+        } catch (\Throwable $e) {
+            return response()->json([
+                'status' => 'error',
+                'message' => $e->getMessage(),
+            ]);
+        }
+    }
+
+    public function confirmed_payment(Request $request, $id)
+    {
+        if (!$request->ajax()) abort(400, 'Invalid request type.');
+
+        $request->validate([
+            'catatan' => 'nullable|string|max:255',
+        ]);
+
+        DB::beginTransaction();
+        try {
+            $packing = PackingOrder::lockForUpdate()->findOrFail($id);
+
+            if ($packing->type_transaction != 'CASH') {
+                throw new \Exception('Konfirmasi pembayaran ini hanya berlaku untuk transaksi CASH.');
+            }
+
+            $packing->has_payment = 1; // ✅ Tandai DO ini sudah dibayar
+            $packing->updated_by = Auth::id();
+            $packing->save();
+
+            Log::info('Konfirmasi pembayaran manual: DO #' . $packing->code
+                . ' dikonfirmasi oleh user #' . Auth::id()
+                . ($request->catatan ? ' - catatan: ' . $request->catatan : ''));
+
+            DB::commit();
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Pembayaran berhasil dikonfirmasi. DO ini sekarang bisa dinaikkan ke logistik.',
+            ]);
+
+        } catch (\Throwable $e) {
+            DB::rollBack();
+            return response()->json([
+                'success' => false,
+                'message' => $e->getMessage(),
+            ], 500);
         }
     }
 }

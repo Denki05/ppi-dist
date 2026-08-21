@@ -126,6 +126,14 @@ class SalesOrderProformaController extends Controller
         return view($this->view . "create", $data);
     }
 
+    private function cleanCurrency($value)
+    {
+        if ($value === null || $value === '') {
+            return 0;
+        }
+        return (float) str_replace(',', '.', str_replace('.', '', $value));
+    }
+
     public function store(Request $request)
     {
         if ($request->ajax()) {
@@ -402,7 +410,7 @@ class SalesOrderProformaController extends Controller
             $sales_proforma->so_date = $request->so_date;
             $sales_proforma->so_brand_name = $request->so_brand_name;
             $sales_proforma->so_type_transaction = $request->type_transaction;
-            $sales_proforma->so_idr_rate = $request->idr_rate;
+            $sales_proforma->so_idr_rate = $this->cleanCurrency($request->idr_rate);
             $sales_proforma->note = $request->note;
             $sales_proforma->sales_senior_id = $request->sales_senior_id;
             $sales_proforma->sales_id = $request->sales_id;
@@ -428,14 +436,14 @@ class SalesOrderProformaController extends Controller
             ]);
 
             $detail_cost->discount_1_percent = $request->disc_agen_percent ?? 0;
-            $detail_cost->discount_1 = $request->disc_agen_idr ?? 0;
+            $detail_cost->discount_1 = $this->cleanCurrency($request->disc_agen_idr);
             $detail_cost->discount_2_percent = $request->disc_kemasan_percent ?? 0;
-            $detail_cost->discount_2 = $request->disc_kemasan_idr ?? 0;
-            $detail_cost->discount_idr = $request->disc_tambahan_idr ?? 0;
-            $detail_cost->voucher_idr = $request->voucher_idr ?? 0;
-            $detail_cost->delivery_cost_idr = $request->delivery_cost_idr ?? 0;
-            $detail_cost->purchase_total_idr = $request->subtotal ?? 0;
-            $detail_cost->grand_total_idr = $request->grand_total ?? 0;
+            $detail_cost->discount_2 = $this->cleanCurrency($request->disc_kemasan_idr);
+            $detail_cost->discount_idr = $this->cleanCurrency($request->disc_tambahan_idr);
+            $detail_cost->voucher_idr = $this->cleanCurrency($request->voucher_idr);
+            $detail_cost->delivery_cost_idr = $this->cleanCurrency($request->delivery_cost_idr);
+            $detail_cost->purchase_total_idr = $this->cleanCurrency($request->subtotal);
+            $detail_cost->grand_total_idr = $this->cleanCurrency($request->grand_total);
 
             $detail_cost->save();
 
@@ -472,10 +480,10 @@ class SalesOrderProformaController extends Controller
                     }
 
                     $item->product_packaging_id = $value;
-                    $item->price = $request->price[$key] ?? 0;
-                    $item->qty = $request->qty[$key] ?? 0;
-                    $item->disc_usd = $request->disc_usd[$key] ?? 0;
-                    $item->total_item = $request->total[$key] ?? 0;
+                    $item->price = (float) ($request->price[$key] ?? 0);
+                    $item->qty = (float) ($request->qty[$key] ?? 0);
+                    $item->disc_usd = (float) ($request->disc_usd[$key] ?? 0);
+                    $item->total_item = $this->cleanCurrency($request->total[$key] ?? 0);
                     $item->packaging_id = $request->packaging[$key] ?? null;
                     $item->free_product = $free;
 
@@ -650,11 +658,19 @@ class SalesOrderProformaController extends Controller
             $packingOrder = PackingOrder::where('so_id', $sales_order->id)
                 ->where('status', 7)->orderBy('id', 'desc')->first();
     
+            // Kurs Proforma seharusnya SUDAH diisi Admin sejak awal (dipakai untuk
+            // kalkulasi di Proforma), tapi tetap dijaga dengan ambang batas yang sama
+            // seperti alur lain (kosong/0/1 dianggap belum valid -> hold), untuk
+            // berjaga-jaga jika ada input tidak wajar.
+            $isKursHoldProforma = empty($sales_proforma->so_idr_rate) || (float) $sales_proforma->so_idr_rate <= 1;
+
             if ($packingOrder) {
                 $packingOrder->update([
                     'status' => 2,
                     'warehouse_id' => $sales_proforma->warehouse_id,
                     'note' => $sales_proforma->note,
+                    'idr_rate' => $sales_proforma->so_idr_rate,
+                    'is_kurs_hold' => $isKursHoldProforma,
                     'created_by' => Auth::id()
                 ]);
                 PackingOrderItem::where('do_id', $packingOrder->id)->delete();
@@ -667,6 +683,7 @@ class SalesOrderProformaController extends Controller
                     'customer_other_address_id' => $sales_proforma->customer_other_address_id,
                     'vendor_id' => $sales_proforma->vendor_id,
                     'idr_rate' => $sales_proforma->so_idr_rate,
+                    'is_kurs_hold' => $isKursHoldProforma,
                     'type_transaction' => optional($sales_proforma->salesOrder)->type_transaction,
                     'count_cancel' => 0,
                     'status' => 2,
@@ -763,16 +780,11 @@ class SalesOrderProformaController extends Controller
                 }
             }
     
-            Invoicing::updateOrCreate(
-                ['code' => $sales_order->code, 'do_id' => $do_id],
-                [
-                    'customer_id' => $sales_order->customer_id,
-                    'customer_other_address_id' => $sales_proforma->customer_other_address_id,
-                    'grand_total_idr' => $sales_proforma->details_cost->grand_total_idr ?? 0,
-                    'created_by' => Auth::id(),
-                    'status' => 1
-                ]
-            );
+            // Invoice RESMI tidak dibuat di sini - mengikuti alur baru,
+            // invoice resmi baru terbentuk otomatis nanti di Checker (packed()),
+            // sama seperti alur TEMPO normal. Dokumen "Invoice Proforma" untuk
+            // customer tetap bisa dicetak lewat printProforma()/print_so_proforma(),
+            // itu dokumen tagihan sementara, bukan row Invoicing resmi.
     
             DB::commit();
     
@@ -789,7 +801,7 @@ class SalesOrderProformaController extends Controller
             ], 500);
         }
     }
-    
+
     public function destroy(Request $request, $id)
     {
         if (!$request->ajax()) {

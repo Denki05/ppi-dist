@@ -230,6 +230,7 @@
                 @endif
 
                 <!-- Penjualan -->
+                @if(!in_array($superuser->id, [41, 29]))
                 <li class="nav-item dropdown">
                     <a class="nav-link dropdown-toggle" role="button" data-bs-toggle="dropdown"
                         aria-expanded="false">
@@ -296,9 +297,10 @@
                         @endif
                     </ul>
                 </li>
+                @endif
 
                 <!-- Gudang -->
-                @if($superuser->can('superuser-manage') OR $superuser->division == "Admin" OR $superuser->division == "Management" OR $superuser->division == "Warehouse")
+                @if($superuser->can('superuser-manage') OR $superuser->division == "Admin" OR $superuser->division == "Management" OR $superuser->division == "Warehouse"  OR $superuser->division == "Finance")
                 <li class="nav-item dropdown">
                     <a class="nav-link dropdown-toggle" role="button" data-bs-toggle="dropdown"
                         aria-expanded="false">
@@ -307,7 +309,14 @@
                     <ul class="dropdown-menu">
 
                         {{-- ================= DOCUMENT ================= --}}
-                        @if($superuser->can('superuser-manage') OR $superuser->division == "Admin" OR $superuser->division == "Management" OR $superuser->division == "Warehouse")
+                        @if(
+                            ($superuser->can('superuser-manage') 
+                            OR $superuser->division == "Admin" 
+                            OR $superuser->division == "Management" 
+                            OR $superuser->division == "Warehouse" 
+                            OR $superuser->division == "Finance")
+                            AND !in_array($superuser->id, [29, 41])
+                        )
                         <li class="submenu submenu-md dropend">
                             <a class="dropdown-item dropdown-toggle" href="#" data-bs-toggle="dropdown">
                                 <i class="fa-solid fa-file-lines"></i> Document
@@ -350,7 +359,7 @@
                                 <i class="fa-solid fa-warehouse"></i> Warehouse
                             </a>
                             <ul class="dropdown-menu">
-                                @if($superuser->can('superuser-manage') OR $superuser->division == "Admin" OR $superuser->division == "Management" OR $superuser->division == "Warehouse")
+                                @if($superuser->can('superuser-manage') OR $superuser->division == "Admin" OR $superuser->division == "Management" OR $superuser->division == "Warehouse" OR $superuser->division == "Finance")
                                 <li>
                                     <a class="dropdown-item" href="{{ route('superuser.penjualan.delivery_order.index') }}">
                                         Checker Transaksi (DO)
@@ -388,7 +397,7 @@
                                 <i class="fa-solid fa-cubes"></i> Inventory
                             </a>
                             <ul class="dropdown-menu">
-                                @if($superuser->can('superuser-manage') OR $superuser->division == "Admin" OR $superuser->division == "Management" OR $superuser->division == "Warehouse")
+                                @if($superuser->can('superuser-manage') OR $superuser->division == "Admin" OR $superuser->division == "Management" OR $superuser->division == "Warehouse" OR $superuser->division == "Finance")
                                 <li>
                                     <a class="dropdown-item" href="{{ route('superuser.gudang.stock.index') }}">
                                         Stock
@@ -419,6 +428,7 @@
                         <li><a class="dropdown-item" href="{{ route('superuser.finance.nota_kredit_finance.index') }}"><i class="fa-solid fa-file-prescription"></i> Nota TT</a></li>
                         <li><a class="dropdown-item" href="{{ route('superuser.finance.nota_kredit_finance.refund_page') }}"><i class="fa-solid fa-file-prescription"></i> Refund</a></li>
                         <li><a class="dropdown-item" href="{{ route('superuser.finance.cashback.index') }}"><i class="fa-solid fa-code-branch"></i> Araya</a></li>
+                        
                         <!-- <li class="submenu submenu-md dropend">
                             <a class="dropdown-item dropdown-toggle" role="button" data-bs-toggle="dropdown"
                                 aria-expanded="false">
@@ -464,6 +474,7 @@
                                 </li>
                             </ul>
                         </li>
+                        <li><a class="dropdown-item" href="{{ route('superuser.finance.void.index') }}"><i class="fa-solid fa-ban"></i> Void DO</a></li>
                     </ul>
                 </li>
                 @endif
@@ -527,6 +538,7 @@
                                         <li><a class="dropdown-item" href="{{ route('superuser.report.customer_order_variant.index') }}">Customer - Produk</a></li>
                                         <li><a class="dropdown-item" href="{{ route('superuser.report.customer_order_variant.index') }}">Customer History</a></li>
                                         <li><a class="dropdown-item" href="{{ route('superuser.report.customer_type_zone.index') }}">Customer - Zoning</a></li>
+                                        <li><a class="dropdown-item" href="#">Summary Customer - Produk</a></li>
                                         <li><a class="dropdown-item" href="{{ route('superuser.report.sales.index') }}">Penjualan</a></li>
                                     </ul>
                                 </li>
@@ -537,7 +549,7 @@
                                         <li><a class="dropdown-item" href="{{ route('superuser.report.product_performance.index') }}">Produk - Customer</a></li>
                                         <li><a class="dropdown-item" href="{{ route('superuser.report.product_high_sell.index') }}">Produk Penjualan Tertinggi</a></li>
                                         @if($superuser->division == "Management" OR $superuser->division == "Developer")
-                                        <li><a class="dropdown-item" href="">Produk - Material</a></li>
+                                        <li><a class="dropdown-item" href="#">Produk - Material</a></li>
                                         @endif
                                     </ul>
                                 </li>
