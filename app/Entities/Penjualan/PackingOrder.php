@@ -52,6 +52,8 @@ class PackingOrder extends Model
 		'total_usd_before',
 		'total_usd_after',
 		'so_id',
+		'internal_revision_status',
+		'internal_revision_count',
     	'updated_by',
     	'created_by',
     	'deleted_by'

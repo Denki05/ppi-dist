@@ -96,6 +96,7 @@ class SalesOrderPpnController extends Controller
     						})
                             ->where('type_so', 'ppn')
                             ->where('so_indent', SalesOrder::INDENT['NO'])
+                            ->where('is_archived', 0)
                             ->orderBy('id','DESC')
                             ->get();
 
@@ -152,6 +153,7 @@ class SalesOrderPpnController extends Controller
     						})
                             ->where('type_so', 'ppn')
                             ->where('so_indent', SalesOrder::INDENT['NO'])
+                            ->where('is_archived', 0)
                             ->orderBy('id','DESC')
                             ->get();
 

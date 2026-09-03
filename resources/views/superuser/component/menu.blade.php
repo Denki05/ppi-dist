@@ -673,7 +673,7 @@
                 </div>
 
                 <div class="notification-footer text-center">
-                    <a href="#" class="text-muted small">View All</a>
+                    <a href="{{ route('superuser.penjualan.notification.index') }}" class="text-muted small">View All Notifications</a>
                 </div>
             </div>
         </li>

@@ -17,6 +17,7 @@ class SalesOrderLanjutanTable extends Table
 
         $model = SalesOrder::where('penjualan_so.type_so', 'nonppn')
             ->where('penjualan_so.so_indent', SalesOrder::INDENT['NO'])
+            ->where('penjualan_so.is_archived', 0)
             ->whereIn('penjualan_so.status', [2, 4])
             // ->whereDate('penjualan_so.created_at', Carbon::now())
             ->leftJoin('master_customer_other_addresses', 'penjualan_so.customer_other_address_id', '=', 'master_customer_other_addresses.id')

@@ -15,7 +15,9 @@ class SalesOrder extends Model
     protected $table = "penjualan_so";
     protected $fillable =[
     	'so_code',
+        'estimate_code',
         'is_proforma',
+        'is_estimate',
         'status_proforma',
     	'code',
         'keep_code', 
@@ -42,6 +44,8 @@ class SalesOrder extends Model
         'no_ducument_ppn',
     	'so_for',
     	'so_indent',
+        'is_archived',
+        'archived_at',
         // --- FIELD DISKON GLOBAL SEBAGAI INFORMASI ---
         'disc_percent',
         'disc_idr',
@@ -57,8 +61,13 @@ class SalesOrder extends Model
     	'updated_by',
     	'created_by',
     	'deleted_by',
-        'created_at', 
+    	'created_at', 
         'updated_at',
+    ];
+
+    protected $casts = [
+        'is_archived' => 'boolean',
+        'archived_at' => 'datetime',
     ];
 
     const STATUS = [

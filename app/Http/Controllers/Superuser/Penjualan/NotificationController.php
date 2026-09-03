@@ -24,7 +24,7 @@ class NotificationController extends Controller
                 'App\Notifications\DoNotification',
                 'App\Notifications\SoNotification',
                 'App\Notifications\PayableNotification',
-                'App\Notifications\ReceivingNotification'
+                'App\Notifications\ReceivingNotification',
             ])
             ->orderBy('created_at', 'desc')
             ->get()
@@ -45,6 +45,56 @@ class NotificationController extends Controller
             'notifications' => $notifications,
             'notifCount'    => $notifCount,
         ]);
+    }
+
+    /**
+     * Halaman View All Notifications dengan pagination
+     */
+    public function index(Request $request)
+    {
+        $userId = Auth::id();
+        $typeFilter = $request->get('type');
+
+        $query = DB::table('notifications')
+            ->where('notifiable_id', $userId)
+            ->whereIn('type', [
+                'App\Notifications\DoNotification',
+                'App\Notifications\SoNotification',
+                'App\Notifications\PayableNotification',
+                'App\Notifications\ReceivingNotification',
+            ])
+            ->orderBy('created_at', 'desc');
+
+        if ($typeFilter) {
+            $query->where('type', $typeFilter);
+        }
+
+        $notifications = $query->paginate(20)->withQueryString();
+
+        // Statistik
+        $stats = [
+            'total' => DB::table('notifications')
+                ->where('notifiable_id', $userId)
+                ->whereIn('type', [
+                    'App\Notifications\DoNotification',
+                    'App\Notifications\SoNotification',
+                    'App\Notifications\PayableNotification',
+                    'App\Notifications\ReceivingNotification',
+                ])
+                ->count(),
+            'unread' => DB::table('notifications')
+                ->where('notifiable_id', $userId)
+                ->whereNull('read_at')
+                ->whereIn('type', [
+                    'App\Notifications\DoNotification',
+                    'App\Notifications\SoNotification',
+                    'App\Notifications\PayableNotification',
+                    'App\Notifications\ReceivingNotification',
+                ])
+                ->count(),
+        ];
+
+        return view('superuser.penjualan.notification.index', compact('notifications', 'stats', 'typeFilter'));
     }
 
     /**

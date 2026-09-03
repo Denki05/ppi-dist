@@ -26,6 +26,7 @@ class SalesOrderAwalTable extends Table
 
         $model = SalesOrder::where('penjualan_so.type_so', 'nonppn')
             ->where('penjualan_so.so_indent', SalesOrder::INDENT['NO'])
+            ->where('penjualan_so.is_archived', 0)
             ->whereIn('penjualan_so.status', array_values($statusMap))
             ->leftJoin('master_customer_other_addresses', 'penjualan_so.customer_other_address_id', '=', 'master_customer_other_addresses.id')
             ->select(
@@ -40,8 +41,9 @@ class SalesOrderAwalTable extends Table
                 'penjualan_so.customer_other_address_id AS customer_id', 
                 'penjualan_so.created_at AS so_created_at', 
                 'penjualan_so.is_proforma AS is_proforma',
+                'penjualan_so.is_estimate AS is_estimate',
                 'penjualan_so.status_proforma AS status_proforma',
-                'penjualan_so.idr_rate AS idr_rate', // <--- TAMBAHKAN BARIS INI
+                'penjualan_so.idr_rate AS idr_rate',
                 DB::raw('
                     CASE 
                         WHEN penjualan_so.status = 1 THEN "AWAL"
@@ -186,7 +188,8 @@ class SalesOrderAwalTable extends Table
             // LOGIKA WARNING KURS: Jika kosong atau <= 1 cegah cetak PDF
             // -----------------------------------------------------------
             $btn_estimate = "";
-            if ($model->is_proforma == 1) {
+            // Tampilkan icon PDF HANYA jika is_estimate = 1
+            if ($model->is_estimate == 1) {
                 if (empty($model->idr_rate) || (float) $model->idr_rate <= 1) {
                     $btn_estimate = "
                         <a href=\"javascript:void(0);\" onclick=\"Swal.fire('Peringatan!', 'Kurs belum di setting silahkan edit SO anda', 'warning');\">
@@ -213,7 +216,7 @@ class SalesOrderAwalTable extends Table
             */
 
             if ($model->status_so === 'AWAL' && $model->is_proforma == 1) {
-                // PROFORMA SUDAH DIBUAT
+                // PROFORMA SUDAH DIBUAT - hanya tampilkan Print SO
                 if (in_array($model->status_proforma, [1, 2, 3, 4])) {
                     $buttons .= "
                         <a href=\"{$print_so}\">

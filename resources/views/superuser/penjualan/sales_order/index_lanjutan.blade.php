@@ -67,10 +67,8 @@
   <input style="display: none;" id="tab3" type="radio" name="tabs">
   <label style="padding: 15px 25px;" for="tab3">SO PROGRESS</label>
 
-  {{--@if($superuser->division == "Management" OR $superuser->division == "Admin" OR $superuser->division == "Developer")
   <input style="display: none;" id="tab4" type="radio" name="tabs">
-  <label style="padding: 15px 25px;" for="tab4">DO CANCEL</label>
-  @endif--}}
+  <label style="padding: 15px 25px;" for="tab4">REVISI INTERNAL</label>
 
     
   <!-- Sales Order Lanjutan -->
@@ -311,49 +309,68 @@
 
     <section id="content4">
       <div class="row mb-30">
+        @if($superuser->division == "Admin" OR $superuser->division == "Management" OR $superuser->division == "Developer")
+        <div class="col-12 mb-15">
+          <a href="{{ route('superuser.penjualan.internal_revision.index') }}" class="btn btn-outline-primary btn-sm">
+            <i class="fa fa-check-circle"></i> Halaman Approval Revisi Internal (Management/Developer)
+          </a>
+        </div>
+        @endif
         <div class="col-12">
-        <table class="table table-hover" id="do_cancel">
-    <thead>
-        <tr>
-            <th>#</th>
-            <th>DO Code</th>
-            <th>Refrensi SO</th>
-            <th>Customer</th>
-            <th>Tanggal Buat</th>
-            <th>Transaction Type</th>
-            <th>Action</th>
-        </tr>
-    </thead>
-    <tbody>
-        @foreach($packing_order as $index => $row)
-            @if(in_array($row->status, [5, 6, 7]))
-                <tr>
+          <table class="table table-hover" id="revisi_internal_list">
+            <thead>
+              <tr>
+                <th>#</th>
+                <th>DO Code</th>
+                <th>Refrensi SO</th>
+                <th>Customer</th>
+                <th>Status DO</th>
+                <th>Status Revisi</th>
+                <th>Action</th>
+              </tr>
+            </thead>
+            <tbody>
+              @foreach($packing_order as $index => $row)
+                @if(in_array($row->status, [5, 6]))
+                  <tr>
                     <td>{{ $index + 1 }}</td>
                     <td>{{ $row->do_code }}</td>
                     <td>{{ $row->so->code ?? '-' }}</td>
                     <td>
-                        @if($row->member)
-                            {{ $row->member->name }} {{ $row->member->text_kota }}
-                        @else
-                            <span class="text-danger">-</span>
-                        @endif
+                      @if($row->member)
+                        {{ $row->member->name }} {{ $row->member->text_kota }}
+                      @else
+                        <span class="text-danger">-</span>
+                      @endif
                     </td>
-                    <td>{{ \Carbon\Carbon::parse($row->created_at)->format('d-m-Y h:i:s') }}</td>
-                    <td>{{ $row->so->type_transaction ?? '-' }}</td>
+                    <td>{{ $row->do_status()->msg ?? '-' }}</td>
                     <td>
-                        @if((in_array($row->status, [5, 6]) || ($superuser->division == "Management" && $superuser->division == "Developer")))
-                            <a href="javascript:void(0)" type="button" class="btn btn-danger opneModalDoCancel" data-id="{{ $row->id }}">Cancel DO</a>
-                        @endif
-                        @if($row->status == 7)
-                            <a href="#" class="btn btn-info btn-sm btn-flat btn-frmdoedit" data-id="{{ $row->id }}"><i class="fa fa-edit"></i> Form Revisi</a>
-                        @endif
+                      @if($row->internal_revision_status == 1)
+                        <span class="badge badge-warning">Sedang Diproses</span>
+                      @elseif($row->internal_revision_count > 0)
+                        <span class="badge badge-success">Sudah Direvisi ({{ $row->internal_revision_count }}x)</span>
+                      @else
+                        <span class="badge badge-light">-</span>
+                      @endif
                     </td>
-                </tr>
-            @endif
-        @endforeach
-    </tbody>
-</table>
-
+                    <td>
+                      @if($row->internal_revision_status == 1)
+                        <button type="button" class="btn btn-sm btn-secondary" disabled>Menunggu Approval</button>
+                      @elseif(!empty($row->void_status))
+                        <button type="button" class="btn btn-sm btn-secondary" disabled title="Sedang ada pengajuan Void">Terkunci (Void)</button>
+                      @elseif($row->internal_revision_count > 0)
+                        <button type="button" class="btn btn-sm btn-secondary" disabled title="DO sudah pernah di-revisi internal">Sudah Direvisi</button>
+                      @else
+                        <a href="{{ route('superuser.penjualan.internal_revision.create', $row->id) }}" class="btn btn-sm btn-outline-warning">
+                          <i class="fa fa-edit"></i> Ajukan Revisi
+                        </a>
+                      @endif
+                    </td>
+                  </tr>
+                @endif
+              @endforeach
+            </tbody>
+          </table>
         </div>
       </div>
     </section>
@@ -364,31 +381,7 @@
     <input type="hidden" name="id">
 </form>
 
-<div class="modal fade" id="modalDoCancel" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true">
-  <div class="modal-dialog" role="document">
-    <div class="modal-content">
-      <div role="alert" class="alert" id="alert-message" style="display: none;"></div>
-      <div class="modal-header">
-        <h5 class="modal-title" id="exampleModalLabel">verify auth token</h5>
-        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-          <span aria-hidden="true">&times;</span>
-        </button>
-      </div>
-      <div class="modal-body">
-        <form id="myFormDoCancel" method="POST" role="form" enctype="multipart/form-data" novalidate>
-          @csrf
-          <div class="mb-3">
-            <label>TOKEN :</label>
-            <input type="password" class="form-control" name="secreatCode" id="secreatCode">
-          </div>
-          <input type="hidden" id="doID" />
-          <button type="button" class="btn btn-info" id="submitDoCancel">Auth</button>
-          <button type="button" class="btn btn-danger" data-bs-dismiss="modal">Close</button>
-        </form>
-      </div>
-    </div>
-  </div>
-</div>
+
 
 <!-- view so -->
 <div class="modal fade bd-example-modal-xl" id="modalViewSo" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true">
@@ -862,19 +855,19 @@ input[type="checkbox"]{ accent-color:var(--sop-primary); width:16px; height:16px
             ], 
         });
 
-        $('#do_cancel').DataTable( {
-          paging:   true,
-            orderin: true,
-            info:     false,
-            searching : true,
-            order: [
-              [2, 'asc'],
-            ],
-            pageLength: 10,
-            lengthMenu: [
+        $('#revisi_internal_list').DataTable({
+          paging: true,
+          ordering: true,
+          info: false,
+          searching: true,
+          order: [
+              [1, 'asc'],
+          ],
+          pageLength: 5,
+          lengthMenu: [
               [10, 30, 100, -1],
               [10, 30, 100, 'All']
-            ], 
+          ],
         });
 
         // ================= SO PROGRESS: custom table (no DataTables) =================
@@ -1064,49 +1057,6 @@ input[type="checkbox"]{ accent-color:var(--sop-primary); width:16px; height:16px
             $('#frmDoEdit').find('input[name="id"]').val(id);
             $('#frmDoEdit').submit();
             }
-        });
-
-        $(document).on('click', '.opneModalDoCancel', function () {
-            var id = $(this).data('id');
-            $('#doID').val(id);
-            $('#modalDoCancel').modal('show');
-        });
-
-        $('#submitDoCancel').on('click', function (e) {
-          e.preventDefault();
-          var code = $('#secreatCode').val();
-          var do_id = $('#doID').val();
-
-          $.ajax({
-              type: 'POST',
-              url: "{{ route('superuser.penjualan.delivery_order.cancel_proses') }}",
-              data: {
-                  "_token": "{{ csrf_token() }}",
-                  "pass": code,
-                  "id": do_id
-              },
-              success: function (response) {
-                  $('#alert-message')
-                      .removeClass('alert-danger')
-                      .addClass('alert-success')
-                      .text(response.message)
-                      .show();
-
-                  setTimeout(function () {
-                      $('#modalDoCancel').modal('hide');
-                      setTimeout(function () {
-                          window.location.reload();
-                      }, 800);
-                  }, 800);
-              },
-              error: function (xhr, status, error) {
-                  $('#alert-message')
-                      .removeClass('alert-success')
-                      .addClass('alert-danger')
-                      .text(xhr.responseJSON.message || 'Token tidak sah!')
-                      .show();
-              }
-          });
         });
 
         $(document).on('click', '.btn-revisi', function(e) {

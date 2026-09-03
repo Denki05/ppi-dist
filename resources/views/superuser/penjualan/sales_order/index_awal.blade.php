@@ -153,7 +153,7 @@
               </div>
 
               <div class="form-row align-items-end">
-                <div class="form-group col-8">
+                <div class="form-group col-12">
                   <span class="form-label"><b>Type Transaksi </b> <span class="text-danger">*</span></span>
                   <select class="form-control js-select2" name="so_type" id="so_type" style="width:100%;" required>
                     <option value="">Pilih Transaksi Type </option>
@@ -161,17 +161,6 @@
                     <option value="{{$row}}">{{$row}}</option>
                     @endforeach
                   </select>
-                </div>
-                <div class="form-group col-4" id="proforma-group" style="display:none;">
-                  <div class="custom-control custom-checkbox">
-                      <input type="checkbox" class="custom-control-input" 
-                            name="need_proforma" 
-                            id="need_proforma" 
-                            value="1">
-                      <label class="custom-control-label" for="need_proforma">
-                          <b>Estimate?</b>
-                      </label>
-                  </div>
                 </div>
               </div>
 
@@ -495,7 +484,6 @@
           var disc_usd = $('#disc_usd').val() || 0;
           var disc_kemasan = $('#disc_kemasan').val() || 0;
           
-          var need_proforma = $('#need_proforma').is(':checked') ? 1 : 0;
           var packaging_id = $('#packaging_id').val() || '';
 
           if (!packaging_id) {
@@ -504,8 +492,8 @@
             return;
           }
 
-          // Update template URL route (tambahkan 3 parameter baru)
-          var url = '{{ route('superuser.penjualan.sales_order.create',  [":step", ":member", ":brand", ":type", ":indent", ":approval", ":note", ":kurs", ":disc_percent", ":disc_idr", ":disc_usd", ":disc_kemasan", ":need_proforma", ":packaging"]) }}';
+          // Update template URL route
+          var url = '{{ route('superuser.penjualan.sales_order.create',  [":step", ":member", ":brand", ":type", ":indent", ":approval", ":note", ":kurs", ":disc_percent", ":disc_idr", ":disc_usd", ":disc_kemasan", ":packaging"]) }}';
           
           url = url.replace(':member', customer);
           url = url.replace(':brand', merek);
@@ -519,7 +507,6 @@
           url = url.replace(':disc_idr', disc_idr);
           url = url.replace(':disc_usd', disc_usd);
           url = url.replace(':disc_kemasan', disc_kemasan);
-          url = url.replace(':need_proforma', need_proforma);
           url = url.replace(':packaging', packaging_id);
 
           $.ajax({
@@ -539,10 +526,6 @@
           $(this).find('form')[0].reset();
 
           $(this).find('.js-select2').val(null).trigger('change');
-
-          // TAMBAHAN
-          $('#proforma-group').hide();
-          $('#need_proforma').prop('checked', false);
         });
 
         $('#exampleModal').on('shown.bs.modal', function () {
@@ -584,30 +567,6 @@
           text = text.concat(exp);
           document.getElementById('editor').value = text;
         }
-
-        // HANDLE PROFORMA BASED ON SO TYPE
-        $('#so_type').on('change', function () {
-          var type = $(this).val();
-          var group = $('#proforma-group');
-          var checkbox = $('#need_proforma');
-
-          if (!type) {
-              group.hide();
-              checkbox.prop('checked', false);
-              return;
-          }
-          var typeUpper = type.toUpperCase();
-          if (typeUpper === 'CASH') {
-              group.show();
-              checkbox.prop('checked', true);
-          } else if (typeUpper === 'TEMPO') {
-              group.show();
-              checkbox.prop('checked', false);
-          } else {
-              group.hide();
-              checkbox.prop('checked', false);
-          }
-      });
     })
 </script>
 @endpush

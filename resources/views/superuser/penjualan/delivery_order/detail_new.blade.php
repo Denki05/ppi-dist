@@ -400,7 +400,7 @@
       <i class="fa fa-print"></i> Dokumen
     </span>
     <div class="do-toolbar-actions">
-      @if($result->count_cancel == 0)
+      @if($result->count_cancel == 0 && $result->internal_revision_count == 0)
         <a href="{{ route('superuser.penjualan.delivery_order.print', $result->id) }}"
           class="btn btn-outline-info" target="_blank">
             <i class="fa fa-file-o"></i> Print DO
@@ -411,10 +411,13 @@
               <i class="fa fa-file-o"></i> Print SJ Internal
           </a>
         @endif--}}
-      @elseif($result->count_cancel == 1)
+      @else
         <a href="{{ route('superuser.penjualan.delivery_order.print', $result->id) }}"
-          class="btn btn-outline-info" target="_blank">
+          class="btn btn-outline-warning" target="_blank">
             <i class="fa fa-print"></i> Print DO Revisi
+            @if($result->internal_revision_count > 0)
+              (ke-{{ $result->internal_revision_count }})
+            @endif
         </a>
       @endif
     </div>

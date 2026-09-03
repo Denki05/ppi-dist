@@ -277,7 +277,7 @@
             <div class="form-group row justify-content-end">
               <label class="col-md-1 col-form-label">Disc Kemasan</label>
               <div class="col-md-1">
-                <input type="text" class="form-control" id="disc_kemasan_percent" name="disc_kemasan_percent" value="{{ $detailsCost->discount_1_percent ?? 0 }}">
+                <input type="text" class="form-control" id="disc_kemasan_percent" name="disc_kemasan_percent" value="{{ $detailsCost->discount_2_percent ?? 0 }}">
               </div>
               <div class="col-sm-2">
                 <input type="text" readonly class="form-control" id="disc_kemasan_idr" name="disc_kemasan_idr" value="{{ number_format((float) ($detailsCost->discount_2 ?? 0), 2, ',', '.') }}">
@@ -321,6 +321,9 @@
             </a>
           </div>
           <div class="col-md-6 text-right">
+            <button type="button" class="btn btn-warning mb-2" id="btn_call">
+              <i class="fas fa-calculator pr-2" aria-hidden="true"></i> Calculated
+            </button>
             <button type="submit" class="btn btn-primary">
                 <i class="fa fa-save  pr-2" aria-hidden="true" ></i> Save
             </button>
@@ -573,60 +576,95 @@
       recalcRow($row);
     });
 
-    $('#disc_agen_percent').on('keyup', function(e) {
-      if($(this).val() != ''){
-        let subtotal = clean($("#subtotal").val());
-
-        let amount = subtotal * $(this).val() / 100;
-
-        $('input[name="disc_agen_idr"]').val(formatNumber(amount));
-        grandtotal();
-      }else{
-        $('input[name="disc_agen_idr"]').val(formatNumber(0));
-        grandtotal();
-      }
-    });
-
-    $('#disc_kemasan_percent').on('input', function(e){
-      if($(this).val() != ''){
-        let subtotal = clean($("#subtotal").val());
-        let disc_percent = clean($('input[name="disc_agen_idr"]').val());
-
-        let subAfterDiscPercent = subtotal - disc_percent;
-
-        var amount = subAfterDiscPercent * $(this).val() / 100;
-        $('#disc_kemasan_idr').val(formatNumber(amount));
-        grandtotal();
-      }else{
-        $('#disc_kemasan_idr').val(formatNumber(0));
-        grandtotal();
-      }
-    });
-
-    $("#disc_tambahan_idr").on('keyup', function() {
-      grandtotal();
-    });
-
-    $("#voucher_idr").on('keyup', function() {
-      grandtotal();
-    });
-
-    $("#delivery_cost_idr").on('keyup', function() {
-      grandtotal();
-    });
-
-    function grandtotal() {
-      if (!userInteracted) return;
-      
+    // ==========================================
+    // STEP 1: HITUNG DISC AGEN
+    // ==========================================
+    function hitungDiscAgen() {
+      var discPercent = parseFloat($('#disc_agen_percent').val()) || 0;
       var subtotal = clean($('#subtotal').val());
-      var disc_percent = clean($('#disc_agen_idr').val());
-      var disc_kemasan = clean($('#disc_kemasan_idr').val());
-      var disc_idr = clean($('#disc_tambahan_idr').val());
+      var result = (subtotal * discPercent) / 100;
+      $('#disc_agen_idr').val(formatNumber(result));
+      // Chain: setelah disc agen, hitung disc kemasan
+      hitungDiscKemasan();
+    }
+
+    // ==========================================
+    // STEP 2: HITUNG DISC KEMASAN
+    // ==========================================
+    function hitungDiscKemasan() {
+      var percentVal = $('#disc_kemasan_percent').val();
+      if (percentVal !== '' && percentVal !== '0') {
+        var subtotal = clean($('#subtotal').val());
+        var discAgen = clean($('#disc_agen_idr').val());
+        var subAfterDiscAgen = subtotal - discAgen;
+        var amount = (subAfterDiscAgen * parseFloat(percentVal)) / 100;
+        $('#disc_kemasan_idr').val(formatNumber(amount));
+      } else {
+        $('#disc_kemasan_idr').val(formatNumber(0));
+      }
+      // Chain: setelah disc kemasan, hitung grand total
+      hitungGrandTotal();
+    }
+
+    // ==========================================
+    // STEP 3: HITUNG GRAND TOTAL
+    // ==========================================
+    function hitungGrandTotal() {
+      var subtotal = clean($('#subtotal').val());
+      var discAgen = clean($('#disc_agen_idr').val());
+      var discKemasan = clean($('#disc_kemasan_idr').val());
+      var discIdr = clean($('#disc_tambahan_idr').val());
       var voucher = clean($('#voucher_idr').val());
       var ongkir = clean($('#delivery_cost_idr').val());
-      var grandtotal = subtotal - disc_percent - disc_kemasan - disc_idr - voucher + ongkir;
+      var grandTotal = subtotal - discAgen - discKemasan - discIdr - voucher + ongkir;
+      $('#grand_total').val(formatNumber(grandTotal));
+    }
 
-      $('#grand_total').val(formatNumber(grandtotal));
+    // ==========================================
+    // EVENT LISTENERS - Live Update
+    // ==========================================
+    $('#disc_agen_percent').on('keyup change', function() {
+      hitungDiscAgen();
+    });
+
+    $('#disc_kemasan_percent').on('keyup change input', function() {
+      hitungDiscKemasan();
+    });
+
+    $('#disc_tambahan_idr').on('keyup', function() {
+      hitungGrandTotal();
+    });
+
+    $('#voucher_idr').on('keyup', function() {
+      hitungGrandTotal();
+    });
+
+    $('#delivery_cost_idr').on('keyup', function() {
+      hitungGrandTotal();
+    });
+
+    // Format input currency otomatis
+    $(document).on('input', '#disc_tambahan_idr, #voucher_idr, #delivery_cost_idr', function() {
+      var cursorFromEnd = this.value.length - this.selectionStart;
+      this.value = formatInputKurs(this.value);
+      var newPos = this.value.length - cursorFromEnd;
+      if (this.selectionStart) {
+        this.setSelectionRange(newPos, newPos);
+      }
+      hitungGrandTotal();
+    });
+
+    // ==========================================
+    // TOMBOL CALCULATED (Manual Trigger)
+    // ==========================================
+    $(document).on('click', '#btn_call', function(e) {
+      e.preventDefault();
+      hitungDiscAgen();
+    });
+
+    // Legacy function name - panggil hitungDiscAgen
+    function grandtotal() {
+      hitungDiscAgen();
     }
   });
 </script>

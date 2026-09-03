@@ -330,7 +330,7 @@ class SalesOrderController extends Controller
      *
      * @return \Illuminate\Http\Response
      */
-    public function create(Request $request, $step, $member, $brand, $type, $indent, $approval, $note, $kurs, $disc_percent, $disc_idr, $disc_usd, $disc_kemasan, $need_proforma, $packaging = null)
+    public function create(Request $request, $step, $member, $brand, $type, $indent, $approval, $note, $kurs, $disc_percent, $disc_idr, $disc_usd, $disc_kemasan, $packaging = null)
     {
         // Access
         if(Auth::user()->is_superuser == 0){
@@ -383,7 +383,6 @@ class SalesOrderController extends Controller
             'disc_idr' => $disc_idr_val,
             'disc_usd' => $disc_usd_val,
             'disc_kemasan' => $disc_kemasan_val,
-            'is_proforma' => $need_proforma,
             'selected_packaging' => $selected_packaging,
         ];
 
@@ -433,7 +432,31 @@ class SalesOrderController extends Controller
                     $insert->approval_mou = $request->approval;
                     $insert->idr_rate = str_replace(',', '.', $request->kurs);
                     $insert->note = $request->note_so;
-                    $insert->is_proforma = $request->need_proforma ?? 0;
+                    $insert->is_proforma = 0;
+                    
+                    // Auto generate estimate untuk semua SO (Cash/Tempo)
+                    $typeUpper = strtoupper($request->type_transaction);
+                    if (in_array($typeUpper, ['CASH', 'TEMPO'])) {
+                        $insert->is_estimate = 1;
+                        
+                        // Generate estimate_code
+                        $today = now();
+                        $prefix = $today->format('ymd');
+                        $lastEstimate = SalesOrder::where('estimate_code', 'LIKE', $prefix . '-%')
+                            ->orderByRaw("CAST(SUBSTRING_INDEX(estimate_code, '-', -1) AS UNSIGNED) DESC")
+                            ->first();
+                        
+                        if ($lastEstimate) {
+                            $lastNumber = (int) substr($lastEstimate->estimate_code, -2);
+                            $newNumber = $lastNumber + 1;
+                        } else {
+                            $newNumber = 1;
+                        }
+                        
+                        $insert->estimate_code = $prefix . '-' . str_pad($newNumber, 2, '0', STR_PAD_LEFT);
+                    } else {
+                        $insert->is_estimate = 0;
+                    }
                     
                     // --- SAVE DISKON GLOBAL DI HEADER SEBAGAI INFO ---
                     $insert->catatan = null; // Bisa dikosongkan atau diisi hal lain
@@ -941,12 +964,13 @@ class SalesOrderController extends Controller
             try {
                 /*
                 |--------------------------------------------------------------------------
-                | CASE 1: PROFORMA (KHUSUS CASH) -> MASUK MODUL SO PROFORMA
+                | CASE 1: PROFORMA (CASH + ESTIMATE) -> MASUK MODUL SO PROFORMA
                 |--------------------------------------------------------------------------
                 */
-                // Pintu penjagaan ketat: Harus Proforma AND Harus CASH AND Status Proforma masih 0
-                if ($sales_order->is_proforma == 1 && trim(strtoupper($sales_order->type_transaction)) == 'CASH' && $sales_order->status_proforma == 0) {
+                // Pintu penjagaan ketat: Harus CASH AND is_estimate = 1 AND Status Proforma masih 0
+                if ($sales_order->is_estimate == 1 && trim(strtoupper($sales_order->type_transaction)) == 'CASH' && $sales_order->status_proforma == 0) {
 
+                    $sales_order->is_proforma = 1;
                     $sales_order->status_proforma = 1;
                     $sales_order->status = 1; // Tetap di tahan di index AWAL
                     $sales_order->save();
@@ -1011,11 +1035,11 @@ class SalesOrderController extends Controller
                 } 
                 /*
                 |--------------------------------------------------------------------------
-                | CASE 2: SO NORMAL ATAU "TEMPO + PROFORMA" -> MASUK SO LANJUTAN
+                | CASE 2: SO NORMAL ATAU "TEMPO + ESTIMATE" -> MASUK SO LANJUTAN
                 |--------------------------------------------------------------------------
                 */
                 else {
-                    // Semua transaksi TEMPO (walaupun centang proforma) akan masuk ke sini
+                    // Semua transaksi TEMPO (walaupun centang estimate) akan masuk ke sini
                     $sales_order->status = 2; // Pindah ke SO Lanjutan
                     $sales_order->save();
 
@@ -2760,11 +2784,9 @@ class SalesOrderController extends Controller
     public function sales_estimate_pdf($id)
     {
         // 1. Tarik data SO beserta Relasinya
-        $sales_order = SalesOrder::with([
-            'member', 
-            'so_detail.product_pack', 
-            'so_detail.packaging'
-        ])->find($id);
+        $sales_order = SalesOrder::find($id);
+
+        // dd($sales_order);
         
         if (!$sales_order) abort(404, 'Data SO tidak ditemukan');
 

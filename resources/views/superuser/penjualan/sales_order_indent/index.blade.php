@@ -55,6 +55,9 @@
 
 <div class="block">
   <div class="block-content">
+    <a href="{{ route('superuser.penjualan.sales_order_indent.archive') }}" class="btn btn-outline-info">
+      <i class="fa fa-history"></i> Riwayat Indent (Archive)
+    </a>
     <button type="button" class="btn btn-outline-info ml-10" data-toggle="modal" data-target="#modal-manage">Manage</button>
   </div>
   <div class="block-content block-content-full">
@@ -66,22 +69,55 @@
           <th class="text-center">Code</th>
           <th class="text-center">Customer</th>
           <th class="text-center">Status</th>
+          <th class="text-center">Sisa Hari</th>
           <th class="text-center">Created By</th>
           <th class="text-center">Action</th>
         </tr>
       </thead>
       <tbody>
         @foreach($sales_order as $key)
+            @php
+                $createdAt = \Carbon\Carbon::parse($key->created_at);
+                $daysSince = $createdAt->diffInDays(now());
+                $daysRemaining = max(0, 14 - $daysSince);
+                $isWarning = $daysSince >= 7;
+                $isDanger = $daysSince >= 12;
+            @endphp
             <tr>
                 <td>{{$loop->iteration}}</td>
                 <td>{{ $key->created_at }}</td>
                 <td>{{ $key->so_code }}</td>
                 <td>{{ $key->member->name }} {{ $key->member->text_kota }}</td>
                 <td>{{ $key->so_indent_status() ?? '-' }}</td>
+                <td class="text-center">
+                    @if($isDanger)
+                        <span class="badge badge-danger">{{ $daysRemaining }} hari</span>
+                    @elseif($isWarning)
+                        <span class="badge badge-warning">{{ $daysRemaining }} hari</span>
+                    @else
+                        <span class="badge badge-success">{{ $daysRemaining }} hari</span>
+                    @endif
+                </td>
                 <td>{{ $key->createdBySuperuser() ?? '-' }}</td>
                 <td>
                     <button type="button" class="btn btn-info btn-sm btn-flat" data-toggle="modal" data-target="#myModal{{$key->id}}"><i class="fa fa-eye mr-10" aria-hidden="true"></i> View</button>
                     <a href="{{route('superuser.penjualan.sales_order_indent.print_out_indent',$key->id)}}" class="btn btn-primary btn-sm btn-flat" data-id="{{$key->id}}" target="_blank"><i class="fa fa-print"></i> Print</a>
+                    @if($key->is_estimate == 1)
+                        @if(empty($key->idr_rate) || (float) $key->idr_rate <= 1)
+                            <a href="javascript:void(0);" onclick="Swal.fire('Peringatan!', 'Kurs belum di setting silahkan edit SO anda', 'warning');">
+                                <button type="button" class="btn btn-sm btn-flat btn-alt-primary" title="Print Sales Estimate">
+                                    <i class="fa fa-file-pdf-o"></i> Estimate
+                                </button>
+                            </a>
+                        @else
+                            <a href="{{ route('superuser.penjualan.sales_order.sales_estimate_pdf', $key->id) }}" target="_blank" class="btn btn-sm btn-flat btn-alt-primary" title="Print Sales Estimate">
+                                <i class="fa fa-file-pdf-o"></i> Estimate
+                            </a>
+                        @endif
+                    @endif
+                    <a href="{{ route('superuser.penjualan.sales_order_indent.archive_one', $key->id) }}" class="btn btn-warning btn-sm btn-flat" onclick="return confirm('Arsipkan SO indent ini?')" title="Archive Manual">
+                        <i class="fa fa-archive"></i> Archive
+                    </a>
                     <a class="btn btn-danger btn-sm btn-flat" href="javascript:deleteConfirmation('{{ route('superuser.penjualan.sales_order_indent.destroy', $key->id) }}')" role="button"><i class="fa fa-trash mr-10" aria-hidden="true"></i> Hapus</a>
                 </td>
             </tr>
@@ -234,7 +270,9 @@
 @push('scripts')
 <script type="text/javascript">
   $(document).ready(function () {
-    var table = $('#datatable').DataTable();
+    var table = $('#datatable').DataTable({
+      order: [[1, 'desc']]
+    });
 
     // Toggle read-only state for Qty input based on checkbox
     $('.edit-checkbox').on('change', function () {

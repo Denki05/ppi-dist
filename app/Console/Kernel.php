@@ -28,6 +28,9 @@ class Kernel extends ConsoleKernel
         //          ->hourly();
 
         $schedule->command('backup:run')->daily()->at('02:00');
+        
+        // Arsipkan SO Indent yang sudah lebih dari 30 hari - setiap hari jam 03:00
+        $schedule->command('so:archive-old-indent --days=30')->daily()->at('03:00');
     }
 
     /**

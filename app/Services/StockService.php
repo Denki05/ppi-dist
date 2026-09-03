@@ -354,4 +354,93 @@ class StockService
             return true;
         });
     }
+
+        // 8. KOREKSI REVISI INTERNAL DO (DIPANGGIL: InternalRevisionController@approve, khusus origin_status == 6)
+    // Beda dari recordAdministrativeLog (yang cuma bisa nambah potongan/stock_out),
+    // method ini bisa DUA ARAH: $qtyDelta positif = potong stok tambahan (barang nambah),
+    // $qtyDelta negatif = kembalikan stok (barang berkurang/dihapus).
+    // Method ini JUGA menyesuaikan ProductMinStock.quantity, karena beda dari recordAdministrativeLog
+    // yang physical cut-nya sudah kejadian duluan di step packing.
+    public function recordCorrectionLog(
+        $warehouseId,
+        $productId,
+        $qtyDelta,
+        $transactionCode,
+        $note,
+        $transactionDate = null
+    ) {
+        return DB::transaction(function () use ($warehouseId, $productId, $qtyDelta, $transactionCode, $note, $transactionDate) {
+
+            $effectiveDate = $transactionDate ?? now();
+            $qtyDelta = (float) $qtyDelta;
+
+            $stock = ProductMinStock::where('warehouse_id', $warehouseId)
+                ->where('product_packaging_id', $productId)
+                ->lockForUpdate()
+                ->first();
+
+            if (!$stock) {
+                $stock = ProductMinStock::create([
+                    'warehouse_id' => $warehouseId, 'product_packaging_id' => $productId,
+                    'quantity' => 0, 'reserved_quantity' => 0
+                ]);
+            }
+
+            // Delta positif = potong tambahan fisik. Delta negatif = kembalikan fisik.
+            $stock->quantity -= $qtyDelta;
+            $stock->save();
+
+            $stockIn  = $qtyDelta < 0 ? abs($qtyDelta) : 0;
+            $stockOut = $qtyDelta > 0 ? $qtyDelta : 0;
+
+            $lastBalance = StockMove::where('warehouse_id', $warehouseId)
+                ->where('product_packaging_id', $productId)
+                ->where('created_at', '<=', $effectiveDate)
+                ->orderBy('created_at', 'desc')
+                ->orderBy('id', 'desc')
+                ->value('stock_balance');
+
+            $currentBalance = $lastBalance ?? 0;
+            $newBalance = $currentBalance + $stockIn - $stockOut;
+
+            $newId = StockMove::insertGetId([
+                'code_transaction'     => $transactionCode,
+                'warehouse_id'         => $warehouseId,
+                'product_packaging_id' => $productId,
+                'stock_in'             => $stockIn,
+                'stock_out'            => $stockOut,
+                'stock_balance'        => $newBalance,
+                'note'                 => $note,
+                'created_by'           => auth()->id() ?? 1,
+                'created_at'           => $effectiveDate,
+                'updated_at'           => now(),
+            ]);
+
+            $subsequentMoves = StockMove::where('warehouse_id', $warehouseId)
+                ->where('product_packaging_id', $productId)
+                ->where(function ($q) use ($effectiveDate, $newId) {
+                    $q->where('created_at', '>', $effectiveDate)
+                      ->orWhere(function ($q2) use ($effectiveDate, $newId) {
+                          $q2->where('created_at', '=', $effectiveDate)
+                             ->where('id', '>', $newId);
+                      });
+                })
+                ->orderBy('created_at', 'asc')
+                ->orderBy('id', 'asc')
+                ->get();
+
+            $runningBalance = $newBalance;
+            foreach ($subsequentMoves as $move) {
+                $runningBalance += ($move->stock_in - $move->stock_out);
+                if ((float) $move->stock_balance !== (float) $runningBalance) {
+                    StockMove::where('id', $move->id)->update([
+                        'stock_balance' => $runningBalance,
+                        'updated_at'    => now(),
+                    ]);
+                }
+            }
+
+            return true;
+        });
+    }
 }

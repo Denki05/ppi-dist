@@ -9,6 +9,9 @@
 
 define('LARAVEL_START', microtime(true));
 
+// TEMP DEBUG
+file_put_contents(__DIR__.'/../storage/logs/debug_index.txt', date('Y-m-d H:i:s').' '.$_SERVER['REQUEST_METHOD'].' '.$_SERVER['REQUEST_URI'].PHP_EOL, FILE_APPEND);
+
 /*
 |--------------------------------------------------------------------------
 | Register The Auto Loader

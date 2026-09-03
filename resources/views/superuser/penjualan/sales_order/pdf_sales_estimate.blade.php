@@ -1,8 +1,8 @@
 <style>
-@page { size: A5 landscape; margin: 5mm; } 
+@page { size: A5 landscape; margin: 3mm 5mm; } 
 body { 
     font-family: Arial, sans-serif; 
-    font-size: 10.5px; 
+    font-size: 12px; 
     color: #333; 
     margin: 0;
     padding: 0;
@@ -23,17 +23,17 @@ th { background:#e5e5e5; font-weight:bold; }
 }
 
 /* Tabel Header Judul */
-.header-table { width: 100%; margin-bottom: 6px; border: none; }
+.header-table { width: 100%; margin-bottom: 4px; border: none; }
 .header-table td { padding: 0; border: none; vertical-align: bottom; }
 
 /* Tabel Produk */
 .item-table { margin-top: 2px; width:100%; table-layout:fixed; }
-.item-table th { border-top:1.5px solid #000; border-bottom:1.5px solid #000; padding: 3px 2px; }
-.item-table td { border-bottom:1px dashed #ccc; padding: 2px; height: 16px; word-wrap:break-word; }
+.item-table th { border-top:1.5px solid #000; border-bottom:1.5px solid #000; padding: 2px 2px; font-size: 9px; }
+.item-table td { border-bottom:1px dashed #ccc; padding: 1.5px 2px; height: 14px; word-wrap:break-word; font-size: 9.5px; }
 
 /* Tabel Kalkulasi & Footer */
-.footer-container { margin-top: 5px; width: 100%; page-break-inside: avoid; }
-.kalkulasi-table td { padding: 2.5px 0; }
+.footer-container { margin-top: 4px; width: 100%; page-break-inside: avoid; }
+.kalkulasi-table td { padding: 2px 0; font-size: 9.5px; }
 </style>
 
 <div class="container">
@@ -42,11 +42,21 @@ th { background:#e5e5e5; font-weight:bold; }
     <!-- HEADER: JUDUL (KIRI) & NOTE ESTIMASI (KANAN) -->
     <table class="header-table">
         <tr>
-            <td style="width: 40%; vertical-align: bottom; padding-bottom: 14px;" class="text-left">
-                <span style="font-size: 22px; font-weight: bold; text-decoration: underline;">SALES ESTIMATE</span>
+            <td style="width: 45%; vertical-align: bottom; padding-bottom: 0;" class="text-left">
+                <div style="padding-bottom: 2px;">
+                    <span style="font-size: 20px; font-weight: bold; text-decoration: underline;">SALES ESTIMATE</span>
+                </div>
+                <div style="font-size: 9.5px; color: #444; line-height: 1.5;">
+                    @if(!empty($so->estimate_code))
+                    <b>Kode Est.:</b> {{ $so->estimate_code }}<br>
+                    @endif
+                    <b>Customer:</b> {{ optional($so->member)->name ?? '-' }} {{ optional($so->member)->text_kota ?? '' }}<br>
+                    <b>Tanggal SO:</b> {{ $so->so_date ? \Carbon\Carbon::parse($so->so_date)->format('d/m/Y') : ($so->created_at ? \Carbon\Carbon::parse($so->created_at)->format('d/m/Y') : '-') }}<br>
+                    <b>AO / Sales:</b> {{ $so->createdBySuperuser() }}
+                </div>
             </td>
-            <td style="width: 60%; vertical-align: bottom; padding-bottom: 2px;" class="text-right">
-                <span style="color: red; font-weight: bold; font-size: 12px; font-style: italic; line-height: 1.3;">
+            <td style="width: 55%; vertical-align: bottom; padding-bottom: 0;" class="text-right">
+                <span style="color: red; font-weight: bold; font-size: 12px; font-style: italic; line-height: 1.6;">
                     * Dokumen ini hanya estimasi harga bukan transaksi<br>
                     * Belum termasuk biaya pengiriman.<br>
                     * Stock dan Kurs bersifat tidak mengikat
@@ -107,44 +117,40 @@ th { background:#e5e5e5; font-weight:bold; }
         </tbody>
     </table>
 
-    <!-- BAGIAN BAWAH: CATATAN (KIRI) & KALKULASI + TTD (KANAN) -->
-    <table class="footer-container">
+    <!-- BARIS 1: Terbilang + Kurs (kiri) | Kalkulasi (kanan) -->
+    <table style="width: 100%; margin-top: 4px; font-size: 9px; border-collapse: collapse;">
         <tr>
-            <!-- SISI KIRI: TERBILANG & KURS SAJA -->
-            <td width="65%" style="vertical-align: top; padding-right: 15px;">
-                <div style="margin-bottom: 8px;">
-                    Terbilang: <br>
-                    <i># {{ $terbilang ?? '-' }} Rupiah #</i><br><br>
-                    <b>* Kurs USD: {{ number_format($idr_rate, 2) }}</b>
-                </div>
+            <!-- KIRI: Terbilang + Kurs -->
+            <td style="width: 60%; vertical-align: top; padding-right: 10px;">
+                <b>Terbilang:</b><br>
+                <i># {{ $terbilang ?? '-' }} Rupiah #</i><br>
+                <b>* Kurs USD: {{ number_format($idr_rate, 2) }}</b>
             </td>
-
-            <!-- SISI KANAN: KALKULASI & TANDA TANGAN -->
-            <td width="35%" style="vertical-align: top;">
-                <table class="kalkulasi-table" style="width: 100%;">
+            <!-- KANAN: Kalkulasi -->
+            <td style="width: 40%; vertical-align: top;">
+                <table style="width: 100%; font-size: 9px; border-collapse: collapse;">
                     <tr>
-                        <td>Sub total:</td>
-                        <td class="text-right">{{ number_format($data_kalkulasi['subtotal'], 2) }}</td>
+                        <td style="padding: 1px 0;">Sub total:</td>
+                        <td class="text-right" style="padding: 1px 0;">{{ number_format($data_kalkulasi['subtotal'], 2) }}</td>
                     </tr>
                     <tr>
-                        <td>Disc %:</td>
-                        <td class="text-right">{{ number_format($data_kalkulasi['disc_agen_idr'], 2) }}</td>
+                        <td style="padding: 1px 0;">Disc %:</td>
+                        <td class="text-right" style="padding: 1px 0;">{{ number_format($data_kalkulasi['disc_agen_idr'], 2) }}</td>
                     </tr>
-                    <!-- GARIS BAWAH SEBELUM GRAND TOTAL -->
                     <tr>
-                        <td style="font-weight: bold; border-top: 1.5px solid #000; padding-top: 4px;">Grand Total:</td>
-                        <td class="text-right" style="font-weight: bold; border-top: 1.5px solid #000; padding-top: 4px;">
+                        <td style="font-weight: bold; border-top: 1.5px solid #000; padding-top: 2px;">Grand Total:</td>
+                        <td class="text-right" style="font-weight: bold; border-top: 1.5px solid #000; padding-top: 2px;">
                             {{ number_format($data_kalkulasi['grand_total'], 2) }}
                         </td>
                     </tr>
                 </table>
-
-                <div class="text-center" style="margin-top: 25px;">
-                    Hormat kami,
-                    <br><br><br>
-                    <b><u>{{ $so->createdBySuperuser() }}</u></b>
-                </div>
             </td>
         </tr>
     </table>
+
+    <!-- BARIS 2: Tanda Tangan (paling bawah) -->
+    <div style="width: 100%; text-align: right; margin-top: 20px; padding-right: 10px; font-size: 9px;">
+        Hormat kami,<br><br><br>
+        <b><u>{{ $so->createdBySuperuser() }}</u></b>
+    </div>
 </div>

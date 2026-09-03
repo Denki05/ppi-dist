@@ -44,7 +44,16 @@ class SalesOrderIndentController extends Controller
             }
         }
 
-        $sales_order = SalesOrder::where('so_indent', 1)->get();
+        $query = SalesOrder::where('so_indent', SalesOrder::INDENT['YES'])
+            ->where('is_archived', 0);
+
+        // Filter berdasarkan division: Developer/Management lihat semua, lainnya hanya lihat miliknya
+        $userDivision = Auth::user()->division;
+        if(!in_array($userDivision, ['Developer', 'Management'])){
+            $query->where('created_by', Auth::id());
+        }
+
+        $sales_order = $query->get();
 
         $data = [
             'sales_order' => $sales_order,
@@ -217,12 +226,6 @@ class SalesOrderIndentController extends Controller
 
         $file = 'C:\\xampp\\htdocs\\ppi-dist\\public\\cr\\so\\export\\'.$sales_order->so_code.'-INDENT'.'.pdf';
 
-        // if($get_do->type_transaction == 1 && $get_do->so->payment_status == 1){
-        //     $file->SetWatermarkText("PAID");
-        // }elseif($get_do->type_transaction == 2 && $get_do->so->payment_status == 2){
-        //     $file->SetWatermarkText("COPY");
-        // }
-
         header("Content-Description: File Transfer"); 
         header("Content-Type: application/octet-stream"); 
         header("Content-Transfer-Encoding: Binary"); 
@@ -314,5 +317,90 @@ class SalesOrderIndentController extends Controller
 
             return redirect()->route('superuser.penjualan.sales_order_indent.index');
         }
+    }
+
+    /**
+     * Archive satu SO Indent manual
+     */
+    public function archive_one($id)
+    {
+        $sales_order = SalesOrder::findOrFail($id);
+
+        $sales_order->update([
+            'is_archived' => 1,
+            'archived_at' => now(),
+        ]);
+
+        return redirect()->route('superuser.penjualan.sales_order_indent.index')
+            ->with('success', 'SO Indent berhasil diarsipkan.');
+    }
+
+    /**
+     * Kembalikan SO Indent dari archive (restore)
+     */
+    public function restore($id)
+    {
+        $sales_order = SalesOrder::findOrFail($id);
+
+        $sales_order->update([
+            'is_archived' => 0,
+            'archived_at' => null,
+        ]);
+
+        return redirect()->route('superuser.penjualan.sales_order_indent.archive')
+            ->with('success', 'SO Indent berhasil dikembalikan.');
+    }
+
+    /**
+     * Tampilkan riwayat SO Indent yang sudah diarsipkan (invisible)
+     */
+    public function archive()
+    {
+        if(Auth::user()->is_superuser == 0){
+            if(empty($this->access) || empty($this->access->user) || $this->access->can_read == 0){
+                return redirect()->route('superuser.index')->with('error','Anda tidak punya akses untuk membuka menu terkait');
+            }
+        }
+
+        $query = SalesOrder::where('so_indent', SalesOrder::INDENT['YES'])
+            ->where('is_archived', 1);
+
+        // Filter berdasarkan division: Developer/Management lihat semua, lainnya hanya lihat miliknya
+        $userDivision = Auth::user()->division;
+        if(!in_array($userDivision, ['Developer', 'Management'])){
+            $query->where('created_by', Auth::id());
+        }
+
+        $archives = $query->orderBy('archived_at', 'desc')->get();
+
+        $data = [
+            'archives' => $archives,
+        ];
+
+        return view($this->view . 'archive', $data);
+    }
+
+    /**
+     * Print ulang estimate PDF dari data archive
+     */
+    public function archive_print_estimate($id)
+    {
+        $so = SalesOrder::with(['so_detail.product_pack', 'member'])
+            ->findOrFail($id);
+
+        // Gunakan SalesOrderCalculationService
+        $kalkulasiService = new \App\Services\SalesOrderCalculationService();
+        $data_kalkulasi = $kalkulasiService->calculateEstimate($so);
+
+        $terbilang = trim(\App\CustomHelper::terbilang($data_kalkulasi['grand_total']));
+
+        $pdf = \PDF::loadView('superuser.penjualan.sales_order.pdf_sales_estimate', [
+            'so'             => $so,
+            'data_kalkulasi' => $data_kalkulasi,
+            'terbilang'      => $terbilang,
+            'idr_rate'       => $data_kalkulasi['idr_rate']
+        ])->setPaper('A5', 'landscape');
+
+        return $pdf->stream('Sales_Estimate_Archive_' . $so->so_code . '.pdf');
     }
 }

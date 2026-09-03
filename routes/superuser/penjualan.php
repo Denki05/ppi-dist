@@ -7,7 +7,27 @@ Route::group([
     'namespace' => 'Penjualan'
 ], function () {
 
-    Route::group(['as' => 'setting_price.', 'prefix' => '/setting_price'], function () {
+    // QA Checklist
+    Route::get('/qa-checklist', function () {
+        return view('superuser.penjualan.qa_checklist_flow');
+    })->name('qa_checklist');
+    
+    Route::get('/qa-checklist/excel', function () {
+        return \Excel::download(new \App\Exports\Penjualan\QaChecklistExport(), 'QA_Checklist_Flow_SO.xlsx');
+    })->name('qa_checklist_excel');
+
+    Route::group(['as' => 'internal_revision.', 'prefix' => '/internal_revision'], function () {
+        Route::get('/', 'InternalRevisionController@index')->name('index');
+        Route::get('/{do_id}/create', 'InternalRevisionController@create')->name('create');
+        Route::post('/store', 'InternalRevisionController@store')->name('store');
+        Route::post('/{id}/request_otp', 'InternalRevisionController@request_otp')->name('request_otp');
+        Route::post('/{id}/approve', 'InternalRevisionController@approve')->name('approve');
+        Route::post('/{id}/reject', 'InternalRevisionController@reject')->name('reject');
+        Route::get('/{id}/detail', 'InternalRevisionController@detail')->name('detail');
+    });
+
+    Route::group(['as' => 'setting
+    _price.', 'prefix' => '/setting_price'], function () {
         Route::get('/', 'SettingPriceController@index')->name('index');
         Route::get('/{id}/edit', 'SettingPriceController@edit')->name('edit');
         Route::post('/update', 'SettingPriceController@update')->name('update');
@@ -19,12 +39,13 @@ Route::group([
         Route::get('/sync_price', 'SettingPriceController@sync_price')->name('sync_price');
     });
 
+    // NOTE: 'prfix' is intentionally kept as-is (known typo) to avoid changing existing URLs
     Route::group(['as' => 'sales_order.', 'prfix' => '/sales_order'], function () {
         // Route::get('/index', 'SalesOrderController@index')->name('index');
         Route::get('/so_awal', 'SalesOrderController@index_awal')->name('index_awal');
         Route::get('/so_lanjutan', 'SalesOrderController@index_lanjutan')->name('index_lanjutan');
         Route::get('/so_mutasi', 'SalesOrderController@index_mutasi')->name('index_mutasi');
-        Route::get('/create/{step}/{member}/{brand}/{type}/{indent}/{approval}/{note}/{kurs}/{disc_percent}/{disc_idr}/{disc_usd}/{disc_kemasan}/{is_proforma}/{packaging?}', 'SalesOrderController@create')->name('create');
+        Route::get('/create/{step}/{member}/{brand}/{type}/{indent}/{approval}/{note}/{kurs}/{disc_percent}/{disc_idr}/{disc_usd}/{disc_kemasan}/{packaging?}', 'SalesOrderController@create')->name('create');
         Route::get('/{id}/edit/{step}', 'SalesOrderController@edit')->name('edit');
         Route::get('/{id}/detail', 'SalesOrderController@detail')->name('detail');
         Route::post('/{member}/store', 'SalesOrderController@store')->name('store');
@@ -183,6 +204,10 @@ Route::group([
         Route::post('/proses_ready', 'SalesOrderIndentController@proses_ready')->name('proses_ready');
         Route::post('/deleteItems', 'SalesOrderIndentController@deleteItems')->name('deleteItems');
         Route::get('/print_out_indent/{so_id}', 'SalesOrderIndentController@print_out_indent')->name('print_out_indent');
+        Route::get('/archive', 'SalesOrderIndentController@archive')->name('archive');
+        Route::get('/archive/{id}/restore', 'SalesOrderIndentController@restore')->name('restore');
+        Route::get('/archive/{id}/print_estimate', 'SalesOrderIndentController@archive_print_estimate')->name('archive_print_estimate');
+        Route::get('/archive_one/{id}', 'SalesOrderIndentController@archive_one')->name('archive_one');
     });
     Route::resource('sales_order_indent', 'SalesOrderIndentController');
 
@@ -216,8 +241,8 @@ Route::group([
         Route::post('/mark_as_read_payable/{id}', 'NotificationController@unread_notif_payable')->name('mark_as_read_payable');
         Route::post('/mark_as_read_only/{id}', 'NotificationController@mark_as_read_only')->name('mark_as_read_only');
         Route::post('/unread_all_notif', 'NotificationController@unread_all_notif')->name('unread_all_notif');
+        Route::get('/', 'NotificationController@index')->name('index');
     });
-    Route::resource('notification', 'NotificationController');
 
     Route::group(['as' => 'so_proforma.', 'prefix' => '/so_proforma'], function () {
         Route::post('/store', 'SalesOrderProformaController@store')->name('store');
