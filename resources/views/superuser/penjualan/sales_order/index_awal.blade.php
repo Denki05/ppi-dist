@@ -98,6 +98,12 @@
           <button type="button" class="btn btn-outline-info" data-toggle="modal" data-target="#modal-manage">Manage</button>
 
           <a href="{{ route('superuser.penjualan.migrasi_so.prosesMigrasi') }}" class="btn btn-outline-info">Migrasi SO</a>
+
+          @if($superuser->division == "Admin" OR $superuser->division == "Management" OR $superuser->division == "Developer")
+            <a href="{{ route('superuser.penjualan.sales_order.archive_awal') }}" class="btn btn-outline-warning">
+              <i class="fa fa-archive mr-10"></i> Riwayat Archive
+            </a>
+          @endif
         </div>
         <br>
         <div class="table-responsive">

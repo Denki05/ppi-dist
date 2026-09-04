@@ -88,6 +88,9 @@ Route::group([
 
         Route::get('/so-progress-partial', 'SalesOrderController@so_progress_partial')->name('so_progress_partial');
         Route::get('/sales_estimate_pdf/{id}', 'SalesOrderController@sales_estimate_pdf')->name('sales_estimate_pdf');
+        Route::get('/archive_awal', 'SalesOrderController@archive_awal')->name('archive_awal');
+        Route::get('/archive_awal/{id}/restore', 'SalesOrderController@archive_awal_restore')->name('archive_awal_restore');
+        Route::get('/archive_awal/{id}/print_estimate', 'SalesOrderController@archive_awal_print_estimate')->name('archive_awal_print_estimate');
     });
 
     Route::group(['as' => 'packing_order.', 'prefix' => '/packing_order'], function () {

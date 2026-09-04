@@ -2807,4 +2807,63 @@ class SalesOrderController extends Controller
 
         return $pdf->stream('Sales_Estimate_' . $sales_order->so_code . '.pdf');
     }
+
+    /**
+     * Halaman archive SO Awal CASH/TEMPO
+     */
+    public function archive_awal()
+    {
+        if(Auth::user()->is_superuser == 0){
+            if(empty($this->access) || empty($this->access->user) || $this->access->can_read == 0){
+                return redirect()->route('superuser.index')->with('error','Anda tidak punya akses untuk membuka menu terkait');
+            }
+        }
+
+        $query = SalesOrder::where('so_indent', SalesOrder::INDENT['NO'])
+            ->where('is_archived', 1)
+            ->whereIn('type_transaction', ['CASH', 'TEMPO']); // CASH atau TEMPO (string)
+
+        $archives = $query->orderBy('archived_at', 'desc')->get();
+
+        return view('superuser.penjualan.sales_order.archive_awal', compact('archives'));
+    }
+
+    /**
+     * Restore SO Awal dari archive
+     */
+    public function archive_awal_restore($id)
+    {
+        $sales_order = SalesOrder::findOrFail($id);
+
+        $sales_order->update([
+            'is_archived' => 0,
+            'archived_at' => null,
+        ]);
+
+        return redirect()->route('superuser.penjualan.sales_order.archive_awal')
+            ->with('success', 'SO Awal berhasil dikembalikan.');
+    }
+
+    /**
+     * Print estimate PDF dari data archive
+     */
+    public function archive_awal_print_estimate($id)
+    {
+        $so = SalesOrder::with(['so_detail.product_pack', 'member'])
+            ->findOrFail($id);
+
+        $kalkulasiService = new SalesOrderCalculationService();
+        $data_kalkulasi = $kalkulasiService->calculateEstimate($so);
+
+        $terbilang = trim(CustomHelper::terbilang($data_kalkulasi['grand_total']));
+
+        $pdf = \PDF::loadView('superuser.penjualan.sales_order.pdf_sales_estimate', [
+            'so'             => $so,
+            'data_kalkulasi' => $data_kalkulasi,
+            'terbilang'      => $terbilang,
+            'idr_rate'       => $data_kalkulasi['idr_rate']
+        ])->setPaper('A5', 'landscape');
+
+        return $pdf->stream('Sales_Estimate_Archive_' . $so->so_code . '.pdf');
+    }
 }
