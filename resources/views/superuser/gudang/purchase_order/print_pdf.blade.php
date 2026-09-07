@@ -1,216 +1,109 @@
-<?php
-  $idr_total = 0; 
-  $code = $result->code;
-?>
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
 <style type="text/css">
-  body {
-    color: #333;
-    font-family: Arial, sans-serif;
-    font-size: 12px;
-  }
-  table.borderless {
-    border-collapse: collapse;
-    border-spacing: 0;
-  }
-  .borderless td, .borderless th {
-    border: none;
-  }
-  .info td, .info th {
-    padding: 2px;
-    margin: 2px;
-    box-sizing: border-box;
-  }
-  .column-float {
-    float: left;
-    width: 50%;
-  }
-  .row-float {
-    position: relative;
-  }
-  .row-float:after {
-    content: "";
-    display: block;
-    clear: both;
-  }
-  table.table-data {
-    width: 100%;
-    border-collapse: collapse;
-    color: #333;
-  }
-  table.table-data th {
-    font-size: 12px;
-    background-color: #d3d3d3;
-  }
-  table.table-data td {
-    border: none;
-  }
-  table.table-data tbody {
-    text-align: center;
-    font-size: 12px;
-  }
-  @page {
-    margin-top: 0px;
-  }
-  .text-right {
-    text-align: right;
-  }
-  .text-left {
-    text-align: left;
-  }
-  .header {
-    width: 100%;
-    position: fixed;
-    z-index: 99999;
-    letter-spacing: 10px;
-    font-size: 150px;
-    font-weight: 800;
-    opacity: 0.3;
-    color: #404040;
-    text-transform: uppercase;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%) rotate(-20deg);
-    text-align: center;
-  }
-  .page-break {
-    page-break-after: always;
-  }
-
-  .clearfix::after {
-    content: "";
-    display: table;
-    clear: both;
-  }
+  @page { size: A5 landscape; margin: 12mm 10mm 12mm 10mm; }
+  body { color: #000; font-family: Arial, Helvetica, sans-serif; font-size: 11px; margin: 0; }
+  .title { text-align: center; font-size: 18px; font-weight: bold; text-decoration: underline; margin: 0 0 8px 0; }
+  table.head { width: 100%; border-collapse: collapse; margin-bottom: 6px; font-size: 11px; }
+  table.head td { padding: 1px 4px; vertical-align: top; }
+  table.head .lbl { width: 110px; }
+  table.head .sep { width: 10px; }
+  table.head .val { font-weight: bold; }
+  table.data { width: 100%; border-collapse: collapse; font-size: 11px; }
+  table.data th, table.data td { border: 1px solid #000; padding: 3px 5px; }
+  table.data th { text-align: center; font-weight: bold; }
+  table.data td.c { text-align: center; }
+  table.data td.r { text-align: right; }
+  table.data tr.total td { font-weight: bold; border-top: 2px solid #000; }
+  .note { margin-top: 8px; font-size: 11px; }
+  .sign { margin-top: 34px; width: 100%; border-collapse: collapse; font-size: 11px; font-weight: bold; }
+  .sign td { text-align: center; width: 50%; }
+  .page-break { page-break-after: always; }
 </style>
-
+</head>
+<body>
 @php
-  $limit = 12; // Limit items per page
-  $doDetails = $result->purchase_order_detail;
-  $doDetails = $doDetails->sortBy(function($row) {
-      return $row->product_pack->name ?? '';
-  });
-  $totalItems = $doDetails->count();
-  $totalPages = ceil($totalItems / $limit);
-@endphp
-
-@php
-  $offset = 0; // Untuk menyimpan indeks awal di setiap halaman
+  $limit = 12; // baris per halaman
+  $totalRows = $rows->count();
+  $totalPages = max(1, (int) ceil($totalRows / $limit));
+  $poBrand = optional($po->brandLokal)->brand_name ?? '-';
+  $no = 0;
 @endphp
 
 @for ($page = 0; $page < $totalPages; $page++)
-<div>
-  <h2 style="text-align: center; margin: 0; padding: 0; margin-bottom: 5px;"><u>FORM PERMINTAAN BARANG</u></h2>
-  
-  <div style="margin-bottom: 15px; font-size: 11px;">
-    <div class="row-float">
-      <div class="column-float" style="width: 50%; margin-top: 4px;">
-        <table class="table borderless info" style="width: 100%;">
-          <tbody>
-            <tr>
-                <td style="width: 35%;">NO - PO</td>
-                <td style="width: 2%;">:</td>
-                <td style="width: 63%;">{{ $result->code }}</td>
-            </tr>
-            <tr>
-                <td style="width: 35%;">Tanggal</td>
-                <td style="width: 2%;">:</td>
-                <td style="width: 63%;">{{ \Carbon\Carbon::parse($result->created_at)->format('d-m-Y') }}</td>
-            </tr>
-          </tbody>
+  <div class="title">FORM PERMINTAAN BARANG</div>
+
+  <table class="head">
+    <tr>
+      <td>
+        <table class="head">
+          <tr><td class="lbl">NO - PO</td><td class="sep">:</td><td class="val">{{ $po->code }}</td></tr>
+          <tr><td class="lbl">TGL</td><td class="sep">:</td><td class="val">{{ \Carbon\Carbon::parse($po->created_at)->format('d-M-Y') }}</td></tr>
         </table>
-      </div>
-      <div class="column-float" style="width: 50%;">
-          <table class="table borderless info" style="width: 100%;">
-            <tbody>
-              <tr>
-                <td style="width: 35%;"><b>ETD</b></td>
-                <td style="width: 2%;">:</td>
-                <td style="width: 63%;"><b>{{ \Carbon\Carbon::parse($result->etd)->format('d-m-Y') }}</b></td>
-              </tr>
-              <tr>
-                <td style="width: 35%;">KIRIM GUDANG</td>
-                <td style="width: 2%;">:</td>
-                <td style="width: 63%;">{{ $result->warehouse->name }}</td>
-              </tr>
-              <tr>
-                <td style="width: 35%;">Brand</td>
-                <td style="width: 2%;">:</td>
-                <td style="width: 63%;">{{ $result->purchase_order_detail->first()->product_pack->product->brand_name }}</td>
-              </tr>
-              
-            </tbody>
-          </table>
-      </div>
-    </div>
-  </div>
-  
-    <table class="table-data" style="border: 1px solid black;">
-        <thead>
-        <tr>
-            <th style="border: 1px solid black;">No</th>
-            <th style="border: 1px solid black;">Kode</th>
-            <th style="border: 1px solid black;">Nama (KG)</th>
-            <th style="border: 1px solid black;">Qty (KG)</th>
-            <th class="text-center" style="border: 1px solid black;">Kemasan</th>
-            <th class="text-center" style="border: 1px solid black;">Notes</th>
-            <th class="text-center" style="border: 1px solid black;">Customer</th>
-        </tr>
-        </thead>
-        <tbody>
-        @foreach ($doDetails->slice($page * $limit, $limit)->values() as $index => $row)
+      </td>
+      <td>
+        <table class="head">
+          <tr><td class="lbl">ETD</td><td class="sep">:</td><td class="val">{{ $po->etd ? \Carbon\Carbon::parse($po->etd)->format('d-M-Y') : '-' }}</td></tr>
+          <tr><td class="lbl">KIRIM GUDANG</td><td class="sep">:</td><td class="val">{{ optional($po->warehouse)->name ?? '-' }}</td></tr>
+          <tr><td class="lbl">BRAND</td><td class="sep">:</td><td class="val">{{ $poBrand }}</td></tr>
+        </table>
+      </td>
+    </tr>
+  </table>
+
+  <table class="data">
+    <thead>
+      <tr>
+        <th style="width:4%;">NO</th>
+        <th style="width:24%;">PRODUK</th>
+        <th style="width:9%;">QTY (KG)</th>
+        <th style="width:13%;">KEMASAN</th>
+        <th style="width:25%;">NOTES</th>
+        <th style="width:25%;">CUSTOMER</th>
+      </tr>
+    </thead>
+    <tbody>
+      @foreach ($rows->slice($page * $limit, $limit)->values() as $row)
         @php
-            // Nomor urut dihitung berdasarkan offset + index
-            $nomor_urut = $offset + $index + 1;
+          $no++;
+          $pack = $row->product_pack;
+          $packName = ($pack && $pack->packaging) ? $pack->packaging->pack_name : '-';
         @endphp
         <tr>
-            <td style="border: 1px solid black;">{{ $nomor_urut }}</td>
-            <td style="border: 1px solid black;">{{ $row->product_pack->code }}</td>
-            <td style="border: 1px solid black;">{{ $row->product_pack->name }}</td>
-            <td style="border: 1px solid black;">{{ $row->quantity }}</td>
-            <td style="border: 1px solid black;">{{ $row->product_pack->packaging->pack_name }}</td>
-            <td style="border: 1px solid black;">{{ $row->note_produksi }}</td>
-            <td style="border: 1px solid black;">{{ $row->note_repack }}</td>
+          <td class="c">{{ $no }}</td>
+          <td class="c">{{ optional($pack)->code ?? '' }} - {{ optional($pack)->name ?? '-' }}</td>
+          <td class="c">{{ number_format((float) $row->quantity, 2, '.', '') }}</td>
+          <td class="c">{{ $packName }}</td>
+          <td class="c">{{ $row->note_produksi ?: '' }}</td>
+          <td class="c">{{ $row->note_repack ?: '' }}</td>
         </tr>
-        @endforeach
-        </tbody>
+      @endforeach
+      @if ($page === $totalPages - 1)
+        <tr class="total">
+          <td colspan="2" class="r">TOTAL :</td>
+          <td class="c">{{ number_format($total, 2, '.', '') }}</td>
+          <td colspan="3"></td>
+        </tr>
+      @endif
+    </tbody>
+  </table>
+
+  @if ($page === $totalPages - 1)
+    <div class="note">NOTE : {{ $po->note ?: '' }}</div>
+
+    <table class="sign">
+      <tr>
+        <td>MENGAJUKAN</td>
+        <td>MENYETUJUI</td>
+      </tr>
     </table>
-</div>
+  @endif
 
-@php
-  // Tambahkan jumlah item yang dirender di halaman ini ke offset
-  $offset += $doDetails->slice($page * $limit, $limit)->count();
-@endphp
-
-@if ($page < $totalPages - 1)
-<div class="page-break"></div>
-@endif
+  @if ($page < $totalPages - 1)
+    <div class="page-break"></div>
+  @endif
 @endfor
-
-<div>
-  <div style="font-size: 12px; position: absolute; bottom: 10px; width: 100%; margin-top: 30px;">
-    <div class="row-float clearfix" style="display: flex; justify-content: space-between;">
-
-      <div class="row-float" style="display: flex; justify-content: space-between; align-items: flex-start;">
-        
-        <!-- Bank Logo Column -->
-        <div class="column-float" style="width: 20%; text-align: center;">
-            Mengajukan
-            <br><br><br><br>
-            .......................
-        </div>
-        
-        <!-- Signature Column -->
-        <div class="column-float" style="width: 20%; text-align: center; margin-left: 60%;">
-            Menyetujui
-            <br><br><br><br>
-            .......................
-        </div>
-
-      </div>
-    </div>
-    
-
-    <div id="footer">
-      <div class="page-number"></div>
-    </div>
-</div>
+</body>
+</html>

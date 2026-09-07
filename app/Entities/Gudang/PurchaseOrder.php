@@ -11,7 +11,7 @@ class PurchaseOrder extends Model
     protected $table = "purchase_order";
     protected $fillable = [
     	'code',
-        'warehouse_id', 
+        'warehouse_id',
         'brand_lokal_id',
         'ref_po_id',
         'ref_mut_out_id',
@@ -58,6 +58,10 @@ class PurchaseOrder extends Model
 
     public function warehouse(){
     	return $this->BelongsTo('App\Entities\Master\Warehouse','warehouse_id','id');
+    }
+
+    public function brandLokal(){
+        return $this->belongsTo('App\Entities\Master\BrandLokal', 'brand_lokal_id', 'id');
     }
 
     public function purchase_order_detail(){
