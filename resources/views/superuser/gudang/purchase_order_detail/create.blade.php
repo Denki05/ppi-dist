@@ -18,18 +18,17 @@
       @csrf
       <input type="hidden" name="purchase_id" value="{{$purchase_order->id}}">
 
+      @php $poBrandName = optional($purchase_order->brandLokal)->brand_name ?? ''; @endphp
       <div class="card shadow-sm border mb-4" style="max-width: 500px;">
         <div class="card-body p-3">
-          <h5 class="mb-3 font-weight-bold" style="font-size: 1rem;">Pilih Merek</h5>
+          <h5 class="mb-3 font-weight-bold" style="font-size: 1rem;">Merek (dari PO — 1 PO 1 Brand)</h5>
           <div class="form-group mb-2">
             <label for="merek" style="font-size: 0.95rem;">Merek</label>
-            <select class="form-control js-select2 select-brand" name="merek" data-index="0" style="font-size: 0.95rem;">
-              <option value="">Pilih Merek</option>
-              @foreach($merek as $merek => $row)
-              <option value="{{$row->brand_name}}">{{$row->brand_name}}</option>
-              @endforeach
-            </select>
-            <strong class="form-text text-danger" style="font-size: 0.85rem;">*Pilih merek terlebih dahulu sebelum memilih produk</strong>
+            <input type="text" class="form-control" value="{{ $poBrandName ?: '-' }}" readonly>
+            <input type="hidden" class="select-brand" name="merek" data-index="0" value="{{ $poBrandName }}">
+            @if(empty($poBrandName))
+            <strong class="form-text text-danger" style="font-size: 0.85rem;">*PO ini belum punya brand — edit PO untuk mengisi brand terlebih dahulu</strong>
+            @endif
           </div>
         </div>
       </div>
@@ -52,6 +51,9 @@
               <label>Kemasan</label>
               <select name="packaging_id[]" class="form-control js-select2 select-packaging" data-index="0">
                 <option value="">Pilih Kemasan</option>
+                @foreach($packagings as $pk)
+                <option value="{{ $pk->id }}">{{ $pk->pack_name }}</option>
+                @endforeach
               </select>
             </div>
             <div class="form-group col-md-2">
@@ -153,7 +155,6 @@
       const packagingText = $('.select-packaging[data-index=0] option:selected').text();
       const produksi = $('.note_produksi[data-index=0]').val();
       const repack = $('.note_repack[data-index=0]').val();
-      const free = $('.input-free[data-index=0]').val();
      
       let newProductID = 0;
       if (productId.indexOf('/') > 5) {
@@ -203,33 +204,31 @@
 
       $('.select-product[data-index=0]').val('').change();
       $('.input-qty[data-index=0]').val('');
-      $('.select-packaging[data-index=0]').val('').change();
       $('.note_produksi[data-index=0]').val('').change();
       $('.note_repack[data-index=0]').val('').change();
 
       $('.select-product[data-index=0]').select2('focus');
-
-      productCount++;
     });
     
     $(document).on('click','#buttonDeleteProduct',function(){
       $(this).parents(".product-row").remove();
     });
 
-    // load Product
-    var param = [];
-    param["brand_name"] = "";
+    // load Product — brand dikunci dari header PO, filter tambahan per kemasan terpilih
+    var lockedBrand = $('.select-brand[data-index=0]').val() || '';
 
-    loadProduct({});
+    function currentProductParam() {
+      return {
+        brand_name: lockedBrand,
+        index: 0,
+        packaging_id: $('.select-packaging[data-index=0]').val() || ''
+      };
+    }
 
-    $(document).on('change','.select-brand',function(){
-      if ($(this).val() === '') return;
+    loadProduct(currentProductParam());
 
-      param["brand_name"] = $(this).val();
-      loadProduct({
-        brand_name:param["brand_name"],
-        index: $(this).data("index")
-      })
+    $(document).on('change','.select-packaging',function(){
+      loadProduct(currentProductParam());
     })
 
     function loadProduct(param){
@@ -245,42 +244,6 @@
             option += '<option value="'+e.id+'">'+e.productCode+' - '+e.productName+' - '+e.warehouseName+'</option>';
           })
           $('.select-product[data-index=' + param.index + ']').html(option);
-        },
-        error : function(){
-          alert("Cek Koneksi Internet");
-        }
-      })
-    }
-
-    // load packaging
-    var param = [];
-    param["product_id"] = "";
-
-    loadPackaging({});
-
-    $(document).on('change','.select-product',function(){
-      if ($(this).val() === '') return;
-
-      param["product_id"] = $(this).val();
-      loadPackaging({
-        product_id:param["product_id"],
-        index: $(this).data("index")
-      })
-    })
-
-    function loadPackaging(param){
-      $.ajax({
-        url : '{{route('superuser.penjualan.sales_order.get_packaging')}}',
-        method : "GET",
-        data : param,
-        dataType : "JSON",
-        success : function(resp){
-          let option = "";
-          option = '<option value="">Select Packaging</option>';
-          $.each(resp.Data,function(i,e){
-            option += '<option value="'+e.id+'">'+e.pack_name+ ' - ' + e.type +  '</option>';
-          })
-          $('.select-packaging[data-index=' + param.index + ']').html(option);
         },
         error : function(){
           alert("Cek Koneksi Internet");
