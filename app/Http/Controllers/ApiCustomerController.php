@@ -8,6 +8,7 @@ use App\Entities\Master\CustomerOtherAddress;
 use App\Entities\Master\ProductPack;
 use App\Entities\Master\Product;
 use App\Entities\Master\BrandLokal;
+use App\Entities\Master\Packaging;      // master_packaging
 use DB;
 use COM;
 
@@ -241,5 +242,75 @@ class ApiCustomerController extends Controller
             'success' => true,
             'customers' => $allCustomers->sortBy('nama')->values()
         ], 200);
+    }
+
+    // Daftar kemasan: /api/packagings -> [{id, name}]
+    public function getApiDataPackaging()
+    {
+        return response()->json(Packaging::all());
+    }
+
+    // Produk yang direlasikan ke kemasan per brand: /api/product-packaging?brand=Senses
+    // -> [{id, name, code}] (ambil id/name/code sesuai permintaan)
+    public function getApiDataProductPackaging(Request $request)
+    {
+        $brand = $request->query('brand');
+        $query = ProductPack::query();
+        if ($brand) {
+            $query->where('brand_name', $brand);
+        }
+        return response()->json($query->select('id', 'name', 'code', 'price')->get());
+    }
+
+    // Semua brand_name dari BrandLokal (master_brand_lokal)
+    // Endpoint: GET /api/brands/all -> ["Senses","GCF",...]
+    public function getApiDataAllBrands()
+    {
+        return response()->json(BrandLokal::pluck('brand_name'));
+    }
+
+    /**
+     * Customer Other Address untuk SO module
+     * GET /api/customers/member?q=Tania&officer=kantor
+     * Return master_customer_other_addresses.id sebagai customer_id
+     */
+    public function getApiDataCustomerMember(Request $request)
+    {
+        $query = $request->query('q', '');
+        $officer = $request->query('officer', '');
+
+        $results = DB::table('master_customer_other_addresses')
+            ->join('master_customers', 'master_customer_other_addresses.customer_id', '=', 'master_customers.id')
+            ->leftJoin('master_customer_categories', 'master_customers.category_id', '=', 'master_customer_categories.id')
+            ->where('master_customer_other_addresses.status', 1)
+            ->select(
+                'master_customer_other_addresses.id',
+                'master_customer_other_addresses.customer_id as parent_customer_id',
+                'master_customer_other_addresses.name',
+                'master_customer_other_addresses.officer',
+                'master_customer_other_addresses.text_kota',
+                'master_customers.code',
+                'master_customers.name as parent_name',
+                'master_customers.pic',
+                'master_customer_categories.name as kategori'
+            );
+
+        if ($officer) {
+            $results->whereRaw('LOWER(master_customer_other_addresses.officer) = ?', [strtolower($officer)]);
+        }
+
+        if ($query) {
+            $results->where(function ($q) use ($query) {
+                $q->whereRaw('LOWER(master_customer_other_addresses.name) like ?', ["%{$query}%"])
+                ->orWhereRaw('LOWER(master_customers.code) like ?', ["%{$query}%"])
+                ->orWhereRaw('LOWER(master_customer_other_addresses.text_kota) like ?', ["%{$query}%"])
+                ->orWhereRaw('LOWER(master_customer_categories.name) like ?', ["%{$query}%"]);
+            });
+        }
+
+        return response()->json([
+            'success' => true,
+            'data' => $results->orderBy('master_customer_other_addresses.name')->get()
+        ]);
     }
 }

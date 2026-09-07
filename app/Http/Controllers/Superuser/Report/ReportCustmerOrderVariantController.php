@@ -11,6 +11,7 @@ use App\Entities\Master\CustomerOtherAddress;
 use App\Entities\Master\Product;
 use App\Entities\Master\BrandLokal;
 use App\Entities\Master\ProductPack;
+use App\Entities\Master\Packaging;
 use App\Entities\Setting\UserMenu;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\DB;
@@ -76,6 +77,18 @@ class ReportCustmerOrderVariantController extends Controller
         }
     }
 
+    // Tambahkan method baru, di bawah getProductsByBrand()
+    public function getPackaging(Request $request)
+    {
+        if ($request->ajax()) {
+            $packaging = Packaging::where('status', Packaging::STATUS['ACTIVE'])
+                ->select('id', 'pack_name')
+                ->get();
+
+            return response()->json($packaging);
+        }
+    }
+
     public function print_report(Request $request)
     {
         // Validate incoming data
@@ -85,6 +98,7 @@ class ReportCustmerOrderVariantController extends Controller
             'customer' => 'required|array',
             'brand_name' => 'required|array',
             'product' => 'nullable|array',
+            'packaging' => 'nullable|array',   // <-- tambahan
             'nominal' => 'nullable|integer'
         ]);
 
@@ -99,6 +113,7 @@ class ReportCustmerOrderVariantController extends Controller
         $product = $request->input('product', []);
         $nominal = $request->input('nominal', 0);
         $date = date("Y-m");
+        $packaging = $request->input('packaging', []);
 
         // Convert dates
         $new_date_start = date('d-m-Y', strtotime($start));
@@ -123,6 +138,12 @@ class ReportCustmerOrderVariantController extends Controller
             ? '1=1' // Select all products
             : collect($product)->map(function($value) {
                 return "{master_products_packaging.id}='$value'";
+            })->implode(' OR ');
+
+        $packagingSearch = empty($packaging) || in_array('all', $packaging)
+            ? '1=1'
+            : collect($packaging)->map(function($value) {
+                return "{master_packaging.id}=$value";   // <-- tanpa kutip
             })->implode(' OR ');
 
 
@@ -152,8 +173,9 @@ class ReportCustmerOrderVariantController extends Controller
             $creport->ParameterFields(4)->SetCurrentValue($new_date_end);
 
             // Combine the search strings into the record selection formula
-            $creport->RecordSelectionFormula = "($customerSearch) AND {penjualan_so.so_date}>=#$start# AND {penjualan_so.so_date}<=#$end# AND ($brandSearch)" 
-                                            . (!empty($productSearch) && $productSearch !== '1=1' ? " AND ($productSearch)" : "");
+            $creport->RecordSelectionFormula = "($customerSearch) AND {penjualan_so.so_date}>=#$start# AND {penjualan_so.so_date}<=#$end# AND ($brandSearch)"
+                                . (!empty($productSearch) && $productSearch !== '1=1' ? " AND ($productSearch)" : "")
+                                . (!empty($packagingSearch) && $packagingSearch !== '1=1' ? " AND ($packagingSearch)" : "");
 
             $creport->ExportOptions->DiskFileName = $my_pdf; // export to pdf
             $creport->ExportOptions->PDFExportAllPages = true;

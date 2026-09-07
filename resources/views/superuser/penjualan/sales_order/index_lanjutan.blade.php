@@ -176,7 +176,7 @@
                                         data-url="{{ route('superuser.penjualan.packing_order.revisi', $row->id) }}">
                                     <i class="fa fa-edit"></i> Revisi
                                 </button>
-                        @elseif($row->type_transaction == 'CASH' && optional($row->so)->payment_status == 0)
+                        @elseif($row->type_transaction == 'CASH')
                             @role('Developer|Admin|Management')
                                 <button type="button" 
                                         class="btn btn-dark btn-sm btn-flat btn-revisi" 

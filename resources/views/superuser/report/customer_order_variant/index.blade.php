@@ -24,59 +24,69 @@
   <div class="row">
     <div class="col-10">
       <div class="block">
-        <div class="block-content">
-          <div class="form-group row">
-            <label class="col-md-2 col-form-label text-left" for="customer[]">Customer:</label>
-            <div class="col-md-4">
-              <select class="js-select2 form-control" id="customer" name="customer[]" data-placeholder="Select Customer" multiple required>
-                <option value="all">All</option>
-                @foreach($customer as $row)
-                  <option value="{{ $row->id }}">{{ $row->name }} {{ $row->text_kota }}</option>
-                @endforeach
-              </select>
-            </div>
-
-            @if($superuser->division == "Management" OR $superuser->division == "Developer")
-              <div class="col-md-2 align-self-center">
-                <div class="form-check">
-                  <input type="checkbox" class="form-check-input" name="nominal" value="1" id="nominal_show" onclick="handleClick(this);">
-                  <label class="form-check-label" for="nominal_show">Show Nominal</label>
-                </div>
-              </div>
-            @endif
+      <div class="block-content">
+        <div class="form-group row">
+          <label class="col-md-2 col-form-label text-left" for="customer">Customer:</label>
+          <div class="col-md-4">
+            <select class="js-select2 form-control" id="customer" name="customer[]" data-placeholder="Select Customer" multiple required>
+              <option value="all">All</option>
+              @foreach($customer as $row)
+                <option value="{{ $row->id }}">{{ $row->name }} {{ $row->text_kota }}</option>
+              @endforeach
+            </select>
           </div>
 
-          <div class="form-group row">
-            <label class="col-md-2 col-form-label text-left" for="brand_name">Brand:</label>
-            <div class="col-md-4">
-              <select class="js-select2 form-control js-select2-brand" id="brand_name" name="brand_name[]" data-placeholder="Select Brand/Merek" multiple>
-                <option value="all">All</option>
-                @foreach($brand as $row)
-                  <option value="{{ $row->brand_name }}">{{ $row->brand_name }}</option>
-                @endforeach
-              </select>
-            </div>
+          <label class="col-md-2 col-form-label text-left" for="brand_name">Brand:</label>
+          <div class="col-md-4">
+            <select class="js-select2 form-control js-select2-brand" id="brand_name" name="brand_name[]" data-placeholder="Select Brand/Merek" multiple>
+              <option value="all">All</option>
+              @foreach($brand as $row)
+                <option value="{{ $row->brand_name }}">{{ $row->brand_name }}</option>
+              @endforeach
+            </select>
+          </div>
+        </div>
 
-            <label class="col-md-2 col-form-label text-left" for="product">Product:</label>
-            <div class="col-md-4">
-              <select class="js-select2 form-control" id="product" name="product[]" data-placeholder="Select Product" multiple>
-                <option value="all">All</option>
-              </select>
-            </div>
+        <div class="form-group row">
+          <label class="col-md-2 col-form-label text-left" for="product">Product:</label>
+          <div class="col-md-4">
+            <select class="js-select2 form-control" id="product" name="product[]" data-placeholder="Select Product" multiple>
+              <option value="all">All</option>
+            </select>
           </div>
 
-          <div class="form-group row">
-            <label class="col-md-2 col-form-label text-left" for="start">Periode From:</label>
-            <div class="col-md-4">
-              <input type="date" class="form-control" id="start_date" name="start" required value="{{ date('Y-m-01') }}">
-            </div>
+          <label class="col-md-2 col-form-label text-left" for="packaging">Kemasan:</label>
+          <div class="col-md-4">
+            <select class="js-select2 form-control" id="packaging" name="packaging[]" data-placeholder="Select Kemasan" multiple>
+              <option value="all">All</option>
+            </select>
+          </div>
+        </div>
 
-            <label class="col-md-2 col-form-label text-left" for="end">Periode To:</label>
-            <div class="col-md-4">
-              <input type="date" class="form-control" id="end_date" name="end" required value="{{ date('Y-m-d') }}">
+        <div class="form-group row">
+          <label class="col-md-2 col-form-label text-left" for="start">Periode From:</label>
+          <div class="col-md-4">
+            <input type="date" class="form-control" id="start_date" name="start" required value="{{ date('Y-m-01') }}">
+          </div>
+
+          <label class="col-md-2 col-form-label text-left" for="end">Periode To:</label>
+          <div class="col-md-4">
+            <input type="date" class="form-control" id="end_date" name="end" required value="{{ date('Y-m-d') }}">
+          </div>
+        </div>
+
+        @if($superuser->division == "Management" OR $superuser->division == "Developer")
+        <div class="form-group row">
+          <div class="col-md-2"></div>
+          <div class="col-md-4 align-self-center">
+            <div class="form-check">
+              <input type="checkbox" class="form-check-input" name="nominal" value="1" id="nominal_show" onclick="handleClick(this);">
+              <label class="form-check-label" for="nominal_show">Show Nominal</label>
             </div>
           </div>
         </div>
+        @endif
+      </div>
       </div>
     </div>
 
@@ -148,7 +158,7 @@
 
       let datatableUrl = '{{ route('superuser.report.customer_order_variant.json') }}';
       let firstDatatableUrl = datatableUrl + '?start_date=' + start_date + '&end_date=' + end_date +
-      '&customer=all&brand=all&product=all';
+      '&customer=all&brand=all&product=all&packaging=all';
 
       var datatable = $('#datatable').DataTable({
         language: {
@@ -203,16 +213,17 @@
       });
 
       $('#btn-filter').on('click', function(e) {
-        e.preventDefault();
-        var customer = $('#customer').val();
-        var brand = $('#brand_name').val();
-        var product = $('#product').val();
-        var start_date = $('#start_date').val();
-        var end_date = $('#end_date').val();
-        
-        let newDatatableUrl = datatableUrl + '?start_date=' + start_date + '&end_date=' + end_date +
-          '&customer=' + customer + '&brand_name=' + brand + '&product=' + product;
-        datatable.ajax.url(newDatatableUrl).load();
+          e.preventDefault();
+          var customer = $('#customer').val();
+          var brand = $('#brand_name').val();
+          var product = $('#product').val();
+          var packaging = $('#packaging').val();   // <-- tambahan
+          var start_date = $('#start_date').val();
+          var end_date = $('#end_date').val();
+          
+          let newDatatableUrl = datatableUrl + '?start_date=' + start_date + '&end_date=' + end_date +
+            '&customer=' + customer + '&brand_name=' + brand + '&product=' + product + '&packaging=' + packaging;
+          datatable.ajax.url(newDatatableUrl).load();
       });
 
       function handleClick(cb) {
@@ -261,27 +272,43 @@
                 alert('Gagal memuat data produk.');
             }
         });
-    });
+      });
+
+      function loadPackaging() {
+          $.ajax({
+            url: "{{ route('superuser.report.customer_order_variant.getPackaging') }}",
+            type: "GET",
+            success: function (data) {
+              let options = '<option value="all" selected>All</option>';
+              data.forEach(function (p) {
+                options += `<option value="${p.id}">${p.pack_name}</option>`;
+              });
+              $('#packaging').html(options);
+            },
+            error: function () {
+              alert('Gagal memuat data kemasan.');
+            }
+          });
+        }
+        loadPackaging(); // panggil sekali saat halaman load
 
         $('#btn-reset').on('click', function (e) {
           e.preventDefault();
 
-          // Kosongkan pilihan select2 (customer, brand, product)
           $('#customer').val(null).trigger('change');
           $('#brand_name').val(null).trigger('change');
           $('#product').html('').val(null).trigger('change');
+          $('#packaging').html('').val(null).trigger('change');   // <-- tambahan
 
-          // Reset tanggal ke default (bulan berjalan)
           let defaultStart = '{{ date('Y-m-01') }}';
           let defaultEnd = '{{ date('Y-m-d') }}';
           $('#start_date').val(defaultStart);
           $('#end_date').val(defaultEnd);
 
-          // Panggil ulang datatable dengan URL dasar tanpa parameter customer/brand/product
           let resetUrl = datatableUrl + '?start_date=' + defaultStart + '&end_date=' + defaultEnd;
 
           datatable.ajax.url(resetUrl).load();
-        });
+      });
   })
 </script>
 @endpush

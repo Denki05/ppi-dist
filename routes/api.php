@@ -54,3 +54,12 @@ Route::group(['middleware' => 'picker.auth', 'prefix' => 'picker'], function () 
     Route::post('tasks/{id}/pack', [PickerApiController::class, 'packTask']);
     Route::get('tasks/{id}/label', [PickerApiController::class, 'printLabel']);
 });
+
+// Kemasan & relasi produk-kemasan (ditambahkan agar konsumsi SO valid)
+Route::get('packagings', [ApiCustomerController::class, 'getApiDataPackaging']);
+Route::get('product-packaging', [ApiCustomerController::class, 'getApiDataProductPackaging']);
+// Semua brand_name dari BrandLokal (khusus SO, tanpa mengubah /api/brands lama)
+Route::get('brands/all', [ApiCustomerController::class, 'getApiDataAllBrands']);
+
+// Customer Other Address untuk SO module
+Route::get('customers/member', [ApiCustomerController::class, 'getApiDataCustomerMember']);

@@ -78,6 +78,7 @@ Route::group([
         Route::get('/json', 'ReportCustmerOrderVariantController@json')->name('json');
         Route::post('/print_report', 'ReportCustmerOrderVariantController@print_report')->name('print_report');
         Route::get('/getProductsByBrand', 'ReportCustmerOrderVariantController@getProductsByBrand')->name('getProductsByBrand');
+        Route::get('/getPackaging', 'ReportCustmerOrderVariantController@getPackaging')->name('getPackaging'); // <-- di sini
         Route::get('/get_brand', 'ReportCustmerOrderVariantController@get_brand')->name('get_brand');
         Route::post('/get_product', 'ReportCustmerOrderVariantController@get_product')->name('get_product');
     });
@@ -89,6 +90,7 @@ Route::group([
         Route::get('/getProductsByBrand', 'ReportCustomerOrderVariantV2Controller@getProductsByBrand')->name('getProductsByBrand');
         // Route::post('/get_product', 'ReportCustomerOrderVariantV2Controller@get_product')->name('get_product');
         // Route::post('/get_product', 'ReportCustomerOrderVariantV2Controller@get_product')->name('get_product');
+        Route::get('/getPackaging', 'ReportCustmerOrderVariantController@getPackaging')->name('getPackaging');
     });
     Route::resource('customer_order_variant_v2', 'ReportCustomerOrderVariantV2Controller');
 

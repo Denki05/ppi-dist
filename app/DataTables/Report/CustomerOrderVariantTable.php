@@ -56,11 +56,13 @@ class CustomerOrderVariantTable extends Table
         $this->applyWhereInFilter($model, $request, 'customer', 'penjualan_so.customer_other_address_id');
 
         // Handle filter brand
-        // Pastikan 'master_products.brand_name' adalah kolom yang benar untuk brand
         $this->applyWhereInFilter($model, $request, 'brand_name', 'master_products.brand_name');
 
         // Handle filter produk
         $this->applyWhereInFilter($model, $request, 'product', 'master_products_packaging.id');
+
+        // Handle filter kemasan
+        $this->applyWhereInFilter($model, $request, 'packaging', 'master_packaging.id');   // <-- tambahan
 
         return $model;
     }
