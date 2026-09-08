@@ -14,8 +14,9 @@ class PurchaseOrderTable extends Table
      */
     private function query()
     {
-        $model = PurchaseOrder::select('id', 'code', 'edit_counter', 'updated_by', 'status', 'sub_type', 'count_send_spk', 'note', 'created_at', 'updated_by')
-                ->where('type', PurchaseOrder::TYPE['PO']);
+        $model = PurchaseOrder::select('id', 'code', 'warehouse_id', 'brand_lokal_id', 'etd', 'edit_counter', 'updated_by', 'status', 'sub_type', 'count_send_spk', 'note', 'created_at')
+                ->where('type', PurchaseOrder::TYPE['PO'])
+                ->with(['warehouse', 'brandLokal']);
 
         return $model;
     }
@@ -46,7 +47,29 @@ class PurchaseOrderTable extends Table
         });
         
         $table->editColumn('status', function (PurchaseOrder $model) {
-            return $model->status();
+            $status = $model->status();
+            $map = [
+                'DRAFT' => 'warning',
+                'ACTIVE' => 'info',
+                'ACC' => 'success',
+                'SENT' => 'primary',
+                'DELETED' => 'danger',
+            ];
+            $color = isset($map[$status]) ? $map[$status] : 'secondary';
+
+            return '<span class="badge badge-' . $color . '">' . $status . '</span>';
+        });
+
+        $table->addColumn('warehouse', function (PurchaseOrder $model) {
+            return optional($model->warehouse)->name ?? '-';
+        });
+
+        $table->addColumn('brand', function (PurchaseOrder $model) {
+            return optional($model->brandLokal)->brand_name ?? '-';
+        });
+
+        $table->editColumn('etd', function (PurchaseOrder $model) {
+            return $model->etd ? Carbon::parse($model->etd)->format('d-m-Y') : '-';
         });
 
         $table->editColumn('updated_by', function (PurchaseOrder $model) {
@@ -116,7 +139,7 @@ class PurchaseOrderTable extends Table
                             </button>
                         </a>
 
-                        <a href=\"{$pdf}\">
+                        <a href=\"{$pdf}\" target=\"_blank\">
                             <button type=\"button\" class=\"btn btn-sm btn-circle btn-alt-secondary\" title=\"Print Out\">
                                 <i class=\"fa fa-print\"></i>
                             </button>
@@ -170,7 +193,7 @@ class PurchaseOrderTable extends Table
                                 </button>
                             </a>
                     
-                            <a href=\"{$pdf}\">
+                            <a href=\"{$pdf}\" target=\"_blank\">
                                 <button type=\"button\" class=\"btn btn-sm btn-circle btn-alt-secondary\" title=\"Print Out\">
                                     <i class=\"fa fa-print\"></i>
                                 </button>
@@ -196,6 +219,8 @@ class PurchaseOrderTable extends Table
             }
 
         });
+
+        $table->rawColumns(['action', 'status']);
 
         return $table->make(true);
     }

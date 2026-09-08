@@ -54,6 +54,9 @@
     <a href="{{ route('superuser.gudang.receiving.create') }}">
       <button type="button" class="btn btn-outline-primary min-width-125">New</button>
     </a>
+    <button type="button" class="btn btn-outline-success min-width-125 ml-10" data-toggle="modal" data-target="#modalExportReceiving" title="Download rekap receiving sebagai Excel (bisa filter tanggal)">
+      <i class="fa fa-file-excel-o mr-5"></i> Export
+    </button>
     @endif
 
     {{-- <button type="button" class="btn btn-outline-info ml-10" data-toggle="modal" data-target="#modal-manage">Manage</button> --}}
@@ -86,6 +89,36 @@
   'import_url' => route('superuser.master.warehouse.import'),
   'export_url' => route('superuser.master.warehouse.export')
 ]) --}}
+
+<!-- Modal Export Receiving -->
+<div class="modal fade" id="modalExportReceiving" tabindex="-1" role="dialog" aria-hidden="true">
+  <div class="modal-dialog modal-sm" role="document">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title"><i class="fa fa-file-excel-o mr-5"></i>Export Receiving</h5>
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body">
+        <div class="form-group">
+          <label>Dari tanggal <small class="text-muted">(Tanggal Terima)</small></label>
+          <input type="date" class="form-control" id="exp-start">
+        </div>
+        <div class="form-group mb-0">
+          <label>Sampai tanggal</label>
+          <input type="date" class="form-control" id="exp-end">
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-dismiss="modal">Batal</button>
+        <button type="button" class="btn btn-success" id="btnDoExport">
+          <i class="fa fa-download mr-5"></i> Download
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
 
 @endsection
 
@@ -126,6 +159,26 @@ $(document).ready(function() {
       [5, 15, 20]
     ],
     "dom": '<"row"<"col-sm-12 col-md-6"l><"col-sm-12 col-md-6"f>> <"row"<"col-sm-12 col-md-12"p>> <"row"<"col-sm-12"rt>> <"row"<"col-sm-12 col-md-6"i><"col-sm-12 col-md-6"p>>'
+  });
+
+  $(document).on('click', '#btnDoExport', function() {
+    var start = $('#exp-start').val();
+    var end = $('#exp-end').val();
+    if ((start && !end) || (!start && end)) {
+      alert('Isi kedua tanggal, atau kosongkan keduanya untuk semua data.');
+      return;
+    }
+    if (start && end && start > end) {
+      alert('Tanggal awal tidak boleh lebih dari tanggal akhir.');
+      return;
+    }
+    var url = '{{ route("superuser.gudang.receiving.export") }}';
+    var params = [];
+    if (start) params.push('start_date=' + encodeURIComponent(start));
+    if (end) params.push('end_date=' + encodeURIComponent(end));
+    if (params.length > 0) url += '?' + params.join('&');
+    $('#modalExportReceiving').modal('hide');
+    window.location.href = url;
   });
 });
 </script>

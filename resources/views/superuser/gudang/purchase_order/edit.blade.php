@@ -32,6 +32,17 @@
         </div>
       </div>
       <div class="form-group row">
+        <label class="col-md-3 col-form-label text-right" for="brand_lokal_id">Brand <span class="text-danger">*</span></label>
+        <div class="col-md-7">
+          <select class="js-select2 form-control" id="brand_lokal_id" name="brand_lokal_id" data-placeholder="Select Brand">
+            <option></option>
+            @foreach($brands as $br)
+            <option value="{{ $br->id }}" {{ $purchase_order->brand_lokal_id == $br->id ? 'selected' : '' }}>{{ $br->brand_name }}</option>
+            @endforeach
+          </select>
+        </div>
+      </div>
+      <div class="form-group row">
         <label class="col-md-3 col-form-label text-right" for="etd">ETD</span></label>
         <div class="col-md-7">
           <input type="date" class="form-control" id="etd" name="etd" value="{{ $purchase_order->etd ? date('Y-m-d', strtotime($purchase_order->etd)) : '' }}">

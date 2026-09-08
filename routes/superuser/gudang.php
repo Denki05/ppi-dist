@@ -54,9 +54,10 @@ Route::group([
         Route::get('/{id}/cancel_acc', 'PurchaseOrderController@cancel_acc')->name('cancel_acc');
         Route::get('/{id}/send', 'PurchaseOrderController@send')->name('send');
         Route::get('/summary', 'PurchaseOrderController@summary')->name('summary');
+        Route::get('/summary_json', 'PurchaseOrderController@summary_json')->name('summary_json');
+        Route::get('/export', 'PurchaseOrderController@export')->name('export');
         Route::get('/{id}/cancel_send', 'PurchaseOrderController@cancel_send')->name('cancel_send');
         Route::get('/{id}/send_spk', 'PurchaseOrderController@send_spk')->name('send_spk');
-        Route::get('/export', 'PurchaseOrderController@export')->name('export');
 
         Route::group(['as' => 'detail.'], function () {
             Route::get('{purchase_id}/detail/create', 'PurchaseOrderDetailController@create')->name('create');
@@ -66,6 +67,7 @@ Route::group([
             Route::delete('{id}/detail/{detail_id}', 'PurchaseOrderDetailController@destroy')->name('destroy');
             Route::get('/get_product', 'PurchaseOrderDetailController@get_product')->name('get_product');
             Route::get('/get_packaging', 'PurchaseOrderDetailController@get_packaging')->name('get_packaging');
+            Route::get('{purchase_id}/detail_json', 'PurchaseOrderDetailController@detail_json')->name('detail_json');
         });
     });
     Route::resource('purchase_order', 'PurchaseOrderController');
@@ -111,6 +113,7 @@ Route::group([
         Route::get('/cancel/{id}', 'ReceivingController@cancel')->name('cancel');
         Route::get('/import_template', 'ReceivingController@import_template')->name('import_template');
         Route::post('/import/{id}', 'ReceivingController@import')->name('import');
+        Route::get('/export', 'ReceivingController@export')->name('export');
 
         Route::group(['as' => 'detail.'], function () {
             Route::get('{id}/detail/{detail_id}/colly', 'ReceivingDetailController@show')->name('show');

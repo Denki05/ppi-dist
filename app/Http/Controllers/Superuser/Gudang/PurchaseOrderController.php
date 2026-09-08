@@ -178,6 +178,7 @@ class PurchaseOrderController extends Controller
 
         $data['purchase_order'] = PurchaseOrder::with('brandLokal')->findOrFail($id);
         $data['merek'] = \App\Entities\Master\BrandLokal::get();
+        $data['warehouses'] = \App\Entities\Master\Warehouse::get();
 
         if($data['purchase_order']->status == PurchaseOrder::STATUS['ACC'] OR $data['purchase_order']->status == PurchaseOrder::STATUS['DELETED']) {
             return abort(404);
@@ -338,7 +339,10 @@ class PurchaseOrderController extends Controller
     public function export(Request $request)
     {
         $filename = 'Purchase-Order-' . date('d-m-Y_H-i-s') . '.xlsx';
-        return Excel::download(new PurchaseOrderExport, $filename);
+        return Excel::download(
+            new PurchaseOrderExport($request->input('start_date'), $request->input('end_date')),
+            $filename
+        );
     }
 
     public function send(Request $request, $id)
@@ -361,6 +365,16 @@ class PurchaseOrderController extends Controller
         $summary = $this->service->summaryRows();
 
         return view($this->view."summary", compact('summary'));
+    }
+
+    public function summary_json()
+    {
+        if ($deny = $this->denyUnless('can_read')) return $deny;
+
+        return response()->json([
+            'IsError' => false,
+            'Data' => $this->service->summaryRows(),
+        ]);
     }
 
     public function cancel_send(Request $request, $id)

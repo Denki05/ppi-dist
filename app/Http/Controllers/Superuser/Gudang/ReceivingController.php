@@ -14,6 +14,7 @@ use App\Entities\Gudang\PurchaseOrderSummary;
 use App\Entities\Gudang\StockMove;
 use App\Entities\Master\ProductMinStock;
 use App\Entities\Master\ProductPack;
+use App\Exports\Gudang\ReceivingExport;
 use App\Entities\Finance\SettingFinance;
 use App\Http\Controllers\Controller;
 use App\Repositories\MasterRepo;
@@ -588,6 +589,15 @@ class ReceivingController extends Controller
         
             return redirect()->back()->with(['collect_success' => $import->success, 'collect_error' => $import->error]);
         }
+    }
+
+    public function export(Request $request)
+    {
+        $filename = 'Receiving-' . date('d-m-Y_H-i-s') . '.xlsx';
+        return Excel::download(
+            new ReceivingExport($request->input('start_date'), $request->input('end_date')),
+            $filename
+        );
     }
 
     public function cancel(Request $request, $id)
