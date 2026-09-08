@@ -1,158 +1,119 @@
 @extends('superuser.app')
 
-@section('content')
+@push('styles')
+<style>
+  @include('superuser.gudang.shared._doc_styles')
+</style>
+@endpush
 
-<nav class="breadcrumb bg-white push">
-  <span class="breadcrumb-item">Purchasing</span>
+@section('content')
+@php
+  use App\Entities\Gudang\Receiving as RI;
+  $role = $superuser->division;
+  $isDraft = $receiving->status == RI::STATUS['ACTIVE'];
+@endphp
+
+<nav class="breadcrumb bg-white py-10" style="margin-bottom:8px;">
+  <span class="breadcrumb-item">Gudang</span>
   <span class="breadcrumb-item">Receiving</span>
-  <span class="breadcrumb-item">{{ $receiving->code }}</span>
+  <span class="breadcrumb-item active">{{ $receiving->code }}</span>
 </nav>
 
-<div class="block">
-  <div class="block-header block-header-default">
-    <h3 class="block-title">Receiving</h3>
-  </div>
-  <div class="block-content">
-    <div class="row">
-      <label class="col-md-3 col-form-label text-right">Code</label>
-      <div class="col-md-7">
-        <div class="form-control-plaintext">{{ $receiving->code }}</div>
-      </div>
-    </div>
-    <div class="row">
-      <label class="col-md-3 col-form-label text-right">Warehouse</label>
-      <div class="col-md-7">
-        <div class="form-control-plaintext">{{ $receiving->warehouse->name }}</div>
-      </div>
-    </div>
-    <div class="row">
-      <label class="col-md-3 col-form-label text-right">PBM Date</label>
-      <div class="col-md-7">
-        <div class="form-control-plaintext">{{ $receiving->pbm_date ? date('d/m/Y', strtotime($receiving->pbm_date)) : '' }}</div>
-      </div>
-    </div>
-    <div class="row">
-      <label class="col-md-3 col-form-label text-right">Note</label>
-      <div class="col-md-7">
-        <div class="form-control-plaintext">{{ $receiving->description ?? '-' }}</div>
-      </div>
-    </div>
-    <div class="row">
-      <label class="col-md-3 col-form-label text-right">Status</label>
-      <div class="col-md-7">
-        <div class="form-control-plaintext">{{ $receiving->status() }}</div>
-      </div>
-    </div>
+<div class="po-wrap">
+  {{-- ===== KIRI: info receiving ===== --}}
+  <div class="po-col-left">
+    <div class="po-info-card">
+      <p class="po-info-code">{{ $receiving->code }}</p>
+      <span class="po-status-pill {{ $isDraft ? 'is-draft' : 'is-live' }}"><span class="dot"></span>{{ $receiving->status() }}</span>
 
-    <div class="form-group row pt-30">
-      <div class="col-md-6">
-        <a href="{{ route('superuser.gudang.receiving.index') }}">
-          <button type="button" class="btn bg-gd-cherry border-0 text-white">
-            <i class="fa fa-arrow-left mr-10"></i> Back
-          </button>
-        </a>
-      </div>
+      <ul class="po-info-list">
+        <li>
+          <span class="po-info-icon"><i class="fa fa-warehouse"></i></span>
+          <span class="po-info-body"><span class="po-info-label">Warehouse</span><span class="po-info-val" title="{{ optional($receiving->warehouse)->name ?? '-' }}">{{ optional($receiving->warehouse)->name ?? '-' }}</span></span>
+        </li>
+        <li>
+          <span class="po-info-icon"><i class="fa fa-exchange"></i></span>
+          <span class="po-info-body"><span class="po-info-label">Tipe</span><span class="po-info-val">{{ $receiving->type() }}</span></span>
+        </li>
+        <li>
+          <span class="po-info-icon"><i class="fa fa-calendar"></i></span>
+          <span class="po-info-body"><span class="po-info-label">PBM Date</span><span class="po-info-val">{{ $receiving->pbm_date ? date('d-m-Y', strtotime($receiving->pbm_date)) : '-' }}</span></span>
+        </li>
+        <li>
+          <span class="po-info-icon"><i class="fa fa-sticky-note"></i></span>
+          <span class="po-info-body"><span class="po-info-label">Note</span><span class="po-info-val" title="{{ $receiving->note ?: '-' }}">{{ $receiving->note ?: '-' }}</span></span>
+        </li>
+      </ul>
 
-      <div class="col-md-6 text-right">
-        @php
-            use App\Entities\Gudang\Receiving as RI;
-            $role = $superuser->division;           // singkat
-        @endphp
+      <div class="po-info-actions">
+        <a href="{{ route('superuser.gudang.receiving.index') }}" class="btn btn-sm btn-back"><i class="fa fa-arrow-left"></i>Kembali ke daftar</a>
 
-        {{-- 1. Draft (ACTIVE) – tombol Edit/Publish/Delete hanya utk Admin & Developer --}}
-        @if($receiving->status == \App\Entities\Gudang\Receiving::STATUS['ACTIVE']
-            && in_array($role, ['Admin','Developer']))
-            <a href="{{ route('superuser.gudang.receiving.edit', $receiving->id) }}">
-                <button type="button" class="btn bg-gd-sea border-0 text-white">
-                    Edit <i class="fa fa-pencil ml-10"></i>
-                </button>
-            </a>
-
-            <a href="{{ route('superuser.gudang.receiving.publish', $receiving->id) }}">
-              <button type="button" class="btn bg-gd-leaf border-0 text-white">
-                Publish to QC <i class="fa fa-check ml-10"></i>
-              </button>
-            </a>
-
-            <a href="javascript:deleteConfirmation('{{ route('superuser.gudang.receiving.destroy', $receiving->id) }}', true)">
-                <button type="button" class="btn bg-gd-pulse border-0 text-white">
-                    Delete <i class="fa fa-trash ml-10"></i>
-                </button>
-            </a>
-
-        {{-- 2. Tahap QC – tombol Finish QC hanya utk Warehouse --}}
-        @elseif($receiving->status == \App\Entities\Gudang\Receiving::STATUS['QC'] && in_array($role, ['Warehouse','Developer']))
-            <a href="{{ route('superuser.gudang.receiving.publish', $receiving->id) }}">
-              <button type="button" class="btn bg-gd-leaf border-0 text-white">
-                Publish to Ready <i class="fa fa-check ml-10"></i>
-              </button>
-            </a>
-
-        {{-- 3. Tahap ACC --}}
-        @elseif($receiving->status == \App\Entities\Gudang\Receiving::STATUS['READY'] && in_array($role, ['Admin','Developer']))
-            <a href="javascript:saveConfirmation2('{{ route('superuser.gudang.receiving.acc_ri', $receiving->id) }}')">
-                <button type="button" class="btn bg-gd-leaf border-0 text-white" title="ACC">
-                  ACC <i class="fa fa-check"></i>
-                </button>
-            </a>
+        @if($receiving->status == RI::STATUS['ACTIVE'] && in_array($role, ['Admin','Developer']))
+          <a href="{{ route('superuser.gudang.receiving.edit', $receiving->id) }}" class="btn btn-sm btn-edit"><i class="fa fa-pencil"></i>Edit</a>
+          <a href="{{ route('superuser.gudang.receiving.publish', $receiving->id) }}" class="btn btn-sm btn-publish"><i class="fa fa-check"></i>Publish to QC</a>
+          <a href="javascript:deleteConfirmation('{{ route('superuser.gudang.receiving.destroy', $receiving->id) }}', true)" class="btn btn-sm btn-danger-ghost"><i class="fa fa-trash"></i>Delete</a>
+        @elseif($receiving->status == RI::STATUS['QC'] && in_array($role, ['Warehouse','Developer']))
+          <a href="{{ route('superuser.gudang.receiving.publish', $receiving->id) }}" class="btn btn-sm btn-publish"><i class="fa fa-check"></i>Publish to Ready</a>
+        @elseif($receiving->status == RI::STATUS['READY'] && in_array($role, ['Admin','Developer']))
+          <a href="javascript:saveConfirmation2('{{ route('superuser.gudang.receiving.acc_ri', $receiving->id) }}')" class="btn btn-sm btn-publish" title="ACC"><i class="fa fa-check"></i>ACC</a>
         @endif
       </div>
     </div>
   </div>
-</div>
 
-<div class="block">
-  <div class="block-header block-header-default">
-    <h3 class="block-title">Detail ({{ $receiving->details->count() }})</h3>
-  </div>
-  <div class="block-content">
-    <table id="datatable" class="table table-striped">
-      <thead>
-        <tr>
-          <th class="text-center">#</th>
-          <th class="text-center">Product</th>
-          <th class="text-center">Quantity SJ</th>
-          <th class="text-center">Quantity QC</th>
-          <th class="text-center">Kurang Kirim</th>
-          <th class="text-center">NO BATCH</th>
-          <th class="text-center">Note</th>
-        </tr>
-      </thead>
-      <tbody>
-        @foreach($receiving->details as $detail)
-        <tr>
-          <td class="text-center">{{ $loop->iteration }}</td>
-          <td class="text-center">{{ $detail->product_pack->code }} - <b>{{ $detail->product_pack->name }}</b> - {{$detail->product_pack->packaging->pack_name}}</td>
-          <td class="text-center">{{ $detail->quantity_po }}</td>
-          <td class="text-center">{{ $detail->quantity_ri ?? '-' }}</td>
-          <td class="text-center">{{ $detail->selisih ?? '-' }}</td>
-          <td class="text-center">{{ $detail->no_batch ?? '-'}}</td>
-          <td class="text-center">{{ $detail->note ?? '-' }}</td>
-        </tr>
-        @endforeach
-      </tbody>
-    </table>
+  {{-- ===== KANAN: daftar produk (read-only) ===== --}}
+  <div class="po-col-right">
+    <div class="po-main-card">
+      <div class="po-main-inner">
+        <div class="po-panel">
+          <div class="po-section-label" style="margin:10px 0 0 12px;">Daftar produk ({{ $receiving->details->count() }})</div>
+          <div class="table-responsive po-table-scroll mt-5">
+            <table id="datatable" class="table table-sm table-bordered table-striped mb-0">
+              <thead class="thead-light">
+                <tr>
+                  <th class="text-center" style="width:45px;">#</th>
+                  <th class="text-center">Produk</th>
+                  <th class="text-center" style="width:90px;">Qty PO</th>
+                  <th class="text-center" style="width:90px;">Qty RI</th>
+                  <th class="text-center" style="width:90px;">Kurang</th>
+                  <th class="text-center">No Batch</th>
+                  <th class="text-center">Note</th>
+                </tr>
+              </thead>
+              <tbody>
+                @forelse($receiving->details as $detail)
+                <tr>
+                  <td class="text-center">{{ $loop->iteration }}</td>
+                  <td>{{ optional($detail->product_pack)->code ?? '-' }} - <b>{{ optional($detail->product_pack)->name ?? '-' }}</b>{{ $detail->product_pack && $detail->product_pack->packaging ? ' - ' . $detail->product_pack->packaging->pack_name : '' }}</td>
+                  <td class="text-center">{{ $detail->quantity_po }}</td>
+                  <td class="text-center">{{ $detail->quantity_ri ?? '-' }}</td>
+                  <td class="text-center">{{ $detail->selisih ?? '-' }}</td>
+                  <td class="text-center">{{ $detail->no_batch ?? '-' }}</td>
+                  <td class="text-center">{{ $detail->note ?: '-' }}</td>
+                </tr>
+                @empty
+                <tr class="empty-state"><td colspan="7" class="text-center">
+                  <i class="fa fa-inbox"></i>
+                  <div class="empty-title">Belum ada produk di receiving ini</div>
+                </td></tr>
+                @endforelse
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
   </div>
 </div>
 
 @endsection
 
 @include('superuser.asset.plugin.datatables')
-@include('superuser.asset.plugin.magnific-popup')
-@include('superuser.asset.plugin.swal2')
 
 @push('scripts')
-<script src="{{ asset('utility/superuser/js/form.js') }}"></script>
 <script type="text/javascript">
   $(document).ready(function() {
-    $('#datatable').DataTable({
-      "dom": '<"row"<"col-sm-12 col-md-6"l><"col-sm-12 col-md-6"f>> <"row"<"col-sm-12 col-md-12"p>> <"row"<"col-sm-12"rt>> <"row"<"col-sm-12 col-md-6"i><"col-sm-12 col-md-6"p>>'
-    })
-
-    $('a.img-lightbox').magnificPopup({
-    type: 'image',
-    closeOnContentClick: true,
-  });
+    $('#datatable').DataTable({});
   })
 </script>
 @endpush

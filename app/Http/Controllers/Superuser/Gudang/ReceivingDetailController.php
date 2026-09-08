@@ -14,6 +14,7 @@ use App\Entities\Master\ProductMinStock;
 use App\Entities\Master\ProductPack;
 use App\Entities\Master\Packaging;
 use App\Http\Controllers\Controller;
+use App\Services\Receiving\ReceivingService;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
 use Illuminate\Support\Facades\Auth;
@@ -23,7 +24,10 @@ use DB;
 
 class ReceivingDetailController extends Controller
 {
-    public function __construct(){
+    protected $service;
+
+    public function __construct(ReceivingService $service){
+        $this->service = $service;
         $this->view = "superuser.gudang.receiving.detail.";
         $this->route = "superuser.gudang.receiving.detail";
         $this->user_menu = new UserMenu;
@@ -100,25 +104,12 @@ class ReceivingDetailController extends Controller
             ]);
         }
 
-        // Default: Inbond dari PO
+        // Default: Inbond dari PO (sisa live, bukan summary)
         $productPack = ProductPack::with('packaging')->findOrFail($productPackId);
 
-        $totalRemaining = PurchaseOrderSummary::where([
-            ['status', 2],
-            ['product_packaging_id', $productPack->id],
-        ])->sum('quantity');
+        $available = $this->service->livePackRemaining($productPack->id, $receivingId);
 
-        $qtyCurrent = ReceivingDetail::where([
-            ['receiving_id', $receivingId],
-            ['product_packaging_id', $productPack->id],
-        ])->sum('quantity_po');
-
-        $available = max($totalRemaining - $qtyCurrent, 0);
-
-        $firstPO = PurchaseOrderSummary::where([
-            ['status', 2],
-            ['product_packaging_id', $productPack->id],
-        ])->value('po_id');
+        $firstPO = $this->service->liveFirstPo($productPack->id, $receivingId);
 
         return response()->json([
             'code' => 200,
@@ -130,6 +121,128 @@ class ReceivingDetailController extends Controller
                 'quantity' => $available
             ]
         ]);
+    }
+
+    /**
+     * Daftar produk yang bisa ditambahkan (sisa tersedia > 0) — untuk input inline di step.
+     */
+    public function product_list($id)
+    {
+        $receiving = Receiving::findOrFail($id);
+        $products = collect();
+
+        if ($receiving->type == 1) {
+            // Retur customer
+            $products = DB::table('penjualan_retur_detail AS d')
+                ->join('penjualan_retur AS r', 'r.id', '=', 'd.retur_id')
+                ->join('master_products_packaging AS p', 'p.id', '=', 'd.product_packaging_id')
+                ->select(
+                    'p.id AS product_pack_id',
+                    'p.code',
+                    'p.name',
+                    DB::raw('NULL AS pack_name'),
+                    'd.qty AS qty_available',
+                    'r.code AS retur_code'
+                )
+                ->where('r.status', 1)
+                ->whereNull('r.deleted_at')
+                ->where('r.type', 1)
+                ->get();
+        } else {
+            // Inbound dari PO — sisa live (PO SENT/ACC - diterima - reservasi terbuka)
+            $products = $this->service->liveAvailability($receiving->id);
+        }
+
+        return response()->json(['IsError' => false, 'Data' => $products->values()], 200);
+    }
+
+    /**
+     * Daftar detail 1 receiving untuk hot-reload tabel step.
+     */
+    public function detail_json($id)
+    {
+        $details = ReceivingDetail::with(['product_pack.packaging', 'qcLogs'])
+            ->where('receiving_id', $id)
+            ->orderBy('id')
+            ->get();
+
+        $route = $this->route;
+        $data = $details->map(function ($d) use ($id, $route) {
+            $pack = $d->product_pack;
+            return [
+                'id' => $d->id,
+                'code' => $pack ? $pack->code : '-',
+                'name' => $pack ? $pack->name : '-',
+                'pack_name' => ($pack && $pack->packaging) ? $pack->packaging->pack_name : '-',
+                'quantity_po' => $d->quantity_po,
+                'quantity_ri' => $d->quantity_ri,
+                'selisih' => $d->selisih,
+                'qty_qc' => round((float) $d->qcLogs->sum('qty_qc'), 2),
+                'no_batch' => $d->no_batch,
+                'note' => $d->note,
+                'destroy_url' => route($route . '.destroy', [$id, $d->id]),
+            ];
+        });
+
+        return response()->json(['IsError' => false, 'Data' => $data], 200);
+    }
+
+    /**
+     * Opsi produk untuk input QC inline (sisa = PO - sudah QC).
+     */
+    public function qc_options($id)
+    {
+        $receiving = Receiving::with(['details.product_pack.packaging', 'details.qcLogs'])->findOrFail($id);
+
+        $options = [];
+        foreach ($receiving->details as $d) {
+            $qc = round((float) $d->qcLogs->sum('qty_qc'), 2);
+            $po = round((float) $d->quantity_po, 2);
+            $sisa = round($po - $qc, 2);
+            if ($sisa >= 0.01) {
+                $options[] = [
+                    'id' => $d->id,
+                    'code' => $d->product_pack ? $d->product_pack->code : '-',
+                    'name' => $d->product_pack ? $d->product_pack->name : '-',
+                    'pack' => ($d->product_pack && $d->product_pack->packaging) ? $d->product_pack->packaging->pack_name : null,
+                    'no_batch' => $d->no_batch,
+                    'po' => $po,
+                    'qc' => $qc,
+                    'sisa' => $sisa,
+                ];
+            }
+        }
+
+        return response()->json(['IsError' => false, 'Data' => $options], 200);
+    }
+
+    /**
+     * Daftar log QC 1 receiving untuk hot-reload tabel QC.
+     */
+    public function qc_json($id)
+    {
+        $receiving = Receiving::with(['details.product_pack.packaging'])->findOrFail($id);
+
+        $data = [];
+        foreach ($receiving->details as $d) {
+            foreach ($d->qcLogs as $qc) {
+                $data[] = [
+                    'id' => $qc->id,
+                    'code' => $d->product_pack ? $d->product_pack->code : '-',
+                    'name' => $d->product_pack ? $d->product_pack->name : '-',
+                    'pack' => ($d->product_pack && $d->product_pack->packaging) ? $d->product_pack->packaging->pack_name : null,
+                    'no_batch' => $d->no_batch,
+                    'qty_qc' => $qc->qty_qc,
+                    'status_qc' => method_exists($qc, 'status_qc') ? $qc->status_qc() : $qc->status_qc,
+                    'is_sellable' => $qc->is_sellable,
+                    'is_approved' => $qc->is_approved,
+                    'approve_url' => route($this->route . '.approveQc', $qc->id),
+                    'destroy_url' => route($this->route . '.destroyQc', $qc->id),
+                ];
+            }
+        }
+
+        return response()->json(['IsError' => false, 'Data' => $data], 200);
     }
 
     public function show($id, $detail_id)
@@ -219,10 +332,8 @@ class ReceivingDetailController extends Controller
                 ['product_packaging_id', $request->product_pack_id]
             ])->sum('qty'));
         } else {
-            $available = floatval(PurchaseOrderSummary::where([
-                ['status', 2],
-                ['product_packaging_id', $request->product_pack_id]
-            ])->sum('quantity'));
+            // Sisa live (PO SENT/ACC - sudah diterima - reservasi terbuka)
+            $available = $this->service->livePackRemaining($request->product_pack_id, $id);
         }
 
         $validator = Validator::make($request->all(), [
@@ -280,11 +391,7 @@ class ReceivingDetailController extends Controller
         $detail->po_id                  = $poId;                    // opsional, bisa NULL
         $detail->product_packaging_id   = $request->product_pack_id;
         $detail->quantity_po            = $request->quantity;
-        if ($receiving->type == 1) {
-            $detail->no_batch               = $request->no_batch;
-        }else {
-            $detail->no_batch               = null; // untuk Inbond, no_batch bisa NULL
-        }
+        $detail->no_batch               = $request->no_batch ?? null;
         $detail->note                   = $request->description ?? null;
 
         if (!$detail->save()) {

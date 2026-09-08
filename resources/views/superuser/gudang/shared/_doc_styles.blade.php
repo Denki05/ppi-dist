@@ -1,4 +1,4 @@
-  {{-- CSS bersama halaman PO step & show (two column layout). Dipakai via @_include di dalam tag <style>. --}}
+  {{-- CSS bersama dokumen gudang (PO + receiving): layout 2 kolom, tab, tabel, stepper, toggle. Dipakai via @include di dalam tag <style>. --}}
     /* ===== PO Detail — two column layout ===== */
     :root {
       --po-ink: #1c2733;
@@ -37,6 +37,9 @@
     .po-info-list li .po-info-val { font-size: 13.5px; font-weight: 600; color: var(--po-ink); overflow-wrap: anywhere; }
 
     .po-info-actions { margin-top: 10px; display: flex; flex-direction: column; gap: 6px; }
+  .po-info-actions .row { margin-left: -3px; margin-right: -3px; }
+  .po-info-actions .row > [class*="col-"] { padding-left: 3px; padding-right: 3px; display: flex; }
+  .po-info-actions .row .btn { flex: 1 1 auto; }
     .po-info-actions .row { margin-left: -3px; margin-right: -3px; }
     .po-info-actions .row > [class*="col-"] { padding-left: 3px; padding-right: 3px; }
     .po-info-actions .btn { border-radius: 9px; font-weight: 600; font-size: 12px; text-align: left; padding: 6px 10px; box-shadow: none; border: 1px solid transparent; }
@@ -74,7 +77,22 @@
     .po-inputbar .form-group { margin-bottom: 0; }
     .po-inputbar .form-row { margin-bottom: 0; }
     .po-input-caption { font-size: 16px; font-weight: 800; color: var(--po-ink); margin: 0 2px 4px; }
-    .po-toolbar-btns { display: flex; gap: 6px; align-items: center; }
+    .po-toolbar-btns { display: flex; gap: 6px; align-items: center; flex-wrap: nowrap; }
+  .po-inputbar .form-row > [class*="col-"] { min-width: 0; }
+  .po-inputbar .qty-compact { font-size: 12px; padding-left: 4px; padding-right: 4px; }
+
+  /* Stepper workflow (receiving): ACTIVE > QC > READY > ACC */
+  .ri-stepper { display: flex; align-items: flex-start; margin: 4px 0 12px; }
+  .ri-step { flex: 1 1 0; text-align: center; position: relative; }
+  .ri-step .ri-dot { width: 26px; height: 26px; border-radius: 50%; background: #e6eaf1; color: #8a94a6; display: inline-flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 700; position: relative; z-index: 2; }
+  .ri-step .ri-lbl { display: block; font-size: 10.5px; font-weight: 700; color: #8a94a6; margin-top: 4px; text-transform: uppercase; letter-spacing: .04em; }
+  .ri-step::before { content: ""; position: absolute; top: 13px; left: -50%; width: 100%; height: 2px; background: #e6eaf1; z-index: 1; }
+  .ri-step:first-child::before { display: none; }
+  .ri-step.is-done .ri-dot { background: var(--po-green); color: #fff; }
+  .ri-step.is-done .ri-lbl { color: var(--po-green); }
+  .ri-step.is-done::before { background: var(--po-green); }
+  .ri-step.is-current .ri-dot { background: var(--po-accent); color: #fff; box-shadow: 0 0 0 4px var(--po-accent-soft); }
+  .ri-step.is-current .ri-lbl { color: var(--po-accent); }
     .po-toolbar-btns .staged-count { font-size: 11.5px; color: var(--po-muted); font-weight: 600; white-space: nowrap; }
     .po-edit-mode .hdr-field { margin-bottom: 6px; }
     .po-edit-mode .hdr-field .field-label { margin-bottom: 0; }
@@ -145,9 +163,35 @@
     .select2-container .select2-selection--single { height: 31px !important; border-radius: 8px !important; border-color: #d8dfec !important; overflow: hidden; display: flex !important; align-items: center !important; }
     .select2-container--default .select2-selection--single .select2-selection__rendered { line-height: normal !important; font-size: 12px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; padding-right: 24px; text-align: center; flex: 1 1 auto; }
     .select2-container--default .select2-selection--single .select2-selection__arrow { height: 29px !important; }
-    /* List produk: scroll dalam card + header nempel di atas */
-    .po-table-scroll { max-height: 320px; overflow-y: auto; }
-    .po-table-scroll thead th { position: sticky; top: 0; z-index: 2; }
+  /* List produk: scroll dalam card + header nempel di atas */
+  .po-table-scroll { max-height: 320px; overflow-y: auto; }
+  .po-table-scroll thead th { position: sticky; top: 0; z-index: 2; }
+
+  /* Form halaman create/edit */
+  .po-form .field-label { display: block; font-size: 10.5px; font-weight: 600; color: var(--po-muted); margin-bottom: 3px; text-align: left; }
+  .po-form .field-label .req { color: var(--po-red); margin-left: 2px; }
+  .po-form .form-control { border-radius: 8px; border-color: #d8dfec; font-size: 13px; }
+  .po-form .form-control:focus { border-color: var(--po-accent); box-shadow: 0 0 0 3px rgba(61,111,209,.14); }
+
+  /* Toggle kotak generik (dipakai modal QC, Auto SPK, dsb) */
+  .po-spk-toggle { display: flex; align-items: center; gap: 10px; border: 1px solid #d8dfec; border-radius: 8px; padding: 6px 10px; cursor: pointer; margin: 0; min-height: 38px; }
+  .po-spk-toggle input { display: none; }
+  .po-spk-box { flex: 0 0 22px; height: 22px; border-radius: 6px; border: 2px solid #c3cad6; color: transparent; display: flex; align-items: center; justify-content: center; font-size: 12px; }
+  .po-spk-toggle input:checked + .po-spk-box { background: #2fa85a; border-color: #2fa85a; color: #fff; }
+  .po-spk-toggle input:checked ~ .po-spk-text strong { color: #1d7a41; }
+  .po-spk-text { line-height: 1.25; }
+  .po-spk-text strong { display: block; font-size: 12.5px; color: #1c2733; }
+  .po-spk-text small { color: #7a8494; font-size: 10.5px; }
+  .po-spk-toggle.mini { min-height: 31px; padding: 3px 8px; gap: 6px; }
+  .po-spk-toggle.mini .po-spk-box { flex-basis: 18px; height: 18px; font-size: 10px; }
+  .po-spk-toggle.mini .po-spk-text { min-width: 0; }
+  .po-spk-toggle.mini .po-spk-text strong { font-size: 10px; }
+  #qc-status { text-align: center; text-align-last: center; }
+  #qc-status option { text-align: center; }
+
+  /* Label & modal generik */
+  .modal .field-label { display: block; font-size: 10.5px; font-weight: 600; color: #7a8494; margin-bottom: 3px; text-align: left; }
+  .modal .field-label .req { color: #d9534f; margin-left: 2px; }
     /* Kolom baku: layout fixed + lebar pasti, semua sel 1 baris (teks penuh via tooltip) */
     .po-panel table.table-fit { table-layout: fixed; }
     .po-panel table.table-fit th, .po-panel table.table-fit td {

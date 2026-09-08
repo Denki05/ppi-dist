@@ -2,7 +2,7 @@
 
 @push('styles')
 <style>
-  @include('superuser.gudang.purchase_order._po_styles')
+  @include('superuser.gudang.shared._doc_styles')
 </style>
 @endpush
 

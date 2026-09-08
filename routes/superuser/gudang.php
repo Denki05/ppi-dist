@@ -108,8 +108,10 @@ Route::group([
         Route::get('{id}/publish', 'ReceivingController@publish')->name('publish');
         Route::get('{id}/acc_ri', 'ReceivingController@acc_ri')->name('acc_ri');
         Route::get('/cancel/{id}', 'ReceivingController@cancel')->name('cancel');
+        Route::get('/rollback/{id}', 'ReceivingController@rollback')->name('rollback');
         Route::get('/import_template', 'ReceivingController@import_template')->name('import_template');
         Route::post('/import/{id}', 'ReceivingController@import')->name('import');
+        Route::get('/export', 'ReceivingController@export')->name('export');
 
         Route::group(['as' => 'detail.'], function () {
             Route::get('{id}/detail/{detail_id}/colly', 'ReceivingDetailController@show')->name('show');
@@ -125,6 +127,10 @@ Route::group([
             Route::post('detail/{detail}/qc', 'ReceivingDetailController@storeQc')->name('qty_qc');
             Route::get('detail/qc/{id}/approve', 'ReceivingDetailController@approveQc')->name('approveQc');
             Route::get('detail/qc/{id}/destroy', 'ReceivingDetailController@destroyQc')->name('destroyQc');
+            Route::get('{id}/product_list', 'ReceivingDetailController@product_list')->name('product_list');
+            Route::get('{id}/detail_json', 'ReceivingDetailController@detail_json')->name('detail_json');
+            Route::get('{id}/qc_options', 'ReceivingDetailController@qc_options')->name('qc_options');
+            Route::get('{id}/qc_json', 'ReceivingDetailController@qc_json')->name('qc_json');
 
             Route::group(['as' => 'colly.'], function () {
                 Route::get('{id}/colly/{detail_id}/create', 'ReceivingDetailCollyController@create')->name('create');

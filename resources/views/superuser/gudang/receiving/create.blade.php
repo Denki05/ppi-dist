@@ -1,68 +1,51 @@
 @extends('superuser.app')
 
+@push('styles')
+<style>
+  @include('superuser.gudang.shared._doc_styles')
+</style>
+@endpush
+
 @section('content')
-<nav class="breadcrumb bg-white push">
-  <span class="breadcrumb-item">Purchasing</span>
+<nav class="breadcrumb bg-white py-10" style="margin-bottom:8px;">
+  <span class="breadcrumb-item">Gudang</span>
   <a class="breadcrumb-item" href="{{ route('superuser.gudang.receiving.index') }}">Receiving</a>
   <span class="breadcrumb-item active">New</span>
 </nav>
 <div id="alert-block"></div>
-<div class="block">
-  <div class="block-header block-header-default">
-    <h3 class="block-title">New Receiving</h3>
-  </div>
-  <div class="block-content">
-    <form class="ajax" data-action="{{ route('superuser.gudang.receiving.store') }}" data-type="POST" enctype="multipart/form-data">
-      <div class="form-group row">
-        <label class="col-md-3 col-form-label text-right" for="code">Code <span class="text-danger">*</span></label>
-        <div class="col-md-7">
-          <input type="text" class="form-control" id="code" name="code" onkeyup="nospaces(this)">
-        </div>
+<div class="block po-main-card">
+  <div class="block-content po-main-inner">
+    <div class="po-section-label" style="margin-top:10px;">Receiving Baru</div>
+    <form class="ajax po-form" data-action="{{ route('superuser.gudang.receiving.store') }}" data-type="POST" enctype="multipart/form-data">
+      <div class="form-group">
+        <label class="field-label" for="code">Code<span class="req">*</span></label>
+        <input type="text" class="form-control" id="code" name="code" onkeyup="nospaces(this)" placeholder="Kode receiving...">
       </div>
-      <!--<div class="form-group row">-->
-      <!--  <label class="col-md-3 col-form-label text-right" for="type">Type <span class="text-danger">*</span></label>-->
-      <!--  <div class="col-md-7">-->
-      <!--    <select class="js-select2 form-control" id="type" name="type" data-placeholder="Select Type">-->
-      <!--      <option value="{{ \App\Entities\Gudang\Receiving::TYPE['INBOUND'] }}">Inbound</option>-->
-      <!--      <option value="{{ \App\Entities\Gudang\Receiving::TYPE['RETURN'] }}">Return</option>-->
-      <!--    </select>-->
-      <!--  </div>-->
-      <!--</div>-->
-      <div class="form-group row">
-        <label class="col-md-3 col-form-label text-right" for="warehouse">Warehouse <span class="text-danger">*</span></label>
-        <div class="col-md-7">
-          <select class="js-select2 form-control" id="warehouse" name="warehouse" data-placeholder="Select Warehouse">
-            <option></option>
-            @foreach($warehouses as $warehouse)
-            <option value="{{ $warehouse->id }}">{{ $warehouse->name }}</option>
-            @endforeach
-          </select>
-        </div>
+      <div class="form-group">
+        <label class="field-label" for="warehouse">Warehouse<span class="req">*</span></label>
+        <select class="js-select2 form-control" id="warehouse" name="warehouse" data-placeholder="— Pilih warehouse —" style="width:100%;">
+          <option></option>
+          @foreach($warehouses as $warehouse)
+          <option value="{{ $warehouse->id }}">{{ $warehouse->name }}</option>
+          @endforeach
+        </select>
       </div>
-      <div class="form-group row">
-        <label class="col-md-3 col-form-label text-right" for="pbm_date">PBM Date</span></label>
-        <div class="col-md-7">
+      <div class="form-row">
+        <div class="form-group col-md-6">
+          <label class="field-label" for="pbm_date">PBM Date</label>
           <input type="date" class="form-control" id="pbm_date" name="pbm_date">
         </div>
-      </div>
-      <div class="form-group row">
-        <label class="col-md-3 col-form-label text-right" for="note">Note</span></label>
-        <div class="col-md-7">
-          <textarea class="form-control" id="note" name="note"></textarea>
+        <div class="form-group col-md-6">
+          <label class="field-label" for="note">Note</label>
+          <textarea class="form-control" id="note" name="note" rows="1" placeholder="Catatan..."></textarea>
         </div>
       </div>
-      <div class="form-group row pt-30">
+      <div class="form-row pt-10">
         <div class="col-md-6">
-          <a href="{{ route('superuser.gudang.receiving.index') }}">
-            <button type="button" class="btn bg-gd-cherry border-0 text-white">
-              <i class="fa fa-arrow-left mr-10"></i> Back
-            </button>
-          </a>
+          <a href="{{ route('superuser.gudang.receiving.index') }}" class="btn btn-sm btn-secondary"><i class="fa fa-arrow-left mr-5"></i>Back</a>
         </div>
         <div class="col-md-6 text-right">
-          <button type="submit" class="btn bg-gd-corporate border-0 text-white">
-            Next <i class="fa fa-arrow-right ml-10"></i>
-          </button>
+          <button type="submit" class="btn btn-sm btn-primary">Next<i class="fa fa-arrow-right ml-5"></i></button>
         </div>
       </div>
     </form>
