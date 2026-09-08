@@ -47,7 +47,17 @@ class PurchaseOrderTable extends Table
         });
         
         $table->editColumn('status', function (PurchaseOrder $model) {
-            return $model->status();
+            $status = $model->status();
+            $map = [
+                'DRAFT' => 'warning',
+                'ACTIVE' => 'info',
+                'ACC' => 'success',
+                'SENT' => 'primary',
+                'DELETED' => 'danger',
+            ];
+            $color = isset($map[$status]) ? $map[$status] : 'secondary';
+
+            return '<span class="badge badge-' . $color . '">' . $status . '</span>';
         });
 
         $table->addColumn('warehouse', function (PurchaseOrder $model) {
@@ -209,6 +219,8 @@ class PurchaseOrderTable extends Table
             }
 
         });
+
+        $table->rawColumns(['action', 'status']);
 
         return $table->make(true);
     }

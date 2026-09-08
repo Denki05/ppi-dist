@@ -27,11 +27,15 @@
         <i class="fa fa-plus mr-5"></i> New PO
       </button>
 
-      <a href="{{route('superuser.gudang.purchase_order.summary')}}">
+      <a href="{{route('superuser.gudang.purchase_order.summary')}}" title="Lihat ringkasan outstanding per produk di layar">
         <button type="button" class="btn btn-info min-width-125">
           <i class="fa fa-bar-chart mr-5"></i> Summary
         </button>
       </a>
+
+      <button type="button" class="btn btn-success min-width-125" data-toggle="modal" data-target="#modalExportPO" title="Download rekap PO sebagai Excel (bisa filter tanggal)">
+        <i class="fa fa-file-excel-o mr-5"></i> Export
+      </button>
 
       <hr class="my-20">
 
@@ -129,6 +133,39 @@
     </div>
   </div>
 </div>
+
+<!-- Modal Export PO -->
+<div class="modal fade" id="modalExportPO" tabindex="-1" role="dialog" aria-hidden="true">
+  <div class="modal-dialog modal-sm" role="document">
+    <div class="modal-content po-create">
+      <div class="modal-header">
+        <div>
+          <h5 class="modal-title"><i class="fa fa-file-excel-o mr-5"></i>Export PO</h5>
+          <small class="text-muted">Filter tanggal pembuatan (opsional).</small>
+        </div>
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body">
+        <div class="form-group mb-10">
+          <label class="field-label">Dari tanggal</label>
+          <input type="date" class="form-control" id="exp-start">
+        </div>
+        <div class="form-group mb-0">
+          <label class="field-label">Sampai tanggal</label>
+          <input type="date" class="form-control" id="exp-end">
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-dismiss="modal">Batal</button>
+        <button type="button" class="btn btn-success" id="btnDoExport">
+          <i class="fa fa-download mr-5"></i> Download
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
 @endsection
 
 @include('superuser.asset.plugin.select2')
@@ -173,6 +210,26 @@
     $('#modalCreatePO').on('hidden.bs.modal', function() {
       $('#frmCreatePO')[0].reset();
       $('#frmCreatePO .js-select2').val('').trigger('change');
+    });
+
+    $(document).on('click', '#btnDoExport', function() {
+      var start = $('#exp-start').val();
+      var end = $('#exp-end').val();
+      if ((start && !end) || (!start && end)) {
+        showToast('warning', 'Isi kedua tanggal, atau kosongkan keduanya untuk semua data.');
+        return;
+      }
+      if (start && end && start > end) {
+        showToast('warning', 'Tanggal awal tidak boleh lebih dari tanggal akhir.');
+        return;
+      }
+      var url = '{{ route("superuser.gudang.purchase_order.export") }}';
+      var params = [];
+      if (start) params.push('start_date=' + encodeURIComponent(start));
+      if (end) params.push('end_date=' + encodeURIComponent(end));
+      if (params.length > 0) url += '?' + params.join('&');
+      $('#modalExportPO').modal('hide');
+      window.location.href = url;
     });
 
     $('#datatables').DataTable({

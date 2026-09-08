@@ -55,6 +55,8 @@ Route::group([
         Route::get('/{id}/cancel_acc', 'PurchaseOrderController@cancel_acc')->name('cancel_acc');
         Route::get('/{id}/send', 'PurchaseOrderController@send')->name('send');
         Route::get('/summary', 'PurchaseOrderController@summary')->name('summary');
+        Route::get('/summary_json', 'PurchaseOrderController@summary_json')->name('summary_json');
+        Route::get('/export', 'PurchaseOrderController@export')->name('export');
         Route::get('/{id}/cancel_send', 'PurchaseOrderController@cancel_send')->name('cancel_send');
         Route::get('/{id}/send_spk', 'PurchaseOrderController@send_spk')->name('send_spk');
 

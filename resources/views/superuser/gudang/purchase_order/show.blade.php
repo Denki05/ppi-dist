@@ -87,7 +87,7 @@
                         <th class="text-center">Kemasan</th>
                         <th class="text-center">Produk</th>
                         <th class="text-center" style="width:80px;">Qty</th>
-                        <th class="text-center">Catatan Produksi</th>
+                        <th class="text-center">Note</th>
                         <th class="text-center">Customer</th>
                       </tr>
                     </thead>
@@ -125,7 +125,7 @@
                         <th class="text-center">Nama Varian</th>
                         <th class="text-center" style="width:80px;">Qty</th>
                         <th class="text-center">Kemasan</th>
-                        <th class="text-center">Catatan Produksi</th>
+                        <th class="text-center">Note</th>
                         <th class="text-center">Customer</th>
                       </tr>
                     </thead>
