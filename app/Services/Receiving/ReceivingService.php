@@ -5,6 +5,7 @@ namespace App\Services\Receiving;
 use App\Entities\Gudang\PurchaseOrder;
 use App\Entities\Gudang\PurchaseOrderSummary;
 use App\Entities\Gudang\Receiving;
+use App\Entities\Master\Packaging;
 use App\Entities\Master\ProductPack;
 use App\Entities\Master\Warehouse;
 use DB;
@@ -18,6 +19,38 @@ use Validator;
  */
 class ReceivingService
 {
+    /**
+     * Definisi tab multipage kemasan (cermin PO): beda tab beda kemasan, data tetap 1 receiving.
+     * ID kemasan di-resolve by pack_name saat runtime agar aman beda database.
+     *
+     * @return array [pack_tabs, fixed_pack_ids]
+     */
+    public function packTabs()
+    {
+        $tab_defs = [
+            ['key' => '100gr', 'label' => '100gr', 'pack_names' => ['0.1 kg Alu']],
+            ['key' => '500gr', 'label' => '500gr', 'pack_names' => ['0.5 kg Alu']],
+            ['key' => '5kg',   'label' => '5kg',   'pack_names' => ['5 kg Alu', '5 Kg Jirigen']],
+            ['key' => '25kg',  'label' => '25kg',  'pack_names' => ['25 Kg Drum', '25 Kg Jirigen']],
+        ];
+
+        $pack_tabs = [];
+        $fixed_pack_ids = [];
+        foreach ($tab_defs as $tab) {
+            $packs = Packaging::whereIn('pack_name', $tab['pack_names'])->get(['id', 'pack_name']);
+            $ids = $packs->pluck('id')->all();
+            $fixed_pack_ids = array_merge($fixed_pack_ids, $ids);
+            $pack_tabs[] = [
+                'key' => $tab['key'],
+                'label' => $tab['label'],
+                'pack_ids' => $ids,
+                'pack_names' => $packs->pluck('pack_name')->all(),
+            ];
+        }
+
+        return ['pack_tabs' => $pack_tabs, 'fixed_pack_ids' => $fixed_pack_ids];
+    }
+
     /**
      * Data dropdown untuk form create.
      */

@@ -1,10 +1,11 @@
 <?php
 
-namespace App\Services;
+namespace App\Services\SalesOrder;
 
 use App\Entities\Penjualan\SalesOrder;
 use App\Entities\Penjualan\SalesOrderItem;
 use App\Entities\Penjualan\SalesOrderKontrakPivot;
+use App\Entities\Master\ProductPack;
 use Auth;
 use DB;
 
@@ -132,7 +133,19 @@ class SalesOrderUpdateService
     protected function insertItems($salesOrder, $post)
     {
         $listItem = [];
+        $headerBrand = trim((string) ($salesOrder->brand_name ?? ''));
         for ($i = 0; $i < sizeof($post["sku"]); $i++) {
+            // Jaring pengaman: item harus milik brand header (frontend bisa di-bypass)
+            $pack = ProductPack::with('product')->where('id', $post["sku"][$i])->first();
+            if (!$pack) {
+                return ['success' => false, 'message' => 'Produk pada baris ' . ($i + 1) . ' tidak ditemukan.'];
+            }
+            $itemBrand = trim((string) ($pack->product->brand_name ?? ''));
+            if ($headerBrand === '' || strcasecmp($itemBrand, $headerBrand) !== 0) {
+                $code = $pack->code ?? $post["sku"][$i];
+                return ['success' => false, 'message' => 'Item <b>' . e($code) . '</b> milik brand "' . e($itemBrand) . '", tidak sesuai dengan brand SO "' . e($headerBrand) . '". Hapus baris tersebut atau kembalikan Brand.'];
+            }
+
             $duplicate_product = [];
             $duplicate = false;
             $listItem[] = [

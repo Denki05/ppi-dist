@@ -181,7 +181,21 @@ class SalesOrderAwalTable extends Table
             $delete = route('superuser.penjualan.sales_order.destroy', $model->id);
             $print_so = route('superuser.penjualan.sales_order.print_so', $model->id);
             $estimate_pdf = route('superuser.penjualan.sales_order.sales_estimate_pdf', $model->id);
-        
+            $archive = route('superuser.penjualan.sales_order.archive_one_awal', $model->id);
+
+            // Tombol arsip manual hanya untuk divisi yang boleh (sama seperti Riwayat Archive)
+            $canArchive = in_array(Auth::user()->division, ['Admin', 'Developer', 'Management']);
+            $btn_archive = '';
+            if ($canArchive) {
+                $btn_archive = "
+                    <a href=\"javascript:saveConfirmation('{$archive}')\">
+                        <button type=\"button\" class=\"btn btn-sm btn-circle btn-alt-secondary\" title=\"Arsipkan\">
+                            <i class=\"fa fa-archive\"></i>
+                        </button>
+                    </a>
+                ";
+            }
+
             $buttons = '';
 
             // -----------------------------------------------------------
@@ -216,10 +230,10 @@ class SalesOrderAwalTable extends Table
             */
 
             if ($model->status_so === 'AWAL' && $model->is_proforma == 1) {
-                // PROFORMA SUDAH DIBUAT - hanya tampilkan Print SO
+                // PROFORMA SUDAH DIBUAT = sudah dilanjutkan (CASH) - hanya Print SO, tanpa Arsip
                 if (in_array($model->status_proforma, [1, 2, 3, 4])) {
                     $buttons .= "
-                        <a href=\"{$print_so}\">
+                        <a href=\"{$print_so}\" target=\"_blank\">
                             <button type=\"button\" class=\"btn btn-sm btn-circle btn-alt-info\" title=\"Print SO\">
                                 <i class=\"fa fa-print\"></i>
                             </button>
@@ -231,48 +245,37 @@ class SalesOrderAwalTable extends Table
         
             if ($model->status_so === 'AWAL') {
                 if ($model->approval_mou == "YES" && $model->approval_mou_status != "APPROVED") {
-                    
-                    // JIKA BUTUH APPROVAL: Print SO Dulu, lalu Estimate
-                    $buttons .= "
-                        <a href=\"{$print_so}\">
-                            <button type=\"button\" class=\"btn btn-sm btn-circle btn-alt-info\" title=\"Print SO\">
-                                <i class=\"fa fa-print\"></i>
-                            </button>
-                        </a>
-                    ";
+
+                    // JIKA BUTUH APPROVAL: belum dilanjutkan -> tanpa Print SO, hanya Estimate
                     $buttons .= $btn_estimate;
+                    $buttons .= $btn_archive;
 
                 } else {
                     
-                    // NORMAL / APPROVED: Revisi, Lanjut, Delete, Print SO
+                    // NORMAL / APPROVED: belum dilanjutkan -> Revisi, Lanjut, Delete (tanpa Print SO)
                     $buttons .= "
                         <a href=\"{$revisi}\">
                             <button type=\"button\" class=\"btn btn-sm btn-circle btn-alt-warning\" title=\"Revisi\">
                                 <i class=\"fa fa-pencil\"></i>
                             </button>
                         </a>
-        
+
                         <a href=\"javascript:saveConfirmation('{$lanjutkan}')\">
                             <button type=\"button\" class=\"btn btn-sm btn-circle btn-alt-success\" title=\"Lanjutkan\">
                                 <i class=\"fa fa-check\"></i>
                             </button>
                         </a>
-        
+
                         <a href=\"javascript:saveConfirmation('{$delete}')\">
                             <button type=\"button\" class=\"btn btn-sm btn-circle btn-alt-danger\" title=\"Delete\">
                                 <i class=\"fa fa-trash\"></i>
                             </button>
                         </a>
-
-                        <a href=\"{$print_so}\">
-                            <button type=\"button\" class=\"btn btn-sm btn-circle btn-alt-info\" title=\"Print SO\">
-                                <i class=\"fa fa-print\"></i>
-                            </button>
-                        </a>
                     ";
-                    
-                    // Tombol Estimate ditaruh terakhir
+
+                    // Tombol Estimate ditaruh terakhir, lalu Arsip manual
                     $buttons .= $btn_estimate;
+                    $buttons .= $btn_archive;
                 }
             } elseif ($model->status_so === 'REVISI') {
                 $buttons .= "
@@ -281,22 +284,16 @@ class SalesOrderAwalTable extends Table
                             <i class=\"fa fa-pencil\"></i>
                         </button>
                     </a>
-        
+
                     <a href=\"javascript:saveConfirmation('{$lanjutkan}')\">
                         <button type=\"button\" class=\"btn btn-sm btn-circle btn-alt-success\" title=\"Lanjutkan\">
                             <i class=\"fa fa-check\"></i>
                         </button>
                     </a>
-        
+
                     <a href=\"javascript:saveConfirmation('{$delete}')\">
                         <button type=\"button\" class=\"btn btn-sm btn-circle btn-alt-danger\" title=\"Delete\">
                             <i class=\"fa fa-trash\"></i>
-                        </button>
-                    </a>
-
-                    <a href=\"{$print_so}\">
-                        <button type=\"button\" class=\"btn btn-sm btn-circle btn-alt-info\" title=\"Print SO\">
-                            <i class=\"fa fa-print\"></i>
                         </button>
                     </a>
                 ";
@@ -305,12 +302,12 @@ class SalesOrderAwalTable extends Table
 
             } elseif (in_array($model->status_so, ['TUTUP', 'LANJUTAN'])) {
                 $buttons .= "
-                    <a href=\"{$print_so}\">
-                        <button type=\"button\" class=\"btn btn-sm btn-circle btn-alt-info\" title=\"Print SO\">
-                            <i class=\"fa fa-print\"></i>
-                        </button>
-                    </a>
-                ";
+                    <a href=\"{$print_so}\" target=\"_blank\">
+                            <button type=\"button\" class=\"btn btn-sm btn-circle btn-alt-info\" title=\"Print SO\">
+                                <i class=\"fa fa-print\"></i>
+                            </button>
+                        </a>
+                    ";
             }
         
             return $buttons;

@@ -173,6 +173,7 @@ class ReceivingDetailController extends Controller
                 'id' => $d->id,
                 'code' => $pack ? $pack->code : '-',
                 'name' => $pack ? $pack->name : '-',
+                'packaging_id' => ($pack && $pack->packaging) ? $pack->packaging->id : null,
                 'pack_name' => ($pack && $pack->packaging) ? $pack->packaging->pack_name : '-',
                 'quantity_po' => $d->quantity_po,
                 'quantity_ri' => $d->quantity_ri,

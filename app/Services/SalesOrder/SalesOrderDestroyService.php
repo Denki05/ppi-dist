@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Services;
+namespace App\Services\SalesOrder;
 
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Auth;
@@ -8,7 +8,7 @@ use App\Entities\Penjualan\SalesOrder;
 use App\Entities\Penjualan\SalesOrderItem;
 use App\Entities\Penjualan\PackingOrderItem;
 use App\Entities\Penjualan\DeliveryOrderMutationItem;
-use App\Helpers\LogActivity;
+use App\Helper\LogActivity;
 
 class SalesOrderDestroyService
 {

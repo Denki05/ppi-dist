@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Services;
+namespace App\Services\SalesOrder;
 
 use App\Entities\Penjualan\SalesOrder;
 

@@ -108,6 +108,10 @@ class ReceivingController extends Controller
 
         $data['receiving'] = Receiving::findOrFail($id);
 
+        $tabs = $this->service->packTabs();
+        $data['pack_tabs'] = $tabs['pack_tabs'];
+        $data['fixed_pack_ids'] = $tabs['fixed_pack_ids'];
+
         return view('superuser.gudang.receiving.step', $data);
     }
 

@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Services;
+namespace App\Services\SalesOrder;
 
 use App\Entities\Penjualan\SalesOrder;
 use App\Entities\Penjualan\SalesOrderItem;
@@ -9,7 +9,7 @@ use App\Entities\Penjualan\SalesOrderKontrakItem;
 use App\Entities\Penjualan\SalesOrderKontrakPivot;
 use App\Entities\Master\CustomerOtherAddress;
 use App\Entities\Master\ProductPack;
-use App\Helpers\CodeRepo;
+use App\Repositories\CodeRepo;
 use Auth;
 use DB;
 use Log;

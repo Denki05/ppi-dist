@@ -370,10 +370,70 @@
     // Load data product onload
     loadProductList();
 
-    // Trigger load data jika ganti brand
+    var kontrakUrlTemplate = '{{ route('superuser.penjualan.sales_order.search_kontrak', [$result->customer_other_address_id, '__BRAND__']) }}';
+
+    function initKontrakSelect2(brand) {
+      if ($('#so_kontrak').hasClass('select2-hidden-accessible')) {
+        $('#so_kontrak').select2('destroy');
+      }
+      $('#so_kontrak').val(null).trigger('change');
+      $(".js-select2-kontrak").select2({
+        ajax: {
+          url: kontrakUrlTemplate.replace('__BRAND__', encodeURIComponent(brand)),
+          dataType: 'json',
+          delay: 250,
+          data: function (params) {
+            return {
+              q: params.term,
+              _token: "{{csrf_token()}}"
+            };
+          },
+          cache: true,
+        },
+      });
+    }
+
+    // Ganti brand: list produk milik brand lama, wajib konfirmasi + kosongkan tabel
     $('#brand_name').on('select2:select', function (e) {
-      $('#brand_ppi').val($(this).val());
-      loadProductList();
+      var newBrand = $(this).val();
+      var oldBrand = $('#brand_ppi').val();
+
+      if (newBrand === oldBrand) {
+        return;
+      }
+
+      // Tabel masih kosong: langsung ganti tanpa konfirmasi
+      if (table.rows().count() === 0) {
+        $('#brand_ppi').val(newBrand);
+        product_kontrak = new Object();
+        initKontrakSelect2(newBrand);
+        loadProductList();
+        return;
+      }
+
+      var rowCount = table.rows().count();
+      Swal.fire({
+        title: 'Ganti Brand?',
+        text: 'Mengganti brand akan menghapus ' + rowCount + ' baris produk (milik brand "' + oldBrand + '"). Lanjutkan?',
+        type: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#3085d6',
+        cancelButtonColor: '#d33',
+        confirmButtonText: 'Ya, ganti & hapus list',
+        cancelButtonText: 'Batal'
+      }).then((result) => {
+        if (result.value || result.isConfirmed) {
+          table.clear().draw();
+          $('#brand_ppi').val(newBrand);
+          product_kontrak = new Object();
+          initKontrakSelect2(newBrand);
+          loadProductList();
+          Swal.fire('Brand diganti', 'List produk dikosongkan. Silakan tambah produk dari brand "' + newBrand + '".', 'success');
+        } else {
+          // Batal: kembalikan pilihan ke brand lama
+          $('#brand_name').val(oldBrand).trigger('change');
+        }
+      });
     });
 
     $('a.row-add').on( 'click', function (e) {

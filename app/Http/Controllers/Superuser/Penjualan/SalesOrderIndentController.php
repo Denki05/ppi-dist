@@ -389,7 +389,7 @@ class SalesOrderIndentController extends Controller
             ->findOrFail($id);
 
         // Gunakan SalesOrderCalculationService
-        $kalkulasiService = new \App\Services\SalesOrderCalculationService();
+        $kalkulasiService = new \App\Services\SalesOrder\SalesOrderCalculationService();
         $data_kalkulasi = $kalkulasiService->calculateEstimate($so);
 
         $terbilang = trim(\App\CustomHelper::terbilang($data_kalkulasi['grand_total']));

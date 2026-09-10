@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Services;
+namespace App\Services\SalesOrder;
 
 use Illuminate\Support\Facades\DB;
 use App\Entities\Master\Product;

@@ -14,7 +14,7 @@ use App\DataTables\Penjualan\SalesOrderLanjutanTable;
 use App\Exports\Penjualan\SalesOrderAwalExport;
 use App\Helper\CustomHelper;
 use App\Helper\LogActivity;
-use App\Services\SalesOrderCalculationService;
+use App\Services\SalesOrder\SalesOrderCalculationService;
 use Illuminate\Support\Facades\Log;
 use Validator;
 use Auth;
@@ -180,7 +180,7 @@ class SalesOrderController extends Controller
             }
         }
 
-        $queryService = new \App\Services\SalesOrderQueryService();
+        $queryService = new \App\Services\SalesOrder\SalesOrderQueryService();
         $result = $queryService->getDataSo($id);
 
         return response()->json($result['data']);
@@ -194,7 +194,7 @@ class SalesOrderController extends Controller
             }
         }
 
-        $queryService = new \App\Services\SalesOrderQueryService();
+        $queryService = new \App\Services\SalesOrder\SalesOrderQueryService();
         $result = $queryService->getCreateFormData($step, $member, $brand, $type, $indent, $approval, $note, $kurs, $disc_percent, $disc_idr, $disc_usd, $disc_kemasan, $packaging);
 
         $data = $result['data'];
@@ -224,7 +224,7 @@ class SalesOrderController extends Controller
                 try {
                     DB::beginTransaction();
 
-                    $storeService = new \App\Services\SalesOrderStoreService();
+                    $storeService = new \App\Services\SalesOrder\SalesOrderStoreService();
                     $result = $storeService->create($request, $member);
 
                     if (!$result['success']) {
@@ -276,7 +276,7 @@ class SalesOrderController extends Controller
             }
         }
 
-        $queryService = new \App\Services\SalesOrderQueryService();
+        $queryService = new \App\Services\SalesOrder\SalesOrderQueryService();
         $result = $queryService->getEditFormData($id, $step);
 
         if (!$result['success']) {
@@ -314,7 +314,7 @@ class SalesOrderController extends Controller
         if($request->method() == "POST"){
             DB::beginTransaction();
             try {
-                $updateService = new \App\Services\SalesOrderUpdateService();
+                $updateService = new \App\Services\SalesOrder\SalesOrderUpdateService();
                 $result = $updateService->update($request);
 
                 if (!$result['success']) {
@@ -346,7 +346,7 @@ class SalesOrderController extends Controller
     {
         $data_json = [];
         if($request->method() == "POST"){
-            $updateService = new \App\Services\SalesOrderUpdateService();
+            $updateService = new \App\Services\SalesOrder\SalesOrderUpdateService();
             $result = $updateService->updateItem($request);
 
             $data_json["IsError"] = !$result['success'];
@@ -377,7 +377,7 @@ class SalesOrderController extends Controller
 
             DB::beginTransaction();
             try {
-                $workflowService = new \App\Services\SalesOrderWorkflowService();
+                $workflowService = new \App\Services\SalesOrder\SalesOrderWorkflowService();
                 $result = $workflowService->lanjutkan($sales_order);
 
                 if ($result['type'] === 'lanjutan') {
@@ -426,7 +426,7 @@ class SalesOrderController extends Controller
                     $errors[] = 'Sales Order tidak ditemukan!';
                 }
 
-                $workflowService = new \App\Services\SalesOrderWorkflowService();
+                $workflowService = new \App\Services\SalesOrder\SalesOrderWorkflowService();
                 $workflowService->kembali($sales_order);
 
                 if($errors) {
@@ -471,7 +471,7 @@ class SalesOrderController extends Controller
 
             DB::beginTransaction();
             try {
-                $destroyService = new \App\Services\SalesOrderDestroyService();
+                $destroyService = new \App\Services\SalesOrder\SalesOrderDestroyService();
                 $result = $destroyService->destroy($sales_order);
 
                 if (!$result['success']) {
@@ -505,7 +505,7 @@ class SalesOrderController extends Controller
 
         DB::beginTransaction();
         try{
-            $destroyService = new \App\Services\SalesOrderDestroyService();
+            $destroyService = new \App\Services\SalesOrder\SalesOrderDestroyService();
             $result = $destroyService->destroyItem($request);
 
             if (!$result['success']) {
@@ -538,7 +538,7 @@ class SalesOrderController extends Controller
 
             DB::beginTransaction();
             try {
-                $workflowService = new \App\Services\SalesOrderWorkflowService();
+                $workflowService = new \App\Services\SalesOrder\SalesOrderWorkflowService();
                 $workflowService->tidakLanjut($sales_order, $post["keterangan"]);
                     
                 DB::commit();
@@ -572,7 +572,7 @@ class SalesOrderController extends Controller
             DB::beginTransaction();
             try{
                 $errors = [];
-                $closingService = new \App\Services\SalesOrderClosingService();
+                $closingService = new \App\Services\SalesOrder\SalesOrderClosingService();
                 
                 $sales_order = SalesOrder::find($request->id);
 
@@ -650,7 +650,7 @@ class SalesOrderController extends Controller
         $data_json = [];
         $post = $request->all();
         if($request->method() == "POST"){
-            $queryService = new \App\Services\SalesOrderQueryService();
+            $queryService = new \App\Services\SalesOrder\SalesOrderQueryService();
             $result = $queryService->getCustomerDetail($post["id"]);
 
             $data_json["IsError"] = !$result['success'];
@@ -669,7 +669,7 @@ class SalesOrderController extends Controller
         $data_json = [];
         $post = $request->all();
         if($request->method() == "POST"){
-            $queryService = new \App\Services\SalesOrderQueryService();
+            $queryService = new \App\Services\SalesOrder\SalesOrderQueryService();
             $result = $queryService->getWarehouseDetail($post["id"]);
 
             $data_json["IsError"] = !$result['success'];
@@ -718,7 +718,7 @@ class SalesOrderController extends Controller
         $result = $crService->printProforma($id);
 
         if (!$result['success']) {
-            abort(500, $result['message']);
+            return redirect()->back()->with('error', $result['message']);
         }
 
         $file = $result['file'];
@@ -735,7 +735,7 @@ class SalesOrderController extends Controller
     public function get_product(Request $request){
         $data_json = [];
         if($request->method() == "GET"){
-            $queryService = new \App\Services\SalesOrderQueryService();
+            $queryService = new \App\Services\SalesOrder\SalesOrderQueryService();
             $result = $queryService->getProductsByBrand($request->brand_name);
 
             $data_json["IsError"] = FALSE;
@@ -752,7 +752,7 @@ class SalesOrderController extends Controller
     public function get_packaging(Request $request){
         $data_json = [];
         if($request->method() == "GET"){
-            $queryService = new \App\Services\SalesOrderQueryService();
+            $queryService = new \App\Services\SalesOrder\SalesOrderQueryService();
             $result = $queryService->getPackagingByProduct($request->product_id);
 
             $data_json["IsError"] = FALSE;
@@ -781,7 +781,7 @@ class SalesOrderController extends Controller
                 abort(404);
             }
 
-            $destroyService = new \App\Services\SalesOrderDestroyService();
+            $destroyService = new \App\Services\SalesOrder\SalesOrderDestroyService();
             $result = $destroyService->destroyLanjutan($sales_order);
 
             if (!$result['success']) {
@@ -809,7 +809,7 @@ class SalesOrderController extends Controller
                     abort(404);
                 }
 
-                $workflowService = new \App\Services\SalesOrderWorkflowService();
+                $workflowService = new \App\Services\SalesOrder\SalesOrderWorkflowService();
                 $workflowService->indent($result);
 
                 DB::commit();
@@ -839,7 +839,7 @@ class SalesOrderController extends Controller
             try{
                 $sales_order = SalesOrder::find($id);
 
-                $workflowService = new \App\Services\SalesOrderWorkflowService();
+                $workflowService = new \App\Services\SalesOrder\SalesOrderWorkflowService();
                 $result = $workflowService->kembaliHold($sales_order, $request->catatan_kembali);
 
                 if(!$result['success']){
@@ -893,7 +893,7 @@ class SalesOrderController extends Controller
         }
 
         try {
-            $queryService = new \App\Services\SalesOrderQueryService();
+            $queryService = new \App\Services\SalesOrder\SalesOrderQueryService();
             $result = $queryService->getProductPack($request);
 
             if (!$result['success']) {
@@ -926,7 +926,7 @@ class SalesOrderController extends Controller
         $result = $crService->printSo($so_id);
 
         if (!$result['success']) {
-            abort(500, $result['message']);
+            return redirect()->back()->with('error', $result['message']);
         }
 
         return response()->file($result['file']);
@@ -934,7 +934,7 @@ class SalesOrderController extends Controller
 
     public function updateBrandName(Request $request)
     {
-        $queryService = new \App\Services\SalesOrderQueryService();
+        $queryService = new \App\Services\SalesOrder\SalesOrderQueryService();
         $queryService->updateBrandName();
 
         return redirect()->back()->with('message', 'Berhasil Update!');
@@ -949,7 +949,7 @@ class SalesOrderController extends Controller
     public function search_kontrak(Request $request, $id, $merek)
     {
         try {
-            $queryService = new \App\Services\SalesOrderQueryService();
+            $queryService = new \App\Services\SalesOrder\SalesOrderQueryService();
             $result = $queryService->searchKontrak($request, $id, $merek);
 
             if (!$result['success']) {
@@ -968,7 +968,7 @@ class SalesOrderController extends Controller
     public function get_product_kontrak(Request $request)
     {
         if ($request->ajax()) {
-            $queryService = new \App\Services\SalesOrderQueryService();
+            $queryService = new \App\Services\SalesOrder\SalesOrderQueryService();
             $result = $queryService->getProductKontrak($request->so_kontrak);
 
             return response()->json(['code' => 200, 'data' => $result['data']]);
@@ -994,7 +994,7 @@ class SalesOrderController extends Controller
                     abort(404);
                 }
 
-                $workflowService = new \App\Services\SalesOrderWorkflowService();
+                $workflowService = new \App\Services\SalesOrder\SalesOrderWorkflowService();
                 $workflowService->approvalMou($sales_order);
 
                 DB::commit();
@@ -1016,7 +1016,7 @@ class SalesOrderController extends Controller
 
     public function viewSalesOrderDetail($id)
     {
-        $queryService = new \App\Services\SalesOrderQueryService();
+        $queryService = new \App\Services\SalesOrder\SalesOrderQueryService();
         $result = $queryService->viewSalesOrderDetail($id);
 
         if (!$result['success']) {
@@ -1045,6 +1045,46 @@ class SalesOrderController extends Controller
         ])->setPaper('A5', 'landscape');
 
         return $pdf->stream('Sales_Estimate_' . $sales_order->so_code . '.pdf');
+    }
+
+    /**
+     * Arsipkan satu SO Awal secara manual (tombol per-baris di index_awal).
+     * Dipanggil via AJAX oleh saveConfirmation(), jadi response wajib JSON
+     * dengan redirect_to (lihat Responder + common.js), bukan redirect().
+     * Kriteria disamakan dengan cron so:archive-old-awal: hanya status AWAL.
+     */
+    public function archive_one_awal($id)
+    {
+        $userDivision = Auth::user()->division;
+        if (!in_array($userDivision, ['Admin', 'Developer', 'Management'])) {
+            return $this->response(400, ['message' => 'Anda tidak punya akses untuk mengarsipkan SO.']);
+        }
+
+        $sales_order = SalesOrder::find($id);
+        if (!$sales_order) {
+            return $this->response(404, ['message' => 'Sales Order tidak ditemukan.']);
+        }
+
+        if ($sales_order->is_archived == 1) {
+            return $this->response(400, ['message' => 'SO sudah diarsipkan sebelumnya.']);
+        }
+
+        if ($sales_order->status != 1) {
+            return $this->response(400, ['message' => 'Hanya SO berstatus AWAL yang bisa diarsipkan manual.']);
+        }
+
+        $sales_order->update([
+            'is_archived' => 1,
+            'archived_at' => now(),
+        ]);
+
+        $response['notification'] = [
+            'alert' => 'notify',
+            'type' => 'success',
+            'content' => 'SO Awal ' . $sales_order->so_code . ' berhasil diarsipkan.',
+        ];
+        $response['redirect_to'] = 'reload()';
+        return $this->response(200, $response);
     }
 
     public function archive_awal()

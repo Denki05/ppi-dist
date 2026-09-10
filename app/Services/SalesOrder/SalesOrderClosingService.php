@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Services;
+namespace App\Services\SalesOrder;
 
 use App\Entities\Penjualan\SalesOrder;
 use App\Entities\Penjualan\SalesOrderItem;
@@ -10,8 +10,8 @@ use App\Entities\Penjualan\PackingOrderItem;
 use App\Entities\Penjualan\MutasiShowroom;
 use App\Entities\Penjualan\MutasiShowroomDetail;
 use App\Entities\Master\Company;
-use App\Helpers\CodeRepo;
-use App\Helpers\CustomHelper;
+use App\Repositories\CodeRepo;
+use App\Helper\CustomHelper;
 use Auth;
 use DB;
 use Log;
@@ -22,7 +22,7 @@ class SalesOrderClosingService
 
     public function __construct()
     {
-        $this->stockService = new StockService();
+        $this->stockService = new \App\Services\StockService();
     }
 
     /**

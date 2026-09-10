@@ -15,6 +15,7 @@
   $canDeleteDetail = in_array($role, ['Admin', 'Developer', 'Management']);
   $canApproveQc = in_array($role, ['Admin', 'Developer']);
   $canDelQc = in_array($role, ['Warehouse', 'Developer']);
+  $riTabs = $receiving->type == 1 ? [['key' => 'all', 'label' => 'Semua', 'pack_ids' => [], 'pack_names' => []]] : $pack_tabs;
   $steps = ['ACTIVE', 'QC', 'READY', 'ACC'];
   $stepOrder = array_flip([RI::STATUS['ACTIVE'], RI::STATUS['QC'], RI::STATUS['READY'], RI::STATUS['ACC']]);
   $curOrder = isset($stepOrder[$receiving->status]) ? $stepOrder[$receiving->status] : -1;
@@ -151,36 +152,52 @@
         </div>
 
         @if(in_array($role, ['Admin','Developer', 'Warehouse', 'Management']) && in_array($receiving->status, [RI::STATUS['ACTIVE'], RI::STATUS['READY'], RI::STATUS['ACC']]))
-        <div class="po-panel">
+        @if($receiving->type == 0)
+        <ul class="nav nav-tabs" role="tablist">
+          @foreach($riTabs as $i => $tab)
+          <li class="nav-item">
+            <a class="nav-link {{ $i == 0 ? 'active' : '' }}" data-toggle="tab" href="#ri-tab-{{ $tab['key'] }}" role="tab" title="{{ implode(', ', $tab['pack_names']) }}">{{ implode(' / ', $tab['pack_names']) }} <span class="badge badge-primary" id="ri-badge-{{ $tab['key'] }}">0</span></a>
+          </li>
+          @endforeach
+        </ul>
+        <div id="riOrphanBar" class="alert alert-warning py-5 px-10 mb-10 mt-5" style="display:none; font-size:12px;">
+          <i class="fa fa-exclamation-triangle mr-5"></i><strong>Kemasan lain terdeteksi</strong> — produk di bawah ini kemasannya di luar 4 halaman fix:
+          <div id="riOrphanList" class="mt-5"></div>
+        </div>
+        @endif
+        <div class="tab-content">
+          @foreach($riTabs as $i => $tab)
+          <div class="tab-pane {{ $i == 0 ? 'active' : '' }}" id="ri-tab-{{ $tab['key'] }}" role="tabpanel" data-tabkey="{{ $tab['key'] }}">
+          <div class="po-panel">
           @if($receiving->status == RI::STATUS['ACTIVE'] && in_array($role, ['Admin','Developer', 'Management']))
           <div class="po-inputbar">
-            <div class="po-input-caption">Input produk</div>
+            <div class="po-input-caption">Input produk{{ $tab['key'] !== 'all' ? ' ke ' . implode(' / ', $tab['pack_names']) : '' }}</div>
             <div class="form-row align-items-center">
-                <div class="form-group col-xl-4 col-lg-4 col-md-12">
-                  <select class="form-control form-control-sm js-select2-ri" id="ri-product" style="width:100%;" title="Produk — wajib">
-                    <option value="">— Pilih produk —</option>
-                  </select>
-                </div>
-                <div class="form-group col-xl-1 col-lg-1 col-md-4">
-                  <input type="number" class="form-control form-control-sm text-center qty-compact" id="ri-qty" placeholder="Qty" title="Qty — wajib, lebih dari 0" step="any" min="0">
-                </div>
-              <div class="form-group col-xl-2 col-lg-2 col-md-4">
-                <input type="text" class="form-control form-control-sm text-center" id="ri-batch" placeholder="No Batch" title="No Batch (opsional)">
+              <div class="form-group col-xl-4 col-lg-4 col-md-12">
+                <select class="form-control form-control-sm js-select2-ri product-sel-ri" data-tabkey="{{ $tab['key'] }}" style="width:100%;" title="Produk — wajib">
+                  <option value="">— Pilih produk —</option>
+                </select>
+              </div>
+              <div class="form-group col-xl-1 col-lg-1 col-md-4">
+                <input type="number" class="form-control form-control-sm text-center qty-compact qty-inp-ri" data-tabkey="{{ $tab['key'] }}" placeholder="Qty" title="Qty — wajib, lebih dari 0" step="any" min="0">
               </div>
               <div class="form-group col-xl-2 col-lg-2 col-md-4">
-                <input type="text" class="form-control form-control-sm" id="ri-note" placeholder="Note" title="Note (opsional)">
+                <input type="text" class="form-control form-control-sm text-center batch-inp-ri" data-tabkey="{{ $tab['key'] }}" placeholder="No Batch" title="No Batch (opsional)">
               </div>
-                <div class="form-group col-xl-3 col-lg-3 col-md-12">
-                  <div class="po-toolbar-btns">
-                    <button type="button" class="btn btn-sm btn-success" id="btnRiAdd" title="Tambahkan sebagai baris baru"><i class="fa fa-plus"></i>Tambah</button>
-                    <button type="button" class="btn btn-sm btn-primary" id="btnRiSave" disabled><i class="fa fa-save"></i>Simpan</button>
-                  </div>
+              <div class="form-group col-xl-2 col-lg-2 col-md-4">
+                <input type="text" class="form-control form-control-sm note-inp-ri" data-tabkey="{{ $tab['key'] }}" placeholder="Note" title="Note (opsional)">
+              </div>
+              <div class="form-group col-xl-3 col-lg-3 col-md-12">
+                <div class="po-toolbar-btns">
+                  <button type="button" class="btn btn-sm btn-success btn-add-ri" data-tabkey="{{ $tab['key'] }}" title="Tambahkan sebagai baris baru"><i class="fa fa-plus"></i>Tambah</button>
+                  <button type="button" class="btn btn-sm btn-primary btn-save-ri" data-tabkey="{{ $tab['key'] }}" disabled><i class="fa fa-save"></i>Simpan</button>
                 </div>
+              </div>
             </div>
           </div>
           @endif
           <div class="table-responsive po-table-scroll">
-            <table class="table table-sm table-bordered table-striped mb-0">
+            <table class="table table-sm table-bordered table-striped mb-0 table-fit">
               <thead class="thead-light">
                 <tr>
                   <th class="text-center" style="width:45px;">#</th>
@@ -193,29 +210,48 @@
                   @if(in_array($role, ['Admin','Developer', 'Management']))<th class="text-center" style="width:80px;">Aksi</th>@endif
                 </tr>
               </thead>
-              <tbody class="details-body" data-cols="{{ in_array($role, ['Admin','Developer', 'Management']) ? 8 : 7 }}">
+              <tbody class="details-body" data-tabkey="{{ $tab['key'] }}" data-cols="{{ in_array($role, ['Admin','Developer', 'Management']) ? 8 : 7 }}">
                 <tr><td colspan="{{ in_array($role, ['Admin','Developer', 'Management']) ? 8 : 7 }}" class="text-center text-muted"><i class="fa fa-spinner fa-spin mr-5"></i>Memuat...</td></tr>
               </tbody>
             </table>
           </div>
+          </div>
+          </div>
+          @endforeach
         </div>
 
         @elseif($receiving->status == RI::STATUS['QC'])
-        <div class="po-panel">
+        @if($receiving->type == 0)
+        <ul class="nav nav-tabs" role="tablist">
+          @foreach($riTabs as $i => $tab)
+          <li class="nav-item">
+            <a class="nav-link {{ $i == 0 ? 'active' : '' }}" data-toggle="tab" href="#qc-tab-{{ $tab['key'] }}" role="tab" title="{{ implode(', ', $tab['pack_names']) }}">{{ implode(' / ', $tab['pack_names']) }} <span class="badge badge-primary" id="qc-badge-{{ $tab['key'] }}">0</span></a>
+          </li>
+          @endforeach
+        </ul>
+        <div id="qcOrphanBar" class="alert alert-warning py-5 px-10 mb-10 mt-5" style="display:none; font-size:12px;">
+          <i class="fa fa-exclamation-triangle mr-5"></i><strong>Kemasan lain terdeteksi</strong>:
+          <div id="qcOrphanList" class="mt-5"></div>
+        </div>
+        @endif
+        <div class="tab-content">
+          @foreach($riTabs as $i => $tab)
+          <div class="tab-pane {{ $i == 0 ? 'active' : '' }}" id="qc-tab-{{ $tab['key'] }}" role="tabpanel" data-tabkey="{{ $tab['key'] }}">
+          <div class="po-panel">
           @if(in_array($role, ['Warehouse','Developer']))
           <div class="po-inputbar">
-            <div class="po-input-caption">Input QC</div>
+            <div class="po-input-caption">Input QC{{ $tab['key'] !== 'all' ? ' ke ' . implode(' / ', $tab['pack_names']) : '' }}</div>
             <div class="form-row align-items-center">
-              <div class="form-group col-xl-5 col-lg-5 col-md-12">
-                <select class="form-control form-control-sm js-select2-qc" id="qc-product" style="width:100%;" title="Produk — wajib">
+              <div class="form-group col-xl-6 col-lg-6 col-md-12">
+                <select class="form-control form-control-sm js-select2-qc qc-product-sel" data-tabkey="{{ $tab['key'] }}" style="width:100%;" title="Produk — wajib">
                   <option value="">Pilih produk</option>
                 </select>
               </div>
               <div class="form-group col-xl-1 col-lg-1 col-md-4">
-                <input type="number" class="form-control form-control-sm text-center qty-compact" id="qc-qty" placeholder="Qty" title="Jumlah QC — wajib" step="any" min="0">
+                <input type="number" class="form-control form-control-sm text-center qty-compact qc-qty-inp" data-tabkey="{{ $tab['key'] }}" placeholder="Qty" title="Jumlah QC — wajib" step="any" min="0">
               </div>
-              <div class="form-group col-xl-2 col-lg-2 col-md-4">
-                <select class="form-control form-control-sm text-center" id="qc-status" title="Status QC — wajib">
+              <div class="form-group col-xl-1 col-lg-1 col-md-4">
+                <select class="form-control form-control-sm text-center qc-status-sel" data-tabkey="{{ $tab['key'] }}" title="Status QC — wajib">
                   <option value="">Status</option>
                   <option value="OK">OK</option>
                   <option value="NOT OK">NOT OK</option>
@@ -223,8 +259,8 @@
               </div>
               @if($receiving->type == 0)
               <div class="form-group col-xl-1 col-lg-1 col-md-4">
-                <label class="po-spk-toggle mini" for="qc-sellable" title="Langsung bisa dijual (Saleable)">
-                  <input type="checkbox" id="qc-sellable">
+                <label class="po-spk-toggle mini" title="Langsung bisa dijual (Saleable)">
+                  <input type="checkbox" class="qc-sellable-chk" data-tabkey="{{ $tab['key'] }}">
                   <span class="po-spk-box"><i class="fa fa-check"></i></span>
                   <span class="po-spk-text"><strong>Saleable</strong></span>
                 </label>
@@ -232,9 +268,9 @@
               @endif
               <div class="form-group col-xl-3 col-lg-3 col-md-12">
                 <div class="po-toolbar-btns">
-                  <button type="button" class="btn btn-sm btn-success" id="btnQcAdd" title="Tambahkan sebagai baris baru"><i class="fa fa-plus"></i>Tambah</button>
-                  <button type="button" class="btn btn-sm btn-primary" id="btnQcSave" disabled><i class="fa fa-save"></i>Simpan</button>
-                  <button type="button" class="btn btn-sm btn-danger" id="btnQcBulkDel" style="display:none;" title="Hapus yang dipilih sekaligus"><i class="fa fa-trash"></i>Hapus (<span id="bulkDelCount">0</span>)</button>
+                  <button type="button" class="btn btn-sm btn-success btn-qc-add" data-tabkey="{{ $tab['key'] }}" title="Tambahkan sebagai baris baru"><i class="fa fa-plus"></i>Tambah</button>
+                  <button type="button" class="btn btn-sm btn-primary btn-qc-save" data-tabkey="{{ $tab['key'] }}" disabled><i class="fa fa-save"></i>Simpan</button>
+                  <button type="button" class="btn btn-sm btn-danger btn-qc-bulk" data-tabkey="{{ $tab['key'] }}" style="display:none;" title="Hapus yang dipilih sekaligus"><i class="fa fa-trash"></i>Hapus (<span class="bulk-del-count" data-tabkey="{{ $tab['key'] }}">0</span>)</button>
                 </div>
               </div>
             </div>
@@ -242,11 +278,10 @@
           @endif
           <div class="table-responsive po-table-scroll">
             <table class="table table-sm table-bordered table-striped mb-0">
-              <!-- qc-bulk-v2 -->
               <thead class="thead-light">
                 <tr>
                   @if(in_array($role, ['Warehouse','Developer']))
-                  <th class="text-center" style="width:36px;"><input type="checkbox" id="qc-check-all" title="Pilih semua"></th>
+                  <th class="text-center" style="width:36px;"><input type="checkbox" class="qc-check-all" data-tabkey="{{ $tab['key'] }}" title="Pilih semua"></th>
                   @endif
                   <th class="text-center" style="width:45px;">#</th>
                   <th class="text-center">Produk</th>
@@ -255,11 +290,14 @@
                   <th class="text-center" style="width:90px;">Aksi</th>
                 </tr>
               </thead>
-              <tbody id="qc-body">
+              <tbody class="qc-tbody" data-tabkey="{{ $tab['key'] }}">
                 <tr><td colspan="{{ in_array($role, ['Warehouse','Developer']) ? 6 : 5 }}" class="text-center text-muted"><i class="fa fa-spinner fa-spin mr-5"></i>Memuat...</td></tr>
               </tbody>
             </table>
           </div>
+          </div>
+          </div>
+          @endforeach
         </div>
         @endif
       </div>
@@ -295,6 +333,23 @@ $(document).ready(function () {
   var QC_OPTIONS_URL = '{{ route("superuser.gudang.receiving.detail.qc_options", $receiving->id) }}';
   var QC_LIST_URL = '{{ route("superuser.gudang.receiving.detail.qc_json", $receiving->id) }}';
   var QC_STORE_TPL = '{{ route("superuser.gudang.receiving.detail.qty_qc", ":detail") }}';
+  var RI_TABS = @json($riTabs);
+  var TAB_PACK = {}, TAB_NAMES = {};
+  RI_TABS.forEach(function(t) {
+    TAB_PACK[t.key] = (t.pack_ids || []).map(Number);
+    TAB_NAMES[t.key] = t.pack_names || [];
+  });
+  var TAB_KEYS = RI_TABS.map(function(t) { return t.key; });
+
+  function inTabPack(packId, key) {
+    if (key === 'all') return true;
+    return (TAB_PACK[key] || []).indexOf(Number(packId)) !== -1;
+  }
+
+  function inTabName(packName, key) {
+    if (key === 'all') return true;
+    return (TAB_NAMES[key] || []).indexOf(packName) !== -1;
+  }
 
 
   function esc(s) {
@@ -315,8 +370,9 @@ $(document).ready(function () {
     return t;
   }
 
-  /* ================= FASE ACTIVE: daftar produk ================= */
-  var D_SAVED = [], D_STAGED = [];
+  /* ================= FASE ACTIVE: daftar produk per tab kemasan ================= */
+  var D_SAVED = [], D_STAGED = {};
+  TAB_KEYS.forEach(function(k) { D_STAGED[k] = []; });
   var DETAILS_COLS = parseInt($('.details-body').data('cols') || '8', 10);
 
   function rowSavedDetail(r, n) {
@@ -339,7 +395,7 @@ $(document).ready(function () {
     return h + '</tr>';
   }
 
-  function rowStagedDetail(s, n) {
+  function rowStagedDetail(s, n, key) {
     var h = '<tr class="table-warning">'
       + '<td class="text-center">' + n + ' <span class="badge badge-warning">baru</span></td>'
       + '<td title="' + esc(s.productText) + '">' + esc(s.productText) + '</td>'
@@ -348,23 +404,56 @@ $(document).ready(function () {
       + '<td class="text-center">' + esc(s.qty) + '</td>'
       + '<td class="text-center">' + esc(s.batch || '-') + '</td>'
       + '<td class="text-center">' + esc(s.note || '-') + '</td>';
-    h += '<td class="text-center"><button type="button" class="btn btn-sm btn-circle btn-alt-danger btn-ri-remove-staged" data-idx="' + s.idx + '" title="Batalkan baris ini"><i class="fa fa-times"></i></button></td></tr>';
+    h += '<td class="text-center"><button type="button" class="btn btn-sm btn-circle btn-alt-danger btn-ri-remove-staged" data-tabkey="' + key + '" data-idx="' + s.idx + '" title="Batalkan baris ini"><i class="fa fa-times"></i></button></td></tr>';
     return h;
   }
 
-  function renderDetails() {
+  function renderDetails(key) {
     var html = '', n = 0;
-    D_SAVED.forEach(function(r) { n++; html += rowSavedDetail(r, n); });
-    D_STAGED.forEach(function(s) { n++; html += rowStagedDetail(s, n); });
+    D_SAVED.forEach(function(r) {
+      if (!inTabDetail(r, key)) return;
+      n++; html += rowSavedDetail(r, n);
+    });
+    D_STAGED[key].forEach(function(s) { n++; html += rowStagedDetail(s, n, key); });
     if (n === 0) {
       html = '<tr class="empty-state"><td colspan="' + DETAILS_COLS + '" class="text-center">'
         + '<div class="empty-title">Belum ada produk di receiving ini</div></td></tr>';
     }
-    $('.details-body').html(html);
-    var sc = D_STAGED.length;
-    var $b = $('#btnRiSave');
+    $('.details-body[data-tabkey="' + key + '"]').html(html);
+    $('#ri-badge-' + key).text(D_SAVED.filter(function(r) { return inTabDetail(r, key); }).length);
+    var sc = D_STAGED[key].length;
+    var $b = $('.btn-save-ri[data-tabkey="' + key + '"]');
     $b.prop('disabled', sc === 0);
     $b.html('<i class="fa fa-save"></i>Simpan' + (sc > 0 ? ' (' + sc + ' baru)' : ''));
+  }
+
+  function inTabDetail(r, key) {
+    if (key === 'all') return true;
+    if (r.packaging_id === null || r.packaging_id === undefined) return false;
+    return inTabPack(r.packaging_id, key);
+  }
+
+  function renderAllDetails() {
+    TAB_KEYS.forEach(function(k) { renderDetails(k); });
+    renderRiOrphan();
+  }
+
+  function renderRiOrphan() {
+    var $bar = $('#riOrphanBar');
+    if (!$bar.length) return;
+    var orphans = D_SAVED.filter(function(r) {
+      return TAB_KEYS.every(function(k) { return !inTabDetail(r, k); });
+    });
+    if (orphans.length === 0) { $bar.hide(); return; }
+    var html = '';
+    orphans.forEach(function(r) {
+      html += '<div class="orphan-item"><span><strong>' + esc(r.code) + '</strong> — ' + esc(r.name)
+        + ' · Qty ' + esc(r.quantity_po) + ' · ' + esc(r.pack_name) + '</span>'
+        + (CAN_DELETE ? ' <button type="button" class="btn btn-sm btn-danger btn-ri-del" data-url="' + r.destroy_url + '" title="Hapus"><i class="fa fa-times"></i></button>' : '')
+        + '</div>';
+    });
+    $('#riOrphanList').html(html);
+    $bar.show();
   }
 
   function refreshDetails() {
@@ -372,7 +461,7 @@ $(document).ready(function () {
       url: DETAIL_LIST_URL, method: 'GET', dataType: 'JSON',
       success: function(resp) {
         D_SAVED = (resp && resp.Data) ? resp.Data : [];
-        renderDetails();
+        renderAllDetails();
       },
       error: function() { showToast('danger', 'Gagal memuat daftar produk.'); }
     });
@@ -385,7 +474,9 @@ $(document).ready(function () {
 
   function stagedQtyRi(packId) {
     var t = 0;
-    D_STAGED.forEach(function(s) { if (String(s.productId) === String(packId)) t += Number(s.qty) || 0; });
+    TAB_KEYS.forEach(function(k) {
+      D_STAGED[k].forEach(function(s) { if (String(s.productId) === String(packId)) t += Number(s.qty) || 0; });
+    });
     return round2(t);
   }
 
@@ -397,11 +488,12 @@ $(document).ready(function () {
   }
 
   // Dropdown dikurangi baris staging: habis diambil → hilang, sebagian → sisa berkurang
-  function renderRiOptions() {
-    var keep = $('#ri-product').val();
+  function renderRiOptions(key) {
+    var $sel = $('.product-sel-ri[data-tabkey="' + key + '"]');
+    var keep = $sel.val();
     var opt = '<option value="">— Pilih produk —</option>';
-    RI_PROD_TEXT = {};
     RI_OPTS_ALL.forEach(function(e) {
+      if (!inTabName(e.pack_name, key)) return;
       var eff = round2((parseFloat(e.qty_available) || 0) - stagedQtyRi(e.product_pack_id));
       if (eff < 0.01) return;
       var packTxt = e.pack_name ? ' [' + e.pack_name + ']' : '';
@@ -409,8 +501,12 @@ $(document).ready(function () {
       var extra = (e.retur_code ? ' (retur ' + e.retur_code + ')' : '') + ' (sisa: ' + eff + ')';
       opt += '<option value="' + e.product_pack_id + '">' + esc(RI_PROD_TEXT[e.product_pack_id] + extra) + '</option>';
     });
-    $('#ri-product').html(opt);
-    if (keep) $('#ri-product').val(keep);
+    $sel.html(opt);
+    if (keep) $sel.val(keep);
+  }
+
+  function renderAllRiOptions() {
+    TAB_KEYS.forEach(function(k) { renderRiOptions(k); });
   }
 
   function loadRiProducts() {
@@ -418,20 +514,31 @@ $(document).ready(function () {
       url: PRODUCT_LIST_URL, method: 'GET', dataType: 'JSON',
       success: function(resp) {
         RI_OPTS_ALL = resp.Data || [];
-        renderRiOptions();
+        RI_PROD_TEXT = {};
+        renderAllRiOptions();
       }
     });
   }
 
-  if ($('.details-body').length) { refreshDetails(); }
-  if ($('#ri-product').length) { $('.js-select2-ri').select2({ width: '100%' }); loadRiProducts(); }
+  // Select2 di tab tersembunyi salah hitung lebar — betulkan saat tab dibuka
+  $('a[data-toggle="tab"]').on('shown.bs.tab', function(e) {
+    var $pane = $($(e.target).attr('href'));
+    $pane.find('.js-select2-ri, .js-select2-qc').each(function() {
+      $(this).next('.select2-container').css('width', '100%');
+    });
+  });
 
-  $(document).on('click', '#btnRiAdd', function() {
-    var productId = $('#ri-product').val();
-    var productText = RI_PROD_TEXT[productId] || $('#ri-product option:selected').text().replace(/\s*\(sisa:[^)]*\)\s*$/, '');
-    var qty = $('#ri-qty').val();
-    var batch = $('#ri-batch').length ? ($('#ri-batch').val() || '') : '';
-    var note = $('#ri-note').val() || '';
+  if ($('.details-body').length) { refreshDetails(); }
+  if ($('.product-sel-ri').length) { $('.js-select2-ri').select2({ width: '100%' }); loadRiProducts(); }
+
+  $(document).on('click', '.btn-add-ri', function() {
+    var tabkey = $(this).data('tabkey');
+    var $pane = $('#ri-tab-' + tabkey);
+    var productId = $pane.find('.product-sel-ri').val();
+    var productText = RI_PROD_TEXT[productId] || $pane.find('.product-sel-ri option:selected').text().replace(/\s*\(sisa:[^)]*\)\s*$/, '');
+    var qty = $pane.find('.qty-inp-ri').val();
+    var batch = $pane.find('.batch-inp-ri').length ? ($pane.find('.batch-inp-ri').val() || '') : '';
+    var note = $pane.find('.note-inp-ri').val() || '';
     if (!productId || !qty || Number(qty) <= 0) {
       Swal.fire('Belum lengkap', 'Pilih produk dan isi qty (>0).', 'warning');
       return;
@@ -441,49 +548,51 @@ $(document).ready(function () {
       Swal.fire('Melebihi sisa', 'Sisa tersedia (termasuk baris baru) tinggal ' + effRi + '.', 'warning');
       return;
     }
-    D_STAGED.push({ idx: Date.now() + Math.floor(Math.random() * 1000), productId: productId, productText: productText, qty: qty, batch: batch, note: note });
-    renderDetails();
-    renderRiOptions();
-    $('#ri-product').val('').trigger('change');
-    $('#ri-qty').val('');
-    if ($('#ri-batch').length) $('#ri-batch').val('');
-    $('#ri-note').val('');
+    D_STAGED[tabkey].push({ idx: Date.now() + Math.floor(Math.random() * 1000), productId: productId, productText: productText, qty: qty, batch: batch, note: note });
+    renderDetails(tabkey);
+    renderRiOptions(tabkey);
+    $pane.find('.product-sel-ri').val('').trigger('change');
+    $pane.find('.qty-inp-ri').val('');
+    if ($pane.find('.batch-inp-ri').length) $pane.find('.batch-inp-ri').val('');
+    $pane.find('.note-inp-ri').val('');
   });
 
   $(document).on('click', '.btn-ri-remove-staged', function() {
     var idx = $(this).data('idx');
-    D_STAGED = D_STAGED.filter(function(s) { return s.idx != idx; });
-    renderDetails();
-    renderRiOptions();
+    var tabkey = $(this).data('tabkey');
+    D_STAGED[tabkey] = D_STAGED[tabkey].filter(function(s) { return s.idx != idx; });
+    renderDetails(tabkey);
+    renderRiOptions(tabkey);
   });
 
-  $(document).on('click', '#btnRiSave', function() {
-    if (D_STAGED.length === 0) {
+  $(document).on('click', '.btn-save-ri', function() {
+    var tabkey = $(this).data('tabkey');
+    if (D_STAGED[tabkey].length === 0) {
       Swal.fire('Kosong', 'Belum ada baris baru. Klik Tambah dulu.', 'info');
       return;
     }
     var $btn = $(this);
     Swal.fire({
-      title: 'Simpan ' + D_STAGED.length + ' produk ke receiving?',
+      title: 'Simpan ' + D_STAGED[tabkey].length + ' produk ke receiving?',
       type: 'question', showCancelButton: true,
       confirmButtonText: 'Ya, simpan', cancelButtonText: 'Batal'
     }).then(function(res) {
       if (!res || (!res.isConfirmed && !res.value)) return;
       $btn.prop('disabled', true).html('<i class="fa fa-spinner fa-spin"></i> Menyimpan...');
-      var queue = D_STAGED.slice();
+      var queue = D_STAGED[tabkey].slice();
       function doneFail(msg) {
         showToast('danger', msg);
         refreshDetails();
         loadRiProducts();
-        renderDetails();
+        renderDetails(tabkey);
       }
       function next() {
         if (queue.length === 0) {
-          D_STAGED = [];
+          D_STAGED[tabkey] = [];
           showToast('success', 'Produk berhasil ditambahkan.');
           refreshDetails();
           loadRiProducts();
-          renderDetails();
+          renderDetails(tabkey);
           return;
         }
         var s = queue[0];
@@ -526,21 +635,26 @@ $(document).ready(function () {
     });
   });
 
-  /* ================= FASE QC: staging log QC ================= */
-  var Q_SAVED = [], Q_STAGED = [];
+  /* ================= FASE QC: staging log QC per tab kemasan ================= */
+  var Q_SAVED = [], Q_STAGED = {};
+  TAB_KEYS.forEach(function(k) { Q_STAGED[k] = []; });
 
-  var QC_SELECTED = {}; // qcId -> true (pilihan hapus massal, bertahan antar refresh)
+  var QC_SELECTED = {}; // tabkey -> {qcId: true} (pilihan hapus massal, bertahan antar refresh)
+  TAB_KEYS.forEach(function(k) { QC_SELECTED[k] = {}; });
+  var QC_ALL_ON = {};
+  TAB_KEYS.forEach(function(k) { QC_ALL_ON[k] = false; });
 
   function qcCols() {
     var ths = $('#qc-body').closest('table').find('thead th').length;
     return ths > 0 ? ths : 6;
   }
 
-  function renderQc() {
+  function renderQc(key) {
     var html = '', n = 0;
-    Q_SAVED.forEach(function(r) {
+    var tabSaved = Q_SAVED.filter(function(r) { return inTabQc(r, key); });
+    tabSaved.forEach(function(r) {
       n++;
-      var checked = QC_SELECTED[r.id] ? ' checked' : '';
+      var checked = (QC_SELECTED[key] && QC_SELECTED[key][r.id]) ? ' checked' : '';
       html += '<tr>'
         + (CAN_DEL_QC ? '<td class="text-center"><input type="checkbox" class="qc-row-check" data-id="' + r.id + '" data-url="' + r.destroy_url + '"' + checked + '></td>' : '')
         + '<td class="text-center">' + n + '</td>'
@@ -552,7 +666,7 @@ $(document).ready(function () {
         + (CAN_DEL_QC ? '<button type="button" class="btn btn-sm btn-circle btn-alt-danger btn-qc-del" data-url="' + r.destroy_url + '" title="Hapus Log QC"><i class="fa fa-trash"></i></button>' : '')
         + '</td></tr>';
     });
-    Q_STAGED.forEach(function(s) {
+    Q_STAGED[key].forEach(function(s) {
       n++;
       html += '<tr class="table-warning">'
         + (CAN_DEL_QC ? '<td></td>' : '')
@@ -560,31 +674,59 @@ $(document).ready(function () {
         + '<td title="' + esc(s.productText) + '">' + esc(s.productText) + '</td>'
         + '<td class="text-center">' + esc(s.qty) + '</td>'
         + '<td class="text-center">' + esc(s.status) + (s.sellable ? ' <span class="badge badge-info">saleable</span>' : '') + '</td>'
-        + '<td class="text-center"><button type="button" class="btn btn-sm btn-circle btn-alt-danger btn-qc-remove-staged" data-idx="' + s.idx + '" title="Batalkan baris ini"><i class="fa fa-times"></i></button></td></tr>';
+        + '<td class="text-center"><button type="button" class="btn btn-sm btn-circle btn-alt-danger btn-qc-remove-staged" data-tabkey="' + key + '" data-idx="' + s.idx + '" title="Batalkan baris ini"><i class="fa fa-times"></i></button></td></tr>';
     });
     if (n === 0) {
-      html = '<tr class="empty-state"><td colspan="' + qcCols() + '" class="text-center">'
-        + '<div class="empty-title">Belum ada log QC</div></td></tr>';
+      html = '<tr class="empty-state"><td colspan="' + qcCols(key) + '" class="text-center">'
+        + '<i class="fa fa-inbox"></i><div class="empty-title">Belum ada log QC di halaman ini</div></td></tr>';
     }
-    $('#qc-body').html(html);
+    $('.qc-tbody[data-tabkey="' + key + '"]').html(html);
     // Bersihkan pilihan yang sudah tidak ada + sinkron check-all & tombol hapus massal
-    Object.keys(QC_SELECTED).forEach(function(id) {
-      if (!Q_SAVED.some(function(r) { return String(r.id) === String(id); })) delete QC_SELECTED[id];
+    Object.keys(QC_SELECTED[key]).forEach(function(id) {
+      if (!tabSaved.some(function(r) { return String(r.id) === String(id); })) delete QC_SELECTED[key][id];
     });
-    var selCount = Object.keys(QC_SELECTED).length;
-    QC_ALL_ON = Q_SAVED.length > 0 && selCount === Q_SAVED.length;
-    var $master = $('#qc-check-all');
+    var selCount = Object.keys(QC_SELECTED[key]).length;
+    QC_ALL_ON[key] = tabSaved.length > 0 && selCount === tabSaved.length;
+    var $master = $('.qc-check-all[data-tabkey="' + key + '"]');
     if ($master.length) {
-      $master.prop('checked', QC_ALL_ON);
-      $master.prop('indeterminate', selCount > 0 && !QC_ALL_ON);
+      $master.prop('checked', QC_ALL_ON[key]);
+      $master.prop('indeterminate', selCount > 0 && !QC_ALL_ON[key]);
     }
-    var $bulk = $('#btnQcBulkDel');
+    $('#qc-badge-' + key).text(tabSaved.length);
+    var $bulk = $('.btn-qc-bulk[data-tabkey="' + key + '"]');
     $bulk.toggle(selCount > 0);
-    $('#bulkDelCount').text(selCount);
-    var sc = Q_STAGED.length;
-    var $b = $('#btnQcSave');
+    $bulk.find('.bulk-del-count').text(selCount);
+    var sc = Q_STAGED[key].length;
+    var $b = $('.btn-qc-save[data-tabkey="' + key + '"]');
     $b.prop('disabled', sc === 0);
     $b.html('<i class="fa fa-save"></i>Simpan' + (sc > 0 ? ' (' + sc + ' baru)' : ''));
+  }
+
+  function inTabQc(r, key) {
+    if (key === 'all') return true;
+    if (!r.pack) return false;
+    return inTabName(r.pack, key);
+  }
+
+  function renderAllQc() {
+    TAB_KEYS.forEach(function(k) { renderQc(k); });
+    renderQcOrphan();
+  }
+
+  function renderQcOrphan() {
+    var $bar = $('#qcOrphanBar');
+    if (!$bar.length) return;
+    var orphans = Q_SAVED.filter(function(r) {
+      return TAB_KEYS.every(function(k) { return !inTabQc(r, k); });
+    });
+    if (orphans.length === 0) { $bar.hide(); return; }
+    var html = '';
+    orphans.forEach(function(r) {
+      html += '<div class="orphan-item"><span><strong>' + esc(r.code) + '</strong> — ' + esc(r.name)
+        + ' · Qty ' + esc(r.qty_qc) + ' · ' + esc(r.pack || '-') + '</span></div>';
+    });
+    $('#qcOrphanList').html(html);
+    $bar.show();
   }
 
   function refreshQc() {
@@ -592,7 +734,7 @@ $(document).ready(function () {
       url: QC_LIST_URL, method: 'GET', dataType: 'JSON',
       success: function(resp) {
         Q_SAVED = (resp && resp.Data) ? resp.Data : [];
-        renderQc();
+        renderAllQc();
       },
       error: function() { showToast('danger', 'Gagal memuat log QC.'); }
     });
@@ -603,7 +745,9 @@ $(document).ready(function () {
 
   function stagedQtyQc(detailId) {
     var t = 0;
-    Q_STAGED.forEach(function(s) { if (String(s.detailId) === String(detailId)) t += Number(s.qty) || 0; });
+    TAB_KEYS.forEach(function(k) {
+      Q_STAGED[k].forEach(function(s) { if (String(s.detailId) === String(detailId)) t += Number(s.qty) || 0; });
+    });
     return round2(t);
   }
 
@@ -615,18 +759,29 @@ $(document).ready(function () {
   }
 
   // Dropdown dikurangi baris staging: habis diambil → hilang, sebagian → sisa berkurang
-  function renderQcOptions() {
-    var keep = $('#qc-product').val();
+  function renderQcOptions(key) {
+    var $sel = $('.qc-product-sel[data-tabkey="' + key + '"]');
+    var keep = $sel.val();
     var opt = '<option value="">— Pilih produk —</option>';
-    QC_PROD_TEXT = {};
     QC_OPTS_ALL.forEach(function(p) {
+      if (!inTabQcOpt(p, key)) return;
       var eff = round2((parseFloat(p.sisa) || 0) - stagedQtyQc(p.id));
       if (eff < 0.01) return;
       QC_PROD_TEXT[p.id] = p.code + ' - ' + p.name + (p.pack ? ' / ' + p.pack : '');
       opt += '<option value="' + p.id + '">' + esc(QC_PROD_TEXT[p.id] + ' (sisa: ' + eff + ' kg)') + '</option>';
     });
-    $('#qc-product').html(opt);
-    if (keep) $('#qc-product').val(keep);
+    $sel.html(opt);
+    if (keep) $sel.val(keep);
+  }
+
+  function inTabQcOpt(p, key) {
+    if (key === 'all') return true;
+    if (!p.pack) return false;
+    return inTabName(p.pack, key);
+  }
+
+  function renderAllQcOptions() {
+    TAB_KEYS.forEach(function(k) { renderQcOptions(k); });
   }
 
   function loadQcOptions() {
@@ -634,22 +789,26 @@ $(document).ready(function () {
       url: QC_OPTIONS_URL, method: 'GET', dataType: 'JSON',
       success: function(resp) {
         QC_OPTS_ALL = resp.Data || [];
-        renderQcOptions();
+        QC_PROD_TEXT = {};
+        renderAllQcOptions();
       }
     });
   }
 
   if ($('.js-select2-ri').length) { $('.js-select2-ri').select2({ width: '100%' }); }
   if ($('.js-select2-qc').length) { $('.js-select2-qc').select2({ width: '100%' }); }
-  if ($('#qc-body').length) { refreshQc(); }
-  if ($('#qc-product').length) { loadQcOptions(); }
+  if ($('.qc-tbody').length) { refreshQc(); }
+  if ($('.qc-product-sel').length) { loadQcOptions(); }
 
-  $(document).on('click', '#btnQcAdd', function() {
-    var detailId = $('#qc-product').val();
-    var productText = QC_PROD_TEXT[detailId] || $('#qc-product option:selected').text().replace(/\s*\(sisa:[^)]*\)\s*$/, '');
-    var qty = $('#qc-qty').val();
-    var status = $('#qc-status').val();
-    var sellable = $('#qc-sellable').length ? ($('#qc-sellable').is(':checked') ? 1 : 0) : 0;
+  $(document).on('click', '.btn-qc-add', function() {
+    var tabkey = $(this).data('tabkey');
+    var $pane = $('#qc-tab-' + tabkey);
+    var detailId = $pane.find('.qc-product-sel').val();
+    var productText = QC_PROD_TEXT[detailId] || $pane.find('.qc-product-sel option:selected').text().replace(/\s*\(sisa:[^)]*\)\s*$/, '');
+    var qty = $pane.find('.qc-qty-inp').val();
+    var status = $pane.find('.qc-status-sel').val();
+    var $sell = $pane.find('.qc-sellable-chk');
+    var sellable = $sell.length ? ($sell.is(':checked') ? 1 : 0) : 0;
     if (!detailId || !qty || Number(qty) <= 0 || !status) {
       Swal.fire('Belum lengkap', 'Pilih produk, isi qty (>0), dan status QC.', 'warning');
       return;
@@ -659,49 +818,51 @@ $(document).ready(function () {
       Swal.fire('Melebihi sisa', 'Sisa QC (termasuk baris baru) tinggal ' + effQc + ' kg.', 'warning');
       return;
     }
-    Q_STAGED.push({ idx: Date.now() + Math.floor(Math.random() * 1000), detailId: detailId, productText: productText, qty: qty, status: status, sellable: sellable });
-    renderQc();
-    renderQcOptions();
-    $('#qc-product').val('').trigger('change');
-    $('#qc-qty').val('');
-    $('#qc-status').val('');
-    if ($('#qc-sellable').length) $('#qc-sellable').prop('checked', false);
+    Q_STAGED[tabkey].push({ idx: Date.now() + Math.floor(Math.random() * 1000), detailId: detailId, productText: productText, qty: qty, status: status, sellable: sellable });
+    renderQc(tabkey);
+    renderQcOptions(tabkey);
+    $pane.find('.qc-product-sel').val('').trigger('change');
+    $pane.find('.qc-qty-inp').val('');
+    $pane.find('.qc-status-sel').val('');
+    if ($sell.length) $sell.prop('checked', false);
   });
 
   $(document).on('click', '.btn-qc-remove-staged', function() {
     var idx = $(this).data('idx');
-    Q_STAGED = Q_STAGED.filter(function(s) { return s.idx != idx; });
-    renderQc();
-    renderQcOptions();
+    var tabkey = $(this).data('tabkey');
+    Q_STAGED[tabkey] = Q_STAGED[tabkey].filter(function(s) { return s.idx != idx; });
+    renderQc(tabkey);
+    renderQcOptions(tabkey);
   });
 
-  $(document).on('click', '#btnQcSave', function() {
-    if (Q_STAGED.length === 0) {
+  $(document).on('click', '.btn-qc-save', function() {
+    var tabkey = $(this).data('tabkey');
+    if (Q_STAGED[tabkey].length === 0) {
       Swal.fire('Kosong', 'Belum ada baris baru. Klik Tambah dulu.', 'info');
       return;
     }
     var $btn = $(this);
     Swal.fire({
-      title: 'Simpan ' + Q_STAGED.length + ' entri QC?',
+      title: 'Simpan ' + Q_STAGED[tabkey].length + ' entri QC?',
       type: 'question', showCancelButton: true,
       confirmButtonText: 'Ya, simpan', cancelButtonText: 'Batal'
     }).then(function(res) {
       if (!res || (!res.isConfirmed && !res.value)) return;
       $btn.prop('disabled', true).html('<i class="fa fa-spinner fa-spin"></i> Menyimpan...');
-      var queue = Q_STAGED.slice();
+      var queue = Q_STAGED[tabkey].slice();
       function fail(msg) {
         showToast('danger', msg);
         refreshQc();
         loadQcOptions();
-        renderQc();
+        renderQc(tabkey);
       }
       function next() {
         if (queue.length === 0) {
-          Q_STAGED = [];
+          Q_STAGED[tabkey] = [];
           showToast('success', 'Entri QC tersimpan.');
           refreshQc();
           loadQcOptions();
-          renderQc();
+          renderQc(tabkey);
           return;
         }
         var s = queue[0];
@@ -778,37 +939,40 @@ $(document).ready(function () {
     });
   });
 
-  // Pilih massal: state eksplisit (tidak tergantung perilaku indeterminate browser)
-  var QC_ALL_ON = false;
-  window.__qcDbg = function() {
-    return 'saved=' + Q_SAVED.length + ' selected=' + Object.keys(QC_SELECTED).length + ' allOn=' + QC_ALL_ON
-      + ' masterChecked=' + $('#qc-check-all').is(':checked')
-      + ' rowChecked=' + $('.qc-row-check:checked').length + '/' + $('.qc-row-check').length;
+  // Pilih massal per tab: state eksplisit (tidak tergantung perilaku indeterminate browser)
+  window.__qcDbg = function(tabkey) {
+    var keys = tabkey ? [tabkey] : TAB_KEYS;
+    return keys.map(function(k) {
+      return k + ':saved=' + Q_SAVED.filter(function(r) { return inTabQc(r, k); }).length
+        + ' selected=' + Object.keys(QC_SELECTED[k] || {}).length;
+    }).join(' | ');
   };
 
-  $(document).on('click', '#qc-check-all', function(e) {
+  $(document).on('click', '.qc-check-all', function(e) {
     e.stopPropagation();
-    QC_ALL_ON = !QC_ALL_ON;
-    QC_SELECTED = {};
-    if (QC_ALL_ON) {
-      Q_SAVED.forEach(function(r) { QC_SELECTED[r.id] = true; });
+    var tabkey = $(this).data('tabkey');
+    QC_ALL_ON[tabkey] = !QC_ALL_ON[tabkey];
+    QC_SELECTED[tabkey] = {};
+    if (QC_ALL_ON[tabkey]) {
+      Q_SAVED.forEach(function(r) { if (inTabQc(r, tabkey)) QC_SELECTED[tabkey][r.id] = true; });
     }
-    renderQc();
+    renderQc(tabkey);
   });
 
   $(document).on('click', '.qc-row-check', function(e) {
     e.stopPropagation();
+    var tabkey = $(this).data('tabkey');
     var id = $(this).data('id');
     var on = $(this).is(':checked');
-    // Kembalikan visual dulu bila render gagal — state dihitung ulang di bawah
-    if (on) QC_SELECTED[id] = true;
-    else delete QC_SELECTED[id];
-    renderQc();
+    if (on) QC_SELECTED[tabkey][id] = true;
+    else delete QC_SELECTED[tabkey][id];
+    renderQc(tabkey);
   });
 
   // Hapus massal yang dipilih (berurutan, berhenti saat gagal)
-  $(document).on('click', '#btnQcBulkDel', function() {
-    var ids = Object.keys(QC_SELECTED);
+  $(document).on('click', '.btn-qc-bulk', function() {
+    var tabkey = $(this).data('tabkey');
+    var ids = Object.keys(QC_SELECTED[tabkey]);
     if (ids.length === 0) return;
     var $btn = $(this);
     var btnHtml = $btn.html();
@@ -824,11 +988,11 @@ $(document).ready(function () {
       var okCount = 0;
       function resetBulkBtn() {
         $btn.prop('disabled', false).html(btnHtml);
-        renderQc();
+        renderQc(tabkey);
       }
       function next() {
         if (queue.length === 0) {
-          QC_SELECTED = {};
+          QC_SELECTED[tabkey] = {};
           showToast('success', okCount + ' log QC dihapus.');
           refreshQc();
           loadQcOptions();
@@ -841,7 +1005,7 @@ $(document).ready(function () {
           success: function(resp) {
             if (resp && resp.status === 'success') {
               okCount++;
-              delete QC_SELECTED[id];
+              delete QC_SELECTED[tabkey][id];
               queue.shift();
               next();
             } else {
