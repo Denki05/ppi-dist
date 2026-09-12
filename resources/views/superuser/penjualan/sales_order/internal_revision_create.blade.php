@@ -81,8 +81,13 @@
                 <div class="form-row">
                     <div class="form-group col-md-6">
                         <label>Customer</label>
+                        @php
+                            // Pakai relasi yang sudah ada (seperti sebelumnya): DO member -> SO member -> master customer
+                            $custName = $result->member->name ?? $result->so->member->name ?? $result->customer->name ?? $result->so->customer->name ?? '-';
+                            $custKota = $result->member->text_kota ?? $result->so->member->text_kota ?? '';
+                        @endphp
                         <input type="text" class="form-control" readonly
-                            value="{{ $result->member->name ?? '-' }} {{ $result->member->text_kota ?? '' }}">
+                            value="{{ $custName }} {{ $custKota }}">
                     </div>
                     <div class="form-group col-md-6">
                         <label>Kurs IDR</label>
@@ -98,7 +103,7 @@
                     </div>
                     <div class="form-group col-md-6">
                         <label>Brand</label>
-                        <input type="text" class="form-control" readonly value="{{ $result->brand_name ?? '-' }}">
+                        <input type="text" class="form-control" readonly value="{{ $result->so->brand_name ?? '-' }}">
                     </div>
                 </div>
             </div>
@@ -111,28 +116,11 @@
                 <h3 class="block-title">#Customer Info</h3>
             </div>
             <div class="block-content">
-                <div class="form-row">
-                    <div class="form-group col-md-6">
-                        <label>Alamat Kirim</label>
-                        <textarea class="form-control" rows="1" readonly>{{ $result->member->address ?? '-' }}</textarea>
-                    </div>
-                    <div class="form-group col-md-6">
-                        <label>Kota</label>
-                        <input type="text" class="form-control" readonly value="{{ $result->member->text_kota ?? '-' }}">
-                    </div>
-                </div>
+                {{-- Hanya Sales + No Rek + Disc USD sejajar (sales senior tidak perlu).
+                     Disc USD = set massal kolom Disc (USD) per item, kecuali produk Free. --}}
                 <div class="form-row">
                     <div class="form-group col-md-4">
-                        <label>Sales Senior <span class="text-danger">*</span></label>
-                        <select class="form-control js-select2" name="sales_senior_id" required>
-                            <option value="">Pilih Sales Senior</option>
-                            @foreach(\App\Entities\Penjualan\SalesOrder::SALES_SENIOR as $sales_senior => $senior_value)
-                            <option value="{{ $senior_value }}" @if(isset($result->so->sales_senior_id) && $result->so->sales_senior_id == $senior_value) selected @endif>{{ $sales_senior }}</option>
-                            @endforeach
-                        </select>
-                    </div>
-                    <div class="form-group col-md-4">
-                        <label>Sales <span class="text-danger">*</span></label>
+                        <label for="sales_id">Sales <span class="text-danger">*</span></label>
                         <select class="form-control js-select2" name="sales_id" required>
                             <option value="">Pilih Sales</option>
                             @foreach(\App\Entities\Penjualan\SalesOrder::SALES as $sales => $sales_value)
@@ -141,12 +129,34 @@
                         </select>
                     </div>
                     <div class="form-group col-md-4">
-                        <label>No Rek Admin <span class="text-danger">*</span></label>
+                        <label for="rekening_id">No Rek Admin <span class="text-danger">*</span></label>
                         <select class="form-control js-select2" name="rekening_id" required>
                             <option value="">Pilih Rekening</option>
                             @foreach($rekening as $rek)
                             <option value="{{ $rek->id }}" @if(isset($result->so->rekening) && $result->so->rekening == $rek->id) selected @endif>{{ $rek->name }} - {{ $rek->number_card }}</option>
                             @endforeach
+                        </select>
+                    </div>
+                    <div class="form-group col-md-4">
+                        <label for="base_id">Disc USD</label>
+                        @php
+                            // Preselect sesuai nilai sebelumnya: samakan pola create_lanjutan ($result->disc_usd).
+                            // DO tidak punya field disc_usd, jadi ambil dari SO, fallback ke usd_disc item DO bila seragam.
+                            $baseDiscDefault = 0;
+                            $soDisc = $result->so->disc_usd ?? null;
+                            if (in_array((float) ($soDisc ?? -1), [0, 2, 4], true)) {
+                                $baseDiscDefault = (float) $soDisc;
+                            } else {
+                                $itemDiscs = $result->do_detail->map(function ($d) { return (float) ($d->usd_disc ?? 0); })->unique()->values();
+                                if ($itemDiscs->count() === 1 && in_array($itemDiscs->first(), [0.0, 2.0, 4.0], true)) {
+                                    $baseDiscDefault = $itemDiscs->first();
+                                }
+                            }
+                        @endphp
+                        <select class="form-control js-select2 base_disc" id="base_id">
+                            <option value="0" @if($baseDiscDefault == 0) selected @endif>$0</option>
+                            <option value="2" @if($baseDiscDefault == 2) selected @endif>$2</option>
+                            <option value="4" @if($baseDiscDefault == 4) selected @endif>$4</option>
                         </select>
                     </div>
                 </div>
@@ -174,8 +184,9 @@
                             <th class="block" style="width:18%">Product</th>
                             <th class="block" style="width:auto">Qty Asal</th>
                             <th class="block" style="width:7%">Qty Baru</th>
-                            <th class="block" style="width:15%">Harga (USD)</th>
-                            <th class="block" style="width:auto">Kemasan</th>
+                            <th class="block" style="width:10%">Harga (USD)</th>
+                            <th class="block" style="width:auto">Free</th>
+                            <th class="block" style="width:17%">Kemasan</th>
                             <th class="block" style="width:13%">Disc (USD)</th>
                             <th class="block" style="width:15%">Total (IDR)</th>
                         </tr>
@@ -185,6 +196,8 @@
                         @php
                             $priceRupiah = round((float) $detail->price * (float) $result->idr_rate);
                             $discRupiah = round((float) ($detail->usd_disc ?? 0) * (float) $result->idr_rate);
+                            // Samakan create_lanjutan: status Free dibaca dari SO item terkait (DO tidak punya flag free sendiri)
+                            $isFree = (int) (optional($detail->so_item)->free_product ?? 0) === 1;
                         @endphp
                         <tr class="index{{ $index }} row-item" data-index="{{ $index }}">
                             <input type="hidden" name="items[{{ $index }}][do_item_id]" value="{{ $detail->id }}">
@@ -192,6 +205,7 @@
                             <input type="hidden" name="items[{{ $index }}][qty_asal]" value="{{ $detail->qty }}">
                             <input type="hidden" name="items[{{ $index }}][price]" class="hidden-price-usd" value="{{ $detail->price }}">
                             <input type="hidden" name="items[{{ $index }}][usd_disc]" class="hidden-disc-usd" value="{{ $detail->usd_disc ?? 0 }}">
+                            <input type="hidden" name="items[{{ $index }}][percent_disc]" value="{{ $detail->percent_disc ?? 0 }}">
 
                             <td>
                                 <button type="button" class="btn btn-sm btn-outline-danger btn-remove-row" title="Hapus produk ini dari DO">
@@ -205,13 +219,17 @@
                                 <input type="number" name="items[{{ $index }}][qty]" class="form-control text-center count" data-index="{{ $index }}" value="{{ $detail->qty }}" step="any" required>
                             </td>
                             <td>
-                                <input type="text" class="form-control text-center price-usd-input" data-index="{{ $index }}" value="{{ number_format((float)$detail->price, 2, ',', '.') }}">
+                                <input type="text" class="form-control text-center price-usd-input" data-index="{{ $index }}" value="{{ number_format((float)($isFree ? 0 : $detail->price), 2, ',', '.') }}" @if($isFree) readonly @endif>
+                            </td>
+                            <td class="text-center">
+                                {{-- Samakan create_lanjutan: tampilkan status Free, disabled (info saja, tidak dikirim) --}}
+                                <input class="form-check-input free-count" type="checkbox" value="{{ $isFree ? 1 : 0 }}" @if($isFree) checked @endif disabled>
                             </td>
                             <td>
                                 <input type="text" class="form-control text-center" readonly value="{{ $detail->product_pack->packaging->pack_name ?? '' }}">
                             </td>
                             <td>
-                                <input type="text" class="form-control text-center disc-usd-input" data-index="{{ $index }}" value="{{ number_format((float)($detail->usd_disc ?? 0), 2, ',', '.') }}">
+                                <input type="text" class="form-control text-center disc-usd-input count-disc" data-index="{{ $index }}" value="{{ number_format((float)($isFree ? 0 : ($detail->usd_disc ?? 0)), 2, ',', '.') }}" @if($isFree) readonly @endif>
                             </td>
                             <td>
                                 <input type="text" name="items[{{ $index }}][total]" class="form-control text-center" readonly>
@@ -221,7 +239,7 @@
                     </tbody>
                     <tfoot>
                         <tr class="row-footer-subtotal">
-                            <td colspan="8" class="text-right"><b>Subtotal</b></td>
+                            <td colspan="9" class="text-right"><b>Subtotal</b></td>
                             <td class="text-center">
                                 <input type="text" class="form-control sub-total-item-display" readonly>
                             </td>
@@ -278,6 +296,13 @@
                     </div>
                 </div>
                 <div class="form-group row">
+                    <label class="col-sm-4 col-form-label">Biaya Lain</label>
+                    <div class="col-sm-8">
+                        <input type="text" class="form-control" id="other_cost_idr" name="other_cost_idr"
+                            value="{{ optional($result->do_detail_cost)->other_cost_idr ?? 0 }}">
+                    </div>
+                </div>
+                <div class="form-group row">
                     <label class="col-sm-4 col-form-label">Grand Total</label>
                     <div class="col-sm-8">
                         <input type="text" class="form-control" id="grand_total_idr" readonly>
@@ -327,13 +352,15 @@
             <input type="hidden" name="items[__INDEX__][qty_asal]" value="0">
             <input type="hidden" name="items[__INDEX__][price]" class="hidden-price-usd" value="0">
             <input type="hidden" name="items[__INDEX__][usd_disc]" class="hidden-disc-usd" value="0">
+            <input type="hidden" name="items[__INDEX__][percent_disc]" value="0">
         </td>
         <td>0 <span class="text-muted">(baru)</span></td>
-        <td><input type="number" step="any" class="form-control count" data-index="__INDEX__" name="items[__INDEX__][qty]" value="1" required></td>
+        <td><input type="number" step="any" class="form-control text-center count" data-index="__INDEX__" name="items[__INDEX__][qty]" value="1" required></td>
         <td><input type="text" class="form-control text-center price-usd-input" data-index="__INDEX__" value="0.00"></td>
+        <td class="text-center"><input class="form-check-input" type="checkbox" disabled></td>
         <td><input type="text" class="form-control text-center" readonly value="-"></td>
-        <td><input type="text" class="form-control text-center disc-usd-input" data-index="__INDEX__" value="0.00"></td>
-        <td><input type="text" class="form-control" name="items[__INDEX__][total]" readonly></td>
+        <td><input type="text" class="form-control text-center disc-usd-input count-disc" data-index="__INDEX__" value="0.00"></td>
+        <td><input type="text" class="form-control text-center" name="items[__INDEX__][total]" readonly></td>
     </tr>
 </template>
 
@@ -348,6 +375,9 @@
 <script type="text/javascript">
 $(document).ready(function () {
     var rowIndex = {{ count($result->do_detail) }};
+
+    // Samakan create_lanjutan: aktifkan select2 untuk Sales Senior / Sales / Rekening / Disc Cash
+    $('.js-select2').select2();
 
     // Hide loading overlay
     setTimeout(function () {
@@ -384,17 +414,36 @@ $(document).ready(function () {
       return parseFloat(String(val).split('.').join('')) || 0;
     }
 
+    // Harga/disc USD memakai koma desimal (cth "49,50"): titik ribuan dibuang,
+    // koma jadi titik desimal. Sama dengan parseCurrency di backend.
+    function parseUsd(val) {
+      if (val === null || val === undefined || val === '') return 0;
+      var s = String(val).replace(/\./g, '').replace(',', '.');
+      var n = parseFloat(s);
+      return isNaN(n) ? 0 : n;
+    }
+
+    function formatUsd(inputValue) {
+      var clean = String(inputValue).replace(/[^\d,]/g, '');
+      var parts = clean.split(',');
+      var intPart = (parts[0] || '').replace(/^0+(?=\d)/, '');
+      var decPart = (parts.slice(1).join('')).substring(0, 2);
+      if (intPart === '') intPart = '0';
+      intPart = intPart.replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+      return decPart.length ? intPart + ',' + decPart : intPart;
+    }
+
     // ==========================================
     // AUTO-FORMAT INPUT
     // ==========================================
     $(document).on('input', '.price-usd-input, .disc-usd-input', function () {
       var cursorFromEnd = this.value.length - this.selectionStart;
-      this.value = formatInputKurs(this.value);
+      this.value = formatUsd(this.value);
       var newPos = this.value.length - cursorFromEnd;
       if (this.selectionStart) this.setSelectionRange(newPos, newPos);
     });
 
-    $(document).on('input', '#disc_tambahan_idr, #voucher_idr, #delivery_cost_idr', function () {
+    $(document).on('input', '#disc_tambahan_idr, #voucher_idr, #delivery_cost_idr, #other_cost_idr', function () {
       var cursorFromEnd = this.value.length - this.selectionStart;
       this.value = formatInputKurs(this.value);
       var newPos = this.value.length - cursorFromEnd;
@@ -419,16 +468,18 @@ $(document).ready(function () {
     function count_per_item(index) {
       let $row = $('tr.index' + index);
       let qty = parseFloat($row.find('input[name="items[' + index + '][qty]"]').val()) || 0;
-      let priceUsd = parseFormattedNumber($row.find('.price-usd-input').val());
-      let discUsd = parseFormattedNumber($row.find('.disc-usd-input').val());
+      let priceUsd = parseUsd($row.find('.price-usd-input').val());
+      let discUsd = parseUsd($row.find('.disc-usd-input').val());
+      let pctDisc = parseFloat($row.find('input[name="items[' + index + '][percent_disc]"]').val()) || 0;
       let kurs = parseFloat($('#idr_rate').val()) || 0;
 
       // Sync ke hidden field
       $row.find('.hidden-price-usd').val(priceUsd);
       $row.find('.hidden-disc-usd').val(discUsd);
 
-      // Hitung total dalam IDR
-      let sub_total_usd = (priceUsd - discUsd) * qty;
+      // Rumus sama dengan calculateTotals backend (termasuk percent_disc)
+      let totalDiscItem = (discUsd + ((priceUsd - discUsd) * (pctDisc / 100))) * qty;
+      let sub_total_usd = (qty * priceUsd) - totalDiscItem;
       let total_idr = sub_total_usd * kurs;
       if (isNaN(total_idr)) total_idr = 0;
 
@@ -509,6 +560,23 @@ $(document).ready(function () {
     $('#disc_kemasan_percent').on('keyup change input', hitungDiscKemasan);
     $('#btn_call').on('click', hitungGrandTotal);
 
+    // Samakan create_lanjutan.blade.php: Disc Cash global set massal Disc USD,
+    // kecuali produk Free (price 0 & disc terkunci).
+    $('.base_disc').on('change', function () {
+        var baseDisc = $(this).val();
+        $('tbody tr.row-item').each(function () {
+            var idx = $(this).data('index');
+            var isFree = $(this).find('.free-count').is(':checked');
+            if (isFree) {
+                $(this).find('.disc-usd-input').val('0');
+            } else {
+                $(this).find('.disc-usd-input').val(baseDisc);
+            }
+            count_per_item(idx);
+        });
+        hitungDiscAgen();
+    });
+
     // Load awal
     $('tbody tr.row-item').each(function () {
       count_per_item($(this).data('index'));
@@ -536,9 +604,11 @@ $(document).ready(function () {
             placeholder: 'Cari produk...'
         }).on('select2:select', function (e) {
             $row.find('.input-product-id').val(e.params.data.id);
-            // Set harga dari produk yang dipilih
-            let selectedPrice = e.params.data.price || 0;
-            $row.find('.price-usd-input').val(parseFloat(selectedPrice).toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, '.'));
+            // Set harga dari produk yang dipilih (format Indonesia: ribuan titik, desimal koma)
+            let selectedPrice = parseFloat(e.params.data.price) || 0;
+            let intPart = String(Math.floor(selectedPrice)).replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+            let decPart = (selectedPrice % 1).toFixed(2).split('.')[1];
+            $row.find('.price-usd-input').val(intPart + ',' + decPart);
         });
 
         rowIndex++;

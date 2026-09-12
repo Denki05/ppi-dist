@@ -10,6 +10,7 @@ class ProductFinance extends Model
     use SoftDeletes;
 
     protected $fillable = [
+        'product_pack_id',
         'brand_name',
         'code_product', 
         'name_product', 
@@ -32,6 +33,7 @@ class ProductFinance extends Model
 
     protected $table = 'master_product_finance';
     public $incrementing = false;
+    protected $keyType = 'string';
 
     const STATUS = [
         'DELETED' => 0,
@@ -63,9 +65,16 @@ class ProductFinance extends Model
         return $this->belongsTo('App\Entities\Master\Packaging', 'packaging_id');
     }
 
+    public function productPack()
+    {
+        return $this->belongsTo('App\Entities\Master\ProductPack', 'product_pack_id', 'id');
+    }
+
     public function child_product()
     {
-        return $this->belongsTo('App\Entities\Master\ProductPack', 'id');
+        // Legacy: id lama = packId-mitraId, pertahankan untuk kompatibilitas.
+        // Untuk logic baru gunakan productPack() / product_pack_id + mitra_id.
+        return $this->belongsTo('App\Entities\Master\ProductPack', 'product_pack_id', 'id');
     }
 
     public function status()

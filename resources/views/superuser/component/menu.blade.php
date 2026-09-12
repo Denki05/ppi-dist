@@ -753,39 +753,67 @@
 
         const items = (notifData.code || 'No code').split(',');
 
+        // Klik lonceng selalu lewat rute baca universal (GET): tandai dibaca +
+        // redirect sesuai tipe. (Rute POST lama hanya untuk form, tidak bisa di-GET.)
+        const readUrl = '{{ route('superuser.penjualan.notification.read', ['id' => '__NID__']) }}'.replace('__NID__', notification.id);
+
         let config = {
             title: 'Notification',
             icon: 'bi-bell',
-            url: '#'
+            url: readUrl
         };
 
         if (notification.type.includes('DoNotification')) {
             config = {
                 title: 'Delivery Order',
                 icon: 'bi-truck',
-                url: `/superuser/penjualan/notification/mark_as_read_do/${notification.id}/${notifData.id}`
+                url: readUrl
             };
         }
         else if (notification.type.includes('SoNotification')) {
             config = {
                 title: 'Sales Order',
                 icon: 'bi-cart',
-                url: `/superuser/penjualan/notification/mark_as_read_so/${notification.id}/${notifData.id}`
+                url: readUrl
             };
         }
         else if (notification.type.includes('PayableNotification')) {
             config = {
                 title: 'Payment',
                 icon: 'bi-credit-card',
-                url: `/superuser/penjualan/notification/mark_as_read_payable/${notification.id}`
+                url: readUrl
             };
         }
         else if (notification.type.includes('ReceivingNotification')) {
             config = {
                 title: 'Receiving',
                 icon: 'bi-box-seam',
-                url: `/superuser/penjualan/notification/mark_as_read_only/${notification.id}`
+                url: readUrl
             };
+        }
+        else if (notification.type.includes('InternalRevisionOtpNotification')) {
+            // OTP revisi internal: tampil menonjol dengan kode besar agar tidak
+            // tenggelam di antara notifikasi lain. Klik -> daftar revisi.
+            return `
+            <div class="notification-item unread" data-url="${readUrl}" style="background:#fff8e1;border-left:4px solid #fcc419;">
+                <div class="d-flex align-items-start gap-2">
+                    <i class="bi bi-key fs-5 text-warning"></i>
+                    <div class="flex-grow-1">
+                        <div class="notification-title">
+                            OTP Revisi Internal
+                        </div>
+                        <div class="text-center my-1" style="font-size:1.6em;font-weight:800;letter-spacing:6px;color:#e67700;">
+                            ${notifData.otp ?? '-'}
+                        </div>
+                        <div class="notification-text">
+                            ${notifData.message ?? ''}
+                        </div>
+                        <div class="notification-time">
+                            ${new Date(notification.created_at).toLocaleString()}
+                        </div>
+                    </div>
+                </div>
+            </div>`;
         }
 
         return items.map(item => `
@@ -836,6 +864,13 @@
             updateBadge(response.notifCount);
 
             const notifications = response.notifications || [];
+
+            // Notifikasi OTP selalu di urutan paling atas supaya tidak tertutup notifikasi lain.
+            notifications.sort(function (a, b) {
+                const aOtp = (a.type || '').includes('InternalRevisionOtp') ? 0 : 1;
+                const bOtp = (b.type || '').includes('InternalRevisionOtp') ? 0 : 1;
+                return aOtp - bOtp;
+            });
 
             if (!notifications.length) {
                 $('#notifList').html(`

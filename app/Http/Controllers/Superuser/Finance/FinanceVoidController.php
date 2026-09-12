@@ -137,6 +137,16 @@ class FinanceVoidController extends Controller
             }
 
             // ======================================================
+            // 🔴 GUARD PENTING: tolak kalau revisi internal sedang pending
+            // ======================================================
+            if (!empty($packing->internal_revision_status) && (int) $packing->internal_revision_status === 1) {
+                return response()->json([
+                    'status' => 'error',
+                    'message' => 'DO ini sedang dalam pengajuan revisi internal. Tolak/selesaikan revisi tersebut dulu sebelum approve void.',
+                ]);
+            }
+
+            // ======================================================
             // 🔴 GUARD PENTING: tolak kalau invoice sudah ada pembayaran
             // ======================================================
             if ($invoicing) {

@@ -1457,11 +1457,18 @@ class PackingOrderController extends Controller
         $do = PackingOrder::where('id',$do_id)->first();
         $result = PackingOrderDetail::where('do_id',$do_id)->first();
 
+        // Pakai kurs BARU dari parameter (bukan $do->idr_rate dari DB) karena
+        // update() memanggil fungsi ini SEBELUM menyimpan kurs baru.
+        $rate = (float) $idr_rate;
+        if ($rate <= 0) {
+            $rate = (float) $do->idr_rate;
+        }
+
         $check_po = PackingOrderItem::where('do_id',$result->do_id)->get();
         $idr_total = 0;
 
         foreach ($check_po as $key => $row) {
-            $idr_total += ceil(((($row->price * $do->idr_rate) * $row->qty ) - ($row->total_disc * $do->idr_rate))); 
+            $idr_total += ceil(((($row->price * $rate) * $row->qty ) - ($row->total_disc * $rate)));
         }
 
         $discount_1 = floatval($result->discount_1) / 100;
@@ -1818,6 +1825,15 @@ class PackingOrderController extends Controller
                 return response()->json([
                     'status' => 'error',
                     'message' => 'DO ini sudah pernah diajukan void sebelumnya.',
+                ]);
+            }
+
+            // Guard dua arah dengan revisi internal: DO yang sedang pending revisi
+            // (invoice di-hold) tidak boleh diajukan void bersamaan.
+            if (!empty($packing->internal_revision_status) && (int) $packing->internal_revision_status === 1) {
+                return response()->json([
+                    'status' => 'error',
+                    'message' => 'DO ini sedang dalam pengajuan revisi internal. Selesaikan atau tolak revisi tersebut sebelum mengajukan void.',
                 ]);
             }
 

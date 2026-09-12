@@ -63,7 +63,16 @@ class InternalRevisionController extends Controller
      */
     public function create($do_id)
     {
-        $do = PackingOrder::with(['do_detail.product_pack', 'do_detail_cost', 'so', 'member'])
+        $do = PackingOrder::with([
+                'do_detail.product_pack.warehouse',
+                'do_detail.product_pack.packaging',
+                'do_detail.so_item',
+                'do_detail_cost',
+                'so.member',
+                'so.customer',
+                'member',
+                'customer',
+            ])
             ->findOrFail($do_id);
 
         if (!in_array((int) $do->status, [5, 6])) {
@@ -116,9 +125,10 @@ class InternalRevisionController extends Controller
                 'request_reason' => 'required|string|min:10',
                 'items' => 'required|array|min:1',
                 'items.*.product_packaging_id' => 'required|string',
-                'items.*.qty' => 'required',
-                'items.*.price' => 'required',
-                'sales_senior_id' => 'required|integer',
+                'items.*.qty' => 'required|numeric|gt:0',
+                'items.*.price' => 'required|numeric|min:0',
+                'items.*.usd_disc' => 'nullable|numeric|min:0',
+                'items.*.percent_disc' => 'nullable|numeric|min:0|max:100',
                 'sales_id' => 'required|integer',
                 'rekening_id' => 'required|integer',
             ]);
@@ -204,7 +214,9 @@ class InternalRevisionController extends Controller
                 'voucher_idr' => $this->parseCurrency($request->voucher_idr ?? 0),
                 'delivery_cost_idr' => $this->parseCurrency($request->delivery_cost_idr ?? 0),
                 'other_cost_idr' => $this->parseCurrency($request->other_cost_idr ?? 0),
-                'sales_senior_id' => $request->sales_senior_id ?? $before['sales_senior_id'],
+                // sales_senior TIDAK dikelola form revisi -> kunci ke nilai before
+                // supaya tidak bisa diubah diam-diam via request manual.
+                'sales_senior_id' => $before['sales_senior_id'],
                 'sales_id' => $request->sales_id ?? $before['sales_id'],
                 'rekening_id' => $request->rekening_id ?? $before['rekening_id'],
                 // grand_total_idr sengaja TIDAK dihitung di sini - akan dihitung ULANG
@@ -434,6 +446,9 @@ class InternalRevisionController extends Controller
 
         Auth::user()->notify(new \App\Notifications\InternalRevisionOtpNotification($revision, $otp));
 
+        // OTP ditampilkan di modal approver (penerima = pengklik = approver sah yang
+        // lolos cek role + bukan pengaju) supaya tidak perlu keluar modal cek lonceng.
+        // Salinan tetap tersimpan di notifikasi database sebagai cadangan.
         return response()->json([
             'status' => 'success',
             'message' => 'Kode OTP telah dikirim. Silakan masukkan kode di bawah ini.',
@@ -476,7 +491,29 @@ class InternalRevisionController extends Controller
 
             $do = PackingOrder::where('id', $revision->do_id)->lockForUpdate()->first();
             if (!$do || (int) $do->status !== (int) $revision->origin_status) {
-                throw new \Exception('Status DO sudah berubah sejak pengajuan dibuat, tidak bisa diapprove. Silakan reject dan ajukan ulang.');
+                // Status berubah di tengah pending (misal void menang / update resi 5->6):
+                // jangan biarkan revisi yatim mengunci DO selamanya. Bersihkan dengan
+                // end-state yang SAMA seperti reject manual, lalu kembalikan error
+                // yang jelas supaya user bisa ajukan ulang bila masih perlu.
+                $revision->update([
+                    'status' => 3,
+                    'approved_by' => Auth::id(),
+                    'approved_at' => now(),
+                    'approval_reason' => 'Otomatis: status DO berubah sejak pengajuan dibuat.',
+                    'otp_hash' => null,
+                    'otp_expires_at' => null,
+                ]);
+                PackingOrder::where('id', $revision->do_id)->update(['internal_revision_status' => null]);
+                Invoicing::where('do_id', $revision->do_id)->update(['status' => Invoicing::STATUS['ACTIVE']]);
+                DB::commit();
+                return response()->json(['status' => 'error', 'message' => 'Status DO sudah berubah sejak pengajuan dibuat. Pengajuan ini otomatis dibatalkan, silakan ajukan ulang bila masih perlu.']);
+            }
+
+            // Guard: invoice yang sudah ada pembayaran tidak boleh diubah nilainya
+            // (konsisten dengan guard void di FinanceVoidController).
+            $invCheck = Invoicing::where('do_id', $do->id)->first();
+            if ($invCheck && \App\Entities\Finance\PayableDetail::where('invoice_id', $invCheck->id)->exists()) {
+                throw new \Exception('Invoice ini sudah punya catatan pembayaran (Payable), revisi tidak bisa diapprove. Koordinasikan dulu dengan tim AR/Payable.');
             }
 
             $detail = $revision->revision_detail;
@@ -707,6 +744,33 @@ class InternalRevisionController extends Controller
         $before['items'] = $resolveItems($before['items'], $before['idr_rate']);
         $after['items'] = $resolveItems($after['items'], $after['idr_rate']);
 
+        // Resolve nama Sales Senior / Sales / Rekening untuk before & after,
+        // supaya modal detail bisa tampilkan diff seperti create_lanjutan.
+        $salesSeniorMap = array_flip(SalesOrder::SALES_SENIOR);
+        $salesMap = array_flip(SalesOrder::SALES);
+        $rekeningMap = DB::table('rekening')->pluck('name', 'id');
+        $rekeningFullMap = DB::table('rekening')->get()->keyBy('id');
+
+        $resolvePerson = function ($beforeId, $afterId, $map) {
+            return [
+                'before_id' => $beforeId,
+                'after_id' => $afterId,
+                'before_name' => $map[$beforeId] ?? ($beforeId ? '#'.$beforeId : '-'),
+                'after_name' => $map[$afterId] ?? ($afterId ? '#'.$afterId : '-'),
+            ];
+        };
+
+        $rekeningName = function ($id) use ($rekeningFullMap) {
+            if (empty($id) || !isset($rekeningFullMap[$id])) {
+                return $id ? '#'.$id : '-';
+            }
+            $r = $rekeningFullMap[$id];
+            return $r->name . ' - ' . $r->number_card;
+        };
+
+        $salesSenior = $resolvePerson($before['sales_senior_id'] ?? null, $after['sales_senior_id'] ?? null, $salesSeniorMap);
+        $sales = $resolvePerson($before['sales_id'] ?? null, $after['sales_id'] ?? null, $salesMap);
+
         // Total akhir before/after, biar approver bisa langsung banding sama invoice tercetak
         try {
             $before['calculated_totals'] = $this->calculateTotals(array_merge($before, ['items' => $before['items']->toArray()]));
@@ -731,6 +795,14 @@ class InternalRevisionController extends Controller
             'approved_at' => $revision->approved_at ? $revision->approved_at->format('d/m/Y H:i') : null,
             'before' => $before,
             'after' => $after,
+            'sales_senior' => $salesSenior,
+            'sales' => $sales,
+            'rekening' => [
+                'before_id' => $before['rekening_id'] ?? null,
+                'after_id' => $after['rekening_id'] ?? null,
+                'before_name' => $rekeningName($before['rekening_id'] ?? null),
+                'after_name' => $rekeningName($after['rekening_id'] ?? null),
+            ],
         ]);
     }
 }

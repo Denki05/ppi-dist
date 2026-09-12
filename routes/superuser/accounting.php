@@ -13,6 +13,8 @@ Route::group([
         Route::get('/export', 'ProductFinanceController@export')->name('export');
         Route::get('/get_product', 'ProductFinanceController@get_product')->name('get_product');
         Route::post('/updatePrice', 'ProductFinanceController@updatePrice')->name('updatePrice');
+        Route::get('/history/{id}', 'ProductFinanceController@history')->name('history')->where('id', '.*');
+        Route::post('/toggleStatus', 'ProductFinanceController@toggleStatus')->name('toggleStatus');
     });
     Route::resource('product_finance', 'ProductFinanceController');
 

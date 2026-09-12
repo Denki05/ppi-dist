@@ -39,6 +39,10 @@
            class="btn {{ $typeFilter === 'App\\Notifications\\PayableNotification' ? 'btn-secondary' : 'btn-outline-secondary' }}">
             <i class="fa fa-credit-card"></i> Payment
         </a>
+        <a href="{{ route('superuser.penjualan.notification.index', ['type' => 'App\\Notifications\\InternalRevisionOtpNotification']) }}" 
+           class="btn {{ $typeFilter === 'App\\Notifications\\InternalRevisionOtpNotification' ? 'btn-warning' : 'btn-outline-warning' }}">
+            <i class="fa fa-key"></i> OTP Revisi
+        </a>
     </div>
 </div>
 
@@ -53,6 +57,7 @@
                     str_contains($notif->type ?? '', 'DoNotification') => ['DO', 'fa-truck', 'info'],
                     str_contains($notif->type ?? '', 'SoNotification') => ['SO', 'fa-shopping-cart', 'success'],
                     str_contains($notif->type ?? '', 'PayableNotification') => ['Payment', 'fa-credit-card', 'secondary'],
+                    str_contains($notif->type ?? '', 'InternalRevisionOtp') => ['OTP Revisi', 'fa-key', 'warning'],
                     default => ['Notif', 'fa-bell', 'primary'],
                 };
             @endphp
@@ -78,6 +83,13 @@
                         <small class="text-muted">{{ \Carbon\Carbon::parse($notif->created_at)->diffForHumans() }}</small>
                     </div>
 
+                    @if(str_contains($notif->type ?? '', 'InternalRevisionOtp'))
+                        <!-- OTP Revisi: kode besar + pesan, tidak tenggelam -->
+                        <div class="mt-1 p-2 rounded" style="background:#fff8e1;border:1px dashed #fcc419;max-width:420px;">
+                            <div style="font-size:1.5em;font-weight:800;letter-spacing:6px;color:#e67700;">{{ $data['otp'] ?? '-' }}</div>
+                            <div class="text-muted" style="font-size:12px;">{{ $data['message'] ?? '' }}</div>
+                        </div>
+                    @else
                     <!-- Regular Notification -->
                     <div class="mt-1">
                         @if(isset($data['code']))
@@ -90,6 +102,7 @@
                             <span class="text-muted">({{ $data['customer_kota'] }})</span>
                         @endif
                     </div>
+                    @endif
                     <div class="mt-1">
                         @if(str_contains($notif->type ?? '', 'DoNotification'))
                             @if(isset($data['status']) && $data['status'] == 2)
@@ -107,6 +120,11 @@
                             <a href="{{ route('superuser.finance.payable.index') }}" 
                                class="text-primary" style="font-size:13px;">
                                 Lihat Payable →
+                            </a>
+                        @elseif(str_contains($notif->type ?? '', 'InternalRevisionOtp'))
+                            <a href="{{ route('superuser.penjualan.internal_revision.index') }}" 
+                               class="text-primary" style="font-size:13px;">
+                                Ke Daftar Revisi →
                             </a>
                         @endif
                     </div>
@@ -128,6 +146,14 @@
                             </form>
                         @elseif(str_contains($notif->type ?? '', 'PayableNotification'))
                             <form action="{{ route('superuser.penjualan.notification.mark_as_read_payable', $notif->id) }}" method="POST" class="d-inline">
+                                @csrf
+                                <button type="submit" class="btn btn-xs btn-outline-secondary">
+                                    <i class="fa fa-check"></i> Dibaca
+                                </button>
+                            </form>
+                        @else
+                            {{-- Fallback generik (OTP revisi, receiving, tipe baru): cukup tandai dibaca --}}
+                            <form action="{{ route('superuser.penjualan.notification.mark_as_read_only', $notif->id) }}" method="POST" class="d-inline">
                                 @csrf
                                 <button type="submit" class="btn btn-xs btn-outline-secondary">
                                     <i class="fa fa-check"></i> Dibaca

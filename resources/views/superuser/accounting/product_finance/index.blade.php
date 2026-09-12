@@ -132,9 +132,6 @@
                 <form action="{{ route('superuser.accounting.product_finance.import_template') }}" method="GET">
                   <button type="submit" class="btn btn-success">Export Template</button>
                 </form>
-                <form action="{{ route('superuser.accounting.product_finance.export') }}" method="GET">
-                  <button type="submit" class="btn btn-info">Export</button>
-                </form>
               </div>
             </div>
         </div>

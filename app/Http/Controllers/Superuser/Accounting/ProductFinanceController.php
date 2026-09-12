@@ -2,48 +2,48 @@
 
 namespace App\Http\Controllers\Superuser\Accounting;
 
-use Illuminate\Http\Request;
-use App\Http\Controllers\Controller;
-use App\Entities\Master\ProductFinance;
-use App\Entities\Master\Mitra;
-use App\Entities\Accounting\PriceLogFinance;
-use App\Entities\Master\Product;
-use App\Entities\Master\ProductPack;
-use App\Entities\Master\Packaging;
-use App\Entities\Master\BrandLokal;
-use App\Entities\Setting\UserMenu;
-use App\Repositories\CodeRepo;
-use App\Entities\Penjualan\PackingOrder;
-use App\Exports\Finance\ProductFinanceExport;
-use App\Imports\Accounting\ProductFinanceImport;
-use App\Exports\Accounting\ProductFinanceImportTemplate;
 use App\DataTables\Accounting\ProductFinanceTable;
-use DB;
+use App\Exports\Accounting\ProductFinanceImportTemplate;
+use App\Exports\Finance\ProductFinanceExport;
+use App\Http\Controllers\Controller;
+use App\Imports\Accounting\ProductFinanceImport;
+use App\Services\Accounting\ProductFinanceService;
+use Illuminate\Http\Request;
 use Auth;
-use PDF;
-use Carbon\Carbon;
 use Validator;
 use Excel;
 
 class ProductFinanceController extends Controller
 {
+    protected $view = 'superuser.accounting.product_finance.';
+    protected $route = 'superuser.accounting.product_finance';
+    protected $service;
+    protected $access;
 
-    public function __construct(){
-        $this->view = "superuser.accounting.product_finance.";
-        $this->route = "superuser.accounting.product_finance";
-        $this->user_menu = new UserMenu;
-        $this->access = null;
+    public function __construct(ProductFinanceService $service)
+    {
+        $this->service = $service;
         $this->middleware(function ($request, $next) {
             $user = Auth::user();
-            $access = $this->user_menu;
-            $access = $access->where('user_id',$user->id)
-                             ->whereHas('menu',function($query2){
-                                $query2->where('route_name',$this->route);
-                             })
-                             ->first();
-            $this->access = $access;
+            $this->access = \App\Entities\Setting\UserMenu::where('user_id', $user->id)
+                ->whereHas('menu', function ($q) {
+                    $q->where('route_name', $this->route);
+                })
+                ->first();
+
             return $next($request);
         });
+    }
+
+    private function needAccess(string $ability)
+    {
+        if (Auth::user()->is_superuser == 0) {
+            if (empty($this->access) || empty($this->access->user) || $this->access->{$ability} == 0) {
+                return redirect()->route('superuser.index')->with('error', 'Anda tidak punya akses untuk membuka menu terkait');
+            }
+        }
+
+        return null;
     }
 
     public function json(Request $request, ProductFinanceTable $datatable)
@@ -51,240 +51,136 @@ class ProductFinanceController extends Controller
         return $datatable->build($request);
     }
 
-    
-    public function index(Request $request)
-    {   
-        // Access
-        if(Auth::user()->is_superuser == 0){
-            if(empty($this->access) || empty($this->access->user) || $this->access->can_read == 0){
-                return redirect()->route('superuser.index')->with('error','Anda tidak punya akses untuk membuka menu terkait');
-            }
-        }
-
-        $data['mitra'] = Mitra::where('status', Mitra::STATUS['ACTIVE'])->get();
-
-        return view($this->view."index", $data);
-    }
-
-    
-    public function create(Request $request)
+    public function index()
     {
-        // Access control
-        if (Auth::user()->is_superuser == 0) {
-            if (empty($this->access) || empty($this->access->user) || $this->access->can_create == 0) {
-                return redirect()->route('superuser.index')->with('error', 'Anda tidak punya akses untuk membuka menu terkait');
-            }
+        if ($deny = $this->needAccess('can_read')) {
+            return $deny;
         }
 
-        $mitra = Mitra::where('status', Mitra::STATUS['ACTIVE'])->get();
-        $kemasan = Packaging::get();
-        $brand = BrandLokal::get();
-
-        
-        $data = [
-            'mitra' => $mitra,
-            'kemasan' => $kemasan,
-            'brand' => $brand,
-        ];
-
-        return view($this->view . "create", $data);
+        return view($this->view . 'index', $this->service->indexData());
     }
 
-   
+    public function create()
+    {
+        if ($deny = $this->needAccess('can_create')) {
+            return $deny;
+        }
+
+        return view($this->view . 'create', $this->service->createData());
+    }
+
     public function store(Request $request)
     {
-        // dd($request->product);
-        if ($request->ajax()) {
-            DB::beginTransaction();
+        if (! $request->ajax()) {
+            abort(404);
+        }
 
-            try {
-                // Validasi Input
-                $validator = Validator::make($request->all(), [
-                    'brand' => 'required|string',
-                    'product' => 'required|string|exists:master_products_packaging,id',
-                    'packaging_code' => 'required|string',
-                    'mitra_id' => 'required|integer|exists:master_mitra,id',
-                    'harga_beli_satuan' => 'required|numeric',
-                    'harga_jual_satuan' => 'required|numeric',
-                ]);
+        $validator = Validator::make($request->all(), [
+            'brand' => 'required|string|max:225',
+            'product' => 'required|string|max:50|exists:master_products_packaging,id',
+            'packaging_code' => 'required|integer|exists:master_packaging,id',
+            'mitra_id' => 'required|integer|exists:master_mitra,id',
+            'harga_beli_satuan' => 'required|numeric|min:0|max:999999999999.99',
+            'harga_jual_satuan' => 'required|numeric|min:0|max:999999999999.99',
+        ]);
 
-                // Jika validasi gagal, kirimkan response error
-                if ($validator->fails()) {
-                    $response['notification'] = [
-                        'alert' => 'block',
-                        'type' => 'alert-danger',
-                        'header' => 'Error',
-                        'content' => $validator->errors()->all(),
-                    ];
-      
-                    return $this->response(400, $response);
-                }
-
-                // Ambil data produk berdasarkan ID yang dipilih dari dropdown
-                $product_pack = ProductPack::where('id', $request->product)->first();
-                if (!$product_pack) {
-                    $response['notification'] = [
-                        'alert' => 'block',
-                        'type' => 'alert-danger',
-                        'header' => 'Error',
-                        'content' => $validator->errors()->all(),
-                    ];
-      
-                    return $this->response(400, $response);
-                }
-
-
-                // Cek apakah master_product ada
-                $master_product = ProductPack::where('id', $product_pack->id)->first();
-                if (!$master_product) {
-                    return response()->json([
-                        'status' => 400,
-                        'errors' => 'Master Product belum ada, silahkan input dahulu!'
-                    ], 400);
-                }
-
-                // Cek apakah produk finance sudah ada
-                $existing_product_finance = ProductFinance::where('id', $request->product)->first();
-                if ($existing_product_finance) {
-                    return response()->json([
-                        'status' => 400,
-                        'errors' => 'Product Finance sudah ada!'
-                    ], 400);
-                }
-
-                // Simpan ke tabel ProductFinance
-                $product_finance = new ProductFinance();
-                $product_finance->id = $request->product;
-                $product_finance->brand_name = $request->brand;
-                $product_finance->code_product = $product_pack->code;
-                $product_finance->name_product = $product_pack->name;
-                $product_finance->product_id = $master_product->product_id;
-                $product_finance->packaging_id = $request->packaging_code;
-                $product_finance->mitra_id = $request->mitra_id;
-                $product_finance->selling_price_usd_unit = $request->harga_jual_satuan;
-                $product_finance->buying_price_usd_unit = $request->harga_beli_satuan;
-                $product_finance->status = 1;
-                $product_finance->save();
-
-                // Commit transaksi
-                DB::commit();
-
-                $response['notification'] = [
-                    'alert' => 'notify',
-                    'type' => 'success',
-                    'content' => 'Success',
-                ];
-
-                $response['redirect_to'] = route('superuser.accounting.product_finance.index');
-
-                return $this->response(200, $response);
-
-            } catch (\Exception $e) {
-                DB::rollback();
-
-                $response['notification'] = [
+        if ($validator->fails()) {
+            return $this->response(400, [
+                'notification' => [
                     'alert' => 'block',
                     'type' => 'alert-danger',
                     'header' => 'Error',
-                    'content' => "Internal Server Error",
-                ];
-
-                return $this->response(400, $response);
-            }
+                    'content' => $validator->errors()->all(),
+                ],
+            ]);
         }
+
+        $result = $this->service->store($request->only([
+            'brand', 'product', 'packaging_code', 'mitra_id', 'harga_beli_satuan', 'harga_jual_satuan',
+        ]));
+
+        if ($result['status'] !== 'ok') {
+            $message = $result['errors'][0] ?? 'Gagal menyimpan data.';
+
+            if (in_array($result['status'], ['not_found', 'exists'])) {
+                return response()->json(['status' => 400, 'errors' => $message], 400);
+            }
+
+            return $this->response(400, [
+                'notification' => ['alert' => 'block', 'type' => 'alert-danger', 'header' => 'Error', 'content' => $message],
+            ]);
+        }
+
+        return $this->response(200, [
+            'notification' => ['alert' => 'notify', 'type' => 'success', 'content' => 'Success'],
+            'redirect_to' => route('superuser.accounting.product_finance.index'),
+        ]);
     }
 
-    public function show(Request $request)
+    public function show()
     {
-
     }
 
-    /**
-     * Show the form for editing the specified resource.
-     *
-     * @param  int  $id
-     * @return \Illuminate\Http\Response
-     */
     public function edit($id)
     {
-        //
     }
 
-    /**
-     * Update the specified resource in storage.
-     *
-     * @param  \Illuminate\Http\Request  $request
-     * @param  int  $id
-     * @return \Illuminate\Http\Response
-     */
     public function update(Request $request, $id)
     {
-        //
     }
 
-    /**
-     * Remove the specified resource from storage.
-     *
-     * @param  int  $id
-     * @return \Illuminate\Http\Response
-     */
     public function destroy($id)
     {
-        //
     }
 
-    public function export()
+    public function export(Request $request)
     {
-        $filename = 'master-product-finance' . date('d-m-Y_H-i-s') . '.xlsx';
-        return Excel::download(new ProductFinanceExport, $filename);
+        if ($deny = $this->needAccess('can_read')) {
+            return $deny;
+        }
+
+        $mitraId = $request->input('mitra_id');
+        if ($mitraId !== null && ! ctype_digit((string) $mitraId)) {
+            abort(400, 'Mitra tidak valid.');
+        }
+
+        $suffix = $mitraId ? '-mitra-' . (int) $mitraId : '';
+
+        return Excel::download(
+            new ProductFinanceExport($mitraId),
+            'master-product-finance' . $suffix . '-' . date('d-m-Y_H-i-s') . '.xlsx'
+        );
     }
 
     public function import_template()
     {
-        $filename = 'product-tax-import-template.xlsx';
-        return Excel::download(new ProductFinanceImportTemplate, $filename);
+        return Excel::download(new ProductFinanceImportTemplate, 'product-finance-import-template.xlsx');
     }
 
     public function import(Request $request)
     {
-        // Access
-        if(Auth::user()->is_superuser == 0){
-            if(empty($this->access) || empty($this->access->user) || $this->access->can_create == 0){
-                return redirect()->route('superuser.index')->with('error','Anda tidak punya akses untuk membuka menu terkait');
-            }
+        if ($deny = $this->needAccess('can_create')) {
+            return $deny;
         }
-        
+
         $validator = Validator::make($request->all(), [
-            'import_file' => 'required|file|mimes:xls,xlsx|max:2048',
+            'import_file' => 'required|file|mimes:xls,xlsx|max:5120',
         ]);
 
         if ($validator->fails()) {
             return redirect()->back()->withErrors($validator->errors()->all());
         }
 
-        if ($validator->passes()) {
-            $import = new ProductFinanceImport();
-            Excel::import($import, $request->import_file);
-        
-            return redirect()->back()->with(['collect_success' => $import->success, 'collect_error' => $import->error]);
-        }
+        $import = new ProductFinanceImport();
+        Excel::import($import, $request->file('import_file'));
+
+        return redirect()->back()->with(['collect_success' => $import->success, 'collect_error' => $import->error]);
     }
 
     public function get_product(Request $request)
     {
-        $products = ProductPack::leftJoin('master_products', 'master_products.id', '=', 'master_products_packaging.product_id')
-            ->leftJoin('master_packaging', 'master_packaging.id', '=', 'master_products_packaging.packaging_id')
-            ->select(
-                'master_products_packaging.id', 
-                'master_products_packaging.code', 
-                'master_products_packaging.name', 
-                'master_packaging.id as packaging_id',
-                'master_packaging.pack_name as packaging_name'
-            )
-            ->where('master_products.brand_name', $request->brand_name)
-            ->get(); 
+        $products = $this->service->productsByBrand($request->input('brand_name'));
 
-        // Debugging
         if ($products->isEmpty()) {
             return response()->json(['message' => 'No products found for this brand'], 404);
         }
@@ -294,53 +190,66 @@ class ProductFinanceController extends Controller
 
     public function updatePrice(Request $request)
     {
-        $request->validate([
-            'id' => 'required|exists:master_product_finance,id',
-            'buying_price' => 'required|numeric|min:0',
-            'selling_price' => 'required|numeric|min:0',
+        $validated = $request->validate([
+            'id' => 'required|string|max:50|regex:/^[A-Za-z0-9\/\-.]+$/|exists:master_product_finance,id',
+            'buying_price' => 'required|numeric|min:0|max:999999999999.99',
+            'selling_price' => 'required|numeric|min:0|max:999999999999.99',
         ]);
 
-        DB::beginTransaction(); // Mulai transaksi
+        $result = $this->service->updatePrice(
+            $validated['id'],
+            $validated['buying_price'],
+            $validated['selling_price'],
+            Auth::id()
+        );
 
-        try {
-            // Ambil data harga lama sebelum perubahan
-            $old_price = ProductFinance::find($request->id);
+        $http = $result['status'] === 'ok' ? 200 : ($result['status'] === 'not_found' ? 404 : 500);
 
-            if (!$old_price) {
-                return response()->json([
-                    'status' => 404,
-                    'message' => 'Produk tidak ditemukan!'
-                ], 404);
-            }
+        return response()->json([
+            'status' => $http,
+            'message' => $result['message'],
+        ], $http);
+    }
 
-            // Perbarui harga produk
-            $product = ProductFinance::findOrFail($request->id);
-            $product->buying_price_usd_unit = $request->buying_price;
-            $product->selling_price_usd_unit = $request->selling_price;
-            $product->save(); // Simpan perubahan harga
-
-            // Simpan log harga sebelum perubahan
-            $price_log = new PriceLogFinance;
-            $price_log->product_finance_id = $product->id;
-            $price_log->selling_price_usd_unit = $old_price->selling_price_usd_unit;
-            $price_log->buying_price_usd_unit = $old_price->buying_price_usd_unit;
-            $price_log->created_by = Auth::id();
-            $price_log->save();
-
-            DB::commit(); // Commit transaksi jika semua berhasil
-
-            return response()->json([
-                'status' => 200,
-                'message' => 'Harga berhasil diperbarui!'
-            ]);
-        } catch (\Exception $e) {
-            DB::rollback(); // Rollback transaksi jika ada error
-
-            return response()->json([
-                'status' => 500,
-                'message' => 'Terjadi kesalahan saat memperbarui harga!',
-                'error' => $e->getMessage()
-            ], 500);
+    public function history($id)
+    {
+        if ($deny = $this->needAccess('can_read')) {
+            return $deny;
         }
+
+        if (! is_string($id) || strlen($id) > 50 || ! preg_match('/^[A-Za-z0-9\/\-.]+$/', $id)) {
+            abort(400, 'ID tidak valid.');
+        }
+
+        $result = $this->service->priceHistory($id);
+
+        if ($result['status'] === 'not_found') {
+            return response()->json(['status' => 404, 'message' => 'Data tidak ditemukan.'], 404);
+        }
+
+        return response()->json(['status' => 200, 'data' => $result]);
+    }
+
+    public function toggleStatus(Request $request)
+    {
+        if ($deny = $this->needAccess('can_create')) {
+            return $deny;
+        }
+
+        $validated = $request->validate([
+            'id' => 'required|string|max:50|regex:/^[A-Za-z0-9\/\-.]+$/|exists:master_product_finance,id',
+        ]);
+
+        $result = $this->service->toggleStatus($validated['id']);
+
+        if ($result['status'] === 'not_found') {
+            return response()->json(['status' => 404, 'message' => 'Data tidak ditemukan.'], 404);
+        }
+
+        return response()->json([
+            'status' => 200,
+            'message' => $result['active'] ? 'Produk diaktifkan.' : 'Produk dinonaktifkan.',
+            'active' => $result['active'],
+        ]);
     }
 }

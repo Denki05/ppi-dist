@@ -580,7 +580,18 @@ class SalesOrderController extends Controller
                     abort(404);
                 }
 
+                // Validasi dulu SEBELUM ada tulisan ke DB, supaya submit invalid
+                // (misal grand total kosong karena kalkulasi JS belum jalan) tidak
+                // menyisakan SO tertutup / DO dengan grand_total 0.
                 $closingService->validateClosingRequest($request, $errors);
+                if ($errors) {
+                    DB::rollBack();
+                    $response['notification'] = [
+                        'alert' => 'block', 'type' => 'alert-danger', 'header' => 'Error', 'content' => $errors,
+                    ];
+                    return $this->response(400, $response);
+                }
+
                 $sales_order = $closingService->prepareClosing($sales_order, $request);
                 $packing_order = $closingService->getOrCreatePackingOrder($sales_order, $request);
 
@@ -597,13 +608,22 @@ class SalesOrderController extends Controller
                     $sales_order, $request->repeater, $packing_order->id, $errors
                 );
 
-                $suffix = ($sales_order->count_rev == 0 && $request->has('keep_old_code')) ? 'Rev' : '';
-                $closingService->createMutasiShowroom($sales_order, $request, $mutasiItems, $suffix);
-
                 if (count($packingOrderItems) == 0) {
-                    DB::rollback();
                     $errors[] = 'Not item sales order are ready';
                 }
+
+                // Ada error item (ID kosong, qty melebihi SO, dsb) -> batalkan SEMUA,
+                // jangan sisakan DO setengah jadi yang bikin warning di logistik.
+                if ($errors) {
+                    DB::rollBack();
+                    $response['notification'] = [
+                        'alert' => 'block', 'type' => 'alert-danger', 'header' => 'Error', 'content' => $errors,
+                    ];
+                    return $this->response(400, $response);
+                }
+
+                $suffix = ($sales_order->count_rev == 0 && $request->has('keep_old_code')) ? 'Rev' : '';
+                $closingService->createMutasiShowroom($sales_order, $request, $mutasiItems, $suffix);
 
                 foreach ($packingOrderItems as $item) {
                     PackingOrderItem::create($item);
@@ -614,18 +634,11 @@ class SalesOrderController extends Controller
 
                 DB::commit();
 
-                if($errors) {
-                    $response['notification'] = [
-                        'alert' => 'block', 'type' => 'alert-danger', 'header' => 'Error', 'content' => $errors,
-                    ];
-                    return $this->response(400, $response);
-                } else {
-                    $response['notification'] = [
-                        'alert' => 'notify', 'type' => 'success', 'content' => 'Success',
-                    ];
-                    $response['redirect_to'] = route('superuser.penjualan.sales_order.index_lanjutan');
-                    return $this->response(200, $response);
-                }
+                $response['notification'] = [
+                    'alert' => 'notify', 'type' => 'success', 'content' => 'Success',
+                ];
+                $response['redirect_to'] = route('superuser.penjualan.sales_order.index_lanjutan');
+                return $this->response(200, $response);
 
             } catch (\Exception $e) {
                 DB::rollback();

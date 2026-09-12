@@ -207,10 +207,21 @@
                 @if($step == 2)
                 <div class="form-group col-md-4">
                   <label for="customer_area">Disc Cash <span class="text-danger">*</span></label>
+                  @php
+                    // Preselect ikut disc item bila seragam (item bisa $2 walau header $result->disc_usd $0),
+                    // fallback ke header seperti sebelumnya. Dropdown ini hanya bulk-setter, tidak auto-ubah saat load.
+                    $baseDiscDefault = $result->disc_usd ?? 0;
+                    if (isset($result->so_detail) && count($result->so_detail) > 0) {
+                        $rowDiscs = collect($result->so_detail)->map(function ($d) { return (float) ($d->disc_usd ?? 0); })->unique()->values();
+                        if ($rowDiscs->count() === 1 && in_array($rowDiscs->first(), [0.0, 2.0, 4.0], true)) {
+                            $baseDiscDefault = $rowDiscs->first();
+                        }
+                    }
+                  @endphp
                   <select class="form-control js-select2 base_disc" id="base_id">
-                    <option value="0" {{ $result->disc_usd == 0 ? 'selected' : '' }}>$0</option>
-                    <option value="2" {{ $result->disc_usd == 2 ? 'selected' : '' }}>$2</option>
-                    <option value="4" {{ $result->disc_usd == 4 ? 'selected' : '' }}>$4</option>
+                    <option value="0" {{ $baseDiscDefault == 0 ? 'selected' : '' }}>$0</option>
+                    <option value="2" {{ $baseDiscDefault == 2 ? 'selected' : '' }}>$2</option>
+                    <option value="4" {{ $baseDiscDefault == 4 ? 'selected' : '' }}>$4</option>
                   </select>
                 </div>
                 @endif

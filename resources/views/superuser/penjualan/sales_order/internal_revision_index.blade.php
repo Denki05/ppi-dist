@@ -16,61 +16,48 @@
 </div>
 @endif
 
-<div class="row mb-30">
-    <div class="col-md-6">
-        <h4 style="font-weight: bold;"><i class="fa fa-history mr-2"></i>REVISI INTERNAL</h4>
-        <!-- <p class="text-muted mb-0" style="font-size:13px;">
-            <span class="badge badge-warning">{{ $stats['pending'] }} Pending</span>
-            <span class="badge badge-success">{{ $stats['approved'] }} Approved</span>
-            <span class="badge badge-danger">{{ $stats['rejected'] }} Rejected</span>
-        </p> -->
-    </div>
-    <div class="col-md-6 text-right">
-        <a href="{{ route('superuser.penjualan.sales_order.index_lanjutan') }}" class="btn bg-gd-cherry border-0 text-white">
-            <i class="fa fa-arrow-left mr-10"></i> Back to SO Lanjutan
-        </a>
-    </div>
-</div>
-
-<!-- Filter Tabs -->
-<div class="mb-3">
+<div class="d-flex flex-wrap align-items-center mb-2" style="gap:10px;">
+    <h4 class="mb-0" style="font-weight:bold;"><i class="fa fa-history mr-2"></i>REVISI INTERNAL</h4>
+    <div class="d-flex flex-wrap align-items-center ml-auto" style="gap:10px;">
+    <a href="{{ route('superuser.penjualan.sales_order.index_lanjutan') }}" class="btn btn-sm bg-gd-cherry border-0 text-white">
+        <i class="fa fa-arrow-left mr-2"></i> Back to SO Lanjutan
+    </a>
     <div class="btn-group btn-group-sm" role="group">
-        <a href="{{ route('superuser.penjualan.internal_revision.index') }}" 
+        <a href="{{ route('superuser.penjualan.internal_revision.index') }}"
            class="btn {{ !$statusFilter ? 'btn-primary' : 'btn-outline-primary' }}">
-            Semua
+            Semua <span class="badge badge-light">{{ $stats['pending'] + $stats['approved'] + $stats['rejected'] }}</span>
         </a>
-        <a href="{{ route('superuser.penjualan.internal_revision.index', ['status' => 1]) }}" 
+        <a href="{{ route('superuser.penjualan.internal_revision.index', ['status' => 1]) }}"
            class="btn {{ $statusFilter == 1 ? 'btn-warning' : 'btn-outline-warning' }}">
             <i class="fa fa-clock-o"></i> Pending
-            @if($stats['pending'] > 0)
-                <span class="badge badge-light">{{ $stats['pending'] }}</span>
-            @endif
+            <span class="badge badge-light">{{ $stats['pending'] }}</span>
         </a>
-        <a href="{{ route('superuser.penjualan.internal_revision.index', ['status' => 2]) }}" 
+        <a href="{{ route('superuser.penjualan.internal_revision.index', ['status' => 2]) }}"
            class="btn {{ $statusFilter == 2 ? 'btn-success' : 'btn-outline-success' }}">
             <i class="fa fa-check"></i> Approved
+            <span class="badge badge-light">{{ $stats['approved'] }}</span>
         </a>
-        <a href="{{ route('superuser.penjualan.internal_revision.index', ['status' => 3]) }}" 
+        <a href="{{ route('superuser.penjualan.internal_revision.index', ['status' => 3]) }}"
            class="btn {{ $statusFilter == 3 ? 'btn-danger' : 'btn-outline-danger' }}">
             <i class="fa fa-times"></i> Rejected
+            <span class="badge badge-light">{{ $stats['rejected'] }}</span>
         </a>
+    </div>
     </div>
 </div>
 
-<div class="block">
-    <div class="block-content block-content-full">
-        <table class="table table-hover table-striped" id="dtRevisions" style="width:100%">
+<div class="block mb-0">
+    <div class="block-content block-content-full py-2">
+        <table class="table table-hover table-striped table-sm" id="dtRevisions" style="width:100%;font-size:13px;">
             <thead>
                 <tr class="small text-uppercase">
-                    <th>#</th>
-                    <th>DO Code</th>
-                    <th>SO Ref</th>
+                    <th style="width:30px;">#</th>
+                    <th>DO / SO</th>
                     <th>Customer</th>
-                    <th>Status Revisi</th>
-                    <th>Alasan Revisi</th>
-                    <th>Diajukan Oleh</th>
-                    <th>Tanggal</th>
-                    <th>Aksi</th>
+                    <th>Status</th>
+                    <th>Alasan</th>
+                    <th>Pengajuan</th>
+                    <th class="text-center" style="width:110px;">Aksi</th>
                 </tr>
             </thead>
             <tbody>
@@ -87,10 +74,12 @@
                     ];
                     $revSt = $revStatusMap[$rev->status] ?? $revStatusMap[1];
                 @endphp
-                <tr>
-                    <td>{{ $index + 1 }}</td>
-                    <td><b>{{ $rev->packingOrder->do_code ?? '-' }}</b></td>
-                    <td>{{ $rev->packingOrder->so->code ?? '-' }}</td>
+                <tr @if($rev->status == 1) style="border-left:3px solid #fcc419;" @endif>
+                    <td class="text-muted">{{ $index + 1 }}</td>
+                    <td>
+                        <b>{{ $rev->packingOrder->do_code ?? '-' }}</b>
+                        <br><small class="text-muted">{{ $rev->packingOrder->so->code ?? '-' }}</small>
+                    </td>
                     <td>{{ $customerName }}</td>
                     <td>
                         <span class="badge badge-{{ $revSt['class'] }}">
@@ -103,18 +92,22 @@
                             <br><small class="text-danger" title="{{ $rev->approval_reason }}">{{ \Illuminate\Support\Str::limit($rev->approval_reason, 40) }}</small>
                         @endif
                     </td>
-                    <td style="max-width:250px;">{{ $rev->request_reason }}</td>
-                    <td>{{ $rev->requestedBy->name ?? $rev->requested_by }}</td>
-                    <td>{{ $rev->requested_at ? \Illuminate\Support\Carbon::parse($rev->requested_at)->format('d/m/Y H:i') : '-' }}</td>
+                    <td style="max-width:280px;" title="{{ $rev->request_reason }}">{{ \Illuminate\Support\Str::limit($rev->request_reason, 70) }}</td>
                     <td>
-                        <button type="button" class="btn btn-sm btn-outline-primary btn-lihat-detail" data-id="{{ $rev->id }}">
-                            <i class="fa fa-eye"></i> Lihat Detail
+                        {{ $rev->requestedBy->name ?? $rev->requested_by }}
+                        <br><small class="text-muted">{{ $rev->requested_at ? \Illuminate\Support\Carbon::parse($rev->requested_at)->format('d/m/Y H:i') : '-' }}</small>
+                    </td>
+                    <td class="text-center">
+                        <button type="button" class="btn btn-sm {{ $rev->status == 1 ? 'btn-warning' : 'btn-outline-primary' }} btn-lihat-detail" data-id="{{ $rev->id }}">
+                            <i class="fa fa-eye"></i> Detail
                         </button>
                     </td>
                 </tr>
                 @empty
                 <tr>
-                    <td colspan="9" class="text-center text-muted">Tidak ada data revisi internal.</td>
+                    <td colspan="7" class="text-center text-muted py-4">
+                        <i class="fa fa-inbox fa-2x mb-2 d-block"></i>Tidak ada data revisi internal.
+                    </td>
                 </tr>
                 @endforelse
             </tbody>
@@ -122,13 +115,30 @@
     </div>
 </div>
 
+<style>
+/* Mode padat: semua serba ramping supaya muat tanpa scroll */
+#modalDetailRevisi .modal-body { padding: 10px 14px; overflow-x: hidden; }
+#modalDetailRevisi .block-header { padding: 5px 12px; min-height: 0; }
+#modalDetailRevisi .block-header .block-title { font-size: 12px; }
+#modalDetailRevisi .block-content { padding: 8px 12px; }
+#modalDetailRevisi .table-sm td, #modalDetailRevisi .table-sm th { padding: 3px 6px; font-size: 12px; }
+#modalDetailRevisi td.prod-cell { white-space: normal; min-width: 160px; }
+#modalDetailRevisi .info-label { font-size: 10px; color: #98a2ad; text-transform: uppercase; letter-spacing: .03em; margin-bottom: 0; }
+#modalDetailRevisi .info-val { font-size: 12.5px; font-weight: 600; }
+#modalDetailRevisi .legend-bar { font-size: 11.5px; padding: 4px 12px; margin-bottom: 10px; }
+#modalDetailRevisi .table-responsive { overflow-x: hidden; }
+#modalDetailRevisi .btn-block { padding: 6px 12px; font-size: 13px; }
+#modalDetailRevisi #otpDisplayBox { padding: 8px !important; margin-bottom: 8px !important; }
+#modalDetailRevisi #otpDisplayCode { font-size: 1.7em !important; }
+#modalDetailRevisi .form-group { margin-bottom: 8px; }
+</style>
 <!-- Modal Detail + Approve/Reject -->
 <div class="modal fade" id="modalDetailRevisi" tabindex="-1" role="dialog">
-    <!-- Menggunakan class modal-xl (bawaan bootstrap) agar tampilan rapi tanpa perlu inline style width -->
-    <div class="modal-dialog modal-xl modal-dialog-scrollable modal-dialog-centered" role="document">
+    <!-- Dilebarkan (1360px) supaya tabel item + biaya tidak berdesakan dan info tidak terpotong -->
+    <div class="modal-dialog modal-xl modal-dialog-scrollable modal-dialog-centered" style="max-width:1360px;" role="document">
         <div class="modal-content">
             <div class="modal-header bg-light">
-                <h5 class="modal-title font-weight-bold">Detail Revisi - <span id="detailDoCode"></span></h5>
+                <h5 class="modal-title font-weight-bold">Detail Revisi - <span id="detailDoCode"></span> <span id="detailStatusBadge"></span></h5>
                 <button type="button" class="close" data-dismiss="modal" data-bs-dismiss="modal" aria-label="Close">
                     <span aria-hidden="true">&times;</span>
                 </button>
@@ -137,84 +147,83 @@
                 <input type="hidden" id="modal_revision_id">
 
                 <!-- Legend -->
-                <div class="alert alert-info py-2 px-3 mb-4" style="font-size: 13px;">
+                <div class="alert alert-info legend-bar">
                     <i class="fa fa-info-circle mr-2"></i>
                     <span class="text-muted">nilai lama</span>
                     <i class="fa fa-arrow-right text-warning mx-2"></i>
                     <b class="text-success">nilai baru</b>
-                    <span class="mx-2">|</span> 
+                    <span class="mx-2">|</span>
                     <span>tanpa panah = tidak berubah</span>
                 </div>
 
-                <!-- Section Info DO & Alasan Revisi -->
-                <div class="row mb-4">
-                    <div class="col-md-7 mb-3 mb-md-0">
-                        <div class="block block-bordered mb-0 h-100">
-                            <div class="block-header block-header-default">
-                                <h3 class="block-title font-size-sm font-weight-bold">#Info DO</h3>
+                <!-- Info pengajuan: 1 kartu penuh, tanpa ruang kosong -->
+                <div class="block block-bordered mb-2">
+                    <div class="block-header block-header-default">
+                        <h3 class="block-title font-size-sm font-weight-bold">#Info Pengajuan</h3>
+                    </div>
+                    <div class="block-content">
+                        <div class="row">
+                            <div class="col-sm-6 col-lg-2 mb-1">
+                                <div class="info-label">DO Code</div>
+                                <div class="info-val" id="detailDoCode2"></div>
                             </div>
-                            <div class="block-content py-3">
-                                <div class="row font-size-sm">
-                                    <div class="col-sm-4 mb-2">
-                                        <div class="text-muted mb-1">DO Code</div>
-                                        <b id="detailDoCode2"></b>
-                                    </div>
-                                    <div class="col-sm-4 mb-2">
-                                        <div class="text-muted mb-1">Customer</div>
-                                        <b id="detailCustomer"></b>
-                                    </div>
-                                    <div class="col-sm-4 mb-2">
-                                        <div class="text-muted mb-1">Kurs IDR</div>
-                                        <span id="detailKursDiff"></span>
-                                    </div>
-                                </div>
+                            <div class="col-sm-6 col-lg-3 mb-1">
+                                <div class="info-label">Customer</div>
+                                <div class="info-val" id="detailCustomer"></div>
+                            </div>
+                            <div class="col-sm-6 col-lg-2 mb-1">
+                                <div class="info-label">Kurs IDR</div>
+                                <div class="info-val" id="detailKursDiff"></div>
+                            </div>
+                            <div class="col-sm-6 col-lg-2 mb-1">
+                                <div class="info-label">Sales</div>
+                                <div class="info-val" id="detailSalesDiff"></div>
+                            </div>
+                            <div class="col-sm-6 col-lg-3 mb-1">
+                                <div class="info-label">No Rek Admin</div>
+                                <div class="info-val" id="detailRekeningDiff"></div>
                             </div>
                         </div>
-                    </div>
-                    <div class="col-md-5">
-                        <div class="block block-bordered mb-0 h-100">
-                            <div class="block-header block-header-default">
-                                <h3 class="block-title font-size-sm font-weight-bold">#Alasan Revisi</h3>
-                            </div>
-                            <div class="block-content py-3 font-size-sm" id="detailReason"></div>
+                        <div class="pt-1 mt-1" style="border-top:1px dashed #e0e0e0;">
+                            <div class="info-label">Alasan Revisi</div>
+                            <div class="font-size-sm" id="detailReason"></div>
                         </div>
                     </div>
                 </div>
 
-                <!-- Section Item Produk & Kalkulasi -->
-                <div class="row mb-4">
-                    <div class="col-lg-7 mb-3 mb-lg-0">
-                        <div class="block block-bordered mb-0 h-100">
-                            <div class="block-header block-header-default">
-                                <h3 class="block-title font-size-sm font-weight-bold">#Perubahan Item Produk</h3>
-                            </div>
-                            <div class="block-content block-content-full p-0">
-                                <div class="table-responsive">
-                                    <table class="table table-hover table-sm table-vcenter mb-0 font-size-sm">
-                                        <thead class="thead-light">
-                                            <tr class="text-uppercase">
-                                                <th>Produk</th>
-                                                <th class="text-center">Qty</th>
-                                                <th class="text-right">Harga (Rp)</th>
-                                                <th class="text-right">Disc (Rp)</th>
-                                                <th class="text-right">Total (Rp)</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody id="detailItemsBody"></tbody>
-                                        <tfoot>
-                                            <tr class="table-light">
-                                                <td colspan="4" class="text-right"><b>Subtotal Item</b></td>
-                                                <td id="subtotalItemValue" class="text-right"></td>
-                                            </tr>
-                                        </tfoot>
-                                    </table>
-                                </div>
-                            </div>
+                <!-- Item produk: full width, tinggi natural -->
+                <div class="block block-bordered mb-2">
+                    <div class="block-header block-header-default">
+                        <h3 class="block-title font-size-sm font-weight-bold">#Perubahan Item Produk</h3>
+                    </div>
+                    <div class="block-content block-content-full p-0">
+                        <div class="table-responsive">
+                            <table class="table table-hover table-sm table-vcenter mb-0 font-size-sm">
+                                <thead class="thead-light">
+                                    <tr class="text-uppercase">
+                                        <th>Produk</th>
+                                        <th class="text-center">Qty</th>
+                                        <th class="text-right">Harga (Rp)</th>
+                                        <th class="text-right">Disc (Rp)</th>
+                                        <th class="text-right">Total (Rp)</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="detailItemsBody"></tbody>
+                                <tfoot>
+                                    <tr class="table-light">
+                                        <td colspan="4" class="text-right"><b>Subtotal Item</b></td>
+                                        <td id="subtotalItemValue" class="text-right"></td>
+                                    </tr>
+                                </tfoot>
+                            </table>
                         </div>
                     </div>
+                </div>
 
-                    <div class="col-lg-5">
-                        <div class="block block-bordered mb-0 h-100">
+                <!-- Kalkulasi + Aksi sejajar: tidak perlu scroll jauh untuk approve -->
+                <div class="row">
+                    <div class="col-lg-6 mb-3 mb-lg-0">
+                        <div class="block block-bordered mb-0">
                             <div class="block-header block-header-default">
                                 <h3 class="block-title font-size-sm font-weight-bold">#Kalkulasi Kurs &amp; Biaya</h3>
                             </div>
@@ -229,12 +238,14 @@
                             </div>
                         </div>
                     </div>
-                </div>
-
+                    <div class="col-lg-6">
                 <!-- Aksi -->
                 <div id="actionSection">
-                <div class="row">
-                    <div class="col-md-6 mb-2 mb-md-0">
+                    <div class="block block-bordered mb-2">
+                        <div class="block-header block-header-default">
+                            <h3 class="block-title font-size-sm font-weight-bold text-danger">#Tolak Pengajuan</h3>
+                        </div>
+                        <div class="block-content">
                         <button type="button" class="btn btn-outline-danger btn-block" id="btnToggleReject">
                             <i class="fa fa-times-circle mr-1"></i> Tolak Pengajuan
                         </button>
@@ -246,8 +257,13 @@
                                 <i class="fa fa-times mr-1"></i> Konfirmasi Tolak
                             </button>
                         </div>
+                        </div>
                     </div>
-                    <div class="col-md-6">
+                    <div class="block block-bordered mb-0">
+                        <div class="block-header block-header-default">
+                            <h3 class="block-title font-size-sm font-weight-bold text-success">#Setujui Pengajuan</h3>
+                        </div>
+                        <div class="block-content">
                         <button type="button" class="btn btn-outline-success btn-block" id="btnToggleApprove">
                             <i class="fa fa-check-circle mr-1"></i> Setujui Pengajuan
                         </button>
@@ -256,12 +272,13 @@
                                 <i class="fa fa-key mr-1"></i> Kirim Kode OTP
                             </button>
                             <div id="otpSection" style="display:none;">
-                                <!-- OTP Code Display - Large & Copyable -->
+                                <!-- Kode OTP tampil di sini supaya approver tidak perlu keluar modal cek lonceng.
+                                     Salinan yang sama juga tersimpan di notifikasi sebagai cadangan. -->
                                 <div id="otpDisplayBox" class="text-center p-3 mb-3" style="background: #fff3bf; border: 2px dashed #fcc419; border-radius: 10px; display:none;">
                                     <div class="text-muted mb-1" style="font-size:12px; text-transform:uppercase; letter-spacing:0.05em;">Kode OTP Anda</div>
-                                    <div id="otpDisplayCode" style="font-size:2.2em; font-weight:800; letter-spacing:8px; color:#e67700; cursor:pointer;" title="Klik untuk copy" onclick="copyOtp()"></div>
+                                    <div id="otpDisplayCode" style="font-size:2.2em; font-weight:800; letter-spacing:8px; color:#e67700; cursor:pointer;" title="Klik untuk copy"></div>
                                     <div class="text-muted mt-1" style="font-size:11px;">
-                                        <i class="fa fa-clock-o"></i> Berlaku <span id="otpCountdown">5:00</span> menit &middot; <small>klik kode untuk copy</small>
+                                        <i class="fa fa-clock-o"></i> Berlaku <span id="otpCountdown">5:00</span> menit &middot; <small>klik kode untuk copy &middot; cadangan ada di ikon lonceng</small>
                                     </div>
                                 </div>
                                 <!-- Manual Input -->
@@ -277,9 +294,11 @@
                                 </button>
                             </div>
                         </div>
-                    </div>
-                </div>
+                        </div><!-- /block-content approve -->
+                    </div><!-- /block approve -->
                 </div><!-- /actionSection -->
+                    </div><!-- /col-lg-6 aksi -->
+                </div><!-- /row kalkulasi + aksi -->
 
                 <!-- Info untuk already processed -->
                 <div id="processedInfo" class="d-none mt-3 p-3 rounded" style="background:#f8f9fa; border:1px solid #dee2e6;">
@@ -319,6 +338,8 @@ $(document).ready(function () {
                '<b class="text-success">' + after + '</b>';
     }
 
+    var otpCountdownInterval = null;
+
     function resetActionPanels() {
         $('#rejectPanel, #approvePanel, #otpSection, #otpDisplayBox').hide();
         $('#reject_reason, #otp_code, #approval_reason').val('');
@@ -329,6 +350,44 @@ $(document).ready(function () {
             clearInterval(otpCountdownInterval);
             otpCountdownInterval = null;
         }
+    }
+
+    $(document).on('click', '#otpDisplayCode', function () {
+        var code = $(this).text().trim();
+        if (!code) return;
+        if (navigator.clipboard) {
+            navigator.clipboard.writeText(code);
+        } else {
+            var tmp = document.createElement('input');
+            document.body.appendChild(tmp);
+            tmp.value = code;
+            tmp.select();
+            document.execCommand('copy');
+            document.body.removeChild(tmp);
+        }
+    });
+
+    function startOtpCountdown(minutes) {
+        if (otpCountdownInterval) clearInterval(otpCountdownInterval);
+        var totalSeconds = minutes * 60;
+        var display = $('#otpCountdown');
+
+        otpCountdownInterval = setInterval(function() {
+            totalSeconds--;
+            if (totalSeconds <= 0) {
+                clearInterval(otpCountdownInterval);
+                display.text('0:00').addClass('text-danger font-weight-bold');
+                $('#otpDisplayBox').css('border-color', '#fa5252').css('background', '#fff5f5');
+                $('#otpDisplayCode').css('color', '#fa5252');
+                return;
+            }
+            var m = Math.floor(totalSeconds / 60);
+            var s = totalSeconds % 60;
+            display.text(m + ':' + (s < 10 ? '0' : '') + s);
+            if (totalSeconds <= 60) {
+                display.addClass('text-danger font-weight-bold');
+            }
+        }, 1000);
     }
 
     $('#btnToggleReject').on('click', function () {
@@ -349,9 +408,14 @@ $(document).ready(function () {
         $.get('{{ route("superuser.penjualan.internal_revision.detail", ["id" => "__ID__"]) }}'.replace('__ID__', id), function (res) {
             $('#detailDoCode').text(res.do_code);
             $('#detailDoCode2').text(res.do_code);
+            var statusBadge = {1: '<span class="badge badge-warning">Pending</span>', 2: '<span class="badge badge-success">Approved</span>', 3: '<span class="badge badge-danger">Rejected</span>'};
+            $('#detailStatusBadge').html(statusBadge[res.status] || '');
             $('#detailCustomer').text(res.customer || '-');
             $('#detailReason').text(res.request_reason);
             $('#detailKursDiff').html(cell(res.before.idr_rate, res.after.idr_rate));
+            // Diff Sales & Rekening (fallback '-' untuk data lama yang belum punya snapshot sales)
+            $('#detailSalesDiff').html(res.sales ? cell(res.sales.before_name, res.sales.after_name) : '-');
+            $('#detailRekeningDiff').html(res.rekening ? cell(res.rekening.before_name, res.rekening.after_name) : '-');
 
             // Show/hide action buttons based on status
             if (res.status == 1) {
@@ -388,7 +452,7 @@ $(document).ready(function () {
                 var a = afterMap[b.product_packaging_id];
                 if (a) {
                     rows += '<tr>' +
-                            '<td>' + b.product_code + ' - ' + b.product_name + '</td>' +
+                            '<td class="prod-cell">' + b.product_code + ' - ' + b.product_name + '</td>' +
                             '<td class="text-center">' + cell(b.qty, a.qty) + '</td>' +
                             '<td class="text-right">' + cell(formatRp(b.price_idr), formatRp(a.price_idr)) + '</td>' +
                             '<td class="text-right">' + cell(formatRp(b.usd_disc_idr), formatRp(a.usd_disc_idr)) + '</td>' +
@@ -396,7 +460,7 @@ $(document).ready(function () {
                             '</tr>';
                 } else {
                     rows += '<tr class="table-danger">' +
-                            '<td>' + b.product_code + ' - ' + b.product_name + ' <span class="badge badge-danger ml-1">Dihapus</span></td>' +
+                            '<td class="prod-cell">' + b.product_code + ' - ' + b.product_name + ' <span class="badge badge-danger ml-1">Dihapus</span></td>' +
                             '<td class="text-center">' + b.qty + '</td>' +
                             '<td class="text-center" colspan="2">-</td>' +
                             '<td class="text-right">' + formatRp(b.total_idr) + '</td>' +
@@ -406,7 +470,7 @@ $(document).ready(function () {
             res.after.items.forEach(function (a) {
                 if (beforeIds.indexOf(a.product_packaging_id) === -1) {
                     rows += '<tr class="table-success">' +
-                            '<td>' + a.product_code + ' - ' + a.product_name + ' <span class="badge badge-success ml-1">Produk Baru</span></td>' +
+                            '<td class="prod-cell">' + a.product_code + ' - ' + a.product_name + ' <span class="badge badge-success ml-1">Produk Baru</span></td>' +
                             '<td class="text-center">' + a.qty + '</td>' +
                             '<td class="text-right">' + formatRp(a.price_idr) + '</td>' +
                             '<td class="text-right">' + formatRp(a.usd_disc_idr) + '</td>' +
@@ -447,58 +511,13 @@ $(document).ready(function () {
         });
     });
 
-    var otpCountdownInterval = null;
-
-    function copyOtp() {
-        var code = $('#otpDisplayCode').text().trim();
-        if (navigator.clipboard) {
-            navigator.clipboard.writeText(code).then(function() {
-                var el = $('#otpDisplayCode');
-                el.effect('highlight', {color: '#b2f2bb'}, 600);
-            });
-        } else {
-            // Fallback
-            var tmp = document.createElement('input');
-            document.body.appendChild(tmp);
-            tmp.value = code;
-            tmp.select();
-            document.execCommand('copy');
-            document.body.removeChild(tmp);
-        }
-    }
-
-    function startOtpCountdown(minutes) {
-        if (otpCountdownInterval) clearInterval(otpCountdownInterval);
-        var totalSeconds = minutes * 60;
-        var display = $('#otpCountdown');
-
-        otpCountdownInterval = setInterval(function() {
-            totalSeconds--;
-            if (totalSeconds <= 0) {
-                clearInterval(otpCountdownInterval);
-                display.text('0:00').addClass('text-danger font-weight-bold');
-                $('#otpDisplayBox').css('border-color', '#fa5252').css('background', '#fff5f5');
-                $('#otpDisplayCode').css('color', '#fa5252');
-                return;
-            }
-            var m = Math.floor(totalSeconds / 60);
-            var s = totalSeconds % 60;
-            display.text(m + ':' + (s < 10 ? '0' : '') + s);
-
-            // Warning when < 60 seconds
-            if (totalSeconds <= 60) {
-                display.addClass('text-danger font-weight-bold');
-            }
-        }, 1000);
-    }
-
     $('#btnRequestOtp').on('click', function () {
         var id = $('#modal_revision_id').val();
         var btn = $(this);
 
         Swal.fire({
             title: 'Kirim Kode OTP?',
-            text: 'Kode OTP akan dikirim dan ditampilkan di bawah ini.',
+            text: 'Kode OTP akan ditampilkan di bawah ini (cadangan juga masuk ke lonceng notifikasi).',
             icon: 'question',
             showCancelButton: true,
             confirmButtonColor: '#fcc419',

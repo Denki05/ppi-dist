@@ -10,6 +10,21 @@ use Illuminate\Support\Facades\DB;
 class NotificationController extends Controller
 {
     /**
+     * Daftar tipe notifikasi yang ditampilkan (satu sumber supaya bell,
+     * halaman, dan statistik tidak pernah beda isi — OTP revisi wajib ikut).
+     */
+    private function visibleTypes()
+    {
+        return [
+            'App\Notifications\DoNotification',
+            'App\Notifications\SoNotification',
+            'App\Notifications\PayableNotification',
+            'App\Notifications\ReceivingNotification',
+            'App\Notifications\InternalRevisionOtpNotification',
+        ];
+    }
+
+    /**
      * Ambil data notifikasi (maksimal 5 per tipe)
      */
     public function getNotifData()
@@ -20,12 +35,7 @@ class NotificationController extends Controller
         $notifications = DB::table('notifications')
             ->where('notifiable_id', $userId)
             ->whereNull('read_at')
-            ->whereIn('type', [
-                'App\Notifications\DoNotification',
-                'App\Notifications\SoNotification',
-                'App\Notifications\PayableNotification',
-                'App\Notifications\ReceivingNotification',
-            ])
+            ->whereIn('type', $this->visibleTypes())
             ->orderBy('created_at', 'desc')
             ->get()
             ->groupBy('type')
@@ -57,12 +67,7 @@ class NotificationController extends Controller
 
         $query = DB::table('notifications')
             ->where('notifiable_id', $userId)
-            ->whereIn('type', [
-                'App\Notifications\DoNotification',
-                'App\Notifications\SoNotification',
-                'App\Notifications\PayableNotification',
-                'App\Notifications\ReceivingNotification',
-            ])
+            ->whereIn('type', $this->visibleTypes())
             ->orderBy('created_at', 'desc');
 
         if ($typeFilter) {
@@ -75,22 +80,12 @@ class NotificationController extends Controller
         $stats = [
             'total' => DB::table('notifications')
                 ->where('notifiable_id', $userId)
-                ->whereIn('type', [
-                    'App\Notifications\DoNotification',
-                    'App\Notifications\SoNotification',
-                    'App\Notifications\PayableNotification',
-                    'App\Notifications\ReceivingNotification',
-                ])
+                ->whereIn('type', $this->visibleTypes())
                 ->count(),
             'unread' => DB::table('notifications')
                 ->where('notifiable_id', $userId)
                 ->whereNull('read_at')
-                ->whereIn('type', [
-                    'App\Notifications\DoNotification',
-                    'App\Notifications\SoNotification',
-                    'App\Notifications\PayableNotification',
-                    'App\Notifications\ReceivingNotification',
-                ])
+                ->whereIn('type', $this->visibleTypes())
                 ->count(),
         ];
 
@@ -170,6 +165,46 @@ class NotificationController extends Controller
         $this->markAsRead($id);
 
         return back()->with('success', 'Notif ditandai sebagai telah dibaca.');
+    }
+
+    /**
+     * Baca via klik lonceng (GET): tandai dibaca lalu redirect sesuai tipe.
+     * Rute POST lama tidak diubah (dipakai form halaman + flows lain).
+     */
+    public function read($id)
+    {
+        $notification = $this->getUserNotification($id);
+
+        if (!$notification) {
+            return redirect()->route('superuser.penjualan.notification.index')
+                ->with('error', 'Notif tidak ditemukan atau Anda tidak berhak.');
+        }
+
+        $this->markAsRead($id);
+
+        $data = json_decode($notification->data, true) ?? [];
+        $type = $notification->type ?? '';
+
+        if (str_contains($type, 'DoNotification')) {
+            if (($data['status'] ?? null) == 2 && !empty($data['id'])) {
+                return redirect()->route('superuser.penjualan.delivery_order.detail', ['id' => $data['id']]);
+            }
+            return redirect()->route('superuser.penjualan.delivery_order.index');
+        }
+
+        if (str_contains($type, 'SoNotification')) {
+            return redirect()->route('superuser.penjualan.sales_order.index_lanjutan');
+        }
+
+        if (str_contains($type, 'PayableNotification')) {
+            return redirect()->route('superuser.finance.payable.index');
+        }
+
+        if (str_contains($type, 'InternalRevisionOtp')) {
+            return redirect()->route('superuser.penjualan.internal_revision.index');
+        }
+
+        return redirect()->route('superuser.penjualan.notification.index');
     }
 
     /**

@@ -477,9 +477,12 @@ class DeliveryOrderController extends Controller
                 'id' => 'required'
             ]);
             $post = $request->all();
-            $result = PackingOrder::with('do_detail')->where('id',$post["id"])->first();
+            $result = PackingOrder::with('do_detail')->where('id',$post["id"])->lockForUpdate()->first();
             $do_cost = PackingOrderDetail::where('do_id', $result->id)->first();
 
+            if ((int) $result->status !== 4) {
+                return redirect()->route('superuser.penjualan.delivery_order.index')->with('error','DO ini sudah tidak dalam status Siap Kirim (mungkin sudah diproses / double-click).');
+            }
             if($result->status == 1){
                 return redirect()->route('superuser.penjualan.packing_order.index')->with('error','Tidak bisa mengirim packing order yang masih baru dibuat');
             }
@@ -624,6 +627,18 @@ class DeliveryOrderController extends Controller
                 throw new \Exception('Pengajuan void pada kode ini sedang berlangsung! Mohon koordinasi dengan Finance sebelum melanjutkan Update Resi.');
             }
 
+            // Guard status asal: cegah lompat 3/4 -> 6 tanpa lewat delivering (potong fisik).
+            if ((int) $get_do->status !== 5) {
+                throw new \Exception('Update Resi hanya bisa dilakukan untuk DO berstatus Delivering (status 5).');
+            }
+
+            // Guard revisi internal pending: transisi 5->6 membuat approve revisi
+            // mustahil (origin_status berubah) dan mengunci DO. Selesaikan/tolak
+            // revisi dulu, pola sama seperti guard void di atas.
+            if (!empty($get_do->internal_revision_status) && (int) $get_do->internal_revision_status === 1) {
+                throw new \Exception('DO ini sedang dalam pengajuan revisi internal. Selesaikan atau tolak revisi tersebut sebelum Update Resi.');
+            }
+
             // ======================================================
             // ✅ VALIDASI STATUS LOG AKTIF SEBELUM UPDATE RESI
             // ======================================================
@@ -685,7 +700,8 @@ class DeliveryOrderController extends Controller
             }
 
             $purchase_total = $result_cost->purchase_total_idr ?? 0;
-            $updateData['grand_total_idr'] = $purchase_total + ($updateData['delivery_cost_idr'] ?? 0);
+            // Samakan rumus baku (update_cost/reset_cost/do_update): purchase + ongkir + biaya lain.
+            $updateData['grand_total_idr'] = $purchase_total + ($updateData['delivery_cost_idr'] ?? 0) + ($updateData['other_cost_idr'] ?? 0);
 
             // Update PackingOrderDetail
             PackingOrderDetail::where('do_id', $do_id)->update($updateData);
