@@ -322,6 +322,12 @@ class InternalRevisionController extends Controller
      */
     public function index(Request $request)
     {
+        // Default tab Pending; tiap tab me-load dataset sendiri sehingga
+        // paging DataTables berjalan per tab (tidak menumpuk jadi satu).
+        if ($request->get('status') === null) {
+            return redirect()->route('superuser.penjualan.internal_revision.index', ['status' => 1]);
+        }
+
         $statusFilter = $request->get('status');
 
         $query = DoInternalRevision::with([

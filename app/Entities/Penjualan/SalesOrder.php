@@ -166,12 +166,17 @@ class SalesOrder extends Model
 
     public function so_sales_senior()
     {
-        return self::SALES_SENIOR[$this->sales_senior_id] ?? '-';
+        // Konstanta berbentuk nama => id, jadi dibalik dulu untuk lookup by id.
+        $map = array_flip(self::SALES_SENIOR);
+        return $map[$this->sales_senior_id] ?? '-';
     }
 
     public function so_sales()
     {
-        return self::SALES[$this->sales_id] ?? '-';
+        // Konstanta berbentuk nama => id, jadi dibalik dulu untuk lookup by id.
+        // Sebelumnya selalu '-' karena lookup id pada key nama tidak pernah cocok.
+        $map = array_flip(self::SALES);
+        return $map[$this->sales_id] ?? '-';
     }
 
     public function so_status()

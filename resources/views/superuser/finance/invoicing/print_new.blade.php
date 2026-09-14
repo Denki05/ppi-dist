@@ -245,7 +245,7 @@
               </tr>
               <tr>
                 <td style="width: 60%; text-align: right;">Disc Kemasan ({{ $result->do->do_detail_cost->discount_2 }})</td>
-                <td style="width: 40%; text-align: left; border-bottom: 1px solid black;">: {{ $result->do->do_detail_cost->discount_2_idr }}</td>
+                <td style="width: 40%; text-align: left; border-bottom: 1px solid black;">: {{ number_format($result->do->do_detail_cost->discount_2_idr ?? 0, 0, ',', '.') }}</td>
               </tr>
               @if($result->do->do_detail_cost->discount_idr != null && $result->do->do_detail_cost->discount_idr > 0)
               <tr>
@@ -291,10 +291,15 @@
         <!-- Bank Logo Column -->
         <div class="column-float" style="width: 20%; text-align: left; margin-left: -35px;">
           <div style="height: 100px;">
-            @if($result->do->so->rekening == 3)
-              <img src="<?= base_path('public/cr/invoice/3.png') ?>" style="width: 85%; height: 60%;">
-            @else
-              <img src="<?= base_path('public/cr/invoice/4.png') ?>" style="width: 85%; height: 60%;">
+            @php
+              // Caption diambil dari DB supaya selalu sesuai pilihan rekening
+              // (gambar hanya tersedia untuk id 3 & 4, dan id lain tidak punya gambar).
+              $rekNota = DB::table('rekening')->where('id', $result->do->so->rekening)->first();
+              $rekImg = in_array($result->do->so->rekening, [3, 4]) ? $result->do->so->rekening : 4;
+            @endphp
+            <img src="<?= base_path('public/cr/invoice/' . $rekImg . '.png') ?>" style="width: 85%; height: 60%;">
+            @if($rekNota)
+            <div style="font-size: 9px; font-weight: bold;">{{ $rekNota->name }}<br>{{ $rekNota->number_card }}</div>
             @endif
           </div>
         </div>

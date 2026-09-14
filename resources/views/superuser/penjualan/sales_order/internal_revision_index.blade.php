@@ -23,10 +23,6 @@
         <i class="fa fa-arrow-left mr-2"></i> Back to SO Lanjutan
     </a>
     <div class="btn-group btn-group-sm" role="group">
-        <a href="{{ route('superuser.penjualan.internal_revision.index') }}"
-           class="btn {{ !$statusFilter ? 'btn-primary' : 'btn-outline-primary' }}">
-            Semua <span class="badge badge-light">{{ $stats['pending'] + $stats['approved'] + $stats['rejected'] }}</span>
-        </a>
         <a href="{{ route('superuser.penjualan.internal_revision.index', ['status' => 1]) }}"
            class="btn {{ $statusFilter == 1 ? 'btn-warning' : 'btn-outline-warning' }}">
             <i class="fa fa-clock-o"></i> Pending
