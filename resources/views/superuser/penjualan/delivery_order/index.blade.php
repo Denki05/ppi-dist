@@ -724,6 +724,8 @@ $(document).ready(function() {
 <script type="text/javascript">
 $(document).ready(function() {
   let datatableUrl = '{{ route('superuser.penjualan.delivery_order.json') }}';
+  let detailUrlTpl = '{{ route("superuser.penjualan.delivery_order.detail", ["id" => "__ID__"]) }}';
+  let printUrlTpl = '{{ route("superuser.penjualan.delivery_order.print_manifest", ["id" => "__ID__"]) }}';
   let valShow = "default";
   let currentPage = 0;   // 0-based, dikonversi ke 'start' pas fetch
   let pageLength = 10;
@@ -869,6 +871,23 @@ $(document).ready(function() {
       currentPage = 0;
       loadList();
     }, 400);
+  });
+
+  // ==== Hot reload tombol Kerjakan setelah Print SPK (tanpa refresh) ====
+  // Server menaikkan print_count saat manifest dibuka di tab baru, jadi
+  // langsung tukar aksi kartu ini ke state "sudah print".
+  $(document).on('click', '.btn-print-spk-spv', function () {
+    var id = $(this).data('id');
+    var $actions = $(this).closest('.do-card-actions');
+    if (!id || !$actions.length) return;
+    $actions.html(
+      '<a href="' + printUrlTpl.replace('__ID__', id) + '" target="_blank">' +
+      '<button type="button" class="btn btn-outline-secondary btn-sm btn-flat" title="Print Ulang SPK">' +
+      '<i class="fas fa-print"></i></button></a> ' +
+      '<a href="' + detailUrlTpl.replace('__ID__', id) + '">' +
+      '<button type="button" class="btn btn-primary btn-sm btn-flat" title="Kerjakan">' +
+      '<i class="fas fa-box"></i></button></a>'
+    );
   });
 
   // ==== Pager ====

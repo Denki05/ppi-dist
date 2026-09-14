@@ -378,6 +378,8 @@ class SalesOrderClosingService
             'voucher_idr' => $currencyFields['voucher_idr'],
             'purchase_total_idr' => $currencyFields['sub_total'],
             'grand_total_idr' => $currencyFields['grand_total_idr'],
+            // Rumus sama seperti approve revisi & reset_cost: agen + kemasan + tambahan.
+            'total_discount_idr' => $currencyFields['discount_agen_idr'] + $currencyFields['discount_kemasan_idr'] + $currencyFields['disc_tambahan_idr'],
             'terbilang' => CustomHelper::terbilang($currencyFields['grand_total_idr']),
             'created_by' => Auth::id(),
         ];

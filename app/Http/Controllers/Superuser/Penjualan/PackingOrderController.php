@@ -500,7 +500,7 @@ class PackingOrderController extends Controller
                 }
                 $idr_rate = str_replace('.', '', $post["idr_rate"]);
                 $get = PackingOrder::where('id',$post["id"])->first();
-                
+
                 $this->reset_cost_if_change_idr_rate($post["id"],$idr_rate);
 
                 $data = [
@@ -508,6 +508,9 @@ class PackingOrderController extends Controller
                     'other_address' => trim(htmlentities($post["other_address"])),
                     'note' => trim(htmlentities($post["note"])),
                     'idr_rate' => $idr_rate,
+                    // Sinkron penanda hold: tanpa ini, DO yang kursnya dibetulkan
+                    // lewat form ini tetap terbaca "Belum Valid" selamanya.
+                    'is_kurs_hold' => (empty($idr_rate) || (float) $idr_rate <= 1),
                     'updated_by' => Auth::id(),
                     'ekspedisi_id' => (empty($post["ekspedisi_id"])) ? null : $post["ekspedisi_id"],
                 ];
@@ -1281,7 +1284,7 @@ class PackingOrderController extends Controller
 
                 return response()->json([
                     'status' => 'success',
-                    'message' => 'SO berhasil direvisi dan stok kembali normal!',
+                    'message' => 'Data berhasil dikembalikan untuk revisi!',
                     'redirect' => route('superuser.penjualan.sales_order.index_lanjutan')
                 ]);
             }
@@ -1695,7 +1698,8 @@ class PackingOrderController extends Controller
             'idr_rate' => 'required',
         ]);
 
-        $idrRate = (float) str_replace('.', '', str_replace(',', '.', $request->idr_rate));
+        // Buang titik ribuan dulu, baru koma desimal jadi titik (cth "16.500,50" -> 16500.50)
+        $idrRate = (float) str_replace(',', '.', str_replace('.', '', $request->idr_rate));
 
         if ($idrRate <= 1) {
             return response()->json([
@@ -1715,14 +1719,24 @@ class PackingOrderController extends Controller
         }
 
         try {
-            DB::transaction(function () use ($ids, $idrRate) {
+            $updated = 0;
+            $skipped = 0;
+            DB::transaction(function () use ($ids, $idrRate, &$updated, &$skipped) {
                 foreach ($ids as $id) {
                     $packing = PackingOrder::where('id', $id)->lockForUpdate()->first();
                     if (!$packing) continue;
 
+                    // Aturan: kurs hanya bisa diupdate 1x selama masih hold.
+                    // Setelah valid, terkunci (koreksi lewat revisi internal).
+                    if (empty($packing->is_kurs_hold)) {
+                        $skipped++;
+                        continue;
+                    }
+
                     $packing->idr_rate = $idrRate;
                     $packing->is_kurs_hold = false;
                     $packing->save();
+                    $updated++;
 
                     // Hitung ulang idr_total, diskon, ppn, dsb pakai kurs baru
                     $this->reset_cost_if_change_idr_rate($packing->id, $idrRate);
@@ -1734,11 +1748,23 @@ class PackingOrderController extends Controller
                 }
             });
 
+            if ($updated === 0) {
+                return response()->json([
+                    'status' => 'error',
+                    'message' => 'Kurs sudah valid / terkunci, tidak bisa diupdate lagi. Koreksi lewat revisi internal.',
+                ]);
+            }
+
+            $msg = $updated > 1
+                ? $updated . ' DO berhasil diupdate kurs-nya.'
+                : 'Kurs DO berhasil diupdate.';
+            if ($skipped > 0) {
+                $msg .= ' ' . $skipped . ' DO dilewati karena kursnya sudah valid/terkunci.';
+            }
+
             return response()->json([
                 'status' => 'success',
-                'message' => count($ids) > 1
-                    ? count($ids) . ' DO berhasil diupdate kurs-nya.'
-                    : 'Kurs DO berhasil diupdate.',
+                'message' => $msg,
             ]);
         } catch (\Throwable $e) {
             // dd($e);

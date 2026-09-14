@@ -192,7 +192,7 @@ class DeliveryOrdersTable extends Table
                     // arahkan dulu ke tombol Print SPK.
                     if ((int) $model->print_count === 0) {
                         return "
-                            <a href=\"{$print_manifest}\" target=\"_blank\">
+                            <a href=\"{$print_manifest}\" target=\"_blank\" class=\"btn-print-spk-spv\" data-id=\"{$model->id}\">
                                 <button type=\"button\" class=\"btn btn-warning btn-sm btn-flat\" title=\"Print SPK dulu\">
                                     <i class=\"fas fa-print\"></i> Print SPK
                                 </button>

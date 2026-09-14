@@ -614,7 +614,9 @@ class InternalRevisionController extends Controller
             // ==========================================
             \App\Entities\Penjualan\PackingOrderDetail::where('do_id', $do->id)->update([
                 'discount_1'         => $after['disc_agen_percent'],
+                'discount_1_idr'     => $totals['disc_agen_idr'],
                 'discount_2'         => $after['disc_kemasan_percent'],
+                'discount_2_idr'     => $totals['disc_kemasan_idr'],
                 'discount_idr'       => $after['disc_tambahan_idr'],
                 'voucher_idr'        => $after['voucher_idr'],
                 'delivery_cost_idr'  => $after['delivery_cost_idr'],

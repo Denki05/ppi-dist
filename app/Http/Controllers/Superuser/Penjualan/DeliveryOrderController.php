@@ -1260,6 +1260,7 @@ class DeliveryOrderController extends Controller
 
                 $do->warehouse_id = $do->warehouse_id;
                 $do->idr_rate = $this->parseCurrency($request->idr_rate);
+                $do->is_kurs_hold = (empty($do->idr_rate) || (float) $do->idr_rate <= 1);
                 $do->status = $do_detail->status_resi == 1 ? 6 : 4;
                 $do->updated_by = Auth::id();
                 $do->save();

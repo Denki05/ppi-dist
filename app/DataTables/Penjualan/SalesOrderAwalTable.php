@@ -251,8 +251,8 @@ class SalesOrderAwalTable extends Table
                     $buttons .= $btn_archive;
 
                 } else {
-                    
-                    // NORMAL / APPROVED: belum dilanjutkan -> Revisi, Lanjut, Delete (tanpa Print SO)
+
+                    // NORMAL / APPROVED: belum dilanjutkan -> Revisi, Lanjut, Delete + Print SO
                     $buttons .= "
                         <a href=\"{$revisi}\">
                             <button type=\"button\" class=\"btn btn-sm btn-circle btn-alt-warning\" title=\"Revisi\">
@@ -263,6 +263,12 @@ class SalesOrderAwalTable extends Table
                         <a href=\"javascript:saveConfirmation('{$lanjutkan}')\">
                             <button type=\"button\" class=\"btn btn-sm btn-circle btn-alt-success\" title=\"Lanjutkan\">
                                 <i class=\"fa fa-check\"></i>
+                            </button>
+                        </a>
+
+                        <a href=\"{$print_so}\" target=\"_blank\">
+                            <button type=\"button\" class=\"btn btn-sm btn-circle btn-alt-info\" title=\"Print SO\">
+                                <i class=\"fa fa-print\"></i>
                             </button>
                         </a>
 
@@ -288,6 +294,12 @@ class SalesOrderAwalTable extends Table
                     <a href=\"javascript:saveConfirmation('{$lanjutkan}')\">
                         <button type=\"button\" class=\"btn btn-sm btn-circle btn-alt-success\" title=\"Lanjutkan\">
                             <i class=\"fa fa-check\"></i>
+                        </button>
+                    </a>
+
+                    <a href=\"{$print_so}\" target=\"_blank\">
+                        <button type=\"button\" class=\"btn btn-sm btn-circle btn-alt-info\" title=\"Print SO\">
+                            <i class=\"fa fa-print\"></i>
                         </button>
                     </a>
 

@@ -4,9 +4,9 @@
     @php $no++; @endphp
     <tr>
         <td class="sop-td-check">
-          {{-- Update kurs dibuka untuk semua DO status Packed (4), bukan cuma yang hold,
-               supaya kurs yang sudah terisi tapi salah tetap bisa dikoreksi (hitung ulang otomatis). --}}
-          @if($row->status == 4)
+          {{-- Checkbox massal hanya untuk kurs hold (status Packed), supaya chip
+               "kurs belum valid" dan bulk-bar tidak kehitung untuk DO yang sudah valid. --}}
+          @if($row->is_kurs_hold && $row->status == 4)
             <input type="checkbox" class="check-kurs-row" value="{{ $row->id }}">
           @endif
         </td>
@@ -61,7 +61,9 @@
                   <i class="fa fa-clock text-warning"></i> Menunggu Approval Void
                 </span>
               @else
-                @if($row->status == 4)
+                {{-- Kurs hanya bisa diupdate 1x selama masih hold. Setelah valid, terkunci:
+                     koreksi lewat revisi internal (dengan approval). --}}
+                @if($row->is_kurs_hold && $row->status == 4)
                   <a href="javascript:void(0)" class="dropdown-item btn-update-kurs" data-id="{{ $row->id }}">
                     <i class="fa fa-money text-warning"></i> Update Kurs
                   </a>
