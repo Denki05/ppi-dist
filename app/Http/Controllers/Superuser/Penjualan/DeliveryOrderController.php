@@ -429,7 +429,9 @@ class DeliveryOrderController extends Controller
      * Buat invoice untuk DO ini kalau belum ada, pakai grand_total_idr
      * yang sudah tersimpan di PackingOrderDetail (sama seperti perhitungan
      * di tutup_so() / reset_cost_if_change_idr_rate()).
-     * Kalau invoice sudah ada, cukup sinkronkan grand_total_idr-nya.
+     * Kalau invoice sudah ada (termasuk yang sempat ter-soft-delete saat
+     * revisi logistik), sinkronkan ulang kode/customer/total + restore —
+     * kecuali invoice VOID (final). Duplikat identik di PackingOrderController.
      */
     private function createInvoiceIfNeeded($do_id)
     {
@@ -440,14 +442,23 @@ class DeliveryOrderController extends Controller
             return;
         }
 
-        $existing = Invoicing::where('do_id', $do_id)->first();
+        $existing = Invoicing::withTrashed()->where('do_id', $do_id)->first();
 
         if ($existing) {
-            if ($existing->grand_total_idr != $detail->grand_total_idr) {
-                $existing->update([
-                    'grand_total_idr' => $detail->grand_total_idr,
-                ]);
+            // Invoice VOID bersifat final — jangan restore/sinkron dari alur DO.
+            if ($existing->trashed() && (int) $existing->status === Invoicing::STATUS['VOID']) {
+                return;
             }
+            if ($existing->trashed()) {
+                $existing->restore();
+            }
+            $existing->update([
+                'code' => $packing->do_code,
+                'customer_id' => $packing->customer_id,
+                'customer_other_address_id' => $packing->customer_other_address_id,
+                'grand_total_idr' => $detail->grand_total_idr,
+                'status' => Invoicing::STATUS['ACTIVE'],
+            ]);
             return;
         }
 
@@ -457,6 +468,7 @@ class DeliveryOrderController extends Controller
             'customer_id' => $packing->customer_id,
             'customer_other_address_id' => $packing->customer_other_address_id,
             'grand_total_idr' => $detail->grand_total_idr,
+            'status' => Invoicing::STATUS['ACTIVE'],
             'type' => 0,
             'created_by' => Auth::id(),
         ]);

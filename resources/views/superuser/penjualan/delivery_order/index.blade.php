@@ -909,7 +909,13 @@ $(document).on('click', '.btn-kurs-blocked', function () {
         icon: 'warning',
         title: 'Kurs Belum Diset',
         text: 'DO ' + $(this).data('code') + ' belum bisa diproses ke Surat Jalan karena kurs IDR belum di-set (masih 0/1). Silakan update kurs terlebih dahulu di halaman SO Progress.',
-        confirmButtonText: 'Mengerti'
+        showCancelButton: true,
+        confirmButtonText: 'Mengerti',
+        cancelButtonText: 'Ke SO Progress'
+    }).then(function (result) {
+        if (result.dismiss === Swal.DismissReason.cancel) {
+            window.location.href = '{{ route("superuser.penjualan.sales_order.index_lanjutan") }}';
+        }
     });
 });
 

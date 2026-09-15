@@ -58,6 +58,50 @@ class InternalRevisionController extends Controller
     }
 
     /**
+     * Status pembayaran invoice DO ini.
+     * - belum ada invoice / belum ada PayableDetail -> belum bayar (revisi bebas).
+     * - ada bayar tapi total < grand_total -> belum lunas (revisi nominal masih boleh).
+     * - total bayar >= grand_total -> lunas (revisi ubah nominal ditolak dini).
+     */
+    private function getInvoicePaymentState($do_id)
+    {
+        $invoice = Invoicing::where('do_id', $do_id)->first();
+        if (!$invoice) {
+            return ['invoice' => null, 'paid' => 0, 'grand' => 0, 'is_paid' => false, 'is_lunas' => false];
+        }
+        $grand = (float) $invoice->grand_total_idr;
+        $paid = (float) \App\Entities\Finance\PayableDetail::where('invoice_id', $invoice->id)->sum('total');
+        $isPaid = \App\Entities\Finance\PayableDetail::where('invoice_id', $invoice->id)->exists();
+        return [
+            'invoice' => $invoice,
+            'paid' => $paid,
+            'grand' => $grand,
+            'is_paid' => $isPaid,
+            'is_lunas' => $isPaid && $grand > 0 && $paid >= ($grand - 0.5),
+        ];
+    }
+
+    /**
+     * Approver revisi internal: superuser lolos, selain itu wajib role/divisi
+     * Management. Role `Manajemen` (ID) dipertahankan sebagai alias legacy
+     * karena tabel `roles` saat ini hanya berisi Developer/SuperAdmin/Admin,
+     * jadi cek juga `superusers.division` (Management/Developer/Finance).
+     */
+    private function isRevisionApprover($user)
+    {
+        if (!$user) {
+            return false;
+        }
+        if (!empty($user->is_superuser)) {
+            return true;
+        }
+        if ($user->hasRole(['Developer', 'SuperAdmin', 'Management', 'Manajemen'])) {
+            return true;
+        }
+        return in_array($user->division ?? '', ['Management', 'Developer', 'Finance']);
+    }
+
+    /**
      * Form pengajuan revisi internal. Ambil data DO + item existing,
      * mirip pola create_lanjutan.
      */
@@ -222,6 +266,35 @@ class InternalRevisionController extends Controller
                 // grand_total_idr sengaja TIDAK dihitung di sini - akan dihitung ULANG
                 // dari nol pas approve(), supaya tidak percaya angka dari form (anti-tampering).
             ];
+
+            // ==========================================
+            // TOLAK DINI: invoice sudah LUNAS + revisi mengubah nominal.
+            // - Belum bayar / belum lunas -> revisi nominal masih boleh.
+            // - Lunas + nominal sama (cuma ubah data non-nominal) -> boleh.
+            // - Lunas + nominal berubah -> tolak di sini (hemat OTP + tidak mengunci DO).
+            // ==========================================
+            $payState = $this->getInvoicePaymentState($do->id);
+            if ($payState['is_lunas']) {
+                try {
+                    $previewTotals = $this->calculateTotals($after);
+                    $beforeGrand = (float) ($before['grand_total_idr'] ?? 0);
+                    if (abs((float) $previewTotals['grand_total_idr'] - $beforeGrand) > 0.5) {
+                        throw new \Exception(
+                            'Invoice ini sudah LUNAS (dibayar Rp ' . number_format($payState['paid'], 0, ',', '.') .
+                            ' dari Rp ' . number_format($payState['grand'], 0, ',', '.') .
+                            '). Revisi yang mengubah nominal tidak bisa diproses. ' .
+                            'Jika hanya ubah data non-nominal (sales/rekening/alamat/note), ajukan ulang tanpa mengubah item/diskon/ongkir/kurs. ' .
+                            'Untuk koreksi nilai yang sudah lunas gunakan Nota Kredit / Sale Retur.'
+                        );
+                    }
+                } catch (\Exception $previewException) {
+                    // calculateTotals() gagal (mis. qty 0 / disc over): biarkan validasi
+                    // normal yang menangani, kecuali itu error lunas kita sendiri.
+                    if (strpos($previewException->getMessage(), 'sudah LUNAS') !== false) {
+                        throw $previewException;
+                    }
+                }
+            }
 
             // ==========================================
             // DETEKSI items_changed (buat nentuin wajib reprint SJ atau tidak)
@@ -433,8 +506,7 @@ class InternalRevisionController extends Controller
     {
         $revision = DoInternalRevision::where('status', 1)->findOrFail($id);
 
-        if (!Auth::user()->is_superuser && !Auth::user()->hasRole(['Manajemen', 'Developer'])) {
-            // TODO: pastikan nama role 'Manajemen' sesuai yang terdaftar di tabel roles
+        if (!$this->isRevisionApprover(Auth::user())) {
             return response()->json(['status' => 'error', 'message' => 'Anda tidak punya akses approval revisi internal.']);
         }
 
@@ -478,7 +550,7 @@ class InternalRevisionController extends Controller
         try {
             $revision = DoInternalRevision::where('status', 1)->lockForUpdate()->findOrFail($id);
 
-            if (!Auth::user()->is_superuser && !Auth::user()->hasRole(['Manajemen', 'Developer'])) {
+            if (!$this->isRevisionApprover(Auth::user())) {
                 throw new \Exception('Anda tidak punya akses approval revisi internal.');
             }
             if ((int) $revision->requested_by === (int) Auth::id()) {
@@ -515,12 +587,11 @@ class InternalRevisionController extends Controller
                 return response()->json(['status' => 'error', 'message' => 'Status DO sudah berubah sejak pengajuan dibuat. Pengajuan ini otomatis dibatalkan, silakan ajukan ulang bila masih perlu.']);
             }
 
-            // Guard: invoice yang sudah ada pembayaran tidak boleh diubah nilainya
+            // Guard: invoice yang sudah LUNAS tidak boleh diubah nilainya
             // (konsisten dengan guard void di FinanceVoidController).
-            $invCheck = Invoicing::where('do_id', $do->id)->first();
-            if ($invCheck && \App\Entities\Finance\PayableDetail::where('invoice_id', $invCheck->id)->exists()) {
-                throw new \Exception('Invoice ini sudah punya catatan pembayaran (Payable), revisi tidak bisa diapprove. Koordinasikan dulu dengan tim AR/Payable.');
-            }
+            // Belum bayar / belum lunas -> revisi nominal masih boleh.
+            // Lunas + nominal sama (ubah data non-nominal saja) -> boleh.
+            $payState = $this->getInvoicePaymentState($do->id);
 
             $detail = $revision->revision_detail;
             $before = $detail['before'];
@@ -528,6 +599,16 @@ class InternalRevisionController extends Controller
 
             $this->checkStockAvailability($do->warehouse_id, $before['items'], $after['items']);
             $totals = $this->calculateTotals($after);
+
+            // Final safety net: pembayaran bisa masuk SETELAH pengajuan dibuat
+            // (lolos tolak dini di store), jadi cek ulang di sini.
+            if ($payState['is_lunas'] && abs((float) $totals['grand_total_idr'] - (float) ($before['grand_total_idr'] ?? 0)) > 0.5) {
+                throw new \Exception(
+                    'Invoice ini sudah LUNAS (dibayar Rp ' . number_format($payState['paid'], 0, ',', '.') .
+                    ' dari Rp ' . number_format($payState['grand'], 0, ',', '.') .
+                    '). Revisi yang mengubah nominal tidak bisa diapprove. Untuk koreksi nilai yang sudah lunas gunakan Nota Kredit / Sale Retur.'
+                );
+            }
 
             $stockService = new StockService();
             $beforeMap = collect($before['items'])->keyBy('product_packaging_id');
@@ -693,7 +774,7 @@ class InternalRevisionController extends Controller
         try {
             $revision = DoInternalRevision::where('status', 1)->lockForUpdate()->findOrFail($id);
 
-            if (!Auth::user()->is_superuser && !Auth::user()->hasRole(['Manajemen', 'Developer'])) {
+            if (!$this->isRevisionApprover(Auth::user())) {
                 throw new \Exception('Anda tidak punya akses approval revisi internal.');
             }
             if ((int) $revision->requested_by === (int) Auth::id()) {

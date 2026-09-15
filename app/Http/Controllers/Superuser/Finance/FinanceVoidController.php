@@ -22,10 +22,14 @@ class FinanceVoidController extends Controller
      */
     private function guardFinance()
     {
-        // SPV Finance & Accounting yang berwenang approve/reject void
-        // TODO: pastikan nama role ini sesuai yang terdaftar di Spatie Permission
-        // (cek di tabel `roles` atau penggunaan @role() lain di menu.blade.php)
-        if (Auth::user()->is_superuser == 0 && !Auth::user()->hasRole(['SPV Finance', 'Finance', 'Developer'])) {
+        // Approval void: superuser lolos, selain itu wajib role/divisi Finance.
+        // Role di tabel `roles` saat ini hanya Developer/SuperAdmin/Admin,
+        // jadi cek juga kolom `superusers.division` (Finance/Management/Developer)
+        // sesuai pemakaian di menu.blade.php.
+        $user = Auth::user();
+        if ($user->is_superuser == 0
+            && !$user->hasRole(['Developer', 'SuperAdmin'])
+            && !in_array($user->division ?? '', ['Finance', 'Management', 'Developer'])) {
             return response()->json([
                 'status' => 'error',
                 'message' => 'Anda tidak punya akses untuk approval void.',
@@ -49,8 +53,10 @@ class FinanceVoidController extends Controller
             $packing = PackingOrder::with('member')->find($vr->do_id);
             $invoicing = Invoicing::where('do_id', $vr->do_id)->first();
 
-            // TODO: sesuaikan nama tabel/kolom kalau bukan users.name
-            $requestedByName = DB::table('superusers')->where('id', $vr->requested_by)->value('username');
+            // Tabel requester adalah `superusers` (bukan `users`); tampilkan `name`,
+            // fallback ke `username` karena `name` boleh null.
+            $requester = DB::table('superusers')->where('id', $vr->requested_by)->first();
+            $requestedByName = $requester->name ?? $requester->username ?? '-';
 
             // ⚠️ Info tambahan untuk Finance - seharusnya sudah aman (kurs & payment
             // sudah digerbang di ready()/sending()), tapi tetap ditampilkan sebagai
@@ -261,8 +267,10 @@ class FinanceVoidController extends Controller
             // Invoicing sudah soft-deleted kalau approved -> pakai withTrashed()
             $invoicing = Invoicing::withTrashed()->where('do_id', $vr->do_id)->first();
 
-            $requestedByName = DB::table('superusers')->where('id', $vr->requested_by)->value('username');
-            $approvedByName = $vr->approved_by ? DB::table('superusers')->where('id', $vr->approved_by)->value('username') : null;
+            $requestedBy = DB::table('superusers')->where('id', $vr->requested_by)->first();
+            $requestedByName = $requestedBy->name ?? $requestedBy->username ?? '-';
+            $approvedBy = $vr->approved_by ? DB::table('superusers')->where('id', $vr->approved_by)->first() : null;
+            $approvedByName = $approvedBy->name ?? $approvedBy->username ?? null;
 
             return (object) [
                 'id' => $vr->id,
