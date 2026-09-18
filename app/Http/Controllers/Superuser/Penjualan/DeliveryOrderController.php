@@ -459,7 +459,6 @@ class DeliveryOrderController extends Controller
             return redirect()->route('superuser.penjualan.delivery_order.index')->with('success','Delivery Order berhasil diubah ke delivery!');
             
         }catch(\Throwable $e){
-            dd($e);
             DB::rollback();
             return redirect()->back()->with('error',$e->getMessage());
         }
@@ -613,7 +612,7 @@ class DeliveryOrderController extends Controller
             } elseif ($get_do->type_transaction == "TEMPO" && $customer->free_shipping == 0) {
                 $updateData['delivery_cost_idr'] = $post["other_cost_idr"];
             } elseif ($get_do->type_transaction == "CASH" && $customer->free_shipping == 0) {
-                $updateData['other_cost_idr'] = $post["other_cost_idr"];
+                $updateData['delivery_cost_idr'] = $post["other_cost_idr"];
             }
 
             $purchase_total = $result_cost->purchase_total_idr ?? 0;

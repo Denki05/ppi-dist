@@ -62,22 +62,32 @@ class ReportCustmerOrderVariantController extends Controller
     public function getProductsByBrand(Request $request)
     {
         if ($request->ajax()) {
-            $products = ProductPack::leftJoin('master_products', 'master_products_packaging.product_id', '=', 'master_products.id')
+            $brand_name = $request->brand_name;
+            $packaging  = $request->packaging;
+
+            $query = ProductPack::leftJoin('master_products', 'master_products_packaging.product_id', '=', 'master_products.id')
                 ->leftJoin('master_packaging', 'master_products_packaging.packaging_id', '=', 'master_packaging.id')
                 ->select(
-                    'master_products_packaging.id as product_id', 
-                    'master_products_packaging.code as product_code', 
-                    'master_products_packaging.name as product_name', 
+                    'master_products_packaging.id as product_id',
+                    'master_products_packaging.code as product_code',
+                    'master_products_packaging.name as product_name',
                     'master_packaging.pack_name as product_kemasan'
-                )
-                ->where('master_products.brand_name', $request->brand_name)
-                ->get();
-            
+                );
+
+            if (!empty($brand_name) && !in_array('all', (array) $brand_name)) {
+                $query->whereIn('master_products.brand_name', (array) $brand_name);
+            }
+
+            if (!empty($packaging) && !in_array('all', (array) $packaging)) {
+                $query->whereIn('master_products_packaging.packaging_id', (array) $packaging);
+            }
+
+            $products = $query->get();
+
             return response()->json($products);
         }
     }
 
-    // Tambahkan method baru, di bawah getProductsByBrand()
     public function getPackaging(Request $request)
     {
         if ($request->ajax()) {

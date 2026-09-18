@@ -25,53 +25,64 @@
     <div class="col-10">
       <div class="block">
       <div class="block-content">
-        <div class="form-group row">
-          <label class="col-md-2 col-form-label text-left" for="customer">Customer:</label>
-          <div class="col-md-4">
-            <select class="js-select2 form-control" id="customer" name="customer[]" data-placeholder="Select Customer" multiple required>
-              <option value="all">All</option>
-              @foreach($customer as $row)
-                <option value="{{ $row->id }}">{{ $row->name }} {{ $row->text_kota }}</option>
-              @endforeach
-            </select>
+        <div class="row">
+          <div class="col-md-6">
+            <div class="form-group row">
+              <label class="col-md-4 col-form-label text-left" for="customer">Customer:</label>
+              <div class="col-md-8">
+                <select class="js-select2 form-control" id="customer" name="customer[]" data-placeholder="Select Customer" multiple required>
+                  <option value="all">All</option>
+                  @foreach($customer as $row)
+                    <option value="{{ $row->id }}">{{ $row->name }} {{ $row->text_kota }}</option>
+                  @endforeach
+                </select>
+              </div>
+            </div>
+
+            <div class="form-group row">
+              <label class="col-md-4 col-form-label text-left" for="start">Periode From:</label>
+              <div class="col-md-8">
+                <input type="date" class="form-control" id="start_date" name="start" required value="{{ date('Y-m-01') }}">
+              </div>
+            </div>
+
+            <div class="form-group row">
+              <label class="col-md-4 col-form-label text-left" for="end">Periode To:</label>
+              <div class="col-md-8">
+                <input type="date" class="form-control" id="end_date" name="end" required value="{{ date('Y-m-d') }}">
+              </div>
+            </div>
           </div>
 
-          <label class="col-md-2 col-form-label text-left" for="brand_name">Brand:</label>
-          <div class="col-md-4">
-            <select class="js-select2 form-control js-select2-brand" id="brand_name" name="brand_name[]" data-placeholder="Select Brand/Merek" multiple>
-              <option value="all">All</option>
-              @foreach($brand as $row)
-                <option value="{{ $row->brand_name }}">{{ $row->brand_name }}</option>
-              @endforeach
-            </select>
-          </div>
-        </div>
+          <div class="col-md-6">
+            <div class="form-group row">
+              <label class="col-md-4 col-form-label text-left" for="brand_name">Brand:</label>
+              <div class="col-md-8">
+                <select class="js-select2 form-control js-select2-brand" id="brand_name" name="brand_name[]" data-placeholder="Select Brand/Merek" multiple>
+                  <option value="all">All</option>
+                  @foreach($brand as $row)
+                    <option value="{{ $row->brand_name }}">{{ $row->brand_name }}</option>
+                  @endforeach
+                </select>
+              </div>
+            </div>
 
-        <div class="form-group row">
-          <label class="col-md-2 col-form-label text-left" for="product">Product:</label>
-          <div class="col-md-4">
-            <select class="js-select2 form-control" id="product" name="product[]" data-placeholder="Select Product" multiple>
-              <option value="all">All</option>
-            </select>
-          </div>
+            <div class="form-group row">
+              <label class="col-md-4 col-form-label text-left" for="packaging">Kemasan:</label>
+              <div class="col-md-8">
+                <select class="js-select2 form-control" id="packaging" name="packaging[]" data-placeholder="Select Kemasan" multiple>
+                </select>
+              </div>
+            </div>
 
-          <label class="col-md-2 col-form-label text-left" for="packaging">Kemasan:</label>
-          <div class="col-md-4">
-            <select class="js-select2 form-control" id="packaging" name="packaging[]" data-placeholder="Select Kemasan" multiple>
-              <option value="all">All</option>
-            </select>
-          </div>
-        </div>
-
-        <div class="form-group row">
-          <label class="col-md-2 col-form-label text-left" for="start">Periode From:</label>
-          <div class="col-md-4">
-            <input type="date" class="form-control" id="start_date" name="start" required value="{{ date('Y-m-01') }}">
-          </div>
-
-          <label class="col-md-2 col-form-label text-left" for="end">Periode To:</label>
-          <div class="col-md-4">
-            <input type="date" class="form-control" id="end_date" name="end" required value="{{ date('Y-m-d') }}">
+            <div class="form-group row">
+            <label class="col-md-4 col-form-label text-left" for="product">Product:</label>
+            <div class="col-md-8">
+              <select class="js-select2 form-control" id="product" name="product[]" data-placeholder="Select Product" multiple>
+                <option value="all">All</option>
+              </select>
+            </div>
+            </div>
           </div>
         </div>
 
@@ -147,6 +158,19 @@
 @include('superuser.asset.plugin.datatables')
 @include('superuser.asset.plugin.daterangepicker')
 @include('superuser.asset.plugin.datatables-button')
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/datatables.net-rowgroup/1.5.0/rowGroup.dataTables.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/datatables.net-rowgroup/1.5.0/dataTables.rowGroup.min.js"></script>
+
+<style>
+  #datatable tbody td {
+    vertical-align: middle;
+    padding-top: 8px;
+    padding-bottom: 8px;
+  }
+  #datatable tbody tr.dtrg-start td {
+    border-bottom: none !important;
+  }
+</style>
 
 @push('scripts')
 <script type="text/javascript">
@@ -168,6 +192,42 @@
         },
         processing: true,
         serverSide: false,
+        rowGroup: {
+          dataSrc: ['combined_customer', 'invoice_brand', 'combined_month_year'],
+          startRender: function (rows, group, level) {
+              let config = {
+                  0: { bg: '#dfe3e8', weight: '700', size: '14px', color: '#1f2937', topSpace: true },
+                  1: { bg: '#eef1f4', weight: '600', size: '13px', color: '#374151', topSpace: false },
+                  2: { bg: '#f6f7f9', weight: '500', size: '12.5px', color: '#4b5563', topSpace: false }
+              };
+
+              let c = config[level];
+
+              let tr = $('<tr/>')
+                  .addClass('group-row-level-' + level)
+                  .css({
+                      'background-color': c.bg,
+                      'border-top': level === 0 ? '3px solid #9aa5b1' : '1px solid #e5e7eb',
+                  });
+
+              // 5 kolom: Customer, Brand, Month, Variant, Qty
+              for (let i = 0; i < 5; i++) {
+                  let cellText = (i === level) ? group : '';
+                  tr.append(
+                      $('<td/>')
+                          .css({
+                              'font-weight': c.weight,
+                              'font-size': c.size,
+                              'color': c.color,
+                              'text-align': i === 4 ? 'right' : 'left',
+                          })
+                          .text(cellText)
+                  );
+              }
+
+              return tr;
+          }
+      },
         ajax: {
           "url": firstDatatableUrl,
           "dataType": "json",
@@ -175,14 +235,37 @@
           "data":{ _token: "{{csrf_token()}}"}
         },
         columns: [
-          {data: 'combined_customer'},
-          {data: 'invoice_brand', name: 'penjualan_so.brand_name'},
-          {data: 'combined_month_year'},
+          {
+            data: 'combined_customer',
+            render: function (data, type) {
+                return type === 'display' ? '' : data;
+            }
+          },
+          {
+            data: 'invoice_brand',
+            name: 'penjualan_so.brand_name',
+            render: function (data, type) {
+                return type === 'display' ? '' : data;
+            }
+          },
+          {
+            data: 'combined_month_year',
+            render: function (data, type) {
+                return type === 'display' ? '' : data;
+            }
+          },
           {data: 'combined_product'},
           {data: 'invoice_qty'},
         ],
+        columnDefs: [
+          { targets: 0, width: '160px' },
+          { targets: 1, width: '100px' },
+          { targets: 2, width: '130px' }
+        ],
         order: [
-          [0, 'asc']
+          [0, 'asc'],
+          [1, 'asc'],
+          [2, 'asc']
         ],
         pageLength: 10,
         lengthMenu: [
@@ -243,62 +326,92 @@
       // $("#brand_name").val("all").change();
       // $("#product").val("all").change();
 
-      $('#brand_name').on('change', function () {
-        let brand_name = $(this).val();
-
-        // Jika tidak ada brand yang dipilih, tampilkan opsi "All" saja
-        if (!brand_name || brand_name.length === 0 || brand_name.includes("all")) {
-            $('#product').html('<option value="all" selected>All</option>');
-            $('#product').val("all").trigger('change'); // set kembali ke all
-            return;
-        }
-
-        // AJAX untuk mengambil produk berdasarkan brand
+      function loadPackaging() {
         $.ajax({
-            url: "{{ route('superuser.report.customer_order_variant_v2.getProductsByBrand') }}",
-            type: "GET",
-            data: { brand_name: brand_name },
-            success: function (data) {
-                let productOptions = '<option value="all">All</option>';
-                data.forEach(function (product) {
-                    productOptions += `<option value="${product.product_id}">
-                        ${product.product_code} - ${product.product_name} (${product.product_kemasan})
-                    </option>`;
-                });
-                $('#product').html(productOptions);
-                $('#product').val("all").trigger('change'); // reset ke All setelah load
-            },
-            error: function () {
-                alert('Gagal memuat data produk.');
-            }
+          url: "{{ route('superuser.report.customer_order_variant.getPackaging') }}",
+          type: "GET",
+          success: function (data) {
+            let options = '';
+            data.forEach(function (p) {
+              options += `<option value="${p.id}">${p.pack_name}</option>`;
+            });
+            $('#packaging').html(options);
+          },
+          error: function () {
+            alert('Gagal memuat data kemasan.');
+          }
         });
+      }
+      loadPackaging(); // load semua kemasan sekali saat halaman dibuka, tidak bergantung brand
+
+      var productRequest = null;
+      var productRequestToken = 0; // penanda request terbaru
+
+      function loadProducts() {
+          let brand_name = $('#brand_name').val();
+          let packaging = $('#packaging').val();
+
+          // Batalkan request sebelumnya kalau masih pending
+          if (productRequest !== null) {
+              productRequest.abort();
+              productRequest = null;
+          }
+
+          // Naikkan token tiap kali loadProducts dipanggil -> jadi "nomor urut" request ini
+          productRequestToken++;
+          let currentToken = productRequestToken;
+
+          if ((!brand_name || brand_name.length === 0) && (!packaging || packaging.length === 0)) {
+              $('#product').html('<option value="all" selected>All</option>').trigger('change');
+              return;
+          }
+
+          productRequest = $.ajax({
+              url: "{{ route('superuser.report.customer_order_variant.getProductsByBrand') }}",
+              type: "GET",
+              cache: false,
+              data: { brand_name: brand_name, packaging: packaging },
+              success: function (data) {
+                  // Kalau saat response ini datang sudah ada request lain yang lebih baru, abaikan
+                  if (currentToken !== productRequestToken) {
+                      return;
+                  }
+
+                  let productOptions = '<option value="all">All</option>';
+                  data.forEach(function (product) {
+                      productOptions += `<option value="${product.product_id}">
+                          ${product.product_code} - ${product.product_name}
+                      </option>`;
+                  });
+                  $('#product').html(productOptions).trigger('change');
+                  productRequest = null;
+              },
+              error: function (jqXHR, textStatus) {
+                  productRequest = null;
+                  if (textStatus !== 'abort') {
+                      alert('Gagal memuat data produk.');
+                  }
+              }
+          });
+      }
+
+      $('#brand_name').on('change', function () {
+          loadProducts();
       });
 
-      function loadPackaging() {
-          $.ajax({
-            url: "{{ route('superuser.report.customer_order_variant.getPackaging') }}",
-            type: "GET",
-            success: function (data) {
-              let options = '<option value="all" selected>All</option>';
-              data.forEach(function (p) {
-                options += `<option value="${p.id}">${p.pack_name}</option>`;
-              });
-              $('#packaging').html(options);
-            },
-            error: function () {
-              alert('Gagal memuat data kemasan.');
-            }
-          });
-        }
-        loadPackaging(); // panggil sekali saat halaman load
+      $('#packaging').on('change', function () {
+          loadProducts();
+      });
+
+      
 
         $('#btn-reset').on('click', function (e) {
           e.preventDefault();
 
           $('#customer').val(null).trigger('change');
           $('#brand_name').val(null).trigger('change');
-          $('#product').html('').val(null).trigger('change');
-          $('#packaging').html('').val(null).trigger('change');   // <-- tambahan
+          $('#product').html('<option value="all" selected>All</option>').val("all").trigger('change');
+          loadPackaging(); // reload semua kemasan lagi
 
           let defaultStart = '{{ date('Y-m-01') }}';
           let defaultEnd = '{{ date('Y-m-d') }}';

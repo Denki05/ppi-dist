@@ -22,9 +22,33 @@ class StockService
                 ]);
             }
 
+            $qty = (float) $qty;
+            $reservedBefore = (float) $stock->reserved_quantity;
+
+            // ✅ FIX: lepas reserved SEBISANYA (partial release), bukan all-or-nothing.
+            // Sebelumnya: kalau reserved < qty, reserved SAMA SEKALI tidak dikurangi
+            // (macet selamanya). Sekarang: dikurangi sebanyak yang tersedia, minimal 0.
+            $stock->reserved_quantity = max(0, $reservedBefore - $qty);
+
             $stock->quantity -= $qty;
-            if ($stock->reserved_quantity >= $qty) $stock->reserved_quantity -= $qty;
             $stock->save();
+
+            // ✅ LOG kalau reserved yang tersedia lebih kecil dari qty yang dipotong —
+            // ini indikasi ada order lain yang "mendahului" pakai reserved produk ini,
+            // atau reserved memang belum pernah dibooking untuk order ini.
+            // Bukan error fatal (proses tetap lanjut), tapi WAJIB tercatat supaya
+            // ketahuan dari log, bukan ketahuan belakangan dari selisih stok manual.
+            if ($reservedBefore < $qty) {
+                \Illuminate\Support\Facades\Log::warning('StockService: reserved_quantity kurang dari qty yang dipotong', [
+                    'warehouse_id'     => $warehouseId,
+                    'product_packaging_id' => $productId,
+                    'qty_dipotong'     => $qty,
+                    'reserved_sebelum' => $reservedBefore,
+                    'reserved_sesudah' => $stock->reserved_quantity,
+                    'quantity_sesudah' => $stock->quantity,
+                ]);
+            }
+
             return true;
         });
     }
