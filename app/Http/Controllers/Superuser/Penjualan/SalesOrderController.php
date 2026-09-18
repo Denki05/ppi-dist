@@ -240,6 +240,16 @@ class SalesOrderController extends Controller
 
                     DB::commit();
 
+                    // Sinkron ke AO (best-effort): input via web transaksi ikut masuk AO (pull fallback via /list)
+                    try {
+                        $created = $result['sales_order'];
+                        if ($created) {
+                            $created->refresh();
+                            \App\Services\AoProgressPushService::push($created, 'CREATE', []);
+                        }
+                    } catch (\Exception $pushEx) {
+                    }
+
                     $response['notification'] = [
                         'alert' => 'notify',
                         'type' => 'success',
@@ -386,6 +396,13 @@ class SalesOrderController extends Controller
 
                 DB::commit();
 
+                // Sync ke AO (best-effort): lanjutkan
+                try {
+                    $sales_order->refresh();
+                    \App\Services\AoProgressPushService::push($sales_order, 'LANJUTAN');
+                } catch (\Exception $pushEx) {
+                }
+
                 $response['notification'] = [
                     'alert' => 'notify',
                     'type' => 'success',
@@ -438,6 +455,12 @@ class SalesOrderController extends Controller
                 }
 
                 DB::commit();
+                // Sync ke AO (best-effort): revisi -> AO reopen order
+                try {
+                    $sales_order->refresh();
+                    \App\Services\AoProgressPushService::push($sales_order, 'REVISI', ['note' => 'Admin mengembalikan SO untuk revisi']);
+                } catch (\Exception $pushEx) {
+                }
                 $response['notification'] = [
                     'alert' => 'notify', 'type' => 'success', 'content' => 'Success',
                 ];
@@ -480,6 +503,11 @@ class SalesOrderController extends Controller
                 }
 
                 DB::commit();
+                // Sync ke AO: SO dihapus -> AO tandai DIHAPUS (tidak ikut terhapus)
+                try {
+                    \App\Services\AoProgressPushService::push($sales_order, 'DELETE', ['note' => 'SO dihapus di transaksi (masa transisi SO Awal -> AO)']);
+                } catch (\Exception $pushEx) {
+                }
                 $response['notification'] = [
                     'alert' => 'notify',
                     'type' => 'success',
@@ -542,6 +570,13 @@ class SalesOrderController extends Controller
                 $workflowService->tidakLanjut($sales_order, $post["keterangan"]);
                     
                 DB::commit();
+
+                // Sync ke AO: tidak lanjut dianggap revisi + note agar AO tahu
+                try {
+                    $sales_order->refresh();
+                    \App\Services\AoProgressPushService::push($sales_order, 'REVISI', ['note' => $post["keterangan"]]);
+                } catch (\Exception $pushEx) {
+                }
 
                 $data_json["IsError"] = FALSE;
                 $data_json["Message"] = "Sales Order Berhasil Diubah";
@@ -633,6 +668,17 @@ class SalesOrderController extends Controller
                 $closingService->insertStockLogs($stockLogs);
 
                 DB::commit();
+
+                // Sync ke AO (best-effort): tutup_so -> update invoice/synced_to (do_code + nota)
+                try {
+                    $sales_order->refresh();
+                    $packing_order->refresh();
+                    \App\Services\AoProgressPushService::push($sales_order, 'TUTUP', [
+                        'do_code' => $packing_order->do_code ?? $packing_order->code ?? null,
+                        'nota_code' => $sales_order->code,
+                    ]);
+                } catch (\Exception $pushEx) {
+                }
 
                 $response['notification'] = [
                     'alert' => 'notify', 'type' => 'success', 'content' => 'Success',

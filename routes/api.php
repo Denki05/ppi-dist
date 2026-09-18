@@ -18,7 +18,16 @@ Route::get('product-assets', [ProductAssetsController::class, 'index']);
 Route::group(['prefix' => 'ao/so-awal', 'middleware' => 'ao.apikey'], function () {
     Route::get('/brands', [AoSalesOrderApiController::class, 'brands']);
     Route::get('/products', [AoSalesOrderApiController::class, 'products']);
+    Route::get('/kemasan', [AoSalesOrderApiController::class, 'kemasan']);
+    Route::get('/next-code', [AoSalesOrderApiController::class, 'nextCode']);
+    // Sinkron dua arah: import transaksi->AO (pull) + delete sync AO->transaksi
+    Route::get('/list', [AoSalesOrderApiController::class, 'list']);
+    Route::get('/detail/{so_code}', [AoSalesOrderApiController::class, 'detail']);
+    Route::delete('/{so_code}', [AoSalesOrderApiController::class, 'destroyApi']);
     Route::post('/store', [AoSalesOrderApiController::class, 'store']);
+    // Revisi AO: cek status + kirim revisi (hanya jika status=3 di transaksi)
+    Route::get('/status/{so_code}', [AoSalesOrderApiController::class, 'status']);
+    Route::post('/update', [AoSalesOrderApiController::class, 'updateFromAo']);
 });
 
 /*

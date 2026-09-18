@@ -91,31 +91,38 @@ class AoSalesOrderApiController extends Controller
     }
 
     /**
-     * Create SO Awal dari AO (produk reguler saja, tanpa kontrak/indent).
+     * Create SO Awal dari AO — full mapping dari modal AO ke penjualan_so + penjualan_so_item.
      * POST /api/ao/so-awal/store
      *
-     * Payload:
-     * {
-     *   "customer_id": 123,
-     *   "brand_name": "GCF",
-     *   "type_transaction": 1,      // 1 CASH, 2 TEMPO, 3 MARKETPLACE, 4 COD
-     *   "note": "opsional",
-     *   "pic_username": "budi",     // opsional, dipakai untuk created_by
-     *   "items": [
-     *     { "product_packaging_id": 55, "price": 100000, "qty": 2, "disc_usd": 0, "free_product": 0 }
-     *   ]
-     * }
+     * Menerima field fleksibel dari AO (string/int) lalu dinormalisasi:
+     * - customer_id: "123" (id CustomerOtherAddress langsung) ATAU "123.1" (customer_id.index)
+     * - brand_name: string, wajib
+     * - type_transaction: 1/2/3/4 ATAU "CASH"/"TEMPO"/"MARKETPLACE"/"COD"
+     * - kurs / currency_rate / idr_rate: angka (boleh format "15.500")
+     * - disc: disc_percent/discount_value, disc_idr, disc_usd/global_disc_usd, disc_kemasan
+     * - approval: 0/1, "YES"/"NO", true/false
+     * - so_indent: "YES"/"NO", 1/0, true/false
+     * - note / notes / note_so: string opsional
+     * - pic_username: opsional untuk created_by
+     * - ao_order_number: nomor order dari AO (disimpan ke catatan, anti-duplikat via log)
+     * - items[] tiap item menerima alias:
+     *     product_packaging_id | product_id | sku,
+     *     price | unit_price,
+     *     qty,
+     *     disc_usd | discount | disc,
+     *     packaging_id | packaging,
+     *     free_product | free
+     *
+     * Setelah create, SO langsung di-lanjutkan (status=2 = SO Lanjutan)
+     * kecuali indent (tetap status=1 + so_indent=1, biar masuk jalur indent).
      */
     public function store(Request $request)
     {
         $validator = Validator::make($request->all(), [
-            'customer_id'                   => ['required', 'regex:/^\d+\.\d+$/'],
-            'brand_name'                    => 'required|string',
-            'type_transaction'               => 'required|integer|in:1,2,3,4',
-            'items'                          => 'required|array|min:1',
-            'items.*.product_packaging_id'   => 'required',
-            'items.*.qty'                    => 'required|numeric|min:0.01',
-            'items.*.price'                  => 'required|numeric|min:0',
+            'customer_id'    => 'required|string',
+            'brand_name'     => 'required|string',
+            'type_transaction' => 'required',
+            'items'          => 'required|array|min:1',
         ]);
 
         if ($validator->fails()) {
@@ -126,34 +133,95 @@ class AoSalesOrderApiController extends Controller
             ], 422);
         }
 
-        $ppIds = collect($request->items)->pluck('product_packaging_id')->all();
+        // --- Normalisasi type_transaction (string/int -> NAMA string untuk DB) ---
+        // DB penjualan_so.type_transaction = varchar: CASH/TEMPO/MARKETPLACE/COD
+        $typeMap = ['CASH' => 1, 'TEMPO' => 2, 'MARKETPLACE' => 3, 'COD' => 4];
+        $typeRaw = $request->input('type_transaction');
+        if (is_numeric($typeRaw)) {
+            $typeInt = (int) $typeRaw;
+            $typeName = array_search($typeInt, $typeMap, true);
+        } else {
+            $typeName = strtoupper(trim((string) $typeRaw));
+            $typeInt = $typeMap[$typeName] ?? 0;
+        }
+        if (!in_array($typeInt, [1, 2, 3, 4], true)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'type_transaction tidak valid (gunakan CASH/TEMPO/MARKETPLACE/COD atau 1-4)',
+            ], 422);
+        }
+
+        // --- Normalisasi customer/member ---
+        $otherAddress = $this->resolveMember($request->input('customer_id'));
+        if (!$otherAddress) {
+            return response()->json([
+                'success' => false,
+                'message' => "Customer/member tidak ditemukan: {$request->input('customer_id')}",
+            ], 422);
+        }
+
+        // --- Normalisasi kurs ---
+        $kursRaw = $request->input('kurs', $request->input('currency_rate', $request->input('idr_rate', 0)));
+        $kurs = $this->parseNumber($kursRaw);
+
+        // --- Normalisasi diskon global ---
+        $discPercent = $this->parseNumber($request->input('disc_percent', $request->input('discount_value', 0)));
+        $discIdr     = $this->parseNumber($request->input('disc_idr', $request->input('global_disc_idr', 0)));
+        $discUsd     = $this->parseNumber($request->input('disc_usd', $request->input('global_disc_usd', 0)));
+        $discKemasan = $this->parseNumber($request->input('disc_kemasan', $request->input('global_disc_kemasan', 0)));
+
+        // --- Normalisasi approval & indent ---
+        $approval = $this->parseBool($request->input('approval', 0));
+        $soIndentRaw = $request->input('so_indent', $request->input('is_indent', 0));
+        // dukung juga order_type dari AO: biasa/ppn/indent
+        $orderType = strtolower(trim((string) $request->input('order_type', '')));
+        if ($orderType === 'indent') {
+            $soIndentRaw = 1;
+        }
+        $isIndent = $this->parseBool($soIndentRaw);
+
+        $note = $request->input('note', $request->input('notes', $request->input('note_so')));
+
+        // --- Normalisasi items + cek duplikat ---
+        $normItems = [];
+        foreach ((array) $request->input('items') as $idx => $it) {
+            if (!is_array($it)) {
+                return response()->json(['success' => false, 'message' => "Item ke-{$idx} tidak valid"], 422);
+            }
+            $ppId  = $it['product_packaging_id'] ?? $it['product_id'] ?? $it['sku'] ?? null;
+            $price = $it['price'] ?? $it['unit_price'] ?? null;
+            $qty   = $it['qty'] ?? null;
+            if ($ppId === null || $price === null || $qty === null) {
+                return response()->json(['success' => false, 'message' => "Item ke-{$idx} wajib ada product_packaging_id/product_id, price, qty"], 422);
+            }
+            $disc  = $it['disc_usd'] ?? $it['discount'] ?? $it['disc'] ?? 0;
+            $pack  = $it['packaging_id'] ?? $it['packaging'] ?? null;
+            $free  = $this->parseBool($it['free_product'] ?? $it['free'] ?? 0);
+            if ($free) {
+                $disc = 0; // samakan aturan SO awal: free => disc 0
+            }
+            $normItems[] = [
+                'pp_id' => $ppId,
+                'price' => $this->parseNumber($price),
+                'qty'   => $this->parseNumber($qty),
+                'disc'  => $this->parseNumber($disc),
+                'pack'  => $pack,
+                'free'  => $free ? 1 : 0,
+            ];
+        }
+        if (count($normItems) < 1) {
+            return response()->json(['success' => false, 'message' => 'Items kosong'], 422);
+        }
+        foreach ($normItems as $ni) {
+            if ($ni['qty'] < 0.01 || $ni['price'] < 0) {
+                return response()->json(['success' => false, 'message' => 'Qty minimal 0.01 dan price minimal 0'], 422);
+            }
+        }
+        $ppIds = collect($normItems)->pluck('pp_id')->map(function ($v) { return (string) $v; })->all();
         if (count($ppIds) !== count(array_unique($ppIds))) {
             return response()->json([
                 'success' => false,
                 'message' => 'Item produk duplikat, tidak boleh ada produk yang sama 2x',
-            ], 422);
-        }
-
-        [$customerIdRaw, $memberIndexRaw] = explode('.', $request->customer_id, 2);
-        $customerId  = (int) $customerIdRaw;
-        $memberIndex = (int) $memberIndexRaw;
-
-        if ($customerId <= 0 || $memberIndex <= 0) {
-            return response()->json([
-                'success' => false,
-                'message' => "Format customer_id tidak valid: {$request->customer_id}",
-            ], 422);
-        }
-
-        $otherAddress = CustomerOtherAddress::where('customer_id', $customerId)
-            ->orderBy('id', 'asc')
-            ->skip($memberIndex - 1)
-            ->first();
-
-        if (!$otherAddress) {
-            return response()->json([
-                'success' => false,
-                'message' => "Member ke-{$memberIndex} untuk customer_id {$customerId} tidak ditemukan.",
             ], 422);
         }
 
@@ -170,36 +238,56 @@ class AoSalesOrderApiController extends Controller
 
             $so = new SalesOrder;
             $so->so_code                     = CodeRepo::generateSoAwal();
-            $so->brand_name                  = $request->brand_name;
+            $so->brand_name                  = $request->input('brand_name');
             $so->customer_id                 = $otherAddress->customer_id;
             $so->customer_other_address_id   = $otherAddress->id;
-            $so->type_transaction            = $request->type_transaction;
+            // Simpan STRING (CASH/TEMPO/...) agar sinkron dengan modul transaksi
+            // (WorkflowService, report, DO semua bandingkan string, kolom DB varchar)
+            $so->type_transaction            = $typeName;
             $so->so_for                      = 1;
             $so->so_date                     = null;
             $so->type_so                     = 'nonppn';
-            $so->approval_mou                = 0;
-            $so->idr_rate                    = 0;
-            $so->catatan                     = '0';
-            $so->note                        = $request->note;
+            $so->approval_mou                = $approval ? 1 : 0;
+            $so->idr_rate                    = $kurs;
+            $so->catatan                     = (string) $discPercent;
+            $so->disc_percent                = $discPercent;
+            $so->disc_idr                    = $discIdr;
+            $so->disc_usd                    = $discUsd;
+            $so->disc_kemasan                = $discKemasan;
+            $so->note                        = $note;
             $so->is_proforma                 = 0;
             $so->code                        = null;
-            $so->status                      = 1;
-            $so->so_indent                   = SalesOrder::INDENT['NO'];
+            // Indent tetap status AWAL (1) + flag indent, non-indent langsung LANJUTAN (2).
+            // Sesuai kesepakatan: yang ter-up ke transaksi = sudah SO Lanjutan.
+            if ($isIndent) {
+                $so->status        = 1;
+                $so->so_indent     = SalesOrder::INDENT['YES'];
+                $so->indent_status = 1;
+            } else {
+                $so->status        = 1;
+                $so->so_indent     = SalesOrder::INDENT['NO'];
+            }
             $so->condition                   = 1;
             $so->payment_status              = 0;
             $so->count_rev                   = 0;
             $so->created_by                  = $createdBy;
+            // Auto estimate untuk CASH/TEMPO (samakan SalesOrderStoreService)
+            if (in_array($typeName, ['CASH', 'TEMPO'], true)) {
+                $so->is_estimate = 1;
+                $so->estimate_code = $this->generateEstimateCode();
+            } else {
+                $so->is_estimate = 0;
+            }
+            // Jejak order AO asal (untuk idempotensi & tracing)
+            if ($request->filled('ao_order_number')) {
+                $aoNo = trim((string) $request->input('ao_order_number'));
+                $so->note = trim(($so->note ? $so->note . "\n" : '') . "[AO:{$aoNo}]");
+            }
             $so->save();
 
-            // 🔎 DIAGNOSTIK SEMENTARA: log detail SO yang baru saja dibuat.
-            // Ini akan kasih tau kita persis kenapa id-nya 0 (kalau memang masih 0).
-            Log::info('AO SO Awal DEBUG - after save', [
-                'so_id_attribute' => $so->id,
-                'so_getKey'       => $so->getKey(),
-                'so_exists'       => $so->exists,
-                'so_wasRecentlyCreated' => $so->wasRecentlyCreated,
-                'so_so_code'      => $so->so_code,
-                'so_all_attrs'    => $so->getAttributes(),
+            Log::info('AO SO Awal created', [
+                'so_id' => $so->id, 'so_code' => $so->so_code,
+                'ao_order' => $request->input('ao_order_number'),
             ]);
 
             if (!$so->id || $so->id == 0) {
@@ -212,15 +300,15 @@ class AoSalesOrderApiController extends Controller
                 ], 500);
             }
 
-            foreach ($request->items as $item) {
-                $baseProductPackagingId = $item['product_packaging_id'];
-                $product = ProductPack::where('id', $item['product_packaging_id'])->first();
+            foreach ($normItems as $item) {
+                $baseProductPackagingId = $item['pp_id'];
+                $product = ProductPack::where('id', $item['pp_id'])->first();
 
                 if (!$product) {
                     DB::rollBack();
                     return response()->json([
                         'success' => false,
-                        'message' => "Produk dengan id {$item['product_packaging_id']} tidak ditemukan.",
+                        'message' => "Produk dengan id {$item['pp_id']} tidak ditemukan.",
                     ], 422);
                 }
 
@@ -236,23 +324,39 @@ class AoSalesOrderApiController extends Controller
                 $detail->product_packaging_id   = $baseProductPackagingId;
                 $detail->price                  = $item['price'];
                 $detail->qty                    = $item['qty'];
-                $detail->disc_usd               = $item['disc_usd'] ?? 0;
-                $detail->packaging_id           = $item['packaging_id'] ?? $product->packaging_id;
-                $detail->free_product           = $item['free_product'] ?? 0;
+                $detail->disc_usd               = $item['disc'];
+                $detail->packaging_id           = $item['pack'] ?? $product->packaging_id;
+                $detail->free_product           = $item['free'];
                 $detail->kontrak                = 0;
                 $detail->created_by             = $createdBy;
                 $detail->status                 = 1;
                 $detail->save();
             }
 
+            // Lanjutkan otomatis ke SO Lanjutan (non-indent) agar sesuai kesepakatan.
+            if (!$isIndent) {
+                try {
+                    $wf = new \App\Services\SalesOrder\SalesOrderWorkflowService();
+                    $wf->lanjutkan($so);
+                    $so->refresh();
+                } catch (\Exception $wfEx) {
+                    Log::warning('AO SO auto-lanjutkan gagal, tetap status AWAL: ' . $wfEx->getMessage(), ['so_id' => $so->id]);
+                }
+            }
+
             DB::commit();
 
             return response()->json([
                 'success' => true,
-                'message' => 'SO Awal berhasil dibuat',
+                'message' => 'SO Awal berhasil dibuat' . ($isIndent ? ' (Indent)' : ' dan dilanjutkan ke SO Lanjutan'),
                 'data'    => [
                     'so_id'   => $so->id,
                     'so_code' => $so->so_code,
+                    'status'  => $so->status,
+                    'status_text' => SalesOrder::STEP[$so->status] ?? (string) $so->status,
+                    'so_indent' => $so->so_indent,
+                    'is_estimate' => $so->is_estimate ?? 0,
+                    'estimate_code' => $so->estimate_code ?? null,
                 ],
             ], 200);
 
@@ -266,5 +370,417 @@ class AoSalesOrderApiController extends Controller
                 'error'   => $e->getMessage(),
             ], 500);
         }
+    }
+
+    /**
+     * List kemasan aktif untuk dropdown AO.
+     * GET /api/ao/so-awal/kemasan -> [{id, pack_name}]
+     */
+    public function kemasan()
+    {
+        $rows = \App\Entities\Master\Packaging::where('status', \App\Entities\Master\Packaging::STATUS['ACTIVE'])
+            ->orderBy('pack_name')
+            ->select('id', 'pack_name')
+            ->get();
+
+        return response()->json(['success' => true, 'data' => $rows]);
+    }
+
+    /**
+     * List SO baru untuk import transaksi -> AO (pull).
+     * GET /api/ao/so-awal/list?since_id=0&limit=100
+     * Mengembalikan SO non-deleted dengan id > since_id (asc), max 200.
+     * Dipakai scheduler AO agar input via web transaksi ikut masuk AO.
+     */
+    public function list(Request $request)
+    {
+        $sinceId = (int) $request->query('since_id', 0);
+        $limit = min(max((int) $request->query('limit', 100), 1), 200);
+
+        $rows = SalesOrder::where('id', '>', $sinceId)
+            ->orderBy('id', 'asc')
+            ->limit($limit)
+            ->get(['id', 'so_code', 'status', 'brand_name', 'type_transaction', 'customer_id', 'customer_other_address_id', 'note', 'idr_rate', 'disc_percent', 'disc_idr', 'disc_usd', 'disc_kemasan', 'approval_mou', 'so_indent', 'is_estimate', 'estimate_code', 'code', 'created_by', 'created_at']);
+
+        $usernames = [];
+        try {
+            $uids = $rows->pluck('created_by')->filter()->unique()->values()->all();
+            if ($uids) {
+                $usernames = Superuser::whereIn('id', $uids)->pluck('username', 'id')->toArray();
+            }
+        } catch (\Exception $e) {
+        }
+
+        $data = $rows->map(function ($so) use ($usernames) {
+            return [
+                'so_id' => $so->id,
+                'so_code' => $so->so_code,
+                'status' => $so->status,
+                'brand_name' => $so->brand_name,
+                'type_transaction' => $so->type_transaction,
+                'customer_id' => $so->customer_id,
+                'customer_other_address_id' => $so->customer_other_address_id,
+                'created_by' => $so->created_by,
+                'created_username' => $usernames[$so->created_by] ?? null,
+                'created_at' => $so->created_at,
+            ];
+        });
+
+        return response()->json(['success' => true, 'data' => $data]);
+    }
+
+    /**
+     * Detail SO + items untuk import (GET /api/ao/so-awal/detail/{so_code}).
+     */
+    public function detail($so_code)
+    {
+        $so = SalesOrder::where('so_code', $so_code)->first();
+        if (!$so) {
+            $trashed = SalesOrder::withTrashed()->where('so_code', $so_code)->first();
+            if ($trashed) {
+                return response()->json(['success' => false, 'deleted' => true, 'message' => "SO {$so_code} sudah dihapus"], 410);
+            }
+            return response()->json(['success' => false, 'message' => "SO {$so_code} tidak ditemukan"], 404);
+        }
+
+        $items = SalesOrderItem::where('so_id', $so->id)->get();
+        $ppIds = $items->pluck('product_packaging_id')->filter()->unique()->values()->all();
+        $names = [];
+        if ($ppIds) {
+            try {
+                $names = ProductPack::whereIn('id', $ppIds)->pluck('name', 'id')->toArray();
+            } catch (\Exception $e) {
+            }
+        }
+
+        return response()->json(['success' => true, 'data' => [
+            'so_id' => $so->id,
+            'so_code' => $so->so_code,
+            'status' => $so->status,
+            'brand_name' => $so->brand_name,
+            'type_transaction' => $so->type_transaction,
+            'customer_id' => $so->customer_id,
+            'customer_other_address_id' => $so->customer_other_address_id,
+            'note' => $so->note,
+            'idr_rate' => $so->idr_rate,
+            'disc_percent' => $so->disc_percent,
+            'disc_idr' => $so->disc_idr,
+            'disc_usd' => $so->disc_usd,
+            'disc_kemasan' => $so->disc_kemasan,
+            'approval_mou' => $so->approval_mou,
+            'so_indent' => $so->so_indent,
+            'created_by' => $so->created_by,
+            'items' => $items->map(function ($it) use ($names) {
+                return [
+                    'product_packaging_id' => $it->product_packaging_id,
+                    'product_name' => $names[$it->product_packaging_id] ?? '',
+                    'price' => $it->price,
+                    'qty' => $it->qty,
+                    'disc_usd' => $it->disc_usd,
+                    'packaging_id' => $it->packaging_id,
+                    'free_product' => $it->free_product,
+                ];
+            })->values(),
+        ]]);
+    }
+
+    /**
+     * Hapus SO dari AO (delete sync AO -> transaksi).
+     * DELETE /api/ao/so-awal/{so_code}
+     * Guard: hanya status AWAL(1)/REVISI(3) dan belum ada DO. Selain itu 422.
+     */
+    public function destroyApi($so_code)
+    {
+        $so = SalesOrder::where('so_code', $so_code)->first();
+        if (!$so) {
+            return response()->json(['success' => false, 'message' => "SO {$so_code} tidak ditemukan"], 404);
+        }
+        if (!in_array((int) $so->status, [1, 3], true)) {
+            return response()->json(['success' => false, 'message' => 'SO sudah diproses (lanjutkan/tutup), hapus via flow Void di transaksi'], 422);
+        }
+        try {
+            $hasDo = \App\Entities\Penjualan\PackingOrder::where('so_id', $so->id)->exists();
+            if ($hasDo) {
+                return response()->json(['success' => false, 'message' => 'SO sudah punya DO, tidak bisa dihapus via AO'], 422);
+            }
+        } catch (\Exception $e) {
+        }
+
+        try {
+            DB::beginTransaction();
+            SalesOrderItem::where('so_id', $so->id)->delete();
+            $so->delete();
+            DB::commit();
+            Log::info('AO delete-sync: SO dihapus via AO', ['so_code' => $so_code]);
+            return response()->json(['success' => true, 'message' => 'SO dihapus di transaksi']);
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return response()->json(['success' => false, 'message' => 'Gagal hapus: ' . $e->getMessage()], 500);
+        }
+    }
+
+    /**
+     * Prediksi nomor SO berikutnya (acuan counting AO).
+     * GET /api/ao/so-awal/next-code -> {last_code, next_code}
+     * next_code dihitung via CodeRepo::generateSoAwal() TANPA menyimpan.
+     * Sifatnya prediksi (bisa geser jika ada SO masuk bersamaan) —
+     * nomor resmi tetap so_code yang dikembalikan POST /store.
+     */
+    public function nextCode()
+    {
+        $next = CodeRepo::generateSoAwal();
+        $last = SalesOrder::withTrashed()
+            ->where('status', '>', 0)
+            ->whereYear('created_at', date('Y'))
+            ->whereMonth('created_at', date('m'))
+            ->orderBy('id', 'desc')
+            ->first();
+
+        return response()->json([
+            'success' => true,
+            'data' => [
+                'last_code' => $last->so_code ?? null,
+                'next_code' => $next,
+            ],
+        ]);
+    }
+
+    /**
+     * GET status SO untuk tombol "Cek Status" di AO + scheduler poll.
+     * GET /api/ao/so-awal/status/{so_code}
+     * Response: status int + status_text (STEP) + do_code/nota/invoice bila sudah tutup.
+     */
+    public function status($so_code)
+    {
+        $so = SalesOrder::where('so_code', $so_code)->first();
+        if (!$so) {
+            // Bedakan "tidak pernah ada" vs "sudah dihapus" (soft delete) agar AO tidak menebak
+            $trashed = SalesOrder::withTrashed()->where('so_code', $so_code)->first();
+            if ($trashed) {
+                return response()->json(['success' => false, 'deleted' => true, 'message' => "SO {$so_code} sudah dihapus di transaksi"], 410);
+            }
+            return response()->json(['success' => false, 'message' => "SO {$so_code} tidak ditemukan"], 404);
+        }
+
+        $doCode = null;
+        $notaCode = $so->code;
+        $invoiceCode = null;
+        try {
+            $do = \App\Entities\Penjualan\PackingOrder::where('so_id', $so->id)->orderBy('id', 'desc')->first();
+            if ($do) {
+                $doCode = $do->do_code ?? $do->code;
+                $inv = \App\Entities\Finance\Invoicing::where('do_id', $do->id)->orderBy('id', 'desc')->first();
+                if ($inv) {
+                    $invoiceCode = $inv->code;
+                }
+            }
+        } catch (\Exception $e) {
+            // abaikan, status tetap kembali
+        }
+
+        return response()->json([
+            'success' => true,
+            'data' => [
+                'so_id'     => $so->id,
+                'so_code'   => $so->so_code,
+                'status'    => $so->status,
+                'status_text' => SalesOrder::STEP[$so->status] ?? (string) $so->status,
+                'so_indent' => $so->so_indent,
+                'indent_status' => $so->indent_status,
+                'condition' => $so->condition,
+                'do_code' => $doCode,
+                'nota_code' => $notaCode,
+                'invoice_code' => $invoiceCode,
+                'updated_at' => $so->updated_at,
+            ],
+        ]);
+    }
+
+    /**
+     * POST revisi dari AO (hanya jika SO status=3 di transaksi).
+     * POST /api/ao/so-awal/update
+     * Payload sama seperti store + wajib transaksi_so_id / so_code.
+     * Aturan edit ikut SalesOrderUpdateService@updateStep1
+     * (type_transaction, brand, note, kurs, so_indent, disc global, items baru).
+     */
+    public function updateFromAo(Request $request)
+    {
+        $so = null;
+        if ($request->filled('transaksi_so_id')) {
+            $so = SalesOrder::find($request->input('transaksi_so_id'));
+        } elseif ($request->filled('so_code')) {
+            $so = SalesOrder::where('so_code', $request->input('so_code'))->first();
+        }
+        if (!$so) {
+            return response()->json(['success' => false, 'message' => 'SO transaksi tidak ditemukan'], 404);
+        }
+        if ((int) $so->status !== 3) {
+            return response()->json([
+                'success' => false,
+                'message' => 'SO belum berstatus perlu revisi (status=3), revisi ditolak',
+                'status' => $so->status,
+                'status_text' => SalesOrder::STEP[$so->status] ?? (string) $so->status,
+            ], 422);
+        }
+
+        // Reuse validasi ringan store (tanpa customer ulang — customer dikunci)
+        $validator = Validator::make($request->all(), [
+            'brand_name' => 'required|string',
+            'type_transaction' => 'required',
+            'items' => 'required|array|min:1',
+        ]);
+        if ($validator->fails()) {
+            return response()->json(['success' => false, 'message' => 'Validasi gagal', 'errors' => $validator->errors()], 422);
+        }
+
+        $typeMap = ['CASH' => 1, 'TEMPO' => 2, 'MARKETPLACE' => 3, 'COD' => 4];
+        $typeRaw = $request->input('type_transaction');
+        if (is_numeric($typeRaw)) {
+            $typeInt = (int) $typeRaw;
+            $typeNameUp = array_search($typeInt, $typeMap, true);
+        } else {
+            $typeNameUp = strtoupper(trim((string) $typeRaw));
+            $typeInt = $typeMap[$typeNameUp] ?? 0;
+        }
+        if (!in_array($typeInt, [1, 2, 3, 4], true)) {
+            return response()->json(['success' => false, 'message' => 'type_transaction tidak valid'], 422);
+        }
+
+        try {
+            DB::beginTransaction();
+            $so->type_transaction = $typeNameUp;
+            $so->brand_name = $request->input('brand_name');
+            $so->note = $request->input('note', $request->input('notes', $so->note));
+            $so->idr_rate = $this->parseNumber($request->input('kurs', $request->input('currency_rate', $so->idr_rate)));
+            $so->disc_percent = $this->parseNumber($request->input('disc_percent', $request->input('discount_value', $so->disc_percent)));
+            $so->disc_idr = $this->parseNumber($request->input('disc_idr', $so->disc_idr));
+            $so->disc_usd = $this->parseNumber($request->input('disc_usd', $so->disc_usd));
+            $so->disc_kemasan = $this->parseNumber($request->input('disc_kemasan', $so->disc_kemasan));
+            if ($request->has('so_indent') || $request->has('is_indent')) {
+                $so->so_indent = $this->parseBool($request->input('so_indent', $request->input('is_indent'))) ? 1 : 0;
+            }
+            if ($request->filled('pic_username')) {
+                $su = Superuser::where('username', $request->input('pic_username'))->first();
+                if ($su) {
+                    $so->updated_by = $su->id;
+                }
+            }
+            $so->status = 1; // reset AWAL dulu (konsisten updateStep1), lalu lanjutkan otomatis di bawah
+            $so->save();
+
+            // Hapus item lama + insert baru (samakan updateStep1)
+            SalesOrderItem::where('so_id', $so->id)->delete();
+            foreach ((array) $request->input('items') as $it) {
+                $ppId = $it['product_packaging_id'] ?? $it['product_id'] ?? $it['sku'] ?? null;
+                $product = ProductPack::where('id', $ppId)->first();
+                if (!$product) {
+                    DB::rollBack();
+                    return response()->json(['success' => false, 'message' => "Produk {$ppId} tidak ditemukan"], 422);
+                }
+                $free = $this->parseBool($it['free_product'] ?? $it['free'] ?? 0);
+                $d = new SalesOrderItem;
+                $d->so_id = $so->id;
+                $d->product_packaging_id = $ppId;
+                $d->price = $this->parseNumber($it['price'] ?? $it['unit_price'] ?? 0);
+                $d->qty = $this->parseNumber($it['qty'] ?? 0);
+                $d->disc_usd = $free ? 0 : $this->parseNumber($it['disc_usd'] ?? $it['discount'] ?? $it['disc'] ?? 0);
+                $d->packaging_id = $it['packaging_id'] ?? $it['packaging'] ?? $product->packaging_id;
+                $d->free_product = $free ? 1 : 0;
+                $d->kontrak = 0;
+                $d->created_by = $so->updated_by ?? $so->created_by;
+                $d->status = 1;
+                $d->save();
+            }
+
+            // Revisi dari AO langsung lanjutkan lagi (non-indent) — tidak berhenti di AWAL.
+            $isIndentRev = ((int) $so->so_indent === 1);
+            if (!$isIndentRev) {
+                try {
+                    $wf = new \App\Services\SalesOrder\SalesOrderWorkflowService();
+                    $wf->lanjutkan($so);
+                    $so->refresh();
+                } catch (\Exception $wfEx) {
+                    Log::warning('AO revisi auto-lanjutkan gagal, tetap AWAL: ' . $wfEx->getMessage(), ['so_id' => $so->id]);
+                }
+            }
+
+            DB::commit();
+
+            return response()->json(['success' => true, 'message' => 'Revisi diterima dan dilanjutkan ke SO Lanjutan', 'data' => ['so_id' => $so->id, 'so_code' => $so->so_code, 'status' => $so->status, 'status_text' => SalesOrder::STEP[$so->status] ?? (string) $so->status]], 200);
+        } catch (\Exception $e) {
+            DB::rollBack();
+            Log::error('AO SO revisi gagal: ' . $e->getMessage());
+            return response()->json(['success' => false, 'message' => 'Revisi gagal', 'error' => $e->getMessage()], 500);
+        }
+    }
+
+    // ---------- helpers ----------
+
+    protected function resolveMember($raw)
+    {
+        $raw = trim((string) $raw);
+        if ($raw === '') {
+            return null;
+        }
+        // 1) langsung id CustomerOtherAddress
+        if (strpos($raw, '.') === false && ctype_digit($raw)) {
+            $m = CustomerOtherAddress::where('id', $raw)->first();
+            if ($m) {
+                return $m;
+            }
+        }
+        // 2) format customer_id.index
+        if (strpos($raw, '.') !== false) {
+            [$cid, $idx] = explode('.', $raw, 2);
+            if (ctype_digit($cid) && ctype_digit($idx) && (int) $idx > 0) {
+                $m = CustomerOtherAddress::where('customer_id', (int) $cid)
+                    ->orderBy('id', 'asc')->skip((int) $idx - 1)->first();
+                if ($m) {
+                    return $m;
+                }
+            }
+        }
+        return null;
+    }
+
+    protected function parseNumber($v)
+    {
+        if ($v === null || $v === '') {
+            return 0;
+        }
+        $s = trim((string) $v);
+        // dukung "15.500" (ribuan ID) -> 15500 ; "1.800.000,50" -> 1800000.50
+        if (strpos($s, ',') !== false) {
+            $s = str_replace('.', '', $s);
+            $s = str_replace(',', '.', $s);
+        } else {
+            // hilangkan koma ribuan US, titik ribuan ID tanpa desimal dianggap ribuan
+            if (preg_match('/^\d{1,3}(\.\d{3})+$/', $s)) {
+                $s = str_replace('.', '', $s);
+            } else {
+                $s = str_replace(',', '', $s);
+            }
+        }
+        return is_numeric($s) ? (float) $s : 0;
+    }
+
+    protected function parseBool($v)
+    {
+        if (is_bool($v)) {
+            return $v;
+        }
+        $s = strtolower(trim((string) $v));
+        return in_array($s, ['1', 'yes', 'y', 'true', 'on'], true);
+    }
+
+    protected function generateEstimateCode()
+    {
+        $today = now();
+        $prefix = $today->format('ymd');
+        $last = SalesOrder::where('estimate_code', 'LIKE', $prefix . '-%')
+            ->orderByRaw("CAST(SUBSTRING_INDEX(estimate_code, '-', -1) AS UNSIGNED) DESC")
+            ->first();
+        $newNumber = $last ? ((int) substr($last->estimate_code, -2) + 1) : 1;
+        return $prefix . '-' . str_pad($newNumber, 2, '0', STR_PAD_LEFT);
     }
 }
