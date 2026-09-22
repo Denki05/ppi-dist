@@ -105,6 +105,8 @@ class ReportForecastSupplierController extends Controller
             $creport = $crapp->OpenReport($my_report,1);
 
             $creport->Database->Tables(1)->SetLogOnInfo($my_server, $my_database, $my_user, $my_password);
+            $creport->DiscardSavedData();
+            $creport->VerifyOnEveryPrint = false;
 
             $creport->EnableParameterPrompting = FALSE;
 

@@ -5,10 +5,10 @@
 
 @section('content')
 @unless($useTabletLayout ?? false)
-<!-- <nav class="breadcrumb bg-white push">
+<nav class="breadcrumb bg-white push">
   <span class="breadcrumb-item">Manajemen Barang</span>
   <span class="breadcrumb-item active">Checker Transaksi</span>
-</nav> -->
+</nav>
 @endunless
 @if(session('error') || session('success'))
 <div class="alert alert-{{ session('error') ? 'danger' : 'success' }} alert-dismissible fade show" role="alert">
@@ -112,11 +112,11 @@
     <div class="spv-tabs" role="tablist">
       <label class="spv-tab">
         <input type="radio" name="show-control" value="default" checked>
-        <span><i class="fas fa-clipboard-list"></i> Picker / Checker</span>
+        <span><i class="fas fa-clipboard-list"></i> List SPK</span>
       </label>
       <label class="spv-tab">
         <input type="radio" name="show-control" value="acc">
-        <span><i class="fas fa-print"></i> Cetak SJ</span>
+        <span><i class="fas fa-shipping-timed"></i> Cetak SJ</span>
       </label>
       <label class="spv-tab">
         <input type="radio" name="show-control" value="all">
@@ -124,7 +124,7 @@
       </label>
       <label class="spv-tab">
         <input type="radio" name="show-control" value="history">
-        <span><i class="fas fa-history"></i> History Resi / Settle</span>
+        <span><i class="fas fa-history"></i> History Resi</span>
       </label>
     </div>
 
@@ -554,6 +554,7 @@
   .status-pill-ready      { background: #f1f3f5; color: #495057; }
   .status-pill-packed     { background: #fff3bf; color: #995c00; }
   .status-pill-delivering { background: #edf2ff; color: #3b5bdb; }
+  .status-pill-void { background: #fef2f2; color: #dc2626; }
   .status-pill-delivered  { background: #ebfbee; color: #2b8a3e; }
   .status-pill-default    { background: #f1f3f5; color: #868e96; }
 
@@ -657,12 +658,6 @@
 @push('scripts')
 @if($useTabletLayout)
 <script>
-window.addEventListener('pageshow', function (event) {
-  if (event.persisted) {
-    window.location.reload();
-  }
-});
-
 $(document).ready(function() {
   let jsonUrl = '{{ route("superuser.penjualan.delivery_order.json") }}';
 
@@ -727,14 +722,10 @@ $(document).ready(function() {
 </script>
 @else
 <script type="text/javascript">
-window.addEventListener('pageshow', function (event) {
-  if (event.persisted) {
-    window.location.reload();
-  }
-});
-
 $(document).ready(function() {
   let datatableUrl = '{{ route('superuser.penjualan.delivery_order.json') }}';
+  let detailUrlTpl = '{{ route("superuser.penjualan.delivery_order.detail", ["id" => "__ID__"]) }}';
+  let printUrlTpl = '{{ route("superuser.penjualan.delivery_order.print_manifest", ["id" => "__ID__"]) }}';
   let valShow = "default";
   let currentPage = 0;   // 0-based, dikonversi ke 'start' pas fetch
   let pageLength = 10;
@@ -750,7 +741,10 @@ $(document).ready(function() {
     'DELIVERED':  'delivered'
   };
 
-  function statusBadge(text) {
+  function statusBadge(text, isVoid) {
+    if (isVoid) {
+      return '<span class="status-pill status-pill-void"><i class="fa fa-ban"></i> Pengajuan Void</span>';
+    }
     let cls = statusMap[text] || 'default';
     return '<span class="status-pill status-pill-' + cls + '">' + (text || '-') + '</span>';
   }
@@ -771,7 +765,7 @@ $(document).ready(function() {
         '  <div class="do-card-code">' + (row.do_code || row.code || '-') + '</div>' +
         '  <div class="do-card-date">' + (row.created_at ? row.created_at.display : '-') + '</div>' +
         '  <div class="do-card-customer">' + (row.customer_other_address_id || '-') + '</div>' +
-        '  <div class="do-card-status">' + statusBadge(row.status) + '</div>' +
+        '  <div class="do-card-status">' + statusBadge(row.status, row.void_status == 1) + '</div>' +
         '  <div class="do-card-actions">' + (row.action || '') + '</div>' +
         '</div>';
       $list.append(card);
@@ -879,6 +873,23 @@ $(document).ready(function() {
     }, 400);
   });
 
+  // ==== Hot reload tombol Kerjakan setelah Print SPK (tanpa refresh) ====
+  // Server menaikkan print_count saat manifest dibuka di tab baru, jadi
+  // langsung tukar aksi kartu ini ke state "sudah print".
+  $(document).on('click', '.btn-print-spk-spv', function () {
+    var id = $(this).data('id');
+    var $actions = $(this).closest('.do-card-actions');
+    if (!id || !$actions.length) return;
+    $actions.html(
+      '<a href="' + printUrlTpl.replace('__ID__', id) + '" target="_blank">' +
+      '<button type="button" class="btn btn-outline-secondary btn-sm btn-flat" title="Print Ulang SPK">' +
+      '<i class="fas fa-print"></i></button></a> ' +
+      '<a href="' + detailUrlTpl.replace('__ID__', id) + '">' +
+      '<button type="button" class="btn btn-primary btn-sm btn-flat" title="Kerjakan">' +
+      '<i class="fas fa-box"></i></button></a>'
+    );
+  });
+
   // ==== Pager ====
   $('#doPagerPrev').on('click', function () {
     if (currentPage > 0) { currentPage--; loadList(); }
@@ -891,4 +902,40 @@ $(document).ready(function() {
 });
 </script>
 @endif
+
+<script>
+$(document).on('click', '.btn-kurs-blocked', function () {
+    Swal.fire({
+        icon: 'warning',
+        title: 'Kurs Belum Diset',
+        text: 'DO ' + $(this).data('code') + ' belum bisa diproses ke Surat Jalan karena kurs IDR belum di-set (masih 0/1). Silakan update kurs terlebih dahulu di halaman SO Progress.',
+        showCancelButton: true,
+        confirmButtonText: 'Mengerti',
+        cancelButtonText: 'Ke SO Progress'
+    }).then(function (result) {
+        if (result.dismiss === Swal.DismissReason.cancel) {
+            window.location.href = '{{ route("superuser.penjualan.sales_order.index_lanjutan") }}';
+        }
+    });
+});
+
+$(document).on('click', '.btn-payment-blocked', function () {
+    Swal.fire({
+        icon: 'warning',
+        title: 'Pembayaran Belum Tercatat',
+        text: 'DO ' + $(this).data('code') + ' adalah transaksi CASH dan belum ada catatan pembayaran (Payable) untuk invoice ini. Konfirmasi/catat pembayarannya dulu sebelum Update Resi.',
+        confirmButtonText: 'Mengerti'
+    });
+});
+
+$(document).on('click', '.btn-void-blocked', function () {
+    Swal.fire({
+        icon: 'warning',
+        title: 'Sedang Pengajuan Void',
+        text: 'DO ' + $(this).data('code') + ' sedang diajukan void dan menunggu approval Finance. Update Resi tidak bisa dilakukan sampai pengajuan ini selesai diproses.',
+        confirmButtonText: 'Mengerti'
+    });
+});
+</script>
+
 @endpush

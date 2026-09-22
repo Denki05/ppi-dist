@@ -25,6 +25,8 @@ class PackingOrder extends Model
         'ekspedisi_id',
         'vendor_id',
     	'idr_rate',
+		'is_kurs_hold',
+		'has_payment',
     	'status',
 		'prev_sataus',
 		'count_cancel',
@@ -49,6 +51,8 @@ class PackingOrder extends Model
 		'total_usd_before',
 		'total_usd_after',
 		'so_id',
+		'internal_revision_status',
+		'internal_revision_count',
     	'updated_by',
     	'created_by',
     	'deleted_by'
@@ -59,6 +63,7 @@ class PackingOrder extends Model
     	2 => 'TEMPO',
     	3 => 'MARKETING'
     ];
+
     const STATUS_PENGIRIMAN = [
     	1 => [
     		'class' => 'secondary',
@@ -87,6 +92,10 @@ class PackingOrder extends Model
 		7 => [
     		'class' => 'warning',
     		'msg' => 'Revisi'
+    	],
+		8 => [
+    		'class' => 'dark',
+    		'msg' => 'Void'
     	],
     ];
 

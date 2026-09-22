@@ -337,6 +337,8 @@ class CashbackController extends Controller
 
         //- Set database logon info - must have
         $creport->Database->Tables(1)->SetLogOnInfo($my_server, $my_database, $my_user, $my_password);
+        $creport->DiscardSavedData();
+        $creport->VerifyOnEveryPrint = false;
 
         //- field prompt or else report will hang - to get through
         $creport->EnableParameterPrompting = FALSE;
@@ -410,6 +412,8 @@ class CashbackController extends Controller
 
         //- Set database logon info - must have
         $creport->Database->Tables(1)->SetLogOnInfo($my_server, $my_database, $my_user, $my_password);
+        $creport->DiscardSavedData();
+        $creport->VerifyOnEveryPrint = false;
 
         //- field prompt or else report will hang - to get through
         $creport->EnableParameterPrompting = FALSE;

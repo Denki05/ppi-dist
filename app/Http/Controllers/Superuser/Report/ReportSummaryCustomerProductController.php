@@ -124,6 +124,8 @@ class ReportSummaryCustomerProductController extends Controller
             }
             $creport = $crapp->OpenReport($my_report, 1);
             $creport->Database->Tables(1)->SetLogOnInfo("LOCAL", "ppi_araya", "root", "");
+            $creport->DiscardSavedData();
+            $creport->VerifyOnEveryPrint = false;
             $creport->EnableParameterPrompting = false;
             $creport->ParameterFields(4)->SetCurrentValue($new_date_start);
             $creport->ParameterFields(5)->SetCurrentValue($new_date_end);

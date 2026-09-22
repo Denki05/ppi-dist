@@ -66,16 +66,18 @@ class Kernel extends HttpKernel
         // superuser
         'superuser' => \App\Http\Middleware\Superuser::class,
         'superuser_prevent_direct_access' => \App\Http\Middleware\SuperuserPreventDirectAccess::class,
+        'maintenance.logout' => \App\Http\Middleware\MaintenanceForceLogout::class,
 
         // authentication
         'authenctication' => \App\Http\Middleware\Authentication::class,
 
         // vendor
         // role and permission
-        'role'               => \Spatie\Permission\Middlewares\RoleMiddleware::class,
-        'permission'         => \Spatie\Permission\Middlewares\PermissionMiddleware::class,
-        'role_or_permission' => \Spatie\Permission\Middlewares\RoleOrPermissionMiddleware::class,
-        'picker.auth' => \App\Http\Middleware\PickerApiAuth::class,
+        'role'                  => \Spatie\Permission\Middlewares\RoleMiddleware::class,
+        'permission'            => \Spatie\Permission\Middlewares\PermissionMiddleware::class,
+        'role_or_permission'    => \Spatie\Permission\Middlewares\RoleOrPermissionMiddleware::class,
+        'picker.auth'           => \App\Http\Middleware\PickerApiAuth::class,
+        'ao.apikey'             => \App\Http\Middleware\VerifyAoApiKey::class,
     ];
 
     /**

@@ -14,7 +14,12 @@ class AuthenticationController extends Controller
 {
     public function index()
     {
-        return view('superuser.auth');
+        $down = app()->isDownForMaintenance();
+
+        return view('superuser.auth', [
+            'maintenanceDown' => $down,
+            'maintenanceMessage' => $down ? $this->maintenanceMessage() : null,
+        ]);
     }
 
     public function login(Request $request)
@@ -29,6 +34,20 @@ class AuthenticationController extends Controller
             $validator = validator($request->all(), $rules);
 
             $superuser = Superuser::where('username', $request->account_name)->orWhere('email', $request->account_name)->first();
+
+            // Gate maintenance: user biasa (semua role selain
+            // Developer/SuperAdmin) ditolak login sejak awal dengan
+            // pesan yang jelas, agar tidak "login sukses lalu mental".
+            // Admin tetap boleh login untuk mematikan maintenance.
+            if (app()->isDownForMaintenance() && !$this->isMaintenanceAdmin($superuser)) {
+                $response['notification'] = [
+                    'alert' => 'notify',
+                    'type' => 'danger',
+                    'content' => $this->maintenanceMessage(),
+                ];
+
+                return $this->response(503, $response);
+            }
 
             if (filter_var($request->account_name, FILTER_VALIDATE_EMAIL)) {
                 $field = 'email';
@@ -107,18 +126,77 @@ class AuthenticationController extends Controller
 
     public function magicLogin($plainToken)
     {
-        $tokenData = SuperuserLoginToken::where('token', hash('sha256', $plainToken))->first();
+        // Cari token di database
+        $tokenData = SuperuserLoginToken::where('token', hash('sha256', $plainToken))
+            ->where('used', false)
+            ->where(function($query) {
+                $query->whereNull('expires_at')
+                    ->orWhere('expires_at', '>', now());
+            })
+            ->first();
 
         if (!$tokenData) {
             return redirect()->route('auth.superuser.index')
-                ->withErrors(['Token tidak valid.']);
+                ->withErrors(['Token tidak valid atau sudah kadaluarsa.']);
         }
 
+        // Gate maintenance: user biasa ditolak dengan pesan jelas.
+        // Token sengaja TIDAK ditandai used agar bisa dipakai lagi
+        // setelah maintenance selesai.
+        if (app()->isDownForMaintenance() && !$this->isMaintenanceAdmin($tokenData->superuser)) {
+            return redirect()->route('auth.superuser.index')
+                ->withErrors([$this->maintenanceMessage()]);
+        }
+
+        // Login otomatis
         Auth::guard('superuser')->login($tokenData->superuser);
 
-        // Jangan tandai token sebagai used agar bisa dipakai berulang kali
+        // Tandai token sudah digunakan
+        $tokenData->update(['used' => true]);
 
-        return redirect()->route('superuser.index');
+        return redirect()->route('superuser.index'); // ubah sesuai dashboard Anda
+    }
+
+    /**
+     * Admin (Developer/SuperAdmin) boleh login saat maintenance.
+     * $user null (username tidak dikenal) dianggap bukan admin.
+     */
+    protected function isMaintenanceAdmin($user)
+    {
+        try {
+            if ($user && method_exists($user, 'hasAnyRole')) {
+                return $user->hasAnyRole(['Developer', 'SuperAdmin']);
+            }
+
+            if ($user && isset($user->is_superuser) && $user->is_superuser == 1) {
+                return true;
+            }
+        } catch (\Throwable $e) {
+            // abaikan, anggap bukan admin
+        }
+
+        return false;
+    }
+
+    /**
+     * Ambil pesan maintenance dari file storage/framework/down,
+     * fallback ke pesan default bila file tidak ada.
+     */
+    protected function maintenanceMessage()
+    {
+        $default = 'Sistem sedang dalam pemeliharaan (update fitur). Mohon simpan pekerjaan Anda dan coba login kembali nanti.';
+
+        try {
+            $raw = @file_get_contents(storage_path('framework/down'));
+            $data = json_decode($raw, true);
+            if (!empty($data['message'])) {
+                return $data['message'];
+            }
+        } catch (\Throwable $e) {
+            // pakai pesan default
+        }
+
+        return $default;
     }
 
     // public function directLogin($id)

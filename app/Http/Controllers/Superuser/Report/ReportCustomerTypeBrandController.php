@@ -374,6 +374,8 @@ class ReportCustomerTypeBrandController extends Controller
             $crapp = new COM("CrystalDesignRunTime.Application");
             $creport = $crapp->OpenReport($my_report, 1);
             $creport->Database->Tables(1)->SetLogOnInfo("LOCAL", "ppi_araya", "root", "");
+            $creport->DiscardSavedData();
+            $creport->VerifyOnEveryPrint = false;
 
             $creport->EnableParameterPrompting = false;
             $creport->ParameterFields(2)->SetCurrentValue($new_date_start);

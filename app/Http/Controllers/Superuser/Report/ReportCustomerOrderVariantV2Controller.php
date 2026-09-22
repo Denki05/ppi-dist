@@ -158,6 +158,8 @@ class ReportCustomerOrderVariantV2Controller extends Controller
             $creport = $crapp->OpenReport($my_report, 1); // call rpt report
 
             $creport->Database->Tables(1)->SetLogOnInfo($my_server, $my_database, $my_user, $my_password);
+            $creport->DiscardSavedData();
+            $creport->VerifyOnEveryPrint = false;
             $creport->EnableParameterPrompting = false;
             $creport->ParameterFields(3)->SetCurrentValue($new_date_start);
             $creport->ParameterFields(4)->SetCurrentValue($new_date_end);

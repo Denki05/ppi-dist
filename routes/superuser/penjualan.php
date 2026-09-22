@@ -7,6 +7,25 @@ Route::group([
     'namespace' => 'Penjualan'
 ], function () {
 
+    // QA Checklist
+    Route::get('/qa-checklist', function () {
+        return view('superuser.penjualan.qa_checklist_flow');
+    })->name('qa_checklist');
+    
+    Route::get('/qa-checklist/excel', function () {
+        return \Excel::download(new \App\Exports\Penjualan\QaChecklistExport(), 'QA_Checklist_Flow_SO.xlsx');
+    })->name('qa_checklist_excel');
+
+    Route::group(['as' => 'internal_revision.', 'prefix' => '/internal_revision'], function () {
+        Route::get('/', 'InternalRevisionController@index')->name('index');
+        Route::get('/{do_id}/create', 'InternalRevisionController@create')->name('create');
+        Route::post('/store', 'InternalRevisionController@store')->name('store');
+        Route::post('/{id}/request_otp', 'InternalRevisionController@request_otp')->name('request_otp');
+        Route::post('/{id}/approve', 'InternalRevisionController@approve')->name('approve');
+        Route::post('/{id}/reject', 'InternalRevisionController@reject')->name('reject');
+        Route::get('/{id}/detail', 'InternalRevisionController@detail')->name('detail');
+    });
+
     Route::group(['as' => 'setting_price.', 'prefix' => '/setting_price'], function () {
         Route::get('/', 'SettingPriceController@index')->name('index');
         Route::get('/{id}/edit', 'SettingPriceController@edit')->name('edit');
@@ -24,7 +43,7 @@ Route::group([
         Route::get('/so_awal', 'SalesOrderController@index_awal')->name('index_awal');
         Route::get('/so_lanjutan', 'SalesOrderController@index_lanjutan')->name('index_lanjutan');
         Route::get('/so_mutasi', 'SalesOrderController@index_mutasi')->name('index_mutasi');
-        Route::get('/create/{step}/{member}/{brand}/{type}/{indent}/{approval}/{note}/{kurs}/{disc_percent}/{is_proforma}/{packaging?}', 'SalesOrderController@create')->name('create');
+        Route::get('/create/{step}/{member}/{brand}/{type}/{indent}/{approval}/{note}/{kurs}/{disc_percent}/{disc_idr}/{disc_usd}/{disc_kemasan}/{packaging?}', 'SalesOrderController@create')->name('create');
         Route::get('/{id}/edit/{step}', 'SalesOrderController@edit')->name('edit');
         Route::get('/{id}/detail', 'SalesOrderController@detail')->name('detail');
         Route::post('/{member}/store', 'SalesOrderController@store')->name('store');
@@ -64,6 +83,13 @@ Route::group([
         Route::post('/approvalMouSo/{id}', 'SalesOrderController@approvalMouSo')->name('approvalMouSo');
         Route::get('/viewSalesOrderDetail/{id}', 'SalesOrderController@viewSalesOrderDetail')->name('viewSalesOrderDetail');
         Route::get('/migrasi_so', 'SalesOrderController@migrasi_so')->name('migrasi_so');
+
+        Route::get('/so-progress-partial', 'SalesOrderController@so_progress_partial')->name('so_progress_partial');
+        Route::get('/sales_estimate_pdf/{id}', 'SalesOrderController@sales_estimate_pdf')->name('sales_estimate_pdf');
+        Route::get('/archive_awal', 'SalesOrderController@archive_awal')->name('archive_awal');
+        Route::get('/archive_one_awal/{id}', 'SalesOrderController@archive_one_awal')->name('archive_one_awal');
+        Route::get('/archive_awal/{id}/restore', 'SalesOrderController@archive_awal_restore')->name('archive_awal_restore');
+        Route::get('/archive_awal/{id}/print_estimate', 'SalesOrderController@archive_awal_print_estimate')->name('archive_awal_print_estimate');
     });
 
     Route::group(['as' => 'packing_order.', 'prefix' => '/packing_order'], function () {
@@ -89,6 +115,11 @@ Route::group([
         Route::post('/ajax_customer_other_address_detail', 'PackingOrderController@ajax_customer_other_address_detail')->name('ajax_customer_other_address_detail');
         Route::get('/{id}/print_proforma', 'PackingOrderController@print_proforma')->name('print_proforma');
         Route::get('/update_header_do', 'PackingOrderController@update_header_do')->name('update_header_do');
+
+        Route::post('/revisi-dari-logistik/{id}', 'PackingOrderController@revisi_dari_logistik')->name('revisi_dari_logistik');
+        Route::post('/update-kurs', 'PackingOrderController@update_kurs')->name('update_kurs');
+        Route::post('/ajukan-void/{id}', 'PackingOrderController@ajukan_void')->name('ajukan_void');
+        Route::post('/confirmed_payment/{id}', 'PackingOrderController@confirmed_payment')->name('confirmed_payment');
     });
 
     Route::group(['as' => 'delivery_order.', 'prefix' => '/delivery_order'], function () {

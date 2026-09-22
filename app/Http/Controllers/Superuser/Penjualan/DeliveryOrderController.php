@@ -359,11 +359,11 @@ class DeliveryOrderController extends Controller
             }
 
             // ======================================
-            // VALIDASI LOGS & POTONG STOK FISIK
+            // VALIDASI LOGS (memastikan checker tidak konfirmasi melebihi kuota reserved).
+            // CATATAN: potong fisik TIDAK dilakukan di sini lagi — dipindah ke sending()
+            // (status 4 -> 5 / DELIVERING). Jadi kalau DO masih status 4 dan di-revisi,
+            // stok fisik belum pernah kepotong -> cukup lepas reserved, tidak perlu restore fisik.
             // ======================================
-            $stockService = new \App\Services\StockService();
-
-            // ✅ 1. KELOMPOKKAN QTY CHECKER PER PRODUK
             $checkerQtys = [];
 
             foreach ($packing->do_detail as $item) {
@@ -377,7 +377,6 @@ class DeliveryOrderController extends Controller
                 $checkerQtys[$base_id] += $item->qty;
             }
 
-            // ✅ 2. VALIDASI TOTAL CHECKER VS TOTAL LOGS
             foreach ($checkerQtys as $base_id => $totalCheckerQty) {
 
                 $logQty = DB::table('do_stock_deduction_logs')
@@ -393,19 +392,25 @@ class DeliveryOrderController extends Controller
                 }
             }
 
-            // ✅ 3. JIKA SEMUA VALID, LANGSUNG POTONG FISIK
-            foreach ($packing->do_detail as $item) {
+            // ======================================
+            // CEK KURS: kalau belum valid, DO tetap lanjut ke status 4,
+            // tapi ditandai is_kurs_hold supaya diblokir sebelum Surat Jalan.
+            // ======================================
+            $isKursHold = empty($packing->idr_rate) || (float) $packing->idr_rate <= 1;
 
-                $base_id = preg_replace('/_\d+$/', '', $item->product_packaging_id);
+            $packing->update([
+                'status' => 4,
+                'is_kurs_hold' => $isKursHold,
+            ]);
 
-                $stockService->deductPhysicalStock(
-                    $packing->warehouse_id,
-                    $base_id,
-                    $item->qty
-                );
+            // ======================================
+            // BUAT INVOICE DI SINI kalau kurs sudah valid (>1).
+            // Kalau masih hold, invoice BELUM dibuat -> nanti dibuat otomatis
+            // saat admin update kurs lewat SO Progress (lihat update_kurs()).
+            // ======================================
+            if (!$isKursHold) {
+                $this->createInvoiceIfNeeded($packing->id);
             }
-
-            $packing->update(['status' => 4]);
 
             DB::commit();
 
@@ -414,12 +419,59 @@ class DeliveryOrderController extends Controller
                 ->with('success', 'DO berhasil diubah ke Siap Kirim!');
 
         } catch (\Throwable $e) {
-
             DB::rollBack();
-
             return redirect()->back()
                 ->with('error', $e->getMessage());
         }
+    }
+
+     /**
+     * Buat invoice untuk DO ini kalau belum ada, pakai grand_total_idr
+     * yang sudah tersimpan di PackingOrderDetail (sama seperti perhitungan
+     * di tutup_so() / reset_cost_if_change_idr_rate()).
+     * Kalau invoice sudah ada (termasuk yang sempat ter-soft-delete saat
+     * revisi logistik), sinkronkan ulang kode/customer/total + restore —
+     * kecuali invoice VOID (final). Duplikat identik di PackingOrderController.
+     */
+    private function createInvoiceIfNeeded($do_id)
+    {
+        $packing = PackingOrder::where('id', $do_id)->first();
+        $detail  = PackingOrderDetail::where('do_id', $do_id)->first();
+
+        if (!$packing || !$detail) {
+            return;
+        }
+
+        $existing = Invoicing::withTrashed()->where('do_id', $do_id)->first();
+
+        if ($existing) {
+            // Invoice VOID bersifat final — jangan restore/sinkron dari alur DO.
+            if ($existing->trashed() && (int) $existing->status === Invoicing::STATUS['VOID']) {
+                return;
+            }
+            if ($existing->trashed()) {
+                $existing->restore();
+            }
+            $existing->update([
+                'code' => $packing->do_code,
+                'customer_id' => $packing->customer_id,
+                'customer_other_address_id' => $packing->customer_other_address_id,
+                'grand_total_idr' => $detail->grand_total_idr,
+                'status' => Invoicing::STATUS['ACTIVE'],
+            ]);
+            return;
+        }
+
+        Invoicing::create([
+            'code' => $packing->do_code,
+            'do_id' => $packing->id,
+            'customer_id' => $packing->customer_id,
+            'customer_other_address_id' => $packing->customer_other_address_id,
+            'grand_total_idr' => $detail->grand_total_idr,
+            'status' => Invoicing::STATUS['ACTIVE'],
+            'type' => 0,
+            'created_by' => Auth::id(),
+        ]);
     }
 
     public function sending(Request $request)
@@ -437,13 +489,12 @@ class DeliveryOrderController extends Controller
                 'id' => 'required'
             ]);
             $post = $request->all();
-            $result = PackingOrder::where('id',$post["id"])->first();
+            $result = PackingOrder::with('do_detail')->where('id',$post["id"])->lockForUpdate()->first();
             $do_cost = PackingOrderDetail::where('do_id', $result->id)->first();
 
-            PackingOrder::where('id',$result->id)->update([
-                'date_sent' => date('Y-m-d')
-            ]);
-
+            if ((int) $result->status !== 4) {
+                return redirect()->route('superuser.penjualan.delivery_order.index')->with('error','DO ini sudah tidak dalam status Siap Kirim (mungkin sudah diproses / double-click).');
+            }
             if($result->status == 1){
                 return redirect()->route('superuser.penjualan.packing_order.index')->with('error','Tidak bisa mengirim packing order yang masih baru dibuat');
             }
@@ -453,7 +504,33 @@ class DeliveryOrderController extends Controller
             if($do_cost->grand_total_idr == 0){
                 return redirect()->route('superuser.penjualan.delivery_order.index')->with('error','Harga didalam packing list belum di set');
             }
-            $update = PackingOrder::where('id',$post["id"])->update(['status' => 5]);
+
+            // ======================================
+            // GUARD KURS: jangan sampai lanjut ke Delivering kalau kurs masih belum valid.
+            // (Safety net server-side, selain guard di klik "Surat Jalan" pada list.)
+            // ======================================
+            if($result->is_kurs_hold || empty($result->idr_rate) || (float) $result->idr_rate <= 1){
+                return redirect()->route('superuser.penjualan.delivery_order.index')->with('error','Kurs IDR belum di-set / masih 0-1. Silakan update kurs terlebih dahulu di SO Progress.');
+            }
+
+            // ======================================
+            // POTONG FISIK STOK DI SINI (dipindah dari packed()) — momen "save setelah cetak SJ".
+            // ======================================
+            $stockService = new \App\Services\StockService();
+
+            foreach ($result->do_detail as $item) {
+                $base_id = preg_replace('/_\d+$/', '', $item->product_packaging_id);
+                $stockService->deductPhysicalStock(
+                    $result->warehouse_id,
+                    $base_id,
+                    $item->qty
+                );
+            }
+
+            PackingOrder::where('id',$result->id)->update([
+                'date_sent' => date('Y-m-d'),
+                'status' => 5
+            ]);
 
             DB::commit();
             return redirect()->route('superuser.penjualan.delivery_order.index')->with('success','Delivery Order berhasil diubah ke delivery!');
@@ -556,6 +633,25 @@ class DeliveryOrderController extends Controller
             }
 
             // ======================================================
+            // ⚠️ WARNING: DO ini sedang dalam pengajuan void
+            // ======================================================
+            if ($get_do->void_status == 1) {
+                throw new \Exception('Pengajuan void pada kode ini sedang berlangsung! Mohon koordinasi dengan Finance sebelum melanjutkan Update Resi.');
+            }
+
+            // Guard status asal: cegah lompat 3/4 -> 6 tanpa lewat delivering (potong fisik).
+            if ((int) $get_do->status !== 5) {
+                throw new \Exception('Update Resi hanya bisa dilakukan untuk DO berstatus Delivering (status 5).');
+            }
+
+            // Guard revisi internal pending: transisi 5->6 membuat approve revisi
+            // mustahil (origin_status berubah) dan mengunci DO. Selesaikan/tolak
+            // revisi dulu, pola sama seperti guard void di atas.
+            if (!empty($get_do->internal_revision_status) && (int) $get_do->internal_revision_status === 1) {
+                throw new \Exception('DO ini sedang dalam pengajuan revisi internal. Selesaikan atau tolak revisi tersebut sebelum Update Resi.');
+            }
+
+            // ======================================================
             // ✅ VALIDASI STATUS LOG AKTIF SEBELUM UPDATE RESI
             // ======================================================
             $activeLogExists = DB::table('do_stock_deduction_logs')
@@ -612,11 +708,12 @@ class DeliveryOrderController extends Controller
             } elseif ($get_do->type_transaction == "TEMPO" && $customer->free_shipping == 0) {
                 $updateData['delivery_cost_idr'] = $post["other_cost_idr"];
             } elseif ($get_do->type_transaction == "CASH" && $customer->free_shipping == 0) {
-                $updateData['delivery_cost_idr'] = $post["other_cost_idr"];
+                $updateData['other_cost_idr'] = $post["other_cost_idr"];
             }
 
             $purchase_total = $result_cost->purchase_total_idr ?? 0;
-            $updateData['grand_total_idr'] = $purchase_total + ($updateData['delivery_cost_idr'] ?? 0);
+            // Samakan rumus baku (update_cost/reset_cost/do_update): purchase + ongkir + biaya lain.
+            $updateData['grand_total_idr'] = $purchase_total + ($updateData['delivery_cost_idr'] ?? 0) + ($updateData['other_cost_idr'] ?? 0);
 
             // Update PackingOrderDetail
             PackingOrderDetail::where('do_id', $do_id)->update($updateData);
@@ -797,6 +894,8 @@ class DeliveryOrderController extends Controller
 
         //- Set database logon info - must have
         $creport->Database->Tables(1)->SetLogOnInfo($my_server, $my_database, $my_user, $my_password);
+        $creport->DiscardSavedData();
+        $creport->VerifyOnEveryPrint = false;
 
         //- field prompt or else report will hang - to get through
         $creport->EnableParameterPrompting = FALSE;
@@ -851,6 +950,8 @@ class DeliveryOrderController extends Controller
 
         //- Set database logon info - must have
         $creport->Database->Tables(1)->SetLogOnInfo($my_server, $my_database, $my_user, $my_password);
+        $creport->DiscardSavedData();
+        $creport->VerifyOnEveryPrint = false;
 
         //- field prompt or else report will hang - to get through
         $creport->EnableParameterPrompting = FALSE;
@@ -905,6 +1006,8 @@ class DeliveryOrderController extends Controller
 
         //- Set database logon info - must have
         $creport->Database->Tables(1)->SetLogOnInfo($my_server, $my_database, $my_user, $my_password);
+        $creport->DiscardSavedData();
+        $creport->VerifyOnEveryPrint = false;
 
         //- field prompt or else report will hang - to get through
         $creport->EnableParameterPrompting = FALSE;
@@ -959,6 +1062,8 @@ class DeliveryOrderController extends Controller
 
         //- Set database logon info - must have
         $creport->Database->Tables(1)->SetLogOnInfo($my_server, $my_database, $my_user, $my_password);
+        $creport->DiscardSavedData();
+        $creport->VerifyOnEveryPrint = false;
 
         //- field prompt or else report will hang - to get through
         $creport->EnableParameterPrompting = FALSE;

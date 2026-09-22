@@ -4,7 +4,14 @@ namespace App\Http\Controllers\Superuser\Utility;
 
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Artisan;
+use Spatie\Backup\Tasks\Backup\BackupJobFactory;
+use Spatie\Backup\BackupDestination\BackupDestinationFactory;
 use Validator;
+use DB;
+use Auth;
+use App;
+
 class SettingController extends Controller
 {
     public function index()
@@ -17,8 +24,8 @@ class SettingController extends Controller
         if ($request->ajax()) {
             $validator = Validator::make($request->all(), [
                 'name' => 'nullable|string',
-                // 'maintenance' => 'nullable',
-                // 'maintenance_message' => 'nullable|string'
+                'maintenance' => 'nullable',
+                'maintenance_message' => 'nullable|string'
             ]);
   
             if ($validator->fails()) {
@@ -35,8 +42,8 @@ class SettingController extends Controller
             if ($validator->passes()) {
                 setting([
                     'website.name' => $request->name,
-                    // 'website.maintenance' => isset($request->maintenance),
-                    // 'website.maintenance_message' => $request->maintenance_message,
+                    'website.maintenance' => isset($request->maintenance),
+                    'website.maintenance_message' => $request->maintenance_message,
                     'website.color_themes' => $request->color_themes
                 ]);
 
@@ -55,17 +62,22 @@ class SettingController extends Controller
         }
     }
 
-    public function toggleMaintenanceMode()
+    public function toggleMaintenanceMode(Request $request)
     {
         if (app()->isDownForMaintenance()) {
             // Jika dalam mode maintenance, maka matikan
             Artisan::call('up');
             $message = 'Maintenance mode disabled';
         } else {
-            // Jika tidak dalam mode maintenance, maka aktifkan dengan tampilan khusus
+            // Laravel 6: php artisan down hanya mendukung
+            // --message, --retry, --allow (tidak ada --render).
+            // Tampilan custom errors/503.blade.php otomatis dipakai
+            // lewat abort(503) di CheckForMaintenanceMode.
+            $customMessage = $request->input('message')
+                ?: 'Kami sedang dalam perbaikan. Coba lagi nanti!';
+
             Artisan::call('down', [
-                '--render' => 'errors.503', // Menampilkan tampilan custom
-                '--message' => 'Kami sedang dalam perbaikan. Coba lagi nanti!',
+                '--message' => $customMessage,
             ]);
             $message = 'Maintenance mode enabled';
         }
@@ -116,5 +128,47 @@ class SettingController extends Controller
 
             return $this->response(500, $response);
         }
+    }
+
+    /**
+     * Dipolling oleh JS di semua halaman superuser.
+     * Harus tetap bisa diakses saat maintenance ON
+     * (lihat $except di CheckForMaintenanceMode).
+     *
+     * Admin (Developer/SuperAdmin) selalu dijawab down=false
+     * agar tidak ikut kena popup/auto-logout.
+     */
+    public function maintenanceStatus()
+    {
+        $user = Auth::guard('superuser')->user();
+
+        if ($user && method_exists($user, 'hasAnyRole') && $user->hasAnyRole(['Developer', 'SuperAdmin'])) {
+            return response()->json([
+                'down' => false,
+                'bypass' => true,
+                'message' => 'Anda login sebagai admin, maintenance tidak berlaku.',
+                'timestamp' => now()->toDateTimeString(),
+            ]);
+        }
+
+        $down = app()->isDownForMaintenance();
+
+        $message = 'Sistem sedang dalam pemeliharaan. Silakan coba lagi nanti!';
+        try {
+            $data = json_decode(@file_get_contents(storage_path('framework/down')), true);
+            if (!empty($data['message'])) {
+                $message = $data['message'];
+            }
+        } catch (\Throwable $e) {
+            // pakai pesan default
+        }
+
+        return response()->json([
+            'down' => $down,
+            'bypass' => false,
+            'message' => $message,
+            'logout_url' => route('superuser.logout'),
+            'timestamp' => now()->toDateTimeString(),
+        ]);
     }
 }

@@ -53,6 +53,18 @@
     @include('superuser.asset.js')
     @stack('scripts')
     <script src="{{ asset('utility/superuser/js/common.js') }}"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    {{-- Maintenance watcher: beri tahu + paksa logout user online saat maintenance ON.
+         Admin Developer/SuperAdmin otomatis di-bypass oleh server. --}}
+    <script>
+      window.MaintenanceWatcher = {
+        statusUrl: "{{ route('superuser.utility.settings.maintenanceStatus') }}",
+        logoutUrl: "{{ route('superuser.logout') }}",
+        intervalMs: 15000,
+        countdownSec: 15
+      };
+    </script>
+    <script src="{{ asset('utility/superuser/js/maintenance.js') }}"></script>
     @include('superuser.asset.prevent_direct_access')
   </body>
 </html>

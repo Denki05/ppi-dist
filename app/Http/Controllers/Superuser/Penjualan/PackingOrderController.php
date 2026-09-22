@@ -28,6 +28,7 @@ use App\Notifications\DoNotification;
 use App\Entities\Setting\UserMenu;
 use App\Entities\Account\User;
 use App\Repositories\CodeRepo;
+use Illuminate\Support\Facades\Log;
 use Auth;
 use DB;
 use PDF;
@@ -497,9 +498,9 @@ class PackingOrderController extends Controller
                     $data_json["Message"] = "IDR Rate tidak boleh kosong";
                     goto ResultData;
                 }
-                $idr_rate = str_replace('.', '', $post["idr_rate"]);
+                $idr_rate = $this->parseIdrRate($post["idr_rate"]);
                 $get = PackingOrder::where('id',$post["id"])->first();
-                
+
                 $this->reset_cost_if_change_idr_rate($post["id"],$idr_rate);
 
                 $data = [
@@ -507,6 +508,9 @@ class PackingOrderController extends Controller
                     'other_address' => trim(htmlentities($post["other_address"])),
                     'note' => trim(htmlentities($post["note"])),
                     'idr_rate' => $idr_rate,
+                    // Sinkron penanda hold: tanpa ini, DO yang kursnya dibetulkan
+                    // lewat form ini tetap terbaca "Belum Valid" selamanya.
+                    'is_kurs_hold' => (empty($idr_rate) || (float) $idr_rate <= 1),
                     'updated_by' => Auth::id(),
                     'ekspedisi_id' => (empty($post["ekspedisi_id"])) ? null : $post["ekspedisi_id"],
                 ];
@@ -564,26 +568,21 @@ class PackingOrderController extends Controller
                     goto ResultData;
                 }
 
-                $discount_1 = empty($post["discount_1"]) ? 0 : $post["discount_1"] / 100;
-                $discount_2 = empty($post["discount_2"]) ? 0 : $post["discount_2"] / 100;
-                $discount_idr = empty($post["discount_idr"]) ? 0 : $post["discount_idr"];
-                $ppn = empty($post["ppn"]) ? 0 : $post["ppn"];
-                $voucher_idr = empty($post["voucher_idr"]) ? 0 : $post["voucher_idr"];
-                $cashback_idr = empty($post["cashback_idr"]) ? 0 : $post["cashback_idr"];
-                $delivery_cost_idr = empty($post["delivery_cost_idr"]) ? 0 : $post["delivery_cost_idr"];
-                $other_cost_idr = empty($post["other_cost_idr"]) ? 0 : $post["other_cost_idr"];
-
-                $discount_idr = str_replace('.', '', $discount_idr);
-                $ppn = str_replace('.', '', $ppn);
-                $voucher_idr = str_replace('.', '', $voucher_idr);
-                $cashback_idr = str_replace('.', '', $cashback_idr);
-                $delivery_cost_idr = str_replace('.', '', $delivery_cost_idr);
-                $other_cost_idr = str_replace('.', '', $other_cost_idr);
+                $discount_1 = empty($post["discount_1"]) ? 0 : $this->parseIdrRate($post["discount_1"]) / 100;
+                $discount_2 = empty($post["discount_2"]) ? 0 : $this->parseIdrRate($post["discount_2"]) / 100;
+                $discount_idr = empty($post["discount_idr"]) ? 0 : $this->parseIdrRate($post["discount_idr"]);
+                // $post["ppn"] adalah PERSEN (mis. 11 atau "11,5"), bukan nominal.
+                $ppn_percent = empty($post["ppn"]) ? 0 : $this->parseIdrRate($post["ppn"]);
+                $voucher_idr = empty($post["voucher_idr"]) ? 0 : $this->parseIdrRate($post["voucher_idr"]);
+                $cashback_idr = empty($post["cashback_idr"]) ? 0 : $this->parseIdrRate($post["cashback_idr"]);
+                $delivery_cost_idr = empty($post["delivery_cost_idr"]) ? 0 : $this->parseIdrRate($post["delivery_cost_idr"]);
+                $other_cost_idr = empty($post["other_cost_idr"]) ? 0 : $this->parseIdrRate($post["other_cost_idr"]);
 
                 $total_discount_idr = ceil(( $idr_total * $discount_1 ) + (($idr_total - ($idr_total * $discount_1)) * $discount_2) + $discount_idr);
 
-                if($ppn > 0){
-                    $ppn = ceil(($idr_total - $total_discount_idr ) * (10/100));
+                // PPN dinamis sesuai persen input (dulu hardcode 10%).
+                if($ppn_percent > 0){
+                    $ppn = ceil(($idr_total - $total_discount_idr ) * ($ppn_percent / 100));
                 }
                 else{
                     $ppn = 0;
@@ -606,6 +605,8 @@ class PackingOrderController extends Controller
                     'discount_idr' => trim(htmlentities($discount_idr)),
                     'total_discount_idr' => trim(htmlentities($total_discount_idr)),
                     'ppn' => trim(htmlentities($ppn)),
+                    'ppn_percent' => $ppn_percent,
+                    'ppn_idr' => trim(htmlentities($ppn)),
                     'voucher_idr' => trim(htmlentities($voucher_idr)),
                     'cashback_idr' => trim(htmlentities($cashback_idr)),
                     'purchase_total_idr' => trim(htmlentities($purchase_total_idr)),
@@ -662,7 +663,7 @@ class PackingOrderController extends Controller
                     $data_json["Message"] = "IDR Rate tidak boleh kosong";
                     goto ResultData;
                 }
-                $idr_rate = str_replace('.', '', $post["idr_rate"]);
+                $idr_rate = $this->parseIdrRate($post["idr_rate"]);
                 $get = PackingOrder::where('id',$post["id"])->first();
                 
                 $this->reset_cost_if_change_idr_rate($post["id"],$idr_rate);
@@ -672,6 +673,9 @@ class PackingOrderController extends Controller
                     //'note' => trim(htmlentities($post["note"])),
                     'other_address' => trim(htmlentities($post["other_address"])),
                     'idr_rate' => $idr_rate,
+                    // Sinkron penanda hold supaya konsisten dengan update():
+                    // DO yang kursnya masih 0-1 tetap terbaca hold / diblokir sebelum Surat Jalan.
+                    'is_kurs_hold' => (empty($idr_rate) || (float) $idr_rate <= 1),
                     'status' => 2,
                     'updated_by' => Auth::id(),
                     'ekspedisi_id' => (empty($post["ekspedisi_id"])) ? null : $post["ekspedisi_id"],
@@ -729,26 +733,21 @@ class PackingOrderController extends Controller
                     $idr_total += ceil((($row->price * $detail_po->idr_rate) * $row->qty) - ($row->total_disc * $detail_po->idr_rate)); 
                 }
 
-                $discount_1 = empty($post["discount_1"]) ? 0 : $post["discount_1"] / 100;
-                $discount_2 = empty($post["discount_2"]) ? 0 : $post["discount_2"] / 100;
-                $discount_idr = empty($post["discount_idr"]) ? 0 : $post["discount_idr"];
-                $ppn = empty($post["ppn"]) ? 0 : $post["ppn"];
-                $voucher_idr = empty($post["voucher_idr"]) ? 0 : $post["voucher_idr"];
-                $cashback_idr = empty($post["cashback_idr"]) ? 0 : $post["cashback_idr"];
-                $delivery_cost_idr = empty($post["delivery_cost_idr"]) ? 0 : $post["delivery_cost_idr"];
-                $other_cost_idr = empty($post["other_cost_idr"]) ? 0 : $post["other_cost_idr"];
-
-                $discount_idr = str_replace('.', '', $discount_idr);
-                $ppn = str_replace('.', '', $ppn);
-                $voucher_idr = str_replace('.', '', $voucher_idr);
-                $cashback_idr = str_replace('.', '', $cashback_idr);
-                $delivery_cost_idr = str_replace('.', '', $delivery_cost_idr);
-                $other_cost_idr = str_replace('.', '', $other_cost_idr);
+                $discount_1 = empty($post["discount_1"]) ? 0 : $this->parseIdrRate($post["discount_1"]) / 100;
+                $discount_2 = empty($post["discount_2"]) ? 0 : $this->parseIdrRate($post["discount_2"]) / 100;
+                $discount_idr = empty($post["discount_idr"]) ? 0 : $this->parseIdrRate($post["discount_idr"]);
+                // $post["ppn"] adalah PERSEN, bukan nominal.
+                $ppn_percent = empty($post["ppn"]) ? 0 : $this->parseIdrRate($post["ppn"]);
+                $voucher_idr = empty($post["voucher_idr"]) ? 0 : $this->parseIdrRate($post["voucher_idr"]);
+                $cashback_idr = empty($post["cashback_idr"]) ? 0 : $this->parseIdrRate($post["cashback_idr"]);
+                $delivery_cost_idr = empty($post["delivery_cost_idr"]) ? 0 : $this->parseIdrRate($post["delivery_cost_idr"]);
+                $other_cost_idr = empty($post["other_cost_idr"]) ? 0 : $this->parseIdrRate($post["other_cost_idr"]);
 
                 $total_discount_idr = ceil(( $idr_total * $discount_1 ) + (($idr_total - ($idr_total * $discount_1)) * $discount_2) + $discount_idr);
 
-                if($ppn > 0){
-                    $ppn = ceil(($idr_total - $total_discount_idr ) * (10/100));
+                // PPN dinamis sesuai persen input (dulu hardcode 10%).
+                if($ppn_percent > 0){
+                    $ppn = ceil(($idr_total - $total_discount_idr ) * ($ppn_percent / 100));
                 }
                 else{
                     $ppn = 0;
@@ -769,6 +768,8 @@ class PackingOrderController extends Controller
                     'discount_idr' => trim(htmlentities($discount_idr)),
                     'total_discount_idr' => trim(htmlentities($total_discount_idr)),
                     'ppn' => trim(htmlentities($ppn)),
+                    'ppn_percent' => $ppn_percent,
+                    'ppn_idr' => trim(htmlentities($ppn)),
                     'voucher_idr' => trim(htmlentities($voucher_idr)),
                     'cashback_idr' => trim(htmlentities($cashback_idr)),
                     'purchase_total_idr' => trim(htmlentities($purchase_total_idr)),
@@ -915,12 +916,55 @@ class PackingOrderController extends Controller
                 abort(404);
             }
 
+            // Guard tambahan - jangan hanya andalkan blade menyembunyikan tombol
+            if ($getDo->type_transaction == 'CASH') {
+                if (!$getDo || $getDo->has_payment != 1) {
+                    return response()->json([
+                        'status' => 'error',
+                        'message' => 'DO CASH ini belum dikonfirmasi pembayarannya. Konfirmasi dulu sebelum naik ke logistik.',
+                    ]);
+                }
+            }
+
             DB::beginTransaction();
-
             try {
+                $hasActiveLog = DB::table('do_stock_deduction_logs')
+                    ->where('do_id', $getDo->id)
+                    ->where('status', 1)
+                    ->exists();
 
-                // Hanya ubah status menjadi DO (Logistik)
-                $getDo->status = 3; // status DO
+                // Kalau tidak ada log aktif (DO ini sempat direvisi & kembali ke List Queue),
+                // catat ULANG log-nya - TANPA reserveStock() lagi, karena reserved_quantity
+                // di ProductMinStock memang tidak pernah dilepas untuk kasus ini
+                if (!$hasActiveLog) {
+                    $qtys = [];
+                    foreach ($getDo->do_detail as $item) {
+                        $base_id = preg_replace('/_\d+$/', '', $item->product_packaging_id);
+                        $qtys[$base_id] = ($qtys[$base_id] ?? 0) + (float) $item->qty;
+                    }
+
+                    $newLogs = [];
+                    foreach ($qtys as $base_id => $qty) {
+                        if ($qty > 0) {
+                            $newLogs[] = [
+                                'do_id' => $getDo->id,
+                                'warehouse_id' => $getDo->warehouse_id,
+                                'product_packaging_id' => $base_id,
+                                'qty' => $qty,
+                                'status' => 1,
+                                'note' => 'Dicatat ulang - DO diproses kembali dari List Queue (reservasi tidak berubah)',
+                                'created_at' => now(),
+                                'updated_at' => now(),
+                            ];
+                        }
+                    }
+
+                    if (!empty($newLogs)) {
+                        DB::table('do_stock_deduction_logs')->insert($newLogs);
+                    }
+                }
+
+                $getDo->status = 3;
                 $getDo->updated_by = Auth::id();
                 $getDo->save();
 
@@ -1237,7 +1281,7 @@ class PackingOrderController extends Controller
 
                 return response()->json([
                     'status' => 'success',
-                    'message' => 'SO berhasil direvisi dan stok kembali normal!',
+                    'message' => 'Data berhasil dikembalikan untuk revisi!',
                     'redirect' => route('superuser.penjualan.sales_order.index_lanjutan')
                 ]);
             }
@@ -1408,25 +1452,85 @@ class PackingOrderController extends Controller
         exit();
     }
 
-    private function reset_cost_if_change_idr_rate($do_id,$idr_rate){
+    /**
+     * Parse input kurs IDR dari form ke float.
+     * Support format ID "16.500,50" -> 16500.50, "16.500" -> 16500,
+     * dan format EN "16500.50" -> 16500.50.
+     */
+    private function parseIdrRate($value)
+    {
+        if (is_numeric($value)) {
+            return (float) $value;
+        }
+        $s = trim((string) $value);
+        if ($s === '') {
+            return 0;
+        }
+        // Buang prefix Rp / IDR dan spasi (termasuk NBSP)
+        $s = str_replace(["\xc2\xa0", ' ', 'Rp', 'RP', 'rp', 'IDR', 'Idr', 'idr'], '', $s);
+        $hasDot = strpos($s, '.') !== false;
+        $hasComma = strpos($s, ',') !== false;
+        if ($hasDot && $hasComma) {
+            // Format ID: titik ribuan, koma desimal
+            $s = str_replace('.', '', $s);
+            $s = str_replace(',', '.', $s);
+        } elseif ($hasComma) {
+            // Hanya koma: anggap desimal "16500,50" -> "16500.50"
+            $s = str_replace(',', '.', $s);
+        } else {
+            // Hanya titik / tanpa separator
+            if (substr_count($s, '.') > 1) {
+                // "1.650.000" -> ribuan
+                $s = str_replace('.', '', $s);
+            } elseif (preg_match('/^\d{1,3}(\.\d{3})+$/', $s)) {
+                // "16.500" -> ribuan, bukan desimal
+                $s = str_replace('.', '', $s);
+            }
+            // Selain itu titik dianggap desimal "16500.50" -> biarkan
+        }
+        $s = preg_replace('/[^0-9\.\-]/', '', $s);
+        return (float) $s;
+    }
+
+    private function reset_cost_if_change_idr_rate($do_id,$idr_rate)
+    {
         $do = PackingOrder::where('id',$do_id)->first();
         $result = PackingOrderDetail::where('do_id',$do_id)->first();
+
+        // Guard: DO/detail bisa hilang (misal revisi logistik) — jangan fatal error.
+        if (!$do || !$result) {
+            return false;
+        }
+
+        // Pakai kurs BARU dari parameter (bukan $do->idr_rate dari DB) karena
+        // update() memanggil fungsi ini SEBELUM menyimpan kurs baru.
+        $rate = (float) $idr_rate;
+        if ($rate <= 0) {
+            $rate = (float) $do->idr_rate;
+        }
+        if ($rate <= 0) {
+            return false;
+        }
 
         $check_po = PackingOrderItem::where('do_id',$result->do_id)->get();
         $idr_total = 0;
 
         foreach ($check_po as $key => $row) {
-            $idr_total += ceil(((($row->price * $do->idr_rate) * $row->qty ) - ($row->total_disc * $do->idr_rate))); 
+            $idr_total += ceil(((($row->price * $rate) * $row->qty ) - ($row->total_disc * $rate)));
         }
 
         $discount_1 = floatval($result->discount_1) / 100;
         $discount_2 = floatval($result->discount_2) / 100;
         $discount_idr = ($result->discount_idr);
 
+        // ✅ TAMBAHAN: hitung ulang nominal IDR dari masing-masing diskon persentase
+        $discount_1_idr = ceil($idr_total * $discount_1);
+        $discount_2_idr = ceil(($idr_total - $discount_1_idr) * $discount_2);
+
         $total_discount_idr = ceil(( $idr_total * $discount_1 ) + (($idr_total - ($idr_total * $discount_1)) * $discount_2) + $discount_idr);
 
-        if($result->ppn > 0){
-            $ppn = ceil(($idr_total - $total_discount_idr ) * (10/100));
+        if($result->ppn_percent > 0){
+            $ppn = ceil(($idr_total - $total_discount_idr ) * ($result->ppn_percent / 100));
         }
         else{
             $ppn = 0;
@@ -1440,7 +1544,9 @@ class PackingOrderController extends Controller
         $grand_total_idr = ceil($purchase_total_idr + $delivery_cost_idr + $other_cost_idr);
 
         $data = [
-            'ppn' => $ppn,
+            'discount_1_idr' => $discount_1_idr,      // ✅ ditambahkan
+            'discount_2_idr' => $discount_2_idr,      // ✅ ditambahkan
+            'ppn_idr' => $ppn,
             'total_discount_idr' => trim(htmlentities($total_discount_idr)),
             'purchase_total_idr' => trim(htmlentities($purchase_total_idr)),
             'grand_total_idr' => trim(htmlentities($grand_total_idr)),
@@ -1450,13 +1556,14 @@ class PackingOrderController extends Controller
         $update = PackingOrderDetail::where('do_id',$do_id)->update($data);
         return true;        
     }
+
     public function reset_cost($id){
       $data = [
           'discount_1' => 0,
           'discount_2' => 0,
           'discount_idr' => 0,
           'total_discount_idr' => 0,
-          'ppn' => 0,
+          'ppn_idr' => 0,
           'voucher_idr' => 0,
           'cashback_idr' => 0,
           'purchase_total_idr' => 0,
@@ -1528,6 +1635,389 @@ class PackingOrderController extends Controller
         } catch (\Exception $e) {
             DB::rollBack();
             return redirect()->back()->with('error', 'Gagal insert data: ' . $e->getMessage());
+        }
+    }
+
+    public function revisi_dari_logistik(Request $request, $id)
+    {
+        if (!$request->ajax()) {
+            abort(404);
+        }
+
+        if (Auth::user()->is_superuser == 0) {
+            if (empty($this->access) || empty($this->access->user) || $this->access->can_approve == 0) {
+                return response()->json([
+                    'status' => 'error',
+                    'message' => 'Anda tidak punya akses untuk membuka menu terkait',
+                ]);
+            }
+        }
+
+        try {
+            $packing = PackingOrder::find($id);
+
+            if (!$packing) {
+                return response()->json([
+                    'status' => 'error',
+                    'message' => 'Data DO tidak ditemukan',
+                ]);
+            }
+
+            if (!in_array($packing->status, [3, 4])) {
+                return response()->json([
+                    'status' => 'error',
+                    'message' => 'DO ini tidak dalam status yang bisa direvisi dari sini.',
+                ]);
+            }
+
+            DB::transaction(function () use ($packing) {
+                $packing = PackingOrder::where('id', $packing->id)->lockForUpdate()->firstOrFail();
+
+                // HANYA flip status log jadi 0 - JANGAN panggil releaseReservedStock()
+                // karena reserved di ProductMinStock sengaja dipertahankan sampai
+                // benar-benar dikembalikan ke SO Lanjutan
+                $affected = DB::table('do_stock_deduction_logs')
+                    ->where('do_id', $packing->id)
+                    ->where('status', 1)
+                    ->update([
+                        'status' => 0,
+                        'note' => 'Dibatalkan sementara - DO kembali ke List Queue (revisi status ' . $packing->status . ') oleh ' . (Auth::user()->name ?? 'Admin'),
+                        'updated_at' => now(),
+                    ]);
+
+                // Invoice batal kalau sudah sempat terbentuk - soft delete (bukan
+                // forceDelete) supaya jejak audit & kode tidak hilang, konsisten
+                // dengan alur Void.
+                Invoicing::where('do_id', $packing->id)->delete();
+
+                // Kalau DO ini asalnya dari Proforma (CASH), kembalikan juga status
+                // Proforma-nya supaya bisa diedit ulang - sama seperti yang sudah
+                // ada di revisi() lama, disamakan di sini.
+                $so = SalesOrder::find($packing->so_id);
+                if ($so && $so->status_proforma == 4) {
+                    $so->status_proforma = 2; // Mengembalikan status proforma agar bisa direvisi ulang
+                    $so->save();
+
+                    $proforma = SalesOrderProforma::where('so_id', $so->id)->first();
+                    if ($proforma) {
+                        $proforma->so_lanjutan = 0;
+                        $proforma->status = 2;
+                        $proforma->save();
+                    }
+                }
+
+                $packing->update(['status' => 2]);
+
+                // Konfirmasi manual tahap 1 merujuk ke item/total lama — setelah DO
+                // ditarik ke queue dan diedit ulang, flag harus diulang dari nol
+                // supaya ready() tidak lolos pakai konfirmasi basi.
+                if ($packing->type_transaction == 'CASH') {
+                    $packing->update(['has_payment' => 0]);
+                }
+            });
+
+            return response()->json([
+                'status' => 'success',
+                'message' => 'DO berhasil ditarik kembali ke List Queue.',
+                'redirect' => route('superuser.penjualan.sales_order.index_lanjutan'),
+            ]);
+
+        } catch (\Exception $e) {
+            return response()->json([
+                'status' => 'error',
+                'message' => $e->getMessage(),
+            ]);
+        }
+    }
+
+    public function update_kurs(Request $request)
+    {
+        if (!$request->ajax()) {
+            abort(404);
+        }
+
+        if (Auth::user()->is_superuser == 0) {
+            if (empty($this->access) || empty($this->access->user) || $this->access->can_approve == 0) {
+                return response()->json([
+                    'status' => 'error',
+                    'message' => 'Anda tidak punya akses untuk membuka menu terkait',
+                ]);
+            }
+        }
+
+        $request->validate([
+            'ids' => 'required',
+            'idr_rate' => 'required',
+        ]);
+
+        // Parse kurs via helper terpusat (support "16.500,50" -> 16500.50 dan "16500.50")
+        $idrRate = $this->parseIdrRate($request->idr_rate);
+
+        if ($idrRate <= 1) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Kurs harus lebih dari Rp 1 agar dianggap valid.',
+            ]);
+        }
+
+        $ids = is_array($request->ids) ? $request->ids : explode(',', $request->ids);
+        $ids = array_filter(array_map('trim', $ids));
+
+        if (empty($ids)) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Tidak ada DO yang dipilih.',
+            ]);
+        }
+
+        try {
+            $updated = 0;
+            $skipped = 0;
+            DB::transaction(function () use ($ids, $idrRate, &$updated, &$skipped) {
+                foreach ($ids as $id) {
+                    $packing = PackingOrder::where('id', $id)->lockForUpdate()->first();
+                    if (!$packing) continue;
+
+                    // Aturan kunci kurs:
+                    // - Masih hold -> set kurs pertama kali.
+                    // - Sudah valid + masih PACKED (status 4, belum Surat Jalan) -> boleh koreksi
+                    //   typo langsung di sini (invoice ikut disinkronkan di bawah).
+                    // - Sudah valid + status >= 5 -> terkunci, koreksi wajib lewat revisi
+                    //   internal (ada OTP + approval + sinkron stok/invoice).
+                    if (empty($packing->is_kurs_hold) && (int) $packing->status !== 4) {
+                        $skipped++;
+                        continue;
+                    }
+
+                    $packing->idr_rate = $idrRate;
+                    $packing->is_kurs_hold = false;
+                    $packing->save();
+                    $updated++;
+
+                    // Hitung ulang idr_total, diskon, ppn, dsb pakai kurs baru
+                    $this->reset_cost_if_change_idr_rate($packing->id, $idrRate);
+
+                    // Kurs baru valid & DO sudah di tahap Packed (status 4) -> buat/sinkronkan invoice
+                    if ((int) $packing->status >= 4) {
+                        $this->createInvoiceIfNeeded($packing->id);
+                    }
+                }
+            });
+
+            if ($updated === 0) {
+                // Beri petunjuk akurat sesuai kondisi DO pertama yang dilewati,
+                // karena jalur koreksi beda untuk status 4 vs 5/6 vs revisi sudah terpakai.
+                $sample = PackingOrder::whereIn('id', $ids)->first();
+                if ($sample && empty($sample->is_kurs_hold) && (int) $sample->status >= 5) {
+                    if (!empty($sample->internal_revision_count)) {
+                        return response()->json([
+                            'status' => 'error',
+                            'message' => 'Kurs sudah terkunci dan jatah revisi internal DO ini sudah terpakai. Hubungi Finance/Developer untuk koreksi manual.',
+                        ]);
+                    }
+                    return response()->json([
+                        'status' => 'error',
+                        'message' => 'Kurs sudah terkunci (DO sudah lewat PACKED). Koreksi lewat revisi internal (khusus status Delivering/Delivered).',
+                    ]);
+                }
+                return response()->json([
+                    'status' => 'error',
+                    'message' => 'Kurs sudah valid / terkunci, tidak bisa diupdate lagi.',
+                ]);
+            }
+
+            $msg = $updated > 1
+                ? $updated . ' DO berhasil diupdate kurs-nya.'
+                : 'Kurs DO berhasil diupdate.';
+            if ($skipped > 0) {
+                $msg .= ' ' . $skipped . ' DO dilewati karena kursnya sudah valid/terkunci.';
+            }
+
+            return response()->json([
+                'status' => 'success',
+                'message' => $msg,
+            ]);
+        } catch (\Throwable $e) {
+            // dd($e);
+            return response()->json([
+                'status' => 'error',
+                'message' => $e->getMessage(),
+            ]);
+        }
+    }
+
+    /**
+     * Buat invoice untuk DO ini kalau belum ada, pakai grand_total_idr
+     * yang sudah tersimpan di PackingOrderDetail. Kalau sudah ada (termasuk
+     * yang sempat ter-soft-delete saat revisi logistik), sinkronkan ulang
+     * kode/customer/total + restore — kecuali invoice VOID (final, jangan
+     * dihidupkan lagi). Duplikat identik di DeliveryOrderController.
+     */
+    private function createInvoiceIfNeeded($do_id)
+    {
+        $packing = PackingOrder::where('id', $do_id)->first();
+        $detail  = PackingOrderDetail::where('do_id', $do_id)->first();
+
+        if (!$packing || !$detail) {
+            return;
+        }
+
+        $existing = Invoicing::withTrashed()->where('do_id', $do_id)->first();
+
+        if ($existing) {
+            // Invoice VOID bersifat final — jangan restore/sinkron dari alur kurs.
+            if ($existing->trashed() && (int) $existing->status === Invoicing::STATUS['VOID']) {
+                return;
+            }
+            if ($existing->trashed()) {
+                $existing->restore();
+            }
+            $existing->update([
+                'code' => $packing->do_code,
+                'customer_id' => $packing->customer_id,
+                'customer_other_address_id' => $packing->customer_other_address_id,
+                'grand_total_idr' => $detail->grand_total_idr,
+                'status' => Invoicing::STATUS['ACTIVE'],
+            ]);
+            return;
+        }
+
+        Invoicing::create([
+            'code' => $packing->do_code,
+            'do_id' => $packing->id,
+            'customer_id' => $packing->customer_id,
+            'customer_other_address_id' => $packing->customer_other_address_id,
+            'grand_total_idr' => $detail->grand_total_idr,
+            'status' => Invoicing::STATUS['ACTIVE'],
+            'type' => 0,
+            'created_by' => Auth::id(),
+        ]);
+    }
+
+    public function ajukan_void(Request $request, $id)
+    {
+        if (!$request->ajax()) {
+            abort(404);
+        }
+
+        if (Auth::user()->is_superuser == 0) {
+            if (empty($this->access) || empty($this->access->user) || $this->access->can_approve == 0) {
+                return response()->json([
+                    'status' => 'error',
+                    'message' => 'Anda tidak punya akses untuk membuka menu terkait',
+                ]);
+            }
+        }
+
+        $request->validate([
+            'reason' => 'required|string|min:5',
+        ]);
+
+        try {
+            $packing = PackingOrder::find($id);
+
+            if (!$packing) {
+                return response()->json([
+                    'status' => 'error',
+                    'message' => 'Data DO tidak ditemukan',
+                ]);
+            }
+
+            if ((int) $packing->status !== 5) {
+                return response()->json([
+                    'status' => 'error',
+                    'message' => 'Pengajuan void hanya bisa dilakukan untuk DO berstatus Delivering (status 5).',
+                ]);
+            }
+
+            if (!empty($packing->void_status)) {
+                return response()->json([
+                    'status' => 'error',
+                    'message' => 'DO ini sudah pernah diajukan void sebelumnya.',
+                ]);
+            }
+
+            // Guard dua arah dengan revisi internal: DO yang sedang pending revisi
+            // (invoice di-hold) tidak boleh diajukan void bersamaan.
+            if (!empty($packing->internal_revision_status) && (int) $packing->internal_revision_status === 1) {
+                return response()->json([
+                    'status' => 'error',
+                    'message' => 'DO ini sedang dalam pengajuan revisi internal. Selesaikan atau tolak revisi tersebut sebelum mengajukan void.',
+                ]);
+            }
+
+            DB::transaction(function () use ($packing, $request) {
+                DB::table('do_void_requests')->insert([
+                    'do_id' => $packing->id,
+                    'so_id' => $packing->so_id,
+                    'requested_by' => Auth::id(),
+                    'requested_at' => now(),
+                    'request_reason' => trim(htmlentities($request->reason)),
+                    'status' => 1, // 1 = pending
+                    'created_at' => now(),
+                    'updated_at' => now(),
+                ]);
+
+                $packing->update(['void_status' => 1]); // 1 = pending
+            });
+
+            return response()->json([
+                'status' => 'success',
+                'message' => 'Pengajuan void berhasil dikirim, menunggu approval dari Finance.',
+            ]);
+
+        } catch (\Throwable $e) {
+            return response()->json([
+                'status' => 'error',
+                'message' => $e->getMessage(),
+            ]);
+        }
+    }
+
+    public function confirmed_payment(Request $request, $id)
+    {
+        if (!$request->ajax()) abort(400, 'Invalid request type.');
+
+        $request->validate([
+            'catatan' => 'nullable|string|max:255',
+        ]);
+
+        DB::beginTransaction();
+        try {
+            $packing = PackingOrder::lockForUpdate()->findOrFail($id);
+
+            if ($packing->type_transaction != 'CASH') {
+                throw new \Exception('Konfirmasi pembayaran ini hanya berlaku untuk transaksi CASH.');
+            }
+
+            // Konfirmasi manual hanya bermakna SEBELUM naik logistik.
+            // Setelah status 3+ (sudah diproses gudang), flag ini tidak boleh
+            // diubah-ubah lagi — pelunasan tahap akhir dicek live via PayableDetail.
+            if ((int) $packing->status > 2) {
+                throw new \Exception('DO ini sudah lewat tahap konfirmasi pembayaran (sudah masuk logistik).');
+            }
+
+            $packing->has_payment = 1; // ✅ Tandai DO ini sudah dibayar (tahap 1: konfirmasi manual)
+            $packing->updated_by = Auth::id();
+            $packing->save();
+
+            Log::info('Konfirmasi pembayaran manual: DO #' . $packing->code
+                . ' dikonfirmasi oleh user #' . Auth::id()
+                . ($request->catatan ? ' - catatan: ' . $request->catatan : ''));
+
+            DB::commit();
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Pembayaran berhasil dikonfirmasi. DO ini sekarang bisa dinaikkan ke logistik.',
+            ]);
+
+        } catch (\Throwable $e) {
+            DB::rollBack();
+            return response()->json([
+                'success' => false,
+                'message' => $e->getMessage(),
+            ], 500);
         }
     }
 }

@@ -15,7 +15,9 @@ class SalesOrder extends Model
     protected $table = "penjualan_so";
     protected $fillable =[
     	'so_code',
+        'estimate_code',
         'is_proforma',
+        'is_estimate',
         'status_proforma',
     	'code',
         'keep_code', 
@@ -42,6 +44,14 @@ class SalesOrder extends Model
         'no_ducument_ppn',
     	'so_for',
     	'so_indent',
+        'is_archived',
+        'archived_at',
+        // --- FIELD DISKON GLOBAL SEBAGAI INFORMASI ---
+        'disc_percent',
+        'disc_idr',
+        'disc_usd',
+        'disc_kemasan',
+        // ---------------------------------------------
         'indent_status', 
         'count_rev',
         'approval_mou',
@@ -89,6 +99,7 @@ class SalesOrder extends Model
         4 => 'TUTUP',
         5 => 'HOLD',
         6 => 'INDENT',
+        7 => 'VOID',
     	9 => 'MUTASI',
     ];
 
@@ -100,16 +111,17 @@ class SalesOrder extends Model
     ];
 
     const TYPE_TRANSACTION = [
-    	1 => 'CASH',
-        2 => 'TEMPO',
-        3 => 'MARKETPLACE',
-        4 => 'COD',
+        'CASH' => 1,
+        'TEMPO' => 2,
+        'MARKETPLACE' => 3,
+        'COD' => 4,
     ];
 
     const CONDITION = [
     	0 => 'DELETED',
     	1 => 'ACTIVED',
         2 => 'HOLD',
+        3 => 'VOID',
     ];
 
     const COUNT_REV = [

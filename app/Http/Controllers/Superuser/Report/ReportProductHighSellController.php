@@ -95,6 +95,8 @@ class ReportProductHighSellController extends Controller
             $creport = $crapp->OpenReport($my_report, 1);
 
             $this->setDatabaseLogon($creport);
+            $creport->DiscardSavedData();
+            $creport->VerifyOnEveryPrint = false;
             $creport->EnableParameterPrompting = false;
             $creport->ParameterFields(2)->SetCurrentValue($new_date_start);
             $creport->ParameterFields(3)->SetCurrentValue($new_date_end);

@@ -139,6 +139,8 @@ class ReportEmployeePerformanceController extends Controller
 
             // Set database logon info
             $creport->Database->Tables(1)->SetLogOnInfo($dbConfig['server'], $dbConfig['database'], $dbConfig['user'], $dbConfig['password']);
+            $creport->DiscardSavedData();
+            $creport->VerifyOnEveryPrint = false;
 
             // Nonaktifkan prompt parameter
             $creport->EnableParameterPrompting = false;

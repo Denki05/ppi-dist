@@ -270,9 +270,9 @@
 
   <div class="do-canvas-header">
     <div class="do-canvas-title">
-      <a href="{{ route('superuser.penjualan.delivery_order.index') }}" class="btn btn-light btn-sm" style="border-radius:8px;">
+      {{--<a href="{{ route('superuser.penjualan.delivery_order.index') }}" class="btn btn-light btn-sm" style="border-radius:8px;">
         <i class="fa fa-arrow-left"></i>
-      </a>
+      </a>--}}
       <div>
         <h4>{{ $result->do_code ?: $result->code }}</h4>
         <small>DO Proses &middot; fallback checker/picker</small>
@@ -302,29 +302,15 @@
     </div>
   </div>
 
-  {{--@if(in_array($result->type_transaction, ['TEMPO','COD','MARKETPLACE']))
-  <div class="do-toolbar">
-    <span style="font-size:12.5px; color:#868e96; font-weight:600;">
-      <i class="fa fa-print"></i> Dokumen
-    </span>
-    <div class="do-toolbar-actions">
-      <a href="{{ route('superuser.penjualan.delivery_order.print_manifest', $result->id) }}"
-        class="btn btn-outline-info" data-id="{{ $result->id }}" target="_blank">
-          <i class="fas fa-clipboard-list"></i> Print Manifest
-      </a>
-    </div>
-  </div>
-  @endif --}}
-
   <div class="do-canvas-body" style="padding-top:14px;">
     <table class="do-confirm-table">
       <thead>
         <tr>
-          <th>No</th>
-          <th>Nama Barang</th>
-          <th>Jumlah</th>
-          <th>Packaging</th>
-          <th>
+          <th class="text-center">No</th>
+          <th class="text-center">Nama Barang</th>
+          <th class="text-center">Jumlah</th>
+          <th class="text-center">Packaging</th>
+          <th class="text-center">
             Cek <input type="checkbox" class="check-all-confirm-item" onclick="$('.confirm-item').prop('checked', $(this).prop('checked'))" />
           </th>
         </tr>
@@ -352,9 +338,9 @@
   </div>
 
   <div class="do-footer">
-    <button type="button" class="btn btn-outline-danger" id="btnCancelToDraft">
-      <i class="fa fa-undo"></i> Kembali ke Packing Order
-    </button>
+    <a href="{{ route('superuser.penjualan.delivery_order.index') }}" class="btn btn-danger btn-sm" style="border-radius:8px;">
+      <i class="fa fa-arrow-left"></i> Back
+    </a>
     <button type="button" class="btn btn-primary" onclick="konfirmasiBarang()">
       <i class="fa fa-save"></i> Save
     </button>
@@ -377,9 +363,9 @@
 
   <div class="do-canvas-header">
     <div class="do-canvas-title">
-      <a href="{{ route('superuser.penjualan.delivery_order.index') }}" class="btn btn-light btn-sm" style="border-radius:8px;">
+      {{--<a href="{{ route('superuser.penjualan.delivery_order.index') }}" class="btn btn-light btn-sm" style="border-radius:8px;">
         <i class="fa fa-arrow-left"></i>
-      </a>
+      </a>--}}
       <div>
         <h4>{{ $result->do_code ?: $result->code }}</h4>
         <small>DO Siap Kirim</small>
@@ -414,30 +400,33 @@
       <i class="fa fa-print"></i> Dokumen
     </span>
     <div class="do-toolbar-actions">
-      @if($result->count_cancel == 0)
+      @if($result->count_cancel == 0 && $result->internal_revision_count == 0)
         <a href="{{ route('superuser.penjualan.delivery_order.print', $result->id) }}"
           class="btn btn-outline-info" target="_blank">
-            <i class="fa fa-file-alt"></i> Print DO
+            <i class="fa fa-file-o"></i> Print DO
         </a>
         {{--@if(isset($result->so) && isset($result->so->showroom_mutation))
           <a href="{{ route('superuser.gudang.mutasi_showroom.print_pdf', $result->so->showroom_mutation->id) }}"
             class="btn btn-outline-secondary" target="_blank">
               <i class="fa fa-file-o"></i> Print SJ Internal
           </a>
-        @endif --}}
-      @elseif($result->count_cancel == 1)
+        @endif--}}
+      @else
         <a href="{{ route('superuser.penjualan.delivery_order.print', $result->id) }}"
-          class="btn btn-outline-info" target="_blank">
+          class="btn btn-outline-warning" target="_blank">
             <i class="fa fa-print"></i> Print DO Revisi
+            @if($result->internal_revision_count > 0)
+              (ke-{{ $result->internal_revision_count }})
+            @endif
         </a>
       @endif
     </div>
   </div>
 
   <div class="do-footer">
-    <button type="button" class="btn btn-outline-danger btn-cancel-step">
-      <i class="fa fa-undo"></i> Kembali ke Checker
-    </button>
+    <a href="{{ route('superuser.penjualan.delivery_order.index') }}" class="btn btn-danger btn-sm" style="border-radius:8px;">
+      <i class="fa fa-arrow-left"></i> Back
+    </a>
     <button type="button" class="btn btn-primary btn-delivery">
       <i class="fas fa-shipping-fast"></i> DELIVERING / BERANGKAT
     </button>
@@ -460,9 +449,9 @@
 
   <div class="do-canvas-header">
     <div class="do-canvas-title">
-      <a href="{{ route('superuser.penjualan.delivery_order.index') }}" class="btn btn-light btn-sm" style="border-radius:8px;">
+      {{--<a href="{{ route('superuser.penjualan.delivery_order.index') }}" class="btn btn-light btn-sm" style="border-radius:8px;">
         <i class="fa fa-arrow-left"></i>
-      </a>
+      </a>--}}
       <div>
         <h4>{{ $result->do_code }}</h4>
         <small>Update Resi</small>
@@ -480,11 +469,11 @@
         <div class="do-form-section-title">Customer</div>
         <div class="do-form-grid">
           <div class="do-form-field">
-            <label class="text-left">Nama</label>
+            <label>Nama</label>
             <input class="form-control" value="{{$result->member->name}}" readonly>
           </div>
           <div class="do-form-field">
-            <label class="text-left">Kota</label>
+            <label>Kota</label>
             <input class="form-control" value="{{$result->member->text_kota}}" readonly>
           </div>
         </div>
@@ -495,13 +484,13 @@
         <div class="do-form-section-title">Upload Bukti Kirim</div>
         <div class="do-form-grid">
           <div class="do-form-field">
-            <label class="text-left">Foto 1</label>
+            <label>Foto 1</label>
             <div class="do-upload-box">
               <input type="file" id="image" name="image" data-max-file-size="2000" accept="image/png, image/jpeg">
             </div>
           </div>
           <div class="do-form-field">
-            <label class="text-left">Foto 2</label>
+            <label>Foto 2</label>
             <div class="do-upload-box">
               <input type="file" id="image2" name="image2" data-max-file-size="2000" accept="image/png, image/jpeg">
             </div>
@@ -523,15 +512,15 @@
         <div class="do-form-section-title">Biaya</div>
         <div class="do-form-grid">
           <div class="do-form-field">
-            <label class="text-left">Ekspedisi</label>
+            <label>Ongkir (IDR) - Note</label>
             <input type="text" class="form-control" placeholder="Input Note" value="{{ $result->vendor->name ?? '-' }}" name="delivery_cost_note" {{$result->status == 6 ? 'readonly' : ''}} readonly>
           </div>
           <div class="do-form-field">
-            <label class="text-left">Ongkir (IDR) - Nominal</label>
+            <label>Ongkir (IDR) - Nominal</label>
             <input type="text" class="form-control" value="{{ $result->do_detail_cost[0]->delivery_cost_idr ?? 0 }}" name="delivery_cost_idr" step="any" {{$result->status == 5  || $result->status == 6 ? 'readonly' : ''}}>
           </div>
           <div class="do-form-field">
-            <label class="text-left">Resi - Ekspedisi</label>
+            <label>Resi - Ekspedisi</label>
             <select class="form-control js-select2" name="other_cost_note" id="other_cost_note">
               <option value="">Pilih Ekspedisi</option>
               @foreach($ekspedisi as $row)
@@ -540,7 +529,7 @@
             </select>
           </div>
           <div class="do-form-field">
-            <label class="text-left">Resi (IDR) - Nominal</label>
+            <label>Resi (IDR) - Nominal</label>
             <input type="number" class="form-control" value="{{$result->do_detail_cost->first()->other_cost_idr ?? 0}}" name="other_cost_idr" step="any" {{$result->status == 6 ? 'readonly' : ''}}>
           </div>
         </div>
@@ -550,12 +539,9 @@
 
   <div class="do-footer">
     <div style="display:flex; gap:8px;">
-      <a href="{{route('superuser.penjualan.delivery_order.index')}}" class="btn btn-outline-warning">
+      <a href="{{route('superuser.penjualan.delivery_order.index')}}" class="btn btn-outline-danger">
         <i class="fa fa-arrow-left"></i> Back
       </a>
-      <button type="button" class="btn btn-outline-danger btn-cancel-step">
-        <i class="fa fa-undo"></i> Kembali ke Siap Kirim
-      </button>
     </div>
     @if($result->status==5)
     <button type="button" class="btn btn-primary btn-delivered">
@@ -581,9 +567,9 @@
 
   <div class="do-canvas-header">
     <div class="do-canvas-title">
-      <a href="{{ route('superuser.penjualan.delivery_order.index') }}" class="btn btn-light btn-sm" style="border-radius:8px;">
+      {{--<a href="{{ route('superuser.penjualan.delivery_order.index') }}" class="btn btn-light btn-sm" style="border-radius:8px;">
         <i class="fa fa-arrow-left"></i>
-      </a>
+      </a>--}}
       <div>
         <h4>{{ $result->do_code }}</h4>
         <small>History Update Resi</small>
@@ -620,6 +606,10 @@
         <div class="do-info-label">Resi (IDR)</div>
         <div class="do-info-value">Rp {{ number_format($result->do_detail_cost[0]->other_cost_idr ?? 0, 0, ',', '.') }}</div>
       </div>
+      <div class="do-info-item">
+        <div class="do-info-label">Grand Total</div>
+        <div class="do-info-value">Rp {{ number_format($result->do_detail_cost[0]->grand_total_idr ?? 0, 0, ',', '.') }}</div>
+      </div>
     </div>
 
     @if(!empty($result->image) || !empty($result->image2))
@@ -645,9 +635,9 @@
     <a href="{{ route('superuser.penjualan.delivery_order.index') }}" class="btn btn-outline-warning">
       <i class="fa fa-arrow-left"></i> Kembali ke List
     </a>
-    {{-- <a href="{{ route('superuser.penjualan.delivery_order.print', $result->id) }}" class="btn btn-outline-info" target="_blank">
-      <i class="fa fa-file-alt"></i> Print DO
-    </a> --}}
+    {{--<a href="{{ route('superuser.penjualan.delivery_order.print', $result->id) }}" class="btn btn-outline-info" target="_blank">
+      <i class="fa fa-file-o"></i> Print DO
+    </a>--}}
   </div>
 
 </div>
@@ -680,12 +670,6 @@
 @push('scripts')
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 <script type="text/javascript">
-  window.addEventListener('pageshow', function (event) {
-    if (event.persisted) {
-      window.location.reload();
-    }
-  });
-
   $('.js-select2').select2();
 
     $('#image').fileinput({

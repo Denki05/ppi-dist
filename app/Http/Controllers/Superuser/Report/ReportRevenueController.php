@@ -184,6 +184,8 @@ class ReportRevenueController extends Controller
         $creport = $crapp->OpenReport($my_report,1); // call rpt report
 
         $creport->Database->Tables(1)->SetLogOnInfo($my_server, $my_database, $my_user, $my_password);
+        $creport->DiscardSavedData();
+        $creport->VerifyOnEveryPrint = false;
 
         $creport->EnableParameterPrompting = FALSE;
         $creport->ParameterFields(2)->SetCurrentValue ("$new_date_start"); // <-- param 1

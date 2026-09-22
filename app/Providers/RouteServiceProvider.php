@@ -77,7 +77,7 @@ class RouteServiceProvider extends ServiceProvider
             'as' => 'superuser.',
             'prefix' => '/superuser',
             'namespace' => $this->namespace . '\Superuser',
-            'middleware' => ['web', 'superuser', 'superuser_prevent_direct_access']
+            'middleware' => ['web', 'maintenance.logout', 'superuser', 'superuser_prevent_direct_access']
         ];
         
         $superusers = glob(base_path('/routes/superuser/*.php'));

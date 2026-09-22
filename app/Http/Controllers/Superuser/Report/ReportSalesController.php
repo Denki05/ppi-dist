@@ -178,6 +178,8 @@ class ReportSalesController extends Controller
 
             // Set database connection info
             $creport->Database->Tables(1)->SetLogOnInfo($my_server, $my_database, $my_user, $my_password);
+            $creport->DiscardSavedData();
+            $creport->VerifyOnEveryPrint = false;
 
             // Disable parameter prompting
             $creport->EnableParameterPrompting = false;

@@ -516,6 +516,8 @@ class InvoicingController extends Controller
         $creport = $crapp->OpenReport($my_report, 1);
 
         $creport->Database->Tables(1)->SetLogOnInfo($my_server, $my_database, $my_user, $my_password);
+        $creport->DiscardSavedData();
+        $creport->VerifyOnEveryPrint = false;
         $creport->EnableParameterPrompting = false;
         $creport->RecordSelectionFormula = "{penjualan_do.id} = " . $get_do->id;
 
@@ -576,6 +578,8 @@ class InvoicingController extends Controller
         $creport = $crapp->OpenReport($my_report, 1);
 
         $creport->Database->Tables(1)->SetLogOnInfo($my_server, $my_database, $my_user, $my_password);
+        $creport->DiscardSavedData();
+        $creport->VerifyOnEveryPrint = false;
         $creport->EnableParameterPrompting = false;
         $creport->RecordSelectionFormula = "{penjualan_do.id} = " . $get_do->id;
 
@@ -643,6 +647,8 @@ class InvoicingController extends Controller
 
         //- Set database logon info - must have
         $creport->Database->Tables(1)->SetLogOnInfo($my_server, $my_database, $my_user, $my_password);
+        $creport->DiscardSavedData();
+        $creport->VerifyOnEveryPrint = false;
 
         //- field prompt or else report will hang - to get through
         $creport->EnableParameterPrompting = FALSE;
@@ -867,6 +873,8 @@ class InvoicingController extends Controller
         $COM_Object = "CrystalDesignRunTime.Application";
 
         $creport->Database->Tables(1)->SetLogOnInfo($my_server, $my_database, $my_user, $my_password);
+        $creport->DiscardSavedData();
+        $creport->VerifyOnEveryPrint = false;
 
         // Set parameters
         $creport->EnableParameterPrompting = false;

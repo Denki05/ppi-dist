@@ -151,6 +151,8 @@ class ReportProductPerformanceController extends Controller
             $creport = $crapp->OpenReport($reportPath, 1);
 
             $creport->Database->Tables(1)->SetLogOnInfo($server, $database, $user, $password);
+            $creport->DiscardSavedData();
+            $creport->VerifyOnEveryPrint = false;
 
             $creport->EnableParameterPrompting = false;
             $creport->ParameterFields(2)->SetCurrentValue($new_date_start);
