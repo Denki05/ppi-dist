@@ -61,10 +61,23 @@
                 @endforeach
               </select>
             </div>
-            
+
             <div class="form-group col-md">
               <label for="customer">Customer</label>
               <input type="text" name="customer_name" class="form-control bg-light" value="{{ $result->member->name }} {{$result->member->text_kota}}" readonly>
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group col-md">
+              <label for="kemasan">Kemasan (mengikuti SO saat create)</label>
+              <input type="text" class="form-control bg-light" value="{{ $selected_packaging->pack_name ?? '-' }}" readonly>
+              <input type="hidden" name="packaging_id" id="packaging_id" value="{{ $selected_packaging->id ?? '' }}">
+              @if(empty($selected_packaging))
+                <small class="text-muted">Kemasan tidak terdeteksi dari item SO — daftar produk menampilkan semua kemasan brand ini.</small>
+              @elseif(!empty($is_mixed_packaging) && $is_mixed_packaging)
+                <small class="text-warning">SO ini berisi campuran kemasan — filter produk mengikuti kemasan dominan ({{ $selected_packaging->pack_name }}).</small>
+              @endif
             </div>
           </div>
         </div>
@@ -157,6 +170,7 @@
             <i class="fa fa-spinner fa-spin fa-2x text-primary"></i>
             <p class="mt-10 mb-0 text-muted">Memuat daftar produk...</p>
           </div>
+          <div id="produk-empty-alert" class="alert alert-warning" style="display:none;"></div>
 
           <table id="datatables" class="table table-striped">
             <thead>
@@ -343,12 +357,14 @@
     function loadProductList() {
       isProductLoading = true;
       $('#loading-produk').show();
+      $('#produk-empty-alert').hide();
       $('a.row-add, #addModalKontrak').prop('disabled', true);
 
       $.ajax({
         url: '{{ route('superuser.penjualan.sales_order.get_product_pack') }}',
         data: {
-          id: $('#brand_ppi').val(), // Panggil default saat load
+          id: $('#brand_name').val() || $('#brand_ppi').val(),
+          packaging_id: $('#packaging_id').val(),
           _token: "{{csrf_token()}}"
         },
         type: 'POST',
@@ -357,7 +373,15 @@
         success: function(json) {
           if (json.code == 200) {
             product_data = json.data;
+          } else {
+            product_data = {};
+            $('#produk-empty-alert')
+              .text('Tidak ada produk yang cocok dengan Brand & Kemasan ini.')
+              .show();
           }
+        },
+        error: function() {
+          product_data = {};
         },
         complete: function() {
           isProductLoading = false;
@@ -447,6 +471,10 @@
 
       if($('#brand_name').val()) {
         if(typeAdd == 0){
+          if ($.isEmptyObject(product_data)) {
+            Swal.fire('Perhatian', 'Tidak ada produk untuk Brand & Kemasan ini.', 'warning');
+            return;
+          }
           makeselect = '<select class="js-select2 form-control js-ajax" id="sku['+counter+']" name="sku[]" data-placeholder="Select Product" style="width:100%" required><option></option>';
           
           $.map( product_data, function( val, i ) {
