@@ -1,6 +1,13 @@
 <?php
 
 Route::group(['as' => 'utility.', 'prefix' => '/utility'], function () {
+    // Endpoint polling maintenance: bisa diakses SEMUA user login
+    // (tanpa batasan role) agar user online langsung diberi tahu.
+    // Termasuk dalam $except CheckForMaintenanceMode.
+    Route::get('/settings/maintenance-status', 'Utility\SettingController@maintenanceStatus')
+        ->middleware(['auth:superuser'])
+        ->name('settings.maintenanceStatus');
+
     Route::group(['middleware' => ['role:Developer|SuperAdmin', 'auth:superuser'], 'as' => 'settings.', 'prefix' => '/settings'], function () {
         Route::get('/', 'Utility\SettingController@index')->name('index');
         Route::post('/website', 'Utility\SettingController@website')->name('website');

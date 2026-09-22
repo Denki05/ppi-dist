@@ -236,8 +236,13 @@ class AoSalesOrderApiController extends Controller
         try {
             DB::beginTransaction();
 
+            $isPpn = (strtolower(trim((string) $request->input('order_type', ''))) === 'ppn');
+            if ($isPpn && !$request->filled('no_document')) {
+                return response()->json(['success' => false, 'message' => 'No. Dokumen PPN wajib diisi untuk order PPN'], 422);
+            }
+
             $so = new SalesOrder;
-            $so->so_code                     = CodeRepo::generateSoAwal();
+            $so->so_code                     = $isPpn ? CodeRepo::generateSoAwalPpn() : CodeRepo::generateSoAwal();
             $so->brand_name                  = $request->input('brand_name');
             $so->customer_id                 = $otherAddress->customer_id;
             $so->customer_other_address_id   = $otherAddress->id;
@@ -246,7 +251,7 @@ class AoSalesOrderApiController extends Controller
             $so->type_transaction            = $typeName;
             $so->so_for                      = 1;
             $so->so_date                     = null;
-            $so->type_so                     = 'nonppn';
+            $so->type_so                     = $isPpn ? 'ppn' : 'nonppn';
             $so->approval_mou                = $approval ? 1 : 0;
             $so->idr_rate                    = $kurs;
             $so->catatan                     = (string) $discPercent;
@@ -271,6 +276,15 @@ class AoSalesOrderApiController extends Controller
             $so->payment_status              = 0;
             $so->count_rev                   = 0;
             $so->created_by                  = $createdBy;
+            if ($isPpn) {
+                $so->no_ducument_ppn = trim((string) $request->input('no_document'));
+                $so->sales_senior_id = $request->input('sales_senior_id') ?: null;
+                $so->sales_id = $request->input('sales_id') ?: null;
+                $so->rekening = $request->input('rekening', $request->input('rekening_id'));
+                if ($kurs <= 0) {
+                    $so->idr_rate = 1; // samakan store PPN (idr_rate=1)
+                }
+            }
             // Auto estimate untuk CASH/TEMPO (samakan SalesOrderStoreService)
             if (in_array($typeName, ['CASH', 'TEMPO'], true)) {
                 $so->is_estimate = 1;
@@ -658,6 +672,18 @@ class AoSalesOrderApiController extends Controller
             $so->disc_kemasan = $this->parseNumber($request->input('disc_kemasan', $so->disc_kemasan));
             if ($request->has('so_indent') || $request->has('is_indent')) {
                 $so->so_indent = $this->parseBool($request->input('so_indent', $request->input('is_indent'))) ? 1 : 0;
+            }
+            if ($request->filled('no_document')) {
+                $so->no_ducument_ppn = trim((string) $request->input('no_document'));
+            }
+            if ($request->filled('sales_senior_id')) {
+                $so->sales_senior_id = $request->input('sales_senior_id');
+            }
+            if ($request->filled('sales_id')) {
+                $so->sales_id = $request->input('sales_id');
+            }
+            if ($request->has('rekening')) {
+                $so->rekening = $request->input('rekening');
             }
             if ($request->filled('pic_username')) {
                 $su = Superuser::where('username', $request->input('pic_username'))->first();

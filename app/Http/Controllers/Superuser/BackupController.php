@@ -16,8 +16,8 @@ class BackupController extends Controller
     public function createBackup()
     {
         try {
-            // Run the backup command
-            Artisan::call('backup:run');
+            // Backup FULL: database + file project (sesuai config/backup.php)
+            Artisan::call('backup:run --disable-notifications');
 
             // Get the output from the command for debugging
             $output = Artisan::output();
@@ -26,8 +26,9 @@ class BackupController extends Controller
                 'message' => 'Backup created successfully',
                 'output' => $output
             ], 200);
-        } catch (\Exception $e) {
-            dd($e);
+        } catch (\Throwable $e) {
+            \Log::error('Backup failed: ' . $e->getMessage());
+
             return response()->json([
                 'error' => 'Failed to create backup',
                 'details' => $e->getMessage()

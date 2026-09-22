@@ -5,8 +5,6 @@ namespace App\Http\Controllers\Superuser\Utility;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Artisan;
-use Spatie\Backup\Tasks\Backup\BackupJobFactory;
-use Spatie\Backup\BackupDestination\BackupDestinationFactory;
 use Validator;
 use DB;
 use Auth;
@@ -62,17 +60,22 @@ class SettingController extends Controller
         }
     }
 
-    public function toggleMaintenanceMode()
+    public function toggleMaintenanceMode(Request $request)
     {
         if (app()->isDownForMaintenance()) {
             // Jika dalam mode maintenance, maka matikan
             Artisan::call('up');
             $message = 'Maintenance mode disabled';
         } else {
-            // Jika tidak dalam mode maintenance, maka aktifkan dengan tampilan khusus
+            // Laravel 6: php artisan down hanya mendukung
+            // --message, --retry, --allow (tidak ada --render).
+            // Tampilan custom errors/503.blade.php otomatis dipakai
+            // lewat abort(503) di CheckForMaintenanceMode.
+            $customMessage = $request->input('message')
+                ?: 'Kami sedang dalam perbaikan. Coba lagi nanti!';
+
             Artisan::call('down', [
-                '--render' => 'errors.503', // Menampilkan tampilan custom
-                '--message' => 'Kami sedang dalam perbaikan. Coba lagi nanti!',
+                '--message' => $customMessage,
             ]);
             $message = 'Maintenance mode enabled';
         }
@@ -88,40 +91,78 @@ class SettingController extends Controller
         return $this->response(200, $response);
     }
 
+    /**
+     * Backup FULL: database + file project (sesuai config/backup.php).
+     * Sama persis dengan menu Backup, agar hasilnya konsisten.
+     */
     public function backupDatabase()
     {
         try {
-            // Create a backup job
-            $backupJob = BackupJobFactory::createFromArray(config('backup'));
-            
-            // Set the backup destination
-            $backupDestinations = BackupDestinationFactory::createFromArray(config('backup.destinations'));
-
-            foreach ($backupDestinations as $backupDestination) {
-                $backupJob->setBackupDestination($backupDestination);
-            }
-
-            // Start the backup process
-            $backupJob->run();
+            // Jalankan backup full (DB + files) via artisan, sama seperti menu Backup.
+            Artisan::call('backup:run --disable-notifications');
 
             $response['notification'] = [
                 'alert' => 'notify',
                 'type' => 'success',
-                'content' => 'Backup DB Success',
+                'content' => 'Backup Full (DB + Files) Success',
             ];
-    
+
             $response['redirect_to'] = 'reload()';
-    
+
             return $this->response(200, $response);
-        } catch (\Exception $e) {
+        } catch (\Throwable $e) {
+            \Log::error('Backup failed: ' . $e->getMessage());
+
             $response['notification'] = [
                 'alert' => 'block',
                 'type' => 'alert-danger',
                 'header' => 'Error',
-                'content' => 'Backup DB Failed!',
+                'content' => 'Backup Full Failed: ' . $e->getMessage(),
             ];
 
             return $this->response(500, $response);
         }
+    }
+
+    /**
+     * Dipolling oleh JS di semua halaman superuser.
+     * Harus tetap bisa diakses saat maintenance ON
+     * (lihat $except di CheckForMaintenanceMode).
+     *
+     * Admin (Developer/SuperAdmin) selalu dijawab down=false
+     * agar tidak ikut kena popup/auto-logout.
+     */
+    public function maintenanceStatus()
+    {
+        $user = Auth::guard('superuser')->user();
+
+        if ($user && method_exists($user, 'hasAnyRole') && $user->hasAnyRole(['Developer', 'SuperAdmin'])) {
+            return response()->json([
+                'down' => false,
+                'bypass' => true,
+                'message' => 'Anda login sebagai admin, maintenance tidak berlaku.',
+                'timestamp' => now()->toDateTimeString(),
+            ]);
+        }
+
+        $down = app()->isDownForMaintenance();
+
+        $message = 'Sistem sedang dalam pemeliharaan. Silakan coba lagi nanti!';
+        try {
+            $data = json_decode(@file_get_contents(storage_path('framework/down')), true);
+            if (!empty($data['message'])) {
+                $message = $data['message'];
+            }
+        } catch (\Throwable $e) {
+            // pakai pesan default
+        }
+
+        return response()->json([
+            'down' => $down,
+            'bypass' => false,
+            'message' => $message,
+            'logout_url' => route('superuser.logout'),
+            'timestamp' => now()->toDateTimeString(),
+        ]);
     }
 }

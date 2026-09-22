@@ -67,6 +67,7 @@ class Kernel extends HttpKernel
         // superuser
         'superuser' => \App\Http\Middleware\Superuser::class,
         'superuser_prevent_direct_access' => \App\Http\Middleware\SuperuserPreventDirectAccess::class,
+        'maintenance.logout' => \App\Http\Middleware\MaintenanceForceLogout::class,
 
         // authentication
         'authenctication' => \App\Http\Middleware\Authentication::class,

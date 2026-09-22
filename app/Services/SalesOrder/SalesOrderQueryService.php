@@ -258,7 +258,7 @@ class SalesOrderQueryService
 
     public function getEditFormData($id, $step)
     {
-        $result = SalesOrder::where('id', $id)->first();
+        $result = SalesOrder::with('so_detail')->where('id', $id)->first();
         if (empty($result)) {
             return ['success' => false, 'message' => 'SO tidak ditemukan'];
         }
@@ -272,6 +272,22 @@ class SalesOrderQueryService
         $packaging = \App\Entities\Master\Packaging::get();
         $rekening = DB::table('rekening')->get();
 
+        // Kemasan awal SO diinfer dari item yang sudah ada (mode packaging_id),
+        // karena header penjualan_so tidak menyimpan packaging_id.
+        // Ini menyamakan filter produk di halaman edit dengan pilihan kemasan saat create.
+        $selected_packaging = null;
+        $is_mixed_packaging = false;
+        $packagingIds = $result->so_detail->pluck('packaging_id')->filter()->values();
+        if ($packagingIds->isNotEmpty()) {
+            $counts = array_count_values($packagingIds->map(function ($v) {
+                return (string) $v;
+            })->toArray());
+            arsort($counts);
+            $dominantId = (int) array_key_first($counts);
+            $selected_packaging = \App\Entities\Master\Packaging::find($dominantId);
+            $is_mixed_packaging = count($counts) > 1;
+        }
+
         $data = [
             'customers' => $customers,
             'warehouse' => $warehouse,
@@ -284,6 +300,8 @@ class SalesOrderQueryService
             'step_txt' => SalesOrder::STEP[$step],
             'packaging' => $packaging,
             'rekening' => $rekening,
+            'selected_packaging' => $selected_packaging,
+            'is_mixed_packaging' => $is_mixed_packaging,
         ];
 
         if ($step == 2) {

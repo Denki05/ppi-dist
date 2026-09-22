@@ -29,6 +29,7 @@ return [
                 'exclude' => [
                     base_path('vendor'),
                     base_path('node_modules'),
+                    base_path('.git'), // repo git (±2GB) tidak perlu ikut backup
                 ],
 
                 /*

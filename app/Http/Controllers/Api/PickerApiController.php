@@ -119,9 +119,14 @@ class PickerApiController extends Controller
 
     /**
      * Submit checklist konfirmasi barang dari picker-app.
-     * Ini adalah pemindahan logic dari DeliveryOrderController::packed(),
-     * TETAP jalan di project transaksi (bukan di picker-app) karena
-     * potongan stok fisik & validasi kuota log HARUS satu sumber kebenaran.
+     * Disamakan dengan checker web (DeliveryOrderController::packed):
+     * - validasi checklist + kuota reserved (do_stock_deduction_logs)
+     * - status 3 -> 4 (+ invoice kalau kurs valid)
+     * - potong fisik TIDAK di sini — satu-satunya titik potong adalah
+     *   sending() (4 -> 5, momen save-setelah-cetak SJ).
+     *   (Dulu packTask motong di sini; itu bikin double-deduct karena
+     *   sending() motong lagi untuk DO yang diproses via picker-app,
+     *   plus invoice tidak pernah dibuat di jalur picker.)
      *
      * Body yang diharapkan:
      * {
@@ -140,8 +145,6 @@ class PickerApiController extends Controller
             $packing = PackingOrder::with(['do_detail.product_pack', 'so'])
                 ->where('print_count', '>', 0)
                 ->findOrFail($id);
-
-            $isProforma = optional($packing->so)->is_proforma == 1;
 
             if ($packing->status != 3) {
                 throw new \Exception('Status DO tidak valid untuk diproses (mungkin sudah diproses picker/SPV lain).');
@@ -166,38 +169,38 @@ class PickerApiController extends Controller
                 }
             }
 
-            // ====== POTONG STOK FISIK (sama seperti versi web) ======
-            if (!$isProforma) {
-                $stockService = new StockService();
+            // ====== VALIDASI KUOTA RESERVED (checker tidak boleh melebihi log) ======
+            // Fisik TIDAK dipotong di sini (lihat docblock di atas).
+            $checkerQtys = [];
+            foreach ($packing->do_detail as $item) {
+                $base_id = preg_replace('/_\d+$/', '', $item->product_packaging_id);
+                $checkerQtys[$base_id] = ($checkerQtys[$base_id] ?? 0) + $item->qty;
+            }
 
-                $checkerQtys = [];
-                foreach ($packing->do_detail as $item) {
-                    $base_id = preg_replace('/_\d+$/', '', $item->product_packaging_id);
-                    $checkerQtys[$base_id] = ($checkerQtys[$base_id] ?? 0) + $item->qty;
-                }
+            foreach ($checkerQtys as $base_id => $totalCheckerQty) {
+                $logQty = DB::table('do_stock_deduction_logs')
+                    ->where('do_id', $packing->id)
+                    ->where('product_packaging_id', $base_id)
+                    ->where('status', 1)
+                    ->sum('qty');
 
-                foreach ($checkerQtys as $base_id => $totalCheckerQty) {
-                    $logQty = DB::table('do_stock_deduction_logs')
-                        ->where('do_id', $packing->id)
-                        ->where('product_packaging_id', $base_id)
-                        ->where('status', 1)
-                        ->sum('qty');
-
-                    if ((float) $totalCheckerQty > (float) $logQty) {
-                        throw new \Exception("Gagal: Total Qty untuk produk {$base_id} ({$totalCheckerQty}) melebihi kuota Pesanan di Log ({$logQty}).");
-                    }
-                }
-
-                foreach ($packing->do_detail as $item) {
-                    $base_id = preg_replace('/_\d+$/', '', $item->product_packaging_id);
-                    $stockService->deductPhysicalStock($packing->warehouse_id, $base_id, $item->qty);
+                if ((float) $totalCheckerQty > (float) $logQty) {
+                    throw new \Exception("Gagal: Total Qty untuk produk {$base_id} ({$totalCheckerQty}) melebihi kuota Pesanan di Log ({$logQty}).");
                 }
             }
 
+            // ====== CEK KURS + INVOICE (sama seperti checker web) ======
+            $isKursHold = empty($packing->idr_rate) || (float) $packing->idr_rate <= 1;
+
             $packing->update([
-                'status'     => 4,
-                'updated_by' => null, // TODO: isi ID user picker kalau mau tercatat siapa yg proses
+                'status'       => 4,
+                'is_kurs_hold' => $isKursHold,
+                'updated_by'   => null, // TODO: isi ID user picker kalau mau tercatat siapa yg proses
             ]);
+
+            if (!$isKursHold) {
+                $this->createInvoiceIfNeeded($packing->id);
+            }
 
             DB::commit();
 
@@ -213,6 +216,51 @@ class PickerApiController extends Controller
                 'message' => $e->getMessage(),
             ], 422);
         }
+    }
+
+    /**
+     * Buat invoice DO bila belum ada (salinan logika
+     * DeliveryOrderController::createInvoiceIfNeeded agar jalur picker
+     * dan web menghasilkan invoice yang sama).
+     */
+    private function createInvoiceIfNeeded($do_id)
+    {
+        $packing = PackingOrder::where('id', $do_id)->first();
+        $detail  = \App\Entities\Penjualan\PackingOrderDetail::where('do_id', $do_id)->first();
+
+        if (!$packing || !$detail) {
+            return;
+        }
+
+        $existing = \App\Entities\Finance\Invoicing::withTrashed()->where('do_id', $do_id)->first();
+
+        if ($existing) {
+            if ($existing->trashed() && (int) $existing->status === \App\Entities\Finance\Invoicing::STATUS['VOID']) {
+                return;
+            }
+            if ($existing->trashed()) {
+                $existing->restore();
+            }
+            $existing->update([
+                'code' => $packing->do_code,
+                'customer_id' => $packing->customer_id,
+                'customer_other_address_id' => $packing->customer_other_address_id,
+                'grand_total_idr' => $detail->grand_total_idr,
+                'status' => \App\Entities\Finance\Invoicing::STATUS['ACTIVE'],
+            ]);
+            return;
+        }
+
+        \App\Entities\Finance\Invoicing::create([
+            'code' => $packing->do_code,
+            'do_id' => $packing->id,
+            'customer_id' => $packing->customer_id,
+            'customer_other_address_id' => $packing->customer_other_address_id,
+            'grand_total_idr' => $detail->grand_total_idr,
+            'status' => \App\Entities\Finance\Invoicing::STATUS['ACTIVE'],
+            'type' => 0,
+            'created_by' => null,
+        ]);
     }
 
     /**

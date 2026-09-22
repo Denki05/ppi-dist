@@ -134,6 +134,9 @@ class SalesOrderUpdateService
     {
         $listItem = [];
         $headerBrand = trim((string) ($salesOrder->brand_name ?? ''));
+        $expectedPackagingId = isset($post['packaging_id']) && is_numeric($post['packaging_id'])
+            ? (int) $post['packaging_id']
+            : null;
         for ($i = 0; $i < sizeof($post["sku"]); $i++) {
             // Jaring pengaman: item harus milik brand header (frontend bisa di-bypass)
             $pack = ProductPack::with('product')->where('id', $post["sku"][$i])->first();
@@ -144,6 +147,19 @@ class SalesOrderUpdateService
             if ($headerBrand === '' || strcasecmp($itemBrand, $headerBrand) !== 0) {
                 $code = $pack->code ?? $post["sku"][$i];
                 return ['success' => false, 'message' => 'Item <b>' . e($code) . '</b> milik brand "' . e($itemBrand) . '", tidak sesuai dengan brand SO "' . e($headerBrand) . '". Hapus baris tersebut atau kembalikan Brand.'];
+            }
+
+            // Jaring pengaman: item non-kontrak harus ikut kemasan awal SO
+            // (frontend sudah difilter, ini mencegah bypass via devtools).
+            $isKontrak = isset($post['so_kontrak_value'][$i]) && (string) $post['so_kontrak_value'][$i] === '1';
+            if (!$isKontrak && $expectedPackagingId) {
+                $submittedPackagingId = isset($post['packaging'][$i]) && is_numeric($post['packaging'][$i])
+                    ? (int) $post['packaging'][$i]
+                    : null;
+                if ($submittedPackagingId !== $expectedPackagingId) {
+                    $code = $pack->code ?? $post["sku"][$i];
+                    return ['success' => false, 'message' => 'Item <b>' . e($code) . '</b> kemasannya tidak sesuai dengan kemasan SO awal. Hapus baris tersebut dan pilih ulang produk.'];
+                }
             }
 
             $duplicate_product = [];
