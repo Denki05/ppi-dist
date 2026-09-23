@@ -1201,6 +1201,37 @@ class DeliveryOrderController extends Controller
                 \App\Entities\Gudang\StockMove::where('code_transaction', $do->do_code)->delete();
             }
 
+            // ======================================================
+            // LEPASKAN BOOKING + MATIKAN LOG KUOTA (anti booking hantu).
+            // delivering() sudah melepas reserved saat potong fisik, jadi
+            // pemanggilan ini no-op untuk DO yang sempat delivering;
+            // untuk DO yang dibatalkan dari status 4 (belum delivering),
+            // inilah yang melepas booking-nya. Aman di semua status.
+            // ======================================================
+            $cancelledLogs = DB::table('do_stock_deduction_logs')
+                ->where('do_id', $do->id)
+                ->where('status', 1)
+                ->get();
+
+            foreach ($cancelledLogs as $clog) {
+                if ((float) $clog->qty > 0) {
+                    $stockService->releaseReservedStock(
+                        $clog->warehouse_id ?? $do->warehouse_id,
+                        $clog->product_packaging_id,
+                        (float) $clog->qty
+                    );
+                }
+            }
+
+            DB::table('do_stock_deduction_logs')
+                ->where('do_id', $do->id)
+                ->where('status', 1)
+                ->update([
+                    'status' => 0,
+                    'note' => 'Dibatalkan karena Cancel DO',
+                    'updated_at' => now(),
+                ]);
+
             // Simpan status lama
             if ($do->prev_sataus === null) {
                 $do->prev_sataus = $do->status;
@@ -1306,6 +1337,69 @@ class DeliveryOrderController extends Controller
                 // Hitung total IDR
                 $items = PackingOrderItem::where('do_id', $request->id)->get();
                 $rate = $do->idr_rate;
+
+                // ======================================================
+                // NORMALISASI LOG KUOTA PASCA CANCEL.
+                // Cancel versi lama tidak mematikan log aktif / melepas
+                // booking, jadi void-kan dulu sisanya agar tidak dobel,
+                // lalu booking ulang sesuai qty item terkini. Kalau qty
+                // terkini butuh booking tapi stok tidak cukup, reserveStock
+                // melempar error dan seluruh update di-rollback (aman).
+                // ======================================================
+                $staleLogs = DB::table('do_stock_deduction_logs')
+                    ->where('do_id', $do->id)
+                    ->where('status', 1)
+                    ->get();
+
+                // $stockService sudah diinisialisasi di blok kartu stok di bawah,
+                // tapi dibutuhkan di sini — inisialisasi ulang aman (stateless).
+                $rebookStockService = new \App\Services\StockService();
+
+                foreach ($staleLogs as $slog) {
+                    if ((float) $slog->qty > 0) {
+                        $rebookStockService->releaseReservedStock(
+                            $slog->warehouse_id ?? $do->warehouse_id,
+                            $slog->product_packaging_id,
+                            (float) $slog->qty
+                        );
+                    }
+                }
+
+                DB::table('do_stock_deduction_logs')
+                    ->where('do_id', $do->id)
+                    ->where('status', 1)
+                    ->update([
+                        'status' => 0,
+                        'note' => 'Dibatalkan karena Revisi/Update DO',
+                        'updated_at' => now(),
+                    ]);
+
+                $rebook = [];
+                foreach ($items as $item) {
+                    $pid = preg_replace('/_\d+$/', '', $item->product_packaging_id);
+                    $rebook[$pid] = ($rebook[$pid] ?? 0) + (float) $item->qty;
+                }
+
+                $rebookLogs = [];
+                foreach ($rebook as $pid => $qty) {
+                    if ($qty > 0) {
+                        $rebookStockService->reserveStock($do->warehouse_id, $pid, $qty);
+                        $rebookLogs[] = [
+                            'do_id' => $do->id,
+                            'warehouse_id' => $do->warehouse_id,
+                            'product_packaging_id' => $pid,
+                            'qty' => $qty,
+                            'status' => 1,
+                            'note' => 'Booking ulang - DO diaktifkan kembali pasca cancel',
+                            'created_at' => now(),
+                            'updated_at' => now(),
+                        ];
+                    }
+                }
+
+                if (!empty($rebookLogs)) {
+                    DB::table('do_stock_deduction_logs')->insert($rebookLogs);
+                }
                 $idr_total = $items->sum(function ($i) use ($rate) {
                     return (($i->price * $rate) * $i->qty) - ($i->total_disc * $rate);
                 });
@@ -1391,8 +1485,8 @@ class DeliveryOrderController extends Controller
 
                         // Tulis baris baru ke Kartu Stok (Stock Move)
                         foreach ($grouped as $pid => $totalQty) {
-                            $note = $transactionCode . ' - ' 
-                                  . ($do->member->name ?? '') . ' ' 
+                            $note = $transactionCode . ' - '
+                                  . ($do->member->name ?? '') . ' '
                                   . ($do->member->text_kota ?? '');
 
                             $stockService->recordAdministrativeLog(
@@ -1405,6 +1499,17 @@ class DeliveryOrderController extends Controller
                             );
                         }
                     }
+
+                    // Booking yang dicatat ulang di atas sudah terpotong fisik
+                    // (deductPhysicalStock melepas reserved), jadi tuntaskan log.
+                    DB::table('do_stock_deduction_logs')
+                        ->where('do_id', $do->id)
+                        ->where('status', 1)
+                        ->update([
+                            'status' => 2,
+                            'note' => 'Selesai (Update Resi via Update DO)',
+                            'updated_at' => now(),
+                        ]);
                 }
                 // ======================================================
                 // END LOGIKA KARTU STOK

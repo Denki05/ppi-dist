@@ -243,14 +243,16 @@ class StockService
 
             // 2. Jika fisik rak dari awal memang sudah minus (bug/selisih opname), tolak!
             if ($quantity < 0) {
-                throw new \Exception("Stok fisik sudah minus. Product ID: {$productId}");
+                $label = $this->productLabel($productId);
+                throw new \Exception("Stok fisik sudah minus. Produk: {$label}");
             }
 
             // 3. ATURAN SMART MINUS
             // Jika sisa stok SEBELUM order ini masuk sudah minus, TOLAK!
             // Ini memastikan stok tidak bertambah minus berkali-kali.
             if ($available < 0) {
-                throw new \Exception("Stock untuk product {$productId} sedang kosong / minus (Sisa: {$available}). Harap tunggu restock.");
+                $label = $this->productLabel($productId);
+                throw new \Exception("Stock untuk produk {$label} sedang kosong / minus (Sisa: {$available}). Harap tunggu restock.");
             }
 
             // Jika lolos dari validasi di atas, orderan ini diizinkan lewat
@@ -262,6 +264,28 @@ class StockService
         }, 5); 
     }
     
+    /**
+     * Label produk untuk notifikasi: "kode - nama".
+     * Fallback ke ID mentah bila data master tidak ditemukan.
+     */
+    protected function productLabel($productId)
+    {
+        try {
+            $p = \App\Entities\Master\ProductPack::where('id', $productId)->first();
+            if ($p) {
+                $code = $p->code ?? $productId;
+                $name = $p->name ?? '';
+                $label = trim($code . ($name !== '' ? ' - ' . $name : ''));
+                if ($label !== '') {
+                    return $label;
+                }
+            }
+        } catch (\Exception $e) {
+        }
+
+        return $productId;
+    }
+
     /**
      * 6. FUNGSI RELEASE BOOKING STOK (DIPANGGIL SAAT TUTUP SO / BARANG REJECT)
      * Hanya mengurangi reserved_quantity karena barang batal dikirim.

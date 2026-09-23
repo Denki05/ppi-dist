@@ -111,7 +111,7 @@ class SalesOrderClosingService
                     );
                 }
             } catch (\Exception $e) {
-                throw new \Exception("Gagal reserve stock ({$result->product_packaging_id}): " . $e->getMessage());
+                throw new \Exception("Gagal reserve stock (" . $this->productLabel($result, $base_product_packaging_id) . "): " . $e->getMessage());
             }
 
             // Simpan data untuk mutasi jika ini free product
@@ -125,6 +125,37 @@ class SalesOrderClosingService
         }
 
         return [$stockLogs, $mutasiItems];
+    }
+
+    /**
+     * Label produk untuk notifikasi: "kode - nama".
+     * Diambil dari relasi product_pack bila ada, fallback ke master via base ID,
+     * terakhir fallback ke ID mentah.
+     */
+    protected function productLabel($soItem, $baseProductPackagingId = null)
+    {
+        try {
+            if ($soItem && $soItem->relationLoaded('product_pack') === false) {
+                $soItem->loadMissing('product_pack');
+            }
+            $pack = $soItem ? $soItem->product_pack : null;
+            if ($pack && ($pack->code || $pack->name)) {
+                return trim(($pack->code ?? '') . ($pack->name ? ' - ' . $pack->name : ''));
+            }
+        } catch (\Exception $e) {
+        }
+
+        foreach (array_filter([$baseProductPackagingId, $soItem->product_packaging_id ?? null]) as $candidateId) {
+            try {
+                $master = \App\Entities\Master\ProductPack::where('id', $candidateId)->first();
+                if ($master && ($master->code || $master->name)) {
+                    return trim(($master->code ?? $candidateId) . ($master->name ? ' - ' . $master->name : ''));
+                }
+            } catch (\Exception $e) {
+            }
+        }
+
+        return $soItem->product_packaging_id ?? $baseProductPackagingId ?? '-';
     }
 
     /**
