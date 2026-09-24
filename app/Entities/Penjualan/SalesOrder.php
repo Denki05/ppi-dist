@@ -287,14 +287,4 @@ class SalesOrder extends Model
             return $superuser->name ?? $superuser->username;
         }
     }
-
-    public function so_status_proforma()
-    {
-        return array_search($this->status_proforma, self::STATUS_PROFORMA);
-    }
-
-    public function so_type_transaction()
-    {
-        return self::TYPE_TRANSACTION[$this->type_transaction];
-    }
 }

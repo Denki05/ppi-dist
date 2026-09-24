@@ -4,9 +4,11 @@
     @php $no++; @endphp
     <tr>
         <td class="sop-td-check">
-          {{-- Checkbox massal hanya untuk kurs hold (status Packed), supaya chip
-               "kurs belum valid" dan bulk-bar tidak kehitung untuk DO yang sudah valid. --}}
-          @if($row->is_kurs_hold && $row->status == 4)
+          {{-- Checkbox massal untuk kurs hold (status 2/3/4),
+               supaya user bisa update sejak List Queue tanpa menunggu
+               picker/checker selesai (invoice auto-terbuat saat Release SPK
+               jika kurs valid, atau langsung saat update kurs jika masih hold). --}}
+          @if($row->is_kurs_hold && in_array($row->status, [2, 3, 4]))
             <input type="checkbox" class="check-kurs-row" value="{{ $row->id }}">
           @endif
         </td>
@@ -36,7 +38,7 @@
             @endif
         </td>
         <td data-label="Status Kurs">
-            @if($row->status < 3)
+            @if($row->status < 2)
               <span class="sop-badge sop-badge-secondary">
                 <i class="sop-dot"></i>Draft
               </span>
@@ -61,9 +63,11 @@
                   <i class="fa fa-clock text-warning"></i> Menunggu Approval Void
                 </span>
               @else
-                {{-- Kurs hanya bisa diupdate 1x selama masih hold. Setelah valid, terkunci:
-                     koreksi lewat revisi internal (dengan approval). --}}
-                @if($row->is_kurs_hold && $row->status == 4)
+                {{-- Kurs hold bisa diupdate sejak List Queue (2) / Ready (3) / Packed (4).
+                     Setelah valid, terkunci: koreksi lewat revisi internal (dengan approval).
+                     Invoice auto-terbuat saat Release SPK jika kurs valid,
+                     atau langsung saat update kurs jika sebelumnya hold. --}}
+                @if($row->is_kurs_hold && in_array($row->status, [2, 3, 4]))
                   <a href="javascript:void(0)" class="dropdown-item btn-update-kurs" data-id="{{ $row->id }}">
                     <i class="fa fa-money text-warning"></i> Update Kurs
                   </a>
@@ -80,7 +84,7 @@
                     <i class="fa fa-ban text-danger"></i> Ajukan Void
                   </a>
                 @endif
-                @if(!in_array($row->status, [3, 4]) && $row->status != 5)
+                @if(!in_array($row->status, [2, 3, 4]) && $row->status != 5)
                   <span class="dropdown-item text-muted disabled" style="pointer-events:none;">
                     Tidak ada aksi tersedia
                   </span>

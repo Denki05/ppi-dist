@@ -121,7 +121,8 @@ class PickerApiController extends Controller
      * Submit checklist konfirmasi barang dari picker-app.
      * Disamakan dengan checker web (DeliveryOrderController::packed):
      * - validasi checklist + kuota reserved (do_stock_deduction_logs)
-     * - status 3 -> 4 (+ invoice kalau kurs valid)
+     * - status 3 -> 4 (tanpa buat invoice; invoice sudah dibuat saat Release SPK
+     *   2->3 kalau kurs valid, atau saat update kurs jika masih hold)
      * - potong fisik TIDAK di sini — satu-satunya titik potong adalah
      *   sending() (4 -> 5, momen save-setelah-cetak SJ).
      *   (Dulu packTask motong di sini; itu bikin double-deduct karena
@@ -189,7 +190,7 @@ class PickerApiController extends Controller
                 }
             }
 
-            // ====== CEK KURS + INVOICE (sama seperti checker web) ======
+            // ====== CEK KURS (tanpa buat invoice; invoice dibuat saat Release SPK / update kurs) ======
             $isKursHold = empty($packing->idr_rate) || (float) $packing->idr_rate <= 1;
 
             $packing->update([
@@ -197,10 +198,6 @@ class PickerApiController extends Controller
                 'is_kurs_hold' => $isKursHold,
                 'updated_by'   => null, // TODO: isi ID user picker kalau mau tercatat siapa yg proses
             ]);
-
-            if (!$isKursHold) {
-                $this->createInvoiceIfNeeded($packing->id);
-            }
 
             DB::commit();
 

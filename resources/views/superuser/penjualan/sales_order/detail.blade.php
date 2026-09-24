@@ -29,13 +29,13 @@
           <div class="form-group row">
             <label class="col-md-2 col-form-label text-right" for="name">Sales Senior</label>
             <div class="col-md-8">
-              <input type="text" class="form-control" value="{{$result->sales_senior() ?? ''}}" readonly>
+              <input type="text" class="form-control" value="{{$result->so_sales_senior() ?? ''}}" readonly>
             </div>
           </div>
           <div class="form-group row">
             <label class="col-md-2 col-form-label text-right" for="name">Sales </label>
             <div class="col-md-8">
-              <input type="text" class="form-control" value="{{$result->sales() ?? ''}}" readonly>
+              <input type="text" class="form-control" value="{{$result->so_sales() ?? ''}}" readonly>
             </div>
           </div>
           <div class="form-group row">
@@ -66,22 +66,30 @@
               @if($result->so_for == 1)
               <textarea type="text" name="address" class="form-control" readonly>{{$result->customer->address ?? ''}}</textarea>
               @else
-              <textarea type="text" name="address" class="form-control" readonly>{{$result->warehouse->address ?? ''}}</textarea>
+              <textarea type="text" name="address" class="form-control" readonly>{{optional($result->customer_gudang)->address ?? ''}}</textarea>
               @endif
             </div>
           </div>
-          @if($result->member->member_default == 1)
+          @php
+            $memberName = trim((optional($result->member)->name ?? '') . ' ' . (optional($result->member)->text_kota ?? ''));
+            if ($memberName === '') {
+              $memberName = trim((optional($result->customer)->name ?? '') . ' ' . (optional($result->customer)->text_kota ?? ''));
+            }
+            if ($memberName === '') { $memberName = '-'; }
+          @endphp
+          @php $memberDefault = optional($result->member)->member_default; @endphp
+          @if($memberDefault == 1)
             <div class="form-group row">
               <label class="col-md-2 col-form-label text-right">Member</label>
               <div class="col-md-8">
-                <input type="text" class="form-control" value="{{$result->customer->name ?? ''}} {{ $result->member->text_kota }}" readonly>
+                <input type="text" class="form-control" value="{{ $memberName }}" readonly>
               </div>
             </div>
           @else
             <div class="form-group row">
               <label class="col-md-2 col-form-label text-right">Member</label>
               <div class="col-md-8">
-                <input type="text" class="form-control" value="{{$result->member->name ?? ''}} {{ $result->member->text_kota }}" readonly>
+                <input type="text" class="form-control" value="{{ $memberName }}" readonly>
               </div>
             </div>
           @endif
@@ -94,7 +102,7 @@
           <div class="form-group row">
             <label class="col-md-2 col-form-label text-right">Ekspedisi</label>
             <div class="col-md-8">
-              <input type="text" class="form-control" value="{{$result->vendor->name ?? ''}}" readonly>
+              <input type="text" class="form-control" value="{{ $ekspedisi_display ?? optional($result->ekspedisi)->name ?? $result->vendor->name ?? '' }}" readonly>
             </div>
           </div>
           <div class="form-group row">

@@ -395,6 +395,8 @@ class DeliveryOrderController extends Controller
             // ======================================
             // CEK KURS: kalau belum valid, DO tetap lanjut ke status 4,
             // tapi ditandai is_kurs_hold supaya diblokir sebelum Surat Jalan.
+            // Invoice TIDAK dibuat di sini lagi — sudah dibuat saat Release SPK
+            // (2->3) kalau kurs valid, atau saat update kurs jika masih hold.
             // ======================================
             $isKursHold = empty($packing->idr_rate) || (float) $packing->idr_rate <= 1;
 
@@ -402,15 +404,6 @@ class DeliveryOrderController extends Controller
                 'status' => 4,
                 'is_kurs_hold' => $isKursHold,
             ]);
-
-            // ======================================
-            // BUAT INVOICE DI SINI kalau kurs sudah valid (>1).
-            // Kalau masih hold, invoice BELUM dibuat -> nanti dibuat otomatis
-            // saat admin update kurs lewat SO Progress (lihat update_kurs()).
-            // ======================================
-            if (!$isKursHold) {
-                $this->createInvoiceIfNeeded($packing->id);
-            }
 
             DB::commit();
 

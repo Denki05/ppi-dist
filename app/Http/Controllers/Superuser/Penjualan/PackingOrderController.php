@@ -968,6 +968,14 @@ class PackingOrderController extends Controller
                 $getDo->updated_by = Auth::id();
                 $getDo->save();
 
+                // Buat nota/invoice langsung di Release SPK kalau kurs sudah valid (>1).
+                // Kalau masih hold, invoice tetap dibuat nanti di alur lama
+                // (checker packed 3->4 / update kurs di SO Progress).
+                $isKursHoldRelease = empty($getDo->idr_rate) || (float) $getDo->idr_rate <= 1;
+                if (!$isKursHoldRelease) {
+                    $this->createInvoiceIfNeeded($getDo->id);
+                }
+
                 // Kirim notifikasi
                 $user = User::find(29);
                 if($user){
@@ -1797,8 +1805,10 @@ class PackingOrderController extends Controller
                     // Hitung ulang idr_total, diskon, ppn, dsb pakai kurs baru
                     $this->reset_cost_if_change_idr_rate($packing->id, $idrRate);
 
-                    // Kurs baru valid & DO sudah di tahap Packed (status 4) -> buat/sinkronkan invoice
-                    if ((int) $packing->status >= 4) {
+                    // Kurs baru valid & DO sudah di tahap List Queue ke atas (status 2/3/4)
+                    // -> langsung buat/sinkronkan nota. Jadi update kurs di 2/3
+                    // memunculkan nota tanpa menunggu Release SPK / Packed.
+                    if ((int) $packing->status >= 2) {
                         $this->createInvoiceIfNeeded($packing->id);
                     }
                 }

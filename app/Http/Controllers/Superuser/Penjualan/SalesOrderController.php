@@ -164,10 +164,126 @@ class SalesOrderController extends Controller
             $step = 1;
         }
 
+        // Ekspedisi SO tersimpan sebagai ID ke master_vendors (bukan master_ekspedisi),
+        // sedang relasi vendor() memakai vendor_id yang umumnya null -> resolve manual.
+        // Dihitung di sini agar dipakai kedua view (detail & detail_lanjutan).
+        $ekspedisi_display = '-';
+        if (!empty($result->ekspedisi_id)) {
+            $ven = DB::table('master_vendors')->where('id', $result->ekspedisi_id)->first();
+            if ($ven && !empty($ven->name)) {
+                $ekspedisi_display = $ven->name;
+            }
+        }
+        if ($ekspedisi_display === '-') {
+            $ekspedisi_display = optional($result->ekspedisi)->name ?? optional($result->vendor)->name ?? '-';
+        }
+
+        // Detail kalkulasi view-only untuk SO TUTUP (status 4) dengan layout
+        // persis create_lanjutan tapi readonly. Hanya untuk view admin sales;
+        // role lain tetap pakai blade detail lama.
+        $data_kalkulasi = null;
+        $packing_order = null;
+        $packing_detail = null;
+        $view_items = [];
+        $is_admin_sales_view = (Auth::user()->is_superuser == 1 || in_array(Auth::user()->division ?? '', ['Admin', 'Developer', 'Management']));
+        if ((int) $result->status === 4 && $is_admin_sales_view) {
+            try {
+                $result->loadMissing(['so_detail.product_pack.packaging', 'so_detail.product_pack.warehouse', 'so_detail.packaging', 'member', 'customer', 'origin_warehouse', 'vendor', 'ekspedisi']);
+                $kalkulasiService = new SalesOrderCalculationService();
+                $data_kalkulasi = $kalkulasiService->calculateEstimate($result);
+                $packing_order = \App\Entities\Penjualan\PackingOrder::where('so_id', $result->id)->first();
+                if ($packing_order) {
+                    $packing_detail = PackingOrderDetail::where('do_id', $packing_order->id)->first();
+                    $packing_order->loadMissing(['do_detail.product_pack.packaging', 'do_detail.product_pack.warehouse', 'do_detail.packaging']);
+                }
+                $kurs_view = ($packing_order && (float) $packing_order->idr_rate > 0)
+                    ? (float) $packing_order->idr_rate
+                    : (float) ($data_kalkulasi['idr_rate'] ?? $result->idr_rate);
+
+                // Teks tampilan: member (toko) diutamakan, fallback ke customer.
+                // Mencegah field kosong / tampil ID mentah saat relasi null.
+                $member = $result->member;
+                $customer = $result->customer;
+                $customer_name = trim(($member->name ?? '') . ' ' . ($member->text_kota ?? ''));
+                if ($customer_name === '') {
+                    $customer_name = trim(($customer->name ?? '') . ' ' . ($customer->text_kota ?? ''));
+                }
+                if ($customer_name === '') {
+                    $customer_name = '-';
+                }
+                $customer_address = ($member->address ?? '') !== '' ? $member->address : ($customer->address ?? '-');
+                $customer_kota = ($member->text_kota ?? '') !== '' ? $member->text_kota : ($customer->text_kota ?? '-');
+                $customer_provinsi = ($member->text_provinsi ?? '') !== '' ? $member->text_provinsi : ($customer->text_provinsi ?? '-');
+
+                // Rekening tersimpan sebagai ID -> tampilkan "nama - nomor kartu".
+                $rekening_display = '-';
+                if (!empty($result->rekening)) {
+                    $rek = DB::table('rekening')->where('id', $result->rekening)->first();
+                    if ($rek) {
+                        $rekening_display = trim(($rek->name ?? '') . ' - ' . ($rek->number_card ?? ''), ' -');
+                    } else {
+                        $rekening_display = $result->rekening;
+                    }
+                }
+
+                // Item tampil dari DO aktual (qty/price hasil tutup SO), fallback ke SO detail.
+                $source_items = ($packing_order && count($packing_order->do_detail) > 0)
+                    ? $packing_order->do_detail
+                    : $result->so_detail;
+                foreach ($source_items as $s_item) {
+                    $pack = $s_item->product_pack;
+                    $qty = (float) ($s_item->qty ?? 0);
+                    $price = (float) ($s_item->price ?? 0);
+                    $usd_disc = (float) ($s_item->usd_disc ?? 0);
+                    $is_free = !empty($s_item->free_product) && (float) $s_item->free_product > 0;
+                    if ($is_free) {
+                        $price = 0;
+                        $usd_disc = 0;
+                    }
+                    $total_usd = ($price - $usd_disc) * $qty;
+                    $view_items[] = [
+                        'code' => $pack->code ?? '-',
+                        'name' => $pack->name ?? '-',
+                        'warehouse' => $pack->warehouse->name ?? '-',
+                        'qty' => $qty,
+                        'price' => $price,
+                        'free' => $is_free,
+                        'kemasan' => $pack->packaging->pack_name ?? ($s_item->packaging->pack_name ?? '-'),
+                        'usd_disc' => $usd_disc,
+                        'total_idr' => $total_usd * $kurs_view,
+                    ];
+                }
+
+                $data = [
+                    'result' => $result,
+                    'step' => $step,
+                    'step_txt' => SalesOrder::STEP[$step],
+                    'data_kalkulasi' => $data_kalkulasi,
+                    'packing_order' => $packing_order,
+                    'packing_detail' => $packing_detail,
+                    'view_items' => $view_items,
+                    'kurs_view' => $kurs_view,
+                    'customer_name' => $customer_name,
+                    'customer_address' => $customer_address,
+                    'customer_kota' => $customer_kota,
+                    'customer_provinsi' => $customer_provinsi,
+                    'rekening_display' => $rekening_display,
+                    'ekspedisi_display' => $ekspedisi_display,
+                ];
+                return view($this->view."detail_lanjutan",$data);
+            } catch (\Exception $e) {
+                // Gagal susun view kalkulasi; fallback ke detail lama di bawah.
+            }
+        }
+
         $data = [
             'result' => $result,
             'step' => $step,
             'step_txt' => SalesOrder::STEP[$step],
+            'data_kalkulasi' => $data_kalkulasi,
+            'packing_order' => $packing_order,
+            'packing_detail' => $packing_detail,
+            'ekspedisi_display' => $ekspedisi_display,
         ];
         return view($this->view."detail",$data);
     }

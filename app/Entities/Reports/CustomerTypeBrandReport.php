@@ -15,6 +15,7 @@ class CustomerTypeBrandReports extends Model
     	'customer_kota',
     	'customer_provinsi',
     	'customer_zone',
+    	'officer',
     	'invoice_code',
     	'invoice_date',
         'invoice_brand',
