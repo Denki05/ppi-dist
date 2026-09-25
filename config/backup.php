@@ -15,11 +15,11 @@ return [
             'files' => [
 
                 /*
-                 * The list of directories and files that will be included in the backup.
+                 * DB-ONLY: kosongkan include agar backup file project tidak ikut.
+                 * Backup file dinonaktifkan; gunakan --only-db di Artisan.
+                 * Jika butuh backup files, isi kembali dengan [base_path()].
                  */
-                'include' => [
-                    base_path(),
-                ],
+                'include' => [],
 
                 /*
                  * These directories and files will be excluded from the backup.
@@ -29,6 +29,7 @@ return [
                 'exclude' => [
                     base_path('vendor'),
                     base_path('node_modules'),
+                    base_path('.git'), // repo git (±2GB) tidak perlu ikut backup
                 ],
 
                 /*
@@ -109,8 +110,9 @@ return [
 
             /*
              * The filename prefix used for the backup zip file.
+             * db-only agar jelas isi zip hanya dump database.
              */
-            'filename_prefix' => 'ppi-backup-',
+            'filename_prefix' => 'ppi-dist-db-backup-',
 
             /*
              * The disk names on which the backups will be stored.
@@ -166,12 +168,12 @@ return [
         'notifiable' => \Spatie\Backup\Notifications\Notifiable::class,
 
         'mail' => [
-            'to' => 'your@example.com',
+            // 'to' => 'your@example.com',
 
-            'from' => [
-                'address' => env('MAIL_FROM_ADDRESS', 'hello@example.com'),
-                'name' => env('MAIL_FROM_NAME', 'Example'),
-            ],
+            // 'from' => [
+            //     'address' => env('MAIL_FROM_ADDRESS', 'hello@example.com'),
+            //     'name' => env('MAIL_FROM_NAME', 'Example'),
+            // ],
         ],
 
         'slack' => [
@@ -180,9 +182,9 @@ return [
             /*
              * If this is set to null the default channel of the webhook will be used.
              */
-            'channel' => null,
+            'channel' => '',
 
-            'username' => null,
+            'username' => '',
 
             'icon' => null,
 

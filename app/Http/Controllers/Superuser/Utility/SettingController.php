@@ -93,37 +93,36 @@ class SettingController extends Controller
         return $this->response(200, $response);
     }
 
+    /**
+     * Backup DATABASE SAJA (tanpa file project).
+     * Sama persis dengan menu Backup, agar hasilnya konsisten.
+     */
     public function backupDatabase()
     {
         try {
-            // Create a backup job
-            $backupJob = BackupJobFactory::createFromArray(config('backup'));
-            
-            // Set the backup destination
-            $backupDestinations = BackupDestinationFactory::createFromArray(config('backup.destinations'));
-
-            foreach ($backupDestinations as $backupDestination) {
-                $backupJob->setBackupDestination($backupDestination);
-            }
-
-            // Start the backup process
-            $backupJob->run();
+            // --only-db => Spatie memanggil dontBackupFilesystem(), file diabaikan.
+            Artisan::call('backup:run', [
+                '--only-db' => true,
+                '--disable-notifications' => true,
+            ]);
 
             $response['notification'] = [
                 'alert' => 'notify',
                 'type' => 'success',
-                'content' => 'Backup DB Success',
+                'content' => 'Backup Database Success',
             ];
-    
+
             $response['redirect_to'] = 'reload()';
-    
+
             return $this->response(200, $response);
-        } catch (\Exception $e) {
+        } catch (\Throwable $e) {
+            \Log::error('Backup failed: ' . $e->getMessage());
+
             $response['notification'] = [
                 'alert' => 'block',
                 'type' => 'alert-danger',
                 'header' => 'Error',
-                'content' => 'Backup DB Failed!',
+                'content' => 'Backup Database Failed: ' . $e->getMessage(),
             ];
 
             return $this->response(500, $response);

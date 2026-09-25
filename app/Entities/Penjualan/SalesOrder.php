@@ -36,6 +36,7 @@ class SalesOrder extends Model
         'type_so',
     	'idr_rate',
     	'status',
+        'submitted_at',
         'shipping_cost_buyer',
         'condition',
     	'payment_status',
@@ -153,12 +154,14 @@ class SalesOrder extends Model
 
     public function so_sales_senior()
     {
-        return self::SALES_SENIOR[$this->sales_senior_id] ?? '-';
+        $map = array_flip(self::SALES_SENIOR);
+        return $map[$this->sales_senior_id] ?? '-';
     }
 
     public function so_sales()
     {
-        return self::SALES[$this->sales_id] ?? '-';
+        $map = array_flip(self::SALES);
+        return $map[$this->sales_id] ?? '-';
     }
 
     public function so_status()

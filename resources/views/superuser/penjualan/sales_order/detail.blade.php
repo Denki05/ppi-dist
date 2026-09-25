@@ -66,22 +66,23 @@
               @if($result->so_for == 1)
               <textarea type="text" name="address" class="form-control" readonly>{{$result->customer->address ?? ''}}</textarea>
               @else
-              <textarea type="text" name="address" class="form-control" readonly>{{$result->warehouse->address ?? ''}}</textarea>
+              <textarea type="text" name="address" class="form-control" readonly>{{optional($result->customer_gudang)->address ?? ''}}</textarea>
               @endif
             </div>
           </div>
-          @if($result->member->member_default == 1)
+          @php $memberDefault = optional($result->member)->member_default; @endphp
+          @if($memberDefault == 1)
             <div class="form-group row">
               <label class="col-md-2 col-form-label text-right">Member</label>
               <div class="col-md-8">
-                <input type="text" class="form-control" value="{{$result->customer->name ?? ''}} {{ $result->member->text_kota }}" readonly>
+                <input type="text" class="form-control" value="{{ optional($result->customer)->name ?? '' }} {{ optional($result->member)->text_kota ?? '' }}" readonly>
               </div>
             </div>
           @else
             <div class="form-group row">
               <label class="col-md-2 col-form-label text-right">Member</label>
               <div class="col-md-8">
-                <input type="text" class="form-control" value="{{$result->member->name ?? ''}} {{ $result->member->text_kota }}" readonly>
+                <input type="text" class="form-control" value="{{ optional($result->member)->name ?? '' }} {{ optional($result->member)->text_kota ?? '' }}" readonly>
               </div>
             </div>
           @endif
@@ -94,7 +95,7 @@
           <div class="form-group row">
             <label class="col-md-2 col-form-label text-right">Ekspedisi</label>
             <div class="col-md-8">
-              <input type="text" class="form-control" value="{{$result->vendor->name ?? ''}}" readonly>
+              <input type="text" class="form-control" value="{{optional($result->ekspedisi)->name ?? $result->vendor->name ?? ''}}" readonly>
             </div>
           </div>
           <div class="form-group row">

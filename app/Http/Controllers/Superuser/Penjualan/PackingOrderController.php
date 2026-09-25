@@ -968,6 +968,15 @@ class PackingOrderController extends Controller
                 $getDo->updated_by = Auth::id();
                 $getDo->save();
 
+                // Nota utama dibuat di tutup_so kalau kurs valid.
+                // Di Release SPK tetap panggil sync idempotent sebagai fallback
+                // (untuk DO lama yang tutup sebelum fitur geser, / revisi restore).
+                // Kalau masih hold, invoice tetap dibuat nanti via update kurs.
+                $isKursHoldRelease = empty($getDo->idr_rate) || (float) $getDo->idr_rate <= 1;
+                if (!$isKursHoldRelease) {
+                    $this->createInvoiceIfNeeded($getDo->id);
+                }
+
                 // Kirim notifikasi
                 $user = User::find(29);
                 if($user){
