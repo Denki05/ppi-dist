@@ -80,6 +80,8 @@ class SalesOrderWorkflowService
 
         // CASE 2: SO NORMAL ATAU "TEMPO + ESTIMATE" -> MASUK SO LANJUTAN
         $salesOrder->status = 2;
+        // Catat waktu submit ke admin (basis tanggal tab SO Lanjutan).
+        $salesOrder->submitted_at = date('Y-m-d H:i:s');
         $salesOrder->save();
 
         return ['type' => 'lanjutan', 'sales_order' => $salesOrder];
@@ -155,6 +157,8 @@ class SalesOrderWorkflowService
         $salesOrder->approval_mou_date = date('Y-m-d H:i:s');
         $salesOrder->approval_mou_by = Auth::id();
         $salesOrder->status = 2;
+        // Kembali masuk antrean admin -> perbarui waktu submit.
+        $salesOrder->submitted_at = date('Y-m-d H:i:s');
         $salesOrder->save();
 
         return $salesOrder;

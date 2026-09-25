@@ -105,6 +105,8 @@ class SalesOrderUpdateService
         $salesOrder->type_transaction = trim(htmlentities($post["type_transaction"]));
         $salesOrder->updated_by = Auth::id();
         $salesOrder->status = 2;
+        // Edit & submit ulang ke admin -> perbarui waktu submit.
+        $salesOrder->submitted_at = date('Y-m-d H:i:s');
         $salesOrder->ekspedisi_id = (empty($post["ekspedisi_id"])) ? null : $post["ekspedisi_id"];
     }
 

@@ -110,7 +110,7 @@
               <th>Customer</th>
               <th>Created By</th>
               <th>Type</th>
-              <th>Created At</th>
+              <th>Tgl Lanjutan</th>
               <th>Action</th>
               </tr>
           </thead>
@@ -752,7 +752,7 @@ input[type="checkbox"]{ accent-color:var(--sop-primary); width:16px; height:16px
             {data: 'so_created_by'},
             {data: 'so_transaction', name: 'penjualan_so.type_transaction'},
             {
-                data: 'so_created_at',
+                data: 'submitted_at',
                 render: {
                     _: 'display',
                     sort: 'timestamp'

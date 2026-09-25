@@ -28,8 +28,10 @@ class SalesOrderLanjutanTable extends Table
                 'penjualan_so.brand_name AS nota_brand', 
                 'master_customer_other_addresses.name AS customer_name', 
                 'master_customer_other_addresses.text_kota AS customer_kota', 
-                'penjualan_so.customer_other_address_id AS customer_id', 
-                'penjualan_so.created_at AS so_created_at', 
+                'penjualan_so.customer_other_address_id AS customer_id',
+                'penjualan_so.created_at AS so_created_at',
+                // Tgl diajukan ke admin (basis tanggal tab ini). Fallback untuk data lama.
+                DB::raw('COALESCE(penjualan_so.submitted_at, penjualan_so.updated_at, penjualan_so.created_at) AS submitted_at'),
                 DB::raw('
                     CASE 
                         WHEN penjualan_so.status = 2 THEN "LANJUTAN"
@@ -52,17 +54,25 @@ class SalesOrderLanjutanTable extends Table
                 '),
                 'penjualan_so.type_transaction AS so_transaction',
             );
-
-        if(!$statusSoFilter) {
-            $model->whereDate('penjualan_so.created_at', Carbon::now());
+        // Aturan tampil (basis tanggal = created_at ATAU submitted_at):
+        // - LANJUTAN (status 2) = pekerjaan pending -> tampil semua tanggal.
+        // - TUTUP (status 4) = yang dibuat hari ini ATAU disubmit hari ini.
+        if ($statusSoFilter === 'LANJUTAN') {
+            $model->where('penjualan_so.status', 2);
+        } elseif ($statusSoFilter === 'TUTUP') {
+            $model->where('penjualan_so.status', 4)
+                ->where(function ($q) {
+                    $q->whereDate('penjualan_so.created_at', Carbon::today())
+                      ->orWhereDate('penjualan_so.submitted_at', Carbon::today());
+                });
         } else {
-            $model->where(DB::raw('
-                CASE 
-                    WHEN penjualan_so.status = 2 THEN "LANJUTAN"
-                    WHEN penjualan_so.status = 4 THEN "TUTUP"
-                    ELSE "NONE"
-                END
-            '), $statusSoFilter);
+            // Default: hanya aktivitas hari ini (dibuat ATAU disubmit hari ini),
+            // berlaku untuk LANJUTAN maupun TUTUP. Pending lama hanya tampil
+            // lewat filter LANJUTAN eksplisit.
+            $model->where(function ($q) {
+                $q->whereDate('penjualan_so.created_at', Carbon::today())
+                  ->orWhereDate('penjualan_so.submitted_at', Carbon::today());
+            });
         }
 
         return $model;
@@ -74,10 +84,10 @@ class SalesOrderLanjutanTable extends Table
 
         $table->addIndexColumn();
 
-        $table->editColumn('so_created_at', function (SalesOrder $model) {
+        $table->editColumn('submitted_at', function (SalesOrder $model) {
             return [
-              'display' => Carbon::parse($model->so_created_at)->format('d/m/Y'),
-              'timestamp' => $model->created_at
+              'display' => Carbon::parse($model->submitted_at)->format('d/m/Y'),
+              'timestamp' => $model->submitted_at
             ];
         });
 

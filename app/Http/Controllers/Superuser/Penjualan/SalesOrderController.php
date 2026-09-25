@@ -735,6 +735,11 @@ class SalesOrderController extends Controller
                 // (misal grand total kosong karena kalkulasi JS belum jalan) tidak
                 // menyisakan SO tertutup / DO dengan grand_total 0.
                 $closingService->validateClosingRequest($request, $errors);
+                // Guard silang: pastikan diskon sudah masuk ke grand total
+                // (mencegah terulangnya kasus Depo Aroma).
+                if (empty($errors)) {
+                    $closingService->validateClosingTotals($request, $errors);
+                }
                 if ($errors) {
                     DB::rollBack();
                     $response['notification'] = [
@@ -782,6 +787,12 @@ class SalesOrderController extends Controller
 
                 $closingService->upsertPackingOrderDetail($packing_order, $sales_order, $request);
                 $closingService->insertStockLogs($stockLogs);
+
+                // Geser cetak nota ke tutup_so untuk nota yang valid
+                // (kurs > 1 + grand_total > 0), sesuai alur tutup_so_ppn.
+                // Kalau masih kurs hold, nota tetap dibuat nanti via
+                // update kurs / Release SPK (idempotent, tidak duplikat).
+                $closingService->createInvoiceIfNeeded($packing_order->id);
 
                 DB::commit();
 

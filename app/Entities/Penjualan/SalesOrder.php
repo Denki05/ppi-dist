@@ -36,6 +36,7 @@ class SalesOrder extends Model
         'type_so',
     	'idr_rate',
     	'status',
+        'submitted_at',
         'shipping_cost_buyer',
         'condition',
     	'payment_status',

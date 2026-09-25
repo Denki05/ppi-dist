@@ -15,11 +15,11 @@ return [
             'files' => [
 
                 /*
-                 * The list of directories and files that will be included in the backup.
+                 * DB-ONLY: kosongkan include agar backup file project tidak ikut.
+                 * Backup file dinonaktifkan; gunakan --only-db di Artisan.
+                 * Jika butuh backup files, isi kembali dengan [base_path()].
                  */
-                'include' => [
-                    base_path(),
-                ],
+                'include' => [],
 
                 /*
                  * These directories and files will be excluded from the backup.
@@ -110,8 +110,9 @@ return [
 
             /*
              * The filename prefix used for the backup zip file.
+             * db-only agar jelas isi zip hanya dump database.
              */
-            'filename_prefix' => 'ppi-dist-backup-',
+            'filename_prefix' => 'ppi-dist-db-backup-',
 
             /*
              * The disk names on which the backups will be stored.

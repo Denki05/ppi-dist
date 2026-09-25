@@ -16,8 +16,12 @@ class BackupController extends Controller
     public function createBackup()
     {
         try {
-            // Backup FULL: database + file project (sesuai config/backup.php)
-            Artisan::call('backup:run --disable-notifications');
+            // Backup DB SAJA (tanpa file project).
+            // --only-db => Spatie memanggil dontBackupFilesystem().
+            Artisan::call('backup:run', [
+                '--only-db' => true,
+                '--disable-notifications' => true,
+            ]);
 
             // Get the output from the command for debugging
             $output = Artisan::output();

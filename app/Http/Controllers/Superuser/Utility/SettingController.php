@@ -92,19 +92,22 @@ class SettingController extends Controller
     }
 
     /**
-     * Backup FULL: database + file project (sesuai config/backup.php).
+     * Backup DATABASE SAJA (tanpa file project).
      * Sama persis dengan menu Backup, agar hasilnya konsisten.
      */
     public function backupDatabase()
     {
         try {
-            // Jalankan backup full (DB + files) via artisan, sama seperti menu Backup.
-            Artisan::call('backup:run --disable-notifications');
+            // --only-db => Spatie memanggil dontBackupFilesystem(), file diabaikan.
+            Artisan::call('backup:run', [
+                '--only-db' => true,
+                '--disable-notifications' => true,
+            ]);
 
             $response['notification'] = [
                 'alert' => 'notify',
                 'type' => 'success',
-                'content' => 'Backup Full (DB + Files) Success',
+                'content' => 'Backup Database Success',
             ];
 
             $response['redirect_to'] = 'reload()';
@@ -117,7 +120,7 @@ class SettingController extends Controller
                 'alert' => 'block',
                 'type' => 'alert-danger',
                 'header' => 'Error',
-                'content' => 'Backup Full Failed: ' . $e->getMessage(),
+                'content' => 'Backup Database Failed: ' . $e->getMessage(),
             ];
 
             return $this->response(500, $response);

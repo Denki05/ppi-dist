@@ -7,6 +7,7 @@ use App\Entities\Penjualan\SalesOrderItem;
 use App\Entities\Penjualan\PackingOrder;
 use App\Entities\Penjualan\PackingOrderDetail;
 use App\Entities\Penjualan\PackingOrderItem;
+use App\Entities\Finance\Invoicing;
 use App\Entities\Penjualan\MutasiShowroom;
 use App\Entities\Penjualan\MutasiShowroomDetail;
 use App\Entities\Master\Company;
@@ -50,6 +51,84 @@ class SalesOrderClosingService
         if (empty($request->grand_total_idr)) {
             $errors[] = 'Grand Total tidak boleh kosong!';
         }
+        return empty($errors);
+    }
+
+    /**
+     * Validasi silang total tutup SO dari request yang SAMA dengan yang dipakai
+     * kalkulasi frontend (create_lanjutan): subtotal dari repeater x kurs,
+     * nominal diskon dari persen, dan grand total akhir.
+     *
+     * Mencegah kasus diskon tersimpan tapi tidak dikurangkan dari grand total
+     * (kasus Depo Aroma: kalkulasi JS tidak jalan penuh saat submit, backend
+     * menyimpan grand kotor apa adanya). Return true jika konsisten.
+     */
+    public function validateClosingTotals($request, &$errors)
+    {
+        $repeater = $request->repeater;
+        if (is_string($repeater)) {
+            $repeater = json_decode($repeater, true);
+        }
+        if (empty($repeater) || !is_array($repeater)) {
+            $errors[] = 'Item sales order kosong, kalkulasi tidak bisa divalidasi!';
+            return false;
+        }
+
+        $kurs = (float) $this->cleanCurrency($request->idr_rate);
+        if ($kurs <= 0) {
+            $errors[] = 'Kurs tidak valid, kalkulasi tidak bisa divalidasi!';
+            return false;
+        }
+
+        // Subtotal: mirror processItems & JS count_per_item (percent_disc = 0).
+        $subtotal = 0;
+        foreach ($repeater as $item) {
+            $doQty = (float) ($item['do_qty'] ?? 0);
+            if ($doQty <= 0) {
+                continue;
+            }
+            $price = (float) ($item['price'] ?? 0);
+            $usdDisc = (float) ($item['usd_disc'] ?? 0);
+            $lineDiscUsd = $usdDisc * $doQty;
+            $subtotal += round(($doQty * $price - $lineDiscUsd) * $kurs);
+        }
+
+        if ($subtotal <= 0) {
+            $errors[] = 'Subtotal hasil kalkulasi nol, periksa qty/harga/kurs!';
+            return false;
+        }
+
+        // Toleransi pembulatan antar langkah kalkulasi (kasus rusak selisih jutaan).
+        $tol = max(1000, round($subtotal * 0.001));
+
+        $d1pct = (float) ($request->disc_agen_percent ?? 0);
+        $d2pct = (float) ($request->disc_kemasan_percent ?? 0);
+        $discAgenReq = (float) $this->cleanCurrency($request->disc_agen_idr);
+        $discKemasanReq = (float) $this->cleanCurrency($request->disc_kemasan_idr);
+        $tambahan = (float) $this->cleanCurrency($request->disc_tambahan_idr);
+        $voucher = (float) $this->cleanCurrency($request->voucher_idr);
+        $delivery = (float) $this->cleanCurrency($request->delivery_cost_idr);
+        $grandReq = (float) $this->cleanCurrency($request->grand_total_idr);
+
+        // 1) Nominal diskon harus konsisten dengan persen x subtotal.
+        $discAgenCalc = round($subtotal * ($d1pct / 100));
+        $discKemasanCalc = round(($subtotal - $discAgenCalc) * ($d2pct / 100));
+        if (abs($discAgenReq - $discAgenCalc) > $tol || abs($discKemasanReq - $discKemasanCalc) > $tol) {
+            $errors[] = 'Nominal diskon tidak sesuai persen x subtotal (selisih Rp '
+                . number_format(max(abs($discAgenReq - $discAgenCalc), abs($discKemasanReq - $discKemasanCalc)), 0, ',', '.')
+                . '). Refresh halaman agar kalkulasi berjalan ulang, lalu submit kembali!';
+            return false;
+        }
+
+        // 2) Grand total harus = subtotal - diskon - tambahan - voucher + ongkir.
+        $grandCalc = $subtotal - $discAgenReq - $discKemasanReq - $tambahan - $voucher + $delivery;
+        if (abs($grandReq - $grandCalc) > $tol) {
+            $errors[] = 'Grand total tidak sesuai kalkulasi (selisih Rp '
+                . number_format(abs($grandReq - $grandCalc), 0, ',', '.')
+                . '). Diskon belum masuk ke total. Refresh halaman agar kalkulasi berjalan ulang, lalu submit kembali!';
+            return false;
+        }
+
         return empty($errors);
     }
 
@@ -430,5 +509,65 @@ class SalesOrderClosingService
             $poDetailData['other_cost_idr'] = 0;
             PackingOrderDetail::create($poDetailData);
         }
+    }
+
+    /**
+     * Buat nota/invoicing langsung di tutup_so kalau nota valid:
+     * kurs valid (>1) + grand_total_idr > 0.
+     * Idempotent: kalau invoice sudah ada (termasuk soft-delete revisi),
+     * sinkronkan ulang + restore — kecuali VOID (final).
+     * Duplikat logika createInvoiceIfNeeded di PackingOrderController
+     * (Release SPK) supaya Release tetap aman jadi fallback/sync.
+     */
+    public function createInvoiceIfNeeded($packingOrderId)
+    {
+        $packing = PackingOrder::where('id', $packingOrderId)->first();
+        $detail  = PackingOrderDetail::where('do_id', $packingOrderId)->first();
+
+        if (!$packing || !$detail) {
+            return false;
+        }
+
+        // Nota valid = kurs valid + total valid.
+        $idrRate = (float) ($packing->idr_rate ?? 0);
+        if ($idrRate <= 1) {
+            return false;
+        }
+        if ((float) ($detail->grand_total_idr ?? 0) <= 0) {
+            return false;
+        }
+
+        $existing = Invoicing::withTrashed()->where('do_id', $packingOrderId)->first();
+
+        if ($existing) {
+            // Invoice VOID bersifat final — jangan restore/sinkron.
+            if ($existing->trashed() && (int) $existing->status === Invoicing::STATUS['VOID']) {
+                return false;
+            }
+            if ($existing->trashed()) {
+                $existing->restore();
+            }
+            $existing->update([
+                'code' => $packing->do_code,
+                'customer_id' => $packing->customer_id,
+                'customer_other_address_id' => $packing->customer_other_address_id,
+                'grand_total_idr' => $detail->grand_total_idr,
+                'status' => Invoicing::STATUS['ACTIVE'],
+            ]);
+            return true;
+        }
+
+        Invoicing::create([
+            'code' => $packing->do_code,
+            'do_id' => $packing->id,
+            'customer_id' => $packing->customer_id,
+            'customer_other_address_id' => $packing->customer_other_address_id,
+            'grand_total_idr' => $detail->grand_total_idr,
+            'status' => Invoicing::STATUS['ACTIVE'],
+            'type' => 0,
+            'created_by' => Auth::id(),
+        ]);
+
+        return true;
     }
 }
