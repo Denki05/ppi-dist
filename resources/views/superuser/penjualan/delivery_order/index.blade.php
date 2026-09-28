@@ -717,6 +717,22 @@ $(document).ready(function() {
     $(this).closest('.checker-row').find('.btn-proses').show();
   });
 
+  // Sinkronkan radio tab dengan valShow sebelum list pertama dimuat.
+  // Khusus 'history', samakan juga rentang tanggal seperti handler change.
+  (function () {
+    var $radio = $('input[type=radio][name=show-control][value="' + valShow + '"]');
+    if ($radio.length) $radio.prop('checked', true);
+    if (valShow === 'history') {
+      var startOfMonth = moment().startOf('month');
+      var today = moment();
+      $('#datesearch').data('daterangepicker').setStartDate(startOfMonth);
+      $('#datesearch').data('daterangepicker').setEndDate(today);
+      $('#datesearch').val(startOfMonth.format('DD/MM/YYYY') + ' - ' + today.format('DD/MM/YYYY'));
+      fromDate = startOfMonth.format('YYYY-MM-DD');
+      toDate = today.format('YYYY-MM-DD');
+    }
+  })();
+
   loadList();
 });
 </script>
@@ -726,7 +742,9 @@ $(document).ready(function() {
   let datatableUrl = '{{ route('superuser.penjualan.delivery_order.json') }}';
   let detailUrlTpl = '{{ route("superuser.penjualan.delivery_order.detail", ["id" => "__ID__"]) }}';
   let printUrlTpl = '{{ route("superuser.penjualan.delivery_order.print_manifest", ["id" => "__ID__"]) }}';
-  let valShow = "default";
+  // Tab awal bisa dipaksa via ?tab= (misal redirect packed() -> 'acc'/Cetak SJ).
+  let valShow = "{{ request('tab', 'default') }}";
+  if (['default', 'acc', 'all', 'history'].indexOf(valShow) === -1) valShow = 'default';
   let currentPage = 0;   // 0-based, dikonversi ke 'start' pas fetch
   let pageLength = 10;
   let searchValue = '';

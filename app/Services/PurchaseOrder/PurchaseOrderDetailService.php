@@ -172,6 +172,31 @@ class PurchaseOrderDetailService
             return ["IsError" => true, "Message" => "Qty wajib dipilih", "http" => 200];
         }
 
+        // Pengaman brand: produk yang disimpan harus se-brand dengan PO
+        // (kasus B26I006: PO Senses terisi produk GCF/Nginden sebelum brand dikunci).
+        // PO lama tanpa brand dilewati (kompatibilitas mundur).
+        $po = PurchaseOrder::with('brandLokal')->find($purchase_id);
+        $poBrand = ($po && $po->brandLokal) ? $po->brandLokal->brand_name : null;
+
+        if ($poBrand) {
+            $mismatch = [];
+            foreach ((array) ($input["product_packaging_id"] ?? []) as $pid) {
+                if (empty($pid)) continue;
+                $prod = Product::find($pid);
+                if ($prod && $prod->brand_name !== $poBrand) {
+                    $mismatch[] = ($prod->code ?? $pid) . ' - ' . ($prod->name ?? '');
+                }
+            }
+            $mismatch = array_unique($mismatch);
+            if (!empty($mismatch)) {
+                return [
+                    "IsError" => true,
+                    "Message" => "Brand produk tidak sesuai PO (" . $poBrand . "): " . implode(', ', $mismatch),
+                    "http" => 200,
+                ];
+            }
+        }
+
         DB::beginTransaction();
         try {
             $brand_id = BrandLokal::where('brand_name', $input["merek"])->pluck('id')->first();
@@ -183,7 +208,7 @@ class PurchaseOrderDetailService
                     $po_detail = new PurchaseOrderDetail;
                     $po_detail->po_id = $purchase_id;
                     $po_detail->brand_lokal_id = $brand_id;
-                    $po_detail->product_packaging_id = trim(htmlentities(implode("-", [$input["product_packaging_id"][$i], $input["packaging_id"][$i]])));
+                    $po_detail->product_packaging_id = trim(htmlentities(implode("-", [$input["product_packaging_id"][$i],$input["packaging_id"][$i]])));
                     $po_detail->quantity = trim(htmlentities($input["qty"][$i]));
                     $po_detail->packaging_id = trim(htmlentities($input["packaging_id"][$i]));
                     $po_detail->note_produksi = trim(htmlentities($input["note_produksi"][$i])) ?? null;

@@ -97,9 +97,32 @@ class PurchaseOrderService
             return ["status" => "validation", "errors" => $validator->errors()->all(), "po" => null];
         }
 
+        $newBrandId = (int) $input["brand_lokal_id"];
+        // Pengaman ganti brand: tolak bila masih ada baris detail milik brand lain
+        // (koordinat: hapus/pindahkan barisnya dulu). Berlaku PO biasa & SPK.
+        if ($newBrandId !== (int) $purchase_order->brand_lokal_id) {
+            $conflictBrands = PurchaseOrderDetail::where('po_id', $purchase_order->id)
+                ->whereNotNull('brand_lokal_id')
+                ->where('brand_lokal_id', '!=', $newBrandId)
+                ->distinct()
+                ->pluck('brand_lokal_id');
+            if ($conflictBrands->isNotEmpty()) {
+                $names = BrandLokal::whereIn('id', $conflictBrands->all())->pluck('brand_name')->all();
+                $newName = BrandLokal::where('id', $newBrandId)->value('brand_name') ?? $newBrandId;
+                return [
+                    "status" => "validation",
+                    "errors" => [
+                        "Brand tidak bisa diubah ke " . $newName . " karena masih ada baris produk milik brand: "
+                        . implode(', ', $names) . ". Hapus baris tersebut dulu, baru ganti brand.",
+                    ],
+                    "po" => null,
+                ];
+            }
+        }
+
         $purchase_order->code = $input["code"];
         $purchase_order->warehouse_id = $input["warehouse"];
-        $purchase_order->brand_lokal_id = $input["brand_lokal_id"];
+        $purchase_order->brand_lokal_id = $newBrandId;
         $purchase_order->type = isset($input["type"]) ? $input["type"] : $purchase_order->type;
         $purchase_order->etd = $input["etd"];
         $purchase_order->note = isset($input["note"]) ? $input["note"] : $purchase_order->note;

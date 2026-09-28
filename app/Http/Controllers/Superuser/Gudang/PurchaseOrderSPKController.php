@@ -17,6 +17,9 @@ use App\Imports\Gudang\PurchaseOrderDetailImport;
 use App\Entities\Gudang\MutasiOut;
 use App\Entities\Gudang\MutasiOutDetail;
 use App\Entities\Master\Warehouse;
+use App\Services\PurchaseOrder\PurchaseOrderService;
+use App\Helper\LogActivity;
+use Illuminate\Support\Facades\Log;
 use Auth;
 use COM;
 use DB;
@@ -27,7 +30,10 @@ use Carbon\Carbon;
 
 class PurchaseOrderSPKController extends Controller
 {
-    public function __construct(){
+    protected $service;
+
+    public function __construct(PurchaseOrderService $service){
+        $this->service = $service;
         $this->view = "superuser.gudang.purchase_order_spk.";
         $this->route = "superuser.gudang.purchase_order_spk";
         $this->user_menu = new UserMenu;
@@ -80,6 +86,9 @@ class PurchaseOrderSPKController extends Controller
         }
 
         $data['purchase_order'] = PurchaseOrder::where('type', PurchaseOrder::TYPE['SPK'])->get();
+        // Sama seperti PO biasa: dropdown modal create di index.
+        $data['warehouse'] = Warehouse::get();
+        $data['brands'] = BrandLokal::where('status', BrandLokal::STATUS['ACTIVE'])->orderBy('brand_name')->get();
 
         return view($this->view."index", $data);
     }
@@ -98,6 +107,8 @@ class PurchaseOrderSPKController extends Controller
         }
 
         $data['warehouse'] = Warehouse::get();
+        // Sama seperti PO biasa: brand didefinisikan di awal (mengunci produk di step).
+        $data['brands'] = BrandLokal::where('status', BrandLokal::STATUS['ACTIVE'])->orderBy('brand_name')->get();
 
         return view($this->view."create", $data);
     }
@@ -111,9 +122,11 @@ class PurchaseOrderSPKController extends Controller
     public function store(Request $request)
     {
         if ($request->ajax()) {
+            // Sama seperti PO biasa: brand wajib di awal (type SPK dipertahankan).
             $validator = Validator::make($request->all(), [
                 'code' => 'required|string|unique:purchase_order,code',
                 'warehouse' => 'required|integer',
+                'brand_lokal_id' => 'required|integer|exists:master_brand_lokal,id',
                 'etd'  =>  'required|date',
             ]);
 
@@ -124,7 +137,7 @@ class PurchaseOrderSPKController extends Controller
                     'header' => 'Error',
                     'content' => $validator->errors()->all(),
                 ];
-  
+
                 return $this->response(400, $response);
             }
 
@@ -133,6 +146,7 @@ class PurchaseOrderSPKController extends Controller
 
                 $purchase_order->code = $request->code;
                 $purchase_order->warehouse_id = $request->warehouse;
+                $purchase_order->brand_lokal_id = $request->brand_lokal_id;
                 $purchase_order->etd = $request->etd;
                 $purchase_order->type = 0;
                 $purchase_order->note = $request->note;
@@ -141,6 +155,7 @@ class PurchaseOrderSPKController extends Controller
                 $purchase_order->status = PurchaseOrder::STATUS['DRAFT'];
 
                 if ($purchase_order->save()) {
+                    LogActivity::addToLog('Created a new SPK: ' . $purchase_order->code);
                     $response['notification'] = [
                         'alert' => 'notify',
                         'type' => 'success',
@@ -183,14 +198,16 @@ class PurchaseOrderSPKController extends Controller
     public function edit($id)
     {
         if(Auth::user()->is_superuser == 0){
-            if(empty($this->access) || empty($this->access->user) || $this->access->can_edit == 0){
+            if(empty($this->access) || empty($this->access->user) || $this->access->can_update == 0){
                 return redirect()->route('superuser.index')->with('error','Anda tidak punya akses untuk membuka menu terkait');
             }
         }
 
         $data['purchase_order'] = PurchaseOrder::find($id);
         $data['warehouse'] = Warehouse::get();
-        
+        // Sama seperti PO biasa: brand bisa diubah dari halaman edit.
+        $data['brands'] = BrandLokal::where('status', BrandLokal::STATUS['ACTIVE'])->orderBy('brand_name')->get();
+
         return view($this->view."edit", $data);
     }
 
@@ -204,47 +221,35 @@ class PurchaseOrderSPKController extends Controller
     public function update(Request $request, $id)
     {
         if ($request->ajax()) {
-            $purchase_order = PurchaseOrder::find($id);
+            // Sama seperti PO biasa: update via service (termasuk pengaman ganti
+            // brand bila masih ada baris beda brand). Type SPK dipertahankan
+            // service karena form tidak mengirim field type.
+            $result = $this->service->updatePo($id, $request->all());
 
-            if ($purchase_order == null) {
+            if ($result["status"] === "not_found") {
                 abort(404);
             }
 
-            $validator = Validator::make($request->all(), [
-                'code' => 'required|string|unique:purchase_order,code,' . $purchase_order->id,
-                'warehouse' => 'required|integer',
-                'etd'  =>  'required|date',
-            ]);
-
-            if ($validator->fails()) {
+            if ($result["status"] === "validation") {
                 $response['notification'] = [
                     'alert' => 'block',
                     'type' => 'alert-danger',
                     'header' => 'Error',
-                    'content' => $validator->errors()->all(),
+                    'content' => $result["errors"],
                 ];
-  
+
                 return $this->response(400, $response);
             }
 
-            if ($validator->passes()) {
-                $purchase_order->code = $request->code;
-                $purchase_order->warehouse_id = $request->warehouse;
-                $purchase_order->etd = $request->etd;
-                $purchase_order->note = $request->note;
+            $response['notification'] = [
+                'alert' => 'notify',
+                'type' => 'success',
+                'content' => 'Success',
+            ];
 
-                if ($purchase_order->save()) {
-                    $response['notification'] = [
-                        'alert' => 'notify',
-                        'type' => 'success',
-                        'content' => 'Success',
-                    ];
+            $response['redirect_to'] = route('superuser.gudang.purchase_order_spk.step', ['id' => $result["po"]->id]);
 
-                    $response['redirect_to'] = route('superuser.gudang.purchase_order_spk.step', ['id' => $purchase_order->id]);
-
-                    return $this->response(200, $response);
-                }
-            }
+            return $this->response(200, $response);
         }
     }
 
@@ -256,8 +261,19 @@ class PurchaseOrderSPKController extends Controller
             }
         }
 
-        $data['purchase_order'] = PurchaseOrder::findOrFail($id);
+        // Sama seperti PO biasa: info header + tab kemasan dari service.
+        $data['purchase_order'] = PurchaseOrder::with('brandLokal')->findOrFail($id);
         $data['merek'] = BrandLokal::get();
+        $data['warehouses'] = Warehouse::get();
+        $data['ref_po_code'] = $data['purchase_order']->ref_po_id
+            ? PurchaseOrder::where('id', $data['purchase_order']->ref_po_id)->value('code')
+            : null;
+
+        $tabs = (new \App\Services\PurchaseOrder\PurchaseOrderDetailService)->packTabs();
+        $data['pack_tabs'] = $tabs['pack_tabs'];
+        $data['fixed_pack_ids'] = $tabs['fixed_pack_ids'];
+        $data['other_packs'] = $tabs['other_packs'];
+        $data['other_pack_ids'] = $tabs['other_pack_ids'];
 
         if($data['purchase_order']->status == PurchaseOrder::STATUS['ACC'] OR $data['purchase_order']->status == PurchaseOrder::STATUS['DELETED']) {
             return abort(404);
@@ -266,102 +282,89 @@ class PurchaseOrderSPKController extends Controller
         return view($this->view."step", $data);
     }
 
+    public function detail_json($purchase_id)
+    {
+        // Sama seperti PO biasa: daftar detail untuk hot-reload per tab.
+        $data = $this->service->listDetails($purchase_id, $this->route . '.detail');
+
+        return response()->json(['IsError' => false, 'Data' => $data], 200);
+    }
+
     public function publish(Request $request, $id)
     {
         if ($request->ajax()) {
-            $purchase_order = PurchaseOrder::find($id);
+            // Sama seperti PO biasa: pindah status via service.
+            $result = $this->service->changeStatus($id, PurchaseOrder::STATUS['ACTIVE'], Auth::id());
 
-            if ($purchase_order == null) {
+            if ($result["status"] === "not_found") {
                 abort(404);
             }
 
-            $purchase_order->updated_by = Auth::id();
-            $purchase_order->status = PurchaseOrder::STATUS['ACTIVE'];
+            $response['notification'] = [
+                'alert' => 'notify',
+                'type' => 'success',
+                'content' => 'Success',
+            ];
 
-            if ($purchase_order->save()) {
-                $response['notification'] = [
-                    'alert' => 'notify',
-                    'type' => 'success',
-                    'content' => 'Success',
-                ];
+            $response['redirect_to'] = route('superuser.gudang.purchase_order_spk.index');
 
-                $response['redirect_to'] = route('superuser.gudang.purchase_order_spk.index');
-
-                return $this->response(200, $response);
-            }
+            return $this->response(200, $response);
         }
     }
 
     public function unpublish(Request $request, $id)
     {
         if ($request->ajax()) {
-            $purchase_order = PurchaseOrder::find($id);
+            // Sama seperti PO biasa: pindah status via service.
+            $result = $this->service->changeStatus($id, PurchaseOrder::STATUS['DRAFT'], Auth::id());
 
-            if ($purchase_order == null) {
+            if ($result["status"] === "not_found") {
                 abort(404);
             }
 
-            $purchase_order->updated_by = Auth::id();
-            $purchase_order->status = PurchaseOrder::STATUS['DRAFT'];
+            $response['notification'] = [
+                'alert' => 'notify',
+                'type' => 'success',
+                'content' => 'Success',
+            ];
 
-            if ($purchase_order->save()) {
-                $response['notification'] = [
-                    'alert' => 'notify',
-                    'type' => 'success',
-                    'content' => 'Success',
-                ];
+            $response['redirect_to'] = route('superuser.gudang.purchase_order_spk.index');
 
-                $response['redirect_to'] = route('superuser.gudang.purchase_order_spk.index');
-
-                return $this->response(200, $response);
-            }
+            return $this->response(200, $response);
         }
     }
 
     public function save_modify(Request $request, $id, $save_type)
     {
         if ($request->ajax()) {
+            // Sama seperti PO biasa: logika save/ACC via service
+            // (sekaligus memperbaiki $failed yang undefined di catch lama).
+            $result = $this->service->saveModify($id, $save_type, Auth::id());
 
-            $purchase_order = PurchaseOrder::find($id);
-
-            if ($purchase_order == null) {
+            if ($result["status"] === "not_found") {
                 abort(404);
             }
 
-            DB::beginTransaction();
-            try{
-
-                if($save_type == 'save') {
-                    $purchase_order->edit_counter += 1;
-                } else {
-                    $purchase_order->acc_by = Auth::id();
-                    $purchase_order->acc_at = Carbon::now()->toDateTimeString();
-                }
-                
-                $purchase_order->status = $save_type == 'save' ? PurchaseOrder::STATUS['ACTIVE'] : PurchaseOrder::STATUS['ACC'];
-    
-                if ($purchase_order->save()) {
-                    $response['notification'] = [
-                        'alert' => 'notify',
-                        'type' => 'success',
-                        'content' => 'Success',
-                    ];
-    
-                    $response['redirect_to'] = route('superuser.gudang.purchase_order_spk.index');
-    
-                    return $this->response(200, $response);
-                }
-            }catch (\Exception $e) {
-                DB::rollback();
+            if ($result["status"] === "error") {
                 $response['notification'] = [
                     'alert' => 'block',
                     'type' => 'alert-danger',
                     'header' => 'Error',
-                    'content' => $failed,
+                    'content' => $result["message"],
                 ];
 
                 return $this->response(400, $response);
             }
+
+            $response['notification'] = [
+                'alert' => 'notify',
+                'type' => 'success',
+                'content' => 'Success',
+            ];
+
+            $response['redirect_to'] = route('superuser.gudang.purchase_order_spk.index');
+
+            return $this->response(200, $response);
         }
     }
 
@@ -426,7 +429,7 @@ class PurchaseOrderSPKController extends Controller
                             'date'           => Carbon::now(),
                             'warehouse_from' => $warehouseAraya->id,
                             'warehouse_to'   => $purchase_order->warehouse_id ?? null, // sesuaikan
-                            'note'           => 'Auto generate dari SPK ' . $purchase_order->code,
+                            'note'           => $purchase_order->note ?? null,
                             'status'         => MutasiOut::STATUS['PUBLISH'],
                             'created_by'     => Auth::id(),
                         ]);
@@ -461,14 +464,16 @@ class PurchaseOrderSPKController extends Controller
                     return $this->response(200, $response);
                 }
             }catch (\Exception $e) {
+                // Sama seperti PO biasa: tanpa dd(), pesan error asli + log.
                 DB::rollback();
+                \Log::error('SPK acc failed', ['po_id' => $id, 'error' => $e->getMessage()]);
                 $response['notification'] = [
                     'alert' => 'block',
                     'type' => 'alert-danger',
                     'header' => 'Error',
-                    'content' => $failed,
+                    'content' => $e->getMessage(),
                 ];
-    
+
                 return $this->response(400, $response);
             }
         }
@@ -482,20 +487,17 @@ class PurchaseOrderSPKController extends Controller
                 abort(405);
             }
         }
-        
-        if ($request->ajax()) {
-            $purchase_order = PurchaseOrder::find($id);
 
-            if ($purchase_order === null) {
+        if ($request->ajax()) {
+            // Sama seperti PO biasa: soft-delete via service (plus pencatatan log).
+            $result = $this->service->deletePo($id, Auth::id());
+
+            if ($result["status"] === "not_found") {
                 abort(404);
             }
 
-            $purchase_order->status = PurchaseOrder::STATUS['DELETED'];
-
-            if ($purchase_order->save()) {
-                $response['redirect_to'] = route('superuser.gudang.purchase_order_spk.index');
-                return $this->response(200, $response);
-            }
+            $response['redirect_to'] = route('superuser.gudang.purchase_order_spk.index');
+            return $this->response(200, $response);
         }
     }
 
@@ -552,14 +554,31 @@ class PurchaseOrderSPKController extends Controller
     
     public function cancel_acc(Request $request, $id)
     {
-        if(Auth::user()->is_superuser == 0){
-            if(empty($this->access) || empty($this->access->user) || $this->access->can_approve == 0){
+        try {
+
+            // ===============================
+            // VALIDASI ACCESS
+            // ===============================
+            if (Auth::user()->is_superuser == 0) {
+                if (
+                    empty($this->access) ||
+                    empty($this->access->user) ||
+                    $this->access->can_approve == 0
+                ) {
+                    abort(405);
+                }
+            }
+
+            // ===============================
+            // VALIDASI AJAX
+            // ===============================
+            if (!$request->ajax()) {
                 abort(405);
             }
-        }
-        
-        if ($request->ajax()) {
 
+            // ===============================
+            // CARI PURCHASE ORDER
+            // ===============================
             $purchase_order = PurchaseOrder::find($id);
 
             if ($purchase_order === null) {
@@ -575,7 +594,7 @@ class PurchaseOrderSPKController extends Controller
                     'alert'   => 'block',
                     'type'    => 'alert-warning',
                     'header'  => 'Gagal',
-                    'content' => 'Tidak bisa di cancel karena sudah ada proses Checker logisitk',
+                    'content' => 'Tidak bisa di cancel karena sudah ada proses Checker logistik',
                 ];
 
                 return $this->response(400, $response);
@@ -591,45 +610,71 @@ class PurchaseOrderSPKController extends Controller
 
             if ($purchase_order->save()) {
 
-                $response['redirect_to'] = route('superuser.gudang.purchase_order_spk.index');
+                $response['redirect_to'] = route(
+                    'superuser.gudang.purchase_order_spk.index'
+                );
+
                 return $this->response(200, $response);
             }
+
+            // ===============================
+            // JIKA SAVE GAGAL
+            // ===============================
+            $response['notification'] = [
+                'alert'   => 'block',
+                'type'    => 'alert-danger',
+                'header'  => 'Gagal',
+                'content' => 'Data Purchase Order gagal di cancel.',
+            ];
+
+            return $this->response(500, $response);
+
+        } catch (\Exception $e) {
+
+            // ===============================
+            // LOG ERROR
+            // ===============================
+            \Log::error('Gagal cancel approval Purchase Order', [
+                'purchase_order_id' => $id,
+                'user_id'            => Auth::id(),
+                'message'            => $e->getMessage(),
+                'file'               => $e->getFile(),
+                'line'               => $e->getLine(),
+            ]);
+
+            // ===============================
+            // RESPONSE ERROR
+            // ===============================
+            $response['notification'] = [
+                'alert'   => 'block',
+                'type'    => 'alert-danger',
+                'header'  => 'Terjadi Kesalahan',
+                'content' => 'Terjadi kesalahan saat membatalkan approval Purchase Order.',
+            ];
+
+            return $this->response(500, $response);
         }
     }
 
     public function send(Request $request, $id)
     {
         if ($request->ajax()) {
-            $purchase_order = PurchaseOrder::find($id);
+            // Sama seperti PO biasa: kirim + bentuk summary via service.
+            $result = $this->service->sendPo($id, Auth::id());
 
-            if ($purchase_order === null) {
+            if ($result["status"] === "not_found") {
                 abort(404);
             }
 
-            $purchase_order->updated_by = Auth::id();
-            $purchase_order->status = PurchaseOrder::STATUS['SENT'];
+            $response['notification'] = [
+                'alert' => 'notify',
+                'type' => 'success',
+                'content' => 'Success',
+            ];
 
-            if ($purchase_order->save()) {
-                $purchase_order_details = PurchaseOrderDetail::where('po_id', $id)->get();
-                foreach ($purchase_order_details as $detail) {
-                    $summary = new PurchaseOrderSummary;
-                    $summary->po_id = $id;
-                    $summary->product_packaging_id = $detail->product_packaging_id;
-                    $summary->quantity = $detail->quantity;
-                    $summary->status = PurchaseOrderSummary::STATUS['UNDONE'];
-                    $summary->save();
-                }
+            $response['redirect_to'] = route('superuser.gudang.purchase_order_spk.index');
 
-                $response['notification'] = [
-                    'alert' => 'notify',
-                    'type' => 'success',
-                    'content' => 'Success',
-                ];
-
-                $response['redirect_to'] = route('superuser.gudang.purchase_order_spk.index');
-
-                return $this->response(200, $response);
-            }
+            return $this->response(200, $response);
         }
     } 
 
@@ -671,55 +716,32 @@ class PurchaseOrderSPKController extends Controller
     public function cancel_send(Request $request, $id)
     {
         if ($request->ajax()) {
-            $purchase_order = PurchaseOrder::find($id);
+            // Sama seperti PO biasa: batal kirim via service (termasuk blokir
+            // bila sudah ada penerimaan terkait).
+            $result = $this->service->cancelSend($id, Auth::id());
 
-            if ($purchase_order === null) {
+            if ($result["status"] === "not_found") {
                 abort(404);
             }
 
-            if ($purchase_order->receiving_detail()->exists()) { 
+            if (in_array($result["status"], ["has_receiving", "error"])) {
                 return $this->response(400, [
                     'notification' => [
                         'alert'   => 'block',
                         'type'    => 'alert-danger',
-                        'content' => 'PO tidak dapat dibatalkan karena sudah ada penerimaan yang terkait.',
+                        'content' => $result["message"],
                     ]
                 ]);
             }
 
-            DB::beginTransaction();
-            try {
-
-                $purchase_order->updated_by = Auth::id();
-                $purchase_order->status = PurchaseOrder::STATUS['ACC'];
-                $purchase_order->save();
-
-                PurchaseOrderSummary::where([
-                    ['po_id', $purchase_order->id],
-                    ['status', PurchaseOrderSummary::STATUS['UNDONE']]
-                ])->delete();
-
-                DB::commit();
-
-                return $this->response(200, [
-                    'notification' => [
-                        'alert'   => 'notify',
-                        'type'    => 'success',
-                        'content' => 'PO berhasil dibatalkan dari status SENT'
-                    ],
-                    'redirect_to' => route('superuser.gudang.purchase_order_spk.index')
-                ]);
-
-            }catch (\Exception $e) {
-                DB::rollBack();
-                return $this->response(500, [
-                    'notification' => [
-                        'alert'   => 'block',
-                        'type'    => 'alert-danger',
-                        'content' => 'Terjadi kesalahan: '.$e->getMessage()
-                    ]
-                ]);
-            }
+            return $this->response(200, [
+                'notification' => [
+                    'alert'   => 'notify',
+                    'type'    => 'success',
+                    'content' => $result["message"] !== "" ? $result["message"] : 'PO berhasil dibatalkan dari status SENT'
+                ],
+                'redirect_to' => route('superuser.gudang.purchase_order_spk.index')
+            ]);
         }
     }
 

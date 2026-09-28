@@ -80,7 +80,9 @@ Route::group([
         Route::get('{id}/unpublish', 'PurchaseOrderSPKController@unpublish')->name('unpublish');
         Route::get('{id}/save_modify/{save_type}', 'PurchaseOrderSPKController@save_modify')->name('save_modify');
         Route::get('{id}/acc', 'PurchaseOrderSPKController@acc')->name('acc');
-        Route::get('{id}/print_spk_pdf', 'PurchaseOrderSPKController@print_spk_pdf')->name('print_spk_pdf');
+        Route::get('{id}/print_spk_pdf', 'PurchaseOrderSPKController@print_pdf')->name('print_spk_pdf');
+        // Alias selaras PO biasa (dipakai PurchaseOrderSPKTable kolom action).
+        Route::get('{id}/print_pdf', 'PurchaseOrderSPKController@print_pdf')->name('print_pdf');
         Route::get('/import_template', 'PurchaseOrderSPKController@import_template')->name('import_template');
         Route::post('/import/{id}', 'PurchaseOrderSPKController@import')->name('import');
         Route::get('/search_sku', 'PurchaseOrderSPKController@search_sku')->name('search_sku');
@@ -98,6 +100,7 @@ Route::group([
             Route::delete('{id}/detail/{detail_id}', 'PurchaseOrderDetailSPKController@destroy')->name('destroy');
             Route::get('/get_product', 'PurchaseOrderDetailSPKController@get_product')->name('get_product');
             Route::get('/get_packaging', 'PurchaseOrderDetailSPKController@get_packaging')->name('get_packaging');
+            Route::get('{purchase_id}/detail_json', 'PurchaseOrderSPKController@detail_json')->name('detail_json');
         });
     });
     Route::resource('purchase_order_spk', 'PurchaseOrderSPKController');

@@ -351,15 +351,142 @@ class ReportRequestController extends Controller
                 }
             }
     
+            // Urutan penting: reset data tersimpan + matikan prompting DULU,
+            // baru isi parameter. (Dugaan: DiscardSavedData setelah Set bisa
+            // me-reset nilai param pada sebagian versi runtime.)
+            $creport->DiscardSavedData();
+            $creport->VerifyOnEveryPrint = false;
+            $creport->EnableParameterPrompting = false;
+
             // ============================================================
-            // INJECT PARAMETER (PEMBERSIHAN NAMA & LOOP TUNGGAL)
-            // customer_type_brand.rpt menampilkan periode via ParameterFields(2)
-            // dan (3) dengan format d-m-Y (lihat print_report lama), jadi selain
-            // match by-name, selalu fallback set by-index agar header tanggal
-            // tidak kosong ("parameter range date tidak muncul").
+            // INJECT PARAMETER
+            // Prinsip: SEMUA parameter tanggal/RPT harus terisi apa pun namanya,
+            // untuk SEMUA jenis laporan (dulu fallback hanya untuk market).
+            // Klasifikasi per nama: officer -> dilewati (kecuali dipilih spesifik),
+            // range/awal/akhir -> diisi tanggal. Setiap Set dibungkus try/catch
+            // agar satu param bertipe tak terduga tidak menggagalkan seluruh PDF.
+            // (RecordSelectionFormula sudah dioverride di bawah, jadi param RPT
+            // hanya dipakai untuk tampilan/header — aman diisi.)
             // ============================================================
             $paramCount = $creport->ParameterFields->Count;
             \Log::info("[DEBUG REPORT] Jumlah Parameter terdeteksi: " . $paramCount);
+
+            // Set penanda param yang sudah ditangani agar fallback tidak menimpa.
+            $paramHandled = [];
+
+            $isOfficerParam = function ($c) {
+                static $keys = ['officer','officersearch','officer_search','ao','pic','salesman','sales','marketing','petugas','karyawan','employee','pengguna','user','username'];
+                return in_array($c, $keys, true);
+            };
+            // Catatan urutan: cek start/end SEBELUM range, karena
+            // 'periode_start' mengandung kata 'periode' tapi maksudnya awal.
+            $isStartParam = function ($c) {
+                static $exact = ['start','from','awal','dari','mulai','pertama','start_date','startdate','tgl_awal','tglawal','tanggalawal','tanggal_awal','daritanggal','tanggaldari','datefrom','fromdate','periodestart','periodestartdate','periode_start','periodeawal','periode_awal','awalperiode'];
+                if (in_array($c, $exact, true)) return true;
+                foreach (['start','awal','mulai','pertama','dari','from'] as $k) {
+                    if (strpos($c, $k) !== false) return true;
+                }
+                return false;
+            };
+            $isEndParam = function ($c) {
+                static $exact = ['end','to','akhir','sampai','hingga','selesai','terakhir','end_date','enddate','tgl_akhir','tglakhir','tanggalakhir','tanggal_akhir','sampaitanggal','tanggalsampai','dateto','todate','dateend','enddate','periodeend','periodeenddate','periode_end','periodeakhir','periode_akhir','akhirperiode'];
+                if (in_array($c, $exact, true)) return true;
+                foreach (['akhir','sampai','hingga','selesai','terakhir','end'] as $k) {
+                    if (strpos($c, $k) !== false) return true;
+                }
+                return false;
+            };
+            $isRangeParam = function ($c) {
+                // Nama yang jelas-jelas penanda awal/akhir (mis. periode_start)
+                // BUKAN range, walau mengandung kata 'periode'.
+                foreach (['start','awal','mulai','pertama','dari','from','akhir','sampai','hingga','selesai','terakhir','end','dateto','todate'] as $k) {
+                    if (strpos($c, $k) !== false) return false;
+                }
+                static $exact = ['range_date','rangedate','date_range','daterange','periode','period','rentang','rentangtanggal','periodedate','dateperiode','tanggalperiode','periodetanggal','rangeperiode'];
+                if (in_array($c, $exact, true)) return true;
+                foreach (['range','periode','period','rentang'] as $k) {
+                    if (strpos($c, $k) !== false) return true;
+                }
+                return false;
+            };
+            // Isi tanggal dengan 2x percobaan format (display d-m-Y dulu,
+            // lalu ISO Y-m-d bila RPT memakai param bertipe Date).
+            $setDateParam = function ($param, $idx, $kind, $disp, $iso) use (&$paramHandled) {
+                try {
+                    $param->SetCurrentValue($disp);
+                    $paramHandled[$idx] = true;
+                    \Log::info("[DEBUG REPORT] ---> Berhasil Set Param {$kind}: {$disp}");
+                    return true;
+                } catch (\Exception $ex1) {
+                    try {
+                        $param->SetCurrentValue($iso);
+                        $paramHandled[$idx] = true;
+                        \Log::info("[DEBUG REPORT] ---> Berhasil Set Param {$kind} (format ISO): {$iso}");
+                        return true;
+                    } catch (\Exception $ex2) {
+                        \Log::info("[DEBUG REPORT] Set Param {$kind} gagal: " . $ex2->getMessage());
+                        return false;
+                    }
+                }
+            };
+            // Isi RANGE dengan beberapa percobaan format (Crystal COM rewel soal
+            // format tanggal; tiap gagal dicoba format berikut, semua dicatat).
+            $setRangeParam = function ($param, $idx, $tag) use ($startDt, $endDt, $dispStart, $dispEnd, &$paramHandled) {
+                try {
+                    $param->ClearCurrentValueAndRange();
+                } catch (\Exception $ex) {
+                    \Log::info("[DEBUG REPORT] Clear range #{$idx} gagal (lanjut): " . $ex->getMessage());
+                }
+                foreach (['m/d/Y', 'Y-m-d', 'd-m-Y'] as $fmt) {
+                    $s = date($fmt, strtotime($startDt));
+                    $e = date($fmt, strtotime($endDt));
+                    try {
+                        $param->AddCurrentRange($s, $e, 3);
+                        $paramHandled[$idx] = true;
+                        \Log::info("[DEBUG REPORT] ---> Berhasil Set Param Range ({$fmt}): {$s} s/d {$e}");
+                        return true;
+                    } catch (\Exception $ex) {
+                        \Log::info("[DEBUG REPORT] AddCurrentRange {$fmt} gagal: " . $ex->getMessage());
+                    }
+                }
+                // Terakhir: param string tunggal "01-01-2026 - 25-09-2026".
+                try {
+                    $param->SetCurrentValue($dispStart . ' - ' . $dispEnd);
+                    $paramHandled[$idx] = true;
+                    \Log::info("[DEBUG REPORT] ---> Berhasil Set Param Range (string): {$dispStart} - {$dispEnd}");
+                    return true;
+                } catch (\Exception $ex2) {
+                    \Log::warning("[DEBUG REPORT] Set Param Range #{$idx} gagal total: " . $ex2->getMessage());
+                    return false;
+                }
+            };
+            // Isi param multi-nilai (selectBrand/selectProduct/selectCustomer):
+            // tiap pilihan di-Add satu per satu; bila user pilih 'semua',
+            // diisi label 'Semua' agar header tidak kosong.
+            $setMultiParam = function ($param, $idx, $kind, array $values) use (&$paramHandled) {
+                $vals = !empty($values) ? array_values($values) : ['Semua'];
+                try {
+                    $param->ClearCurrentValueAndRange();
+                } catch (\Exception $ex) {
+                    \Log::info("[DEBUG REPORT] Clear {$kind} #{$idx} gagal (lanjut): " . $ex->getMessage());
+                }
+                $ok = 0;
+                foreach ($vals as $v) {
+                    try {
+                        $param->AddCurrentValue($v);
+                        $ok++;
+                    } catch (\Exception $ex) {
+                        \Log::info("[DEBUG REPORT] AddCurrentValue {$kind} '{$v}' gagal: " . $ex->getMessage());
+                    }
+                }
+                if ($ok > 0) {
+                    $paramHandled[$idx] = true;
+                    \Log::info("[DEBUG REPORT] ---> Berhasil Set Param {$kind}: {$ok} nilai");
+                    return true;
+                }
+                \Log::info("[DEBUG REPORT] Param {$kind} #{$idx} tidak ada nilai yang masuk.");
+                return false;
+            };
 
             // Normalisasi daftar officer sekali untuk dipakai param + formula.
             $officersNorm = is_array($ao) ? $ao : [$ao];
@@ -398,6 +525,8 @@ class ReportRequestController extends Controller
             }
             $expandedOfficers = array_values(array_unique($expandedOfficers));
 
+            // Putaran 1: cocokkan by-name (exact). Setiap Set dibungkus
+            // try/catch + format ganda via $setDateParam.
             for ($i = 1; $i <= $paramCount; $i++) {
                 $param = $creport->ParameterFields->Item($i);
 
@@ -406,87 +535,89 @@ class ReportRequestController extends Controller
 
                 \Log::info("[DEBUG REPORT] Memproses Parameter #{$i}: '{$param->Name}' (dibersihkan jadi: '{$cleanName}')");
 
-                switch ($cleanName) {
-
-                    // ── PARAMETER RANGE (Crystal range value: awal–akhir) ──
-                    // RPT market punya {?range_date} selain {?start_date}/{?end_date}.
-                    case 'range_date':
-                    case 'rangedate':
-                    case 'date_range':
-                    case 'daterange':
-                    case 'periode':
-                        try {
-                            $param->ClearCurrentValueAndRange();
-                            $param->AddCurrentRange($startDt, $endDt, 3);
-                            \Log::info("[DEBUG REPORT] ---> Berhasil Set Param Range: {$startDt} s/d {$endDt}");
-                        } catch (\Exception $ex) {
-                            \Log::info("[DEBUG REPORT] Set Param Range gagal: " . $ex->getMessage());
-                        }
-                        break;
-
-                    // ── PARAMETER TANGGAL (SEMUA VARIANT) ──
-                    // RPT lama (management) pakai display d-m-Y, bukan datetime.
-                    case 'start':
-                    case 'start_date':
-                    case 'tgl_awal':
-                    case 'tglawal':
-                    case 'datefrom':
-                    case 'fromdate':
-                    case 'periodestart':
-                    case 'periodestartdate':
-                    case 'periode_start':
-                    case 'periodeawal':
-                    case 'periode_awal':
-                        $param->SetCurrentValue($dispStart);
-                        \Log::info("[DEBUG REPORT] ---> Berhasil Set Param Start: {$dispStart}");
-                        break;
-
-                    case 'end':
-                    case 'end_date':
-                    case 'tgl_akhir':
-                    case 'tglakhir':
-                    case 'dateto':
-                    case 'todate':
-                    case 'periodeend':
-                    case 'periodeenddate':
-                    case 'periode_end':
-                    case 'periodeakhir':
-                    case 'periode_akhir':
-                        $param->SetCurrentValue($dispEnd);
-                        \Log::info("[DEBUG REPORT] ---> Berhasil Set Param End: {$dispEnd}");
-                        break;
-
+                if ($cleanName === 'selectbrand' || $cleanName === 'brand') {
+                    // ── PARAMETER PILIHAN BRAND (multi-nilai) ──
+                    $setMultiParam($param, $i, 'Brand', $brandsEff);
+                } elseif ($cleanName === 'selectproduct' || $cleanName === 'product' || $cleanName === 'varian') {
+                    // ── PARAMETER PILIHAN VARIAN/PRODUK (multi-nilai) ──
+                    $setMultiParam($param, $i, 'Product', $variansEff);
+                } elseif ($cleanName === 'selectcustomer' || $cleanName === 'customer') {
+                    // ── PARAMETER PILIHAN CUSTOMER (multi-nilai) ──
+                    $setMultiParam($param, $i, 'Customer', $customersEff);
+                } elseif ($isOfficerParam($cleanName)) {
                     // ── PARAMETER OFFICER ──
-                    case 'officer':
-                    case 'officersearch':
-                    case 'officer_search':
-                    case 'ao':
-                        $officerParamVal = count($expandedOfficers) > 0 ? $expandedOfficers[0] : '';
-                        if (!empty($officerParamVal) && strtolower($officerParamVal) !== 'all') {
-                            try {
-                                $param->SetCurrentValue($officerParamVal);
-                                \Log::info("[DEBUG REPORT] ---> Berhasil Set Param Officer: {$officerParamVal}");
-                            } catch (\Exception $ex) {
-                                \Log::info("[DEBUG REPORT] Skip Param Officer (mungkin multi-value): " . $ex->getMessage());
-                            }
+                    $paramHandled[$i] = true;
+                    $officerParamVal = count($expandedOfficers) > 0 ? $expandedOfficers[0] : '';
+                    if (!empty($officerParamVal) && strtolower($officerParamVal) !== 'all') {
+                        try {
+                            $param->SetCurrentValue($officerParamVal);
+                            \Log::info("[DEBUG REPORT] ---> Berhasil Set Param Officer: {$officerParamVal}");
+                        } catch (\Exception $ex) {
+                            \Log::info("[DEBUG REPORT] Skip Param Officer (mungkin multi-value): " . $ex->getMessage());
                         }
-                        break;
+                    }
+                } elseif ($isStartParam($cleanName) && !$isRangeParam($cleanName)) {
+                    // ── PARAMETER TANGGAL AWAL ──
+                    $setDateParam($param, $i, 'Start', $dispStart, $startDt);
+                } elseif ($isEndParam($cleanName) && !$isRangeParam($cleanName)) {
+                    // ── PARAMETER TANGGAL AKHIR ──
+                    $setDateParam($param, $i, 'End', $dispEnd, $endDt);
+                } elseif ($isRangeParam($cleanName)) {
+                    // ── PARAMETER RANGE (Crystal range value: awal–akhir) ──
+                    $setRangeParam($param, $i, 'Range');
+                } else {
+                    \Log::info("[DEBUG REPORT] Parameter tidak dikenali, dilewati pada putaran 1: '{$cleanName}'");
                 }
             }
 
-            $creport->DiscardSavedData();
-            $creport->VerifyOnEveryPrint = false;
+            // Putaran 2 (pengaman untuk RPT sales v1/v2/v3 dkk): param tanggal
+            // yang luput dari putaran 1 (nama tak standar) tetap diisi agar
+            // header periode tidak kosong. Param officer TIDAK PERNAH disentuh
+            // di sini — hanya yang berbau tanggal.
+            for ($i = 1; $i <= $paramCount; $i++) {
+                if (!empty($paramHandled[$i])) continue;
+                $param = $creport->ParameterFields->Item($i);
+                $cleanName = strtolower(preg_replace('/[^a-zA-Z0-9_]/', '', $param->Name));
+                if ($isOfficerParam($cleanName)) {
+                    $paramHandled[$i] = true;
+                    continue;
+                }
+                if ($cleanName === 'selectbrand' || $cleanName === 'brand') {
+                    $setMultiParam($param, $i, 'Brand(fallback)', $brandsEff);
+                } elseif ($cleanName === 'selectproduct' || $cleanName === 'product' || $cleanName === 'varian') {
+                    $setMultiParam($param, $i, 'Product(fallback)', $variansEff);
+                } elseif ($cleanName === 'selectcustomer' || $cleanName === 'customer') {
+                    $setMultiParam($param, $i, 'Customer(fallback)', $customersEff);
+                } elseif ($isRangeParam($cleanName)) {
+                    $setRangeParam($param, $i, 'Range(fallback)');
+                } elseif ($isEndParam($cleanName)) {
+                    $setDateParam($param, $i, 'End(fallback)', $dispEnd, $endDt);
+                } elseif ($isStartParam($cleanName)) {
+                    $setDateParam($param, $i, 'Start(fallback)', $dispStart, $startDt);
+                } else {
+                    \Log::warning("[DEBUG REPORT] Parameter #{$i} '{$param->Name}' tidak dikenali sebagai tanggal/officer — dibiarkan kosong. Laporkan nama ini agar ditambahkan.");
+                }
+            }
+
             $creport->EnableParameterPrompting = false;
 
-            // Fallback index-based untuk RPT market yang nama parameternya tidak
-            // standar: ParameterFields(2)=periode awal, (3)=periode akhir (d-m-Y).
+            // Fallback index-based (warisan RPT market: ParameterFields(2)=awal,
+            // (3)=akhir). Hanya jalan bila kedua index itu belum tertangani
+            // dan namanya bukan param officer — anti salah tembak.
             if (!empty($config['display_date_param']) && $paramCount >= 3) {
-                try {
-                    $creport->ParameterFields(2)->SetCurrentValue($dispStart);
-                    $creport->ParameterFields(3)->SetCurrentValue($dispEnd);
-                    \Log::info("[DEBUG REPORT] ---> Fallback Set Param idx2/idx3: {$dispStart} / {$dispEnd}");
-                } catch (\Exception $ex) {
-                    \Log::info("[DEBUG REPORT] Fallback idx2/idx3 gagal: " . $ex->getMessage());
+                foreach ([2 => [$dispStart, $startDt, 'Start'], 3 => [$dispEnd, $endDt, 'End']] as $idx => $cfg) {
+                    if (!empty($paramHandled[$idx])) continue;
+                    try {
+                        $p = $creport->ParameterFields($idx);
+                        $cn = strtolower(preg_replace('/[^a-zA-Z0-9_]/', '', $p->Name));
+                        if ($isOfficerParam($cn)) {
+                            $paramHandled[$idx] = true;
+                            continue;
+                        }
+                        $setDateParam($p, $idx, $cfg[2] . '(idx)', $cfg[0], $cfg[1]);
+                    } catch (\Exception $ex) {
+                        \Log::info("[DEBUG REPORT] Fallback idx{$idx} gagal: " . $ex->getMessage());
+                    }
                 }
             }
     

@@ -14,8 +14,14 @@ class SalesOrderAwalTable extends Table
     public function query(Request $request)
     {
         $isSuperuser = Auth::user()->is_superuser;
+        $tab = $request->tab ?: 'default';
         $statusSoFilter = $request->status_so;
         $customerSoFilter = $request->customer_name;
+        $brandFilter = $request->brand_name;
+        $dateFrom = $request->date_from;
+        $dateTo = $request->date_to;
+        $bulan = $request->bulan;
+        $tahun = $request->tahun;
 
         $statusMap = [
             'AWAL' => 1,
@@ -27,16 +33,13 @@ class SalesOrderAwalTable extends Table
         $model = SalesOrder::where('penjualan_so.type_so', 'nonppn')
             ->where('penjualan_so.so_indent', SalesOrder::INDENT['NO'])
             ->where('penjualan_so.is_archived', 0)
-            ->whereIn('penjualan_so.status', array_values($statusMap))
             ->leftJoin('master_customer_other_addresses', 'penjualan_so.customer_other_address_id', '=', 'master_customer_other_addresses.id')
             ->select(
                 'penjualan_so.id AS id', 
                 'penjualan_so.so_code AS so_code', 
                 'penjualan_so.code AS code', 
-                'penjualan_so.brand_name AS nota_brand', 
-                'penjualan_so.approval_mou AS approval_mou', 
-                'penjualan_so.approval_mou_status AS approval_mou_status', 
-                'master_customer_other_addresses.name AS customer_name', 
+                'penjualan_so.brand_name AS nota_brand',
+                'master_customer_other_addresses.name AS customer_name',
                 'master_customer_other_addresses.text_kota AS customer_kota', 
                 'penjualan_so.customer_other_address_id AS customer_id', 
                 'penjualan_so.created_at AS so_created_at', 
@@ -83,26 +86,98 @@ class SalesOrderAwalTable extends Table
                     END AS approval_mou
                 '),
                 DB::raw('
-                    CASE 
+                    CASE
                         WHEN penjualan_so.approval_mou_status = 0 THEN "NOT APPROVED"
                         WHEN penjualan_so.approval_mou_status = 1 THEN "APPROVED"
                         ELSE "-"
                     END AS approval_mou_status
                 '),
+                // Tgl resi terakhir (DO status 6) — dipakai tab history.
+                DB::raw('(SELECT MAX(po.updated_at) FROM penjualan_do AS po WHERE po.so_id = penjualan_so.id AND po.status = 6) AS resi_at'),
             );
 
         if (!$isSuperuser) {
             $model->where('penjualan_so.created_by', Auth::id());
         }
 
-        if ($statusSoFilter && isset($statusMap[$statusSoFilter])) {
-            $model->where('penjualan_so.status', $statusMap[$statusSoFilter]);
-        } elseif (!$statusSoFilter) {
-            $model->whereDate('penjualan_so.created_at', Carbon::now());
+        // ============ TAB: default / proses / history ============
+        if ($tab === 'history') {
+            // SO yang DO-nya sudah update resi (status 6). Default: bulan berjalan.
+            $model->whereExists(function ($q) use ($dateFrom, $dateTo, $bulan, $tahun) {
+                $q->select(DB::raw(1))
+                    ->from('penjualan_do AS po')
+                    ->whereColumn('po.so_id', 'penjualan_so.id')
+                    ->where('po.status', 6);
+                if ($dateFrom && $dateTo) {
+                    $q->whereDate('po.updated_at', '>=', $dateFrom)
+                      ->whereDate('po.updated_at', '<=', $dateTo);
+                } else {
+                    $q->whereMonth('po.updated_at', $bulan ?: Carbon::now()->month)
+                      ->whereYear('po.updated_at', $tahun ?: Carbon::now()->year);
+                }
+            });
+            $model->orderByDesc('resi_at');
+        } elseif ($tab === 'proses') {
+            // (a) Draft/revisi lewat hari + (b) sudah dilanjutkan tapi belum update resi.
+            $model->where(function ($q) {
+                $q->where(function ($q2) {
+                    $q2->whereIn('penjualan_so.status', [1, 3])
+                       ->whereDate('penjualan_so.created_at', '<', Carbon::today());
+                })->orWhere(function ($q2) {
+                    $q2->whereIn('penjualan_so.status', [2, 4])
+                       ->whereNotExists(function ($q3) {
+                           $q3->select(DB::raw(1))
+                               ->from('penjualan_do AS po')
+                               ->whereColumn('po.so_id', 'penjualan_so.id')
+                               ->where('po.status', 6);
+                       });
+                });
+            });
+            if ($statusSoFilter && isset($statusMap[$statusSoFilter])) {
+                $model->where('penjualan_so.status', $statusMap[$statusSoFilter]);
+            }
+            $this->applySoDateFilter($model, $dateFrom, $dateTo, $bulan, $tahun);
+        } else {
+            // Default: draft (AWAL + REVISI) yang belum terproses, default hari ini.
+            $model->whereIn('penjualan_so.status', [1, 3]);
+            if ($statusSoFilter && isset($statusMap[$statusSoFilter])) {
+                $model->where('penjualan_so.status', $statusMap[$statusSoFilter]);
+            }
+            if ($dateFrom && $dateTo) {
+                $model->whereDate('penjualan_so.created_at', '>=', $dateFrom)
+                      ->whereDate('penjualan_so.created_at', '<=', $dateTo);
+            } elseif (!$statusSoFilter) {
+                $model->whereDate('penjualan_so.created_at', Carbon::today());
+            }
         }
 
         if ($customerSoFilter) {
             $model->where('master_customer_other_addresses.name', 'like', '%' . $customerSoFilter . '%');
+        }
+
+        if ($brandFilter) {
+            $model->where('penjualan_so.brand_name', 'like', '%' . $brandFilter . '%');
+        }
+
+        return $model;
+    }
+
+    /**
+     * Filter tanggal (rentang prioritas, lalu bulan+tahun) pada created_at SO.
+     * Dipakai tab proses agar bisa kombinasi bulan/tahun berjalan maupun beda.
+     */
+    protected function applySoDateFilter($model, $dateFrom, $dateTo, $bulan, $tahun)
+    {
+        if ($dateFrom && $dateTo) {
+            $model->whereDate('penjualan_so.created_at', '>=', $dateFrom)
+                  ->whereDate('penjualan_so.created_at', '<=', $dateTo);
+        } elseif ($bulan || $tahun) {
+            if ($bulan) {
+                $model->whereMonth('penjualan_so.created_at', $bulan);
+            }
+            if ($tahun) {
+                $model->whereYear('penjualan_so.created_at', $tahun);
+            }
         }
 
         return $model;
@@ -119,6 +194,12 @@ class SalesOrderAwalTable extends Table
                 'display' => Carbon::parse($model->so_created_at)->format('d/m/Y'),
                 'timestamp' => $model->so_created_at
             ];
+        });
+
+        $table->editColumn('resi_at', function ($model) {
+            return $model->resi_at
+                ? Carbon::parse($model->resi_at)->format('d/m/Y H:i')
+                : '-';
         });
 
         $table->filterColumn('sales', function($query, $keyword) {
