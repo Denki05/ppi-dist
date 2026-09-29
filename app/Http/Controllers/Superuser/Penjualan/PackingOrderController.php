@@ -580,6 +580,12 @@ class PackingOrderController extends Controller
 
                 $total_discount_idr = ceil(( $idr_total * $discount_1 ) + (($idr_total - ($idr_total * $discount_1)) * $discount_2) + $discount_idr);
 
+                // Nominal diskon dihitung ulang dari persen x subtotal agar tidak stale
+                // (kasus invoice minus: discount_1_idr tersimpan 100x lipat sementara
+                // persen & total tidak sinkron). Sama seperti reset_cost_if_change_idr_rate().
+                $discount_1_idr = ceil($idr_total * $discount_1);
+                $discount_2_idr = ceil(($idr_total - $discount_1_idr) * $discount_2);
+
                 // PPN dinamis sesuai persen input (dulu hardcode 10%).
                 if($ppn_percent > 0){
                     $ppn = ceil(($idr_total - $total_discount_idr ) * ($ppn_percent / 100));
@@ -587,7 +593,7 @@ class PackingOrderController extends Controller
                 else{
                     $ppn = 0;
                 }
-                
+
                 $purchase_total_idr = ceil($idr_total - $total_discount_idr - $voucher_idr - $cashback_idr + $ppn);
                 $grand_total_idr = ceil($purchase_total_idr + $delivery_cost_idr + $other_cost_idr);
 
@@ -597,11 +603,18 @@ class PackingOrderController extends Controller
                     goto ResultData;
                 }
 
-                
+                if($grand_total_idr <= 0){
+                    $data_json["IsError"] = TRUE;
+                    $data_json["Message"] = "Grand total tidak valid (minus/nol), periksa diskon.";
+                    goto ResultData;
+                }
+
 
                 $data = [
                     'discount_1' => trim(htmlentities($post["discount_1"])),
                     'discount_2' => trim(htmlentities($post["discount_2"])),
+                    'discount_1_idr' => trim(htmlentities($discount_1_idr)),
+                    'discount_2_idr' => trim(htmlentities($discount_2_idr)),
                     'discount_idr' => trim(htmlentities($discount_idr)),
                     'total_discount_idr' => trim(htmlentities($total_discount_idr)),
                     'ppn' => trim(htmlentities($ppn)),
@@ -745,6 +758,11 @@ class PackingOrderController extends Controller
 
                 $total_discount_idr = ceil(( $idr_total * $discount_1 ) + (($idr_total - ($idr_total * $discount_1)) * $discount_2) + $discount_idr);
 
+                // Nominal diskon dihitung ulang dari persen x subtotal agar tidak stale
+                // (kasus invoice minus). Sama seperti reset_cost_if_change_idr_rate().
+                $discount_1_idr = ceil($idr_total * $discount_1);
+                $discount_2_idr = ceil(($idr_total - $discount_1_idr) * $discount_2);
+
                 // PPN dinamis sesuai persen input (dulu hardcode 10%).
                 if($ppn_percent > 0){
                     $ppn = ceil(($idr_total - $total_discount_idr ) * ($ppn_percent / 100));
@@ -752,19 +770,27 @@ class PackingOrderController extends Controller
                 else{
                     $ppn = 0;
                 }
-                
+
                 $purchase_total_idr = ceil($idr_total - $total_discount_idr - $voucher_idr - $cashback_idr + $ppn);
                 $grand_total_idr = ceil($purchase_total_idr + $delivery_cost_idr);
-                
+
                 if($total_discount_idr > $grand_total_idr){
                     $data_json["IsError"] = TRUE;
                     $data_json["Message"] = "Total Discount melebihi IDR total item pembelian";
                     goto ResultData;
                 }
 
+                if($grand_total_idr <= 0){
+                    $data_json["IsError"] = TRUE;
+                    $data_json["Message"] = "Grand total tidak valid (minus/nol), periksa diskon.";
+                    goto ResultData;
+                }
+
                 $data = [
                     'discount_1' => trim(htmlentities($post["discount_1"])),
                     'discount_2' => trim(htmlentities($post["discount_2"])),
+                    'discount_1_idr' => trim(htmlentities($discount_1_idr)),
+                    'discount_2_idr' => trim(htmlentities($discount_2_idr)),
                     'discount_idr' => trim(htmlentities($discount_idr)),
                     'total_discount_idr' => trim(htmlentities($total_discount_idr)),
                     'ppn' => trim(htmlentities($ppn)),
@@ -1552,6 +1578,12 @@ class PackingOrderController extends Controller
         $other_cost_idr = $result->other_cost_idr;
         $grand_total_idr = ceil($purchase_total_idr + $delivery_cost_idr + $other_cost_idr);
 
+        // Jangan simpan nota minus/nol hasil hitung ulang kurs (kasus invoice
+        // minus). Lempar agar transaksi rollback & user dapat pesan error.
+        if ($grand_total_idr <= 0) {
+            throw new \Exception('Grand total hasil hitung ulang kurs tidak valid (minus/nol), periksa diskon & item DO.');
+        }
+
         $data = [
             'discount_1_idr' => $discount_1_idr,      // ✅ ditambahkan
             'discount_2_idr' => $discount_2_idr,      // ✅ ditambahkan
@@ -1870,6 +1902,11 @@ class PackingOrderController extends Controller
         $detail  = PackingOrderDetail::where('do_id', $do_id)->first();
 
         if (!$packing || !$detail) {
+            return;
+        }
+
+        // Jangan buat/sinkron nota minus/nol (kasus invoice minus).
+        if ((float) ($detail->grand_total_idr ?? 0) <= 0) {
             return;
         }
 

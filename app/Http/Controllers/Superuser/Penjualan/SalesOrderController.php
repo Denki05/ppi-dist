@@ -735,9 +735,40 @@ class SalesOrderController extends Controller
                 // (misal grand total kosong karena kalkulasi JS belum jalan) tidak
                 // menyisakan SO tertutup / DO dengan grand_total 0.
                 $closingService->validateClosingRequest($request, $errors);
-                // Guard silang: pastikan diskon sudah masuk ke grand total
-                // (mencegah terulangnya kasus Depo Aroma).
+                // Hitung ulang otoritatif di backend: nominal disc/grand dari
+                // browser TIDAK dipercaya (kasus invoice 61079: disc 100x lipat
+                // karena kalkulasi JS stale). Yang disimpan selalu hasil ini.
+                $totals = null;
+                $autoCorrected = false;
                 if (empty($errors)) {
+                    $totals = $closingService->calculateClosingTotals($request, $errors);
+                }
+                if (empty($errors) && $totals) {
+                    // Bandingkan dengan kiriman browser untuk audit/warning.
+                    $tol = max(1000, round($totals['subtotal'] * 0.001));
+                    $grandReq = (float) $closingService->cleanCurrency($request->grand_total_idr);
+                    $discAgenReq = (float) $closingService->cleanCurrency($request->disc_agen_idr);
+                    if (abs($grandReq - $totals['grand_total_idr']) > $tol
+                        || abs($discAgenReq - $totals['disc_agen_idr']) > $tol) {
+                        $autoCorrected = true;
+                        \Log::warning('tutup_so auto-correct totals', [
+                            'so_id' => $request->id,
+                            'user_id' => Auth::id(),
+                            'grand_req' => $grandReq,
+                            'grand_calc' => $totals['grand_total_idr'],
+                            'disc_agen_req' => $discAgenReq,
+                            'disc_agen_calc' => $totals['disc_agen_idr'],
+                        ]);
+                    }
+                    // Timpa kiriman browser dengan hasil hitungan backend.
+                    $fmt = function ($v) { return number_format((float) $v, 0, ',', '.'); };
+                    $request->merge([
+                        'disc_agen_idr' => $fmt($totals['disc_agen_idr']),
+                        'disc_kemasan_idr' => $fmt($totals['disc_kemasan_idr']),
+                        'subtotal_2' => $fmt($totals['subtotal_2']),
+                        'grand_total_idr' => $fmt($totals['grand_total_idr']),
+                    ]);
+                    // Asertasi akhir: harus lolos karena sudah disamakan.
                     $closingService->validateClosingTotals($request, $errors);
                 }
                 if ($errors) {
@@ -748,8 +779,14 @@ class SalesOrderController extends Controller
                     return $this->response(400, $response);
                 }
 
+                // Snapshot status revisi SEBELUM prepareClosing (ia me-reset
+                // count_rev ke 0 bila tanpa keep_old_code). Dipakai agar tutup
+                // ulang sesudah revisi selalu pakai ulang DO revisi, bukan
+                // bikin DO baru dengan do_code sama (kasus 6I076 ganda).
+                $wasRevised = ((int) $sales_order->count_rev === 1);
+
                 $sales_order = $closingService->prepareClosing($sales_order, $request);
-                $packing_order = $closingService->getOrCreatePackingOrder($sales_order, $request);
+                $packing_order = $closingService->getOrCreatePackingOrder($sales_order, $request, $wasRevised);
 
                 $repeaterData = collect($request->repeater)->map(function($item) use ($packing_order) {
                     $item['do_id'] = $packing_order->id;
@@ -807,9 +844,14 @@ class SalesOrderController extends Controller
                 } catch (\Exception $pushEx) {
                 }
 
-                $response['notification'] = [
-                    'alert' => 'notify', 'type' => 'success', 'content' => 'Success',
-                ];
+                $response['notification'] = $autoCorrected
+                    ? [
+                        'alert' => 'notify', 'type' => 'warning',
+                        'content' => 'Tersimpan dengan koreksi otomatis: angka diskon/grand total dari layar tidak sesuai hitungan, sudah dibetulkan mengikuti kalkulasi sistem.',
+                    ]
+                    : [
+                        'alert' => 'notify', 'type' => 'success', 'content' => 'Success',
+                    ];
                 $response['redirect_to'] = route('superuser.penjualan.sales_order.index_lanjutan');
                 return $this->response(200, $response);
 

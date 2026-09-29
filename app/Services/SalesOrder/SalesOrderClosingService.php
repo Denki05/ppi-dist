@@ -133,6 +133,78 @@ class SalesOrderClosingService
     }
 
     /**
+     * Hitung ulang total tutup SO dari nol di backend (otoritatif).
+     * Browser hanya preview: nominal disc/grand yang dikirim user TIDAK dipercaya,
+     * yang disimpan selalu hasil hitungan ini. Mencegah terulangnya kasus
+     * invoice 61079 (discount_1_idr 100x lipat karena kalkulasi JS stale).
+     *
+     * Return array hasil hitungan, atau null + $errors terisi bila fatal
+     * (kurs invalid, item kosong, subtotal/grand tidak valid).
+     */
+    public function calculateClosingTotals($request, &$errors)
+    {
+        $repeater = $request->repeater;
+        if (is_string($repeater)) {
+            $repeater = json_decode($repeater, true);
+        }
+        if (empty($repeater) || !is_array($repeater)) {
+            $errors[] = 'Item sales order kosong, kalkulasi tidak bisa divalidasi!';
+            return null;
+        }
+
+        $kurs = (float) $this->cleanCurrency($request->idr_rate);
+        if ($kurs <= 0) {
+            $errors[] = 'Kurs tidak valid, kalkulasi tidak bisa divalidasi!';
+            return null;
+        }
+
+        // Subtotal: mirror processItems & JS count_per_item (percent_disc = 0).
+        $subtotal = 0;
+        foreach ($repeater as $item) {
+            $doQty = (float) ($item['do_qty'] ?? 0);
+            if ($doQty <= 0) {
+                continue;
+            }
+            $price = (float) ($item['price'] ?? 0);
+            $usdDisc = (float) ($item['usd_disc'] ?? 0);
+            $lineDiscUsd = $usdDisc * $doQty;
+            $subtotal += round(($doQty * $price - $lineDiscUsd) * $kurs);
+        }
+
+        if ($subtotal <= 0) {
+            $errors[] = 'Subtotal hasil kalkulasi nol, periksa qty/harga/kurs!';
+            return null;
+        }
+
+        $d1pct = (float) ($request->disc_agen_percent ?? 0);
+        $d2pct = (float) ($request->disc_kemasan_percent ?? 0);
+        $tambahan = (float) $this->cleanCurrency($request->disc_tambahan_idr);
+        $voucher = (float) $this->cleanCurrency($request->voucher_idr);
+        $delivery = (float) $this->cleanCurrency($request->delivery_cost_idr);
+
+        $discAgen = round($subtotal * ($d1pct / 100));
+        $discKemasan = round(($subtotal - $discAgen) * ($d2pct / 100));
+        $subtotal2 = $subtotal - $discAgen - $discKemasan;
+        $grand = $subtotal2 - $tambahan - $voucher + $delivery;
+
+        if ($grand <= 0) {
+            $errors[] = 'Grand total hasil kalkulasi tidak valid (minus/nol), periksa diskon!';
+            return null;
+        }
+
+        return [
+            'subtotal' => $subtotal,
+            'disc_agen_idr' => $discAgen,
+            'disc_kemasan_idr' => $discKemasan,
+            'subtotal_2' => $subtotal2,
+            'disc_tambahan_idr' => $tambahan,
+            'voucher_idr' => $voucher,
+            'delivery_cost_idr' => $delivery,
+            'grand_total_idr' => $grand,
+        ];
+    }
+
+    /**
      * Process stock reservation & release for SO items
      * Returns [stockLogs, mutasiItems]
      */
@@ -428,9 +500,13 @@ class SalesOrderClosingService
     /**
      * Get or create PackingOrder for closing
      */
-    public function getOrCreatePackingOrder($salesOrder, $request)
+    public function getOrCreatePackingOrder($salesOrder, $request, $forceReuse = false)
     {
-        $isRevision = ($salesOrder->count_rev == 0 && $request->has('keep_old_code'));
+        // $forceReuse = snapshot count_rev SEBELUM prepareClosing me-reset-nya ke 0.
+        // Tanpa ini, tutup ulang sesudah revisi yang tanpa centang "Previous Code"
+        // membuat PackingOrder BARU dengan do_code sama (kasus 6I076 ganda:
+        // 1 baris Revisi + 1 baris Packed), padahal harus pakai ulang DO revisi.
+        $isRevision = $forceReuse || ($salesOrder->count_rev == 0 && $request->has('keep_old_code'));
 
         if ($isRevision || $salesOrder->count_rev == 1) {
             $packing_order = PackingOrder::where('so_id', $salesOrder->id)->first();
