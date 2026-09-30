@@ -115,18 +115,18 @@ class SalesOrderUpdateService
      */
     protected function deleteOldItems($soId)
     {
-        $search_so_items = SalesOrderItem::where('so_id', $soId)->get();
+        $search_so_items = \App\Entities\Penjualan\SalesOrderItem::where('so_id', $soId)->get();
         if ($search_so_items->isNotEmpty()) {
             foreach ($search_so_items as $search_so_item) {
-                $get_pivot_kontrak = SalesOrderKontrakPivot::where('so_item_id', $search_so_item->id)->get();
+                $get_pivot_kontrak = \App\Entities\Penjualan\SalesOrderKontrakPivot::where('so_item_id', $search_so_item->id)->get();
                 foreach ($get_pivot_kontrak as $row) {
-                    SalesOrderKontrakPivot::where('so_item_id', $row->so_item_id)->delete();
+                    \App\Entities\Penjualan\SalesOrderKontrakPivot::where('so_item_id', $row->so_item_id)->delete();
                 }
             }
         }
 
-        SalesOrderItem::where('so_id', $soId)->update(['status' => 0]);
-        SalesOrderItem::where('so_id', $soId)->delete();
+        \App\Entities\Penjualan\SalesOrderItem::where('so_id', $soId)->update(['status' => 0]);
+        \App\Entities\Penjualan\SalesOrderItem::where('so_id', $soId)->delete();
     }
 
     /**
@@ -139,6 +139,19 @@ class SalesOrderUpdateService
         $expectedPackagingId = isset($post['packaging_id']) && is_numeric($post['packaging_id'])
             ? (int) $post['packaging_id']
             : null;
+        // Validasi ketat: kemasan wajib dipilih & harus aktif (mencegah bypass + data revisi yatim).
+        if (empty($expectedPackagingId)) {
+            return ['success' => false, 'message' => 'Kemasan wajib dipilih sebelum menyimpan SO.'];
+        }
+        $masterPackaging = \App\Entities\Master\Packaging::where('id', $expectedPackagingId)
+            ->where('status', \App\Entities\Master\Packaging::STATUS['ACTIVE'])
+            ->first();
+        if (!$masterPackaging) {
+            return ['success' => false, 'message' => 'Kemasan yang dipilih tidak valid / tidak aktif.'];
+        }
+        // Penanda revisi: jika SO hasil revisi DO (count_rev=1), kemasan boleh diubah
+        // HANYA sebelum tutup ulang — item lama wajib sudah disesuaikan (dicek per-baris di bawah).
+        $isRevision = ((int) ($salesOrder->count_rev ?? 0) === 1);
         for ($i = 0; $i < sizeof($post["sku"]); $i++) {
             // Jaring pengaman: item harus milik brand header (frontend bisa di-bypass)
             $pack = ProductPack::with('product')->where('id', $post["sku"][$i])->first();
@@ -153,14 +166,19 @@ class SalesOrderUpdateService
 
             // Jaring pengaman: item non-kontrak harus ikut kemasan awal SO
             // (frontend sudah difilter, ini mencegah bypass via devtools).
+            // Berlaku juga untuk SO revisi (count_rev=1): baris lama yang masih
+            // kemasan lama wajib dihapus dulu, tidak bisa campur.
             $isKontrak = isset($post['so_kontrak_value'][$i]) && (string) $post['so_kontrak_value'][$i] === '1';
-            if (!$isKontrak && $expectedPackagingId) {
+            if (!$isKontrak) {
                 $submittedPackagingId = isset($post['packaging'][$i]) && is_numeric($post['packaging'][$i])
                     ? (int) $post['packaging'][$i]
                     : null;
-                if ($submittedPackagingId !== $expectedPackagingId) {
+                // Cek ganda: kiriman form + master ProductPack aktual.
+                $actualPackagingId = isset($pack->packaging_id) ? (int) $pack->packaging_id : null;
+                if ($submittedPackagingId !== $expectedPackagingId || $actualPackagingId !== $expectedPackagingId) {
                     $code = $pack->code ?? $post["sku"][$i];
-                    return ['success' => false, 'message' => 'Item <b>' . e($code) . '</b> kemasannya tidak sesuai dengan kemasan SO awal. Hapus baris tersebut dan pilih ulang produk.'];
+                    $extra = $isRevision ? ' (SO revisi: hapus baris kemasan lama dulu)' : '';
+                    return ['success' => false, 'message' => 'Item <b>' . e($code) . '</b> kemasannya tidak sesuai dengan kemasan SO (' . e($masterPackaging->pack_name) . ')' . $extra . '. Hapus baris tersebut dan pilih ulang produk.'];
                 }
             }
 

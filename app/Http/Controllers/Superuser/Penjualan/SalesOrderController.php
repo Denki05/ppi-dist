@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use App\Entities\Penjualan\SalesOrder;
 use App\Entities\Penjualan\SalesOrderItem;
+use App\Entities\Penjualan\SalesOrderKontrakPivot;
 use App\Entities\Penjualan\PackingOrderItem;
 use App\Entities\Penjualan\PackingOrderDetail;
 use App\Entities\Setting\UserMenu;
@@ -96,16 +97,26 @@ class SalesOrderController extends Controller
     private function getSoProgressQuery(Request $request)
     {
         $filter_periode = $request->filter_periode ?? 'harian';
-        $query = \App\Entities\Penjualan\PackingOrder::query();
+        $query = \App\Entities\Penjualan\PackingOrder::query()
+            ->leftJoin('penjualan_so as so', 'so.id', '=', 'penjualan_do.so_id')
+            ->select('penjualan_do.*');
 
         if ($filter_periode == 'harian') {
-            $query->whereDate('created_at', Carbon\Carbon::today());
+            $query->whereDate('penjualan_do.created_at', Carbon\Carbon::today());
         } elseif ($filter_periode == 'bulanan') {
-            $query->whereMonth('created_at', Carbon\Carbon::now()->month)
-                ->whereYear('created_at', Carbon\Carbon::now()->year);
+            $query->whereMonth('penjualan_do.created_at', Carbon\Carbon::now()->month)
+                ->whereYear('penjualan_do.created_at', Carbon\Carbon::now()->year);
         } elseif ($filter_periode == 'custom' && $request->tanggal_dari && $request->tanggal_sampai) {
-            $query->whereBetween('created_at', [$request->tanggal_dari, $request->tanggal_sampai]);
+            $query->whereBetween('penjualan_do.created_at', [$request->tanggal_dari, $request->tanggal_sampai]);
         }
+
+        // Hide DO Revisi (status 7) kalau SO-nya sudah dikembalikan ke AWAL (1/3),
+        // tetap tampil kalau masih di LANJUTAN/TUTUP (2/4) sebelum tutup ulang.
+        $query->where(function ($q) {
+            $q->where('penjualan_do.status', '!=', 7)
+              ->orWhereNull('so.id')
+              ->orWhereIn('so.status', [2, 4]);
+        });
 
         return $query;
     }

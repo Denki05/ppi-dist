@@ -27,14 +27,53 @@ class SalesOrderClosingService
     }
 
     /**
-     * Clean currency value: remove dots, replace comma with dot
+     * Clean currency value, tahan format ID maupun EN.
+     * ID: "18.025" / "18.025,00" -> 18025 | EN: "18025.00" / "1,802,500.00" -> 18025 / 1802500.
+     * Aturan: bila titik & koma sama-sama ada, pemisah TERAKHIR adalah desimal.
+     * Kasus nyata 6I083: "18025.00" dulu terbaca 1802500 (100x) karena semua titik dibuang.
      */
     public function cleanCurrency($value)
     {
-        if (empty($value)) return 0;
-        $value = str_replace('.', '', $value);
-        $value = str_replace(',', '.', $value);
-        return $value;
+        if ($value === null || $value === '') return 0;
+        // Hati-hati: "18.025" is_numeric (18.025 EN) tapi bermakna 18025 (ID),
+        // jadi shortcut hanya untuk angka polos tanpa titik/koma.
+        if (is_numeric($value) && strpos((string) $value, '.') === false && strpos((string) $value, ',') === false) {
+            return $value + 0;
+        }
+        $s = trim((string) $value);
+        $s = str_replace(["\xc2\xa0", ' ', 'Rp', 'RP', 'rp', 'IDR', 'Idr', 'idr'], '', $s);
+        if ($s === '' || $s === '-' || $s === '.' || $s === ',') return 0;
+        $hasDot = strpos($s, '.') !== false;
+        $hasComma = strpos($s, ',') !== false;
+        if ($hasDot && $hasComma) {
+            if (strrpos($s, ',') > strrpos($s, '.')) {
+                // ID: titik ribuan, koma desimal.
+                $s = str_replace('.', '', $s);
+                $s = str_replace(',', '.', $s);
+            } else {
+                // EN: koma ribuan, titik desimal.
+                $s = str_replace(',', '', $s);
+            }
+        } elseif ($hasComma) {
+            if (substr_count($s, ',') > 1) {
+                $s = str_replace(',', '', $s);
+            } elseif (preg_match('/,\d{1,2}$/', $s)) {
+                $s = str_replace(',', '.', $s);
+            } else {
+                $s = str_replace(',', '', $s);
+            }
+        } else {
+            if (substr_count($s, '.') > 1) {
+                $s = str_replace('.', '', $s);
+            } elseif (!preg_match('/^\d{1,3}(\.\d{3})+$/', $s)) {
+                // Titik tunggal bukan pola ribuan -> desimal, biarkan.
+            } else {
+                $s = str_replace('.', '', $s);
+            }
+        }
+        $s = preg_replace('/[^0-9.\-]/', '', $s);
+        if ($s === '' || $s === '-' || $s === '.') return 0;
+        return $s + 0;
     }
 
     /**

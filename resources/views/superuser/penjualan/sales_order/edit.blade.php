@@ -70,13 +70,23 @@
 
           <div class="form-row">
             <div class="form-group col-md">
-              <label for="kemasan">Kemasan (mengikuti SO saat create)</label>
-              <input type="text" class="form-control bg-light" value="{{ $selected_packaging->pack_name ?? '-' }}" readonly>
-              <input type="hidden" name="packaging_id" id="packaging_id" value="{{ $selected_packaging->id ?? '' }}">
+              <label for="packaging_id">Kemasan (bisa diubah — ketat)</label>
+              <select class="js-select2 form-control" id="packaging_id" name="packaging_id" data-placeholder="Pilih Kemasan" required>
+                <option value=""></option>
+                @foreach($packaging as $kem)
+                <option value="{{ $kem->id }}" {{ (($selected_packaging->id ?? '') == $kem->id) ? 'selected' : '' }}>{{ $kem->pack_name }}</option>
+                @endforeach
+              </select>
+              <input type="hidden" id="packaging_id_old" value="{{ $selected_packaging->id ?? '' }}">
               @if(empty($selected_packaging))
-                <small class="text-muted">Kemasan tidak terdeteksi dari item SO — daftar produk menampilkan semua kemasan brand ini.</small>
+                <small class="text-muted">Kemasan tidak terdeteksi dari item SO — wajib pilih sebelum tambah produk.</small>
               @elseif(!empty($is_mixed_packaging) && $is_mixed_packaging)
-                <small class="text-warning">SO ini berisi campuran kemasan — filter produk mengikuti kemasan dominan ({{ $selected_packaging->pack_name }}).</small>
+                <small class="text-warning">SO ini berisi campuran kemasan — filter produk mengikuti kemasan dominan ({{ $selected_packaging->pack_name }}). Ganti kemasan akan mengosongkan baris non-kontrak.</small>
+              @else
+                <small class="text-muted">Ganti kemasan akan mengosongkan baris non-kontrak (kontrak dipertahankan).</small>
+              @endif
+              @if(($result->count_rev ?? 0) == 1)
+                <small class="text-danger d-block">SO hasil revisi ({{ $result->keep_code ?? '-' }}) — ganti kemasan hanya sebelum tutup ulang.</small>
               @endif
             </div>
           </div>
@@ -456,6 +466,62 @@
         } else {
           // Batal: kembalikan pilihan ke brand lama
           $('#brand_name').val(oldBrand).trigger('change');
+        }
+      });
+    });
+
+    // Ganti kemasan: validasi ketat — baris non-kontrak wajib dikosongkan, kontrak dipertahankan
+    $('#packaging_id').on('select2:select', function (e) {
+      var newPack = $(this).val();
+      var oldPack = $('#packaging_id_old').val();
+
+      if (newPack === oldPack) {
+        return;
+      }
+
+      if (!newPack) {
+        Swal.fire('Perhatian', 'Kemasan wajib dipilih.', 'warning');
+        $('#packaging_id').val(oldPack).trigger('change');
+        return;
+      }
+
+      // Hitung baris non-kontrak yang ada (value_kontrak / so_kontrak_value == 0)
+      var nonKontrakRows = [];
+      table.rows().every(function () {
+        var $row = $(this.node());
+        var v = $row.find('input[name="so_kontrak_value[]"]').val() || $row.find('input[name="value_kontrak[]"]').val() || '0';
+        if (String(v) !== '1') {
+          nonKontrakRows.push(this);
+        }
+      });
+
+      if (nonKontrakRows.length === 0) {
+        $('#packaging_id_old').val(newPack);
+        loadProductList();
+        return;
+      }
+
+      Swal.fire({
+        title: 'Ganti Kemasan?',
+        text: 'Mengganti kemasan akan menghapus ' + nonKontrakRows.length + ' baris non-kontrak. Baris kontrak dipertahankan. Lanjutkan?',
+        type: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#3085d6',
+        cancelButtonColor: '#d33',
+        confirmButtonText: 'Ya, ganti & hapus non-kontrak',
+        cancelButtonText: 'Batal'
+      }).then((result) => {
+        if (result.value || result.isConfirmed) {
+          // Hapus hanya baris non-kontrak (iterasi mundur agar index aman)
+          $(nonKontrakRows).each(function () {
+            table.row(this).remove();
+          });
+          table.draw();
+          $('#packaging_id_old').val(newPack);
+          loadProductList();
+          Swal.fire('Kemasan diganti', 'Baris non-kontrak dikosongkan. Silakan tambah produk dengan kemasan baru.', 'success');
+        } else {
+          $('#packaging_id').val(oldPack).trigger('change');
         }
       });
     });

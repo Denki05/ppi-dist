@@ -531,13 +531,10 @@
       let so_qty = parseFloat($('tr.index' + index + '').find('input[name="repeater[' + index + '][so_qty]"]').val());
       let val_usd_disc = parseFloat($('tr.index' + index + '').find('input[name="repeater[' + index + '][usd_disc]"]').val());
       let val_percent_disc = parseFloat($('tr.index' + index + '').find('input[name="repeater[' + index + '][percent_disc]"]').val());
-      // Hidden #idr_rate menyimpan angka bersih TANPA titik, tapi pertahankan
-      // pembersihan titik ribuan di sini agar tidak pernah terjadi kasus
-      // parseFloat("18.050") = 18.05 (kurs 18050 terbaca 18 rupiah) yang
-      // membuat subtotal layar kecil sementara backend (cleanCurrency)
-      // menghitung 18050 -> selisih miliaran.
-      let kursRaw = String($('#idr_rate').val() ?? '').replace(/\./g, '');
-      let kurs = parseFloat(kursRaw);
+      // Hidden #idr_rate menyimpan angka bersih; parse tahan format ID/EN
+      // (kasus 6I083: parseFloat("18.050") / buang-titik buta membuat kurs 100x).
+      let kursRaw = String($('#idr_rate').val() ?? '');
+      let kurs = parseInputKurs(kursRaw);
 
       if (isNaN(kurs)) kurs = 0;
       if (isNaN(val_usd_disc)) val_usd_disc = 0;
@@ -769,14 +766,41 @@
       return numberString.replace(/\B(?=(\d{3})+(?!\d))/g, '.');
     }
 
+    // Parse kurs tahan format ID ("18.025" / "18.025,00") maupun EN ("18025.00").
+    // Kasus nyata 6I083: "18025.00" dibuang titiknya jadi 1802500 (kurs 100x).
+    function parseInputKurs(raw) {
+      var s = String(raw == null ? '' : raw).replace(/[^\d.,]/g, '');
+      if (!s) return 0;
+      var hasDot = s.indexOf('.') !== -1, hasComma = s.indexOf(',') !== -1;
+      if (hasDot && hasComma) {
+        if (s.lastIndexOf(',') > s.lastIndexOf('.')) {
+          s = s.replace(/\./g, '').replace(',', '.');
+        } else {
+          s = s.replace(/,/g, '');
+        }
+      } else if (hasComma) {
+        if ((s.match(/,/g) || []).length > 1) s = s.replace(/,/g, '');
+        else if (/,\d{1,2}$/.test(s)) s = s.replace(',', '.');
+        else s = s.replace(/,/g, '');
+      } else {
+        if ((s.match(/\./g) || []).length > 1) s = s.replace(/\./g, '');
+        else if (!/^\d{1,3}(\.\d{3})+$/.test(s)) { /* titik desimal, biarkan */ }
+        else s = s.replace(/\./g, '');
+      }
+      var v = parseFloat(s);
+      return isNaN(v) ? 0 : v;
+    }
+
     $(document).on('input', '#idr_rate_display', function () {
+      // Hitung hidden dari NILAI KETIKAN mentah (sebelum diformat),
+      // agar "18025.00" terbaca 18025 bukan 1802500.
+      var kursVal = Math.round(parseInputKurs(this.value));
+      $('#idr_rate').val(kursVal ? String(kursVal) : '');
+
       var cursorFromEnd = this.value.length - this.selectionStart;
       this.value = formatInputKurs(this.value);
       var newPos = this.value.length - cursorFromEnd;
       this.setSelectionRange(newPos, newPos);
-
-      // Sinkron ke hidden field (angka bersih tanpa titik)
-      $('#idr_rate').val(this.value.replace(/\./g, ''));
 
       // Hitung ulang semua baris TANPA merubah angka diskon yang sudah diketik manual
       $('tbody tr').each(function (index, e) {
