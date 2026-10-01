@@ -74,6 +74,12 @@ function responded(notification = null) {
         log('div#alert-block is missing')
       } else {
         $('div#alert-block').append(html).hide().show('normal');
+        // Error muncul di atas halaman sedangkan tombol Save di bawah
+        // (form tutup_so panjang). Tanpa scroll, user mengira "tidak ada
+        // error". Scroll otomatis ke alert setiap ada pesan block.
+        try {
+          $('html, body').animate({ scrollTop: alert_block.offset().top - 80 }, 400);
+        } catch (e) { /* abaikan */ }
       }
 
       break;

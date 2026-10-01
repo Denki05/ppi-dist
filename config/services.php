@@ -42,12 +42,24 @@ return [
         // ASUMSI: ganti dengan ID superuser yang memang layak jadi "pencipta" SO dari API.
         'default_superuser_id' => env('AO_API_DEFAULT_SUPERUSER_ID', 1),
     ],
-
+    
+    // Kunci direktori user (login modul AO).
+    // Samakan USER_API_KEY di sini dengan AGENDA_TOKEN di .env AO.
+    'user_api' => [
+        'key' => env('USER_API_KEY', 'warungkopi123'),
+    ],
+    
     'ao_callback' => [
         // Push progress transaksi -> AO (best-effort, timeout 5 dtk).
         // Kosongkan untuk menonaktifkan push (AO tetap bisa polling via status).
         'url' => env('AO_CALLBACK_URL'),
         'key' => env('AO_CALLBACK_KEY', 'warungkopi@123'),
+    ],
+
+    // Notifikasi inbound ke modul AO (taskManagement) setelah mutasi berhasil.
+    'ao_module' => [
+        'notif_inbound_url' => env('AO_MODULE_NOTIF_URL'),
+        'api_key'           => env('AO_MODULE_API_KEY', ''),
     ],
 
 ];

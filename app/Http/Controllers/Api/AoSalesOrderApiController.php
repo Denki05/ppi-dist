@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Entities\Penjualan\PengajuanProforma;
 use App\Entities\Penjualan\SalesOrder;
 use App\Entities\Penjualan\SalesOrderItem;
 use App\Entities\Master\Product;
@@ -15,9 +16,155 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Storage;
 
 class AoSalesOrderApiController extends Controller
 {
+    /**
+     * Terima pengajuan proforma dari modul AO (taskManagement).
+     * POST /api/ao/pengajuan/receive (X-API-KEY).
+     * Idempoten via estimate_number unik — kirim ulang aman.
+     */
+    public function receivePengajuan(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            'estimate_number' => 'required|string|max:100',
+            'ao_pic' => 'nullable|string|max:100',
+            'prospect_id' => 'nullable|string|max:50',
+            'prospect_name' => 'required|string|max:255',
+            'perusahaan' => 'nullable|string|max:255',
+            'owner' => 'nullable|string|max:255',
+            'phone' => 'nullable|string|max:30',
+            'address' => 'nullable|string|max:255',
+            'city' => 'nullable|string|max:100',
+            'provinsi' => 'nullable|string|max:100',
+            'kecamatan' => 'nullable|string|max:100',
+            'kelurahan' => 'nullable|string|max:100',
+            'ktp' => 'required|digits:16',
+            'npwp' => 'nullable|digits:15',
+            'termin' => 'required|in:CASH,TEMPO_14,TEMPO_30',
+            'foto_ktp_ada' => 'nullable|boolean',
+            'foto_npwp_ada' => 'nullable|boolean',
+            'grand_total' => 'nullable|numeric|min:0',
+            'items' => 'nullable|array',
+            'submitted_at' => 'nullable|date',
+        ], [
+            'ktp.required' => 'KTP 16 digit wajib.',
+            'ktp.digits' => 'KTP harus 16 digit.',
+            'termin.in' => 'Termin tidak dikenal.',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'success' => false,
+                'message' => $validator->errors()->first(),
+                'errors' => $validator->errors(),
+            ], 422);
+        }
+
+        $items = $request->input('items', []);
+        if (!is_array($items)) {
+            $items = [];
+        }
+
+        $sudah = PengajuanProforma::where('estimate_number', $request->estimate_number)->first();
+        if ($sudah && $sudah->status !== PengajuanProforma::STATUS_MENUNGGU) {
+            return response()->json([
+                'success' => true,
+                'message' => 'Pengajuan sudah diproses (' . $sudah->status . '), kiriman ulang diabaikan.',
+                'pengajuan_id' => $sudah->id,
+                'status' => $sudah->status,
+            ]);
+        }
+
+        try {
+            $pengajuan = PengajuanProforma::updateOrCreate(
+                ['estimate_number' => $request->estimate_number],
+                [
+                    'ao_pic' => $request->input('ao_pic'),
+                    'prospect_id' => $request->input('prospect_id'),
+                    'prospect_name' => $request->prospect_name,
+                    'perusahaan' => $request->input('perusahaan'),
+                    'owner' => $request->input('owner'),
+                    'phone' => $request->input('phone'),
+                    'address' => $request->input('address'),
+                    'city' => $request->input('city'),
+                    'provinsi' => $request->input('provinsi'),
+                    'kecamatan' => $request->input('kecamatan'),
+                    'kelurahan' => $request->input('kelurahan'),
+                    'ktp' => $request->ktp,
+                    'npwp' => $request->input('npwp'),
+                    'termin' => $request->termin,
+                    'foto_ktp_ada' => (bool) $request->input('foto_ktp_ada', false),
+                    'foto_npwp_ada' => (bool) $request->input('foto_npwp_ada', false),
+                    'grand_total' => $request->input('grand_total', 0),
+                    'items_count' => count($items),
+                    'items_json' => empty($items) ? null : json_encode(array_values($items)),
+                    'submitted_at' => $request->input('submitted_at'),
+                    'status' => PengajuanProforma::STATUS_MENUNGGU,
+                ]
+            );
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Pengajuan diterima, menunggu verifikasi admin sales.',
+                'pengajuan_id' => $pengajuan->id,
+                'status' => $pengajuan->status,
+            ]);
+        } catch (\Exception $e) {
+            Log::error('receivePengajuan gagal', [
+                'estimate_number' => $request->input('estimate_number'),
+                'error' => $e->getMessage(),
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Gagal menyimpan pengajuan.',
+            ], 500);
+        }
+    }
+    
+    /**
+     * Terima foto KTP/NPWP untuk pengajuan yang masih menunggu.
+     * POST /api/ao/so-awal/pengajuan/{estimate_number}/dokumen (multipart, X-API-KEY)
+     */
+    public function receivePengajuanDokumen(Request $request, $estimate_number)
+    {
+        $pengajuan = PengajuanProforma::where('estimate_number', $estimate_number)->first();
+        if (!$pengajuan) {
+            return response()->json(['success' => false, 'message' => 'Pengajuan tidak ditemukan. Kirim pengajuan dulu.'], 404);
+        }
+        if ($pengajuan->status !== PengajuanProforma::STATUS_MENUNGGU) {
+            return response()->json(['success' => false, 'message' => 'Pengajuan sudah diproses, dokumen tidak bisa diubah.'], 422);
+        }
+
+        $validator = Validator::make($request->all(), [
+            'ktp_photo' => 'nullable|image|mimes:jpg,jpeg,png,webp|max:5120',
+            'npwp_photo' => 'nullable|image|mimes:jpg,jpeg,png,webp|max:5120',
+        ]);
+        if ($validator->fails()) {
+            return response()->json(['success' => false, 'message' => $validator->errors()->first()], 422);
+        }
+        if (!$request->hasFile('ktp_photo') && !$request->hasFile('npwp_photo')) {
+            return response()->json(['success' => false, 'message' => 'Tidak ada file yang dikirim.'], 422);
+        }
+
+        $update = [];
+        foreach (['ktp_photo' => 'foto_ktp_ada', 'npwp_photo' => 'foto_npwp_ada'] as $field => $flag) {
+            if ($request->hasFile($field)) {
+                $old = $pengajuan->{$field . '_path'};
+                $update[$field . '_path'] = $request->file($field)->store('pengajuan_proforma/' . $pengajuan->id, 'local');
+                $update[$flag] = true;
+                if ($old && Storage::disk('local')->exists($old)) {
+                    Storage::disk('local')->delete($old);
+                }
+            }
+        }
+        $pengajuan->update($update);
+
+        return response()->json(['success' => true, 'message' => 'Dokumen diterima.']);
+    }
+
     /**
      * List brand untuk dropdown di form AO.
      * GET /api/ao/so-awal/brands
@@ -665,7 +812,13 @@ class AoSalesOrderApiController extends Controller
             $so->type_transaction = $typeNameUp;
             $so->brand_name = $request->input('brand_name');
             $so->note = $request->input('note', $request->input('notes', $so->note));
-            $so->idr_rate = $this->parseNumber($request->input('kurs', $request->input('currency_rate', $so->idr_rate)));
+            $kursAo = $this->parseNumber($request->input('kurs', $request->input('currency_rate', $so->idr_rate)));
+            // SO non-PPN wajib kurs realistis (mencegah 1000x kekecilan, samakan validasi web).
+            if (($so->type_so ?? 'nonppn') !== 'ppn' && $kursAo < 1000) {
+                DB::rollBack();
+                return response()->json(['success' => false, 'message' => 'Kurs tidak valid. Gunakan angka penuh, cth: 18000'], 422);
+            }
+            $so->idr_rate = $kursAo;
             $so->disc_percent = $this->parseNumber($request->input('disc_percent', $request->input('discount_value', $so->disc_percent)));
             $so->disc_idr = $this->parseNumber($request->input('disc_idr', $so->disc_idr));
             $so->disc_usd = $this->parseNumber($request->input('disc_usd', $so->disc_usd));

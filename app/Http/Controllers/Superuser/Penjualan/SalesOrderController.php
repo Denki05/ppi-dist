@@ -725,9 +725,25 @@ class SalesOrderController extends Controller
     public function tutup_so(Request $request)
     {
         if ($request->ajax()) {
+            // Sesi habis di tengah pengisian form: Auth::user() null. Jangan
+            // biarkan jadi redirect HTML (silent di form.js), balas JSON 401.
+            if (!Auth::check() || !Auth::user()) {
+                $response['notification'] = [
+                    'alert' => 'block', 'type' => 'alert-danger', 'header' => 'Error',
+                    'content' => ['Sesi Anda telah habis. Silakan login ulang di tab baru, lalu klik Save kembali (data form tidak hilang).'],
+                ];
+                return $this->response(401, $response);
+            }
             if(Auth::user()->is_superuser == 0){
                 if(empty($this->access) || empty($this->access->user) || $this->access->can_read == 0){
-                    return redirect()->route('superuser.index')->with('error','Anda tidak punya akses untuk membuka menu terkait');
+                    // Request ajax WAJIB dibalas JSON, bukan redirect HTML,
+                    // supaya form.js bisa menampilkan notifikasi (redirect HTML
+                    // membuat save terlihat diam tanpa error).
+                    $response['notification'] = [
+                        'alert' => 'block', 'type' => 'alert-danger', 'header' => 'Error',
+                        'content' => ['Anda tidak punya akses untuk membuka menu terkait'],
+                    ];
+                    return $this->response(403, $response);
                 }
             }
 
@@ -739,7 +755,14 @@ class SalesOrderController extends Controller
                 $sales_order = SalesOrder::find($request->id);
 
                 if($sales_order === null){
-                    abort(404);
+                    DB::rollBack();
+                    // Jangan abort(404) HTML untuk ajax, balas JSON agar
+                    // form.js bisa menampilkan pesannya.
+                    $response['notification'] = [
+                        'alert' => 'block', 'type' => 'alert-danger', 'header' => 'Error',
+                        'content' => ['Sales Order tidak ditemukan (id: '.$request->id.')'],
+                    ];
+                    return $this->response(404, $response);
                 }
 
                 // Validasi dulu SEBELUM ada tulisan ke DB, supaya submit invalid
@@ -784,11 +807,42 @@ class SalesOrderController extends Controller
                 }
                 if ($errors) {
                     DB::rollBack();
+                    \Log::warning('tutup_so validation failed', [
+                        'so_id' => $request->id,
+                        'user_id' => Auth::id(),
+                        'errors' => $errors,
+                        'payload' => [
+                            'origin_warehouse_id' => $request->origin_warehouse_id,
+                            'rekening' => $request->rekening,
+                            'idr_rate' => $request->idr_rate,
+                            'disc_agen_percent' => $request->disc_agen_percent,
+                            'disc_agen_idr' => $request->disc_agen_idr,
+                            'disc_kemasan_percent' => $request->disc_kemasan_percent,
+                            'disc_kemasan_idr' => $request->disc_kemasan_idr,
+                            'disc_tambahan_idr' => $request->disc_tambahan_idr,
+                            'voucher_idr' => $request->voucher_idr,
+                            'delivery_cost_idr' => $request->delivery_cost_idr,
+                            'grand_total_idr' => $request->grand_total_idr,
+                            'repeater_count' => is_array($request->repeater) ? count($request->repeater) : null,
+                        ],
+                    ]);
                     $response['notification'] = [
                         'alert' => 'block', 'type' => 'alert-danger', 'header' => 'Error', 'content' => $errors,
                     ];
                     return $this->response(400, $response);
                 }
+
+                // Normalisasi nilai mentah browser SEBELUM disimpan:
+                // - idr_rate dibersihkan ("17.900" -> 17900) supaya yang
+                //   tersimpan di packing_order bukan 17.9 (salah 1000x).
+                // - select kosong ("") dijadikan null agar tidak error
+                //   constraint integer di DB (kasus Ekspedisi "None"/kosong).
+                $request->merge([
+                    'idr_rate' => (string) $closingService->cleanCurrency($request->idr_rate),
+                    'ekspedisi' => ($request->ekspedisi === '' ? null : $request->ekspedisi),
+                    'sales_senior_id' => ($request->sales_senior_id === '' ? null : $request->sales_senior_id),
+                    'sales_id' => ($request->sales_id === '' ? null : $request->sales_id),
+                ]);
 
                 // Snapshot status revisi SEBELUM prepareClosing (ia me-reset
                 // count_rev ke 0 bila tanpa keep_old_code). Dipakai agar tutup
@@ -869,6 +923,12 @@ class SalesOrderController extends Controller
             } catch (\Exception $e) {
                 DB::rollback();
                 $errors[] = $e->getMessage();
+                \Log::error('tutup_so exception', [
+                    'so_id' => $request->id,
+                    'user_id' => Auth::id(),
+                    'message' => $e->getMessage(),
+                    'file' => $e->getFile() . ':' . $e->getLine(),
+                ]);
 
                 if ($request->ajax()) {
                     $response['notification'] = [
@@ -883,6 +943,14 @@ class SalesOrderController extends Controller
                 return redirect()->back()->with('errors', $errors);
             }
         }
+
+        // Bukan ajax (misal header X-Requested-With hilang): jangan kembalikan
+        // null/HTML kosong yang membuat form.js diam. Balas JSON 400.
+        $response['notification'] = [
+            'alert' => 'block', 'type' => 'alert-danger', 'header' => 'Error',
+            'content' => ['Invalid request (non-ajax). Silakan refresh halaman lalu coba lagi.'],
+        ];
+        return $this->response(400, $response);
     }
 
     public function ajax_customer_detail(Request $request){

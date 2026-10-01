@@ -44,6 +44,17 @@
                 </button>
             </a>
 
+            @php $pgId = ($pengajuanMap ?? [])[(string) optional($row->member)->id] ?? null; @endphp
+            @if($pgId)
+            {{-- Shortcut batalkan langsung dari tab (menu pengajuan tetap bisa) --}}
+            <button type="button"
+                class="btn btn-sm btn-circle btn-alt-warning btn-batalkan-prospek"
+                data-pgid="{{ $pgId }}"
+                data-code="{{ $row->code }}"
+                title="Batalkan (Prospek) langsung dari sini">
+                <i class="fa fa-ban"></i>
+            </button>
+            @else
             <button type="button"
                 class="btn btn-sm btn-circle btn-alt-danger btn-delete-proforma"
                 data-id="{{ $row->id }}"
@@ -55,6 +66,7 @@
                     data-id="{{ $row->id }}" title="Cancel">
                 <i class="fa fa-undo"></i>
             </button>
+            @endif
         </td>
     </tr>
 

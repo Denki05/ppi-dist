@@ -36,7 +36,12 @@ class SalesOrderStoreService
         $insert->so_date = null;
         $insert->type_so = 'nonppn';
         $insert->approval_mou = $request->approval;
-        $insert->idr_rate = str_replace(',', '.', $request->kurs);
+        $kurs = \App\Helper\CustomHelper::parseKurs($request->kurs);
+        // SO non-PPN wajib kurs realistis (mencegah 1000x kekecilan akibat salah format ribuan).
+        if ($kurs < 1000) {
+            return ['success' => false, 'errors' => ['Kurs tidak valid (' . e($request->kurs) . '). Gunakan angka penuh, cth: 18000.'], 'sales_order' => null];
+        }
+        $insert->idr_rate = $kurs;
         $insert->note = $request->note_so;
         $insert->is_proforma = 0;
 
@@ -140,6 +145,19 @@ class SalesOrderStoreService
             }
 
             $is_free = ($request->free_product[$key] == 1);
+
+            // Validasi angka item (mencegah qty minus/nol dan harga/diskon negatif).
+            $qtyItem = (float) $request->qty[$key];
+            $priceItem = (float) $request->price[$key];
+            $discItem = (float) ($request->disc[$key] ?? 0);
+            if (!is_numeric($request->qty[$key]) || $qtyItem <= 0) {
+                $errors[] = 'Qty baris ' . ($key + 1) . ' wajib angka lebih dari 0.';
+                return $errors;
+            }
+            if ($priceItem < 0 || $discItem < 0) {
+                $errors[] = 'Price/Disc baris ' . ($key + 1) . ' tidak boleh minus.';
+                return $errors;
+            }
 
             $insertDetail = new SalesOrderItem;
             $insertDetail->so_id = $salesOrder->id;

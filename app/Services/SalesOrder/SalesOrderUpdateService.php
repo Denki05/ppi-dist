@@ -41,7 +41,10 @@ class SalesOrderUpdateService
         }
 
         if ($step == 1) {
-            $this->updateStep1($sales_order, $post);
+            $stepError = $this->updateStep1($sales_order, $post);
+            if ($stepError) {
+                return ['success' => false, 'message' => $stepError];
+            }
         } else if ($step == 2) {
             $this->updateStep2($sales_order, $post, $gudang);
         }
@@ -66,6 +69,7 @@ class SalesOrderUpdateService
 
     /**
      * Update step 1 fields
+     * Returns null jika OK, atau string pesan error jika validasi gagal.
      */
     protected function updateStep1($salesOrder, $post)
     {
@@ -73,10 +77,13 @@ class SalesOrderUpdateService
         $salesOrder->brand_name = trim(htmlentities($post["brand_name"]));
         $salesOrder->note = trim(htmlentities($post["note"]));
 
-        // Update kurs/IDR rate
-        $idr_rate_clean = str_replace('.', '', $post["idr_rate"] ?? '0');
-        $idr_rate_clean = str_replace(',', '.', $idr_rate_clean);
-        $salesOrder->idr_rate = (float) $idr_rate_clean;
+        // Update kurs/IDR rate (tahan format ID "17.975,00" maupun EN "17,975.00").
+        $idr_rate = \App\Helper\CustomHelper::parseKurs($post["idr_rate"] ?? 0);
+        // SO non-PPN wajib kurs realistis (mencegah 1000x kekecilan akibat salah format ribuan).
+        if (($salesOrder->type_so ?? 'nonppn') !== 'ppn' && $idr_rate < 1000) {
+            return 'Kurs tidak valid (' . e($post["idr_rate"] ?? '') . '). Gunakan angka penuh, cth: 18000.';
+        }
+        $salesOrder->idr_rate = $idr_rate;
 
         // Update indent
         if (isset($post["so_indent"])) {
@@ -93,6 +100,8 @@ class SalesOrderUpdateService
 
         $salesOrder->updated_by = Auth::id();
         $salesOrder->status = 1;
+
+        return null;
     }
 
     /**
@@ -200,6 +209,17 @@ class SalesOrderUpdateService
 
             if ($duplicate) {
                 return ['success' => false, 'message' => 'Item sudah ada di dalam list. Silahkan gabungkan Qty-nya.'];
+            }
+
+            // Validasi angka item (mencegah qty minus/nol dan harga/diskon negatif).
+            $qtyItem = $post["qty"][$i] ?? null;
+            $priceItem = $post["price"][$i] ?? null;
+            $discItem = $post["disc"][$i] ?? 0;
+            if (!is_numeric($qtyItem) || (float) $qtyItem <= 0) {
+                return ['success' => false, 'message' => 'Qty baris ' . ($i + 1) . ' wajib angka lebih dari 0.'];
+            }
+            if (!is_numeric($priceItem) || (float) $priceItem < 0 || !is_numeric($discItem) || (float) $discItem < 0) {
+                return ['success' => false, 'message' => 'Price/Disc baris ' . ($i + 1) . ' tidak boleh minus.'];
             }
 
             $insertDetail = new SalesOrderItem;

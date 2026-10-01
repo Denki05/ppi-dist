@@ -8,11 +8,23 @@ use App\Http\Controllers\Api\PickerApiController;
 use App\Http\Controllers\Api\AoSalesOrderApiController;
 
 Route::get('customers', [ApiCustomerController::class, 'getApiDataCustomer']);
+Route::get('listMarketNasional', [ApiCustomerController::class, 'getListMarketNasional']);
+Route::get('customers/show/{id}', [ApiCustomerController::class, 'getApiCustomerDetail']);
+Route::get('productProspek', [ApiCustomerController::class, 'getProductProspek']);
+Route::get('productExisting', [ApiCustomerController::class, 'getProductExisting']);
 Route::get('products', [ApiCustomerController::class, 'getApiDataProduct']);
 Route::get('brands', [ApiCustomerController::class, 'getApiDataBrand']);
 Route::get('invoices', [ApiInvoiceController::class, 'getApiData']);
 Route::get('categories', [ApiCustomerController::class, 'getApiDataCategoryProduct']);
 Route::get('product-assets', [ProductAssetsController::class, 'index']);
+
+// Direktori user untuk login modul AO (pengganti endpoint trial yang hilang)
+Route::group(['middleware' => 'user.apikey'], function () {
+    Route::get('superusers', [\App\Http\Controllers\Api\ApiUserController::class, 'index']);
+    Route::get('superusers/{id}', [\App\Http\Controllers\Api\ApiUserController::class, 'show']);
+    // Pencarian customer untuk form estimate AO
+    Route::get('customers/search/name', [\App\Http\Controllers\Api\ApiCustomerSearchController::class, 'searchByName']);
+});
 
 // === API khusus modul AO (sys-af) untuk fitur Add SO Awal ===
 Route::group(['prefix' => 'ao/so-awal', 'middleware' => 'ao.apikey'], function () {
@@ -28,6 +40,9 @@ Route::group(['prefix' => 'ao/so-awal', 'middleware' => 'ao.apikey'], function (
     // Revisi AO: cek status + kirim revisi (hanya jika status=3 di transaksi)
     Route::get('/status/{so_code}', [AoSalesOrderApiController::class, 'status']);
     Route::post('/update', [AoSalesOrderApiController::class, 'updateFromAo']);
+    // Pengajuan proforma dari modul AO (antrean verifikasi admin sales)
+    Route::post('/pengajuan/receive', [AoSalesOrderApiController::class, 'receivePengajuan']);
+    Route::post('/pengajuan/{estimate_number}/dokumen', [AoSalesOrderApiController::class, 'receivePengajuanDokumen']);
 });
 
 /*

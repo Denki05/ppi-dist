@@ -35,10 +35,15 @@
         </td>
 
         <td>
+            @php $pgId = ($pengajuanMap ?? [])[(string) optional($row->member)->id] ?? null; @endphp
+            @if($pgId)
+                @include('superuser.penjualan.so_proforma._batalkan', ['pgId' => $pgId])
+            @else
             <button type="button" class="btn btn-sm btn-circle btn-alt-danger btn-status-rollback" 
                     data-id="{{ $row->so_id }}" title="Rollback">
                 <i class="fa fa-undo"></i>
             </button>
+            @endif
 
             <a href="{{ route('superuser.penjualan.so_proforma.edit', $row->id) }}">
                 <button type="button" class="btn btn-sm btn-circle btn-alt-danger" title="Edit">
@@ -46,12 +51,14 @@
                 </button>
             </a>
 
+            @if(!$pgId)
             <button type="button"
                 class="btn btn-sm btn-circle btn-alt-danger btn-delete-proforma"
                 data-id="{{ $row->id }}"
                 title="Delete">
                 <i class="fa fa-trash"></i>
             </button>
+            @endif
         </td>
     </tr>
 

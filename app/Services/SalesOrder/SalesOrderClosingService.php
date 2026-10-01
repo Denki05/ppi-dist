@@ -514,9 +514,9 @@ class SalesOrderClosingService
         }
 
         $salesOrder->origin_warehouse_id = $request->origin_warehouse_id;
-        $salesOrder->sales_senior_id = $request->sales_senior_id;
-        $salesOrder->sales_id = $request->sales_id;
-        $salesOrder->ekspedisi_id = $request->ekspedisi ?? null;
+        $salesOrder->sales_senior_id = ($request->sales_senior_id === '' ? null : $request->sales_senior_id);
+        $salesOrder->sales_id = ($request->sales_id === '' ? null : $request->sales_id);
+        $salesOrder->ekspedisi_id = (!isset($request->ekspedisi) || $request->ekspedisi === '' ? null : $request->ekspedisi);
         $salesOrder->so_date = $request->so_date;
         $salesOrder->rekening = $request->rekening;
         $salesOrder->shipping_cost_buyer = $request->shipping_cost_buyer ?? 0;
@@ -555,6 +555,9 @@ class SalesOrderClosingService
 
         if (!$packing_order) {
             $company = Company::first();
+            // idr_rate WAJIB angka bersih ("17.900" -> 17900). Nilai mentah
+            // tampilan yang lolos akan tersimpan 17.9 (salah 1000x).
+            $cleanRate = $this->cleanCurrency($request->idr_rate ?? null);
             $packing_order = new PackingOrder;
             $packing_order->code = CodeRepo::generatePO();
             $packing_order->do_code = $salesOrder->code;
@@ -563,8 +566,8 @@ class SalesOrderClosingService
             $packing_order->customer_other_address_id = $salesOrder->customer_other_address_id;
             $packing_order->warehouse_id = $salesOrder->origin_warehouse_id;
             $packing_order->type_transaction = $salesOrder->type_transaction;
-            $packing_order->idr_rate = $request->idr_rate;
-            $packing_order->is_kurs_hold = (empty($request->idr_rate) || (float) $request->idr_rate <= 1);
+            $packing_order->idr_rate = $cleanRate;
+            $packing_order->is_kurs_hold = ($cleanRate <= 1);
             $packing_order->other_address = 0 ?? Null;
             $packing_order->note = $company->note ?? null;
             $packing_order->pic = $salesOrder->customer->pic;
@@ -576,11 +579,12 @@ class SalesOrderClosingService
             $packing_order->created_by = Auth::id();
             $packing_order->save();
         } else {
+            $cleanRate = $this->cleanCurrency($request->idr_rate ?? null);
             $packing_order->update([
                 'status' => 2,
                 'do_code' => $salesOrder->code,
-                'idr_rate' => $request->idr_rate,
-                'is_kurs_hold' => (empty($request->idr_rate) || (float) $request->idr_rate <= 1),
+                'idr_rate' => $cleanRate,
+                'is_kurs_hold' => ($cleanRate <= 1),
             ]);
         }
 

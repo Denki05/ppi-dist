@@ -270,11 +270,30 @@
       $('#frmCreate').submit();
     })
 
+    // Cegah scroll-wheel mouse mengubah angka (qty/price/disc) secara tak sengaja.
+    document.addEventListener("wheel", function(event) {
+      if (document.activeElement.type === "number" &&
+        document.activeElement.classList.contains("noscroll")) {
+        document.activeElement.blur();
+      }
+    });
+
     $(document).on('submit','#frmCreate',function(e){
       e.preventDefault();
 
       if (table.rows().count() === 0) {
         Swal.fire('Perhatian', 'Tambahkan minimal 1 produk sebelum menyimpan SO.', 'warning');
+        return;
+      }
+
+      // Validasi qty di semua baris (mencegah qty 0/minus tersimpan).
+      var badQtyRow = -1;
+      table.rows().every(function (idx) {
+        var q = parseFloat($(this.node()).find('input[name="qty[]"]').val());
+        if (isNaN(q) || q <= 0) { badQtyRow = idx + 1; return false; }
+      });
+      if (badQtyRow !== -1) {
+        Swal.fire('Perhatian', 'Qty baris ' + badQtyRow + ' wajib lebih dari 0.', 'warning');
         return;
       }
 
@@ -453,10 +472,10 @@
                       '<input class="form-check-input" type="checkbox" value="0" name="check_kontrak" id="check_kontrak" disabled><input type="hidden" class="form-control" value="0" name="value_kontrak[]">',
                       makeselect,
                       '<input type="text" class="form-control packaging-name-display text-center" value="" disabled>',
-                      '<input type="number" class="form-control" name="price[]" style="text-align: center;"><input type="hidden" class="form-control packaging" name="packaging[]">',
-                      '<input type="number" class="form-control" name="qty[]" style="text-align: center;" required>',
+                      '<input type="number" class="form-control noscroll" name="price[]" style="text-align: center;" min="0"><input type="hidden" class="form-control packaging" name="packaging[]">',
+                      '<input type="number" class="form-control noscroll" name="qty[]" style="text-align: center;" required step="any" min="0.01">',
                       // UPDATE DISINI: Set value = globalDiscUsd dan tambahkan readonly
-                      '<input type="number" class="form-control" name="disc[]" style="text-align: center;" value="'+ globalDiscUsd +'" readonly>',
+                      '<input type="number" class="form-control noscroll" name="disc[]" style="text-align: center;" value="'+ globalDiscUsd +'" readonly min="0">',
                       '<input type="checkbox" class="form-check-input input-gift" id="gift" name="gift"><input class="form-control input-free" type="hidden" id="free_product" value="0" name="free_product[]">',
                       '<a href="#" class="row-delete"><button type="button" class="btn btn-sm btn-circle btn-alt-danger" title="Delete"><i class="fa fa-trash"></i></button></a>'
                     ]).draw( false );
@@ -478,10 +497,10 @@
                   '<input class="form-check-input" type="checkbox" value="1" name="check_kontrak" id="check_kontrak" disabled checked><input type="hidden" class="form-control" value="1" name="value_kontrak[]"><input type="hidden" class="form-control" name="kontrak_so_id[]">',
                   makeselect,
                   '<input type="text" class="form-control packaging-name-display" value="" disabled>',
-                  '<input type="number" class="form-control" name="price[]" style="text-align: center;" readonly><input type="hidden" class="form-control packaging" name="packaging[]">',
-                    '<input type="number" class="form-control noscroll" name="qty[]" style="text-align: center;" required>',
+                    '<input type="number" class="form-control noscroll" name="price[]" style="text-align: center;" readonly min="0"><input type="hidden" class="form-control packaging" name="packaging[]">',
+                    '<input type="number" class="form-control noscroll" name="qty[]" style="text-align: center;" required step="any" min="0.01">',
                     // UPDATE DISINI JUGA: Tambahkan readonly pada kontrak agar tidak bisa diedit manual
-                    '<input type="number" class="form-control noscroll usd_disc" style="text-align: center;" name="disc[]" readonly>',
+                    '<input type="number" class="form-control noscroll usd_disc" style="text-align: center;" name="disc[]" readonly min="0">',
                     '<input type="checkbox" class="form-check-input input-gift" id="gift" name="gift" disabled><input class="form-control input-free" type="hidden" id="free_product" value="0" name="free_product[]">',
                     '<a href="#" class="row-delete"><button type="button" class="btn btn-sm btn-circle btn-alt-danger" title="Delete"><i class="fa fa-trash"></i></button></a>'
                   ]).draw( false );

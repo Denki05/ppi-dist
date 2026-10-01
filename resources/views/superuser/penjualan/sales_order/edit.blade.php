@@ -216,9 +216,9 @@
                       <input type="text" class="form-control packaging-name-display text-center bg-light" value="{{ $detail->product_pack->packaging->pack_name }}" disabled>
                       <input type="hidden" class="form-control packaging" name="packaging[]" value="{{ $detail->packaging_id }}">
                   </td>
-                  <td><input type="number" style="text-align: center;" class="form-control bg-light" name="price[]" required value="{{ $detail->price }}" readonly></td>
+                  <td><input type="number" style="text-align: center;" class="form-control bg-light noscroll" name="price[]" required value="{{ $detail->price }}" readonly min="0"></td>
                   <td>
-                    <input type="number" style="text-align: center;" class="form-control input-qty" name="qty[]" value="{{ $detail->qty }}" step="any" required>
+                    <input type="number" style="text-align: center;" class="form-control input-qty noscroll" name="qty[]" value="{{ $detail->qty }}" step="any" min="0.01" required>
                   </td>
                   <td>
                     <input type="text" style="text-align: center;" class="form-control" name="disc[]" value="{{ $detail->disc_usd }}" {{ $detail->free_product == 1 ? 'readonly' : '' }}>
@@ -554,9 +554,9 @@
             '<input class="form-check-input" type="checkbox" value="0" name="check_kontrak" disabled><input type="hidden" class="form-control" value="0" name="value_kontrak[]"><input type="hidden" name="so_kontrak_value[]" value="0">',
             makeselect,
             '<input type="text" class="form-control packaging-name-display text-center bg-light" value="" disabled>',
-            '<input type="number" class="form-control bg-light" name="price[]" style="text-align: center;" readonly><input type="hidden" class="form-control packaging" name="packaging[]"><input type="hidden" class="form-control" name="kontrak_id[]">',
-            '<input type="number" class="form-control" name="qty[]" style="text-align: center;" required step="any">',
-            '<input type="number" class="form-control" name="disc[]" style="text-align: center;" value="0">',
+            '<input type="number" class="form-control bg-light noscroll" name="price[]" style="text-align: center;" readonly min="0"><input type="hidden" class="form-control packaging" name="packaging[]"><input type="hidden" class="form-control" name="kontrak_id[]">',
+            '<input type="number" class="form-control noscroll" name="qty[]" style="text-align: center;" required step="any" min="0.01">',
+            '<input type="number" class="form-control noscroll" name="disc[]" style="text-align: center;" value="0" min="0">',
             '<input type="checkbox" class="form-check-input input-gift mt-2" name="gift"><input class="form-control input-free" type="hidden" value="0" name="free_product[]">',
             '<a href="#" class="row-delete"><button type="button" class="btn btn-sm btn-circle btn-alt-danger" title="Delete"><i class="fa fa-trash"></i></button></a>'
           ]).draw( false );
@@ -684,6 +684,17 @@ $('#datatables tbody').on('change', '.input-gift', function (e) {
         return;
       }
 
+      // Validasi qty di semua baris (mencegah qty 0/minus tersimpan).
+      var badQtyRow = -1;
+      table.rows().every(function (idx) {
+        var q = parseFloat($(this.node()).find('input[name="qty[]"]').val());
+        if (isNaN(q) || q <= 0) { badQtyRow = idx + 1; return false; }
+      });
+      if (badQtyRow !== -1) {
+        Swal.fire('Perhatian', 'Qty baris ' + badQtyRow + ' wajib lebih dari 0.', 'warning');
+        return;
+      }
+
       Swal.fire({
         title: 'Konfirmasi',
         text: "Apakah anda yakin ingin menyimpan perubahan sales order ini?",
@@ -728,6 +739,14 @@ $('#datatables tbody').on('change', '.input-gift', function (e) {
           });
         }
       });
+    });
+
+    // Cegah scroll-wheel mouse mengubah angka (qty/price/disc) secara tak sengaja.
+    document.addEventListener("wheel", function(event) {
+      if (document.activeElement.type === "number" &&
+        document.activeElement.classList.contains("noscroll")) {
+        document.activeElement.blur();
+      }
     });
 
     // FUNGSI AUTO FORMAT RUPIAH PADA INPUT KURS

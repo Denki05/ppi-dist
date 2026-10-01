@@ -254,6 +254,9 @@
                                 @if($superuser->can('superuser-manage') OR $superuser->division == "Admin" OR $superuser->division == "Management")
                                 <li><a class="dropdown-item" href="{{ route('superuser.penjualan.so_proforma.index') }}"><i class="fa-solid fa-file-prescription"></i> Proforma</a></li>
                                 @endif
+                                @if($superuser->can('superuser-manage') OR $superuser->division == "Admin" OR $superuser->division == "Management")
+                                <li><a class="dropdown-item" href="{{ route('superuser.penjualan.pengajuan_proforma.index') }}"><i class="fa-solid fa-file-circle-plus"></i> Pengajuan Proforma</a></li>
+                                @endif
                                 <li>
                                     <hr class="dropdown-divider">
                                 </li>

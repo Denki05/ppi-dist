@@ -290,4 +290,14 @@ Route::group([
         Route::post('get-qc-by-do', 'SaleReturnController@getQcByDo')->name('get_qc_by_do');
     });
     Route::resource('sale_return', 'SaleReturnController');
+
+    // === Pengajuan Proforma (verifikasi & mutasi dari modul AO) ===
+    Route::group(['as' => 'pengajuan_proforma.', 'prefix' => '/pengajuan-proforma'], function () {
+        Route::get('/',              'PengajuanProformaController@index')->name('index');
+        Route::get('/{id}',          'PengajuanProformaController@show')->name('show');
+        Route::post('/{id}/verifikasi', 'PengajuanProformaController@verifikasi')->name('verifikasi');
+        Route::post('/{id}/tolak',   'PengajuanProformaController@tolak')->name('tolak');
+        Route::post('/{id}/cancel',  'PengajuanProformaController@cancel')->name('cancel');
+        Route::post('/{id}/notif-ulang', 'PengajuanProformaController@notifUlang')->name('notif-ulang');
+    });
 });

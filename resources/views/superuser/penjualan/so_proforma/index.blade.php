@@ -319,6 +319,62 @@
 
     });
 
+    // Shortcut Batalkan (Prospek) langsung dari tab terbuat.
+    // Rute resmi yang sama dengan menu pengajuan (log + flag + kembali + notif AO).
+    $(document).on('click', '.btn-batalkan-prospek', function() {
+        let pgId = $(this).data('pgid');
+        let code = $(this).data('code') || '';
+
+        Swal.fire({
+            title: 'Batalkan proforma ' + code + '?',
+            html: '<div style="text-align:left;">' +
+                  '<label>Alasan pembatalan *</label>' +
+                  '<textarea id="btlAlasan" class="form-control" rows="2" placeholder="Wajib diisi"></textarea>' +
+                  '<div class="form-check mt-2"><input type="checkbox" class="form-check-input" id="btlRollback" checked>' +
+                  '<label class="form-check-label" for="btlRollback">Kembalikan customer ke prospek</label></div>' +
+                  '</div>',
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonText: 'Ya, Batalkan',
+            cancelButtonText: 'Batal',
+            preConfirm: function() {
+                var a = document.getElementById('btlAlasan').value.trim();
+                if (!a) {
+                    Swal.showValidationMessage('Alasan wajib diisi');
+                    return false;
+                }
+                return {
+                    alasan: a,
+                    rollback_customer: document.getElementById('btlRollback').checked ? 1 : 0
+                };
+            }
+        }).then((result) => {
+            if (!result.isConfirmed) return;
+
+            $.ajax({
+                url: '/superuser/penjualan/pengajuan-proforma/' + pgId + '/cancel',
+                type: 'POST',
+                data: {
+                    _token: '{{ csrf_token() }}',
+                    alasan: result.value.alasan,
+                    rollback_customer: result.value.rollback_customer,
+                    proforma_code: code
+                },
+                success: function(res) {
+                    if (res.success !== false) {
+                        Swal.fire('Berhasil!', res.message || 'Proforma dibatalkan.', 'success')
+                            .then(() => location.reload());
+                    } else {
+                        Swal.fire('Gagal!', res.message || 'Terjadi kesalahan', 'error');
+                    }
+                },
+                error: function(xhr) {
+                    Swal.fire('Gagal!', xhr.responseJSON?.message || 'Terjadi kesalahan', 'error');
+                }
+            });
+        });
+    });
+
     $(document).on('click', '.btn-status-rollback', function() {
 
         let id = $(this).data('id');

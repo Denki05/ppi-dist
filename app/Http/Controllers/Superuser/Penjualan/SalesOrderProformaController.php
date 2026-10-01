@@ -95,11 +95,22 @@ class SalesOrderProformaController extends Controller
                 $q->where('status_proforma', 4);
             })->get();
 
+        // Peta member hasil mutasi -> pengajuan (untuk tombol Batalkan Prospek).
+        // Kunci string agar cocok dengan id dotted ("178.1").
+        $pengajuanMap = \App\Entities\Penjualan\PengajuanProforma::where('status', 'disetujui')
+            ->whereNotNull('member_id_hasil')
+            ->pluck('id', 'member_id_hasil')
+            ->mapWithKeys(function ($id, $member) {
+                return [(string) $member => $id];
+            })
+            ->toArray();
+
         return view('superuser.penjualan.so_proforma.index', [
             'aktif' => $aktif,
             'terbuat' => $terbuat,
             'siap' => $siap,
             'tutup' => $tutup,
+            'pengajuanMap' => $pengajuanMap,
 
             'count_aktif' => $aktif->count(),
             'count_terbuat' => $terbuat->count(),
@@ -850,6 +861,24 @@ class SalesOrderProformaController extends Controller
 
             /*
             |--------------------------------------------------------------------------
+            | CEK ASAL MUTASI PROSPEK — hapus biasa dilarang, wajib lewat Batalkan
+            |--------------------------------------------------------------------------
+            */
+            $pengajuanTerkait = app(\App\Services\Penjualan\PengajuanMutasiService::class)
+                ->findPengajuanForProforma($sales_proforma);
+
+            if ($pengajuanTerkait) {
+                DB::rollBack();
+
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Proforma dari mutasi prospek (' . $pengajuanTerkait->estimate_number . ') tidak boleh dihapus langsung — gunakan Batalkan (Prospek).',
+                    'pengajuan_id' => $pengajuanTerkait->id,
+                ], 422);
+            }
+
+            /*
+            |--------------------------------------------------------------------------
             | RESET SALES ORDER
             |--------------------------------------------------------------------------
             */
@@ -996,6 +1025,23 @@ class SalesOrderProformaController extends Controller
 
             $proforma = SalesOrderProforma::where('so_id', $sales_order->id)->first();
 
+            // Proforma dari mutasi prospek wajib lewat Batalkan (Prospek) agar
+            // tercatat di log + flag + kembali ke prospek + AO diberi tahu.
+            if ($proforma) {
+                $pengajuanTerkait = app(\App\Services\Penjualan\PengajuanMutasiService::class)
+                    ->findPengajuanForProforma($proforma);
+
+                if ($pengajuanTerkait) {
+                    DB::rollBack();
+
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'Proforma dari mutasi prospek (' . $pengajuanTerkait->estimate_number . ') tidak boleh di-rollback langsung — gunakan Batalkan (Prospek).',
+                        'pengajuan_id' => $pengajuanTerkait->id,
+                    ], 422);
+                }
+            }
+
             $deleted_items = 0;
             $deleted_header = 0;
 
@@ -1071,6 +1117,20 @@ class SalesOrderProformaController extends Controller
             $so_proforma = SalesOrderProforma::find($id);
             if (!$so_proforma) {
                 throw new \Exception("Sales Order Proforma tidak ditemukan");
+            }
+
+            // Proforma dari mutasi prospek wajib lewat Batalkan (Prospek)
+            $pengajuanTerkait = app(\App\Services\Penjualan\PengajuanMutasiService::class)
+                ->findPengajuanForProforma($so_proforma);
+
+            if ($pengajuanTerkait) {
+                DB::rollBack();
+
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Proforma dari mutasi prospek (' . $pengajuanTerkait->estimate_number . ') tidak boleh di-cancel dari sini — gunakan Batalkan (Prospek).',
+                    'pengajuan_id' => $pengajuanTerkait->id,
+                ], 422);
             }
 
             $sales_order = SalesOrder::find($so_proforma->so_id);

@@ -31,12 +31,17 @@
                 <i class="fa fa-check"></i>
             </button>
 
+            @php $pgId = ($pengajuanMap ?? [])[(string) optional($row->member)->id] ?? null; @endphp
+            @if($pgId)
+                @include('superuser.penjualan.so_proforma._batalkan', ['pgId' => $pgId])
+            @else
             <button type="button"
                 class="btn btn-sm btn-circle btn-alt-danger btn-delete-proforma"
                 data-id="{{ $row->id }}"
                 title="Delete">
                 <i class="fa fa-trash"></i>
             </button>
+            @endif
         </td>
 
     </tr>
