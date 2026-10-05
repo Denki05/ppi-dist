@@ -132,6 +132,64 @@
         </div>
     @endif
 
+    {{-- Paket B poin 11: pilihan member — gandeng existing / buat baru di store ini --}}
+    @if($pengajuan->status === 'menunggu' && !empty($candidateStore['parent']) && $candidateStore['members']->count())
+    @php $csParent = $candidateStore['parent']; @endphp
+    <div class="alert alert-info rounded-lg" id="memberPickAlert">
+        <strong><i class="fa fa-link mr-1"></i>Store cocok: {{ $csParent->name }}</strong>
+        <span class="text-muted small">(ID: {{ $csParent->id }})</span>
+        <div class="mt-2 small">
+            <div class="form-check">
+                <input class="form-check-input member-action-radio" type="radio" name="member_action_dup" value="auto" id="maAuto" checked>
+                <label class="form-check-label" for="maAuto">Otomatis — ikut KTP (perilaku lama)</label>
+            </div>
+            @foreach($candidateStore['members'] as $m)
+            <div class="form-check">
+                <input class="form-check-input member-action-radio" type="radio" name="member_action_dup" value="gandeng:{{ $m->id }}" id="ma{{ $loop->index }}">
+                <label class="form-check-label" for="ma{{ $loop->index }}">
+                    Gandeng — <strong>{{ $m->name }}</strong> ({{ $m->phone ?: '-' }}, {{ $m->kota ?: '-' }})
+                    @if((int) $m->member_default === 1) <span class="badge badge-success">default</span> @endif
+                    <span class="text-muted">{{ $m->id }}</span>
+                </label>
+            </div>
+            @endforeach
+            <div class="form-check">
+                <input class="form-check-input member-action-radio" type="radio" name="member_action_dup" value="baru" id="maBaru">
+                <label class="form-check-label" for="maBaru">Buat member baru di store ini <span class="text-muted">({{ $csParent->id }}.+1, tercatat siapa membuat)</span></label>
+            </div>
+        </div>
+        <small class="d-block mt-1 text-muted">Pilihan ikut terkirim saat tekan <strong>Proses Mutasi / Paksa Mutasi</strong>.</small>
+    </div>
+    <script>
+    (function () {
+        function val() {
+            var c = document.querySelector('input[name="member_action_dup"]:checked');
+            return c ? c.value : 'auto';
+        }
+        ['frmPaksa', 'frmVerif'].forEach(function (fid) {
+            var f = document.getElementById(fid);
+            if (!f) return;
+            var h = document.createElement('input');
+            h.type = 'hidden'; h.name = 'member_action'; h.value = 'auto';
+            f.appendChild(h);
+            f.addEventListener('submit', function () { h.value = val(); });
+        });
+        var radios = document.querySelectorAll('input[name="member_action_dup"]');
+        for (var i = 0; i < radios.length; i++) {
+            radios[i].addEventListener('change', function () {
+                var v = val();
+                ['frmPaksa', 'frmVerif'].forEach(function (fid) {
+                    var f = document.getElementById(fid);
+                    if (!f) return;
+                    var h = f.querySelector('input[name="member_action"]');
+                    if (h) h.value = v;
+                });
+            });
+        }
+    })();
+    </script>
+    @endif
+
     {{-- ═════════════════════════════════════════
          CARD IDENTITAS — 3 kolom
     ═════════════════════════════════════════ --}}

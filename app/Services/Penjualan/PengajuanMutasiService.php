@@ -71,8 +71,10 @@ class PengajuanMutasiService
     // ------------------------------------------------------------------
 
     /**
-     * Cek apakah phone atau KTP sudah ada di master_customers / master_customer_other_addresses.
-     * Mengembalikan array info duplikat (kosong = tidak ada).
+     * Cek apakah phone, KTP, atau NAMA sudah ada di master_customers /
+     * master_customer_other_addresses. Mengembalikan array info duplikat
+     * (kosong = tidak ada). Dipakai halaman verifikasi (Paket B poin 11:
+     * cek SEMUA data pengajuan, bukan cuma HP/KTP).
      *
      * Format:
      * [
@@ -84,7 +86,7 @@ class PengajuanMutasiService
     {
         $hits = [];
 
-        // --- parent ---
+        // --- parent: phone / KTP ---
         $parentQuery = Customer::withTrashed();
         $parentOr = [];
         if (!empty($p->phone))  $parentOr[] = ['phone', '=', $p->phone];
@@ -103,7 +105,24 @@ class PengajuanMutasiService
             }
         }
 
-        // --- child ---
+        // --- parent: NAMA store (exact, case-insensitive) ---
+        foreach ($this->namaCalon($p) as $nama) {
+            $found = Customer::withTrashed()
+                ->whereRaw('LOWER(name) = ?', [mb_strtolower(trim($nama))])
+                ->first(['id', 'name', 'phone', 'ktp', 'deleted_at']);
+            if ($found) {
+                $hits[] = [
+                    'table'      => 'master_customers',
+                    'field'      => 'name',
+                    'id'         => $found->id,
+                    'name'       => $found->name,
+                    'deleted_at' => $found->deleted_at,
+                ];
+                break;
+            }
+        }
+
+        // --- child: phone / KTP ---
         $childOr = [];
         if (!empty($p->phone)) $childOr[] = ['phone', '=', $p->phone];
         if (!empty($p->ktp))   $childOr[] = ['ktp',   '=', $p->ktp];
@@ -123,7 +142,74 @@ class PengajuanMutasiService
             }
         }
 
+        // --- child: NAMA member (exact, case-insensitive, semua store) ---
+        foreach ($this->namaCalon($p) as $nama) {
+            $found = CustomerOtherAddress::where('status', CustomerOtherAddress::STATUS['ACTIVE'])
+                ->whereRaw('LOWER(name) = ?', [mb_strtolower(trim($nama))])
+                ->first(['id', 'name', 'phone', 'ktp', 'customer_id']);
+            if ($found) {
+                $hits[] = [
+                    'table'       => 'master_customer_other_addresses',
+                    'field'       => 'name',
+                    'id'          => $found->id,
+                    'name'        => $found->name,
+                    'customer_id' => $found->customer_id,
+                ];
+                break;
+            }
+        }
+
         return $hits;
+    }
+
+    /**
+     * Nama-nama calon dari pengajuan untuk pencocokan (unik, non-kosong).
+     */
+    private function namaCalon(PengajuanProforma $p): array
+    {
+        $out = [];
+        foreach ([$p->perusahaan, $p->prospect_name] as $n) {
+            $n = trim((string) $n);
+            if ($n !== '' && !in_array(mb_strtolower($n), array_map('mb_strtolower', $out), true)) {
+                $out[] = $n;
+            }
+        }
+        return $out;
+    }
+
+    /**
+     * Paket B poin 11: kandidat store + daftar member turunannya untuk
+     * pilihan gandeng eksplisit. Parent dicari by KTP (seperti resolveParent),
+     * fallback by nama exact. Member = child ACTIVE milik parent tsb.
+     *
+     * @return array ['parent' => Customer|null, 'members' => Collection]
+     */
+    public function candidateStore(PengajuanProforma $p): array
+    {
+        $parent = null;
+        if (!empty($p->ktp)) {
+            $parent = Customer::withTrashed()->where('ktp', $p->ktp)->first();
+        }
+        if (!$parent) {
+            foreach ($this->namaCalon($p) as $nama) {
+                $parent = Customer::withTrashed()
+                    ->whereRaw('LOWER(name) = ?', [mb_strtolower(trim($nama))])
+                    ->first();
+                if ($parent) {
+                    break;
+                }
+            }
+        }
+
+        $members = collect();
+        if ($parent) {
+            $members = CustomerOtherAddress::where('customer_id', $parent->id)
+                ->where('status', CustomerOtherAddress::STATUS['ACTIVE'])
+                ->orderBy('id')
+                ->get(['id', 'name', 'phone', 'kota', 'member_default']);
+        }
+
+        return ['parent' => $parent, 'members' => $members];
     }
 
     // ------------------------------------------------------------------
@@ -140,11 +226,13 @@ class PengajuanMutasiService
      * @param  string            $verifiedBy  Username admin yang memverifikasi
      * @param  string|null       $catatan
      * @param  bool              $paksa       true = abaikan warning duplikat
+     * @param  string            $memberAction 'auto' | 'baru' | 'gandeng:{memberId}'
+     *                                        (Paket B poin 11: pilihan eksplisit di halaman verifikasi)
      * @return array             ['customer' => Customer, 'member' => CustomerOtherAddress,
      *                            'parent_baru' => bool, 'member_baru' => bool]
      * @throws \RuntimeException  jika validasi gagal atau duplikat tanpa paksa
      */
-    public function mutasi(PengajuanProforma $p, string $verifiedBy, ?string $catatan = null, bool $paksa = false): array
+    public function mutasi(PengajuanProforma $p, string $verifiedBy, ?string $catatan = null, bool $paksa = false, string $memberAction = 'auto'): array
     {
         // 1. Validasi field
         $errors = $this->validateFieldKelengkapan($p);
@@ -176,9 +264,9 @@ class PengajuanMutasiService
             }
         }
 
-        return DB::transaction(function () use ($p, $verifiedBy, $catatan) {
+        return DB::transaction(function () use ($p, $verifiedBy, $catatan, $memberAction) {
             [$customer, $parentBaru] = $this->resolveParent($p);
-            [$member, $memberBaru]   = $this->resolveMember($p, $customer);
+            [$member, $memberBaru]   = $this->resolveMember($p, $customer, $memberAction);
 
             $p->update([
                 'status'           => PengajuanProforma::STATUS_DISETUJUI,
@@ -197,6 +285,8 @@ class PengajuanMutasiService
                 'member_id'       => $member->id,
                 'parent_baru'     => $parentBaru,
                 'member_baru'     => $memberBaru,
+                'member_action'   => $memberAction,
+                'verified_by'     => $verifiedBy,
             ]);
 
             return [
@@ -449,12 +539,30 @@ class PengajuanMutasiService
     /**
      * Buat atau update child (master_customer_other_addresses).
      * 1 member default per store yang baru dibuat.
+     *
+     * Paket B poin 11 — $memberAction:
+     *  - 'auto'            : perilaku lama (cocok KTP dalam store → update, else buat baru)
+     *  - 'baru'            : paksa buat member baru di store ini (id {parent}.{n+1})
+     *  - 'gandeng:{id}'    : pakai member existing tsb (wajib milik store ini) + update datanya
      */
-    private function resolveMember(PengajuanProforma $p, Customer $customer): array
+    private function resolveMember(PengajuanProforma $p, Customer $customer, string $memberAction = 'auto'): array
     {
-        $existing = CustomerOtherAddress::where('customer_id', $customer->id)
-            ->where('ktp', $p->ktp)
-            ->first();
+        $existing = null;
+        // Gandeng eksplisit: validasi milik store ini
+        if (strpos($memberAction, 'gandeng:') === 0) {
+            $mid = substr($memberAction, strlen('gandeng:'));
+            $existing = CustomerOtherAddress::where('id', $mid)
+                ->where('customer_id', $customer->id)
+                ->first();
+            if (!$existing) {
+                throw new \RuntimeException('Member gandengan tidak ditemukan di store ini.');
+            }
+        } elseif ($memberAction !== 'baru' && !empty($p->ktp)) {
+            // 'auto': cocok KTP dalam store → update. 'baru': lewati, langsung buat.
+            $existing = CustomerOtherAddress::where('customer_id', $customer->id)
+                ->where('ktp', $p->ktp)
+                ->first();
+        }
 
         $nama = !empty($p->perusahaan) ? $p->perusahaan : $p->prospect_name;
 

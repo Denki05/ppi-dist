@@ -69,12 +69,15 @@ class PengajuanProformaController extends Controller
 
         $duplikat   = [];
         $fieldErrors = $this->mutasiSvc->validateFieldKelengkapan($pengajuan);
+        // Paket B poin 11: kandidat store + member turunannya untuk pilihan gandeng
+        $candidateStore = ['parent' => null, 'members' => collect()];
 
         if ($pengajuan->status === PengajuanProforma::STATUS_MENUNGGU) {
             $duplikat = $this->mutasiSvc->cekDuplikat($pengajuan);
+            $candidateStore = $this->mutasiSvc->candidateStore($pengajuan);
         }
 
-        return view('superuser.penjualan.pengajuan_proforma.show', compact('pengajuan', 'duplikat', 'fieldErrors'));
+        return view('superuser.penjualan.pengajuan_proforma.show', compact('pengajuan', 'duplikat', 'fieldErrors', 'candidateStore'));
     }
 
     // ------------------------------------------------------------------
@@ -120,6 +123,8 @@ class PengajuanProformaController extends Controller
         $validator = Validator::make($request->all(), [
             'catatan' => 'nullable|string|max:1000',
             'paksa'   => 'nullable|boolean',
+            // Paket B poin 11: auto | baru | gandeng:{memberId}
+            'member_action' => ['nullable', 'string', 'max:100', 'regex:/^(auto|baru|gandeng:[A-Za-z0-9.\-_]+)$/'],
         ]);
 
         if ($validator->fails()) {
@@ -127,11 +132,13 @@ class PengajuanProformaController extends Controller
         }
 
         try {
+            $memberAction = (string) $request->input('member_action', 'auto');
             $result = $this->mutasiSvc->mutasi(
                 $pengajuan,
                 $this->adminName(),
                 $request->input('catatan'),
-                (bool) $request->input('paksa', false)
+                (bool) $request->input('paksa', false),
+                $memberAction
             );
 
             // Kirim notif ke AO (non-blocking — gagal tidak rollback mutasi)
@@ -139,7 +146,11 @@ class PengajuanProformaController extends Controller
 
             $msg  = 'Mutasi berhasil. ';
             $msg .= $result['parent_baru'] ? 'Customer baru dibuat. ' : 'Customer existing dipakai. ';
-            $msg .= $result['member_baru'] ? 'Member baru dibuat.' : 'Member existing dipakai.';
+            if (strpos($memberAction, 'gandeng:') === 0) {
+                $msg .= 'Member digandeng (' . $result['member']['id'] . ').';
+            } else {
+                $msg .= $result['member_baru'] ? 'Member baru dibuat.' : 'Member existing dipakai.';
+            }
 
             return redirect()
                 ->route('superuser.penjualan.pengajuan_proforma.show', $id)
@@ -354,6 +365,15 @@ class PengajuanProformaController extends Controller
      */
     public function cancel(Request $request, $id)
     {
+        // Paket A poin 10: cabut pengajuan (batal) hanya admin sales / management
+        if (!\App\Helper\ProformaAccess::canRevisiBatal(Auth::user())) {
+            $msg = 'Batalkan pengajuan hanya untuk admin sales dan management.';
+            if ($request->ajax() || $request->wantsJson()) {
+                return response()->json(['success' => false, 'message' => $msg], 403);
+            }
+            return back()->with('error', $msg);
+        }
+
         $pengajuan = PengajuanProforma::findOrFail($id);
 
         if (!in_array($pengajuan->status, [PengajuanProforma::STATUS_DISETUJUI, PengajuanProforma::STATUS_DIBATALKAN], true)) {

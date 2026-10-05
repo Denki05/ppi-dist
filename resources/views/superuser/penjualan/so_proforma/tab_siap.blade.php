@@ -31,6 +31,15 @@
                 <i class="fa fa-check"></i>
             </button>
 
+            {{-- Paket A poin 10: Revisi (pengajuan tetap) vs Batal (pengajuan dicabut) --}}
+            @if($canRevisiBatal ?? false)
+            <a href="{{ route('superuser.penjualan.so_proforma.edit', $row->id) }}"
+               title="Revisi — tambah/ubah produk, pengajuan TETAP berlaku">
+                <button type="button" class="btn btn-sm btn-circle btn-alt-warning">
+                  <i class="fa fa-plus-circle"></i>
+                </button>
+            </a>
+
             @php $pgId = ($pengajuanMap ?? [])[(string) optional($row->member)->id] ?? null; @endphp
             @if($pgId)
                 @include('superuser.penjualan.so_proforma._batalkan', ['pgId' => $pgId])
@@ -38,9 +47,10 @@
             <button type="button"
                 class="btn btn-sm btn-circle btn-alt-danger btn-delete-proforma"
                 data-id="{{ $row->id }}"
-                title="Delete">
+                title="Hapus — proforma dihapus, pengajuan dicabut">
                 <i class="fa fa-trash"></i>
             </button>
+            @endif
             @endif
         </td>
 

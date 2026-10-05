@@ -111,6 +111,8 @@ class SalesOrderProformaController extends Controller
             'siap' => $siap,
             'tutup' => $tutup,
             'pengajuanMap' => $pengajuanMap,
+            // Paket A poin 10: tombol Revisi/Batal hanya ID admin sales + divisi Management
+            'canRevisiBatal' => \App\Helper\ProformaAccess::canRevisiBatal(Auth::user()),
 
             'count_aktif' => $aktif->count(),
             'count_terbuat' => $terbuat->count(),
@@ -380,6 +382,18 @@ class SalesOrderProformaController extends Controller
     {
         if (!$request->ajax()) {
             abort(404);
+        }
+
+        // Paket A poin 10: revisi (tambah produk) hanya admin sales / management
+        if (!\App\Helper\ProformaAccess::canRevisiBatal(Auth::user())) {
+            return $this->response(403, [
+                'notification' => [
+                    'alert' => 'block',
+                    'type' => 'alert-danger',
+                    'header' => 'Akses ditolak',
+                    'content' => 'Revisi proforma hanya untuk admin sales dan management.',
+                ]
+            ]);
         }
 
         $validator = Validator::make($request->all(), [
@@ -822,6 +836,14 @@ class SalesOrderProformaController extends Controller
             ], 400);
         }
 
+        // Paket A poin 10: hapus proforma hanya admin sales / management
+        if (!\App\Helper\ProformaAccess::canRevisiBatal(Auth::user())) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Hapus proforma hanya untuk admin sales dan management.'
+            ], 403);
+        }
+
         DB::beginTransaction();
 
         try {
@@ -1015,6 +1037,14 @@ class SalesOrderProformaController extends Controller
 
     public function rollbackProforma($so_id)
     {
+        // Paket A poin 10: rollback proforma hanya admin sales / management
+        if (!\App\Helper\ProformaAccess::canRevisiBatal(Auth::user())) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Rollback proforma hanya untuk admin sales dan management.'
+            ], 403);
+        }
+
         DB::beginTransaction();
 
         try {
@@ -1111,6 +1141,14 @@ class SalesOrderProformaController extends Controller
 
     public function MultiCancel($id)
     {
+        // Paket A poin 10: cancel proforma hanya admin sales / management
+        if (!\App\Helper\ProformaAccess::canRevisiBatal(Auth::user())) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Cancel proforma hanya untuk admin sales dan management.'
+            ], 403);
+        }
+
         DB::beginTransaction();
 
         try {

@@ -30,14 +30,18 @@
                 <i class="fa fa-check"></i>
             </button>
 
-            <a href="{{ route('superuser.penjualan.so_proforma.edit', $row->id) }}">
-                <button type="button" class="btn btn-sm btn-circle btn-alt-danger" title="Edit">
-                  <i class="fa fa-pencil"></i>
+            {{-- Paket A poin 10: Revisi (pengajuan tetap) vs Batal (pengajuan dicabut) --}}
+            @if($canRevisiBatal ?? false)
+            <a href="{{ route('superuser.penjualan.so_proforma.edit', $row->id) }}"
+               title="Revisi — tambah/ubah produk, pengajuan TETAP berlaku">
+                <button type="button" class="btn btn-sm btn-circle btn-alt-warning">
+                  <i class="fa fa-plus-circle"></i>
                 </button>
             </a>
+            @endif
 
-            <a href="{{ route('superuser.penjualan.so_proforma.print_so_proforma', $row->id) }}" 
-            target="_blank" 
+            <a href="{{ route('superuser.penjualan.so_proforma.print_so_proforma', $row->id) }}"
+            target="_blank"
             rel="noopener noreferrer">
                 <button type="button" class="btn btn-sm btn-circle btn-alt-danger" title="Print proforma">
                     <i class="fa fa-print"></i>
@@ -45,27 +49,29 @@
             </a>
 
             @php $pgId = ($pengajuanMap ?? [])[(string) optional($row->member)->id] ?? null; @endphp
+            @if($canRevisiBatal ?? false)
             @if($pgId)
             {{-- Shortcut batalkan langsung dari tab (menu pengajuan tetap bisa) --}}
             <button type="button"
-                class="btn btn-sm btn-circle btn-alt-warning btn-batalkan-prospek"
+                class="btn btn-sm btn-circle btn-alt-danger btn-batalkan-prospek"
                 data-pgid="{{ $pgId }}"
                 data-code="{{ $row->code }}"
-                title="Batalkan (Prospek) langsung dari sini">
+                title="Batalkan (Prospek) — pengajuan dicabut + log">
                 <i class="fa fa-ban"></i>
             </button>
             @else
             <button type="button"
                 class="btn btn-sm btn-circle btn-alt-danger btn-delete-proforma"
                 data-id="{{ $row->id }}"
-                title="Delete">
+                title="Hapus — proforma dihapus, pengajuan dicabut">
                 <i class="fa fa-trash"></i>
             </button>
 
-            <button type="button" class="btn btn-sm btn-circle btn-alt-danger btn-status-cancel" 
-                    data-id="{{ $row->id }}" title="Cancel">
+            <button type="button" class="btn btn-sm btn-circle btn-alt-danger btn-status-cancel"
+                    data-id="{{ $row->id }}" title="Cancel — turunkan status, pengajuan dicabut">
                 <i class="fa fa-undo"></i>
             </button>
+            @endif
             @endif
         </td>
     </tr>
