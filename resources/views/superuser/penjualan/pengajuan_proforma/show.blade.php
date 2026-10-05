@@ -173,6 +173,14 @@
                     <span class="info-lbl">NPWP</span>
                     <span class="info-val">{{ $pengajuan->npwp ?: '—' }}</span>
                 </div>
+                <div class="info-row">
+                    <span class="info-lbl">Zone</span>
+                    <span class="info-val">{{ $pengajuan->zone ?: '—' }}</span>
+                </div>
+                <div class="info-row">
+                    <span class="info-lbl">Kategori</span>
+                    <span class="info-val">{{ $pengajuan->kategori ?: '—' }}</span>
+                </div>
             </div>
 
             {{-- Kolom 2: Alamat --}}
@@ -208,7 +216,7 @@
                     @if($pengajuan->foto_ktp_ada)
                         <span class="doc-pill ada"><i class="fa fa-check"></i> Ada</span>
                         @if($pengajuan->ktp_photo_path)
-                            <a href="{{ asset('storage/'.$pengajuan->ktp_photo_path) }}" target="_blank"
+                            <a href="{{ route('superuser.penjualan.pengajuan_proforma.dokumen', ['id' => $pengajuan->id, 'jenis' => 'ktp']) }}" target="_blank"
                                class="btn btn-xs btn-outline-secondary" style="font-size:.75rem;padding:2px 8px;margin-left:4px">
                                 <i class="fa fa-eye"></i> Lihat
                             </a>
@@ -223,7 +231,7 @@
                     @if($pengajuan->foto_npwp_ada)
                         <span class="doc-pill ada"><i class="fa fa-check"></i> Ada</span>
                         @if($pengajuan->npwp_photo_path)
-                            <a href="{{ asset('storage/'.$pengajuan->npwp_photo_path) }}" target="_blank"
+                            <a href="{{ route('superuser.penjualan.pengajuan_proforma.dokumen', ['id' => $pengajuan->id, 'jenis' => 'npwp']) }}" target="_blank"
                                class="btn btn-xs btn-outline-secondary" style="font-size:.75rem;padding:2px 8px;margin-left:4px">
                                 <i class="fa fa-eye"></i> Lihat
                             </a>
@@ -282,6 +290,12 @@
                 <i class="fa fa-times mr-1"></i> Tolak
             </button>
 
+            {{-- Tombol Hapus / Minta Revisi (input AO keliru) --}}
+            <button type="button" class="btn btn-outline-secondary font-weight-bold" onclick="submitHapus()"
+                title="Hapus pengajuan ini agar AO bisa perbaiki + ajukan ulang">
+                <i class="fa fa-trash mr-1"></i> Hapus / Revisi
+            </button>
+
             @if(!empty($fieldErrors))
                 <small class="text-danger"><i class="fa fa-lock mr-1"></i>Data belum lengkap — verifikasi dinonaktifkan.</small>
             @endif
@@ -293,6 +307,12 @@
             @csrf
             <input type="hidden" name="catatan" id="inputAlasanTolak">
         </form>
+
+        {{-- Hidden form hapus / revisi --}}
+        <form method="POST" action="{{ route('superuser.penjualan.pengajuan_proforma.hapus', $pengajuan->id) }}" id="frmHapus" class="d-none">
+            @csrf
+            <input type="hidden" name="alasan" id="inputAlasanHapus">
+        </form>
         @endif
 
         {{-- Terminal state --}}
@@ -302,6 +322,16 @@
             Pengajuan sudah <strong>{{ $pengajuan->status }}</strong> — tidak dapat diproses ulang.
             @if($pengajuan->catatan)
                 &bull; <em>{{ $pengajuan->catatan }}</em>
+            @endif
+            @if(empty($pengajuan->customer_id_hasil) && empty($pengajuan->member_id_hasil))
+            <form method="POST" action="{{ route('superuser.penjualan.pengajuan_proforma.hapus', $pengajuan->id) }}" id="frmHapusTerminal" class="d-inline ml-2">
+                @csrf
+                <input type="hidden" name="alasan" id="inputAlasanHapusTerminal">
+                <button type="button" class="btn btn-sm btn-outline-danger font-weight-bold" onclick="submitHapusTerminal()"
+                    title="Hapus agar AO bisa perbaiki + ajukan ulang">
+                    <i class="fa fa-trash mr-1"></i> Hapus / Revisi
+                </button>
+            </form>
             @endif
         </div>
         @endif
@@ -389,6 +419,24 @@ function submitCancel() {
     if (!alasan.trim()) { alert('Alasan tidak boleh kosong.'); return; }
     document.getElementById('inputAlasanCancel').value = alasan;
     document.getElementById('frmCancel').submit();
+}
+
+function submitHapus() {
+    var alasan = prompt('Alasan hapus / minta revisi (wajib diisi, diteruskan ke AO):');
+    if (alasan === null) return; // user cancel
+    if (!alasan.trim()) { alert('Alasan tidak boleh kosong.'); return; }
+    if (!confirm('Hapus pengajuan {{ addslashes($pengajuan->estimate_number) }}? AO harus perbaiki + ajukan ulang.')) return;
+    document.getElementById('inputAlasanHapus').value = alasan;
+    document.getElementById('frmHapus').submit();
+}
+
+function submitHapusTerminal() {
+    var alasan = prompt('Alasan hapus / minta revisi (wajib diisi, diteruskan ke AO):');
+    if (alasan === null) return;
+    if (!alasan.trim()) { alert('Alasan tidak boleh kosong.'); return; }
+    if (!confirm('Hapus pengajuan {{ addslashes($pengajuan->estimate_number) }}? AO harus perbaiki + ajukan ulang.')) return;
+    document.getElementById('inputAlasanHapusTerminal').value = alasan;
+    document.getElementById('frmHapusTerminal').submit();
 }
 </script>
 @endpush

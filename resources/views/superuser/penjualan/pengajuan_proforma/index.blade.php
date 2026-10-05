@@ -135,7 +135,10 @@
                             <td>
                                 <div class="font-weight-bold" style="line-height:1.2">{{ $item->prospect_name }}</div>
                                 @if($item->perusahaan && $item->perusahaan !== $item->prospect_name)
-                                    <small class="text-muted">{{ $item->perusahaan }}</small>
+                                    <small class="text-muted">{{ $item->perusahaan }}</small><br>
+                                @endif
+                                @if($item->zone || $item->kategori)
+                                    <small class="text-muted">{{ $item->zone ?: '-' }} &middot; {{ $item->kategori ?: '-' }}</small>
                                 @endif
                             </td>
                             <td>{{ $item->phone ?: '-' }}</td>

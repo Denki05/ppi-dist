@@ -294,9 +294,11 @@ Route::group([
     // === Pengajuan Proforma (verifikasi & mutasi dari modul AO) ===
     Route::group(['as' => 'pengajuan_proforma.', 'prefix' => '/pengajuan-proforma'], function () {
         Route::get('/',              'PengajuanProformaController@index')->name('index');
+        Route::get('/{id}/dokumen/{jenis}', 'PengajuanProformaController@dokumen')->name('dokumen')->where(['id' => '[0-9]+', 'jenis' => 'ktp|npwp']);
         Route::get('/{id}',          'PengajuanProformaController@show')->name('show');
         Route::post('/{id}/verifikasi', 'PengajuanProformaController@verifikasi')->name('verifikasi');
         Route::post('/{id}/tolak',   'PengajuanProformaController@tolak')->name('tolak');
+        Route::post('/{id}/hapus',   'PengajuanProformaController@hapus')->name('hapus');
         Route::post('/{id}/cancel',  'PengajuanProformaController@cancel')->name('cancel');
         Route::post('/{id}/notif-ulang', 'PengajuanProformaController@notifUlang')->name('notif-ulang');
     });

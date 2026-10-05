@@ -40,6 +40,8 @@ class AoSalesOrderApiController extends Controller
             'provinsi' => 'nullable|string|max:100',
             'kecamatan' => 'nullable|string|max:100',
             'kelurahan' => 'nullable|string|max:100',
+            'zone' => 'nullable|string|max:100',
+            'kategori' => 'nullable|string|max:100',
             'ktp' => 'required|digits:16',
             'npwp' => 'nullable|digits:15',
             'termin' => 'required|in:CASH,TEMPO_14,TEMPO_30',
@@ -92,6 +94,8 @@ class AoSalesOrderApiController extends Controller
                     'provinsi' => $request->input('provinsi'),
                     'kecamatan' => $request->input('kecamatan'),
                     'kelurahan' => $request->input('kelurahan'),
+                    'zone' => $request->input('zone'),
+                    'kategori' => $request->input('kategori'),
                     'ktp' => $request->ktp,
                     'npwp' => $request->input('npwp'),
                     'termin' => $request->termin,
@@ -279,6 +283,30 @@ class AoSalesOrderApiController extends Controller
                 'errors'  => $validator->errors(),
             ], 422);
         }
+        
+        // Idempotensi: nomor order AO yang sama tidak boleh membuat SO kedua
+        // (kiriman ulang setelah timeout / klik ganda). SO yang sudah dihapus diabaikan.
+        $aoOrderNo = trim((string) $request->input('ao_order_number', ''));
+        if ($aoOrderNo !== '') {
+            $dup = SalesOrder::where('ao_order_number', $aoOrderNo)->orderBy('id', 'desc')->first();
+            if ($dup) {
+                Log::info('AO SO Awal duplikat diabaikan', ['ao_order' => $aoOrderNo, 'so_code' => $dup->so_code]);
+                return response()->json([
+                    'success'   => true,
+                    'duplicate' => true,
+                    'message'   => 'SO untuk order AO ' . $aoOrderNo . ' sudah ada (' . $dup->so_code . '), kiriman ulang tidak membuat SO baru.',
+                    'data'      => [
+                        'so_id'         => $dup->id,
+                        'so_code'       => $dup->so_code,
+                        'status'        => $dup->status,
+                        'status_text'   => SalesOrder::STEP[$dup->status] ?? (string) $dup->status,
+                        'so_indent'     => $dup->so_indent,
+                        'is_estimate'   => $dup->is_estimate ?? 0,
+                        'estimate_code' => $dup->estimate_code ?? null,
+                    ],
+                ], 200);
+            }
+        }
 
         // --- Normalisasi type_transaction (string/int -> NAMA string untuk DB) ---
         // DB penjualan_so.type_transaction = varchar: CASH/TEMPO/MARKETPLACE/COD
@@ -442,6 +470,7 @@ class AoSalesOrderApiController extends Controller
             // Jejak order AO asal (untuk idempotensi & tracing)
             if ($request->filled('ao_order_number')) {
                 $aoNo = trim((string) $request->input('ao_order_number'));
+                $so->ao_order_number = $aoNo;   // <-- baris baru
                 $so->note = trim(($so->note ? $so->note . "\n" : '') . "[AO:{$aoNo}]");
             }
             $so->save();
@@ -531,6 +560,20 @@ class AoSalesOrderApiController extends Controller
                 'error'   => $e->getMessage(),
             ], 500);
         }
+    }
+
+    /**
+     * List kategori customer aktif untuk dropdown AO.
+     * GET /api/ao/so-awal/customer-categories -> [{id, name}]
+     */
+    public function customerCategories()
+    {
+        $rows = \App\Entities\Master\CustomerCategory::where('status', \App\Entities\Master\CustomerCategory::STATUS['ACTIVE'])
+            ->orderBy('name')
+            ->select('id', 'name')
+            ->get();
+
+        return response()->json(['success' => true, 'data' => $rows]);
     }
 
     /**
@@ -711,12 +754,15 @@ class AoSalesOrderApiController extends Controller
      * GET /api/ao/so-awal/status/{so_code}
      * Response: status int + status_text (STEP) + do_code/nota/invoice bila sudah tutup.
      */
-    public function status($so_code)
+    public function status(Request $request, $so_code)
     {
-        $so = SalesOrder::where('so_code', $so_code)->first();
+        // ?by=ao -> $so_code diartikan sebagai nomor order AO (untuk pemulihan setelah sync timeout)
+        $col = $request->query('by') === 'ao' ? 'ao_order_number' : 'so_code';
+
+        $so = SalesOrder::where($col, $so_code)->orderBy('id', 'desc')->first();
         if (!$so) {
             // Bedakan "tidak pernah ada" vs "sudah dihapus" (soft delete) agar AO tidak menebak
-            $trashed = SalesOrder::withTrashed()->where('so_code', $so_code)->first();
+            $trashed = SalesOrder::withTrashed()->where($col, $so_code)->first();
             if ($trashed) {
                 return response()->json(['success' => false, 'deleted' => true, 'message' => "SO {$so_code} sudah dihapus di transaksi"], 410);
             }
@@ -812,13 +858,7 @@ class AoSalesOrderApiController extends Controller
             $so->type_transaction = $typeNameUp;
             $so->brand_name = $request->input('brand_name');
             $so->note = $request->input('note', $request->input('notes', $so->note));
-            $kursAo = $this->parseNumber($request->input('kurs', $request->input('currency_rate', $so->idr_rate)));
-            // SO non-PPN wajib kurs realistis (mencegah 1000x kekecilan, samakan validasi web).
-            if (($so->type_so ?? 'nonppn') !== 'ppn' && $kursAo < 1000) {
-                DB::rollBack();
-                return response()->json(['success' => false, 'message' => 'Kurs tidak valid. Gunakan angka penuh, cth: 18000'], 422);
-            }
-            $so->idr_rate = $kursAo;
+            $so->idr_rate = $this->parseNumber($request->input('kurs', $request->input('currency_rate', $so->idr_rate)));
             $so->disc_percent = $this->parseNumber($request->input('disc_percent', $request->input('discount_value', $so->disc_percent)));
             $so->disc_idr = $this->parseNumber($request->input('disc_idr', $so->disc_idr));
             $so->disc_usd = $this->parseNumber($request->input('disc_usd', $so->disc_usd));

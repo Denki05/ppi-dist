@@ -20,6 +20,8 @@ class PengajuanProforma extends Model
         'provinsi',
         'kecamatan',
         'kelurahan',
+        'zone',
+        'kategori',
         'ktp',
         'npwp',
         'termin',

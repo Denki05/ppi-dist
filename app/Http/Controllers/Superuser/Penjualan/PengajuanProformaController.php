@@ -13,6 +13,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Validator;
 
 class PengajuanProformaController extends Controller
@@ -74,6 +75,31 @@ class PengajuanProformaController extends Controller
         }
 
         return view('superuser.penjualan.pengajuan_proforma.show', compact('pengajuan', 'duplikat', 'fieldErrors'));
+    }
+
+    // ------------------------------------------------------------------
+    // DOKUMEN KTP/NPWP — sajikan file private (disk local) via auth
+    // File disimpan di storage/app/pengajuan_proforma/{id}/xxx,
+    // jadi tidak bisa diakses via asset('storage/...'). Route ini
+    // yang dipakai tombol Lihat di show.blade.php.
+    // GET /penjualan/pengajuan-proforma/{id}/dokumen/{jenis}
+    // ------------------------------------------------------------------
+    public function dokumen($id, $jenis)
+    {
+        $pengajuan = PengajuanProforma::findOrFail($id);
+
+        if (!in_array($jenis, ['ktp', 'npwp'], true)) {
+            abort(404);
+        }
+
+        $col = $jenis === 'ktp' ? 'ktp_photo_path' : 'npwp_photo_path';
+        $path = $pengajuan->{$col};
+
+        if (empty($path) || !Storage::disk('local')->exists($path)) {
+            abort(404, 'Dokumen tidak ditemukan.');
+        }
+
+        return response()->file(storage_path('app/' . $path));
     }
 
     // ------------------------------------------------------------------
@@ -191,6 +217,132 @@ class PengajuanProformaController extends Controller
         return redirect()
             ->route('superuser.penjualan.pengajuan_proforma.index')
             ->with('success', 'Pengajuan ditolak.');
+    }
+
+    // ------------------------------------------------------------------
+    // HAPUS / MINTA REVISI (sebelum mutasi — input AO keliru)
+    // ------------------------------------------------------------------
+
+    /**
+     * POST /penjualan/pengajuan-proforma/{id}/hapus
+     * Hapus pengajuan yang inputnya keliru agar AO bisa perbaiki + ajukan ulang.
+     * Guard: hanya menunggu/ditolak/dibatalkan yang BELUM dimutasi
+     * (customer_id_hasil + member_id_hasil masih kosong). Yang sudah
+     * disetujui wajib lewat Batalkan Proforma (ada rollback customer).
+     * Best-effort: kabari AO agar estimate-nya kembali draft + inbox.
+     */
+    public function hapus(Request $request, $id)
+    {
+        $pengajuan = PengajuanProforma::findOrFail($id);
+
+        if (!in_array($pengajuan->status, [
+            PengajuanProforma::STATUS_MENUNGGU,
+            PengajuanProforma::STATUS_DITOLAK,
+            PengajuanProforma::STATUS_DIBATALKAN,
+        ], true)) {
+            return back()->with('error', 'Pengajuan sudah ' . $pengajuan->status . ' — gunakan Batalkan Proforma, bukan Hapus.');
+        }
+
+        if (!empty($pengajuan->customer_id_hasil) || !empty($pengajuan->member_id_hasil)) {
+            return back()->with('error', 'Pengajuan ini sudah dimutasi ke customer existing — gunakan Batalkan Proforma.');
+        }
+
+        $validator = Validator::make($request->all(), [
+            'alasan' => 'required|string|max:1000',
+        ], ['alasan.required' => 'Alasan hapus/revisi wajib diisi.']);
+
+        if ($validator->fails()) {
+            return back()->withErrors($validator)->withInput();
+        }
+
+        $estimateNumber = $pengajuan->estimate_number;
+        $aoPic = $pengajuan->ao_pic;
+        $alasan = trim((string) $request->alasan);
+
+        foreach (['ktp_photo_path', 'npwp_photo_path'] as $col) {
+            $p = $pengajuan->{$col};
+            if (!empty($p) && Storage::disk('local')->exists($p)) {
+                Storage::disk('local')->delete($p);
+            }
+        }
+
+        $pengajuan->delete();
+
+        Log::info('Pengajuan proforma dihapus (minta revisi AO)', [
+            'estimate_number' => $estimateNumber,
+            'by' => $this->adminName(),
+            'alasan' => $alasan,
+        ]);
+
+        $notifOk = $this->notifyAoRevisi($estimateNumber, $alasan);
+
+        $msg = 'Pengajuan ' . $estimateNumber . ' dihapus.'
+            . ($notifOk
+                ? ' AO (' . $aoPic . ') sudah diberi tahu — estimate kembali draft, silakan minta AO perbaiki + ajukan ulang.'
+                : ' (Notifikasi otomatis ke AO gagal — minta AO perbaiki manual / hubungi IT. Alasan: ' . $alasan . ')');
+
+        return redirect()
+            ->route('superuser.penjualan.pengajuan_proforma.index')
+            ->with('success', $msg);
+    }
+
+    /**
+     * Kabari modul AO agar estimate kembali draft (best-effort).
+     * POST {AO}/api/ao/estimate-revisi (agenda token) — turunan dari
+     * AO_MODULE_NOTIF_URL yang sudah ada (.../api/ao/notif).
+     */
+    private function notifyAoRevisi(string $estimateNumber, string $alasan): bool
+    {
+        $notifUrl = (string) config('services.ao_module.notif_inbound_url');
+        $apiKey = (string) config('services.ao_module.api_key');
+
+        if ($notifUrl === '') {
+            Log::warning('notifyAoRevisi: ao_module.notif_inbound_url belum dikonfigurasi, skip.');
+            return false;
+        }
+
+        $revisiUrl = str_replace('/api/ao/notif', '/api/ao/estimate-revisi', $notifUrl);
+        if ($revisiUrl === $notifUrl) {
+            $revisiUrl = rtrim($notifUrl, '/') . '-revisi';
+        }
+
+        try {
+            $client = new \GuzzleHttp\Client([
+                'timeout' => 10,
+                'connect_timeout' => 5,
+                'verify' => false,
+                'http_errors' => false,
+            ]);
+
+            $response = $client->post($revisiUrl, [
+                'headers' => [
+                    'Authorization' => 'Bearer ' . $apiKey,
+                    'Accept' => 'application/json',
+                    'Content-Type' => 'application/json',
+                ],
+                'json' => [
+                    'estimate_number' => $estimateNumber,
+                    'alasan' => $alasan,
+                ],
+            ]);
+
+            $code = $response->getStatusCode();
+            $ok = $code >= 200 && $code < 300;
+
+            Log::info('notifyAoRevisi', [
+                'estimate_number' => $estimateNumber,
+                'status' => $code,
+                'ok' => $ok,
+            ]);
+
+            return $ok;
+        } catch (\Exception $e) {
+            Log::warning('notifyAoRevisi exception', [
+                'estimate_number' => $estimateNumber,
+                'error' => $e->getMessage(),
+            ]);
+            return false;
+        }
     }
 
     // ------------------------------------------------------------------

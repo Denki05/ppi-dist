@@ -110,13 +110,9 @@ class SalesOrderController extends Controller
             $query->whereBetween('penjualan_do.created_at', [$request->tanggal_dari, $request->tanggal_sampai]);
         }
 
-        // Hide DO Revisi (status 7) kalau SO-nya sudah dikembalikan ke AWAL (1/3),
-        // tetap tampil kalau masih di LANJUTAN/TUTUP (2/4) sebelum tutup ulang.
-        $query->where(function ($q) {
-            $q->where('penjualan_do.status', '!=', 7)
-              ->orWhereNull('so.id')
-              ->orWhereIn('so.status', [2, 4]);
-        });
+        // Request user: DO Revisi (status 7 / "Revisi -> SO Lanjutan")
+        // disembunyikan dari SO Progress. Tutup ulang tetap lewat tab SO Lanjutan.
+        $query->where('penjualan_do.status', '!=', 7);
 
         return $query;
     }

@@ -424,6 +424,16 @@ class PengajuanMutasiService
             'saldo'         => 0,
         ];
 
+        // Zone + kategori dari pengajuan ikut masuk ke customer existing.
+        // Kategori disimpan sebagai nama di pengajuan -> resolve ke id master.
+        if (trim((string) $p->zone) !== '') {
+            $data['zone'] = trim((string) $p->zone);
+        }
+        $categoryId = $this->resolveCategoryId($p->kategori);
+        if ($categoryId !== null) {
+            $data['category_id'] = $categoryId;
+        }
+
         if ($existing) {
             $existing->restore(); // no-op jika belum trashed
             $existing->update($data);
@@ -466,6 +476,7 @@ class PengajuanMutasiService
             'text_kelurahan'         => $p->kelurahan,
             'member_default'         => CustomerOtherAddress::MEMBER_DEFAULT['YES'],
             'account_representative' => $p->ao_pic,
+            'zone'                   => trim((string) $p->zone) !== '' ? trim((string) $p->zone) : null,
             'status'                 => CustomerOtherAddress::STATUS['ACTIVE'],
             'situation'              => CustomerOtherAddress::SITUATION['ACTIVE'],
             'status_key'             => CustomerOtherAddress::STATUS_KEY['ENABLE'],
@@ -493,6 +504,28 @@ class PengajuanMutasiService
         $member->save();
 
         return [$member->fresh(), true];
+    }
+
+    /**
+     * Resolve nama kategori (dari pengajuan AO) ke id master_customer_categories.
+     * Case-insensitive; null bila kosong/tidak cocok agar tidak memblokir mutasi.
+     */
+    private function resolveCategoryId($kategori): ?int
+    {
+        $name = trim((string) $kategori);
+        if ($name === '') {
+            return null;
+        }
+        try {
+            $found = \App\Entities\Master\CustomerCategory::whereRaw('LOWER(name) = ?', [strtolower($name)])->first(['id']);
+            if ($found) {
+                return (int) $found->id;
+            }
+            Log::warning('PengajuanMutasi: kategori tidak cocok master, dilewati', ['kategori' => $name]);
+        } catch (\Exception $e) {
+            Log::warning('PengajuanMutasi: resolve kategori gagal', ['kategori' => $name, 'error' => $e->getMessage()]);
+        }
+        return null;
     }
 
     private function generateCustomerCode(): string

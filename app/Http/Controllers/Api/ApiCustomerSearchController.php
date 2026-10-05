@@ -9,7 +9,7 @@ use Illuminate\Support\Facades\DB;
 /**
  * Pencarian customer (existing + prospek) untuk form estimate AO.
  * GET /api/customers/search/name?q=
- * Response {success, customers:[{id,nama,city,address,phone,pic,officer,kategori,jenis}]}
+ * Response {success, customers:[{id,nama,city,address,phone,cp,owner,provinsi,kecamatan,kelurahan,pic,officer,kategori,zone,jenis}]}
  */
 class ApiCustomerSearchController extends Controller
 {
@@ -37,9 +37,21 @@ class ApiCustomerSearchController extends Controller
                 'a.text_kota as city',
                 'a.address as address',
                 'a.phone as phone',
+                'a.contact_person as cp',
+                'c.owner_name as owner',
+                'a.provinsi as provinsi',
+                'a.text_provinsi as text_provinsi',
+                'c.provinsi as parent_provinsi',
+                'a.kecamatan as kecamatan',
+                'a.text_kecamatan as text_kecamatan',
+                'c.kecamatan as parent_kecamatan',
+                'a.kelurahan as kelurahan',
+                'a.text_kelurahan as text_kelurahan',
+                'c.kelurahan as parent_kelurahan',
                 'c.pic as pic',
                 'a.officer as officer',
                 'cat.name as kategori',
+                'a.zone as zone',
                 DB::raw("'EXISTING' as jenis")
             )
             ->limit(50)
@@ -59,9 +71,21 @@ class ApiCustomerSearchController extends Controller
                 'a.text_kota as city',
                 'a.address as address',
                 'a.phone as phone',
+                'a.contact_person as cp',
+                'c.owner_name as owner',
+                'a.provinsi as provinsi',
+                'a.text_provinsi as text_provinsi',
+                'c.provinsi as parent_provinsi',
+                'a.kecamatan as kecamatan',
+                'a.text_kecamatan as text_kecamatan',
+                'c.kecamatan as parent_kecamatan',
+                'a.kelurahan as kelurahan',
+                'a.text_kelurahan as text_kelurahan',
+                'c.kelurahan as parent_kelurahan',
                 'c.pic as pic',
                 'a.officer as officer',
                 'cat.name as kategori',
+                'a.zone as zone',
                 DB::raw("'PROSPEK' as jenis")
             )
             ->limit(50)
