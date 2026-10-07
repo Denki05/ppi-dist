@@ -7,25 +7,26 @@
         <div class="card-body">
 
             {{-- TAB HEADER --}}
-            <div class="workflow-tabs">
+            <div class="workflow-tabs" role="tablist" aria-label="Tahapan proforma">
 
-                <button class="menu-tab active workflow-tab" data-target="tab-aktif">
+                <button class="menu-tab active workflow-tab" data-target="tab-aktif" role="tab" aria-label="Proforma aktif">
                     Aktif <span class="badge bg-light text-dark">{{ $count_aktif }}</span>
                 </button>
 
-                <button class="menu-tab workflow-tab" data-target="tab-terbuat">
+                <button class="menu-tab workflow-tab" data-target="tab-terbuat" role="tab" aria-label="Proforma terbuat">
                     Terbuat <span class="badge bg-light text-dark">{{ $count_terbuat }}</span>
                 </button>
 
-                <button class="menu-tab workflow-tab" data-target="tab-siap">
+                <button class="menu-tab workflow-tab" data-target="tab-siap" role="tab" aria-label="Proforma siap ACC">
                     Siap <span class="badge bg-light text-dark">{{ $count_siap }}</span>
                 </button>
 
-                <button class="menu-tab workflow-tab" data-target="tab-tutup">
+                <button class="menu-tab workflow-tab" data-target="tab-tutup" role="tab" aria-label="Proforma tutup">
                     Tutup <span class="badge bg-light text-dark">{{ $count_tutup }}</span>
                 </button>
 
             </div>
+            <small class="text-muted d-block mb-2">Alur: <strong>Aktif → Terbuat → Siap → Tutup</strong>. Baris dari prospek ada tombol Revisi (kuning) / Batal (merah).</small>
 
             <hr>
 
@@ -66,7 +67,8 @@
 .workflow-tabs{
     display:flex;
     gap:10px;
-    margin-bottom:10px;
+    margin-bottom:6px;
+    flex-wrap:wrap;
 }
 
 .menu-tab{
@@ -75,6 +77,7 @@
     padding:8px 16px;
     border-radius:20px;
     font-weight:500;
+    min-height:38px;
 }
 
 .menu-tab.active{
@@ -85,66 +88,61 @@
 .menu-tab .badge{
     margin-left:6px;
 }
-
-.workflow-tabs .list-group-item{
-  font-weight:500;
-  border-radius:6px;
-  margin-bottom:5px;
-}
-
-.workflow-tabs .list-group-item.active{
-  background:#4c6ef5;
-  border-color:#4c6ef5;
-  color:white;
-}
-
-.crm-wrapper{
-    max-width:1100px;
-    margin:auto;
-    height:calc(100vh - 120px);
-}
-
-.crm-row{
-    display:flex;
-    gap:10px;
-    height:100%;
-}
-
-.frame-a{
-    flex:0 0 200px;
-}
-
-.frame-b{
-    flex:1;
-}
-
-.menu-btn{
-    width:100%;
-    margin-bottom:8px;
-    border-radius:10px;
-    padding:10px;
-    border:1px solid #dce1e7;
-    background:#fff;
-    font-weight:500;
-    text-align:left;
-}
-
-.menu-btn.active{
-    background:#4c6ef5;
-    color:white;
-}
-
-.frame-b .card{
-    border-radius:16px;
-}
-
-.frame-b .card-body{
-    overflow-y:auto;
-}
+.btn-circle:disabled { opacity:.65; cursor:not-allowed; }
 </style>
 
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 <script>
+// Kunci tombol selama AJAX agar tidak dobel-klik (psikologi: feedback + error prevention)
+function pfLock(btn) {
+    if (!btn || btn.disabled) return false;
+    btn.disabled = true;
+    btn.dataset.orig = btn.innerHTML;
+    btn.innerHTML = '<i class="fa fa-spinner fa-spin"></i>';
+    return true;
+}
+function pfUnlock(btn) {
+    if (!btn) return;
+    btn.disabled = false;
+    if (btn.dataset.orig) btn.innerHTML = btn.dataset.orig;
+}
+    // Revisi tab: kembalikan pengajuan ke AO (tanpa pengajuan/mutasi ulang, tanpa redirect)
+    function submitKembalikanAoTab(pgId) {
+        Swal.fire({
+            title: 'Kembalikan ke AO?',
+            html: '<div style="text-align:left;">Ubah data di AO, proforma diperbarui otomatis. Catatan revisi (wajib diisi):'
+                + '<textarea id="swCatatanAo" class="form-control" rows="3" placeholder="Wajib diisi..."></textarea></div>',
+            icon: 'question',
+            showCancelButton: true,
+            confirmButtonText: 'Ya, Kembalikan',
+            cancelButtonText: 'Batal',
+            confirmButtonColor: '#4e73df',
+            preConfirm: function() {
+                var v = document.getElementById('swCatatanAo').value.trim();
+                if (!v) { Swal.showValidationMessage('Catatan tidak boleh kosong.'); return false; }
+                return v;
+            }
+        }).then(function(r) {
+            if (!r.isConfirmed) return;
+            Swal.fire({ title: 'Memproses...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
+            $.ajax({
+                url: '{{ route("superuser.penjualan.pengajuan_proforma.kembalikanAo", ":id") }}'.replace(':id', pgId),
+                type: 'POST',
+                data: {
+                    _token: '{{ csrf_token() }}',
+                    catatan: r.value
+                },
+                success: function(res) {
+                    Swal.fire('Berhasil!', res.message || 'Dikembalikan ke AO.', 'success')
+                        .then(() => location.reload());
+                },
+                error: function(xhr) {
+                    Swal.fire('Gagal!', (xhr.responseJSON && xhr.responseJSON.message) || 'Terjadi kesalahan', 'error');
+                }
+            });
+        });
+    }
+
     $('.datatable').DataTable({
         pageLength:25
     })
@@ -153,15 +151,22 @@
         $.fn.dataTable.tables({ visible: true, api: true }).columns.adjust();
     })
 
-    $(document).on('click','.workflow-tab',function(){
-        let target = $(this).data('target');
-
+    // Ingat tab aktif agar tetap di halaman/tab yang sama setelah reload
+    function activateTab(target) {
         $('.workflow-content').addClass('d-none');
         $('#'+target).removeClass('d-none');
-
         $('.workflow-tab').removeClass('active');
-        $(this).addClass('active');
+        $('.workflow-tab[data-target="'+target+'"]').addClass('active');
+        try { sessionStorage.setItem('pfTab', target); } catch (e) {}
+    }
+    $(document).on('click','.workflow-tab',function(){
+        activateTab($(this).data('target'));
     });
+    (function() {
+        var t = null;
+        try { t = sessionStorage.getItem('pfTab'); } catch (e) {}
+        if (t && document.getElementById(t)) activateTab(t);
+    })();
 
     $(document).on('click', '.btn-status-siap', function() {
 
@@ -177,6 +182,7 @@
             cancelButtonText: 'Batal',
         }).then((result) => {
             if (result.isConfirmed) {
+                if (!pfLock(button[0])) return;
 
                 $.ajax({
                     url: '/superuser/penjualan/so_proforma/statusSiap/' + id,
@@ -184,6 +190,7 @@
                     data: {
                         _token: '{{ csrf_token() }}'
                     },
+                    complete: function() { pfUnlock(button[0]); },
                     success: function(res) {
                         if (res.success) {
                             Swal.fire(
@@ -229,6 +236,7 @@
             cancelButtonText: 'Batal',
         }).then((result) => {
             if (result.isConfirmed) {
+                if (!pfLock(button[0])) return;
 
                 $.ajax({
                     url: '/superuser/penjualan/so_proforma/acc/' + id,
@@ -236,6 +244,7 @@
                     data: {
                         _token: '{{ csrf_token() }}'
                     },
+                    complete: function() { pfUnlock(button[0]); },
                     success: function(res) {
                         if (res.success) {
                             Swal.fire(
@@ -281,6 +290,7 @@
             cancelButtonText: 'Batal',
         }).then((result) => {
             if (result.isConfirmed) {
+                if (!pfLock(button[0])) return;
 
                 $.ajax({
                     url: '/superuser/penjualan/so_proforma/MultiCancel/' + id,
@@ -288,6 +298,7 @@
                     data: {
                         _token: '{{ csrf_token() }}'
                     },
+                    complete: function() { pfUnlock(button[0]); },
                     success: function(res) {
                         if (res.success) {
                             Swal.fire(
@@ -350,6 +361,7 @@
             }
         }).then((result) => {
             if (!result.isConfirmed) return;
+            Swal.fire({ title: 'Memproses...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
 
             $.ajax({
                 url: '/superuser/penjualan/pengajuan-proforma/' + pgId + '/cancel',
@@ -389,6 +401,7 @@
             cancelButtonText: 'Batal',
         }).then((result) => {
             if (result.isConfirmed) {
+                if (!pfLock(button[0])) return;
 
                 $.ajax({
                     url: '/superuser/penjualan/so_proforma/rollbackProforma/' + id,
@@ -396,6 +409,7 @@
                     data: {
                         _token: '{{ csrf_token() }}'
                     },
+                    complete: function() { pfUnlock(button[0]); },
                     success: function(res) {
                         if (res.success) {
                             Swal.fire(
@@ -430,6 +444,7 @@
     $(document).on('click', '.btn-delete-proforma', function () {
 
         let id = $(this).data('id');
+        let delBtn = $(this);
 
         Swal.fire({
             title: 'Apakah Anda yakin?',
@@ -441,6 +456,7 @@
         }).then((result) => {
 
             if (result.isConfirmed) {
+                if (!pfLock(delBtn[0])) return;
 
                 $.ajax({
                     url: '/superuser/penjualan/so_proforma/destroy/' + id,
@@ -448,6 +464,7 @@
                     data: {
                         _token: '{{ csrf_token() }}'
                     },
+                    complete: function() { pfUnlock(delBtn[0]); },
                     success: function(res) {
 
                         Swal.fire(

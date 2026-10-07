@@ -6,13 +6,13 @@
     <thead>
         <tr>
             <th>#</th>
-            <th>Created At</th>
-            <th>Code</th>
-            <th>Brand</th>
+            <th>Kode</th>
             <th>Customer</th>
-            <th>Created By</th>
+            <th>Brand</th>
+            <th>Grand Total</th>
+            <th>Tanggal</th>
             <th>Status</th>
-            <th>Actions</th>
+            <th>Aksi</th>
         </tr>
     </thead>
     <tbody>
@@ -20,15 +20,16 @@
 
     <tr>
         <td>{{ $loop->iteration }}</td>
-        <td>{{ $row->created_at }}</td>
 
-        <td>{{ $row->code ?? '-' }}</td>
+        <td><span class="font-weight-bold text-primary">{{ $row->code ?? '-' }}</span></td>
+
+        <td>{{ $row->member->name ?? '-' }} <small class="text-muted">{{ $row->member->text_kota ?? '' }}</small></td>
 
         <td>{{ $row->so_brand_name ?? '-' }}</td>
 
-        <td>{{ $row->member->name ?? '-' }} {{ $row->member->text_kota ?? '-' }}</td>
+        <td>{{ optional($row->details_cost)->grand_total_idr ? number_format($row->details_cost->grand_total_idr,0,',','.') : '-' }}</td>
 
-        <td>{{ $row->createdBySuperuser() ?? '-' }}</td>
+        <td><small class="text-muted">{{ $row->created_at ? $row->created_at->format('d/m/Y H:i') : '-' }}</small></td>
 
         <td>
             <span class="badge badge-warning">Aktif</span>
@@ -36,27 +37,29 @@
 
         <td>
             @php $pgId = ($pengajuanMap ?? [])[(string) optional($row->member)->id] ?? null; @endphp
-            {{-- Paket A poin 10: Revisi vs Batal eksplisit, hanya admin sales / management --}}
-            @if($canRevisiBatal ?? false)
+            {{-- Edit = kalkulasi saja (tanpa tambah varian), seperti semula --}}
             <a href="{{ route('superuser.penjualan.so_proforma.edit', $row->id) }}"
-               title="Revisi — tambah/ubah produk, pengajuan TETAP berlaku">
-                <button type="button" class="btn btn-sm btn-circle btn-alt-warning">
-                  <i class="fa fa-plus-circle"></i>
+               title="Edit — kalkulasi (tanpa tambah varian)" aria-label="Edit kalkulasi {{ $row->code }}">
+                <button type="button" class="btn btn-sm btn-circle btn-outline-secondary">
+                  <i class="fa fa-pencil"></i>
                 </button>
             </a>
 
+            {{-- Baris ADA pengajuan: Revisi + Batal langsung (tanpa redirect).
+                 Baris TANPA pengajuan (existing): tanpa Revisi/Batal. --}}
+            @if($canRevisiBatal ?? false)
             @if($pgId)
-                @include('superuser.penjualan.so_proforma._batalkan', ['pgId' => $pgId])
-            @else
-            <button type="button" class="btn btn-sm btn-circle btn-alt-danger btn-status-rollback"
-                    data-id="{{ $row->so_id }}" title="Rollback — kembali ke SO awal, pengajuan dicabut">
-                <i class="fa fa-undo"></i>
+            <button type="button" class="btn btn-sm btn-circle btn-outline-warning"
+                    onclick="submitKembalikanAoTab({{ $pgId }})"
+                    title="Revisi — kembalikan ke AO, proforma diperbarui otomatis tanpa pengajuan/mutasi ulang" aria-label="Revisi {{ $row->code }} ke AO">
+                <i class="fa fa-reply"></i>
             </button>
             <button type="button"
-                class="btn btn-sm btn-circle btn-alt-danger btn-delete-proforma"
-                data-id="{{ $row->id }}"
-                title="Hapus — proforma dihapus, pengajuan dicabut">
-                <i class="fa fa-trash"></i>
+                class="btn btn-sm btn-circle btn-outline-danger btn-batalkan-prospek"
+                data-pgid="{{ $pgId }}"
+                data-code="{{ $row->code }}"
+                title="Batalkan langsung — pengajuan dicabut + log (tanpa pindah halaman)" aria-label="Batalkan {{ $row->code }}">
+                <i class="fa fa-ban"></i>
             </button>
             @endif
             @endif

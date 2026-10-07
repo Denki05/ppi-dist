@@ -9,9 +9,24 @@
 
 <div id="alert-block"></div>
 
+@php $isRevisi = request('mode') === 'revisi'; @endphp
+@if($isRevisi)
+<div class="alert alert-warning d-flex align-items-center" role="alert">
+  <i class="fa fa-exclamation-triangle mr-2"></i>
+  <div><strong>Mode Revisi:</strong> boleh tambah varian produk baru (tombol <strong>+ Row</strong> aktif). Perubahan akan diteruskan ke AO otomatis.</div>
+</div>
+@else
+<div class="alert alert-info d-flex align-items-center" role="alert">
+  <i class="fa fa-info-circle mr-2"></i>
+  <div><strong>Mode Edit:</strong> kalkulasi saja (ubah qty / diskon / kurs). Untuk tambah varian, gunakan tombol <strong>Revisi</strong> dari daftar proforma.</div>
+</div>
+@endif
+
 <form class="ajax" data-action="{{ route('superuser.penjualan.so_proforma.update', $results->id) }}" data-type="POST" enctype="multipart/form-data">
   <input type="hidden" name="_method" value="PUT">
   <input type="hidden" name="ids_delete" value="">
+  {{-- Mode revisi (tambah varian) hanya via tombol Revisi; edit biasa = kalkulasi saja --}}
+  <input type="hidden" name="revision_mode" value="{{ request('mode') === 'revisi' ? 'revisi' : '' }}">
     <div class="row">
         <div class="col-6">
             <div class="block">
@@ -152,15 +167,18 @@
                         <div class="form-group col-md-6">
                             <label for="customer_city">Kota</label>
                             @php
-                                  $city = DB::table('kabupaten')->where('city_id', $results->customer_city)->first();
+                                  $city = !empty($results->customer_city) ? DB::table('kabupaten')->where('city_id', $results->customer_city)->first() : null;
                               @endphp
-                              <label for="customer_city">Kota</label>
                               @if($results->exsisting_customer == 0)
                               <select class="form-control js-select2" name="customer_city" id="customer_city">
+                                  @if($city)
                                   <option value="{{ $results->customer_city }}">{{ $city->city_name }}</option>
+                                  @else
+                                  <option value="">Pilih Kota — pilih Provinsi dulu</option>
+                                  @endif
                               </select>
                               @else
-                              <input type="text" class="form-control" value="{{ optional($results->member)->text_kota }}" readonly>
+                              <input type="text" class="form-control" value="{{ optional($results->member)->text_kota }}" readonly tabindex="-1" title="Data dari member existing — tidak dapat diubah di sini">
                               @endif
                         </div>
                     </div>
@@ -168,11 +186,11 @@
                     <div class="form-row">
                           <div class="form-group col-md-6">
                               <label for="customer_phone">Phone</label>
-                              <input type="number" class="form-control" name="customer_phone" value="{{ optional($results->member)->phone }}" readonly>
+                              <input type="text" class="form-control" value="{{ optional($results->member)->phone ?: $results->customer_phone }}" readonly tabindex="-1" title="Data dari member — tidak dapat diubah di sini">
                           </div>
                           <div class="form-group col-md-6">
                               <label for="customer_owner">Contact Person</label>
-                              <input type="text" class="form-control" name="customer_owner" value="{{ optional($results->member)->contact_person }}" readonly>
+                              <input type="text" class="form-control" value="{{ optional($results->member)->contact_person ?: $results->customer_owner }}" readonly tabindex="-1" title="Data dari member — tidak dapat diubah di sini">
                           </div>
                     </div>
                 </div>
@@ -211,14 +229,16 @@
 
     <div class="row">
       <div class="block">
-        <div class="block-header block-header-default">
-          <h3 class="block-title">Add Product</h3>
-          <a href="#" class="row-add">
-            <button type="button" class="btn bg-gd-sea border-0 text-white">
-              <i class="fa fa-plus mr-10"></i> Row
-            </button>
-          </a>
-        </div>
+                <div class="block-header block-header-default">
+                  <h3 class="block-title">Add Product</h3>
+                  @if(request('mode') === 'revisi')
+                  <a href="#" class="row-add">
+                    <button type="button" class="btn bg-gd-sea border-0 text-white">
+                      <i class="fa fa-plus mr-10"></i> Row
+                    </button>
+                  </a>
+                  @endif
+                </div>
         <div class="block-content">
           <table id="datatable" class="table table-striped">
             <thead>
@@ -268,7 +288,8 @@
             <div class="form-group row justify-content-end">
               <label class="col-md-1 col-form-label">Disc %</label>
               <div class="col-md-1">
-                <input type="text" class="form-control" id="disc_agen_percent" name="disc_agen_percent" value="{{ $detailsCost->discount_1_percent ?? $results->salesOrder->catatan }}">
+                @php $discAgenPct = $detailsCost->discount_1_percent ?? (is_numeric(optional($results->salesOrder)->catatan) ? $results->salesOrder->catatan : 0); @endphp
+                <input type="text" class="form-control" id="disc_agen_percent" name="disc_agen_percent" value="{{ $discAgenPct }}">
               </div>
               <div class="col-sm-2">
                 <input type="text" readonly class="form-control" id="disc_agen_idr" name="disc_agen_idr" value="{{ number_format((float) ($detailsCost->discount_1 ?? 0), 2, ',', '.') }}">
@@ -322,7 +343,7 @@
           </div>
           <div class="col-md-6 text-right">
             <button type="button" class="btn btn-warning mb-2" id="btn_call">
-              <i class="fas fa-calculator pr-2" aria-hidden="true"></i> Calculated
+              <i class="fas fa-calculator pr-2" aria-hidden="true"></i> Hitung Ulang
             </button>
             <button type="submit" class="btn btn-primary">
                 <i class="fa fa-save  pr-2" aria-hidden="true" ></i> Save
@@ -342,11 +363,7 @@
   $(document).ready(function () {
     $('.js-select2').select2()
 
-    var userInteracted = false;
-
-    $(document).on('focus keydown paste', '#idr_rate_display, input[name="qty[]"], input[name="disc_usd[]"], #disc_agen_percent, #disc_kemasan_percent, #disc_tambahan_idr, #voucher_idr, #delivery_cost_idr', function () {
-      userInteracted = true;
-    });
+    var userInteracted = true;
 
     $('#customer_region').on('change', function(){
         let prov_id = $('#customer_region').val();
@@ -506,8 +523,6 @@
     });
 
     function recalcRow($row) {
-      if (!userInteracted) return;
-
       var price = parseFloat($row.find('input[name="price[]"]').val()) || 0;
       var qty = parseFloat($row.find('input[name="qty[]"]').val()) || 0;
       var discUsd = parseFloat($row.find('input[name="disc_usd[]"]').val()) || 0;
@@ -666,6 +681,9 @@
     function grandtotal() {
       hitungDiscAgen();
     }
+
+    // Auto-hitung saat halaman dibuka agar total tidak basi (psikologi: trust angka)
+    hitungDiscAgen();
   });
 </script>
 @endpush

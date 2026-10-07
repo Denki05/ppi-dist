@@ -484,11 +484,18 @@ class SalesOrderProformaController extends Controller
             $sales_order->save();
 
             // ===== ITEMS =====
+            // Mode revisi (tambah varian) hanya bila dibuka via tombol Revisi.
+            // Edit biasa = kalkulasi item existing saja.
+            $isRevisi = $request->input('revision_mode') === 'revisi';
             if ($request->sku) {
 
                 foreach ($request->sku as $key => $value) {
 
                     if (!$value) continue;
+
+                    if (empty($request->edit[$key]) && !$isRevisi) {
+                        throw new \Exception('Tambah varian baru hanya diizinkan via tombol Revisi.');
+                    }
 
                     $free = isset($request->free_product[$key]) 
                             ? $request->free_product[$key] 

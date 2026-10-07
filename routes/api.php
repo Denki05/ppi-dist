@@ -44,6 +44,7 @@ Route::group(['prefix' => 'ao/so-awal', 'middleware' => 'ao.apikey'], function (
     // Pengajuan proforma dari modul AO (antrean verifikasi admin sales)
     Route::post('/pengajuan/receive', [AoSalesOrderApiController::class, 'receivePengajuan']);
     Route::post('/pengajuan/{estimate_number}/dokumen', [AoSalesOrderApiController::class, 'receivePengajuanDokumen']);
+    Route::post('/proforma-revision', [AoSalesOrderApiController::class, 'proformaRevision']);
 });
 
 /*

@@ -54,6 +54,7 @@ class PengajuanProformaController extends Controller
         // Badge count untuk tab menunggu
         $counts = [
             'menunggu' => PengajuanProforma::where('status', PengajuanProforma::STATUS_MENUNGGU)->count(),
+            'revisi' => PengajuanProforma::where('status', PengajuanProforma::STATUS_REVISI)->count(),
         ];
 
         return view('superuser.penjualan.pengajuan_proforma.index', compact('items', 'counts'));
@@ -100,6 +101,22 @@ class PengajuanProformaController extends Controller
 
         if (empty($path) || !Storage::disk('local')->exists($path)) {
             abort(404, 'Dokumen tidak ditemukan.');
+        }
+
+        return response()->file(storage_path('app/' . $path));
+    }
+
+    /**
+     * GET bukti capture ke-{index} (0-based) dari bukti_list.
+     */
+    public function bukti($id, $index)
+    {
+        $pengajuan = PengajuanProforma::findOrFail($id);
+        $list = json_decode((string) $pengajuan->bukti_list, true) ?: [];
+        $path = $list[(int) $index] ?? null;
+
+        if (empty($path) || !Storage::disk('local')->exists($path)) {
+            abort(404, 'Bukti tidak ditemukan.');
         }
 
         return response()->file(storage_path('app/' . $path));
@@ -165,6 +182,121 @@ class PengajuanProformaController extends Controller
     }
 
     // ------------------------------------------------------------------
+    // ISI DOKUMEN (KTP/NPWP + foto) — sebelum mutasi ke baris pengajuan,
+    // sesudah mutasi langsung ke data CUSTOMER (+ sinkron baris pengajuan).
+    // ------------------------------------------------------------------
+
+    /**
+     * POST /penjualan/pengajuan-proforma/{id}/dokumen-simpan
+     */
+    public function updateDokumen(Request $request, $id)
+    {
+        if (!\App\Helper\ProformaAccess::canRevisiBatal(Auth::user())) {
+            $msg = 'Isi dokumen hanya untuk admin sales dan management.';
+            if ($request->ajax() || $request->wantsJson()) {
+                return response()->json(['success' => false, 'message' => $msg], 403);
+            }
+            return back()->with('error', $msg);
+        }
+
+        $pengajuan = PengajuanProforma::findOrFail($id);
+
+        // Dokumen hanya bisa diubah saat menunggu/revisi/disetujui; ditolak/dibatalkan read-only
+        if (!in_array($pengajuan->status, [PengajuanProforma::STATUS_MENUNGGU, PengajuanProforma::STATUS_REVISI, PengajuanProforma::STATUS_DISETUJUI], true)) {
+            $msg = 'Dokumen terkunci (status ' . $pengajuan->status . ').';
+            if ($request->ajax() || $request->wantsJson()) {
+                return response()->json(['success' => false, 'message' => $msg], 403);
+            }
+            return back()->with('error', $msg);
+        }
+
+        $validator = Validator::make($request->all(), [
+            'ktp' => 'nullable|digits:16',
+            'npwp' => 'nullable|digits:15',
+            'phone' => 'nullable|string|max:30',
+            'ktp_photo' => 'nullable|image|mimes:jpg,jpeg,png,webp|max:5120',
+            'npwp_photo' => 'nullable|image|mimes:jpg,jpeg,png,webp|max:5120',
+        ]);
+
+        if ($validator->fails()) {
+            $msg = $validator->errors()->first();
+            if ($request->ajax() || $request->wantsJson()) {
+                return response()->json(['success' => false, 'message' => $msg], 422);
+            }
+            return back()->withErrors($validator)->withInput();
+        }
+
+        try {
+            DB::transaction(function () use ($request, $pengajuan) {
+                $data = [];
+                foreach (['ktp', 'npwp', 'phone'] as $f) {
+                    if ($request->filled($f)) {
+                        $data[$f] = trim((string) $request->input($f));
+                    }
+                }
+                foreach (['ktp_photo' => 'ktp_photo_path', 'npwp_photo' => 'npwp_photo_path'] as $file => $col) {
+                    if ($request->hasFile($file)) {
+                        $old = $pengajuan->{$col};
+                        $data[$col] = $request->file($file)->store('pengajuan_proforma/' . $pengajuan->id, 'local');
+                        if ($col === 'ktp_photo_path') {
+                            $data['foto_ktp_ada'] = true;
+                        } else {
+                            $data['foto_npwp_ada'] = true;
+                        }
+                        if (!empty($old) && Storage::disk('local')->exists($old)) {
+                            Storage::disk('local')->delete($old);
+                        }
+                    }
+                }
+
+                $sudahMutasi = !empty($pengajuan->customer_id_hasil) || !empty($pengajuan->member_id_hasil);
+                if ($sudahMutasi) {
+                    // Sesudah mutasi: tulis langsung ke master customer + member
+                    if (!empty($pengajuan->customer_id_hasil) && isset($data['ktp'])) {
+                        Customer::where('id', $pengajuan->customer_id_hasil)->update(['ktp' => $data['ktp']]);
+                    }
+                    if (!empty($pengajuan->customer_id_hasil) && isset($data['npwp'])) {
+                        Customer::where('id', $pengajuan->customer_id_hasil)->update(['npwp' => $data['npwp']]);
+                    }
+                    if (!empty($pengajuan->member_id_hasil)) {
+                        $m = [];
+                        if (isset($data['ktp'])) {
+                            $m['ktp'] = $data['ktp'];
+                        }
+                        if (isset($data['npwp'])) {
+                            $m['npwp'] = $data['npwp'];
+                        }
+                        if (isset($data['phone'])) {
+                            $m['phone'] = $data['phone'];
+                        }
+                        if (!empty($m)) {
+                            CustomerOtherAddress::where('id', $pengajuan->member_id_hasil)->update($m);
+                        }
+                    }
+                }
+
+                if (!empty($data)) {
+                    $pengajuan->update($data);
+                }
+            });
+
+            $msg = 'Dokumen tersimpan.'
+                . (!empty($pengajuan->member_id_hasil) ? ' Data customer ikut diperbarui.' : '');
+            if ($request->ajax() || $request->wantsJson()) {
+                return response()->json(['success' => true, 'message' => $msg]);
+            }
+            return back()->with('success', $msg);
+        } catch (\Exception $e) {
+            Log::error('Update dokumen pengajuan gagal', ['id' => $id, 'error' => $e->getMessage()]);
+            $msg = 'Gagal menyimpan dokumen.';
+            if ($request->ajax() || $request->wantsJson()) {
+                return response()->json(['success' => false, 'message' => $msg], 500);
+            }
+            return back()->with('error', $msg);
+        }
+    }
+
+    // ------------------------------------------------------------------
     // KIRIM ULANG NOTIFIKASI AO (bila member_hasil tidak masuk / gagal)
     // ------------------------------------------------------------------
 
@@ -196,7 +328,123 @@ class PengajuanProformaController extends Controller
     }
 
     // ------------------------------------------------------------------
-    // TOLAK (sebelum mutasi)
+    // KEMBALIKAN / REVISI pre-mutasi : baris DIPERTAHANKAN (status revisi),
+    // AO perbaiki data + ajukan ulang (kirim data lagi full).
+    // ------------------------------------------------------------------
+
+    /**
+     * POST /penjualan/pengajuan-proforma/{id}/kembalikan
+     */
+    public function kembalikan(Request $request, $id)
+    {
+        $pengajuan = PengajuanProforma::findOrFail($id);
+
+        if ($pengajuan->status !== PengajuanProforma::STATUS_MENUNGGU) {
+            return back()->with('error', 'Hanya pengajuan menunggu yang bisa dikembalikan revisi.');
+        }
+
+        $validator = Validator::make($request->all(), [
+            'catatan' => 'required|string|max:1000',
+        ], ['catatan.required' => 'Catatan revisi wajib diisi.']);
+
+        if ($validator->fails()) {
+            return back()->withErrors($validator)->withInput();
+        }
+
+        $pengajuan->update([
+            'status'      => PengajuanProforma::STATUS_REVISI,
+            'catatan'     => $request->catatan,
+            'verified_by' => $this->adminName(),
+            'verified_at' => now(),
+        ]);
+
+        $notifOk = $this->notifyAoRevisi(
+            $pengajuan->estimate_number,
+            'Revisi admin sales: ' . trim((string) $request->catatan)
+        );
+
+        return redirect()
+            ->route('superuser.penjualan.pengajuan_proforma.index')
+            ->with('success', 'Pengajuan dikembalikan untuk revisi.'
+                . ($notifOk
+                    ? ' AO sudah diberi tahu — estimate kembali draft, ajukan ulang bila sudah diperbaiki.'
+                    : ' (Notifikasi otomatis ke AO gagal — minta AO perbaiki manual / hubungi IT.)'));
+    }
+
+    // ------------------------------------------------------------------
+    // KEMBALIKAN KE AO pasca-mutasi : ubah data di AO, proforma diupdate
+    // (TANPA pengajuan/mutasi ulang). Hanya admin sales / management.
+    // ------------------------------------------------------------------
+
+    /**
+     * POST /penjualan/pengajuan-proforma/{id}/kembalikan-ao
+     */
+    public function kembalikanAo(Request $request, $id)
+    {
+        if (!\App\Helper\ProformaAccess::canRevisiBatal(Auth::user())) {
+            $msg = 'Kembalikan ke AO hanya untuk admin sales dan management.';
+            if ($request->ajax() || $request->wantsJson()) {
+                return response()->json(['success' => false, 'message' => $msg], 403);
+            }
+            return back()->with('error', $msg);
+        }
+
+        $pengajuan = PengajuanProforma::findOrFail($id);
+
+        if ($pengajuan->status !== PengajuanProforma::STATUS_DISETUJUI) {
+            return back()->with('error', 'Hanya pengajuan disetujui (sudah mutasi) yang bisa dikembalikan ke AO.');
+        }
+
+        if (empty($pengajuan->member_id_hasil)) {
+            return back()->with('error', 'Pengajuan ini belum punya member hasil mutasi.');
+        }
+
+        $validator = Validator::make($request->all(), [
+            'catatan' => 'required|string|max:1000',
+        ], ['catatan.required' => 'Catatan revisi untuk AO wajib diisi.']);
+
+        if ($validator->fails()) {
+            return back()->withErrors($validator)->withInput();
+        }
+
+        $pengajuan->update([
+            'revisi_ao' => true,
+            'catatan' => ($pengajuan->catatan ? $pengajuan->catatan . ' | ' : '') . 'REVISI-AO: ' . $request->catatan,
+        ]);
+
+        // Sembunyikan proforma dari semua tab selama revisi (status 0);
+        // kembali ke Aktif (1) saat update revisi dari AO tiba.
+        if (!empty($pengajuan->member_id_hasil)) {
+            $pf = \App\Entities\Penjualan\SalesOrderProforma::where(
+                'customer_other_address_id', $pengajuan->member_id_hasil
+            )->orderBy('id', 'desc')->first();
+            if ($pf && !empty($pf->so_id)) {
+                SalesOrder::where('id', $pf->so_id)->update(['status_proforma' => 0]);
+            }
+        }
+
+        $notifOk = $this->notifyAoRevisi(
+            $pengajuan->estimate_number,
+            'Revisi data (tanpa pengajuan ulang): ' . trim((string) $request->catatan),
+            'post_mutasi'
+        );
+
+        $msg = 'Dikembalikan ke AO untuk revisi data.'
+            . ($notifOk
+                ? ' AO ubah via Edit; proforma diperbarui otomatis tanpa pengajuan/mutasi ulang.'
+                : ' (Notifikasi otomatis ke AO gagal — minta AO buka dari inbox / hubungi IT.)');
+
+        if ($request->ajax() || $request->wantsJson()) {
+            return response()->json(['success' => true, 'message' => $msg]);
+        }
+
+        return redirect()
+            ->route('superuser.penjualan.pengajuan_proforma.show', $id)
+            ->with('success', $msg);
+    }
+
+    // ------------------------------------------------------------------
+    // TOLAK = hapus / cabut semua (baris + file dihapus, AO kembali draft).
     // ------------------------------------------------------------------
 
     /**
@@ -218,16 +466,46 @@ class PengajuanProformaController extends Controller
             return back()->withErrors($validator)->withInput();
         }
 
-        $pengajuan->update([
-            'status'      => PengajuanProforma::STATUS_DITOLAK,
-            'catatan'     => $request->catatan,
-            'verified_by' => $this->adminName(),
-            'verified_at' => now(),
-        ]);
+        $alasan = 'Ditolak admin sales: ' . trim((string) $request->catatan);
+        $notifOk = $this->cabutPengajuan($pengajuan, $alasan);
 
         return redirect()
             ->route('superuser.penjualan.pengajuan_proforma.index')
-            ->with('success', 'Pengajuan ditolak.');
+            ->with('success', 'Pengajuan ditolak dan dicabut total.'
+                . ($notifOk
+                    ? ' AO sudah diberi tahu — estimate kembali draft.'
+                    : ' (Notifikasi otomatis ke AO gagal — minta AO perbaiki manual / hubungi IT.)'));
+    }
+
+    /**
+     * Cabut total pengajuan pre-mutasi: hapus file + baris + kabari AO.
+     * Dipakai tolak() dan hapus(). Mengembalikan hasil notif (bool).
+     */
+    private function cabutPengajuan(PengajuanProforma $pengajuan, string $alasan): bool
+    {
+        $estimateNumber = $pengajuan->estimate_number;
+
+        foreach (['ktp_photo_path', 'npwp_photo_path'] as $col) {
+            $p = $pengajuan->{$col};
+            if (!empty($p) && Storage::disk('local')->exists($p)) {
+                Storage::disk('local')->delete($p);
+            }
+        }
+        foreach (json_decode((string) $pengajuan->bukti_list, true) ?: [] as $bp) {
+            if (is_string($bp) && Storage::disk('local')->exists($bp)) {
+                Storage::disk('local')->delete($bp);
+            }
+        }
+
+        $pengajuan->delete();
+
+        Log::info('Pengajuan proforma dicabut total', [
+            'estimate_number' => $estimateNumber,
+            'by' => $this->adminName(),
+            'alasan' => $alasan,
+        ]);
+
+        return $this->notifyAoRevisi($estimateNumber, $alasan);
     }
 
     // ------------------------------------------------------------------
@@ -270,22 +548,7 @@ class PengajuanProformaController extends Controller
         $aoPic = $pengajuan->ao_pic;
         $alasan = trim((string) $request->alasan);
 
-        foreach (['ktp_photo_path', 'npwp_photo_path'] as $col) {
-            $p = $pengajuan->{$col};
-            if (!empty($p) && Storage::disk('local')->exists($p)) {
-                Storage::disk('local')->delete($p);
-            }
-        }
-
-        $pengajuan->delete();
-
-        Log::info('Pengajuan proforma dihapus (minta revisi AO)', [
-            'estimate_number' => $estimateNumber,
-            'by' => $this->adminName(),
-            'alasan' => $alasan,
-        ]);
-
-        $notifOk = $this->notifyAoRevisi($estimateNumber, $alasan);
+        $notifOk = $this->cabutPengajuan($pengajuan, $alasan);
 
         $msg = 'Pengajuan ' . $estimateNumber . ' dihapus.'
             . ($notifOk
@@ -301,8 +564,9 @@ class PengajuanProformaController extends Controller
      * Kabari modul AO agar estimate kembali draft (best-effort).
      * POST {AO}/api/ao/estimate-revisi (agenda token) — turunan dari
      * AO_MODULE_NOTIF_URL yang sudah ada (.../api/ao/notif).
+     * $mode: pra_mutasi (draft + ajukan ulang) | post_mutasi (edit + update proforma).
      */
-    private function notifyAoRevisi(string $estimateNumber, string $alasan): bool
+    private function notifyAoRevisi(string $estimateNumber, string $alasan, string $mode = 'pra_mutasi'): bool
     {
         $notifUrl = (string) config('services.ao_module.notif_inbound_url');
         $apiKey = (string) config('services.ao_module.api_key');
@@ -334,6 +598,7 @@ class PengajuanProformaController extends Controller
                 'json' => [
                     'estimate_number' => $estimateNumber,
                     'alasan' => $alasan,
+                    'mode' => $mode,
                 ],
             ]);
 
@@ -463,7 +728,8 @@ class PengajuanProformaController extends Controller
             // Kabari AO (non-blocking — gagal notif tidak membatalkan cancel)
             $notifOk = $this->mutasiSvc->notifAoBatal(
                 $pengajuan->fresh(),
-                $request->input('proforma_code')
+                $request->input('proforma_code'),
+                trim((string) $request->input('alasan', ''))
             );
 
             $msg = 'Proforma dibatalkan. Log audit tersimpan.'

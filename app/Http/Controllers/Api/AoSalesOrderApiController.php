@@ -42,11 +42,12 @@ class AoSalesOrderApiController extends Controller
             'kelurahan' => 'nullable|string|max:100',
             'zone' => 'nullable|string|max:100',
             'kategori' => 'nullable|string|max:100',
-            'ktp' => 'required|digits:16',
+            'ktp' => 'nullable|digits:16',
             'npwp' => 'nullable|digits:15',
             'termin' => 'required|in:CASH,TEMPO_14,TEMPO_30',
             'foto_ktp_ada' => 'nullable|boolean',
             'foto_npwp_ada' => 'nullable|boolean',
+            'bukti_ada' => 'nullable|boolean',
             'grand_total' => 'nullable|numeric|min:0',
             'items' => 'nullable|array',
             'submitted_at' => 'nullable|date',
@@ -70,7 +71,10 @@ class AoSalesOrderApiController extends Controller
         }
 
         $sudah = PengajuanProforma::where('estimate_number', $request->estimate_number)->first();
-        if ($sudah && $sudah->status !== PengajuanProforma::STATUS_MENUNGGU) {
+        // Ajukan ulang (data dikirim lagi full) diizinkan dari status revisi/ditolak/
+        // dibatalkan: baris dipakai ulang, status kembali menunggu.
+        $bolehUlang = [PengajuanProforma::STATUS_MENUNGGU, PengajuanProforma::STATUS_REVISI, PengajuanProforma::STATUS_DITOLAK, PengajuanProforma::STATUS_DIBATALKAN];
+        if ($sudah && !in_array($sudah->status, $bolehUlang, true)) {
             return response()->json([
                 'success' => true,
                 'message' => 'Pengajuan sudah diproses (' . $sudah->status . '), kiriman ulang diabaikan.',
@@ -101,6 +105,7 @@ class AoSalesOrderApiController extends Controller
                     'termin' => $request->termin,
                     'foto_ktp_ada' => (bool) $request->input('foto_ktp_ada', false),
                     'foto_npwp_ada' => (bool) $request->input('foto_npwp_ada', false),
+                    'bukti_ada' => $request->has('bukti_ada') ? (bool) $request->input('bukti_ada') : null,
                     'grand_total' => $request->input('grand_total', 0),
                     'items_count' => count($items),
                     'items_json' => empty($items) ? null : json_encode(array_values($items)),
@@ -145,11 +150,13 @@ class AoSalesOrderApiController extends Controller
         $validator = Validator::make($request->all(), [
             'ktp_photo' => 'nullable|image|mimes:jpg,jpeg,png,webp|max:5120',
             'npwp_photo' => 'nullable|image|mimes:jpg,jpeg,png,webp|max:5120',
+            'bukti' => 'nullable|array|max:3',
+            'bukti.*' => 'image|mimes:jpg,jpeg,png,webp|max:5120',
         ]);
         if ($validator->fails()) {
             return response()->json(['success' => false, 'message' => $validator->errors()->first()], 422);
         }
-        if (!$request->hasFile('ktp_photo') && !$request->hasFile('npwp_photo')) {
+        if (!$request->hasFile('ktp_photo') && !$request->hasFile('npwp_photo') && !$request->hasFile('bukti')) {
             return response()->json(['success' => false, 'message' => 'Tidak ada file yang dikirim.'], 422);
         }
 
@@ -164,9 +171,137 @@ class AoSalesOrderApiController extends Controller
                 }
             }
         }
+        // Bukti capture chat (multi, maks 3) — ganti total setiap kiriman
+        if ($request->hasFile('bukti')) {
+            $oldList = json_decode((string) $pengajuan->bukti_list, true) ?: [];
+            foreach ($oldList as $op) {
+                if (is_string($op) && Storage::disk('local')->exists($op)) {
+                    Storage::disk('local')->delete($op);
+                }
+            }
+            $saved = [];
+            foreach (array_slice((array) $request->file('bukti'), 0, 3) as $f) {
+                $saved[] = $f->store('pengajuan_proforma/' . $pengajuan->id, 'local');
+            }
+            $update['bukti_list'] = json_encode(array_values($saved));
+            $update['bukti_ada'] = !empty($saved);
+        }
         $pengajuan->update($update);
 
         return response()->json(['success' => true, 'message' => 'Dokumen diterima.']);
+    }
+
+    /**
+     * Revisi proforma dari AO pasca-mutasi (tanpa pengajuan/mutasi ulang).
+     * POST /api/ao/so-awal/proforma-revision (ao.apikey).
+     * Syarat: pengajuan disetujui + flag revisi_ao. Efek: item diganti,
+     * total dihitung ulang, SO kembali status terbuat (2) untuk kalkulasi ulang.
+     */
+    public function proformaRevision(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            'estimate_number' => 'required|string|max:100',
+            'items' => 'required|array|min:1',
+            'items.*.product_packaging_id' => 'required|string',
+            'items.*.price' => 'required|numeric|min:0',
+            'items.*.qty' => 'required|numeric|min:0.01',
+            'items.*.disc_usd' => 'nullable|numeric|min:0',
+            'items.*.packaging_id' => 'nullable|string',
+            'items.*.free' => 'nullable|boolean',
+            'discount_value' => 'nullable|numeric|min:0',
+            'disc_idr' => 'nullable|numeric|min:0',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'success' => false,
+                'message' => $validator->errors()->first(),
+            ], 422);
+        }
+
+        $pengajuan = PengajuanProforma::where('estimate_number', $request->estimate_number)->first();
+        if (!$pengajuan
+            || $pengajuan->status !== PengajuanProforma::STATUS_DISETUJUI
+            || empty($pengajuan->revisi_ao)
+            || empty($pengajuan->member_id_hasil)
+        ) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Tidak ada revisi berjalan untuk estimate ini.',
+            ], 422);
+        }
+
+        $proforma = \App\Entities\Penjualan\SalesOrderProforma::where(
+            'customer_other_address_id', $pengajuan->member_id_hasil
+        )->orderBy('id', 'desc')->first();
+
+        if (!$proforma) {
+            return response()->json(['success' => false, 'message' => 'Proforma tidak ditemukan.'], 404);
+        }
+        if ((int) $proforma->so_lanjutan === 1 || (int) $proforma->status === 4) {
+            return response()->json(['success' => false, 'message' => 'Proforma sudah lanjutan/ACC, revisi ditolak.'], 422);
+        }
+
+        try {
+            DB::transaction(function () use ($request, $pengajuan, $proforma) {
+                \App\Entities\Penjualan\SalesOrderProformaItem::where('so_proforma_id', $proforma->id)->delete();
+
+                $purchase = 0;
+                foreach ((array) $request->input('items') as $it) {
+                    $free = !empty($it['free']);
+                    $price = (float) ($it['price'] ?? 0);
+                    $qty = (float) ($it['qty'] ?? 0);
+                    $line = new \App\Entities\Penjualan\SalesOrderProformaItem();
+                    $line->so_proforma_id = $proforma->id;
+                    $line->product_packaging_id = $it['product_packaging_id'];
+                    $line->price = $price;
+                    $line->qty = $qty;
+                    $line->disc_usd = (float) ($it['disc_usd'] ?? 0);
+                    $line->packaging_id = $it['packaging_id'] ?? null;
+                    $line->free_product = $free ? 1 : 0;
+                    $line->total_item = $free ? 0 : $price * $qty;
+                    $line->save();
+                    $purchase += $line->total_item;
+                }
+
+                $cost = \App\Entities\Penjualan\SalesOrderProformaDetails::firstOrNew(
+                    ['so_proforma_id' => $proforma->id]
+                );
+                $discPct = (float) $request->input('discount_value', 0);
+                $discIdr = (float) $request->input('disc_idr', 0);
+                $cost->discount_1_percent = $discPct;
+                $cost->discount_1 = $discIdr;
+                $cost->purchase_total_idr = $purchase;
+                $cost->voucher_idr = (float) ($cost->voucher_idr ?: 0);
+                $cost->delivery_cost_idr = (float) ($cost->delivery_cost_idr ?: 0);
+                $cost->discount_2_percent = (float) ($cost->discount_2_percent ?: 0);
+                $cost->discount_2 = (float) ($cost->discount_2 ?: 0);
+                $cost->discount_idr = (float) ($cost->discount_idr ?: 0);
+                $discAgen = $purchase * ($discPct / 100);
+                $cost->grand_total_idr = $purchase - $discAgen - $discIdr
+                    - (float) ($cost->discount_2 ?: 0) - (float) ($cost->discount_idr ?: 0)
+                    - (float) ($cost->voucher_idr ?: 0) + (float) ($cost->delivery_cost_idr ?: 0);
+                $cost->save();
+
+                if (!empty($proforma->so_id)) {
+                    // Kembali ke Aktif (1) agar dikalkulasi ulang, bukan Terbuat
+                    SalesOrder::where('id', $proforma->so_id)->update(['status_proforma' => 1]);
+                }
+
+                $pengajuan->update(['revisi_ao' => false]);
+            });
+
+            Log::info('AO proforma revision applied', ['estimate' => $request->estimate_number]);
+        } catch (\Exception $e) {
+            Log::error('AO proforma revision gagal', [
+                'estimate' => $request->input('estimate_number'),
+                'error' => $e->getMessage(),
+            ]);
+
+            return response()->json(['success' => false, 'message' => 'Gagal menerapkan revisi: ' . $e->getMessage()], 500);
+        }
+
+        return response()->json(['success' => true, 'message' => 'Proforma diperbarui, kembali ke status terbuat untuk kalkulasi ulang.']);
     }
 
     /**
@@ -531,6 +666,18 @@ class AoSalesOrderApiController extends Controller
                     $so->refresh();
                 } catch (\Exception $wfEx) {
                     Log::warning('AO SO auto-lanjutkan gagal, tetap status AWAL: ' . $wfEx->getMessage(), ['so_id' => $so->id]);
+                }
+            }
+
+            // 1-jalan: SO lanjutan dari estimate CASH => otomatis buatkan dokumen
+            // proforma status "terbuat" (warehouse dikosongkan, diisi saat kalkulasi).
+            // Idempoten + non-blocking: gagal = admin buat manual seperti biasa.
+            if (!$isIndent && strtoupper(trim((string) $so->type_transaction)) === 'CASH') {
+                try {
+                    $this->autoBuatProformaTerbuat($so);
+                    $so->refresh();
+                } catch (\Exception $pfEx) {
+                    Log::warning('AO SO auto-proforma gagal, buat manual: ' . $pfEx->getMessage(), ['so_id' => $so->id]);
                 }
             }
 
@@ -990,6 +1137,76 @@ class AoSalesOrderApiController extends Controller
         }
         $s = strtolower(trim((string) $v));
         return in_array($s, ['1', 'yes', 'y', 'true', 'on'], true);
+    }
+
+    /**
+     * 1-jalan: buatkan dokumen proforma status "terbuat" dari SO lanjutan
+     * estimate (warehouse dikosongkan — diisi admin saat kalkulasi).
+     * Idempoten: lewati bila proforma untuk SO ini sudah ada.
+     */
+    protected function autoBuatProformaTerbuat($so)
+    {
+        $exists = \App\Entities\Penjualan\SalesOrderProforma::where('so_id', $so->id)->first();
+        if ($exists) {
+            return $exists;
+        }
+
+        $items = \App\Entities\Penjualan\SalesOrderItem::where('so_id', $so->id)->get();
+        if ($items->isEmpty()) {
+            throw new \Exception('SO tanpa item, proforma tidak bisa dibuat otomatis.');
+        }
+
+        return DB::transaction(function () use ($so, $items) {
+            $doc = new \App\Entities\Penjualan\SalesOrderProforma();
+            $doc->so_id = $so->id;
+            $doc->code = CodeRepo::generateSoProforma();
+            $doc->customer_other_address_id = $so->customer_other_address_id;
+            $doc->so_date = now()->toDateString();
+            $doc->so_brand_name = $so->brand_name;
+            $doc->so_type_transaction = $so->type_transaction;
+            $doc->warehouse_id = null; // diisi admin saat kalkulasi
+            $doc->note = '[AUTO 1-jalan] dari ' . ($so->so_code ?: ('SO#' . $so->id)) . ' — warehouse + kalkulasi oleh admin.';
+            $doc->status = 1;
+            $doc->exsisting_customer = 1;
+            $doc->created_by = null;
+            $doc->save();
+
+            $purchase = 0;
+            foreach ($items as $it) {
+                $line = new \App\Entities\Penjualan\SalesOrderProformaItem();
+                $line->so_proforma_id = $doc->id;
+                $line->product_packaging_id = $it->product_packaging_id;
+                $line->price = (float) $it->price;
+                $line->qty = (float) $it->qty;
+                $line->disc_usd = (float) ($it->disc_usd ?: 0);
+                $line->packaging_id = $it->packaging_id;
+                $line->free_product = (int) ($it->free_product ?: 0);
+                $line->total_item = ((float) $it->price) * ((float) $it->qty);
+                $line->save();
+                $purchase += $line->total_item;
+            }
+
+            $cost = new \App\Entities\Penjualan\SalesOrderProformaDetails();
+            $cost->so_proforma_id = $doc->id;
+            $cost->discount_1_percent = 0;
+            $cost->discount_1 = 0;
+            $cost->discount_2_percent = 0;
+            $cost->discount_2 = 0;
+            $cost->discount_idr = 0;
+            $cost->voucher_idr = 0;
+            $cost->purchase_total_idr = $purchase;
+            $cost->delivery_cost_idr = 0;
+            $cost->grand_total_idr = $purchase;
+            $cost->save();
+
+            // Samakan update() manual: SO masuk tab "terbuat"
+            $so->status_proforma = 2;
+            $so->save();
+
+            Log::info('AO SO auto-proforma terbuat', ['so_id' => $so->id, 'proforma' => $doc->code]);
+
+            return $doc;
+        });
     }
 
     protected function generateEstimateCode()

@@ -6,9 +6,10 @@
 .crm-wrapper { max-width: 992px; margin: auto; }
 
 /* ── Page header ── */
-.pp-header { margin-bottom: 20px; }
-.pp-no { font-size: 1.35rem; font-weight: 700; color: #2d3748; }
-.pp-meta { font-size: .82rem; color: #a0aec0; margin-top: 3px; }
+.pp-no { font-size: 1.1rem; font-weight: 700; color: #2d3748; }
+.pp-meta { font-size: .8rem; color: #64748b; margin-top: 2px; }
+.pp-crumb { font-size: .8rem; color: #64748b; text-decoration: none; display: inline-flex; align-items: center; gap: 4px; }
+.pp-crumb:hover { color: #4e73df; }
 
 /* ── Card ── */
 .pp-card { background:#fff; border:1px solid #e8ecf0; border-radius:10px; overflow:hidden; margin-bottom:16px; }
@@ -22,17 +23,17 @@
 .info-3col { display:grid; grid-template-columns:1fr 1fr 1fr; gap:0; }
 .info-3col .col-divider { border-right:1px solid #f1f5f9; }
 .info-3col .col-divider:last-child { border-right:none; }
-.info-col { padding:16px 18px; }
-.info-col-title { font-size:.68rem; font-weight:700; text-transform:uppercase; letter-spacing:.6px; color:#a0aec0; margin-bottom:10px; }
+.info-col { padding:12px 14px; }
+.info-col-title { font-size:.68rem; font-weight:700; text-transform:uppercase; letter-spacing:.6px; color:#64748b; margin-bottom:10px; }
 
 .info-row { display:flex; flex-direction:column; padding:5px 0; border-bottom:1px solid #f8fafc; }
 .info-row:last-child { border-bottom:none; }
-.info-lbl { font-size:.72rem; color:#a0aec0; margin-bottom:1px; }
+.info-lbl { font-size:.72rem; color:#64748b; margin-bottom:1px; }
 .info-val { font-size:.875rem; color:#2d3748; font-weight:500; word-break:break-word; }
 .info-val.big { font-size:1rem; font-weight:700; color:#1a202c; }
 
 /* ── Identitas kepala ── */
-.prospect-head { padding:14px 18px 0; display:flex; align-items:center; gap:12px; }
+.prospect-head { padding:10px 14px 0; display:flex; align-items:center; gap:10px; }
 .prospect-avatar {
     width:44px; height:44px; border-radius:50%; background:#e8f0fe;
     display:flex; align-items:center; justify-content:center;
@@ -41,10 +42,17 @@
 .prospect-name { font-size:1.05rem; font-weight:700; color:#1a202c; line-height:1.2; }
 .prospect-sub { font-size:.8rem; color:#718096; }
 
-/* ── Dokumen inline ── */
-.doc-row { display:flex; align-items:center; gap:8px; padding:6px 0; border-bottom:1px solid #f8fafc; }
+/* ── Dokumen inline (rapat) ── */
+.doc-row { display:flex; align-items:center; gap:8px; padding:4px 0; border-bottom:1px solid #f8fafc; }
 .doc-row:last-child { border-bottom:none; }
-.doc-lbl { font-size:.72rem; color:#a0aec0; width:70px; flex-shrink:0; }
+.doc-lbl { font-size:.72rem; color:#64748b; width:70px; flex-shrink:0; }
+.doc-row .form-control-sm { height:28px; font-size:.8rem; padding:2px 8px; }
+/* Dropzone foto: klik/seret/tempel */
+.doc-drop { flex:1; border:1.5px dashed #cbd5e0; border-radius:8px; padding:6px 8px; text-align:center; font-size:.72rem; color:#718096; cursor:pointer; background:#f8fafc; transition:all .12s; min-width:0; }
+.doc-drop:hover, .doc-drop.over { border-color:#4e73df; color:#4e73df; background:#eef4ff; }
+.doc-drop.has-file { border-style:solid; border-color:#16a34a; color:#16a34a; background:#f0fdf4; }
+.doc-prev { display:flex; gap:4px; margin-top:4px; flex-wrap:wrap; }
+.doc-prev img { width:40px; height:40px; object-fit:cover; border-radius:6px; border:1px solid #e2e8f0; }
 .doc-pill {
     display:inline-flex; align-items:center; gap:4px; font-size:.75rem; font-weight:600;
     padding:3px 10px; border-radius:20px;
@@ -69,27 +77,19 @@
 @section('content')
 <div class="crm-wrapper">
 
-    {{-- Breadcrumb --}}
-    <a href="{{ route('superuser.penjualan.pengajuan_proforma.index') }}" class="text-muted small d-inline-block mb-3">
-        <i class="fa fa-arrow-left mr-1"></i>Kembali ke Antrian
-    </a>
-
-    {{-- Page header --}}
+    {{-- Page header ringkas: konteks EST tetap terlihat (scent), status ikut di kepala identitas --}}
     @php
-        $badgeMap   = ['menunggu'=>['warning','#f6c23e','#333'], 'disetujui'=>['success','#1cc88a','#fff'], 'ditolak'=>['danger','#e74a3b','#fff'], 'dibatalkan'=>['secondary','#858796','#fff']];
+        $badgeMap   = ['menunggu'=>['warning','#f6c23e','#333'], 'disetujui'=>['success','#1cc88a','#fff'], 'ditolak'=>['danger','#e74a3b','#fff'], 'dibatalkan'=>['secondary','#858796','#fff'], 'revisi'=>['info','#36b9cc','#fff']];
         $bStyle     = $badgeMap[$pengajuan->status] ?? ['secondary','#858796','#fff'];
     @endphp
-    <div class="pp-header d-flex justify-content-between align-items-start">
-        <div>
-            <div class="pp-no">{{ $pengajuan->estimate_number }}</div>
-            <div class="pp-meta">
-                AO: <strong>{{ $pengajuan->ao_pic ?: '-' }}</strong>
-                @if($pengajuan->created_at) &bull; {{ $pengajuan->created_at->format('d/m/Y H:i') }} @endif
-            </div>
+    <div class="d-flex justify-content-between align-items-center mb-2">
+        <a href="{{ route('superuser.penjualan.pengajuan_proforma.index') }}" class="pp-crumb">
+            <i class="fa fa-arrow-left"></i> Antrian
+        </a>
+        <div class="text-right" style="min-width:0;">
+            <span class="pp-no">{{ $pengajuan->estimate_number ?: 'EST-?' }}</span>
+            <span class="pp-meta ml-2">AO: <strong>{{ $pengajuan->ao_pic ?: '-' }}</strong>@if($pengajuan->created_at) &bull; {{ $pengajuan->created_at->format('d/m/Y H:i') }} @endif</span>
         </div>
-        <span class="status-pill" style="background:{{ $bStyle[1] }};color:{{ $bStyle[2] }}">
-            {{ ucfirst($pengajuan->status) }}
-        </span>
     </div>
 
     {{-- Flash --}}
@@ -195,10 +195,10 @@
     ═════════════════════════════════════════ --}}
     <div class="pp-card">
 
-        {{-- Nama besar di atas --}}
+        {{-- Nama besar di atas + badge status menempel kanan --}}
         <div class="prospect-head">
             <div class="prospect-avatar">{{ strtoupper(substr($pengajuan->prospect_name,0,1)) }}</div>
-            <div>
+            <div style="min-width:0;">
                 <div class="prospect-name">{{ $pengajuan->prospect_name }}</div>
                 @if($pengajuan->perusahaan && $pengajuan->perusahaan !== $pengajuan->prospect_name)
                     <div class="prospect-sub"><i class="fa fa-store mr-1" style="font-size:.7rem"></i>{{ $pengajuan->perusahaan }}</div>
@@ -207,6 +207,9 @@
                     <div class="prospect-sub"><i class="fa fa-user mr-1" style="font-size:.7rem"></i>CP: {{ $pengajuan->owner }}</div>
                 @endif
             </div>
+            <span class="status-pill" style="margin-left:auto;background:{{ $bStyle[1] }};color:{{ $bStyle[2] }}">
+                {{ ucfirst($pengajuan->status) }}
+            </span>
         </div>
 
         <div class="pp-card-hd mt-2">
@@ -265,37 +268,185 @@
                 </div>
             </div>
 
-            {{-- Kolom 3: Dokumen --}}
+            {{-- Kolom 3: Dokumen (bisa diisi admin sales sebelum/sesudah mutasi) --}}
             <div class="info-col">
                 <div class="info-col-title"><i class="fa fa-file-alt mr-1"></i>Dokumen</div>
-
+                @if(in_array($pengajuan->status, ['menunggu', 'revisi', 'disetujui'], true))
+                <form method="POST" action="{{ route('superuser.penjualan.pengajuan_proforma.dokumen-simpan', $pengajuan->id) }}" enctype="multipart/form-data" id="frmDokumen">
+                    @csrf
+                    <div class="doc-row">
+                        <span class="doc-lbl">No. HP</span>
+                        <input type="text" name="phone" value="{{ $pengajuan->phone }}" class="form-control form-control-sm">
+                    </div>
+                    <div class="doc-row">
+                        <span class="doc-lbl">No. KTP</span>
+                        <input type="text" name="ktp" value="{{ $pengajuan->ktp }}" maxlength="16" inputmode="numeric" class="form-control form-control-sm" placeholder="16 digit (opsional)">
+                    </div>
+                    <div class="doc-row">
+                        <span class="doc-lbl">NPWP</span>
+                        <input type="text" name="npwp" value="{{ $pengajuan->npwp }}" maxlength="15" inputmode="numeric" class="form-control form-control-sm" placeholder="15 digit (opsional)">
+                    </div>
+                    <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;">
+                        <div>
+                            <div class="doc-lbl" style="margin-bottom:2px;">Foto KTP</div>
+                            <div class="doc-drop" id="docKtpDrop" title="Klik / seret file / tempel (Ctrl+V)">
+                                <span id="docKtpTxt">{{ $pengajuan->ktp_photo_path ? 'Ada — ganti?' : 'Klik / seret' }}</span>
+                                @if($pengajuan->ktp_photo_path)
+                                <a href="{{ route('superuser.penjualan.pengajuan_proforma.dokumen', ['id' => $pengajuan->id, 'jenis' => 'ktp']) }}" target="_blank"
+                                   class="btn btn-xs btn-outline-secondary ml-1" style="font-size:.7rem;padding:1px 7px;" onclick="event.stopPropagation();">
+                                    <i class="fa fa-eye"></i>
+                                </a>
+                                @endif
+                            </div>
+                            <input type="file" name="ktp_photo" id="docKtpFile" accept="image/*" style="display:none;">
+                            <div class="doc-prev" id="docKtpPrev"></div>
+                        </div>
+                        <div>
+                            <div class="doc-lbl" style="margin-bottom:2px;">Foto NPWP</div>
+                            <div class="doc-drop" id="docNpwpDrop" title="Klik / seret file / tempel (Ctrl+V)">
+                                <span id="docNpwpTxt">{{ $pengajuan->npwp_photo_path ? 'Ada — ganti?' : 'Klik / seret' }}</span>
+                                @if($pengajuan->npwp_photo_path)
+                                <a href="{{ route('superuser.penjualan.pengajuan_proforma.dokumen', ['id' => $pengajuan->id, 'jenis' => 'npwp']) }}" target="_blank"
+                                   class="btn btn-xs btn-outline-secondary ml-1" style="font-size:.7rem;padding:1px 7px;" onclick="event.stopPropagation();">
+                                    <i class="fa fa-eye"></i>
+                                </a>
+                                @endif
+                            </div>
+                            <input type="file" name="npwp_photo" id="docNpwpFile" accept="image/*" style="display:none;">
+                            <div class="doc-prev" id="docNpwpPrev"></div>
+                        </div>
+                    </div>
+                    <div class="doc-row">
+                        <span class="doc-lbl"></span>
+                        <button type="submit" class="btn btn-xs btn-primary font-weight-bold">
+                            <i class="fa fa-save"></i> Simpan Dokumen
+                        </button>
+                    </div>
+                    <small class="text-muted d-block mt-1">Sesudah mutasi: tersimpan langsung ke data customer.</small>
+                </form>
+                @else
+                {{-- Read-only: pengajuan sudah final (disetujui/ditolak/dibatalkan) --}}
+                <div class="doc-row">
+                    <span class="doc-lbl">No. HP</span>
+                    <span class="info-val">{{ $pengajuan->phone ?: '—' }}</span>
+                </div>
+                <div class="doc-row">
+                    <span class="doc-lbl">No. KTP</span>
+                    <span class="info-val">{{ $pengajuan->ktp ?: '—' }}</span>
+                </div>
+                <div class="doc-row">
+                    <span class="doc-lbl">NPWP</span>
+                    <span class="info-val">{{ $pengajuan->npwp ?: '—' }}</span>
+                </div>
                 <div class="doc-row">
                     <span class="doc-lbl">Foto KTP</span>
-                    @if($pengajuan->foto_ktp_ada)
-                        <span class="doc-pill ada"><i class="fa fa-check"></i> Ada</span>
-                        @if($pengajuan->ktp_photo_path)
-                            <a href="{{ route('superuser.penjualan.pengajuan_proforma.dokumen', ['id' => $pengajuan->id, 'jenis' => 'ktp']) }}" target="_blank"
-                               class="btn btn-xs btn-outline-secondary" style="font-size:.75rem;padding:2px 8px;margin-left:4px">
-                                <i class="fa fa-eye"></i> Lihat
-                            </a>
-                        @endif
+                    @if($pengajuan->ktp_photo_path)
+                    <a href="{{ route('superuser.penjualan.pengajuan_proforma.dokumen', ['id' => $pengajuan->id, 'jenis' => 'ktp']) }}" target="_blank"
+                       class="btn btn-xs btn-outline-secondary" style="font-size:.75rem;padding:2px 8px;">
+                        <i class="fa fa-eye"></i> Lihat
+                    </a>
                     @else
-                        <span class="doc-pill belum"><i class="fa fa-times"></i> Belum</span>
+                    <span class="text-muted">—</span>
                     @endif
                 </div>
-
                 <div class="doc-row">
                     <span class="doc-lbl">Foto NPWP</span>
-                    @if($pengajuan->foto_npwp_ada)
-                        <span class="doc-pill ada"><i class="fa fa-check"></i> Ada</span>
-                        @if($pengajuan->npwp_photo_path)
-                            <a href="{{ route('superuser.penjualan.pengajuan_proforma.dokumen', ['id' => $pengajuan->id, 'jenis' => 'npwp']) }}" target="_blank"
-                               class="btn btn-xs btn-outline-secondary" style="font-size:.75rem;padding:2px 8px;margin-left:4px">
-                                <i class="fa fa-eye"></i> Lihat
-                            </a>
-                        @endif
+                    @if($pengajuan->npwp_photo_path)
+                    <a href="{{ route('superuser.penjualan.pengajuan_proforma.dokumen', ['id' => $pengajuan->id, 'jenis' => 'npwp']) }}" target="_blank"
+                       class="btn btn-xs btn-outline-secondary" style="font-size:.75rem;padding:2px 8px;">
+                        <i class="fa fa-eye"></i> Lihat
+                    </a>
                     @else
-                        <span class="doc-pill belum"><i class="fa fa-times"></i> Belum</span>
+                    <span class="text-muted">—</span>
+                    @endif
+                </div>
+                @endif
+                @if(in_array($pengajuan->status, ['menunggu', 'revisi', 'disetujui'], true))
+                <script>
+                (function () {
+                    function docAssign(kind, file) {
+                        if (!file || (file.type && file.type.indexOf('image/') !== 0)) { alert('File harus berupa gambar.'); return; }
+                        if (file.size > 5 * 1024 * 1024) { alert('Maksimal 5MB per foto.'); return; }
+                        var input = document.getElementById(kind === 'ktp' ? 'docKtpFile' : 'docNpwpFile');
+                        var drop = document.getElementById(kind === 'ktp' ? 'docKtpDrop' : 'docNpwpDrop');
+                        var prev = document.getElementById(kind === 'ktp' ? 'docKtpPrev' : 'docNpwpPrev');
+                        var txt = document.getElementById(kind === 'ktp' ? 'docKtpTxt' : 'docNpwpTxt');
+                        if (!input || !drop) return;
+                        var dt = new DataTransfer();
+                        dt.items.add(file);
+                        input.files = dt.files;
+                        drop.classList.add('has-file');
+                        if (prev) prev.innerHTML = '<img src="' + URL.createObjectURL(file) + '" title="' + file.name + '">';
+                        if (txt) txt.textContent = file.name;
+                        lastDoc = kind === 'ktp' ? 'docKtpDrop' : 'docNpwpDrop';
+                    }
+                    function bindDoc(dropId, kind) {
+                        var drop = document.getElementById(dropId);
+                        if (!drop) return;
+                        drop.addEventListener('click', function(e) {
+                            if (e.target.closest('a')) return;
+                            lastDoc = dropId;
+                            document.getElementById(kind === 'ktp' ? 'docKtpFile' : 'docNpwpFile').click();
+                        });
+                        ['dragover', 'dragenter'].forEach(function(ev) {
+                            drop.addEventListener(ev, function(e) { e.preventDefault(); drop.classList.add('over'); });
+                        });
+                        ['dragleave', 'drop'].forEach(function(ev) {
+                            drop.addEventListener(ev, function(e) { e.preventDefault(); drop.classList.remove('over'); });
+                        });
+                        drop.addEventListener('drop', function(e) {
+                            if (e.dataTransfer && e.dataTransfer.files[0]) docAssign(kind, e.dataTransfer.files[0]);
+                        });
+                    }
+                    var lastDoc = 'docKtpDrop';
+                    bindDoc('docKtpDrop', 'ktp');
+                    bindDoc('docNpwpDrop', 'npwp');
+                    document.getElementById('docKtpFile').addEventListener('change', function() {
+                        if (this.files[0]) docAssign('ktp', this.files[0]);
+                    });
+                    document.getElementById('docNpwpFile').addEventListener('change', function() {
+                        if (this.files[0]) docAssign('npwp', this.files[0]);
+                    });
+                    // Tempel (Ctrl+V): masuk ke dropzone terakhir disentuh (default KTP).
+                    // Abaikan bila fokus sedang di input/textarea agar tidak salah sasaran.
+                    document.addEventListener('paste', function(e) {
+                        var tag = (e.target && e.target.tagName) || '';
+                        if (/^(INPUT|TEXTAREA|SELECT)$/.test(tag)) return;
+                        if (!document.getElementById('frmDokumen')) return;
+                        var files = (e.clipboardData && e.clipboardData.files) || [];
+                        if (!files.length) return;
+                        docAssign(lastDoc === 'docNpwpDrop' ? 'npwp' : 'ktp', files[0]);
+                    });
+                    // Cegah dobel-klik: kunci tombol saat submit dokumen / mutasi
+                    ['frmDokumen', 'frmPaksa', 'frmVerif'].forEach(function(fid) {
+                        var f = document.getElementById(fid);
+                        if (!f) return;
+                        f.addEventListener('submit', function() {
+                            var b = f.querySelector('button[type="submit"]');
+                            if (b) { b.disabled = true; b.innerHTML = '<i class="fa fa-spinner fa-spin"></i> Memproses...'; }
+                        });
+                    });
+                })();
+                </script>
+                @endif
+
+                <div class="doc-row">
+                    <span class="doc-lbl">Bukti Capture</span>
+                    @php $buktiList = json_decode((string) $pengajuan->bukti_list, true) ?: []; @endphp
+                    @if(!is_null($pengajuan->bukti_ada) && $pengajuan->bukti_ada)
+                        <span class="doc-pill ada"><i class="fa fa-check"></i> Ada ({{ count($buktiList) }})</span>
+                        @foreach($buktiList as $bi => $bp)
+                        <a href="{{ route('superuser.penjualan.pengajuan_proforma.bukti', ['id' => $pengajuan->id, 'index' => $bi]) }}" target="_blank" rel="noopener"
+                           class="btn btn-xs btn-outline-secondary" style="font-size:.75rem;padding:4px 10px;margin-left:4px;min-height:32px;"
+                           title="Lihat bukti capture {{ $bi + 1 }} (tab baru)" aria-label="Lihat bukti {{ $bi + 1 }}">
+                            <i class="fa fa-eye"></i> {{ $bi + 1 }}
+                        </a>
+                        @endforeach
+                        <small class="text-muted ml-1">klik untuk lihat</small>
+                    @elseif(is_null($pengajuan->bukti_ada))
+                        <span class="doc-pill belum" title="Pengajuan lama, status bukti tak diketahui"><i class="fa fa-question"></i> Tak diketahui</span>
+                    @else
+                        <span class="doc-pill belum"><i class="fa fa-times"></i> Belum — mutasi diblokir</span>
                     @endif
                 </div>
 
@@ -319,6 +470,9 @@
         {{-- ── Action Row ── --}}
         @if($pengajuan->status === 'menunggu')
         <div class="action-row">
+            <a href="{{ route('superuser.penjualan.pengajuan_proforma.index') }}" class="btn btn-outline-secondary font-weight-bold" style="margin-right:auto;">
+                <i class="fa fa-arrow-left mr-1"></i> Kembali
+            </a>
 
             {{-- Tombol Verifikasi --}}
             @if(!empty($duplikat))
@@ -343,15 +497,16 @@
                 </form>
             @endif
 
-            {{-- Tombol Tolak --}}
-            <button type="button" class="btn btn-outline-danger font-weight-bold" onclick="submitTolak()">
-                <i class="fa fa-times mr-1"></i> Tolak
+            {{-- Kembalikan = revisi, baris + file DIPERTAHANKAN --}}
+            <button type="button" class="btn btn-outline-warning font-weight-bold" onclick="submitKembalikan()"
+                title="Kembalikan (revisi): baris dipertahankan, AO perbaiki lalu ajukan ulang">
+                <i class="fa fa-undo mr-1"></i> Kembalikan (Revisi)
             </button>
 
-            {{-- Tombol Hapus / Minta Revisi (input AO keliru) --}}
-            <button type="button" class="btn btn-outline-secondary font-weight-bold" onclick="submitHapus()"
-                title="Hapus pengajuan ini agar AO bisa perbaiki + ajukan ulang">
-                <i class="fa fa-trash mr-1"></i> Hapus / Revisi
+            {{-- Tolak = cabut total (pengganti Hapus/Revisi yang lama) --}}
+            <button type="button" class="btn btn-outline-danger font-weight-bold" onclick="submitTolak()"
+                title="Tolak: baris + file dihapus total, AO mulai dari draft">
+                <i class="fa fa-times mr-1"></i> Tolak (Cabut Total)
             </button>
 
             @if(!empty($fieldErrors))
@@ -366,17 +521,20 @@
             <input type="hidden" name="catatan" id="inputAlasanTolak">
         </form>
 
-        {{-- Hidden form hapus / revisi --}}
-        <form method="POST" action="{{ route('superuser.penjualan.pengajuan_proforma.hapus', $pengajuan->id) }}" id="frmHapus" class="d-none">
+        {{-- Hidden form kembalikan (revisi, baris dipertahankan) --}}
+        <form method="POST" action="{{ route('superuser.penjualan.pengajuan_proforma.kembalikan', $pengajuan->id) }}" id="frmKembalikan" class="d-none">
             @csrf
-            <input type="hidden" name="alasan" id="inputAlasanHapus">
+            <input type="hidden" name="catatan" id="inputAlasanKembalikan">
         </form>
         @endif
 
         {{-- Terminal state --}}
         @if(in_array($pengajuan->status, ['ditolak', 'dibatalkan']))
         <div class="action-row justify-content-center text-muted">
-            <i class="fa fa-lock mr-2"></i>
+            <a href="{{ route('superuser.penjualan.pengajuan_proforma.index') }}" class="btn btn-outline-secondary font-weight-bold">
+                <i class="fa fa-arrow-left mr-1"></i> Kembali
+            </a>
+            <i class="fa fa-lock mr-2 ml-2"></i>
             Pengajuan sudah <strong>{{ $pengajuan->status }}</strong> — tidak dapat diproses ulang.
             @if($pengajuan->catatan)
                 &bull; <em>{{ $pengajuan->catatan }}</em>
@@ -441,18 +599,29 @@
             </div>
         </div>
 
-        {{-- Cancel proforma --}}
+        {{-- Cancel proforma + kembalikan ke AO (revisi pasca-mutasi) --}}
         @if($pengajuan->status === 'disetujui')
         <div class="action-row">
+            <a href="{{ route('superuser.penjualan.pengajuan_proforma.index') }}" class="btn btn-outline-secondary font-weight-bold" style="margin-right:auto;">
+                <i class="fa fa-arrow-left mr-1"></i> Kembali
+            </a>
+            <button type="button" class="btn btn-outline-info font-weight-bold" onclick="submitKembalikanAo()"
+                title="Kembalikan ke AO: ubah data di sana, proforma diperbarui otomatis tanpa pengajuan/mutasi ulang">
+                <i class="fa fa-reply mr-1"></i> Kembalikan ke AO
+            </button>
             <button type="button" class="btn btn-outline-warning font-weight-bold" onclick="submitCancel()">
                 <i class="fa fa-ban mr-1"></i> Batalkan Proforma
             </button>
-            <small class="text-muted">Customer akan dihapus dari existing dan log audit dicatat.</small>
+            <!--<small class="text-muted">Customer akan dihapus dari existing dan log audit dicatat.</small>-->
         </div>
         <form method="POST" action="{{ route('superuser.penjualan.pengajuan_proforma.cancel', $pengajuan->id) }}" id="frmCancel" class="d-none">
             @csrf
             <input type="hidden" name="alasan" id="inputAlasanCancel">
             <input type="hidden" name="rollback_customer" value="1">
+        </form>
+        <form method="POST" action="{{ route('superuser.penjualan.pengajuan_proforma.kembalikanAo', $pengajuan->id) }}" id="frmKembalikanAo" class="d-none">
+            @csrf
+            <input type="hidden" name="catatan" id="inputAlasanKembalikanAo">
         </form>
         @endif
     </div>
@@ -463,38 +632,63 @@
 
 @push('scripts')
 <script>
+function ppAskAlasan(judul, teks, danger) {
+    return Swal.fire({
+        title: judul,
+        html: '<div style="text-align:left;">' + teks + '<textarea id="ppAlasanSw" class="form-control" rows="3" placeholder="Wajib diisi..."></textarea></div>',
+        icon: danger ? 'warning' : 'question',
+        showCancelButton: true,
+        confirmButtonText: 'Ya, Lanjut',
+        cancelButtonText: 'Batal',
+        confirmButtonColor: danger ? '#dc3545' : '#4e73df',
+        preConfirm: function() {
+            var v = document.getElementById('ppAlasanSw').value.trim();
+            if (!v) { Swal.showValidationMessage('Alasan tidak boleh kosong.'); return false; }
+            return v;
+        }
+    });
+}
 function submitTolak() {
-    var alasan = prompt('Alasan penolakan (wajib diisi):');
-    if (alasan === null) return; // user cancel
-    if (!alasan.trim()) { alert('Alasan tidak boleh kosong.'); return; }
-    document.getElementById('inputAlasanTolak').value = alasan;
-    document.getElementById('frmTolak').submit();
+    ppAskAlasan('Tolak pengajuan?', 'Pengajuan akan <b>DIHAPUS total</b> (baris + file). Alasan wajib diisi:', true)
+    .then(function(r) {
+        if (!r.isConfirmed) return;
+        document.getElementById('inputAlasanTolak').value = r.value;
+        document.getElementById('frmTolak').submit();
+    });
+}
+function submitKembalikan() {
+    ppAskAlasan('Kembalikan untuk revisi?', 'Baris dipertahankan. Catatan untuk AO (wajib diisi):', false)
+    .then(function(r) {
+        if (!r.isConfirmed) return;
+        document.getElementById('inputAlasanKembalikan').value = r.value;
+        document.getElementById('frmKembalikan').submit();
+    });
 }
 
 function submitCancel() {
-    var alasan = prompt('Alasan pembatalan proforma (wajib diisi):');
-    if (alasan === null) return;
-    if (!alasan.trim()) { alert('Alasan tidak boleh kosong.'); return; }
-    document.getElementById('inputAlasanCancel').value = alasan;
-    document.getElementById('frmCancel').submit();
+    ppAskAlasan('Batalkan proforma?', 'Customer dihapus dari existing + log audit dicatat. Alasan (wajib diisi):', true)
+    .then(function(r) {
+        if (!r.isConfirmed) return;
+        document.getElementById('inputAlasanCancel').value = r.value;
+        document.getElementById('frmCancel').submit();
+    });
 }
-
-function submitHapus() {
-    var alasan = prompt('Alasan hapus / minta revisi (wajib diisi, diteruskan ke AO):');
-    if (alasan === null) return; // user cancel
-    if (!alasan.trim()) { alert('Alasan tidak boleh kosong.'); return; }
-    if (!confirm('Hapus pengajuan {{ addslashes($pengajuan->estimate_number) }}? AO harus perbaiki + ajukan ulang.')) return;
-    document.getElementById('inputAlasanHapus').value = alasan;
-    document.getElementById('frmHapus').submit();
+function submitKembalikanAo() {
+    ppAskAlasan('Kembalikan ke AO?', 'Ubah data di AO, proforma diperbarui otomatis. Catatan revisi (wajib diisi, mis. tambah/kurangi produk atau ubah diskon):', false)
+    .then(function(r) {
+        if (!r.isConfirmed) return;
+        document.getElementById('inputAlasanKembalikanAo').value = r.value;
+        document.getElementById('frmKembalikanAo').submit();
+    });
 }
 
 function submitHapusTerminal() {
-    var alasan = prompt('Alasan hapus / minta revisi (wajib diisi, diteruskan ke AO):');
-    if (alasan === null) return;
-    if (!alasan.trim()) { alert('Alasan tidak boleh kosong.'); return; }
-    if (!confirm('Hapus pengajuan {{ addslashes($pengajuan->estimate_number) }}? AO harus perbaiki + ajukan ulang.')) return;
-    document.getElementById('inputAlasanHapusTerminal').value = alasan;
-    document.getElementById('frmHapusTerminal').submit();
+    ppAskAlasan('Hapus pengajuan?', 'AO harus perbaiki + ajukan ulang. Alasan (wajib diisi, diteruskan ke AO):', true)
+    .then(function(r) {
+        if (!r.isConfirmed) return;
+        document.getElementById('inputAlasanHapusTerminal').value = r.value;
+        document.getElementById('frmHapusTerminal').submit();
+    });
 }
 </script>
 @endpush

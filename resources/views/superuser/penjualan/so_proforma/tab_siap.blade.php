@@ -21,36 +21,26 @@
     @forelse($siap as $row)
     <tr>
         <td>{{ $loop->iteration }}</td>
-        <td>{{ $row->code }}</td>
-        <td>{{ $row->member->name ?? '-' }} {{ $row->member->text_kota ?? '-' }}</td>
-        <td>{{ number_format($row->details_cost->grand_total_idr,2,',','.') }}</td>
-        <td>{{ $row->created_at }}</td>
+        <td><span class="font-weight-bold text-primary">{{ $row->code }}</span></td>
+        <td>{{ $row->member->name ?? '-' }} <small class="text-muted">{{ $row->member->text_kota ?? '' }}</small></td>
+        <td>{{ optional($row->details_cost)->grand_total_idr ? number_format($row->details_cost->grand_total_idr,0,',','.') : '-' }}</td>
+        <td><small class="text-muted">{{ $row->created_at ? $row->created_at->format('d/m/Y H:i') : '-' }}</small></td>
         <td>
-            <button type="button" class="btn btn-sm btn-circle btn-alt-danger btn-status-acc" 
-                    data-id="{{ $row->id }}" title="ACC">
+            <button type="button" class="btn btn-sm btn-circle btn-outline-success btn-status-acc" 
+                    data-id="{{ $row->id }}" title="ACC — lanjut ke DO/Packing" aria-label="ACC {{ $row->code }}">
                 <i class="fa fa-check"></i>
             </button>
 
-            {{-- Paket A poin 10: Revisi (pengajuan tetap) vs Batal (pengajuan dicabut) --}}
-            @if($canRevisiBatal ?? false)
-            <a href="{{ route('superuser.penjualan.so_proforma.edit', $row->id) }}"
-               title="Revisi — tambah/ubah produk, pengajuan TETAP berlaku">
-                <button type="button" class="btn btn-sm btn-circle btn-alt-warning">
-                  <i class="fa fa-plus-circle"></i>
-                </button>
-            </a>
-
+            {{-- Tab siap: Batal langsung HANYA baris ada pengajuan; existing: tanpa tombol --}}
             @php $pgId = ($pengajuanMap ?? [])[(string) optional($row->member)->id] ?? null; @endphp
-            @if($pgId)
-                @include('superuser.penjualan.so_proforma._batalkan', ['pgId' => $pgId])
-            @else
+            @if(($canRevisiBatal ?? false) && $pgId)
             <button type="button"
-                class="btn btn-sm btn-circle btn-alt-danger btn-delete-proforma"
-                data-id="{{ $row->id }}"
-                title="Hapus — proforma dihapus, pengajuan dicabut">
-                <i class="fa fa-trash"></i>
+                class="btn btn-sm btn-circle btn-outline-danger btn-batalkan-prospek"
+                data-pgid="{{ $pgId }}"
+                data-code="{{ $row->code }}"
+                title="Batalkan langsung — pengajuan dicabut + log (tanpa pindah halaman)" aria-label="Batalkan {{ $row->code }}">
+                <i class="fa fa-ban"></i>
             </button>
-            @endif
             @endif
         </td>
 

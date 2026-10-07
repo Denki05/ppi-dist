@@ -40,11 +40,14 @@ class PengajuanProforma extends Model
         'member_id_hasil',
         'parent_dibuat_baru',
         'member_dibuat_baru',
+        'revisi_ao',
         'notif_ao_status',
         'ktp_photo_path',
         'npwp_photo_path',
         'bukti_chat_path',
         'bukti_chat_at',
+        'bukti_ada',
+        'bukti_list',
     ];
 
     protected $casts = [
@@ -62,4 +65,6 @@ class PengajuanProforma extends Model
     const STATUS_DISETUJUI  = 'disetujui';
     const STATUS_DITOLAK    = 'ditolak';
     const STATUS_DIBATALKAN = 'dibatalkan';
+    // Revisi pre-mutasi: baris dipertahankan, AO perbaiki + ajukan ulang (kirim data lagi full)
+    const STATUS_REVISI     = 'revisi';
 }

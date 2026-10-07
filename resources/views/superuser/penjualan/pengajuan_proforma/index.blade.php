@@ -39,9 +39,14 @@
 .table th { font-size: .75rem; text-transform: uppercase; letter-spacing: .4px; color: #858796; }
 .table td { vertical-align: middle; font-size: .875rem; }
 
-/* Tombol aksi inline */
-.btn-verif  { font-size:.75rem; padding:3px 9px; border-radius:5px; }
-.btn-tolak  { font-size:.75rem; padding:3px 9px; border-radius:5px; }
+/* Tombol aksi inline — tap target ≥34px (Fitts), beda semantik warna */
+.btn-verif  { font-size:.75rem; padding:5px 11px; border-radius:6px; min-height:34px; }
+.btn-tolak  { font-size:.75rem; padding:5px 11px; border-radius:6px; min-height:34px; }
+.btn-kembali { font-size:.75rem; padding:5px 11px; border-radius:6px; min-height:34px; }
+@media (max-width: 640px) {
+    .toolbar-search { max-width: 100%; flex-basis: 100%; }
+    .table td .btn { margin-top: 4px; }
+}
 </style>
 @endpush
 
@@ -85,6 +90,12 @@
                     </button>
                     <button class="menu-tab {{ request('status') === 'disetujui' ? 'active' : '' }}"
                         onclick="gotoTab('disetujui')">✅ Disetujui</button>
+                    <button class="menu-tab {{ request('status') === 'revisi' ? 'active' : '' }}"
+                        onclick="gotoTab('revisi')">↩️ Revisi
+                        @if($counts['revisi'] ?? 0)
+                            <span class="badge badge-light ml-1">{{ $counts['revisi'] }}</span>
+                        @endif
+                    </button>
                     <button class="menu-tab {{ request('status') === 'ditolak' ? 'active' : '' }}"
                         onclick="gotoTab('ditolak')">❌ Ditolak</button>
                     <button class="menu-tab {{ request('status') === 'dibatalkan' ? 'active' : '' }}"
@@ -120,7 +131,7 @@
                             <th>No. HP</th>
                             <th>AO PIC</th>
                             <th>Tgl Masuk</th>
-                            <th width="160" class="text-center">Aksi</th>
+                            <th width="200" class="text-center">Aksi</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -157,7 +168,7 @@
                             <td class="text-center">
                                 {{-- Detail --}}
                                 <a href="{{ route('superuser.penjualan.pengajuan_proforma.show', $item->id) }}"
-                                   class="btn btn-verif btn-outline-secondary" title="Lihat Detail">
+                                   class="btn btn-verif btn-outline-secondary" title="Lihat Detail" aria-label="Lihat detail {{ $item->prospect_name }}">
                                     <i class="fa fa-eye"></i>
                                 </a>
 
@@ -170,13 +181,29 @@
                                     @csrf
                                     <button type="button"
                                         class="btn btn-verif btn-success ml-1"
-                                        title="Verifikasi & Mutasi"
+                                        title="Verifikasi & Mutasi — customer masuk existing"
+                                        aria-label="Mutasi {{ $item->prospect_name }}"
                                         onclick="doMutasi({{ $item->id }}, '{{ addslashes($item->prospect_name) }}')">
                                         <i class="fa fa-check"></i> Mutasi
                                     </button>
                                 </form>
 
-                                {{-- Tolak langsung --}}
+                                {{-- Kembalikan (revisi): baris dipertahankan, AO perbaiki --}}
+                                <form method="POST"
+                                      action="{{ route('superuser.penjualan.pengajuan_proforma.kembalikan', $item->id) }}"
+                                      class="d-inline" id="frmK{{ $item->id }}">
+                                    @csrf
+                                    <input type="hidden" name="catatan" id="alasanK{{ $item->id }}">
+                                    <button type="button"
+                                        class="btn btn-kembali btn-outline-warning ml-1"
+                                        title="Kembalikan untuk revisi — baris dipertahankan"
+                                        aria-label="Kembalikan {{ $item->prospect_name }} untuk revisi"
+                                        onclick="doKembalikan({{ $item->id }}, '{{ addslashes($item->prospect_name) }}')">
+                                        <i class="fa fa-undo"></i>
+                                    </button>
+                                </form>
+
+                                {{-- Tolak langsung = cabut total --}}
                                 <form method="POST"
                                       action="{{ route('superuser.penjualan.pengajuan_proforma.tolak', $item->id) }}"
                                       class="d-inline" id="frmT{{ $item->id }}">
@@ -184,7 +211,8 @@
                                     <input type="hidden" name="catatan" id="alasanT{{ $item->id }}">
                                     <button type="button"
                                         class="btn btn-tolak btn-outline-danger ml-1"
-                                        title="Tolak"
+                                        title="Tolak — baris + file dihapus total"
+                                        aria-label="Tolak {{ $item->prospect_name }}"
                                         onclick="doTolak({{ $item->id }}, '{{ addslashes($item->prospect_name) }}')">
                                         <i class="fa fa-times"></i>
                                     </button>
@@ -199,6 +227,11 @@
                                 <i class="fa fa-inbox fa-2x mb-2 d-block"></i>
                                 Tidak ada pengajuan dengan status
                                 <strong>{{ request('status','menunggu') }}</strong>.
+                                @if(request('status','menunggu') === 'menunggu')
+                                <div class="mt-2 small">Pengajuan baru dari modul AO akan muncul di sini.<br>Coba ubah kata kunci atau cek tab <strong>Revisi</strong>.</div>
+                                @elseif(request('status') === 'revisi')
+                                <div class="mt-2 small">Belum ada yang perlu direvisi.<br>Pengajuan yang dikembalikan ke AO akan tercatat di sini.</div>
+                                @endif
                             </td>
                         </tr>
                         @endforelse
@@ -226,17 +259,70 @@ function gotoTab(status) {
     window.location = base + '?status=' + status + (q ? '&q=' + encodeURIComponent(q) : '');
 }
 
+// Satu bahasa dialog (Swal) — sama dengan halaman detail. Psikologi: konsistensi = trust.
+function ppAskAlasanIdx(judul, teks, danger) {
+    return Swal.fire({
+        title: judul,
+        html: '<div style="text-align:left;">' + teks + '<textarea id="ppAlasanIdx" class="form-control" rows="3" placeholder="Wajib diisi..."></textarea></div>',
+        icon: danger ? 'warning' : 'question',
+        showCancelButton: true,
+        confirmButtonText: 'Ya, Lanjut',
+        cancelButtonText: 'Batal',
+        confirmButtonColor: danger ? '#dc3545' : '#28a745',
+        preConfirm: function() {
+            var v = document.getElementById('ppAlasanIdx').value.trim();
+            if (!v && danger !== false) {
+                // Mutasi tidak butuh alasan, Tolak/Kembalikan wajib
+                if (judul.indexOf('Mutasi') === -1) { Swal.showValidationMessage('Alasan tidak boleh kosong.'); return false; }
+            }
+            return v;
+        }
+    });
+}
+
+function lockBtn(btn) {
+    if (!btn) return;
+    btn.disabled = true;
+    btn.innerHTML = '<i class="fa fa-spinner fa-spin"></i> Memproses...';
+}
+
 function doMutasi(id, nama) {
-    if (!confirm('Verifikasi & mutasi customer "' + nama + '"?')) return;
-    document.getElementById('frmV' + id).submit();
+    Swal.fire({
+        title: 'Verifikasi & mutasi?',
+        html: 'Customer <b>"' + nama + '"</b> akan masuk ke data existing.',
+        icon: 'question',
+        showCancelButton: true,
+        confirmButtonText: 'Ya, Mutasi',
+        cancelButtonText: 'Batal',
+        confirmButtonColor: '#28a745'
+    }).then(function(r) {
+        if (!r.isConfirmed) return;
+        var btn = document.querySelector('#frmV' + id + ' button');
+        lockBtn(btn);
+        document.getElementById('frmV' + id).submit();
+    });
+}
+
+function doKembalikan(id, nama) {
+    ppAskAlasanIdx('Kembalikan untuk revisi?', 'Baris <b>dipertahankan</b>. Catatan untuk AO (wajib diisi):', false)
+    .then(function(r) {
+        if (!r.isConfirmed) return;
+        document.getElementById('alasanK' + id).value = r.value;
+        var btn = document.querySelector('#frmK' + id + ' button');
+        lockBtn(btn);
+        document.getElementById('frmK' + id).submit();
+    });
 }
 
 function doTolak(id, nama) {
-    var alasan = prompt('Alasan penolakan untuk "' + nama + '":');
-    if (alasan === null) return;
-    if (!alasan.trim()) { alert('Alasan tidak boleh kosong.'); return; }
-    document.getElementById('alasanT' + id).value = alasan;
-    document.getElementById('frmT' + id).submit();
+    ppAskAlasanIdx('Tolak pengajuan?', 'Pengajuan <b>"' + nama + '"</b> akan <b>DIHAPUS total</b> (baris + file). Alasan wajib diisi:', true)
+    .then(function(r) {
+        if (!r.isConfirmed) return;
+        document.getElementById('alasanT' + id).value = r.value;
+        var btn = document.querySelector('#frmT' + id + ' button');
+        lockBtn(btn);
+        document.getElementById('frmT' + id).submit();
+    });
 }
 </script>
 @endpush

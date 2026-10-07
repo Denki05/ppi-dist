@@ -28,13 +28,13 @@ use Illuminate\Support\Facades\Log;
  */
 class PengajuanMutasiService
 {
-    /** Field wajib di pengajuan_proforma sebelum mutasi bisa dijalankan */
+    /** Field wajib di pengajuan_proforma sebelum mutasi bisa dijalankan
+     * (KTP opsional — dilengkapi admin sales bila ada) */
     private const REQUIRED_FIELDS = [
         'prospect_name',
         'phone',
         'address',
         'city',
-        'ktp',
     ];
 
     // ------------------------------------------------------------------
@@ -240,6 +240,12 @@ class PengajuanMutasiService
             throw new \RuntimeException(implode(' | ', $errors));
         }
 
+        // 1b. 1-jalan: mutasi diblokir bila bukti capture belum dilampirkan.
+        // NULL = pengajuan lama (tak diketahui) -> tetap lolos.
+        if ($p->bukti_ada === false || $p->bukti_ada === 0 || $p->bukti_ada === '0') {
+            throw new \RuntimeException('Mutasi diblokir: belum ada foto bukti capture. Minta AO melampirkan bukti di pengajuan dulu.');
+        }
+
         // 2. Cek status
         if ($p->status === PengajuanProforma::STATUS_DISETUJUI) {
             // Sudah dimutasi — kembalikan data existing
@@ -424,7 +430,7 @@ class PengajuanMutasiService
      * Notifikasi PEMBATALAN proforma ke modul AO.
      * Dipanggil setelah cancel() sukses. Non-blocking (gagal = status gagal).
      */
-    public function notifAoBatal(PengajuanProforma $p, $proformaCode = null): bool
+    public function notifAoBatal(PengajuanProforma $p, $proformaCode = null, string $alasan = ''): bool
     {
         $aoCallbackUrl = config('services.ao_module.notif_inbound_url');
         $aoApiKey      = config('services.ao_module.api_key');
@@ -453,7 +459,9 @@ class PengajuanMutasiService
                     'estimate_number' => $p->estimate_number,
                     'type'            => 'proforma_batal',
                     'title'           => 'Proforma dibatalkan' . ($proformaCode ? ' (' . $proformaCode . ')' : ''),
-                    'body'            => 'Proforma ' . ($proformaCode ?: $p->estimate_number) . ' dibatalkan oleh admin sales. Customer kembali ke prospek.',
+                    'body'            => 'Proforma ' . ($proformaCode ?: $p->estimate_number) . ' dibatalkan oleh admin sales. Customer kembali ke prospek.'
+                        . ($alasan !== '' ? ' Alasan: ' . $alasan : ''),
+                    'alasan'          => $alasan,
                     'customer_id_hasil' => $p->customer_id_hasil,
                     'member_id_hasil'   => $p->member_id_hasil,
                 ],
@@ -489,7 +497,10 @@ class PengajuanMutasiService
      */
     private function resolveParent(PengajuanProforma $p): array
     {
-        $existing = Customer::withTrashed()->where('ktp', $p->ktp)->first();
+        // KTP kosong = jangan cari (where null = IS NULL bisa gandeng customer salah)
+        $existing = !empty($p->ktp)
+            ? Customer::withTrashed()->where('ktp', $p->ktp)->first()
+            : null;
 
         $nama = !empty($p->perusahaan) ? $p->perusahaan : $p->prospect_name;
 

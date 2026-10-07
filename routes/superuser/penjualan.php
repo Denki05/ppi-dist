@@ -295,11 +295,15 @@ Route::group([
     Route::group(['as' => 'pengajuan_proforma.', 'prefix' => '/pengajuan-proforma'], function () {
         Route::get('/',              'PengajuanProformaController@index')->name('index');
         Route::get('/{id}/dokumen/{jenis}', 'PengajuanProformaController@dokumen')->name('dokumen')->where(['id' => '[0-9]+', 'jenis' => 'ktp|npwp']);
+        Route::get('/{id}/dokumen/bukti/{index}', 'PengajuanProformaController@bukti')->name('bukti')->where(['id' => '[0-9]+', 'index' => '[0-9]+']);
         Route::get('/{id}',          'PengajuanProformaController@show')->name('show');
         Route::post('/{id}/verifikasi', 'PengajuanProformaController@verifikasi')->name('verifikasi');
         Route::post('/{id}/tolak',   'PengajuanProformaController@tolak')->name('tolak');
+        Route::post('/{id}/kembalikan', 'PengajuanProformaController@kembalikan')->name('kembalikan');
+        Route::post('/{id}/kembalikan-ao', 'PengajuanProformaController@kembalikanAo')->name('kembalikanAo');
         Route::post('/{id}/hapus',   'PengajuanProformaController@hapus')->name('hapus');
         Route::post('/{id}/cancel',  'PengajuanProformaController@cancel')->name('cancel');
         Route::post('/{id}/notif-ulang', 'PengajuanProformaController@notifUlang')->name('notif-ulang');
+        Route::post('/{id}/dokumen-simpan', 'PengajuanProformaController@updateDokumen')->name('dokumen-simpan');
     });
 });
