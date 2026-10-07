@@ -39,8 +39,8 @@
             @php $pgId = ($pengajuanMap ?? [])[(string) optional($row->member)->id] ?? null; @endphp
             {{-- Edit = kalkulasi saja (tanpa tambah varian), seperti semula --}}
             <a href="{{ route('superuser.penjualan.so_proforma.edit', $row->id) }}"
-               title="Edit — kalkulasi (tanpa tambah varian)" aria-label="Edit kalkulasi {{ $row->code }}">
-                <button type="button" class="btn btn-sm btn-circle btn-outline-secondary">
+               title="Edit - kalkulasi (tanpa tambah varian)" aria-label="Edit kalkulasi {{ $row->code }}">
+                <button type="button" class="btn btn-sm btn-circle btn-alt-secondary">
                   <i class="fa fa-pencil"></i>
                 </button>
             </a>
@@ -49,16 +49,16 @@
                  Baris TANPA pengajuan (existing): tanpa Revisi/Batal. --}}
             @if($canRevisiBatal ?? false)
             @if($pgId)
-            <button type="button" class="btn btn-sm btn-circle btn-outline-warning"
+            <button type="button" class="btn btn-sm btn-circle btn-alt-warning"
                     onclick="submitKembalikanAoTab({{ $pgId }})"
-                    title="Revisi — kembalikan ke AO, proforma diperbarui otomatis tanpa pengajuan/mutasi ulang" aria-label="Revisi {{ $row->code }} ke AO">
+                    title="Revisi - kembalikan ke AO, proforma diperbarui otomatis tanpa pengajuan/mutasi ulang" aria-label="Revisi {{ $row->code }} ke AO">
                 <i class="fa fa-reply"></i>
             </button>
             <button type="button"
-                class="btn btn-sm btn-circle btn-outline-danger btn-batalkan-prospek"
+                class="btn btn-sm btn-circle btn-alt-danger btn-batalkan-prospek"
                 data-pgid="{{ $pgId }}"
                 data-code="{{ $row->code }}"
-                title="Batalkan langsung — pengajuan dicabut + log (tanpa pindah halaman)" aria-label="Batalkan {{ $row->code }}">
+                title="Batalkan langsung - pengajuan dicabut + log (tanpa pindah halaman)" aria-label="Batalkan {{ $row->code }}">
                 <i class="fa fa-ban"></i>
             </button>
             @endif

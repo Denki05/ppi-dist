@@ -1,10 +1,43 @@
 @extends('superuser.app')
 
 @section('content')
+<style>
+/* ── Padatkan tampilan edit proforma ── */
+.pf-compact { max-width: 1240px; margin: 0 auto; }
+.pf-compact .breadcrumb { padding: 4px 10px; font-size: .78rem; margin-bottom: 8px; }
+.pf-compact .alert { padding: 5px 10px; font-size: .78rem; margin-bottom: 8px; }
+.pf-compact .block { margin-bottom: 10px; }
+.pf-compact .block-header { padding: 8px 12px; min-height: 0; }
+.pf-compact .block-title { font-size: .85rem; }
+.pf-compact .block-content { padding: 10px 12px; }
+.pf-compact .form-group { margin-bottom: 8px; }
+.pf-compact label { font-size: .72rem; color: #64748b; font-weight: 600; margin-bottom: 2px; }
+.pf-compact .form-control { height: 32px; font-size: .85rem; padding: 4px 8px; }
+.pf-compact select.form-control { height: 32px; }
+.pf-compact #datatable th { font-size: .68rem; text-transform: uppercase; letter-spacing: .4px; color: #64748b; padding: 6px 6px; }
+.pf-compact #datatable td { padding: 4px 6px; vertical-align: middle; }
+.pf-compact #datatable .form-control { height: 30px; font-size: .82rem; }
+/* Ringkasan: rapat kanan, tanpa whitespace kiri */
+.pf-summary { max-width: 460px; margin-left: auto; display: grid; gap: 6px; padding: 10px 12px; }
+.pf-sum-row { display: flex; align-items: center; justify-content: flex-end; gap: 8px; }
+.pf-sum-row label { width: 110px; text-align: right; margin: 0; }
+.pf-sum-row .form-control { width: 132px; text-align: right; }
+.pf-sum-row .form-control.wide { width: 272px; }
+.pf-sum-total input { font-weight: 700; background: #f0fdf4; border-color: #bbf7d0; }
+/* Status hitungan */
+#calcBadge { font-size: .75rem; font-weight: 600; padding: 4px 10px; border-radius: 20px; }
+#calcBadge.ok { background: #dcfce7; color: #166534; }
+#calcBadge.need { background: #fef3c7; color: #92400e; animation: pfPulse 1.2s infinite; }
+@keyframes pfPulse { 0%,100% { opacity: 1; } 50% { opacity: .6; } }
+#btn_call.need { box-shadow: 0 0 0 3px rgba(245,158,11,.35); }
+/* Footer sticky agar Save selalu terjangkau */
+.pf-footer { position: sticky; bottom: 0; background: #fff; border-top: 1px solid #e8ecf0; padding: 8px 4px; z-index: 5; }
+</style>
+<div class="pf-compact">
 <nav class="breadcrumb bg-white push">
   <span class="breadcrumb-item">Sales</span>
   <a class="breadcrumb-item" href="{{ route('superuser.penjualan.so_proforma.index') }}">Sales Order Proforma</a>
-  <span class="breadcrumb-item active">Edit</span>
+  <span class="breadcrumb-item active">Edit {{ $results->code ?? '' }}</span>
 </nav>
 
 <div id="alert-block"></div>
@@ -228,29 +261,28 @@
     </div>
 
     <div class="row">
+      <div class="col-12">
       <div class="block">
-                <div class="block-header block-header-default">
-                  <h3 class="block-title">Add Product</h3>
-                  @if(request('mode') === 'revisi')
-                  <a href="#" class="row-add">
-                    <button type="button" class="btn bg-gd-sea border-0 text-white">
-                      <i class="fa fa-plus mr-10"></i> Row
+                @if(request('mode') === 'revisi')
+                <div class="block-header block-header-default" style="padding:6px 12px;">
+                  <span class="small text-muted">Mode Revisi — tambah varian bila perlu</span>
+                  <a href="#" class="row-add ml-auto">
+                    <button type="button" class="btn btn-sm btn-outline-success font-weight-bold">
+                      <i class="fa fa-plus mr-1"></i> Row
                     </button>
                   </a>
-                  @endif
                 </div>
+                @endif
         <div class="block-content">
           <table id="datatable" class="table table-striped">
             <thead>
               <tr>
                 <th class="text-center">Counter</th>
-                <th class="text-center">Free</th>
                 <th class="text-center">Select Product</th>
                 <th class="text-center">Price</th>
                 <th class="text-center">Qty</th>
                 <th class="text-center">Disc</th>
                 <th class="text-center">Total</th>
-                <th class="text-center">Action</th>
               </tr>
             </thead>
             <tbody>
@@ -258,99 +290,88 @@
                 <tr>
                   <td>{{ $loop->iteration }}</td>
                   <td>
-                    <input type="checkbox" class="form-check-input input-gift" id="free_product" 
-                    value="{{$item->free_product}}" name="free_product[]" 
-                    {{ $item->free_product ? 'checked' : '' }}>
-                  </td>
-                  <td>
-                    <select class="js-select2 form-control js-ajax" id="sku[{{ $loop->iteration }}]" name="sku[]" data-placeholder="Select SKU" style="width:100%" required>
+                    <select class="js-select2 form-control js-ajax" id="sku[{{ $loop->iteration }}]" data-placeholder="Select SKU" style="width:100%" disabled tabindex="-1">
                       <option value="{{ $item->product_packaging_id }}">{{ $item->productPack->code }} - {{ $item->productPack->name }} / {{ $item->packaging->pack_name }}</option>
                     </select>
+                    <input type="hidden" name="sku[]" value="{{ $item->product_packaging_id }}">
+                    {{-- Free dihapus dari UI baku: status dipertahankan via hidden, ubah via Kembalikan (pengajuan / existing) --}}
+                    <input type="hidden" name="free_product[]" value="{{ $item->free_product ? 1 : 0 }}">
                   </td>
-                  <td><input type="number" class="form-control text-center" name="price[]" value="{{ $item->free_product ? 0 : $item->price }}" readonly required></td>
+                  <td><input type="number" class="form-control text-center" name="price[]" value="{{ $item->free_product ? 0 : $item->price }}" readonly required tabindex="-1"></td>
                   <td><input type="number" class="form-control text-center" name="qty[]" value="{{ $item->qty }}" required step="0.01" min="0"><input type="hidden" name="packaging[]" value="{{ $item->packaging_id }}"><input type="hidden" class="form-control" name="edit[]" value="{{ $item->id }}"></td>
                   <td><input type="number" class="form-control text-center" name="disc_usd[]" value="{{ $item->disc_usd }}" required></td>
-                  <td><input type="text" class="form-control text-center" name="total[]" readonly value="{{ number_format((float) $item->total_item, 2, ',', '.') }}"></td>
-                  <td><a href="#" class="row-delete"><button type="button" class="btn btn-sm btn-circle btn-alt-danger" title="Delete"><i class="fa fa-trash"></i></button></a></td>
+                  <td><input type="text" class="form-control text-center" name="total[]" readonly tabindex="-1" value="{{ number_format((float) $item->total_item, 2, ',', '.') }}"></td>
                 </tr>
               @endforeach
             </tbody>
           </table>
         </div>
-        <div class="block-header block-header-default">
-          <div class="container">
-            <div class="form-group row justify-content-end">
-              <label class="col-md-3 col-form-label text-right" for="subtotal">IDR Sub Total</label>
-              <div class="col-md-2">
-                <input type="text" class="form-control" id="subtotal" name="subtotal" readonly value="{{ number_format((float) ($detailsCost->purchase_total_idr ?? 0), 2, ',', '.') }}">
-              </div>
+        <div class="block-content" style="border-top:1px solid #e8ecf0; background:#f8fafc;">
+          <div class="pf-summary">
+            <div class="pf-sum-row">
+              <label for="subtotal">IDR Sub Total</label>
+              <input type="text" class="form-control wide" id="subtotal" name="subtotal" readonly value="{{ number_format((float) ($detailsCost->purchase_total_idr ?? 0), 2, ',', '.') }}">
             </div>
-            <div class="form-group row justify-content-end">
-              <label class="col-md-1 col-form-label">Disc %</label>
-              <div class="col-md-1">
-                @php $discAgenPct = $detailsCost->discount_1_percent ?? (is_numeric(optional($results->salesOrder)->catatan) ? $results->salesOrder->catatan : 0); @endphp
-                <input type="text" class="form-control" id="disc_agen_percent" name="disc_agen_percent" value="{{ $discAgenPct }}">
-              </div>
-              <div class="col-sm-2">
-                <input type="text" readonly class="form-control" id="disc_agen_idr" name="disc_agen_idr" value="{{ number_format((float) ($detailsCost->discount_1 ?? 0), 2, ',', '.') }}">
-              </div>
+            <div class="pf-sum-row">
+              <label>Disc %</label>
+              @php $discAgenPct = $detailsCost->discount_1_percent ?? (is_numeric(optional($results->salesOrder)->catatan) ? $results->salesOrder->catatan : 0); @endphp
+              <input type="text" class="form-control" id="disc_agen_percent" name="disc_agen_percent" value="{{ $discAgenPct }}" inputmode="decimal">
+              <input type="text" readonly class="form-control" id="disc_agen_idr" name="disc_agen_idr" value="{{ number_format((float) ($detailsCost->discount_1 ?? 0), 2, ',', '.') }}">
             </div>
-            <div class="form-group row justify-content-end">
-              <label class="col-md-1 col-form-label">Disc Kemasan</label>
-              <div class="col-md-1">
-                <input type="text" class="form-control" id="disc_kemasan_percent" name="disc_kemasan_percent" value="{{ $detailsCost->discount_2_percent ?? 0 }}">
-              </div>
-              <div class="col-sm-2">
-                <input type="text" readonly class="form-control" id="disc_kemasan_idr" name="disc_kemasan_idr" value="{{ number_format((float) ($detailsCost->discount_2 ?? 0), 2, ',', '.') }}">
-              </div>
+            <div class="pf-sum-row">
+              <label>Disc Kemasan</label>
+              <input type="text" class="form-control" id="disc_kemasan_percent" name="disc_kemasan_percent" value="{{ $detailsCost->discount_2_percent ?? 0 }}" inputmode="decimal">
+              <input type="text" readonly class="form-control" id="disc_kemasan_idr" name="disc_kemasan_idr" value="{{ number_format((float) ($detailsCost->discount_2 ?? 0), 2, ',', '.') }}">
             </div>
-            <div class="form-group row justify-content-end">
-              <label class="col-md-3 col-form-label text-right" for="disc_tambahan_idr">Disc IDR</label>
-              <div class="col-md-2">
-                <input type="text" class="form-control" id="disc_tambahan_idr" name="disc_tambahan_idr" value="{{ number_format((float) ($detailsCost->discount_idr ?? 0), 2, ',', '.') }}">
-              </div>
+            <div class="pf-sum-row">
+              <label for="disc_tambahan_idr">Disc IDR</label>
+              <input type="text" class="form-control wide" id="disc_tambahan_idr" name="disc_tambahan_idr" value="{{ number_format((float) ($detailsCost->discount_idr ?? 0), 2, ',', '.') }}" inputmode="numeric">
             </div>
-            <div class="form-group row justify-content-end">
-              <label class="col-md-3 col-form-label text-right" for="voucher_idr">Voucher</label>
-              <div class="col-md-2">
-                <input type="text" class="form-control" id="voucher_idr" name="voucher_idr" value="{{ number_format((float) ($detailsCost->voucher_idr ?? 0), 2, ',', '.') }}">
-              </div>
+            <div class="pf-sum-row">
+              <label for="voucher_idr">Voucher</label>
+              <input type="text" class="form-control wide" id="voucher_idr" name="voucher_idr" value="{{ number_format((float) ($detailsCost->voucher_idr ?? 0), 2, ',', '.') }}" inputmode="numeric">
             </div>
-            <div class="form-group row justify-content-end">
-              <label class="col-md-3 col-form-label text-right" for="voucher_idr">Ongkir</label>
-              <div class="col-md-2">
-                <input type="text" class="form-control" id="delivery_cost_idr" name="delivery_cost_idr" value="{{ number_format((float) ($detailsCost->delivery_cost_idr ?? 0), 2, ',', '.') }}">
-              </div>
+            <div class="pf-sum-row">
+              <label for="delivery_cost_idr">Ongkir</label>
+              <input type="text" class="form-control wide" id="delivery_cost_idr" name="delivery_cost_idr" value="{{ number_format((float) ($detailsCost->delivery_cost_idr ?? 0), 2, ',', '.') }}" inputmode="numeric">
             </div>
-            <div class="form-group row justify-content-end">
-              <label class="col-md-3 col-form-label text-right" for="grand_total">IDR Total</label>
-              <div class="col-md-2">
-                <input type="text" class="form-control" id="grand_total" name="grand_total" readonly value="{{ number_format((float) ($detailsCost->grand_total_idr ?? 0), 2, ',', '.') }}">
-              </div>
+            <div class="pf-sum-row pf-sum-total">
+              <label for="grand_total">IDR Total</label>
+              <input type="text" class="form-control wide" id="grand_total" name="grand_total" readonly value="{{ number_format((float) ($detailsCost->grand_total_idr ?? 0), 2, ',', '.') }}">
             </div>
           </div>
         </div>
       </div>
+      </div>
     </div>
-    
-    <div class="row pt-30 mb-15">
-          <div class="col-md-6">
-            <a href="{{ route('superuser.penjualan.so_proforma.index') }}">
-              <button type="button" class="btn bg-gd-cherry border-0 text-white">
-                <i class="fa fa-arrow-left mr-10"></i> Back
-              </button>
+
+    <div class="row">
+      <div class="col-12">
+      <div class="block">
+        <div class="block-content pf-footer">
+          <div class="row align-items-center">
+          <div class="col-md-6 d-flex align-items-center gap-2">
+            <a href="{{ route('superuser.penjualan.so_proforma.index') }}" class="btn btn-sm btn-outline-secondary">
+              <i class="fa fa-arrow-left mr-1"></i> Back
             </a>
+            <span id="calcBadge" class="ok ml-2"><i class="fa fa-check mr-1"></i>Sudah dihitung</span>
+            <small id="calcCount" class="text-muted ml-1"></small>
           </div>
           <div class="col-md-6 text-right">
-            <button type="button" class="btn btn-warning mb-2" id="btn_call">
-              <i class="fas fa-calculator pr-2" aria-hidden="true"></i> Hitung Ulang
+            <button type="button" class="btn btn-sm btn-warning font-weight-bold" id="btn_call">
+              <i class="fas fa-calculator pr-1" aria-hidden="true"></i> Hitung Ulang
             </button>
-            <button type="submit" class="btn btn-primary">
-                <i class="fa fa-save  pr-2" aria-hidden="true" ></i> Save
+            <button type="submit" class="btn btn-sm btn-primary font-weight-bold" id="btn_save">
+                <i class="fa fa-save pr-1" aria-hidden="true"></i> Save
             </button>
           </div>
+          </div>
         </div>
+      </div>
+      </div>
+    </div>
 </form>
+</div>
 @endsection
 
 @include('superuser.asset.plugin.select2')
@@ -363,7 +384,40 @@
   $(document).ready(function () {
     $('.js-select2').select2()
 
-    var userInteracted = true;
+    // ── Dirty tracking + localStorage counter: wajib Hitung Ulang sebelum Save ──
+    var PF_ID = '{{ $results->id }}';
+    var LS_KEY = 'pfcalc_' + PF_ID;
+    var suppressDirty = true; // true selama auto-kalkulasi awal
+    function pfGet() {
+      try {
+        var raw = localStorage.getItem(LS_KEY);
+        if (raw) { var o = JSON.parse(raw); return { dirty: o.dirty|0, calc: o.calc|0 }; }
+      } catch (e) {}
+      return { dirty: 0, calc: 0 };
+    }
+    function pfSet(s) { try { localStorage.setItem(LS_KEY, JSON.stringify(s)); } catch (e) {} }
+    function refreshBadge() {
+      var s = pfGet();
+      var need = s.dirty > s.calc;
+      var badge = $('#calcBadge');
+      if (need) {
+        badge.removeClass('ok').addClass('need')
+          .html('<i class="fa fa-exclamation-triangle mr-1"></i>Belum dihitung (' + (s.dirty - s.calc) + ' perubahan)');
+        $('#btn_call').addClass('need');
+      } else {
+        badge.removeClass('need').addClass('ok')
+          .html('<i class="fa fa-check mr-1"></i>Sudah dihitung');
+        $('#btn_call').removeClass('need');
+      }
+      $('#calcCount').text(s.dirty + ' perubahan • ' + s.calc + 'x dihitung');
+    }
+    function markDirty() {
+      if (suppressDirty) return;
+      var s = pfGet(); s.dirty++; pfSet(s); refreshBadge();
+    }
+    function markCalculated() {
+      var s = pfGet(); s.calc = s.dirty; pfSet(s); refreshBadge();
+    }
 
     $('#customer_region').on('change', function(){
         let prov_id = $('#customer_region').val();
@@ -407,13 +461,11 @@
         searching: false,
         columns: [
           {name: 'counter', "visible": false},
-          {name: 'free', orderable: false, width: "5%"},
-          {name: 'sku', orderable: false, width: "30%"},
-          {name: 'qty', orderable: false, searcable: false, width: "10%"},
-          {name: 'price', orderable: false, searcable: false, width: "10%"},
-          {name: 'disc_usd', orderable: false, searcable: false, width: "10%"},
-          {name: 'total', orderable: false, searcable: false, width: "20%"},
-          {name: 'action', orderable: false, searcable: false, width: "5%"}
+          {name: 'sku', orderable: false, width: "40%"},
+          {name: 'price', orderable: false, searcable: false, width: "12%"},
+          {name: 'qty', orderable: false, searcable: false, width: "12%"},
+          {name: 'disc_usd', orderable: false, searcable: false, width: "12%"},
+          {name: 'total', orderable: false, searcable: false, width: "24%"}
         ],
         'order' : [[0,'desc']]
     })
@@ -425,16 +477,15 @@
       if($('#so_brand_name').val()) {
         table.row.add([
                       counter,
-                      '<input type="checkbox" class="form-check-input input-gift" id="gift" name="gift"><input class="form-control input-free" type="hidden" id="free_product" value="0" name="free_product[]">',
-                      '<select class="js-select2 form-control js-ajax" id="sku['+counter+']" name="sku[]" data-placeholder="Select SKU" style="width:100%" required></select>',
+                      '<select class="js-select2 form-control js-ajax" id="sku['+counter+']" name="sku[]" data-placeholder="Select SKU" style="width:100%" required></select><input type="hidden" name="free_product[]" value="0">',
                       '<input type="number" style="text-align: center;" class="form-control" name="price[]" readonly required>',
-                      '<input type="number" style="text-align: center;" class="form-control" name="qty[]" readonly required step="0.01" min="0"><input type="hidden" class="form-control packaging" name="packaging[]"><input type="hidden" class="form-control" name="edit[]" value="">',
-                      '<input type="number" style="text-align: center;" class="form-control" name="disc_usd[]" required>',
-                      '<input type="text" style="text-align: center;" class="form-control" name="total[]" readonly>',
-                      '<a href="#" class="row-delete"><button type="button" class="btn btn-sm btn-circle btn-alt-danger" title="Delete"><i class="fa fa-trash"></i></button></a>'
+                      '<input type="number" style="text-align: center;" class="form-control" name="qty[]" required step="0.01" min="0"><input type="hidden" class="form-control packaging" name="packaging[]"><input type="hidden" class="form-control" name="edit[]" value="">',
+                      '<input type="number" style="text-align: center;" class="form-control" name="disc_usd[]" value="0" required>',
+                      '<input type="text" style="text-align: center;" class="form-control" name="total[]" readonly>'
                     ]).draw( false );
                     initailizeSelect2();
         counter++;
+        markDirty();
       }
     });
 
@@ -461,13 +512,12 @@
         $(this).parents('tr').find('input[name="qty[]"]').removeAttr('readonly');
 
         var $row = $(this).parents('tr');
-        var isFree = $row.find('.input-gift').is(':checked');
-
-        var price = isFree ? 0 : e.params.data.product_price;
-        $row.find('input[name="price[]"]').val(price);
+        // Baku: baris baru selalu non-free (free hanya via Kembalikan)
+        $row.find('input[name="price[]"]').val(e.params.data.product_price);
 
         var kemasan = e.params.data.IdKemasan;
         $row.find('input[name="packaging[]"]').val(kemasan);
+        markDirty();
       });
 
     };
@@ -552,44 +602,9 @@
       grandtotal();
     });
 
-    $('#datatable tbody').on('click', '.row-delete', function (e) {
-      e.preventDefault();
-
-      userInteracted = true;
-
-      parent = $(this).parents('tr');
-      edit = parent.find('input[name="edit[]"]').val();
-      if(edit) {
-        ids_delete = $('input[name="ids_delete"]').val();
-        $('input[name="ids_delete"]').val(edit+','+ids_delete);
-      }
-
-      table.row( $(this).parents('tr') ).remove().draw();
-
-      var subtotal = 0;
-      $('input[name="total[]"]').each(function () {
-        subtotal += clean($(this).val());
-      });
-      $('#subtotal').val(formatNumber(subtotal));
-
-      grandtotal();
-
-    });
-
-    $('#datatable tbody').on( 'click', '.input-gift', function (e) {
-      userInteracted = true;
-      var $row = $(this).parents('tr');
-
-      if($(this).is(':checked')){
-        $row.find('.input-free').val(1);
-        $row.find('input[name="price[]"]').val(0);
-        $row.find('input[name="disc_usd[]"]').val(0);
-      }else{
-        $row.find('.input-free').val(0);
-      }
-
-      recalcRow($row);
-    });
+    // Baku: tanpa hapus baris & tanpa free di layar edit.
+    // Hapus/ubah free hanya via Kembalikan (pengajuan proforma / customer existing).
+    // Handler .row-delete & .input-gift sengaja dihapus.
 
     // ==========================================
     // STEP 1: HITUNG DISC AGEN
@@ -636,26 +651,26 @@
     }
 
     // ==========================================
-    // EVENT LISTENERS - Live Update
+    // EVENT LISTENERS - Live Update + tandai kotor
     // ==========================================
     $('#disc_agen_percent').on('keyup change', function() {
-      hitungDiscAgen();
+      hitungDiscAgen(); markDirty();
     });
 
     $('#disc_kemasan_percent').on('keyup change input', function() {
-      hitungDiscKemasan();
+      hitungDiscKemasan(); markDirty();
     });
 
     $('#disc_tambahan_idr').on('keyup', function() {
-      hitungGrandTotal();
+      hitungGrandTotal(); markDirty();
     });
 
     $('#voucher_idr').on('keyup', function() {
-      hitungGrandTotal();
+      hitungGrandTotal(); markDirty();
     });
 
     $('#delivery_cost_idr').on('keyup', function() {
-      hitungGrandTotal();
+      hitungGrandTotal(); markDirty();
     });
 
     // Format input currency otomatis
@@ -666,15 +681,25 @@
       if (this.selectionStart) {
         this.setSelectionRange(newPos, newPos);
       }
-      hitungGrandTotal();
+      hitungGrandTotal(); markDirty();
     });
 
+    // Perubahan qty/disc/kurs/qty-row = kotor (live hitung tetap jalan agar angka tidak basi)
+    $(document).on('input change', 'input[name="qty[]"], input[name="disc_usd[]"], #idr_rate_display', function() {
+      markDirty();
+    });
+    $('#datatable').on('change', 'select[name="sku[]"], input[name="price[]"]', function() { markDirty(); });
+
     // ==========================================
-    // TOMBOL CALCULATED (Manual Trigger)
+    // TOMBOL HITUNG ULANG (wajib sebelum Save)
     // ==========================================
     $(document).on('click', '#btn_call', function(e) {
       e.preventDefault();
+      // Hitung ulang semua baris dulu (mandiri), lalu rantai diskon
+      $('input[name="qty[]"]').each(function () { recalcRow($(this).parents('tr')); });
       hitungDiscAgen();
+      markCalculated();
+      Swal.fire({ icon: 'success', title: 'Sudah dihitung ulang', timer: 1200, showConfirmButton: false });
     });
 
     // Legacy function name - panggil hitungDiscAgen
@@ -682,8 +707,44 @@
       hitungDiscAgen();
     }
 
-    // Auto-hitung saat halaman dibuka agar total tidak basi (psikologi: trust angka)
+    // Wajib Hitung Ulang sebelum Save: cegat klik Save bila masih kotor
+    $(document).on('click', '#btn_save', function(e) {
+      var s = pfGet();
+      if (s.dirty > s.calc) {
+        e.preventDefault(); e.stopImmediatePropagation();
+        Swal.fire({
+          icon: 'warning',
+          title: 'Wajib Hitung Ulang dulu',
+          html: 'Ada <b>' + (s.dirty - s.calc) + ' perubahan</b> (qty / diskon / kurs / ongkir) yang belum dihitung.<br>Klik <b>Hitung Ulang</b> sebelum Save.',
+          confirmButtonText: 'Mengerti',
+          confirmButtonColor: '#f59e0b'
+        });
+        $('#btn_call').focus();
+        return false;
+      }
+      // Bersihkan counter setelah save sukses (form.js akan ajax; reset di sini agar tidak menumpuk)
+      // (tidak reset dirty di sini — biarkan sampai response sukses; form.js me-reload/redirect)
+    });
+    // Pengaman ganda bila submit via Enter: cegat di level form (capture)
+    document.querySelector('form.ajax').addEventListener('submit', function(e) {
+      var s = pfGet();
+      if (s.dirty > s.calc) {
+        e.preventDefault(); e.stopImmediatePropagation();
+        Swal.fire({
+          icon: 'warning', title: 'Wajib Hitung Ulang dulu',
+          html: 'Ada <b>' + (s.dirty - s.calc) + ' perubahan</b> belum dihitung.',
+          confirmButtonText: 'Mengerti', confirmButtonColor: '#f59e0b'
+        });
+        return false;
+      }
+      try { localStorage.removeItem(LS_KEY); } catch (err) {}
+    }, true);
+
+    // Auto-hitung mandiri saat halaman dibuka: hitung semua baris + rantai diskon, lalu tandai bersih
+    suppressDirty = true;
+    $('input[name="qty[]"]').each(function () { recalcRow($(this).parents('tr')); });
     hitungDiscAgen();
+    (function(){ var s = pfGet(); s.calc = s.dirty; pfSet(s); refreshBadge(); suppressDirty = false; })();
   });
 </script>
 @endpush

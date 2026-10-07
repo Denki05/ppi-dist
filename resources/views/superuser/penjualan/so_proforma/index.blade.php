@@ -6,7 +6,8 @@
     <div class="card">
         <div class="card-body">
 
-            {{-- TAB HEADER --}}
+            {{-- TAB HEADER + search tutup (kanan atas, hanya di tab Tutup) --}}
+            <div class="d-flex align-items-center flex-wrap" style="gap:10px;">
             <div class="workflow-tabs" role="tablist" aria-label="Tahapan proforma">
 
                 <button class="menu-tab active workflow-tab" data-target="tab-aktif" role="tab" aria-label="Proforma aktif">
@@ -26,7 +27,12 @@
                 </button>
 
             </div>
-            <small class="text-muted d-block mb-2">Alur: <strong>Aktif → Terbuat → Siap → Tutup</strong>. Baris dari prospek ada tombol Revisi (kuning) / Batal (merah).</small>
+            <div id="tutupSearchWrap" class="input-group input-group-sm ml-auto d-none" style="max-width:280px;">
+                <div class="input-group-prepend"><span class="input-group-text"><i class="fa fa-search"></i></span></div>
+                <input type="text" id="tutupSearch" class="form-control" placeholder="Cari nama customer..." aria-label="Cari nama customer di tab tutup">
+            </div>
+            </div>
+            <!-- <small class="text-muted d-block mb-2">Alur: <strong>Aktif → Terbuat → Siap → Tutup</strong>. Baris dari prospek ada tombol Revisi (kuning) / Batal (merah).</small> -->
 
             <hr>
 
@@ -157,6 +163,9 @@ function pfUnlock(btn) {
         $('#'+target).removeClass('d-none');
         $('.workflow-tab').removeClass('active');
         $('.workflow-tab[data-target="'+target+'"]').addClass('active');
+        // Search customer hanya muncul di tab Tutup (kanan atas)
+        var w = document.getElementById('tutupSearchWrap');
+        if (w) w.classList.toggle('d-none', target !== 'tab-tutup');
         try { sessionStorage.setItem('pfTab', target); } catch (e) {}
     }
     $(document).on('click','.workflow-tab',function(){

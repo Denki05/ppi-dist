@@ -26,8 +26,8 @@
         <td>{{ optional($row->details_cost)->grand_total_idr ? number_format($row->details_cost->grand_total_idr,0,',','.') : '-' }}</td>
         <td><small class="text-muted">{{ $row->created_at ? $row->created_at->format('d/m/Y H:i') : '-' }}</small></td>
         <td>
-            <button type="button" class="btn btn-sm btn-circle btn-outline-success btn-status-acc" 
-                    data-id="{{ $row->id }}" title="ACC — lanjut ke DO/Packing" aria-label="ACC {{ $row->code }}">
+            <button type="button" class="btn btn-sm btn-circle btn-alt-success btn-status-acc" 
+                    data-id="{{ $row->id }}" title="ACC - lanjut ke DO/Packing" aria-label="ACC {{ $row->code }}">
                 <i class="fa fa-check"></i>
             </button>
 
@@ -35,10 +35,10 @@
             @php $pgId = ($pengajuanMap ?? [])[(string) optional($row->member)->id] ?? null; @endphp
             @if(($canRevisiBatal ?? false) && $pgId)
             <button type="button"
-                class="btn btn-sm btn-circle btn-outline-danger btn-batalkan-prospek"
+                class="btn btn-sm btn-circle btn-alt-danger btn-batalkan-prospek"
                 data-pgid="{{ $pgId }}"
                 data-code="{{ $row->code }}"
-                title="Batalkan langsung — pengajuan dicabut + log (tanpa pindah halaman)" aria-label="Batalkan {{ $row->code }}">
+                title="Batalkan langsung - pengajuan dicabut + log (tanpa pindah halaman)" aria-label="Batalkan {{ $row->code }}">
                 <i class="fa fa-ban"></i>
             </button>
             @endif
