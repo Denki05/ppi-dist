@@ -3,6 +3,20 @@
 @push('styles')
 <style>
   @include('superuser.gudang.purchase_order._po_styles')
+
+  /* Tabel produk memanjang ke bawah mengikuti tinggi layar */
+  .po-table-scroll {
+    max-height: calc(100vh - 330px) !important;
+    min-height: 320px;
+    overflow-y: auto;
+  }
+  /* Header tabel tetap terlihat saat scroll */
+  .po-table-scroll thead th {
+    position: sticky;
+    top: 0;
+    z-index: 2;
+    background: #f6f7f9;
+  }
 </style>
 @endpush
 

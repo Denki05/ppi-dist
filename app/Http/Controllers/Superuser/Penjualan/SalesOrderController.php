@@ -6,6 +6,8 @@ use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use App\Entities\Penjualan\SalesOrder;
 use App\Entities\Penjualan\SalesOrderItem;
+use App\Entities\Penjualan\SalesOrderKontrakPivot;
+use App\Entities\Master\ProductPack;
 use App\Entities\Penjualan\PackingOrderItem;
 use App\Entities\Penjualan\PackingOrderDetail;
 use App\Entities\Setting\UserMenu;
@@ -161,16 +163,22 @@ class SalesOrderController extends Controller
     private function getSoProgressQuery(Request $request)
     {
         $filter_periode = $request->filter_periode ?? 'harian';
-        $query = \App\Entities\Penjualan\PackingOrder::query();
+        $query = \App\Entities\Penjualan\PackingOrder::query()
+            ->leftJoin('penjualan_so as so', 'so.id', '=', 'penjualan_do.so_id')
+            ->select('penjualan_do.*');
 
         if ($filter_periode == 'harian') {
-            $query->whereDate('created_at', Carbon\Carbon::today());
+            $query->whereDate('penjualan_do.created_at', Carbon\Carbon::today());
         } elseif ($filter_periode == 'bulanan') {
-            $query->whereMonth('created_at', Carbon\Carbon::now()->month)
-                ->whereYear('created_at', Carbon\Carbon::now()->year);
+            $query->whereMonth('penjualan_do.created_at', Carbon\Carbon::now()->month)
+                ->whereYear('penjualan_do.created_at', Carbon\Carbon::now()->year);
         } elseif ($filter_periode == 'custom' && $request->tanggal_dari && $request->tanggal_sampai) {
-            $query->whereBetween('created_at', [$request->tanggal_dari, $request->tanggal_sampai]);
+            $query->whereBetween('penjualan_do.created_at', [$request->tanggal_dari, $request->tanggal_sampai]);
         }
+
+        // Request user: DO Revisi (status 7 / "Revisi -> SO Lanjutan")
+        // disembunyikan dari SO Progress. Tutup ulang tetap lewat tab SO Lanjutan.
+        $query->where('penjualan_do.status', '!=', 7);
 
         return $query;
     }
@@ -614,162 +622,28 @@ class SalesOrderController extends Controller
      */
     public function update(Request $request)
     {
-        
-        $data_json = [];
-        $post = $request->all();
-        if($request->method() == "POST"){
-            $step = $post["step"];
-
-            if(empty($post["id"])){
-                $data_json["IsError"] = TRUE;
-                $data_json["Message"] = "ID Sales Order tidak boleh kosong";
-                goto ResultData;
-            }
-
-            $customer = [];
-            $gudang = [];
-            if(!empty($post["customer_id"])){
-                $customer["id"] = empty($post["customer_id"]) ? null : $post["customer_id"];
-                $customer["so_for"] = 1;
-            }
-            else{
-                $gudang["id"] = empty($post["destination_warehouse_id"]) ? null : $post["destination_warehouse_id"];
-                $customer["so_for"] = 2;
-            }
-            
-            $sales_order = SalesOrder::find($post["id"]);
-
-            DB::beginTransaction();
-            try {
-                
-                if ($step == 1) {
-                    $sales_order->type_transaction = trim(htmlentities($post["type_transaction"]));
-                    $sales_order->catatan = trim(htmlentities($post["catatan"]));
-                    $sales_order->brand_name = trim(htmlentities($post["brand_name"]));
-                    $sales_order->idr_rate = trim(htmlentities($post["idr_rate"]));
-                    $sales_order->note = trim(htmlentities($post["note"]));
-                    $sales_order->updated_by = Auth::id();
-                    $sales_order->status = $step;
-                } else if ($step == 2) {
-                    // di set statusnya, kalau dari front end dia di cancel, tidak di forward, maka status jadi 3 => awal perlu revisi
-                    $data = [
-                        'origin_warehouse_id' => trim(htmlentities($post["origin_warehouse_id"])),
-                        'destination_warehouse_id' => $gudang["id"] ??  null,
-                        'type_transaction' => trim(htmlentities($post["type_transaction"])),
-                        'updated_by' => Auth::id(),
-                        'status' => $step,
-                        'ekspedisi_id' => (empty($post["ekspedisi_id"])) ? null : $post["ekspedisi_id"],
-                    ];
-                }
-                if($sales_order->save()){
-                    $search_so_items = SalesOrderItem::where('so_id', $post["id"])->get();  // Use get() to retrieve all items
-                    if ($search_so_items->isNotEmpty()) {  // Check if any items were found
-                        foreach ($search_so_items as $search_so_item) {
-                            // Get all related SalesOrderKontrakPivot records for each found SalesOrderItem
-                            $get_pivot_kontrak = SalesOrderKontrakPivot::where('so_item_id', $search_so_item->id)->get();
-
-                            // Iterate through the retrieved SalesOrderKontrakPivot records
-                            foreach ($get_pivot_kontrak as $row) {
-                                // Delete each related pivot record
-                                SalesOrderKontrakPivot::where('so_item_id', $row->so_item_id)->delete();
-                            }
-                        }
-                    } else {
-                        return response()->json(['error' => 'SalesOrderItem not found'], 404);
-                    }
-
-                    // deleted so item
-                    $update_item = SalesOrderItem::where('so_id', $post["id"])->update(['status' => 0]);
-                    $deleted_item = SalesOrderItem::where('so_id', $post["id"])->delete();
-                    if (sizeof($post["sku"]) > 0) {
-                        $listItem = [];
-                        for ($i = 0; $i < sizeof($post["sku"]); $i++) {
-                            // dd($post["so_kontrak"][$i]);
-
-                            $duplicate_product = [];
-                            $duplicate = false;
-                            $listItem[] = [
-                                'sku' => $post["sku"][$i],
-                                'free_product' => $post["free_product"][$i],
-                            ];
-
-                            foreach($listItem as $row => $value){
-                                if(in_array($value, $duplicate_product)) {
-                                    $duplicate = true;
-                                    break;
-                                } else {
-                                    array_push($duplicate_product, $value);
-                                }
-
-                                // dd($value); 
-                            }
-
-                            if($duplicate){
-                                $data_json["IsError"] = TRUE;
-                                $data_json["Message"] = "Item sudah ada";
-                                goto ResultData;
-                            }else{
-                                $insertDetail = new SalesOrderItem;
-                                $insertDetail->so_id = $sales_order->id;
-                                $insertDetail->product_packaging_id =  $post["sku"][$i];
-                                $insertDetail->price =  $post["price"][$i];
-                                $insertDetail->qty = $post["qty"][$i];
-                                $insertDetail->disc_usd = $post["disc"][$i];
-                                $insertDetail->packaging_id = $post["packaging"][$i];
-                                $insertDetail->kontrak = $post["so_kontrak_value"][$i];
-                                $insertDetail->free_product = $post["free_product"][$i];
-                                $insertDetail->created_by = Auth::id();
-                                $insertDetail->save();
-                                
-                                // if ($post["so_kontrak_value"][$i] == 1) {
-                                //     if ($post["kontrak_new"][$i] == 0) {
-                                //         // If kontrak_new value is 0, find and associate with a specific kontrak item
-                                //         $search_kontrak = SalesOrderkontrak::where('id', $request->so_kontrak)->first();
-                                //         $item_kontrak = SalesOrderkontrakItem::where('so_kontrak_id', $search_kontrak->id)->first();
-                                    
-                                //         $pivot_kontrak = new SalesOrderKontrakPivot;
-                                //         $pivot_kontrak->so_item_id = $insertDetail->id;
-                                //         $pivot_kontrak->so_kontrak_item_id = $item_kontrak->id;
-                                //         $pivot_kontrak->save();
-                                //     }else{
-                                //         // If kontrak value is 1, associate with a specific kontrak item
-                                //         $pivot_kontrak = new SalesOrderKontrakPivot;
-                                //         $pivot_kontrak->so_item_id = $insertDetail->id;
-                                //         $pivot_kontrak->so_kontrak_item_id = $get_pivot_kontrak->so_kontrak_item_id;
-                                //         $pivot_kontrak->save();
-                                //     }
-                                // }else {
-                                //     continue;
-                                // }
-                                
-                                
-                            }
-                        }
-                    }
-                }   
-                DB::commit();
-
-                $data_json["IsError"] = FALSE;
-                $data_json["Message"] = "Sales Order Berhasil Diubah";
-                goto ResultData;
-            } catch (\Exception $e) {
-
-                dd($e);
-                DB::rollback();
-
-                $data_json["IsError"] = TRUE;
-                $data_json["Message"] = "Sales Order Gagal Diubah";
-    
-                return response()->json($data_json,400);
-            }
+        if ($request->method() != "POST") {
+            return response()->json(['IsError' => true, 'Message' => 'Invalid Method'], 200);
         }
-        else{
-            $data_json["IsError"] = TRUE;
-            $data_json["Message"] = "Invalid Method";
-            goto ResultData;
+
+        DB::beginTransaction();
+        try {
+            $updateService = new \App\Services\SalesOrder\SalesOrderUpdateService();
+            $result = $updateService->update($request);
+
+            if (!$result['success']) {
+                DB::rollBack();
+                return response()->json(['IsError' => true, 'Message' => $result['message']], 200);
+            }
+
+            DB::commit();
+
+            return response()->json(['IsError' => false, 'Message' => $result['message']], 200);
+        } catch (\Exception $e) {
+            DB::rollBack();
+            Log::error('Sales Order update failed: ' . $e->getMessage());
+            return response()->json(['IsError' => true, 'Message' => 'Sales Order Gagal Diubah'], 400);
         }
-        ResultData:
-        return response()->json($data_json,200);
     }
 
     public function update_item(Request $request)
@@ -1133,9 +1007,40 @@ class SalesOrderController extends Controller
                 // (misal grand total kosong karena kalkulasi JS belum jalan) tidak
                 // menyisakan SO tertutup / DO dengan grand_total 0.
                 $closingService->validateClosingRequest($request, $errors);
-                // Guard silang: pastikan diskon sudah masuk ke grand total
-                // (mencegah terulangnya kasus Depo Aroma).
+                // Hitung ulang otoritatif di backend: nominal disc/grand dari
+                // browser TIDAK dipercaya (kasus invoice 61079: disc 100x lipat
+                // karena kalkulasi JS stale). Yang disimpan selalu hasil ini.
+                $totals = null;
+                $autoCorrected = false;
                 if (empty($errors)) {
+                    $totals = $closingService->calculateClosingTotals($request, $errors);
+                }
+                if (empty($errors) && $totals) {
+                    // Bandingkan dengan kiriman browser untuk audit/warning.
+                    $tol = max(1000, round($totals['subtotal'] * 0.001));
+                    $grandReq = (float) $closingService->cleanCurrency($request->grand_total_idr);
+                    $discAgenReq = (float) $closingService->cleanCurrency($request->disc_agen_idr);
+                    if (abs($grandReq - $totals['grand_total_idr']) > $tol
+                        || abs($discAgenReq - $totals['disc_agen_idr']) > $tol) {
+                        $autoCorrected = true;
+                        \Log::warning('tutup_so auto-correct totals', [
+                            'so_id' => $request->id,
+                            'user_id' => Auth::id(),
+                            'grand_req' => $grandReq,
+                            'grand_calc' => $totals['grand_total_idr'],
+                            'disc_agen_req' => $discAgenReq,
+                            'disc_agen_calc' => $totals['disc_agen_idr'],
+                        ]);
+                    }
+                    // Timpa kiriman browser dengan hasil hitungan backend.
+                    $fmt = function ($v) { return number_format((float) $v, 0, ',', '.'); };
+                    $request->merge([
+                        'disc_agen_idr' => $fmt($totals['disc_agen_idr']),
+                        'disc_kemasan_idr' => $fmt($totals['disc_kemasan_idr']),
+                        'subtotal_2' => $fmt($totals['subtotal_2']),
+                        'grand_total_idr' => $fmt($totals['grand_total_idr']),
+                    ]);
+                    // Asertasi akhir: harus lolos karena sudah disamakan.
                     $closingService->validateClosingTotals($request, $errors);
                 }
                 if ($errors) {
@@ -1205,9 +1110,14 @@ class SalesOrderController extends Controller
                 } catch (\Exception $pushEx) {
                 }
 
-                $response['notification'] = [
-                    'alert' => 'notify', 'type' => 'success', 'content' => 'Success',
-                ];
+                $response['notification'] = $autoCorrected
+                    ? [
+                        'alert' => 'notify', 'type' => 'warning',
+                        'content' => 'Tersimpan dengan koreksi otomatis: angka diskon/grand total dari layar tidak sesuai hitungan, sudah dibetulkan mengikuti kalkulasi sistem.',
+                    ]
+                    : [
+                        'alert' => 'notify', 'type' => 'success', 'content' => 'Success',
+                    ];
                 $response['redirect_to'] = route('superuser.penjualan.sales_order.index_lanjutan');
                 return $this->response(200, $response);
 

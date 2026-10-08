@@ -48,7 +48,7 @@
 <div class="block">
   <hr class="my-20">
   <div class="block-content block-content-full">
-    <form action="{{ route('superuser.report.forecast_supplier.printReport') }}" method="POST">
+  <form id="formForecast" action="{{ route('superuser.report.forecast_supplier.printReport') }}" method="POST">
       @csrf
         <div class="row">
           <div class="col-lg-3">
@@ -80,6 +80,12 @@
           </div>
           <div class="col-lg-3">
             <div class="form-group">
+              <label>Jumlah Semester</label>
+              <input type="number" name="semester_count" id="semester_count" class="form-control" value="2" min="1" max="12">
+            </div>
+          </div>
+          <div class="col-lg-3">
+            <div class="form-group">
               <br>
               <!-- <button class="btn btn-success" type="submit"><i class="fa fa-print"></i> print</button> -->
               <button type="submit" class="btn btn-success"><i class="fa fa-print"></i> Print</button>
@@ -101,23 +107,48 @@
     
     $(function(){
 
-      $('.js-select2').select2();
+$('.js-select2').select2();
 
-      function showAlert(message, type) {
-          var alertClass = 'alert-info'; // Default alert class
-          if (type === 'error') {
-              alertClass = 'alert-danger';
-          } else if (type === 'success') {
-              alertClass = 'alert-success';
-          }
-          var alertHTML = '<div class="alert ' + alertClass + ' alert-dismissible fade show" role="alert">' +
-                              message +
-                              '<button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>' +
-                          '</div>';
-          $('#alert-container').html(alertHTML);
+function showAlert(message, type) {
+  var alertClass = (type === 'error') ? 'alert-danger' : 'alert-success';
+  var alertHTML = '<div class="alert ' + alertClass + ' alert-dismissable" role="alert">' +
+                    '<button type="button" class="close" data-dismiss="alert" aria-label="Close"><span aria-hidden="true">&times;</span></button>' +
+                    message +
+                  '</div>';
+  $('#alert-container').html(alertHTML);
+}
+
+$("#vendor_name").val("all").change();
+
+$('#formForecast').on('submit', function(e){
+  e.preventDefault();
+  var $btn = $(this).find('button[type=submit]');
+  $btn.prop('disabled', true);
+
+  // buka tab dulu supaya tidak diblokir popup blocker
+  var w = window.open('', '_blank');
+
+  $.ajax({
+    url: $(this).attr('action'),
+    method: 'POST',
+    data: $(this).serialize(),
+    success: function(res){
+      if (res.success && res.pdf_url) {
+        w.location = res.pdf_url;
+      } else {
+        w.close();
+        showAlert(res.error || 'Gagal membuat laporan.', 'error');
       }
+    },
+    error: function(xhr){
+      w.close();
+      var msg = (xhr.responseJSON && xhr.responseJSON.error) ? xhr.responseJSON.error : 'Terjadi kesalahan saat membuat laporan.';
+      showAlert(msg, 'error');
+    },
+    complete: function(){ $btn.prop('disabled', false); }
+  });
+});
 
-      $("#vendor_name").val("all").change();
-    });
+});
   </script>
 @endpush

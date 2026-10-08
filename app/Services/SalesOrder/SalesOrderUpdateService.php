@@ -40,8 +40,14 @@ class SalesOrderUpdateService
             $customer["so_for"] = 2;
         }
 
+        // LOG SEMENTARA (debug kurs 261001-03) — hapus setelah investigasi selesai.
+        \Log::info('SO-UPDATE-DBG input', ['id' => $post['id'] ?? null, 'step' => $step ?? null, 'idr_rate_raw' => $post['idr_rate'] ?? null]);
+
         if ($step == 1) {
-            $this->updateStep1($sales_order, $post);
+            $stepError = $this->updateStep1($sales_order, $post);
+            if ($stepError) {
+                return ['success' => false, 'message' => $stepError];
+            }
         } else if ($step == 2) {
             $this->updateStep2($sales_order, $post, $gudang);
         }
@@ -66,6 +72,7 @@ class SalesOrderUpdateService
 
     /**
      * Update step 1 fields
+     * Returns null jika OK, atau string pesan error jika validasi gagal.
      */
     protected function updateStep1($salesOrder, $post)
     {
@@ -73,10 +80,15 @@ class SalesOrderUpdateService
         $salesOrder->brand_name = trim(htmlentities($post["brand_name"]));
         $salesOrder->note = trim(htmlentities($post["note"]));
 
-        // Update kurs/IDR rate
-        $idr_rate_clean = str_replace('.', '', $post["idr_rate"] ?? '0');
-        $idr_rate_clean = str_replace(',', '.', $idr_rate_clean);
-        $salesOrder->idr_rate = (float) $idr_rate_clean;
+        // Update kurs/IDR rate (tahan format ID "17.975,00" maupun EN "17,975.00").
+        $idr_rate = \App\Helper\CustomHelper::parseKurs($post["idr_rate"] ?? 0);
+        // LOG SEMENTARA (debug kurs 261001-03) — hapus setelah investigasi selesai.
+        \Log::info('SO-UPDATE-DBG parsed', ['idr_rate_raw' => $post["idr_rate"] ?? null, 'idr_rate_parsed' => $idr_rate]);
+        // SO non-PPN wajib kurs realistis (mencegah 1000x kekecilan akibat salah format ribuan).
+        if (($salesOrder->type_so ?? 'nonppn') !== 'ppn' && $idr_rate < 1000) {
+            return 'Kurs tidak valid (' . e($post["idr_rate"] ?? '') . '). Gunakan angka penuh, cth: 18000.';
+        }
+        $salesOrder->idr_rate = $idr_rate;
 
         // Update indent
         if (isset($post["so_indent"])) {
@@ -93,6 +105,8 @@ class SalesOrderUpdateService
 
         $salesOrder->updated_by = Auth::id();
         $salesOrder->status = 1;
+
+        return null;
     }
 
     /**
@@ -115,18 +129,18 @@ class SalesOrderUpdateService
      */
     protected function deleteOldItems($soId)
     {
-        $search_so_items = SalesOrderItem::where('so_id', $soId)->get();
+        $search_so_items = \App\Entities\Penjualan\SalesOrderItem::where('so_id', $soId)->get();
         if ($search_so_items->isNotEmpty()) {
             foreach ($search_so_items as $search_so_item) {
-                $get_pivot_kontrak = SalesOrderKontrakPivot::where('so_item_id', $search_so_item->id)->get();
+                $get_pivot_kontrak = \App\Entities\Penjualan\SalesOrderKontrakPivot::where('so_item_id', $search_so_item->id)->get();
                 foreach ($get_pivot_kontrak as $row) {
-                    SalesOrderKontrakPivot::where('so_item_id', $row->so_item_id)->delete();
+                    \App\Entities\Penjualan\SalesOrderKontrakPivot::where('so_item_id', $row->so_item_id)->delete();
                 }
             }
         }
 
-        SalesOrderItem::where('so_id', $soId)->update(['status' => 0]);
-        SalesOrderItem::where('so_id', $soId)->delete();
+        \App\Entities\Penjualan\SalesOrderItem::where('so_id', $soId)->update(['status' => 0]);
+        \App\Entities\Penjualan\SalesOrderItem::where('so_id', $soId)->delete();
     }
 
     /**
@@ -139,6 +153,19 @@ class SalesOrderUpdateService
         $expectedPackagingId = isset($post['packaging_id']) && is_numeric($post['packaging_id'])
             ? (int) $post['packaging_id']
             : null;
+        // Validasi ketat: kemasan wajib dipilih & harus aktif (mencegah bypass + data revisi yatim).
+        if (empty($expectedPackagingId)) {
+            return ['success' => false, 'message' => 'Kemasan wajib dipilih sebelum menyimpan SO.'];
+        }
+        $masterPackaging = \App\Entities\Master\Packaging::where('id', $expectedPackagingId)
+            ->where('status', \App\Entities\Master\Packaging::STATUS['ACTIVE'])
+            ->first();
+        if (!$masterPackaging) {
+            return ['success' => false, 'message' => 'Kemasan yang dipilih tidak valid / tidak aktif.'];
+        }
+        // Penanda revisi: jika SO hasil revisi DO (count_rev=1), kemasan boleh diubah
+        // HANYA sebelum tutup ulang — item lama wajib sudah disesuaikan (dicek per-baris di bawah).
+        $isRevision = ((int) ($salesOrder->count_rev ?? 0) === 1);
         for ($i = 0; $i < sizeof($post["sku"]); $i++) {
             // Jaring pengaman: item harus milik brand header (frontend bisa di-bypass)
             $pack = ProductPack::with('product')->where('id', $post["sku"][$i])->first();
@@ -153,14 +180,19 @@ class SalesOrderUpdateService
 
             // Jaring pengaman: item non-kontrak harus ikut kemasan awal SO
             // (frontend sudah difilter, ini mencegah bypass via devtools).
+            // Berlaku juga untuk SO revisi (count_rev=1): baris lama yang masih
+            // kemasan lama wajib dihapus dulu, tidak bisa campur.
             $isKontrak = isset($post['so_kontrak_value'][$i]) && (string) $post['so_kontrak_value'][$i] === '1';
-            if (!$isKontrak && $expectedPackagingId) {
+            if (!$isKontrak) {
                 $submittedPackagingId = isset($post['packaging'][$i]) && is_numeric($post['packaging'][$i])
                     ? (int) $post['packaging'][$i]
                     : null;
-                if ($submittedPackagingId !== $expectedPackagingId) {
+                // Cek ganda: kiriman form + master ProductPack aktual.
+                $actualPackagingId = isset($pack->packaging_id) ? (int) $pack->packaging_id : null;
+                if ($submittedPackagingId !== $expectedPackagingId || $actualPackagingId !== $expectedPackagingId) {
                     $code = $pack->code ?? $post["sku"][$i];
-                    return ['success' => false, 'message' => 'Item <b>' . e($code) . '</b> kemasannya tidak sesuai dengan kemasan SO awal. Hapus baris tersebut dan pilih ulang produk.'];
+                    $extra = $isRevision ? ' (SO revisi: hapus baris kemasan lama dulu)' : '';
+                    return ['success' => false, 'message' => 'Item <b>' . e($code) . '</b> kemasannya tidak sesuai dengan kemasan SO (' . e($masterPackaging->pack_name) . ')' . $extra . '. Hapus baris tersebut dan pilih ulang produk.'];
                 }
             }
 
@@ -182,6 +214,17 @@ class SalesOrderUpdateService
 
             if ($duplicate) {
                 return ['success' => false, 'message' => 'Item sudah ada di dalam list. Silahkan gabungkan Qty-nya.'];
+            }
+
+            // Validasi angka item (mencegah qty minus/nol dan harga/diskon negatif).
+            $qtyItem = $post["qty"][$i] ?? null;
+            $priceItem = $post["price"][$i] ?? null;
+            $discItem = $post["disc"][$i] ?? 0;
+            if (!is_numeric($qtyItem) || (float) $qtyItem <= 0) {
+                return ['success' => false, 'message' => 'Qty baris ' . ($i + 1) . ' wajib angka lebih dari 0.'];
+            }
+            if (!is_numeric($priceItem) || (float) $priceItem < 0 || !is_numeric($discItem) || (float) $discItem < 0) {
+                return ['success' => false, 'message' => 'Price/Disc baris ' . ($i + 1) . ' tidak boleh minus.'];
             }
 
             $insertDetail = new SalesOrderItem;

@@ -269,7 +269,7 @@ class SalesOrderQueryService
         $product_category = \App\Entities\Master\ProductCategory::all();
         $brand = \App\Entities\Master\BrandLokal::get();
         $ekspedisi = \App\Entities\Master\Vendor::where('type', 1)->get();
-        $packaging = \App\Entities\Master\Packaging::get();
+        $packaging = \App\Entities\Master\Packaging::where('status', \App\Entities\Master\Packaging::STATUS['ACTIVE'])->orderBy('pack_name')->get();
         $rekening = DB::table('rekening')->get();
 
         // Kemasan awal SO diinfer dari item yang sudah ada (mode packaging_id),

@@ -27,14 +27,53 @@ class SalesOrderClosingService
     }
 
     /**
-     * Clean currency value: remove dots, replace comma with dot
+     * Clean currency value, tahan format ID maupun EN.
+     * ID: "18.025" / "18.025,00" -> 18025 | EN: "18025.00" / "1,802,500.00" -> 18025 / 1802500.
+     * Aturan: bila titik & koma sama-sama ada, pemisah TERAKHIR adalah desimal.
+     * Kasus nyata 6I083: "18025.00" dulu terbaca 1802500 (100x) karena semua titik dibuang.
      */
     public function cleanCurrency($value)
     {
-        if (empty($value)) return 0;
-        $value = str_replace('.', '', $value);
-        $value = str_replace(',', '.', $value);
-        return $value;
+        if ($value === null || $value === '') return 0;
+        // Hati-hati: "18.025" is_numeric (18.025 EN) tapi bermakna 18025 (ID),
+        // jadi shortcut hanya untuk angka polos tanpa titik/koma.
+        if (is_numeric($value) && strpos((string) $value, '.') === false && strpos((string) $value, ',') === false) {
+            return $value + 0;
+        }
+        $s = trim((string) $value);
+        $s = str_replace(["\xc2\xa0", ' ', 'Rp', 'RP', 'rp', 'IDR', 'Idr', 'idr'], '', $s);
+        if ($s === '' || $s === '-' || $s === '.' || $s === ',') return 0;
+        $hasDot = strpos($s, '.') !== false;
+        $hasComma = strpos($s, ',') !== false;
+        if ($hasDot && $hasComma) {
+            if (strrpos($s, ',') > strrpos($s, '.')) {
+                // ID: titik ribuan, koma desimal.
+                $s = str_replace('.', '', $s);
+                $s = str_replace(',', '.', $s);
+            } else {
+                // EN: koma ribuan, titik desimal.
+                $s = str_replace(',', '', $s);
+            }
+        } elseif ($hasComma) {
+            if (substr_count($s, ',') > 1) {
+                $s = str_replace(',', '', $s);
+            } elseif (preg_match('/,\d{1,2}$/', $s)) {
+                $s = str_replace(',', '.', $s);
+            } else {
+                $s = str_replace(',', '', $s);
+            }
+        } else {
+            if (substr_count($s, '.') > 1) {
+                $s = str_replace('.', '', $s);
+            } elseif (!preg_match('/^\d{1,3}(\.\d{3})+$/', $s)) {
+                // Titik tunggal bukan pola ribuan -> desimal, biarkan.
+            } else {
+                $s = str_replace('.', '', $s);
+            }
+        }
+        $s = preg_replace('/[^0-9.\-]/', '', $s);
+        if ($s === '' || $s === '-' || $s === '.') return 0;
+        return $s + 0;
     }
 
     /**
@@ -130,6 +169,78 @@ class SalesOrderClosingService
         }
 
         return empty($errors);
+    }
+
+    /**
+     * Hitung ulang total tutup SO dari nol di backend (otoritatif).
+     * Browser hanya preview: nominal disc/grand yang dikirim user TIDAK dipercaya,
+     * yang disimpan selalu hasil hitungan ini. Mencegah terulangnya kasus
+     * invoice 61079 (discount_1_idr 100x lipat karena kalkulasi JS stale).
+     *
+     * Return array hasil hitungan, atau null + $errors terisi bila fatal
+     * (kurs invalid, item kosong, subtotal/grand tidak valid).
+     */
+    public function calculateClosingTotals($request, &$errors)
+    {
+        $repeater = $request->repeater;
+        if (is_string($repeater)) {
+            $repeater = json_decode($repeater, true);
+        }
+        if (empty($repeater) || !is_array($repeater)) {
+            $errors[] = 'Item sales order kosong, kalkulasi tidak bisa divalidasi!';
+            return null;
+        }
+
+        $kurs = (float) $this->cleanCurrency($request->idr_rate);
+        if ($kurs <= 0) {
+            $errors[] = 'Kurs tidak valid, kalkulasi tidak bisa divalidasi!';
+            return null;
+        }
+
+        // Subtotal: mirror processItems & JS count_per_item (percent_disc = 0).
+        $subtotal = 0;
+        foreach ($repeater as $item) {
+            $doQty = (float) ($item['do_qty'] ?? 0);
+            if ($doQty <= 0) {
+                continue;
+            }
+            $price = (float) ($item['price'] ?? 0);
+            $usdDisc = (float) ($item['usd_disc'] ?? 0);
+            $lineDiscUsd = $usdDisc * $doQty;
+            $subtotal += round(($doQty * $price - $lineDiscUsd) * $kurs);
+        }
+
+        if ($subtotal <= 0) {
+            $errors[] = 'Subtotal hasil kalkulasi nol, periksa qty/harga/kurs!';
+            return null;
+        }
+
+        $d1pct = (float) ($request->disc_agen_percent ?? 0);
+        $d2pct = (float) ($request->disc_kemasan_percent ?? 0);
+        $tambahan = (float) $this->cleanCurrency($request->disc_tambahan_idr);
+        $voucher = (float) $this->cleanCurrency($request->voucher_idr);
+        $delivery = (float) $this->cleanCurrency($request->delivery_cost_idr);
+
+        $discAgen = round($subtotal * ($d1pct / 100));
+        $discKemasan = round(($subtotal - $discAgen) * ($d2pct / 100));
+        $subtotal2 = $subtotal - $discAgen - $discKemasan;
+        $grand = $subtotal2 - $tambahan - $voucher + $delivery;
+
+        if ($grand <= 0) {
+            $errors[] = 'Grand total hasil kalkulasi tidak valid (minus/nol), periksa diskon!';
+            return null;
+        }
+
+        return [
+            'subtotal' => $subtotal,
+            'disc_agen_idr' => $discAgen,
+            'disc_kemasan_idr' => $discKemasan,
+            'subtotal_2' => $subtotal2,
+            'disc_tambahan_idr' => $tambahan,
+            'voucher_idr' => $voucher,
+            'delivery_cost_idr' => $delivery,
+            'grand_total_idr' => $grand,
+        ];
     }
 
     /**
@@ -403,9 +514,9 @@ class SalesOrderClosingService
         }
 
         $salesOrder->origin_warehouse_id = $request->origin_warehouse_id;
-        $salesOrder->sales_senior_id = $request->sales_senior_id;
-        $salesOrder->sales_id = $request->sales_id;
-        $salesOrder->ekspedisi_id = $request->ekspedisi ?? null;
+        $salesOrder->sales_senior_id = ($request->sales_senior_id === '' ? null : $request->sales_senior_id);
+        $salesOrder->sales_id = ($request->sales_id === '' ? null : $request->sales_id);
+        $salesOrder->ekspedisi_id = (!isset($request->ekspedisi) || $request->ekspedisi === '' ? null : $request->ekspedisi);
         $salesOrder->so_date = $request->so_date;
         $salesOrder->rekening = $request->rekening;
         $salesOrder->shipping_cost_buyer = $request->shipping_cost_buyer ?? 0;
@@ -428,9 +539,13 @@ class SalesOrderClosingService
     /**
      * Get or create PackingOrder for closing
      */
-    public function getOrCreatePackingOrder($salesOrder, $request)
+    public function getOrCreatePackingOrder($salesOrder, $request, $forceReuse = false)
     {
-        $isRevision = ($salesOrder->count_rev == 0 && $request->has('keep_old_code'));
+        // $forceReuse = snapshot count_rev SEBELUM prepareClosing me-reset-nya ke 0.
+        // Tanpa ini, tutup ulang sesudah revisi yang tanpa centang "Previous Code"
+        // membuat PackingOrder BARU dengan do_code sama (kasus 6I076 ganda:
+        // 1 baris Revisi + 1 baris Packed), padahal harus pakai ulang DO revisi.
+        $isRevision = $forceReuse || ($salesOrder->count_rev == 0 && $request->has('keep_old_code'));
 
         if ($isRevision || $salesOrder->count_rev == 1) {
             $packing_order = PackingOrder::where('so_id', $salesOrder->id)->first();
@@ -440,6 +555,9 @@ class SalesOrderClosingService
 
         if (!$packing_order) {
             $company = Company::first();
+            // idr_rate WAJIB angka bersih ("17.900" -> 17900). Nilai mentah
+            // tampilan yang lolos akan tersimpan 17.9 (salah 1000x).
+            $cleanRate = $this->cleanCurrency($request->idr_rate ?? null);
             $packing_order = new PackingOrder;
             $packing_order->code = CodeRepo::generatePO();
             $packing_order->do_code = $salesOrder->code;
@@ -448,8 +566,8 @@ class SalesOrderClosingService
             $packing_order->customer_other_address_id = $salesOrder->customer_other_address_id;
             $packing_order->warehouse_id = $salesOrder->origin_warehouse_id;
             $packing_order->type_transaction = $salesOrder->type_transaction;
-            $packing_order->idr_rate = $request->idr_rate;
-            $packing_order->is_kurs_hold = (empty($request->idr_rate) || (float) $request->idr_rate <= 1);
+            $packing_order->idr_rate = $cleanRate;
+            $packing_order->is_kurs_hold = ($cleanRate <= 1);
             $packing_order->other_address = 0 ?? Null;
             $packing_order->note = $company->note ?? null;
             $packing_order->pic = $salesOrder->customer->pic;
@@ -461,11 +579,12 @@ class SalesOrderClosingService
             $packing_order->created_by = Auth::id();
             $packing_order->save();
         } else {
+            $cleanRate = $this->cleanCurrency($request->idr_rate ?? null);
             $packing_order->update([
                 'status' => 2,
                 'do_code' => $salesOrder->code,
-                'idr_rate' => $request->idr_rate,
-                'is_kurs_hold' => (empty($request->idr_rate) || (float) $request->idr_rate <= 1),
+                'idr_rate' => $cleanRate,
+                'is_kurs_hold' => ($cleanRate <= 1),
             ]);
         }
 

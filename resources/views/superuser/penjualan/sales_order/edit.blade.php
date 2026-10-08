@@ -70,13 +70,23 @@
 
           <div class="form-row">
             <div class="form-group col-md">
-              <label for="kemasan">Kemasan (mengikuti SO saat create)</label>
-              <input type="text" class="form-control bg-light" value="{{ $selected_packaging->pack_name ?? '-' }}" readonly>
-              <input type="hidden" name="packaging_id" id="packaging_id" value="{{ $selected_packaging->id ?? '' }}">
+              <label for="packaging_id">Kemasan (bisa diubah — ketat)</label>
+              <select class="js-select2 form-control" id="packaging_id" name="packaging_id" data-placeholder="Pilih Kemasan" required>
+                <option value=""></option>
+                @foreach($packaging as $kem)
+                <option value="{{ $kem->id }}" {{ (($selected_packaging->id ?? '') == $kem->id) ? 'selected' : '' }}>{{ $kem->pack_name }}</option>
+                @endforeach
+              </select>
+              <input type="hidden" id="packaging_id_old" value="{{ $selected_packaging->id ?? '' }}">
               @if(empty($selected_packaging))
-                <small class="text-muted">Kemasan tidak terdeteksi dari item SO — daftar produk menampilkan semua kemasan brand ini.</small>
+                <small class="text-muted">Kemasan tidak terdeteksi dari item SO — wajib pilih sebelum tambah produk.</small>
               @elseif(!empty($is_mixed_packaging) && $is_mixed_packaging)
-                <small class="text-warning">SO ini berisi campuran kemasan — filter produk mengikuti kemasan dominan ({{ $selected_packaging->pack_name }}).</small>
+                <small class="text-warning">SO ini berisi campuran kemasan — filter produk mengikuti kemasan dominan ({{ $selected_packaging->pack_name }}). Ganti kemasan akan mengosongkan baris non-kontrak.</small>
+              @else
+                <small class="text-muted">Ganti kemasan akan mengosongkan baris non-kontrak (kontrak dipertahankan).</small>
+              @endif
+              @if(($result->count_rev ?? 0) == 1)
+                <small class="text-danger d-block">SO hasil revisi ({{ $result->keep_code ?? '-' }}) — ganti kemasan hanya sebelum tutup ulang.</small>
               @endif
             </div>
           </div>
@@ -206,9 +216,9 @@
                       <input type="text" class="form-control packaging-name-display text-center bg-light" value="{{ $detail->product_pack->packaging->pack_name }}" disabled>
                       <input type="hidden" class="form-control packaging" name="packaging[]" value="{{ $detail->packaging_id }}">
                   </td>
-                  <td><input type="number" style="text-align: center;" class="form-control bg-light" name="price[]" required value="{{ $detail->price }}" readonly></td>
+                  <td><input type="number" style="text-align: center;" class="form-control bg-light noscroll" name="price[]" required value="{{ $detail->price }}" readonly min="0"></td>
                   <td>
-                    <input type="number" style="text-align: center;" class="form-control input-qty" name="qty[]" value="{{ $detail->qty }}" step="any" required>
+                    <input type="number" style="text-align: center;" class="form-control input-qty noscroll" name="qty[]" value="{{ $detail->qty }}" step="any" min="0.01" required>
                   </td>
                   <td>
                     <input type="text" style="text-align: center;" class="form-control" name="disc[]" value="{{ $detail->disc_usd }}" {{ $detail->free_product == 1 ? 'readonly' : '' }}>
@@ -460,6 +470,62 @@
       });
     });
 
+    // Ganti kemasan: validasi ketat — baris non-kontrak wajib dikosongkan, kontrak dipertahankan
+    $('#packaging_id').on('select2:select', function (e) {
+      var newPack = $(this).val();
+      var oldPack = $('#packaging_id_old').val();
+
+      if (newPack === oldPack) {
+        return;
+      }
+
+      if (!newPack) {
+        Swal.fire('Perhatian', 'Kemasan wajib dipilih.', 'warning');
+        $('#packaging_id').val(oldPack).trigger('change');
+        return;
+      }
+
+      // Hitung baris non-kontrak yang ada (value_kontrak / so_kontrak_value == 0)
+      var nonKontrakRows = [];
+      table.rows().every(function () {
+        var $row = $(this.node());
+        var v = $row.find('input[name="so_kontrak_value[]"]').val() || $row.find('input[name="value_kontrak[]"]').val() || '0';
+        if (String(v) !== '1') {
+          nonKontrakRows.push(this);
+        }
+      });
+
+      if (nonKontrakRows.length === 0) {
+        $('#packaging_id_old').val(newPack);
+        loadProductList();
+        return;
+      }
+
+      Swal.fire({
+        title: 'Ganti Kemasan?',
+        text: 'Mengganti kemasan akan menghapus ' + nonKontrakRows.length + ' baris non-kontrak. Baris kontrak dipertahankan. Lanjutkan?',
+        type: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#3085d6',
+        cancelButtonColor: '#d33',
+        confirmButtonText: 'Ya, ganti & hapus non-kontrak',
+        cancelButtonText: 'Batal'
+      }).then((result) => {
+        if (result.value || result.isConfirmed) {
+          // Hapus hanya baris non-kontrak (iterasi mundur agar index aman)
+          $(nonKontrakRows).each(function () {
+            table.row(this).remove();
+          });
+          table.draw();
+          $('#packaging_id_old').val(newPack);
+          loadProductList();
+          Swal.fire('Kemasan diganti', 'Baris non-kontrak dikosongkan. Silakan tambah produk dengan kemasan baru.', 'success');
+        } else {
+          $('#packaging_id').val(oldPack).trigger('change');
+        }
+      });
+    });
+
     $('a.row-add').on( 'click', function (e) {
       e.preventDefault();
       var typeAdd = $(this).data('id');
@@ -488,9 +554,9 @@
             '<input class="form-check-input" type="checkbox" value="0" name="check_kontrak" disabled><input type="hidden" class="form-control" value="0" name="value_kontrak[]"><input type="hidden" name="so_kontrak_value[]" value="0">',
             makeselect,
             '<input type="text" class="form-control packaging-name-display text-center bg-light" value="" disabled>',
-            '<input type="number" class="form-control bg-light" name="price[]" style="text-align: center;" readonly><input type="hidden" class="form-control packaging" name="packaging[]"><input type="hidden" class="form-control" name="kontrak_id[]">',
-            '<input type="number" class="form-control" name="qty[]" style="text-align: center;" required step="any">',
-            '<input type="number" class="form-control" name="disc[]" style="text-align: center;" value="0">',
+            '<input type="number" class="form-control bg-light noscroll" name="price[]" style="text-align: center;" readonly min="0"><input type="hidden" class="form-control packaging" name="packaging[]"><input type="hidden" class="form-control" name="kontrak_id[]">',
+            '<input type="number" class="form-control noscroll" name="qty[]" style="text-align: center;" required step="any" min="0.01">',
+            '<input type="number" class="form-control noscroll" name="disc[]" style="text-align: center;" value="0" min="0">',
             '<input type="checkbox" class="form-check-input input-gift mt-2" name="gift"><input class="form-control input-free" type="hidden" value="0" name="free_product[]">',
             '<a href="#" class="row-delete"><button type="button" class="btn btn-sm btn-circle btn-alt-danger" title="Delete"><i class="fa fa-trash"></i></button></a>'
           ]).draw( false );
@@ -618,6 +684,17 @@ $('#datatables tbody').on('change', '.input-gift', function (e) {
         return;
       }
 
+      // Validasi qty di semua baris (mencegah qty 0/minus tersimpan).
+      var badQtyRow = -1;
+      table.rows().every(function (idx) {
+        var q = parseFloat($(this.node()).find('input[name="qty[]"]').val());
+        if (isNaN(q) || q <= 0) { badQtyRow = idx + 1; return false; }
+      });
+      if (badQtyRow !== -1) {
+        Swal.fire('Perhatian', 'Qty baris ' + badQtyRow + ' wajib lebih dari 0.', 'warning');
+        return;
+      }
+
       Swal.fire({
         title: 'Konfirmasi',
         text: "Apakah anda yakin ingin menyimpan perubahan sales order ini?",
@@ -662,6 +739,14 @@ $('#datatables tbody').on('change', '.input-gift', function (e) {
           });
         }
       });
+    });
+
+    // Cegah scroll-wheel mouse mengubah angka (qty/price/disc) secara tak sengaja.
+    document.addEventListener("wheel", function(event) {
+      if (document.activeElement.type === "number" &&
+        document.activeElement.classList.contains("noscroll")) {
+        document.activeElement.blur();
+      }
     });
 
     // FUNGSI AUTO FORMAT RUPIAH PADA INPUT KURS

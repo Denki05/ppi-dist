@@ -20,9 +20,9 @@
         </div>
       </div>
       <div class="form-group row">
-        <label class="col-md-3 col-form-label text-right" for="warehouse">Warehouse <span class="text-danger">*</span></label>
+        <label class="col-md-3 col-form-label text-right" for="warehouse">Gudang Tujuan <span class="text-danger">*</span></label>
         <div class="col-md-7">
-          <select class="js-select2 form-control" id="warehouse" name="warehouse" data-placeholder="Select Warehouse">
+          <select class="js-select2 form-control" id="warehouse" name="warehouse" data-placeholder="Pilih Gudang Tujuan">
             <option></option>
             @foreach($warehouse as $warehouse)
             <option value="{{ $warehouse->id }}">{{ $warehouse->name }}</option>

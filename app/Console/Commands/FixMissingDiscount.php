@@ -11,9 +11,13 @@ class FixMissingDiscount extends Command
     protected $signature = 'payable:fix-missing-discount
                             {--fix : Terapkan perbaikan (tanpa flag ini hanya laporan dry-run)}
                             {--codes= : Batasi ke kode nota, dipisah koma (cth: 6H077,6H078)}
-                            {--customer=Depo Aroma : Filter nama customer/address (LIKE)}';
+                            {--customer= : Filter nama customer/address (LIKE), kosong = semua customer}
+                            {--year= : Batasi tahun invoice berdasar tanggal buat (cth: 2026)}
+                            {--unpaid-only : Hanya tampilkan yang belum lunas (sembunyikan yang sudah dibayar)}
+                            {--problems-only : Hanya tampilkan yang bermasalah (FIX/SKIP), sembunyikan yang OK}
+                            {--include-paid : Sertakan yang sudah dibayar HANYA bila total bayar pas sama dengan seharusnya (sisa hantu jadi nol)}';
 
-    protected $description = 'Betulkan invoice & DO yang diskon persennya tersimpan tapi tidak dikurangkan dari grand total (kasus Depo Aroma)';
+    protected $description = 'Scan semua invoice (default semua customer): betulkan yang diskon persennya tersimpan tapi tidak dikurangkan dari grand total';
 
     public function handle()
     {
@@ -38,6 +42,12 @@ class FixMissingDiscount extends Command
             $query->where('addr.name', 'LIKE', '%' . $customerOpt . '%');
         }
 
+        $yearOpt = $this->option('year');
+        if ($yearOpt) {
+            $query->whereYear('fi.created_at', $yearOpt);
+        }
+        $unpaidOnly = (bool) $this->option('unpaid-only');
+
         $invoices = $query->orderBy('fi.code')->get();
 
         if ($invoices->isEmpty()) {
@@ -51,11 +61,21 @@ class FixMissingDiscount extends Command
         $nSkip = 0;
         $totalSelisih = 0;
 
+        $problemsOnly = (bool) $this->option('problems-only');
+
         foreach ($invoices as $inv) {
             $result = $this->evaluate((array) $inv);
 
+            // Mode belum-lunas: sembunyikan baris yang sudah ada pembayaran.
+            if ($unpaidOnly && $result['action'] === 'SKIP' && strpos($result['note'], 'sudah ada pembayaran') === 0) {
+                continue;
+            }
+
             if ($result['action'] === 'OK') {
                 $nOk++;
+                if ($problemsOnly) {
+                    continue; // tetap dihitung, tidak ditampilkan
+                }
             } elseif ($result['action'] === 'SKIP') {
                 $nSkip++;
             } elseif ($result['action'] === 'FIX' && $isFix) {
@@ -98,12 +118,9 @@ class FixMissingDiscount extends Command
             'note' => '',
         ];
 
-        // Jangan sentuh invoice yang sudah ada pembayaran / payable masuk.
+        // Total yang sudah dibayar (diputuskan di akhir setelah expected ketemu).
         $paid = (float) DB::table('finance_payable_detail')->where('invoice_id', $inv['invoice_id'])->sum('total');
-        if ($paid > 0) {
-            $base['note'] = 'sudah ada pembayaran ' . number_format($paid, 2, '.', ',');
-            return $base;
-        }
+        $base['paid'] = $paid;
 
         $det = DB::table('penjualan_do_details')->where('do_id', $inv['do_id'])->first();
         if (!$det) {
@@ -155,9 +172,11 @@ class FixMissingDiscount extends Command
         if (abs($purch - $grossItem) <= $tol) {
             $gross = $purch; // Tipe A: purchase tersimpan = kotor
             $grossNote = '';
+            $grossType = 'A';
         } elseif (abs($purch - ($grossItem - $discSum)) <= $tol) {
-            $gross = $grossItem; // Tipe C: purchase tersimpan sudah nett, tinggal validasi grand
+            $gross = $grossItem; // Tipe C: purchase tersimpan sudah nett
             $grossNote = '';
+            $grossType = 'C';
         } elseif ($purch <= $discSum && $d1 > 0 && $d2 == 0 && $didr == 0) {
             $gross = round($d1idr / ($d1 / 100), 2); // Tipe B
             if (abs($gross - $grossItem) > max(10000, $grossItem * 0.005)) {
@@ -165,6 +184,7 @@ class FixMissingDiscount extends Command
                 return $base;
             }
             $grossNote = 'gross direkonstruksi dari persen';
+            $grossType = 'B';
         } else {
             $base['note'] = 'pola purchase vs diskon tidak dikenal, perlu manual';
             return $base;
@@ -191,14 +211,47 @@ class FixMissingDiscount extends Command
         $base['expected'] = $expectedGrand;
         $base['selisih'] = $expectedGrand - (float) $inv['inv_grand'];
         $base['det_id'] = $det->id;
+        $base['purchase_stored'] = $purch;
         $base['gross'] = $gross;
         $base['discSum'] = $discSum;
         $base['expectedPurchase'] = $expectedPurchase;
         $base['grossNote'] = $grossNote;
+        $base['grossType'] = $grossType;
 
-        if (abs($base['selisih']) <= 1 && abs((float) $det->grand_total_idr - $expectedGrand) <= 1) {
+        // Yang menentukan OK/FIX adalah INVOICE (basis payable). Selisih kecil
+        // (<= Rp 100) = noise pembulatan. Bedanya grand di detail saja (misal
+        // ketambahan other_cost saat update resi) hanya jadi catatan info.
+        if (abs($base['selisih']) <= 100) {
             $base['action'] = 'OK';
-            $base['note'] = 'sudah benar';
+            $base['note'] = abs($base['selisih']) > 1 ? 'sudah benar (noise rounding)' : 'sudah benar';
+            if (abs((float) $det->grand_total_idr - $expectedGrand) > 100) {
+                $base['note'] .= '; info: grand di detail beda ' . number_format((float) $det->grand_total_idr - $expectedGrand, 2, '.', ',');
+            }
+            return $base;
+        }
+
+        // Sudah ada pembayaran: hanya boleh ikut bila total bayar PAS sama dengan
+        // seharusnya (kasus 6H124: bayar nett benar, grand rusak belakangan ->
+        // sisa hantu jadi nol). Selain itu wajib manual + flag --include-paid.
+        if ($paid > 0) {
+            $paidLabel = number_format($paid, 2, '.', ',');
+            if (!$this->option('include-paid') || abs($paid - $expectedGrand) > 1) {
+                $base['action'] = 'SKIP';
+                $base['note'] = 'sudah ada pembayaran ' . $paidLabel . ', perlu keputusan manual'
+                    . (!$this->option('include-paid') ? ' (atau ulangi dgn --include-paid)' : '');
+                $base['expected'] = null;
+                $base['selisih'] = null;
+                return $base;
+            }
+            $base['action'] = 'FIX';
+            $notes = ['sudah dibayar pas nett ' . $paidLabel . '; sisa hantu jadi nol'];
+            if ($grossNote) {
+                $notes[] = $grossNote;
+            }
+            if ((float) $det->other_cost_idr != 0) {
+                $notes[] = 'other_cost ' . number_format((float) $det->other_cost_idr, 2, '.', ',') . ' tidak ikut grand';
+            }
+            $base['note'] = implode('; ', $notes);
             return $base;
         }
 
@@ -221,8 +274,11 @@ class FixMissingDiscount extends Command
     protected function applyFix(array $r)
     {
         DB::transaction(function () use ($r) {
+            // Tipe C: purchase tersimpan sudah nett -> jangan ubah purchase,
+            // cukup selaraskan grand (+ total_discount bila masih nol).
+            $purchase = ($r['grossType'] ?? '') === 'C' ? $r['purchase_stored'] : $r['gross'];
             DB::table('penjualan_do_details')->where('id', $r['det_id'])->update([
-                'purchase_total_idr' => $r['gross'],
+                'purchase_total_idr' => $purchase,
                 'total_discount_idr' => $r['discSum'],
                 'grand_total_idr' => $r['expected'],
                 'terbilang' => CustomHelper::terbilang($r['expected']),

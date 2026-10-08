@@ -275,18 +275,42 @@ class CodeRepo
 
         $yearMonth = $p1.$p2;
 
+        $numLen = strlen($yearMonth) + 1;
         $last = DB::table('penjualan_so')
             ->where('code', 'LIKE', $yearMonth.'%') // FIXED
             ->whereNull('deleted_at')
-            ->orderByRaw('CAST(SUBSTRING(code, '.(strlen($yearMonth)+1).') AS UNSIGNED) DESC')
+            ->orderByRaw('CAST(SUBSTRING(code, '.$numLen.') AS UNSIGNED) DESC')
             ->first();
 
-        if (!$last) {
+        // Revisi mengosongkan penjualan_so.code (NULL) dan menyimpan nomor lama di
+        // keep_code. Kalau hanya max(code) yang dilihat, nomor bekas revisi akan
+        // dipakai ulang untuk SO baru -> do_code ganda (kasus 6J005: 1 baris
+        // status 7 + 1 baris Packed). Jadi pertimbangkan juga keep_code dan
+        // penjualan_do.do_code yang masih ada.
+        $lastKeep = DB::table('penjualan_so')
+            ->where('keep_code', 'LIKE', $yearMonth.'%')
+            ->whereNull('deleted_at')
+            ->orderByRaw('CAST(SUBSTRING(keep_code, '.$numLen.') AS UNSIGNED) DESC')
+            ->first(['keep_code as code']);
+
+        $lastDo = DB::table('penjualan_do')
+            ->where('do_code', 'LIKE', $yearMonth.'%')
+            ->whereNull('deleted_at')
+            ->orderByRaw('CAST(SUBSTRING(do_code, '.$numLen.') AS UNSIGNED) DESC')
+            ->first(['do_code as code']);
+
+        $maxNumber = 0;
+        foreach ([$last, $lastKeep, $lastDo] as $row) {
+            if ($row && !empty($row->code)) {
+                $maxNumber = max($maxNumber, (int) substr($row->code, strlen($yearMonth)));
+            }
+        }
+
+        if ($maxNumber <= 0) {
             return $yearMonth.'001';
         }
 
-        $lastNumber = (int) substr($last->code, strlen($yearMonth));
-        $nextNumber = $lastNumber + 1;
+        $nextNumber = $maxNumber + 1;
 
         return $yearMonth . str_pad($nextNumber, 3, '0', STR_PAD_LEFT);
     }

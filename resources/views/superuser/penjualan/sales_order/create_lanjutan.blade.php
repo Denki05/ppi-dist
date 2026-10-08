@@ -489,8 +489,16 @@
       hitungDiscAgen();
     });
 
-    $(document).on('keyup change', '.count', function() {
+    // Harga (class .price) WAJIB ikut memicu hitung ulang per baris.
+    // Sebelumnya hanya .count (do_qty/usd_disc) yang memicu, sehingga edit harga
+    // tidak merubah total/subtotal/grand di layar -> submit membawa grand stale
+    // dan backend menolak dengan "Grand total tidak sesuai kalkulasi".
+    $(document).on('keyup change', '.count, .price', function() {
       let index = $(this).attr('data-index');
+      // Input harga tidak punya data-index, cari dari baris terdekat
+      if (index === undefined) {
+        index = $(this).closest('tr').attr('data-index');
+      }
       count_per_item(index); // Langsung hitung ulang baris tersebut tanpa mereset baris lain
     });
 
@@ -523,7 +531,13 @@
       let so_qty = parseFloat($('tr.index' + index + '').find('input[name="repeater[' + index + '][so_qty]"]').val());
       let val_usd_disc = parseFloat($('tr.index' + index + '').find('input[name="repeater[' + index + '][usd_disc]"]').val());
       let val_percent_disc = parseFloat($('tr.index' + index + '').find('input[name="repeater[' + index + '][percent_disc]"]').val());
-      let kurs = parseFloat($('#idr_rate').val());
+      // Hidden #idr_rate menyimpan angka bersih TANPA titik, tapi pertahankan
+      // pembersihan titik ribuan di sini agar tidak pernah terjadi kasus
+      // parseFloat("18.050") = 18.05 (kurs 18050 terbaca 18 rupiah) yang
+      // membuat subtotal layar kecil sementara backend (cleanCurrency)
+      // menghitung 18050 -> selisih miliaran.
+      let kursRaw = String($('#idr_rate').val() ?? '').replace(/\./g, '');
+      let kurs = parseFloat(kursRaw);
 
       if (isNaN(kurs)) kurs = 0;
       if (isNaN(val_usd_disc)) val_usd_disc = 0;
@@ -686,8 +700,36 @@
       $('#grand_total_idr').val(formatNumber(grand_total_idr));
     }
 
+    // Hitung ulang SELURUH baris dari repeater + kurs yang sedang tampil.
+    // Dipakai tombol Calculated & otomatis sebelum submit agar tidak ada
+    // nilai stale (misal user edit harga lalu langsung Save).
+    function recalcAll() {
+      $('tbody tr').each(function (index, e) {
+        // Lewati baris non-item (misal "Data tidak ditemukan")
+        if ($('tr.index' + index + '').length === 0) return;
+        count_per_item(index);
+      });
+      // Pastikan rantai diskon -> subtotal -> grand total jalan sekali lagi
+      // dengan seluruh total baris yang sudah final.
+      sub_total_item();
+    }
+
     $(document).on('click', '#btn_call', function (e) {
-      hitungGrandTotal();
+      recalcAll();
+    });
+
+    // Paksa kalkulasi ulang TEPAT sebelum FormData dibuat oleh form.js.
+    // Handler submit jQuery form.js terdaftar lebih dulu (bubble), sehingga
+    // recalc via jQuery submit bisa terlambat. Pakai native capture listener
+    // agar recalc selalu jalan duluan, plus klik tombol Save sebagai lapis kedua.
+    (function () {
+      var formEl = document.querySelector('form.ajax');
+      if (formEl) {
+        formEl.addEventListener('submit', function () { recalcAll(); }, true);
+      }
+    })();
+    $(document).on('click', '#save_form', function () {
+      recalcAll();
     });
 
     // Live update dan Format Rupiah Otomatis saat user mengetik

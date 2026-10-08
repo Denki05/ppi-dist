@@ -405,8 +405,12 @@ class DeliveryOrderController extends Controller
                 'is_kurs_hold' => $isKursHold,
             ]);
 
+            DB::commit();
+
+            // Arahkan ke tab Cetak SJ: DO baru saja jadi status 4 (Siap Kirim)
+            // sehingga tidak terlihat lagi di tab List SPK.
             return redirect()
-                ->route('superuser.penjualan.delivery_order.index')
+                ->route('superuser.penjualan.delivery_order.index', ['tab' => 'acc'])
                 ->with('success', 'DO berhasil diubah ke Siap Kirim!');
 
         } catch (\Throwable $e) {
@@ -524,7 +528,8 @@ class DeliveryOrderController extends Controller
             ]);
 
             DB::commit();
-            return redirect()->route('superuser.penjualan.delivery_order.index')->with('success','Delivery Order berhasil diubah ke delivery!');
+            // DO jadi status 5 (Delivering) -> mendarat di tab Update Resi.
+            return redirect()->route('superuser.penjualan.delivery_order.index', ['tab' => 'all'])->with('success','Delivery Order berhasil diubah ke delivery!');
             
         }catch(\Throwable $e){
             DB::rollback();
@@ -619,7 +624,7 @@ class DeliveryOrderController extends Controller
             // 2. CEK STATUS: Mencegah Eksekusi Ulang
             if ($get_do->status == 6) {
                 DB::rollBack();
-                return redirect()->route('superuser.penjualan.delivery_order.index')
+                return redirect()->route('superuser.penjualan.delivery_order.index', ['tab' => 'history'])
                                  ->with('success','DO sudah berhasil update resi sebelumnya!');
             }
 
@@ -814,7 +819,8 @@ class DeliveryOrderController extends Controller
             }
 
             LogActivity::addToLog('Update Resi DO: ' . $get_do->do_code);
-            return redirect()->route('superuser.penjualan.delivery_order.index')->with('success','DO berhasil update resi!');
+            // DO jadi status 6 (selesai) -> mendarat di tab History Resi.
+            return redirect()->route('superuser.penjualan.delivery_order.index', ['tab' => 'history'])->with('success','DO berhasil update resi!');
 
         } catch (\Throwable $e) {
             DB::rollback();
@@ -1419,7 +1425,12 @@ class DeliveryOrderController extends Controller
                 $other    = $this->parseCurrency($request->resi_ongkir);
 
                 // Gunakan round() alih-alih ceil() untuk akurasi presisi desimal
-                $total_disc_idr     = round(($idr_total * $disc1) + (($idr_total - ($idr_total * $disc1)) * $disc2) + $disc_idr, 2);
+                // Nominal diskon disimpan dari hasil hitung ulang (persen x subtotal),
+                // BUKAN mentah dari request, agar nominal di invoice selalu sinkron
+                // dengan persen & total (kasus invoice minus: nominal 100x lipat).
+                $disc_agen_idr    = round($idr_total * $disc1, 2);
+                $disc_kemasan_idr = round(($idr_total - $disc_agen_idr) * $disc2, 2);
+                $total_disc_idr     = round($disc_agen_idr + $disc_kemasan_idr + $disc_idr, 2);
                 $purchase_total_idr = round($idr_total - $total_disc_idr - $voucher, 2);
                 $grand_total_idr    = round($purchase_total_idr + $delivery + $other, 2);
 

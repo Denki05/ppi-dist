@@ -31,6 +31,10 @@
               <span class="sop-badge sop-badge-danger">
                 <i class="sop-dot"></i>Pengajuan Void
               </span>
+            @elseif($row->status == 7 && isset($row->so) && in_array($row->so->status, [2, 4]))
+              <span class="sop-badge sop-badge-{{ $row->do_status()->class }}" title="DO revisi, SO masih di Lanjutan — tutup ulang untuk kirim ke logistik">
+                <i class="sop-dot"></i>Revisi → SO Lanjutan
+              </span>
             @else
               <span class="sop-badge sop-badge-{{ $row->do_status()->class }}">
                 <i class="sop-dot"></i>{{ $row->do_status()->msg }}

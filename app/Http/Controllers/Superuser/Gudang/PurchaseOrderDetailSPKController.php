@@ -9,6 +9,7 @@ use App\Entities\Gudang\PurchaseOrder;
 use App\Entities\Gudang\PurchaseOrderDetail;
 use App\Entities\Master\BrandLokal;
 use App\Entities\Master\Product;
+use App\Entities\Master\ProductPack;
 use Auth;
 use DB;
 use Validator;
@@ -137,7 +138,7 @@ class PurchaseOrderDetailSPKController extends Controller
     public function edit($id, $detail)
     {
         if(Auth::user()->is_superuser == 0){
-            if(empty($this->access) || empty($this->access->user) || $this->access->can_update == 0){
+            if(empty($this->access) || empty($this->access->user) || $this->access->can_edit == 0){
                 return redirect()->route('superuser.index')->with('error','Anda tidak punya akses untuk membuka menu terkait');
             }
         }
