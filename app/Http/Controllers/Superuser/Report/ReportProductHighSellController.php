@@ -6,6 +6,8 @@ use Illuminate\Http\Request;
 use App\Http\Controllers\Controller;
 use App\Entities\Setting\UserMenu;
 use App\Entities\Master\BrandLokal;
+use App\Entities\Master\Packaging;
+use App\Entities\Master\ProductPack;
 use App\DataTables\Report\ProductHighSaleTable;
 use DB;
 use Auth;
@@ -47,24 +49,45 @@ class ReportProductHighSellController extends Controller
         }
 
         $data['brand'] = BrandLokal::get();
+        $data['kemasan'] = Packaging::orderBy('pack_name')->get();
+        $data['product'] = ProductPack::with(['packaging', 'product'])
+            ->leftJoin('master_products', 'master_products_packaging.product_id', '=', 'master_products.id')
+            ->select('master_products_packaging.*', 'master_products.brand_name AS brand_name')
+            ->orderBy('master_products.brand_name')
+            ->orderBy('master_products_packaging.name')
+            ->get();
 
         return view($this->view."index", $data);
     }
 
     public function print_report(Request $request)
     {
-        $validatedData = $request->validate([
-            'start' => 'required|date',
-            'end' => 'required|date',
-            'brand' => 'required|array',
-            'brand.*' => 'string',
-            'type' => 'required|integer|in:1,2',
-        ]);
+        // Form blade mengirim: periode_from, periode_to, brand_name[], kemasan[], product[], type
+        // Tetap dukung penamaan lama (start, end, brand) agar backward compatible.
+        $start = $request->input('start', $request->input('periode_from'));
+        $end = $request->input('end', $request->input('periode_to'));
+        $brands = $request->input('brand', $request->input('brand_name', []));
+        $kemasan = $request->input('kemasan', []);
+        $products = $request->input('product', []);
+        $type = $request->input('type');
 
-        $start = $validatedData['start'];
-        $end = $validatedData['end'];
-        $brands = $validatedData['brand'];
-        $type = $validatedData['type'];
+        $validated = validator(
+            ['start' => $start, 'end' => $end, 'brand' => (array) $brands, 'type' => $type],
+            [
+                'start' => 'required|date',
+                'end' => 'required|date',
+                'brand' => 'required|array',
+                'type' => 'required|integer|in:1,2',
+            ]
+        )->validate();
+
+        $start = $validated['start'];
+        $end = $validated['end'];
+        $brands = $validated['brand'];
+        $type = $validated['type'];
+        // Normalisasi kemasan & produk ke array (boleh kosong / berisi 'all' = tanpa filter)
+        $kemasan = is_array($kemasan) ? $kemasan : ($kemasan ? [$kemasan] : []);
+        $products = is_array($products) ? $products : ($products ? [$products] : []);
         $date = date("Y-m");
 
         $new_date_start = date('d-m-Y', strtotime($start));
@@ -76,7 +99,9 @@ class ReportProductHighSellController extends Controller
         $reportPath = public_path('cr/report/operasional/product_high_sell/');
         $exportPath = public_path('cr/report/operasional/product_high_sell/export/');
 
-        $sqlStyle = $this->constructSqlStyle($brands);
+        $brandFormula = $this->constructBrandFormula($brands);
+        $kemasanFormula = $this->constructKemasanFormula($kemasan);
+        $productFormula = $this->constructProductFormula($products);
 
         if ($type == 1) {
             $reportName = "report_high_sell_semester.rpt";
@@ -102,8 +127,12 @@ class ReportProductHighSellController extends Controller
             $creport->ParameterFields(2)->SetCurrentValue($new_date_start);
             $creport->ParameterFields(3)->SetCurrentValue($new_date_end);
 
-            $sqlString = $sqlStyle;
-            $creport->RecordSelectionFormula = "($sqlString)AND{penjualan_so.so_date}>=#$start#AND{penjualan_so.so_date}<=#$end#AND{penjualan_so.status}=4";
+            // Samakan dengan preview web (ProductHighSaleTable):
+            // status=4, periode so_date, filter brand + kemasan + produk.
+            // Jika filter berisi 'all'/kosong maka tidak membatasi (agar sama dengan preview).
+            $filters = array_filter([$brandFormula, $kemasanFormula, $productFormula]);
+            $filterString = empty($filters) ? "TRUE" : "(" . implode(")AND(", $filters) . ")";
+            $creport->RecordSelectionFormula = "($filterString)AND{penjualan_so.so_date}>=#$start#AND{penjualan_so.so_date}<=#$end#AND{penjualan_so.status}=4";
 
             $creport->ExportOptions->DiskFileName = $my_pdf;
             $creport->ExportOptions->PDFExportAllPages = true;
@@ -119,16 +148,47 @@ class ReportProductHighSellController extends Controller
             } else {
                 return response()->json(['error' => 'PDF not generated'], 500);
             }
-        } catch (Exception $e) {
+        } catch (\Exception $e) {
             return response()->json(['error' => 'Failed to generate report: ' . $e->getMessage()], 500);
         }
     }
 
-    private function constructSqlStyle($brands)
+    /**
+     * Bangun potongan RecordSelectionFormula untuk brand.
+     * 'all'/kosong => return "" (tanpa filter) agar sama dengan preview web.
+     */
+    private function constructBrandFormula($brands)
+    {
+        $brands = array_filter((array) $brands, function ($v) { return $v !== '' && $v !== null; });
+        if (empty($brands) || in_array('all', $brands)) {
+            return "";
+        }
+        return $this->constructSqlStyle($brands, "{master_products.brand_name}");
+    }
+
+    private function constructKemasanFormula($kemasan)
+    {
+        $kemasan = array_filter((array) $kemasan, function ($v) { return $v !== '' && $v !== null; });
+        if (empty($kemasan) || in_array('all', $kemasan)) {
+            return "";
+        }
+        return $this->constructSqlStyle($kemasan, "{master_packaging.pack_name}");
+    }
+
+    private function constructProductFormula($products)
+    {
+        $products = array_filter((array) $products, function ($v) { return $v !== '' && $v !== null; });
+        if (empty($products) || in_array('all', $products)) {
+            return "";
+        }
+        return $this->constructSqlStyle($products, "{master_products_packaging.id}");
+    }
+
+    private function constructSqlStyle($values, $field)
     {
         $sqlStyle = "";
         $i = 1;
-        foreach ($brands as $value) {
+        foreach ((array) $values as $value) {
             if ($i > 1) {
                 $sqlStyle .= " OR ";
             }
@@ -136,25 +196,34 @@ class ReportProductHighSellController extends Controller
             if (is_array($value)) {
                 $sec = array();
                 foreach ($value as $second_level) {
-                    $sec[] = "{master_products.brand_name}='$second_level'";
+                    $sec[] = $field . "='" . str_replace("'", "''", $second_level) . "'";
                 }
                 $sqlStyle .= "(" . implode(' AND ', $sec) . ")";
             } else {
-                $sqlStyle .= "{master_products.brand_name}='$value'";
+                $sqlStyle .= $field . "='" . str_replace("'", "''", $value) . "'";
             }
             $i++;
         }
 
-        return $sqlStyle;
+        return $sqlStyle === "" ? "" : "($sqlStyle)";
     }
 
     private function setDatabaseLogon($creport)
     {
-        $my_server = "SERVER 2"; 
-        $my_user = "dev_denki"; 
-        $my_password = "Denki@05121996"; 
+        $my_server = "SERVER 2";
+        $my_user = "dev_denki";
+        $my_password = "Denki@05121996";
         $my_database = "ppi_araya";
 
-        $creport->Database->Tables(1)->SetLogOnInfo($my_server, $my_database, $my_user, $my_password);
+        // Terapkan ke semua tabel di report (dulu hanya Tables(1),
+        // sehingga join master_packaging/penjualan_so bisa pakai kredensial kadaluarsa).
+        try {
+            $count = $creport->Database->Tables->Count;
+            for ($i = 1; $i <= $count; $i++) {
+                $creport->Database->Tables($i)->SetLogOnInfo($my_server, $my_database, $my_user, $my_password);
+            }
+        } catch (\Exception $e) {
+            $creport->Database->Tables(1)->SetLogOnInfo($my_server, $my_database, $my_user, $my_password);
+        }
     }
 }

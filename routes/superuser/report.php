@@ -82,6 +82,7 @@ Route::group([
 
     Route::group(['as' => 'product_high_sell.', 'prefix' => '/product_high_sell'], function () {
         Route::get('/', 'ReportProductHighSellController@index')->name('index');
+        Route::get('/json', 'ReportProductHighSellController@json')->name('json');
         Route::post('/print_report', 'ReportProductHighSellController@print_report')->name('print_report');
     });
     Route::resource('product_high_sell', 'ReportProductHighSellController');
