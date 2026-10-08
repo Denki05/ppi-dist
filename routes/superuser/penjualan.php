@@ -304,6 +304,7 @@ Route::group([
         Route::post('/{id}/hapus',   'PengajuanProformaController@hapus')->name('hapus');
         Route::post('/{id}/cancel',  'PengajuanProformaController@cancel')->name('cancel');
         Route::post('/{id}/notif-ulang', 'PengajuanProformaController@notifUlang')->name('notif-ulang');
+        Route::post('/{id}/retry-so', 'PengajuanProformaController@retrySo')->name('retry-so');
         Route::post('/{id}/dokumen-simpan', 'PengajuanProformaController@updateDokumen')->name('dokumen-simpan');
     });
 });

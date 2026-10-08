@@ -72,13 +72,23 @@ class PengajuanProformaController extends Controller
         $fieldErrors = $this->mutasiSvc->validateFieldKelengkapan($pengajuan);
         // Paket B poin 11: kandidat store + member turunannya untuk pilihan gandeng
         $candidateStore = ['parent' => null, 'members' => collect()];
+        // Retry SO+proforma: hanya relevan pasca-mutasi (disetujui + ada member hasil)
+        $retryInfo = ['so' => null, 'proforma' => null, 'canRetry' => false, 'reason' => null, 'brand' => null, 'itemCount' => 0, 'freeCount' => 0];
 
         if ($pengajuan->status === PengajuanProforma::STATUS_MENUNGGU) {
             $duplikat = $this->mutasiSvc->cekDuplikat($pengajuan);
             $candidateStore = $this->mutasiSvc->candidateStore($pengajuan);
         }
 
-        return view('superuser.penjualan.pengajuan_proforma.show', compact('pengajuan', 'duplikat', 'fieldErrors', 'candidateStore'));
+        if ($pengajuan->status === PengajuanProforma::STATUS_DISETUJUI && !empty($pengajuan->member_id_hasil)) {
+            try {
+                $retryInfo = app(\App\Services\Penjualan\PengajuanRetryService::class)->statusFor($pengajuan);
+            } catch (\Exception $e) {
+                $retryInfo['reason'] = 'Cek retry gagal: ' . $e->getMessage();
+            }
+        }
+
+        return view('superuser.penjualan.pengajuan_proforma.show', compact('pengajuan', 'duplikat', 'fieldErrors', 'candidateStore', 'retryInfo'));
     }
 
     // ------------------------------------------------------------------
@@ -324,6 +334,75 @@ class PengajuanProformaController extends Controller
             Log::error('Kirim ulang notif gagal', ['id' => $id, 'error' => $e->getMessage()]);
 
             return back()->with('error', 'Terjadi kesalahan sistem, coba lagi.');
+        }
+    }
+
+    // ------------------------------------------------------------------
+    // RETRY BUAT SO + PROFORMA (pasca-mutasi, sumber lokal items_json)
+    // ------------------------------------------------------------------
+
+    /**
+     * POST /penjualan/pengajuan-proforma/{id}/retry-so
+     * Membuat SO Awal + proforma Terbuat dari items_json pengajuan bila
+     * push AO gagal (422 duplikat / 500). Idempoten: tidak menggandakan
+     * proforma yang sudah ada; SO Tutup (status 4) ditolak (butuh diskusi).
+     */
+    public function retrySo(Request $request, $id)
+    {
+        if (!\App\Helper\ProformaAccess::canRevisiBatal(Auth::user())) {
+            $msg = 'Retry SO hanya untuk admin sales dan management.';
+            if ($request->ajax() || $request->wantsJson()) {
+                return response()->json(['success' => false, 'message' => $msg], 403);
+            }
+            return back()->with('error', $msg);
+        }
+
+        $pengajuan = PengajuanProforma::findOrFail($id);
+
+        $validator = Validator::make($request->all(), [
+            'kurs' => 'required|numeric|min:1000',
+        ], [
+            'kurs.required' => 'Kurs wajib diisi.',
+            'kurs.min' => 'Kurs tidak valid. Gunakan angka penuh, cth: 19000.',
+        ]);
+
+        if ($validator->fails()) {
+            $msg = $validator->errors()->first();
+            if ($request->ajax() || $request->wantsJson()) {
+                return response()->json(['success' => false, 'message' => $msg], 422);
+            }
+            return back()->withErrors($validator)->withInput();
+        }
+
+        try {
+            $result = app(\App\Services\Penjualan\PengajuanRetryService::class)
+                ->retry($pengajuan, (int) Auth::id(), (float) $request->input('kurs'));
+
+            $msg = 'Retry berhasil. SO ' . $result['so']->so_code
+                . ($result['so_baru'] ? ' (baru)' : ' (existing dipakai)')
+                . ($result['proforma']
+                    ? ' + proforma ' . $result['proforma']->code . ' (Aktif — lanjut kalkulasi admin).'
+                    : ' (SO Lanjutan, tanpa proforma).')
+                . ' Jangan Sync lagi dari AO untuk estimate ini agar tidak ganda.';
+
+            if ($request->ajax() || $request->wantsJson()) {
+                return response()->json(['success' => true, 'message' => $msg]);
+            }
+            return redirect()
+                ->route('superuser.penjualan.pengajuan_proforma.show', $id)
+                ->with('success', $msg);
+        } catch (\RuntimeException $e) {
+            if ($request->ajax() || $request->wantsJson()) {
+                return response()->json(['success' => false, 'message' => $e->getMessage()], 422);
+            }
+            return back()->with('error', $e->getMessage())->withInput();
+        } catch (\Exception $e) {
+            Log::error('Retry SO pengajuan gagal', ['id' => $id, 'error' => $e->getMessage()]);
+            $msg = 'Terjadi kesalahan sistem, coba lagi.';
+            if ($request->ajax() || $request->wantsJson()) {
+                return response()->json(['success' => false, 'message' => $msg], 500);
+            }
+            return back()->with('error', $msg)->withInput();
         }
     }
 

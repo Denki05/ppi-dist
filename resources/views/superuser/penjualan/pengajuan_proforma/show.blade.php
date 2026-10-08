@@ -614,6 +614,30 @@
             </button>
             <!--<small class="text-muted">Customer akan dihapus dari existing dan log audit dicatat.</small>-->
         </div>
+        {{-- Retry SO + Proforma (push AO gagal): sumber lokal items_json, duplikat ke-2 = free.
+             Dua blok if terpisah tanpa nesting agar aman di semua versi compiler Blade. --}}
+        @if(isset($retryInfo) && ($retryInfo['canRetry'] ?? false) && empty($retryInfo['proforma']))
+        <div class="action-row" style="background:#fffbeb;border-top-color:#fde68a;">
+            <span class="small text-muted" style="margin-right:auto;">
+                <i class="fa fa-redo mr-1"></i>Proforma belum terbentuk (push AO gagal).
+                @if(!empty($retryInfo['brand'] ?? null)) Brand: <strong>{{ $retryInfo['brand'] }}</strong> &bull; @endif
+                    {{ $retryInfo['itemCount'] ?? 0 }} item @if(!empty($retryInfo['freeCount'] ?? null)) ({{ $retryInfo['freeCount'] }} free) @endif
+            </span>
+            <button type="button" class="btn btn-success font-weight-bold" onclick="submitRetrySo()"
+                title="Buat SO Awal + proforma Aktif dari data pengajuan lokal">
+                <i class="fa fa-redo mr-1"></i> Retry Proforma
+            </button>
+        </div>
+        <form method="POST" action="{{ route('superuser.penjualan.pengajuan_proforma.retry-so', $pengajuan->id) }}" id="frmRetrySo" class="d-none">
+            @csrf
+            <input type="hidden" name="kurs" id="inputKursRetry">
+        </form>
+        @endif
+        @if(isset($retryInfo) && !($retryInfo['canRetry'] ?? false) && empty($retryInfo['proforma']) && !empty($retryInfo['reason'] ?? null))
+        <div class="action-row justify-content-center">
+            <small class="text-muted"><i class="fa fa-info-circle mr-1"></i>{{ $retryInfo['reason'] }}</small>
+        </div>
+        @endif
         <form method="POST" action="{{ route('superuser.penjualan.pengajuan_proforma.cancel', $pengajuan->id) }}" id="frmCancel" class="d-none">
             @csrf
             <input type="hidden" name="alasan" id="inputAlasanCancel">
@@ -674,7 +698,7 @@ function submitCancel() {
     });
 }
 function submitKembalikanAo() {
-    ppAskAlasan('Kembalikan ke AO?', 'Ubah data di AO, proforma diperbarui otomatis. Catatan revisi (wajib diisi, mis. tambah/kurangi produk atau ubah diskon):', false)
+    ppAskAlasan('Kembalikan ke AO?', 'Ubah data di AO, proforma diperbarui otomatis. Catatan revisi (wajib diisi, misF. tambah/kurangi produk atau ubah diskon):', false)
     .then(function(r) {
         if (!r.isConfirmed) return;
         document.getElementById('inputAlasanKembalikanAo').value = r.value;
@@ -684,10 +708,34 @@ function submitKembalikanAo() {
 
 function submitHapusTerminal() {
     ppAskAlasan('Hapus pengajuan?', 'AO harus perbaiki + ajukan ulang. Alasan (wajib diisi, diteruskan ke AO):', true)
-    .then(function(r) {
+    .then(function(r) {F
         if (!r.isConfirmed) return;
         document.getElementById('inputAlasanHapusTerminal').value = r.value;
         document.getElementById('frmHapusTerminal').submit();
+    });
+}
+
+function submitRetrySo() {
+    Swal.fire({
+        title: 'Retry Proforma',
+        html: '<div style="text-align:left;">Sumber <b>lokal</b> (items pengajuan, duplikat ke-2 = free).'
+            + '<br>SO Tutup (status 4) tidak diproses otomatis.'
+            + '<br><br><label style="font-size:.8rem;">Kurs (wajib &ge; 1000)</label>'
+            + '<input id="ppKursRetry" type="number" min="1000" step="1" value="19000" class="form-control" placeholder="cth: 19000"></div>',
+        icon: 'question',
+        showCancelButton: true,
+        confirmButtonText: 'Ya, Buatkan',
+        cancelButtonText: 'Batal',
+        confirmButtonColor: '#16a34a',
+        preConfirm: function() {
+            var v = parseFloat(document.getElementById('ppKursRetry').value);
+            if (!v || v < 1000) { Swal.showValidationMessage('Kurs wajib angka &ge; 1000.'); return false; }
+            return v;
+        }
+    }).then(function(r) {
+        if (!r.isConfirmed) return;
+        document.getElementById('inputKursRetry').value = r.value;
+        document.getElementById('frmRetrySo').submit();
     });
 }
 </script>

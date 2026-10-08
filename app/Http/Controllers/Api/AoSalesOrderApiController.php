@@ -421,8 +421,9 @@ class AoSalesOrderApiController extends Controller
         
         // Idempotensi: nomor order AO yang sama tidak boleh membuat SO kedua
         // (kiriman ulang setelah timeout / klik ganda). SO yang sudah dihapus diabaikan.
+        // Guard hasColumn: tetap jalan walau migrasi ao_order_number belum dijalankan.
         $aoOrderNo = trim((string) $request->input('ao_order_number', ''));
-        if ($aoOrderNo !== '') {
+        if ($aoOrderNo !== '' && \Illuminate\Support\Facades\Schema::hasColumn('penjualan_so', 'ao_order_number')) {
             $dup = SalesOrder::where('ao_order_number', $aoOrderNo)->orderBy('id', 'desc')->first();
             if ($dup) {
                 Log::info('AO SO Awal duplikat diabaikan', ['ao_order' => $aoOrderNo, 'so_code' => $dup->so_code]);
@@ -527,11 +528,14 @@ class AoSalesOrderApiController extends Controller
                 return response()->json(['success' => false, 'message' => 'Qty minimal 0.01 dan price minimal 0'], 422);
             }
         }
-        $ppIds = collect($normItems)->pluck('pp_id')->map(function ($v) { return (string) $v; })->all();
-        if (count($ppIds) !== count(array_unique($ppIds))) {
+        // Duplikat = kombinasi produk + flag free yang sama (samakan aturan web
+        // SalesOrderStoreService: sku + free_product). Produk sama namun salah
+        // satu free (beli + bonus) tetap lolos agar SO Lanjutan + proforma terbentuk.
+        $keys = collect($normItems)->map(function ($v) { return (string) $v['pp_id'] . '|' . (int) $v['free']; })->all();
+        if (count($keys) !== count(array_unique($keys))) {
             return response()->json([
                 'success' => false,
-                'message' => 'Item produk duplikat, tidak boleh ada produk yang sama 2x',
+                'message' => 'Item produk duplikat, tidak boleh ada produk + tipe free yang sama 2x',
             ], 422);
         }
 
@@ -602,10 +606,13 @@ class AoSalesOrderApiController extends Controller
             } else {
                 $so->is_estimate = 0;
             }
-            // Jejak order AO asal (untuk idempotensi & tracing)
+            // Jejak order AO asal (untuk idempotensi & tracing).
+            // Kolom ditulis hanya bila sudah migrate; penanda [AO:xxx] di note selalu ditulis.
             if ($request->filled('ao_order_number')) {
                 $aoNo = trim((string) $request->input('ao_order_number'));
-                $so->ao_order_number = $aoNo;   // <-- baris baru
+                if (\Illuminate\Support\Facades\Schema::hasColumn('penjualan_so', 'ao_order_number')) {
+                    $so->ao_order_number = $aoNo;
+                }
                 $so->note = trim(($so->note ? $so->note . "\n" : '') . "[AO:{$aoNo}]");
             }
             $so->save();
@@ -903,10 +910,16 @@ class AoSalesOrderApiController extends Controller
      */
     public function status(Request $request, $so_code)
     {
-        // ?by=ao -> $so_code diartikan sebagai nomor order AO (untuk pemulihan setelah sync timeout)
-        $col = $request->query('by') === 'ao' ? 'ao_order_number' : 'so_code';
+        // ?by=ao -> $so_code diartikan sebagai nomor order AO (untuk pemulihan setelah sync timeout).
+        // Fallback ke pencarian [AO:xxx] di note bila kolom belum migrate.
+        $byAo = $request->query('by') === 'ao';
+        $hasAoCol = \Illuminate\Support\Facades\Schema::hasColumn('penjualan_so', 'ao_order_number');
+        $col = ($byAo && $hasAoCol) ? 'ao_order_number' : 'so_code';
 
         $so = SalesOrder::where($col, $so_code)->orderBy('id', 'desc')->first();
+        if (!$so && $byAo && !$hasAoCol) {
+            $so = SalesOrder::where('note', 'like', '%[AO:' . $so_code . ']%')->orderBy('id', 'desc')->first();
+        }
         if (!$so) {
             // Bedakan "tidak pernah ada" vs "sudah dihapus" (soft delete) agar AO tidak menebak
             $trashed = SalesOrder::withTrashed()->where($col, $so_code)->first();
