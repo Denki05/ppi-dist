@@ -517,7 +517,7 @@
           </div>
           <div class="do-form-field">
             <label>Ongkir (IDR) - Nominal</label>
-            <input type="text" class="form-control" value="{{ $result->do_detail_cost[0]->delivery_cost_idr ?? 0 }}" name="delivery_cost_idr" step="any" {{$result->status == 5  || $result->status == 6 ? 'readonly' : ''}}>
+            <input type="text" class="form-control" value="{{ $result->do_detail_cost->delivery_cost_idr ?? 0 }}" name="delivery_cost_idr" step="any" {{$result->status == 5  || $result->status == 6 ? 'readonly' : ''}}>
           </div>
           <div class="do-form-field">
             <label>Resi - Ekspedisi</label>
@@ -530,7 +530,7 @@
           </div>
           <div class="do-form-field">
             <label>Resi (IDR) - Nominal</label>
-            <input type="number" class="form-control" value="{{$result->do_detail_cost->first()->other_cost_idr ?? 0}}" name="other_cost_idr" step="any" {{$result->status == 6 ? 'readonly' : ''}}>
+            <input type="number" class="form-control" value="{{$result->do_detail_cost->other_cost_idr ?? 0}}" name="other_cost_idr" step="any" {{$result->status == 6 ? 'readonly' : ''}}>
           </div>
         </div>
       </div>
@@ -592,23 +592,23 @@
       </div>
       <div class="do-info-item">
         <div class="do-info-label">Ongkir (Note)</div>
-        <div class="do-info-value">{{ $result->do_detail_cost[0]->delivery_cost_note ?? '-' }}</div>
+        <div class="do-info-value">{{ $result->do_detail_cost->delivery_cost_note ?? '-' }}</div>
       </div>
       <div class="do-info-item">
         <div class="do-info-label">Ongkir (IDR)</div>
-        <div class="do-info-value">Rp {{ number_format($result->do_detail_cost[0]->delivery_cost_idr ?? 0, 0, ',', '.') }}</div>
+        <div class="do-info-value">Rp {{ number_format($result->do_detail_cost->delivery_cost_idr ?? 0, 0, ',', '.') }}</div>
       </div>
       <div class="do-info-item">
         <div class="do-info-label">Resi (Ekspedisi)</div>
-        <div class="do-info-value">{{ $result->do_detail_cost[0]->other_cost_note ?? '-' }}</div>
+        <div class="do-info-value">{{ $result->do_detail_cost->other_cost_note ?? '-' }}</div>
       </div>
       <div class="do-info-item">
         <div class="do-info-label">Resi (IDR)</div>
-        <div class="do-info-value">Rp {{ number_format($result->do_detail_cost[0]->other_cost_idr ?? 0, 0, ',', '.') }}</div>
+        <div class="do-info-value">Rp {{ number_format($result->do_detail_cost->other_cost_idr ?? 0, 0, ',', '.') }}</div>
       </div>
       <div class="do-info-item">
         <div class="do-info-label">Grand Total</div>
-        <div class="do-info-value">Rp {{ number_format($result->do_detail_cost[0]->grand_total_idr ?? 0, 0, ',', '.') }}</div>
+        <div class="do-info-value">Rp {{ number_format($result->do_detail_cost->grand_total_idr ?? 0, 0, ',', '.') }}</div>
       </div>
     </div>
 
