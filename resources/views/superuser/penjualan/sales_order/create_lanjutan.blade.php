@@ -133,9 +133,18 @@
             @if($result->count_rev == 1)
               <div class="form-check-inline">
                 <label class="form-check-label">
-                  <input type="checkbox" class="form-check-input" value="1" id="keep_old_code" name="keep_old_code">Previous Code
+                  <input type="checkbox" class="form-check-input" value="1" id="keep_old_code" name="keep_old_code" @if(!empty($keep_code_taken)) disabled @endif>Previous Code @if(!empty($result->keep_code)) ({{ $result->keep_code }}) @endif
                 </label>
               </div>
+              @if(!empty($keep_code_taken))
+                <div class="alert alert-warning mt-2 mb-0" style="font-size:9pt;">
+                  Kode {{ $result->keep_code }} sudah dipakai SO lain{{ !empty($keep_code_taken_by) ? ' ('.$keep_code_taken_by.')' : '' }}, tidak bisa pakai Previous Code. Akan memakai nomor bebas{{ !empty($suggested_code) ? ' '.$suggested_code : ' di atasnya' }}.
+                </div>
+              @elseif(!empty($result->keep_code))
+                <div class="text-muted mt-1" style="font-size:9pt;">
+                  Centang untuk pakai kode lama {{ $result->keep_code }}. Kosongkan untuk pakai nomor bebas{{ !empty($suggested_code) ? ' '.$suggested_code : '' }}.
+                </div>
+              @endif
             @endif
           </div>
         </div>
@@ -526,18 +535,19 @@
 
     function count_per_item(indx) {
       let index = indx;
-      let price = parseFloat($('tr.index' + index + '').find('input[name="repeater[' + index + '][price]"]').val());
-      let do_qty = parseFloat($('tr.index' + index + '').find('input[name="repeater[' + index + '][do_qty]"]').val());
-      let so_qty = parseFloat($('tr.index' + index + '').find('input[name="repeater[' + index + '][so_qty]"]').val());
-      let val_usd_disc = parseFloat($('tr.index' + index + '').find('input[name="repeater[' + index + '][usd_disc]"]').val());
-      let val_percent_disc = parseFloat($('tr.index' + index + '').find('input[name="repeater[' + index + '][percent_disc]"]').val());
-      // Hidden #idr_rate menyimpan angka bersih TANPA titik, tapi pertahankan
-      // pembersihan titik ribuan di sini agar tidak pernah terjadi kasus
-      // parseFloat("18.050") = 18.05 (kurs 18050 terbaca 18 rupiah) yang
-      // membuat subtotal layar kecil sementara backend (cleanCurrency)
-      // menghitung 18050 -> selisih miliaran.
-      let kursRaw = String($('#idr_rate').val() ?? '').replace(/\./g, '');
-      let kurs = parseFloat(kursRaw);
+      // Parse TAHAN FORMAT: nilai dari DB bisa desimal ("49.00", "17900.00")
+      // dan tampilan bisa ribuan ID ("17.900"). parseFloat buta / buang-titik
+      // buta membuat 100x (kasus kurs "17900.00" -> 1790000). Pakai parseInputKurs
+      // yang membedakan titik desimal vs titik ribuan.
+      let price = parseInputKurs($('tr.index' + index + '').find('input[name="repeater[' + index + '][price]"]').val());
+      let do_qty = parseInputKurs($('tr.index' + index + '').find('input[name="repeater[' + index + '][do_qty]"]').val());
+      let so_qty = parseInputKurs($('tr.index' + index + '').find('input[name="repeater[' + index + '][so_qty]"]').val());
+      let val_usd_disc = parseInputKurs($('tr.index' + index + '').find('input[name="repeater[' + index + '][usd_disc]"]').val());
+      let val_percent_disc = parseInputKurs($('tr.index' + index + '').find('input[name="repeater[' + index + '][percent_disc]"]').val());
+      // Hidden #idr_rate menyimpan angka bersih; parse tahan format ID/EN
+      // (kasus 6I083: parseFloat("18.050") / buang-titik buta membuat kurs 100x).
+      let kursRaw = String($('#idr_rate').val() ?? '');
+      let kurs = parseInputKurs(kursRaw);
 
       if (isNaN(kurs)) kurs = 0;
       if (isNaN(val_usd_disc)) val_usd_disc = 0;
@@ -564,7 +574,7 @@
 
       $('tbody tr').each(function (index, e) {
         let sub_total = $('tr.index' + index + '').find('input[name="repeater[' + index + '][total]"]').val();
-        sub_total = sub_total ? parseFloat(sub_total.split('.').join('')) : 0;
+        sub_total = parseInputKurs(sub_total);
         if (isNaN(sub_total)) sub_total = 0;
         total += sub_total;
       });
@@ -580,7 +590,7 @@
     function hitungDiscAgen() {
       let discPercent = parseFloat($('#disc_agen_percent').val());
       let subTotalItemRaw = $('input[name="sub_total_item"]').val();
-      let subTotalItem = subTotalItemRaw ? parseFloat(subTotalItemRaw.split('.').join('')) : 0;
+      let subTotalItem = parseInputKurs(subTotalItemRaw);
 
       if (isNaN(discPercent)) discPercent = 0;
       if (isNaN(subTotalItem)) subTotalItem = 0;
@@ -603,8 +613,8 @@
         let sub_total_item_raw = $('input[name="sub_total_item"]').val();
         let disc_agen_raw = $('#disc_agen_idr').val();
 
-        let sub_total_item = sub_total_item_raw ? parseFloat(sub_total_item_raw.split('.').join('')) : 0;
-        let disc_agen_idr = disc_agen_raw ? parseFloat(disc_agen_raw.split('.').join('')) : 0;
+        let sub_total_item = parseInputKurs(sub_total_item_raw);
+        let disc_agen_idr = parseInputKurs(disc_agen_raw);
         let disc_kemasan_percent = parseFloat(percentVal);
 
         if (isNaN(sub_total_item)) sub_total_item = 0;
@@ -640,8 +650,8 @@
         let sub_total_item_raw = $('input[name="sub_total_item"]').val();
         let disc_percent_raw = $('input[name="disc_agen_idr"]').val();
 
-        let sub_total_item = sub_total_item_raw ? parseFloat(sub_total_item_raw.split('.').join('')) : 0;
-        let disc_percent = disc_percent_raw ? parseFloat(disc_percent_raw.split('.').join('')) : 0;
+        let sub_total_item = parseInputKurs(sub_total_item_raw);
+        let disc_percent = parseInputKurs(disc_percent_raw);
 
         if (isNaN(sub_total_item)) sub_total_item = 0;
         if (isNaN(disc_percent)) disc_percent = 0;
@@ -661,9 +671,9 @@
       let disc_agen_raw = $('#disc_agen_idr').val();
       let dics_kemasan_raw = $('#disc_kemasan_idr').val();
 
-      let sub_total = sub_total_raw ? parseFloat(sub_total_raw.split('.').join('')) : 0;
-      let disc_agen = disc_agen_raw ? parseFloat(disc_agen_raw.split('.').join('')) : 0;
-      let dics_kemasan = dics_kemasan_raw ? parseFloat(dics_kemasan_raw.split('.').join('')) : 0;
+      let sub_total = parseInputKurs(sub_total_raw);
+      let disc_agen = parseInputKurs(disc_agen_raw);
+      let dics_kemasan = parseInputKurs(dics_kemasan_raw);
 
       if (isNaN(sub_total)) sub_total = 0;
       if (isNaN(disc_agen)) disc_agen = 0;
@@ -685,10 +695,10 @@
       let voucher_idr_raw = $('#voucher_idr').val();
       let ongkir_raw = $('#delivery_cost_idr').val();
 
-      let subtotal_before = subtotal_before_raw ? parseFloat(subtotal_before_raw.split('.').join('')) : 0;
-      let disc_tambahan = disc_tambahan_raw ? parseFloat(disc_tambahan_raw.split('.').join('')) : 0;
-      let voucher_idr = voucher_idr_raw ? parseFloat(voucher_idr_raw.split('.').join('')) : 0;
-      let ongkir = ongkir_raw ? parseFloat(ongkir_raw.split('.').join('')) : 0;
+      let subtotal_before = parseInputKurs(subtotal_before_raw);
+      let disc_tambahan = parseInputKurs(disc_tambahan_raw);
+      let voucher_idr = parseInputKurs(voucher_idr_raw);
+      let ongkir = parseInputKurs(ongkir_raw);
 
       if (isNaN(subtotal_before)) subtotal_before = 0;
       if (isNaN(disc_tambahan)) disc_tambahan = 0;
@@ -769,14 +779,41 @@
       return numberString.replace(/\B(?=(\d{3})+(?!\d))/g, '.');
     }
 
+    // Parse kurs tahan format ID ("18.025" / "18.025,00") maupun EN ("18025.00").
+    // Kasus nyata 6I083: "18025.00" dibuang titiknya jadi 1802500 (kurs 100x).
+    function parseInputKurs(raw) {
+      var s = String(raw == null ? '' : raw).replace(/[^\d.,]/g, '');
+      if (!s) return 0;
+      var hasDot = s.indexOf('.') !== -1, hasComma = s.indexOf(',') !== -1;
+      if (hasDot && hasComma) {
+        if (s.lastIndexOf(',') > s.lastIndexOf('.')) {
+          s = s.replace(/\./g, '').replace(',', '.');
+        } else {
+          s = s.replace(/,/g, '');
+        }
+      } else if (hasComma) {
+        if ((s.match(/,/g) || []).length > 1) s = s.replace(/,/g, '');
+        else if (/,\d{1,2}$/.test(s)) s = s.replace(',', '.');
+        else s = s.replace(/,/g, '');
+      } else {
+        if ((s.match(/\./g) || []).length > 1) s = s.replace(/\./g, '');
+        else if (!/^\d{1,3}(\.\d{3})+$/.test(s)) { /* titik desimal, biarkan */ }
+        else s = s.replace(/\./g, '');
+      }
+      var v = parseFloat(s);
+      return isNaN(v) ? 0 : v;
+    }
+
     $(document).on('input', '#idr_rate_display', function () {
+      // Hitung hidden dari NILAI KETIKAN mentah (sebelum diformat),
+      // agar "18025.00" terbaca 18025 bukan 1802500.
+      var kursVal = Math.round(parseInputKurs(this.value));
+      $('#idr_rate').val(kursVal ? String(kursVal) : '');
+
       var cursorFromEnd = this.value.length - this.selectionStart;
       this.value = formatInputKurs(this.value);
       var newPos = this.value.length - cursorFromEnd;
       this.setSelectionRange(newPos, newPos);
-
-      // Sinkron ke hidden field (angka bersih tanpa titik)
-      $('#idr_rate').val(this.value.replace(/\./g, ''));
 
       // Hitung ulang semua baris TANPA merubah angka diskon yang sudah diketik manual
       $('tbody tr').each(function (index, e) {

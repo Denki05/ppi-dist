@@ -1045,14 +1045,59 @@ class SalesOrderController extends Controller
                 }
                 if ($errors) {
                     DB::rollBack();
+                    \Log::warning('tutup_so validation failed', [
+                        'so_id' => $request->id,
+                        'user_id' => Auth::id(),
+                        'errors' => $errors,
+                        'payload' => [
+                            'origin_warehouse_id' => $request->origin_warehouse_id,
+                            'rekening' => $request->rekening,
+                            'idr_rate' => $request->idr_rate,
+                            'disc_agen_percent' => $request->disc_agen_percent,
+                            'disc_agen_idr' => $request->disc_agen_idr,
+                            'disc_kemasan_percent' => $request->disc_kemasan_percent,
+                            'disc_kemasan_idr' => $request->disc_kemasan_idr,
+                            'disc_tambahan_idr' => $request->disc_tambahan_idr,
+                            'voucher_idr' => $request->voucher_idr,
+                            'delivery_cost_idr' => $request->delivery_cost_idr,
+                            'grand_total_idr' => $request->grand_total_idr,
+                            'repeater_count' => is_array($request->repeater) ? count($request->repeater) : null,
+                        ],
+                    ]);
                     $response['notification'] = [
                         'alert' => 'block', 'type' => 'alert-danger', 'header' => 'Error', 'content' => $errors,
                     ];
                     return $this->response(400, $response);
                 }
 
+                // Normalisasi nilai mentah browser SEBELUM disimpan:
+                // - idr_rate dibersihkan ("17.900" -> 17900) supaya yang
+                //   tersimpan di packing_order bukan 17.9 (salah 1000x).
+                // - select kosong ("") dijadikan null agar tidak error
+                //   constraint integer di DB (kasus Ekspedisi "None"/kosong).
+                $request->merge([
+                    'idr_rate' => (string) $closingService->cleanCurrency($request->idr_rate),
+                    'ekspedisi' => ($request->ekspedisi === '' ? null : $request->ekspedisi),
+                    'sales_senior_id' => ($request->sales_senior_id === '' ? null : $request->sales_senior_id),
+                    'sales_id' => ($request->sales_id === '' ? null : $request->sales_id),
+                ]);
+
+                // Snapshot status revisi SEBELUM prepareClosing (ia me-reset
+                // count_rev ke 0 bila tanpa keep_old_code). Dipakai agar tutup
+                // ulang sesudah revisi selalu pakai ulang DO revisi, bukan
+                // bikin DO baru dengan do_code sama (kasus 6I076 ganda).
+                $wasRevised = ((int) $sales_order->count_rev === 1);
+
                 $sales_order = $closingService->prepareClosing($sales_order, $request);
                 $packing_order = $closingService->getOrCreatePackingOrder($sales_order, $request);
+
+                // Tutup ulang revisi = pakai ulang header + detail cost lama,
+                // item lama dibersihkan dulu baru diisi ulang (anti-dobel).
+                // Tutup baru (SO lain pakai nomor bebas) = DO baru, tidak
+                // menyentuh DO revisi lain.
+                if ($wasRevised) {
+                    $closingService->resetPackingOrderItems($packing_order->id);
+                }
 
                 $repeaterData = collect($request->repeater)->map(function($item) use ($packing_order) {
                     $item['do_id'] = $packing_order->id;
@@ -1115,9 +1160,14 @@ class SalesOrderController extends Controller
                         'alert' => 'notify', 'type' => 'warning',
                         'content' => 'Tersimpan dengan koreksi otomatis: angka diskon/grand total dari layar tidak sesuai hitungan, sudah dibetulkan mengikuti kalkulasi sistem.',
                     ]
-                    : [
-                        'alert' => 'notify', 'type' => 'success', 'content' => 'Success',
-                    ];
+                    : (!empty($closingService->keepCodeConflict)
+                        ? [
+                            'alert' => 'notify', 'type' => 'warning',
+                            'content' => 'Kode lama '.$closingService->keepCodeConflict.' sudah dipakai SO lain, memakai nomor baru '.$sales_order->code.' (Previous Code tidak bisa dipakai).',
+                        ]
+                        : [
+                            'alert' => 'notify', 'type' => 'success', 'content' => 'Success',
+                        ]);
                 $response['redirect_to'] = route('superuser.penjualan.sales_order.index_lanjutan');
                 return $this->response(200, $response);
 

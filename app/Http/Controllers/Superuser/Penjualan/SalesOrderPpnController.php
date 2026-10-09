@@ -689,7 +689,13 @@ class SalesOrderPpnController extends Controller
                     }
 
                     $sales_order_ppn->so_date = date("y-m-d", strtotime($request->so_date));
-                    $sales_order_ppn->code = $sales_order_ppn->keep_code;
+                    // Guard sama dengan non-PPN: keep_code yang sudah dipakai
+                    // SO lain tidak boleh dipakai ulang -> fallback nomor baru.
+                    if (!empty($sales_order_ppn->keep_code) && !CodeRepo::isSoCodeTaken($sales_order_ppn->keep_code, $sales_order_ppn->id)) {
+                        $sales_order_ppn->code = $sales_order_ppn->keep_code;
+                    } else {
+                        $sales_order_ppn->code = CodeRepo::generateSOPPN();
+                    }
                     $sales_order_ppn->rekening = $request->rekening;
                     $sales_order_ppn->idr_rate = $request->idr_rate;
                     $sales_order_ppn->status = 4;

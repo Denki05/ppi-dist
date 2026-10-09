@@ -306,6 +306,22 @@ class SalesOrderQueryService
 
         if ($step == 2) {
             $data['customer_history'] = $this->getUnpaidInvoices($result);
+            // Info keep_code untuk notice di form tutup_so:
+            // bila kode lama sudah dipakai SO lain, checkbox Previous Code
+            // tidak boleh dipakai -> wajib nomor baru (gap-filling).
+            $data['keep_code_taken'] = false;
+            $data['keep_code_taken_by'] = null;
+            $data['suggested_code'] = null;
+            if ((int) $result->count_rev === 1 && !empty($result->keep_code)) {
+                $taken = \App\Entities\Penjualan\SalesOrder::where('code', $result->keep_code)
+                    ->where('id', '!=', $result->id)
+                    ->first();
+                if ($taken) {
+                    $data['keep_code_taken'] = true;
+                    $data['keep_code_taken_by'] = $taken->code;
+                }
+                $data['suggested_code'] = \App\Repositories\CodeRepo::generateSO();
+            }
         }
 
         return ['success' => true, 'data' => $data];

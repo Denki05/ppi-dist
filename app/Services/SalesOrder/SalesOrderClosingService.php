@@ -21,6 +21,12 @@ class SalesOrderClosingService
 {
     protected $stockService;
 
+    /**
+     * Terisi bila request keep_old_code ditolak karena keep_code sudah
+     * dipakai SO lain -> dipakai controller untuk notice warning.
+     */
+    public $keepCodeConflict = null;
+
     public function __construct()
     {
         $this->stockService = new \App\Services\StockService();
@@ -505,12 +511,36 @@ class SalesOrderClosingService
     }
 
     /**
-     * Prepare SO fields for closing
+     * Prepare SO fields for closing.
+     * - keep_old_code hanya dipakai bila keep_code masih bebas. Bila sudah
+     *   dipakai SO lain (direbut via gap-filling), otomatis fallback ke
+     *   nomor bebas terkecil + tandai keepCodeConflict untuk notice.
+     * - Jangan generate nomor baru sebelum cek keep, supaya tidak ada
+     *   lompatan nomor sia-sia.
      */
     public function prepareClosing($salesOrder, $request)
     {
-        if (empty($salesOrder->code)) {
-            $salesOrder->code = CodeRepo::generateSO();
+        $this->keepCodeConflict = null;
+
+        $wantKeep = ((int) $salesOrder->count_rev === 1 && (int) $request->keep_old_code == 1);
+        if ($wantKeep && !empty($salesOrder->keep_code)) {
+            if (!CodeRepo::isSoCodeTaken($salesOrder->keep_code, $salesOrder->id)) {
+                $salesOrder->code = $salesOrder->keep_code;
+            } else {
+                // Kode lama sudah dipakai SO lain -> wajib nomor baru.
+                $this->keepCodeConflict = $salesOrder->keep_code;
+                \Log::warning('tutup_so keep_code conflict, fallback ke nomor baru', [
+                    'so_id' => $salesOrder->id,
+                    'keep_code' => $salesOrder->keep_code,
+                ]);
+                $salesOrder->code = CodeRepo::generateSO();
+                $salesOrder->count_rev = 0;
+            }
+        } else {
+            if (empty($salesOrder->code)) {
+                $salesOrder->code = CodeRepo::generateSO();
+            }
+            $salesOrder->count_rev = 0;
         }
 
         $salesOrder->origin_warehouse_id = $request->origin_warehouse_id;
@@ -523,12 +553,6 @@ class SalesOrderClosingService
         $salesOrder->status = 4;
         $salesOrder->updated_by = Auth::id();
 
-        if ($salesOrder->count_rev == 1 && $request->keep_old_code == 1) {
-            $salesOrder->code = $salesOrder->keep_code;
-        } else {
-            $salesOrder->count_rev = 0;
-        }
-
         if (!$salesOrder->save()) {
             throw new \Exception('Gagal menyimpan Sales Order');
         }
@@ -537,20 +561,23 @@ class SalesOrderClosingService
     }
 
     /**
-     * Get or create PackingOrder for closing
+     * Get or create PackingOrder for closing.
+     * Aturan bersih:
+     * - Tutup ulang sesudah revisi ($forceReuse=true) -> pakai ulang DO
+     *   revisi TERBARU (status 7), jangan first() asal + jangan bikin baru.
+     *   Item lama dibersihkan dulu oleh resetPackingOrderItems() agar tidak
+     *   dobel (kasus revisi_dari_logistik yang itemnya masih utuh).
+     * - Tutup baru (SO lain, termasuk yang memakai nomor bebas 6J036) ->
+     *   selalu buat DO baru.
      */
     public function getOrCreatePackingOrder($salesOrder, $request, $forceReuse = false)
     {
         // $forceReuse = snapshot count_rev SEBELUM prepareClosing me-reset-nya ke 0.
-        // Tanpa ini, tutup ulang sesudah revisi yang tanpa centang "Previous Code"
-        // membuat PackingOrder BARU dengan do_code sama (kasus 6I076 ganda:
-        // 1 baris Revisi + 1 baris Packed), padahal harus pakai ulang DO revisi.
-        $isRevision = $forceReuse || ($salesOrder->count_rev == 0 && $request->has('keep_old_code'));
-
-        if ($isRevision || $salesOrder->count_rev == 1) {
-            $packing_order = PackingOrder::where('so_id', $salesOrder->id)->first();
-        } else {
-            $packing_order = null;
+        $packing_order = null;
+        if ($forceReuse) {
+            $packing_order = PackingOrder::where('so_id', $salesOrder->id)
+                ->orderBy('id', 'desc')
+                ->first();
         }
 
         if (!$packing_order) {
@@ -589,6 +616,18 @@ class SalesOrderClosingService
         }
 
         return $packing_order;
+    }
+
+    /**
+     * Bersihkan item DO lama sebelum diisi ulang saat tutup_so reuse.
+     * Wajib dipanggil setiap tutup ulang revisi, karena:
+     * - revisi() menghapus item (aman), tapi
+     * - revisi_dari_logistik() menyisakan item utuh -> tanpa delete akan dobel.
+     * Detail cost tidak dihapus (di-upsert), header dipakai ulang.
+     */
+    public function resetPackingOrderItems($packingOrderId)
+    {
+        PackingOrderItem::where('do_id', $packingOrderId)->delete();
     }
 
     /**
