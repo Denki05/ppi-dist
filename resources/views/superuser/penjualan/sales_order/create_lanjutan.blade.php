@@ -133,9 +133,18 @@
             @if($result->count_rev == 1)
               <div class="form-check-inline">
                 <label class="form-check-label">
-                  <input type="checkbox" class="form-check-input" value="1" id="keep_old_code" name="keep_old_code">Previous Code
+                  <input type="checkbox" class="form-check-input" value="1" id="keep_old_code" name="keep_old_code" @if(!empty($keep_code_taken)) disabled @endif>Previous Code @if(!empty($result->keep_code)) ({{ $result->keep_code }}) @endif
                 </label>
               </div>
+              @if(!empty($keep_code_taken))
+                <div class="alert alert-warning mt-2 mb-0" style="font-size:9pt;">
+                  Kode {{ $result->keep_code }} sudah dipakai SO lain{{ !empty($keep_code_taken_by) ? ' ('.$keep_code_taken_by.')' : '' }}, tidak bisa pakai Previous Code. Akan memakai nomor bebas{{ !empty($suggested_code) ? ' '.$suggested_code : ' di atasnya' }}.
+                </div>
+              @elseif(!empty($result->keep_code))
+                <div class="text-muted mt-1" style="font-size:9pt;">
+                  Centang untuk pakai kode lama {{ $result->keep_code }}. Kosongkan untuk pakai nomor bebas{{ !empty($suggested_code) ? ' '.$suggested_code : '' }}.
+                </div>
+              @endif
             @endif
           </div>
         </div>

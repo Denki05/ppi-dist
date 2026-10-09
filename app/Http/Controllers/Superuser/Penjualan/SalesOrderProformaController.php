@@ -591,8 +591,10 @@ class SalesOrderProformaController extends Controller
             */
             $sales_order->status = 4;
             $sales_order->status_proforma = 4;
-            $sales_order->code = ($sales_order->count_rev > 0 && $sales_order->keep_code) 
-                                 ? $sales_order->keep_code 
+            // Guard sama: keep_code yang sudah dipakai SO lain -> nomor baru.
+            $sales_order->code = ($sales_order->count_rev > 0 && $sales_order->keep_code
+                                  && !CodeRepo::isSoCodeTaken($sales_order->keep_code, $sales_order->id))
+                                 ? $sales_order->keep_code
                                  : CodeRepo::generateSO();
                                  
             $sales_order->payment_status = 0; 

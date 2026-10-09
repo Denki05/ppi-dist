@@ -849,6 +849,14 @@ class SalesOrderController extends Controller
                 $sales_order = $closingService->prepareClosing($sales_order, $request);
                 $packing_order = $closingService->getOrCreatePackingOrder($sales_order, $request, $wasRevised);
 
+                // Tutup ulang revisi = pakai ulang header + detail cost lama,
+                // item lama dibersihkan dulu baru diisi ulang (anti-dobel).
+                // Tutup baru (SO lain pakai nomor bebas) = DO baru, tidak
+                // menyentuh DO revisi lain.
+                if ($wasRevised) {
+                    $closingService->resetPackingOrderItems($packing_order->id);
+                }
+
                 $repeaterData = collect($request->repeater)->map(function($item) use ($packing_order) {
                     $item['do_id'] = $packing_order->id;
                     return $item;
@@ -910,9 +918,14 @@ class SalesOrderController extends Controller
                         'alert' => 'notify', 'type' => 'warning',
                         'content' => 'Tersimpan dengan koreksi otomatis: angka diskon/grand total dari layar tidak sesuai hitungan, sudah dibetulkan mengikuti kalkulasi sistem.',
                     ]
-                    : [
-                        'alert' => 'notify', 'type' => 'success', 'content' => 'Success',
-                    ];
+                    : (!empty($closingService->keepCodeConflict)
+                        ? [
+                            'alert' => 'notify', 'type' => 'warning',
+                            'content' => 'Kode lama '.$closingService->keepCodeConflict.' sudah dipakai SO lain, memakai nomor baru '.$sales_order->code.' (Previous Code tidak bisa dipakai).',
+                        ]
+                        : [
+                            'alert' => 'notify', 'type' => 'success', 'content' => 'Success',
+                        ]);
                 $response['redirect_to'] = route('superuser.penjualan.sales_order.index_lanjutan');
                 return $this->response(200, $response);
 

@@ -261,11 +261,6 @@ class CodeRepo
     // }
     public static function generateSO()
     {
-        // dd([
-        //     'yearMonth' => $yearMonth,
-        //     'get_max' => $get_max
-        // ]);
-
         $year = date("Y");
         $month = date("n");
 
@@ -275,20 +270,50 @@ class CodeRepo
 
         $yearMonth = $p1.$p2;
 
-        $last = DB::table('penjualan_so')
-            ->where('code', 'LIKE', $yearMonth.'%') // FIXED
+        // Nomor bebas bisa dipakai SO lain (kasus 6J036/037 revisi lalu
+        // dipakai tutup_so order lain). Cari nomor terkecil yang belum
+        // terpakai di kolom code aktif, bukan sekadar MAX+1.
+        // keep_code (status revisi) TIDAK memblokir — kalau sudah diambil
+        // SO lain, pemilik lama dapat notice dan wajib pakai nomor baru.
+        $used = DB::table('penjualan_so')
+            ->where('code', 'LIKE', $yearMonth.'%')
             ->whereNull('deleted_at')
-            ->orderByRaw('CAST(SUBSTRING(code, '.(strlen($yearMonth)+1).') AS UNSIGNED) DESC')
-            ->first();
+            ->lockForUpdate()
+            ->pluck('code');
 
-        if (!$last) {
-            return $yearMonth.'001';
+        $numbers = [];
+        foreach ($used as $code) {
+            $num = (int) substr($code, strlen($yearMonth));
+            if ($num > 0) {
+                $numbers[$num] = true;
+            }
         }
 
-        $lastNumber = (int) substr($last->code, strlen($yearMonth));
-        $nextNumber = $lastNumber + 1;
+        $max = empty($numbers) ? 0 : max(array_keys($numbers));
+        for ($i = 1; $i <= $max + 1; $i++) {
+            if (!isset($numbers[$i])) {
+                return $yearMonth . str_pad($i, 3, '0', STR_PAD_LEFT);
+            }
+        }
 
-        return $yearMonth . str_pad($nextNumber, 3, '0', STR_PAD_LEFT);
+        return $yearMonth.'001';
+    }
+
+    /**
+     * Cek apakah kode SO sudah dipakai SO lain (abaikan soft-delete).
+     */
+    public static function isSoCodeTaken($code, $excludeId = null)
+    {
+        if (empty($code)) {
+            return false;
+        }
+        $q = DB::table('penjualan_so')
+            ->where('code', $code)
+            ->whereNull('deleted_at');
+        if ($excludeId) {
+            $q->where('id', '!=', $excludeId);
+        }
+        return $q->exists();
     }
 
     // Generate PO code
@@ -347,20 +372,31 @@ class CodeRepo
         $p2 = $abjadMonth[date('n')];
         $index_so = 'P';
         $yearMonth = $index_so.$p1.$p2;
-        $latestNumber = "";
-        
-        $get_max = DB::table('penjualan_so')->where('code', 'LIKE', '%'.$yearMonth.'%')->where('deleted_at', null)->max('code');
 
-        if($get_max == 'false'){
-            $latestNumber = $yearMonth . '001';
-        }else{
-            $latestNumber = $get_max;
-            $id = (int) substr($latestNumber, strlen($yearMonth)) + 1;
-            $latestNumber = $yearMonth . str_pad($id, 3, 0, STR_PAD_LEFT);
+        // Samakan dengan generateSO: gap-filling + urutan numerik yang benar
+        // (dulu max(code) string, 6J100 < 6J99 secara string).
+        $used = DB::table('penjualan_so')
+            ->where('code', 'LIKE', $yearMonth.'%')
+            ->whereNull('deleted_at')
+            ->lockForUpdate()
+            ->pluck('code');
+
+        $numbers = [];
+        foreach ($used as $code) {
+            $num = (int) substr($code, strlen($yearMonth));
+            if ($num > 0) {
+                $numbers[$num] = true;
+            }
         }
 
-        // dd($latestNumber);
-        return $latestNumber;
+        $max = empty($numbers) ? 0 : max(array_keys($numbers));
+        for ($i = 1; $i <= $max + 1; $i++) {
+            if (!isset($numbers[$i])) {
+                return $yearMonth . str_pad($i, 3, '0', STR_PAD_LEFT);
+            }
+        }
+
+        return $yearMonth.'001';
     }
 
     // Generate invoice tax
