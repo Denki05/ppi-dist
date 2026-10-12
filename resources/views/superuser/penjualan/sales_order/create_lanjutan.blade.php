@@ -544,10 +544,10 @@
       let so_qty = parseInputKurs($('tr.index' + index + '').find('input[name="repeater[' + index + '][so_qty]"]').val());
       let val_usd_disc = parseInputKurs($('tr.index' + index + '').find('input[name="repeater[' + index + '][usd_disc]"]').val());
       let val_percent_disc = parseInputKurs($('tr.index' + index + '').find('input[name="repeater[' + index + '][percent_disc]"]').val());
-      // Hidden #idr_rate menyimpan angka bersih; parse tahan format ID/EN
-      // (kasus 6I083: parseFloat("18.050") / buang-titik buta membuat kurs 100x).
+      // Hidden #idr_rate menyimpan angka bersih; parse KHUSUS kurs (tahan
+      // typo "1.7900" -> 17900, bukan 2). Lihat parseKurs di bawah.
       let kursRaw = String($('#idr_rate').val() ?? '');
-      let kurs = parseInputKurs(kursRaw);
+      let kurs = parseKurs(kursRaw);
 
       if (isNaN(kurs)) kurs = 0;
       if (isNaN(val_usd_disc)) val_usd_disc = 0;
@@ -804,10 +804,30 @@
       return isNaN(v) ? 0 : v;
     }
 
+    // Parse KHUSUS field Kurs (Rp ribuan, integer) — parseInputKurs + rescue typo.
+    // Kasus nyata SO-2610045: user mengetik "1.7900". Generic parse membacanya
+    // desimal 1.79 -> hidden jadi "2", sementara display terformat "17.900"
+    // sehingga tampak benar padahal total collapse (188, bukan 1.682.600).
+    // Rescue: bila hasil < 1000 (bukan kurs wajar) tapi seluruh digit mentah
+    // membentuk angka >= 1000, pakai angka digit tsb ("1.7900" -> 17900).
+    // Nilai kecil murni ("1", "2" untuk kurs-hold) tidak tersentuh.
+    // HANYA untuk kurs — harga/diskon tetap pakai parseInputKurs.
+    function parseKurs(raw) {
+      var v = parseInputKurs(raw);
+      if (v < 1000) {
+        var digits = String(raw == null ? '' : raw).replace(/[^\d]/g, '').replace(/^0+/, '');
+        if (digits !== '' && parseFloat(digits) >= 1000) {
+          return parseFloat(digits);
+        }
+      }
+      return v;
+    }
+
     $(document).on('input', '#idr_rate_display', function () {
       // Hitung hidden dari NILAI KETIKAN mentah (sebelum diformat),
-      // agar "18025.00" terbaca 18025 bukan 1802500.
-      var kursVal = Math.round(parseInputKurs(this.value));
+      // agar "18025.00" terbaca 18025 bukan 1802500. Pakai parseKurs
+      // (bukan parseInputKurs mentah) agar typo "1.7900" jadi 17900, bukan 2.
+      var kursVal = Math.round(parseKurs(this.value));
       $('#idr_rate').val(kursVal ? String(kursVal) : '');
 
       var cursorFromEnd = this.value.length - this.selectionStart;

@@ -11,9 +11,14 @@ use DB;
 
 class SalesOrderAwalTable extends Table
 {
+    // User non-superuser yang boleh melihat SO semua user (operator / reminder ke sales)
+    // 33 = Putri
+    private const VIEW_ALL_USER_IDS = [33];
+
     public function query(Request $request)
     {
         $isSuperuser = Auth::user()->is_superuser;
+        $canViewAll  = $isSuperuser || in_array(Auth::id(), self::VIEW_ALL_USER_IDS);
         $statusSoFilter = $request->status_so;
         $customerSoFilter = $request->customer_name;
 
@@ -91,7 +96,7 @@ class SalesOrderAwalTable extends Table
                 '),
             );
 
-        if (!$isSuperuser) {
+        if (!$canViewAll) {
             $model->where('penjualan_so.created_by', Auth::id());
         }
 

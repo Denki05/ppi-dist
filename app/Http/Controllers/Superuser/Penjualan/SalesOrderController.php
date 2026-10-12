@@ -1089,7 +1089,7 @@ class SalesOrderController extends Controller
                 $wasRevised = ((int) $sales_order->count_rev === 1);
 
                 $sales_order = $closingService->prepareClosing($sales_order, $request);
-                $packing_order = $closingService->getOrCreatePackingOrder($sales_order, $request);
+                $packing_order = $closingService->getOrCreatePackingOrder($sales_order, $request, $wasRevised);
 
                 // Tutup ulang revisi = pakai ulang header + detail cost lama,
                 // item lama dibersihkan dulu baru diisi ulang (anti-dobel).

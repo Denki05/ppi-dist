@@ -70,19 +70,26 @@
               @endif
             </div>
           </div>
+          @php
+            $memberName = trim((optional($result->member)->name ?? '') . ' ' . (optional($result->member)->text_kota ?? ''));
+            if ($memberName === '') {
+              $memberName = trim((optional($result->customer)->name ?? '') . ' ' . (optional($result->customer)->text_kota ?? ''));
+            }
+            if ($memberName === '') { $memberName = '-'; }
+          @endphp
           @php $memberDefault = optional($result->member)->member_default; @endphp
           @if($memberDefault == 1)
             <div class="form-group row">
               <label class="col-md-2 col-form-label text-right">Member</label>
               <div class="col-md-8">
-                <input type="text" class="form-control" value="{{ optional($result->customer)->name ?? '' }} {{ optional($result->member)->text_kota ?? '' }}" readonly>
+                <input type="text" class="form-control" value="{{ $memberName }}" readonly>
               </div>
             </div>
           @else
             <div class="form-group row">
               <label class="col-md-2 col-form-label text-right">Member</label>
               <div class="col-md-8">
-                <input type="text" class="form-control" value="{{ optional($result->member)->name ?? '' }} {{ optional($result->member)->text_kota ?? '' }}" readonly>
+                <input type="text" class="form-control" value="{{ $memberName }}" readonly>
               </div>
             </div>
           @endif
@@ -95,7 +102,7 @@
           <div class="form-group row">
             <label class="col-md-2 col-form-label text-right">Ekspedisi</label>
             <div class="col-md-8">
-              <input type="text" class="form-control" value="{{optional($result->ekspedisi)->name ?? $result->vendor->name ?? ''}}" readonly>
+              <input type="text" class="form-control" value="{{ $ekspedisi_display ?? optional($result->ekspedisi)->name ?? $result->vendor->name ?? '' }}" readonly>
             </div>
           </div>
           <div class="form-group row">
@@ -132,10 +139,14 @@
                     <td>{{$row->product_pack->code ?? ''}}</td>
                     <td>{{$row->product_pack->name ?? ''}}</td>
                     <td>
-                      @if($row->status <> 4)
-                        {{$row->qty ?? '0'}}
-                      @else
+                      {{-- Qty tampil = qty DO (qty_worked) bila SO sudah TUTUP (status 4),
+                        karena tutup_so menyimpan do_qty ke DO item + qty_worked,
+                        sedangkan qty asli SO tidak diubah. Cek status item tidak bisa
+                        dipakai (status item hanya 0/1, tidak pernah 4). --}}
+                      @if(($result->status ?? 0) == 4 && (float)($row->qty_worked ?? 0) > 0)
                         {{$row->qty_worked ?? '0'}}
+                      @else
+                        {{$row->qty ?? '0'}}
                       @endif
                     </td>
                     <td>{{$row->product_pack->packaging->pack_name ?? ''}}</td>

@@ -313,6 +313,11 @@ body{ background:#1f242a; font-family: "Segoe UI", Roboto, sans-serif; }
                 </ul>
             </div>
 
+            {{-- Cek selisih Fisik vs KS + sinkron aman (pengganti 11x command) --}}
+            <button type="button" class="btn btn-info btn-sm" data-bs-toggle="modal" data-bs-target="#reconcileModal">
+                <i class="fa fa-stethoscope me-1"></i> Cek Selisih
+            </button>
+
             </div>
 
             <div class="d-flex align-items-center flex-wrap gap-2 action-toolbar">
@@ -642,6 +647,34 @@ body{ background:#1f242a; font-family: "Segoe UI", Roboto, sans-serif; }
           <button type="submit" class="btn btn-dark">Jalankan Rebuild</button>
         </div>
       </form>
+    </div>
+  </div>
+</div>
+
+<!-- ====================== MODAL: CEK SELISIH FISIK vs KS ====================== -->
+<div class="modal fade" id="reconcileModal" tabindex="-1">
+  <div class="modal-dialog modal-lg modal-dialog-scrollable">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">Cek Selisih Fisik vs KS</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <small class="text-muted d-block mb-2">
+          Cari data tidak valid (Fisik != KS / booking tidak cocok), kroscek, lalu tampilkan hasil perbaikan.
+          Yang diperbaiki otomatis hanya yang aman: Fisik diset = KS saat tidak ada DO open (LogAktif 0).
+        </small>
+        <div id="reconcileResult" class="small">Pilih gudang di filter, lalu klik Cari.</div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Tutup</button>
+        <button type="button" class="btn btn-info btn-sm" id="btnReconcileCheck">
+          <i class="fa fa-search me-1"></i> Cari Data Tidak Valid
+        </button>
+        <button type="button" class="btn btn-success btn-sm" id="btnReconcileSync" disabled>
+          <i class="fa fa-wrench me-1"></i> Perbaiki & Kroscek Ulang
+        </button>
+      </div>
     </div>
   </div>
 </div>
@@ -1079,6 +1112,62 @@ function loadRebuildProducts(warehouseId) {
     $('#rebuildVariantModal').on('hidden.bs.modal', function () {
         $('#rebuildWarehouse').val('').trigger('change');
         $('#rebuildProducts').empty().trigger('change');
+    });
+
+    // ── Reconcile: cari tidak valid + perbaiki & kroscek ──
+    function renderReconcile(rows) {
+        if (!rows.length) {
+            return '<div class="alert alert-success py-2">Tidak ada selisih. Fisik = KS.</div>';
+        }
+        let html = '<div class="table-responsive"><table class="table table-sm table-bordered mb-0">'
+            + '<thead><tr><th>Produk</th><th class="text-end">Fisik</th><th class="text-end">KS</th>'
+            + '<th class="text-end">Selisih</th><th class="text-end">LogAktif</th><th>Otomatis?</th></tr></thead><tbody>';
+        rows.forEach(function (r) {
+            html += '<tr><td>' + r.product_packaging_id + '</td>'
+                + '<td class="text-end">' + r.fisik + '</td>'
+                + '<td class="text-end">' + r.ks + '</td>'
+                + '<td class="text-end">' + r.selisih_fisik + '</td>'
+                + '<td class="text-end">' + r.log_aktif + '</td>'
+                + '<td>' + (r.auto_fixable ? 'Ya' : 'Manual') + '</td></tr>';
+        });
+        return html + '</tbody></table></div>';
+    }
+
+    $('#btnReconcileCheck').on('click', function () {
+        let wid = $('#warehouse').val();
+        if (!wid) { alert('Pilih gudang di filter dulu!'); return; }
+        $('#reconcileResult').html('Mencari...');
+        $('#btnReconcileSync').prop('disabled', true);
+        $.get("{{ route('superuser.gudang.stock.reconcileCheck') }}", { warehouse_id: wid })
+            .done(function (res) {
+                $('#reconcileResult').html(
+                    '<div class="mb-2">Total bermasalah: <strong>' + (res.total || 0) + '</strong></div>'
+                    + renderReconcile(res.data || [])
+                );
+                if ((res.total || 0) > 0) $('#btnReconcileSync').prop('disabled', false);
+            })
+            .fail(function () { $('#reconcileResult').html('Gagal memuat.'); });
+    });
+
+    $('#btnReconcileSync').on('click', function () {
+        let wid = $('#warehouse').val();
+        if (!wid) return;
+        if (!confirm('Selaraskan Fisik=KS untuk yang aman (LogAktif 0)?')) return;
+        $('#reconcileResult').html('Memperbaiki...');
+        $.post("{{ route('superuser.gudang.stock.reconcileSync') }}", {
+            warehouse_id: wid, _token: '{{ csrf_token() }}'
+        }).done(function (res) {
+            let html = '<div class="alert alert-info py-2">Fisik diperbaiki: <strong>'
+                + res.fixed_fisik + '</strong>, orphan dibersihkan: <strong>'
+                + res.fixed_orphan + '</strong>, sisa manual: <strong>'
+                + res.remaining + '</strong></div>';
+            if ((res.details || []).length) html += '<div class="mb-2">' + res.details.join('<br>') + '</div>';
+            if ((res.need_manual || []).length) html += '<div>Perlu manual: ' + res.need_manual.join(', ') + '</div>';
+            $('#reconcileResult').html(html);
+            try { $('#datatable').DataTable().ajax.reload(null, false); } catch (e) {}
+        }).fail(function (xhr) {
+            $('#reconcileResult').html('Gagal: ' + (xhr.responseJSON?.message || 'error'));
+        });
     });
 
 })();
