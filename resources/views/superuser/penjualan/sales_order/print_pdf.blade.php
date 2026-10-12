@@ -92,13 +92,34 @@
   }
   .sign-line { margin-top: 55px; }
   .page-break { page-break-after: always; }
+  /* Psikologi anti-lupa: print dari Draft harus terlihat belum valid saat di-share ke grup */
+  .draft-watermark {
+    position: fixed; top: 38%; left: 5%; right: 5%; text-align: center;
+    font-size: 72px; font-weight: bold; color: #dc2626; opacity: 0.13;
+    transform: rotate(-24deg); letter-spacing: 2px; pointer-events: none; z-index: 9999;
+  }
+  .draft-banner {
+    border: 2px dashed #dc2626; color: #b91c1c; background: #fef2f2;
+    font-size: 13px; font-weight: bold; text-align: center;
+    padding: 7px 10px; margin: 0 0 10px 0;
+  }
+  .draft-footer {
+    margin-top: 8px; font-size: 11px; color: #b91c1c; text-align: center; font-weight: bold;
+  }
 </style>
+@php $isDraft = in_array((int)($result->status ?? 0), [1, 3]); @endphp
+@if($isDraft)
+<div class="draft-watermark">DRAFT<br><span style="font-size:34px;">BELUM DILANJUTKAN</span></div>
+@endif
 
 @php $offset = 0; @endphp
 @for ($page = 0; $page < $totalPages; $page++)
 <div>
   <div class="page-no">Page {{ $page + 1 }} of {{ $totalPages }}</div>
-  <h2 class="nota-title">SALES ORDER</h2>
+  @if($page == 0 && $isDraft)
+  <div class="draft-banner">DRAFT — BELUM DILANJUTKAN KE ADMIN, BELUM VALID UNTUK DIPROSES</div>
+  @endif
+  <h2 class="nota-title">SALES ORDER{{ $isDraft ? ' (DRAFT)' : '' }}</h2>
 
   <table class="info-table">
     <tr>
@@ -184,6 +205,9 @@
       </td>
     </tr>
   </table>
+  @if($isDraft)
+  <div class="draft-footer">Dokumen ini dicetak dari status DRAFT — wajib klik LANJUTKAN di program agar diproses admin. Jangan jadikan acuan final.</div>
+  @endif
   @endif
 </div>
 

@@ -1222,4 +1222,169 @@ class StockController extends Controller
 
         return response()->json(['results' => $products]);
     }
+
+    /**
+     * Cek data tidak valid: Fisik (quantity) vs KS (stock_balance terakhir)
+     * + booking (reserved vs do_stock_deduction_logs status 1).
+     * Dipakai tombol "Cek Selisih" agar tidak perlu 11x command manual.
+     */
+    public function reconcileCheck(Request $request)
+    {
+        $warehouseId = $request->warehouse_id;
+        if (!$warehouseId) {
+            return response()->json(['data' => [], 'total' => 0, 'message' => 'Pilih gudang dulu']);
+        }
+
+        $stocks = DB::table('master_product_min_stocks')
+            ->where('warehouse_id', $warehouseId)
+            ->orderBy('product_packaging_id')
+            ->get();
+
+        $rows = [];
+        foreach ($stocks as $stock) {
+            $ks = DB::table('gudang_move_stock')
+                ->where('warehouse_id', $stock->warehouse_id)
+                ->where('product_packaging_id', $stock->product_packaging_id)
+                ->orderBy('created_at', 'desc')
+                ->orderBy('id', 'desc')
+                ->first();
+
+            $activeLog = (float) DB::table('do_stock_deduction_logs')
+                ->where('warehouse_id', $stock->warehouse_id)
+                ->where('product_packaging_id', $stock->product_packaging_id)
+                ->where('status', 1)
+                ->sum('qty');
+
+            $quantity = (float) $stock->quantity;
+            $reserved = (float) $stock->reserved_quantity;
+            $ksBalance = $ks ? (float) $ks->stock_balance : null;
+
+            $selisihFisik = $ksBalance === null ? null : round($quantity - $ksBalance, 2);
+            $selisihBooking = round($reserved - $activeLog, 2);
+
+            $hasFisikIssue = $selisihFisik !== null && abs($selisihFisik) > 0.01;
+            $hasBookingIssue = abs($selisihBooking) > 0.01;
+            if (!$hasFisikIssue && !$hasBookingIssue) continue;
+
+            // Aman diperbaiki otomatis? Hanya jika tidak ada DO open.
+            $autoFixable = ($activeLog == 0 && $hasFisikIssue);
+
+            $rows[] = [
+                'warehouse_id' => $stock->warehouse_id,
+                'product_packaging_id' => $stock->product_packaging_id,
+                'fisik' => $quantity,
+                'reserved' => $reserved,
+                'ks' => $ksBalance,
+                'selisih_fisik' => $selisihFisik,
+                'log_aktif' => $activeLog,
+                'selisih_booking' => $selisihBooking,
+                'auto_fixable' => $autoFixable,
+            ];
+        }
+
+        return response()->json(['data' => $rows, 'total' => count($rows)]);
+    }
+
+    /**
+     * Perbaiki otomatis yang aman + kroscek ulang.
+     * Aturan: Fisik diset = KS hanya jika LogAktif == 0.
+     * Orphan log (do_id tidak ada di penjualan_do) dibatalkan (status 0).
+     * Selain itu dilaporkan sebagai perlu manual.
+     */
+    public function reconcileSync(Request $request)
+    {
+        if (Auth::user()->is_superuser == 0) {
+            if (empty($this->access) || $this->access->can_update == 0) {
+                return response()->json(['success' => false, 'message' => 'Tidak punya akses update'], 403);
+            }
+        }
+
+        $warehouseId = $request->warehouse_id;
+        if (!$warehouseId) {
+            return response()->json(['success' => false, 'message' => 'Pilih gudang dulu']);
+        }
+
+        $fixedFisik = 0;
+        $fixedOrphan = 0;
+        $manual = [];
+        $details = [];
+
+        $stocks = DB::table('master_product_min_stocks')
+            ->where('warehouse_id', $warehouseId)
+            ->orderBy('product_packaging_id')
+            ->get();
+
+        foreach ($stocks as $stock) {
+            $ks = DB::table('gudang_move_stock')
+                ->where('warehouse_id', $stock->warehouse_id)
+                ->where('product_packaging_id', $stock->product_packaging_id)
+                ->orderBy('created_at', 'desc')
+                ->orderBy('id', 'desc')
+                ->first();
+
+            $activeLog = (float) DB::table('do_stock_deduction_logs')
+                ->where('warehouse_id', $stock->warehouse_id)
+                ->where('product_packaging_id', $stock->product_packaging_id)
+                ->where('status', 1)
+                ->sum('qty');
+
+            $quantity = (float) $stock->quantity;
+            $ksBalance = $ks ? (float) $ks->stock_balance : null;
+            if ($ksBalance === null) continue;
+
+            $selisih = round($quantity - $ksBalance, 2);
+
+            // 1. Bersihkan orphan dulu (do_id sudah tidak ada)
+            if ($activeLog != 0) {
+                $orphanIds = DB::table('do_stock_deduction_logs')
+                    ->where('warehouse_id', $stock->warehouse_id)
+                    ->where('product_packaging_id', $stock->product_packaging_id)
+                    ->where('status', 1)
+                    ->whereNotIn('do_id', function ($q) {
+                        $q->select('id')->from('penjualan_do');
+                    })
+                    ->pluck('id');
+
+                if ($orphanIds->isNotEmpty()) {
+                    DB::table('do_stock_deduction_logs')
+                        ->whereIn('id', $orphanIds)
+                        ->update([
+                            'status' => 0,
+                            'note' => 'Orphan DO tidak ada - dibatalkan via tombol sinkron',
+                            'updated_at' => now(),
+                        ]);
+                    $fixedOrphan += $orphanIds->count();
+                    $activeLog = (float) DB::table('do_stock_deduction_logs')
+                        ->where('warehouse_id', $stock->warehouse_id)
+                        ->where('product_packaging_id', $stock->product_packaging_id)
+                        ->where('status', 1)
+                        ->sum('qty');
+                }
+            }
+
+            // 2. Selaraskan fisik = KS jika sudah tidak ada DO open
+            if (abs($selisih) > 0.01 && $activeLog == 0) {
+                DB::table('master_product_min_stocks')
+                    ->where('warehouse_id', $stock->warehouse_id)
+                    ->where('product_packaging_id', $stock->product_packaging_id)
+                    ->update(['quantity' => $ksBalance, 'updated_at' => now()]);
+                $fixedFisik++;
+                $details[] = $stock->product_packaging_id . ': ' . $quantity . ' -> ' . $ksBalance;
+            } elseif (abs($selisih) > 0.01 || abs((float) $stock->reserved_quantity - $activeLog) > 0.01) {
+                $manual[] = $stock->product_packaging_id;
+            }
+        }
+
+        // Kroscek ulang = sisa yang perlu manual
+        $remaining = count($manual);
+
+        return response()->json([
+            'success' => true,
+            'fixed_fisik' => $fixedFisik,
+            'fixed_orphan' => $fixedOrphan,
+            'need_manual' => $manual,
+            'remaining' => $remaining,
+            'details' => $details,
+        ]);
+    }
 }

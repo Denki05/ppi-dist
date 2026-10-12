@@ -83,6 +83,31 @@ class SalesOrderClosingService
     }
 
     /**
+     * Parse KURS (Rp ribuan, integer) — cleanCurrency + rescue typo.
+     * Kasus nyata SO-2610045: user mengetik "1.7900" (varian pemisah ribuan
+     * yang salah). Generic parse membacanya desimal 1.79 -> Math.round/hidden
+     * jadi "2", padahal display terformat "17.900" sehingga tampak benar.
+     * Aturan rescue: bila hasil < 1000 (bukan kurs wajar) tapi seluruh digit
+     * mentah membentuk angka >= 1000, pakai angka digit tersebut
+     * ("1.7900" -> 17900, "17.90" -> 1790). Nilai kecil murni ("1", "2",
+     * "1.00" untuk kurs-hold) tidak tersentuh karena digitnya < 1000.
+     * HANYA untuk field kurs — jangan dipakai untuk nominal lain
+     * (disc kecil "15.00" harus tetap 15, bukan 1500).
+     */
+    public function cleanKurs($value)
+    {
+        $v = (float) $this->cleanCurrency($value);
+        if ($v < 1000) {
+            $digits = preg_replace('/[^0-9]/', '', (string) ($value ?? ''));
+            $digits = ltrim($digits, '0');
+            if ($digits !== '' && (float) $digits >= 1000) {
+                return (float) $digits;
+            }
+        }
+        return $v;
+    }
+
+    /**
      * Validate closing request fields
      */
     public function validateClosingRequest($request, &$errors)
@@ -119,7 +144,7 @@ class SalesOrderClosingService
             return false;
         }
 
-        $kurs = (float) $this->cleanCurrency($request->idr_rate);
+        $kurs = (float) $this->cleanKurs($request->idr_rate);
         if ($kurs <= 0) {
             $errors[] = 'Kurs tidak valid, kalkulasi tidak bisa divalidasi!';
             return false;
@@ -197,7 +222,7 @@ class SalesOrderClosingService
             return null;
         }
 
-        $kurs = (float) $this->cleanCurrency($request->idr_rate);
+        $kurs = (float) $this->cleanKurs($request->idr_rate);
         if ($kurs <= 0) {
             $errors[] = 'Kurs tidak valid, kalkulasi tidak bisa divalidasi!';
             return null;
@@ -575,16 +600,41 @@ class SalesOrderClosingService
         // $forceReuse = snapshot count_rev SEBELUM prepareClosing me-reset-nya ke 0.
         $packing_order = null;
         if ($forceReuse) {
+            // Tutup ulang revisi -> pakai ulang DO revisi (status 7) terbaru.
+            // Dibatasi status 7 agar tidak pernah mereset item DO yang masih
+            // aktif di logistik bila flag revisi menyala di luar skenario normal.
+            // (Kasus SO-2610045: tanpa ini tutup ulang bikin DO ke-2/ke-3
+            // dengan kode sama karena argumen $wasRevised sempat hilang.)
             $packing_order = PackingOrder::where('so_id', $salesOrder->id)
+                ->where('status', 7)
                 ->orderBy('id', 'desc')
                 ->first();
         }
 
         if (!$packing_order) {
+            // Guard anti-dobel (kasus: DO ditarik logistik ke queue lalu SO
+            // ditutup langsung tanpa Revisi): SO ini sudah punya DO aktif
+            // (Billed/Ready/Packed/Delivering/Delivered) -> TOLAK, jangan
+            // bikin DO baru. Stok DO lama masih ter-reserve; alur yang benar
+            // adalah Revisi DO dulu (melepas reserve + menghapus item lama),
+            // lalu tutup ulang (DO lama dipakai ulang via $forceReuse).
+            $activeDo = PackingOrder::where('so_id', $salesOrder->id)
+                ->whereIn('status', [2, 3, 4, 5, 6])
+                ->orderBy('id', 'desc')
+                ->first();
+            if ($activeDo) {
+                $label = $activeDo->do_code ?? $activeDo->code ?? ('#' . $activeDo->id);
+                $statusMap = PackingOrder::STATUS_PENGIRIMAN[(int) $activeDo->status] ?? null;
+                $statusMsg = (is_array($statusMap) && isset($statusMap['msg'])) ? $statusMap['msg'] : ('status ' . $activeDo->status);
+                throw new \Exception(
+                    'SO ini sudah punya DO aktif ' . $label . ' (' . $statusMsg . '). ' .
+                    'Jangan tutup SO langsung — lakukan Revisi DO dulu supaya DO lama dipakai ulang, bukan terdobel (stok ikut terdobel).'
+                );
+            }
             $company = Company::first();
             // idr_rate WAJIB angka bersih ("17.900" -> 17900). Nilai mentah
             // tampilan yang lolos akan tersimpan 17.9 (salah 1000x).
-            $cleanRate = $this->cleanCurrency($request->idr_rate ?? null);
+            $cleanRate = $this->cleanKurs($request->idr_rate ?? null);
             $packing_order = new PackingOrder;
             $packing_order->code = CodeRepo::generatePO();
             $packing_order->do_code = $salesOrder->code;
@@ -606,7 +656,7 @@ class SalesOrderClosingService
             $packing_order->created_by = Auth::id();
             $packing_order->save();
         } else {
-            $cleanRate = $this->cleanCurrency($request->idr_rate ?? null);
+            $cleanRate = $this->cleanKurs($request->idr_rate ?? null);
             $packing_order->update([
                 'status' => 2,
                 'do_code' => $salesOrder->code,

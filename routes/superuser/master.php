@@ -46,6 +46,7 @@ Route::group([
         Route::post('/update_ratio', 'ProductController@update_ratio')->name('update_ratio');
         Route::get('/update_ratio_template', 'ProductController@update_ratio_template')->name('update_ratio_template');
         Route::post('/update_on_order/{id}', 'ProductController@update_on_order')->name('update_on_order');
+        Route::post('/duplicate_iva', 'ProductController@duplicateIva')->name('duplicate_iva');
 
         Route::group(['as' => 'min_stock.'], function () {
             Route::get('/{id}/min_stock/create', 'ProductMinStockController@create')->name('create');

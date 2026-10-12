@@ -118,6 +118,25 @@
           <a href="javascript:void(0)" id="soa-chips-reset" style="display:none;">Reset filter</a>
         </div>
 
+        {{-- Peringatan psikologi: draft yang nyantol harus terlihat seperti "hutang", bukan baris biasa --}}
+        <div id="soa-draft-alert" class="soa-warning" style="display:none;">
+          <span class="soa-warning-icon"><i class="fa fa-exclamation-triangle"></i></span>
+          <span class="soa-warning-text" id="soa-draft-alert-text"></span>
+          <button type="button" class="soa-warning-btn" id="soa-draft-alert-btn">Lihat Draft</button>
+        </div>
+
+        {{-- Preset cepat: AO tidak perlu buka modal filter hanya untuk ganti tanggal --}}
+        <div class="soa-presets" id="soa-presets">
+          <span class="soa-presets-label"><i class="fa fa-bolt"></i> Cepat:</span>
+          <button type="button" class="soa-preset" data-range="today">Hari ini</button>
+          <button type="button" class="soa-preset" data-range="7d">7 hari</button>
+          <button type="button" class="soa-preset active" data-range="all">Semua</button>
+        </div>
+        <div class="soa-legend">
+          <span class="swatch"></span>
+          <span>Kuning = Draft belum dilanjutkan (wajib klik <b>Lanjutkan</b>). Angka <b>hari</b> = umur draft. Garis kiri <b style="color:#dc2626;">merah</b> = sudah ≥2 hari, segera lanjutkan. Tanda <b>-</b> di Action = sudah lanjut / tanpa aksi.</span>
+        </div>
+
         <div class="tab-content pt-10">
 
           {{-- ================= TAB DRAFT: AWAL + REVISI, semua yang belum disubmit ================= --}}
@@ -639,7 +658,8 @@
   }
 
   /* ================= Keterangan cakupan + chip filter ================= */
-  .soa-scopebar { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; margin: 12px 0 0; min-height: 26px; }
+  .soa-scopebar { display: flex; align-items: center; flex-wrap: wrap; gap: 6px; margin: 8px 0 0; min-height: 22px; }
+  .soa-scope { font-size: 11.5px; }
   .soa-scope { font-size: 12px; color: #64748b; display: inline-flex; align-items: center; gap: 6px; }
   .soa-scope i { color: #94a3b8; }
   #soa-chips { display: inline-flex; flex-wrap: wrap; gap: 6px; }
@@ -652,25 +672,92 @@
   #soa-chips-reset { font-size: 12px; color: #64748b; text-decoration: underline; }
   #soa-chips-reset:hover { color: #0f172a; }
 
-  /* ================= Tabel modern ================= */
-  .soa-table-card { background: #fff; border: 1px solid #e2e8f0; border-radius: 12px; overflow: hidden; }
-  .soa-table-card .table { margin-bottom: 0; font-size: 13px; }
+  /* ================= Tampilan padat: kurangi white space ================= */
+  .so-title { font-size: 16px; }
+  .soa-cmdbar { gap: 6px; }
+  #soAwalTabs .nav-link { padding: 5px 11px; font-size: 12.5px; gap: 5px; }
+  .soa-searchwrap input { padding: 6px 12px 6px 30px; font-size: 12.5px; }
+  .btn-filter-toggle { padding: 6px 13px; font-size: 12.5px; }
+
+  /* ================= CTA Lanjutkan: 1 aksi utama, tidak bersaing dengan icon lain ================= */
+  .soa-actionwrap { display: inline-flex; align-items: center; gap: 4px; }
+  .btn-lanjut-utama {
+    display: inline-flex; align-items: center; gap: 5px;
+    background: linear-gradient(135deg, #16a34a, #15803d); color: #fff !important;
+    font-weight: 800; font-size: 12px; letter-spacing: .02em;
+    padding: 5px 11px; border-radius: 999px; text-decoration: none !important;
+    box-shadow: 0 2px 8px rgba(22,163,74,.35); white-space: nowrap;
+    animation: soa-pulse 2.2s infinite;
+  }
+  .btn-lanjut-utama:hover { filter: brightness(1.07); color: #fff !important; }
+  @keyframes soa-pulse {
+    0% { box-shadow: 0 0 0 0 rgba(22,163,74,.45); }
+    70% { box-shadow: 0 0 0 8px rgba(22,163,74,0); }
+    100% { box-shadow: 0 0 0 0 rgba(22,163,74,0); }
+  }
+  .btn-lainnya {
+    border: 1px solid #e2e8f0; background: #fff; color: #64748b;
+    width: 26px; height: 26px; border-radius: 50%; font-size: 11px;
+    display: inline-flex; align-items: center; justify-content: center;
+  }
+  .btn-lainnya:hover { border-color: #94a3b8; color: #0f172a; }
+  .soa-dd { font-size: 13px; min-width: 210px; border-radius: 10px; overflow: hidden; padding: 6px; }
+  .soa-dd-item { border-radius: 7px; padding: 8px 10px; font-weight: 600; color: #334155; }
+  .soa-dd-item:hover { background: #f1f5f9; }
+  .soa-dd-hint { font-size: 11px; color: #b45309; background: #fef3c2; border-radius: 999px; padding: 1px 7px; margin-left: 4px; }
+
+  /* ================= Draft nyantol: terlihat seperti hutang ================= */
+  .soa-warning {
+    display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
+    background: #fffbeb; border: 1px solid #fcd34d; border-left: 5px solid #f59e0b;
+    border-radius: 8px; padding: 7px 12px; margin-top: 8px; font-size: 12.5px; color: #92400e;
+  }
+  .soa-warning-icon { width: 26px; height: 26px; border-radius: 50%; background: #f59e0b; color: #fff; display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0; font-size: 12px; }
+  .soa-warning-text { flex: 1 1 200px; font-weight: 600; }
+  .soa-warning-btn { border: none; background: #f59e0b; color: #fff; font-weight: 800; border-radius: 999px; padding: 5px 13px; font-size: 12px; }
+  .soa-warning-btn:hover { background: #d97706; }
+
+  /* ================= Preset cepat ================= */
+  .soa-presets { display: flex; align-items: center; gap: 5px; flex-wrap: wrap; margin-top: 8px; }
+  .soa-presets-label { font-size: 11.5px; color: #64748b; font-weight: 700; }
+  .soa-preset { border: 1px solid #e2e8f0; background: #fff; color: #475569; border-radius: 999px; padding: 4px 11px; font-size: 11.5px; font-weight: 700; }
+  .soa-preset:hover { border-color: #4f46e5; color: #4f46e5; }
+  .soa-preset.active { background: #4f46e5; border-color: #4f46e5; color: #fff; }
+
+  /* ================= Baris draft: SATU warna kuning saja (umur dibaca dari teks, bukan warna) ================= */
+  table.dataTable tbody tr.soa-row-draft { background: #fffbeb !important; }
+  table.dataTable tbody tr.soa-row-draft td:first-child { box-shadow: inset 3px 0 0 #f59e0b; }
+  table.dataTable tbody tr.soa-row-draft:hover { background: #fef3c2 !important; }
+  /* Draft lama (>=2 hari): bukan beda blok warna, hanya garis kiri merah + teks umur merah */
+  table.dataTable tbody tr.soa-row-lama td:first-child { box-shadow: inset 3px 0 0 #dc2626; }
+  table.dataTable tbody tr.soa-flash { animation: soa-flash 2.4s ease; }
+  @keyframes soa-flash {
+    0%, 40% { background: #bbf7d0 !important; }
+    100% { background: transparent; }
+  }
+  .soa-sub-lama { color: #b91c1c !important; font-weight: 700; }
+  .soa-legend { font-size: 11px; color: #64748b; margin-top: 6px; display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+  .soa-legend .swatch { width: 12px; height: 12px; border-radius: 3px; display: inline-block; background: #fffbeb; border: 1px solid #fcd34d; border-left: 3px solid #f59e0b; }
+
+  /* ================= Tabel modern (padat) ================= */
+  .soa-table-card { background: #fff; border: 1px solid #e2e8f0; border-radius: 10px; overflow: hidden; }
+  .soa-table-card .table { margin-bottom: 0; font-size: 12.5px; }
   .soa-table-card thead th {
     background: #f8fafc;
     border-bottom: 1px solid #e2e8f0;
-    font-size: 10.5px;
+    font-size: 10px;
     text-transform: uppercase;
     letter-spacing: .04em;
     color: #64748b;
     font-weight: 700;
-    padding: 10px 12px;
+    padding: 7px 8px;
     white-space: nowrap;
   }
-  .soa-table-card tbody td { padding: 9px 12px; border-bottom: 1px solid #f1f4f8; vertical-align: middle; }
+  .soa-table-card tbody td { padding: 5px 8px; border-bottom: 1px solid #f1f4f8; vertical-align: middle; }
   .soa-table-card tbody tr:last-child td { border-bottom: none; }
   .soa-table-card tbody tr:hover { background: #f8fafc; }
 
-  .soa-pill { display: inline-flex; align-items: center; gap: 5px; padding: 3px 10px; border-radius: 999px; font-size: 11.5px; font-weight: 700; white-space: nowrap; }
+  .soa-pill { display: inline-flex; align-items: center; gap: 4px; padding: 2px 8px; border-radius: 999px; font-size: 11px; font-weight: 700; white-space: nowrap; }
   .soa-pill .dot { width: 6px; height: 6px; border-radius: 50%; display: inline-block; }
   .soa-pill-info { background: #f0f9ff; color: #0284c7; } .soa-pill-info .dot { background: #0284c7; }
   .soa-pill-warn { background: #fffbeb; color: #d97706; } .soa-pill-warn .dot { background: #d97706; }
@@ -678,15 +765,15 @@
   .soa-pill-success { background: #f0fdf4; color: #16a34a; } .soa-pill-success .dot { background: #16a34a; }
   .soa-pill-muted { background: #f1f5f9; color: #64748b; } .soa-pill-muted .dot { background: #64748b; }
 
-  .soa-cust { display: flex; align-items: center; gap: 8px; }
+  .soa-cust { display: flex; align-items: center; gap: 6px; }
   .soa-avatar {
-    width: 28px; height: 28px; border-radius: 50%; flex-shrink: 0;
+    width: 24px; height: 24px; border-radius: 50%; flex-shrink: 0;
     background: linear-gradient(135deg, #4f46e5, #7c3aed); color: #fff;
     display: inline-flex; align-items: center; justify-content: center;
-    font-size: 12px; font-weight: 800;
+    font-size: 11px; font-weight: 800;
   }
-  .soa-sub { font-size: 11px; color: #94a3b8; font-weight: 400; margin-top: 1px; }
-  .soa-code { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 12px; font-weight: 700; color: #334155; }
+  .soa-sub { font-size: 10.5px; color: #94a3b8; font-weight: 400; margin-top: 0; line-height: 1.3; }
+  .soa-code { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 11.5px; font-weight: 700; color: #334155; }
   .soa-dash { color: #94a3b8; }
 
   /* Search bawaan DataTables disembunyikan (diganti search global) */
@@ -773,7 +860,8 @@
     // 1 filter bersama untuk semua tab (tab-nya sendiri = status).
     var soaDateLabel = { draft: 'Tanggal Buat', submit: 'Tanggal (Buat/Submit)', selesai: 'Tanggal Resi' };
     var soaTables = {};
-    var soaFilter = {};
+    // Default: Semua (bukan hari ini) agar SO lama langsung ketemu tanpa buka filter.
+    var soaFilter = { show_all: '1' };
     var soaKeyword = '';
     var activeTab = 'draft';
 
@@ -807,7 +895,9 @@
             if (type !== 'display') return data;
             var txt = (data || '').trim() || '-';
             var ch = txt.charAt(0).toUpperCase() || '-';
-            var info = row.tgl_info ? '<div class="soa-sub">' + esc(row.tgl_info) + '</div>' : '';
+            // Umur >=2 hari ditandai merah agar terbaca tanpa perlu beda warna baris.
+            var subCls = (row.umur_hari || 0) >= 2 ? 'soa-sub soa-sub-lama' : 'soa-sub';
+            var info = row.tgl_info ? '<div class="' + subCls + '">' + esc(row.tgl_info) + '</div>' : '';
             return '<span class="soa-cust"><span class="soa-avatar">' + esc(ch) + '</span><span>' + esc(txt) + info + '</span></span>';
           }
         },
@@ -863,9 +953,20 @@
       return datatableUrl + '?' + $.param($.extend({ tab: tab }, clean));
     }
 
+    // ID highlight dari redirect habis save (?highlight=SO-xxx) agar AO langsung ketemu.
+    function soaGetParam(name) {
+      try {
+        return new URLSearchParams(window.location.search).get(name) || '';
+      } catch (e) { return ''; }
+    }
+    var soaHighlight = (soaGetParam('highlight') || '').trim();
+
     function soAwalTable(selector, tab, withResi, order) {
       return $(selector).DataTable({
-        language: { processing: spinnerHtml },
+        language: {
+          processing: spinnerHtml,
+          emptyTable: 'Tidak ketemu. Coba klik preset <b>Semua</b> di atas atau <b>Reset filter</b> — SO lama tidak hilang, hanya kepotong tanggal.'
+        },
         processing: true,
         serverSide: true,
         searching: true,
@@ -885,23 +986,69 @@
         lengthMenu: [
           [10, 20, 50],
           [10, 20, 50]
-        ]
+        ],
+        // Psikologi: draft terlihat seperti hutang (kuning). Yang lama makin pekat.
+        createdRow: function(row, data) {
+          try {
+            var label = data.status_label || '';
+            if (label === 'AWAL' || label === 'REVISI') {
+              $(row).addClass('soa-row-draft');
+              if ((data.umur_hari || 0) >= 2) $(row).addClass('soa-row-lama');
+              var code = (data.so_code || '') + ' ' + (data.code || '');
+              if (soaHighlight && code.toLowerCase().indexOf(soaHighlight.toLowerCase()) !== -1) {
+                $(row).addClass('soa-flash');
+              }
+            }
+          } catch (e) {}
+        }
       });
     }
 
     // Semua tabel diinit di awal (anti bug kolom kosong saat pindah tab).
     // Indeks 11 = so_created_at (tersembunyi), 12 = resi_at (tersembunyi, khusus Terkirim).
-    soaTables.draft = soAwalTable('#sales_order_awal_draft', 'draft', false, [11, 'asc']);
-    soaTables.submit = soAwalTable('#sales_order_awal_submit', 'submit', false, [11, 'asc']);
+    // Draft: terbaru dulu agar SO yang baru dibuat langsung ketemu di baris 1.
+    soaTables.draft = soAwalTable('#sales_order_awal_draft', 'draft', false, [11, 'desc']);
+    soaTables.submit = soAwalTable('#sales_order_awal_submit', 'submit', false, [11, 'desc']);
     soaTables.selesai = soAwalTable('#sales_order_awal_selesai', 'selesai', true, [12, 'desc']);
 
-    // Jumlah data per tab (badge) mengikuti hasil tiap tabel.
+    // Jumlah data per tab (badge) + banner peringatan draft nyantol.
     soaTabList.forEach(function(tab) {
       soaTables[tab].on('draw.dt', function() {
         try {
-          $('#cnt-' + tab).text(soaTables[tab].page.info().recordsDisplay);
+          var n = soaTables[tab].page.info().recordsDisplay;
+          $('#cnt-' + tab).text(n);
+          if (tab === 'draft') soaDraftAlert(n);
+          // Bersihkan highlight dari URL setelah 1x flash agar refresh berikutnya normal.
+          if (soaHighlight && tab === 'draft') {
+            setTimeout(function() {
+              try {
+                var url = new URL(window.location.href);
+                url.searchParams.delete('highlight');
+                url.searchParams.delete('baru');
+                window.history.replaceState({}, '', url.toString());
+              } catch (e) {}
+              soaHighlight = '';
+            }, 2600);
+          }
         } catch (e) { /* abaikan sebelum draw pertama */ }
       });
+    });
+
+    function soaDraftAlert(n) {
+      var box = $('#soa-draft-alert');
+      if (!box.length) return;
+      if ((n || 0) > 0 && activeTab === 'draft') {
+        $('#soa-draft-alert-text').html(
+          'Ada <b>' + n + ' SO belum dilanjutkan</b> — Print saja belum cukup, wajib klik <b>Lanjutkan</b> agar masuk antrian admin.'
+        );
+        box.show();
+      } else {
+        box.hide();
+      }
+    }
+    $('#soa-draft-alert-btn').on('click', function() {
+      $('a[data-tab="draft"]').tab('show');
+      $('#sales_order_awal_draft').closest('.soa-table-card').get(0).scrollIntoView({ behavior: 'smooth', block: 'center' });
     });
 
     function soaReload(tab) {
@@ -936,20 +1083,24 @@
     function soaScopeText(tab) {
       var f = soaFilter;
       var hasRange = !!(f.date_from && f.date_to);
+      var all = (f.show_all === '1' || f.show_all === 1);
 
       if (tab === 'draft') {
         return hasRange
-          ? 'Draft dibuat ' + soaRangeText(f)
-          : 'Semua draft yang belum disubmit, semua tanggal';
+          ? 'Draft dibuat ' + soaRangeText(f) + ' — terbaru di atas'
+          : 'Semua draft yang belum disubmit, semua tanggal — terbaru di atas';
       }
       if (tab === 'submit') {
-        if (hasRange) return 'Order dibuat atau disubmit ' + soaRangeText(f);
-        if (soaKeyword) return 'Order submit dari semua tanggal';
-        return 'Order dibuat atau disubmit hari ini';
+        var base;
+        if (hasRange) base = 'Order dibuat atau disubmit ' + soaRangeText(f);
+        else if (soaKeyword) base = 'Order submit dari semua tanggal';
+        else if (all) base = 'Order submit dari semua tanggal';
+        else base = 'Order dibuat atau disubmit hari ini — klik Semua untuk cari yang lama';
+        return base + ' • riwayat, tanpa aksi (fokus kerja di Draft)';
       }
-      if (hasRange) return 'Order terkirim, resi ' + soaRangeText(f);
-      if (soaKeyword) return 'Order terkirim dari semua tanggal resi';
-      return 'Order terkirim, resi bulan ini';
+      if (hasRange) return 'Order terkirim, resi ' + soaRangeText(f) + ' • riwayat, tanpa aksi';
+      if (soaKeyword || all) return 'Order terkirim dari semua tanggal resi • riwayat, tanpa aksi';
+      return 'Order terkirim, resi bulan ini — klik Semua untuk cari yang lama • riwayat, tanpa aksi';
     }
 
     function soaRenderScopeAndChips() {
@@ -976,6 +1127,7 @@
       if (key === 'date') {
         delete soaFilter.date_from;
         delete soaFilter.date_to;
+        soaFilter.show_all = '1';
         var fp = ($('#f_date')[0] && $('#f_date')[0]._flatpickr) || null;
         if (fp) fp.clear();
         else $('#f_date').val('');
@@ -984,13 +1136,52 @@
       }
       soaReload(activeTab);
       soaRenderScopeAndChips();
+      try { soaSyncPresets(); } catch (err) {}
     });
 
     $('#soa-chips-reset').on('click', function() {
-      soaFilter = {};
+      soaFilter = { show_all: '1' };
       soaFillForm();
       soaReload(activeTab);
       soaRenderScopeAndChips();
+      soaSyncPresets();
+    });
+
+    // ---- Preset cepat tanggal: tanpa buka modal. Psikologi: mengurangi 3 klik jadi 1 klik.
+    function soaYmd(d) {
+      var m = ('0' + (d.getMonth() + 1)).slice(-2);
+      var day = ('0' + d.getDate()).slice(-2);
+      return d.getFullYear() + '-' + m + '-' + day;
+    }
+    function soaSyncPresets() {
+      var hasRange = !!(soaFilter.date_from && soaFilter.date_to);
+      var today = soaYmd(new Date());
+      var isToday = hasRange && soaFilter.date_from === today && soaFilter.date_to === today;
+      var past = new Date(); past.setDate(past.getDate() - 6);
+      var is7 = hasRange && soaFilter.date_from === soaYmd(past) && soaFilter.date_to === today;
+      $('.soa-preset').removeClass('active');
+      if (isToday) $('.soa-preset[data-range="today"]').addClass('active');
+      else if (is7) $('.soa-preset[data-range="7d"]').addClass('active');
+      else if (!hasRange) $('.soa-preset[data-range="all"]').addClass('active');
+    }
+    $('.soa-preset').on('click', function() {
+      var r = $(this).data('range');
+      if (r === 'today') {
+        var t = soaYmd(new Date());
+        soaFilter.date_from = t; soaFilter.date_to = t;
+        delete soaFilter.show_all;
+      } else if (r === '7d') {
+        var now = new Date(); var ago = new Date(); ago.setDate(ago.getDate() - 6);
+        soaFilter.date_from = soaYmd(ago); soaFilter.date_to = soaYmd(now);
+        delete soaFilter.show_all;
+      } else {
+        delete soaFilter.date_from; delete soaFilter.date_to;
+        soaFilter.show_all = '1';
+      }
+      soaFillForm();
+      soaReload(activeTab);
+      soaRenderScopeAndChips();
+      soaSyncPresets();
     });
 
     // ---- Search global: satu kotak, berlaku ke semua tab (jumlah tab ikut berubah) ----
@@ -1049,16 +1240,20 @@
 
     $('#soa-apply').on('click', function() {
       soaFilter = soaCollect();
+      // Jika modal tidak memilih tanggal, anggap minta Semua agar konsisten dengan preset.
+      if (!soaFilter.date_from) soaFilter.show_all = '1';
       soaReload(activeTab);
       soaRenderScopeAndChips();
+      try { soaSyncPresets(); } catch (err) {}
       $('#soaFilterModal').modal('hide');
     });
 
     $('#soa-apply-reset').on('click', function() {
-      soaFilter = {};
+      soaFilter = { show_all: '1' };
       soaFillForm();
       soaReload(activeTab);
       soaRenderScopeAndChips();
+      try { soaSyncPresets(); } catch (err) {}
       $('#soaFilterModal').modal('hide');
     });
 
@@ -1067,9 +1262,16 @@
       // Samakan ulang lebar kolom tiap pindah tab (anti tabel kosong/geser).
       soaTables[activeTab].columns.adjust();
       soaRenderScopeAndChips();
+      try { soaSyncPresets(); } catch (err) {}
+      try { soaDraftAlert(soaTables.draft.page.info().recordsDisplay); } catch (err) {}
     });
 
     soaRenderScopeAndChips();
+    try { soaSyncPresets(); } catch (err) {}
+    // Jika redirect habis save (?baru=1), pastikan tab Draft aktif agar AO langsung lihat hasilnya.
+    try {
+      if (soaGetParam('baru') === '1') { $('a[data-tab="draft"]').tab('show'); }
+    } catch (err) {}
 
     // ============================================================
     //  MODAL ADD SO

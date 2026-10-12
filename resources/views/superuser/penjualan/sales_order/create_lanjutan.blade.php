@@ -535,15 +535,19 @@
 
     function count_per_item(indx) {
       let index = indx;
-      let price = parseFloat($('tr.index' + index + '').find('input[name="repeater[' + index + '][price]"]').val());
-      let do_qty = parseFloat($('tr.index' + index + '').find('input[name="repeater[' + index + '][do_qty]"]').val());
-      let so_qty = parseFloat($('tr.index' + index + '').find('input[name="repeater[' + index + '][so_qty]"]').val());
-      let val_usd_disc = parseFloat($('tr.index' + index + '').find('input[name="repeater[' + index + '][usd_disc]"]').val());
-      let val_percent_disc = parseFloat($('tr.index' + index + '').find('input[name="repeater[' + index + '][percent_disc]"]').val());
-      // Hidden #idr_rate menyimpan angka bersih; parse tahan format ID/EN
-      // (kasus 6I083: parseFloat("18.050") / buang-titik buta membuat kurs 100x).
+      // Parse TAHAN FORMAT: nilai dari DB bisa desimal ("49.00", "17900.00")
+      // dan tampilan bisa ribuan ID ("17.900"). parseFloat buta / buang-titik
+      // buta membuat 100x (kasus kurs "17900.00" -> 1790000). Pakai parseInputKurs
+      // yang membedakan titik desimal vs titik ribuan.
+      let price = parseInputKurs($('tr.index' + index + '').find('input[name="repeater[' + index + '][price]"]').val());
+      let do_qty = parseInputKurs($('tr.index' + index + '').find('input[name="repeater[' + index + '][do_qty]"]').val());
+      let so_qty = parseInputKurs($('tr.index' + index + '').find('input[name="repeater[' + index + '][so_qty]"]').val());
+      let val_usd_disc = parseInputKurs($('tr.index' + index + '').find('input[name="repeater[' + index + '][usd_disc]"]').val());
+      let val_percent_disc = parseInputKurs($('tr.index' + index + '').find('input[name="repeater[' + index + '][percent_disc]"]').val());
+      // Hidden #idr_rate menyimpan angka bersih; parse KHUSUS kurs (tahan
+      // typo "1.7900" -> 17900, bukan 2). Lihat parseKurs di bawah.
       let kursRaw = String($('#idr_rate').val() ?? '');
-      let kurs = parseInputKurs(kursRaw);
+      let kurs = parseKurs(kursRaw);
 
       if (isNaN(kurs)) kurs = 0;
       if (isNaN(val_usd_disc)) val_usd_disc = 0;
@@ -570,7 +574,7 @@
 
       $('tbody tr').each(function (index, e) {
         let sub_total = $('tr.index' + index + '').find('input[name="repeater[' + index + '][total]"]').val();
-        sub_total = sub_total ? parseFloat(sub_total.split('.').join('')) : 0;
+        sub_total = parseInputKurs(sub_total);
         if (isNaN(sub_total)) sub_total = 0;
         total += sub_total;
       });
@@ -586,7 +590,7 @@
     function hitungDiscAgen() {
       let discPercent = parseFloat($('#disc_agen_percent').val());
       let subTotalItemRaw = $('input[name="sub_total_item"]').val();
-      let subTotalItem = subTotalItemRaw ? parseFloat(subTotalItemRaw.split('.').join('')) : 0;
+      let subTotalItem = parseInputKurs(subTotalItemRaw);
 
       if (isNaN(discPercent)) discPercent = 0;
       if (isNaN(subTotalItem)) subTotalItem = 0;
@@ -609,8 +613,8 @@
         let sub_total_item_raw = $('input[name="sub_total_item"]').val();
         let disc_agen_raw = $('#disc_agen_idr').val();
 
-        let sub_total_item = sub_total_item_raw ? parseFloat(sub_total_item_raw.split('.').join('')) : 0;
-        let disc_agen_idr = disc_agen_raw ? parseFloat(disc_agen_raw.split('.').join('')) : 0;
+        let sub_total_item = parseInputKurs(sub_total_item_raw);
+        let disc_agen_idr = parseInputKurs(disc_agen_raw);
         let disc_kemasan_percent = parseFloat(percentVal);
 
         if (isNaN(sub_total_item)) sub_total_item = 0;
@@ -646,8 +650,8 @@
         let sub_total_item_raw = $('input[name="sub_total_item"]').val();
         let disc_percent_raw = $('input[name="disc_agen_idr"]').val();
 
-        let sub_total_item = sub_total_item_raw ? parseFloat(sub_total_item_raw.split('.').join('')) : 0;
-        let disc_percent = disc_percent_raw ? parseFloat(disc_percent_raw.split('.').join('')) : 0;
+        let sub_total_item = parseInputKurs(sub_total_item_raw);
+        let disc_percent = parseInputKurs(disc_percent_raw);
 
         if (isNaN(sub_total_item)) sub_total_item = 0;
         if (isNaN(disc_percent)) disc_percent = 0;
@@ -667,9 +671,9 @@
       let disc_agen_raw = $('#disc_agen_idr').val();
       let dics_kemasan_raw = $('#disc_kemasan_idr').val();
 
-      let sub_total = sub_total_raw ? parseFloat(sub_total_raw.split('.').join('')) : 0;
-      let disc_agen = disc_agen_raw ? parseFloat(disc_agen_raw.split('.').join('')) : 0;
-      let dics_kemasan = dics_kemasan_raw ? parseFloat(dics_kemasan_raw.split('.').join('')) : 0;
+      let sub_total = parseInputKurs(sub_total_raw);
+      let disc_agen = parseInputKurs(disc_agen_raw);
+      let dics_kemasan = parseInputKurs(dics_kemasan_raw);
 
       if (isNaN(sub_total)) sub_total = 0;
       if (isNaN(disc_agen)) disc_agen = 0;
@@ -691,10 +695,10 @@
       let voucher_idr_raw = $('#voucher_idr').val();
       let ongkir_raw = $('#delivery_cost_idr').val();
 
-      let subtotal_before = subtotal_before_raw ? parseFloat(subtotal_before_raw.split('.').join('')) : 0;
-      let disc_tambahan = disc_tambahan_raw ? parseFloat(disc_tambahan_raw.split('.').join('')) : 0;
-      let voucher_idr = voucher_idr_raw ? parseFloat(voucher_idr_raw.split('.').join('')) : 0;
-      let ongkir = ongkir_raw ? parseFloat(ongkir_raw.split('.').join('')) : 0;
+      let subtotal_before = parseInputKurs(subtotal_before_raw);
+      let disc_tambahan = parseInputKurs(disc_tambahan_raw);
+      let voucher_idr = parseInputKurs(voucher_idr_raw);
+      let ongkir = parseInputKurs(ongkir_raw);
 
       if (isNaN(subtotal_before)) subtotal_before = 0;
       if (isNaN(disc_tambahan)) disc_tambahan = 0;
@@ -800,10 +804,30 @@
       return isNaN(v) ? 0 : v;
     }
 
+    // Parse KHUSUS field Kurs (Rp ribuan, integer) — parseInputKurs + rescue typo.
+    // Kasus nyata SO-2610045: user mengetik "1.7900". Generic parse membacanya
+    // desimal 1.79 -> hidden jadi "2", sementara display terformat "17.900"
+    // sehingga tampak benar padahal total collapse (188, bukan 1.682.600).
+    // Rescue: bila hasil < 1000 (bukan kurs wajar) tapi seluruh digit mentah
+    // membentuk angka >= 1000, pakai angka digit tsb ("1.7900" -> 17900).
+    // Nilai kecil murni ("1", "2" untuk kurs-hold) tidak tersentuh.
+    // HANYA untuk kurs — harga/diskon tetap pakai parseInputKurs.
+    function parseKurs(raw) {
+      var v = parseInputKurs(raw);
+      if (v < 1000) {
+        var digits = String(raw == null ? '' : raw).replace(/[^\d]/g, '').replace(/^0+/, '');
+        if (digits !== '' && parseFloat(digits) >= 1000) {
+          return parseFloat(digits);
+        }
+      }
+      return v;
+    }
+
     $(document).on('input', '#idr_rate_display', function () {
       // Hitung hidden dari NILAI KETIKAN mentah (sebelum diformat),
-      // agar "18025.00" terbaca 18025 bukan 1802500.
-      var kursVal = Math.round(parseInputKurs(this.value));
+      // agar "18025.00" terbaca 18025 bukan 1802500. Pakai parseKurs
+      // (bukan parseInputKurs mentah) agar typo "1.7900" jadi 17900, bukan 2.
+      var kursVal = Math.round(parseKurs(this.value));
       $('#idr_rate').val(kursVal ? String(kursVal) : '');
 
       var cursorFromEnd = this.value.length - this.selectionStart;

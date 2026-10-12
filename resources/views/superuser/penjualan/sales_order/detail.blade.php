@@ -139,10 +139,14 @@
                     <td>{{$row->product_pack->code ?? ''}}</td>
                     <td>{{$row->product_pack->name ?? ''}}</td>
                     <td>
-                      @if($row->status <> 4)
-                        {{$row->qty ?? '0'}}
-                      @else
+                      {{-- Qty tampil = qty DO (qty_worked) bila SO sudah TUTUP (status 4),
+                        karena tutup_so menyimpan do_qty ke DO item + qty_worked,
+                        sedangkan qty asli SO tidak diubah. Cek status item tidak bisa
+                        dipakai (status item hanya 0/1, tidak pernah 4). --}}
+                      @if(($result->status ?? 0) == 4 && (float)($row->qty_worked ?? 0) > 0)
                         {{$row->qty_worked ?? '0'}}
+                      @else
+                        {{$row->qty ?? '0'}}
                       @endif
                     </td>
                     <td>{{$row->product_pack->packaging->pack_name ?? ''}}</td>

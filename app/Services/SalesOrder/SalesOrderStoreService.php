@@ -70,7 +70,13 @@ class SalesOrderStoreService
             $insert->indent_status = 1;
         } elseif ($request->so_indent == "NO") {
             $insert->code = null;
-            $insert->status = $request->ajukankelanjutan ? 2 : 1;
+            // Psikologi AO: "Simpan & Lanjutkan" langsung jadi status 2 + submitted_at
+            // agar tidak nyantol di Draft dan langsung masuk antrian admin.
+            $langsung = !empty($request->ajukankelanjutan) && (int) $request->ajukankelanjutan === 1;
+            $insert->status = $langsung ? 2 : 1;
+            if ($langsung) {
+                $insert->submitted_at = date('Y-m-d H:i:s');
+            }
             $insert->so_indent = SalesOrder::INDENT['NO'];
         }
         $insert->condition = 1;

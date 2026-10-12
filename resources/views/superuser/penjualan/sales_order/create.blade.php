@@ -199,10 +199,11 @@
             </a>
           </div>
           <div class="col-md-6 text-right">
-            <button class="btn btn-primary btn-md btn-simpan" type="button"><i class="fa fa-save"></i> Simpan</button>
-          @role('Developer')
-            <button class="btn btn-primary btn-md btn-simpan-dan-ajukan-ke-lanjutan" type="button"><i class="fa fa-save"></i> Simpan dan ajukan ke Lanjutan</button>
-          @endrole
+            {{-- Psikologi AO: jadikan Lanjutkan sebagai jalan utama (hijau, teks jelas).
+                 Simpan Draft hanya jalan kedua agar tidak dipilih tanpa sadar. --}}
+            <button class="btn btn-outline-secondary btn-md btn-simpan" type="button"><i class="fa fa-save"></i> Simpan Draft</button>
+            <button class="btn btn-success btn-md btn-simpan-dan-ajukan-ke-lanjutan" type="button" style="font-weight:800;"><i class="fa fa-check"></i> Simpan &amp; Lanjutkan →</button>
+            <div class="text-muted mt-5" style="font-size:11.5px;">Print saja belum cukup — <b>Lanjutkan</b> yang mengirim ke admin.</div>
           </div>
         </div>
       </div>
@@ -297,7 +298,11 @@
         return;
       }
 
-      if(confirm("Apakah anda yakin ingin menambakan sales order ini ?")){
+      var lanjutMode = $('#frmCreate').find('input[name="ajukankelanjutan"]').val() == '1';
+      var confirmText = lanjutMode
+        ? 'SO akan langsung DILANJUTKAN ke admin dan masuk antrian. Lanjut?'
+        : 'SO hanya disimpan sebagai DRAFT (belum diproses admin). Anda wajib klik Lanjutkan nanti. Tetap simpan draft?';
+      if(confirm(confirmText)){
         let _form = $('#frmCreate');
         $.ajax({
           url : '{{route('superuser.penjualan.sales_order.store', [$other_address->id])}}',
@@ -313,14 +318,26 @@
               showToast('danger',resp.Message);
             }
             else{
+              // Backend baru mengembalikan data.redirect_to + so_code (di resp.data),
+              // fallback ke format lama agar tidak pecah.
+              var redirectTo = (resp && resp.data && resp.data.redirect_to) || resp.redirect_to || '';
+              var soCode = (resp && resp.data && resp.data.so_code) || resp.so_code || '';
+              var isLanjut = ((resp && resp.data && resp.data.langsung_lanjut) || resp.langsung_lanjut || (lanjutMode ? 1 : 0)) == 1;
+              if (!redirectTo) {
+                redirectTo = '{{ route('superuser.penjualan.sales_order.index_' . strtolower($step_txt)) }}'
+                  + (soCode ? '?highlight=' + encodeURIComponent(soCode) : '')
+                  + (isLanjut ? (soCode ? '&' : '?') + 'langsung=1' : (soCode ? '' : '?baru=1'));
+              }
               Swal.fire(
-                'Success!',
-                resp.Message,
-                'success'
+                isLanjut ? 'Terkirim ke admin!' : 'Tersimpan sebagai Draft',
+                isLanjut
+                  ? 'SO ' + soCode + ' sudah dilanjutkan. Silakan Print yang bersih (tanpa watermark) lalu share.'
+                  : 'SO ' + soCode + ' masih DRAFT dan berwarna kuning di tabel. Jangan lupa klik Lanjutkan sebelum share.',
+                isLanjut ? 'success' : 'warning'
               ).then((result) => {
-                  document.location.href = '{{ route('superuser.penjualan.sales_order.index_' . strtolower($step_txt)) }}';
+                  document.location.href = redirectTo;
               })
-              
+
             }
           },
           error: function (jqXHR) {
@@ -335,8 +352,8 @@
             );
           },
           complete : function(){
-            $('.btn-simpan').prop('disabled', false).html('<i class="fa fa-save"></i> Simpan');
-            $('.btn-simpan-dan-ajukan-ke-lanjutan').prop('disabled', false).html('<i class="fa fa-save"></i> Simpan dan ajukan ke Lanjutan');
+            $('.btn-simpan').prop('disabled', false).html('<i class="fa fa-save"></i> Simpan Draft');
+            $('.btn-simpan-dan-ajukan-ke-lanjutan').prop('disabled', false).html('<i class="fa fa-check"></i> Simpan & Lanjutkan →');
           }
         })
       }

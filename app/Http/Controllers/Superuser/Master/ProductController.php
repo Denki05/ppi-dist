@@ -1146,4 +1146,33 @@ class ProductController extends Controller
             }
         }
     }
+
+    /**
+     * 1-klik duplikasi 12 produk lama -> produk IVA baru + repoint SO/DO terlist.
+     * Idempotent & aman diulang (cek exists, acuan kode SO bukan ID).
+     */
+    public function duplicateIva()
+    {
+        if (Auth::user()->is_superuser == 0) {
+            if (empty($this->access) || empty($this->access->user) || $this->access->can_create == 0) {
+                return redirect()->route('superuser.master.product.index')->with('error', 'Anda tidak punya akses untuk proses ini');
+            }
+        }
+
+        try {
+            $summary = (new \App\Services\Master\ProductIvaDuplicateService)->run();
+
+            return redirect()->route('superuser.master.product.index')->with(
+                'success',
+                'Duplikasi IVA selesai. Parent baru: ' . $summary['parents']
+                . ', Child baru: ' . $summary['childs']
+                . ', Min stock: ' . $summary['min_stocks']
+                . ', Min ganda dibersihkan: ' . $summary['min_dedup']
+                . ', SO diarahkan: ' . $summary['so_items']
+                . ', DO diarahkan: ' . $summary['do_items'] . '.'
+            );
+        } catch (\Throwable $e) {
+            return redirect()->route('superuser.master.product.index')->with('error', 'Duplikasi IVA gagal: ' . $e->getMessage());
+        }
+    }
 }

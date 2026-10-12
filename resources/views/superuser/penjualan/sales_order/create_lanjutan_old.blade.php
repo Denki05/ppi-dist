@@ -1,838 +1,797 @@
-@foreach($result->so_detail as $index => $row)
-  @php $row->product->name @endphp
-@endforeach
-
 @extends('superuser.app')
 
 @section('content')
-<nav class="breadcrumb bg-white push">
-  <span class="breadcrumb-item">Penjualan</span>
-  <a class="breadcrumb-item" href="{{ route('superuser.penjualan.sales_order.index_' . strtolower($step_txt)) }}">Sales Order {{ $step_txt }}</a>
-  <span class="breadcrumb-item active">Edit Sales Order</span>
-</nav>
-@if(session('error') || session('success'))
-<div class="alert alert-{{ session('error') ? 'danger' : 'success' }} alert-dismissible fade show" role="alert">
-    @if (session('error'))
-    <strong>Error!</strong> {!! session('error') !!}
-    @elseif (session('success'))
-    <strong>Berhasil!</strong> {!! session('success') !!}
-    @endif
-    <button type="button" class="close" data-dismiss="alert" aria-label="Close">
-        <span aria-hidden="true">&times;</span>
-    </button>
+
+{{-- Pesan Error --}}
+@php
+    $allErrors = collect([]);
+    if($errors->any()){
+        $allErrors = $allErrors->merge($errors->all());
+    }
+    if(session('errors') && count(session('errors')) > 0){
+        $allErrors = $allErrors->merge(session('errors'));
+    }
+@endphp
+
+@if($allErrors->count() > 0)
+<div class="alert alert-danger alert-dismissible fade show" role="alert">
+    <h5 class="alert-heading">Error</h5>
+    <ul class="mb-0">
+        @foreach($allErrors->unique() as $error)
+            <li>{{ $error }}</li>
+        @endforeach
+    </ul>
+    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
 </div>
 @endif
-<div class="block">
-  <div class="block-content pb-3">
-    <div class="row">
-      <div class="col-12">
-        <div role="tabpanel">
-          <ul id="formTab" class="nav nav-tabs" role="tablist">
-            <li class="active"><a class="btn btn-secondary mr-2 active" href="#validasiCustomer" data-toggle="tab">Cek Hutang</a></li>
-            <li><a class="btn btn-secondary mr-2" href="#pembuatanPO">Cek Detail Barang</a></li>
-          </ul>
-          <div class="tab-content">
-            <div class="tab-pane pt-3 active" role="tabpanel" id="validasiCustomer">
-              <div class="row mb-3">
-                <div class="col-12">
-                  @if($step == 1 || $step == 2)
-                  <div class="form-group row">
-                    <label class="col-md-2 col-form-label text-right">Customer</label>
-                    <div class="col-md-8">
-                      <select class="form-control js-select2 select-customer" name="customer_other_address_id" @if($step == 2) disabled @endif>
-                        <option value="">==Select customer==</option>
-                        @foreach($member as $index => $row)
-                          <option value="{{$row->id}}" @if($result->customer_other_address_id == $row->id && $result->so_for == 1) selected @endif>{{$row->name}}</option>
-                        @endforeach
-                      </select>
-                    </div>
-                  </div>
-                  @endif
-                  @if($step == 1 || $step == 2)
-                  <div class="form-group row">
-                    <label class="col-md-2 col-form-label text-right">Address</label>
-                    <div class="col-md-8">
-                      @if($result->so_for == 1)
-                      <textarea type="text" name="address" class="form-control" readonly>{{$result->member->address ?? ''}}</textarea>
-                      @else
-                      <textarea type="text" name="address" class="form-control" readonly>{{$result->warehouse->address ?? ''}}</textarea>
-                      @endif
-                    </div>
-                  </div>
-                  @endif
-                  
-                  @if($step == 1 || $step == 2)
-                  <div class="form-group row">
-                    <label class="col-md-2 col-form-label text-right" for="name">Sales Senior<span class="text-danger">*</span></label>
-                    <div class="col-md-8">
-                      <select class="form-control js-select2" name="sales_senior_id" @if($step == 2) disabled @endif>
-                        <option value="">==Select sales senior==</option>
-                        @foreach($sales as $index => $row)
-                          <option value="{{$row->id}}" @if($result->sales_senior_id == $row->id) selected @endif>{{$row->name}}</option>
-                        @endforeach
-                      </select>
-                    </div>
-                  </div>
-                  @endif
-                  @if($step == 1 || $step == 2)
-                  <div class="form-group row">
-                    <label class="col-md-2 col-form-label text-right" for="name">Sales <span class="text-danger">*</span></label>
-                    <div class="col-md-8">
-                      <select class="form-control js-select2" name="sales_id" @if($step == 2) disabled @endif>
-                        <option value="">==Select sales==</option>
-                        @foreach($sales as $index => $row)
-                          <option value="{{$row->id}}" @if($result->sales_id == $row->id) selected @endif>{{$row->name}}</option>
-                        @endforeach
-                      </select>
-                    </div>
-                  </div>
-                  @endif
-                  @if(1 != 1)
-                  <div class="form-group row">
-                    <label class="col-md-2 col-form-label text-right">Destination warehouse</label>
-                    <div class="col-md-1">
-                      <input type="checkbox" name="checkbox_destination_warehouse" value="1" class="form-control select-checkbox mx-auto" style="width: 20px;" @if($result->so_for == 2) checked="true" @endif>
-                    </div>
-                    <div class="col-md-7">
-                      <select class="form-control js-select2 select-warehouse" name="destination_warehouse_id" @if($result->so_for == 1) disabled="true" @endif>
-                        <option value="">==Select destination warehouse==</option>
-                        @foreach($warehouse as $index => $row)
-                          <option value="{{$row->id}}" @if($result->destination_warehouse_id == $row->id && $result->so_for == 2) selected @endif>{{$row->name}}</option>
-                        @endforeach
-                      </select>
-                    </div>
-                  </div>
-                  @endif
+
+{{-- Pesan Warning --}}
+@if(session('warnings') && count(session('warnings')) > 0)
+<div class="alert alert-warning alert-dismissible fade show" role="alert">
+    <h5 class="alert-heading">Warning</h5>
+    <ul class="mb-0">
+        @foreach(session('warnings') as $warning)
+            <li>{{ $warning }}</li>
+        @endforeach
+    </ul>
+    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+</div>
+@endif
+
+{{-- Pesan Sukses --}}
+@if(session()->has('message'))
+<div class="alert alert-success alert-dismissible fade show" role="alert">
+    <h5 class="alert-heading">Success</h5>
+    <p class="mb-0">{{ session('message') }}</p>
+    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+</div>
+@endif
+
+<div id="alert-block"></div>
+
+<div id="page-loading-overlay" style="position:fixed;inset:0;background:rgba(255,255,255,0.85);z-index:9999;display:flex;flex-direction:column;align-items:center;justify-content:center;">
+  <div class="spinner-border text-primary" role="status" style="width:3rem;height:3rem;"></div>
+  <p class="mt-15" style="font-weight:600;">Harap tunggu sebentar, sedang kalkulasi perhitungan...</p>
+</div>
+
+<form class="ajax" data-action="{{ route('superuser.penjualan.sales_order.tutup_so' ) }}" data-type="POST" enctype="multipart/form-data">
+@csrf
+  <input type="hidden" name="id" value="{{$result->id}}">
+  <input type="hidden" name="step" value="{{$step}}">
+
+  <div class="row">
+    <div class="col-6">
+      <div class="block">
+        <div class="block-header block-header-default">
+          <h3 class="block-title">#Detail Nota</h3>
+        </div>
+        <div class="block-content">
+          <div class="form-row">
+            <div class="form-group col-md-6">
+              <label for="so_date">Tanggal Nota</label>
+              <input type="date" name="so_date" class="form-control" required>
+            </div>
+            <div class="form-group col-md-6">
+              <label for="type_transaction">Type Transaksi</label>
+              <input type="text" name="type_transaction" class="form-control" value="{{ $result->type_transaction }}" readonly>
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group col-md-6">
+              <label for="warehouse_id">Gudang <span class="text-danger">*</span></label>
+              <select class="form-control js-select2" style="font-size: 9pt;" name="origin_warehouse_id">
+                <option value="">Pilih Gudang</option>
+                @foreach($warehouse as $index => $row)
+                <option style="font-size: 10pt;" value="{{$row->id}}" @if($result->origin_warehouse_id == $row->id) selected @endif>{{$row->name}}</option>
+                @endforeach
+              </select>
+            </div>
+            <div class="form-group col-md-6">
+              <label for="type_transaction">Eksepdisi <span class="text-danger">*</span></label>
+              <select class="form-control js-select2" name="ekspedisi" required>
+                <option value="">Pilih Ekspedisi</option>
+                @foreach($ekspedisi as $index)
+                <option value="{{ $index->id }}">{{ $index->name }}</option>
+                @endforeach
+              </select>
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group col-md-6">
+              <label for="sales_senior_id">Sales Senior <span class="text-danger">*</span></label>
+              <select class="form-control js-select2" name="sales_senior_id" required>
+                <option value="">Pilih Sales Senior</option>
+                @foreach(\App\Entities\Penjualan\SalesOrder::SALES_SENIOR as $sales_senior => $senior_value)
+                <option value="{{ $senior_value }}">{{ $sales_senior }}</option>
+                @endforeach
+              </select>
+            </div>
+            <div class="form-group col-md-6">
+              <label for="sales_id">Sales <span class="text-danger">*</span></label>
+              <select class="form-control js-select2" name="sales_id" required>
+                <option value="">Pilih Sales</option>
+                @foreach(\App\Entities\Penjualan\SalesOrder::SALES as $sales => $sales_value)
+                <option value="{{ $sales_value }}">{{ $sales }}</option>
+                @endforeach
+              </select>
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group col-md-6">
+              <label for="note">Catatan</label>
+              <!-- <input type="text" class="form-control" value="{{ $result->note ?? '-' }}" readonly> -->
+              <textarea class="form-control" name="note" rows="1" readonly>{{ $result->note }}</textarea>
+            </div>
+            <div class="form-check-inline">
+              <label class="form-check-label">
+                <input type="checkbox" class="form-check-input" value="1" id="shipping_cost_buyer" name="shipping_cost_buyer">Bayar ditempat
+              </label>
+            </div>
+            @if($result->count_rev == 1)
+              <div class="form-check-inline">
+                <label class="form-check-label">
+                  <input type="checkbox" class="form-check-input" value="1" id="keep_old_code" name="keep_old_code" @if(!empty($keep_code_taken)) disabled @endif>Previous Code @if(!empty($result->keep_code)) ({{ $result->keep_code }}) @endif
+                </label>
+              </div>
+              @if(!empty($keep_code_taken))
+                <div class="alert alert-warning mt-2 mb-0" style="font-size:9pt;">
+                  Kode {{ $result->keep_code }} sudah dipakai SO lain{{ !empty($keep_code_taken_by) ? ' ('.$keep_code_taken_by.')' : '' }}, tidak bisa pakai Previous Code. Akan memakai nomor bebas{{ !empty($suggested_code) ? ' '.$suggested_code : ' di atasnya' }}.
+                </div>
+              @elseif(!empty($result->keep_code))
+                <div class="text-muted mt-1" style="font-size:9pt;">
+                  Centang untuk pakai kode lama {{ $result->keep_code }}. Kosongkan untuk pakai nomor bebas{{ !empty($suggested_code) ? ' '.$suggested_code : '' }}.
+                </div>
+              @endif
+            @endif
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-6">
+      <div class="row">
+        <div class="col">
+          <div class="block">
+            <div class="block-header block-header-default">
+              <h3 class="block-title">#Customer Info</h3>
+            </div>
+            <div class="block-content">
+              <div class="form-row">
+                <div class="form-group col-md-6">
+                  <label for="type_transaction">Customer</label>
+                  <input type="text" name="customer_name" class="form-control" value="{{ $result->member->name }} {{$result->member->text_kota}}" readonly>
+                </div>
+                <div class="form-group col-md-6">
+                  <label for="note">Alamat Kirim</label>
+                  <textarea class="form-control" rows="1" readonly>{{ $result->member->address }}</textarea>
                 </div>
               </div>
 
-              <div class="row mb-3">
-                <div class="col-3">
-                  <select id="selectCustomerOutstandingCategory" class="form-control js-select2 select-category" data-index="0">
-                    <option value="">==Semua==</option>
-                    @foreach($product_category as $index => $row)
-                      <option value="{{$row->id}}">{{$row->name}}</option>
-                    @endforeach
-                  </select>
+              <div class="form-row">
+                <div class="form-group col-md-6">
+                  <label for="customer_city">Kota</label>
+                  <input type="text" name="customer_city" class="form-control" value="{{$result->member->text_kota}}" readonly>
                 </div>
-              </div>
-
-              <div class="row mb-3">
-                <div class="col-12">
-                  <table class="customer-outstanding mt-3 mb-3">
-                    <?php
-                      $total_outstanding = 0;
-                      $total_outstanding_past_due_date = 0;
-                      if(isset($customer_history) && sizeof($customer_history) > 0) {
-                        foreach($customer_history as $index => $row) {
-                          $total_outstanding += $row->grand_total_idr;
-                        }
-                      }
-                    ?>
-                    <tr>
-                      <td class="text-left">Total Outstanding</td>
-                      <td>:</td>
-                      <td class="text-left">{{ number_format($total_outstanding,0,',','.') }}</td>
-                    </tr>
-                    <tr>
-                      <td class="text-left">Total Outstanding Lewat Jatuh Tempo</td>
-                      <td>:</td>
-                      <td class="text-left">{{ number_format($total_outstanding,0,',','.') }}</td>
-                    </tr>
-                  </table>
-                </div>
-              </div>
-
-              <div class="row mb-3">
-                <div class="col-12">
-                  @if(isset($customer_history) && sizeof($customer_history) > 0)
-                  <table id="tableCustomerOutstanding" class="table table-hover">
-                    <thead>
-                      <tr>
-                        <th class="text-center">No</th>
-                        <th class="text-center">Invoice No</th>
-                        <th class="text-center">Tanggal</th>
-                        <th class="text-center">Product</th>
-                        <th class="text-right">Total Invoice</th>
-                        <th class="text-right">Total Payment</th>
-                        <th class="text-right">Outstanding</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      @foreach($customer_history as $index => $row)
-                      <tr>
-                        <td>{{ $index + 1 }}</td>
-                        <td>{{ $row->code }}</td>
-                        <td>{{ date('Y-m-d h:i:s',strtotime($row->created_at)) }}</td>
-                        <td>
-                          <?php
-                            if (sizeof($row->do->do_detail) > 0) {
-                              foreach($row->do->do_detail as $indexdodetail => $row_do_detail) {
-                                echo $row_do_detail->product->name . ' - ' . $packaging_dictionary[$row_do_detail->packaging] . '<br />';
-                              }
-                            }
-                          ?>
-                        </td>
-                        <td class="text-right">{{ number_format($row->grand_total_idr,0,',','.') }}</td>
-                        <td class="text-right">
-                          <?php
-                            $total_paid = 0;
-                            if (sizeof($row->payable_detail) > 0) {
-                              foreach($row->payable_detail as $indexpayable => $row_payable) {
-                                $total_paid += $row_payable->total;
-                              }
-                            }
-                          ?>{{ number_format($total_paid,0,',','.') }}</td>
-                        <td class="text-right">{{ number_format(($row->grand_total_idr - $total_paid),0,',','.') }}</td>
-                      </tr>
-                      @endforeach
-                    </tbody>
-                  </table>
-                  @endif
-                  @if(isset($customer_history) && sizeof($customer_history) == 0)
-                  <div class="text-center">Tidak ada data outstanding</div>
-                  @endif
-                </div>
-              </div>
-
-              <hr />
-
-              <div class="row">
-                <div class="col-12 text-center mb-30">
-                  <a href="{{ URL::previous() }}" class="btn btn-warning  btn-md text-white"><i class="fa fa-arrow-left"></i> Back</a>
-                  <button type="button" class="btn btn-primary" onclick="activaTab('pembuatanPO')">Next</button>
+                <div class="form-group col-md-6">
+                  <label for="customer_area">Provinsi</label>
+                  <input type="text" name="customer_area" class="form-control" value="{{ $result->member->text_provinsi }} " readonly>
                 </div>
               </div>
             </div>
+          </div>
+        </div>
+      </div>
 
-
-            <!-- form save packing order -->
-            <div class="tab-pane pt-3" role="tabpanel" id="pembuatanPO">
-              <form id="frmEditSOMaster" method="post" enctype="multipart/form-data">
-                @csrf
-                <input type="hidden" name="id" value="{{$result->id}}">
-                <input type="hidden" name="step" value="{{$step}}">
-                <div class="row">
-                  <div class="col-12">
-                    <h5>#Data Pesanan</h5>
-                    @if($step == 2)
-                    <div class="form-group row">
-                      <label class="col-md-2 col-form-label text-right">Note</label>
-                      <div class="col-md-8">
-                        <textarea class="form-control" readonly name="note" rows="3">{{$result->note}}</textarea>
-                      </div>
-                    </div>
-                    @endif
-                    @if($step == 2)
-                    <div class="form-group row">
-                      <label class="col-md-2 col-form-label text-right">Gudang Asal<span class="text-danger">*</span></label>
-                      <div class="col-md-8">
-                        <select class="form-control js-select2" name="origin_warehouse_id">
-                          <option value="">==Select origin warehouse==</option>
-                          @foreach($warehouse as $index => $row)
-                            <option value="{{$row->id}}" @if($result->origin_warehouse_id == $row->id) selected @endif>{{$row->name}}</option>
-                          @endforeach
-                        </select>
-                      </div>
-                    </div>
-                    @endif
-                    @if($step == 2)
-                    <div class="form-group row">
-                      <label class="col-md-2 col-form-label text-right">IDR Rate<span class="text-danger">*</span></label>
-                      <div class="col-md-8">
-                        <input type="text" name="idr_rate" class="form-control" step="any">
-                      </div>
-                    </div>
-                    @endif
-                  </div>
+      <div class="row">
+        <div class="col">
+          <div class="block">
+            <div class="block-content">
+              <div class="form-row">
+                @if($step == 2)
+                <div class="form-group col-md-4">
+                  <label for="note">Rekening <span class="text-danger">*</span></label>
+                  <select class="form-control js-select2 required-field" name="rekening">
+                    <option value="">Pilih Rekening</option>
+                    @foreach($rekening as $key)
+                    <option value="{{$key->id}}">{{$key->name}} - {{$key->number_card}}</option>
+                    @endforeach
+                  </select>
                 </div>
-
-                <hr />
-
-                <div class="row">
-                  <div class="col-12 product-list">
-                    <h5>Detail Pesanan</h5>
-
-                    <table id="tableDetailPesanan" class="table striped table-bordered">
-                      <thead>
-                        <th>No</th>
-                        <th>Nama Barang</th>
-                        <th>Kategori</th>
-                        <th>Jumlah Permintaan (Kg)</th>
-                        <th>Kemasan</th>
-                        <th>In Stock / KG (dikerjakan)</th>
-                        <th>Keterangan</th>
-                      </thead>
-                      <tbody>
-                        @if(count($result->so_detail) <= 0)
-                          <tr>
-                            <td colspan="13" align="center">Data tidak ditemukan</td>
-                          </tr>
-                        @endif
-                        @if(count($result->so_detail) > 0)
-                          @foreach($result->so_detail as $index => $row)
-                          <input type="hidden" name="repeater[{{$index}}][product_id]" value="{{$row->product_id}}">
-                          <input type="hidden" name="repeater[{{$index}}][so_qty]" value="{{$row->qty}}">
-                          <input type="hidden" name="repeater[{{$index}}][so_item_id]" value="{{$row->id}}">
-                          <input type="hidden" name="repeater[{{$index}}][packaging]" class="form-control" readonly value="{{$row->packaging_txt()->scalar ?? ''}}">
-                          <input type="hidden" name="repeater[{{$index}}][price]" class="form-control" readonly value="{{$row->product->selling_price ?? 0}}">
-                          <tr class="index{{$index}}" data-index="{{$index}}">
-                            <td>{{$index + 1}}</td>
-                            <td>{{$row->product->code ?? ''}} - {{$row->product->name ?? ''}}</td>
-                            <td>{{$row->product->category->name ?? ''}} - {{$row->product->category->type ?? ''}}</td>
-                            <td>{{$row->qty}}</td>
-                            <td>{{$row->packaging_txt()->scalar ?? ''}}</td>
-                            <td>
-                              <input type="number" name="repeater[{{$index}}][do_qty]" class="form-control count" data-index="{{$index}}" value="{{$row->qty}}" step="any" min="0" max="{{$row->qty}}">
-                            </td>
-                            <td>
-                              <input type="text" name="repeater[{{$index}}][note]" class="form-control">
-                            </td>
-                          </tr>
-                          @endforeach
-                        @endif
-                      </tbody>
-                    </table>
-                  </div>
+                @endif
+                @if($step == 2)
+                <div class="form-group col-md-4">
+                  <label for="customer_area">Kurs <span class="text-danger">*</span></label>
+                  @if($result->approval_mou == 1)
+                    <input type="text" id="idr_rate_display" class="form-control" value="{{ number_format((float) $result->idr_rate, 0, ',', '.') }}" readonly>
+                    <input type="hidden" name="idr_rate" id="idr_rate" value="{{ $result->idr_rate }}">
+                  @else
+                    <input type="text" id="idr_rate_display" class="form-control" value="{{ number_format((float) $result->idr_rate, 0, ',', '.') }}" placeholder="cth: 18.050">
+                    <input type="hidden" name="idr_rate" id="idr_rate" value="{{ $result->idr_rate }}">
+                  @endif    
                 </div>
-
-                <hr />
-
-                <div class="row mb-30">
-                  <div class="col-12 text-center">
-                    <a href="{{ URL::previous() }}" class="btn btn-warning  btn-md text-white"><i class="fa fa-arrow-left"></i> Back</a>
-                    <button type="button" class="btn btn-info" onclick="activaTab('validasiCustomer')">Kembali Validasi Customer</button>
-                    <button class="btn btn-primary btn-md" type="submit" disabled="disabled"><i class="fa fa-save"></i> Save</button>
-                  </div>
+                @endif
+                @if($step == 2)
+                <div class="form-group col-md-4">
+                  <label for="customer_area">Disc Cash <span class="text-danger">*</span></label>
+                  @php
+                    // Preselect ikut disc item bila seragam (item bisa $2 walau header $result->disc_usd $0),
+                    // fallback ke header seperti sebelumnya. Dropdown ini hanya bulk-setter, tidak auto-ubah saat load.
+                    $baseDiscDefault = $result->disc_usd ?? 0;
+                    if (isset($result->so_detail) && count($result->so_detail) > 0) {
+                        $rowDiscs = collect($result->so_detail)->map(function ($d) { return (float) ($d->disc_usd ?? 0); })->unique()->values();
+                        if ($rowDiscs->count() === 1 && in_array($rowDiscs->first(), [0.0, 2.0, 4.0], true)) {
+                            $baseDiscDefault = $rowDiscs->first();
+                        }
+                    }
+                  @endphp
+                  <select class="form-control js-select2 base_disc" id="base_id">
+                    <option value="0" {{ $baseDiscDefault == 0 ? 'selected' : '' }}>$0</option>
+                    <option value="2" {{ $baseDiscDefault == 2 ? 'selected' : '' }}>$2</option>
+                    <option value="4" {{ $baseDiscDefault == 4 ? 'selected' : '' }}>$4</option>
+                  </select>
                 </div>
-              </form>
+                @endif
+              </div>
             </div>
           </div>
         </div>
       </div>
     </div>
   </div>
+
+  <div class="row">
+            <aside class="col-lg-9">
+                <div class="card border-0">
+                    <div class="table-responsive">
+                        <table class="table table-hover" id="datatables" style="white-space:nowrap;width:100%;">
+                            <thead class="text-muted">
+                                <tr class="small text-uppercase">
+                                    <th class="block" style="width:auto"></th>
+                                    <th class="block" style="width:auto">#</th>
+                                    <th class="block" style="width:10%">Product</th>
+                                    <th class="block" style="width:auto">Qty</th>
+                                    <th class="block" style="width:5%">In Stock</th>
+                                    <th class="block" style="width:15%">Harga</th>
+                                    <th class="block" style="width:auto">Free</th>
+                                    <th class="block" style="width:20%">Kemasan</th>
+                                    <th class="block" style="width:2%">Disc (USD)</th>
+                                    <th class="block" style="width:30%">Total</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                              @if(count($result->so_detail) <= 0)
+                                <tr>
+                                  <td colspan="13" align="center">Data tidak ditemukan</td>
+                                </tr>
+                              @endif
+                              @if(count($result->so_detail) > 0)
+                                @foreach($result->so_detail as $index => $detail)
+                                  <tr class="index{{$index}}" data-index="{{$index}}">
+                                    <input type="hidden" name="repeater[{{$index}}][product_packaging_id]" value="{{$detail->product_packaging_id}}">
+                                    <input type="hidden" name="repeater[{{$index}}][so_qty]" value="{{$detail->qty}}">
+                                    <input type="hidden" name="repeater[{{$index}}][so_item_id]" value="{{$detail->id}}">
+
+                                    <td>
+                                      <div class="form-check">
+                                          <input class="form-check-input position-static" type="checkbox" name="repeater[{{$index}}][indentProduct]" id="indentProduct" value="1" data-id="{{ $detail->id }}" data-product="{{ $detail->product_packaging_id }}">
+                                        </div>
+                                    </td>
+                                    <td>{{ $loop->iteration }}</td>
+                                    <td>{{ $detail->product_pack->code }} - <b>{{ $detail->product_pack->name }}</b> - {{$detail->product_pack->warehouse->name}}</td>
+                                    <td>{{$detail->qty}}</td>
+                                    <td>
+                                      <input type="number" name="repeater[{{$index}}][do_qty]" class="form-control count" data-index="{{$index}}" value="{{$detail->qty}}" step="any">
+                                    </td>
+                                    <td>
+                                      @if($detail->kontrak == 0)
+                                        <input type="text" name="repeater[{{$index}}][price]" class="form-control price" value="@if ($detail->free_product == 1) 0 @elseif ($detail->price == 0) {{ $detail->product_pack->price }} @else {{ $detail->price }} @endif">
+                                      @else
+                                        <input type="text" name="repeater[{{$index}}][price]" class="form-control price" value="@if ($detail->free_product == 1) 0 @elseif ($detail->price == 0) {{ $detail->product_pack->price }} @else {{ $detail->price }} @endif" readonly>
+                                      @endif
+                                    <!-- <input type="text" name="repeater[{{$index}}][price]" class="form-control price" value="@if($detail->free_product == 1) 0 @else {{$detail->product_pack->price}} @endif">   -->
+                                    
+                                    </td>
+                                    <td>
+                                      <input class="form-check-input free-count" type="checkbox" value="{{$detail->free_product}}" name="repeater[{{$index}}][free_product]" @if($detail->free_product == 1) checked=checked @endif disabled>
+                                    </td>
+                                    <td>
+                                      <input type="text" name="kemasan" class="form-control text-center" readonly value="{{$detail->product_pack->packaging->pack_name ?? ''}}">
+                                      <input type="hidden" name="repeater[{{$index}}][packaging]" class="form-control" readonly value="{{$detail->product_pack->packaging->id ?? ''}}">
+                                    </td>
+                                    <td>
+                                        <input type="number" name="repeater[{{$index}}][usd_disc]" class="form-control count count-disc" data-index="{{$index}}" step="any" value="{{ $detail->disc_usd }}" />
+                                    </td>
+                                    <td>
+                                      <input type="text" name="repeater[{{$index}}][total]" class="form-control " readonly>
+                                    </td>
+                                  </tr>
+                                @endforeach
+                              @endif
+                            </tbody>
+                            <tfoot>
+                              <tr class="row-footer-subtotal">
+                                <td colspan="8" class="text-right">
+                                  <b>Subtotal</b>
+                                </td>
+                                <td class="text-right">
+                                  <input type="text" name="sub_total_item" id="sub_total_item" class="form-control " readonly step="any">
+                                </td>
+                              </tr>
+                            </tfoot>
+                        </table>
+                    </div>
+                </div>
+            </aside>
+            <aside class="col-lg-3">
+                <div class="card border-0">
+                    <div class="card-body">
+                      <div class="form-group row">
+                        <label class="col-sm-4 col-form-label">Disc %</label>
+                        <div class="col-sm-3">
+                          @if($result->approval_mou == 1)
+                            <input type="text" class="form-control" id="disc_agen_percent" name="disc_agen_percent" value="{{ $result->disc_percent ?? 0 }}" readonly>
+                          @else
+                            <input type="text" class="form-control" id="disc_agen_percent" name="disc_agen_percent" value="{{ $result->disc_percent ?? 0 }}" placeholder="{{ $result->disc_percent ?? 0 }}" required>
+                          @endif
+                        </div>
+                        <div class="col-sm-5">
+                          <input type="text" readonly class="form-control" id="disc_agen_idr" name="disc_agen_idr">
+                        </div>
+                      </div>
+                      <div class="form-group row">
+                        <label class="col-sm-4 col-form-label">Disc Kemasan</label>
+                        <div class="col-sm-3">
+                          <input type="text" class="form-control" id="disc_kemasan_percent" name="disc_kemasan_percent" value="{{ $result->disc_kemasan ?? 0 }}">
+                        </div>
+                        <div class="col-sm-5">
+                          <input type="text" readonly class="form-control" id="disc_kemasan_idr" name="disc_kemasan_idr">
+                        </div>
+                      </div>
+                      <div class="form-group row">
+                        <label class="col-sm-4 col-form-label">Disc IDR</label>
+                        <div class="col-sm-8">
+                          <input type="text" class="form-control" id="disc_tambahan_idr" name="disc_tambahan_idr" value="{{ number_format((float)($result->disc_idr ?? 0), 0, ',', '.') }}">
+                        </div>
+                      </div>
+                      <div class="form-group row">
+                        <label class="col-sm-4 col-form-label">Voucher</label>
+                        <div class="col-sm-8">
+                          <input type="text" class="form-control" id="voucher_idr" name="voucher_idr">
+                        </div>
+                      </div>
+                      <div class="form-group row">
+                        <label class="col-sm-4 col-form-label">Ongkir</label>
+                        <div class="col-sm-8">
+                          <input type="text" class="form-control" id="delivery_cost_idr" name="delivery_cost_idr">
+                        </div>
+                      </div>
+                      <div class="form-group row">
+                        <label class="col-sm-4 col-form-label">Grand Total</label>
+                        <div class="col-sm-8">
+                          <input type="text" class="form-control required-field" id="grand_total_idr" name="grand_total_idr" readonly>
+                          <input type="hidden" class="form-control" name="subtotal_2" id="subtotal_2">
+                        </div>
+                      </div>
+
+                      <div class="mt-3">
+                          <button type="button" class="btn btn-warning mb-2" id="btn_call">
+                            <i class="fas fa-calculator pr-2" aria-hidden="true"></i> Calculated
+                          </button>
+
+                          <button type="submit" class="btn btn-primary mb-2" id="save_form">
+                            <i class="fa fa-save pr-2" aria-hidden="true"></i> Save
+                          </button>
+                      </div>
+                    </div>
+                </div>
+            </aside>
+        </div>
+
+        <div class="row pt-30 mb-15">
+          <div class="col-md-6">
+            <a href="{{ route('superuser.penjualan.sales_order.index_lanjutan') }}">
+              <button type="button" class="btn bg-gd-cherry border-0 text-white">
+                <i class="fa fa-arrow-left mr-10"></i> Back
+              </button>
+            </a>
+          </div>
+          {{--<div class="col-md-6 text-right">
+            <button type="button" class="btn bg-gd-corporate border-0 text-white" data-toggle="modal" data-target="#exampleModal">
+              <i class="fa fa-times mr-10"></i> Kembali SO awal
+            </button>
+          </div>--}}
+        </div>
+</form>
+
+@endsection
+
+<!-- Modal balik ke so awal + catatan -->
+
+<div class="modal fade" id="exampleModal" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true">
+  <div class="modal-dialog" role="document">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="exampleModalLabel">Kembali ke so awal</h5>
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body">
+        <form class="ajax" data-action="{{route('superuser.penjualan.sales_order.kembali_hold', $result->id)}}" data-type="POST" enctype="multipart/form-data">
+          @csrf
+          <div class="form-group">
+            <label for="catatan_kembali">Catatan <span class="text-danger">*</span></label>
+            <input type="text" class="form-control" name="catatan_kembali" required>
+          </div>   
+          <button type="submit" class="btn mt-10 w-100 btn-alt-info">Save</button>
+        </form>
+      </div>
+
+    </div>
+  </div>
 </div>
 
-<form method="post" action="{{route('superuser.penjualan.sales_order.destroy_item')}}" id="frmDestroyItem">
-    @csrf
-    <input type="hidden" name="id">
-</form>
-<!-- Modal -->
-@include('superuser.penjualan.sales_order.customer_performance_modal')
-@include('superuser.penjualan.sales_order.tidak_lanjut_modal')
-<!-- End Modal -->
-@endsection
+
 
 @include('superuser.asset.plugin.select2')
 @include('superuser.asset.plugin.swal2')
+@include('superuser.asset.plugin.datatables')
 
 @push('scripts')
-<script>
-  var customerOutstandingData = [<?php
-    if(isset($customer_history) && sizeof($customer_history) > 0) {
-      $index = 0;
-      foreach($customer_history as $index => $row) {
-        echo $row;
+<script src="{{ asset('utility/superuser/js/form.js') }}"></script>
+<script type="text/javascript">
+  $(document).ready(function () {
+    let approval_mou = {{ $result->approval_mou ?? 0 }};
 
-        if ($index < sizeof($customer_history)) {
-          echo ',';
-        }
-
-        $index++;
-      }
-    }
-  ?>];
-
-  var soDetails = [<?php
-    if(isset($result->so_detail) && sizeof($result->so_detail) > 0) {
-      $index = 0;
-      foreach($result->so_detail as $index => $row) {
-        echo $row;
-
-        if ($index < sizeof($result->so_detail)) {
-          echo ',';
-        }
-
-        $index++;
-      }
-    }
-  ?>];
-
-  var packagingDictionary = [];
-  <?php
-    if(isset($packaging_dictionary) && sizeof($packaging_dictionary) > 0) {
-      foreach($packaging_dictionary as $index => $row) {
-        echo 'packagingDictionary[' . $index . '] = "' . $row . '";';
-
-      }
-    }
-  ?>
-
-  console.log('asd', soDetails);
-
-  $(function(){
-    let global_total = 0 ;
-    $('button[type="submit"]').removeAttr('disabled');
     $('.js-select2').select2();
 
-    let param = [];
-    param["category_id"] = "";
-    param["type_id"] = "";
+    $('#datatables').DataTable({
+      paging: false,
+      searching: false,
+      info: false,
+      scrollY: '430px',
+      scrollCollapse: true,
+    });
 
-    loadProduct({});
+    function initLoadCalculate() {
+      // 1. Hitung total per item saat halaman pertama kali diload
+      $('tbody tr').each(function (index, e) {
+        count_per_item(index);
+      });
 
-    $(document).on('change','.select-category',function(){
-      param["category_id"] = $(this).val();
-      loadProduct({
-        category_id:param["category_id"],
-        type_id : param["type_id"]
-      })
-    })
+      // 2. Jika nilai diskon kosong, set default ke 0
+      $('#disc_agen_percent, #disc_kemasan_percent, #disc_tambahan_idr, #voucher_idr, #delivery_cost_idr').each(function () {
+        if ($(this).val() === '') $(this).val('0');
+      });
 
-    $(document).on('click','.select-checkbox',function(){
-      if($(this).is(':checked')){
+      // 3. Picu kalkulasi grand total
+      hitungDiscAgen();
+    }
 
-        $('select[name="destination_warehouse_id"]').attr('disabled',false);
+    initLoadCalculate();
 
-        $('select[name="customer_id"]').val(null).trigger('change')
-        $('select[name="customer_id"]').attr('disabled',true);
-        $('textarea[name="address"]').val("");
+    setTimeout(function () {
+      $('#page-loading-overlay').fadeOut(200);
+    }, 300);
+
+    $('.base_disc').on('change', function () {
+      let baseDisc = $(this).val(); // Tangkap nilai diskon dari dropdown (0, 2, atau 4)
+
+      $('tbody tr').each(function (index, e) {
+        let freeProduct = $('tr.index' + index + '').find('input[name="repeater[' + index + '][free_product]"]').val();
+
+        // Timpa nilai diskon di tabel, KECUALI untuk produk gratis
+        if (freeProduct == 1) {
+          $('tr.index' + index + '').find('input[name="repeater[' + index + '][usd_disc]"]').val(0);
+        } else {
+          $('tr.index' + index + '').find('input[name="repeater[' + index + '][usd_disc]"]').val(baseDisc);
+        }
+
+        // Hitung ulang baris tersebut
+        count_per_item(index);
+      });
+
+      // Lanjutkan hitung total bawah
+      hitungDiscAgen();
+    });
+
+    // Harga (class .price) WAJIB ikut memicu hitung ulang per baris.
+    // Sebelumnya hanya .count (do_qty/usd_disc) yang memicu, sehingga edit harga
+    // tidak merubah total/subtotal/grand di layar -> submit membawa grand stale
+    // dan backend menolak dengan "Grand total tidak sesuai kalkulasi".
+    $(document).on('keyup change', '.count, .price', function() {
+      let index = $(this).attr('data-index');
+      // Input harga tidak punya data-index, cari dari baris terdekat
+      if (index === undefined) {
+        index = $(this).closest('tr').attr('data-index');
       }
-      else{
-       $('select[name="customer_id"]').attr('disabled',false);
+      count_per_item(index); // Langsung hitung ulang baris tersebut tanpa mereset baris lain
+    });
 
-       $('select[name="destination_warehouse_id"]').val(null).trigger('change')
-       $('select[name="destination_warehouse_id"]').attr('disabled',true);
-       $('textarea[name="address"]').val("");
-      }
-    })
+    // function countGetUsd() {
+    //   $('tbody tr').each(function (index, e) {
+    //     let baseDisc = $('.base_disc').val();
+    //     let freeProduct = $('tr.index' + index + '').find('input[name="repeater[' + index + '][free_product]"]').val();
 
-    $(document).on('change','.select-customer',function(){
-      let val = $(this).val();
-      if(val != ""){
-        customer_address(val);
-      }else{
-        $('textarea[name="address"]').val("");
-      }
-    })
+    //     if (freeProduct == 1) {
+    //       $('tr.index' + index + '').find('input[name="repeater[' + index + '][usd_disc]"]').val(0);
+    //     } else {
+    //       $('tr.index' + index + '').find('input[name="repeater[' + index + '][usd_disc]"]').val(baseDisc);
+    //     }
 
-    $(document).on('change','.select-warehouse',function(){
-      let val = $(this).val();
-      if(val != ""){
-        warehouse_address(val);
-      }else{
-        $('textarea[name="address"]').val("");
-      }
-    })
+    //     count_per_item(index);
+    //   });
 
-    $(document).on('click','#buttonAddProduct',function(){
-      const categoryId = $('.select-category[data-index=0]').val();
-      const categoryText = $('.select-category[data-index=0] option:selected').text();
-      const productId = $('.select-product[data-index=0]').val();
-      const productText = $('.select-product[data-index=0] option:selected').text();
-      const qty = $('.input-qty[data-index=0]').val();
-      const packagingId = $('.select-packaging[data-index=0]').val();
-      const packagingText = $('.select-packaging[data-index=0] option:selected').text();
-      if (categoryId === null || categoryId === '' || productId === null || productId === '' || qty === null || qty === '' || packagingId == null || packagingId === '') {
-        Swal.fire(
-          'Error!',
-          'Please input all the data',
-          'error'
-        );
-        return;
-      }
+    //   hitungDiscAgen();
+    // }
 
-      let html = "<div class='row mt-10 product-row category-" + categoryId + "'>";
-      html += "  <div class='col-3'>";
-      html += "    <input type='hidden' class='form-control' value='" + categoryId + "'>";
-      html += categoryText;
-      html += "  </div>";
-      html += "  <div class='col-3'>";
-      html += "    <input type='hidden' name='product_id[]' class='form-control' value='" + productId + "'>";
-      html += productText;
-      html += "  </div>";
-      html += "  <div class='col-1 text-right'>";
-      html += "    <input type='hidden' name='qty[]' class='form-control' value='" + qty + "'>";
-      html += qty;
-      html += "  </div>";
-      html += "  <div class='col-3'>";
-      html += "    <input type='hidden' name='packaging[]' class='form-control' value='" + packagingId + "'>";
-      html += packagingText;
-      html += "  </div>";
-      html += "  <div class='col-1'>";
-      html += "    <button type='button' id='buttonDeleteProduct' class='btn btn-danger'><em class='fa fa-minus'></em></button>";
-      html += "  </div>";
-      html += "</div>";
+    // $(document).on('keyup', '.count', function() {
+    //   let index = $(this).attr('data-index');
+    //   count_per_item(index);
+    // });
+
+    function count_per_item(indx) {
+      let index = indx;
+      let price = parseFloat($('tr.index' + index + '').find('input[name="repeater[' + index + '][price]"]').val());
+      let do_qty = parseFloat($('tr.index' + index + '').find('input[name="repeater[' + index + '][do_qty]"]').val());
+      let so_qty = parseFloat($('tr.index' + index + '').find('input[name="repeater[' + index + '][so_qty]"]').val());
+      let val_usd_disc = parseFloat($('tr.index' + index + '').find('input[name="repeater[' + index + '][usd_disc]"]').val());
+      let val_percent_disc = parseFloat($('tr.index' + index + '').find('input[name="repeater[' + index + '][percent_disc]"]').val());
+      // Hidden #idr_rate menyimpan angka bersih TANPA titik, tapi pertahankan
+      // pembersihan titik ribuan di sini agar tidak pernah terjadi kasus
+      // parseFloat("18.050") = 18.05 (kurs 18050 terbaca 18 rupiah) yang
+      // membuat subtotal layar kecil sementara backend (cleanCurrency)
+      // menghitung 18050 -> selisih miliaran.
+      let kursRaw = String($('#idr_rate').val() ?? '').replace(/\./g, '');
+      let kurs = parseFloat(kursRaw);
+
+      if (isNaN(kurs)) kurs = 0;
+      if (isNaN(val_usd_disc)) val_usd_disc = 0;
+      if (isNaN(val_percent_disc)) val_percent_disc = 0;
+      if (isNaN(price)) price = 0;
+      if (isNaN(do_qty)) do_qty = 0;
+
+      let total_disc = (val_usd_disc + ((price - val_usd_disc) * (val_percent_disc / 100))) * do_qty;
+
+      let sub_total = (do_qty * price) - total_disc;
+      sub_total = sub_total * kurs;
+
+      if (isNaN(total_disc)) total_disc = 0;
+      if (isNaN(sub_total)) sub_total = 0;
+
+      $('tr.index' + index + '').find('input[name="repeater[' + index + '][total_disc]"]').val(total_disc);
+      $('tr.index' + index + '').find('input[name="repeater[' + index + '][total]"]').val(formatNumber(sub_total));
+
+      sub_total_item();
+    }
+
+    function sub_total_item() {
+      let total = 0;
+
+      $('tbody tr').each(function (index, e) {
+        let sub_total = $('tr.index' + index + '').find('input[name="repeater[' + index + '][total]"]').val();
+        sub_total = sub_total ? parseFloat(sub_total.split('.').join('')) : 0;
+        if (isNaN(sub_total)) sub_total = 0;
+        total += sub_total;
+      });
+
+      $('input[name="sub_total_item"]').val(formatNumber(total));
+
+      hitungDiscAgen();
+    }
+
+    // ==========================================
+    // 1. FUNGSI HITUNG DISC AGEN
+    // ==========================================
+    function hitungDiscAgen() {
+      let discPercent = parseFloat($('#disc_agen_percent').val());
+      let subTotalItemRaw = $('input[name="sub_total_item"]').val();
+      let subTotalItem = subTotalItemRaw ? parseFloat(subTotalItemRaw.split('.').join('')) : 0;
+
+      if (isNaN(discPercent)) discPercent = 0;
+      if (isNaN(subTotalItem)) subTotalItem = 0;
+
+      let result = (subTotalItem * discPercent) / 100;
+
+      $('#disc_agen_idr').val(formatNumber(result));
       
-      if ($('.product-row.category-' + categoryId).length > 0) {
-        $('body').find('.product-row.category-' + categoryId + ':last').after(html);
+      // SETELAH DISC AGEN DIHITUNG, LANJUT HITUNG DISC KEMASAN (Efek Domino)
+      hitungDiscKemasan();
+    }
+
+    // ==========================================
+    // 2. FUNGSI HITUNG DISC KEMASAN (BARU)
+    // ==========================================
+    function hitungDiscKemasan() {
+      let percentVal = $('#disc_kemasan_percent').val();
+      
+      if (percentVal !== '') {
+        let sub_total_item_raw = $('input[name="sub_total_item"]').val();
+        let disc_agen_raw = $('#disc_agen_idr').val();
+
+        let sub_total_item = sub_total_item_raw ? parseFloat(sub_total_item_raw.split('.').join('')) : 0;
+        let disc_agen_idr = disc_agen_raw ? parseFloat(disc_agen_raw.split('.').join('')) : 0;
+        let disc_kemasan_percent = parseFloat(percentVal);
+
+        if (isNaN(sub_total_item)) sub_total_item = 0;
+        if (isNaN(disc_agen_idr)) disc_agen_idr = 0;
+        if (isNaN(disc_kemasan_percent)) disc_kemasan_percent = 0;
+
+        // Aturan: Disc Kemasan dihitung dari (Subtotal - Disc Agen IDR)
+        let subAfterDiscAgen = sub_total_item - disc_agen_idr;
+        let amount = (subAfterDiscAgen * disc_kemasan_percent) / 100;
+        
+        $('#disc_kemasan_idr').val(formatNumber(amount));
       } else {
-        $('body').find('.product-list').append(html);
-      }
-
-      //let option = '<option value="">==Select product==</option>';
-      //$('.select-product[data-index=0]').html(option);
-
-      //$('.select-category[data-index=0]').val('').change();
-      $('.select-product[data-index=0]').val('').change();
-      $('.input-qty[data-index=0]').val('');
-      $('.select-packaging[data-index=0]').val('').change();
-
-      $('.select-category[data-index=0]').select2('focus');
-
-      productCount++;
-    })
-
-    $(document).on('click','#buttonDeleteProduct',function(){
-      $(this).parents(".product-row").remove();
-    })
-
-    $(document).on('click','.btn-delete',function(){
-      if(confirm("Apakah anda yakin ingin menghapus item ini ? ")){
-        let id = $(this).data('id');
-        $('#frmDestroyItem').find('input[name="id"]').val(id);
-        $('#frmDestroyItem').submit();
-      }
-    })
-
-    $(document).on('click','.btn-cek-customer',function(){
-      $('#modalCustomerInvoice').modal('show');
-    })
-
-    $(document).on('click','.btn-tidak-lanjut',function(){
-      $('#modalTidakLanjut').modal('show');
-    })
-
-    $(document).on('click','.btn-close-tidak-lanjut-modal',function(){
-      $('#modalTidakLanjut').modal('hide');
-    })
-
-    $(document).on('submit','#frmEditSOMaster',function(e){
-      e.preventDefault();
-      if(confirm("Apakah anda yakin ingin mengubah sales order ini ? ?")){
-        let _form = $('#frmEditSOMaster');
-        $.ajax({
-          url : '{{route('superuser.penjualan.sales_order.tutup_so')}}',
-          method : "POST",
-          data : $('#frmEditSOMaster').serializeArray(),
-          dataType : "JSON",
-          beforeSend : function(){
-            $('#frmEditSOMaster').find('button[type="submit"]').html('Loading...');
-          },
-          success : function(resp){
-            if(resp.IsError == true){
-              showToast('danger',resp.Message);
-            }
-            else{
-              Swal.fire(
-                'Success!',
-                resp.Message,
-                'success'
-              ).then((result) => {
-                document.location.href = '{{ route('superuser.penjualan.sales_order.index_' . strtolower($step_txt)) }}';
-              })
-              
-            }
-          },
-          complete : function(){
-            $('#frmEditSOMaster').find('button[type="submit"]').html('<i class="fa fa-save"> Save</i>');
-          }
-        })
-      }
-    })
-
-    $(document).on('submit','#frmTidakLanjutSO',function(e){
-      e.preventDefault();
-      if(confirm("Apakah anda yakin tidak melanjutkan sales order ini?")){
-        $.ajax({
-          url : '{{route('superuser.penjualan.sales_order.tidak_lanjut_so')}}',
-          method : "POST",
-          data : $('#frmTidakLanjutSO').serializeArray(),
-          dataType : "JSON",
-          beforeSend : function(){
-            $('#frmTidakLanjutSO').find('button[type="submit"]').html('Loading...');
-          },
-          success : function(resp){
-            if(resp.IsError == true){
-              showToast('danger',resp.Message);
-            }
-            else{
-              Swal.fire(
-                'Success!',
-                resp.Message,
-                'success'
-              ).then((result) => {
-                window.history.back();
-              })
-              
-            }
-          },
-          complete : function(){
-            $('#frmTidakLanjutSO').find('button[type="submit"]').html('<i class="fa fa-save"> Save</i>');
-          }
-        })
-      }
-    })
-
-    $(document).on('submit','#frmSaveItem',function(e){
-      e.preventDefault();
-      if(confirm("Apakah anda yakin ingin menyimpan item ini ?")){
-        let _form = $('#frmSaveItem');
-        $.ajax({
-          url : '{{route('superuser.penjualan.sales_order.store_item')}}',
-          method : "POST",
-          data : getFormData(_form),
-          dataType : "JSON",
-          beforeSend : function(){
-            $('#frmSaveItem').find('button[type="submit"]').html('Loading...');
-          },
-          success : function(resp){
-            if(resp.IsError == true){
-              showToast('danger',resp.Message);
-            }
-            else{
-              Swal.fire(
-                'Success!',
-                resp.Message,
-                'success'
-              ).then((result) => {
-                  location.reload();
-              })
-            }
-          },
-          complete : function(){
-            $('#frmSaveItem').find('button[type="submit"]').html('<i class="fa fa-save"> Save Item</i>');
-          }
-        })
-      }
-    })
-  })
-
-  function loadProduct(param){
-    $.ajax({
-      url : '{{route('superuser.penjualan.sales_order.get_product')}}',
-      method : "GET",
-      data : param,
-      dataType : "JSON",
-      success : function(resp){
-        let option = "";
-        option = '<option value="">==Select product==</option>';
-        $.each(resp.Data,function(i,e){
-          option += '<option value="'+e.id+'">'+e.code+' - '+e.name+'</option>';
-        })
-        $('.select-product').html(option);
-      },
-      error : function(){
-        alert("Cek Koneksi Internet");
-      }
-    })
-  }
-
-  function customer_address(id){
-    ajaxcsrfscript();
-    $.ajax({
-      url : '{{route('superuser.penjualan.sales_order.ajax_customer_detail')}}',
-      method : "POST",
-      data : {id:id},
-      dataType : "JSON",
-      success : function(resp){
-        if(resp.IsError == true){
-          showToast('danger',resp.Message);
-        }
-        else{
-          $('textarea[name="address"]').val(resp.Data.address);
-        }
-      },
-      error : function(){
-        alert('Cek Koneksi Internet');
-      },
-    })
-  }
-  function warehouse_address(id){
-    ajaxcsrfscript();
-    $.ajax({
-      url : '{{route('superuser.penjualan.sales_order.ajax_warehouse_detail')}}',
-      method : "POST",
-      data : {id:id},
-      dataType : "JSON",
-      success : function(resp){
-        if(resp.IsError == true){
-          showToast('danger',resp.Message);
-        }
-        else{
-          $('textarea[name="address"]').val(resp.Data.address);
-        }
-      },
-      error : function(){
-        alert('Cek Koneksi Internet');
-      },
-    })
-  }
-  let firstShowTabPembuatanPO = true;
-  function activaTab(tab){
-    $('.nav-tabs a[href="#' + tab + '"]').tab('show');
-    if (firstShowTabPembuatanPO) {
-      $('.js-select2').select2();
-      firstShowTabPembuatanPO = false;
-    }
-  };
-
-  $(document).on('click','.select-all',function(){
-    if($(this).is(':checked')){
-      isSelected();
-    }
-    else{
-      removeSelected();
-    }
-  })
-
-  $(document).on('change', '#selectCustomerOutstandingCategory', function() {
-    loadCustomerOutstandingTable();
-  })
-
-  function loadCustomerOutstandingTable() {
-    let htmlString = '';
-    const categorySelected = $('#selectCustomerOutstandingCategory').val();
-    let totalPaid = 0;
-    let totalOutstanding = 0;
-
-    for (let i = 0; i < customerOutstandingData.length; i++) {
-      const outstandingData = customerOutstandingData[i];
-
-      const doDetails = outstandingData.do.do_detail;
-      let productString = '';
-      if (doDetails && doDetails.length > 0) {
-        let isCategoryMatch = false;
-        for (let j = 0; j < doDetails.length; j++) {
-          const doDetail = doDetails[j];
-          if (doDetail.product.category_id == categorySelected || categorySelected == '') {
-            isCategoryMatch = true;
-
-            productString += doDetail.product.name + ' - ' + packagingDictionary[doDetail.packaging] + '<br />';
-          }
-        }
-        if (!isCategoryMatch) {
-          continue;
-        }
-      }
-
-      if (outstandingData.payable_detail && outstandingData.payable_detail.length > 0) {
-        for (let j = 0; j < outstandingData.payable_detail.length; j++) {
-          const payable_detail = outstandingData.payable_detail[j];
-          totalPaid += payableDetail.total;
-        }
-      }
-
-      htmlString += '<tr>';
-      htmlString += ' <td>' + (i + 1) + '</td>';
-      htmlString += ' <td>' + outstandingData.code + '</td>';
-      htmlString += ' <td>' + outstandingData.created_at + '</td>';
-      htmlString += ' <td>' + productString + '</td>';
-      htmlString += ' <td class="text-right">' + numberWithCommas(outstandingData.grand_total_idr) + '</td>';
-      htmlString += ' <td class="text-right">' + numberWithCommas(totalPaid) + '</td>';
-      htmlString += ' <td class="text-right">' + numberWithCommas(outstandingData.grand_total_idr - totalPaid) + '</td>';
-      htmlString += '</tr>';
-    }
-
-    if (htmlString == '') {
-      htmlString = '<tr><td colspan="7">Data tidak ditemukan</td></tr>';
-    }
-
-    $('#tableCustomerOutstanding tbody').html(htmlString);
-  }
-
-$(document).on('change', '#selectCategoryDetailPesanan', function() {
-  loadDetailPesanan();
-})
-
-function loadDetailPesanan() {
-  let htmlString = '';
-  const categorySelected = $('#selectCategoryDetailPesanan').val();
-  if (categorySelected == '') {
-    htmlString = '<tr><td colspan="7">Data tidak ditemukan</td></tr>';
-    $('#tableDetailPesanan tbody').html(htmlString);
-    return;
-  }
-
-  for (let i = 0; i < soDetails.length; i++) {
-    const soDetail = soDetails[i];
-
-    htmlString += '<tr>';
-    htmlString += ' <input type="text" name="repeater[' + i + '][product_id]" value="' + soDetail.product_id + '" />';
-    htmlString += ' <input type="text" name="repeater[' + i + '][so_qty]" value="' + soDetail.qty + '" />';
-    htmlString += ' <input type="text" name="repeater[' + i + '][so_item_id]" value="' + soDetail.id + '" />';
-    htmlString += ' <input type="text" name="repeater[' + i + '][packaging]" value="' + soDetail.packaging + '" />';
-    htmlString += ' <td>' + soDetail.product.name +  '</td>';
-    htmlString += ' <td>' + soDetail.qty +  '</td>';
-    htmlString += ' <td>' + packagingDictionary[soDetail.packaging] +  '</td>';
-    htmlString += ' <td><input type="text" name="repeater[' + i + '][do_qty]" class="form-control" /></td>';
-    htmlString += ' <td><input type="text" name="repeater[' + i + '][note]" class="form-control" /></td>';
-    htmlString += '</tr>';
-  }
-
-  if (htmlString == '') {
-    htmlString = '<tr><td colspan="7">Data tidak ditemukan</td></tr>';
-  }
-
-  $('#tableDetailPesanan tbody').html(htmlString);
-}
-
-  $(document).on('submit','#frmInsert',function(e){
-    e.preventDefault();
-    if(confirm("Apakah anda yakin ingin menambahkan item ini ke packing order ?")){
-      length = $('#frmInsert tbody').find('input:checkbox:checked').length;
-      if(length == 0){
-        alert("No Item SO Checked")  
-      }
-      else{
-        let _form = $('#frmInsert');
-        $.ajax({
-          url : '{{route('superuser.penjualan.packing_order.store_so')}}',
-          method : "POST",
-          data : getFormData(_form),
-          dataType : "JSON",
-          beforeSend : function(){
-            $('button[type="submit"]').html('Loading...');
-          },
-          success : function(resp){
-            if(resp.IsError == true){
-              showToast('danger',resp.Message);
-            }
-            else{
-              Swal.fire(
-                'Success!',
-                resp.Message,
-                'success'
-              ).then((result) => {
-                //redirect disini
-              })
-              
-            }
-          },
-          error : function(){
-              alert("Cek Koneksi Internet");
-          },
-          complete : function(){
-            $('button[type="submit"]').html('<i class="fa fa-save"> Insert Into Packing</i>');
-          }
-        })
+        $('#disc_kemasan_idr').val('0'); // Set 0 agar aman di database
       }
       
+      // SETELAH DISC KEMASAN DIHITUNG, LANJUT HITUNG SUBTOTAL & GRAND TOTAL
+      subtotal();
     }
+
+    // ==========================================
+    // 3. EVENT LISTENER KETIKA KASIR MENGETIK
+    // ==========================================
+    $('#disc_agen_percent').on('keyup change', function () {
+      hitungDiscAgen();
+    });
+
+    $('#disc_kemasan_percent').on('keyup change input', function () {
+      hitungDiscKemasan();
+    });
+
+    $('#disc_kemasan_percent').on('input', function (e) {
+      if ($(this).val() != '') {
+        let sub_total_item_raw = $('input[name="sub_total_item"]').val();
+        let disc_percent_raw = $('input[name="disc_agen_idr"]').val();
+
+        let sub_total_item = sub_total_item_raw ? parseFloat(sub_total_item_raw.split('.').join('')) : 0;
+        let disc_percent = disc_percent_raw ? parseFloat(disc_percent_raw.split('.').join('')) : 0;
+
+        if (isNaN(sub_total_item)) sub_total_item = 0;
+        if (isNaN(disc_percent)) disc_percent = 0;
+
+        let subAfterDiscPercent = sub_total_item - disc_percent;
+
+        let amount = subAfterDiscPercent * $(this).val() / 100;
+        $('#disc_kemasan_idr').val(formatNumber(amount));
+      } else {
+        $('#disc_kemasan_idr').val('');
+      }
+      subtotal();
+    });
+
+    function subtotal() {
+      let sub_total_raw = $('#sub_total_item').val();
+      let disc_agen_raw = $('#disc_agen_idr').val();
+      let dics_kemasan_raw = $('#disc_kemasan_idr').val();
+
+      let sub_total = sub_total_raw ? parseFloat(sub_total_raw.split('.').join('')) : 0;
+      let disc_agen = disc_agen_raw ? parseFloat(disc_agen_raw.split('.').join('')) : 0;
+      let dics_kemasan = dics_kemasan_raw ? parseFloat(dics_kemasan_raw.split('.').join('')) : 0;
+
+      if (isNaN(sub_total)) sub_total = 0;
+      if (isNaN(disc_agen)) disc_agen = 0;
+      if (isNaN(dics_kemasan)) dics_kemasan = 0;
+
+      let sub_total_before = sub_total - disc_agen - dics_kemasan;
+
+      $('#subtotal_2').val(formatNumber(sub_total_before));
+      hitungGrandTotal();
+    }
+
+    $('#shipping_cost_buyer').change(function () {
+      $('input[name="delivery_cost_idr"]').val(($(this).is(':checked')) ? "0" : "");
+    });
+
+    function hitungGrandTotal() {
+      let subtotal_before_raw = $('#subtotal_2').val();
+      let disc_tambahan_raw = $('#disc_tambahan_idr').val();
+      let voucher_idr_raw = $('#voucher_idr').val();
+      let ongkir_raw = $('#delivery_cost_idr').val();
+
+      let subtotal_before = subtotal_before_raw ? parseFloat(subtotal_before_raw.split('.').join('')) : 0;
+      let disc_tambahan = disc_tambahan_raw ? parseFloat(disc_tambahan_raw.split('.').join('')) : 0;
+      let voucher_idr = voucher_idr_raw ? parseFloat(voucher_idr_raw.split('.').join('')) : 0;
+      let ongkir = ongkir_raw ? parseFloat(ongkir_raw.split('.').join('')) : 0;
+
+      if (isNaN(subtotal_before)) subtotal_before = 0;
+      if (isNaN(disc_tambahan)) disc_tambahan = 0;
+      if (isNaN(voucher_idr)) voucher_idr = 0;
+      if (isNaN(ongkir)) ongkir = 0;
+
+      let grand_total_idr = subtotal_before - disc_tambahan - voucher_idr + ongkir;
+
+      $('#grand_total_idr').val(formatNumber(grand_total_idr));
+    }
+
+    // Hitung ulang SELURUH baris dari repeater + kurs yang sedang tampil.
+    // Dipakai tombol Calculated & otomatis sebelum submit agar tidak ada
+    // nilai stale (misal user edit harga lalu langsung Save).
+    function recalcAll() {
+      $('tbody tr').each(function (index, e) {
+        // Lewati baris non-item (misal "Data tidak ditemukan")
+        if ($('tr.index' + index + '').length === 0) return;
+        count_per_item(index);
+      });
+      // Pastikan rantai diskon -> subtotal -> grand total jalan sekali lagi
+      // dengan seluruh total baris yang sudah final.
+      sub_total_item();
+    }
+
+    $(document).on('click', '#btn_call', function (e) {
+      recalcAll();
+    });
+
+    // Paksa kalkulasi ulang TEPAT sebelum FormData dibuat oleh form.js.
+    // Handler submit jQuery form.js terdaftar lebih dulu (bubble), sehingga
+    // recalc via jQuery submit bisa terlambat. Pakai native capture listener
+    // agar recalc selalu jalan duluan, plus klik tombol Save sebagai lapis kedua.
+    (function () {
+      var formEl = document.querySelector('form.ajax');
+      if (formEl) {
+        formEl.addEventListener('submit', function () { recalcAll(); }, true);
+      }
+    })();
+    $(document).on('click', '#save_form', function () {
+      recalcAll();
+    });
+
+    // Live update dan Format Rupiah Otomatis saat user mengetik
+    $(document).on('input', '#disc_tambahan_idr, #voucher_idr, #delivery_cost_idr', function () {
+      // Format angka dengan titik
+      var cursorFromEnd = this.value.length - this.selectionStart;
+      this.value = formatInputKurs(this.value);
+      var newPos = this.value.length - cursorFromEnd;
+      
+      // Jaga posisi kursor agar tidak melompat ke belakang
+      if(this.selectionStart) {
+          this.setSelectionRange(newPos, newPos);
+      }
+      
+      // Jalankan kalkulasi
+      hitungGrandTotal();
+    });
+
+    // ============================================================
+    // Fungsi untuk OUTPUT DISPLAY (total, diskon, grand total, dll)
+    // Membulatkan ke bilangan bulat agar tidak ada desimal
+    // ============================================================
+    function formatNumber(angka) {
+      var rounded = Math.round(parseFloat(String(angka)));
+      var numberString = String(rounded).replace(/[^\d]/g, '');
+      if (!numberString) return '';
+      return numberString.replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+    }
+
+    // ============================================================
+    // Fungsi untuk INPUT KURS yang sedang diketik user
+    // Hanya menambah titik ribuan, TIDAK membulatkan
+    // ============================================================
+    function formatInputKurs(inputValue) {
+      var numberString = inputValue.replace(/[^\d]/g, '');
+      if (!numberString) return '';
+      return numberString.replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+    }
+
+    $(document).on('input', '#idr_rate_display', function () {
+      var cursorFromEnd = this.value.length - this.selectionStart;
+      this.value = formatInputKurs(this.value);
+      var newPos = this.value.length - cursorFromEnd;
+      this.setSelectionRange(newPos, newPos);
+
+      // Sinkron ke hidden field (angka bersih tanpa titik)
+      $('#idr_rate').val(this.value.replace(/\./g, ''));
+
+      // Hitung ulang semua baris TANPA merubah angka diskon yang sudah diketik manual
+      $('tbody tr').each(function (index, e) {
+        count_per_item(index);
+      });
+    });
   })
-
-  function isSelected(){
-    $('tbody').find('input[type="checkbox"]').attr('checked','checked');
-    $('tbody').find('input[type="checkbox"]').prop('checked', true);
-  }
-  function removeSelected(){
-    $('tbody').find('input[type="checkbox"]').removeAttr('checked');
-    $('tbody').find('input[type="checkbox"]').prop('checked', false);
-  }
-
-  function numberWithCommas(num) {
-    return num.toString().replace(/\B(?=(\d{3})+(?!\d))/g, '.');
-  }
 </script>
 @endpush

@@ -171,7 +171,15 @@ class CodeRepo
     }
 
     public static function generatePO(){
-        return self::generate('PRE', PackingOrder::class);   
+        // Loop anti-tabrakan: count+1 bisa menghasilkan kode yang sudah ada
+        // (race double-submit / baris duplikat warisan seperti PRE12422 ganda
+        // di SO-2610045). Maju sampai dapat kode yang benar-benar bebas.
+        $count = PackingOrder::withTrashed()->count() + 1;
+        do {
+            $code = 'PRE' . sprintf('%05d', $count);
+            $count++;
+        } while (PackingOrder::withTrashed()->where('code', $code)->exists());
+        return $code;
     }
     public static function generateDO(){
         $count = PackingOrder::withTrashed()

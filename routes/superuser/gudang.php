@@ -30,6 +30,10 @@ Route::group([
         Route::get('/audit-products',   'StockController@auditProducts')->name('auditProducts');
         Route::get('/audit-log-json',   'StockController@auditLogJson')->name('auditLogJson');
         Route::get('/audit-log-export', 'StockController@auditLogExport')->name('auditLogExport');
+
+        // Cek & selaraskan Fisik vs KS (ganti 11x command manual)
+        Route::get('/reconcile-check',  'StockController@reconcileCheck')->name('reconcileCheck');
+        Route::post('/reconcile-sync',   'StockController@reconcileSync')->name('reconcileSync');
     });
 
     Route::group(['as' => 'stock_adjustment.', 'prefix' => '/stock_adjustment'], function () {

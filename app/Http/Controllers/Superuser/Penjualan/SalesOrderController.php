@@ -7,6 +7,7 @@ use Illuminate\Http\Request;
 use App\Entities\Penjualan\SalesOrder;
 use App\Entities\Penjualan\SalesOrderItem;
 use App\Entities\Penjualan\SalesOrderKontrakPivot;
+use App\Entities\Master\ProductPack;
 use App\Entities\Penjualan\PackingOrderItem;
 use App\Entities\Penjualan\PackingOrderDetail;
 use App\Entities\Setting\UserMenu;
@@ -22,9 +23,16 @@ use Auth;
 use DB;
 use Carbon;
 use Excel;
+use COM;
+use Imagick;
 
 class SalesOrderController extends Controller
 {
+    /**
+     * Display a listing of the resource.
+     *
+     * @return \Illuminate\Http\Response
+     */
     public function __construct(){
         $this->view = "superuser.penjualan.sales_order.";
         $this->route = "superuser.penjualan.sales_order";
@@ -42,6 +50,64 @@ class SalesOrderController extends Controller
             return $next($request);
         });
     }
+
+    // public function index(Request $request, $step = NULL)
+    // {
+    //     // Access
+    //     if(Auth::user()->is_superuser == 0){
+    //         if(empty($this->access) || empty($this->access->user) || $this->access->can_read == 0){
+    //             return redirect()->route('superuser.index')->with('error','Anda tidak punya akses untuk membuka menu terkait');
+    //         }
+    //     }
+
+    //     $search = $request->input('search');
+    //     $so_for = $request->input('so_for');
+    //     $customer_other_address_id = $request->input('customer_other_address_id');
+    //     $status_so = $request->input('status_so');
+
+    //     $table = SalesOrder::query()
+    //                 ->when(!Auth::user()->is_superuser, function($query) use($step, $customer_other_address_id, $status_so) {
+    //                     $query->when(!empty($step), function($query) use($step) {
+    //                         if ($step === 1) {
+    //                             $query->whereIn('status', [1, 2, 3, 4])
+    //                                 ->where('so_for', 1)
+    //                                 ->where('created_by', Auth::id());
+    //                         } elseif ($step === 2) {
+    //                             $query->whereIn('status', [2, 4])
+    //                                 ->where('so_for', 1);
+    //                         }
+    //                     })
+    //                     ->when(!empty($customer_other_address_id), function($query) use($customer_other_address_id) {
+    //                         $query->whereHas('member', function($query) use($customer_other_address_id) {
+    //                             $query->where('customer_other_address_id', $customer_other_address_id);
+    //                         });
+    //                     })
+    //                     ->when(!empty($status_so), function($query) use($status_so) {
+    //                         $query->where('status', $status_so);
+    //                     })
+    //                     ->where('type_so', 'nonppn')
+    //                     ->where('so_indent', SalesOrder::INDENT['NO']);
+    //                 })
+    //                 ->orderBy('id', 'DESC')
+    //                 ->get();
+
+    //     $customers = Customer::get();
+    //     $other_address = CustomerOtherAddress::where('situation', 1)->get();
+    //     $brand = BrandLokal::get();
+    //     $packing_order = PackingOrder::get();
+
+    //     $data = [
+    //         'customers' => $customers,
+    //         'other_address' => $other_address,
+    //         'packing_order' => $packing_order,
+    //         'brand' => $brand,
+    //         'step' => $step,
+    //         'table' => $table,
+    //         'step_txt' => SalesOrder::STEP[$step],
+    //     ];
+
+    //     return view($this->view."index",$data);
+    // }
 
     public function json_awal(Request $request, SalesOrderAwalTable $datatable)
     {
@@ -116,7 +182,7 @@ class SalesOrderController extends Controller
 
         return $query;
     }
-
+    
     public function index_lanjutan(Request $request, $step = 2)
     {
         if(Auth::user()->is_superuser == 0){
@@ -152,6 +218,7 @@ class SalesOrderController extends Controller
     public function index_mutasi(Request $request)
     {
         return view("superuser.coming-soon");
+        return $this->index($request, 9);
     }
 
     public function detail($id)
@@ -297,16 +364,44 @@ class SalesOrderController extends Controller
 
     public function data_so($id)
     {
+        // Access
         if(Auth::user()->is_superuser == 0){
             if(empty($this->access) || empty($this->access->user) || $this->access->can_read == 0){
                 return redirect()->route('superuser.index')->with('error','Anda tidak punya akses untuk membuka menu terkait');
             }
         }
 
-        $queryService = new \App\Services\SalesOrder\SalesOrderQueryService();
-        $result = $queryService->getDataSo($id);
+        // Join sales_orders with customers
+        $result = DB::table('penjualan_so')
+            ->leftJoin('master_customer_other_addresses', 'penjualan_so.customer_other_address_id', '=', 'master_customer_other_addresses.id')
+            ->leftJoin('penjualan_so_item', 'penjualan_so.id', '=', 'penjualan_so_item.so_id')
+            ->select(
+                'penjualan_so.*',
+                'master_customer_other_addresses.name as customer_name',
+                'master_customer_other_addresses.address AS customer_address', 
+                'master_customer_other_addresses.text_kota AS customer_kota', 
+                'master_customer_other_addresses.text_provinsi AS customer_provinsi',
+            )
+            ->where('penjualan_so.id', $id)
+            ->first();
 
-        return response()->json($result['data']);
+        // Query to retrieve products related to the sales order
+        $products = DB::table('penjualan_so_item')
+        ->leftJoin('master_products_packaging', 'penjualan_so_item.product_packaging_id', '=', 'master_products_packaging.id')
+        ->leftJoin('master_packaging', 'master_products_packaging.packaging_id', '=', 'master_packaging.id')
+        ->select(
+            'penjualan_so_item.*',
+            'master_products_packaging.code AS code',
+            'master_products_packaging.name AS name',
+            'master_packaging.pack_name AS kemasan'
+        )
+        ->where('penjualan_so_item.so_id', $id)
+        ->get();
+
+        // Add products data to the result object
+        $result->products = $products;
+
+        return response()->json($result);
     }
 
     public function create(Request $request, $step, $member, $brand, $type, $indent, $approval, $note, $kurs, $disc_percent, $disc_idr, $disc_usd, $disc_kemasan, $packaging = null)
@@ -369,16 +464,28 @@ class SalesOrderController extends Controller
                         if ($created) {
                             $created->refresh();
                             \App\Services\AoProgressPushService::push($created, 'CREATE', []);
+                            // Jika langsung dilanjutkan, sinkronkan juga status LANJUTAN.
+                            if ((int) $created->status === 2) {
+                                \App\Services\AoProgressPushService::push($created, 'LANJUTAN');
+                            }
                         }
                     } catch (\Exception $pushEx) {
                     }
 
+                    $created = $result['sales_order'];
+                    $langsung = $created && (int) $created->status === 2;
                     $response['notification'] = [
                         'alert' => 'notify',
                         'type' => 'success',
                         'content' => 'Success',
                     ];
-                    $response['redirect_to'] = route('superuser.penjualan.sales_order.index_awal');
+                    // Highlight agar AO langsung ketemu SO-nya (tidak tenggelam).
+                    // langsung=1 -> masuk tab Submit, baru=1 + highlight -> flash di Draft.
+                    $response['redirect_to'] = route('superuser.penjualan.sales_order.index_awal')
+                        . '?highlight=' . urlencode($created->so_code ?? '')
+                        . ($langsung ? '&langsung=1' : '&baru=1');
+                    $response['langsung_lanjut'] = $langsung ? 1 : 0;
+                    $response['so_code'] = $created->so_code ?? '';
                     return $this->response(200, $response);
 
                 } catch (\Exception $e) {
@@ -396,11 +503,88 @@ class SalesOrderController extends Controller
         }
     }
 
+    // public function store_item(Request $request)
+    // {
+    //     $data_json = [];
+    //     $post = $request->all();
+    //     if($request->method() == "POST"){
+    //         if(empty($post["so_id"])){
+    //             $data_json["IsError"] = TRUE;
+    //             $data_json["Message"] = "ID Sales Order tidak boleh kosong";
+    //             goto ResultData;
+    //         }
+    //         if(empty($post["product_id"])){
+    //             $data_json["IsError"] = TRUE;
+    //             $data_json["Message"] = "Product wajib dipilih";
+    //             goto ResultData;
+    //         }
+    //         if(empty($post["qty"])){
+    //             $data_json["IsError"] = TRUE;
+    //             $data_json["Message"] = "Quantity tidak boleh kosong";
+    //             goto ResultData;
+    //         }
+    //         if(empty($post["packaging"])){
+    //             $data_json["IsError"] = TRUE;
+    //             $data_json["Message"] = "Packaging tidak boleh kosong";
+    //             goto ResultData;
+    //         }
+            
+    //         $get_so_item = SalesOrderItem::where('so_id',$post["so_id"])
+    //                                      ->where('product_id',$post["product_id"])
+    //                                      ->where('packaging',$post["packaging"])
+    //                                      ->first();
+    //         if($get_so_item){
+    //             $data_json["IsError"] = TRUE;
+    //             $data_json["Message"] = "Item sudah ada";
+    //             goto ResultData;
+    //         }
+    //         $data = [
+    //             'so_id' => trim(htmlentities($post["so_id"])),
+    //             'product_id' => trim(htmlentities($post["product_id"])),
+    //             'qty' => trim(htmlentities($post["qty"])),
+    //             'packaging' => trim(htmlentities($post["packaging"])),
+    //             'created_by' => Auth::id(),
+    //         ];
+
+    //         $insert = SalesOrderItem::create($data);
+
+    //         if($insert){
+    //             $data_json["IsError"] = FALSE;
+    //             $data_json["Message"] = "Item Berhasil Ditambahkan ke SO";
+    //             goto ResultData;
+    //         }
+    //         else{
+    //             $data_json["IsError"] = TRUE;
+    //             $data_json["Message"] = "Item Gagal Ditambahkan ke SO";
+    //             goto ResultData;
+    //         }
+    //     }
+    //     else{
+    //         $data_json["IsError"] = TRUE;
+    //         $data_json["Message"] = "Invalid Method";
+    //         goto ResultData;
+    //     }
+    //     ResultData:
+    //     return response()->json($data_json,200);
+    // }
+
+    /**
+     * Display the specified resource.
+     *
+     * @param  int  $id
+     * @return \Illuminate\Http\Response
+     */
     public function show($id)
     {
         //
     }
 
+    /**
+     * Show the form for editing the specified resource.
+     *
+     * @param  int  $id
+     * @return \Illuminate\Http\Response
+     */
     public function edit($id, $step)
     {
         if(Auth::user()->is_superuser == 0){
@@ -427,12 +611,12 @@ class SalesOrderController extends Controller
 
     public function edit_item($id)
     {
-        $result = \App\Entities\Penjualan\SalesOrderItem::where('id',$id)->first();
+        $result = SalesOrderItem::where('id',$id)->first();
         if(empty($result)){
             abort(404);
         }
-        $product_category = \App\Entities\Master\ProductCategory::all();
-        $product_type = \App\Entities\Master\ProductType::all();
+        $product_category = ProductCategory::all();
+        $product_type = ProductType::all();
         $data = [
             'product_category' => $product_category,
             'product_type' => $product_type,
@@ -441,57 +625,138 @@ class SalesOrderController extends Controller
         return view($this->view."edit_item",$data);
     }
 
+    /**
+     * Update the specified resource in storage.
+     *
+     * @param  \Illuminate\Http\Request  $request
+     * @param  int  $id
+     * @return \Illuminate\Http\Response
+     */
     public function update(Request $request)
     {
-        $data_json = [];
-        if($request->method() == "POST"){
-            DB::beginTransaction();
-            try {
-                $updateService = new \App\Services\SalesOrder\SalesOrderUpdateService();
-                $result = $updateService->update($request);
-
-                if (!$result['success']) {
-                    DB::rollback();
-                    $data_json["IsError"] = TRUE;
-                    $data_json["Message"] = $result['message'];
-                    return response()->json($data_json, 400);
-                }
-
-                DB::commit();
-                $data_json["IsError"] = FALSE;
-                $data_json["Message"] = $result['message'];
-                return response()->json($data_json, 200);
-            } catch (\Exception $e) {
-                DB::rollback();
-                $data_json["IsError"] = TRUE;
-                $data_json["Message"] = "Sales Order Gagal Diubah: " . $e->getMessage();
-                return response()->json($data_json, 400);
-            }
+        if ($request->method() != "POST") {
+            return response()->json(['IsError' => true, 'Message' => 'Invalid Method'], 200);
         }
-        else{
-            $data_json["IsError"] = TRUE;
-            $data_json["Message"] = "Invalid Method";
-            return response()->json($data_json, 400);
+
+        DB::beginTransaction();
+        try {
+            $updateService = new \App\Services\SalesOrder\SalesOrderUpdateService();
+            $result = $updateService->update($request);
+
+            if (!$result['success']) {
+                DB::rollBack();
+                return response()->json(['IsError' => true, 'Message' => $result['message']], 200);
+            }
+
+            DB::commit();
+
+            return response()->json(['IsError' => false, 'Message' => $result['message']], 200);
+        } catch (\Exception $e) {
+            DB::rollBack();
+            Log::error('Sales Order update failed: ' . $e->getMessage());
+            return response()->json(['IsError' => true, 'Message' => 'Sales Order Gagal Diubah'], 400);
         }
     }
 
     public function update_item(Request $request)
     {
         $data_json = [];
+        $post = $request->all();
         if($request->method() == "POST"){
-            $updateService = new \App\Services\SalesOrder\SalesOrderUpdateService();
-            $result = $updateService->updateItem($request);
+            if(empty($post["id"])){
+                $data_json["IsError"] = TRUE;
+                $data_json["Message"] = "ID item so tidak boleh kosong";
+                goto ResultData;
+            }
+            if(empty($post["product_id"])){
+                $data_json["IsError"] = TRUE;
+                $data_json["Message"] = "Product wajib dipilih";
+                goto ResultData;
+            }
+            if(empty($post["qty"])){
+                $data_json["IsError"] = TRUE;
+                $data_json["Message"] = "Quantity tidak boleh kosong";
+                goto ResultData;
+            }
+            if(empty($post["packaging"])){
+                $data_json["IsError"] = TRUE;
+                $data_json["Message"] = "Packaging tidak boleh kosong";
+                goto ResultData;
+            }
 
-            $data_json["IsError"] = !$result['success'];
-            $data_json["Message"] = $result['message'];
-            return response()->json($data_json, 200);
+            $result = $update = SalesOrderItem::where('id',$post["id"])->first();
+            $get_so_item = SalesOrderItem::where('id','!=',$post["id"])
+                                         ->where('so_id',$result->so_id)
+                                         ->where('product_id',$post["product_id"])
+                                         ->where('packaging',$post["packaging"])
+                                         ->first();
+            if($get_so_item){
+                $data_json["IsError"] = TRUE;
+                $data_json["Message"] = "Item sudah ada";
+                goto ResultData;
+            }
+            $data = [
+                'product_id' => trim(htmlentities($post["product_id"])),
+                'qty' => trim(htmlentities($post["qty"])),
+                'packaging' => trim(htmlentities($post["packaging"])),
+                'updated_by' => Auth::id(),
+            ];
+
+            $update = SalesOrderItem::where('id',$post["id"])->update($data);
+
+            if($update){
+                $data_json["IsError"] = FALSE;
+                $data_json["Message"] = "Item Berhasil Diubah dan Ditambahkan ke SO";
+                goto ResultData;
+            }
+            else{
+                $data_json["IsError"] = TRUE;
+                $data_json["Message"] = "Item Gagal Diubah dan Ditambahkan ke SO";
+                goto ResultData;
+            }
         }
         else{
             $data_json["IsError"] = TRUE;
             $data_json["Message"] = "Invalid Method";
-            return response()->json($data_json, 400);
+            goto ResultData;
         }
+        ResultData:
+        return response()->json($data_json,200);
     }
+
+    // public function lanjutkan(Request $request, $id)
+    // {
+    //     if ($request->ajax()) {
+    //         if(Auth::user()->is_superuser == 0){
+    //             if(empty($this->access) || empty($this->access->user) || $this->access->can_approve == 0){
+    //                 return redirect()->route('superuser.index')->with('error','Anda tidak punya akses untuk membuka menu terkait');
+    //             }
+    //         }
+
+    //         $sales_order = SalesOrder::find($id);
+
+    //         if ($sales_order === null) {
+    //             abort(404);
+    //         }
+
+    //         $sales_order->status = 2;
+
+    //         if($sales_order->save()) {
+    //             $user = User::find(33);
+    //             $user->notify(new SoNotification($sales_order));
+
+    //             $response['notification'] = [
+    //                 'alert' => 'notify',
+    //                 'type' => 'success',
+    //                 'content' => 'Success',
+    //             ];
+    
+    //             $response['redirect_to'] = route('superuser.penjualan.sales_order.index_awal');
+    //             return $this->response(200, $response);
+    //         }
+            
+    //     }
+    // }
 
     public function lanjutkan(Request $request, $id)
     {
@@ -600,6 +865,12 @@ class SalesOrderController extends Controller
         }
     }
 
+    /**
+     * Remove the specified resource from storage.
+     *
+     * @param  int  $id
+     * @return \Illuminate\Http\Response
+     */
     public function destroy(Request $request, $id)
     {
         if (Auth::user()->is_superuser == 0) {
@@ -646,8 +917,10 @@ class SalesOrderController extends Controller
         }
     }
 
+
     public function destroy_item(Request $request)
     {
+        // Access
         if(Auth::user()->is_superuser == 0){
             if(empty($this->access) || empty($this->access->user) || $this->access->can_delete == 0){
                 return redirect()->route('superuser.index')->with('error','Anda tidak punya akses untuk membuka menu terkait');
@@ -656,16 +929,20 @@ class SalesOrderController extends Controller
 
         DB::beginTransaction();
         try{
-            $destroyService = new \App\Services\SalesOrder\SalesOrderDestroyService();
-            $result = $destroyService->destroyItem($request);
-
-            if (!$result['success']) {
-                DB::rollBack();
-                return redirect()->back()->with('error', $result['message']);
+            $request->validate([
+                'id' => 'required'
+            ]);
+            $post = $request->all();
+            $update = SalesOrderItem::where('id',$post["id"])->update(['deleted_by' => Auth::id()]);
+            $destroy = SalesOrderItem::where('id',$post["id"])->delete();
+            $check_do_item = PackingOrderItem::where('so_item_id',$post["id"])->first();
+            $check_do_mutation_item = DeliveryOrderMutationItem::where('so_item_id',$post["id"])->first();
+            if($check_do_item || $check_do_mutation_item){
+                return redirect()->back()->with('error','Gagal menghapus SO . Item di SO sudah digunakan di Packing Order / Delivery Order Mutation');
             }
-
             DB::commit();
-            return redirect()->back()->with('success', $result['message']);
+            return redirect()->back()->with('success','Item berhasil dihapus');
+            
         }catch(\Throwable $e){
             DB::rollback();
             return redirect()->back()->with('error',$e->getMessage());
@@ -721,25 +998,9 @@ class SalesOrderController extends Controller
     public function tutup_so(Request $request)
     {
         if ($request->ajax()) {
-            // Sesi habis di tengah pengisian form: Auth::user() null. Jangan
-            // biarkan jadi redirect HTML (silent di form.js), balas JSON 401.
-            if (!Auth::check() || !Auth::user()) {
-                $response['notification'] = [
-                    'alert' => 'block', 'type' => 'alert-danger', 'header' => 'Error',
-                    'content' => ['Sesi Anda telah habis. Silakan login ulang di tab baru, lalu klik Save kembali (data form tidak hilang).'],
-                ];
-                return $this->response(401, $response);
-            }
             if(Auth::user()->is_superuser == 0){
                 if(empty($this->access) || empty($this->access->user) || $this->access->can_read == 0){
-                    // Request ajax WAJIB dibalas JSON, bukan redirect HTML,
-                    // supaya form.js bisa menampilkan notifikasi (redirect HTML
-                    // membuat save terlihat diam tanpa error).
-                    $response['notification'] = [
-                        'alert' => 'block', 'type' => 'alert-danger', 'header' => 'Error',
-                        'content' => ['Anda tidak punya akses untuk membuka menu terkait'],
-                    ];
-                    return $this->response(403, $response);
+                    return redirect()->route('superuser.index')->with('error','Anda tidak punya akses untuk membuka menu terkait');
                 }
             }
 
@@ -751,14 +1012,7 @@ class SalesOrderController extends Controller
                 $sales_order = SalesOrder::find($request->id);
 
                 if($sales_order === null){
-                    DB::rollBack();
-                    // Jangan abort(404) HTML untuk ajax, balas JSON agar
-                    // form.js bisa menampilkan pesannya.
-                    $response['notification'] = [
-                        'alert' => 'block', 'type' => 'alert-danger', 'header' => 'Error',
-                        'content' => ['Sales Order tidak ditemukan (id: '.$request->id.')'],
-                    ];
-                    return $this->response(404, $response);
+                    abort(404);
                 }
 
                 // Validasi dulu SEBELUM ada tulisan ke DB, supaya submit invalid
@@ -932,12 +1186,6 @@ class SalesOrderController extends Controller
             } catch (\Exception $e) {
                 DB::rollback();
                 $errors[] = $e->getMessage();
-                \Log::error('tutup_so exception', [
-                    'so_id' => $request->id,
-                    'user_id' => Auth::id(),
-                    'message' => $e->getMessage(),
-                    'file' => $e->getFile() . ':' . $e->getLine(),
-                ]);
 
                 if ($request->ajax()) {
                     $response['notification'] = [
@@ -952,55 +1200,63 @@ class SalesOrderController extends Controller
                 return redirect()->back()->with('errors', $errors);
             }
         }
-
-        // Bukan ajax (misal header X-Requested-With hilang): jangan kembalikan
-        // null/HTML kosong yang membuat form.js diam. Balas JSON 400.
-        $response['notification'] = [
-            'alert' => 'block', 'type' => 'alert-danger', 'header' => 'Error',
-            'content' => ['Invalid request (non-ajax). Silakan refresh halaman lalu coba lagi.'],
-        ];
-        return $this->response(400, $response);
     }
 
     public function ajax_customer_detail(Request $request){
         $data_json = [];
         $post = $request->all();
         if($request->method() == "POST"){
-            $queryService = new \App\Services\SalesOrder\SalesOrderQueryService();
-            $result = $queryService->getCustomerDetail($post["id"]);
+            try{
+                $result = Customer::where('id',$post["id"])->first();
+                $data_json["IsError"] = FALSE;
+                $data_json["Data"] = $result;
+                goto ResultData;
 
-            $data_json["IsError"] = !$result['success'];
-            $data_json["Data"] = $result['data'] ?? null;
-            $data_json["Message"] = $result['message'] ?? '';
-            return response()->json($data_json, 200);
+            }catch(\Throwable $e){
+
+                // dd($e);
+                $data_json["IsError"] = TRUE;
+                $data_json["Message"] = $e->getMessage();
+                goto ResultData;
+            }
         }
         else{
             $data_json["IsError"] = TRUE;
             $data_json["Message"] = "Invalid Method";
-            return response()->json($data_json, 400);
+            goto ResultData;
         }
+        ResultData:
+        return response()->json($data_json,200);
     }
 
     public function ajax_warehouse_detail(Request $request){
         $data_json = [];
         $post = $request->all();
         if($request->method() == "POST"){
-            $queryService = new \App\Services\SalesOrder\SalesOrderQueryService();
-            $result = $queryService->getWarehouseDetail($post["id"]);
+            try{
+                $result = Warehouse::where('id',$post["id"])->first();
 
-            $data_json["IsError"] = !$result['success'];
-            $data_json["Data"] = $result['data'] ?? null;
-            $data_json["Message"] = $result['message'] ?? '';
-            return response()->json($data_json, 200);
+                $data_json["IsError"] = FALSE;
+                $data_json["Data"] = $result;
+                goto ResultData;
+
+            }catch(\Throwable $e){
+                $data_json["IsError"] = TRUE;
+                $data_json["Message"] = $e->getMessage();
+                goto ResultData;
+            }
         }
         else{
             $data_json["IsError"] = TRUE;
             $data_json["Message"] = "Invalid Method";
-            return response()->json($data_json, 400);
+            goto ResultData;
         }
+        ResultData:
+        return response()->json($data_json,200);
     }
 
     public function print_rejected_so($id){
+        // Access
         if(Auth::user()->is_superuser == 0){
             if(empty($this->access) || empty($this->access->user) || $this->access->can_print == 0){
                 return redirect()->route('superuser.index')->with('error','Anda tidak punya akses untuk membuka menu terkait');
@@ -1008,7 +1264,7 @@ class SalesOrderController extends Controller
         }
 
         $result = SalesOrder::where('id',$id)->first();
-        $company = \App\Entities\Master\Company::first();
+        $company = Company::first();
         if(empty($result)){
             abort(404);
         }
@@ -1018,68 +1274,128 @@ class SalesOrderController extends Controller
             'company' => $company
         ];
 
-        $pdf = \PDF::loadview($this->view."print_rejected_so",$data)->setPaper('a5','potrait');
+        $pdf = PDF::loadview($this->view."print_rejected_so",$data)->setPaper('a5','potrait');
         return $pdf->stream($result->code ?? '');
     }
 
     public function print_proforma($id)
     {
+        // Access
         if(Auth::user()->is_superuser == 0){
             if(empty($this->access) || empty($this->access->user) || $this->access->can_print == 0){
                 return redirect()->route('superuser.index')->with('error','Anda tidak punya akses untuk membuka menu terkait');
             }
         }
 
-        $crService = new \App\Services\CrystalReportService();
-        $result = $crService->printProforma($id);
+        $result = SalesOrder::where('id',$id)->first();
 
-        if (!$result['success']) {
-            return redirect()->back()->with('error', $result['message']);
-        }
+        // GET DO & ITEM
+        $get_do = PackingOrder::where('so_id', $result->id)->first();
 
-        $file = $result['file'];
-        header("Content-Description: File Transfer");
-        header("Content-Type: application/octet-stream");
-        header("Content-Transfer-Encoding: Binary");
-        header("Content-Disposition: attachment; filename=\"" . basename($file) . "\"");
+        $my_report = "C:\\xampp\\htdocs\\ppi-dist\public\\cr\\proforma\\proforma.rpt"; 
+        $my_pdf = 'C:\\xampp\\htdocs\\ppi-dist\\public\\cr\\proforma\\export\\'.$result->code.'.pdf';
+       
+        //- Variables - Server Information 
+        $my_server = "DEV-SERVER"; 
+        $my_user = "root"; 
+        $my_password = ""; 
+        $my_database = "ppi-dist";
+        $COM_Object = "CrystalDesignRunTime.Application";
+
+
+        //-Create new COM object-depends on your Crystal Report version
+        $crapp= New COM($COM_Object) or die("Unable to Create Object");
+        $creport = $crapp->OpenReport($my_report,1); // call rpt report
+
+        //- Set database logon info - must have
+        $creport->Database->Tables(1)->SetLogOnInfo($my_server, $my_database, $my_user, $my_password);
+        $creport->DiscardSavedData();
+        $creport->VerifyOnEveryPrint = false;
+
+        //- field prompt or else report will hang - to get through
+        $creport->EnableParameterPrompting = FALSE;
+        $creport->RecordSelectionFormula = "{penjualan_do.id}= $get_do->id";
+
+
+        //export to PDF process
+        $creport->ExportOptions->DiskFileName=$my_pdf; //export to pdf
+        $creport->ExportOptions->PDFExportAllPages=true;
+        $creport->ExportOptions->DestinationType=1; // export to file
+        $creport->ExportOptions->FormatType=31; // PDF type
+        $creport->Export(false);
+
+        //------ Release the variables ------
+        $creport = null;
+        $crapp = null;
+        $ObjectFactory = null;
+
+        $file = 'C:\\xampp\\htdocs\\ppi-dist\\public\\cr\\proforma\\export\\'.$result->code.'.pdf';
+
+        header("Content-Description: File Transfer"); 
+        header("Content-Type: application/octet-stream"); 
+        header("Content-Transfer-Encoding: Binary"); 
+        header("Content-Disposition: attachment; filename=\"". basename($file) ."\""); 
         ob_clean();
         flush();
-        readfile($file);
+        readfile ($file);
         exit();
     }
 
     public function get_product(Request $request){
         $data_json = [];
+        $post = $request->all();
         if($request->method() == "GET"){
-            $queryService = new \App\Services\SalesOrder\SalesOrderQueryService();
-            $result = $queryService->getProductsByBrand($request->brand_name);
-
+            $table = Product::where(function($query2) use($post){
+                        if(!empty($post["brand_name"])){
+                            $query2->where('brand_name', $post["brand_name"]);
+                        }
+                    })
+                    ->selectRaw(
+                        'master_products.id as id, 
+                        master_products.name as productName, 
+                        master_products.code as productCode, 
+                        master_products.selling_price as productPrice'
+                    )
+                    ->get();
             $data_json["IsError"] = FALSE;
-            $data_json["Data"] = $result['data'];
-            return response()->json($data_json, 200);
+            $data_json["Data"] = $table;
+            goto ResultData;
         }
         else{
             $data_json["IsError"] = TRUE;
             $data_json["Message"] = "Invalid Method";
-            return response()->json($data_json, 400);
+            goto ResultData;
         }
+        ResultData:
+        return response()->json($data_json,200);
     }
 
     public function get_packaging(Request $request){
         $data_json = [];
+        $post = $request->all();
         if($request->method() == "GET"){
-            $queryService = new \App\Services\SalesOrder\SalesOrderQueryService();
-            $result = $queryService->getPackagingByProduct($request->product_id);
-
+            $table = ProductPack::where(function($query2) use($post){
+                if(!empty($post["product_id"])){
+                    $query2->where('product_id', $post["product_id"]);
+                }
+            })
+            ->leftJoin('master_packaging', 'master_products_packaging.packaging_id', '=', 'master_packaging.id')
+            ->leftJoin('master_product_types', 'master_products_packaging.type_id', '=', 'master_product_types.id')
+            ->selectRaw(
+                'master_packaging.id, master_packaging.pack_name, master_product_types.name as type'
+            )
+            ->get();
             $data_json["IsError"] = FALSE;
-            $data_json["Data"] = $result['data'];
-            return response()->json($data_json, 200);
+            $data_json["Data"] = $table;
+            goto ResultData;
         }
         else{
             $data_json["IsError"] = TRUE;
             $data_json["Message"] = "Invalid Method";
-            return response()->json($data_json, 400);
+            goto ResultData;
         }
+        ResultData:
+        return response()->json($data_json,200);
     }
 
     public function destroy_lanjutan(Request $request, $id)
@@ -1109,6 +1425,7 @@ class SalesOrderController extends Controller
         }
     }
 
+
     public function indent(Request $request, $id)
     {
         if ($request->ajax()) {
@@ -1119,28 +1436,42 @@ class SalesOrderController extends Controller
             }
 
             DB::beginTransaction();
+
             try{
+
                 $result = SalesOrder::find($id);
+
                 if($result == null){
                     abort(404);
                 }
 
-                $workflowService = new \App\Services\SalesOrder\SalesOrderWorkflowService();
-                $workflowService->indent($result);
+                $result->status = 6;
+                $result->code = null;
+                $result->indent_status = 1;
+                $result->updated_by = Auth::id();
 
-                DB::commit();
-                $response['redirect_to'] = route('superuser.penjualan.sales_order_indent.index');
-                return $this->response(200, $response);
+                if($result->save()){
+                    DB::commit();
+                    $response['redirect_to'] = route('superuser.penjualan.sales_order_indent.index');
+                    return $this->response(200, $response);
+                }
 
             }catch (\Exception $e) {
                 DB::rollback();
+                DD($e);
                 $response['notification'] = [
-                    'alert' => 'block', 'type' => 'alert-danger', 'header' => 'Error', 'content' => "Internal Server Error",
+                    'alert' => 'block',
+                    'type' => 'alert-danger',
+                    'header' => 'Error',
+                    'content' => "Internal Server Error",
                 ];
+
                 return $this->response(400, $response);
             }
         }
     }
+
+    // indent button from SO Lanjutan
 
     public function kembali_hold(Request $request, $id)
     {
@@ -1152,32 +1483,55 @@ class SalesOrderController extends Controller
             }
 
             DB::beginTransaction();
+
             try{
+                $errors = [];
+
                 $sales_order = SalesOrder::find($id);
 
-                $workflowService = new \App\Services\SalesOrder\SalesOrderWorkflowService();
-                $result = $workflowService->kembaliHold($sales_order, $request->catatan_kembali);
+                // check invoice apa sudah terbuat?
+                $do = PackingOrder::where('so_id', $sales_order->id)->first();
 
-                if(!$result['success']){
-                    DB::rollBack();
-                    $response['notification'] = [
-                        'alert' => 'block', 'type' => 'alert-danger', 'header' => 'Error', 'content' => $result['errors'],
-                    ];
-                    return $this->response(400, $response);
+                if(!empty($do->invoicing)){
+                    $errors[] = 'Invoice sudah terbuat, tidak bisa melakukan indent!';
                 }
 
-                DB::commit();
-                $response['notification'] = [
-                    'alert' => 'notify', 'type' => 'success', 'content' => 'Success',
-                ];
-                $response['redirect_to'] = route('superuser.penjualan.sales_order.index_lanjutan');
-                return $this->response(200, $response);
-
+                $sales_order->status = 5;
+                $sales_order->indent_status = 2;
+                $sales_order->catatan = $request->catatan_kembali;
+                $sales_order->updated_by = Auth::id();
+                if($sales_order->save()){
+                    DB::commit();
+                    if($errors) {
+                        $response['notification'] = [
+                            'alert' => 'block',
+                            'type' => 'alert-danger',
+                            'header' => 'Error',
+                            'content' => $errors,
+                        ];
+    
+                        return $this->response(400, $response);
+                    } else {
+                        $response['notification'] = [
+                            'alert' => 'notify',
+                            'type' => 'success',
+                            'content' => 'Success',
+                        ];
+            
+                        $response['redirect_to'] = route('superuser.penjualan.sales_order.index_lanjutan');
+                        return $this->response(200, $response);
+                    }
+                }
             }catch (\Exception $e) {
+                dd($e);
                 DB::rollback();
                 $response['notification'] = [
-                    'alert' => 'block', 'type' => 'alert-danger', 'header' => 'Error', 'content' => $e->getMessage(),
+                    'alert' => 'block',
+                    'type' => 'alert-danger',
+                    'header' => 'Error',
+                    'content' => $errors,
                 ];
+
                 return $this->response(400, $response);
             }
         }
@@ -1185,13 +1539,14 @@ class SalesOrderController extends Controller
 
     public function get_brand(Request $request)
     {
-        $brands = \App\Entities\Master\BrandLokal::where('status', \App\Entities\Master\BrandLokal::STATUS['ACTIVE'])
+        $brands = BrandLokal::where('status', BrandLokal::STATUS['ACTIVE'])
             ->where(function ($query) use ($request) {
                 $query->where('brand_name', 'LIKE', $request->input('q', '') . '%');
             })
             ->get();
 
         $results = [];
+
         foreach ($brands as $item) {
             $results[] = [
                 'id' => $item->brand_name,
@@ -1201,6 +1556,46 @@ class SalesOrderController extends Controller
 
         return ['results' => $results];
     }
+
+    // public function get_product_pack(Request $request)
+    // {
+    //     if ($request->ajax()) {
+    //             $data = [];
+                
+    //             $product = Product::where('master_products.brand_name', $request->id)
+    //                     // ->where('master_products.status', 1)
+    //                     ->where('master_products.on_order', 1)
+    //                     ->leftJoin('master_products_packaging', 'master_products.id', '=', 'master_products_packaging.product_id')
+    //                     ->leftJoin('master_packaging', 'master_products_packaging.packaging_id', '=', 'master_packaging.id')
+    //                     ->leftJoin('master_product_types', 'master_products_packaging.type_id', '=', 'master_product_types.id')
+    //                     ->leftJoin('master_warehouses', 'master_products_packaging.warehouse_id', '=', 'master_warehouses.id')
+    //                     ->select('master_products_packaging.id as id' ,
+    //                                 'master_products_packaging.code as ProductCode', 
+    //                                 'master_products_packaging.name as productName', 
+    //                                 'master_products_packaging.price as productPrice', 
+    //                                 'master_packaging.id as  productPackagingID', 
+    //                                 'master_packaging.pack_name as productPackaging', 
+    //                                 'master_warehouses.name as warehouseName',
+    //                                 'master_product_types.name as typeName',
+    //                     )
+    //                     ->get();
+
+    //             foreach($product as $key){
+    //                 $data[] = [
+    //                     'id' => $key->id,
+    //                     'code' => $key->ProductCode,
+    //                     'name' => $key->productName,
+    //                     'price' => $key->productPrice,
+    //                     'packName' => $key->productPackaging,
+    //                     'packID' => $key->productPackagingID,
+    //                     'warehouseName' => $key->warehouseName,
+    //                     'typeName' => $key->typeName,
+    //                 ];
+    //             }
+
+    //             return response()->json(['code' => 200, 'data' => $data]);
+    //     }
+    // }
 
     public function get_product_pack(Request $request)
     {
@@ -1238,20 +1633,100 @@ class SalesOrderController extends Controller
             }
         }
 
-        $crService = new \App\Services\CrystalReportService();
-        $result = $crService->printSo($so_id);
+        $result = SalesOrder::where('id',$so_id)->first();
 
-        if (!$result['success']) {
-            return redirect()->back()->with('error', $result['message']);
-        }
+       
+        $my_report = "C:\\xampp\\htdocs\\ppi-dist\public\\cr\\so\\nota_penjualan.rpt"; 
+        $my_pdf = 'C:\\xampp\\htdocs\\ppi-dist\\public\\cr\\so\\export\\'.$result->so_code.'.pdf';
 
-        return response()->file($result['file']);
+        //- Variables - Server Information 
+        $my_server = "LOCAL"; 
+        $my_user = "root"; 
+        $my_password = ""; 
+        $my_database = "ppi-dist";
+        $COM_Object = "CrystalDesignRunTime.Application";
+
+
+        //-Create new COM object-depends on your Crystal Report version
+        $crapp= New COM($COM_Object) or die("Unable to Create Object");
+        $creport = $crapp->OpenReport($my_report,1); // call rpt report
+
+        //- Set database logon info - must have
+        $creport->Database->Tables(1)->SetLogOnInfo($my_server, $my_database, $my_user, $my_password);
+        $creport->DiscardSavedData();
+        $creport->VerifyOnEveryPrint = false;
+
+        //- field prompt or else report will hang - to get through
+        $creport->EnableParameterPrompting = FALSE;
+        $creport->RecordSelectionFormula = "{penjualan_so.id}= $result->id";
+
+
+        //export to PDF process
+        $creport->ExportOptions->DiskFileName=$my_pdf; //export to pdf
+        $creport->ExportOptions->PDFExportAllPages=true;
+        $creport->ExportOptions->DestinationType=1; // export to file
+        $creport->ExportOptions->FormatType=31; // PDF type
+        $creport->Export(false);
+
+        //------ Release the variables ------
+        $creport = null;
+        $crapp = null;
+        $ObjectFactory = null;
+
+        $file = 'C:\\xampp\\htdocs\\ppi-dist\\public\\cr\\so\\export\\'.$result->so_code.'.pdf';
+
+        $imagick = new Imagick();
+
+        $imgPath = public_path('\cr\\so\\export\\'.$result->so_code.'.pdf');
+        $imgSavePath = public_path('\cr\\so\\export\\images\\'.$result->so_code.'.jpg');
+        $imagick->setResolution(300, 300);
+        $imagick->readImage($imgPath.'[0-4]'); // read only the first 5 pages
+        $imagick->resetIterator();
+        $imagick = $imagick->appendImages(true);
+        $imagick->writeImages($imgSavePath, true); 
+
+        return response()->file($imgSavePath);
     }
 
     public function updateBrandName(Request $request)
     {
-        $queryService = new \App\Services\SalesOrder\SalesOrderQueryService();
-        $queryService->updateBrandName();
+        $sales_order = SalesOrder::leftJoin('penjualan_so_item', 'penjualan_so_item.so_id', '=', 'penjualan_so.id')
+                                ->select(
+                                    'penjualan_so.id as invoice_id', 
+                                    'penjualan_so.code as invoice', 
+                                    'penjualan_so.brand_name as brand_invoice', 
+                                    'penjualan_so.status as status_so', 
+                                    'penjualan_so_item.product_packaging_id as product_pack', 
+                                )
+                                ->where('penjualan_so.status', 4)
+                                ->orWhere('penjualan_so.brand_name', NULL)
+                                ->get();
+
+        foreach($sales_order as $row){
+            $find = false;
+
+            $product = DB::table('penjualan_so_item')
+                            ->select(
+                                'master_products_packaging.id as child_id',
+                                'master_products.id as parent_id',
+                                'master_products.brand_name as brand_name',
+                            )
+                            ->leftJoin('master_products_packaging', 'penjualan_so_item.product_packaging_id', '=', 'master_products_packaging.id')
+                            ->leftJoin('master_products', 'master_products.id', '=', 'master_products_packaging.product_id')
+                            ->where('penjualan_so_item.so_id', $row->invoice_id)
+                            ->get();
+
+            foreach($product as $item){
+                if(!$find){
+                    $data = SalesOrder::find($row->invoice_id);
+
+                    $data->brand_name = $item->brand_name;
+                    $data->save();
+                    
+                    $find = true;
+                }
+            }
+        }
 
         return redirect()->back()->with('message', 'Berhasil Update!');
     }
@@ -1264,16 +1739,72 @@ class SalesOrderController extends Controller
 
     public function search_kontrak(Request $request, $id, $merek)
     {
+        // Validate the input data
+        $validatedData = $request->validate([
+            'q' => 'nullable|string|max:255',
+        ]);
+    
+        // Additional validation for $id and $merek
+        if (!is_numeric($id) || empty($merek)) {
+            return response()->json([
+                'message' => 'Invalid request data.',
+                'errors' => [
+                    'id' => 'The ID must be a number.',
+                    'merek' => 'The brand name is required.'
+                ]
+            ], 422);
+        }
+    
         try {
-            $queryService = new \App\Services\SalesOrder\SalesOrderQueryService();
-            $result = $queryService->searchKontrak($request, $id, $merek);
 
-            if (!$result['success']) {
-                return response()->json(['message' => $result['message'], 'errors' => $result['errors'] ?? []], $result['code']);
-            }
-
-            return response()->json(['results' => $result['data']], 200);
+            $excludedCustomerId = 118.1;
+            // Perform the query to search for contracts, excluding fulfilled items
+            $sales_kontrak = SalesOrderKontrak::where('penjualan_so_kontrak.status', 2)
+                ->where('penjualan_so_kontrak.customer_other_address_id', $id)
+                ->where('master_products.brand_name', $merek)
+                ->when($request->has('q'), function ($query) use ($validatedData) {
+                    // Apply search filter if 'q' parameter is provided
+                    $query->where('master_products_packaging.name', 'LIKE', '%' . $validatedData['q'] . '%');
+                })
+                ->leftJoin('penjualan_so_kontrak_item', 'penjualan_so_kontrak.id', '=', 'penjualan_so_kontrak_item.so_kontrak_id')
+                ->leftJoin('master_products_packaging', 'penjualan_so_kontrak_item.product_packaging_id', '=', 'master_products_packaging.id')
+                ->leftJoin('master_products', 'master_products.id', '=', 'master_products_packaging.product_id')
+                ->leftJoin('penjualan_so_kontrak_log', 'penjualan_so_kontrak.id', '=', 'penjualan_so_kontrak_log.so_kontrak_id')
+                ->select(
+                    'penjualan_so_kontrak.id',
+                    'penjualan_so_kontrak.code AS kontrak_code',
+                    'master_products_packaging.code AS product_code',
+                    'master_products_packaging.name AS product_name',
+                    'penjualan_so_kontrak_item.qty AS product_qty',
+                    'penjualan_so_kontrak_item.qty_sent AS product_qty_sent',
+                    \DB::raw('SUM(penjualan_so_kontrak_log.qty_worked) AS total_qty_worked')
+                )
+                ->groupBy(
+                    'penjualan_so_kontrak.id',
+                    'penjualan_so_kontrak.code',
+                    'master_products_packaging.code',
+                    'master_products_packaging.name',
+                    'penjualan_so_kontrak_item.qty',
+                    'penjualan_so_kontrak_item.qty_sent'
+                )
+                // Filter out fulfilled items
+                ->havingRaw('SUM(penjualan_so_kontrak_log.qty_worked) < penjualan_so_kontrak_item.qty')
+                ->get();
+    
+            // Format the results for the response
+            $results = $sales_kontrak->map(function ($row) {
+                return [
+                    'id' => $row->id,
+                    'text' => "{$row->product_code} - {$row->product_name} / ({$row->kontrak_code})",
+                    'product_qty' => $row->product_qty,
+                    'total_qty_worked' => $row->total_qty_worked
+                ];
+            });
+    
+            return response()->json(['results' => $results], 200);
+    
         } catch (\Exception $e) {
+            // Catch unexpected errors and respond with a 500 error code
             return response()->json([
                 'message' => 'An error occurred while fetching the data.',
                 'error' => $e->getMessage()
@@ -1284,13 +1815,38 @@ class SalesOrderController extends Controller
     public function get_product_kontrak(Request $request)
     {
         if ($request->ajax()) {
-            $queryService = new \App\Services\SalesOrder\SalesOrderQueryService();
-            $result = $queryService->getProductKontrak($request->so_kontrak);
+            $data = [];
 
-            return response()->json(['code' => 200, 'data' => $result['data']]);
+            $sales_kontrak_item = SalesOrderKontrakItem::where('penjualan_so_kontrak_item.so_kontrak_id', $request->so_kontrak)
+                            ->leftJoin('master_products_packaging', 'penjualan_so_kontrak_item.product_packaging_id', '=', 'master_products_packaging.id')
+                            ->leftJoin('master_packaging', 'master_products_packaging.packaging_id', '=', 'master_packaging.id')
+                            ->leftJoin('penjualan_so_kontrak', 'penjualan_so_kontrak_item.so_kontrak_id', '=', 'penjualan_so_kontrak.id')
+                            ->select(
+                                'master_products_packaging.name AS product_name', 
+                                'master_products_packaging.code AS product_code', 
+                                'penjualan_so_kontrak.id AS kontrak_id',
+                                'penjualan_so_kontrak_item.price AS product_price', 
+                                'penjualan_so_kontrak_item.disc_usd AS product_disc', 
+                                'penjualan_so_kontrak_item.product_packaging_id AS product_id',
+                                'master_packaging.id AS packaging_id',
+                                'master_packaging.pack_name AS packaging_name',
+                            )->get();
+            
+            foreach($sales_kontrak_item AS $row){
+                $data[] = [
+                    'product_id' => $row->product_id,
+                    'product_code' => $row->product_code,
+                    'product_name' => $row->product_name,
+                    'product_price' => $row->product_price,
+                    'product_disc' => $row->product_disc,
+                    'packaging_id' => $row->packaging_id,
+                    'packaging_name' => $row->packaging_name,
+                    'kontrak_id' => $row->kontrak_id,
+                ];
+            }
         }
 
-        return response()->json(['code' => 400, 'data' => []]);
+        return response()->json(['code' => 200, 'data' => $data]);
     }
 
     public function approvalMouSo(Request $request, $id)
@@ -1303,28 +1859,42 @@ class SalesOrderController extends Controller
             }
 
             DB::beginTransaction();
+
             try{
                 $errors = [];
+
                 $sales_order = SalesOrder::find($id);
+
                 if($sales_order == null){
                     abort(404);
                 }
 
-                $workflowService = new \App\Services\SalesOrder\SalesOrderWorkflowService();
-                $workflowService->approvalMou($sales_order);
+                $sales_order->approval_mou_status = 1;
+                $sales_order->approval_mou_date = date('Y-m-d H:i:s');
+                $sales_order->approval_mou_by = Auth::id();
+                $sales_order->status = 2;
 
-                DB::commit();
-                $response['notification'] = [
-                    'alert' => 'notify', 'type' => 'success', 'content' => 'Approval MOU berhasil disimpan.',
-                ];
-                $response['redirect_to'] = url()->previous();
-                return response()->json($response, 200);
+                if($sales_order->save()){
+                    DB::commit();
+                    $response['notification'] = [
+                        'alert' => 'notify',
+                        'type' => 'success',
+                        'content' => 'Approval MOU berhasil disimpan.',
+                    ];
+                    $response['redirect_to'] = url()->previous();
+                    return response()->json($response, 200);
+                }
 
             }catch (\Exception $e) {
+                dd($e);
                 DB::rollback();
                 $response['notification'] = [
-                    'alert' => 'block', 'type' => 'alert-danger', 'header' => 'Error', 'content' => $e->getMessage(),
+                    'alert' => 'block',
+                    'type' => 'alert-danger',
+                    'header' => 'Error',
+                    'content' => $errors,
                 ];
+
                 return $this->response(400, $response);
             }
         }
@@ -1451,5 +2021,19 @@ class SalesOrderController extends Controller
         ])->setPaper('A5', 'landscape');
 
         return $pdf->stream('Sales_Estimate_Archive_' . $so->so_code . '.pdf');
+    }
+
+    /**
+     * Membersihkan format angka dari input (titik ribuan -> hilang, koma desimal -> titik)
+     * agar aman disimpan ke kolom decimal.
+     */
+    private function cleanCurrency($value)
+    {
+        if ($value === null || $value === '') {
+            return 0;
+        }
+        $value = str_replace('.', '', $value);   // buang titik ribuan
+        $value = str_replace(',', '.', $value);  // koma jadi titik desimal
+        return $value;
     }
 }

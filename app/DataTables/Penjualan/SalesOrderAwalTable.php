@@ -25,7 +25,9 @@ class SalesOrderAwalTable extends Table
 
         // Jika user sedang mengetik di kotak search, batas tanggal default dilepas
         // supaya pencarian menelusuri semua tanggal di tab yang aktif.
+        // Preset "Semua" (show_all=1) juga melepas batas agar SO lama tetap ketemu.
         $hasKeyword = trim((string) $request->input('search.value', '')) !== '';
+        $showAll = (string) $request->input('show_all', '') === '1';
 
         $statusMap = [
             'AWAL' => 1,
@@ -119,7 +121,8 @@ class SalesOrderAwalTable extends Table
 
             // RESI: history SO yang DO-nya sudah update resi (status 6).
             // Prioritas: range tanggal resi -> bulan/tahun -> bulan berjalan.
-            $model->whereExists(function ($q) use ($dateFrom, $dateTo, $bulan, $tahun) {
+            // show_all / keyword melepas batas agar SO lama tetap ketemu via search.
+            $model->whereExists(function ($q) use ($dateFrom, $dateTo, $bulan, $tahun, $showAll, $hasKeyword) {
                 $q->select(DB::raw(1))
                     ->from('penjualan_do AS po')
                     ->whereColumn('po.so_id', 'penjualan_so.id')
@@ -127,7 +130,7 @@ class SalesOrderAwalTable extends Table
                 if ($dateFrom && $dateTo) {
                     $q->whereDate('po.updated_at', '>=', $dateFrom)
                       ->whereDate('po.updated_at', '<=', $dateTo);
-                } else {
+                } elseif (!$showAll && !$hasKeyword) {
                     $q->whereMonth('po.updated_at', $bulan ?: Carbon::now()->month)
                       ->whereYear('po.updated_at', $tahun ?: Carbon::now()->year);
                 }
@@ -163,7 +166,7 @@ class SalesOrderAwalTable extends Table
                             ->whereDate('penjualan_so.submitted_at', '<=', $dateTo);
                       });
                 });
-            } elseif (!$statusSoFilter && !$bulan && !$tahun && !$hasKeyword) {
+            } elseif (!$statusSoFilter && !$bulan && !$tahun && !$hasKeyword && !$showAll) {
                 $model->where(function ($q) {
                     $q->whereDate('penjualan_so.created_at', Carbon::today())
                       ->orWhereDate('penjualan_so.submitted_at', Carbon::today());
@@ -171,7 +174,7 @@ class SalesOrderAwalTable extends Table
             } else {
                 $this->applySoDateFilter($model, $dateFrom, $dateTo, $bulan, $tahun);
             }
-            $model->orderBy('penjualan_so.created_at', 'asc');
+            $model->orderBy('penjualan_so.created_at', 'desc');
         } else {
             // DRAFT: AWAL (1) + REVISI (3). Semua draft yang belum disubmit
             // selalu tampil (tanpa batas hari ini); filter tanggal opsional.
@@ -184,7 +187,8 @@ class SalesOrderAwalTable extends Table
                 $model->whereDate('penjualan_so.created_at', '>=', $dateFrom)
                       ->whereDate('penjualan_so.created_at', '<=', $dateTo);
             }
-            $model->orderBy('penjualan_so.created_at', 'asc');
+            // Terbaru dulu: SO yang baru dibuat langsung ketemu di baris 1.
+            $model->orderBy('penjualan_so.created_at', 'desc');
         }
 
         if ($customerSoFilter) {
@@ -256,8 +260,32 @@ class SalesOrderAwalTable extends Table
             $txt = 'Dibuat ' . $this->fmtTgl($model->so_created_at);
             if ($isSubmit) {
                 $txt .= ' · Submit ' . $this->fmtTgl($model->submitted_at);
+                return $txt;
+            }
+            // Psikologi AO: umur draft ditampilkan eksplisit agar terasa "nyantol".
+            try {
+                $days = Carbon::parse($model->so_created_at)->startOfDay()
+                    ->diffInDays(Carbon::now()->startOfDay());
+            } catch (\Exception $e) {
+                $days = 0;
+            }
+            if ($days <= 0) {
+                $txt .= ' · hari ini';
+            } elseif ($days == 1) {
+                $txt .= ' · 1 hari belum lanjut';
+            } else {
+                $txt .= ' · ' . $days . ' hari belum lanjut';
             }
             return $txt;
+        });
+
+        $table->addColumn('umur_hari', function ($model) {
+            try {
+                return (int) Carbon::parse($model->so_created_at)->startOfDay()
+                    ->diffInDays(Carbon::now()->startOfDay());
+            } catch (\Exception $e) {
+                return 0;
+            }
         });
 
         $table->editColumn('so_created_at', function ($model) {
@@ -328,7 +356,12 @@ class SalesOrderAwalTable extends Table
             return $model->customer_name . ' ' . $model->customer_kota;
         });
 
-        $table->addColumn('action', function ($model) {
+        // Submit & Terkirim = riwayat read-only. Semua aksi hanya di Draft
+        // agar AO fokus di satu tempat dan tidak terkecoh klik di tab lain.
+        $table->addColumn('action', function ($model) use ($isSubmit, $isSelesai) {
+            if ($isSubmit || $isSelesai) {
+                return '<span class="soa-dash" title="Sudah dilanjutkan / tanpa aksi di sini">-</span>';
+            }
             $revisi = route('superuser.penjualan.sales_order.edit', [$model->id, $step = 1]);
             $lanjutkan = route('superuser.penjualan.sales_order.lanjutkan', $model->id);
             $delete = route('superuser.penjualan.sales_order.destroy', $model->id);
@@ -336,18 +369,9 @@ class SalesOrderAwalTable extends Table
             $estimate_pdf = route('superuser.penjualan.sales_order.sales_estimate_pdf', $model->id);
             $archive = route('superuser.penjualan.sales_order.archive_one_awal', $model->id);
 
-            // Tombol arsip manual hanya untuk divisi yang boleh (sama seperti Riwayat Archive)
+            // Arsip manual hanya untuk divisi yang boleh. Masuk ke menu "..." agar tidak
+            // menambah tombol di baris (psikologi: 1 baris = 1 aksi utama).
             $canArchive = in_array(Auth::user()->division, ['Admin', 'Developer', 'Management']);
-            $btn_archive = '';
-            if ($canArchive) {
-                $btn_archive = "
-                    <a href=\"javascript:saveConfirmation('{$archive}')\">
-                        <button type=\"button\" class=\"btn btn-sm btn-circle btn-alt-secondary\" title=\"Arsipkan\">
-                            <i class=\"fa fa-archive\"></i>
-                        </button>
-                    </a>
-                ";
-            }
 
             $buttons = '';
 
@@ -383,96 +407,74 @@ class SalesOrderAwalTable extends Table
             */
 
             if ($model->status_so === 'AWAL' && $model->is_proforma == 1) {
-                // PROFORMA SUDAH DIBUAT = sudah dilanjutkan (CASH) - hanya Print SO, tanpa Arsip
+                // PROFORMA SUDAH DIBUAT = sudah dilanjutkan (CASH) -> riwayat, tanpa aksi di sini.
                 if (in_array($model->status_proforma, [1, 2, 3, 4])) {
-                    $buttons .= "
-                        <a href=\"{$print_so}\" target=\"_blank\">
-                            <button type=\"button\" class=\"btn btn-sm btn-circle btn-alt-info\" title=\"Print SO\">
-                                <i class=\"fa fa-print\"></i>
-                            </button>
-                        </a>
-                    ";
-                    return $buttons;
+                    return '<span class="soa-dash" title="Sudah dilanjutkan / tanpa aksi di sini">-</span>';
                 }
             }
         
+            // PSIKOLOGI AO: 1 baris = 1 aksi utama. Lanjutkan dibuat besar & jelas,
+            // sisanya disembunyikan di "..." agar tidak bersaing secara visual.
+            // Print draft sengaja dilabeli DRAFT agar tidak terasa "selesai" lalu di-share.
+            $dropdown_items = '';
+            $dropdown_items .= "<a class=\"dropdown-item soa-dd-item\" href=\"{$revisi}\"><i class=\"fa fa-pencil fa-fw text-warning mr-2\"></i>Revisi / Edit</a>";
+            $dropdown_items .= "<a class=\"dropdown-item soa-dd-item\" href=\"{$print_so}\" target=\"_blank\"><i class=\"fa fa-print fa-fw text-info mr-2\"></i>Print Draft <span class=\"soa-dd-hint\">belum valid</span></a>";
+            if (!empty($btn_estimate)) {
+                $dropdown_items .= "<div class=\"dropdown-divider\"></div>";
+                // $btn_estimate adalah HTML tombol lingkaran; sederhanakan jadi item teks.
+                $dropdown_items .= "<a class=\"dropdown-item soa-dd-item\" href=\"" . e($estimate_pdf) . "\" target=\"_blank\"><i class=\"fa fa-file-pdf-o fa-fw text-primary mr-2\"></i>Sales Estimate</a>";
+            }
+            $dropdown_items .= "<div class=\"dropdown-divider\"></div>";
+            $dropdown_items .= "<a class=\"dropdown-item soa-dd-item text-danger\" href=\"javascript:saveConfirmation('{$delete}')\"><i class=\"fa fa-trash fa-fw mr-2\"></i>Hapus</a>";
+            if ($canArchive) {
+                $dropdown_items .= "<a class=\"dropdown-item soa-dd-item\" href=\"javascript:saveConfirmation('{$archive}')\"><i class=\"fa fa-archive fa-fw text-secondary mr-2\"></i>Arsipkan</a>";
+            }
+
+            $btn_lanjut_utama = "
+                <a href=\"javascript:saveConfirmation('{$lanjutkan}')\" class=\"btn-lanjut-utama\" title=\"Wajib: kirim ke admin agar diproses. Print saja belum cukup.\">
+                    <i class=\"fa fa-check\"></i> Lanjutkan
+                </a>
+            ";
+            $btn_lainnya = "
+                <div class=\"btn-group\">
+                    <button type=\"button\" class=\"btn-lainnya\" data-toggle=\"dropdown\" aria-haspopup=\"true\" aria-expanded=\"false\" title=\"Aksi lain: revisi, print draft, hapus\">
+                        <i class=\"fa fa-ellipsis-h\"></i>
+                    </button>
+                    <div class=\"dropdown-menu dropdown-menu-right soa-dd shadow\">
+                        {$dropdown_items}
+                    </div>
+                </div>
+            ";
+
             if ($model->status_so === 'AWAL') {
                 if ($model->approval_mou == "YES" && $model->approval_mou_status != "APPROVED") {
 
-                    // JIKA BUTUH APPROVAL: belum dilanjutkan -> tanpa Print SO, hanya Estimate
-                    $buttons .= $btn_estimate;
-                    $buttons .= $btn_archive;
+                    // JIKA BUTUH APPROVAL: belum bisa Lanjut/Print. Semua aksi di "...".
+                    $approval_items = '';
+                    if ($model->is_estimate == 1) {
+                        $approval_items .= "<a class=\"dropdown-item soa-dd-item\" href=\"" . e($estimate_pdf) . "\" target=\"_blank\"><i class=\"fa fa-file-pdf-o fa-fw text-primary mr-2\"></i>Sales Estimate</a>";
+                    }
+                    if ($canArchive) {
+                        if ($approval_items !== '') $approval_items .= "<div class=\"dropdown-divider\"></div>";
+                        $approval_items .= "<a class=\"dropdown-item soa-dd-item\" href=\"javascript:saveConfirmation('{$archive}')\"><i class=\"fa fa-archive fa-fw text-secondary mr-2\"></i>Arsipkan</a>";
+                    }
+                    $buttons .= "<div class=\"soa-actionwrap\">"
+                        . "<span class=\"soa-pill soa-pill-warn\" title=\"Menunggu approval SPV\"><span class=\"dot\"></span>Butuh Approval</span>"
+                        . "<div class=\"btn-group\"><button type=\"button\" class=\"btn-lainnya\" data-toggle=\"dropdown\" aria-haspopup=\"true\" aria-expanded=\"false\" title=\"Aksi lain\"><i class=\"fa fa-ellipsis-h\"></i></button>"
+                        . "<div class=\"dropdown-menu dropdown-menu-right soa-dd shadow\">{$approval_items}</div></div>"
+                        . "</div>";
 
                 } else {
 
-                    // NORMAL / APPROVED: belum dilanjutkan -> Revisi, Lanjut, Delete + Print SO
-                    $buttons .= "
-                        <a href=\"{$revisi}\">
-                            <button type=\"button\" class=\"btn btn-sm btn-circle btn-alt-warning\" title=\"Revisi\">
-                                <i class=\"fa fa-pencil\"></i>
-                            </button>
-                        </a>
-
-                        <a href=\"javascript:saveConfirmation('{$lanjutkan}')\">
-                            <button type=\"button\" class=\"btn btn-sm btn-circle btn-alt-success\" title=\"Lanjutkan\">
-                                <i class=\"fa fa-check\"></i>
-                            </button>
-                        </a>
-
-                        <a href=\"{$print_so}\" target=\"_blank\">
-                            <button type=\"button\" class=\"btn btn-sm btn-circle btn-alt-info\" title=\"Print SO\">
-                                <i class=\"fa fa-print\"></i>
-                            </button>
-                        </a>
-
-                        <a href=\"javascript:saveConfirmation('{$delete}')\">
-                            <button type=\"button\" class=\"btn btn-sm btn-circle btn-alt-danger\" title=\"Delete\">
-                                <i class=\"fa fa-trash\"></i>
-                            </button>
-                        </a>
-                    ";
-
-                    // Tombol Estimate ditaruh terakhir, lalu Arsip manual
-                    $buttons .= $btn_estimate;
-                    $buttons .= $btn_archive;
+                    // NORMAL / APPROVED: 1 CTA utama + menu lainnya (arsip sudah di dalam).
+                    $buttons .= "<div class=\"soa-actionwrap\">{$btn_lanjut_utama}{$btn_lainnya}</div>";
                 }
             } elseif ($model->status_so === 'REVISI') {
-                $buttons .= "
-                    <a href=\"{$revisi}\">
-                        <button type=\"button\" class=\"btn btn-sm btn-circle btn-alt-warning\" title=\"Revisi\">
-                            <i class=\"fa fa-pencil\"></i>
-                        </button>
-                    </a>
-
-                    <a href=\"javascript:saveConfirmation('{$lanjutkan}')\">
-                        <button type=\"button\" class=\"btn btn-sm btn-circle btn-alt-success\" title=\"Lanjutkan\">
-                            <i class=\"fa fa-check\"></i>
-                        </button>
-                    </a>
-
-                    <a href=\"{$print_so}\" target=\"_blank\">
-                        <button type=\"button\" class=\"btn btn-sm btn-circle btn-alt-info\" title=\"Print SO\">
-                            <i class=\"fa fa-print\"></i>
-                        </button>
-                    </a>
-
-                    <a href=\"javascript:saveConfirmation('{$delete}')\">
-                        <button type=\"button\" class=\"btn btn-sm btn-circle btn-alt-danger\" title=\"Delete\">
-                            <i class=\"fa fa-trash\"></i>
-                        </button>
-                    </a>
-                ";
-
-                $buttons .= $btn_estimate;
+                $buttons .= "<div class=\"soa-actionwrap\">{$btn_lanjut_utama}{$btn_lainnya}</div>";
 
             } elseif (in_array($model->status_so, ['TUTUP', 'LANJUTAN'])) {
-                $buttons .= "
-                    <a href=\"{$print_so}\" target=\"_blank\">
-                            <button type=\"button\" class=\"btn btn-sm btn-circle btn-alt-info\" title=\"Print SO\">
-                                <i class=\"fa fa-print\"></i>
-                            </button>
-                        </a>
-                    ";
+                // Sudah disubmit = tidak ada aksi di sini. Proses lanjut ada di SO Lanjutan.
+                return '<span class="soa-dash" title="Sudah dilanjutkan / tanpa aksi di sini">-</span>';
             }
         
             return $buttons;
