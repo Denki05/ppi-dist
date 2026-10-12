@@ -486,6 +486,71 @@ class PengajuanMutasiService
         }
     }
 
+    /**
+     * Perintah Batal by AO: hapus estimate di AO sekarang juga + tiket agar
+     * estimate baru untuk prospek yang sama langsung lanjut ke proforma
+     * (pengajuan + mutasi lama dipakai ulang, tanpa verifikasi ulang).
+     */
+    public function notifAoBatalByAo(PengajuanProforma $p, string $alasan = ''): bool
+    {
+        $aoCallbackUrl = config('services.ao_module.notif_inbound_url');
+        $aoApiKey      = config('services.ao_module.api_key');
+
+        if (empty($aoCallbackUrl)) {
+            Log::warning('PengajuanMutasi: ao_module.notif_inbound_url belum dikonfigurasi, skip batal-by-ao.');
+            return false;
+        }
+
+        try {
+            $client = new \GuzzleHttp\Client([
+                'timeout' => 10,
+                'connect_timeout' => 5,
+                'verify' => false,
+                'http_errors' => false,
+            ]);
+
+            $response = $client->post($aoCallbackUrl, [
+                'headers' => [
+                    'Authorization' => 'Bearer ' . $aoApiKey,
+                    'Accept' => 'application/json',
+                    'Content-Type' => 'application/json',
+                ],
+                'json' => [
+                    'ao_pic'          => $p->ao_pic,
+                    'estimate_number' => $p->estimate_number,
+                    'type'            => 'batal_by_ao',
+                    'title'           => 'Revisi: buat estimate baru (' . $p->estimate_number . ')',
+                    'body'            => 'Estimate ' . $p->estimate_number . ' dihapus karena revisi.'
+                        . ' Buat estimate BARU untuk prospek ' . $p->prospect_name . ' — pengajuan + mutasi sudah ada, langsung lanjut ke proforma.'
+                        . ($alasan !== '' ? ' Alasan: ' . $alasan : ''),
+                    'alasan'          => $alasan,
+                    'pengajuan_id'    => $p->id,
+                    'prospect_name'   => $p->prospect_name,
+                    'phone'           => $p->phone,
+                    'customer_id_hasil' => $p->customer_id_hasil,
+                    'member_id_hasil'   => $p->member_id_hasil,
+                ],
+            ]);
+
+            $code = $response->getStatusCode();
+            $ok = $code >= 200 && $code < 300;
+
+            Log::info('PengajuanMutasi: notif batal-by-ao', [
+                'estimate_number' => $p->estimate_number,
+                'status'          => $code,
+                'ok'              => $ok,
+            ]);
+
+            return $ok;
+        } catch (\Exception $e) {
+            Log::warning('PengajuanMutasi: notif batal-by-ao exception', [
+                'estimate_number' => $p->estimate_number,
+                'error'           => $e->getMessage(),
+            ]);
+            return false;
+        }
+    }
+
     // ------------------------------------------------------------------
     // PRIVATE HELPERS
     // ------------------------------------------------------------------

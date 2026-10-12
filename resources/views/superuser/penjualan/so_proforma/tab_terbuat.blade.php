@@ -37,13 +37,14 @@
                 </button>
             </a>
 
-            {{-- Baris ADA pengajuan: Revisi (tanpa redirect).
-                 Baris TANPA pengajuan (existing): tanpa Revisi/Batal. --}}
+            {{-- Baris ADA pengajuan: Batal by AO (tengah) — estimate dihapus,
+                 AO buat baru dan otomatis lanjut ke proforma bernomor baru.
+                 Baris TANPA pengajuan (existing): tanpa tombol batal. --}}
             @php $pgIdRv = ($pengajuanMap ?? [])[(string) optional($row->member)->id] ?? null; @endphp
             @if(($canRevisiBatal ?? false) && $pgIdRv)
             <button type="button" class="btn btn-sm btn-circle btn-alt-warning"
-                    onclick="submitKembalikanAoTab({{ $pgIdRv }})"
-                    title="Revisi - kembalikan ke AO, proforma diperbarui otomatis tanpa pengajuan/mutasi ulang" aria-label="Revisi {{ $row->code }} ke AO">
+                    onclick="submitBatalByAoTab({{ $pgIdRv }})"
+                    title="Batal by AO: estimate di AO DIHAPUS, pengajuan + mutasi ditahan, estimate baru otomatis ke proforma" aria-label="Batal by AO {{ $row->code }}">
                 <i class="fa fa-reply"></i>
             </button>
             @endif
@@ -62,7 +63,7 @@
                 class="btn btn-sm btn-circle btn-alt-danger btn-batalkan-prospek"
                 data-pgid="{{ $pgIdRv }}"
                 data-code="{{ $row->code }}"
-                title="Batalkan langsung - pengajuan dicabut + log (tanpa pindah halaman)" aria-label="Batalkan {{ $row->code }}">
+                title="Batal by Admin: cabut pengajuan + hapus mutasi + kembalikan ke AO (tanpa pindah halaman)" aria-label="Batal by Admin {{ $row->code }}">
                 <i class="fa fa-ban"></i>
             </button>
             @endif

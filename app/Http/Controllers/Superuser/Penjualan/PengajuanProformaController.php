@@ -523,6 +523,100 @@ class PengajuanProformaController extends Controller
     }
 
     // ------------------------------------------------------------------
+    // BATAL BY AO = estimate di AO DIHAPUS, pengajuan + mutasi DITAHAN.
+    // AO buat estimate baru untuk prospek yang sama -> otomatis lanjut ke
+    // proforma (auto-approve pakai mutasi lama), tanpa pengajuan/mutasi ulang.
+    // ------------------------------------------------------------------
+
+    /**
+     * POST /penjualan/pengajuan-proforma/{id}/batal-by-ao
+     */
+    public function batalByAo(Request $request, $id)
+    {
+        if (!\App\Helper\ProformaAccess::canRevisiBatal(Auth::user())) {
+            $msg = 'Batal by AO hanya untuk admin sales dan management.';
+            if ($request->ajax() || $request->wantsJson()) {
+                return response()->json(['success' => false, 'message' => $msg], 403);
+            }
+            return back()->with('error', $msg);
+        }
+
+        $pengajuan = PengajuanProforma::findOrFail($id);
+
+        if ($pengajuan->status !== PengajuanProforma::STATUS_DISETUJUI) {
+            return back()->with('error', 'Hanya pengajuan disetujui (sudah mutasi) yang bisa Batal by AO.');
+        }
+
+        if (empty($pengajuan->member_id_hasil)) {
+            return back()->with('error', 'Pengajuan ini belum punya member hasil mutasi.');
+        }
+
+        $validator = Validator::make($request->all(), [
+            'catatan' => 'required|string|max:1000',
+        ], ['catatan.required' => 'Alasan batal untuk AO wajib diisi.']);
+
+        if ($validator->fails()) {
+            if ($request->ajax() || $request->wantsJson()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => $validator->errors()->first(),
+                ], 422);
+            }
+
+            return back()->withErrors($validator)->withInput();
+        }
+
+        // Proforma yang sudah lanjutan/nota tidak boleh dibuang via jalur ini.
+        $pf = \App\Entities\Penjualan\SalesOrderProforma::where(
+            'customer_other_address_id', $pengajuan->member_id_hasil
+        )->orderBy('id', 'desc')->first();
+        if ($pf && ((int) $pf->so_lanjutan === 1 || (int) $pf->status === 4)) {
+            return back()->with('error', 'Proforma sudah lanjutan/ACC — gunakan Batalkan Proforma (Batal by Admin).');
+        }
+
+        try {
+            DB::transaction(function () use ($pengajuan, $request) {
+                // Tandai menunggu estimate baru (pengajuan + mutasi tetap ada).
+                $pengajuan->update([
+                    'tunggu_estimate_baru' => true,
+                    'estimate_lama' => $pengajuan->estimate_number,
+                    'estimate_baru' => null,
+                    'catatan' => ($pengajuan->catatan ? $pengajuan->catatan . ' | ' : '') . 'BATAL-AO: ' . $request->catatan,
+                ]);
+
+                // Buang dokumen proforma + SO lama (helper juga menghapus SO bila
+                // belum punya DO). Nomor baru diterbitkan saat estimate baru tiba.
+                $this->hapusProformaTerkait($pengajuan, null);
+            });
+
+            // Perintah hapus + tiket ke AO (non-blocking).
+            $notifOk = $this->mutasiSvc->notifAoBatalByAo(
+                $pengajuan->fresh(),
+                trim((string) $request->catatan)
+            );
+
+            $msg = 'Batal by AO tersimpan. Estimate di AO akan dihapus; AO buat baru dan otomatis lanjut ke proforma.'
+                . ($notifOk ? '' : ' (Perintah ke AO gagal terkirim — ulangi / hubungi IT.)');
+
+            if ($request->ajax() || $request->wantsJson()) {
+                return response()->json(['success' => true, 'message' => $msg, 'notif_ao' => $notifOk]);
+            }
+
+            return redirect()
+                ->route('superuser.penjualan.pengajuan_proforma.show', $id)
+                ->with('success', $msg);
+        } catch (\Exception $e) {
+            Log::error('Batal by AO gagal', ['id' => $id, 'error' => $e->getMessage()]);
+
+            if ($request->ajax() || $request->wantsJson()) {
+                return response()->json(['success' => false, 'message' => 'Terjadi kesalahan: ' . $e->getMessage()], 500);
+            }
+
+            return back()->with('error', 'Terjadi kesalahan: ' . $e->getMessage())->withInput();
+        }
+    }
+
+    // ------------------------------------------------------------------
     // TOLAK = hapus / cabut semua (baris + file dihapus, AO kembali draft).
     // ------------------------------------------------------------------
 

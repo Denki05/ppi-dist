@@ -599,21 +599,27 @@
             </div>
         </div>
 
-        {{-- Cancel proforma + kembalikan ke AO (revisi pasca-mutasi) --}}
-        @if($pengajuan->status === 'disetujui')
+        {{-- Batal by AO (hapus estimate, tahan pengajuan) + Batal by Admin (cabut semua) --}}
+        @if($pengajuan->status === 'disetujui' && empty($pengajuan->tunggu_estimate_baru))
         <div class="action-row">
             <a href="{{ route('superuser.penjualan.pengajuan_proforma.index') }}" class="btn btn-outline-secondary font-weight-bold" style="margin-right:auto;">
                 <i class="fa fa-arrow-left mr-1"></i> Kembali
             </a>
-            <button type="button" class="btn btn-outline-info font-weight-bold" onclick="submitKembalikanAo()"
-                title="Kembalikan ke AO: ubah data di sana, proforma diperbarui otomatis tanpa pengajuan/mutasi ulang">
-                <i class="fa fa-reply mr-1"></i> Kembalikan ke AO
+            <button type="button" class="btn btn-outline-info font-weight-bold" onclick="submitBatalByAo()"
+                title="Batal by AO: estimate di AO DIHAPUS, pengajuan + mutasi ditahan. AO buat estimate baru dan otomatis lanjut ke proforma bernomor baru">
+                <i class="fa fa-reply mr-1"></i> Batal by AO
             </button>
-            <button type="button" class="btn btn-outline-warning font-weight-bold" onclick="submitCancel()">
-                <i class="fa fa-ban mr-1"></i> Batalkan Proforma
+            <button type="button" class="btn btn-outline-warning font-weight-bold" onclick="submitCancel()"
+                title="Batal by Admin: cabut pengajuan + hapus mutasi + kembalikan ke AO (estimate diarsip)">
+                <i class="fa fa-ban mr-1"></i> Batal by Admin
             </button>
             <!--<small class="text-muted">Customer akan dihapus dari existing dan log audit dicatat.</small>-->
         </div>
+        @if(!empty($pengajuan->tunggu_estimate_baru))
+        <div class="action-row justify-content-center" style="background:#fffbeb;">
+            <small class="text-muted"><i class="fa fa-hourglass-half mr-1"></i>Menunggu estimate baru dari AO (estimate lama: <strong>{{ $pengajuan->estimate_lama ?: '-' }}</strong>). Estimate baru yang cocok otomatis lanjut ke proforma.</small>
+        </div>
+        @endif
         {{-- Retry SO + Proforma (push AO gagal): sumber lokal items_json, duplikat ke-2 = free.
              Dua blok if terpisah tanpa nesting agar aman di semua versi compiler Blade. --}}
         @if(isset($retryInfo) && ($retryInfo['canRetry'] ?? false) && empty($retryInfo['proforma']))
@@ -643,9 +649,9 @@
             <input type="hidden" name="alasan" id="inputAlasanCancel">
             <input type="hidden" name="rollback_customer" value="1">
         </form>
-        <form method="POST" action="{{ route('superuser.penjualan.pengajuan_proforma.kembalikanAo', $pengajuan->id) }}" id="frmKembalikanAo" class="d-none">
+        <form method="POST" action="{{ route('superuser.penjualan.pengajuan_proforma.batalByAo', $pengajuan->id) }}" id="frmBatalByAo" class="d-none">
             @csrf
-            <input type="hidden" name="catatan" id="inputAlasanKembalikanAo">
+            <input type="hidden" name="catatan" id="inputAlasanBatalByAo">
         </form>
         @endif
     </div>
@@ -690,19 +696,19 @@ function submitKembalikan() {
 }
 
 function submitCancel() {
-    ppAskAlasan('Batalkan proforma?', 'Customer dihapus dari existing + log audit dicatat. Alasan (wajib diisi):', true)
+    ppAskAlasan('Batal by Admin?', 'Mencabut pengajuan + menghapus mutasi + mengembalikan ke AO (estimate diarsip). Alasan (wajib diisi):', true)
     .then(function(r) {
         if (!r.isConfirmed) return;
         document.getElementById('inputAlasanCancel').value = r.value;
         document.getElementById('frmCancel').submit();
     });
 }
-function submitKembalikanAo() {
-    ppAskAlasan('Kembalikan ke AO?', 'Ubah data di AO, proforma diperbarui otomatis. Catatan revisi (wajib diisi, misF. tambah/kurangi produk atau ubah diskon):', false)
+function submitBatalByAo() {
+    ppAskAlasan('Batal by AO?', 'Estimate di AO akan <b>DIHAPUS</b>, pengajuan + mutasi <b>DITAHAN</b>. AO buat estimate baru dan otomatis lanjut ke proforma bernomor baru. Alasan (wajib diisi):', false)
     .then(function(r) {
         if (!r.isConfirmed) return;
-        document.getElementById('inputAlasanKembalikanAo').value = r.value;
-        document.getElementById('frmKembalikanAo').submit();
+        document.getElementById('inputAlasanBatalByAo').value = r.value;
+        document.getElementById('frmBatalByAo').submit();
     });
 }
 

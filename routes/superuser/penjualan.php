@@ -301,6 +301,7 @@ Route::group([
         Route::post('/{id}/tolak',   'PengajuanProformaController@tolak')->name('tolak');
         Route::post('/{id}/kembalikan', 'PengajuanProformaController@kembalikan')->name('kembalikan');
         Route::post('/{id}/kembalikan-ao', 'PengajuanProformaController@kembalikanAo')->name('kembalikanAo');
+        Route::post('/{id}/batal-by-ao', 'PengajuanProformaController@batalByAo')->name('batalByAo');
         Route::post('/{id}/hapus',   'PengajuanProformaController@hapus')->name('hapus');
         Route::post('/{id}/cancel',  'PengajuanProformaController@cancel')->name('cancel');
         Route::post('/{id}/notif-ulang', 'PengajuanProformaController@notifUlang')->name('notif-ulang');

@@ -45,20 +45,20 @@
                 </button>
             </a>
 
-            {{-- Baris ADA pengajuan: Revisi + Batal langsung (tanpa redirect).
-                 Baris TANPA pengajuan (existing): tanpa Revisi/Batal. --}}
+            {{-- Baris ADA pengajuan: Batal by AO (tengah) + Batal by Admin (kanan).
+                 Baris TANPA pengajuan (existing): tanpa tombol batal. --}}
             @if($canRevisiBatal ?? false)
             @if($pgId)
             <button type="button" class="btn btn-sm btn-circle btn-alt-warning"
-                    onclick="submitKembalikanAoTab({{ $pgId }})"
-                    title="Revisi - kembalikan ke AO, proforma diperbarui otomatis tanpa pengajuan/mutasi ulang" aria-label="Revisi {{ $row->code }} ke AO">
+                    onclick="submitBatalByAoTab({{ $pgId }})"
+                    title="Batal by AO: estimate di AO DIHAPUS, pengajuan + mutasi ditahan, estimate baru otomatis ke proforma" aria-label="Batal by AO {{ $row->code }}">
                 <i class="fa fa-reply"></i>
             </button>
             <button type="button"
                 class="btn btn-sm btn-circle btn-alt-danger btn-batalkan-prospek"
                 data-pgid="{{ $pgId }}"
                 data-code="{{ $row->code }}"
-                title="Batalkan langsung - pengajuan dicabut + log (tanpa pindah halaman)" aria-label="Batalkan {{ $row->code }}">
+                title="Batal by Admin: cabut pengajuan + hapus mutasi + kembalikan ke AO (tanpa pindah halaman)" aria-label="Batal by Admin {{ $row->code }}">
                 <i class="fa fa-ban"></i>
             </button>
             @endif

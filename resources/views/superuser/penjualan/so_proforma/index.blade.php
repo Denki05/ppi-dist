@@ -112,15 +112,16 @@ function pfUnlock(btn) {
     btn.disabled = false;
     if (btn.dataset.orig) btn.innerHTML = btn.dataset.orig;
 }
-    // Revisi tab: kembalikan pengajuan ke AO (tanpa pengajuan/mutasi ulang, tanpa redirect)
-    function submitKembalikanAoTab(pgId) {
+    // Batal by AO tab: estimate di AO DIHAPUS, pengajuan + mutasi ditahan,
+    // estimate baru otomatis lanjut ke proforma (tanpa redirect)
+    function submitBatalByAoTab(pgId) {
         Swal.fire({
-            title: 'Kembalikan ke AO?',
-            html: '<div style="text-align:left;">Ubah data di AO, proforma diperbarui otomatis. Catatan revisi (wajib diisi):'
+            title: 'Batal by AO?',
+            html: '<div style="text-align:left;">Estimate di AO akan <b>DIHAPUS</b>, pengajuan + mutasi <b>DITAHAN</b>. AO buat estimate baru dan otomatis lanjut ke proforma bernomor baru. Alasan (wajib diisi):'
                 + '<textarea id="swCatatanAo" class="form-control" rows="3" placeholder="Wajib diisi..."></textarea></div>',
             icon: 'question',
             showCancelButton: true,
-            confirmButtonText: 'Ya, Kembalikan',
+            confirmButtonText: 'Ya, Batalkan',
             cancelButtonText: 'Batal',
             confirmButtonColor: '#4e73df',
             preConfirm: function() {
@@ -132,14 +133,14 @@ function pfUnlock(btn) {
             if (!r.isConfirmed) return;
             Swal.fire({ title: 'Memproses...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
             $.ajax({
-                url: '{{ route("superuser.penjualan.pengajuan_proforma.kembalikanAo", ":id") }}'.replace(':id', pgId),
+                url: '{{ route("superuser.penjualan.pengajuan_proforma.batalByAo", ":id") }}'.replace(':id', pgId),
                 type: 'POST',
                 data: {
                     _token: '{{ csrf_token() }}',
                     catatan: r.value
                 },
                 success: function(res) {
-                    Swal.fire('Berhasil!', res.message || 'Dikembalikan ke AO.', 'success')
+                    Swal.fire('Berhasil!', res.message || 'Batal by AO tersimpan.', 'success')
                         .then(() => location.reload());
                 },
                 error: function(xhr) {
@@ -346,8 +347,8 @@ function pfUnlock(btn) {
         let code = $(this).data('code') || '';
 
         Swal.fire({
-            title: 'Batalkan proforma ' + code + '?',
-            html: '<div style="text-align:left;">' +
+            title: 'Batal by Admin ' + code + '?',
+            html: '<div style="text-align:left;">Mencabut pengajuan + menghapus mutasi + mengembalikan ke AO (estimate diarsip).' +
                   '<label>Alasan pembatalan *</label>' +
                   '<textarea id="btlAlasan" class="form-control" rows="2" placeholder="Wajib diisi"></textarea>' +
                   '<div class="form-check mt-2"><input type="checkbox" class="form-check-input" id="btlRollback" checked>' +

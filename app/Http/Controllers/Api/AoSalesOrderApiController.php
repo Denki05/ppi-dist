@@ -83,6 +83,14 @@ class AoSalesOrderApiController extends Controller
             ]);
         }
 
+        // Batal by AO: estimate BARU untuk tiket yang ditahan (nama+HP+AO cocok)
+        // -> hubungkan ke pengajuan lama + auto-approve pakai mutasi lama.
+        // Tanpa verifikasi admin dan tanpa mutasi ulang.
+        $held = $this->findTiketBatalAo($request);
+        if ($held) {
+            return $this->terimaPenggantiBatalAo($request, $held, $items);
+        }
+
         try {
             $pengajuan = PengajuanProforma::updateOrCreate(
                 ['estimate_number' => $request->estimate_number],
@@ -133,6 +141,122 @@ class AoSalesOrderApiController extends Controller
         }
     }
     
+    /**
+     * Cari tiket Batal by AO yang cocok untuk kiriman estimate baru.
+     * Kunci: pengajuan disetujui + flag tunggu + ao_pic sama +
+     * nama ternormalisasi sama + HP sama (bila keduanya terisi).
+     */
+    private function findTiketBatalAo(Request $request)
+    {
+        $norm = function ($s) {
+            $s = strtolower(trim((string) $s));
+            $s = preg_replace('/\s+/', ' ', $s);
+            return $s;
+        };
+        $digits = function ($s) {
+            return preg_replace('/[^0-9]/', '', (string) $s);
+        };
+
+        $namaBaru = $norm($request->prospect_name);
+        $hpBaru = $digits($request->input('phone'));
+        $aoBaru = trim((string) $request->input('ao_pic', ''));
+        if ($namaBaru === '') {
+            return null;
+        }
+
+        $candidates = PengajuanProforma::where('status', PengajuanProforma::STATUS_DISETUJUI)
+            ->where('tunggu_estimate_baru', true)
+            ->orderBy('id', 'desc')
+            ->get();
+
+        foreach ($candidates as $p) {
+            if ($aoBaru !== '' && trim((string) $p->ao_pic) !== '' && trim((string) $p->ao_pic) !== $aoBaru) {
+                continue;
+            }
+            if ($norm($p->prospect_name) !== $namaBaru) {
+                continue;
+            }
+            $hpLama = $digits($p->phone);
+            if ($hpBaru !== '' && $hpLama !== '' && $hpBaru !== $hpLama) {
+                continue;
+            }
+            return $p;
+        }
+
+        return null;
+    }
+
+    /**
+     * Hubungkan estimate baru ke tiket Batal by AO + auto-approve.
+     * Pengajuan lama dipakai ulang (nomor estimate diperbarui), mutasi lama
+     * dipakai ulang, lalu notif mutasi dikirim agar AO otomatis lanjut
+     * (order -> push -> proforma bernomor baru). Tanpa klik admin.
+     */
+    private function terimaPenggantiBatalAo(Request $request, $held, array $items)
+    {
+        try {
+            DB::transaction(function () use ($request, $held, $items) {
+                $held->update([
+                    'estimate_number' => $request->estimate_number,
+                    'estimate_baru' => $request->estimate_number,
+                    'tunggu_estimate_baru' => false,
+                    'prospect_name' => $request->prospect_name,
+                    'perusahaan' => $request->input('perusahaan'),
+                    'owner' => $request->input('owner'),
+                    'phone' => $request->input('phone'),
+                    'address' => $request->input('address'),
+                    'city' => $request->input('city'),
+                    'provinsi' => $request->input('provinsi'),
+                    'kecamatan' => $request->input('kecamatan'),
+                    'kelurahan' => $request->input('kelurahan'),
+                    'zone' => $request->input('zone'),
+                    'kategori' => $request->input('kategori'),
+                    'ktp' => $request->ktp,
+                    'npwp' => $request->input('npwp'),
+                    'termin' => $request->termin,
+                    'foto_ktp_ada' => (bool) $request->input('foto_ktp_ada', false),
+                    'foto_npwp_ada' => (bool) $request->input('foto_npwp_ada', false),
+                    'bukti_ada' => $request->has('bukti_ada') ? (bool) $request->input('bukti_ada') : null,
+                    'grand_total' => $request->input('grand_total', 0),
+                    'items_count' => count($items),
+                    'items_json' => empty($items) ? null : json_encode(array_values($items)),
+                    'submitted_at' => $request->input('submitted_at'),
+                    'catatan' => ($held->catatan ? $held->catatan . ' | ' : '') . 'PENGGANTI: ' . $request->estimate_number . ' (dari ' . ($held->estimate_lama ?: '-') . ')',
+                ]);
+            });
+
+            // Picu jalur normal downstream (AO autoLanjut -> order -> push proforma).
+            $mutasiSvc = app(\App\Services\Penjualan\PengajuanMutasiService::class);
+            $notifOk = $mutasiSvc->notifAo($held->fresh());
+
+            Log::info('Batal-by-AO: pengganti terhubung + auto-approve', [
+                'pengajuan_id' => $held->id,
+                'estimate_lama' => $held->estimate_lama,
+                'estimate_baru' => $request->estimate_number,
+                'notif_ao' => $notifOk,
+            ]);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Estimate baru terhubung ke pengajuan lama — otomatis lanjut ke proforma (tanpa verifikasi ulang).'
+                    . ($notifOk ? '' : ' (Notifikasi ke AO gagal — estimate tetap tercatat, hubungi IT bila order tidak jalan.)'),
+                'pengajuan_id' => $held->id,
+                'status' => $held->status,
+                'langsung_proforma' => true,
+            ]);
+        } catch (\Exception $e) {
+            Log::error('Batal-by-AO: pengganti gagal', [
+                'estimate_baru' => $request->input('estimate_number'),
+                'error' => $e->getMessage(),
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Gagal menghubungkan estimate baru.',
+            ], 500);
+        }
+    }
+
     /**
      * Terima foto KTP/NPWP untuk pengajuan yang masih menunggu.
      * POST /api/ao/so-awal/pengajuan/{estimate_number}/dokumen (multipart, X-API-KEY)

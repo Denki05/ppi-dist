@@ -38,7 +38,7 @@
                 class="btn btn-sm btn-circle btn-alt-danger btn-batalkan-prospek"
                 data-pgid="{{ $pgId }}"
                 data-code="{{ $row->code }}"
-                title="Batalkan langsung - pengajuan dicabut + log (tanpa pindah halaman)" aria-label="Batalkan {{ $row->code }}">
+                title="Batal by Admin: cabut pengajuan + hapus mutasi + kembalikan ke AO (tanpa pindah halaman)" aria-label="Batal by Admin {{ $row->code }}">
                 <i class="fa fa-ban"></i>
             </button>
             @endif
