@@ -51,12 +51,13 @@ Route::group([
         Route::post('/update_ratio', 'ProductController@update_ratio')->name('update_ratio');
         Route::get('/update_ratio_template', 'ProductController@update_ratio_template')->name('update_ratio_template');
         Route::post('/update_on_order/{id}', 'ProductController@update_on_order')->name('update_on_order');
-        
+        Route::post('/duplicate_iva', 'ProductController@duplicateIva')->name('duplicate_iva');
+
         Route::group(['as' => 'product_pack.'], function () {
             Route::get('/{id}/product_pack/create', 'ProductPackController@create')->name('create');
             Route::post('/{id}/product_pack', 'ProductPackController@store')->name('store');
             Route::get('/{id}/product_pack/{pack_id}/edit', 'ProductPackController@edit')->name('edit');
-            Route::put('/{id}/product_pack/{pack_id}', 'ProductPackController@update')->name('update');
+            Route::put('/{id}/product_pack/{pack_id}', 'ProductPackController@update')->name('update');      
         });
     });
     Route::resource('product', 'ProductController');

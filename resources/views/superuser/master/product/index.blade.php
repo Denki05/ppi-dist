@@ -5,6 +5,8 @@
   <a href="{{ route('superuser.master.product.create') }}" class="btn btn-primary btn-lg active" role="button" aria-pressed="true" style="margin-left: 10px !important;">Create</a>
   <button type="button" class="btn btn-outline-info ml-10" data-toggle="modal" data-target="#modal-manage">Manage</button>
 
+  
+
   <button type="button" class="btn btn-outline-warning ml-10" data-toggle="modal" data-target="#ModalLoginForm">
     Print
   </button>
@@ -16,6 +18,11 @@
     <button type="button" class="btn btn-outline-secondary ml-10" data-toggle="modal" data-target="#modal-import-export-ratio">
         Import/Export Ratio
     </button>
+
+    <button type="button" class="btn btn-outline-warning ml-10" id="btn-duplicate-iva">Duplikat IVA (1-klik)</button>
+    <form id="form-duplicate-iva" action="{{ route('superuser.master.product.duplicate_iva') }}" method="POST" style="display:none;">
+        @csrf
+    </form>
   @endrole
 </nav>
 
@@ -29,15 +36,13 @@
 </div>
 @endif
 
-@if($errors->any())
+@if(session('error'))
 <div class="alert alert-danger alert-dismissable" role="alert">
   <button type="button" class="close" data-dismiss="alert" aria-label="Close">
       <span aria-hidden="true">×</span>
   </button>
   <h3 class="alert-heading font-size-h4 font-w400">Error</h3>
-  @foreach ($errors->all() as $error)
-  <p class="mb-0">{{ $error }}</p>
-  @endforeach
+  <p class="mb-0">{{ session('error') }}</p>
 </div>
 @endif
 
@@ -351,6 +356,22 @@ $(document).ready(function() {
     });
 
     $('.js-select2').select2();
+
+    $('#btn-duplicate-iva').on('click', function(e) {
+        e.preventDefault();
+        Swal.fire({
+            title: 'Duplikat 12 produk ke IVA?',
+            text: 'Produk lama dikembalikan ke nama awal, produk IVA baru dibuat (ID + IVA, kode tetap), dan 15 SO + 15 DO terlist diarahkan ke IVA. Aman diulang.',
+            type: 'warning',
+            showCancelButton: true,
+            confirmButtonText: 'Ya, proses',
+            cancelButtonText: 'Batal'
+        }).then((result) => {
+            if (result.value) {
+                $('#form-duplicate-iva').submit();
+            }
+        });
+    });
 
     $(document).on('change', '.toggle-on-order', function(e) {
         e.preventDefault();
