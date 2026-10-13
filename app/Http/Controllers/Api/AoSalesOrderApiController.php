@@ -75,6 +75,13 @@ class AoSalesOrderApiController extends Controller
         // dibatalkan: baris dipakai ulang, status kembali menunggu.
         $bolehUlang = [PengajuanProforma::STATUS_MENUNGGU, PengajuanProforma::STATUS_REVISI, PengajuanProforma::STATUS_DITOLAK, PengajuanProforma::STATUS_DIBATALKAN];
         if ($sudah && !in_array($sudah->status, $bolehUlang, true)) {
+            // Retry nomor SAMA untuk tiket yang masih menunggu: hubungkan +
+            // auto-approve (kasus Kirim ulang setelah Batal by AO).
+            if ($sudah->status === PengajuanProforma::STATUS_DISETUJUI
+                && !empty($sudah->tunggu_estimate_baru)
+            ) {
+                return $this->terimaPenggantiBatalAo($request, $sudah, $items, true);
+            }
             return response()->json([
                 'success' => true,
                 'message' => 'Pengajuan sudah diproses (' . $sudah->status . '), kiriman ulang diabaikan.',
@@ -192,12 +199,11 @@ class AoSalesOrderApiController extends Controller
      * dipakai ulang, lalu notif mutasi dikirim agar AO otomatis lanjut
      * (order -> push -> proforma bernomor baru). Tanpa klik admin.
      */
-    private function terimaPenggantiBatalAo(Request $request, $held, array $items)
+    private function terimaPenggantiBatalAo(Request $request, $held, array $items, bool $nomorSama = false)
     {
         try {
-            DB::transaction(function () use ($request, $held, $items) {
-                $held->update([
-                    'estimate_number' => $request->estimate_number,
+            DB::transaction(function () use ($request, $held, $items, $nomorSama) {
+                $data = [
                     'estimate_baru' => $request->estimate_number,
                     'tunggu_estimate_baru' => false,
                     'prospect_name' => $request->prospect_name,
@@ -222,7 +228,13 @@ class AoSalesOrderApiController extends Controller
                     'items_json' => empty($items) ? null : json_encode(array_values($items)),
                     'submitted_at' => $request->input('submitted_at'),
                     'catatan' => ($held->catatan ? $held->catatan . ' | ' : '') . 'PENGGANTI: ' . $request->estimate_number . ' (dari ' . ($held->estimate_lama ?: '-') . ')',
-                ]);
+                ];
+                // Retry nomor sama: baris sudah bernomor itu, jangan ubah.
+                // Nomor baru: pindahkan baris ke nomor pengganti.
+                if (!$nomorSama) {
+                    $data['estimate_number'] = $request->estimate_number;
+                }
+                $held->update($data);
             });
 
             // Picu jalur normal downstream (AO autoLanjut -> order -> push proforma).
@@ -267,7 +279,16 @@ class AoSalesOrderApiController extends Controller
         if (!$pengajuan) {
             return response()->json(['success' => false, 'message' => 'Pengajuan tidak ditemukan. Kirim pengajuan dulu.'], 404);
         }
-        if ($pengajuan->status !== PengajuanProforma::STATUS_MENUNGGU) {
+        // Pengganti Batal by AO: pengajuan sudah disetujui + menempel ke nomor
+        // ini (estimate_baru) — dokumen baru tetap diterima (menggantikan
+        // dokumen lama), karena foto-foto segar bagian dari revisi.
+        // Tiket yang masih menunggu (belum ada pengganti tertaut) juga boleh
+        // terima dokumen agar retry tidak mentok sebelum kecocokan terjadi.
+        $dokumenBoleh = $pengajuan->status === PengajuanProforma::STATUS_MENUNGGU
+            || ($pengajuan->status === PengajuanProforma::STATUS_DISETUJUI
+                && ($pengajuan->estimate_baru === $estimate_number
+                    || !empty($pengajuan->tunggu_estimate_baru)));
+        if (!$dokumenBoleh) {
             return response()->json(['success' => false, 'message' => 'Pengajuan sudah diproses, dokumen tidak bisa diubah.'], 422);
         }
 

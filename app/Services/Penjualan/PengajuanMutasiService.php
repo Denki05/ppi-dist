@@ -551,6 +551,66 @@ class PengajuanMutasiService
         }
     }
 
+    /**
+     * Perintah hapus estimate di AO (Tolak / Batal by Admin pre-mutasi).
+     * Prinsip: tidak sesuai = ulang dari nol (item + file + baris dibuang,
+     * tanpa tiket). Non-blocking.
+     */
+    public function notifAoHapusEstimate(string $aoPic, string $estimateNumber, string $alasan = ''): bool
+    {
+        $aoCallbackUrl = config('services.ao_module.notif_inbound_url');
+        $aoApiKey      = config('services.ao_module.api_key');
+
+        if (empty($aoCallbackUrl)) {
+            Log::warning('PengajuanMutasi: ao_module.notif_inbound_url belum dikonfigurasi, skip hapus estimate.');
+            return false;
+        }
+
+        try {
+            $client = new \GuzzleHttp\Client([
+                'timeout' => 10,
+                'connect_timeout' => 5,
+                'verify' => false,
+                'http_errors' => false,
+            ]);
+
+            $response = $client->post($aoCallbackUrl, [
+                'headers' => [
+                    'Authorization' => 'Bearer ' . $aoApiKey,
+                    'Accept' => 'application/json',
+                    'Content-Type' => 'application/json',
+                ],
+                'json' => [
+                    'ao_pic'          => $aoPic,
+                    'estimate_number' => $estimateNumber,
+                    'type'            => 'estimate_hapus',
+                    'title'           => 'Pengajuan ditolak (' . $estimateNumber . ')',
+                    'body'            => 'Pengajuan ' . $estimateNumber . ' ditolak admin, datanya dihapus total.'
+                        . ' Buat baru dari nol bila masih perlu.'
+                        . ($alasan !== '' ? ' Alasan: ' . $alasan : ''),
+                    'alasan'          => $alasan,
+                ],
+            ]);
+
+            $code = $response->getStatusCode();
+            $ok = $code >= 200 && $code < 300;
+
+            Log::info('PengajuanMutasi: notif hapus estimate AO', [
+                'estimate_number' => $estimateNumber,
+                'status'          => $code,
+                'ok'              => $ok,
+            ]);
+
+            return $ok;
+        } catch (\Exception $e) {
+            Log::warning('PengajuanMutasi: notif hapus estimate exception', [
+                'estimate_number' => $estimateNumber,
+                'error'           => $e->getMessage(),
+            ]);
+            return false;
+        }
+    }
+
     // ------------------------------------------------------------------
     // PRIVATE HELPERS
     // ------------------------------------------------------------------

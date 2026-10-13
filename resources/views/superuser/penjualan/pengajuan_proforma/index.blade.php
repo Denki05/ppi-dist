@@ -188,22 +188,7 @@
                                     </button>
                                 </form>
 
-                                {{-- Kembalikan (revisi): baris dipertahankan, AO perbaiki --}}
-                                <form method="POST"
-                                      action="{{ route('superuser.penjualan.pengajuan_proforma.kembalikan', $item->id) }}"
-                                      class="d-inline" id="frmK{{ $item->id }}">
-                                    @csrf
-                                    <input type="hidden" name="catatan" id="alasanK{{ $item->id }}">
-                                    <button type="button"
-                                        class="btn btn-kembali btn-outline-warning ml-1"
-                                        title="Kembalikan untuk revisi — baris dipertahankan"
-                                        aria-label="Kembalikan {{ $item->prospect_name }} untuk revisi"
-                                        onclick="doKembalikan({{ $item->id }}, '{{ addslashes($item->prospect_name) }}')">
-                                        <i class="fa fa-undo"></i>
-                                    </button>
-                                </form>
-
-                                {{-- Tolak langsung = cabut total --}}
+                                {{-- Batal by Admin = tolak + cabut total (baris + file + estimate di AO dihapus) --}}
                                 <form method="POST"
                                       action="{{ route('superuser.penjualan.pengajuan_proforma.tolak', $item->id) }}"
                                       class="d-inline" id="frmT{{ $item->id }}">
@@ -211,8 +196,8 @@
                                     <input type="hidden" name="catatan" id="alasanT{{ $item->id }}">
                                     <button type="button"
                                         class="btn btn-tolak btn-outline-danger ml-1"
-                                        title="Tolak — baris + file dihapus total"
-                                        aria-label="Tolak {{ $item->prospect_name }}"
+                                        title="Batal by Admin — baris + file + estimate di AO dihapus total, ulang dari nol"
+                                        aria-label="Batal by Admin {{ $item->prospect_name }}"
                                         onclick="doTolak({{ $item->id }}, '{{ addslashes($item->prospect_name) }}')">
                                         <i class="fa fa-times"></i>
                                     </button>
@@ -303,19 +288,8 @@ function doMutasi(id, nama) {
     });
 }
 
-function doKembalikan(id, nama) {
-    ppAskAlasanIdx('Kembalikan untuk revisi?', 'Baris <b>dipertahankan</b>. Catatan untuk AO (wajib diisi):', false)
-    .then(function(r) {
-        if (!r.isConfirmed) return;
-        document.getElementById('alasanK' + id).value = r.value;
-        var btn = document.querySelector('#frmK' + id + ' button');
-        lockBtn(btn);
-        document.getElementById('frmK' + id).submit();
-    });
-}
-
 function doTolak(id, nama) {
-    ppAskAlasanIdx('Tolak pengajuan?', 'Pengajuan <b>"' + nama + '"</b> akan <b>DIHAPUS total</b> (baris + file). Alasan wajib diisi:', true)
+    ppAskAlasanIdx('Batal by Admin?', 'Pengajuan <b>"' + nama + '"</b> akan <b>DIHAPUS total</b> (baris + file + estimate di AO). Ulang dari nol bila perlu. Alasan wajib diisi:', true)
     .then(function(r) {
         if (!r.isConfirmed) return;
         document.getElementById('alasanT' + id).value = r.value;

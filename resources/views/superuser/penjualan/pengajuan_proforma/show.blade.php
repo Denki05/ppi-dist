@@ -497,16 +497,10 @@
                 </form>
             @endif
 
-            {{-- Kembalikan = revisi, baris + file DIPERTAHANKAN --}}
-            <button type="button" class="btn btn-outline-warning font-weight-bold" onclick="submitKembalikan()"
-                title="Kembalikan (revisi): baris dipertahankan, AO perbaiki lalu ajukan ulang">
-                <i class="fa fa-undo mr-1"></i> Kembalikan (Revisi)
-            </button>
-
-            {{-- Tolak = cabut total (pengganti Hapus/Revisi yang lama) --}}
+            {{-- Batal by Admin = tolak + cabut total (baris + file + estimate di AO dihapus) --}}
             <button type="button" class="btn btn-outline-danger font-weight-bold" onclick="submitTolak()"
-                title="Tolak: baris + file dihapus total, AO mulai dari draft">
-                <i class="fa fa-times mr-1"></i> Tolak (Cabut Total)
+                title="Batal by Admin: baris + file + estimate di AO dihapus total, ulang dari nol bila perlu">
+                <i class="fa fa-times mr-1"></i> Batal by Admin
             </button>
 
             @if(!empty($fieldErrors))
@@ -521,11 +515,6 @@
             <input type="hidden" name="catatan" id="inputAlasanTolak">
         </form>
 
-        {{-- Hidden form kembalikan (revisi, baris dipertahankan) --}}
-        <form method="POST" action="{{ route('superuser.penjualan.pengajuan_proforma.kembalikan', $pengajuan->id) }}" id="frmKembalikan" class="d-none">
-            @csrf
-            <input type="hidden" name="catatan" id="inputAlasanKembalikan">
-        </form>
         @endif
 
         {{-- Terminal state --}}
@@ -679,19 +668,11 @@ function ppAskAlasan(judul, teks, danger) {
     });
 }
 function submitTolak() {
-    ppAskAlasan('Tolak pengajuan?', 'Pengajuan akan <b>DIHAPUS total</b> (baris + file). Alasan wajib diisi:', true)
+    ppAskAlasan('Batal by Admin?', 'Pengajuan akan <b>DIHAPUS total</b> (baris + file + estimate di AO). Ulang dari nol bila perlu. Alasan wajib diisi:', true)
     .then(function(r) {
         if (!r.isConfirmed) return;
         document.getElementById('inputAlasanTolak').value = r.value;
         document.getElementById('frmTolak').submit();
-    });
-}
-function submitKembalikan() {
-    ppAskAlasan('Kembalikan untuk revisi?', 'Baris dipertahankan. Catatan untuk AO (wajib diisi):', false)
-    .then(function(r) {
-        if (!r.isConfirmed) return;
-        document.getElementById('inputAlasanKembalikan').value = r.value;
-        document.getElementById('frmKembalikan').submit();
     });
 }
 

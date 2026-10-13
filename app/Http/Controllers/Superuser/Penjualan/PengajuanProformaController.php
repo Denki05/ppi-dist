@@ -644,19 +644,21 @@ class PengajuanProformaController extends Controller
 
         return redirect()
             ->route('superuser.penjualan.pengajuan_proforma.index')
-            ->with('success', 'Pengajuan ditolak dan dicabut total.'
+            ->with('success', 'Pengajuan ditolak dan dicabut total (Batal by Admin).'
                 . ($notifOk
-                    ? ' AO sudah diberi tahu — estimate kembali draft.'
-                    : ' (Notifikasi otomatis ke AO gagal — minta AO perbaiki manual / hubungi IT.)'));
+                    ? ' AO sudah diberi tahu — estimate dihapus, buat baru bila perlu.'
+                    : ' (Perintah hapus ke AO gagal — minta AO hapus manual / hubungi IT.)'));
     }
 
     /**
-     * Cabut total pengajuan pre-mutasi: hapus file + baris + kabari AO.
-     * Dipakai tolak() dan hapus(). Mengembalikan hasil notif (bool).
+     * Cabut total pengajuan pre-mutasi: hapus file + baris di transaksi +
+     * perintah hapus estimate di AO (ulang dari nol). Dipakai tolak() dan
+     * hapus(). Mengembalikan hasil perintah hapus (bool).
      */
     private function cabutPengajuan(PengajuanProforma $pengajuan, string $alasan): bool
     {
         $estimateNumber = $pengajuan->estimate_number;
+        $aoPic = $pengajuan->ao_pic;
 
         foreach (['ktp_photo_path', 'npwp_photo_path'] as $col) {
             $p = $pengajuan->{$col};
@@ -678,7 +680,7 @@ class PengajuanProformaController extends Controller
             'alasan' => $alasan,
         ]);
 
-        return $this->notifyAoRevisi($estimateNumber, $alasan);
+        return $this->mutasiSvc->notifAoHapusEstimate($aoPic, $estimateNumber, $alasan);
     }
 
     // ------------------------------------------------------------------
