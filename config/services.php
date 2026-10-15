@@ -62,4 +62,11 @@ return [
         'api_key'           => env('AO_MODULE_API_KEY', ''),
     ],
 
+    // SSO Google (Socialite). Isi di .env: GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET, GOOGLE_REDIRECT_URI.
+    'google' => [
+        'client_id'     => env('GOOGLE_CLIENT_ID'),
+        'client_secret' => env('GOOGLE_CLIENT_SECRET'),
+        'redirect'      => env('GOOGLE_REDIRECT_URI'),
+    ],
+
 ];

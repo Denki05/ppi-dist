@@ -65,6 +65,22 @@ Route::group([
     });
     Route::resource('product', 'ProductController');
 
+    // SH Produk: sertifikasi halal (tabel bantuan untuk landing halal).
+    Route::group(['as' => 'sh_produk.', 'prefix' => '/sh_produk'], function () {
+        Route::get('/', 'ShProdukController@index')->name('index');
+        Route::get('/data', 'ShProdukController@data')->name('data');
+        Route::post('/upload-list', 'ShProdukController@uploadList')->name('upload_list');
+        Route::post('/upload-pdf', 'ShProdukController@uploadPdf')->name('upload_pdf');
+        Route::post('/run', 'ShProdukController@run')->name('run');
+        Route::post('/confirm-brand-map', 'ShProdukController@confirmBrandMap')->name('confirm_brand_map');
+        Route::post('/review/{id}', 'ShProdukController@review')->name('review');
+        Route::post('/bulk', 'ShProdukController@bulk')->name('bulk');
+        // Singapore (MUIS): import QR + upload PDF Annex A + pencocokan SG.
+        Route::post('/import-qr-sg', 'ShProdukController@importQrSg')->name('import_qr_sg');
+        Route::post('/upload-pdf-sg', 'ShProdukController@uploadPdfSg')->name('upload_pdf_sg');
+        Route::post('/run-sg', 'ShProdukController@runSg')->name('run_sg');
+    });
+
     Route::group(['as' => 'product_category.', 'prefix' => '/product_category'], function () {
         Route::get('/import_template', 'ProductCategoryController@import_template')->name('import_template');
         Route::post('/import', 'ProductCategoryController@import')->name('import');

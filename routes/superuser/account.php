@@ -26,6 +26,9 @@ Route::group([
         Route::post('/update','Account\UserController@update')->name('update');
         Route::post('/destroy','Account\UserController@destroy')->name('destroy');
         Route::post('/restore','Account\UserController@restore')->name('restore');
+        // Approval pendaftar SSO (paket jabatan, tanpa checklist).
+        Route::get('/{id}/approve','Account\UserController@approveForm')->name('approve.form');
+        Route::post('/approve','Account\UserController@approve')->name('approve');
     });
 
     Route::group(['as' => 'sales_person.', 'prefix' => '/sales_person'], function () {

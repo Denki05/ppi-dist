@@ -74,11 +74,32 @@ class AuthenticationController extends Controller
             } else if ($validator->passes() AND Auth::guard('superuser')->attempt($credentials, $remember) == true) {
                 $request->session()->regenerate();
 
-                $response['notification'] = [
-                    'alert' => 'notify',
-                    'type' => 'success',
-                    'content' => 'Success',
-                ];
+                $user = Auth::guard('superuser')->user();
+
+                // Warning akun lama: email random / belum link Google -> arahkan ke Profile.
+                if ($this->needsEmailFix($user)) {
+                    $response['notification'] = [
+                        'alert' => 'notify',
+                        'type' => 'warning',
+                        'content' => 'Login berhasil. Email akun Anda (' . e($user->email) . ') perlu diperbarui ke Gmail asli agar bisa hubungkan Google. Anda diarahkan ke halaman Profile.',
+                    ];
+                    $response['redirect_to'] = route('superuser.profile.index');
+                    return $this->response(200, $response);
+                }
+
+                if (empty($user->google_id)) {
+                    $response['notification'] = [
+                        'alert' => 'notify',
+                        'type' => 'success',
+                        'content' => 'Login berhasil. Akun belum terhubung Google — hubungkan di halaman Profile agar ke depan bisa login 1 klik.',
+                    ];
+                } else {
+                    $response['notification'] = [
+                        'alert' => 'notify',
+                        'type' => 'success',
+                        'content' => 'Success',
+                    ];
+                }
                 $response['redirect_to'] = route('superuser.index');
                 return $this->response(200, $response);
             }
@@ -155,6 +176,28 @@ class AuthenticationController extends Controller
         $tokenData->update(['used' => true]);
 
         return redirect()->route('superuser.index'); // ubah sesuai dashboard Anda
+    }
+
+    /**
+     * Email butuh diperbaiki kalau bukan Gmail / bukan domain kantor.
+     * Akun lama yang pakai email random akan kena warning + diarahkan ke Profile.
+     */
+    protected function needsEmailFix($user)
+    {
+        if (!$user || empty($user->email)) {
+            return true;
+        }
+
+        $email = strtolower(trim($user->email));
+
+        if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
+            return true;
+        }
+
+        $allowed = ['gmail.com', 'googlemail.com', 'lssoft88.xyz', 'lsfragrance.id'];
+        $domain = substr(strrchr($email, '@'), 1);
+
+        return !in_array($domain, $allowed, true);
     }
 
     /**

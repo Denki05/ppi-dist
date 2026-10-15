@@ -22,6 +22,7 @@ class ProfileController extends Controller
         if ($request->ajax()) {
             $validator = Validator::make($request->all(), [
                 'name'             => 'nullable|string',
+                'email'            => 'nullable|email|max:255',
                 'image'            => 'nullable|image|mimes:jpeg,png,jpg|max:2048',
                 'current_password' => 'nullable|string',
                 'new_password'     => 'nullable|required_with:current_password|min:8|max:16|confirmed'
@@ -48,6 +49,31 @@ class ProfileController extends Controller
                 }
 
                 $superuser->name = $request->input('name');
+
+                // Update email (akun lama pakai email random -> ganti ke gmail asli).
+                // Email berubah = google_id dilepas, wajib hubungkan ulang + verifikasi ulang.
+                $newEmail = strtolower(trim((string) $request->input('email', '')));
+                if ($newEmail !== '' && $newEmail !== strtolower(trim((string) $superuser->email))) {
+                    $exists = Superuser::where('email', $newEmail)
+                        ->where('id', '!=', $superuser->id)
+                        ->exists();
+
+                    if ($exists) {
+                        $response['notification'] = [
+                            'alert' => 'block',
+                            'type' => 'alert-danger',
+                            'header' => 'Error',
+                            'content' => 'Email sudah dipakai user lain.',
+                        ];
+
+                        return $this->response(400, $response);
+                    }
+
+                    $superuser->email = $newEmail;
+                    $superuser->email_verified_at = null;
+                    $superuser->google_id = null;
+                    $emailChanged = true;
+                }
 
                 if (!empty($request->file('image'))) {
                     if (is_file_exists(Superuser::$directory_image.$superuser->image)) {
@@ -81,7 +107,9 @@ class ProfileController extends Controller
                     $response['notification'] = [
                         'alert' => 'notify',
                         'type' => 'success',
-                        'content' => 'Success',
+                        'content' => !empty($emailChanged)
+                            ? 'Email diperbarui. Silakan hubungkan ulang Google di bawah agar bisa login 1 klik.'
+                            : 'Success',
                     ];
 
                     $response['redirect_to'] = 'reload()';
@@ -89,6 +117,32 @@ class ProfileController extends Controller
                     return $this->response(200, $response);
                 }
             }
+        }
+    }
+
+    /**
+     * Lepas hubungan Google (misal ganti gmail). Login password tetap bisa.
+     */
+    public function unlinkGoogle(Request $request)
+    {
+        if ($request->ajax()) {
+            $superuser = Superuser::find(Auth::guard('superuser')->id());
+
+            if ($superuser === null) {
+                abort(404);
+            }
+
+            $superuser->google_id = null;
+            $superuser->save();
+
+            $response['notification'] = [
+                'alert' => 'notify',
+                'type' => 'success',
+                'content' => 'Hubungan Google dilepas. Hubungkan lagi kapan saja.',
+            ];
+            $response['redirect_to'] = 'reload()';
+
+            return $this->response(200, $response);
         }
     }
 }
