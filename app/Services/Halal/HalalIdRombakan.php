@@ -54,6 +54,28 @@ class HalalIdRombakan
         if ($items->isEmpty()) {
             throw new \RuntimeException('Isi halaman ' . $halaman . ' tidak ditemukan.');
         }
+        // Sembuh-sendiri bila halaman tercatat stale: cari halaman
+        // sebenarnya dari nomor produk, pakai itu + betulkan helper.
+        $ada = false;
+        foreach ($items as $it) {
+            if ((int) $it->nomor_urut === $dipilih) {
+                $ada = true;
+                break;
+            }
+        }
+        if (!$ada) {
+            $fix = HalalPdfItem::where('document_id', $docPdf->id)
+                ->where('nomor_urut', $dipilih)->first();
+            if (!$fix) {
+                throw new \RuntimeException('Nomor produk tidak ada di halaman ' . $halaman . '.');
+            }
+            \Log::warning("SH rombakan: helper {$row->id} hal {$halaman} stale, pakai hal {$fix->halaman}.");
+            $halaman = (int) $fix->halaman;
+            $row->halaman_pdf = $halaman;
+            $row->save();
+            $items = HalalPdfItem::where('document_id', $docPdf->id)
+                ->where('halaman', $halaman)->orderBy('nomor_urut')->get();
+        }
 
         $pdf = new \setasign\Fpdi\TcpdfFpdi('P', 'mm', 'A4');
         // Font footer = font PDF asli (ikut repo agar tidak tergantung vendor).

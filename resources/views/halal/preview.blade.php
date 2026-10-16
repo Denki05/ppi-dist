@@ -156,7 +156,7 @@
     @endforeach
     </tbody>
   </table>
-  <div class="hal">Hal {{ $halaman ?? '-' }} / Total Produk: {{ $totalProduk ?? '1500' }}</div>
+  <div class="hal">Hal {{ $halaman ? (($row->sumber ?: 'ID') === 'SG' ? $halaman : max(1, $halaman - 1)) : '-' }} / Total Produk: {{ $totalProduk ?? '1500' }}</div>
 
   {{-- Footer lampiran sesuai PDF asli: diterbitkan + kepala + QR + e-sign + BSrE. --}}
   <table class="lamp-terbit"><tr>

@@ -208,6 +208,10 @@ class HalalLandingController extends Controller
             $lembaga = 'BPJPH Indonesia';
             $perusahaan = 'PT Kreasi Mewangikan Indonesia';
             $sertifikat = $row->nomor_sertifikat ?: ($docPdf->nomor_sertifikat ?? '-');
+            // Normalisasi tampilan: 3521...ID -> ID3521... (sama spt no_regis).
+            if (preg_match('/^(\d{15,25})ID$/', (string) $sertifikat, $mm)) {
+                $sertifikat = 'ID' . $mm[1];
+            }
             $expired = null;
             $qr = null;
             $issued = null;

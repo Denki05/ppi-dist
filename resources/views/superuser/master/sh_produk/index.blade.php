@@ -225,7 +225,8 @@
                             </td>
                             <td>
                                 @if($r->halaman_pdf)
-                                    <span title="Nomor urut PDF #{{ $r->nomor_urut_pdf }}">Hal. {{ $r->halaman_pdf }}</span>
+                                    {{-- ID: tampilkan nomor cetak (fisik - 1, cover tak bernomor); SG apa adanya. --}}
+                                    <span title="Nomor urut PDF #{{ $r->nomor_urut_pdf }}">Hal. {{ $r->sumber === 'SG' ? $r->halaman_pdf : max(1, $r->halaman_pdf - 1) }}</span>
                                 @else
                                     <span class="text-muted">—</span>
                                 @endif
