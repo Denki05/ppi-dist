@@ -377,7 +377,7 @@ class ProductController extends Controller
                 'brand_name'    => 'required|string',
                 'searah'        => 'required|integer',
                 'category'      => 'required|integer',
-                'code'          => 'required|string',
+                'code'          => 'nullable|string',
                 'name'          => 'required|string',
                 'material_code' => 'required|string',
                 'material_name' => 'required|string',

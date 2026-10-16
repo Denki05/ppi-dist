@@ -202,10 +202,11 @@
                     </div>
                   </div>
                   
-                  <div class="form-group row align-items-center mb-2">
+                  <div class="form-group row align-items-center mb-2" id="disc-kemasan-group" style="display: none;">
                     <label class="col-sm-4 col-form-label text-left compact-label pr-0" for="disc_kemasan">Disc Kemasan</label>
                     <div class="col-sm-8">
                       <input class="form-control form-control-sm" type="number" step="any" name="disc_kemasan" id="disc_kemasan" placeholder="0">
+                      <small class="form-text text-muted" style="font-size: 10.5px;">Hanya untuk kemasan 25 Kg Drum / 25 Kg Jirigen</small>
                     </div>
                   </div>
 
@@ -670,6 +671,20 @@
           });
         });
 
+        // Disc Kemasan hanya berlaku untuk 25 Kg Drum / 25 Kg Jirigen, selain itu di-hide
+        function toggleDiscKemasan() {
+          var txt = ($('#packaging_id option:selected').text() || '').toLowerCase().replace(/\s+/g, ' ');
+          var is25 = txt.indexOf('25') !== -1;
+          var isDrum = txt.indexOf('drum') !== -1;
+          var isJirigen = txt.indexOf('jirigen') !== -1 || txt.indexOf('jerigen') !== -1 || txt.indexOf('jergen') !== -1;
+          var show = is25 && (isDrum || isJirigen);
+          $('#disc-kemasan-group').toggle(show);
+          if (!show) {
+            $('#disc_kemasan').val('');
+          }
+        }
+        $('#packaging_id').on('change', toggleDiscKemasan);
+
         $('#addSO').on('click', function (e) {
           e.preventDefault();
           const form = document.getElementById('formAddSO');
@@ -738,15 +753,30 @@
         });
 
         $('#exampleModal').on('hidden.bs.modal', function (e) {
-
           $(this).removeData();
           $(this).find('form')[0].reset();
-
           $(this).find('.js-select2').val(null).trigger('change');
+
+          // UX: Sembunyikan kembali inputan opsional (guard: elemen lama mungkin tidak ada)
+          var kursGroup = document.getElementById('kurs-group');
+          if (kursGroup) kursGroup.style.display = 'none';
+          var discPctGroup = document.getElementById('disc-percent-group');
+          if (discPctGroup) discPctGroup.style.display = 'none';
+          var kursEl = document.getElementById('kurs');
+          if (kursEl) kursEl.required = false;
+          // Disc Kemasan kembali hide + kosongkan
+          $('#disc-kemasan-group').hide();
+          $('#disc_kemasan').val('');
         });
 
         $('#exampleModal').on('shown.bs.modal', function () {
-            $('#so_type').trigger('change');
+          toggleDiscKemasan();
+          $('#so_type').trigger('change');
+
+          // UX: Fokus otomatis ke dropdown customer setelah modal animasi selesai
+          setTimeout(function() {
+            $('#account_member').select2('open');
+          }, 100);
         });
 
         $('a[href^="#"]').on('click', function(event) {

@@ -78,6 +78,9 @@ class Kernel extends HttpKernel
         'role_or_permission'    => \Spatie\Permission\Middlewares\RoleOrPermissionMiddleware::class,
         'picker.auth'           => \App\Http\Middleware\PickerApiAuth::class,
         'ao.apikey'             => \App\Http\Middleware\VerifyAoApiKey::class,
+
+        // CORS khusus API halal (landing di hosting terpisah)
+        'cors.halal' => \App\Http\Middleware\CorsHalal::class,
     ];
 
     /**

@@ -52,6 +52,20 @@ Route::group(['prefix' => 'ao/so-awal', 'middleware' => 'ao.apikey'], function (
     Route::post('/update', [AoSalesOrderApiController::class, 'updateFromAo']);
 });
 
+// === API Halal untuk landing halal.lsfragrance.id (hosting terpisah) ===
+// Read-only, sumber = tabel bantuan halal_helpers (ID + SG).
+// Preview PDF rombakan diserve via /halal/produk/{id}/preview (web route).
+Route::group(['prefix' => 'halal', 'middleware' => 'cors.halal'], function () {
+    Route::get('/search', 'HalalLandingController@search');
+    Route::get('/produk/{id}', 'HalalLandingController@show');
+    Route::options('/search', function () {
+        return response('', 204);
+    });
+    Route::options('/produk/{id}', function () {
+        return response('', 204);
+    });
+});
+
 /*
 |--------------------------------------------------------------------------
 | Picker App API Routes
