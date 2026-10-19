@@ -9,6 +9,11 @@
   --sh-shadow:0 8px 28px rgba(31,42,55,.08); --sh-radius:16px;
 }
 .sh-wrap{max-width:1120px;margin:0 auto;}
+/* Penegasan hit-test modal halaman ini: netralisir konflik CSS Bootstrap ganda
+   (plus-admin .modal-dialog{pointer-events:none} tanpa kompensasi saat CDN BS4 gagal). */
+#modal-sumber, #modal-tinjau { pointer-events: auto; }
+#modal-sumber .modal-dialog, #modal-tinjau .modal-dialog,
+#modal-sumber .modal-content, #modal-tinjau .modal-content { pointer-events: auto; }
 .sh-hero{background:linear-gradient(120deg,#312e81 0%,#4f46e5 45%,#7c3aed 100%);border-radius:20px;color:#fff;padding:20px 22px;box-shadow:var(--sh-shadow);position:relative;overflow:hidden;margin-bottom:14px;}
 .sh-hero::after{content:'';position:absolute;right:-70px;top:-70px;width:260px;height:260px;background:radial-gradient(circle at center,rgba(255,255,255,.22),transparent 65%);pointer-events:none;}
 .sh-hero::before{content:'';position:absolute;left:38%;bottom:-90px;width:320px;height:320px;background:radial-gradient(circle at center,rgba(255,255,255,.12),transparent 65%);pointer-events:none;}
@@ -72,6 +77,7 @@
 .match-one{display:inline-block;max-width:300px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;vertical-align:middle;font-size:12px;color:#374151;}
 .match-key{color:var(--sh-muted);font-size:11px;white-space:nowrap;}
 .hal-chip{font-size:.76rem;color:#4b5563;background:#f1f5f9;border-radius:8px;padding:3px 9px;white-space:nowrap;font-weight:600;}
+.hal-chip.hal-est{background:#fffbeb;color:#92400e;border:1px dashed #f59e0b;}
 .btn-tinjau{border:1.5px solid #e0e7ff!important;background:#eef2ff!important;color:#4338ca!important;font-weight:700!important;font-size:.76rem!important;border-radius:9px!important;padding:5px 13px!important;transition:.15s;}
 .btn-tinjau:hover{background:#4338ca!important;color:#fff!important;border-color:#4338ca!important;}
 .sh-skel td{padding:12px!important;}
@@ -209,9 +215,9 @@
                         <td><input type="checkbox" class="sh-check" value="{{ $r->id }}"></td>
                         <td><div class="prod-line"><span class="src-badge src-{{ $r->sumber }}">{{ $r->sumber }}</span><span class="prod-name" title="{{ $r->nama_produk }}">{{ $r->nama_produk }}</span><span class="prod-code">{{ $r->kode_produk }}</span><a class="prod-prev" href="{{ url('/halal/produk/' . $r->id . '/preview') }}" target="_blank" title="{{ $r->merek }} • {{ $r->kode_produk }}">PDF &nearr;</a></div></td>
                         <td>@if($r->nama_di_list_halal)<span class="match-one" title="{{ $r->nama_di_list_halal }} ({{ $r->kunci_yang_dipakai ?? '-' }})">{{ $r->nama_di_list_halal }} <span class="match-key">#{{ $r->nomor_urut_list_halal }} • {{ $r->kunci_yang_dipakai ?? '-' }}</span></span>@else<span class="text-muted">&mdash;</span>@endif</td>
-                        <td>@if($r->halaman_pdf)<span class="hal-chip" title="Nomor urut PDF #{{ $r->nomor_urut_pdf }}">H.{{ $r->sumber === 'SG' ? $r->halaman_pdf : max(1, $r->halaman_pdf - 1) }}</span>@else<span class="text-muted">&mdash;</span>@endif</td>
+                        <td>@if($r->halaman_pdf)@php $halTampil = $r->sumber === 'SG' ? $r->halaman_pdf : max(1, $r->halaman_pdf - 1); $halEst = $r->status_pdf !== 'Terverifikasi PDF'; @endphp<span class="hal-chip {{ $halEst ? 'hal-est' : '' }}" title="{{ $halEst ? 'Estimasi — belum terverifikasi PDF' : 'Terverifikasi PDF' }} • Nomor urut #{{ $r->nomor_urut_pdf }}">H.{{ $halTampil }}{{ $halEst ? '*' : '' }}</span>@else<span class="text-muted">&mdash;</span>@endif</td>
                         <td>@if($r->status_pencocokan=='Cocok')<span class="st st-ok" @if($r->catatan_tinjauan)title="{{ $r->catatan_tinjauan }}"@endif>Cocok</span>@elseif($r->status_pencocokan=='Perlu ditinjau')<span class="st st-warn" @if($r->catatan_tinjauan)title="{{ $r->catatan_tinjauan }}"@endif>Tinjau</span>@else<span class="st st-bad" @if($r->catatan_tinjauan)title="{{ $r->catatan_tinjauan }}"@endif>Tidak</span>@endif</td>
-                        <td class="text-center"><button type="button" class="btn-tinjau" data-toggle="modal" data-target="#modal-tinjau" data-id="{{ $r->id }}" data-nama="{{ $r->nama_produk }}" data-kode="{{ $r->merek }} • {{ $r->kode_produk }}" data-status="{{ $r->status_pencocokan }}" data-catatan="{{ $r->catatan_tinjauan }}">Tinjau</button></td>
+                        <td class="text-center"><button type="button" class="btn-tinjau" data-toggle="modal" data-target="#modal-tinjau" data-id="{{ $r->id }}" data-nama="{{ $r->nama_produk }}" data-kode="{{ $r->merek }} • {{ $r->kode_produk }}" data-status="{{ $r->status_pencocokan }}" data-catatan="{{ $r->catatan_tinjauan }}" data-sumber="{{ $r->sumber }}" data-list="{{ $r->nomor_urut_list_halal }}" data-namalist="{{ $r->nama_di_list_halal }}" data-hal="{{ $r->halaman_pdf ? ($r->sumber === 'SG' ? $r->halaman_pdf : max(1, $r->halaman_pdf - 1)) : '' }}">Tinjau</button></td>
                     </tr>
                     @empty
                     <tr><td colspan="6"><div class="sh-empty"><div class="big"><i class="fa-solid fa-box-open"></i></div><strong>Belum ada data</strong><div>Upload sumber lalu jalankan pencocokan.</div></div></td></tr>
@@ -328,6 +334,17 @@
               <option value="Tidak cocok">Tidak cocok — disembunyikan</option>
             </select>
           </div>
+          <div class="form-group mb-2">
+            <label class="mb-1">Tautkan ke list halal <small class="text-muted">(opsional — no urut + halaman terisi otomatis)</small></label>
+            <div id="tinjau-cur" class="small text-muted mb-1">Belum terhubung ke list.</div>
+            <input type="hidden" name="nomor_urut_list" id="tinjau-nomor" value="">
+            <input type="hidden" name="lepas_tautan" id="tinjau-lepas-flag" value="">
+            <div class="input-group input-group-sm">
+              <input type="text" id="tinjau-cari" class="form-control form-control-sm" placeholder="ketik no / nama di list…" autocomplete="off">
+              <div class="input-group-append"><button type="button" class="btn btn-outline-secondary" id="tinjau-lepas" title="Lepas tautan">×</button></div>
+            </div>
+            <div id="tinjau-hasil" class="list-group mt-1" style="max-height:150px;overflow:auto;display:none;"></div>
+          </div>
           <div class="form-group mb-0">
             <label class="mb-1">Catatan</label>
             <input type="text" name="catatan_tinjauan" id="tinjau-catatan" class="form-control form-control-sm" placeholder="alasan / keputusan">
@@ -353,6 +370,7 @@
   var indexUrl = "{{ route('superuser.master.sh_produk.index') }}";
   var bulkUrl = "{{ route('superuser.master.sh_produk.bulk') }}";
   var reviewBase = "{{ url('superuser/master/sh_produk/review') }}";
+  var listCariUrl = "{{ route('superuser.master.sh_produk.list_cari') }}";
   var metaCsrf = document.querySelector('meta[name="csrf-token"]');
   var csrf = metaCsrf ? metaCsrf.getAttribute('content') : "{{ csrf_token() }}";
 
@@ -421,13 +439,15 @@
     return '<span class="st st-bad"'+t+'>Tidak</span>';
   }
   function rowHtml(r){
-    var hal = r.halaman_pdf ? '<span class="hal-chip" title="Nomor urut PDF #'+esc(r.nomor_urut_pdf)+'">H.'+(r.sumber==='SG' ? esc(r.halaman_pdf) : Math.max(1, r.halaman_pdf-1))+'</span>' : '<span class="text-muted">&mdash;</span>';
+    var halTampil = r.sumber==='SG' ? r.halaman_pdf : Math.max(1, r.halaman_pdf-1);
+    var halEst = r.status_pdf !== 'Terverifikasi PDF';
+    var hal = r.halaman_pdf ? '<span class="hal-chip'+(halEst?' hal-est':'')+'" title="'+(halEst?'Estimasi \u2014 belum terverifikasi PDF':'Terverifikasi PDF')+' \u2022 Nomor urut #'+esc(r.nomor_urut_pdf)+'">H.'+esc(halTampil)+(halEst?'*':'')+'</span>' : '<span class="text-muted">&mdash;</span>';
     var lst = r.nama_di_list_halal ? '<span class="match-one" title="'+esc(r.nama_di_list_halal)+' ('+esc(r.kunci_yang_dipakai||'-')+')">'+esc(r.nama_di_list_halal)+' <span class="match-key">#'+esc(r.nomor_urut_list_halal)+' • '+esc(r.kunci_yang_dipakai||'-')+'</span></span>' : '<span class="text-muted">&mdash;</span>';
     return '<tr data-id="'+r.id+'">'
       +'<td><input type="checkbox" class="sh-check" value="'+r.id+'"></td>'
       +'<td><div class="prod-line"><span class="src-badge src-'+esc(r.sumber)+'">'+esc(r.sumber)+'</span><span class="prod-name" title="'+esc(r.nama_produk)+'">'+esc(r.nama_produk)+'</span><span class="prod-code">'+esc(r.kode_produk)+'</span><a class="prod-prev" href="'+esc(r.preview_url)+'" target="_blank" title="'+esc(r.merek)+' • '+esc(r.kode_produk)+'">PDF &nearr;</a></div></td>'
       +'<td>'+lst+'</td><td>'+hal+'</td><td>'+statusBadge(r.status_pencocokan, r.catatan_tinjauan)+'</td>'
-      +'<td class="text-center"><button type="button" class="btn-tinjau" data-toggle="modal" data-target="#modal-tinjau" data-id="'+r.id+'" data-nama="'+esc(r.nama_produk)+'" data-kode="'+esc(r.merek)+' • '+esc(r.kode_produk)+'" data-status="'+esc(r.status_pencocokan)+'" data-catatan="'+esc(r.catatan_tinjauan||'')+'">Tinjau</button></td></tr>';
+      +'<td class="text-center"><button type="button" class="btn-tinjau" data-toggle="modal" data-target="#modal-tinjau" data-id="'+r.id+'" data-nama="'+esc(r.nama_produk)+'" data-kode="'+esc(r.merek)+' • '+esc(r.kode_produk)+'" data-status="'+esc(r.status_pencocokan)+'" data-catatan="'+esc(r.catatan_tinjauan||'')+'" data-sumber="'+esc(r.sumber)+'" data-list="'+(r.nomor_urut_list_halal||'')+'" data-namalist="'+esc(r.nama_di_list_halal||'')+'" data-hal="'+(r.halaman_pdf?(r.sumber==='SG'?r.halaman_pdf:Math.max(1,r.halaman_pdf-1)):'')+'">Tinjau</button></td></tr>';
   }
   function setText(sel, v){
     $all(sel).forEach(function(el){ el.textContent = v; });
@@ -585,7 +605,74 @@
     var kd = $('#tinjau-kode'); if(kd) kd.textContent = b.getAttribute('data-kode') || '';
     var st = $('#tinjau-status'); if(st) st.value = b.getAttribute('data-status') || 'Perlu ditinjau';
     var ct = $('#tinjau-catatan'); if(ct) ct.value = b.getAttribute('data-catatan') || '';
-    var f = $('#form-tinjau'); if(f) f.setAttribute('action', reviewBase + '/' + b.getAttribute('data-id'));
+    var rid = (b.getAttribute('data-id') || '').replace(/^\/+/, '');
+    var f = $('#form-tinjau'); if(f) f.setAttribute('action', reviewBase.replace(/\/+$/, '') + '/' + encodeURIComponent(rid));
+    tinjauLinkInit(b);
+  });
+
+  // Picker tautan list halal di modal Tinjau.
+  var tinjauSumber = 'ID', tinjauSeq = 0, tinjauDeb = null;
+  function tinjauCurLabel(){
+    var cur = $('#tinjau-cur'), hid = $('#tinjau-nomor'), flag = $('#tinjau-lepas-flag');
+    if(!cur) return;
+    if(flag && flag.value === '1'){ cur.textContent = 'Tautan akan dilepas saat Simpan.'; return; }
+    if(hid && hid.value){
+      cur.textContent = 'Terpilih: #' + hid.value + (hid.getAttribute('data-nama') ? ' — ' + hid.getAttribute('data-nama') : '') + ' (tersimpan saat Simpan)';
+    } else {
+      var l = cur.getAttribute('data-cur');
+      cur.textContent = l ? ('Terhubung: ' + l) : 'Belum terhubung ke list.';
+    }
+  }
+  function tinjauLinkInit(b){
+    tinjauSumber = b.getAttribute('data-sumber') || 'ID';
+    var hid = $('#tinjau-nomor'); if(hid){ hid.value = ''; hid.removeAttribute('data-nama'); }
+    var flag = $('#tinjau-lepas-flag'); if(flag) flag.value = '';
+    var nol = b.getAttribute('data-list') || '', nm = b.getAttribute('data-namalist') || '', hal = b.getAttribute('data-hal') || '';
+    var cur = $('#tinjau-cur');
+    if(cur) cur.setAttribute('data-cur', nol ? ('#' + nol + ' — ' + nm + (hal ? ' (H.' + hal + ')' : '')) : '');
+    var cari = $('#tinjau-cari');
+    if(cari){ cari.value = b.getAttribute('data-nama') || ''; }
+    var box = $('#tinjau-hasil'); if(box){ box.style.display = 'none'; box.innerHTML = ''; }
+    tinjauCurLabel();
+    tinjauCari();
+  }
+  function tinjauCari(){
+    var box = $('#tinjau-hasil'), cari = $('#tinjau-cari');
+    if(!box || !cari) return;
+    var my = ++tinjauSeq, qs = 'sumber=' + encodeURIComponent(tinjauSumber) + '&q=' + encodeURIComponent(cari.value.trim());
+    fetch(listCariUrl + '?' + qs, {headers:{'Accept':'application/json','X-Requested-With':'XMLHttpRequest'}})
+      .then(function(r){ return r.json(); })
+      .then(function(rows){
+        if(my !== tinjauSeq) return;
+        if(!rows || !rows.length){ box.style.display = 'none'; box.innerHTML = ''; return; }
+        box.innerHTML = rows.map(function(it){
+          return '<button type="button" class="list-group-item list-group-item-action py-1 px-2" style="font-size:.8rem;" data-nol="' + it.nomor_urut + '" data-nm="' + esc(it.nama_lengkap) + '"><strong>#' + it.nomor_urut + '</strong> — ' + esc(it.nama_lengkap) + '</button>';
+        }).join('');
+        box.style.display = 'block';
+      })
+      .catch(function(){});
+  }
+  var tinjauCariInput = $('#tinjau-cari');
+  if(tinjauCariInput) tinjauCariInput.addEventListener('input', function(){
+    if(tinjauDeb) clearTimeout(tinjauDeb);
+    tinjauDeb = setTimeout(tinjauCari, 300);
+  });
+  var tinjauHasil = $('#tinjau-hasil');
+  if(tinjauHasil) tinjauHasil.addEventListener('click', function(e){
+    var it = e.target.closest ? e.target.closest('[data-nol]') : null;
+    if(!it) return;
+    var hid = $('#tinjau-nomor');
+    if(hid){ hid.value = it.getAttribute('data-nol'); hid.setAttribute('data-nama', it.getAttribute('data-nm') || ''); }
+    var flag = $('#tinjau-lepas-flag'); if(flag) flag.value = '';
+    tinjauHasil.style.display = 'none';
+    tinjauCurLabel();
+  });
+  var tinjauLepas = $('#tinjau-lepas');
+  if(tinjauLepas) tinjauLepas.addEventListener('click', function(){
+    var hid = $('#tinjau-nomor'); if(hid){ hid.value = ''; hid.removeAttribute('data-nama'); }
+    var flag = $('#tinjau-lepas-flag'); if(flag) flag.value = '1';
+    var box = $('#tinjau-hasil'); if(box){ box.style.display = 'none'; }
+    tinjauCurLabel();
   });
   // Simpan tinjauan via fetch agar tidak reload; fallback submit biasa bila gagal.
   var formT = $('#form-tinjau');

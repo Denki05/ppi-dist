@@ -4,6 +4,8 @@ namespace App\Http\Controllers\Superuser\Master;
 
 use App\HalalDocument;
 use App\HalalHelper;
+use App\HalalList;
+use App\HalalPdfItem;
 use App\Http\Controllers\Controller;
 use App\Services\Halal\HalalMatcher;
 use App\Services\Halal\HalalSgImporter;
@@ -153,6 +155,7 @@ class ShProdukController extends Controller
                 'kunci_yang_dipakai' => $r->kunci_yang_dipakai,
                 'halaman_pdf' => $r->halaman_pdf,
                 'nomor_urut_pdf' => $r->nomor_urut_pdf,
+                'status_pdf' => $r->status_pdf,
                 'status_pencocokan' => $r->status_pencocokan,
                 'catatan_tinjauan' => $r->catatan_tinjauan,
                 'preview_url' => url('/halal/produk/' . $r->id . '/preview'),
@@ -266,8 +269,11 @@ class ShProdukController extends Controller
         $res = (new HalalMatcher())->importPdf(storage_path('app/' . $path), $doc->id);
         $doc->update(['total_baris' => $res['total'], 'nomor_sertifikat' => $res['cert']]);
 
-        return redirect()->route('superuser.master.sh_produk.index')
-            ->with('success', "PDF diimport: {$res['total']} produk, {$res['pages']} halaman, sertifikat {$res['cert']}.");
+        $msg = "PDF diimport: {$res['total']} produk, {$res['pages']} halaman, sertifikat {$res['cert']}.";
+        if ($res['offset'] !== null && $res['offset'] !== 1) {
+            $msg .= " Peringatan: penomoran tercetak bergeser (offset {$res['offset']}, normalnya 1 karena 1 cover) — kolom Hal. bisa salah, cek manual sebelum publish.";
+        }
+        return redirect()->route('superuser.master.sh_produk.index')->with('success', $msg);
     }
 
     /**
@@ -289,7 +295,8 @@ class ShProdukController extends Controller
             date('Y-m-d'), $docList->tanggal_versi, $docPdf->tanggal_versi
         );
         // Rapikan sisa baris ganda warisan ID: sisakan id terkecil per (merek, kode, sumber).
-        DB::statement("DELETE h1 FROM halal_helpers h1 INNER JOIN halal_helpers h2 ON h1.merek = h2.merek AND h1.kode_produk = h2.kode_produk AND h1.sumber = h2.sumber AND h1.sumber = 'ID' AND h1.id > h2.id");
+        // Baris kode-kosong dikecualikan: mereka memang satu-per-master, bukan ganda.
+        DB::statement("DELETE h1 FROM halal_helpers h1 INNER JOIN halal_helpers h2 ON h1.merek = h2.merek AND h1.kode_produk = h2.kode_produk AND h1.sumber = h2.sumber AND h1.sumber = 'ID' AND h1.kode_produk <> '' AND h1.id > h2.id");
         $msg = "Pencocokan selesai — Cocok: {$stats['Cocok']}, Perlu ditinjau: {$stats['Perlu ditinjau']}, Tidak cocok: {$stats['Tidak cocok']}.";
         if (!empty($stats['digabung'])) {
             $msg .= " {$stats['digabung']} baris master ganda digabung.";
@@ -355,11 +362,14 @@ class ShProdukController extends Controller
             'tanggal_versi' => $request->tanggal_pdf_sg,
             'created_by' => Auth::id(),
         ]);
+        // Normalisasi agar bisa dirombak pixel-identik via FPDI (konten visual sama).
+        $norm = HalalSgImporter::normalisasiUntukFpdi(storage_path('app/' . $path));
         $res = (new HalalSgImporter())->importPdf(storage_path('app/' . $path), $doc->id);
         $doc->update(['total_baris' => $res['total'], 'nomor_sertifikat' => $res['cert']]);
 
-        return redirect()->route('superuser.master.sh_produk.index')
-            ->with('success', "PDF SG diimport: {$res['total']} produk, {$res['pages']} halaman, sertifikat {$res['cert']}.");
+        $msg = "PDF SG diimport: {$res['total']} produk, {$res['pages']} halaman, sertifikat {$res['cert']}.";
+        $msg .= $norm ? ' File dinormalisasi untuk preview pixel-identik.' : ' Catatan: tanpa Ghostscript di server, preview memakai replica.';
+        return redirect()->route('superuser.master.sh_produk.index')->with('success', $msg);
     }
 
     /**
@@ -381,7 +391,7 @@ class ShProdukController extends Controller
             date('Y-m-d'), $docList->tanggal_versi, $docPdf ? $docPdf->tanggal_versi : null,
             $docList->tanggal_kedaluwarsa, $docList->nama_perusahaan
         );
-        DB::statement("DELETE h1 FROM halal_helpers h1 INNER JOIN halal_helpers h2 ON h1.merek = h2.merek AND h1.kode_produk = h2.kode_produk AND h1.sumber = h2.sumber AND h1.sumber = 'SG' AND h1.id > h2.id");
+        DB::statement("DELETE h1 FROM halal_helpers h1 INNER JOIN halal_helpers h2 ON h1.merek = h2.merek AND h1.kode_produk = h2.kode_produk AND h1.sumber = h2.sumber AND h1.sumber = 'SG' AND h1.kode_produk <> '' AND h1.id > h2.id");
 
         return redirect()->route('superuser.master.sh_produk.index')
             ->with('success', "Pencocokan SG selesai — Cocok: {$stats['Cocok']}, Perlu ditinjau: {$stats['Perlu ditinjau']}, Tidak cocok: {$stats['Tidak cocok']}.");
@@ -400,20 +410,106 @@ class ShProdukController extends Controller
         return redirect()->route('superuser.master.sh_produk.index')
             ->with('success', 'Peta merek PPI FF / PPI NON FF = IVA dikonfirmasi. Jalankan pencocokan ulang.');
     }
+    /**
+     * Cari entri list halal (dokumen terbaru per sumber) untuk picker modal Tinjau.
+     */
+    public function listCari(Request $request)
+    {
+        if (Auth::user()->is_superuser == 0) {
+            if (empty($this->access) || empty($this->access->user) || $this->access->can_read == 0) {
+                return response()->json(['error' => 'Tidak punya akses'], 403);
+            }
+        }
+        $sumber = $request->get('sumber', 'ID');
+        $doc = HalalDocument::where('jenis', HalalDocument::JENIS_LIST)
+            ->where('sumber', $sumber)->latest('id')->first();
+        if (!$doc) {
+            return response()->json([]);
+        }
+        $q = HalalList::where('document_id', $doc->id);
+        if ($request->filled('q')) {
+            $cari = trim($request->q);
+            if (ctype_digit($cari)) {
+                $q->where('nomor_urut', (int) $cari);
+            } else {
+                $q->where('nama_lengkap', 'like', '%' . $cari . '%');
+            }
+        }
+        return response()->json(
+            $q->orderBy('nomor_urut')->limit(20)->get(['nomor_urut', 'nama_lengkap'])
+        );
+    }
+
     public function review(Request $request, $id)
     {
         if ($deny = $this->deny('can_update')) {
+            if ($request->ajax() || $request->wantsJson()) {
+                return response()->json(['error' => 'Tidak punya akses'], 403);
+            }
             return $deny;
         }
         $validator = Validator::make($request->all(), [
             'status_pencocokan' => 'required|in:Cocok,Perlu ditinjau,Tidak cocok',
             'catatan_tinjauan' => 'nullable|string',
+            'nomor_urut_list' => 'nullable|integer|min:1',
+            'lepas_tautan' => 'nullable|in:1',
         ]);
         if ($validator->fails()) {
+            if ($request->ajax() || $request->wantsJson()) {
+                return response()->json(['error' => $validator->errors()->first()], 422);
+            }
             return redirect()->route('superuser.master.sh_produk.index')->withErrors($validator);
         }
         $row = HalalHelper::findOrFail($id);
-        $row->update($request->only(['status_pencocokan', 'catatan_tinjauan']));
+        $data = $request->only(['status_pencocokan', 'catatan_tinjauan']);
+        $sumber = $row->sumber ?: 'ID';
+        if ($request->input('lepas_tautan') === '1') {
+            $data += [
+                'nama_di_list_halal' => null, 'nomor_urut_list_halal' => null,
+                'nomor_urut_pdf' => null, 'halaman_pdf' => null,
+                'nomor_sertifikat' => null, 'status_pdf' => HalalHelper::PDF_BELUM,
+                'kunci_yang_dipakai' => null,
+            ];
+        } elseif ($request->filled('nomor_urut_list')) {
+            $docList = HalalDocument::where('jenis', HalalDocument::JENIS_LIST)
+                ->where('sumber', $sumber)->latest('id')->first();
+            if (!$docList) {
+                $err = 'Dokumen list ' . $sumber . ' belum ada.';
+                if ($request->ajax() || $request->wantsJson()) {
+                    return response()->json(['error' => $err], 422);
+                }
+                return redirect()->route('superuser.master.sh_produk.index')->withErrors([$err]);
+            }
+            $entri = HalalList::where('document_id', $docList->id)
+                ->where('nomor_urut', (int) $request->nomor_urut_list)->first();
+            if (!$entri) {
+                $err = 'Nomor list ' . $request->nomor_urut_list . ' tidak ditemukan di dokumen terbaru.';
+                if ($request->ajax() || $request->wantsJson()) {
+                    return response()->json(['error' => $err], 422);
+                }
+                return redirect()->route('superuser.master.sh_produk.index')->withErrors([$err]);
+            }
+            $docPdf = HalalDocument::where('jenis', HalalDocument::JENIS_PDF)
+                ->where('sumber', $sumber)->latest('id')->first();
+            $hal = $docPdf
+                ? HalalPdfItem::where('document_id', $docPdf->id)->where('nomor_urut', $entri->nomor_urut)->value('halaman')
+                : null;
+            $data += [
+                'nama_di_list_halal' => $entri->nama_lengkap,
+                'nomor_urut_list_halal' => $entri->nomor_urut,
+                'list_document_id' => $docList->id,
+                'pdf_document_id' => $docPdf ? $docPdf->id : null,
+                'nomor_urut_pdf' => $hal ? $entri->nomor_urut : null,
+                'halaman_pdf' => $hal,
+                'status_pdf' => $hal ? HalalHelper::PDF_VERIFIED : HalalHelper::PDF_BELUM,
+                'kunci_yang_dipakai' => 'manual',
+            ];
+            if (!$row->nomor_sertifikat) {
+                $data['nomor_sertifikat'] = ($docPdf && $docPdf->nomor_sertifikat)
+                    ? $docPdf->nomor_sertifikat : $docList->nomor_sertifikat;
+            }
+        }
+        $row->update($data);
         if ($request->ajax() || $request->wantsJson()) {
             return response()->json(['success' => true, 'status' => $row->status_pencocokan, 'stats' => $this->statsArray()]);
         }

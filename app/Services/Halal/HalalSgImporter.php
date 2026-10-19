@@ -21,8 +21,12 @@ class HalalSgImporter
 {
     const SUMBER = 'SG';
     const LEMBAGA = 'MUIS';
-    // Annex A: hal 1 = cover, hal 2-5 = 92 produk (~23/hal). Contoh rombakan:
-    // no 12/14/15/21 di hal 2, no 82 di hal 5 -> konsisten 23/hal.
+    // Annex A: 5 halaman total; cover = cetak "1 of 5" (cover DIHITUNG di SG,
+    // beda dengan ID). Konvensi SG = nomor CETAK tampil apa adanya ("X of 5").
+    // Terverifikasi dari file contoh: no 12/14/15/21 di cetak "2 of 5",
+    // no 82 di cetak "5 of 5" (file hanya berisi hal cetak 1, 2, 5!).
+    // Estimasi di bawah ini (asumsi annex lengkap) hanya fallback kasar
+    // untuk baris QR tanpa PDF — wajib dilabeli "estimasi" di UI.
     const SG_JUMLAH_HALAMAN = 5;
     const SG_PER_HALAMAN = 23;
 
@@ -169,8 +173,77 @@ class HalalSgImporter
     }
 
     /**
-     * Import PDF MUIS Annex A (5 halaman) -> halal_pdf_items.
+     * Cari binary Ghostscript (untuk normalisasi PDF agar dibaca FPDI).
+     * @return string|null  nama binary atau null bila exec/Ghostscript tak ada.
+     */
+    public static function gsBinary()
+    {
+        if (!function_exists('exec')) {
+            return null;
+        }
+        $disabled = array_map('trim', explode(',', (string) ini_get('disable_functions')));
+        if (in_array('exec', $disabled, true)) {
+            return null;
+        }
+        $cands = strtoupper(substr(PHP_OS, 0, 3)) === 'WIN'
+            ? ['gswin64c', 'gswin32c'] : ['gs'];
+        foreach ($cands as $b) {
+            $out = [];
+            $ret = 1;
+            @exec($b . ' --version 2>&1', $out, $ret);
+            if ($ret === 0) {
+                return $b;
+            }
+        }
+        return null;
+    }
+
+    /**
+     * Normalisasi PDF SG (object-stream/xref modern) menjadi PDF 1.4 biasa
+     * agar bisa di-import FPDI untuk rombakan pixel-identik. Isi visual sama.
+     * @return bool  true bila file dinormalisasi (in-place).
+     */
+    public static function normalisasiUntukFpdi($path)
+    {
+        $gs = self::gsBinary();
+        if ($gs === null || !is_file($path)) {
+            return false;
+        }
+        $tmp = $path . '.norm.pdf';
+        $cmd = $gs . ' -sDEVICE=pdfwrite -dCompatibilityLevel=1.4'
+            . ' -dPDFSETTINGS=/prepress -dNOPAUSE -dQUIET -dBATCH'
+            . ' -sOutputFile=' . escapeshellarg($tmp) . ' ' . escapeshellarg($path) . ' 2>&1';
+        $out = [];
+        $ret = 1;
+        @exec($cmd, $out, $ret);
+        if ($ret !== 0 || !is_file($tmp) || filesize($tmp) < 1024) {
+            @unlink($tmp);
+            return false;
+        }
+        // Verifikasi cepat: Smalot tetap membaca jumlah halaman yang sama.
+        try {
+            $sebelum = count((new PdfParser())->parseFile($path)->getPages());
+            $sesudah = count((new PdfParser())->parseFile($tmp)->getPages());
+            if ($sebelum !== $sesudah) {
+                @unlink($tmp);
+                return false;
+            }
+        } catch (\Throwable $e) {
+            @unlink($tmp);
+            return false;
+        }
+        @unlink($path . '.orig.pdf');
+        @rename($path, $path . '.orig.pdf');
+        @rename($tmp, $path);
+        return is_file($path);
+    }
+
+    /**
+     * Import PDF MUIS Annex A -> halal_pdf_items.
      * Format baris: "12. CANDY COFFEE 24629 (FRAGRANCE COMPOUND)".
+     * 'halaman' yang disimpan = NOMOR CETAK ("N of 5"), bukan indeks fisik,
+     * karena file upload bisa tidak lengkap (contoh: fisik p3 = cetak "5 of 5").
+     * Fallback ke indeks fisik bila footer tak terbaca.
      */
     public function importPdf($path, $documentId)
     {
@@ -186,6 +259,10 @@ class HalalSgImporter
             if ($cert === null && preg_match('/FMPR\d+/i', $text, $m)) {
                 $cert = strtoupper($m[0]);
             }
+            $halaman = $idx + 1;
+            if (preg_match('/(\d+)\s+of\s+(\d+)/i', $text, $hm)) {
+                $halaman = (int) $hm[1];
+            }
             foreach (preg_split('/\r?\n/', $text) as $line) {
                 $line = trim(preg_replace('/\s+/', ' ', $line));
                 if (preg_match('/^(\d{1,4})\.\s+(.+)$/', $line, $m)) {
@@ -198,9 +275,9 @@ class HalalSgImporter
                         'document_id' => $documentId,
                         'nomor_urut' => $num,
                         'nama_produk' => $nama,
-                        'halaman' => $idx + 1,
+                        'halaman' => $halaman,
                     ]);
-                    $items[$num] = $idx + 1;
+                    $items[$num] = $halaman;
                 }
             }
         }
@@ -230,6 +307,15 @@ class HalalSgImporter
         $masters = DB::table('master_products')->select('id', 'brand_name', 'code', 'name')
             ->orderBy('brand_name')->orderBy('code')->get();
 
+        // Sama seperti ID: buang baris kode-kosong lama yang dipakai ramai-ramai
+        // (nama + master_product_id tidak konsisten); dibuat ulang per-master.
+        // Baris tinjauan manual dipertahankan.
+        HalalHelper::where('sumber', self::SUMBER)
+            ->where(function ($w) {
+                $w->where('kode_produk', '')->orWhereNull('kode_produk');
+            })
+            ->where('status_pencocokan', HalalHelper::STATUS_TIDAK)->delete();
+
         $stats = ['Cocok' => 0, 'Perlu ditinjau' => 0, 'Tidak cocok' => 0];
         foreach ($masters as $m) {
             $kode = trim((string) $m->code);
@@ -250,7 +336,7 @@ class HalalSgImporter
                 'search_keyword' => HalalHelper::normalizeKeyword($merek, $nama, $kode),
             ];
             if ($kode === '' || $nama === '') {
-                $row += $this->noMatch('baris sampah: kode/nama kosong');
+                $row += $this->noMatch('kode/nama kosong di master — lengkapi dulu di master produk');
                 $this->saveHelper($m->id, $row, $stats);
                 continue;
             }
@@ -318,11 +404,16 @@ class HalalSgImporter
 
     protected function saveHelper($masterId, array $row, array &$stats)
     {
-        $helper = HalalHelper::firstOrNew([
+        // Kode kosong dikunci per-master (lihat HalalMatcher::saveHelper).
+        $kunci = [
             'kode_produk' => $row['kode_produk'],
             'merek' => $row['merek'],
             'sumber' => self::SUMBER,
-        ]);
+        ];
+        if (trim((string) $row['kode_produk']) === '') {
+            $kunci['master_product_id'] = $masterId;
+        }
+        $helper = HalalHelper::firstOrNew($kunci);
         if (!$helper->exists) {
             $helper->master_product_id = $masterId;
         }

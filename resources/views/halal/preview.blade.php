@@ -46,6 +46,21 @@
   .sg-scheme { text-align: center; margin-top: 60px; }
   .sg-scheme h3 { color: #0f4156; letter-spacing: 1px; font-size: 15px; margin: 0 0 6px 0; }
   .sg-scheme p { font-size: 9px; color: #0f4156; }
+  .sg-cover { text-align: center; color: #0f4156; }
+  .sg-cover .sg-serial-top { text-align: right; font-size: 10px; }
+  .sg-cover .sg-cert-no { font-size: 12px; font-weight: bold; margin: 2px 0; }
+  .sg-cover .sg-cert-title { font-size: 15px; margin: 2px 0 10px 0; }
+  .sg-cover p { font-size: 11px; margin: 3px 0; }
+  .sg-cover .sg-company { font-size: 12px; font-weight: bold; margin: 8px 0 2px 0; }
+  .sg-cover .sg-addr { font-size: 11px; }
+  .sg-cover .sg-mufti { margin-top: 18px; font-size: 11px; }
+  .sg-cover .sg-expiry { font-size: 12px; font-weight: bold; margin-top: 4px; }
+  .sg-cover .sg-issued { font-size: 11px; margin-top: 10px; }
+  .sg-cover .sg-paging { font-size: 11px; margin-top: 2px; }
+  .sg-cover .sg-muis { font-size: 11px; font-weight: bold; margin-top: 14px; }
+  .sg-cover .sg-hub { font-size: 10px; }
+  .sg-cover .sg-scheme { margin-top: 26px; }
+  .sg-cover .sg-nfd { font-size: 11px; font-weight: bold; margin-top: 16px; }
   .hide-note { font-size: 9px; color: #6b7280; font-style: italic; margin-top: 6px; }
   .foot { margin-top: 12px; font-size: 8px; color: #9ca3af; text-align: center; }
   .page-break { page-break-after: always; }
@@ -55,9 +70,42 @@
 <body>
 <div class="wm-specimen">SPECIMEN</div>
 @if(($row->sumber ?: 'ID') === 'SG')
+  {{-- Replica meniru struktur file contoh (Certificate + Annex A). Nomor seri
+       "301260500019600N" = basis contoh + nomor cetak; ganti bila sertifikat baru beda. --}}
+  @php
+    $sgBase = '301260500019600';
+    $sgOf = \App\Services\Halal\HalalSgImporter::SG_JUMLAH_HALAMAN;
+    $sgExp = $expired ? strtoupper(date('d M Y', strtotime($expired))) : '30 APR 2027';
+  @endphp
+  {{-- ================= HAL 1: CERTIFICATE (cetak "1 of 5") ================= --}}
+  <div class="sg-cover">
+    <div class="sg-serial-top">{{ $sgBase }}1</div>
+    <div class="sg-cert-no">{{ $sertifikat }}</div>
+    <div class="sg-cert-title">Certificate</div>
+    <p>The Majlis Ugama Islam Singapura (MUIS) hereby certifies that<br>the products listed in Annex A for</p>
+    <div class="sg-company">{{ strtoupper($perusahaan) }}</div>
+    <div class="sg-addr">10 TAMPINES NORTH DRIVE 4 #09-03/01/07, #08-03/01/07 JTC SPACE @ TAMPINES NORTH<br>SINGAPORE 528553<br>(Name and Address of Establishment)</div>
+    <p>is in accordance to MUIS Halal Certification Conditions.</p>
+    <div class="sg-mufti">Mufti of Singapore</div>
+    <div class="sg-expiry">{{ $sgExp }}</div>
+    <p>(Date of Expiry)</p>
+    <div class="sg-issued">Issued on: {{ $issued ?? '10 Apr 2026' }}</div>
+    <div class="sg-paging">1 of {{ $sgOf }}</div>
+    <div class="sg-muis">MAJLIS UGAMA ISLAM SINGAPURA (Islamic Religious Council of Singapore)</div>
+    <div class="sg-hub">Singapore Islamic Hub &bull; 273 Braddell Road, Singapore 579702</div>
+    <div class="sg-scheme">
+      <h3>PRODUCT SCHEME</h3>
+      <p>The MUIS Halal Certificate is issued under Section 88A of the Administration of Muslim Law Act (Cap. 3).</p>
+      <p>The use of the SAC accreditation mark indicates accreditation in respect of those activities covered by the accreditation certificate number PD-2018-18.</p>
+    </div>
+    <div class="sg-nfd">NOT FOR DISPLAY</div>
+  </div>
+  <div class="page-break"></div>
+
+  {{-- ================= ANNEX A (halaman produk terpilih) ================= --}}
   <table class="halal-sg-head"><tr>
     <td><div class="sg-title">Annex A</div></td>
-    <td class="sg-qr"><strong>{{ $sertifikat }}</strong><br>Issued on: {{ $issued ?? '10 Apr 2026' }}<br>{{ $halaman ? $halaman . ' of 5' : '' }}</td>
+    <td class="sg-qr">{{ $sgBase }}{{ $halaman ?: '?' }}<br><strong>{{ $sertifikat }}</strong><br>Issued on: {{ $issued ?? '10 Apr 2026' }}<br>{{ $halaman ? $halaman . ' of ' . $sgOf : '' }}</td>
   </tr></table>
   <div class="sg-cert">The Majlis Ugama Islam Singapura (MUIS) hereby certifies that the following is in accordance to MUIS Halal Certification Conditions.</div>
   @php $tampil = collect($siblings)->where('pilih', true)->values(); if ($tampil->isEmpty()) { $tampil = collect([['nomor' => $row->nomor_urut_list_halal, 'nama' => $row->nama_di_list_halal]]); } @endphp

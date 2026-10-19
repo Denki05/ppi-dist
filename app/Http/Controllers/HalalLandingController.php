@@ -116,6 +116,14 @@ class HalalLandingController extends Controller
             'preview_url' => rtrim(url('/halal/produk/' . $row->id . '/preview'), '/'),
             'halal_site_query' => $row->nama_produk,
             'halaman_pdf' => $row->halaman_pdf,
+            // Nomor tampil mengikuti konvensi SH Produk: ID = fisik - 1 (cover tak bernomor),
+            // SG = apa adanya. Estimasi (belum terverifikasi PDF) wajib dilabeli di UI.
+            'halaman_tampil' => $row->halaman_pdf
+                ? ($sumber === 'SG' ? (int) $row->halaman_pdf : max(1, (int) $row->halaman_pdf - 1))
+                : null,
+            'halaman_estimasi' => $row->halaman_pdf
+                ? ($row->status_pdf !== HalalHelper::PDF_VERIFIED)
+                : false,
             'nomor_urut_pdf' => $row->nomor_urut_pdf,
             'nomor_urut_list' => $row->nomor_urut_list_halal,
             'lembaga' => $sumber === 'SG' ? 'MUIS Singapore' : 'BPJPH Indonesia',
@@ -144,6 +152,20 @@ class HalalLandingController extends Controller
             } catch (\Throwable $e) {
                 // Jatuh ke replica dompdf di bawah bila PDF asli tak tersedia.
                 \Log::warning('Rombakan FPDI gagal, fallback dompdf: ' . $e->getMessage());
+            }
+        }
+
+        // SG terverifikasi PDF: rombakan pixel-identik (cover + annex asli).
+        // Baris estimasi (belum terverifikasi) tetap memakai replica dompdf.
+        if ($sumber === 'SG' && $row->halaman_pdf && $row->status_pdf === HalalHelper::PDF_VERIFIED) {
+            try {
+                $bytes = (new \App\Services\Halal\HalalSgRombakan())->build($row);
+                return response($bytes, 200, [
+                    'Content-Type' => 'application/pdf',
+                    'Content-Disposition' => 'inline; filename="SH-SG-' . preg_replace('/[^A-Za-z0-9]+/', '-', $row->kode_produk) . '.pdf"',
+                ]);
+            } catch (\Throwable $e) {
+                \Log::warning('Rombakan SG gagal, fallback dompdf: ' . $e->getMessage());
             }
         }
 
@@ -208,6 +230,10 @@ class HalalLandingController extends Controller
             $lembaga = 'BPJPH Indonesia';
             $perusahaan = 'PT Kreasi Mewangikan Indonesia';
             $sertifikat = $row->nomor_sertifikat ?: ($docPdf->nomor_sertifikat ?? '-');
+            // Normalisasi tampilan: 3521...ID -> ID3521... (sama spt no_regis).
+            if (preg_match('/^(\d{15,25})ID$/', (string) $sertifikat, $mm)) {
+                $sertifikat = 'ID' . $mm[1];
+            }
             $expired = null;
             $qr = null;
             $issued = null;
