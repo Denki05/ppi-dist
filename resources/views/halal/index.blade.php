@@ -216,8 +216,10 @@
                 var lembaga = d.sumber === 'SG' ? 'MUIS Singapore' : 'BPJPH Indonesia';
                 document.getElementById('modalTitle').textContent = 'Sertifikat Halal (' + d.sumber + ') — ' + (d.nama_produk || d.nama);
                 document.getElementById('modalSub').textContent = d.merek + ' - ' + d.kode;
+                var halTxt = (d.halaman_tampil !== null && d.halaman_tampil !== undefined) ? d.halaman_tampil : (d.halaman_pdf || '-');
+                if (d.halaman_tampil !== null && d.halaman_tampil !== undefined && d.halaman_estimasi) halTxt += '* (estimasi)';
                 document.getElementById('modalInfo').textContent =
-                    '[' + d.sumber + ' • ' + lembaga + '] No. list ' + (d.nomor_urut_list || '-') + '  •  Hal. PDF ' + (d.halaman_pdf || '-') +
+                    '[' + d.sumber + ' • ' + lembaga + '] No. list ' + (d.nomor_urut_list || '-') + '  •  Hal. PDF ' + halTxt +
                     '  •  Sertifikat ' + (d.sertifikat_id || '-');
                 document.getElementById('modalNewTab').href = src;
                 frameLoading.classList.add('show');

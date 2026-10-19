@@ -69,6 +69,7 @@ Route::group([
     Route::group(['as' => 'sh_produk.', 'prefix' => '/sh_produk'], function () {
         Route::get('/', 'ShProdukController@index')->name('index');
         Route::get('/data', 'ShProdukController@data')->name('data');
+        Route::get('/list-cari', 'ShProdukController@listCari')->name('list_cari');
         Route::post('/upload-list', 'ShProdukController@uploadList')->name('upload_list');
         Route::post('/upload-pdf', 'ShProdukController@uploadPdf')->name('upload_pdf');
         Route::post('/run', 'ShProdukController@run')->name('run');

@@ -277,6 +277,7 @@
 @section('modal')
 <!-- modal add so : Layout Super Padat -->
 <div class="modal fade" id="exampleModal" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true">
+  <!-- Pastikan ada class "modal-dialog-scrollable" agar footer selalu terlihat -->
   <div class="modal-dialog modal-xl modal-dialog-centered modal-dialog-scrollable modal-add-so" role="document">
     <div class="modal-content border-0 shadow-lg">
       <div class="modal-header bg-light py-2">
@@ -285,15 +286,15 @@
           <span aria-hidden="true">&times;</span>
         </button>
       </div>
-
+      
       <form id="formAddSO" autocomplete="off" class="d-flex flex-column h-100">
         @csrf
-        <div class="modal-body bg-light p-2">
+        <div class="modal-body bg-light p-2"> 
           <div class="row m-0">
-
-            {{-- KOLOM KIRI --}}
+            
+            {{-- KOLOM KIRI : Selesaikan dari atas ke bawah --}}
             <div class="col-12 col-lg-6 px-1 d-flex flex-column">
-
+              
               <div class="so-card shadow-sm mb-2">
                 <div class="so-card-head"><i class="fa fa-user"></i><span>A. Informasi Umum</span></div>
                 <div class="form-group row align-items-center mb-0">
@@ -340,6 +341,7 @@
                 <div class="so-card-head"><i class="fa fa-tags"></i><span>C. Pengaturan Diskon</span></div>
                 <div class="px-1">
 
+                  <!-- DISC USD DIPINDAH KE BAWAH KURS -->
                   <div class="form-group row align-items-center mb-2">
                     <label class="col-sm-4 col-form-label text-left" for="disc_usd">Disc USD</label>
                     <div class="col-sm-8">
@@ -350,8 +352,8 @@
                       </select>
                     </div>
                   </div>
-
-                  <div class="form-group row align-items-center mb-2" id="disc-percent-group" style="display: none;">
+                  
+                  <div class="form-group row align-items-center mb-2">
                     <label class="col-sm-4 col-form-label text-left compact-label pr-0" for="disc_percent">Disc %</label>
                     <div class="col-sm-8">
                       <div class="input-group input-group-sm">
@@ -360,11 +362,12 @@
                       </div>
                     </div>
                   </div>
-
-                  <div class="form-group row align-items-center mb-2">
+                  
+                  <div class="form-group row align-items-center mb-2" id="disc-kemasan-group" style="display: none;">
                     <label class="col-sm-4 col-form-label text-left compact-label pr-0" for="disc_kemasan">Disc Kemasan</label>
                     <div class="col-sm-8">
                       <input class="form-control form-control-sm" type="number" step="any" name="disc_kemasan" id="disc_kemasan" placeholder="0">
+                      <small class="form-text text-muted" style="font-size: 10.5px;">Hanya untuk kemasan 25 Kg Drum / 25 Kg Jirigen</small>
                     </div>
                   </div>
 
@@ -377,18 +380,19 @@
                       </div>
                     </div>
                   </div>
+                  
 
                 </div>
               </div>
 
             </div>
 
-            {{-- KOLOM KANAN --}}
+            {{-- KOLOM KANAN : Langkah Terakhir sebelum Simpan --}}
             <div class="col-12 col-lg-6 px-1 d-flex flex-column">
-
+              
               <div class="so-card shadow-sm mb-2">
                 <div class="so-card-head"><i class="fa fa-cogs"></i><span>D. Mekanisme SO</span></div>
-
+                
                 <div class="form-group row align-items-center mb-1">
                   <label class="col-sm-4 col-form-label text-left" for="so_type">Type <span class="text-danger">*</span></label>
                   <div class="col-sm-8">
@@ -400,7 +404,7 @@
                     </select>
                   </div>
                 </div>
-
+                
                 <div class="form-group row align-items-center mb-1">
                   <label class="col-sm-4 col-form-label text-left" for="indent_so">Indent <span class="text-danger">*</span></label>
                   <div class="col-sm-8">
@@ -411,7 +415,7 @@
                     </select>
                   </div>
                 </div>
-
+                
                 <div class="form-group row align-items-center mb-1">
                   <label class="col-sm-4 col-form-label text-left">Approval</label>
                   <div class="col-sm-8">
@@ -421,20 +425,22 @@
                     </div>
                   </div>
                 </div>
-
-                {{-- Kurs hanya wajib jika Approval SPV dicentang (required diatur lewat JS) --}}
-                <div class="form-group row align-items-center mb-1" id="kurs-group" style="display: none;">
+                
+                <div class="form-group row align-items-center mb-1">
                   <label class="col-sm-4 col-form-label text-left" for="kurs">Kurs <span class="text-danger">*</span></label>
                   <div class="col-sm-8">
                     <div class="input-group input-group-sm">
                       <div class="input-group-prepend"><span class="input-group-text">Rp</span></div>
-                      <input class="form-control" type="text" name="kurs" id="kurs" inputmode="numeric" placeholder="15.500">
+                      <input class="form-control" type="text" name="kurs" id="kurs" inputmode="numeric" placeholder="15.500" required>
                     </div>
                   </div>
                 </div>
 
+                
+
               </div>
 
+              <!-- CATATAN MENDAPATKAN RUANG LEBIH LUAS -->
               <div class="so-card shadow-sm mb-lg-0 flex-grow-1 d-flex flex-column">
                 <div class="so-card-head"><i class="fa fa-sticky-note-o"></i><span>E. Catatan</span></div>
                 <div class="form-group mb-0 flex-grow-1 d-flex flex-column">
@@ -825,20 +831,27 @@
 
 <script>
   document.addEventListener('DOMContentLoaded', function() {
-    document.getElementById('approval_spv').addEventListener('change', function () {
+    var approvalEl = document.getElementById('approval_spv');
+    if (!approvalEl) return;
+    approvalEl.addEventListener('change', function () {
       const isChecked = this.checked;
 
       // Gunakan flex karena parent element menggunakan class bootstrap .row
-      document.getElementById('kurs-group').style.display = isChecked ? 'flex' : 'none';
-      document.getElementById('disc-percent-group').style.display = isChecked ? 'flex' : 'none';
+      // Guard: id lama mungkin tidak ada di layout baru, jadi cek dulu
+      var kursGroup = document.getElementById('kurs-group');
+      if (kursGroup) kursGroup.style.display = isChecked ? 'flex' : 'none';
+      var discPctGroup = document.getElementById('disc-percent-group');
+      if (discPctGroup) discPctGroup.style.display = isChecked ? 'flex' : 'none';
 
       // Kurs hanya wajib jika Approval SPV dicentang
-      document.getElementById('kurs').required = isChecked;
+      var kursEl = document.getElementById('kurs');
+      if (kursEl) kursEl.required = isChecked;
 
       // Kosongkan value jika checkbox dimatikan
       if (!isChecked) {
-        document.getElementById('kurs').value = '';
-        document.getElementById('disc_percent').value = '';
+        if (kursEl) kursEl.value = '';
+        var discPctEl = document.getElementById('disc_percent');
+        if (discPctEl) discPctEl.value = '';
       }
     });
   });
@@ -1297,84 +1310,106 @@
       });
     });
 
+    // Disc Kemasan hanya berlaku untuk 25 Kg Drum / 25 Kg Jirigen, selain itu di-hide
+    function toggleDiscKemasan() {
+      var txt = ($('#packaging_id option:selected').text() || '').toLowerCase().replace(/\s+/g, ' ');
+      var is25 = txt.indexOf('25') !== -1;
+      var isDrum = txt.indexOf('drum') !== -1;
+      var isJirigen = txt.indexOf('jirigen') !== -1 || txt.indexOf('jerigen') !== -1 || txt.indexOf('jergen') !== -1;
+      var show = is25 && (isDrum || isJirigen);
+      $('#disc-kemasan-group').toggle(show);
+      if (!show) {
+        $('#disc_kemasan').val('');
+      }
+    }
+    $('#packaging_id').on('change', toggleDiscKemasan);
+
     $('#addSO').on('click', function (e) {
-      e.preventDefault();
-      const form = document.getElementById('formAddSO');
+          e.preventDefault();
+          const form = document.getElementById('formAddSO');
 
-      if (!form.checkValidity()) {
-        form.reportValidity();
-        return;
-      }
+          if (!form.checkValidity()) {
+            form.reportValidity();
+            return;
+          }
 
-      var kurs = ($('#kurs').val() || '').replace(/\./g, '') || '1';
+          var kurs = ($('#kurs').val() || '').replace(/\./g, '') || '1';
 
-      if (!/^\d+$/.test(kurs)) {
-        alert('Input "Kurs" hanya boleh berupa angka bulat positif.');
-        $('#kurs').focus();
-        return;
-      }
+          if (!/^\d+$/.test(kurs)) {
+              alert('Input "Kurs" hanya boleh berupa angka bulat positif.');
+              $('#kurs').focus();
+              return;
+          }
 
-      var customer = $('#account_member').val();
-      var merek = $('#merek_ppi').val();
-      var type_so = $('#so_type').val();
-      var indent_so = $('#indent_so').val();
-      var step_so = 1;
-      var note = $('#editor').val() || '-';
-      var approval_spv = $('#approval_spv').is(':checked') ? 1 : 0;
+          var customer = $('#account_member').val();
+          var merek = $('#merek_ppi').val();
+          var type_so = $('#so_type').val();
+          var indent_so = $('#indent_so').val();
+          var step_so = 1;
+          var note = $('#editor').val() || '-';
+          var approval_spv = $('#approval_spv').is(':checked') ? 1 : 0;
+          
+          // Tangkap 4 Inputan Diskon
+          var disc_percent = $('#disc_percent').val() || 0;
+          var disc_idr = $('#disc_idr').val() || 0;
+          var disc_usd = $('#disc_usd').val() || 0;
+          var disc_kemasan = $('#disc_kemasan').val() || 0;
+          
+          var packaging_id = $('#packaging_id').val() || '';
 
-      // Tangkap 4 Inputan Diskon
-      var disc_percent = $('#disc_percent').val() || 0;
-      var disc_idr = $('#disc_idr').val() || 0;
-      var disc_usd = $('#disc_usd').val() || 0;
-      var disc_kemasan = $('#disc_kemasan').val() || 0;
+          if (!packaging_id) {
+            Swal.fire('Perhatian', 'Kemasan wajib dipilih sebelum melanjutkan.', 'warning');
+            $('#packaging_id').select2('open');
+            return;
+          }
 
-      var packaging_id = $('#packaging_id').val() || '';
+          // Update template URL route
+          var url = '{{ route('superuser.penjualan.sales_order.create',  [":step", ":member", ":brand", ":type", ":indent", ":approval", ":note", ":kurs", ":disc_percent", ":disc_idr", ":disc_usd", ":disc_kemasan", ":packaging"]) }}';
+          
+          url = url.replace(':member', customer);
+          url = url.replace(':brand', merek);
+          url = url.replace(':type', type_so);
+          url = url.replace(':indent', indent_so);
+          url = url.replace(':step', step_so);
+          url = url.replace(':approval', approval_spv);
+          url = url.replace(':kurs', kurs);
+          url = url.replace(':note', encodeURIComponent(note));
+          url = url.replace(':disc_percent', disc_percent);
+          url = url.replace(':disc_idr', disc_idr);
+          url = url.replace(':disc_usd', disc_usd);
+          url = url.replace(':disc_kemasan', disc_kemasan);
+          url = url.replace(':packaging', packaging_id);
 
-      if (!packaging_id) {
-        Swal.fire('Perhatian', 'Kemasan wajib dipilih sebelum melanjutkan.', 'warning');
-        $('#packaging_id').select2('open');
-        return;
-      }
-
-      // Update template URL route
-      var url = '{{ route('superuser.penjualan.sales_order.create',  [":step", ":member", ":brand", ":type", ":indent", ":approval", ":note", ":kurs", ":disc_percent", ":disc_idr", ":disc_usd", ":disc_kemasan", ":packaging"]) }}';
-
-      url = url.replace(':member', customer);
-      url = url.replace(':brand', merek);
-      url = url.replace(':type', type_so);
-      url = url.replace(':indent', indent_so);
-      url = url.replace(':step', step_so);
-      url = url.replace(':approval', approval_spv);
-      url = url.replace(':kurs', kurs);
-      url = url.replace(':note', encodeURIComponent(note));
-      url = url.replace(':disc_percent', disc_percent);
-      url = url.replace(':disc_idr', disc_idr);
-      url = url.replace(':disc_usd', disc_usd);
-      url = url.replace(':disc_kemasan', disc_kemasan);
-      url = url.replace(':packaging', packaging_id);
-
-      $.ajax({
-        url: url,
-        type: 'GET',
-        headers: {'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')},
-        success: function(data) {
-          window.location.href = url;
-        }
-      });
-    });
+          $.ajax({
+              url: url,
+              type: 'GET',
+              headers: {'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')},
+              success:function(data)
+              {
+                window.location.href = url;
+              }
+          });
+        });
 
     $('#exampleModal').on('hidden.bs.modal', function (e) {
       $(this).removeData();
       $(this).find('form')[0].reset();
       $(this).find('.js-select2').val(null).trigger('change');
 
-      // UX: Sembunyikan kembali inputan opsional
-      document.getElementById('kurs-group').style.display = 'none';
-      document.getElementById('disc-percent-group').style.display = 'none';
-      document.getElementById('kurs').required = false;
+      // UX: Sembunyikan kembali inputan opsional (guard: elemen lama mungkin tidak ada)
+      var kursGroup = document.getElementById('kurs-group');
+      if (kursGroup) kursGroup.style.display = 'none';
+      var discPctGroup = document.getElementById('disc-percent-group');
+      if (discPctGroup) discPctGroup.style.display = 'none';
+      var kursEl = document.getElementById('kurs');
+      if (kursEl) kursEl.required = false;
+      // Disc Kemasan kembali hide + kosongkan
+      $('#disc-kemasan-group').hide();
+      $('#disc_kemasan').val('');
     });
 
     $('#exampleModal').on('shown.bs.modal', function () {
+      toggleDiscKemasan();
       $('#so_type').trigger('change');
 
       // UX: Fokus otomatis ke dropdown customer setelah modal animasi selesai

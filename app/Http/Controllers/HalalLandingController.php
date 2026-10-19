@@ -51,7 +51,7 @@ class HalalLandingController extends Controller
             ->get([
                 'id', 'kode_produk', 'merek', 'sumber', 'nama_produk',
                 'nomor_sertifikat', 'status_pencocokan',
-                'nomor_urut_list_halal', 'halaman_pdf', 'nomor_urut_pdf',
+                'nomor_urut_list_halal', 'halaman_pdf', 'nomor_urut_pdf', 'updated_at',
             ]);
 
         // 1 produk bisa punya 2 baris (ID + SG) -> jangan digabung lintas sumber.
@@ -83,7 +83,8 @@ class HalalLandingController extends Controller
                 'nomor_urut_list' => $r->nomor_urut_list_halal,
                 'halaman_pdf' => $r->halaman_pdf,
                 'nomor_urut_pdf' => $r->nomor_urut_pdf,
-                'preview_url' => rtrim(url('/halal/produk/' . $r->id . '/preview'), '/'),
+                'preview_url' => rtrim(url('/halal/produk/' . $r->id . '/preview'), '/')
+                    . '?v=' . ($r->updated_at ? strtotime((string) $r->updated_at) : time()),
             ];
         }, $rows));
     }
@@ -113,9 +114,19 @@ class HalalLandingController extends Controller
             'status' => $row->status_pencocokan,
             'button_active' => $row->isButtonActive(),
             // Preview rombakan internal (halaman asli, produk lain disembunyikan).
-            'preview_url' => rtrim(url('/halal/produk/' . $row->id . '/preview'), '/'),
+            // ?v= anti-cache agar popup selalu memuat PDF terbaru.
+            'preview_url' => rtrim(url('/halal/produk/' . $row->id . '/preview'), '/')
+                . '?v=' . ($row->updated_at ? strtotime((string) $row->updated_at) : time()),
             'halal_site_query' => $row->nama_produk,
             'halaman_pdf' => $row->halaman_pdf,
+            // Nomor tampil mengikuti konvensi SH Produk: ID = fisik - 1 (cover tak bernomor),
+            // SG = apa adanya. Estimasi (belum terverifikasi PDF) wajib dilabeli di UI.
+            'halaman_tampil' => $row->halaman_pdf
+                ? ($sumber === 'SG' ? (int) $row->halaman_pdf : max(1, (int) $row->halaman_pdf - 1))
+                : null,
+            'halaman_estimasi' => $row->halaman_pdf
+                ? ($row->status_pdf !== HalalHelper::PDF_VERIFIED)
+                : false,
             'nomor_urut_pdf' => $row->nomor_urut_pdf,
             'nomor_urut_list' => $row->nomor_urut_list_halal,
             'lembaga' => $sumber === 'SG' ? 'MUIS Singapore' : 'BPJPH Indonesia',
@@ -144,6 +155,20 @@ class HalalLandingController extends Controller
             } catch (\Throwable $e) {
                 // Jatuh ke replica dompdf di bawah bila PDF asli tak tersedia.
                 \Log::warning('Rombakan FPDI gagal, fallback dompdf: ' . $e->getMessage());
+            }
+        }
+
+        // SG terverifikasi PDF: rombakan pixel-identik (cover + annex asli).
+        // Baris estimasi (belum terverifikasi) tetap memakai replica dompdf.
+        if ($sumber === 'SG' && $row->halaman_pdf && $row->status_pdf === HalalHelper::PDF_VERIFIED) {
+            try {
+                $bytes = (new \App\Services\Halal\HalalSgRombakan())->build($row);
+                return response($bytes, 200, [
+                    'Content-Type' => 'application/pdf',
+                    'Content-Disposition' => 'inline; filename="SH-SG-' . preg_replace('/[^A-Za-z0-9]+/', '-', $row->kode_produk) . '.pdf"',
+                ]);
+            } catch (\Throwable $e) {
+                \Log::warning('Rombakan SG gagal, fallback dompdf: ' . $e->getMessage());
             }
         }
 

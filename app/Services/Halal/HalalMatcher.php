@@ -170,7 +170,10 @@ class HalalMatcher
 
     /**
      * Import PDF resmi ke halal_pdf_items + ambil nomor sertifikat (langkah 5).
-     * Mengembalikan ['total', 'cert', 'pages', 'hal_map' => [nomor => halaman]].
+     * 'halaman' yang disimpan = indeks fisik PDF (termasuk cover); tampilan
+     * memakai fisik - offset. Offset dideteksi dari footer tercetak halaman
+     * konten pertama (normalnya 1: satu cover tak bernomor).
+     * Mengembalikan ['total', 'cert', 'pages', 'offset', 'hal_map' => [nomor => halaman]].
      */
     public function importPdf($path, $documentId)
     {
@@ -180,6 +183,7 @@ class HalalMatcher
 
         HalalPdfItem::where('document_id', $documentId)->delete();
         $cert = null;
+        $offset = null;
         $items = [];
         $prevEnd = 0;
         foreach ($pages as $idx => $page) {
@@ -191,6 +195,9 @@ class HalalMatcher
                     $cert = $m[1] . 'ID';
                 }
                 continue;
+            }
+            if ($offset === null && preg_match('/Hal\s+(\d+)/u', $text, $hm)) {
+                $offset = ($idx + 1) - (int) $hm[1];
             }
             $parts = explode('Nama Produk/ Product Name', $text, 2);
             if (count($parts) < 2) {
@@ -251,7 +258,7 @@ class HalalMatcher
                 $prevEnd = max(array_keys($items));
             }
         }
-        return ['total' => count($items), 'cert' => $cert, 'pages' => count($pages), 'hal_map' => $items];
+        return ['total' => count($items), 'cert' => $cert, 'pages' => count($pages), 'offset' => $offset, 'hal_map' => $items];
     }
 
     /**
@@ -285,6 +292,15 @@ class HalalMatcher
         if (!empty($masterIds)) {
             HalalHelper::where('sumber', 'ID')->whereNotIn('master_product_id', $masterIds)->delete();
         }
+        // Baris kode-kosong hasil run lama (satu baris dipakai ramai-ramai oleh
+        // banyak master sehingga nama + master_product_id tidak konsisten)
+        // dibuang; dibuat ulang satu-per-master di loop bawah. Baris yang
+        // sudah ditinjau manual (bukan Tidak cocok) dipertahankan.
+        HalalHelper::where('sumber', 'ID')
+            ->where(function ($w) {
+                $w->where('kode_produk', '')->orWhereNull('kode_produk');
+            })
+            ->where('status_pencocokan', HalalHelper::STATUS_TIDAK)->delete();
 
         $petaConfirmed = self::isBrandMapConfirmed();
 
@@ -302,10 +318,12 @@ class HalalMatcher
                 'tanggal_master' => $tanggalMaster,
                 'tanggal_list' => $tanggalList,
                 'tanggal_pdf' => $tanggalPdf,
+                'list_document_id' => $listDocumentId,
+                'pdf_document_id' => $pdfDocumentId,
                 'search_keyword' => HalalHelper::normalizeKeyword($merek, $nama, $kode),
             ];
             if ($kode === '' || $nama === '') {
-                $row += $this->noMatch('baris sampah: kode/nama kosong');
+                $row += $this->noMatch('kode/nama kosong di master — lengkapi dulu di master produk');
                 $this->saveHelper($m->id, $row, $stats);
                 continue;
             }
@@ -397,11 +415,17 @@ class HalalMatcher
     {
         // Kunci keunikan = (kode, merek, sumber): 1 produk bisa punya baris ID + SG.
         // master_product_id diisi dari baris pertama saja (tidak ditimpa).
-        $helper = HalalHelper::firstOrNew([
+        // Pengecualian: kode kosong (banyak master tanpa kode) dikunci per-master,
+        // kalau tidak N master menimpa 1 baris yang sama (nama campur aduk).
+        $kunci = [
             'kode_produk' => $row['kode_produk'],
             'merek' => $row['merek'],
             'sumber' => isset($row['sumber']) ? $row['sumber'] : 'ID',
-        ]);
+        ];
+        if (trim((string) $row['kode_produk']) === '') {
+            $kunci['master_product_id'] = $masterId;
+        }
+        $helper = HalalHelper::firstOrNew($kunci);
         $isNew = !$helper->exists;
         if ($isNew) {
             $helper->master_product_id = $masterId;
