@@ -16,6 +16,10 @@ class Superuser extends Authenticatable
     protected $table               = 'superusers';
     protected $guard_name          = 'superuser';
     protected $appends             = ['img'];
+    protected $casts               = [
+        'google_linked_at'     => 'datetime',
+        'google_last_login_at' => 'datetime',
+    ];
     public static $directory_image = 'superuser_assets/media/profiles/';
 
     const IS_SUPERUSER = [

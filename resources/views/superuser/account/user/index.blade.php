@@ -68,7 +68,7 @@
                 @php
                   $em = strtolower(trim($row->email ?? ''));
                   $dom = substr(strrchr($em, '@') ?: '', 1);
-                  $emailOk = $em !== '' && filter_var($em, FILTER_VALIDATE_EMAIL) && in_array($dom, ['gmail.com','googlemail.com','lssoft88.xyz','lsfragrance.id'], true);
+                  $emailOk = $em !== '' && filter_var($em, FILTER_VALIDATE_EMAIL) && in_array($dom, config('services.google.allowed_domains', ['gmail.com','googlemail.com']), true);
                   $roles = $rolesByUser[$row->id] ?? [];
                   $mods = $row->modul_akses ? json_decode($row->modul_akses, true) : [];
                 @endphp

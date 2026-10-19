@@ -194,7 +194,7 @@ class AuthenticationController extends Controller
             return true;
         }
 
-        $allowed = ['gmail.com', 'googlemail.com', 'lssoft88.xyz', 'lsfragrance.id'];
+        $allowed = config('services.google.allowed_domains', ['gmail.com', 'googlemail.com']);
         $domain = substr(strrchr($email, '@'), 1);
 
         return !in_array($domain, $allowed, true);

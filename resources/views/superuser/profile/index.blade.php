@@ -3,7 +3,7 @@
 @section('content')
 @php
   $email = strtolower(trim($superuser->email ?? ''));
-  $allowedDomains = ['gmail.com', 'googlemail.com', 'lssoft88.xyz', 'lsfragrance.id'];
+  $allowedDomains = config('services.google.allowed_domains', ['gmail.com', 'googlemail.com']);
   $domain = substr(strrchr($email, '@') ?: '', 1);
   $emailOk = $email !== '' && filter_var($email, FILTER_VALIDATE_EMAIL) && in_array($domain, $allowedDomains, true);
   $linked = !empty($superuser->google_id);
@@ -87,7 +87,7 @@
 @elseif(!$linked)
   <div class="pfx-banner info"><i class="fa fa-google mt-1"></i><div>Email sudah oke. Tinggal klik <b>Hubungkan Google</b> di kartu Login Google agar bisa masuk 1 klik.</div></div>
 @else
-  <div class="pfx-banner ok"><i class="fa fa-check-circle mt-1"></i><div>Akun siap SSO. Terhubung sejak {{ optional($superuser->email_verified_at ? \Carbon\Carbon::parse($superuser->email_verified_at) : null)->format('d M Y') ?: '-' }}.</div></div>
+  <div class="pfx-banner ok"><i class="fa fa-check-circle mt-1"></i><div>Akun siap SSO. Terhubung sejak {{ $superuser->google_linked_at ? $superuser->google_linked_at->format('d M Y H:i') : '-' }}.</div></div>
 @endif
 
 @if(session('status'))
@@ -133,6 +133,7 @@
           <div class="flex-fill" style="font-size:12.5px;color:#475569">
             @if($linked)
               <b style="color:#0f172a">Aktif.</b> Tidak perlu password tiap hari.
+              <div class="pfx-hint mt-1">Login terakhir via Google: {{ $superuser->google_last_login_at ? $superuser->google_last_login_at->format('d M Y H:i') : 'belum pernah' }}</div>
             @else
               <b style="color:#0f172a">Belum aktif.</b> Pastikan email Gmail, lalu hubungkan.
             @endif
@@ -167,6 +168,16 @@
             </div>
           </div>
           <div class="pfx-hint">8–16 karakter. Kosongkan kalau tidak ganti.</div>
+        </div>
+      </div>
+
+      <div class="pfx-card">
+        <div class="pfx-card-h"><i class="fa fa-shield"></i>Keamanan<small>auto-login</small></div>
+        <div class="pfx-card-b d-flex align-items-center">
+          <div class="flex-fill" style="font-size:12.5px;color:#475569">
+            Matikan auto-login ("Ingat saya") di semua perangkat lain.
+          </div>
+          <button type="button" class="btn btn-sm btn-alt-warning ml-2" id="btn-logout-all">Logout semua perangkat</button>
         </div>
       </div>
 
@@ -212,6 +223,26 @@ $(document).ready(function () {
       else location.reload();
     }).fail(function (xhr) {
       var msg = (xhr.responseJSON && xhr.responseJSON.data && xhr.responseJSON.data.notification && xhr.responseJSON.data.notification.content) || 'Gagal melepas. Coba lagi.';
+      responded({ alert: 'block', type: 'alert-danger', header: 'Error', content: msg });
+      btn.prop('disabled', false);
+    });
+  });
+
+  $('#btn-logout-all').on('click', function () {
+    if (!confirm('Logout dari semua perangkat lain? Auto-login akan dimatikan.')) return;
+    var btn = $(this);
+    btn.prop('disabled', true);
+    $.ajax({
+      url: '{{ route('superuser.profile.logout-all-devices') }}',
+      type: 'POST',
+      data: { _token: '{{ csrf_token() }}' },
+      headers: { 'X-Requested-With': 'XMLHttpRequest', 'Accept': 'application/json' }
+    }).done(function (response) {
+      if (response && response.data && response.data.notification) responded(response.data.notification);
+      if (response && response.data && response.data.redirect_to === 'reload()') redirect('reload()', 1500);
+      else location.reload();
+    }).fail(function (xhr) {
+      var msg = (xhr.responseJSON && xhr.responseJSON.data && xhr.responseJSON.data.notification && xhr.responseJSON.data.notification.content) || 'Gagal. Coba lagi.';
       responded({ alert: 'block', type: 'alert-danger', header: 'Error', content: msg });
       btn.prop('disabled', false);
     });

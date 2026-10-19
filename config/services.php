@@ -67,6 +67,15 @@ return [
         'client_id'     => env('GOOGLE_CLIENT_ID'),
         'client_secret' => env('GOOGLE_CLIENT_SECRET'),
         'redirect'      => env('GOOGLE_REDIRECT_URI'),
+
+        // Domain email yang boleh mendaftar via Google SSO.
+        // Kosongkan array untuk membolehkan semua domain.
+        'allowed_domains' => [
+            'gmail.com',
+            'googlemail.com',
+            'lssoft88.xyz',
+            'lsfragrance.id',
+        ],
     ],
 
 ];

@@ -145,4 +145,35 @@ class ProfileController extends Controller
             return $this->response(200, $response);
         }
     }
+
+    /**
+     * Logout dari semua perangkat lain dengan mereset remember_token.
+     * Semua cookie auto-login ("Ingat saya") di perangkat lain jadi tidak valid.
+     * Session perangkat ini tetap aktif.
+     */
+    public function logoutAllDevices(Request $request)
+    {
+        if ($request->ajax()) {
+            $superuser = Superuser::find(Auth::guard('superuser')->id());
+
+            if ($superuser === null) {
+                abort(404);
+            }
+
+            $superuser->remember_token = null;
+            $superuser->save();
+
+            // Rotasi ID session perangkat ini agar lebih aman, tetap login.
+            $request->session()->regenerate();
+
+            $response['notification'] = [
+                'alert' => 'notify',
+                'type' => 'success',
+                'content' => 'Auto-login dimatikan di semua perangkat. Perangkat ini tetap aktif.',
+            ];
+            $response['redirect_to'] = 'reload()';
+
+            return $this->response(200, $response);
+        }
+    }
 }

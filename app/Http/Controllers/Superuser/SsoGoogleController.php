@@ -6,6 +6,7 @@ use App\Entities\Account\Superuser;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use Laravel\Socialite\Facades\Socialite;
 
@@ -29,7 +30,14 @@ class SsoGoogleController extends Controller
      */
     public function redirect()
     {
-        return Socialite::driver('google')->redirect();
+        try {
+            return Socialite::driver('google')->redirect();
+        } catch (\Exception $e) {
+            report($e);
+
+            return redirect()->route('auth.superuser.sso')
+                ->withErrors(['Login Google sedang tidak tersedia (konfigurasi belum lengkap). Hubungi admin.']);
+        }
     }
 
     /**
@@ -49,8 +57,14 @@ class SsoGoogleController extends Controller
         }
 
         $googleId = $googleUser->getId();
-        $email = strtolower(trim($googleUser->getEmail()));
+        $email = strtolower(trim((string) $googleUser->getEmail()));
         $name = $googleUser->getName() ?: $email;
+
+        // Email wajib ada dari Google (kalau user tidak berbagi email).
+        if ($email === '') {
+            return redirect()->route('auth.superuser.sso')
+                ->withErrors(['Akun Google tidak membagikan email. Izinkan akses email lalu coba lagi.']);
+        }
 
         // Mode hubungkan: user sedang login password dan klik "Hubungkan Google".
         // Ini jalur akun lama yang emailnya beda / random -> mapping manual sekali.
@@ -74,14 +88,24 @@ class SsoGoogleController extends Controller
                     ->withErrors(['Email Google ini sudah dipakai user lain (' . e($emailOwner->username) . '). Minta admin gabungkan manual.']);
             }
 
-            $current->google_id = $googleId;
-            $current->avatar = $googleUser->getAvatar() ?: $current->avatar;
-            // Kalau email lama random, ganti ke gmail asli sekalian.
-            if (strtolower(trim($current->email)) !== $email) {
-                $current->email = $email;
+            try {
+                DB::transaction(function () use ($current, $googleId, $googleUser, $email) {
+                    $current->google_id = $googleId;
+                    $current->avatar = $googleUser->getAvatar() ?: $current->avatar;
+                    // Kalau email lama random, ganti ke gmail asli sekalian.
+                    if (strtolower(trim((string) $current->email)) !== $email) {
+                        $current->email = $email;
+                    }
+                    $current->email_verified_at = $current->email_verified_at ?: now();
+                    $current->google_linked_at = $current->google_linked_at ?: now();
+                    $current->save();
+                });
+            } catch (\Throwable $e) {
+                report($e);
+
+                return redirect()->route('superuser.profile.index')
+                    ->withErrors(['Gagal menghubungkan akun Google. Silakan coba lagi.']);
             }
-            $current->email_verified_at = $current->email_verified_at ?: now();
-            $current->save();
 
             return redirect()->route('superuser.profile.index')
                 ->with('status', 'Akun Google berhasil dihubungkan. Ke depan bisa login 1 klik.');
@@ -95,35 +119,65 @@ class SsoGoogleController extends Controller
             $user = Superuser::where('email', $email)->first();
 
             if ($user && empty($user->google_id)) {
-                $user->google_id = $googleId;
-                $user->avatar = $googleUser->getAvatar();
-                $user->email_verified_at = $user->email_verified_at ?: now();
-                $user->save();
+                try {
+                    DB::transaction(function () use ($user, $googleId, $googleUser) {
+                        $user->google_id = $googleId;
+                        $user->avatar = $googleUser->getAvatar();
+                        $user->email_verified_at = $user->email_verified_at ?: now();
+                        $user->google_linked_at = $user->google_linked_at ?: now();
+                        $user->save();
+                    });
+                } catch (\Throwable $e) {
+                    report($e);
+
+                    return redirect()->route('auth.superuser.sso')
+                        ->withErrors(['Gagal menautkan akun ke Google. Silakan coba lagi.']);
+                }
             }
         }
 
-        // 3. Pendaftar baru -> buat PENDING, jangan langsung aktif.
+        // 3. Pendaftar baru -> validasi domain lalu buat PENDING (is_active=0).
         if (!$user) {
-            $base = strstr($email, '@', true) ?: 'user';
-            $base = preg_replace('/[^a-z0-9]+/i', '', strtolower($base));
-            $username = $base;
-            $counter = 1;
-            while (Superuser::where('username', $username)->exists()) {
-                $counter++;
-                $username = $base . $counter;
+            $allowedDomains = config('services.google.allowed_domains', []);
+            $domain = strtolower((string) substr(strrchr($email, '@') ?: '', 1));
+
+            if (!empty($allowedDomains) && !in_array($domain, $allowedDomains, true)) {
+                return redirect()->route('auth.superuser.sso')
+                    ->withErrors(['Email ' . ($domain ?: '-') . ' tidak diizinkan. Gunakan Gmail atau email kantor.']);
             }
 
-            $user = new Superuser();
-            $user->username = $username;
-            $user->email = $email;
-            $user->name = $name;
-            $user->password = bcrypt(Str::random(32));
-            $user->google_id = $googleId;
-            $user->avatar = $googleUser->getAvatar();
-            $user->email_verified_at = now();
-            $user->is_active = 0;
-            $user->is_superuser = 0;
-            $user->save();
+            try {
+                $user = DB::transaction(function () use ($email, $name, $googleId, $googleUser) {
+                    $base = strstr($email, '@', true) ?: 'user';
+                    $base = preg_replace('/[^a-z0-9]+/i', '', strtolower($base)) ?: 'user';
+                    $username = $base;
+                    $counter = 1;
+                    while (Superuser::where('username', $username)->exists()) {
+                        $counter++;
+                        $username = $base . $counter;
+                    }
+
+                    $newUser = new Superuser();
+                    $newUser->username = $username;
+                    $newUser->email = $email;
+                    $newUser->name = $name;
+                    $newUser->password = bcrypt(Str::random(32));
+                    $newUser->google_id = $googleId;
+                    $newUser->avatar = $googleUser->getAvatar();
+                    $newUser->email_verified_at = now();
+                    $newUser->google_linked_at = now();
+                    $newUser->is_active = 0;
+                    $newUser->is_superuser = 0;
+                    $newUser->save();
+
+                    return $newUser;
+                });
+            } catch (\Throwable $e) {
+                report($e);
+
+                return redirect()->route('auth.superuser.sso')
+                    ->withErrors(['Pendaftaran gagal diproses. Silakan coba lagi atau hubungi admin.']);
+            }
 
             return redirect()->route('auth.superuser.sso')
                 ->withErrors(['Pendaftaran berhasil. Akun menunggu verifikasi admin sebelum bisa dipakai.']);
@@ -139,6 +193,16 @@ class SsoGoogleController extends Controller
         if (!$user->is_active) {
             return redirect()->route('auth.superuser.sso')
                 ->withErrors(['Akun belum aktif. Hubungi admin untuk verifikasi.']);
+        }
+
+        // Catat login Google terakhir (untuk info di Profile).
+        try {
+            DB::transaction(function () use ($user) {
+                $user->google_last_login_at = now();
+                $user->save();
+            });
+        } catch (\Throwable $e) {
+            report($e);
         }
 
         Auth::guard('superuser')->login($user, true);
