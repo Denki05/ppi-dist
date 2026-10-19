@@ -49,4 +49,20 @@ return [
         'url' => env('AO_CALLBACK_URL'),
         'key' => env('AO_CALLBACK_KEY', 'warungkopi@123'),
     ],
+
+    // SSO Google (Socialite). Isi di .env: GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET, GOOGLE_REDIRECT_URI.
+    'google' => [
+        'client_id'     => env('GOOGLE_CLIENT_ID'),
+        'client_secret' => env('GOOGLE_CLIENT_SECRET'),
+        'redirect'      => env('GOOGLE_REDIRECT_URI'),
+
+        // Domain email yang boleh mendaftar via Google SSO.
+        // Kosongkan array untuk membolehkan semua domain.
+        'allowed_domains' => [
+            'gmail.com',
+            'googlemail.com',
+            'lssoft88.xyz',
+            'lsfragrance.id',
+        ],
+    ],
 ];

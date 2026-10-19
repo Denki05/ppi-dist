@@ -13,6 +13,10 @@ Route::group(['as' => 'auth.', 'prefix' => '/auth', 'middleware' => 'authenctica
     Route::group(['as' => 'superuser.', 'prefix' => '/superuser'], function () {
         Route::get('/', 'Superuser\AuthenticationController@index')->name('index');
         Route::post('/login', 'Superuser\AuthenticationController@login')->name('login')->middleware('throttle:10,1');
+        // Halaman SSO kandidat (signup + login Google, 1 tombol).
+        Route::get('/sso', 'Superuser\SsoGoogleController@index')->name('sso');
+        Route::get('/sso/google', 'Superuser\SsoGoogleController@redirect')->name('sso.redirect');
+        Route::get('/sso/google/callback', 'Superuser\SsoGoogleController@callback')->name('sso.callback');
     });
 });
 

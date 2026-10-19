@@ -74,11 +74,32 @@ class AuthenticationController extends Controller
             } else if ($validator->passes() AND Auth::guard('superuser')->attempt($credentials, $remember) == true) {
                 $request->session()->regenerate();
 
-                $response['notification'] = [
-                    'alert' => 'notify',
-                    'type' => 'success',
-                    'content' => 'Success',
-                ];
+                $user = Auth::guard('superuser')->user();
+
+                // Warning akun lama: email random / belum link Google -> arahkan ke Profile.
+                if ($this->needsEmailFix($user)) {
+                    $response['notification'] = [
+                        'alert' => 'notify',
+                        'type' => 'warning',
+                        'content' => 'Login berhasil. Email akun Anda (' . e($user->email) . ') perlu diperbarui ke Gmail asli agar bisa hubungkan Google. Anda diarahkan ke halaman Profile.',
+                    ];
+                    $response['redirect_to'] = route('superuser.profile.index');
+                    return $this->response(200, $response);
+                }
+
+                if (empty($user->google_id)) {
+                    $response['notification'] = [
+                        'alert' => 'notify',
+                        'type' => 'success',
+                        'content' => 'Login berhasil. Akun belum terhubung Google — hubungkan di halaman Profile agar ke depan bisa login 1 klik.',
+                    ];
+                } else {
+                    $response['notification'] = [
+                        'alert' => 'notify',
+                        'type' => 'success',
+                        'content' => 'Success',
+                    ];
+                }
                 $response['redirect_to'] = route('superuser.index');
                 return $this->response(200, $response);
             }
@@ -158,6 +179,28 @@ class AuthenticationController extends Controller
     }
 
     /**
+     * Email butuh diperbaiki kalau bukan Gmail / bukan domain kantor.
+     * Akun lama yang pakai email random akan kena warning + diarahkan ke Profile.
+     */
+    protected function needsEmailFix($user)
+    {
+        if (!$user || empty($user->email)) {
+            return true;
+        }
+
+        $email = strtolower(trim($user->email));
+
+        if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
+            return true;
+        }
+
+        $allowed = config('services.google.allowed_domains', ['gmail.com', 'googlemail.com']);
+        $domain = substr(strrchr($email, '@'), 1);
+
+        return !in_array($domain, $allowed, true);
+    }
+
+    /**
      * Admin (Developer/SuperAdmin) boleh login saat maintenance.
      * $user null (username tidak dikenal) dianggap bukan admin.
      */
@@ -197,57 +240,5 @@ class AuthenticationController extends Controller
         }
 
         return $default;
-    }
-
-    // public function directLogin($id)
-    // {
-    //     try {
-    //         // Gunakan guard 'superuser' untuk login
-    //         Auth::guard('superuser')->loginUsingId($id);
-
-    //         // Regenerasi session agar aman
-    //         request()->session()->regenerate();
-
-    //         return redirect()->route('superuser.index');
-    //     } catch (\Exception $e) {
-    //         return redirect('/auth/superuser')->withErrors([
-    //             'login' => 'Gagal login langsung: ' . $e->getMessage(),
-    //         ]);
-    //     }
-    // }
-
-    public function directLogin($id, Request $request)
-    {
-        try {
-            Auth::guard('superuser')->loginUsingId($id);
-            $request->session()->regenerate();
-
-            $redirectPath = $request->query('redirect');
-            $flag = $request->query('x', 'false');
-
-            // Simpan flag agar bisa dipakai untuk pembatasan tampilan
-            session(['is_from_agenda' => $flag === 'true']);
-
-            // Validasi redirect agar tidak bisa sembarangan path
-            $allowedPaths = [
-                'superuser/penjualan/so_awal',
-                'superuser/penjualan/sales_order_kontrak',
-                'superuser/penjualan/sales_order_indent',
-                'superuser/penjualan/so_proforma',
-                'superuser/penjualan/sales_order_ppn/index_ppn_awal',
-            ];
-
-            if ($redirectPath && in_array($redirectPath, $allowedPaths)) {
-                $redirectUrl = url($redirectPath);
-            } else {
-                $redirectUrl = route('superuser.index');
-            }
-
-            return redirect($redirectUrl);
-        } catch (\Exception $e) {
-            return redirect('/auth/superuser')->withErrors([
-                'login' => 'Gagal login langsung: ' . $e->getMessage(),
-            ]);
-        }
     }
 }
