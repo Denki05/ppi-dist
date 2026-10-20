@@ -7,6 +7,7 @@ use App\Http\Controllers\Controller;
 use App\Entities\Setting\Menu;
 use App\Entities\Account\User;
 use App\Entities\Setting\UserMenu;
+use App\Services\UserSyncService;
 use DB;
 use Auth;
 
@@ -214,6 +215,9 @@ class UserController extends Controller
 
                 DB::commit();
 
+                // Sinkronkan user yang baru di-approve ke DB trial (pusat user).
+                UserSyncService::push($user);
+
                 $data_json["IsError"]  = FALSE;
                 $data_json["Message"] = "User berhasil diaktifkan";
                 $data_json["Credentials"] = [
@@ -260,7 +264,8 @@ class UserController extends Controller
 
     	$data = [
     		'menu' => $menu,
-    		'result' => $result
+    		'result' => $result,
+    		'modules' => ['MIS', 'AO', 'APM', 'TRS', 'DSG'],
     	];
         return view($this->view."edit",$data);
     }
@@ -368,6 +373,8 @@ class UserController extends Controller
                 }
 
                 DB::commit();
+
+                UserSyncService::push(User::find($insert_user->id));
 
                 $data_json["IsError"]  = FALSE;
                 $data_json["Message"] = "User berhasil ditambahkan";
@@ -477,12 +484,17 @@ class UserController extends Controller
                 	goto ResultData;
                 }
 
+                $modules = isset($post["modules"]) && is_array($post["modules"])
+                	? array_values(array_intersect($post["modules"], ['MIS','AO','APM','TRS','DSG']))
+                	: [];
+
                 $data_user = [
                 	'name' => trim(htmlentities($post["name"])),
                 	'email' => trim(htmlentities($post["email"])),
                 	'username' => trim(htmlentities($post["username"])),
                 	'password' => $password,
                 	'division' => trim(htmlentities($post["division"])),
+                	'modul_akses' => json_encode($modules),
                 	'updated_by' => Auth::id(),
                 ];
 
@@ -507,6 +519,8 @@ class UserController extends Controller
                 }
 
                 DB::commit();
+
+                UserSyncService::push(User::find($post["user_id"]));
 
                 $data_json["IsError"]  = FALSE;
                 $data_json["Message"] = "User berhasil diubah";
@@ -544,6 +558,7 @@ class UserController extends Controller
             ]);
             
             DB::commit();
+            UserSyncService::push(User::find($post["id"]));
             return redirect()->back()->with('success','User berhasil dinon-aktifkan');
             
         }catch(\Throwable $e){
@@ -567,6 +582,7 @@ class UserController extends Controller
             ]);
             
             DB::commit();
+            UserSyncService::push(User::find($post["id"]));
             return redirect()->back()->with('success','User berhasil diaktifkan');
             
         }catch(\Throwable $e){

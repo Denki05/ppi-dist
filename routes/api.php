@@ -26,6 +26,12 @@ Route::group(['middleware' => 'user.apikey'], function () {
     Route::get('customers/search/name', [\App\Http\Controllers\Api\ApiCustomerSearchController::class, 'searchByName']);
 });
 
+// === Sinkronisasi user dari trans (master) -> trial (pusat user) ===
+// Dijalankan oleh trans via UserSyncService; dieksekusi di server trial.
+Route::group(['prefix' => 'superusers', 'middleware' => 'trial.sync'], function () {
+    Route::post('/sync', [\App\Http\Controllers\Api\UserSyncController::class, 'upsert']);
+});
+
 // === API khusus modul AO (sys-af) untuk fitur Add SO Awal ===
 Route::group(['prefix' => 'ao/so-awal', 'middleware' => 'ao.apikey'], function () {
     Route::get('/brands', [AoSalesOrderApiController::class, 'brands']);

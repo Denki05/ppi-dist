@@ -88,6 +88,9 @@ class Kernel extends HttpKernel
         // direktori user untuk modul AO (login + one-time access)
         'user.apikey' => \App\Http\Middleware\VerifyUserApiKey::class,
 
+        // penerima sinkronisasi user dari trans ke trial
+        'trial.sync' => \App\Http\Middleware\VerifyTrialSyncKey::class,
+
         // CORS khusus API halal (landing di hosting terpisah)
         'cors.halal' => \App\Http\Middleware\CorsHalal::class,
     ];
