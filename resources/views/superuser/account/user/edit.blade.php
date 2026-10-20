@@ -62,6 +62,25 @@
             <p style="margin:0"><i>Kosongkan jika tidak diubah</i></p>
           </div>
         </div>
+        <div class="form-group row">
+          <label class="col-md-2 col-form-label text-right">Akses Modul</label>
+          <div class="col-md-8">
+            @php
+              $userModules = [];
+              if (!empty($result->modul_akses)) {
+                $decoded = is_array($result->modul_akses) ? $result->modul_akses : json_decode($result->modul_akses, true);
+                $userModules = is_array($decoded) ? $decoded : [];
+              }
+            @endphp
+            @foreach($modules as $mod)
+              <label class="mr-3 mb-0" style="font-weight:normal">
+                <input type="checkbox" name="modules[]" value="{{ $mod }}" {{ in_array($mod, $userModules) ? 'checked' : '' }}>
+                {{ $mod }}
+              </label>
+            @endforeach
+            <p style="margin:0"><i>Menentukan modul yang bisa diakses user ini (tersinkron ke DB trial).</i></p>
+          </div>
+        </div>
       </div>
     </div>
     <div class="row mb-30">

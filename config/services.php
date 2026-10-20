@@ -65,4 +65,12 @@ return [
             'lsfragrance.id',
         ],
     ],
+
+    // Sinkronisasi user dari trans (master, ppi_araya) ke trial (pusat user, lssoftxy_unifra).
+    // Diisi DI TRANS: TRIAL_SYNC_URL + TRIAL_SYNC_KEY.
+    // Diisi DI TRIAL: TRIAL_SYNC_KEY (untuk memvalidasi request masuk).
+    'trial' => [
+        'sync_url' => env('TRIAL_SYNC_URL'),
+        'key'      => env('TRIAL_SYNC_KEY'),
+    ],
 ];

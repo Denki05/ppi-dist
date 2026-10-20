@@ -79,6 +79,9 @@ class Kernel extends HttpKernel
         'picker.auth'           => \App\Http\Middleware\PickerApiAuth::class,
         'ao.apikey'             => \App\Http\Middleware\VerifyAoApiKey::class,
 
+        // penerima sinkronisasi user dari trans ke trial
+        'trial.sync' => \App\Http\Middleware\VerifyTrialSyncKey::class,
+
         // CORS khusus API halal (landing di hosting terpisah)
         'cors.halal' => \App\Http\Middleware\CorsHalal::class,
     ];

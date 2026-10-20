@@ -52,7 +52,19 @@
 	    var unindexed_array = $form.serializeArray();
 	    var indexed_array = {};
 	    $.map(unindexed_array, function (n, i) {
-	        indexed_array[n['name']] = n['value'];
+	        var name = n['name'];
+	        var isArray = name.indexOf('[]') !== -1;
+	        if (isArray) {
+	            name = name.replace('[]', '');
+	        }
+	        if (indexed_array.hasOwnProperty(name)) {
+	            if (!$.isArray(indexed_array[name])) {
+	                indexed_array[name] = [indexed_array[name]];
+	            }
+	            indexed_array[name].push(n['value']);
+	        } else {
+	            indexed_array[name] = isArray ? [n['value']] : n['value'];
+	        }
 	    });
 	    return indexed_array;
 	}

@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Superuser;
 use App\Entities\Account\Superuser;
 use App\Helper\UploadMedia;
 use App\Http\Controllers\Controller;
+use App\Services\UserSyncService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
@@ -104,6 +105,9 @@ class ProfileController extends Controller
 
                 if ($superuser->save()) {
 
+                    // Sinkronkan perubahan profil / ganti password ke DB trial.
+                    UserSyncService::push($superuser);
+
                     $response['notification'] = [
                         'alert' => 'notify',
                         'type' => 'success',
@@ -134,6 +138,8 @@ class ProfileController extends Controller
 
             $superuser->google_id = null;
             $superuser->save();
+
+            UserSyncService::push($superuser);
 
             $response['notification'] = [
                 'alert' => 'notify',
