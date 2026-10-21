@@ -308,6 +308,7 @@ tr.sh-flash{animation:shflash 2.4s;}
                 <button type="submit" class="btn btn-sm btn-outline-primary" style="border-radius:9px;font-weight:700;">Upload</button>
             </form>
             <form action="{{ route('superuser.master.sh_produk.run_sg') }}" method="POST" class="mb-0">@csrf<button type="submit" class="btn btn-sm btn-outline-success" style="border-radius:9px;font-weight:700;" onclick="return confirm('Jalankan pencocokan SG ulang?')">Run SG</button></form>
+            <a href="{{ route('superuser.master.sh_produk.dokumen_sg') }}" target="_blank" class="btn btn-sm btn-outline-info" style="border-radius:9px;font-weight:700;">PDF Semua List (SG)</a>
             </div>
             <div class="doc-hint">{{ isset($docPdfSg) && $docPdfSg ? $docPdfSg->original_name . ' • ' . $docPdfSg->total_baris . ' produk • ' . ($docPdfSg->nomor_sertifikat ?? '-') : 'Belum ada PDF SG (opsional).' }}</div>
         </div>

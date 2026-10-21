@@ -369,6 +369,9 @@ class ShProdukController extends Controller
         $norm = HalalSgImporter::normalisasiUntukFpdi(storage_path('app/' . $path));
         $res = (new HalalSgImporter())->importPdf(storage_path('app/' . $path), $doc->id);
         $doc->update(['total_baris' => $res['total'], 'nomor_sertifikat' => $res['cert']]);
+        // Aset visual (latar + potongan penutup) diambil dari PDF ini, jadi
+        // cache lama harus dibuang agar template ikut dokumen terbaru.
+        \App\Services\Halal\HalalSgAssets::clearCache();
 
         $msg = "PDF SG diimport: {$res['total']} produk, {$res['pages']} halaman, sertifikat {$res['cert']}.";
         $msg .= $norm ? ' File dinormalisasi untuk preview pixel-identik.' : ' Catatan: tanpa Ghostscript di server, preview memakai replica.';
@@ -398,6 +401,28 @@ class ShProdukController extends Controller
 
         return redirect()->route('superuser.master.sh_produk.index')
             ->with('success', "Pencocokan SG selesai — Cocok: {$stats['Cocok']}, Perlu ditinjau: {$stats['Perlu ditinjau']}, Tidak cocok: {$stats['Tidak cocok']}.");
+    }
+
+    /**
+     * Unduh "PDF semua list" SG: cover + 4 halaman Annex A berisi seluruh
+     * produk dari QR MUIS (dibangun memakai template PDF resmi).
+     */
+    public function dokumenSg()
+    {
+        if ($deny = $this->deny('can_read')) {
+            return $deny;
+        }
+        try {
+            $bytes = (new \App\Services\Halal\HalalSgAnnex())->buildSumber();
+        } catch (\Throwable $e) {
+            \Log::warning('Gagal membuat dokumen SG: ' . $e->getMessage());
+            return redirect()->route('superuser.master.sh_produk.index')
+                ->with('error', 'Gagal membuat PDF semua list SG: ' . $e->getMessage());
+        }
+        return response($bytes, 200, [
+            'Content-Type' => 'application/pdf',
+            'Content-Disposition' => 'inline; filename="SH-SG-Semua-Produk.pdf"',
+        ]);
     }
 
     /**

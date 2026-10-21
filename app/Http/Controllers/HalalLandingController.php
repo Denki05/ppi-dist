@@ -158,17 +158,19 @@ class HalalLandingController extends Controller
             }
         }
 
-        // SG terverifikasi PDF: rombakan pixel-identik (cover + annex asli).
-        // Baris estimasi (belum terverifikasi) tetap memakai replica dompdf.
-        if ($sumber === 'SG' && $row->halaman_pdf && $row->status_pdf === HalalHelper::PDF_VERIFIED) {
+        // SG: halaman Annex A dibangun dari data QR MUIS memakai template
+        // resmi; produk yang dipilih saja yang digambar (produk lain tidak
+        // digambar, jadi tidak ada garis putih di atas latar gradasi).
+        if ($sumber === 'SG') {
             try {
-                $bytes = (new \App\Services\Halal\HalalSgRombakan())->build($row);
+                $bytes = (new \App\Services\Halal\HalalSgAnnex())->build($row);
                 return response($bytes, 200, [
                     'Content-Type' => 'application/pdf',
                     'Content-Disposition' => 'inline; filename="SH-SG-' . preg_replace('/[^A-Za-z0-9]+/', '-', $row->kode_produk) . '.pdf"',
                 ]);
             } catch (\Throwable $e) {
-                \Log::warning('Rombakan SG gagal, fallback dompdf: ' . $e->getMessage());
+                // Jatuh ke replica dompdf di bawah bila gagal.
+                \Log::warning('SH SG gagal, fallback dompdf: ' . $e->getMessage());
             }
         }
 
