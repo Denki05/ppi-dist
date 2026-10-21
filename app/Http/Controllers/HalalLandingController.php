@@ -7,9 +7,47 @@ use App\HalalDocument;
 use App\HalalList;
 use App\HalalPdfItem;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 
 class HalalLandingController extends Controller
 {
+    /**
+     * Basis URL publik untuk link PDF/preview.
+     * Default config('app.url'); bisa dioverride lewat env HALAL_PUBLIC_URL
+     * supaya landing di hosting terpisah tetap memakai host yang benar.
+     */
+    public static function baseUrl()
+    {
+        $base = env('HALAL_PUBLIC_URL');
+        return rtrim($base ?: config('app.url'), '/');
+    }
+
+    /**
+     * Link preview PDF (PDF rombakan per produk).
+     * ?v= anti-cache agar popup selalu memuat PDF terbaru.
+     */
+    public static function previewUrl($row)
+    {
+        return self::baseUrl() . '/halal/produk/' . $row->id . '/preview'
+            . '?v=' . ($row->updated_at ? strtotime((string) $row->updated_at) : time());
+    }
+
+    /**
+     * Link cek sertifikat di situs resmi BPJPH (khusus produk Indonesia).
+     */
+    public static function bpjphUrl($row)
+    {
+        if (($row->sumber ?: 'ID') !== 'ID') {
+            return null;
+        }
+        $noRegis = $row->nomor_sertifikat
+            ? 'ID' . preg_replace('/ID$/', '', $row->nomor_sertifikat)
+            : '';
+        return 'https://bpjph.halal.go.id/cari/sertifikat?produk='
+            . rawurlencode($row->nama_produk)
+            . '&no_regis=' . rawurlencode($noRegis);
+    }
+
     /**
      * Halaman utama landing halal.lsfragrance.id.
      * Pencarian memakai nama produk, id sertifikat dibawa sebagai hidden field.
@@ -17,6 +55,171 @@ class HalalLandingController extends Controller
     public function index()
     {
         return view('halal.index');
+    }
+
+    /**
+     * Daftar produk halal untuk landing (public).
+     * Hanya status "Cocok" yang ditampilkan -> ini yang sudah lolos
+     * pencocokan di SH Produk, jadi aman ditampilkan ke publik.
+     *
+     * GET /api/halal/produk?q=&sumber=ID|SG|ALL&page=1&per_page=24
+     *
+     * SEMENTARA: default hanya SH Indonesia (ID). SH Singapura (SG) belum
+     * ditampilkan ke publik sampai datanya selesai ditinjau.
+     * sumber=SG  -> hanya Singapura, sumber=ALL -> keduanya.
+     *
+     * Balisan: { data: [...], meta: { current_page, last_page, per_page,
+     * total, from, to, total_cocok } }
+     */
+    public function listProduk(Request $request)
+    {
+        $q = trim($request->get('q', ''));
+        $sumber = strtoupper(trim($request->get('sumber', 'ID')));
+
+        $query = HalalHelper::query()
+            ->where('status_pencocokan', HalalHelper::STATUS_COCOK);
+
+        if ($sumber !== 'ALL') {
+            // Default & 'ID' -> Indonesia saja; 'SG' -> Singapura saja.
+            $query->where('sumber', $sumber === 'SG' ? 'SG' : 'ID');
+        }
+
+        // 1 huruf: abaikan filter (tampilkan semua) supaya tidak terasa
+        // "produk tidak ditemukan" saat baru mulai mengetik.
+        if (mb_strlen($q) >= 2) {
+            $this->applySearch($query, $q);
+        }
+
+        $rows = $query->orderBy('nama_produk', 'asc')
+            // Satu produk bisa punya SH ID dan SH SG -> tampilkan ID dulu.
+            ->orderByRaw("CASE WHEN sumber = 'ID' THEN 0 WHEN sumber = 'SG' THEN 1 ELSE 2 END")
+            ->get([
+                'id', 'kode_produk', 'merek', 'sumber', 'nama_produk',
+                'nomor_sertifikat', 'status_pencocokan',
+                'nomor_urut_list_halal', 'halaman_pdf', 'nomor_urut_pdf',
+                'status_pdf', 'updated_at',
+            ]);
+
+        // Satu produk bisa punya baris master dobel (master_product_id beda)
+        // -> dedup per (merek, kode, sumber). ID & SG tetap terpisah.
+        $unique = [];
+        foreach ($rows as $r) {
+            $key = $r->merek . '|' . $r->kode_produk . '|' . ($r->sumber ?: 'ID');
+            if (!isset($unique[$key])) {
+                $unique[$key] = $r;
+            }
+        }
+        $rows = array_values($unique);
+
+        $total = count($rows);
+        $perPage = (int) $request->get('per_page', 24);
+        if ($perPage < 1) {
+            $perPage = 1;
+        } elseif ($perPage > 60) {
+            $perPage = 60;
+        }
+        $page = max(1, (int) $request->get('page', 1));
+        $lastPage = max(1, (int) ceil($total / $perPage));
+        if ($page > $lastPage) {
+            $page = $lastPage;
+        }
+        $slice = array_slice($rows, ($page - 1) * $perPage, $perPage);
+
+        // Total produk "Cocok" untuk badge di landing (mengikuti filter).
+        $totalCocok = $this->countTotalCocok($sumber);
+
+        return response()->json([
+            'data' => array_map(function ($r) {
+                return $this->mapRow($r);
+            }, $slice),
+            'meta' => $this->listMeta($page, $perPage, $total, $totalCocok),
+        ]);
+    }
+
+    /**
+     * Jumlah produk "Cocok" unik (merek + kode + sumber) sesuai filter.
+     */
+    protected function countTotalCocok($sumber = 'ALL')
+    {
+        $sql = "SELECT COUNT(DISTINCT CONCAT_WS('|', COALESCE(merek,''), COALESCE(kode_produk,''), COALESCE(sumber,'ID'))) AS c
+                 FROM halal_helpers WHERE status_pencocokan = ?";
+        $params = [HalalHelper::STATUS_COCOK];
+
+        if ($sumber !== 'ALL') {
+            $sql .= ' AND sumber = ?';
+            $params[] = $sumber === 'SG' ? 'SG' : 'ID';
+        }
+
+        return (int) DB::selectOne($sql, $params)->c;
+    }
+
+    /**
+     * Metadata list + total produk "Cocok" (untuk badge di landing).
+     */
+    protected function listMeta($page, $perPage, $total, $totalCocok = null)
+    {
+        if ($totalCocok === null) {
+            $totalCocok = $total;
+        }
+        $lastPage = max(1, (int) ceil($total / $perPage));
+        return [
+            'current_page' => $page,
+            'last_page' => $lastPage,
+            'per_page' => $perPage,
+            'total' => $total,
+            'from' => $total ? (($page - 1) * $perPage) + 1 : 0,
+            'to' => $total ? min($page * $perPage, $total) : 0,
+            'total_cocok' => $totalCocok,
+        ];
+    }
+
+    /**
+     * Bentuk satu baris produk untuk API (dipakai list & search).
+     */
+    protected function mapRow($r)
+    {
+        $sumber = $r->sumber ?: 'ID';
+        $label = $r->nama_produk . ' — ' . $r->merek . ' ' . $r->kode_produk;
+        $label .= $sumber === 'SG' ? ' [SG]' : ' [ID]';
+
+        return [
+            'id' => $r->id,
+            'kode' => $r->kode_produk,
+            'merek' => $r->merek,
+            'sumber' => $sumber,
+            'nama' => $label,
+            'nama_produk' => $r->nama_produk,
+            // Hidden id sertifikasi untuk popup.
+            'sertifikat_id' => $r->nomor_sertifikat,
+            'status' => $r->status_pencocokan,
+            'button_active' => $r->isButtonActive(),
+            'nomor_urut_list' => $r->nomor_urut_list_halal,
+            'halaman_pdf' => $r->halaman_pdf,
+            'nomor_urut_pdf' => $r->nomor_urut_pdf,
+            'preview_url' => self::previewUrl($r),
+            'bpjph_url' => self::bpjphUrl($r),
+        ];
+    }
+
+    /**
+     * Filter pencarian produk.
+     * Kata kunci dipecah per kata: SETIAP kata harus cocok di salah satu
+     * kolom (nama / kode / merek / search_keyword) -> "GCF 999925002" tetap
+     * ketemu walau kata pertama dan kedua ada di kolom berbeda.
+     */
+    protected function applySearch($query, $q)
+    {
+        $tokens = preg_split('/\s+/', trim($q), -1, PREG_SPLIT_NO_EMPTY);
+        foreach ($tokens as $token) {
+            $keyword = HalalHelper::normalizeKeyword('', $token);
+            $query->where(function ($w) use ($token, $keyword) {
+                $w->where('nama_produk', 'like', '%' . $token . '%')
+                    ->orWhere('kode_produk', 'like', '%' . $token . '%')
+                    ->orWhere('merek', 'like', '%' . $token . '%')
+                    ->orWhere('search_keyword', 'like', '%' . $keyword . '%');
+            });
+        }
+        return $query;
     }
 
     /**
@@ -31,13 +234,13 @@ class HalalLandingController extends Controller
         // Landing hanya menampilkan Cocok + Perlu ditinjau.
         // Yang Tidak cocok disembunyikan, ditinjau ulang via SH Produk.
         $query->whereIn('status_pencocokan', [HalalHelper::STATUS_COCOK, HalalHelper::STATUS_TINJAU]);
+        // SEMENTARA: hanya SH Indonesia (ID) yang ditampilkan ke publik.
+        $sumber = strtoupper(trim($request->get('sumber', 'ID')));
+        if ($sumber !== 'ALL') {
+            $query->where('sumber', $sumber === 'SG' ? 'SG' : 'ID');
+        }
         if (mb_strlen($q) >= 2) {
-            $keyword = HalalHelper::normalizeKeyword('', $q);
-            $query->where(function ($w) use ($keyword, $q) {
-                $w->where('search_keyword', 'like', '%' . $keyword . '%')
-                    ->orWhere('nama_produk', 'like', '%' . $q . '%')
-                    ->orWhere('kode_produk', 'like', '%' . $q . '%');
-            });
+            $this->applySearch($query, $q);
         } elseif ($q !== '') {
             return response()->json([]);
         }
@@ -47,6 +250,8 @@ class HalalLandingController extends Controller
         // tidak tampil dobel di landing; yang Cocok diprioritaskan.
 
         $rows = $query->orderBy('nama_produk', 'asc')
+            // Satu produk bisa punya SH ID dan SH SG -> tampilkan ID dulu.
+            ->orderByRaw("CASE WHEN sumber = 'ID' THEN 0 WHEN sumber = 'SG' THEN 1 ELSE 2 END")
             ->limit(60)
             ->get([
                 'id', 'kode_produk', 'merek', 'sumber', 'nama_produk',
@@ -66,26 +271,7 @@ class HalalLandingController extends Controller
         $rows = array_slice(array_values($unique), 0, 15);
 
         return response()->json(array_map(function ($r) {
-            $label = $r->nama_produk . ' — ' . $r->merek . ' ' . $r->kode_produk;
-            $label .= $r->sumber === 'SG' ? ' [SG]' : ' [ID]';
-            return [
-                'id' => $r->id,
-                'kode' => $r->kode_produk,
-                'merek' => $r->merek,
-                'sumber' => $r->sumber ?: 'ID',
-                // Teks tampil = nama + badge sumber agar user tahu ada 2 SH.
-                'nama' => $label,
-                'nama_produk' => $r->nama_produk,
-                // Hidden id sertifikasi untuk popup.
-                'sertifikat_id' => $r->nomor_sertifikat,
-                'status' => $r->status_pencocokan,
-                'button_active' => $r->isButtonActive(),
-                'nomor_urut_list' => $r->nomor_urut_list_halal,
-                'halaman_pdf' => $r->halaman_pdf,
-                'nomor_urut_pdf' => $r->nomor_urut_pdf,
-                'preview_url' => rtrim(url('/halal/produk/' . $r->id . '/preview'), '/')
-                    . '?v=' . ($r->updated_at ? strtotime((string) $r->updated_at) : time()),
-            ];
+            return $this->mapRow($r);
         }, $rows));
     }
 
@@ -114,9 +300,9 @@ class HalalLandingController extends Controller
             'status' => $row->status_pencocokan,
             'button_active' => $row->isButtonActive(),
             // Preview rombakan internal (halaman asli, produk lain disembunyikan).
-            // ?v= anti-cache agar popup selalu memuat PDF terbaru.
-            'preview_url' => rtrim(url('/halal/produk/' . $row->id . '/preview'), '/')
-                . '?v=' . ($row->updated_at ? strtotime((string) $row->updated_at) : time()),
+            'preview_url' => self::previewUrl($row),
+            // Link cek sertifikat di situs resmi BPJPH (khusus ID).
+            'bpjph_url' => self::bpjphUrl($row),
             'halal_site_query' => $row->nama_produk,
             'halaman_pdf' => $row->halaman_pdf,
             // Nomor tampil mengikuti konvensi SH Produk: ID = fisik - 1 (cover tak bernomor),

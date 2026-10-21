@@ -55,14 +55,25 @@ Route::group(['prefix' => 'ao/so-awal', 'middleware' => 'ao.apikey'], function (
 
 // === API Halal untuk landing halal.lsfragrance.id (hosting terpisah) ===
 // Read-only, sumber = tabel bantuan halal_helpers (ID + SG).
-// Preview PDF rombakan diserve via /halal/produk/{id}/preview (web route).
+// Preview PDF rombakan juga diserve di sini (bukan hanya web route)
+// supaya landing cukup pakai satu origin API saja.
 Route::group(['prefix' => 'halal', 'middleware' => 'cors.halal'], function () {
+    // Daftar produk (status "Cocok" saja) + filter q / sumber / paginasi.
+    Route::get('/produk', 'HalalLandingController@listProduk');
+    // Autocomplete (dipakai Select2, maks 15 hasil).
     Route::get('/search', 'HalalLandingController@search');
     Route::get('/produk/{id}', 'HalalLandingController@show');
+    Route::get('/produk/{id}/preview', 'HalalLandingController@preview');
+    Route::options('/produk', function () {
+        return response('', 204);
+    });
     Route::options('/search', function () {
         return response('', 204);
     });
     Route::options('/produk/{id}', function () {
+        return response('', 204);
+    });
+    Route::options('/produk/{id}/preview', function () {
         return response('', 204);
     });
 });
