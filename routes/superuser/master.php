@@ -77,6 +77,7 @@ Route::group([
         Route::post('/import-qr-sg', 'ShProdukController@importQrSg')->name('import_qr_sg');
         Route::post('/upload-pdf-sg', 'ShProdukController@uploadPdfSg')->name('upload_pdf_sg');
         Route::post('/run-sg', 'ShProdukController@runSg')->name('run_sg');
+        Route::get('/dokumen-sg', 'ShProdukController@dokumenSg')->name('dokumen_sg');
     });
 
     Route::group(['as' => 'product_category.', 'prefix' => '/product_category'], function () {

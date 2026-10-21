@@ -97,6 +97,10 @@
 .sh-alert.warn{background:#fffbeb;border-color:#fde68a;color:#92400e;}
 .sh-bulk{background:#eef2ff;border:1px dashed #a5b4fc;border-radius:12px;padding:9px 13px;margin-bottom:10px;display:none;align-items:center;gap:8px;flex-wrap:wrap;font-size:.82rem;}
 .sh-bulk.show{display:flex;}
+@keyframes shflash{0%{background:#fef9c3;}100%{background:transparent;}}
+tr.sh-flash{animation:shflash 2.4s;}
+#tinjau-hasil .list-group-item{cursor:pointer;}
+#tinjau-hasil .list-group-item:hover{background:#eef2ff;}
 .src-modal-sec{border:1px solid var(--sh-border);border-radius:13px;padding:13px 14px;margin-bottom:12px;background:#fafbfe;}
 .src-modal-sec h6{font-weight:800;font-size:.85rem;margin:0 0 9px;display:flex;align-items:center;gap:7px;}
 .upload-row{display:flex;gap:7px;flex-wrap:wrap;align-items:center;}
@@ -213,7 +217,7 @@
                     @forelse($rows as $r)
                     <tr data-id="{{ $r->id }}">
                         <td><input type="checkbox" class="sh-check" value="{{ $r->id }}"></td>
-                        <td><div class="prod-line"><span class="src-badge src-{{ $r->sumber }}">{{ $r->sumber }}</span><span class="prod-name" title="{{ $r->nama_produk }}">{{ $r->nama_produk }}</span><span class="prod-code">{{ $r->kode_produk }}</span><a class="prod-prev" href="{{ url('/halal/produk/' . $r->id . '/preview') }}" target="_blank" title="{{ $r->merek }} • {{ $r->kode_produk }}">PDF &nearr;</a></div></td>
+                        <td><div class="prod-line"><span class="src-badge src-{{ $r->sumber }}">{{ $r->sumber }}</span><span class="prod-name" title="{{ $r->nama_produk }}">{{ $r->nama_produk }}</span><span class="prod-code">{{ $r->kode_produk }}</span><a class="prod-prev" href="{{ url('/halal/produk/' . $r->id . '/preview') }}?v={{ $r->updated_at ? $r->updated_at->timestamp : time() }}" target="_blank" title="{{ $r->merek }} • {{ $r->kode_produk }}">PDF &nearr;</a></div></td>
                         <td>@if($r->nama_di_list_halal)<span class="match-one" title="{{ $r->nama_di_list_halal }} ({{ $r->kunci_yang_dipakai ?? '-' }})">{{ $r->nama_di_list_halal }} <span class="match-key">#{{ $r->nomor_urut_list_halal }} • {{ $r->kunci_yang_dipakai ?? '-' }}</span></span>@else<span class="text-muted">&mdash;</span>@endif</td>
                         <td>@if($r->halaman_pdf)@php $halTampil = $r->sumber === 'SG' ? $r->halaman_pdf : max(1, $r->halaman_pdf - 1); $halEst = $r->status_pdf !== 'Terverifikasi PDF'; @endphp<span class="hal-chip {{ $halEst ? 'hal-est' : '' }}" title="{{ $halEst ? 'Estimasi — belum terverifikasi PDF' : 'Terverifikasi PDF' }} • Nomor urut #{{ $r->nomor_urut_pdf }}">H.{{ $halTampil }}{{ $halEst ? '*' : '' }}</span>@else<span class="text-muted">&mdash;</span>@endif</td>
                         <td>@if($r->status_pencocokan=='Cocok')<span class="st st-ok" @if($r->catatan_tinjauan)title="{{ $r->catatan_tinjauan }}"@endif>Cocok</span>@elseif($r->status_pencocokan=='Perlu ditinjau')<span class="st st-warn" @if($r->catatan_tinjauan)title="{{ $r->catatan_tinjauan }}"@endif>Tinjau</span>@else<span class="st st-bad" @if($r->catatan_tinjauan)title="{{ $r->catatan_tinjauan }}"@endif>Tidak</span>@endif</td>
@@ -304,6 +308,7 @@
                 <button type="submit" class="btn btn-sm btn-outline-primary" style="border-radius:9px;font-weight:700;">Upload</button>
             </form>
             <form action="{{ route('superuser.master.sh_produk.run_sg') }}" method="POST" class="mb-0">@csrf<button type="submit" class="btn btn-sm btn-outline-success" style="border-radius:9px;font-weight:700;" onclick="return confirm('Jalankan pencocokan SG ulang?')">Run SG</button></form>
+            <a href="{{ route('superuser.master.sh_produk.dokumen_sg') }}" target="_blank" class="btn btn-sm btn-outline-info" style="border-radius:9px;font-weight:700;">PDF Semua List (SG)</a>
             </div>
             <div class="doc-hint">{{ isset($docPdfSg) && $docPdfSg ? $docPdfSg->original_name . ' • ' . $docPdfSg->total_baris . ' produk • ' . ($docPdfSg->nomor_sertifikat ?? '-') : 'Belum ada PDF SG (opsional).' }}</div>
         </div>
@@ -315,6 +320,7 @@
   </div>
 </div>
 
+<span id="doc-name-ID" class="d-none">{{ isset($docList) && $docList ? $docList->original_name . ' • ' . $docList->total_baris . ' baris' : 'belum ada dokumen list ID' }}</span><span id="doc-name-SG" class="d-none">{{ isset($docListSg) && $docListSg ? $docListSg->nomor_sertifikat . ' • ' . $docListSg->total_baris . ' produk' : 'belum ada dokumen list SG' }}</span>
 <div class="modal fade" id="modal-tinjau" tabindex="-1" role="dialog">
   <div class="modal-dialog" role="document">
     <form id="form-tinjau" method="POST" action="">
@@ -336,6 +342,7 @@
           </div>
           <div class="form-group mb-2">
             <label class="mb-1">Tautkan ke list halal <small class="text-muted">(opsional — no urut + halaman terisi otomatis)</small></label>
+            <div id="tinjau-doc" class="small text-muted"></div>
             <div id="tinjau-cur" class="small text-muted mb-1">Belum terhubung ke list.</div>
             <input type="hidden" name="nomor_urut_list" id="tinjau-nomor" value="">
             <input type="hidden" name="lepas_tautan" id="tinjau-lepas-flag" value="">
@@ -625,6 +632,8 @@
   }
   function tinjauLinkInit(b){
     tinjauSumber = b.getAttribute('data-sumber') || 'ID';
+    var docEl = $('#doc-name-' + tinjauSumber), docBox = $('#tinjau-doc');
+    if(docBox) docBox.textContent = 'Mencari di list ' + tinjauSumber + ': ' + (docEl ? docEl.textContent : '-');
     var hid = $('#tinjau-nomor'); if(hid){ hid.value = ''; hid.removeAttribute('data-nama'); }
     var flag = $('#tinjau-lepas-flag'); if(flag) flag.value = '';
     var nol = b.getAttribute('data-list') || '', nm = b.getAttribute('data-namalist') || '', hal = b.getAttribute('data-hal') || '';
@@ -640,17 +649,27 @@
     var box = $('#tinjau-hasil'), cari = $('#tinjau-cari');
     if(!box || !cari) return;
     var my = ++tinjauSeq, qs = 'sumber=' + encodeURIComponent(tinjauSumber) + '&q=' + encodeURIComponent(cari.value.trim());
+    box.innerHTML = '<div class="list-group-item py-1 px-2 text-muted" style="font-size:.8rem;">Mencari…</div>';
+    box.style.display = 'block';
     fetch(listCariUrl + '?' + qs, {headers:{'Accept':'application/json','X-Requested-With':'XMLHttpRequest'}})
       .then(function(r){ return r.json(); })
       .then(function(rows){
         if(my !== tinjauSeq) return;
-        if(!rows || !rows.length){ box.style.display = 'none'; box.innerHTML = ''; return; }
+        if(!rows || !rows.length){
+          box.innerHTML = '<div class="list-group-item py-1 px-2 text-muted" style="font-size:.8rem;">Tidak ditemukan di list ' + esc(tinjauSumber) + '. Coba nomor / kata kunci lain.</div>';
+          box.style.display = 'block';
+          return;
+        }
         box.innerHTML = rows.map(function(it){
           return '<button type="button" class="list-group-item list-group-item-action py-1 px-2" style="font-size:.8rem;" data-nol="' + it.nomor_urut + '" data-nm="' + esc(it.nama_lengkap) + '"><strong>#' + it.nomor_urut + '</strong> — ' + esc(it.nama_lengkap) + '</button>';
         }).join('');
         box.style.display = 'block';
       })
-      .catch(function(){});
+      .catch(function(){
+        if(my !== tinjauSeq) return;
+        box.innerHTML = '<div class="list-group-item py-1 px-2 text-danger" style="font-size:.8rem;">Gagal mencari. Coba lagi.</div>';
+        box.style.display = 'block';
+      });
   }
   var tinjauCariInput = $('#tinjau-cari');
   if(tinjauCariInput) tinjauCariInput.addEventListener('input', function(){
@@ -684,10 +703,17 @@
     fetch(url, {method:'POST', body:new URLSearchParams(new FormData(formT)), headers:{'Accept':'application/json','X-Requested-With':'XMLHttpRequest'}})
       .then(function(r){ return r.text().then(function(t){ return {ok:r.ok, t:t}; }); })
       .then(function(w){
-        try{ var j = JSON.parse(w.t); if(!w.ok && j.error) throw j; }
+        var savedId = null, savedNo = null;
+        try{ var j = JSON.parse(w.t); if(!w.ok && j.error) throw j; savedId = j.id || null; savedNo = j.nomor || null; }
         catch(err){ if(!w.ok) throw err; }
         hideTinjau();
-        fetchData({silent:true});
+        fetchData({silent:true}).then(function(){
+          if(savedId && tbody){
+            var tr = tbody.querySelector('tr[data-id="' + savedId + '"]');
+            if(tr) tr.classList.add('sh-flash');
+          }
+          if(meta) meta.textContent = 'Tersimpan' + (savedNo ? ' — tertaut #' + savedNo : '') + '. ' + (meta.textContent || '');
+        });
       })
       .catch(function(){
         formT.submit(); // fallback: submit biasa via DOM (tidak memicu listener submit)

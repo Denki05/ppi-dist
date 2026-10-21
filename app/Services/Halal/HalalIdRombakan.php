@@ -54,6 +54,28 @@ class HalalIdRombakan
         if ($items->isEmpty()) {
             throw new \RuntimeException('Isi halaman ' . $halaman . ' tidak ditemukan.');
         }
+        // Sembuh-sendiri bila halaman tercatat stale: cari halaman
+        // sebenarnya dari nomor produk, pakai itu + betulkan helper.
+        $ada = false;
+        foreach ($items as $it) {
+            if ((int) $it->nomor_urut === $dipilih) {
+                $ada = true;
+                break;
+            }
+        }
+        if (!$ada) {
+            $fix = HalalPdfItem::where('document_id', $docPdf->id)
+                ->where('nomor_urut', $dipilih)->first();
+            if (!$fix) {
+                throw new \RuntimeException('Nomor produk tidak ada di halaman ' . $halaman . '.');
+            }
+            \Log::warning("SH rombakan: helper {$row->id} hal {$halaman} stale, pakai hal {$fix->halaman}.");
+            $halaman = (int) $fix->halaman;
+            $row->halaman_pdf = $halaman;
+            $row->save();
+            $items = HalalPdfItem::where('document_id', $docPdf->id)
+                ->where('halaman', $halaman)->orderBy('nomor_urut')->get();
+        }
 
         $pdf = new \setasign\Fpdi\TcpdfFpdi('P', 'mm', 'A4');
         // Font footer = font PDF asli (ikut repo agar tidak tergantung vendor).
@@ -156,16 +178,16 @@ class HalalIdRombakan
     protected function drawWatermark($pdf)
     {
         // Tengah A4 sedikit ke kiri (koreksi optik: teks diagonal terbaca
-        // berat ke kanan): rotasi terhadap (97,148.5), posisi teks dihitung
+        // berat ke kanan): rotasi terhadap (92,148.5), posisi teks dihitung
         // dari lebar aktual.
         $pdf->SetFont('helvetica', 'B', 72);
         $w = $pdf->GetStringWidth('SPECIMEN');
-        $x = 97 - $w / 2;
+        $x = 92 - $w / 2;
         $y = 148.5 + 9; // baseline ~setengah tinggi huruf di bawah tengah
         $pdf->SetAlpha(0.20);
         $pdf->SetTextColor(110, 110, 110);
         $pdf->StartTransform();
-        $pdf->Rotate(45, 97, 148.5);
+        $pdf->Rotate(45, 92, 148.5);
         $pdf->Text($x, $y, 'SPECIMEN');
         $pdf->StopTransform();
         $pdf->SetAlpha(1);

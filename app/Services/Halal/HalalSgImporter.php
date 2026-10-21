@@ -24,20 +24,22 @@ class HalalSgImporter
     // Annex A: 5 halaman total; cover = cetak "1 of 5" (cover DIHITUNG di SG,
     // beda dengan ID). Konvensi SG = nomor CETAK tampil apa adanya ("X of 5").
     // Terverifikasi dari file contoh: no 12/14/15/21 di cetak "2 of 5",
-    // no 82 di cetak "5 of 5" (file hanya berisi hal cetak 1, 2, 5!).
-    // Estimasi di bawah ini (asumsi annex lengkap) hanya fallback kasar
-    // untuk baris QR tanpa PDF — wajib dilabeli "estimasi" di UI.
+    // no 82 di cetak "5 of 5" (file contoh hanya berisi hal cetak 1, 2, 5).
+    // Halaman annex dibangun ulang dari list QR (lihat HalalSgAnnex) dengan
+    // pagination resmi: 25 baris/halaman -> hal 2 = no 1-24, hal 3 = 25-49,
+    // hal 4 = 50-74, hal 5 = 75-92.
     const SG_JUMLAH_HALAMAN = 5;
-    const SG_PER_HALAMAN = 23;
+    const SG_PER_HALAMAN = 24;
 
+    /**
+     * Nomor halaman cetak resmi ("2 of 5" .. "5 of 5") untuk sebuah nomor
+     * urut produk. Pagination MUIS = 25 baris per halaman, halaman 2 berisi
+     * produk 1-24, halaman 3 = 25-49, halaman 4 = 50-74, halaman 5 = 75-92
+     * (dicalibrasi dari PDF resmi, lihat HalalSgAnnex).
+     */
     public static function estimasiHalaman($nomor)
     {
-        $nomor = (int) $nomor;
-        if ($nomor < 1) {
-            return null;
-        }
-        $hal = (int) ceil($nomor / self::SG_PER_HALAMAN) + 1;
-        return min($hal, self::SG_JUMLAH_HALAMAN);
+        return \App\Services\Halal\HalalSgAnnex::halamanCetak($nomor);
     }
 
     /**
@@ -300,10 +302,6 @@ class HalalSgImporter
                 $byKode[HalalMatcher::normalize($e->kode_parsed)][] = $e;
             }
         }
-        $pdfMap = $pdfDocumentId
-            ? HalalPdfItem::where('document_id', $pdfDocumentId)->pluck('halaman', 'nomor_urut')
-            : collect();
-
         $masters = DB::table('master_products')->select('id', 'brand_name', 'code', 'name')
             ->orderBy('brand_name')->orderBy('code')->get();
 
@@ -366,17 +364,12 @@ class HalalSgImporter
                 $row['nama_di_list_halal'] = $e->nama_lengkap;
                 $row['nomor_urut_list_halal'] = $e->nomor_urut;
                 $row['catatan_tinjauan'] = $catatan ?: null;
-                if (isset($pdfMap[$e->nomor_urut])) {
-                    $row['halaman_pdf'] = $pdfMap[$e->nomor_urut];
-                    $row['nomor_urut_pdf'] = $e->nomor_urut;
-                    $row['status_pdf'] = HalalHelper::PDF_VERIFIED;
-                } else {
-                    // Tanpa PDF asli: halaman diestimasi dari urutan QR (23/hal, 5 hal).
-                    // Cukup untuk rombakan "X of 5"; status tetap belum terverifikasi PDF.
-                    $row['halaman_pdf'] = self::estimasiHalaman($e->nomor_urut);
-                    $row['nomor_urut_pdf'] = $e->nomor_urut;
-                    $row['status_pdf'] = HalalHelper::PDF_BELUM;
-                }
+                // Nomor halaman mengikuti pagination resmi MUIS (bukan
+                // estimasi): halaman "X of 5" tempat produk ini tercantum.
+                $hal = \App\Services\Halal\HalalSgAnnex::halamanCetak($e->nomor_urut);
+                $row['halaman_pdf'] = $hal;
+                $row['nomor_urut_pdf'] = $e->nomor_urut;
+                $row['status_pdf'] = $hal ? HalalHelper::PDF_VERIFIED : HalalHelper::PDF_BELUM;
                 $row['nomor_sertifikat'] = $cert;
             } else {
                 $row += $this->noMatch('tidak ditemukan di list halal SG');
