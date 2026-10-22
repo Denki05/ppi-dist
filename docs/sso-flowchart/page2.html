@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="utf-8"/>
+<title>Halaman 2 - Portal, Pemilihan Modul, dan Masuk Modul</title>
+<style>
+  html, body { margin: 0; padding: 0; background: #ffffff; }
+  body { font-family: 'Segoe UI', Arial, sans-serif; color: #0f172a; }
+  .page { width: 2200px; padding: 28px 36px 40px; box-sizing: border-box; }
+  h1 { font-size: 26px; margin: 0 0 4px; }
+  h2 { font-size: 17px; margin: 0 0 16px; color: #475569; font-weight: 600; }
+  h3 { font-size: 18px; margin: 30px 0 10px; color: #1e293b; }
+  .legend { display: flex; gap: 22px; align-items: center; font-size: 13px; color: #475569; margin: 0 0 14px; }
+  .legend span { display: inline-flex; align-items: center; gap: 7px; }
+  .dot { width: 14px; height: 14px; border-radius: 3px; display: inline-block; border: 1.5px solid; }
+  .green { background: #d9ead3; border-color: #6aa84f; }
+  .blue { background: #dbeaf6; border-color: #6fa8dc; }
+  .yellow { background: #fff2cc; border-color: #f1c232; }
+  .red { background: #f4cccc; border-color: #cc0000; }
+  .mermaid { width: 100%; }
+  .note { font-size: 13px; color: #64748b; margin: 6px 0 0; }
+</style>
+</head>
+<body>
+<div class="page">
+  <h1>ALUR LOGIN GOOGLE SSO &mdash; HALAMAN 2</h1>
+  <h2>Portal, Pemilihan Modul, Akses Langsung, dan Logout</h2>
+  <div class="legend">
+    <span><i class="dot green"></i>Mulai / Selesai</span>
+    <span><i class="dot blue"></i>Proses</span>
+    <span><i class="dot yellow"></i>Keputusan</span>
+    <span><i class="dot red"></i>Penolakan</span>
+  </div>
+
+  <h3>2A. Alur Portal &mdash; Pemeriksaan Sesi dan Pemilihan Modul</h3>
+  <pre class="mermaid">
+flowchart TD
+  B(["HALAMAN 2 &mdash; PORTAL"]) --> P1["User membuka URL Portal"]
+  P1 --> P2{"Gateway memeriksa<br/>sesi login"}
+  P2 -->|"ADA"| P3{"Akun masih aktif?"}
+  P3 -->|"Tidak"| P3R["Hapus sesi dan tolak"]
+  P3R --> E1([SELESAI])
+  P3 -->|"Ya"| P4["Tampilkan pilihan modul<br/>sesuai modul_akses"]
+  P4 --> P5{"User memilih modul"}
+  P5 -->|"Tidak berhak"| P5R["Tolak / kembali<br/>ke pilihan modul"]
+  P5R --> P4
+  P5 -->|"Berhak"| P6["Gateway terbitkan<br/>token sekali pakai"]
+  P6 --> P7["Modul validasi token<br/>dan buat sesi lokal"]
+  P7 --> P8["User langsung masuk modul<br/>tanpa login ulang"]
+  P8 --> E2([SELESAI])
+
+  P2 -->|"TIDAK ADA / HABIS"| P9["Tampilkan login<br/>Google / username+password"]
+  P9 --> P10["Login berhasil"]
+  P10 --> A1(["Pemeriksaan status akun<br/>(Halaman 1)"])
+  A1 -.-> P4
+
+  classDef startEnd fill:#d9ead3,stroke:#6aa84f,color:#000,stroke-width:1.5px;
+  classDef process fill:#dbeaf6,stroke:#6fa8dc,color:#000,stroke-width:1.5px;
+  classDef decision fill:#fff2cc,stroke:#f1c232,color:#000,stroke-width:1.5px;
+  classDef reject fill:#f4cccc,stroke:#cc0000,color:#000,stroke-width:1.5px;
+
+  class B,E1,E2,A1 startEnd;
+  class P1,P4,P6,P7,P8,P9,P10 process;
+  class P2,P3,P5 decision;
+  class P3R,P5R reject;
+  </pre>
+
+  <h3>2B. Cabang &mdash; User Membuka URL Modul Langsung</h3>
+  <pre class="mermaid">
+flowchart TD
+  DR1["User buka URL modul langsung"] --> DR2{"Sesi lokal modul ada?"}
+  DR2 -->|"Ya"| DR3["Langsung masuk modul"]
+  DR3 --> DE1([SELESAI])
+  DR2 -->|"Tidak"| DR4["Arahkan ke Portal<br/>+ modul dan halaman tujuan"]
+  DR4 --> DR5{"Sesi Portal ada?"}
+  DR5 -->|"Tidak"| DR6["Tampilkan login"]
+  DR6 --> DR7["Login berhasil"]
+  DR7 --> DR8["Terbitkan token"]
+  DR5 -->|"Ya"| DR9{"User berhak<br/>atas modul?"}
+  DR9 -->|"Tidak"| DR10["Tolak / tampilkan<br/>pilihan modul"]
+  DR9 -->|"Ya"| DR8
+  DR8 --> DR11["Kembali ke modul"]
+  DR11 --> DE2([SELESAI])
+
+  classDef startEnd fill:#d9ead3,stroke:#6aa84f,color:#000,stroke-width:1.5px;
+  classDef process fill:#dbeaf6,stroke:#6fa8dc,color:#000,stroke-width:1.5px;
+  classDef decision fill:#fff2cc,stroke:#f1c232,color:#000,stroke-width:1.5px;
+  classDef reject fill:#f4cccc,stroke:#cc0000,color:#000,stroke-width:1.5px;
+
+  class DE1,DE2 startEnd;
+  class DR1,DR3,DR4,DR6,DR7,DR8,DR11 process;
+  class DR2,DR5,DR9 decision;
+  class DR10 reject;
+  </pre>
+
+  <h3>2C. Cabang &mdash; Logout</h3>
+  <pre class="mermaid">
+flowchart TD
+  L1["User logout"] --> L2["Hapus sesi Portal dan modul"]
+  L2 --> L3["Kembali ke halaman login"]
+  L3 --> LE([SELESAI])
+
+  classDef startEnd fill:#d9ead3,stroke:#6aa84f,color:#000,stroke-width:1.5px;
+  classDef process fill:#dbeaf6,stroke:#6fa8dc,color:#000,stroke-width:1.5px;
+
+  class LE startEnd;
+  class L1,L2,L3 process;
+  </pre>
+</div>
+
+<script src="mermaid.min.js"></script>
+<script>
+  mermaid.initialize({
+    startOnLoad: true,
+    securityLevel: 'loose',
+    theme: 'base',
+    flowchart: { htmlLabels: true, curve: 'basis', nodeSpacing: 48, rankSpacing: 60, padding: 14, useMaxWidth: false },
+    themeVariables: {
+      fontFamily: 'Segoe UI, Arial, sans-serif',
+      fontSize: '18px',
+      primaryColor: '#dbeaf6',
+      primaryBorderColor: '#6fa8dc',
+      primaryTextColor: '#0f172a',
+      lineColor: '#555555',
+      clusterBkg: '#f7f9fc',
+      clusterBorder: '#9db7d0',
+      edgeLabelBackground: '#ffffff'
+    }
+  });
+</script>
+</body>
+</html>

@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Cek Halal Produk - LS Fragrance</title>
-    <meta name="description" content="Cek dan lihat sertifikat halal resmi produk LS Fragrance (BPJPH Indonesia &amp; MUIS Singapore).">
+    <meta name="description" content="Cek dan lihat sertifikat halal resmi produk LS Fragrance dari BPJPH Indonesia.">
     <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Ccircle cx='32' cy='32' r='30' fill='%23146845'/%3E%3Ctext x='32' y='42' font-size='26' text-anchor='middle' fill='%23ffe9a8' font-family='Arial' font-weight='bold'%3E%D8%AD%3C/text%3E%3C/svg%3E">
     <!-- Halaman dev/internal. Versi production: halal-landing/index.html -->
     <link href="https://cdnjs.cloudflare.com/ajax/libs/select2/4.1.0-rc.0/css/select2.min.css" rel="stylesheet">
@@ -130,12 +130,12 @@
         <div id="err"></div>
     </section>
 
-    <p class="hint">Produk yang sama bisa punya 2 sertifikat halal (Indonesia &amp; Singapura) &mdash; pilih yang mau dilihat.</p>
+    <p class="hint">Sertifikat halal resmi dari BPJPH Indonesia &mdash; produk di bawah ini sudah lolos pencocokan.</p>
 </main>
 
 <footer>
-    Data sertifikasi bersumber dari BPJPH Indonesia &bull; MUIS Singapore<br>
-    PT Kreasi Mewangikan Indonesia &bull; SENSES INTERNATIONAL PTE. LTD.
+    Data sertifikasi bersumber dari BPJPH Indonesia<br>
+    PT Kreasi Mewangikan Indonesia
 </footer>
 
 <div id="modalOverlay" class="modal-overlay">
