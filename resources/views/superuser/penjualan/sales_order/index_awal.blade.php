@@ -44,68 +44,230 @@
   <div class="col-12">
     <div class="block">
       <div class="block-content block-content-full">
-      <div class="form-group so-title-filter mb-0">
-        <h4 class="so-title">#SALES ORDER {{ $step_txt }}</h4>
-        <label class="so-flabel" for="customer_name">Customer :</label>
-        <select class="form-control js-select2" id="customer_name" name="customer_name" data-placeholder="Cari Customer">
-          <option value="">All</option>
-          @foreach($other_address as $key)
-          <option value="{{ $key->id }}">{{ $key->name }} {{$key->text_kota}}</option>
-          @endforeach
-        </select>
-        <label class="so-flabel" for="status_so">Status :</label>
-        <select class="form-control js-select2" name="status_so" id="status_so">
-          <option value="">Pilih Status</option>
-          <option value="AWAL">AWAL</option>
-          <option value="REVISI">REVISI</option>
-          <option value="TUTUP">TUTUP</option>
-        </select>
-        <button class="btn bg-gd-corporate border-0 text-white" id="btn-filter"><i class="fa fa-search ml-10"></i> <span class="d-inline d-md-none">Filter</span></button>
+
+        <h4 class="so-title mb-3">#SALES ORDER {{ $step_txt }}</h4>
+
+        {{-- ================= BARIS 1: tombol kiri, tab + search + filter kanan ================= --}}
+        <div class="d-flex flex-wrap justify-content-between align-items-center" style="gap:8px;">
+
+          <div class="d-flex flex-wrap" style="gap:8px;">
+            <button type="button" class="btn btn-primary shadow-sm" data-toggle="modal" data-target="#exampleModal">
+              <i class="fa fa-plus mr-1"></i> Add SO
+            </button>
+
+            <div class="dropdown">
+              <button class="btn btn-outline-info dropdown-toggle shadow-sm" type="button" id="btnSOOptions" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                <i class="fa fa-cog mr-1"></i> Options
+              </button>
+              <div class="dropdown-menu shadow" aria-labelledby="btnSOOptions" style="font-size: 13px;">
+                @if($superuser->division == "Admin" OR $superuser->division == "Management" OR $superuser->division == "Developer")
+                  <a class="dropdown-item py-2" href="javascript:void(0)" data-toggle="modal" data-target="#modal-manage">
+                    <i class="fa fa-file-excel-o fa-fw mr-2 text-success"></i> Export & Manage
+                  </a>
+                @endif
+
+                <a class="dropdown-item py-2" href="{{ route('superuser.penjualan.migrasi_so.prosesMigrasi') }}">
+                  <i class="fa fa-exchange fa-fw mr-2 text-info"></i> Migrasi SO
+                </a>
+
+                @if($superuser->division == "Admin" OR $superuser->division == "Management" OR $superuser->division == "Developer")
+                  <div class="dropdown-divider"></div>
+                  <a class="dropdown-item py-2 text-warning font-weight-bold" href="{{ route('superuser.penjualan.sales_order.archive_awal') }}">
+                    <i class="fa fa-archive fa-fw mr-2"></i> Riwayat Archive
+                  </a>
+                @endif
+              </div>
+            </div>
+          </div>
+
+          <div class="soa-cmdbar">
+            <ul class="nav nav-tabs" id="soAwalTabs" role="tablist">
+              <li class="nav-item">
+                <a class="nav-link active" data-toggle="tab" href="#so-tab-draft" role="tab" data-tab="draft">
+                  <i class="fa fa-pencil"></i>Draft<span class="soa-tabcount" id="cnt-draft">0</span>
+                </a>
+              </li>
+              <li class="nav-item">
+                <a class="nav-link" data-toggle="tab" href="#so-tab-submit" role="tab" data-tab="submit">
+                  <i class="fa fa-send"></i>Submit<span class="soa-tabcount" id="cnt-submit">0</span>
+                </a>
+              </li>
+              <li class="nav-item">
+                <a class="nav-link" data-toggle="tab" href="#so-tab-selesai" role="tab" data-tab="selesai">
+                  <i class="fa fa-check-circle"></i>Terkirim<span class="soa-tabcount" id="cnt-selesai">0</span>
+                </a>
+              </li>
+            </ul>
+
+            <div class="soa-cmd-right">
+              <div class="soa-searchwrap">
+                <i class="fa fa-search"></i>
+                <input type="text" id="soa-search" placeholder="Cari kode, nota, customer, brand…" autocomplete="off">
+              </div>
+              <button type="button" class="btn btn-filter-toggle" id="soa-filter-toggle">
+                <i class="fa fa-sliders"></i>Filter<span class="soa-filter-count" id="soa-filter-count" style="display:none;">0</span>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        {{-- ================= BARIS 2: keterangan cakupan + chip filter aktif ================= --}}
+        <div class="soa-scopebar">
+          <span class="soa-scope" id="soa-scope"><i class="fa fa-info-circle"></i><span id="soa-scope-text"></span></span>
+          <span id="soa-chips"></span>
+          <a href="javascript:void(0)" id="soa-chips-reset" style="display:none;">Reset filter</a>
+        </div>
+
+        {{-- Peringatan psikologi: draft yang nyantol harus terlihat seperti "hutang", bukan baris biasa --}}
+        <div id="soa-draft-alert" class="soa-warning" style="display:none;">
+          <span class="soa-warning-icon"><i class="fa fa-exclamation-triangle"></i></span>
+          <span class="soa-warning-text" id="soa-draft-alert-text"></span>
+        </div>
+
+        {{-- Preset cepat: AO tidak perlu buka modal filter hanya untuk ganti tanggal --}}
+        <div class="soa-presets" id="soa-presets">
+          <span class="soa-presets-label"><i class="fa fa-bolt"></i> Cepat:</span>
+          <button type="button" class="soa-preset" data-range="today">Hari ini</button>
+          <button type="button" class="soa-preset" data-range="7d">7 hari</button>
+          <button type="button" class="soa-preset active" data-range="all">Semua</button>
+        </div>
+        <div class="soa-legend">
+          <span class="swatch"></span>
+          <span>Kuning = Draft belum dilanjutkan (wajib klik <b>Lanjutkan</b>). Angka <b>hari</b> = umur draft. Garis kiri <b style="color:#dc2626;">merah</b> = sudah ≥2 hari, segera lanjutkan. Tanda <b>-</b> di Action = sudah lanjut / tanpa aksi.</span>
+        </div>
+
+        <div class="tab-content pt-10">
+
+          {{-- ================= TAB DRAFT: AWAL + REVISI, semua yang belum disubmit ================= --}}
+          <div class="tab-pane fade show active" id="so-tab-draft" role="tabpanel">
+            <div class="table-responsive soa-table-card">
+              <table class="table table-bordred table-striped" style="width:100%" id="sales_order_awal_draft">
+                <thead>
+                  <tr>
+                    <th>#</th>
+                    <th>Code</th>
+                    <th>Nota</th>
+                    <th>Approval</th>
+                    <th>Brand</th>
+                    <th>Customer</th>
+                    <th>Sales</th>
+                    <th>Created By</th>
+                    <th>Status</th>
+                    <th>Status Approval</th>
+                    <th>Action</th>
+                    <th>Info</th>
+                    <th></th>
+                  </tr>
+                </thead>
+                <tbody></tbody>
+              </table>
+            </div>
+          </div>
+
+          {{-- ================= TAB SUBMIT: sudah dilanjutkan / diproses, belum ada resi (read-only) ================= --}}
+          <div class="tab-pane fade" id="so-tab-submit" role="tabpanel">
+            <div class="table-responsive soa-table-card">
+              <table class="table table-bordred table-striped" style="width:100%" id="sales_order_awal_submit">
+                <thead>
+                  <tr>
+                    <th>#</th>
+                    <th>Code</th>
+                    <th>Nota</th>
+                    <th>Approval</th>
+                    <th>Brand</th>
+                    <th>Customer</th>
+                    <th>Sales</th>
+                    <th>Created By</th>
+                    <th>Status</th>
+                    <th>Status Approval</th>
+                    <th>Action</th>
+                    <th>Info</th>
+                    <th></th>
+                  </tr>
+                </thead>
+                <tbody></tbody>
+              </table>
+            </div>
+          </div>
+
+          {{-- ================= TAB TERKIRIM: sudah update resi, terbaru dulu (read-only) ================= --}}
+          <div class="tab-pane fade" id="so-tab-selesai" role="tabpanel">
+            <div class="table-responsive soa-table-card">
+              <table class="table table-bordred table-striped" style="width:100%" id="sales_order_awal_selesai">
+                <thead>
+                  <tr>
+                    <th>#</th>
+                    <th>Code</th>
+                    <th>Nota</th>
+                    <th>Approval</th>
+                    <th>Brand</th>
+                    <th>Customer</th>
+                    <th>Sales</th>
+                    <th>Created By</th>
+                    <th>Status</th>
+                    <th>Status Approval</th>
+                    <th>Action</th>
+                    <th></th>
+                    <th></th>
+                  </tr>
+                </thead>
+                <tbody></tbody>
+              </table
+            </div>
+          </div>
+
+        </div>
       </div>
     </div>
+  </div>
+</div>
 
-        <div class="d-flex flex-wrap" style="gap:8px;">
-          <button type="button" class="btn btn-primary" data-toggle="modal" data-target="#exampleModal">
-            <i class="fa fa-plus mr-10"></i> Add SO
-          </button>
+<!-- Modal Filter -->
+<div class="modal fade" id="soaFilterModal" tabindex="-1" role="dialog" aria-hidden="true">
+  <div class="modal-dialog" role="document">
+    <div class="modal-content border-0 shadow-lg">
+      <div class="modal-header bg-light">
+        <h5 class="modal-title font-weight-bold" style="font-size: 15px;">
+          <i class="fa fa-sliders text-primary mr-2"></i>Filter <span id="soa-modal-tabname" class="text-primary">DRAFT</span>
+        </h5>
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
 
-          @if($superuser->division == "Admin" OR $superuser->division == "Management" OR $superuser->division == "Developer")
-            <button type="button" class="btn btn-outline-info" data-toggle="modal" data-target="#modal-manage">Export</button>
-          @endif
+      <div class="modal-body text-left p-4">
 
-          <!-- import migrasi SO -->
-          <button type="button" class="btn btn-outline-info" data-toggle="modal" data-target="#modal-manage">Manage</button>
-
-          <a href="{{ route('superuser.penjualan.migrasi_so.prosesMigrasi') }}" class="btn btn-outline-info">Migrasi SO</a>
-
-          @if($superuser->division == "Admin" OR $superuser->division == "Management" OR $superuser->division == "Developer")
-            <a href="{{ route('superuser.penjualan.sales_order.archive_awal') }}" class="btn btn-outline-warning">
-              <i class="fa fa-archive mr-10"></i> Riwayat Archive
-            </a>
-          @endif
+        <!-- 1 filter bersama untuk semua tab (tab-nya sendiri = status) -->
+        <div id="fsec-shared">
+          <div class="form-group text-left mb-3">
+            <label class="font-weight-bold text-dark" style="font-size: 12px;" for="f_customer">Customer</label>
+            <select class="form-control js-select2" id="f_customer" data-placeholder="Semua Customer" style="width: 100%;">
+              <option value="">Semua</option>
+              @foreach($other_address as $key)
+              <option value="{{ $key->name }}">{{ $key->name }} {{$key->text_kota}}</option>
+              @endforeach
+            </select>
+          </div>
+          <div class="form-group text-left mb-3">
+            <label class="font-weight-bold text-dark" style="font-size: 12px;" for="f_brand">Brand</label>
+            <select class="form-control js-select2" id="f_brand" data-placeholder="Semua Brand" style="width: 100%;">
+              <option value="">Semua</option>
+              @foreach($brand as $br)
+              <option value="{{ $br->brand_name }}">{{ $br->brand_name }}</option>
+              @endforeach
+            </select>
+          </div>
+          <div class="form-group text-left mb-0">
+            <label class="font-weight-bold text-dark" style="font-size: 12px;" id="f_date_label">Tanggal</label>
+            <input type="text" class="form-control soa-flatrange" id="f_date" placeholder="Pilih rentang tanggal" readonly>
+          </div>
         </div>
-        <br>
-        <div class="table-responsive">
-        <table class="table table-bordred table-striped" style="width:100%" id="sales_order_awal">
-          <thead>
-            <th>#</th>
-            <th>Code</th>
-            <th>Nota</th>
-            <th>Approval</th>
-            <th>Brand</th>
-            <th>Customer</th>
-            <th>Sales</th>
-            <th>Created By</th>
-            <th>Created At</th>
-            <th>Status</th>
-            <th>Status Approval</th>
-            <th>Action</th>
-          </thead>
-          <tbody>
-            
-          </tbody>
-        </table>
-        </div>
+      </div>
+
+      <div class="modal-footer bg-light d-flex justify-content-end">
+        <button type="button" class="btn btn-sm btn-secondary" data-dismiss="modal"><i class="fa fa-times mr-1"></i>Batal</button>
+        <button type="button" class="btn btn-sm btn-outline-danger" id="soa-apply-reset"><i class="fa fa-undo mr-1"></i>Reset</button>
+        <button type="button" class="btn btn-sm btn-primary" id="soa-apply"><i class="fa fa-search mr-1"></i>Terapkan</button>
       </div>
     </div>
   </div>
@@ -374,13 +536,9 @@
 
 @push('styles')
 <style>
-  /* === Modal Add SO : Sangat Kompak & Padat === */
-  #exampleModal .modal-dialog {
-    width: 98%;
-    max-width: 1050px;
-  }
-  
-  /* Desain Kartu (Card) */
+  /* ================= Modal Add SO : kompak ================= */
+  #exampleModal .modal-dialog { width: 98%; max-width: 1050px; }
+
   .so-card {
     border: 1px solid #e7eaee;
     border-radius: 6px;
@@ -388,8 +546,6 @@
     margin-bottom: 8px;
     background: #ffffff;
   }
-  
-  /* Header Kartu */
   .so-card-head {
     display: flex;
     align-items: center;
@@ -402,8 +558,6 @@
     margin-bottom: 8px;
     border-bottom: 1px solid #eef1f4;
   }
-  
-  /* Tipografi Label */
   .modal-add-so .col-form-label {
     color: #495057;
     font-weight: 600;
@@ -418,9 +572,7 @@
     margin-bottom: 2px;
     display: block;
   }
-  
-  /* Memperkecil tinggi Input Standard & Textarea */
-  .modal-add-so .form-control-sm, 
+  .modal-add-so .form-control-sm,
   .modal-add-so .input-group-sm > .form-control,
   .modal-add-so .input-group-sm > .input-group-prepend > .input-group-text,
   .modal-add-so .input-group-sm > .input-group-append > .input-group-text {
@@ -428,12 +580,7 @@
     padding: 2px 8px;
     font-size: 12px;
   }
-  .modal-add-so textarea.form-control {
-    font-size: 12px;
-    padding: 6px 8px;
-  }
-  
-  /* Select2 Styling Fix - Diperpendek */
+  .modal-add-so textarea.form-control { font-size: 12px; padding: 6px 8px; }
   .modal-add-so .select2-container .select2-selection--single {
     border: 1px solid #ced4da;
     border-radius: 4px;
@@ -447,86 +594,213 @@
     padding-left: 8px;
     line-height: 28px;
   }
-  .modal-add-so .select2-container--default .select2-selection--single .select2-selection__arrow {
-    height: 28px;
-  }
+  .modal-add-so .select2-container--default .select2-selection--single .select2-selection__arrow { height: 28px; }
+  .modal-add-so.modal-dialog-scrollable .modal-content { max-height: calc(100vh - 2rem); }
 
-  /* Memaksa batas maksimal tinggi modal jika layar sangat kecil (agar bisa discroll) */
-  .modal-add-so.modal-dialog-scrollable .modal-content {
-    max-height: calc(100vh - 2rem);
-  }
+  /* ================= Judul ================= */
+  .so-title { font-weight: bold; margin: 0; white-space: nowrap; }
 
-  /* === Judul + filter 1 garis (dengan jarak) === */
-  .so-title-filter {
-    display: flex;
-    align-items: center;
-    flex-wrap: wrap;
-    gap: 10px;
+  /* ================= Tab segmented + jumlah data ================= */
+  #soAwalTabs {
+    display: inline-flex;
+    flex-wrap: nowrap;
+    background: #f1f5f9;
+    border: 1px solid #e2e8f0;
+    border-radius: 10px;
+    padding: 3px;
+    gap: 2px;
+    border-bottom: none;
+    margin-bottom: 0;
   }
-  .so-title-filter .so-title {
-    font-weight: bold;
-    margin: 0 auto 0 0;
-    white-space: nowrap;
-  }
-  .so-title-filter .so-flabel {
-    margin: 0;
+  #soAwalTabs .nav-item { margin-bottom: 0; flex: 0 0 auto; }
+  #soAwalTabs .nav-link {
+    border: none;
+    border-radius: 7px;
+    padding: 7px 14px;
+    font-size: 13px;
     font-weight: 600;
-    white-space: nowrap;
-  }
-  #customer_name + .select2-container {
-    flex: 0 0 auto;
-    min-width: 0;
-    max-width: 100%;
-  }
-  #status_so + .select2-container {
-    flex: 0 1 180px;
-    min-width: 150px;
-  }
-  .so-title-filter #btn-filter {
-    flex: 0 0 auto;
-    padding-left: 28px;
-    padding-right: 28px;
-  }
-  /* === Sejajarkan filter Customer - Status - tombol Search === */
-  #customer_name + .select2-container .select2-selection--single {
-    height: 38px;
-    display: flex;
-    align-items: center;
-    border-color: #ced4da;
-  }
-  #customer_name + .select2-container .select2-selection--single .select2-selection__rendered {
-    line-height: 1.2;
-    padding-top: 0;
-    padding-bottom: 0;
-  }
-  #customer_name + .select2-container .select2-selection--single .select2-selection__arrow {
-    height: 36px;
-    top: 0;
-  }
-  #status_so {
-    height: 38px;
-  }
-  #btn-filter {
-    height: 38px;
+    color: #64748b;
+    letter-spacing: .02em;
     display: inline-flex;
     align-items: center;
     justify-content: center;
+    gap: 7px;
+    width: auto;
   }
-  /* Label filter tanpa padding atas-bawah agar teksnya tepat di tengah select */
-  label[for="customer_name"],
-  label[for="status_so"] {
-    padding-top: 0;
-    padding-bottom: 0;
+  #soAwalTabs .nav-link:hover { color: #0f172a; }
+  #soAwalTabs .nav-link.active { background: #fff; color: #4f46e5; box-shadow: 0 1px 3px rgba(15,23,42,.12); }
+  .soa-tabcount {
+    min-width: 22px;
+    text-align: center;
+    font-size: 11px;
+    font-weight: 700;
+    line-height: 1;
+    padding: 3px 7px;
+    border-radius: 999px;
+    background: #e2e8f0;
+    color: #475569;
   }
-  /* === Responsive untuk HP === */
+  #soAwalTabs .nav-link.active .soa-tabcount { background: #eef2ff; color: #4f46e5; }
+
+  /* ================= Command bar ================= */
+  .soa-cmdbar { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+  .soa-cmdbar #soAwalTabs { flex-shrink: 0; }
+  .soa-cmd-right { display: flex; align-items: center; gap: 10px; flex-wrap: nowrap; margin-left: auto; }
+  .soa-searchwrap { position: relative; flex: 1 1 100px; max-width: 340px; display: flex; align-items: center; }
+  .soa-searchwrap > i { position: absolute; left: 12px; font-size: 12px; color: #94a3b8; pointer-events: none; }
+  .soa-searchwrap input {
+    width: 100%; min-width: 0; border: 1px solid #e2e8f0; border-radius: 999px; background: #fff;
+    padding: 8px 14px 8px 33px; font-size: 13px; outline: none; transition: .15s;
+  }
+  .soa-searchwrap input:focus { border-color: #4f46e5; box-shadow: 0 0 0 3px rgba(79,70,229,.12); }
+  .btn-filter-toggle {
+    border: 1px solid #e2e8f0; background: #fff; color: #475569; border-radius: 999px;
+    padding: 8px 16px; font-size: 13px; font-weight: 600; white-space: nowrap;
+    display: inline-flex; align-items: center; gap: 7px;
+  }
+  .btn-filter-toggle:hover, .btn-filter-toggle.on { border-color: #4f46e5; color: #4f46e5; }
+  .soa-filter-count {
+    min-width: 18px; text-align: center; font-size: 11px; font-weight: 700; line-height: 1;
+    padding: 3px 6px; border-radius: 999px; background: #4f46e5; color: #fff;
+  }
+
+  /* ================= Keterangan cakupan + chip filter ================= */
+  .soa-scopebar { display: flex; align-items: center; flex-wrap: wrap; gap: 6px; margin: 8px 0 0; min-height: 22px; }
+  .soa-scope { font-size: 11.5px; }
+  .soa-scope { font-size: 12px; color: #64748b; display: inline-flex; align-items: center; gap: 6px; }
+  .soa-scope i { color: #94a3b8; }
+  #soa-chips { display: inline-flex; flex-wrap: wrap; gap: 6px; }
+  .soa-chip {
+    display: inline-flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 600;
+    padding: 3px 10px; border-radius: 999px; background: #eef2ff; color: #4f46e5; cursor: pointer;
+  }
+  .soa-chip i { font-size: 11px; }
+  .soa-chip:hover { background: #e0e7ff; }
+  #soa-chips-reset { font-size: 12px; color: #64748b; text-decoration: underline; }
+  #soa-chips-reset:hover { color: #0f172a; }
+
+  /* ================= Tampilan padat: kurangi white space ================= */
+  .so-title { font-size: 16px; }
+  .soa-cmdbar { gap: 6px; }
+  #soAwalTabs .nav-link { padding: 5px 11px; font-size: 12.5px; gap: 5px; }
+  .soa-searchwrap input { padding: 6px 12px 6px 30px; font-size: 12.5px; }
+  .btn-filter-toggle { padding: 6px 13px; font-size: 12.5px; }
+
+  /* ================= CTA Lanjutkan: 1 aksi utama, tidak bersaing dengan icon lain ================= */
+  .soa-actionwrap { display: inline-flex; align-items: center; gap: 4px; }
+  .btn-lanjut-utama {
+    display: inline-flex; align-items: center; gap: 5px;
+    background: linear-gradient(135deg, #16a34a, #15803d); color: #fff !important;
+    font-weight: 800; font-size: 12px; letter-spacing: .02em;
+    padding: 5px 11px; border-radius: 999px; text-decoration: none !important;
+    box-shadow: 0 2px 8px rgba(22,163,74,.35); white-space: nowrap;
+    animation: soa-pulse 2.2s infinite;
+  }
+  .btn-lanjut-utama:hover { filter: brightness(1.07); color: #fff !important; }
+  @keyframes soa-pulse {
+    0% { box-shadow: 0 0 0 0 rgba(22,163,74,.45); }
+    70% { box-shadow: 0 0 0 8px rgba(22,163,74,0); }
+    100% { box-shadow: 0 0 0 0 rgba(22,163,74,0); }
+  }
+  .btn-lainnya {
+    border: 1px solid #e2e8f0; background: #fff; color: #64748b;
+    width: 26px; height: 26px; border-radius: 50%; font-size: 11px;
+    display: inline-flex; align-items: center; justify-content: center;
+  }
+  .btn-lainnya:hover { border-color: #94a3b8; color: #0f172a; }
+  .soa-dd { font-size: 13px; min-width: 210px; border-radius: 10px; overflow: hidden; padding: 6px; }
+  .soa-dd-item { border-radius: 7px; padding: 8px 10px; font-weight: 600; color: #334155; }
+  .soa-dd-item:hover { background: #f1f5f9; }
+  .soa-dd-hint { font-size: 11px; color: #b45309; background: #fef3c2; border-radius: 999px; padding: 1px 7px; margin-left: 4px; }
+
+  /* ================= Draft nyantol: terlihat seperti hutang ================= */
+  .soa-warning {
+    display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
+    background: #fffbeb; border: 1px solid #fcd34d; border-left: 5px solid #f59e0b;
+    border-radius: 8px; padding: 7px 12px; margin-top: 8px; font-size: 12.5px; color: #92400e;
+  }
+  .soa-warning-icon { width: 26px; height: 26px; border-radius: 50%; background: #f59e0b; color: #fff; display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0; font-size: 12px; }
+  .soa-warning-text { flex: 1 1 200px; font-weight: 600; }
+  .soa-warning-btn { border: none; background: #f59e0b; color: #fff; font-weight: 800; border-radius: 999px; padding: 5px 13px; font-size: 12px; }
+  .soa-warning-btn:hover { background: #d97706; }
+
+  /* ================= Preset cepat ================= */
+  .soa-presets { display: flex; align-items: center; gap: 5px; flex-wrap: wrap; margin-top: 8px; }
+  .soa-presets-label { font-size: 11.5px; color: #64748b; font-weight: 700; }
+  .soa-preset { border: 1px solid #e2e8f0; background: #fff; color: #475569; border-radius: 999px; padding: 4px 11px; font-size: 11.5px; font-weight: 700; }
+  .soa-preset:hover { border-color: #4f46e5; color: #4f46e5; }
+  .soa-preset.active { background: #4f46e5; border-color: #4f46e5; color: #fff; }
+
+  /* ================= Baris draft: SATU warna kuning saja (umur dibaca dari teks, bukan warna) ================= */
+  table.dataTable tbody tr.soa-row-draft { background: #fffbeb !important; }
+  table.dataTable tbody tr.soa-row-draft td:first-child { box-shadow: inset 3px 0 0 #f59e0b; }
+  table.dataTable tbody tr.soa-row-draft:hover { background: #fef3c2 !important; }
+  /* Draft lama (>=2 hari): bukan beda blok warna, hanya garis kiri merah + teks umur merah */
+  table.dataTable tbody tr.soa-row-lama td:first-child { box-shadow: inset 3px 0 0 #dc2626; }
+  table.dataTable tbody tr.soa-flash { animation: soa-flash 2.4s ease; }
+  @keyframes soa-flash {
+    0%, 40% { background: #bbf7d0 !important; }
+    100% { background: transparent; }
+  }
+  .soa-sub-lama { color: #b91c1c !important; font-weight: 700; }
+  .soa-legend { font-size: 11px; color: #64748b; margin-top: 6px; display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+  .soa-legend .swatch { width: 12px; height: 12px; border-radius: 3px; display: inline-block; background: #fffbeb; border: 1px solid #fcd34d; border-left: 3px solid #f59e0b; }
+
+  /* ================= Tabel modern (padat) ================= */
+  .soa-table-card { background: #fff; border: 1px solid #e2e8f0; border-radius: 10px; overflow: hidden; }
+  .soa-table-card .table { margin-bottom: 0; font-size: 12.5px; }
+  .soa-table-card thead th {
+    background: #f8fafc;
+    border-bottom: 1px solid #e2e8f0;
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: .04em;
+    color: #64748b;
+    font-weight: 700;
+    padding: 7px 8px;
+    white-space: nowrap;
+  }
+  .soa-table-card tbody td { padding: 5px 8px; border-bottom: 1px solid #f1f4f8; vertical-align: middle; }
+  .soa-table-card tbody tr:last-child td { border-bottom: none; }
+  .soa-table-card tbody tr:hover { background: #f8fafc; }
+
+  .soa-pill { display: inline-flex; align-items: center; gap: 4px; padding: 2px 8px; border-radius: 999px; font-size: 11px; font-weight: 700; white-space: nowrap; }
+  .soa-pill .dot { width: 6px; height: 6px; border-radius: 50%; display: inline-block; }
+  .soa-pill-info { background: #f0f9ff; color: #0284c7; } .soa-pill-info .dot { background: #0284c7; }
+  .soa-pill-warn { background: #fffbeb; color: #d97706; } .soa-pill-warn .dot { background: #d97706; }
+  .soa-pill-primary { background: #eef2ff; color: #4f46e5; } .soa-pill-primary .dot { background: #4f46e5; }
+  .soa-pill-success { background: #f0fdf4; color: #16a34a; } .soa-pill-success .dot { background: #16a34a; }
+  .soa-pill-muted { background: #f1f5f9; color: #64748b; } .soa-pill-muted .dot { background: #64748b; }
+
+  .soa-cust { display: flex; align-items: center; gap: 6px; }
+  .soa-avatar {
+    width: 24px; height: 24px; border-radius: 50%; flex-shrink: 0;
+    background: linear-gradient(135deg, #4f46e5, #7c3aed); color: #fff;
+    display: inline-flex; align-items: center; justify-content: center;
+    font-size: 11px; font-weight: 800;
+  }
+  .soa-sub { font-size: 10.5px; color: #94a3b8; font-weight: 400; margin-top: 0; line-height: 1.3; }
+  .soa-code { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 11.5px; font-weight: 700; color: #334155; }
+  .soa-dash { color: #94a3b8; }
+
+  /* Search bawaan DataTables disembunyikan (diganti search global) */
+  .soa-table-card .dataTables_filter { display: none; }
+  .soa-table-card .dataTables_length { font-size: 12px; color: #64748b; margin-bottom: 8px; }
+  .soa-table-card .dataTables_length select { border: 1px solid #e2e8f0; border-radius: 6px; padding: 3px 6px; font-size: 12px; }
+  .soa-table-card .dataTables_paginate .paginate_button { border-radius: 6px !important; font-size: 12px; }
+  .soa-table-card .dataTables_paginate .paginate_button.current { background: #4f46e5 !important; border-color: #4f46e5 !important; color: #fff !important; }
+
+  /* Select2 di dalam modal filter tidak boleh menciut */
+  #soaFilterModal .select2-container { width: 100% !important; }
+
+  /* ================= Responsive ================= */
+  @media (max-width: 1100px) {
+    .soa-cmd-right { margin-left: 0; width: 100%; }
+    .soa-searchwrap { flex: 1 1 auto; max-width: none; }
+  }
   @media (max-width: 767.98px) {
-    #sales_order_awal {
-      white-space: nowrap;
-    }
-    .modal-dialog.modal-lg {
-      max-width: 100%;
-      margin: 0.5rem;
-    }
+    .soa-table-card table { white-space: nowrap; }
+    .modal-dialog.modal-lg { max-width: 100%; margin: 0.5rem; }
     .dataTables_wrapper .dataTables_length,
     .dataTables_wrapper .dataTables_filter,
     .dataTables_wrapper .dataTables_info,
@@ -536,13 +810,15 @@
       width: 100%;
       margin-bottom: 10px;
     }
-    .modal-footer {
-      flex-wrap: wrap;
-    }
-    .modal-footer .btn {
-      width: 100%;
-      margin: 4px 0 !important;
-    }
+    .modal-footer { flex-wrap: wrap; }
+    .modal-footer .btn { width: 100%; margin: 4px 0 !important; }
+  }
+  @media (max-width: 640px) {
+    .soa-cmdbar { gap: 8px; width: 100%; }
+    #soAwalTabs { width: 100%; }
+    #soAwalTabs .nav-item { flex: 1; }
+    #soAwalTabs .nav-link { width: 100%; padding: 7px 6px; font-size: 12px; gap: 5px; }
+    .soa-table-card thead th, .soa-table-card tbody td { padding: 7px 8px; font-size: 12px; }
   }
 </style>
 @endpush
@@ -550,142 +826,509 @@
 @include('superuser.asset.plugin.select2')
 @include('superuser.asset.plugin.swal2')
 @include('superuser.asset.plugin.datatables')
+@include('superuser.asset.plugin.flatpickr')
 
 @push('scripts')
 
 <script>
   document.addEventListener('DOMContentLoaded', function() {
-    document.getElementById('approval_spv').addEventListener('change', function () {
+    var approvalEl = document.getElementById('approval_spv');
+    if (!approvalEl) return;
+    approvalEl.addEventListener('change', function () {
       const isChecked = this.checked;
-      document.getElementById('kurs-group').style.display = isChecked ? 'block' : 'none';
-      document.getElementById('disc-percent-group').style.display = isChecked ? 'block' : 'none';
-    });    
+
+      // Gunakan flex karena parent element menggunakan class bootstrap .row
+      // Guard: id lama mungkin tidak ada di layout baru, jadi cek dulu
+      var kursGroup = document.getElementById('kurs-group');
+      if (kursGroup) kursGroup.style.display = isChecked ? 'flex' : 'none';
+      var discPctGroup = document.getElementById('disc-percent-group');
+      if (discPctGroup) discPctGroup.style.display = isChecked ? 'flex' : 'none';
+
+      // Kurs hanya wajib jika Approval SPV dicentang
+      var kursEl = document.getElementById('kurs');
+      if (kursEl) kursEl.required = isChecked;
+
+      // Kosongkan value jika checkbox dimatikan
+      if (!isChecked) {
+        if (kursEl) kursEl.value = '';
+        var discPctEl = document.getElementById('disc_percent');
+        if (discPctEl) discPctEl.value = '';
+      }
+    });
   });
 </script>
+
 <script type="text/javascript">
-    $(document).ready(function() {
-      $('.js-select2').select2();
+  $(document).ready(function() {
 
-      let datatableUrl = '{{ route('superuser.penjualan.sales_order.json_awal') }}';
-      let firstDatatableUrl = datatableUrl + '?status_so=all' + '&customer_name=all';
+    // ============================================================
+    //  DATATABLES: Draft / Submit / Terkirim
+    // ============================================================
+    var datatableUrl = '{{ route('superuser.penjualan.sales_order.json_awal') }}';
+    var spinnerHtml = "<span class='fa-stack fa-lg'>\n\
+                                    <i class='fa fa-spinner fa-spin fa-stack-2x fa-fw'></i>\n\
+                            </span>";
 
-      var datatable =  $('#sales_order_awal').DataTable( {
-            language: {
-                processing: "<span class='fa-stack fa-lg'>\n\
-                                        <i class='fa fa-spinner fa-spin fa-stack-2x fa-fw'></i>\n\
-                                </span>",
-            },
-            processing: true,
-            serverSide: true,
-            searching: true,
-            paging: true,
-            info: false,
-            ajax: {
-                "url": datatableUrl,
-                "dataType": "json",
-                "type": "GET",
-                "data":{ _token: "{{csrf_token()}}"}
-            },
-            columns: [
-                {data: 'DT_RowIndex', name: 'id'},
-                {data: 'so_code', name: 'penjualan_so.so_code'},
-                {data: 'code', name: 'penjualan_so.code'},
-                {data: 'approval_mou', name: 'penjualan_so.approval_mou'},
-                {data: 'nota_brand', name: 'penjualan_so.brand_name'},
-                {data: 'customer'},
-                {data: 'sales'},
-                {data: 'so_created_by'},
-                {
-                    data: 'so_created_at',
-                    render: {
-                        _: 'display',
-                        sort: 'timestamp'
-                    }
-                },
-                {data: 'status_so'},
-                {data: 'approval_mou_status'},
-                {data: 'action'},
-            ],
-            order: [
-                [8, 'asc'],
-            ],
-            pageLength: 10,
-            lengthMenu: [
-                [10, 20, 50],
-                [10, 20, 50]
-            ],
-        });
+    var soaTabList = ['draft', 'submit', 'selesai'];
+    var soaTabName = { draft: 'DRAFT', submit: 'SUBMIT', selesai: 'TERKIRIM' };
+    // 1 filter bersama untuk semua tab (tab-nya sendiri = status).
+    var soaDateLabel = { draft: 'Tanggal Buat', submit: 'Tanggal (Buat/Submit)', selesai: 'Tanggal Resi' };
+    var soaTables = {};
+    // Default: Semua (bukan hari ini) agar SO lama langsung ketemu tanpa buka filter.
+    var soaFilter = { show_all: '1' };
+    var soaKeyword = '';
+    var activeTab = 'draft';
 
-        $('#btn-filter').on('click', function(e) {
-            e.preventDefault();
-            var status = $('#status_so').val();
-            var customer = $('#customer_name').val();
-            let newDatatableUrl = datatableUrl + '?status_so=' + status + '&customer_name=' + customer;
-            datatable.ajax.url(newDatatableUrl).load();
-        })
+    function esc(s) {
+      return $('<div>').text(s == null ? '' : s).html();
+    }
 
-        $('.js-select2').select2();
+    function pill(text, cls) {
+      return '<span class="soa-pill ' + cls + '"><span class="dot"></span>' + esc(text) + '</span>';
+    }
 
-        // Lebarkan select Customer pas selebar opsi terpanjang
-        function autoSizeCustomerSelect() {
-          var $sel = $('#customer_name');
-          var $container = $('#customer_name + .select2-container');
-          if (!$sel.length || !$container.length) {
-            return;
+    function soAwalColumns(withResi) {
+      var cols = [
+        {data: 'DT_RowIndex', name: 'DT_RowIndex', orderable: false, searchable: false},
+        {
+          data: 'so_code',
+          name: 'penjualan_so.so_code',
+          render: function(data, type) {
+            if (type !== 'display') return data;
+            return '<span class="soa-code">' + esc(data || '-') + '</span>';
           }
-          var $tester = $('<span>').css({
-            position: 'absolute',
-            visibility: 'hidden',
-            whiteSpace: 'nowrap',
-            fontSize: '13px',
-            fontFamily: $container.css('font-family')
-          }).appendTo('body');
-          var max = 0;
-          $sel.find('option').each(function () {
-            $tester.text($(this).text());
-            max = Math.max(max, $tester.width());
-          });
-          $tester.remove();
-          $container.css({ flex: '0 0 auto', width: Math.ceil(max + 72) + 'px', maxWidth: '100%' });
-        }
-        autoSizeCustomerSelect();
-
-        function formatRibuan(angka) {
-          var numberString = angka.replace(/[^\d]/g, '');
-          if (!numberString) return '';
-          return numberString.replace(/\B(?=(\d{3})+(?!\d))/g, '.');
-        }
-
-        $(document).on('input', '#kurs', function () {
-          var cursorFromEnd = this.value.length - this.selectionStart;
-          this.value = formatRibuan(this.value);
-          var newPos = this.value.length - cursorFromEnd;
-          this.setSelectionRange(newPos, newPos);
-        });
-
-        // Select2 di dalam modal Add SO butuh dropdownParent supaya search box berfungsi
-        $('#exampleModal .js-select2').each(function () {
-          $(this).select2({
-            dropdownParent: $('#exampleModal'),
-            width: '100%'
-          });
-        });
-
-        // Disc Kemasan hanya berlaku untuk 25 Kg Drum / 25 Kg Jirigen, selain itu di-hide
-        function toggleDiscKemasan() {
-          var txt = ($('#packaging_id option:selected').text() || '').toLowerCase().replace(/\s+/g, ' ');
-          var is25 = txt.indexOf('25') !== -1;
-          var isDrum = txt.indexOf('drum') !== -1;
-          var isJirigen = txt.indexOf('jirigen') !== -1 || txt.indexOf('jerigen') !== -1 || txt.indexOf('jergen') !== -1;
-          var show = is25 && (isDrum || isJirigen);
-          $('#disc-kemasan-group').toggle(show);
-          if (!show) {
-            $('#disc_kemasan').val('');
+        },
+        {data: 'code', name: 'penjualan_so.code'},
+        {data: 'approval_mou', name: 'penjualan_so.approval_mou', searchable: false},
+        {data: 'nota_brand', name: 'penjualan_so.brand_name'},
+        {
+          data: 'customer',
+          name: 'customer',
+          orderable: false,
+          render: function(data, type, row) {
+            if (type !== 'display') return data;
+            var txt = (data || '').trim() || '-';
+            var ch = txt.charAt(0).toUpperCase() || '-';
+            return '<span class="soa-cust"><span class="soa-avatar">' + esc(ch) + '</span><span>' + esc(txt) + '</span></span>';
+          }
+        },
+        {data: 'sales'},
+        {data: 'so_created_by'},
+        {
+          data: 'status_label',
+          name: 'status_label',
+          orderable: false,
+          searchable: false,
+          render: function(data, type) {
+            if (type !== 'display') return data;
+            var cls = 'soa-pill-muted';
+            if (data === 'AWAL') cls = 'soa-pill-muted';
+            else if (data === 'REVISI') cls = 'soa-pill-warn';
+            else if (data === 'SUBMIT') cls = 'soa-pill-primary';
+            else if (data === 'DIPROSES') cls = 'soa-pill-info';
+            else if (data === 'TERKIRIM') cls = 'soa-pill-success';
+            return pill(data || '-', cls);
+          }
+        },
+        {
+          data: 'approval_mou_status',
+          render: function(data, type) {
+            if (type !== 'display') return data;
+            if (data === 'APPROVED') return pill(data, 'soa-pill-success');
+            if (data === 'NOT APPROVED') return pill(data, 'soa-pill-warn');
+            return '<span class="soa-dash">-</span>';
+          }
+        },
+        {data: 'action', orderable: false, searchable: false},
+        {
+          data: 'tgl_info',
+          name: 'tgl_info',
+          orderable: false,
+          searchable: false,
+          render: function(data, type) {
+            if (type !== 'display') return data;
+            return data || '<span class="soa-dash">-</span>';
+          }
+        },
+        // Kolom tersembunyi: dipakai untuk pengurutan default.
+        {
+          data: 'so_created_at',
+          visible: false,
+          render: {
+            _: 'display',
+            sort: 'timestamp'
           }
         }
-        $('#packaging_id').on('change', toggleDiscKemasan);
+      ];
+      if (withResi) {
+        cols.push({data: 'resi_at', name: 'resi_at', visible: false, searchable: false});
+      }
+      return cols;
+    }
 
-        $('#addSO').on('click', function (e) {
+    function soAwalUrl(tab, params) {
+      var clean = {};
+      $.each(params || {}, function(k, v) {
+        if (v !== '' && v != null) clean[k] = v;
+      });
+      return datatableUrl + '?' + $.param($.extend({ tab: tab }, clean));
+    }
+
+    // ID highlight dari redirect habis save (?highlight=SO-xxx) agar AO langsung ketemu.
+    function soaGetParam(name) {
+      try {
+        return new URLSearchParams(window.location.search).get(name) || '';
+      } catch (e) { return ''; }
+    }
+    var soaHighlight = (soaGetParam('highlight') || '').trim();
+
+    function soAwalTable(selector, tab, withResi, order) {
+      return $(selector).DataTable({
+        language: {
+          processing: spinnerHtml,
+          emptyTable: 'Tidak ketemu. Coba klik preset <b>Semua</b> di atas atau <b>Reset filter</b> — SO lama tidak hilang, hanya kepotong tanggal.'
+        },
+        processing: true,
+        serverSide: true,
+        searching: true,
+        paging: true,
+        info: false,
+        scrollX: false,
+        autoWidth: false,
+        ajax: {
+          "url": soAwalUrl(tab, {}),
+          "dataType": "json",
+          "type": "GET",
+          "data": { _token: "{{csrf_token()}}" }
+        },
+        columns: soAwalColumns(withResi),
+        order: [order],
+        pageLength: 10,
+        lengthMenu: [
+          [10, 20, 50],
+          [10, 20, 50]
+        ],
+        // Psikologi: draft terlihat seperti hutang (kuning). Yang lama makin pekat.
+        createdRow: function(row, data) {
+          try {
+            var label = data.status_label || '';
+            if (label === 'AWAL' || label === 'REVISI') {
+              $(row).addClass('soa-row-draft');
+              if ((data.umur_hari || 0) >= 2) $(row).addClass('soa-row-lama');
+              var code = (data.so_code || '') + ' ' + (data.code || '');
+              if (soaHighlight && code.toLowerCase().indexOf(soaHighlight.toLowerCase()) !== -1) {
+                $(row).addClass('soa-flash');
+              }
+            }
+          } catch (e) {}
+        }
+      });
+    }
+
+    // Semua tabel diinit di awal (anti bug kolom kosong saat pindah tab).
+    // Indeks 11 = so_created_at (tersembunyi), 12 = resi_at (tersembunyi, khusus Terkirim).
+    // Draft: terbaru dulu agar SO yang baru dibuat langsung ketemu di baris 1.
+    soaTables.draft = soAwalTable('#sales_order_awal_draft', 'draft', false, [11, 'desc']);
+    soaTables.submit = soAwalTable('#sales_order_awal_submit', 'submit', false, [11, 'desc']);
+    soaTables.selesai = soAwalTable('#sales_order_awal_selesai', 'selesai', true, [12, 'desc']);
+
+    // Jumlah data per tab (badge) + banner peringatan draft nyantol.
+    soaTabList.forEach(function(tab) {
+      soaTables[tab].on('draw.dt', function() {
+        try {
+          var n = soaTables[tab].page.info().recordsDisplay;
+          $('#cnt-' + tab).text(n);
+          if (tab === 'draft') soaDraftAlert(n);
+          // Bersihkan highlight dari URL setelah 1x flash agar refresh berikutnya normal.
+          if (soaHighlight && tab === 'draft') {
+            setTimeout(function() {
+              try {
+                var url = new URL(window.location.href);
+                url.searchParams.delete('highlight');
+                url.searchParams.delete('baru');
+                window.history.replaceState({}, '', url.toString());
+              } catch (e) {}
+              soaHighlight = '';
+            }, 2600);
+          }
+        } catch (e) { /* abaikan sebelum draw pertama */ }
+      });
+    });
+
+    function soaDraftAlert(n) {
+      var box = $('#soa-draft-alert');
+      if (!box.length) return;
+      if ((n || 0) > 0 && activeTab === 'draft') {
+        $('#soa-draft-alert-text').html(
+          'Ada <b>' + n + ' SO belum dilanjutkan</b> — Print saja belum cukup, wajib klik <b>Lanjutkan</b> agar masuk antrian admin.'
+        );
+        box.show();
+      } else {
+        box.hide();
+      }
+    }
+
+    function soaReload(tab) {
+      soaTables[tab].ajax.url(soAwalUrl(tab, soaFilter)).load();
+    }
+
+    // ============================================================
+    //  FILTER: flatpickr, chip, keterangan cakupan
+    // ============================================================
+    if (window.flatpickr) {
+      $('.soa-flatrange').each(function() {
+        flatpickr(this, { mode: 'range', dateFormat: 'Y-m-d', allowInput: false });
+      });
+    }
+
+    function soaRangeOf(inputId) {
+      var v = ($('#' + inputId).val() || '').trim();
+      if (!v) return { from: '', to: '' };
+      var p = v.split(' to ');
+      return { from: (p[0] || '').trim(), to: ((p[1] || p[0] || '').trim()) };
+    }
+
+    function fmtYmd(s) {
+      var p = (s || '').split('-');
+      return p.length === 3 ? p[2] + '/' + p[1] + '/' + p[0] : s;
+    }
+
+    function soaRangeText(f) {
+      return fmtYmd(f.date_from) + ' - ' + fmtYmd(f.date_to);
+    }
+
+    function soaScopeText(tab) {
+      var f = soaFilter;
+      var hasRange = !!(f.date_from && f.date_to);
+      var all = (f.show_all === '1' || f.show_all === 1);
+
+      if (tab === 'draft') {
+        return hasRange
+          ? 'Draft dibuat ' + soaRangeText(f) + ' — terbaru di atas'
+          : 'Semua draft yang belum disubmit, semua tanggal — terbaru di atas';
+      }
+      if (tab === 'submit') {
+        var base;
+        if (hasRange) base = 'Order dibuat atau disubmit ' + soaRangeText(f);
+        else if (soaKeyword) base = 'Order submit dari semua tanggal';
+        else if (all) base = 'Order submit dari semua tanggal';
+        else base = 'Order dibuat atau disubmit hari ini — klik Semua untuk cari yang lama';
+        return base + ' • riwayat, tanpa aksi (fokus kerja di Draft)';
+      }
+      if (hasRange) return 'Order terkirim, resi ' + soaRangeText(f) + ' • riwayat, tanpa aksi';
+      if (soaKeyword || all) return 'Order terkirim dari semua tanggal resi • riwayat, tanpa aksi';
+      return 'Order terkirim, resi bulan ini — klik Semua untuk cari yang lama • riwayat, tanpa aksi';
+    }
+
+    function soaRenderScopeAndChips() {
+      var f = soaFilter;
+      var chips = [];
+
+      if (f.customer_name) chips.push({ key: 'customer_name', label: 'Customer: ' + f.customer_name });
+      if (f.brand_name) chips.push({ key: 'brand_name', label: 'Brand: ' + f.brand_name });
+      if (f.date_from && f.date_to) chips.push({ key: 'date', label: 'Tanggal: ' + soaRangeText(f) });
+
+      var html = '';
+      chips.forEach(function(c) {
+        html += '<span class="soa-chip" data-key="' + c.key + '" title="Hapus filter">' + esc(c.label) + '<i class="fa fa-times"></i></span>';
+      });
+      $('#soa-chips').html(html);
+      $('#soa-chips-reset').toggle(chips.length > 0);
+      $('#soa-filter-count').text(chips.length).toggle(chips.length > 0);
+      $('#soa-filter-toggle').toggleClass('on', chips.length > 0);
+      $('#soa-scope-text').text(soaScopeText(activeTab));
+    }
+
+    $('#soa-chips').on('click', '.soa-chip', function() {
+      var key = $(this).data('key');
+      if (key === 'date') {
+        delete soaFilter.date_from;
+        delete soaFilter.date_to;
+        soaFilter.show_all = '1';
+        var fp = ($('#f_date')[0] && $('#f_date')[0]._flatpickr) || null;
+        if (fp) fp.clear();
+        else $('#f_date').val('');
+      } else {
+        delete soaFilter[key];
+      }
+      soaReload(activeTab);
+      soaRenderScopeAndChips();
+      try { soaSyncPresets(); } catch (err) {}
+    });
+
+    $('#soa-chips-reset').on('click', function() {
+      soaFilter = { show_all: '1' };
+      soaFillForm();
+      soaReload(activeTab);
+      soaRenderScopeAndChips();
+      soaSyncPresets();
+    });
+
+    // ---- Preset cepat tanggal: tanpa buka modal. Psikologi: mengurangi 3 klik jadi 1 klik.
+    function soaYmd(d) {
+      var m = ('0' + (d.getMonth() + 1)).slice(-2);
+      var day = ('0' + d.getDate()).slice(-2);
+      return d.getFullYear() + '-' + m + '-' + day;
+    }
+    function soaSyncPresets() {
+      var hasRange = !!(soaFilter.date_from && soaFilter.date_to);
+      var today = soaYmd(new Date());
+      var isToday = hasRange && soaFilter.date_from === today && soaFilter.date_to === today;
+      var past = new Date(); past.setDate(past.getDate() - 6);
+      var is7 = hasRange && soaFilter.date_from === soaYmd(past) && soaFilter.date_to === today;
+      $('.soa-preset').removeClass('active');
+      if (isToday) $('.soa-preset[data-range="today"]').addClass('active');
+      else if (is7) $('.soa-preset[data-range="7d"]').addClass('active');
+      else if (!hasRange) $('.soa-preset[data-range="all"]').addClass('active');
+    }
+    $('.soa-preset').on('click', function() {
+      var r = $(this).data('range');
+      if (r === 'today') {
+        var t = soaYmd(new Date());
+        soaFilter.date_from = t; soaFilter.date_to = t;
+        delete soaFilter.show_all;
+      } else if (r === '7d') {
+        var now = new Date(); var ago = new Date(); ago.setDate(ago.getDate() - 6);
+        soaFilter.date_from = soaYmd(ago); soaFilter.date_to = soaYmd(now);
+        delete soaFilter.show_all;
+      } else {
+        delete soaFilter.date_from; delete soaFilter.date_to;
+        soaFilter.show_all = '1';
+      }
+      soaFillForm();
+      soaReload(activeTab);
+      soaRenderScopeAndChips();
+      soaSyncPresets();
+    });
+
+    // ---- Search global: satu kotak, berlaku ke semua tab (jumlah tab ikut berubah) ----
+    var soaSearchTimer = null;
+    $('#soa-search').on('keyup', function() {
+      clearTimeout(soaSearchTimer);
+      var v = $(this).val();
+      soaSearchTimer = setTimeout(function() {
+        soaKeyword = (v || '').trim();
+        soaTabList.forEach(function(tab) {
+          soaTables[tab].search(v).draw();
+        });
+        soaRenderScopeAndChips();
+      }, 300);
+    });
+
+    // ---- Modal filter ----
+    $('#soaFilterModal .js-select2').each(function() {
+      $(this).select2({ dropdownParent: $('#soaFilterModal'), width: '100%' });
+    });
+
+    function soaFillForm() {
+      $('#f_customer').val(soaFilter.customer_name || '').trigger('change');
+      $('#f_brand').val(soaFilter.brand_name || '').trigger('change');
+      var el = $('#f_date')[0];
+      var fp = (el && el._flatpickr) || null;
+      if (fp) {
+        if (soaFilter.date_from && soaFilter.date_to) fp.setDate([soaFilter.date_from, soaFilter.date_to], false);
+        else fp.clear();
+      } else if (el) {
+        $(el).val(soaFilter.date_from && soaFilter.date_to ? soaFilter.date_from + ' to ' + soaFilter.date_to : '');
+      }
+    }
+
+    function soaCollect() {
+      var r = soaRangeOf('f_date');
+      var raw = {
+        customer_name: $('#f_customer').val() || '',
+        brand_name: $('#f_brand').val() || '',
+        date_from: r.from,
+        date_to: r.to
+      };
+      var out = {};
+      $.each(raw, function(k, v) {
+        if (v) out[k] = v;
+      });
+      return out;
+    }
+
+    $('#soa-filter-toggle').on('click', function() {
+      $('#soa-modal-tabname').text(soaTabName[activeTab]);
+      $('#f_date_label').text(soaDateLabel[activeTab]);
+      soaFillForm();
+      $('#soaFilterModal').modal('show');
+    });
+
+    $('#soa-apply').on('click', function() {
+      soaFilter = soaCollect();
+      // Jika modal tidak memilih tanggal, anggap minta Semua agar konsisten dengan preset.
+      if (!soaFilter.date_from) soaFilter.show_all = '1';
+      soaReload(activeTab);
+      soaRenderScopeAndChips();
+      try { soaSyncPresets(); } catch (err) {}
+      $('#soaFilterModal').modal('hide');
+    });
+
+    $('#soa-apply-reset').on('click', function() {
+      soaFilter = { show_all: '1' };
+      soaFillForm();
+      soaReload(activeTab);
+      soaRenderScopeAndChips();
+      try { soaSyncPresets(); } catch (err) {}
+      $('#soaFilterModal').modal('hide');
+    });
+
+    $('#soAwalTabs a[data-toggle="tab"]').on('shown.bs.tab', function(e) {
+      activeTab = $(e.target).data('tab') || 'draft';
+      // Samakan ulang lebar kolom tiap pindah tab (anti tabel kosong/geser).
+      soaTables[activeTab].columns.adjust();
+      soaRenderScopeAndChips();
+      try { soaSyncPresets(); } catch (err) {}
+      try { soaDraftAlert(soaTables.draft.page.info().recordsDisplay); } catch (err) {}
+    });
+
+    soaRenderScopeAndChips();
+    try { soaSyncPresets(); } catch (err) {}
+    // Jika redirect habis save (?baru=1), pastikan tab Draft aktif agar AO langsung lihat hasilnya.
+    try {
+      if (soaGetParam('baru') === '1') { $('a[data-tab="draft"]').tab('show'); }
+    } catch (err) {}
+
+    // ============================================================
+    //  MODAL ADD SO
+    // ============================================================
+    function formatRibuan(angka) {
+      var numberString = angka.replace(/[^\d]/g, '');
+      if (!numberString) return '';
+      return numberString.replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+    }
+
+    $(document).on('input', '#kurs', function () {
+      var cursorFromEnd = this.value.length - this.selectionStart;
+      this.value = formatRibuan(this.value);
+      var newPos = this.value.length - cursorFromEnd;
+      this.setSelectionRange(newPos, newPos);
+    });
+
+    // Select2 di dalam modal Add SO butuh dropdownParent supaya search box berfungsi
+    $('#exampleModal .js-select2').each(function () {
+      $(this).select2({
+        dropdownParent: $('#exampleModal'),
+        width: '100%'
+      });
+    });
+
+    // Disc Kemasan hanya berlaku untuk 25 Kg Drum / 25 Kg Jirigen, selain itu di-hide
+    function toggleDiscKemasan() {
+      var txt = ($('#packaging_id option:selected').text() || '').toLowerCase().replace(/\s+/g, ' ');
+      var is25 = txt.indexOf('25') !== -1;
+      var isDrum = txt.indexOf('drum') !== -1;
+      var isJirigen = txt.indexOf('jirigen') !== -1 || txt.indexOf('jerigen') !== -1 || txt.indexOf('jergen') !== -1;
+      var show = is25 && (isDrum || isJirigen);
+      $('#disc-kemasan-group').toggle(show);
+      if (!show) {
+        $('#disc_kemasan').val('');
+      }
+    }
+    $('#packaging_id').on('change', toggleDiscKemasan);
+
+    $('#addSO').on('click', function (e) {
           e.preventDefault();
           const form = document.getElementById('formAddSO');
 
@@ -752,68 +1395,61 @@
           });
         });
 
-        $('#exampleModal').on('hidden.bs.modal', function (e) {
-          $(this).removeData();
-          $(this).find('form')[0].reset();
-          $(this).find('.js-select2').val(null).trigger('change');
+    $('#exampleModal').on('hidden.bs.modal', function (e) {
+      $(this).removeData();
+      $(this).find('form')[0].reset();
+      $(this).find('.js-select2').val(null).trigger('change');
 
-          // UX: Sembunyikan kembali inputan opsional (guard: elemen lama mungkin tidak ada)
-          var kursGroup = document.getElementById('kurs-group');
-          if (kursGroup) kursGroup.style.display = 'none';
-          var discPctGroup = document.getElementById('disc-percent-group');
-          if (discPctGroup) discPctGroup.style.display = 'none';
-          var kursEl = document.getElementById('kurs');
-          if (kursEl) kursEl.required = false;
-          // Disc Kemasan kembali hide + kosongkan
-          $('#disc-kemasan-group').hide();
-          $('#disc_kemasan').val('');
-        });
+      // UX: Sembunyikan kembali inputan opsional (guard: elemen lama mungkin tidak ada)
+      var kursGroup = document.getElementById('kurs-group');
+      if (kursGroup) kursGroup.style.display = 'none';
+      var discPctGroup = document.getElementById('disc-percent-group');
+      if (discPctGroup) discPctGroup.style.display = 'none';
+      var kursEl = document.getElementById('kurs');
+      if (kursEl) kursEl.required = false;
+      // Disc Kemasan kembali hide + kosongkan
+      $('#disc-kemasan-group').hide();
+      $('#disc_kemasan').val('');
+    });
 
-        $('#exampleModal').on('shown.bs.modal', function () {
-          toggleDiscKemasan();
-          $('#so_type').trigger('change');
+    $('#exampleModal').on('shown.bs.modal', function () {
+      toggleDiscKemasan();
+      $('#so_type').trigger('change');
 
-          // UX: Fokus otomatis ke dropdown customer setelah modal animasi selesai
-          setTimeout(function() {
-            $('#account_member').select2('open');
-          }, 100);
-        });
+      // UX: Fokus otomatis ke dropdown customer setelah modal animasi selesai
+      setTimeout(function() {
+        $('#account_member').select2('open');
+      }, 100);
+    });
 
-        $('a[href^="#"]').on('click', function(event) {
-            var target = $( $(this).attr('href') );
-            target.fadeToggle(100);
-        });
+    $("#test").on("click", function(e) {
+      e.preventDefault();
+      addListItem();
+    });
 
-        $("#test").on("click",function(e){
-          e.preventDefault();
-          addListItem();
-        });
+    function addListItem() {
+      var text = document.getElementById('editor').value;
+      var listNumberRegex = /^[0-9]+(?=\.)/gm;
+      var existingNums = [];
+      var num;
 
-        function addListItem() {
-          var text = document.getElementById('editor').value;
-          var listNumberRegex = /^[0-9]+(?=\.)/gm;
-          var existingNums = [];
-          var num;
-        
-          while ((num = listNumberRegex.exec(text)) !== null) {
-            existingNums.push(num);
-          }
-          
-          existingNums.sort();
+      while ((num = listNumberRegex.exec(text)) !== null) {
+        existingNums.push(num);
+      }
 
-          var addListItemNum;
-          if (existingNums.length > 0) {
-          
-            addListItemNum = parseInt(existingNums[existingNums.length - 1], 10) + 1;
-          } else {
-          
-            addListItemNum = 1;
-          } 
+      existingNums.sort();
 
-          var exp = '\n' + addListItemNum + '.\xa0';
-          text = text.concat(exp);
-          document.getElementById('editor').value = text;
-        }
-    })
+      var addListItemNum;
+      if (existingNums.length > 0) {
+        addListItemNum = parseInt(existingNums[existingNums.length - 1], 10) + 1;
+      } else {
+        addListItemNum = 1;
+      }
+
+      var exp = '\n' + addListItemNum + '.\xa0';
+      text = text.concat(exp);
+      document.getElementById('editor').value = text;
+    }
+  })
 </script>
 @endpush
