@@ -122,7 +122,6 @@
         <div id="soa-draft-alert" class="soa-warning" style="display:none;">
           <span class="soa-warning-icon"><i class="fa fa-exclamation-triangle"></i></span>
           <span class="soa-warning-text" id="soa-draft-alert-text"></span>
-          <button type="button" class="soa-warning-btn" id="soa-draft-alert-btn">Lihat Draft</button>
         </div>
 
         {{-- Preset cepat: AO tidak perlu buka modal filter hanya untuk ganti tanggal --}}
@@ -156,6 +155,7 @@
                     <th>Status</th>
                     <th>Status Approval</th>
                     <th>Action</th>
+                    <th>Tgl Info</th>
                     <th></th>
                   </tr>
                 </thead>
@@ -181,6 +181,7 @@
                     <th>Status</th>
                     <th>Status Approval</th>
                     <th>Action</th>
+                    <th>Tgl Info</th>
                     <th></th>
                   </tr>
                 </thead>
@@ -211,7 +212,7 @@
                   </tr>
                 </thead>
                 <tbody></tbody>
-              </table>
+              </table
             </div>
           </div>
 
@@ -908,10 +909,7 @@
             if (type !== 'display') return data;
             var txt = (data || '').trim() || '-';
             var ch = txt.charAt(0).toUpperCase() || '-';
-            // Umur >=2 hari ditandai merah agar terbaca tanpa perlu beda warna baris.
-            var subCls = (row.umur_hari || 0) >= 2 ? 'soa-sub soa-sub-lama' : 'soa-sub';
-            var info = row.tgl_info ? '<div class="' + subCls + '">' + esc(row.tgl_info) + '</div>' : '';
-            return '<span class="soa-cust"><span class="soa-avatar">' + esc(ch) + '</span><span>' + esc(txt) + info + '</span></span>';
+            return '<span class="soa-cust"><span class="soa-avatar">' + esc(ch) + '</span><span>' + esc(txt) + '</span></span>';
           }
         },
         {data: 'sales'},
@@ -942,6 +940,16 @@
           }
         },
         {data: 'action', orderable: false, searchable: false},
+        {
+          data: 'tgl_info',
+          name: 'tgl_info',
+          orderable: false,
+          searchable: false,
+          render: function(data, type) {
+            if (type !== 'display') return data;
+            return data || '<span class="soa-dash">-</span>';
+          }
+        },
         // Kolom tersembunyi: dipakai untuk pengurutan default.
         {
           data: 'so_created_at',
@@ -1059,10 +1067,6 @@
         box.hide();
       }
     }
-    $('#soa-draft-alert-btn').on('click', function() {
-      $('a[data-tab="draft"]').tab('show');
-      $('#sales_order_awal_draft').closest('.soa-table-card').get(0).scrollIntoView({ behavior: 'smooth', block: 'center' });
-    });
 
     function soaReload(tab) {
       soaTables[tab].ajax.url(soAwalUrl(tab, soaFilter)).load();

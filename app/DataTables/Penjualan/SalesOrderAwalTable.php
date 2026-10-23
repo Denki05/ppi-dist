@@ -11,9 +11,14 @@ use DB;
 
 class SalesOrderAwalTable extends Table
 {
+    // User non-superuser yang boleh melihat SO semua user (operator / reminder ke sales)
+    // 33 = Putri
+    private const VIEW_ALL_USER_IDS = [33];
+
     public function query(Request $request)
     {
         $isSuperuser = Auth::user()->is_superuser;
+        $canViewAll  = $isSuperuser || in_array(Auth::id(), self::VIEW_ALL_USER_IDS);
         $tab = $request->tab ?: 'default';
         $statusSoFilter = $request->status_so;
         $customerSoFilter = $request->customer_name;
@@ -102,7 +107,7 @@ class SalesOrderAwalTable extends Table
                 ')
             );
 
-        if (!$isSuperuser) {
+        if (!$canViewAll) {
             $model->where('penjualan_so.created_by', Auth::id());
         }
 
@@ -418,10 +423,9 @@ class SalesOrderAwalTable extends Table
             // Print draft sengaja dilabeli DRAFT agar tidak terasa "selesai" lalu di-share.
             $dropdown_items = '';
             $dropdown_items .= "<a class=\"dropdown-item soa-dd-item\" href=\"{$revisi}\"><i class=\"fa fa-pencil fa-fw text-warning mr-2\"></i>Revisi / Edit</a>";
-            $dropdown_items .= "<a class=\"dropdown-item soa-dd-item\" href=\"{$print_so}\" target=\"_blank\"><i class=\"fa fa-print fa-fw text-info mr-2\"></i>Print Draft <span class=\"soa-dd-hint\">belum valid</span></a>";
+            $dropdown_items .= "<a class=\"dropdown-item soa-dd-item\" href=\"{$print_so}\" target=\"_blank\"><i class=\"fa fa-print fa-fw text-info mr-2\"></i>Print SO</a>";
             if (!empty($btn_estimate)) {
                 $dropdown_items .= "<div class=\"dropdown-divider\"></div>";
-                // $btn_estimate adalah HTML tombol lingkaran; sederhanakan jadi item teks.
                 $dropdown_items .= "<a class=\"dropdown-item soa-dd-item\" href=\"" . e($estimate_pdf) . "\" target=\"_blank\"><i class=\"fa fa-file-pdf-o fa-fw text-primary mr-2\"></i>Sales Estimate</a>";
             }
             $dropdown_items .= "<div class=\"dropdown-divider\"></div>";
@@ -477,9 +481,9 @@ class SalesOrderAwalTable extends Table
                 return '<span class="soa-dash" title="Sudah dilanjutkan / tanpa aksi di sini">-</span>';
             }
         
-            return $buttons;
+return $buttons;
         });     
-
+ 
         return $table->make(true);
     }
 }
