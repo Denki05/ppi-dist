@@ -26,6 +26,8 @@ file_put_contents(__DIR__.'/../storage/logs/debug_index.txt', date('Y-m-d H:i:s'
 
 require __DIR__.'/../vendor/autoload.php';
 
+Illuminate\Support\Env::disablePutenv();
+
 /*
 |--------------------------------------------------------------------------
 | Turn On The Lights

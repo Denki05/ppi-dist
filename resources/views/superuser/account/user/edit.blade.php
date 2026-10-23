@@ -1,173 +1,175 @@
 @extends('superuser.app')
+
 @push('styles')
-<style type="text/css">
-  input[type="checkbox"]{
-    text-align: center; /* center checkbox horizontally */
-    vertical-align: middle; /* center checkbox vertically */
-    width: 20px;
-    height: 20px;
-  }
+<style>
+  .edit-summary { display: flex; align-items: center; gap: 14px; padding: 18px; border-radius: 14px; background: #f8fafc; border: 1px solid #e2e8f0; }
+  .edit-avatar { width: 48px; height: 48px; border-radius: 50%; display: flex; align-items: center; justify-content: center; background: #0f172a; color: #fff; font-weight: 700; font-size: 18px; flex: 0 0 48px; }
+  .edit-summary-title { font-weight: 700; color: #1e293b; }
+  .edit-summary-sub { color: #64748b; font-size: 12px; }
+  .form-section-title { font-size: 12px; font-weight: 700; letter-spacing: .04em; text-transform: uppercase; color: #64748b; margin: 0 0 12px; }
+  .module-list { display: flex; flex-wrap: wrap; gap: 8px 18px; padding: 10px 12px; border: 1px solid #dbe3ee; border-radius: 10px; background: #f8fafc; }
+  .module-item { display: flex; align-items: center; gap: 7px; margin: 0; cursor: pointer; font-size: 13px; color: #334155; }
+  .module-item input { width: 15px; height: 15px; margin: 0; }
+  .module-item b { color: #0f172a; }
+  .user-form-page { max-width: 1080px; margin: 0 auto; padding: 0 8px 16px; }
 </style>
 @endpush
 
 @section('content')
+<div class="user-form-page">
 <nav class="breadcrumb bg-white push">
   <span class="breadcrumb-item">Account</span>
-  <a class="breadcrumb-item" href="{{ route('superuser.account.user.index') }}">User</a>
+  <a class="breadcrumb-item" href="{{ route('superuser.account.user.index', ['tab' => $returnTab]) }}">Akun</a>
   <span class="breadcrumb-item active">Edit User</span>
 </nav>
+
 <div id="alert-block"></div>
-<div class="block">
+
+<div class="block block-rounded mb-3">
   <div class="block-content">
+    <div class="edit-summary">
+      <div class="edit-avatar">{{ strtoupper(substr($result->name ?: $result->username, 0, 1)) }}</div>
+      <div>
+        <div class="edit-summary-title">{{ $result->name ?: $result->username }}</div>
+        <div class="edit-summary-sub">{{ $result->email }} &middot; @ {{ $result->username }}</div>
+        <div class="edit-summary-sub mt-1">
+          @if((int) $result->is_active === 1)
+            <span class="badge badge-success">Aktif</span>
+          @elseif(!empty($result->google_id))
+            <span class="badge badge-warning">Menunggu approval</span>
+          @else
+            <span class="badge badge-danger">Nonaktif</span>
+          @endif
+          @if(!empty($result->google_id))
+            <span class="badge badge-success"><i class="fa fa-google mr-1"></i>Google</span>
+          @endif
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+@if($linkedCustomers > 0)
+<div class="alert alert-warning">
+  <i class="fa fa-link mr-1"></i>
+  User ini tertaut dengan <b>{{ $linkedCustomers }} customer</b>. Jangan hapus permanen; gunakan <b>Nonaktifkan</b> agar data customer tetap aman.
+</div>
+@endif
+
+<div class="block">
+  <div class="block-content block-content-full">
     <form id="frmEdit" action="#">
     @csrf
     <input type="hidden" name="user_id" value="{{$result->id}}">
+    <input type="hidden" name="return_tab" value="{{ $returnTab }}">
     <div class="row">
-      <div class="col-12">
-        <div class="form-group row">
-          <label class="col-md-2 col-form-label text-right">Name<span class="text-danger">*</span></label>
-          <div class="col-md-8">
-            <input type="text" name="name" class="form-control" value="{{$result->name}}">
+      <div class="col-lg-6">
+        <div class="form-section-title">Data akun</div>
+        <div class="form-group">
+          <label>Nama <span class="text-danger">*</span></label>
+          <input type="text" name="name" class="form-control" value="{{$result->name}}" required>
+        </div>
+        <div class="form-group">
+          <label>Email <span class="text-danger">*</span></label>
+          <input type="text" name="email" class="form-control" value="{{$result->email}}" required>
+          <small class="form-text text-muted">Gunakan Gmail asli agar user bisa login lewat Google.</small>
+        </div>
+        <div class="form-group">
+          <label>Username <span class="text-danger">*</span></label>
+          <input type="text" name="username" class="form-control" value="{{$result->username}}" required>
+        </div>
+      </div>
+
+      <div class="col-lg-6">
+        <div class="form-section-title">Penempatan &amp; akses</div>
+        <div class="form-row">
+          <div class="form-group col-md-6">
+            <label>Jabatan <span class="text-danger">*</span></label>
+            <input type="text" name="jabatan" class="form-control" value="{{$result->jabatan}}" placeholder="Contoh: Sales Manager, Finance Staff" required>
+          </div>
+          <div class="form-group col-md-6">
+            <label>Divisi <span class="text-danger">*</span></label>
+            <select name="division" class="form-control js-select2" required>
+              @foreach($divisions as $division)
+                <option value="{{ $division }}" {{ $result->division === $division ? 'selected' : '' }}>{{ $division }}</option>
+              @endforeach
+            </select>
           </div>
         </div>
-        <div class="form-group row">
-          <label class="col-md-2 col-form-label text-right">Division<span class="text-danger">*</span></label>
-          <div class="col-md-8">
-            <input type="text" name="division" class="form-control" value="{{$result->division}}">
+        <div class="form-row">
+          <div class="form-group col-md-6">
+            <label>Cabang</label>
+            <input type="text" name="cabang" class="form-control" value="{{$result->cabang ?: 'Jakarta'}}">
           </div>
         </div>
-        <div class="form-group row">
-          <label class="col-md-2 col-form-label text-right">Email<span class="text-danger">*</span></label>
-          <div class="col-md-8">
-            <input type="text" name="email" class="form-control" value="{{$result->email}}">
-          </div>
+        <div class="form-group">
+          <label>Profil akses <span class="text-danger">*</span></label>
+          <select name="access_profile" class="form-control js-select2" required>
+            <option value="">Pilih profil...</option>
+            @foreach($profiles as $key => $label)
+              <option value="{{ $key }}" {{ $currentProfile === $key ? 'selected' : '' }}>{{ $label }}</option>
+            @endforeach
+          </select>
+          <small class="form-text text-muted">Profil menentukan paket menu dasar yang diberikan ke user.</small>
         </div>
-        <div class="form-group row">
-          <label class="col-md-2 col-form-label text-right">Username<span class="text-danger">*</span></label>
-          <div class="col-md-8">
-            <input type="text" name="username" class="form-control" value="{{$result->username}}">
-          </div>
-        </div>
-        <div class="form-group row">
-          <label class="col-md-2 col-form-label text-right">Password<span class="text-danger">*</span></label>
-          <div class="col-md-8">
-            <input type="password" name="password" class="form-control">
-            <p style="margin:0"><i>Kosongkan jika tidak diubah</i></p>
-          </div>
-        </div>
-        <div class="form-group row">
-          <label class="col-md-2 col-form-label text-right">Password Confirm<span class="text-danger">*</span></label>
-          <div class="col-md-8">
-            <input type="password" name="password_confirm" class="form-control">
-            <p style="margin:0"><i>Kosongkan jika tidak diubah</i></p>
-          </div>
-        </div>
-        <div class="form-group row">
-          <label class="col-md-2 col-form-label text-right">Akses Modul</label>
-          <div class="col-md-8">
-            @php
-              $userModules = [];
-              if (!empty($result->modul_akses)) {
-                $decoded = is_array($result->modul_akses) ? $result->modul_akses : json_decode($result->modul_akses, true);
-                $userModules = is_array($decoded) ? $decoded : [];
-              }
-            @endphp
-            @foreach($modules as $mod)
-              <label class="mr-3 mb-0" style="font-weight:normal">
-                <input type="checkbox" name="modules[]" value="{{ $mod }}" {{ in_array($mod, $userModules) ? 'checked' : '' }}>
-                {{ $mod }}
+        <div class="form-group">
+          <label>Add-on akses</label>
+          <div class="module-list">
+            @foreach($addons as $key => $addon)
+              <label class="module-item" title="{{ $addon['description'] ?? '' }}">
+                <input type="checkbox" name="access_addons[]" value="{{ $key }}" {{ in_array($key, $currentAddons, true) ? 'checked' : '' }}>
+                <span><b>{{ $addon['label'] ?? $key }}</b></span>
               </label>
             @endforeach
-            <p style="margin:0"><i>Menentukan modul yang bisa diakses user ini (tersinkron ke DB trial).</i></p>
+          </div>
+          <small class="form-text text-muted">Opsional. Pilih maksimal 3 add-on sesuai kebutuhan.</small>
+        </div>
+      </div>
+    </div>
+
+    <hr>
+    <div class="row">
+      <div class="col-lg-6">
+        <div class="form-section-title">Ganti password</div>
+        <div class="form-row">
+          <div class="form-group col-md-6">
+            <label>Password baru</label>
+            <input type="password" name="password" class="form-control" autocomplete="new-password">
+            <small class="form-text text-muted">Kosongkan jika tidak diubah.</small>
+          </div>
+          <div class="form-group col-md-6">
+            <label>Konfirmasi password</label>
+            <input type="password" name="password_confirm" class="form-control" autocomplete="new-password">
+            <small class="form-text text-muted">Isi ulang password baru.</small>
           </div>
         </div>
       </div>
-    </div>
-    <div class="row mb-30">
-      <div class="col-12">
-        <div class="table-responsive">
-          <table class="table table-striped">
-            <thead>
-              <th>No</th>
-              <th>Menu</th>
-              <th>View</th>
-              <th>Create</th>
-              <th>Edit</th>
-              <th>Approve</th>
-              <th>Print</th>
-              <th>Delete</th>
-            </thead>
-            <tbody>
-              @foreach($menu as $index => $row)
-              <?php 
-                $user_menu = \DB::table('setting_user_menu')->where('menu_id',$row->id)
-                                                            ->where('user_id',$result->id)
-                                                            ->first();
-                $can_read = "";
-                $can_create = "";
-                $can_update = "";
-                $can_delete = "";
-                $can_approve = "";
-                $can_print = "";
-
-                if(!empty($user_menu)){
-                  if($user_menu->can_read == 1){
-                    $can_read = "checked";
-                  }
-                  if($user_menu->can_create == 1){
-                    $can_create = "checked";
-                  }
-                  if($user_menu->can_update == 1){
-                    $can_update = "checked";
-                  }
-                  if($user_menu->can_delete == 1){
-                    $can_delete = "checked";
-                  }
-                  if($user_menu->can_approve == 1){
-                    $can_approve = "checked";
-                  }
-                  if($user_menu->can_print == 1){
-                    $can_print = "checked";
-                  }
-                }
-              ?>
-              <input type="hidden" name="repeater[{{$index}}][menu_id]" value="{{$row->id}}">
-              <tr class="text-center">
-                <td>{{$index+1}}</td>
-                <td>{{$row->name}}</td>
-                <td>
-                  <input type="checkbox" name="repeater[{{$index}}][can_read]" value="1" <?= $can_read; ?>>
-                </td>
-                <td>
-                  <input type="checkbox" name="repeater[{{$index}}][can_create]" value="1" <?= $can_create; ?>>
-                </td>
-                <td>
-                  <input type="checkbox" name="repeater[{{$index}}][can_update]" value="1" <?= $can_update; ?>>
-                </td>
-                <td>
-                  <input type="checkbox" name="repeater[{{$index}}][can_approve]" value="1" <?= $can_approve; ?>>
-                </td>
-                <td>
-                  <input type="checkbox" name="repeater[{{$index}}][can_print]" value="1" <?= $can_print; ?>>
-                </td>
-                <td>
-                  <input type="checkbox" name="repeater[{{$index}}][can_delete]" value="1" <?= $can_delete; ?>>
-                </td>
-              </tr>
-              @endforeach
-            </tbody>
-          </table>
+      <div class="col-lg-6">
+        <div class="form-section-title">Akses modul</div>
+        <div class="module-list">
+          @foreach($modules as $code => $item)
+            <label class="module-item" title="{{ $item['description'] ?? '' }}">
+              <input type="checkbox" name="modules[]" value="{{ $code }}" {{ in_array($code, $currentModules, true) ? 'checked' : '' }}>
+              <span><b>{{ $code }}</b> {{ $item['name'] ?? $code }}</span>
+            </label>
+          @endforeach
         </div>
+        <small class="form-text text-muted">Menentukan modul yang bisa dibuka user setelah login. Data ini tersinkron dengan gateway.</small>
       </div>
     </div>
-    <div class="row mb-30">
-      <div class="col-12">
-        <a href="{{route('superuser.account.user.index')}}" class="btn btn-warning  btn-md text-white"><i class="fa fa-arrow-left"></i> Back</a>
-        <button class="btn btn-primary btn-md" type="submit" disabled="disabled"><i class="fa fa-save"></i> Save</button>
-      </div>
+
+    <hr>
+    <div class="d-flex flex-column flex-sm-row justify-content-between align-items-sm-center">
+      <a href="{{route('superuser.account.user.index', ['tab' => $returnTab])}}" class="btn btn-alt-secondary mb-2 mb-sm-0">
+        <i class="fa fa-arrow-left mr-1"></i> Kembali
+      </a>
+      <button class="btn btn-primary" type="submit">
+        <i class="fa fa-save mr-1"></i> Simpan Perubahan
+      </button>
     </div>
     </form>
   </div>
+</div>
 </div>
 @endsection
 
@@ -176,47 +178,42 @@
 
 @push('scripts')
 <script>
-  $(function(){
-    $('button[type="submit"]').removeAttr('disabled');
+  var RETURN_URL = '{{ route('superuser.account.user.index', ['tab' => $returnTab]) }}';
 
-    $('.js-select2').select2();
+  $(function(){
+    $('.js-select2').select2({ width: '100%' });
 
     $(document).on('submit','#frmEdit',function(e){
       e.preventDefault();
-      if(confirm("Apakah anda yakin ingin mengubah user ini ?")){
-        let _form = $('#frmEdit');
+      if(confirm("Simpan perubahan user ini?")){
+        var _form = $('#frmEdit');
         $.ajax({
           url : '{{route('superuser.account.user.update')}}',
           method : "POST",
           data : getFormData(_form),
           dataType : "JSON",
           beforeSend : function(){
-            $('button[type="submit"]').html('Loading...');
+            $('button[type="submit"]').prop('disabled', true).html('Menyimpan...');
           },
           success : function(resp){
             if(resp.IsError == true){
               showToast('danger',resp.Message);
             }
             else{
-              Swal.fire(
-                'Success!',
-                resp.Message,
-                'success'
-              ).then((result) => {
-                  document.location.href = '{{route('superuser.account.user.index')}}';
-              })
-              
+              Swal.fire('Berhasil!', resp.Message, 'success').then(function(){
+                document.location.href = RETURN_URL;
+              });
             }
           },
           error : function(){
-            alert("Cek Koneksi Internet")
+            alert("Cek Koneksi Internet");
           },
           complete : function(){
-            $('button[type="submit"]').html('<i class="fa fa-save"> Save</i>');
+            $('button[type="submit"]').prop('disabled', false).html('<i class="fa fa-save mr-1"></i> Simpan Perubahan');
           }
-        })
+        });
       }
-    })
-  })
+    });
+  });
 </script>
 @endpush

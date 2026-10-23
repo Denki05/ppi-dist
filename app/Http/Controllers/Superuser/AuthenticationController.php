@@ -4,6 +4,8 @@ namespace App\Http\Controllers\Superuser;
 
 use App\Entities\Account\Superuser;
 use App\Http\Controllers\Controller;
+use App\Services\ModuleAccessService;
+use App\Services\ModuleSsoService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Crypt;
@@ -100,8 +102,8 @@ class AuthenticationController extends Controller
                         'content' => 'Success',
                     ];
                 }
-                $response['redirect_to'] = route('superuser.index');
-                return $this->response(200, $response);
+
+                return $this->response(200, $this->withModuleRedirect($user, $response));
             }
         } else {
             return redirect()->route('auth.superuser.index');
@@ -175,7 +177,42 @@ class AuthenticationController extends Controller
         // Tandai token sudah digunakan
         $tokenData->update(['used' => true]);
 
-        return redirect()->route('superuser.index'); // ubah sesuai dashboard Anda
+        $user = $tokenData->superuser;
+        $modules = ModuleAccessService::forUser($user);
+
+        if (count($modules) === 1) {
+            return redirect()->away(ModuleSsoService::urlFor($modules[0], $user));
+        }
+
+        return redirect()->route('portal.modules');
+    }
+
+    /**
+     * Arahkan user ke modul yang tepat setelah login berhasil.
+     * - 1 modul  : langsung masuk modul (SSO bila modul eksternal).
+     * - >1 modul : halaman pilih modul.
+     * - 0 modul  : halaman pilih modul dengan peringatan.
+     */
+    protected function withModuleRedirect($user, array $response)
+    {
+        $modules = ModuleAccessService::forUser($user);
+
+        if (count($modules) === 1) {
+            $response['redirect_to'] = ModuleSsoService::urlFor($modules[0], $user);
+            return $response;
+        }
+
+        if (count($modules) === 0) {
+            $response['notification'] = [
+                'alert' => 'notify',
+                'type' => 'warning',
+                'content' => 'Login berhasil, tetapi akun Anda belum memiliki akses modul. Hubungi admin untuk mendapatkan akses.',
+            ];
+        }
+
+        $response['redirect_to'] = route('portal.modules');
+
+        return $response;
     }
 
     /**

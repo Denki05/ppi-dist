@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="utf-8"/>
+<title>A1 - Cara Pendaftaran</title>
+<link rel="stylesheet" href="flowchart.css"/>
+</head>
+<body>
+<div class="page">
+  <h1>A1. Cara Pendaftaran</h1>
+  <h2>Pendaftaran melalui akun Google</h2>
+
+  <div class="legend">
+    <span><i class="dot green"></i>Mulai / Selesai</span>
+    <span><i class="dot blue"></i>Proses</span>
+    <span><i class="dot yellow"></i>Keputusan</span>
+    <span><i class="dot red"></i>Penolakan</span>
+  </div>
+
+  <pre class="mermaid">
+flowchart TD
+  S([MULAI]) --> A["Calon pengguna membuka<br/>Portal SSO"]
+  A --> B["Pilih Daftar dengan Google"]
+  B --> C["Setujui akses email"]
+  C --> D{"Email valid dan<br/>diizinkan?"}
+  D -->|"Tidak"| D1["Tampilkan pesan:<br/>gunakan email yang diizinkan"]
+  D1 --> E([SELESAI])
+
+  D -->|"Ya"| F{"Email sudah<br/>terdaftar?"}
+  F -->|"Ya"| G(["LANJUT KE A3<br/>CARA PENGGUNA LOGIN"])
+  F -->|"Tidak"| H["Buat akun<br/>(Menunggu Verifikasi)"]
+  H --> I["Informasikan:<br/>tunggu verifikasi"]
+  I --> J(["LANJUT KE A2<br/>VERIFIKASI ADMINISTRATOR/DEVELOPER"])
+
+  classDef startEnd fill:#d9ead3,stroke:#6aa84f,color:#000,stroke-width:1.5px;
+  classDef process fill:#dbeaf6,stroke:#6fa8dc,color:#000,stroke-width:1.5px;
+  classDef decision fill:#fff2cc,stroke:#f1c232,color:#000,stroke-width:1.5px;
+  classDef reject fill:#f4cccc,stroke:#cc0000,color:#000,stroke-width:1.5px;
+
+  class S,E,G,J startEnd;
+  class A,B,C,H,I process;
+  class D,F decision;
+  class D1 reject;
+  </pre>
+
+  <p class="note">
+    <strong>Catatan:</strong>
+    Pendaftaran hanya melalui akun Google. Gunakan Gmail atau email kantor yang terdaftar.
+    Akun baru berstatus Menunggu Verifikasi dan diproses pada A2.
+  </p>
+</div>
+
+<script src="mermaid.min.js"></script>
+<script src="flowchart.js"></script>
+</body>
+</html>

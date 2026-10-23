@@ -1,0 +1,87 @@
+html,
+body {
+  margin: 0;
+  padding: 0;
+  background: #ffffff;
+}
+
+body {
+  font-family: 'Segoe UI', Arial, sans-serif;
+  color: #0f172a;
+}
+
+.page {
+  width: 1200px;
+  padding: 30px 40px 44px;
+  box-sizing: border-box;
+}
+
+h1 {
+  font-size: 30px;
+  margin: 0 0 6px;
+}
+
+h2 {
+  font-size: 18px;
+  margin: 0 0 18px;
+  color: #475569;
+  font-weight: 600;
+}
+
+.legend {
+  display: flex;
+  gap: 24px;
+  align-items: center;
+  font-size: 16px;
+  color: #475569;
+  margin: 0 0 18px;
+}
+
+.legend span {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.dot {
+  width: 15px;
+  height: 15px;
+  border-radius: 3px;
+  display: inline-block;
+  border: 1.5px solid;
+}
+
+.green {
+  background: #d9ead3;
+  border-color: #6aa84f;
+}
+
+.blue {
+  background: #dbeaf6;
+  border-color: #6fa8dc;
+}
+
+.yellow {
+  background: #fff2cc;
+  border-color: #f1c232;
+}
+
+.red {
+  background: #f4cccc;
+  border-color: #cc0000;
+}
+
+.mermaid {
+  width: 100%;
+  text-align: center;
+}
+
+.note {
+  font-size: 17px;
+  line-height: 1.65;
+  color: #475569;
+  margin: 18px 0 0;
+  padding: 16px 20px;
+  background: #f7f9fc;
+  border-left: 4px solid #9db7d0;
+}

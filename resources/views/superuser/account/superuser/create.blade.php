@@ -3,7 +3,7 @@
 @section('content')
 <nav class="breadcrumb bg-white push">
   <span class="breadcrumb-item">Account</span>
-  <a class="breadcrumb-item" href="{{ route('superuser.account.superuser.index') }}">Superuser</a>
+  <a class="breadcrumb-item" href="{{ route('superuser.account.user.index', ['type' => 'superuser']) }}">Akun</a>
   <span class="breadcrumb-item active">Create</span>
 </nav>
 <div id="alert-block"></div>
@@ -53,7 +53,7 @@
       </div>
     </div>
     <div class="block-content block-content-full block-content-sm bg-body-light font-size-sm text-right">
-      <a href="{{ route('superuser.account.superuser.index') }}">
+      <a href="{{ route('superuser.account.user.index', ['type' => 'superuser']) }}">
         <button type="button" class="btn bg-gd-cherry border-0 text-white">
           <i class="fa fa-arrow-left mr-10"></i> Back
         </button>

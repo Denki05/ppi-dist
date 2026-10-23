@@ -16,6 +16,6 @@ class Menu extends Model
     ];
 
     public function user_menu(){
-    	return $this->hasMany('App\Entities\Setting\Menu','menu_id');
+    	return $this->hasMany('App\Entities\Setting\UserMenu','menu_id','id');
     }
 }

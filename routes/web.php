@@ -24,6 +24,13 @@ Route::group(['as' => 'auth.', 'prefix' => '/auth', 'middleware' => 'authenctica
     });
 });
 
+// Portal pilih modul setelah login. Halaman ini tidak memakai guard modul TRS
+// supaya user yang hanya punya MIS/AO tetap bisa memilih modulnya.
+Route::group(['middleware' => ['superuser']], function () {
+    Route::get('/portal/modules', [\App\Http\Controllers\Superuser\ModuleController::class, 'index'])->name('portal.modules');
+    Route::get('/portal/modules/{module}', [\App\Http\Controllers\Superuser\ModuleController::class, 'go'])->name('portal.modules.go');
+});
+
 Route::group(['as' => 'utility.'], function () {
     Route::post('/token', function () {
         return 'Token valid.';

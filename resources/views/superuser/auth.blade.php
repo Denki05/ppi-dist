@@ -19,9 +19,9 @@
       .mlogin-orb.o1{width:220px;height:220px;left:8%;bottom:12%}
       .mlogin-orb.o2{width:140px;height:140px;right:10%;top:14%}
       .mlogin-orb.o3{width:80px;height:80px;right:22%;bottom:20%}
-      .mlogin-wrap{position:relative;width:100%;max-width:940px;animation:mlogin-up .5s ease both}
+      .mlogin-wrap{position:relative;width:100%;max-width:460px;animation:mlogin-up .5s ease both}
       @keyframes mlogin-up{from{opacity:0;transform:translateY(18px)}to{opacity:1;transform:none}}
-      .mlogin-card{display:grid;grid-template-columns:400px 1fr;background:#fff;border-radius:22px;overflow:hidden;box-shadow:0 30px 80px rgba(0,0,0,.45)}
+      .mlogin-card{display:grid;grid-template-columns:1fr;background:#fff;border-radius:22px;overflow:hidden;box-shadow:0 30px 80px rgba(0,0,0,.45)}
       /* Brand panel */
       .mlogin-brand{position:relative;padding:40px 36px;color:#fff;background:linear-gradient(160deg,#1d4ed8 0%,#2563eb 45%,#0891b2 100%);overflow:hidden;display:flex;flex-direction:column}
       .mlogin-brand::before{content:"";position:absolute;width:340px;height:340px;right:-120px;top:-120px;border-radius:50%;background:rgba(255,255,255,.12)}
@@ -98,7 +98,7 @@
     <div class="mlogin-wrap">
       <div class="mlogin-card">
 
-        <div class="mlogin-brand">
+        {{--<div class="mlogin-brand">
           <!-- <div class="mlogin-logo">
             <img src="{{ asset('superuser_assets/media/logo_ppi.png') }}" alt="Logo">
             <span>{{ setting('website.name') }}</span>
@@ -111,7 +111,7 @@
             <li><i class="fa fa-line-chart"></i> Laporan &amp; keuangan terpusat</li>
           </ul>
           <div class="mlogin-brandfoot">Copyright &copy; {{ now()->year }} <b>Premium Parfume Indonesia</b>. All rights reserved.</div>
-        </div>
+        </div>--}}
 
         <div class="mlogin-form">
           <h1>Selamat datang kembali</h1>

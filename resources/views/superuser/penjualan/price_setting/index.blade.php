@@ -57,12 +57,12 @@
   <div class="block-content">
     <button type="button" class="btn btn-outline-info ml-10" data-toggle="modal" data-target="#modal-manage">Manage</button>
     @if($draftPrice > 0)
-      <a class="btn btn-primary ml-10" href="javascript:saveConfirmation('{{ route('superuser.penjualan.setting_price.sync_price') }}')" role="button">Update Harga</a>
+      <a class="btn btn-primary ml-10" href="javascript:saveConfirmation('{{ route('superuser.penjualan.price_setting.sync_price') }}')" role="button">Update Harga</a>
     @endif
   </div>
   <!-- <hr class="my-20"> -->
   <div class="block-content block-content-full">
-    <form method="get" action="{{ route('superuser.penjualan.setting_price.index') }}">
+    <form method="get" action="{{ route('superuser.penjualan.price_setting.index') }}">
       <div class="row">
         <div class="col-lg-3">
           <div class="form-group">
@@ -112,8 +112,8 @@
                   <td>{{ $row->warehouse->name ?? '' }}</td>
                   <td>{{ $row->price }}</td>
                   <td>
-                    <a href="{{route('superuser.penjualan.setting_price.edit', base64_encode($row->id))}}" class="btn btn-primary btn-sm btn-flat"><i class="fa fa-edit"></i> Edit</a>
-                    <a href="{{route('superuser.penjualan.setting_price.history', base64_encode($row->id))}}" class="btn btn-info btn-sm btn-flat"><i class="fa fa-history"></i> History</a>
+                    <a href="{{route('superuser.penjualan.price_setting.edit', base64_encode($row->id))}}" class="btn btn-primary btn-sm btn-flat"><i class="fa fa-edit"></i> Edit</a>
+                    <a href="{{route('superuser.penjualan.price_setting.history', base64_encode($row->id))}}" class="btn btn-info btn-sm btn-flat"><i class="fa fa-history"></i> History</a>
                   </td>
                 </tr>
               @endforeach
@@ -133,8 +133,8 @@
 @section('modal')
 
 @include('superuser.component.modal-manage', [
-  'import_template_url' => route('superuser.penjualan.setting_price.import_template'),
-  'import_url' => route('superuser.penjualan.setting_price.import'),
+  'import_template_url' => route('superuser.penjualan.price_setting.import_template'),
+  'import_url' => route('superuser.penjualan.price_setting.import'),
   'export_url' => route('superuser.master.warehouse.export')
 ])
 

@@ -3,7 +3,7 @@
 @section('content')
 <nav class="breadcrumb bg-white push">
   <span class="breadcrumb-item">Account</span>
-  <a class="breadcrumb-item" href="{{ route('superuser.account.superuser.index') }}">Superuser</a>
+  <a class="breadcrumb-item" href="{{ route('superuser.account.user.index', ['type' => 'superuser']) }}">Akun</a>
   <a class="breadcrumb-item" href="{{ route('superuser.account.superuser.show', $account->id) }}">{{ $account->id }}</a>
   <span class="breadcrumb-item active">Edit</span>
 </nav>

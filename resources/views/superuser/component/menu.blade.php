@@ -191,8 +191,10 @@
                     </a>
                 </li>
 
+                @php $menuAccess = app(\App\Services\MenuAccessService::class); @endphp
+
                 <!-- Master -->
-                @if($superuser->can('superuser-manage') OR $superuser->division == "Admin" OR $superuser->division == "Management")
+                @if($menuAccess->canSeeGroup($superuser, 'master'))
                 <li class="nav-item dropdown">
                     <a class="nav-link dropdown-toggle" role="button" data-bs-toggle="dropdown"
                         aria-expanded="false">
@@ -231,33 +233,46 @@
                 @endif
 
                 <!-- Penjualan -->
-                @if(!in_array($superuser->id, [41, 29]))
+                @if($menuAccess->canSeeGroup($superuser, 'penjualan'))
                 <li class="nav-item dropdown">
                     <a class="nav-link dropdown-toggle" role="button" data-bs-toggle="dropdown"
                         aria-expanded="false">
                         <i class="fa-solid fa-basket-shopping"></i> Penjualan
                     </a>
                     <ul class="dropdown-menu">
+                        @if($menuAccess->canSeeRoute($superuser, 'superuser.finance.invoicing.index'))
                         <li><a class="dropdown-item" href="{{ route('superuser.finance.invoicing.index') }}"><i class="fa-solid fa-warehouse"></i> Invoice</a></li>
-                        @if($superuser->can('superuser-manage') OR $superuser->division == "Admin" OR $superuser->division == "Management")
-                        <li><a class="dropdown-item" href="{{ route('superuser.master.contact.index') }}"><i class="fa-solid fa-address-book"></i> Pengaturan Harga</a></li>
                         @endif
+                        @if($menuAccess->canSeeRoute($superuser, 'superuser.penjualan.price_setting.index'))
+                        <li><a class="dropdown-item" href="{{ route('superuser.penjualan.price_setting.index') }}"><i class="fa-solid fa-address-book"></i> Pengaturan Harga</a></li>
+                        @endif
+                        @if($menuAccess->canAnyRoute($superuser, [
+                            'superuser.penjualan.sales_order.index_awal',
+                            'superuser.penjualan.sales_order_indent.index',
+                            'superuser.penjualan.sales_order_kontrak.index',
+                            'superuser.penjualan.so_proforma.index',
+                            'superuser.penjualan.pengajuan_proforma.index',
+                            'superuser.penjualan.sales_order_ppn.index_ppn_awal'
+                        ]))
                         <li class="submenu submenu-md dropend">
                             <a class="dropdown-item dropdown-toggle" role="button" data-bs-toggle="dropdown"
                                 aria-expanded="false">
                                 <i class="fa-solid fa-cart-plus"></i> Sales Order
                             </a>
                             <ul class="dropdown-menu">
+                                @if($menuAccess->canSeeRoute($superuser, 'superuser.penjualan.sales_order_indent.index'))
                                 <li><a class="dropdown-item" href="{{ route('superuser.penjualan.sales_order_indent.index') }}"><i class="fa-solid fa-indent"></i> Indent</a></li>
-                                @if($superuser->division == "Admin" OR $superuser->division == "Management" OR $superuser->division == "Developer")
+                                @endif
+                                @if($menuAccess->canSeeRoute($superuser, 'superuser.penjualan.sales_order_kontrak.index'))
                                 <li><a class="dropdown-item" href="{{ route('superuser.penjualan.sales_order_kontrak.index') }}"><i class="fa-solid fa-file-signature"></i> Kontrak</a></li>
                                 @endif
-                                @if($superuser->can('superuser-manage') OR $superuser->division == "Admin" OR $superuser->division == "Management")
+                                @if($menuAccess->canSeeRoute($superuser, 'superuser.penjualan.so_proforma.index'))
                                 <li><a class="dropdown-item" href="{{ route('superuser.penjualan.so_proforma.index') }}"><i class="fa-solid fa-file-prescription"></i> Proforma</a></li>
                                 @endif
-                                @if($superuser->can('superuser-manage') OR $superuser->division == "Admin" OR $superuser->division == "Management")
+                                @if($menuAccess->canSeeRoute($superuser, 'superuser.penjualan.pengajuan_proforma.index'))
                                 <li><a class="dropdown-item" href="{{ route('superuser.penjualan.pengajuan_proforma.index') }}"><i class="fa-solid fa-file-circle-plus"></i> Pengajuan Proforma</a></li>
                                 @endif
+                                @if($menuAccess->canSeeRoute($superuser, 'superuser.penjualan.sales_order.index_awal'))
                                 <li>
                                     <hr class="dropdown-divider">
                                 </li>
@@ -266,37 +281,29 @@
                                         data-bs-toggle="dropdown" aria-expanded="false"><i class="fa-solid fa-file-invoice"></i> Regular</a>
                                     <ul class="dropdown-menu">
                                         <li><a class="dropdown-item" href="{{ route('superuser.penjualan.sales_order.index_awal') }}"><i class="fa-solid fa-arrow-up-wide-short"></i> Awal</a></li>
-                                        @if($superuser->can('superuser-manage') OR $superuser->division == "Admin" OR $superuser->division == "Management")
+                                        @if($menuAccess->canSeeRoute($superuser, 'superuser.penjualan.sales_order.index_lanjutan'))
                                         <li><a class="dropdown-item" href="{{ route('superuser.penjualan.sales_order.index_lanjutan') }}"><i class="fa-solid fa-arrow-down-wide-short"></i> Lanjutan</a></li>
                                         @endif
                                     </ul>
                                 </li>
-                                @if(
-                                    $superuser->can('superuser-manage') || 
-                                    $superuser->division == "Admin" || 
-                                    $superuser->division == "Management" || 
-                                    $superuser->id == 38 ||
-                                    $superuser->id == 35
-                                )
-                                    <li class="submenu submenu-md dropend">
-                                        <a class="dropdown-item dropdown-toggle" role="button"
-                                            data-bs-toggle="dropdown" aria-expanded="false"><i class="fa-solid fa-file-invoice"></i> PPN</a>
-                                        <ul class="dropdown-menu">
-                                            <li><a class="dropdown-item" href="{{ route('superuser.penjualan.sales_order_ppn.index_ppn_awal') }}"><i class="fa-solid fa-arrow-up-wide-short"></i> Awal</a></li>
-                                            @if(
-                                                $superuser->can('superuser-manage') || 
-                                                $superuser->division == "Admin" || 
-                                                $superuser->division == "Management"
-                                            )
-                                            <li><a class="dropdown-item" href="{{ route('superuser.penjualan.sales_order_ppn.index_ppn_lanjutan') }}"><i class="fa-solid fa-arrow-down-wide-short"></i> Lanjutan</a></li>
-                                            @endif
-                                        </ul>
-                                    </li>
+                                @endif
+                                @if($menuAccess->canSeeRoute($superuser, 'superuser.penjualan.sales_order_ppn.index_ppn_awal'))
+                                <li class="submenu submenu-md dropend">
+                                    <a class="dropdown-item dropdown-toggle" role="button"
+                                        data-bs-toggle="dropdown" aria-expanded="false"><i class="fa-solid fa-file-invoice"></i> PPN</a>
+                                    <ul class="dropdown-menu">
+                                        <li><a class="dropdown-item" href="{{ route('superuser.penjualan.sales_order_ppn.index_ppn_awal') }}"><i class="fa-solid fa-arrow-up-wide-short"></i> Awal</a></li>
+                                        @if($menuAccess->canSeeRoute($superuser, 'superuser.penjualan.sales_order_ppn.index_ppn_lanjutan'))
+                                        <li><a class="dropdown-item" href="{{ route('superuser.penjualan.sales_order_ppn.index_ppn_lanjutan') }}"><i class="fa-solid fa-arrow-down-wide-short"></i> Lanjutan</a></li>
+                                        @endif
+                                    </ul>
+                                </li>
                                 @endif
                             </ul>
                         </li>
+                        @endif
                         
-                        @if($superuser->can('superuser-manage') OR $superuser->division == "Admin" OR $superuser->division == "Management")
+                        @if($menuAccess->canSeeRoute($superuser, 'superuser.penjualan.sale_return.index'))
                         <li><a class="dropdown-item" href="{{ route('superuser.penjualan.sale_return.index') }}"><i class="fa-solid fa-file-prescription"></i> Nota Kredit</a></li>
                         @endif
                     </ul>
@@ -304,7 +311,7 @@
                 @endif
 
                 <!-- Gudang -->
-                @if($superuser->can('superuser-manage') OR $superuser->division == "Admin" OR $superuser->division == "Management" OR $superuser->division == "Warehouse"  OR $superuser->division == "Finance")
+                @if($menuAccess->canSeeGroup($superuser, 'logistik'))
                 <li class="nav-item dropdown">
                     <a class="nav-link dropdown-toggle" role="button" data-bs-toggle="dropdown"
                         aria-expanded="false">
@@ -313,100 +320,132 @@
                     <ul class="dropdown-menu">
 
                         {{-- ================= DOCUMENT ================= --}}
-                        @if(
-                            ($superuser->can('superuser-manage') 
-                            OR $superuser->division == "Admin" 
-                            OR $superuser->division == "Management" 
-                            OR $superuser->division == "Warehouse" 
-                            OR $superuser->division == "Finance")
-                            AND !in_array($superuser->id, [29, 41])
-                        )
+                        @if($menuAccess->canAnyRoute($superuser, [
+                            'superuser.gudang.purchase_order_spk.index',
+                            'superuser.gudang.purchase_order.index',
+                            'superuser.gudang.mutasi_out.index',
+                            'superuser.gudang.mutasi_showroom.index'
+                        ]))
                         <li class="submenu submenu-md dropend">
                             <a class="dropdown-item dropdown-toggle" href="#" data-bs-toggle="dropdown">
                                 <i class="fa-solid fa-file-lines"></i> Document
                             </a>
                             <ul class="dropdown-menu">
+                                @if($menuAccess->canSeeRoute($superuser, 'superuser.gudang.purchase_order_spk.index'))
                                 <li>
                                     <a class="dropdown-item" href="{{ route('superuser.gudang.purchase_order_spk.index') }}">
                                         Order Industri (SPK)
                                     </a>
                                 </li>
+                                @endif
+                                @if($menuAccess->canSeeRoute($superuser, 'superuser.gudang.purchase_order.index'))
                                 <li>
                                     <a class="dropdown-item" href="{{ route('superuser.gudang.purchase_order.index') }}">
                                         Order Pusat (PO)
                                     </a>
                                 </li>
+                                @endif
+                                @if($menuAccess->canAnyRoute($superuser, [
+                                    'superuser.gudang.mutasi_out.index',
+                                    'superuser.gudang.mutasi_showroom.index'
+                                ]))
                                 <li class="submenu submenu-md dropend">
                                     <a class="dropdown-item dropdown-toggle" role="button"
                                         data-bs-toggle="dropdown" aria-expanded="false">Mutasi</a>
                                     <ul class="dropdown-menu">
+                                        @if($menuAccess->canSeeRoute($superuser, 'superuser.gudang.mutasi_out.index'))
                                         <li>
                                             <a class="dropdown-item" href="{{ route('superuser.gudang.mutasi_out.index') }}">
                                                 Gudang Utama
                                             </a>
                                         </li>
+                                        @endif
+                                        @if($menuAccess->canSeeRoute($superuser, 'superuser.gudang.mutasi_showroom.index'))
                                         <li>
                                             <a class="dropdown-item" href="{{ route('superuser.gudang.mutasi_showroom.index') }}">
                                                 Showroom
                                             </a>
                                         </li>
+                                        @endif
                                     </ul>
                                 </li>
+                                @endif
                             </ul>
                         </li>
                         @endif
 
 
                         {{-- ================= WAREHOUSE ================= --}}
+                        @if($menuAccess->canAnyRoute($superuser, [
+                            'superuser.penjualan.delivery_order.index',
+                            'superuser.gudang.sj_mutasi_internal.index',
+                            'superuser.gudang.receiving.index',
+                            'superuser.gudang.quality_control.index',
+                            'superuser.gudang.quality_control_2.index'
+                        ]))
                         <li class="submenu submenu-md dropend">
                             <a class="dropdown-item dropdown-toggle" href="#" data-bs-toggle="dropdown">
                                 <i class="fa-solid fa-warehouse"></i> Warehouse
                             </a>
                             <ul class="dropdown-menu">
-                                @if($superuser->can('superuser-manage') OR $superuser->division == "Admin" OR $superuser->division == "Management" OR $superuser->division == "Warehouse" OR $superuser->division == "Finance")
+                                @if($menuAccess->canSeeRoute($superuser, 'superuser.penjualan.delivery_order.index'))
                                 <li>
                                     <a class="dropdown-item" href="{{ route('superuser.penjualan.delivery_order.index') }}">
                                         Checker Transaksi (DO)
                                     </a>
                                 </li>
+                                @endif
+                                @if($menuAccess->canSeeRoute($superuser, 'superuser.gudang.sj_mutasi_internal.index'))
                                 <li>
                                     <a class="dropdown-item" href="{{ route('superuser.gudang.sj_mutasi_internal.index') }}">
                                         Checker Mutasi
                                     </a>
                                 </li>
+                                @endif
+                                @if($menuAccess->canSeeRoute($superuser, 'superuser.gudang.receiving.index'))
                                 <li>
                                     <a class="dropdown-item" href="{{ route('superuser.gudang.receiving.index') }}">
                                         Receiving
                                     </a>
                                 </li>
+                                @endif
+                                @if($menuAccess->canSeeRoute($superuser, 'superuser.gudang.quality_control.index'))
                                 <li>
                                     <a class="dropdown-item" href="{{ route('superuser.gudang.quality_control.index') }}">
                                         Receiving - Transaksi
                                     </a>
                                 </li>
+                                @endif
+                                @if($menuAccess->canSeeRoute($superuser, 'superuser.gudang.quality_control_2.index'))
                                 <li>
                                     <a class="dropdown-item" href="{{ route('superuser.gudang.quality_control_2.index') }}">
                                         Receiving - Komplain
                                     </a>
                                 </li>
-                                
                                 @endif
                             </ul>
                         </li>
+                        @endif
 
 
                         {{-- ================= INVENTORY ================= --}}
+                        @if($menuAccess->canAnyRoute($superuser, [
+                            'superuser.gudang.stock.index',
+                            'superuser.gudang.stock_adjustment.index'
+                        ]))
                         <li class="submenu submenu-md dropend">
                             <a class="dropdown-item dropdown-toggle" href="#" data-bs-toggle="dropdown">
                                 <i class="fa-solid fa-cubes"></i> Inventory
                             </a>
                             <ul class="dropdown-menu">
-                                @if($superuser->can('superuser-manage') OR $superuser->division == "Admin" OR $superuser->division == "Management" OR $superuser->division == "Warehouse" OR $superuser->division == "Finance")
+                                @if($menuAccess->canSeeRoute($superuser, 'superuser.gudang.stock.index'))
                                 <li>
                                     <a class="dropdown-item" href="{{ route('superuser.gudang.stock.index') }}">
                                         Stock
                                     </a>
                                 </li>
+                                @endif
+                                @if($menuAccess->canSeeRoute($superuser, 'superuser.gudang.stock_adjustment.index'))
                                 <li>
                                     <a class="dropdown-item" href="{{ route('superuser.gudang.stock_adjustment.index') }}">
                                         Stock Adjustment
@@ -415,23 +454,32 @@
                                 @endif
                             </ul>
                         </li>
+                        @endif
 
                     </ul>
                 </li>
                 @endif
 
                 <!-- FAT -->
-                @if($superuser->can('superuser-manage') OR $superuser->division == "Admin" OR $superuser->division == "Management" OR $superuser->division == "Finance")
+                @if($menuAccess->canSeeGroup($superuser, 'fat'))
                 <li class="nav-item dropdown">
                     <a class="nav-link dropdown-toggle" role="button" data-bs-toggle="dropdown"
                         aria-expanded="false">
                         <i class="fa-solid fa-chart-line"></i> FAT
                     </a>
                     <ul class="dropdown-menu">
+                        @if($menuAccess->canSeeRoute($superuser, 'superuser.finance.payable.index'))
                         <li><a class="dropdown-item" href="{{ route('superuser.finance.payable.index') }}"><i class="fa-solid fa-credit-card"></i> Payment</a></li>
+                        @endif
+                        @if($menuAccess->canSeeRoute($superuser, 'superuser.finance.nota_kredit_finance.index'))
                         <li><a class="dropdown-item" href="{{ route('superuser.finance.nota_kredit_finance.index') }}"><i class="fa-solid fa-file-prescription"></i> Nota TT</a></li>
+                        @endif
+                        @if($menuAccess->canSeeRoute($superuser, 'superuser.finance.nota_kredit_finance.refund_page'))
                         <li><a class="dropdown-item" href="{{ route('superuser.finance.nota_kredit_finance.refund_page') }}"><i class="fa-solid fa-file-prescription"></i> Refund</a></li>
+                        @endif
+                        @if($menuAccess->canSeeRoute($superuser, 'superuser.finance.cashback.index'))
                         <li><a class="dropdown-item" href="{{ route('superuser.finance.cashback.index') }}"><i class="fa-solid fa-code-branch"></i> Araya</a></li>
+                        @endif
                         
                         <!-- <li class="submenu submenu-md dropend">
                             <a class="dropdown-item dropdown-toggle" role="button" data-bs-toggle="dropdown"
@@ -450,13 +498,21 @@
                                 
                             </ul>
                         </li> -->
+                        @if($menuAccess->canAnyRoute($superuser, [
+                            'superuser.accounting.product_finance.index',
+                            'superuser.accounting.finance_simulation.index_araya',
+                            'superuser.accounting.finance_simulation.index_mitra'
+                        ]))
                         <li class="submenu submenu-md dropend">
                             <a class="dropdown-item dropdown-toggle" role="button" data-bs-toggle="dropdown"
                                 aria-expanded="false">
                                 <i class="fa-solid fa-repeat"></i> CV
                             </a>
                             <ul class="dropdown-menu">
+                                @if($menuAccess->canSeeRoute($superuser, 'superuser.accounting.product_finance.index'))
                                 <li><a class="dropdown-item" href="{{ route('superuser.accounting.product_finance.index') }}"><i class="fa-solid fa-copyright"></i> Product UV</a></li>
+                                @endif
+                                @if($menuAccess->canSeeRoute($superuser, 'superuser.accounting.finance_simulation.index_araya'))
                                 <li class="submenu submenu-md dropend">
                                     <a class="dropdown-item dropdown-toggle" role="button"
                                         data-bs-toggle="dropdown" aria-expanded="false"> Araya</a>
@@ -466,37 +522,47 @@
                                         <li><a class="dropdown-item" href="">Report</a></li>
                                     </ul>
                                 </li>
+                                @endif
+                                @if($menuAccess->canSeeRoute($superuser, 'superuser.accounting.finance_simulation.index_mitra'))
                                 <li class="submenu submenu-md dropend">
                                     <a class="dropdown-item dropdown-toggle" role="button"
                                         data-bs-toggle="dropdown" aria-expanded="false"> Unifra</a>
                                     <ul class="dropdown-menu">
-                                        <!-- <li><a class="dropdown-item" href="">Set Mitra</a></li> -->
                                         <li><a class="dropdown-item" href="{{ route('superuser.accounting.finance_simulation.index_mitra') }}">Invoice</a></li>
                                         <li><a class="dropdown-item" href="">Payment</a></li>
                                         <li><a class="dropdown-item" href="">Report</a></li>
                                     </ul>
                                 </li>
+                                @endif
                             </ul>
                         </li>
+                        @endif
+                        @if($menuAccess->canSeeRoute($superuser, 'superuser.finance.void.index'))
                         <li><a class="dropdown-item" href="{{ route('superuser.finance.void.index') }}"><i class="fa-solid fa-ban"></i> Void DO</a></li>
+                        @endif
                     </ul>
                 </li>
                 @endif
 
                 <!-- Laporan -->
+                @if($menuAccess->canSeeGroup($superuser, 'laporan'))
                 <li class="nav-item dropdown">
                     <a class="nav-link dropdown-toggle" role="button" data-bs-toggle="dropdown"
                         aria-expanded="false">
                         <i class="fa-solid fa-file-export"></i> Laporan
                     </a>
                     <ul class="dropdown-menu">
-                        @if($superuser->division == "Developer" OR $superuser->division == "Management" OR $superuser->division == "Finance")
+                        @if($menuAccess->canAnyRoute($superuser, [
+                            'superuser.accounting.invoice_tax.pageReportJual',
+                            'superuser.report.revenue.index'
+                        ]))
                         <li class="submenu submenu-md dropend">
                             <a class="dropdown-item dropdown-toggle" role="button" data-bs-toggle="dropdown"
                                 aria-expanded="false">
                                 <i class="fa-solid fa-chart-simple"></i> Accounting
                             </a>
                             <ul class="dropdown-menu">
+                                @if($menuAccess->canSeeRoute($superuser, 'superuser.accounting.invoice_tax.pageReportJual'))
                                 <li class="submenu submenu-md dropend">
                                     <a class="dropdown-item dropdown-toggle" role="button"
                                         data-bs-toggle="dropdown" aria-expanded="false"><i class="fa-solid fa-code-branch"></i> Unifra Report</a>
@@ -505,15 +571,25 @@
                                         <li><a class="dropdown-item" href="{{ route('superuser.accounting.invoice_tax.pageReportBeli') }}">Beli</a></li>
                                     </ul>
                                 </li>
+                                @endif
+                                @if($menuAccess->canSeeRoute($superuser, 'superuser.report.revenue.index'))
                                 <li><a class="dropdown-item" href="{{ route('superuser.report.revenue.index') }}"> Laporan Pendapatan</a></li>
+                                @endif
                             </ul>
                         </li>
+                        @endif
+                        @if($menuAccess->canAnyRoute($superuser, [
+                            'superuser.finance.cashback.pageReport',
+                            'superuser.finance.payable.pageReport',
+                            'superuser.finance.invoicing.pageReport'
+                        ]))
                         <li class="submenu submenu-md dropend">
                             <a class="dropdown-item dropdown-toggle" role="button" data-bs-toggle="dropdown"
                                 aria-expanded="false">
                                 <i class="fa-solid fa-coins"></i> Finance
                             </a>
                             <ul class="dropdown-menu">
+                                @if($menuAccess->canSeeRoute($superuser, 'superuser.finance.cashback.pageReport'))
                                 <li class="submenu submenu-md dropend">
                                     <a class="dropdown-item dropdown-toggle" role="button"
                                         data-bs-toggle="dropdown" aria-expanded="false"><i class="fa-solid fa-code-branch"></i> Araya Report</a>
@@ -523,67 +599,125 @@
                                         <li><a class="dropdown-item" href="{{ route('superuser.finance.cashback.pageReportJual') }}">Jual</a></li>
                                     </ul>
                                 </li>
+                                @endif
+                                @if($menuAccess->canSeeRoute($superuser, 'superuser.finance.payable.pageReport'))
                                 <li><a class="dropdown-item" href="{{ route('superuser.finance.payable.pageReport') }}">Laporan Pembayaran</a></li>
+                                @endif
+                                @if($menuAccess->canSeeRoute($superuser, 'superuser.finance.invoicing.pageReport'))
                                 <li><a class="dropdown-item" href="{{ route('superuser.finance.invoicing.pageReport') }}">Piutang Faktur</a></li>
+                                @endif
                             </ul>
                         </li>
                         @endif
-                        @if($superuser->division == "Admin" OR $superuser->division == "Management" OR $superuser->division == "Developer" OR $superuser->division == "Finance")
+                        @if($menuAccess->canAnyRoute($superuser, [
+                            'superuser.report.customer_order_variant.index',
+                            'superuser.report.customer_type_zone.index',
+                            'superuser.report.sales.index',
+                            'superuser.report.product_performance.index',
+                            'superuser.report.product_high_sell.index',
+                            'superuser.report.report_delivery_cost.index'
+                        ]))
                         <li class="submenu submenu-md dropend">
                             <a class="dropdown-item dropdown-toggle" role="button" data-bs-toggle="dropdown"
                                 aria-expanded="false">
                                 <i class="fa-solid fa-file-import"></i> Operasional
                             </a>
                             <ul class="dropdown-menu">
+                                @if($menuAccess->canAnyRoute($superuser, [
+                                    'superuser.report.customer_order_variant.index',
+                                    'superuser.report.customer_type_zone.index',
+                                    'superuser.report.sales.index'
+                                ]))
                                 <li class="submenu submenu-md dropend">
                                     <a class="dropdown-item dropdown-toggle" role="button"
                                         data-bs-toggle="dropdown" aria-expanded="false">Customer</a>
                                     <ul class="dropdown-menu">
+                                        @if($menuAccess->canSeeRoute($superuser, 'superuser.report.customer_order_variant.index'))
                                         <li><a class="dropdown-item" href="{{ route('superuser.report.customer_order_variant.index') }}">Customer - Produk</a></li>
                                         <li><a class="dropdown-item" href="{{ route('superuser.report.customer_order_variant.index') }}">Customer History</a></li>
-                                        <li><a class="dropdown-item" href="{{ route('superuser.report.customer_type_zone.index') }}">Customer - Zoning</a></li>
                                         <li><a class="dropdown-item" href="#">Summary Customer - Produk</a></li>
+                                        @endif
+                                        @if($menuAccess->canSeeRoute($superuser, 'superuser.report.customer_type_zone.index'))
+                                        <li><a class="dropdown-item" href="{{ route('superuser.report.customer_type_zone.index') }}">Customer - Zoning</a></li>
+                                        @endif
+                                        @if($menuAccess->canSeeRoute($superuser, 'superuser.report.sales.index'))
                                         <li><a class="dropdown-item" href="{{ route('superuser.report.sales.index') }}">Penjualan</a></li>
+                                        @endif
                                     </ul>
                                 </li>
+                                @endif
+                                @if($menuAccess->canAnyRoute($superuser, [
+                                    'superuser.report.product_performance.index',
+                                    'superuser.report.product_high_sell.index'
+                                ]))
                                 <li class="submenu submenu-md dropend">
                                     <a class="dropdown-item dropdown-toggle" role="button"
                                         data-bs-toggle="dropdown" aria-expanded="false">Produk</a>
                                     <ul class="dropdown-menu">
+                                        @if($menuAccess->canSeeRoute($superuser, 'superuser.report.product_performance.index'))
                                         <li><a class="dropdown-item" href="{{ route('superuser.report.product_performance.index') }}">Produk - Customer</a></li>
+                                        @endif
+                                        @if($menuAccess->canSeeRoute($superuser, 'superuser.report.product_high_sell.index'))
                                         <li><a class="dropdown-item" href="{{ route('superuser.report.product_high_sell.index') }}">Produk Penjualan Tertinggi</a></li>
+                                        @endif
                                         @if($superuser->division == "Management" OR $superuser->division == "Developer")
                                         <li><a class="dropdown-item" href="#">Produk - Material</a></li>
                                         @endif
                                     </ul>
                                 </li>
+                                @endif
+                                @if($menuAccess->canSeeRoute($superuser, 'superuser.report.report_delivery_cost.index'))
+                                <li><a class="dropdown-item" href="{{ route('superuser.report.report_delivery_cost.index') }}">Laporan Pengiriman</a></li>
+                                @endif
                             </ul>
                         </li>
                         @endif
 
-                        @if($superuser->division == "Developer" OR $superuser->division == "Management")
+                        @if($menuAccess->canAnyRoute($superuser, [
+                            'superuser.report.forecast_supplier.index',
+                            'superuser.report.customer_type_brand.index',
+                            'superuser.report.employee_performance.index',
+                            'superuser.report.employee_performance_product.index',
+                            'superuser.report.customer_type_brand_uv.index'
+                        ]))
                         <li class="submenu submenu-md dropend">
                             <a class="dropdown-item dropdown-toggle" role="button" data-bs-toggle="dropdown"
                                 aria-expanded="false">
                                 <i class="fa-solid fa-file-import"></i> Management
                             </a>
                             <ul class="dropdown-menu">
+                                @if($menuAccess->canSeeRoute($superuser, 'superuser.report.forecast_supplier.index'))
                                 <li><a class="dropdown-item" href="{{ route('superuser.report.forecast_supplier.index') }}">Forecasting Principle</a></li>
+                                @endif
+                                @if($menuAccess->canSeeRoute($superuser, 'superuser.report.customer_type_brand.index'))
                                 <li><a class="dropdown-item" href="{{ route('superuser.report.customer_type_brand.index') }}">Register Customer</a></li>
+                                @endif
+                                @if($menuAccess->canAnyRoute($superuser, [
+                                    'superuser.report.employee_performance.index',
+                                    'superuser.report.employee_performance_product.index'
+                                ]))
                                 <li class="submenu submenu-md dropend">
                                     <a class="dropdown-item dropdown-toggle" role="button"
                                         data-bs-toggle="dropdown" aria-expanded="false">Penjualan Sales</a>
                                     <ul class="dropdown-menu">
+                                        @if($menuAccess->canSeeRoute($superuser, 'superuser.report.employee_performance.index'))
                                         <li><a class="dropdown-item" href="{{ route('superuser.report.employee_performance.index') }}">Omset Sales</a></li>
+                                        @endif
+                                        @if($menuAccess->canSeeRoute($superuser, 'superuser.report.employee_performance_product.index'))
                                         <li><a class="dropdown-item" href="{{ route('superuser.report.employee_performance_product.index') }}">Kinerja Sales</a></li>
+                                        @endif
                                     </ul>
                                 </li>
+                                @endif
+                                @if($menuAccess->canSeeRoute($superuser, 'superuser.report.customer_type_brand_uv.index'))
                                 <li><a class="dropdown-item" href="{{ route('superuser.report.customer_type_brand_uv.index') }}">UV</a></li>
+                                @endif
                             </ul>
                         </li>
                         @endif
                     </ul>
                 </li>
+                @endif
 
                 <!-- Setting -->
                 @if($superuser->canAny(['superuser-manage', 'salesperson-manage']))
@@ -601,8 +735,7 @@
                             </a>
                             <ul class="dropdown-menu">
                                 <li><a class="dropdown-item" href="{{ route('superuser.account.log_activity.index') }}">Aktivitas Log</a></li>
-                                <li><a class="dropdown-item" href="{{ route('superuser.account.superuser.index') }}">Superuser</a></li>
-                                <li><a class="dropdown-item" href="{{ route('superuser.account.user.index') }}">User</a></li>
+                                <li><a class="dropdown-item" href="{{ route('superuser.account.user.index') }}">Akun</a></li>
                                 <li><a class="dropdown-item" href="{{ route('superuser.account.sales_person.index') }}">Sales Person</a></li>
                             </ul>
                         </li>
@@ -614,9 +747,7 @@
                                 <i class="fa-solid fa-bars"></i> Menu
                             </a>
                             <ul class="dropdown-menu">
-                                <li><a class="dropdown-item" href="{{ route('superuser.setting.menu.index') }}">Halaman</a></li>
-                                <li><a class="dropdown-item" href="{{ route('superuser.account.superuser.index') }}">Kegunaan</a></li>
-                                <li><a class="dropdown-item" href="{{ route('superuser.account.user.index') }}">Wilayah indonesia</a></li>
+                                <li><a class="dropdown-item" href="{{ route('superuser.setting.menu.index') }}">Daftar Menu</a></li>
                                 <li><a class="dropdown-item" href="{{ route('superuser.utility.settings.index') }}">Maintenance Mode</a></li>
                             </ul>
                         </li>

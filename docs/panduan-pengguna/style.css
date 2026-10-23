@@ -1,0 +1,190 @@
+@page {
+  size: A4;
+  margin: 13mm 14mm 14mm;
+}
+
+html {
+  -webkit-print-color-adjust: exact;
+  print-color-adjust: exact;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: "Segoe UI", -apple-system, BlinkMacSystemFont, Arial, sans-serif;
+  font-size: 9.8pt;
+  line-height: 1.42;
+  color: #1e293b;
+}
+
+.cover {
+  padding: 0 0 7mm;
+  margin-bottom: 3mm;
+  border-bottom: 3px solid #2563eb;
+}
+
+.cover-kicker {
+  font-size: 8.5pt;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: #2563eb;
+  margin-bottom: 5px;
+}
+
+.cover h1 {
+  margin: 0 0 5px;
+  border: none;
+  padding: 0;
+  font-size: 21pt;
+  line-height: 1.2;
+  color: #0f172a;
+}
+
+.cover-sub {
+  margin: 0 0 4px;
+  font-size: 10.5pt;
+  color: #475569;
+}
+
+.cover-meta {
+  font-size: 8.5pt;
+  color: #64748b;
+}
+
+h1, h2, h3 {
+  color: #0f172a;
+  page-break-after: avoid;
+}
+
+h2 {
+  margin: 14px 0 6px;
+  padding-bottom: 4px;
+  border-bottom: 2px solid #2563eb;
+  font-size: 14pt;
+}
+
+.page-break {
+  page-break-before: always;
+}
+
+h3 {
+  margin: 10px 0 5px;
+  font-size: 11pt;
+}
+
+p {
+  margin: 0 0 6px;
+}
+
+ul, ol {
+  margin: 0 0 7px 16px;
+  padding: 0;
+}
+
+li {
+  margin: 2px 0;
+}
+
+strong {
+  color: #0f172a;
+}
+
+em {
+  color: #64748b;
+  font-size: 9pt;
+}
+
+blockquote {
+  margin: 7px 0 10px;
+  padding: 7px 10px;
+  background: #f1f5f9;
+  border-left: 4px solid #2563eb;
+  color: #334155;
+}
+
+blockquote p {
+  margin: 0;
+}
+
+img {
+  display: block;
+  max-width: 100%;
+  height: auto;
+  margin: 6px auto 2px;
+  border: 1px solid #dbe3ee;
+  border-radius: 6px;
+  box-shadow: 0 2px 6px rgba(15, 23, 42, 0.08);
+  page-break-inside: avoid;
+}
+
+p:has(> img) {
+  page-break-inside: avoid;
+  text-align: center;
+}
+
+p:has(> img) + p {
+  margin-top: 0;
+  margin-bottom: 7px;
+  text-align: center;
+}
+
+p:has(img[src$="01-halaman-login.png"]) img {
+  max-width: 68mm;
+}
+
+p:has(img[src$="03-pendaftaran-berhasil.png"]) img {
+  max-width: 115mm;
+}
+
+p:has(img[src$="07-akun-aktif.png"]) img {
+  max-width: 92mm;
+}
+
+p:has(img[src$="08-portal-modul.png"]) img {
+  max-width: 155mm;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 7px 0 10px;
+  font-size: 8.8pt;
+  page-break-inside: auto;
+}
+
+tr {
+  page-break-inside: avoid;
+}
+
+th, td {
+  border: 1px solid #dbe3ee;
+  padding: 4px 6px;
+  vertical-align: top;
+  text-align: left;
+}
+
+th {
+  background: #eff6ff;
+  color: #0f172a;
+}
+
+tr:nth-child(even) td {
+  background: #f8fafc;
+}
+
+code {
+  padding: 1px 3px;
+  background: #f1f5f9;
+  border-radius: 3px;
+  font-size: 8.5pt;
+}
+
+hr {
+  border: none;
+  border-top: 1px solid #e2e8f0;
+  margin: 12px 0;
+}

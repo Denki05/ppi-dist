@@ -4,9 +4,10 @@ namespace App\Http\Controllers\Superuser\Account;
 
 use Illuminate\Http\Request;
 use App\Http\Controllers\Controller;
-use App\Entities\Setting\Menu;
 use App\Entities\Account\User;
 use App\Entities\Setting\UserMenu;
+use App\Services\MenuAccessService;
+use App\Services\ModuleAccessService;
 use App\Services\UserSyncService;
 use DB;
 use Auth;
@@ -19,9 +20,13 @@ class UserController extends Controller
     public function index(Request $request)
     {
     	$search = $request->input('search');
-    	$tab = $request->input('tab', 'pending');
+    	$tab = $request->input('tab', 'all');
     	if (!in_array($tab, ['pending', 'active', 'inactive', 'all'])) {
-    		$tab = 'pending';
+    		$tab = 'all';
+    	}
+    	$type = $request->input('type', 'all');
+    	if (!in_array($type, ['all', 'staff', 'superuser'])) {
+    		$type = 'all';
     	}
     	// pending  = pendaftar SSO yang belum di-approve (is_active=0, sudah ada google_id)
     	// inactive = akun lama yang dinonaktifkan (is_active=0, belum pernah link Google)
@@ -32,56 +37,61 @@ class UserController extends Controller
     				  		$query2->where('name','like','%'.$search.'%');
     				  		$query2->orWhere('email','like','%'.$search.'%');
     				  		$query2->orWhere('division','like','%'.$search.'%');
+    				  		$query2->orWhere('jabatan','like','%'.$search.'%');
     				  		$query2->orWhere('username','like','%'.$search.'%');
     				  	}
     				  })
-    				  ->where('is_superuser',0)
+    				  ->where(function($queryType) use($type){
+    				  	if ($type === 'staff') {
+    				  		$queryType->where('is_superuser', 0);
+    				  	} elseif ($type === 'superuser') {
+    				  		$queryType->where('is_superuser', 1);
+    				  	}
+    				  })
     				  ->where(function($query3) use($tab){
     				  	if ($tab === 'pending') {
-    				  		$query3->where('is_active', 0)->whereNotNull('google_id');
+    				  		$query3->where('is_superuser', 0)
+    				  			->where('is_active', 0)
+    				  			->whereNotNull('google_id');
     				  	} elseif ($tab === 'active') {
     				  		$query3->where('is_active', 1);
     				  	} elseif ($tab === 'inactive') {
-    				  		$query3->where('is_active', 0)->whereNull('google_id');
+    				  		$query3->where('is_active', 0)
+    				  			->where(function($queryInactive) {
+    				  				$queryInactive->where('is_superuser', 1)
+    				  					->orWhereNull('google_id');
+    				  			});
     				  	}
     				  })
     				  ->paginate(10)
-    				  ->appends(['search' => $search, 'tab' => $tab]);
-
-    	$ids = $table->pluck('id')->toArray();
-    	$rolesByUser = [];
-    	if (!empty($ids)) {
-    		$rows = DB::table('model_has_roles')
-    			->join('roles', 'roles.id', '=', 'model_has_roles.role_id')
-    			->where('model_has_roles.model_type', 'App\\Entities\\Account\\Superuser')
-    			->whereIn('model_has_roles.model_id', $ids)
-    			->select('model_has_roles.model_id', 'roles.name')
-    			->get();
-    		foreach ($rows as $r) {
-    			$rolesByUser[$r->model_id][] = $r->name;
-    		}
-    	}
+    				  ->appends(['search' => $search, 'tab' => $tab, 'type' => $type]);
 
     	$counts = [
     		'pending' => User::where('is_superuser',0)->where('is_active',0)->whereNotNull('google_id')->count(),
-    		'active' => User::where('is_superuser',0)->where('is_active',1)->count(),
-    		'inactive' => User::where('is_superuser',0)->where('is_active',0)->whereNull('google_id')->count(),
+    		'active' => User::where('is_active',1)->count(),
+    		'inactive' => User::where('is_active',0)
+    			->where(function($query) {
+    				$query->where('is_superuser', 1)->orWhereNull('google_id');
+    			})->count(),
+    		'superuser' => User::where('is_superuser',1)->count(),
+    		'staff' => User::where('is_superuser',0)->count(),
     	];
+
+    	$linkedByUser = [];
+    	foreach ($table as $row) {
+    		$linkedByUser[$row->id] = $this->linkedCustomerCount($row);
+    	}
 
     	$data = [
     		'table' => $table,
     		'tab' => $tab,
+    		'type' => $type,
     		'counts' => $counts,
-    		'rolesByUser' => $rolesByUser,
+    		'linkedByUser' => $linkedByUser,
     	];
         return view($this->view."index",$data);
     }
 
-    /**
-     * Form approve pendaftar SSO baru (Fase 2).
-     * Tanpa checklist: pilih 1 paket jabatan + akses modul,
-     * backend yang menulis baris setting_user_menu + role.
-     */
     public function approveForm($id)
     {
     	$result = User::where('id',$id)
@@ -92,15 +102,18 @@ class UserController extends Controller
     		return redirect()->route('superuser.account.user.index')->with('error','Data tidak ditemukan');
     	}
 
-    	$packages = config('access_packages');
-    	$roles = DB::table('roles')->where('guard_name','superuser')->orderBy('name')->get();
-    	$modules = ['MIS', 'AO', 'APM', 'TRS', 'DSG'];
+    	$modules = config('modules.items', []);
+    	$currentModules = ModuleAccessService::normalize($result->modul_akses);
 
     	$data = [
     		'result' => $result,
-    		'packages' => $packages,
-    		'roles' => $roles,
     		'modules' => $modules,
+    		'currentModules' => $currentModules,
+    		'divisions' => $this->activeDivisions($result->division),
+    		'profiles' => $this->accessProfiles(),
+    		'addons' => config('access_matrix.addons', []),
+    		'currentProfile' => MenuAccessService::profileKeyForUser($result),
+    		'currentAddons' => MenuAccessService::addonKeys($result),
     	];
         return view($this->view."approve",$data);
     }
@@ -130,9 +143,9 @@ class UserController extends Controller
                     $data_json["Message"] = "Username user tidak boleh kosong";
                     goto ResultDataApprove;
                 }
-                if(empty($post["jabatan"]) || !array_key_exists($post["jabatan"], config('access_packages'))){
+                if(empty(trim((string) ($post["jabatan"] ?? '')))){
                     $data_json["IsError"]  = TRUE;
-                    $data_json["Message"] = "Jabatan (paket) wajib dipilih: SM / ASM";
+                    $data_json["Message"] = "Jabatan wajib diisi";
                     goto ResultDataApprove;
                 }
 
@@ -146,6 +159,12 @@ class UserController extends Controller
                     goto ResultDataApprove;
                 }
 
+                if((int) $user->is_active === 1){
+                    $data_json["IsError"]  = TRUE;
+                    $data_json["Message"] = "User sudah aktif. Gunakan menu Edit untuk mengubah datanya.";
+                    goto ResultDataApprove;
+                }
+
                 $check_username = User::where('username',$post["username"])
                 						->where('id','!=',$post["user_id"])
                 						->first();
@@ -156,12 +175,11 @@ class UserController extends Controller
                 	goto ResultDataApprove;
                 }
 
-                $package = config('access_packages.'.$post["jabatan"]);
-
-                // Password random 12 karakter bila dikosongkan.
                 $plainPassword = trim((string) ($post["password"] ?? ''));
                 if ($plainPassword === '') {
-                	$plainPassword = \Illuminate\Support\Str::random(12);
+                    $data_json["IsError"]  = TRUE;
+                    $data_json["Message"] = "Password wajib diisi sebelum user di-approve";
+                    goto ResultDataApprove;
                 }
 
                 if(strlen($plainPassword) < 8 || strlen($plainPassword) > 16){
@@ -174,44 +192,29 @@ class UserController extends Controller
                 	? array_values(array_intersect($post["modules"], ['MIS','AO','APM','TRS','DSG']))
                 	: [];
 
+                $profile = $this->submittedProfile($post);
+                if ($profile === null) {
+                    $data_json["IsError"]  = TRUE;
+                    $data_json["Message"] = "Profil akses wajib dipilih";
+                    goto ResultDataApprove;
+                }
+                $addons = $this->submittedAddons($post);
+
                 $user->name = trim(htmlentities($post["name"]));
                 $user->username = trim(htmlentities($post["username"]));
                 $user->password = bcrypt($plainPassword);
-                $user->division = trim(htmlentities($post["division"] ?? $package['division']));
+                $user->division = trim(htmlentities($post["division"] ?? 'Marketing'));
+                $user->jabatan = trim(htmlentities($post["jabatan"]));
                 $user->cabang = trim(htmlentities($post["cabang"] ?? 'Jakarta'));
                 $user->modul_akses = json_encode($modules);
+                $user->access_profile = $profile;
+                $user->access_addons = json_encode($addons);
+                $user->can_access_mis = in_array('MIS', $modules, true) ? 1 : 0;
                 $user->is_active = 1;
                 $user->updated_by = Auth::id();
                 $user->save();
 
-                // Role jabatan (Spatie).
-                $superuser = \App\Entities\Account\Superuser::find($user->id);
-                if ($superuser) {
-                	$superuser->syncRoles([$post["jabatan"]]);
-                }
-
-                // Tulis baris setting_user_menu dari paket (pengganti centangan manual).
-                $menuIds = DB::table('setting_menu')
-                	->whereIn('route_name', array_keys($package['menus']))
-                	->pluck('id','route_name');
-
-                UserMenu::where('user_id', $user->id)->delete();
-                foreach ($package['menus'] as $route => $flags) {
-                	if (!isset($menuIds[$route])) {
-                		continue;
-                	}
-                	UserMenu::create([
-                		'user_id' => $user->id,
-                		'menu_id' => $menuIds[$route],
-                		'can_read' => $flags[0],
-                		'can_create' => $flags[1],
-                		'can_update' => $flags[2],
-                		'can_delete' => $flags[3],
-                		'can_approve' => $flags[4],
-                		'can_print' => $flags[5],
-                		'created_by' => Auth::id(),
-                	]);
-                }
+                MenuAccessService::sync($user, true);
 
                 DB::commit();
 
@@ -243,14 +246,18 @@ class UserController extends Controller
     }
     public function create()
     {
-    	$menu = Menu::orderBy('name','ASC')->get();
-
     	$data = [
-    		'menu' => $menu
+    		'modules' => config('modules.items', []),
+    		'currentModules' => [],
+    		'divisions' => $this->activeDivisions(),
+    		'profiles' => $this->accessProfiles(),
+    		'addons' => config('access_matrix.addons', []),
+    		'currentProfile' => null,
+    		'currentAddons' => [],
     	];
         return view($this->view."create",$data);
     }
-    public function edit($id)
+    public function edit(Request $request, $id)
     {
     	$result = User::where('id',$id)
     					->where('is_superuser',0)
@@ -260,12 +267,28 @@ class UserController extends Controller
     		return redirect()->route('superuser.account.user.index')->with('error','Data tidak ditemukan');
     	}
 
-    	$menu = Menu::orderBy('name','ASC')->get();
+    	$modules = config('modules.items', []);
+    	$currentModules = ModuleAccessService::normalize($result->modul_akses);
+    	if (empty($currentModules) && ($result->modul_akses === null || $result->modul_akses === '') && (int) $result->is_active === 1) {
+    		$currentModules = ModuleAccessService::forUser($result);
+    	}
+
+    	$returnTab = $request->input('tab');
+    	if (!in_array($returnTab, ['pending', 'active', 'inactive', 'all'], true)) {
+    		$returnTab = (int) $result->is_active === 1 ? 'active' : (!empty($result->google_id) ? 'pending' : 'inactive');
+    	}
 
     	$data = [
-    		'menu' => $menu,
     		'result' => $result,
-    		'modules' => ['MIS', 'AO', 'APM', 'TRS', 'DSG'],
+    		'modules' => $modules,
+    		'currentModules' => $currentModules,
+    		'divisions' => $this->activeDivisions($result->division),
+    		'profiles' => $this->accessProfiles(),
+    		'addons' => config('access_matrix.addons', []),
+    		'currentProfile' => MenuAccessService::profileKeyForUser($result),
+    		'currentAddons' => MenuAccessService::addonKeys($result),
+    		'returnTab' => $returnTab,
+    		'linkedCustomers' => $this->linkedCustomerCount($result),
     	];
         return view($this->view."edit",$data);
     }
@@ -337,6 +360,20 @@ class UserController extends Controller
                 	goto ResultData;
                 }
 
+                if(empty(trim((string) ($post["jabatan"] ?? '')))){
+                    $data_json["IsError"]  = TRUE;
+                    $data_json["Message"] = "Jabatan wajib diisi";
+                    goto ResultData;
+                }
+
+                $profile = $this->submittedProfile($post);
+                if ($profile === null) {
+                    $data_json["IsError"]  = TRUE;
+                    $data_json["Message"] = "Profil akses wajib dipilih";
+                    goto ResultData;
+                }
+                $addons = $this->submittedAddons($post);
+
                 $check_username = User::where('username',$post["username"])->first();
 
                 if($check_username){
@@ -345,12 +382,22 @@ class UserController extends Controller
                 	goto ResultData;
                 }
 
+                $modules = isset($post["modules"]) && is_array($post["modules"])
+                	? array_values(array_intersect($post["modules"], ['MIS','AO','APM','TRS','DSG']))
+                	: [];
+
                 $data_user = [
                 	'name' => trim(htmlentities($post["name"])),
                 	'email' => trim(htmlentities($post["email"])),
                 	'username' => trim(htmlentities($post["username"])),
                 	'password' => bcrypt(trim(htmlentities($post["password"]))),
                 	'division' => trim(htmlentities($post["division"])),
+                	'jabatan' => trim(htmlentities($post["jabatan"])),
+                	'cabang' => trim(htmlentities($post["cabang"] ?? 'Jakarta')),
+                	'modul_akses' => json_encode($modules),
+                	'access_profile' => $profile,
+                	'access_addons' => json_encode($addons),
+                	'can_access_mis' => in_array('MIS', $modules, true) ? 1 : 0,
                 	'is_superuser' => 0,
                 	'is_active' => 1,
                 	'created_by' => Auth::id(),
@@ -358,19 +405,7 @@ class UserController extends Controller
 
                 $insert_user = User::create($data_user);
 
-                foreach ($post["repeater"] as $key => $value) {
-                		$insert_user_menu = UserMenu::create([
-                			'user_id' => $insert_user->id,
-                			'menu_id' => $value["menu_id"],
-                			'can_read' => (empty($value["can_read"])) ? 0 : 1,
-                			'can_create' => (empty($value["can_create"])) ? 0 : 1,
-                			'can_update' => (empty($value["can_update"])) ? 0 : 1,
-                			'can_delete' => (empty($value["can_delete"])) ? 0 : 1,
-                			'can_print' => (empty($value["can_print"])) ? 0 : 1,
-                			'can_approve' => (empty($value["can_approve"])) ? 0 : 1,
-                			'created_by' => Auth::id(),
-                		]);
-                }
+                MenuAccessService::sync($insert_user, true);
 
                 DB::commit();
 
@@ -429,8 +464,28 @@ class UserController extends Controller
                     $data_json["Message"] = "Username user tidak boleh kosong";
                     goto ResultData;
                 }
+                if(empty(trim((string) ($post["jabatan"] ?? '')))){
+                    $data_json["IsError"]  = TRUE;
+                    $data_json["Message"] = "Jabatan wajib diisi";
+                    goto ResultData;
+                }
+
+                $profile = $this->submittedProfile($post);
+                if ($profile === null) {
+                    $data_json["IsError"]  = TRUE;
+                    $data_json["Message"] = "Profil akses wajib dipilih";
+                    goto ResultData;
+                }
+                $addons = $this->submittedAddons($post);
+
                 $result = User::where('id',$post["user_id"])
+                					->where('is_superuser',0)
                 					->first();
+                if(empty($result)){
+                    $data_json["IsError"]  = TRUE;
+                    $data_json["Message"] = "Data user tidak ditemukan";
+                    goto ResultData;
+                }
                 $password = $result->password;
                 if(!empty($post["password"])){
                 	if(empty($post["password_confirm"])){
@@ -494,29 +549,18 @@ class UserController extends Controller
                 	'username' => trim(htmlentities($post["username"])),
                 	'password' => $password,
                 	'division' => trim(htmlentities($post["division"])),
+                	'jabatan' => trim(htmlentities($post["jabatan"])),
+                	'cabang' => trim(htmlentities($post["cabang"] ?? ($result->cabang ?: 'Jakarta'))),
                 	'modul_akses' => json_encode($modules),
+                	'access_profile' => $profile,
+                	'access_addons' => json_encode($addons),
+                	'can_access_mis' => in_array('MIS', $modules, true) ? 1 : 0,
                 	'updated_by' => Auth::id(),
                 ];
 
                 $update_user = User::where('id',$post["user_id"])->update($data_user);
 
-                foreach ($post["repeater"] as $key => $value) {
-                		$update_user_menu = UserMenu::updateOrCreate([
-                			'user_id' => $post["user_id"],
-                			'menu_id' => $value["menu_id"]
-                		],[
-                			'user_id' => $post["user_id"],
-                			'menu_id' => $value["menu_id"],
-                			'can_read' => (empty($value["can_read"])) ? 0 : 1,
-                			'can_create' => (empty($value["can_create"])) ? 0 : 1,
-                			'can_update' => (empty($value["can_update"])) ? 0 : 1,
-                			'can_delete' => (empty($value["can_delete"])) ? 0 : 1,
-                			'can_print' => (empty($value["can_print"])) ? 0 : 1,
-                			'can_approve' => (empty($value["can_approve"])) ? 0 : 1,
-                			'created_by' => Auth::id(),
-                			'updated_by' => Auth::id(),
-                		]);
-                }
+                MenuAccessService::sync(User::find($post["user_id"]), true);
 
                 DB::commit();
 
@@ -550,22 +594,69 @@ class UserController extends Controller
                 'id' => 'required'
             ]);
             $post = $request->all();
-            $result = User::where('id',$post["id"])->first();
+            $result = User::where('id',$post["id"])->where('is_superuser',0)->first();
 
-            $update = User::where('id',$post["id"])->update([
+            if(empty($result)){
+                throw new \RuntimeException('Data user tidak ditemukan');
+            }
+
+            User::where('id',$post["id"])->update([
             	'is_active' => 0,
             	'deleted_by' => Auth::id()
             ]);
             
             DB::commit();
             UserSyncService::push(User::find($post["id"]));
-            return redirect()->back()->with('success','User berhasil dinon-aktifkan');
+            return redirect()->back()->with('success','User berhasil dinonaktifkan. Data dan tautan customer tetap aman.');
             
         }catch(\Throwable $e){
             DB::rollback();
             return redirect()->back()->with('error',$e->getMessage());
         }
     }
+
+    public function forceDelete(Request $request)
+    {
+        $request->validate([
+            'id' => 'required'
+        ]);
+
+        DB::beginTransaction();
+        try{
+            $user = User::where('id',$request->input('id'))->where('is_superuser',0)->first();
+
+            if(empty($user)){
+                throw new \RuntimeException('Data user tidak ditemukan');
+            }
+
+            if((int) $user->is_active === 1){
+                throw new \RuntimeException('Nonaktifkan user terlebih dahulu sebelum menghapus permanen.');
+            }
+
+            $linkedCustomers = $this->linkedCustomerCount($user);
+            if($linkedCustomers > 0){
+                throw new \RuntimeException('User ini tertaut dengan '.$linkedCustomers.' customer. Gunakan Nonaktifkan agar data customer tetap aman.');
+            }
+
+            $user->is_active = 0;
+            UserSyncService::push($user);
+
+            UserMenu::where('user_id',$user->id)->delete();
+            DB::table('model_has_roles')
+                ->where('model_id',$user->id)
+                ->whereIn('model_type', ['App\\Entities\\Account\\Superuser', 'App\\Entities\\Account\\User'])
+                ->delete();
+            DB::table('superuser_login_tokens')->where('superuser_id',$user->id)->delete();
+            $user->delete();
+
+            DB::commit();
+            return redirect()->back()->with('success','User berhasil dihapus permanen.');
+        }catch(\Throwable $e){
+            DB::rollback();
+            return redirect()->back()->with('error',$e->getMessage());
+        }
+    }
+
     public function restore(Request $request)
     {
         DB::beginTransaction();
@@ -574,9 +665,13 @@ class UserController extends Controller
                 'id' => 'required'
             ]);
             $post = $request->all();
-            $result = User::where('id',$post["id"])->first();
+            $result = User::where('id',$post["id"])->where('is_superuser',0)->first();
 
-            $update = User::where('id',$post["id"])->update([
+            if(empty($result)){
+                throw new \RuntimeException('Data user tidak ditemukan');
+            }
+
+            User::where('id',$post["id"])->update([
             	'is_active' => 1,
             	'updated_by' => Auth::id()
             ]);
@@ -589,5 +684,85 @@ class UserController extends Controller
             DB::rollback();
             return redirect()->back()->with('error',$e->getMessage());
         }
+    }
+
+    protected function accessProfiles()
+    {
+        $profiles = config('access_matrix.profiles', []);
+        $labels = config('access_matrix.profile_labels', []);
+        $result = [];
+
+        foreach ($profiles as $key => $permissions) {
+            $result[$key] = $labels[$key] ?? $key;
+        }
+
+        return $result;
+    }
+
+    protected function submittedProfile($post)
+    {
+        $profile = trim((string) ($post['access_profile'] ?? ''));
+
+        return isset(config('access_matrix.profiles', [])[$profile]) ? $profile : null;
+    }
+
+    protected function submittedAddons($post)
+    {
+        $raw = $post['access_addons'] ?? [];
+
+        if (!is_array($raw)) {
+            $raw = [];
+        }
+
+        return array_values(array_intersect(
+            array_map('strval', $raw),
+            array_keys(config('access_matrix.addons', []))
+        ));
+    }
+
+    protected function activeDivisions($current = null)
+    {
+        $divisions = config('access_matrix.divisions', []);
+
+        $used = User::where('is_superuser', 0)
+            ->where('is_active', 1)
+            ->whereNotNull('division')
+            ->where('division', '<>', '')
+            ->distinct()
+            ->pluck('division')
+            ->all();
+
+        $divisions = array_merge($divisions, $used);
+
+        if ($current && !in_array($current, $divisions, true)) {
+            $divisions[] = $current;
+        }
+
+        $divisions = array_values(array_unique(array_filter($divisions)));
+        sort($divisions);
+
+        return !empty($divisions) ? $divisions : ['Marketing'];
+    }
+
+    protected function linkedCustomerCount($user)
+    {
+        $values = array_values(array_filter(array_unique([
+            trim((string) ($user->username ?? '')),
+            trim((string) ($user->name ?? '')),
+        ])));
+
+        if (empty($values)) {
+            return 0;
+        }
+
+        return DB::table('master_customers')
+            ->where(function($query) use ($values) {
+                foreach ($values as $value) {
+                    $query->orWhere('am', $value)
+                        ->orWhere('asm', $value)
+                        ->orWhere('pic', $value);
+                }
+            })
+            ->count();
     }
 }

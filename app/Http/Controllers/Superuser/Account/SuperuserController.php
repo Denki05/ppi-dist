@@ -20,7 +20,7 @@ class SuperuserController extends Controller
 
     public function index()
     {
-        return view('superuser.account.superuser.index');
+        return redirect()->route('superuser.account.user.index', ['type' => 'superuser']);
     }
 
     public function create()
@@ -59,6 +59,7 @@ class SuperuserController extends Controller
                 $superuser->email = $request->email;
                 $superuser->password = Hash::make($request->password);
                 $superuser->name = $request->name;
+                $superuser->is_superuser = 1;
     
                 if (!empty($request->file('image'))) {
                     $superuser->image = UploadMedia::image($request->file('image'), Superuser::$directory_image);
@@ -83,7 +84,7 @@ class SuperuserController extends Controller
 
     public function show($id)
     {
-        $data['account'] = Superuser::findOrFail($id);
+        $data['account'] = Superuser::where('is_superuser', 1)->findOrFail($id);
 
         if (($data['account']->id == 1 OR $data['account']->email == 'contact.willystwn@gmail.com') AND !Auth::guard('superuser')->user()->hasRole('Developer')) {
             abort(403);
@@ -94,7 +95,7 @@ class SuperuserController extends Controller
 
     public function edit($id)
     {
-        $data['account'] = Superuser::findOrFail($id);
+        $data['account'] = Superuser::where('is_superuser', 1)->findOrFail($id);
 
         if (($data['account']->id == 1 OR $data['account']->email == 'contact.willystwn@gmail.com') AND !Auth::guard('superuser')->user()->hasRole('Developer')) {
             abort(403);
@@ -126,7 +127,7 @@ class SuperuserController extends Controller
             }
     
             if ($validator->passes()) {
-                $superuser = Superuser::find($id);
+                $superuser = Superuser::where('is_superuser', 1)->find($id);
     
                 if ($superuser === null) {
                     abort(404);
@@ -170,14 +171,14 @@ class SuperuserController extends Controller
     public function destroy(Request $request, $id)
     {
         if ($request->ajax()) {
-            $superuser = Superuser::find($id);
-
-            if ($superuser->hasRole('Developer') OR !Auth::guard('superuser')->user()->hasRole('SuperAdmin')) {
-                abort(403);
-            }
+            $superuser = Superuser::where('is_superuser', 1)->find($id);
 
             if ($superuser === null) {
                 abort(404);
+            }
+
+            if ($superuser->hasRole('Developer') OR !Auth::guard('superuser')->user()->hasRole('SuperAdmin')) {
+                abort(403);
             }
 
             $superuser->is_active = false;
@@ -193,14 +194,14 @@ class SuperuserController extends Controller
     public function restore(Request $request, $id)
     {
         if ($request->ajax()) {
-            $superuser = Superuser::find($id);
-
-            if ($superuser->hasRole('Developer') OR !Auth::guard('superuser')->user()->hasRole('SuperAdmin')) {
-                abort(403);
-            }
+            $superuser = Superuser::where('is_superuser', 1)->find($id);
 
             if ($superuser === null) {
                 abort(404);
+            }
+
+            if ($superuser->hasRole('Developer') OR !Auth::guard('superuser')->user()->hasRole('SuperAdmin')) {
+                abort(403);
             }
 
             $superuser->is_active = true;
@@ -217,7 +218,7 @@ class SuperuserController extends Controller
     {
         if ($request->ajax()) {
             $role = Role::find($request->role);
-            $superuser = Superuser::find($id);
+            $superuser = Superuser::where('is_superuser', 1)->find($id);
 
             if ($role === null OR $superuser === null) {
                 abort(404);
@@ -240,13 +241,13 @@ class SuperuserController extends Controller
     {
         if ($request->ajax()) {
             $role = Role::find($request->role);
-            $superuser = Superuser::find($id);
+            $superuser = Superuser::where('is_superuser', 1)->find($id);
 
             if ($role === null OR $superuser === null) {
                 abort(404);
             }
 
-            if ($role->name == 'Developer' AND !Auth::guard('superuser')->id() == 1) {
+            if ($role->name == 'Developer' AND Auth::guard('superuser')->id() != 1) {
                 abort(403);
             }
 
@@ -266,7 +267,7 @@ class SuperuserController extends Controller
     public function syncPermission(Request $request, $id)
     {
         if ($request->ajax()) {
-            $superuser = Superuser::findOrFail($id);
+            $superuser = Superuser::where('is_superuser', 1)->findOrFail($id);
 
             $superuser->syncPermissions($request->permissions);
 

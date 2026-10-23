@@ -62,7 +62,7 @@
     </div>
     <div class="row mb-30">
       <div class="col-12">
-        <a href="{{route('superuser.penjualan.setting_price.index')}}" class="btn btn-warning  btn-md text-white"><i class="fa fa-arrow-left"></i> Back</a>
+        <a href="{{route('superuser.penjualan.price_setting.index')}}" class="btn btn-warning  btn-md text-white"><i class="fa fa-arrow-left"></i> Back</a>
         <button class="btn btn-primary btn-md" type="submit" disabled="disabled"><i class="fa fa-save"></i> Save</button>
       </div>
     </div>
@@ -84,7 +84,7 @@
       if(confirm("Yakin ?")){
         let _form = $('#frmEdit');
         $.ajax({
-          url : '{{route('superuser.penjualan.setting_price.update')}}',
+          url : '{{route('superuser.penjualan.price_setting.update')}}',
           method : "POST",
           data : getFormData(_form),
           dataType : "JSON",
@@ -101,7 +101,7 @@
                 resp.Message,
                 'success'
               ).then((result) => {
-                  document.location.href = '{{route('superuser.penjualan.setting_price.index')}}'; 
+                  document.location.href = '{{route('superuser.penjualan.price_setting.index')}}';
               })
               
             }

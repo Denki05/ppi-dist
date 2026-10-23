@@ -65,6 +65,8 @@ class ReceivingController extends Controller
 
     public function store(Request $request)
     {
+        if ($deny = $this->denyUnless('can_create')) return $deny;
+
         if ($request->ajax()) {
             $result = $this->service->createReceiving($request->all(), Auth::id());
 
@@ -87,6 +89,8 @@ class ReceivingController extends Controller
 
     public function update(Request $request, $id)
     {
+        if ($deny = $this->denyUnless('can_update')) return $deny;
+
         if ($request->ajax()) {
             $result = $this->service->updateReceiving($id, $request->all());
 
@@ -117,6 +121,8 @@ class ReceivingController extends Controller
 
     public function publish(Request $request, $id)
     {
+        if ($deny = $this->denyUnless('can_update')) return $deny;
+
         $result = $this->service->publishReceiving($id);
 
         if (!empty($result["error"])) {
@@ -130,6 +136,8 @@ class ReceivingController extends Controller
 
     public function acc_ri(Request $request, $id)
     {
+        if ($deny = $this->denyUnless('can_approve')) return $deny;
+
         $result = $this->service->accReceiving($id, Auth::id());
 
         if ($result["status"] === "not_ready") {
@@ -199,6 +207,8 @@ class ReceivingController extends Controller
 
     public function import(Request $request, $id)
     {
+        if ($deny = $this->denyUnless('can_update')) return $deny;
+
         $validator = Validator::make($request->all(), [
             'import_file' => 'required|file|mimes:xls,xlsx|max:2048',
         ]);

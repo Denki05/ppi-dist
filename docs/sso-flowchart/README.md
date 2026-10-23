@@ -1,47 +1,59 @@
 # Flowchart Login Google SSO
 
-Dokumen alur proses pendaftaran, verifikasi, dan pemilihan modul.
+Dokumen alur pendaftaran, verifikasi, dan login pengguna.
+
+## Struktur alur
+
+| Bagian | Isi | Keputusan |
+|---|---|---|
+| **A1** | Cara pendaftaran melalui akun Google | 2 |
+| **A2** | Verifikasi oleh Administrator/Developer dan penonaktifan akun | 1 |
+| **A3** | Cara pengguna login melalui Google atau username/password | 2 |
+
+Setiap bagian dibuat sederhana: maksimal dua keputusan, istilah seragam, dan tanpa
+rincian teknis yang tidak diperlukan oleh manajemen.
 
 ## File hasil
 
 | File | Keterangan |
 |---|---|
-| `sso-flowchart.pdf` | **Hasil final**, 2 halaman, optimal dilihat di layar/PDF |
-| `halaman-1.png` | Halaman 1: pendaftaran, verifikasi, pemeriksaan status |
-| `halaman-2.png` | Halaman 2: portal, pemilihan modul, akses langsung, logout |
-| `page1.html` | Sumber diagram halaman 1 (Mermaid, dapat diedit) |
-| `page2.html` | Sumber diagram halaman 2 (Mermaid, dapat diedit) |
+| `sso-flowchart.pdf` | **Hasil final**, 3 halaman ukuran A3, siap dibagikan |
+| `A1-Pendaftaran.png` | Diagram A1 |
+| `A2-Verifikasi.png` | Diagram A2 |
+| `A3-Login.png` | Diagram A3 |
+| `a1-pendaftaran.html` | Sumber diagram A1 (Mermaid, dapat diedit) |
+| `a2-verifikasi.html` | Sumber diagram A2 (Mermaid, dapat diedit) |
+| `a3-login.html` | Sumber diagram A3 (Mermaid, dapat diedit) |
+| `flowchart.css` | Gaya tampilan seluruh diagram |
+| `flowchart.js` | Konfigurasi Mermaid |
 | `mermaid.min.js` | Pustaka Mermaid lokal agar HTML dapat dibuka tanpa internet |
-| `build.py` | Membuat ulang PNG final dan PDF dari hasil render |
-| `page1.png`, `page2.png` | Hasil render mentah (bahan `build.py`) |
-
-## Isi alur
-
-**Halaman 1**
-- 1A: Alur kandidat (login Google atau username/password), termasuk akun lama, domain email, dan pemeriksaan status.
-- 1B: Proses samping admin (verifikasi kandidat dan penonaktifan akun).
-
-**Halaman 2**
-- 2A: Portal, pemeriksaan sesi, pemilihan modul, dan penerbitan token.
-- 2B: User membuka URL modul secara langsung.
-- 2C: Logout.
+| `build.py` | Membuat ulang PNG final dan PDF |
+| `render-a1.png`, `render-a2.png`, `render-a3.png` | Hasil render mentah untuk `build.py` |
 
 ## Cara mengubah diagram
 
-1. Edit isi Mermaid di `page1.html` atau `page2.html`.
+1. Edit isi Mermaid pada file HTML yang sesuai.
 2. Render ulang dengan Chrome headless:
 
 ```powershell
 $chrome = "C:\Program Files (x86)\Google\Chrome\Application\chrome.exe"
 $base = "C:\xampp\htdocs\ppi-dist\docs\sso-flowchart"
+$urlBase = "file:///" + ($base -replace '\\','/')
 
-& $chrome --headless=new --disable-gpu --hide-scrollbars --window-size=2400,10000 `
-  --virtual-time-budget=25000 --screenshot="$base\page1.png" `
-  "file:///$($base -replace '\\','/')/page1.html"
+$items = @(
+  @{ h = "a1-pendaftaran"; o = "render-a1" },
+  @{ h = "a2-verifikasi"; o = "render-a2" },
+  @{ h = "a3-login";       o = "render-a3" }
+)
 
-& $chrome --headless=new --disable-gpu --hide-scrollbars --window-size=2400,9000 `
-  --virtual-time-budget=25000 --screenshot="$base\page2.png" `
-  "file:///$($base -replace '\\','/')/page2.html"
+foreach ($item in $items) {
+  $profile = Join-Path $env:TEMP ("opencode\chrome-" + $item.o + "-" + (Get-Random))
+  & $chrome --headless=new --disable-gpu --no-sandbox --hide-scrollbars `
+    --user-data-dir="$profile" --window-size=1600,9000 `
+    --virtual-time-budget=25000 `
+    --screenshot="$base\$($item.o).png" "$urlBase/$($item.h).html"
+  Start-Sleep -Seconds 2
+}
 ```
 
 3. Buat ulang PNG final dan PDF:
@@ -53,6 +65,7 @@ python "C:\xampp\htdocs\ppi-dist\docs\sso-flowchart\build.py"
 ## Catatan
 
 - Warna mengikuti konvensi: hijau (mulai/selesai), biru (proses), kuning (keputusan), merah (penolakan).
-- Ukuran halaman PDF 12 x 32 inci agar teks tetap besar saat diperbesar di layar.
-- Untuk cetak kertas A4/A3, sebaiknya dipecah per bagian (1A, 1B, 2A, 2B, 2C).
-- Modul APM masih perlu didefinisikan oleh manajemen sebelum dokumen dinyatakan final.
+- PDF menggunakan ukuran A3 portrait agar teks tetap terbaca saat dicetak.
+- Pendaftaran mandiri hanya melalui akun Google. Domain yang diizinkan: gmail.com, googlemail.com, lssoft88.xyz, dan lsfragrance.id.
+- Paket jabatan yang tersedia: SM dan ASM. Modul akses: MIS, AO, APM, TRS, dan DSG.
+- Status modul APM masih menunggu definisi dari manajemen.

@@ -18,6 +18,9 @@ Route::group([
     });
     Route::resource('superuser', 'Account\SuperuserController');
     
+    // Checklist akses modul (matriks user x modul).
+    Route::get('/module-access', 'Account\ModuleAccessController@index')->name('module_access.index');
+
     Route::group(['as' => 'user.', 'prefix' => '/user'], function () {
         Route::get('/','Account\UserController@index')->name('index');
         Route::get('/create','Account\UserController@create')->name('create');
@@ -25,6 +28,7 @@ Route::group([
         Route::post('/store','Account\UserController@store')->name('store');
         Route::post('/update','Account\UserController@update')->name('update');
         Route::post('/destroy','Account\UserController@destroy')->name('destroy');
+        Route::post('/force-delete','Account\UserController@forceDelete')->name('force_delete');
         Route::post('/restore','Account\UserController@restore')->name('restore');
         // Approval pendaftar SSO (paket jabatan, tanpa checklist).
         Route::get('/{id}/approve','Account\UserController@approveForm')->name('approve.form');

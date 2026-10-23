@@ -78,6 +78,12 @@ class QualityControlController extends Controller
 
     public function store(Request $request)
     {
+        if (Auth::user()->is_superuser == 0) {
+            if (empty($this->access) || empty($this->access->user) || $this->access->can_create == 0) {
+                abort(403);
+            }
+        }
+
         if (!$request->ajax()) return;  // guard
 
         $validator = Validator::make($request->all(), [
@@ -120,6 +126,12 @@ class QualityControlController extends Controller
 
     public function update(Request $request, $id)
     {
+        if (Auth::user()->is_superuser == 0) {
+            if (empty($this->access) || empty($this->access->user) || $this->access->can_update == 0) {
+                abort(403);
+            }
+        }
+
         if ($request->ajax()) {
             $receiving = Receiving::find($id);
 
@@ -250,6 +262,12 @@ class QualityControlController extends Controller
 
     public function publish(Request $request, $id)
     {
+        if (Auth::user()->is_superuser == 0) {
+            if (empty($this->access) || empty($this->access->user) || $this->access->can_update == 0) {
+                abort(403);
+            }
+        }
+
         try {
             $receiving = QualityControl::findOrFail($id);
 
@@ -327,6 +345,12 @@ class QualityControlController extends Controller
 
     public function acc_ri(Request $request, $id)
     {
+        if (Auth::user()->is_superuser == 0) {
+            if (empty($this->access) || empty($this->access->user) || $this->access->can_approve == 0) {
+                abort(403);
+            }
+        }
+
         if ($request->ajax()) {
             DB::beginTransaction();
 
@@ -501,6 +525,12 @@ class QualityControlController extends Controller
 
     public function import(Request $request, $id)
     {
+        if (Auth::user()->is_superuser == 0) {
+            if (empty($this->access) || empty($this->access->user) || $this->access->can_update == 0) {
+                abort(403);
+            }
+        }
+
         $validator = Validator::make($request->all(), [
             'import_file' => 'required|file|mimes:xls,xlsx|max:2048',
         ]);

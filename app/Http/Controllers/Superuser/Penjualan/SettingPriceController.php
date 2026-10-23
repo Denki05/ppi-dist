@@ -444,7 +444,7 @@ class SettingPriceController extends Controller
                     'content' => 'Success',
                 ];
     
-                $response['redirect_to'] = route('superuser.penjualan.setting_price.index');
+                $response['redirect_to'] = route('superuser.penjualan.price_setting.index');
                 return $this->response(200, $response);
             }
         } catch (\Exception $e) {

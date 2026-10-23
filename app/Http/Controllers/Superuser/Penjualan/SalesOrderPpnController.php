@@ -31,6 +31,7 @@ use App\Entities\Setting\UserMenu;
 use App\Helper\CustomHelper;
 use App\Repositories\CodeRepo;
 use App\Helper\LogActivity;
+use App\Services\MenuAccessService;
 use Auth;
 use DB;
 use Validator;
@@ -120,6 +121,11 @@ class SalesOrderPpnController extends Controller
 
     public function index_ppn_lanjutan(Request $request, $step = 2)
     {
+        if (!MenuAccessService::hasCapability(Auth::user(), 'ppn_lanjutan')) {
+            return redirect()->route('superuser.penjualan.sales_order_ppn.index_ppn_awal')
+                ->with('error', 'Anda tidak punya akses ke PPN Lanjutan');
+        }
+
         if(Auth::user()->is_superuser == 0){
             if(empty($this->access) || empty($this->access->user) || $this->access->can_read == 0){
                 return redirect()->route('superuser.index')->with('error','Anda tidak punya akses untuk membuka menu terkait');
@@ -292,6 +298,10 @@ class SalesOrderPpnController extends Controller
 
     public function lanjutkan(Request $request, $id)
     {
+        if (!MenuAccessService::hasCapability(Auth::user(), 'ppn_lanjutan')) {
+            abort(403);
+        }
+
         if ($request->ajax()) {
             if(Auth::user()->is_superuser == 0){
                 if(empty($this->access) || empty($this->access->user) || $this->access->can_approve == 0){
@@ -469,6 +479,10 @@ class SalesOrderPpnController extends Controller
 
     public function tutup_so_ppn(Request $request)
     {
+        if (!MenuAccessService::hasCapability(Auth::user(), 'ppn_lanjutan')) {
+            abort(403);
+        }
+
         if ($request->ajax()) {
 
             DB::beginTransaction();
@@ -1045,6 +1059,10 @@ class SalesOrderPpnController extends Controller
 
     public function destroy_lanjutan(Request $request, $id)
     {
+        if (!MenuAccessService::hasCapability(Auth::user(), 'ppn_lanjutan')) {
+            abort(403);
+        }
+
         // Access
         if(Auth::user()->is_superuser == 0){
             if(empty($this->access) || empty($this->access->user) || $this->access->can_delete == 0){

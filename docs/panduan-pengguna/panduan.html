@@ -1,0 +1,597 @@
+<!doctype html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Panduan Pendaftaran, Verifikasi, dan Login</title>
+<style>@page {
+  size: A4;
+  margin: 13mm 14mm 14mm;
+}
+
+html {
+  -webkit-print-color-adjust: exact;
+  print-color-adjust: exact;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: "Segoe UI", -apple-system, BlinkMacSystemFont, Arial, sans-serif;
+  font-size: 9.8pt;
+  line-height: 1.42;
+  color: #1e293b;
+}
+
+.cover {
+  padding: 0 0 7mm;
+  margin-bottom: 3mm;
+  border-bottom: 3px solid #2563eb;
+}
+
+.cover-kicker {
+  font-size: 8.5pt;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: #2563eb;
+  margin-bottom: 5px;
+}
+
+.cover h1 {
+  margin: 0 0 5px;
+  border: none;
+  padding: 0;
+  font-size: 21pt;
+  line-height: 1.2;
+  color: #0f172a;
+}
+
+.cover-sub {
+  margin: 0 0 4px;
+  font-size: 10.5pt;
+  color: #475569;
+}
+
+.cover-meta {
+  font-size: 8.5pt;
+  color: #64748b;
+}
+
+h1, h2, h3 {
+  color: #0f172a;
+  page-break-after: avoid;
+}
+
+h2 {
+  margin: 14px 0 6px;
+  padding-bottom: 4px;
+  border-bottom: 2px solid #2563eb;
+  font-size: 14pt;
+}
+
+.page-break {
+  page-break-before: always;
+}
+
+h3 {
+  margin: 10px 0 5px;
+  font-size: 11pt;
+}
+
+p {
+  margin: 0 0 6px;
+}
+
+ul, ol {
+  margin: 0 0 7px 16px;
+  padding: 0;
+}
+
+li {
+  margin: 2px 0;
+}
+
+strong {
+  color: #0f172a;
+}
+
+em {
+  color: #64748b;
+  font-size: 9pt;
+}
+
+blockquote {
+  margin: 7px 0 10px;
+  padding: 7px 10px;
+  background: #f1f5f9;
+  border-left: 4px solid #2563eb;
+  color: #334155;
+}
+
+blockquote p {
+  margin: 0;
+}
+
+img {
+  display: block;
+  max-width: 100%;
+  height: auto;
+  margin: 6px auto 2px;
+  border: 1px solid #dbe3ee;
+  border-radius: 6px;
+  box-shadow: 0 2px 6px rgba(15, 23, 42, 0.08);
+  page-break-inside: avoid;
+}
+
+p:has(> img) {
+  page-break-inside: avoid;
+  text-align: center;
+}
+
+p:has(> img) + p {
+  margin-top: 0;
+  margin-bottom: 7px;
+  text-align: center;
+}
+
+p:has(img[src$="01-halaman-login.png"]) img {
+  max-width: 68mm;
+}
+
+p:has(img[src$="03-pendaftaran-berhasil.png"]) img {
+  max-width: 115mm;
+}
+
+p:has(img[src$="07-akun-aktif.png"]) img {
+  max-width: 92mm;
+}
+
+p:has(img[src$="08-portal-modul.png"]) img {
+  max-width: 155mm;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 7px 0 10px;
+  font-size: 8.8pt;
+  page-break-inside: auto;
+}
+
+tr {
+  page-break-inside: avoid;
+}
+
+th, td {
+  border: 1px solid #dbe3ee;
+  padding: 4px 6px;
+  vertical-align: top;
+  text-align: left;
+}
+
+th {
+  background: #eff6ff;
+  color: #0f172a;
+}
+
+tr:nth-child(even) td {
+  background: #f8fafc;
+}
+
+code {
+  padding: 1px 3px;
+  background: #f1f5f9;
+  border-radius: 3px;
+  font-size: 8.5pt;
+}
+
+hr {
+  border: none;
+  border-top: 1px solid #e2e8f0;
+  margin: 12px 0;
+}
+</style>
+</head>
+<body>
+<div class="cover">
+  <div class="cover-kicker">Portal Modul PPI</div>
+  <h1>Panduan Pendaftaran, Verifikasi, dan Login</h1>
+  <p class="cover-sub">Untuk kandidat/user dan administrator</p>
+  <div class="cover-meta">Versi 1.0 &middot; 22 Oktober 2026</div>
+</div>
+<main><blockquote>
+<p>Dokumen ini menjelaskan alur pendaftaran kandidat baru melalui Google, verifikasi oleh administrator, serta cara login dan memilih modul. Bagian A untuk kandidat/user, Bagian B untuk administrator.</p>
+</blockquote>
+<h2>Ringkasan alur</h2>
+<table>
+<thead>
+<tr>
+<th>Tahap</th>
+<th>Pelaku</th>
+<th>Yang dilakukan</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1</td>
+<td>Kandidat</td>
+<td>Membuka halaman login dan memilih <strong>Masuk dengan Google</strong>.</td>
+</tr>
+<tr>
+<td>2</td>
+<td>Kandidat</td>
+<td>Memilih akun Google yang akan digunakan.</td>
+</tr>
+<tr>
+<td>3</td>
+<td>Sistem</td>
+<td>Membuat akun baru dengan status <strong>Menunggu approval</strong>.</td>
+</tr>
+<tr>
+<td>4</td>
+<td>Administrator</td>
+<td>Membuka <strong>Account → User → Perlu Approval</strong>, lalu klik <strong>Edit</strong>.</td>
+</tr>
+<tr>
+<td>5</td>
+<td>Administrator</td>
+<td>Melengkapi divisi, jabatan, username, password, dan akses modul.</td>
+</tr>
+<tr>
+<td>6</td>
+<td>Administrator</td>
+<td>Mengklik <strong>Approve</strong> dan mengaktifkan akun.</td>
+</tr>
+<tr>
+<td>7</td>
+<td>Administrator</td>
+<td>Menyampaikan username dan password awal kepada kandidat.</td>
+</tr>
+<tr>
+<td>8</td>
+<td>Kandidat</td>
+<td>Login kembali, lalu memilih modul di portal.</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2>Bagian A — Kandidat / User</h2>
+<h3>A.1 Pendaftaran akun baru</h3>
+<ol>
+<li>
+<p>Buka halaman login portal di <code>https://trans.lssoft88.xyz/auth/superuser/</code>.</p>
+</li>
+<li>
+<p>Klik tombol <strong>Masuk dengan Google</strong>.</p>
+<p><img src="images/01-halaman-login.png" alt="Halaman login" /></p>
+<p><em>Gambar 1 — Halaman login. Kandidat baru dapat langsung memilih Masuk dengan Google.</em></p>
+</li>
+<li>
+<p>Pilih akun Google yang akan didaftarkan.</p>
+<p><img src="images/02-pilih-akun-google.png" alt="Pilih akun Google" /></p>
+<p><em>Gambar 2 — Jika ada lebih dari satu akun, pilih salah satu. Jika hanya satu akun, Google langsung menampilkan verifikasi.</em></p>
+</li>
+<li>
+<p>Jika akun belum pernah terdaftar, sistem akan menampilkan pesan berikut.</p>
+<p><img src="images/03-pendaftaran-berhasil.png" alt="Pendaftaran berhasil" /></p>
+<p><em>Gambar 3 — Pendaftaran berhasil, akun menunggu verifikasi administrator.</em></p>
+</li>
+</ol>
+<p><strong>Hal penting saat mendaftar:</strong></p>
+<ul>
+<li>Gunakan email dengan domain <code>gmail.com</code>.</li>
+<li>Jika email sudah terdaftar dan belum terhubung ke Google, sistem akan menautkan akun lama secara otomatis.</li>
+<li>Jika email Google berbeda dengan email akun lama, hubungi administrator untuk proses penautan manual.</li>
+<li>Cukup daftar satu kali. Pendaftaran ulang dengan email berbeda akan menyulitkan proses verifikasi.</li>
+</ul>
+<h3>A.2 Menunggu verifikasi</h3>
+<p>Setelah pendaftaran berhasil, akun <strong>belum aktif</strong>. Administrator akan memeriksa pengajuan dan melengkapi data kandidat.</p>
+<ul>
+<li>Status akun di sistem administrator adalah <strong>Menunggu approval</strong>.</li>
+<li>Jika kandidat mencoba login sebelum diaktifkan, sistem menampilkan pesan <strong>“Akun belum aktif. Hubungi admin untuk verifikasi.”</strong>
+</li>
+<li>Kandidat tidak perlu mendaftar ulang; cukup tunggu konfirmasi administrator.</li>
+</ul>
+<h3>A.3 Menerima kredensial</h3>
+<p>Setelah akun diaktifkan, administrator akan mengirimkan:</p>
+<ul>
+<li>
+<strong>Username</strong>
+</li>
+<li>
+<strong>Password awal</strong>
+</li>
+</ul>
+<p>Password awal bersifat sementara. Segera ganti password melalui menu <strong>Profile</strong> setelah login pertama. Jangan membagikan password kepada orang lain.</p>
+<h3>A.4 Login</h3>
+<p>Kandidat dapat login dengan dua cara.</p>
+<p><strong>Cara 1 — Google (disarankan)</strong></p>
+<ol>
+<li>Buka halaman login di <code>https://trans.lssoft88.xyz/auth/superuser/</code>.</li>
+<li>Klik <strong>Masuk dengan Google</strong>.</li>
+<li>Pilih akun Google yang sama dengan saat pendaftaran.</li>
+<li>Setelah berhasil, sistem langsung mengarahkan ke portal modul.</li>
+</ol>
+<p><strong>Cara 2 — Username dan password</strong></p>
+<ol>
+<li>Buka halaman login di <code>https://trans.lssoft88.xyz/auth/superuser/</code>.</li>
+<li>Isi <strong>Username</strong> dan <strong>Password</strong> yang diberikan administrator.</li>
+<li>Centang <strong>Ingat saya</strong> bila menggunakan perangkat pribadi.</li>
+<li>Klik <strong>Masuk</strong>.</li>
+</ol>
+<p>Jika password lupa atau tidak berfungsi, hubungi administrator. Administrator dapat mengatur ulang password melalui menu <strong>Edit User</strong>.</p>
+<h3>A.5 Memilih modul</h3>
+<p>Setelah login, kandidat akan diarahkan ke portal sesuai hak aksesnya.</p>
+<p><img src="images/08-portal-modul.png" alt="Portal modul" /></p>
+<p><em>Gambar 4 — Portal gateway menampilkan modul yang dapat dibuka oleh user.</em></p>
+<ul>
+<li>Jika user hanya memiliki <strong>satu modul</strong>, sistem langsung membuka modul tersebut.</li>
+<li>Jika user memiliki <strong>lebih dari satu modul</strong>, portal menampilkan daftar modul. Klik salah satu kartu untuk masuk.</li>
+<li>Jika user <strong>belum memiliki modul</strong>, sistem menampilkan pesan untuk menghubungi administrator.</li>
+<li>Klik <strong>Keluar</strong> di kanan atas untuk logout.</li>
+</ul>
+<hr />
+<h2>Bagian B — Administrator / Operator</h2>
+<h3>B.1 Membuka pengajuan kandidat</h3>
+<ol>
+<li>
+<p>Login sebagai administrator.</p>
+</li>
+<li>
+<p>Buka menu <strong>Account → User</strong>.</p>
+</li>
+<li>
+<p>Pilih tab <strong>Perlu Approval</strong>.</p>
+<p><img src="images/04-menu-user-pending.png" alt="Menu user pending" /></p>
+<p><em>Gambar 5 — Daftar kandidat yang menunggu approval.</em></p>
+</li>
+</ol>
+<p>Kolom yang perlu diperhatikan:</p>
+<ul>
+<li>
+<strong>Nama / Username</strong> — identitas kandidat.</li>
+<li>
+<strong>Email</strong> — badge <strong>Terhubung</strong> berarti akun sudah terhubung dengan Google.</li>
+<li>
+<strong>Divisi / Jabatan</strong> — awalnya <strong>Tanpa role</strong> dan modul default.</li>
+<li>
+<strong>Status</strong> — <strong>Menunggu approval</strong>.</li>
+<li>
+<strong>Action</strong> — tombol <strong>Approve</strong>, <strong>Edit</strong>, dan tombol nonaktifkan.</li>
+</ul>
+<p>Gunakan kolom <strong>Keyword</strong> untuk mencari nama, username, atau email bila daftar pengajuan banyak.</p>
+<h3>B.2 Melengkapi data kandidat</h3>
+<ol>
+<li>
+<p>Klik <strong>Edit</strong> pada baris kandidat.</p>
+</li>
+<li>
+<p>Lengkapi data berikut.</p>
+<p><img src="images/05-edit-user.png" alt="Edit user" /></p>
+<p><em>Gambar 6 — Form Edit User untuk melengkapi data dan hak akses kandidat.</em></p>
+<ul>
+<li>
+<strong>Name</strong> — sesuaikan dengan nama kandidat.</li>
+<li>
+<strong>Division</strong> — wajib diisi, misalnya <code>Marketing</code> atau <code>Management</code>.</li>
+<li>
+<strong>Jabatan</strong> — pilih <strong>SM — Sales Manager</strong> atau <strong>ASM — Ass Sales Manager</strong>.</li>
+<li>
+<strong>Email</strong> — biasanya sudah terisi dari akun Google.</li>
+<li>
+<strong>Username</strong> — wajib unik dan mudah diingat kandidat.</li>
+<li>
+<strong>Password</strong> dan <strong>Password Confirm</strong> — isi password awal 8–16 karakter. Kosongkan hanya jika tidak ingin mengubah password.</li>
+<li>
+<strong>Akses Modul</strong> — centang modul yang boleh digunakan: <code>MIS</code>, <code>AO</code>, <code>APM</code>, <code>TRS</code>, <code>DSG</code>.</li>
+</ul>
+</li>
+<li>
+<p>Klik <strong>Save</strong>.</p>
+</li>
+<li>
+<p>Kembali ke daftar user dan pastikan divisi, jabatan, serta modul sudah tampil.</p>
+<p><img src="images/06-data-lengkap.png" alt="Data lengkap" /></p>
+<p><em>Gambar 7 — Data kandidat setelah dilengkapi; status masih Menunggu approval.</em></p>
+</li>
+</ol>
+<p><strong>Catatan:</strong></p>
+<ul>
+<li>
+<strong>Jabatan</strong> menentukan role dan paket menu default kandidat.</li>
+<li>
+<strong>Akses Modul</strong> menentukan modul yang muncul di portal setelah login.</li>
+<li>Jika tidak ada modul yang dicentang, kandidat tidak dapat membuka modul apa pun.</li>
+<li>Rincian checklist menu per fitur untuk sementara disembunyikan; pengaturan akses dilakukan melalui modul.</li>
+</ul>
+<h3>B.3 Approve dan menyampaikan kredensial</h3>
+<ol>
+<li>
+<p>Pastikan password sudah diisi pada langkah <strong>Edit</strong>. Tombol <strong>Approve</strong> tidak dapat dilanjutkan jika password belum diset.</p>
+</li>
+<li>
+<p>Klik <strong>Approve</strong> pada baris kandidat.</p>
+</li>
+<li>
+<p>Periksa kembali data pada halaman konfirmasi:</p>
+<ul>
+<li>Nama dan username</li>
+<li>Password awal (wajib, 8–16 karakter)</li>
+<li>Jabatan</li>
+<li>Divisi dan cabang</li>
+<li>Akses modul</li>
+</ul>
+</li>
+<li>
+<p>Klik <strong>Aktifkan + Terapkan Paket</strong>.</p>
+</li>
+<li>
+<p>Konfirmasi aktivasi.</p>
+<p><img src="images/07-akun-aktif.png" alt="Akun aktif" /></p>
+<p><em>Gambar 8 — Kredensial ditampilkan satu kali setelah akun berhasil diaktifkan.</em></p>
+</li>
+<li>
+<p>Catat dan kirimkan <strong>Username</strong> dan <strong>Password</strong> kepada kandidat melalui WhatsApp atau email.</p>
+</li>
+<li>
+<p>Klik <strong>Kembali ke daftar</strong>. Kandidat akan masuk ke tab <strong>Aktif</strong>.</p>
+</li>
+</ol>
+<p><strong>Penting:</strong></p>
+<ul>
+<li>Password pada halaman approve <strong>wajib diisi</strong>. Jika password sudah diisi pada langkah Edit, gunakan password yang sama agar kredensial yang ditampilkan konsisten.</li>
+<li>Kredensial hanya ditampilkan <strong>satu kali</strong>. Jika lupa, administrator harus mengatur ulang password melalui <strong>Edit User</strong>.</li>
+<li>Jangan mengirim kredensial melalui grup atau kanal publik.</li>
+</ul>
+<h3>B.4 Setelah aktivasi</h3>
+<ol>
+<li>Kandidat login kembali melalui <strong>Masuk dengan Google</strong> atau username/password.</li>
+<li>Portal akan menampilkan modul sesuai <strong>Akses Modul</strong> yang dicentang.</li>
+<li>Jika kandidat melaporkan akun masih belum aktif, periksa tab <strong>Aktif</strong> dan pastikan statusnya sudah aktif.</li>
+<li>Jika kandidat tidak melihat modul yang seharusnya, periksa kembali <strong>Edit → Akses Modul</strong>, lalu minta kandidat logout dan login ulang.</li>
+</ol>
+<h3>B.5 Perubahan data, reset password, dan penonaktifan</h3>
+<ul>
+<li>
+<strong>Ubah data</strong> — buka <strong>Account → User → Edit</strong>, ubah data yang diperlukan, lalu klik <strong>Save</strong>.</li>
+<li>
+<strong>Reset password</strong> — isi <strong>Password</strong> dan <strong>Password Confirm</strong> dengan password baru 8–16 karakter, lalu simpan. Jika password dikosongkan, password lama tetap digunakan.</li>
+<li>
+<strong>Nonaktifkan user</strong> — klik tombol merah (ikon tempat sampah) pada kolom Action.</li>
+<li>
+<strong>Aktifkan kembali</strong> — pada tab <strong>Nonaktif</strong>, klik tombol kuning (ikon reload).</li>
+<li>Setelah jabatan atau akses modul diubah, minta user logout dan login kembali agar hak akses terbaru diterapkan.</li>
+</ul>
+<hr />
+<h2>Troubleshooting</h2>
+<table>
+<thead>
+<tr>
+<th>Masalah</th>
+<th>Penyebab</th>
+<th>Tindakan</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Muncul pesan “Email … tidak diizinkan”</td>
+<td>Domain email bukan <code>gmail.com</code>.</td>
+<td>Gunakan akun Gmail (<code>gmail.com</code>).</td>
+</tr>
+<tr>
+<td>Muncul pesan “Akun belum aktif”</td>
+<td>Akun masih menunggu approval.</td>
+<td>Administrator memeriksa tab <strong>Perlu Approval</strong> dan mengaktifkan akun.</td>
+</tr>
+<tr>
+<td>Pendaftaran berhasil tetapi kredensial belum diterima</td>
+<td>Akun belum di-approve atau kredensial belum dikirim.</td>
+<td>Hubungi administrator; jangan mendaftar ulang.</td>
+</tr>
+<tr>
+<td>Muncul “Akun Anda belum memiliki akses modul”</td>
+<td>Tidak ada modul yang dicentang pada user.</td>
+<td>Administrator membuka <strong>Edit → Akses Modul</strong> dan mencentang modul.</td>
+</tr>
+<tr>
+<td>Login Google gagal</td>
+<td>Akun Google tidak membagikan email atau sesi Google bermasalah.</td>
+<td>Coba lagi, pastikan izin email diberikan, lalu hubungi administrator.</td>
+</tr>
+<tr>
+<td>Password salah atau lupa</td>
+<td>Password telah diubah atau kredensial salah catat.</td>
+<td>Administrator melakukan reset melalui <strong>Edit User</strong>.</td>
+</tr>
+<tr>
+<td>Tombol Approve tidak bisa digunakan</td>
+<td>Password belum diset.</td>
+<td>Isi password melalui <strong>Edit User</strong> terlebih dahulu.</td>
+</tr>
+<tr>
+<td>User tidak bisa membuka modul tertentu</td>
+<td>Modul belum dicentang atau user belum login ulang.</td>
+<td>Periksa akses modul, lalu minta user logout dan login kembali.</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2>Keamanan akun</h2>
+<ul>
+<li>Gunakan password 8–16 karakter dan kombinasi huruf serta angka.</li>
+<li>Ganti password awal segera setelah login pertama.</li>
+<li>Jangan membagikan password kepada rekan kerja atau pihak lain.</li>
+<li>Selalu klik <strong>Keluar</strong> setelah menggunakan perangkat bersama.</li>
+<li>Administrator tidak dapat melihat password lama. Jika password hilang, lakukan reset melalui <strong>Edit User</strong>.</li>
+</ul>
+<hr />
+<div class="page-break"></div><h2>Lampiran</h2>
+<h3>Daftar modul</h3>
+<table>
+<thead>
+<tr>
+<th>Kode</th>
+<th>Nama</th>
+<th>Fungsi</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>MIS</code></td>
+<td>MIS / CRM</td>
+<td>Laporan tim, doctor, customer, dan prospek.</td>
+</tr>
+<tr>
+<td><code>AO</code></td>
+<td>Agenda &amp; Order</td>
+<td>Agenda kunjungan, file doctor, dan sales order awal.</td>
+</tr>
+<tr>
+<td><code>APM</code></td>
+<td>APM</td>
+<td>Modul APM.</td>
+</tr>
+<tr>
+<td><code>TRS</code></td>
+<td>Transaksi</td>
+<td>Sales order, gudang, keuangan, dan laporan.</td>
+</tr>
+<tr>
+<td><code>DSG</code></td>
+<td>Design</td>
+<td>Design drive dan aset produk.</td>
+</tr>
+</tbody>
+</table>
+<h3>Domain email yang diizinkan</h3>
+<p><code>gmail.com</code></p>
+<h3>Status user</h3>
+<table>
+<thead>
+<tr>
+<th>Status</th>
+<th>Arti</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Menunggu approval</td>
+<td>Akun sudah terdaftar tetapi belum bisa digunakan.</td>
+</tr>
+<tr>
+<td>Aktif</td>
+<td>Akun sudah diaktifkan dan dapat login.</td>
+</tr>
+<tr>
+<td>Nonaktif</td>
+<td>Akun dinonaktifkan sementara dan tidak dapat login.</td>
+</tr>
+</tbody>
+</table>
+</main>
+</body>
+</html>

@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="utf-8"/>
+<title>A3 - Cara Pengguna Login</title>
+<link rel="stylesheet" href="flowchart.css"/>
+</head>
+<body>
+<div class="page">
+  <h1>A3. Cara Pengguna Login</h1>
+  <h2>Login melalui Google atau username/password</h2>
+
+  <div class="legend">
+    <span><i class="dot green"></i>Mulai / Selesai</span>
+    <span><i class="dot blue"></i>Proses</span>
+    <span><i class="dot yellow"></i>Keputusan</span>
+    <span><i class="dot red"></i>Penolakan</span>
+  </div>
+
+  <pre class="mermaid">
+flowchart TD
+  S([MULAI]) --> A["Pengguna membuka<br/>Portal SSO"]
+  A --> B["Tampilkan halaman login"]
+  B --> C{"Pilih metode login?"}
+
+  C -->|"Google"| D["Login dengan Google"]
+  C -->|"Username / Password"| E["Login dengan<br/>username/password"]
+
+  D --> F{"Login berhasil dan<br/>akun aktif?"}
+  E --> F
+
+  F -->|"Tidak"| F1["Tampilkan pesan:<br/>login gagal atau<br/>akun belum aktif"]
+  F1 --> G([SELESAI])
+
+  F -->|"Ya"| H["Masuk ke Portal"]
+  H --> I([SELESAI])
+
+  classDef startEnd fill:#d9ead3,stroke:#6aa84f,color:#000,stroke-width:1.5px;
+  classDef process fill:#dbeaf6,stroke:#6fa8dc,color:#000,stroke-width:1.5px;
+  classDef decision fill:#fff2cc,stroke:#f1c232,color:#000,stroke-width:1.5px;
+  classDef reject fill:#f4cccc,stroke:#cc0000,color:#000,stroke-width:1.5px;
+
+  class S,G,I startEnd;
+  class A,B,D,E,H process;
+  class C,F decision;
+  class F1 reject;
+  </pre>
+
+  <p class="note">
+    <strong>Catatan:</strong>
+    Pengguna baru mengikuti A1 terlebih dahulu. Setelah masuk Portal, pengguna memilih
+    modul sesuai hak akses yang ditetapkan pada A2.
+  </p>
+</div>
+
+<script src="mermaid.min.js"></script>
+<script src="flowchart.js"></script>
+</body>
+</html>

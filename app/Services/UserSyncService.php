@@ -43,6 +43,7 @@ class UserSyncService
             'email'             => $user->email,
             'password'          => $user->password,
             'division'          => $user->division,
+            'jabatan'           => $user->jabatan ?? null,
             'cabang'            => $user->cabang ?? null,
             'is_superuser'      => (int) ($user->is_superuser ?? 0),
             'is_active'         => (int) ($user->is_active ?? 0),

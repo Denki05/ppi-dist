@@ -4,6 +4,8 @@ namespace App\Http\Controllers\Superuser;
 
 use App\Entities\Account\Superuser;
 use App\Http\Controllers\Controller;
+use App\Services\ModuleAccessService;
+use App\Services\ModuleSsoService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -19,7 +21,7 @@ class SsoGoogleController extends Controller
     public function index()
     {
         if (Auth::guard('superuser')->check()) {
-            return redirect()->route('superuser.index');
+            return redirect()->route('portal.modules');
         }
 
         return view('superuser.sso');
@@ -208,7 +210,18 @@ class SsoGoogleController extends Controller
         Auth::guard('superuser')->login($user, true);
         $request->session()->regenerate();
 
-        return redirect()->route('superuser.index');
+        $modules = ModuleAccessService::forUser($user);
+
+        if (count($modules) === 1) {
+            return redirect()->away(ModuleSsoService::urlFor($modules[0], $user));
+        }
+
+        if (count($modules) === 0) {
+            return redirect()->route('portal.modules')
+                ->with('error', 'Akun Anda belum memiliki akses modul. Hubungi admin untuk mendapatkan akses.');
+        }
+
+        return redirect()->route('portal.modules');
     }
 
     protected function isMaintenanceAdmin($user)

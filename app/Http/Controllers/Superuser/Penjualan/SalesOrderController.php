@@ -17,6 +17,7 @@ use App\Exports\Penjualan\SalesOrderAwalExport;
 use App\Helper\CustomHelper;
 use App\Helper\LogActivity;
 use App\Services\SalesOrder\SalesOrderCalculationService;
+use App\Services\MenuAccessService;
 use Illuminate\Support\Facades\Log;
 use Validator;
 use Auth;
@@ -185,6 +186,11 @@ class SalesOrderController extends Controller
     
     public function index_lanjutan(Request $request, $step = 2)
     {
+        if (!MenuAccessService::hasCapability(Auth::user(), 'so_lanjutan')) {
+            return redirect()->route('superuser.penjualan.sales_order.index_awal')
+                ->with('error', 'Anda tidak punya akses ke SO Lanjutan');
+        }
+
         if(Auth::user()->is_superuser == 0){
             if(empty($this->access) || empty($this->access->user) || $this->access->can_read == 0){
                 return redirect()->route('superuser.index')->with('error','Anda tidak punya akses untuk membuka menu terkait');
@@ -760,6 +766,10 @@ class SalesOrderController extends Controller
 
     public function lanjutkan(Request $request, $id)
     {
+        if (!MenuAccessService::hasCapability(Auth::user(), 'so_lanjutan')) {
+            abort(403);
+        }
+
         if ($request->ajax()) {
             if(Auth::user()->is_superuser == 0){
                 if(empty($this->access) || empty($this->access->user) || $this->access->can_approve == 0){
@@ -950,6 +960,10 @@ class SalesOrderController extends Controller
     }
 
     public function tidak_lanjut_so(Request $request) {
+        if (!MenuAccessService::hasCapability(Auth::user(), 'so_lanjutan')) {
+            abort(403);
+        }
+
         $data_json = [];
         $post = $request->all();
         if($request->method() == "POST"){
@@ -997,6 +1011,10 @@ class SalesOrderController extends Controller
 
     public function tutup_so(Request $request)
     {
+        if (!MenuAccessService::hasCapability(Auth::user(), 'so_lanjutan')) {
+            abort(403);
+        }
+
         if ($request->ajax()) {
             if(Auth::user()->is_superuser == 0){
                 if(empty($this->access) || empty($this->access->user) || $this->access->can_read == 0){
@@ -1400,6 +1418,10 @@ class SalesOrderController extends Controller
 
     public function destroy_lanjutan(Request $request, $id)
     {
+        if (!MenuAccessService::hasCapability(Auth::user(), 'so_lanjutan')) {
+            abort(403);
+        }
+
         if(Auth::user()->is_superuser == 0){
             if(empty($this->access) || empty($this->access->user) || $this->access->can_delete == 0){
                 abort(405);

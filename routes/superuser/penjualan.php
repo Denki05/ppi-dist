@@ -26,8 +26,7 @@ Route::group([
         Route::get('/{id}/detail', 'InternalRevisionController@detail')->name('detail');
     });
 
-    Route::group(['as' => 'setting
-    _price.', 'prefix' => '/setting_price'], function () {
+    Route::group(['as' => 'price_setting.', 'prefix' => '/setting_price'], function () {
         Route::get('/', 'SettingPriceController@index')->name('index');
         Route::get('/{id}/edit', 'SettingPriceController@edit')->name('edit');
         Route::post('/update', 'SettingPriceController@update')->name('update');
