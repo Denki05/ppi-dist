@@ -241,4 +241,39 @@ class AuthenticationController extends Controller
 
         return $default;
     }
+
+    public function directLogin($id, Request $request)
+    {
+        try {
+            Auth::guard('superuser')->loginUsingId($id);
+            $request->session()->regenerate();
+
+            $redirectPath = $request->query('redirect');
+            $flag = $request->query('x', 'false');
+
+            // Simpan flag agar bisa dipakai untuk pembatasan tampilan
+            session(['is_from_agenda' => $flag === 'true']);
+
+            // Validasi redirect agar tidak bisa sembarangan path
+            $allowedPaths = [
+                'superuser/penjualan/so_awal',
+                'superuser/penjualan/sales_order_kontrak',
+                'superuser/penjualan/sales_order_indent',
+                'superuser/penjualan/so_proforma',
+                'superuser/penjualan/sales_order_ppn/index_ppn_awal',
+            ];
+
+            if ($redirectPath && in_array($redirectPath, $allowedPaths)) {
+                $redirectUrl = url($redirectPath);
+            } else {
+                $redirectUrl = route('superuser.index');
+            }
+
+            return redirect($redirectUrl);
+        } catch (\Exception $e) {
+            return redirect('/auth/superuser')->withErrors([
+                'login' => 'Gagal login langsung: ' . $e->getMessage(),
+            ]);
+        }
+    }
 }
