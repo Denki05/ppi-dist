@@ -24,7 +24,8 @@ class CreatePengajuanProformaTable extends Migration
             $table->string('address', 255)->nullable();
             $table->string('city', 100)->nullable();
             // Dokumen (angka saja di v1; foto menyusul di P4)
-            $table->string('ktp', 20);
+            // nullable: pengajuan dari AO sah tanpa KTP (kontrak API: nullable|digits:16)
+            $table->string('ktp', 20)->nullable();
             $table->string('npwp', 25)->nullable();
             $table->string('termin', 20)->default('CASH');
             $table->boolean('foto_ktp_ada')->default(false);

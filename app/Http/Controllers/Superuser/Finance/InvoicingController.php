@@ -15,6 +15,7 @@ use App\Entities\Master\Customer;
 use App\Entities\Master\Company;
 use App\Entities\Master\Ekspedisi;
 use App\Entities\Finance\Invoicing;
+use App\Services\SalesOrder\SalesOrderClosingService;
 use setasign\Fpdi\Fpdi;
 use iio\libmergepdf\Merger;
 use App\Entities\Setting\UserMenu;
@@ -58,6 +59,168 @@ class InvoicingController extends Controller
     public function json2(Request $request, PiutangFakturTable $datatable)
     {
         return $datatable->build($request);
+    }
+
+    public function missingInvoices()
+    {
+        if (!$this->isDeveloper()) {
+            return response()->json(['message' => 'Fitur ini hanya untuk user Developer.'], 403);
+        }
+
+        $packings = $this->missingInvoiceQuery()
+            ->orderBy('penjualan_do.id', 'desc')
+            ->get();
+
+        $invoices = Invoicing::withTrashed()
+            ->whereIn('do_id', $packings->pluck('id'))
+            ->orderBy('id')
+            ->get()
+            ->keyBy('do_id');
+
+        $data = $packings->map(function (PackingOrder $packing) use ($invoices) {
+            $invoice = $invoices->get($packing->id);
+
+            return [
+                'id' => $packing->id,
+                'so_code' => $packing->so_code,
+                'do_code' => $packing->do_code,
+                'customer' => $packing->customer_name,
+                'do_status' => PackingOrder::STATUS_PENGIRIMAN[$packing->status]['msg'] ?? (string) $packing->status,
+                'idr_rate' => (float) $packing->idr_rate,
+                'grand_total_idr' => (float) $packing->do_grand_total_idr,
+                'invoice' => $invoice ? [
+                    'code' => $invoice->code,
+                    'status' => $invoice->status() ?: (string) $invoice->status,
+                    'deleted' => $invoice->deleted_at !== null,
+                ] : null,
+            ];
+        })->values();
+
+        return response()->json(['data' => $data]);
+    }
+
+    public function generateMissingInvoices(Request $request, SalesOrderClosingService $closingService)
+    {
+        if (!$this->isDeveloper()) {
+            return response()->json(['message' => 'Fitur ini hanya untuk user Developer.'], 403);
+        }
+
+        $request->validate([
+            'ids' => 'required|array|min:1',
+            'ids.*' => 'integer',
+        ]);
+
+        $requestedIds = collect($request->input('ids'))->unique()->values();
+        $eligibleIds = $this->missingInvoiceQuery()
+            ->whereIn('penjualan_do.id', $requestedIds->all())
+            ->pluck('penjualan_do.id')
+            ->unique()
+            ->values();
+        $skippedIds = $requestedIds->diff($eligibleIds)->values();
+
+        $doCodes = PackingOrder::withTrashed()
+            ->whereIn('id', $requestedIds->all())
+            ->pluck('do_code', 'id');
+
+        $generated = [];
+        $failed = [];
+        $skipped = $skippedIds->map(function ($id) use ($doCodes) {
+            return [
+                'do_id' => $id,
+                'do_code' => $doCodes->get($id),
+                'reason' => 'Tidak lagi memenuhi syarat generate nota.',
+            ];
+        })->values()->all();
+
+        foreach ($eligibleIds as $id) {
+            DB::beginTransaction();
+            try {
+                if (!$closingService->createInvoiceIfNeeded($id)) {
+                    DB::rollBack();
+                    $failed[] = [
+                        'do_id' => $id,
+                        'do_code' => $doCodes->get($id),
+                        'reason' => 'Gagal membuat nota.',
+                    ];
+                    continue;
+                }
+
+                $invoice = Invoicing::where('do_id', $id)->first();
+                $generated[] = [
+                    'do_id' => $id,
+                    'do_code' => $doCodes->get($id),
+                    'invoice_code' => $invoice ? $invoice->code : null,
+                ];
+                DB::commit();
+            } catch (\Throwable $e) {
+                DB::rollBack();
+                \Log::error('Generate missing invoice gagal', [
+                    'do_id' => $id,
+                    'message' => $e->getMessage(),
+                ]);
+                $failed[] = [
+                    'do_id' => $id,
+                    'do_code' => $doCodes->get($id),
+                    'reason' => 'Terjadi kesalahan saat generate.',
+                ];
+            }
+        }
+
+        return response()->json([
+            'generated' => $generated,
+            'failed' => $failed,
+            'skipped' => $skipped,
+            'message' => sprintf(
+                '%d nota berhasil dibuat, %d gagal, %d dilewati.',
+                count($generated),
+                count($failed),
+                count($skipped)
+            ),
+        ]);
+    }
+
+    /**
+     * DO yang sudah layak nota tetapi belum punya nota aktif.
+     * Nota soft-deleted (revisi) tetap masuk karena bisa dipulihkan service;
+     * nota VOID bersifat final sehingga DO-nya tidak boleh digenerate ulang.
+     */
+    private function missingInvoiceQuery()
+    {
+        return PackingOrder::query()
+            ->join('penjualan_so as so', 'so.id', '=', 'penjualan_do.so_id')
+            ->join('penjualan_do_details as dod', 'dod.do_id', '=', 'penjualan_do.id')
+            ->leftJoin('master_customers as c', 'c.id', '=', 'penjualan_do.customer_id')
+            ->whereNull('so.deleted_at')
+            ->whereNull('dod.deleted_at')
+            ->whereIn('penjualan_do.status', [2, 3, 4, 5, 6])
+            ->where('penjualan_do.idr_rate', '>', 1)
+            ->where('dod.grand_total_idr', '>', 0)
+            ->whereDoesntHave('invoicing')
+            ->whereNotExists(function ($query) {
+                $query->select(DB::raw(1))
+                    ->from('finance_invoicing as void_invoice')
+                    ->whereColumn('void_invoice.do_id', 'penjualan_do.id')
+                    ->where('void_invoice.status', Invoicing::STATUS['VOID']);
+            })
+            ->select([
+                'penjualan_do.id',
+                'penjualan_do.so_id',
+                'penjualan_do.do_code',
+                'penjualan_do.status',
+                'penjualan_do.customer_id',
+                'penjualan_do.idr_rate',
+                'penjualan_do.created_at',
+                'so.so_code',
+                'c.name as customer_name',
+                'dod.grand_total_idr as do_grand_total_idr',
+            ]);
+    }
+
+    private function isDeveloper()
+    {
+        $user = Auth::guard('superuser')->user();
+
+        return $user && $user->hasRole('Developer');
     }
 
     public function index(Request $request)

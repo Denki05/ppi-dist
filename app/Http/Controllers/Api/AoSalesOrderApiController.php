@@ -143,9 +143,20 @@ class AoSalesOrderApiController extends Controller
 
             return response()->json([
                 'success' => false,
-                'message' => 'Gagal menyimpan pengajuan.',
+                'message' => 'Gagal menyimpan pengajuan: ' . $this->ringkasError($e),
             ], 500);
         }
+    }
+
+    /**
+     * Pesan error pendek untuk AO: tanpa blok SQL + bindings, yang panjangnya
+     * membuat popup AO tidak terbaca.
+     */
+    private function ringkasError(\Throwable $e): string
+    {
+        $msg = trim(preg_replace('/\s+/', ' ', explode('(SQL:', $e->getMessage())[0]));
+
+        return $msg !== '' ? mb_substr($msg, 0, 250) : get_class($e);
     }
     
     /**
@@ -264,7 +275,7 @@ class AoSalesOrderApiController extends Controller
 
             return response()->json([
                 'success' => false,
-                'message' => 'Gagal menghubungkan estimate baru.',
+                'message' => 'Gagal menghubungkan estimate baru: ' . $this->ringkasError($e),
             ], 500);
         }
     }
@@ -501,12 +512,14 @@ class AoSalesOrderApiController extends Controller
             ->get();
 
         $data = $products->map(function ($p) {
-            if (!$p->ProductCode || !$p->productName || !$p->productPackaging) {
+            if (!$p->productName || !$p->productPackaging) {
                 return null;
             }
+            $code = trim((string) $p->ProductCode);
             return [
                 'id'            => $p->id,
-                'code'          => $p->ProductCode,
+                // Produk baru bisa tersimpan tanpa kode; pakai ID pack agar tetap muncul di pilihan SO.
+                'code'          => $code !== '' ? $code : $p->id,
                 'name'          => $p->productName,
                 'price'         => $p->productPrice,
                 'packName'      => $p->productPackaging,
@@ -1077,10 +1090,17 @@ class AoSalesOrderApiController extends Controller
         $doCode = null;
         $notaCode = $so->code;
         $invoiceCode = null;
+        $doStatus = null;
+        $resiAt = null;
         try {
             $do = \App\Entities\Penjualan\PackingOrder::where('so_id', $so->id)->orderBy('id', 'desc')->first();
             if ($do) {
                 $doCode = $do->do_code ?? $do->code;
+                $doStatus = $do->status !== null ? (int) $do->status : null;
+                // Status 6 = sudah update resi (DO terkirim)
+                if ($doStatus === 6) {
+                    $resiAt = optional($do->updated_at)->toDateTimeString();
+                }
                 $inv = \App\Entities\Finance\Invoicing::where('do_id', $do->id)->orderBy('id', 'desc')->first();
                 if ($inv) {
                     $invoiceCode = $inv->code;
@@ -1101,6 +1121,8 @@ class AoSalesOrderApiController extends Controller
                 'indent_status' => $so->indent_status,
                 'condition' => $so->condition,
                 'do_code' => $doCode,
+                'do_status' => $doStatus,
+                'resi_at' => $resiAt,
                 'nota_code' => $notaCode,
                 'invoice_code' => $invoiceCode,
                 'updated_at' => $so->updated_at,
