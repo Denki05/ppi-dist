@@ -21,7 +21,6 @@ use App\Entities\Penjualan\SalesOrderKontrakItem;
 use App\Entities\Penjualan\SalesOrderKontrakLog;
 use App\Entities\Penjualan\SalesOrderKontrakPivot;
 use App\DataTables\Penjualan\DeliveryOrdersTable;
-use App\Entities\Finance\Invoicing;
 use App\Entities\Master\Vendor;
 use App\Entities\Master\Warehouse;
 use App\Entities\Gudang\StockMove;
@@ -32,6 +31,7 @@ use Illuminate\Support\Facades\Log;
 use App\Repositories\CodeRepo;
 use Illuminate\Support\Collection;
 use App\Services\StockService;
+use App\Services\SalesOrder\SalesOrderClosingService;
 use GuzzleHttp\Client;
 use Validator;
 use App\Helper\LogActivity;
@@ -307,7 +307,7 @@ class DeliveryOrderController extends Controller
         exit();
     }
 
-    public function packed(Request $request)
+    public function packed(Request $request, SalesOrderClosingService $closingService)
     {
         if (Auth::user()->is_superuser == 0) {
             if (empty($this->access) || empty($this->access->user) || $this->access->can_approve == 0) {
@@ -395,8 +395,9 @@ class DeliveryOrderController extends Controller
             // ======================================
             // CEK KURS: kalau belum valid, DO tetap lanjut ke status 4,
             // tapi ditandai is_kurs_hold supaya diblokir sebelum Surat Jalan.
-            // Invoice TIDAK dibuat di sini lagi — sudah dibuat saat Release SPK
-            // (2->3) kalau kurs valid, atau saat update kurs jika masih hold.
+            // Nota utama dibuat saat Release SPK / update kurs; di sini
+            // dipanggil lagi sebagai safety net idempotent (tidak dobel,
+            // tidak menghidupkan nota VOID) untuk DO yang terlewat.
             // ======================================
             $isKursHold = empty($packing->idr_rate) || (float) $packing->idr_rate <= 1;
 
@@ -404,6 +405,10 @@ class DeliveryOrderController extends Controller
                 'status' => 4,
                 'is_kurs_hold' => $isKursHold,
             ]);
+
+            if (!$isKursHold) {
+                $closingService->createInvoiceIfNeeded($packing->id);
+            }
 
             DB::commit();
 
@@ -418,55 +423,6 @@ class DeliveryOrderController extends Controller
             return redirect()->back()
                 ->with('error', $e->getMessage());
         }
-    }
-
-    /**
-     * Buat invoice untuk DO ini kalau belum ada, pakai grand_total_idr
-     * yang sudah tersimpan di PackingOrderDetail (sama seperti perhitungan
-     * di tutup_so() / reset_cost_if_change_idr_rate()).
-     * Kalau invoice sudah ada (termasuk yang sempat ter-soft-delete saat
-     * revisi logistik), sinkronkan ulang kode/customer/total + restore —
-     * kecuali invoice VOID (final). Duplikat identik di PackingOrderController.
-     */
-    private function createInvoiceIfNeeded($do_id)
-    {
-        $packing = PackingOrder::where('id', $do_id)->first();
-        $detail  = PackingOrderDetail::where('do_id', $do_id)->first();
-
-        if (!$packing || !$detail) {
-            return;
-        }
-
-        $existing = Invoicing::withTrashed()->where('do_id', $do_id)->first();
-
-        if ($existing) {
-            // Invoice VOID bersifat final — jangan restore/sinkron dari alur DO.
-            if ($existing->trashed() && (int) $existing->status === Invoicing::STATUS['VOID']) {
-                return;
-            }
-            if ($existing->trashed()) {
-                $existing->restore();
-            }
-            $existing->update([
-                'code' => $packing->do_code,
-                'customer_id' => $packing->customer_id,
-                'customer_other_address_id' => $packing->customer_other_address_id,
-                'grand_total_idr' => $detail->grand_total_idr,
-                'status' => Invoicing::STATUS['ACTIVE'],
-            ]);
-            return;
-        }
-
-        Invoicing::create([
-            'code' => $packing->do_code,
-            'do_id' => $packing->id,
-            'customer_id' => $packing->customer_id,
-            'customer_other_address_id' => $packing->customer_other_address_id,
-            'grand_total_idr' => $detail->grand_total_idr,
-            'status' => Invoicing::STATUS['ACTIVE'],
-            'type' => 0,
-            'created_by' => Auth::id(),
-        ]);
     }
 
     public function sending(Request $request)
@@ -1282,7 +1238,7 @@ class DeliveryOrderController extends Controller
         return view($this->view."do_update",$data);
     }
 
-    public function do_update(Request $request)
+    public function do_update(Request $request, SalesOrderClosingService $closingService)
     {
         if ($request->ajax()) {
             DB::beginTransaction();
@@ -1446,11 +1402,10 @@ class DeliveryOrderController extends Controller
                     'updated_by'         => Auth::id(),
                 ]);
 
-                if ($do->invoicing && $do->invoicing->grand_total_idr != $grand_total_idr) {
-                    $do->invoicing->update([
-                        'grand_total_idr' => $grand_total_idr
-                    ]);
-                }
+                // Buat/sinkronkan nota setelah total DO berubah. Service
+                // idempotent: aman dipanggil walau nota sudah ada, dan
+                // menutup kasus nota yang belum pernah terbentuk.
+                $closingService->createInvoiceIfNeeded($do->id);
 
                 // ======================================================
                 // 🔥 LOGIKA MENGISI KEMBALI KARTU STOK PASCA UPDATE

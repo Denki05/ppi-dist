@@ -724,8 +724,8 @@ class SalesOrderClosingService
      * kurs valid (>1) + grand_total_idr > 0.
      * Idempotent: kalau invoice sudah ada (termasuk soft-delete revisi),
      * sinkronkan ulang + restore — kecuali VOID (final).
-     * Duplikat logika createInvoiceIfNeeded di PackingOrderController
-     * (Release SPK) supaya Release tetap aman jadi fallback/sync.
+     * Dipakai bersama oleh tutup_so, Release SPK, update kurs, edit DO,
+     * packed (web & picker) supaya semua jalur menghasilkan nota yang sama.
      */
     public function createInvoiceIfNeeded($packingOrderId)
     {

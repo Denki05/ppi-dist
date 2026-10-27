@@ -28,7 +28,9 @@ use App\Notifications\DoNotification;
 use App\Entities\Setting\UserMenu;
 use App\Entities\Account\User;
 use App\Repositories\CodeRepo;
+use App\Services\SalesOrder\SalesOrderClosingService;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Schema;
 use Auth;
 use DB;
 use PDF;
@@ -480,7 +482,7 @@ class PackingOrderController extends Controller
      * @param  int  $id
      * @return \Illuminate\Http\Response
      */
-    public function update(Request $request)
+    public function update(Request $request, SalesOrderClosingService $closingService)
     {
         $data_json = [];
         $post = $request->all();
@@ -517,6 +519,13 @@ class PackingOrderController extends Controller
 
                 $update = PackingOrder::where('id',$post["id"])->update($data);
 
+                // Nota ikut disinkronkan setiap DO aktif diedit. Service
+                // idempotent: hanya membuat bila kurs > 1 dan total > 0,
+                // serta tidak pernah menghidupkan invoice VOID.
+                if ($get && in_array((int) $get->status, [2, 3, 4, 5, 6], true)) {
+                    $closingService->createInvoiceIfNeeded($post["id"]);
+                }
+
                 // dd($data);
                 DB::commit();
                 $data_json["IsError"] = FALSE;
@@ -540,7 +549,7 @@ class PackingOrderController extends Controller
         ResultData:
         return response()->json($data_json,200);
     }
-    public function update_cost(Request $request){
+    public function update_cost(Request $request, SalesOrderClosingService $closingService){
         $data_json = [];
         $post = $request->all();
         if($request->method() == "POST"){
@@ -617,7 +626,6 @@ class PackingOrderController extends Controller
                     'discount_2_idr' => trim(htmlentities($discount_2_idr)),
                     'discount_idr' => trim(htmlentities($discount_idr)),
                     'total_discount_idr' => trim(htmlentities($total_discount_idr)),
-                    'ppn' => trim(htmlentities($ppn)),
                     'ppn_percent' => $ppn_percent,
                     'ppn_idr' => trim(htmlentities($ppn)),
                     'voucher_idr' => trim(htmlentities($voucher_idr)),
@@ -631,7 +639,22 @@ class PackingOrderController extends Controller
                     'updated_by' => Auth::id()
                 ];
 
-                $update = PackingOrderDetail::where('id',$post["id"])->update($data);
+                // Kolom lama `ppn` tidak ada di sebagian environment
+                // (sudah digantikan ppn_idr/ppn_percent); tulis hanya bila ada.
+                if (Schema::hasColumn('penjualan_do_details', 'ppn')) {
+                    $data['ppn'] = trim(htmlentities($ppn));
+                }
+
+                $update = false;
+                DB::transaction(function () use ($post, $data, $detail_po, $closingService, &$update) {
+                    $update = PackingOrderDetail::where('id',$post["id"])->update($data);
+
+                    // Total nota harus ikut total cost terbaru; sekaligus
+                    // membuat nota bila DO aktif ini belum punya nota.
+                    if ($update && $detail_po && in_array((int) $detail_po->status, [2, 3, 4, 5, 6], true)) {
+                        $closingService->createInvoiceIfNeeded($detail_po->id);
+                    }
+                });
 
                 if($update){
                     $data_json["IsError"] = FALSE;
@@ -793,7 +816,6 @@ class PackingOrderController extends Controller
                     'discount_2_idr' => trim(htmlentities($discount_2_idr)),
                     'discount_idr' => trim(htmlentities($discount_idr)),
                     'total_discount_idr' => trim(htmlentities($total_discount_idr)),
-                    'ppn' => trim(htmlentities($ppn)),
                     'ppn_percent' => $ppn_percent,
                     'ppn_idr' => trim(htmlentities($ppn)),
                     'voucher_idr' => trim(htmlentities($voucher_idr)),
@@ -806,6 +828,10 @@ class PackingOrderController extends Controller
                     'grand_total_idr' => trim(htmlentities($grand_total_idr)),
                     'updated_by' => Auth::id()
                 ];
+
+                if (Schema::hasColumn('penjualan_do_details', 'ppn')) {
+                    $data['ppn'] = trim(htmlentities($ppn));
+                }
 
                 $update = PackingOrderDetail::where('do_id',$post["id"])->update($data);
                 
@@ -925,7 +951,7 @@ class PackingOrderController extends Controller
         }
     }
 
-    public function ready(Request $request, $id)
+    public function ready(Request $request, $id, SalesOrderClosingService $closingService)
     {
         if ($request->ajax()) {
 
@@ -990,6 +1016,7 @@ class PackingOrderController extends Controller
                     }
                 }
 
+                $previousStatus = (int) $getDo->status;
                 $getDo->status = 3;
                 $getDo->updated_by = Auth::id();
                 $getDo->save();
@@ -999,8 +1026,8 @@ class PackingOrderController extends Controller
                 // (untuk DO lama yang tutup sebelum fitur geser, / revisi restore).
                 // Kalau masih hold, invoice tetap dibuat nanti via update kurs.
                 $isKursHoldRelease = empty($getDo->idr_rate) || (float) $getDo->idr_rate <= 1;
-                if (!$isKursHoldRelease) {
-                    $this->createInvoiceIfNeeded($getDo->id);
+                if (!$isKursHoldRelease && in_array($previousStatus, [2, 3, 4, 5, 6], true)) {
+                    $closingService->createInvoiceIfNeeded($getDo->id);
                 }
 
                 // Kirim notifikasi
@@ -1037,7 +1064,7 @@ class PackingOrderController extends Controller
         }
     }
 
-    public function packed(Request $request)
+    public function packed(Request $request, SalesOrderClosingService $closingService)
     {
         // Access
         if(Auth::user()->is_superuser == 0){
@@ -1059,7 +1086,13 @@ class PackingOrderController extends Controller
                 ]);
             }
 
-            $update = PackingOrder::where('id',$post["id"])->update(['status' => 4]);
+            $update = DB::transaction(function () use ($post, $result, $closingService) {
+                $updated = PackingOrder::where('id',$post["id"])->update(['status' => 4]);
+                if ($result && in_array((int) $result->status, [2, 3, 4, 5, 6], true)) {
+                    $closingService->createInvoiceIfNeeded($post["id"]);
+                }
+                return $updated;
+            });
 
             if($update){
                 return redirect()->back()->with('success','Packing Order berhasil diubah ke Packed');    
@@ -1072,7 +1105,7 @@ class PackingOrderController extends Controller
             return redirect()->back()->with('error',$e->getMessage());
         }
     }
-    public function order(Request $request)
+    public function order(Request $request, SalesOrderClosingService $closingService)
     {
         // Access
         if(Auth::user()->is_superuser == 0){
@@ -1086,8 +1119,15 @@ class PackingOrderController extends Controller
                 'id' => 'required'
             ]);
             $post = $request->all();
+            $packing = PackingOrder::where('id',$post["id"])->first();
 
-            $update = PackingOrder::where('id',$post["id"])->update(['status' => 3]);
+            $update = DB::transaction(function () use ($post, $packing, $closingService) {
+                $updated = PackingOrder::where('id',$post["id"])->update(['status' => 3]);
+                if ($packing && in_array((int) $packing->status, [2, 3, 4, 5, 6], true)) {
+                    $closingService->createInvoiceIfNeeded($post["id"]);
+                }
+                return $updated;
+            });
 
             if($update){
                 return redirect()->back()->with('success','Packing Order berhasil diubah ke ordered');    
@@ -1771,7 +1811,7 @@ class PackingOrderController extends Controller
         }
     }
 
-    public function update_kurs(Request $request)
+    public function update_kurs(Request $request, SalesOrderClosingService $closingService)
     {
         if (!$request->ajax()) {
             abort(404);
@@ -1814,7 +1854,7 @@ class PackingOrderController extends Controller
         try {
             $updated = 0;
             $skipped = 0;
-            DB::transaction(function () use ($ids, $idrRate, &$updated, &$skipped) {
+            DB::transaction(function () use ($ids, $idrRate, $closingService, &$updated, &$skipped) {
                 foreach ($ids as $id) {
                     $packing = PackingOrder::where('id', $id)->lockForUpdate()->first();
                     if (!$packing) continue;
@@ -1838,11 +1878,11 @@ class PackingOrderController extends Controller
                     // Hitung ulang idr_total, diskon, ppn, dsb pakai kurs baru
                     $this->reset_cost_if_change_idr_rate($packing->id, $idrRate);
 
-                    // Kurs baru valid & DO sudah di tahap List Queue ke atas (status 2/3/4)
+                    // Kurs baru valid & DO berstatus aktif (2-6)
                     // -> langsung buat/sinkronkan nota. Jadi update kurs di 2/3
                     // memunculkan nota tanpa menunggu Release SPK / Packed.
-                    if ((int) $packing->status >= 2) {
-                        $this->createInvoiceIfNeeded($packing->id);
+                    if (in_array((int) $packing->status, [2, 3, 4, 5, 6], true)) {
+                        $closingService->createInvoiceIfNeeded($packing->id);
                     }
                 }
             });
@@ -1887,59 +1927,6 @@ class PackingOrderController extends Controller
                 'message' => $e->getMessage(),
             ]);
         }
-    }
-
-    /**
-     * Buat invoice untuk DO ini kalau belum ada, pakai grand_total_idr
-     * yang sudah tersimpan di PackingOrderDetail. Kalau sudah ada (termasuk
-     * yang sempat ter-soft-delete saat revisi logistik), sinkronkan ulang
-     * kode/customer/total + restore — kecuali invoice VOID (final, jangan
-     * dihidupkan lagi). Duplikat identik di DeliveryOrderController.
-     */
-    private function createInvoiceIfNeeded($do_id)
-    {
-        $packing = PackingOrder::where('id', $do_id)->first();
-        $detail  = PackingOrderDetail::where('do_id', $do_id)->first();
-
-        if (!$packing || !$detail) {
-            return;
-        }
-
-        // Jangan buat/sinkron nota minus/nol (kasus invoice minus).
-        if ((float) ($detail->grand_total_idr ?? 0) <= 0) {
-            return;
-        }
-
-        $existing = Invoicing::withTrashed()->where('do_id', $do_id)->first();
-
-        if ($existing) {
-            // Invoice VOID bersifat final — jangan restore/sinkron dari alur kurs.
-            if ($existing->trashed() && (int) $existing->status === Invoicing::STATUS['VOID']) {
-                return;
-            }
-            if ($existing->trashed()) {
-                $existing->restore();
-            }
-            $existing->update([
-                'code' => $packing->do_code,
-                'customer_id' => $packing->customer_id,
-                'customer_other_address_id' => $packing->customer_other_address_id,
-                'grand_total_idr' => $detail->grand_total_idr,
-                'status' => Invoicing::STATUS['ACTIVE'],
-            ]);
-            return;
-        }
-
-        Invoicing::create([
-            'code' => $packing->do_code,
-            'do_id' => $packing->id,
-            'customer_id' => $packing->customer_id,
-            'customer_other_address_id' => $packing->customer_other_address_id,
-            'grand_total_idr' => $detail->grand_total_idr,
-            'status' => Invoicing::STATUS['ACTIVE'],
-            'type' => 0,
-            'created_by' => Auth::id(),
-        ]);
     }
 
     public function ajukan_void(Request $request, $id)

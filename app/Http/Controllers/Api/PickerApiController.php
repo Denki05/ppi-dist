@@ -10,6 +10,7 @@ use Illuminate\Support\Facades\DB;
 use App\Entities\Account\Superuser;
 use App\Entities\Penjualan\PackingOrder;
 use App\Services\StockService;
+use App\Services\SalesOrder\SalesOrderClosingService;
 use PDF;
 
 class PickerApiController extends Controller
@@ -134,7 +135,7 @@ class PickerApiController extends Controller
      *   "confirmed_items": [12, 13, 14, ...]   // array do_detail_id yang dicentang
      * }
      */
-    public function packTask(Request $request, $id)
+    public function packTask(Request $request, $id, SalesOrderClosingService $closingService)
     {
         $request->validate([
             'confirmed_items'   => 'required|array',
@@ -190,7 +191,7 @@ class PickerApiController extends Controller
                 }
             }
 
-            // ====== CEK KURS (tanpa buat invoice; invoice dibuat saat Release SPK / update kurs) ======
+            // ====== CEK KURS + SINKRON NOTA (idempotent, aman kalau sudah ada) ======
             $isKursHold = empty($packing->idr_rate) || (float) $packing->idr_rate <= 1;
 
             $packing->update([
@@ -198,6 +199,10 @@ class PickerApiController extends Controller
                 'is_kurs_hold' => $isKursHold,
                 'updated_by'   => null, // TODO: isi ID user picker kalau mau tercatat siapa yg proses
             ]);
+
+            if (!$isKursHold) {
+                $closingService->createInvoiceIfNeeded($packing->id);
+            }
 
             DB::commit();
 
@@ -213,51 +218,6 @@ class PickerApiController extends Controller
                 'message' => $e->getMessage(),
             ], 422);
         }
-    }
-
-    /**
-     * Buat invoice DO bila belum ada (salinan logika
-     * DeliveryOrderController::createInvoiceIfNeeded agar jalur picker
-     * dan web menghasilkan invoice yang sama).
-     */
-    private function createInvoiceIfNeeded($do_id)
-    {
-        $packing = PackingOrder::where('id', $do_id)->first();
-        $detail  = \App\Entities\Penjualan\PackingOrderDetail::where('do_id', $do_id)->first();
-
-        if (!$packing || !$detail) {
-            return;
-        }
-
-        $existing = \App\Entities\Finance\Invoicing::withTrashed()->where('do_id', $do_id)->first();
-
-        if ($existing) {
-            if ($existing->trashed() && (int) $existing->status === \App\Entities\Finance\Invoicing::STATUS['VOID']) {
-                return;
-            }
-            if ($existing->trashed()) {
-                $existing->restore();
-            }
-            $existing->update([
-                'code' => $packing->do_code,
-                'customer_id' => $packing->customer_id,
-                'customer_other_address_id' => $packing->customer_other_address_id,
-                'grand_total_idr' => $detail->grand_total_idr,
-                'status' => \App\Entities\Finance\Invoicing::STATUS['ACTIVE'],
-            ]);
-            return;
-        }
-
-        \App\Entities\Finance\Invoicing::create([
-            'code' => $packing->do_code,
-            'do_id' => $packing->id,
-            'customer_id' => $packing->customer_id,
-            'customer_other_address_id' => $packing->customer_other_address_id,
-            'grand_total_idr' => $detail->grand_total_idr,
-            'status' => \App\Entities\Finance\Invoicing::STATUS['ACTIVE'],
-            'type' => 0,
-            'created_by' => null,
-        ]);
     }
 
     /**

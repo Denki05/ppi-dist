@@ -181,8 +181,11 @@ class InvoicingController extends Controller
 
     /**
      * DO yang sudah layak nota tetapi belum punya nota aktif.
-     * Nota soft-deleted (revisi) tetap masuk karena bisa dipulihkan service;
-     * nota VOID bersifat final sehingga DO-nya tidak boleh digenerate ulang.
+     * Nota soft-deleted (revisi) dan nota berstatus REVISI/PENDING ikut masuk
+     * karena service bisa memulihkan/mengaktifkannya kembali; nota VOID
+     * bersifat final sehingga DO-nya tidak boleh digenerate ulang.
+     * DO yang sedang menunggu revisi internal dikecualikan karena notanya
+     * sengaja ditahan (PENDING) sampai approval selesai.
      */
     private function missingInvoiceQuery()
     {
@@ -192,10 +195,16 @@ class InvoicingController extends Controller
             ->leftJoin('master_customers as c', 'c.id', '=', 'penjualan_do.customer_id')
             ->whereNull('so.deleted_at')
             ->whereNull('dod.deleted_at')
+            ->whereNull('penjualan_do.internal_revision_status')
             ->whereIn('penjualan_do.status', [2, 3, 4, 5, 6])
             ->where('penjualan_do.idr_rate', '>', 1)
             ->where('dod.grand_total_idr', '>', 0)
-            ->whereDoesntHave('invoicing')
+            ->where(function ($query) {
+                $query->whereDoesntHave('invoicing')
+                    ->orWhereHas('invoicing', function ($invoice) {
+                        $invoice->where('status', '!=', Invoicing::STATUS['ACTIVE']);
+                    });
+            })
             ->whereNotExists(function ($query) {
                 $query->select(DB::raw(1))
                     ->from('finance_invoicing as void_invoice')

@@ -161,6 +161,7 @@
             </div>
             <small class="text-muted d-block mt-10">
               Hanya DO dengan kurs valid (&gt; 1) dan total &gt; 0 yang tampil. Nota VOID tidak akan dibuat ulang.
+              Nota berstatus REVISI/PENDING atau yang terhapus karena revisi akan diaktifkan kembali.
             </small>
           </div>
           <div class="modal-footer">
@@ -432,7 +433,7 @@
 
           Swal.fire({
               title: 'Generate ' + ids.length + ' nota?',
-              text: 'Nota yang belum ada akan dibuat. Nota yang terhapus karena revisi akan dipulihkan dan disinkronkan dengan total DO saat ini.',
+              text: 'Nota yang belum ada akan dibuat. Nota yang terhapus atau berstatus REVISI/PENDING akan diaktifkan kembali dan disinkronkan dengan total DO saat ini.',
               type: 'warning',
               showCancelButton: true,
               confirmButtonText: 'Ya, generate',
