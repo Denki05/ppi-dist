@@ -62,8 +62,13 @@ class SalesOrder extends Model
     	'updated_by',
     	'created_by',
     	'deleted_by',
-        'created_at', 
+    	'created_at', 
         'updated_at',
+    ];
+
+    protected $casts = [
+        'is_archived' => 'boolean',
+        'archived_at' => 'datetime',
     ];
 
     const STATUS = [
@@ -152,14 +157,25 @@ class SalesOrder extends Model
         'COMPLETED' => 4,
     ];
 
+    const STATUS_PROFORMA = [
+        1 => 'AKTIF',
+        2 => 'TERBUAT',
+        3 => 'SIAP',
+        4 => 'TUTUP',
+        5 => 'VOID',
+    ];
+
     public function so_sales_senior()
     {
+        // Konstanta berbentuk nama => id, jadi dibalik dulu untuk lookup by id.
         $map = array_flip(self::SALES_SENIOR);
         return $map[$this->sales_senior_id] ?? '-';
     }
 
     public function so_sales()
     {
+        // Konstanta berbentuk nama => id, jadi dibalik dulu untuk lookup by id.
+        // Sebelumnya selalu '-' karena lookup id pada key nama tidak pernah cocok.
         $map = array_flip(self::SALES);
         return $map[$this->sales_id] ?? '-';
     }

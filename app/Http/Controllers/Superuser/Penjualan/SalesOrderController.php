@@ -171,7 +171,11 @@ class SalesOrderController extends Controller
             $query->whereDate('penjualan_do.created_at', Carbon\Carbon::today());
         } elseif ($filter_periode == 'bulanan') {
             $query->whereMonth('penjualan_do.created_at', Carbon\Carbon::now()->month)
-                ->whereYear('penjualan_do.created_at', Carbon\Carbon::now()->year);
+                ->whereYear('penjualan_do.created_at', Carbon\Carbon::now()->year)
+                // DO dengan kurs belum valid (badge "Belum Valid") dinaikkan ke atas,
+                // masing-masing kelompok tetap urut tanggal buat asc.
+                ->orderByRaw('CASE WHEN penjualan_do.status >= 2 AND penjualan_do.is_kurs_hold = 1 THEN 0 ELSE 1 END ASC')
+                ->orderBy('penjualan_do.created_at', 'asc');
         } elseif ($filter_periode == 'custom' && $request->tanggal_dari && $request->tanggal_sampai) {
             $query->whereBetween('penjualan_do.created_at', [$request->tanggal_dari, $request->tanggal_sampai]);
         }

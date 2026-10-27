@@ -361,16 +361,22 @@ class SalesOrderAwalTable extends Table
             return $model->customer_name . ' ' . $model->customer_kota;
         });
 
-        // Submit & Terkirim = riwayat read-only. Semua aksi hanya di Draft
-        // agar AO fokus di satu tempat dan tidak terkecoh klik di tab lain.
+        // Terkirim = riwayat read-only. Tab Submit tetap punya aksi Print SO
+        // (cetak ulang) untuk user yang lupa mencetak saat masih di Draft.
         $table->addColumn('action', function ($model) use ($isSubmit, $isSelesai) {
-            if ($isSubmit || $isSelesai) {
-                return '<span class="soa-dash" title="Sudah dilanjutkan / tanpa aksi di sini">-</span>';
+            $print_so = route('superuser.penjualan.sales_order.print_so', $model->id);
+
+            if ($isSelesai) {
+                return '<span class="soa-dash" title="Sudah terkirim / tanpa aksi di sini">-</span>';
             }
+
+            if ($isSubmit) {
+                return "<a href=\"{$print_so}\" target=\"_blank\" class=\"btn-print-so\" title=\"Print SO (cetak ulang)\"><i class=\"fa fa-print\"></i> Print SO</a>";
+            }
+
             $revisi = route('superuser.penjualan.sales_order.edit', [$model->id, $step = 1]);
             $lanjutkan = route('superuser.penjualan.sales_order.lanjutkan', $model->id);
             $delete = route('superuser.penjualan.sales_order.destroy', $model->id);
-            $print_so = route('superuser.penjualan.sales_order.print_so', $model->id);
             $estimate_pdf = route('superuser.penjualan.sales_order.sales_estimate_pdf', $model->id);
             $archive = route('superuser.penjualan.sales_order.archive_one_awal', $model->id);
 

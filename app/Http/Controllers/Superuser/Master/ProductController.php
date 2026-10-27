@@ -121,7 +121,7 @@ class ProductController extends Controller
                 'searah'        => 'required|integer',
                 'category'      => 'required|integer',
                 'name'          => 'required|string',
-                'code'          => 'required|string',
+                'code'          => 'nullable|string',
                 'selling_price' => 'nullable|numeric|min:0',
                 'description'   => 'nullable|string',
                 'note'          => 'nullable|string',
@@ -213,7 +213,7 @@ class ProductController extends Controller
                             }
 
                             // SYNC CRM
-                            $this->syncToCrm($product, $request->searah, $packagingsSynced);
+                            // $this->syncToCrm($product, $request->searah, $packagingsSynced);
                         }
 
                     } else {
@@ -307,6 +307,7 @@ class ProductController extends Controller
                     return $this->response(200, $response);
 
                 } catch (\Exception $e) {
+                    dd($e);
                     DB::rollback();
                     $response['notification'] = [
                         'alert'   => 'block',

@@ -155,7 +155,7 @@
                     <th>Status</th>
                     <th>Status Approval</th>
                     <th>Action</th>
-                    <th>Info</th>
+                    <th>Tgl Info</th>
                     <th></th>
                   </tr>
                 </thead>
@@ -181,7 +181,7 @@
                     <th>Status</th>
                     <th>Status Approval</th>
                     <th>Action</th>
-                    <th>Info</th>
+                    <th>Tgl Info</th>
                     <th></th>
                   </tr>
                 </thead>
@@ -708,6 +708,17 @@
     display: inline-flex; align-items: center; justify-content: center;
   }
   .btn-lainnya:hover { border-color: #94a3b8; color: #0f172a; }
+
+  /* ================= Print SO di tab Submit (cetak ulang) ================= */
+  .btn-print-so {
+    display: inline-flex; align-items: center; gap: 5px;
+    background: #eff6ff; color: #1d4ed8 !important; border: 1px solid #bfdbfe;
+    font-weight: 800; font-size: 12px; letter-spacing: .02em;
+    padding: 5px 11px; border-radius: 999px; text-decoration: none !important;
+    white-space: nowrap;
+  }
+  .btn-print-so:hover { background: #dbeafe; border-color: #93c5fd; color: #1e40af !important; }
+
   .soa-dd { font-size: 13px; min-width: 210px; border-radius: 10px; overflow: hidden; padding: 6px; }
   .soa-dd-item { border-radius: 7px; padding: 8px 10px; font-weight: 600; color: #334155; }
   .soa-dd-item:hover { background: #f1f5f9; }
@@ -1032,6 +1043,57 @@
     soaTables.submit = soAwalTable('#sales_order_awal_submit', 'submit', false, [11, 'desc']);
     soaTables.selesai = soAwalTable('#sales_order_awal_selesai', 'selesai', true, [12, 'desc']);
 
+    // ============================================================
+    //  MENU AKSI "..." DI TABEL
+    //  Wrapper tabel (.table-responsive), .soa-table-card, dan
+    //  .container-scroller memakai overflow hidden/auto sehingga menu
+    //  terpotong di layar kecil / baris paling bawah. Saat dibuka, menu
+    //  diposisikan fixed terhadap viewport dan otomatis flip ke atas.
+    // ============================================================
+    $(document).on('shown.bs.dropdown', '.soa-table-card .btn-group', function() {
+      var $group = $(this);
+      var $btn = $group.find('[data-toggle="dropdown"]').first();
+      var $menu = $group.find('.dropdown-menu').first();
+      if (!$btn.length || !$menu.length) return;
+
+      var btn = $btn[0].getBoundingClientRect();
+      var menu = $menu[0].getBoundingClientRect();
+      var gap = 4;
+      var margin = 8;
+      var top = btn.bottom + gap;
+      var left = btn.right - menu.width;
+
+      if (top + menu.height > window.innerHeight - margin) {
+        top = btn.top - menu.height - gap;
+      }
+      top = Math.max(margin, Math.min(top, window.innerHeight - menu.height - margin));
+      left = Math.max(margin, Math.min(left, window.innerWidth - menu.width - margin));
+
+      $menu.css({
+        position: 'fixed',
+        top: top + 'px',
+        left: left + 'px',
+        right: 'auto',
+        bottom: 'auto',
+        transform: 'none',
+        margin: 0,
+        zIndex: 3000
+      });
+    });
+
+    $(document).on('hidden.bs.dropdown', '.soa-table-card .btn-group', function() {
+      $(this).find('.dropdown-menu').removeAttr('style');
+    });
+
+    // Menu fixed tidak ikut halaman saat scroll/resize: tutup agar tidak melayang.
+    function soaCloseTableDropdown() {
+      $('.soa-table-card .btn-group.open, .soa-table-card .btn-group.show')
+        .find('[data-toggle="dropdown"]')
+        .dropdown('toggle');
+    }
+    document.addEventListener('scroll', soaCloseTableDropdown, true);
+    window.addEventListener('resize', soaCloseTableDropdown);
+
     // Jumlah data per tab (badge) + banner peringatan draft nyantol.
     soaTabList.forEach(function(tab) {
       soaTables[tab].on('draw.dt', function() {
@@ -1113,7 +1175,7 @@
         else if (soaKeyword) base = 'Order submit dari semua tanggal';
         else if (all) base = 'Order submit dari semua tanggal';
         else base = 'Order dibuat atau disubmit hari ini — klik Semua untuk cari yang lama';
-        return base + ' • riwayat, tanpa aksi (fokus kerja di Draft)';
+        return base + ' • riwayat, bisa cetak ulang SO';
       }
       if (hasRange) return 'Order terkirim, resi ' + soaRangeText(f) + ' • riwayat, tanpa aksi';
       if (soaKeyword || all) return 'Order terkirim dari semua tanggal resi • riwayat, tanpa aksi';

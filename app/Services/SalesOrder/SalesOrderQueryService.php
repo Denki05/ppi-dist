@@ -50,12 +50,14 @@ class SalesOrderQueryService
         }
 
         $data = $products->map(function ($p) {
-            if (!$p->ProductCode || !$p->productName || !$p->productPackaging) {
+            if (!$p->productName || !$p->productPackaging) {
                 return null;
             }
+            $code = trim((string) $p->ProductCode);
             return [
                 'id' => $p->id,
-                'code' => $p->ProductCode,
+                // Produk baru bisa tersimpan tanpa kode; pakai ID pack agar tetap muncul di pilihan SO.
+                'code' => $code !== '' ? $code : $p->id,
                 'name' => $p->productName,
                 'price' => $p->productPrice,
                 'packName' => $p->productPackaging,

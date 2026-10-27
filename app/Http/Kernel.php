@@ -77,7 +77,10 @@ class Kernel extends HttpKernel
         'permission'            => \Spatie\Permission\Middlewares\PermissionMiddleware::class,
         'role_or_permission'    => \Spatie\Permission\Middlewares\RoleOrPermissionMiddleware::class,
         'picker.auth'           => \App\Http\Middleware\PickerApiAuth::class,
-        'ao.apikey'             => \App\Http\Middleware\VerifyAoApiKey::class,
+        'ao.apikey' => \App\Http\Middleware\VerifyAoApiKey::class,
+
+        // direktori user untuk modul AO (login + one-time access)
+        'user.apikey' => \App\Http\Middleware\VerifyUserApiKey::class,
 
         // penerima sinkronisasi user dari trans ke trial
         'trial.sync' => \App\Http\Middleware\VerifyTrialSyncKey::class,

@@ -25,6 +25,8 @@ Route::group([
         Route::get('/{id}/history_payable', 'InvoicingController@history_payable')->name('history_payable');
         Route::get('/json', 'InvoicingController@json')->name('json');
         Route::get('/json2', 'InvoicingController@json2')->name('json2');
+        Route::get('/missing', 'InvoicingController@missingInvoices')->name('missing');
+        Route::post('/generate-missing', 'InvoicingController@generateMissingInvoices')->name('generate_missing');
         Route::get('/updateInvoice', 'InvoicingController@updateInvoice')->name('updateInvoice');
         Route::get('/pageReport', 'InvoicingController@pageReport')->name('pageReport');
         Route::post('/printReportPage', 'InvoicingController@printReportPage')->name('printReportPage');
